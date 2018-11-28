@@ -52,6 +52,7 @@ func main() {
 	cmds := map[string]setupFunc{}
 	registerSampler(cmds, app, "sampler")
 	registerWeb(cmds, app, "web")
+	registerAll(cmds, app, "all")
 
 	cmd, err := app.Parse(os.Args[1:])
 	if err != nil {

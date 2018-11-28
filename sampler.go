@@ -19,7 +19,7 @@ import (
 
 // registerSampler registers a sampler command.
 func registerSampler(m map[string]setupFunc, app *kingpin.Application, name string) {
-	cmd := app.Command(name, "sampler")
+	cmd := app.Command(name, "Run a sampler, that appends profiles to a configured storage.")
 
 	storagePath := cmd.Flag("storage.path", "Directory to read storage from.").
 		Default("./data").String()
