@@ -364,7 +364,7 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer) error {
 		s.req = req
 	}
 
-	s.logger.Log("msg", "scraping profile", "url", s.req.URL.String())
+	level.Debug(s.logger).Log("msg", "scraping profile", "url", s.req.URL.String())
 	resp, err := ctxhttp.Do(ctx, s.client, s.req)
 	if err != nil {
 		return err

@@ -108,9 +108,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	series, timestamp, remainingPath := s.parsePath(r.URL.Path)
-	fmt.Println("path:       ", r.URL.Path)
-	fmt.Println("series:    ", series)
-	fmt.Println("timestamp: ", timestamp)
 	decodedSeriesName, err := base64.URLEncoding.DecodeString(series)
 	if err != nil {
 		msg := fmt.Sprintf("could not decode series name", err)

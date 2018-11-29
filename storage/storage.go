@@ -24,6 +24,7 @@ import (
 	"strconv"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
 
@@ -116,7 +117,7 @@ func (s *storageAppender) Add(labels labels.Labels, timestamp int64, profile []b
 	}
 
 	fullpath := filepath.Join(p, intToString(timestamp))
-	s.logger.Log("msg", "writing profile", "path", fullpath)
+	level.Debug(s.logger).Log("msg", "writing profile", "path", fullpath)
 	return ioutil.WriteFile(fullpath, profile, 0644)
 }
 

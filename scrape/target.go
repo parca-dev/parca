@@ -377,9 +377,5 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 		}
 	}
 
-	for _, t := range targets {
-		fmt.Println(t.String())
-	}
-
 	return targets, nil
 }
