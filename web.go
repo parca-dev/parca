@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Go-SIP/conprof/pprofui"
+	"github.com/Go-SIP/conprof/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -19,12 +20,12 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string) 
 		Default("./data").String()
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
-		return runWeb(mux, *storagePath)
+		return runWeb(mux, logger, *storagePath)
 	}
 }
 
-func runWeb(mux *http.ServeMux, storagePath string) error {
-	store := pprofui.NewDiskStorage(storagePath)
+func runWeb(mux *http.ServeMux, logger log.Logger, storagePath string) error {
+	store := storage.NewDiskStorage(logger, storagePath)
 	server := pprofui.NewServer(store)
 
 	mux.Handle("/", server)

@@ -30,7 +30,7 @@ func runAll(g *run.Group, mux *http.ServeMux, logger log.Logger, storagePath, co
 		return err
 	}
 
-	err = runWeb(mux, storagePath)
+	err = runWeb(mux, logger, storagePath)
 	if err != nil {
 		return err
 	}

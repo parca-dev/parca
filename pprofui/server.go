@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Go-SIP/conprof/storage"
 	"github.com/alecthomas/template"
 	"github.com/google/pprof/driver"
 	"github.com/google/pprof/profile"
@@ -54,11 +55,11 @@ const tpl = `
 // writing include `profile` (cpu), `goroutine`, `threadcreate`,
 // `heap`, `block`, and `mutex`.
 type Server struct {
-	storage Storage
+	storage storage.Storage
 }
 
 // NewServer creates a new Server backed by the supplied Storage.
-func NewServer(storage Storage) *Server {
+func NewServer(storage storage.Storage) *Server {
 	s := &Server{
 		storage: storage,
 	}

@@ -15,8 +15,10 @@ package storage
 
 import (
 	"encoding/base64"
+	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -26,6 +28,9 @@ import (
 )
 
 type Storage interface {
+	Get(series, timestamp string, read func(io.Reader) error) error
+	List() (map[string][]string, error)
+
 	Appender() Appender
 }
 
@@ -39,6 +44,51 @@ func NewDiskStorage(logger log.Logger, path string) Storage {
 		logger: logger,
 		path:   path,
 	}
+}
+
+func (s *diskStorage) Get(series, timestamp string, read func(io.Reader) error) error {
+	f, err := os.Open(path.Join(s.path, base64.URLEncoding.EncodeToString([]byte(series)), timestamp))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return read(f)
+}
+
+func (s *diskStorage) List() (map[string][]string, error) {
+	seriesDirs, err := ioutil.ReadDir(s.path)
+	if err != nil {
+		return nil, err
+	}
+
+	series := make(map[string][]string, len(seriesDirs))
+
+	for _, seriesDir := range seriesDirs {
+		seriesDirName := seriesDir.Name()
+		if !seriesDir.IsDir() || seriesDirName == "." || seriesDirName == ".." {
+			continue
+		}
+		decodedSeriesName, err := base64.URLEncoding.DecodeString(seriesDirName)
+		if err != nil {
+			return nil, err
+		}
+		seriesName := string(decodedSeriesName)
+
+		files, err := ioutil.ReadDir(filepath.Join(s.path, seriesDirName))
+		if err != nil {
+			return nil, err
+		}
+
+		series[seriesName] = make([]string, len(files))
+		for _, file := range files {
+			if file.IsDir() {
+				continue
+			}
+			series[seriesName] = append(series[seriesName], file.Name())
+		}
+	}
+
+	return series, nil
 }
 
 func (s *diskStorage) Appender() Appender {
