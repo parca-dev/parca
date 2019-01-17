@@ -88,7 +88,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		escapedSeriesNames := make(map[string]string, len(series))
-		for k, _ := range series {
+		for k := range series {
 			escapedSeriesNames[k] = base64.URLEncoding.EncodeToString([]byte(k))
 		}
 
@@ -110,7 +110,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	series, timestamp, remainingPath := s.parsePath(r.URL.Path)
 	decodedSeriesName, err := base64.URLEncoding.DecodeString(series)
 	if err != nil {
-		msg := fmt.Sprintf("could not decode series name", err)
+		msg := fmt.Sprintf("could not decode series name: %s", err)
 		http.Error(w, msg, http.StatusNotFound)
 		return
 	}

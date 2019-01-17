@@ -10,7 +10,8 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/coreos-inc/tectonic-operators/bazel-tectonic-operators/external/go_sdk/src/net/http/pprof"
+	"net/http/pprof"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/improbable-eng/thanos/pkg/runutil"
@@ -25,7 +26,7 @@ import (
 
 const (
 	logFormatLogfmt = "logfmt"
-	logFormatJson   = "json"
+	logFormatJSON   = "json"
 )
 
 type setupFunc func(*run.Group, *http.ServeMux, log.Logger, *prometheus.Registry, opentracing.Tracer, bool) error
@@ -45,7 +46,7 @@ func main() {
 	logLevel := app.Flag("log.level", "Log filtering level.").
 		Default("info").Enum("error", "warn", "info", "debug")
 	logFormat := app.Flag("log.format", "Log format to use.").
-		Default(logFormatLogfmt).Enum(logFormatLogfmt, logFormatJson)
+		Default(logFormatLogfmt).Enum(logFormatLogfmt, logFormatJSON)
 	httpBindAddr := app.Flag("listen.address", "Address to listen on with HTTP server.").
 		Default(":8080").String()
 
@@ -77,7 +78,7 @@ func main() {
 			panic("unexpected log level")
 		}
 		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
-		if *logFormat == logFormatJson {
+		if *logFormat == logFormatJSON {
 			logger = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
 		}
 		logger = level.NewFilter(logger, lvl)
