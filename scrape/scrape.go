@@ -32,6 +32,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/pool"
 	"github.com/prometheus/prometheus/pkg/timestamp"
+	"github.com/prometheus/tsdb/labels"
 )
 
 var (
@@ -489,7 +490,17 @@ mainLoop:
 			}
 		}
 
-		err := app.Add(sl.target.labels, timestamp.FromTime(start), buf.Bytes())
+		ls := make(labels.Labels, len(sl.target.labels))
+		for _, l := range sl.target.labels {
+			ls = append(ls, labels.Label{Name: l.Name, Value: l.Value})
+		}
+
+		_, err := app.Add(ls, timestamp.FromTime(start), buf.Bytes())
+		if err != nil && errc != nil {
+			errc <- err
+		}
+
+		err = app.Commit()
 		if err != nil && errc != nil {
 			errc <- err
 		}

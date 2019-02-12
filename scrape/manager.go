@@ -22,13 +22,13 @@ import (
 	"github.com/go-kit/kit/log/level"
 
 	"github.com/Go-SIP/conprof/config"
-	"github.com/Go-SIP/conprof/storage"
+	"github.com/Go-SIP/conprof/storage/tsdb"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 )
 
 // Appendable returns an Appender.
 type Appendable interface {
-	Appender() storage.Appender
+	Appender() tsdb.Appender
 }
 
 // NewManager is the Manager constructor

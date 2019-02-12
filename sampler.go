@@ -7,7 +7,7 @@ import (
 
 	"github.com/Go-SIP/conprof/config"
 	"github.com/Go-SIP/conprof/scrape"
-	"github.com/Go-SIP/conprof/storage"
+	"github.com/Go-SIP/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"
@@ -27,13 +27,16 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		Default("conprof.yaml").String()
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
-		return runSampler(g, logger, *storagePath, *configFile)
+		db, err := tsdb.Open(*storagePath, logger, prometheus.DefaultRegisterer, tsdb.DefaultOptions)
+		if err != nil {
+			return err
+		}
+		return runSampler(g, logger, db, *configFile)
 	}
 }
 
-func runSampler(g *run.Group, logger log.Logger, storagePath, configFile string) error {
-	storage := storage.NewDiskStorage(log.With(logger, "component", "storage"), storagePath)
-	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), storage)
+func runSampler(g *run.Group, logger log.Logger, db *tsdb.DB, configFile string) error {
+	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
 	c, err := config.LoadFile(configFile)
 	if err != nil {
 		return fmt.Errorf("could not load config: %v", err)

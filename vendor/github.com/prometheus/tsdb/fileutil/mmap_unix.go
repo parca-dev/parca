@@ -1,4 +1,4 @@
-// Copyright 2018 The conprof Authors
+// Copyright 2017 The Prometheus Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,13 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+// +build !windows,!plan9
 
-import "testing"
+package fileutil
 
-func TestIntToString(t *testing.T) {
-	str := intToString(int64(1542897504000))
-	if str != "1542897504000" {
-		t.Fatal("incorrect int to str conversion")
-	}
+import (
+	"os"
+
+	"golang.org/x/sys/unix"
+)
+
+func mmap(f *os.File, length int) ([]byte, error) {
+	return unix.Mmap(int(f.Fd()), 0, length, unix.PROT_READ, unix.MAP_SHARED)
+}
+
+func munmap(b []byte) (err error) {
+	return unix.Munmap(b)
 }
