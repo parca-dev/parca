@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/Go-SIP/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -25,12 +26,17 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string) 
 }
 
 func runAll(g *run.Group, mux *http.ServeMux, logger log.Logger, storagePath, configFile string) error {
-	err := runSampler(g, logger, storagePath, configFile)
+	db, err := tsdb.Open(storagePath, logger, prometheus.DefaultRegisterer, tsdb.DefaultOptions)
 	if err != nil {
 		return err
 	}
 
-	err = runWeb(mux, logger, storagePath)
+	err = runSampler(g, logger, db, configFile)
+	if err != nil {
+		return err
+	}
+
+	err = runWeb(mux, logger, db)
 	if err != nil {
 		return err
 	}

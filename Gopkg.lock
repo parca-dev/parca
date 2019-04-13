@@ -144,6 +144,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:4f5513cb656b73fb4c4f77ccd482c8366d6290278564d2b1d3285f45e45f4a1e"
+  name = "github.com/oklog/ulid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "02a8604050d8466dd915307496174adb9be4593a"
+  version = "v1.3.1"
+
+[[projects]]
   digest = "1:9d7b1f07e44cada28e6160cb0a808ad2f71f32bd7114793fb0baa302db0e6229"
   name = "github.com/opentracing/opentracing-go"
   packages = [
@@ -163,12 +171,14 @@
   version = "v0.8.1"
 
 [[projects]]
-  digest = "1:93a746f1060a8acbcf69344862b2ceced80f854170e1caae089b2834c5fbf7f4"
+  digest = "1:7b9fa0181f740bed4de3321f29dfc46667927c13dd71e9cb740d390e49e22f9f"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
     "prometheus/internal",
+    "prometheus/promauto",
     "prometheus/promhttp",
+    "prometheus/testutil",
   ]
   pruneopts = "UT"
   revision = "505eaef017263e299324067d40ca2c48f6a2cf50"
@@ -209,17 +219,45 @@
   revision = "316cf8ccfec56d206735d46333ca162eb374da8b"
 
 [[projects]]
-  digest = "1:7815bbbdd60e0adeab7a4f550a1414899d34ea184ffb25b3d53a34fc9a523caa"
+  digest = "1:d84f422196652b7554681ccd07075a46c85a406d3bad6a6ce0c3a5982d021965"
   name = "github.com/prometheus/prometheus"
   packages = [
     "discovery/targetgroup",
+    "pkg/gate",
     "pkg/labels",
     "pkg/pool",
+    "pkg/textparse",
     "pkg/timestamp",
+    "pkg/value",
+    "promql",
+    "storage",
+    "storage/tsdb",
+    "util/stats",
+    "util/strutil",
+    "util/testutil",
   ]
   pruneopts = "UT"
   revision = "62e591f928ddf6b3468308b7ac1de1c63aa7fcf3"
   version = "v2.7.1"
+
+[[projects]]
+  digest = "1:a7ddcc6da6e3509ca241671980bc358c375b7b186d4a9ca50be8263d5d9df6ca"
+  name = "github.com/prometheus/tsdb"
+  packages = [
+    ".",
+    "chunkenc",
+    "chunks",
+    "encoding",
+    "fileutil",
+    "index",
+    "labels",
+    "testutil",
+    "tsdbutil",
+    "wal",
+  ]
+  pruneopts = "UT"
+  revision = "8921f18eb3e34d1e2a752ae0df5bbb94dc367cc7"
+  version = "v0.6.1"
 
 [[projects]]
   digest = "1:c1b1102241e7f645bc8e0c22ae352e8f0dc6484b6cb4d132fa9f24174e0119e2"
@@ -241,6 +279,22 @@
   ]
   pruneopts = "UT"
   revision = "d26f9f9a57f3fab6a695bec0d84433c2c50f8bbf"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b521f10a2d8fa85c04a8ef4e62f2d1e14d303599a55d64dabf9f5a02f84d35eb"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  pruneopts = "UT"
+  revision = "e225da77a7e68af35c70ccbf71af2b83e6acac3c"
+
+[[projects]]
+  branch = "master"
+  digest = "1:cf353a5a9ffb2d6f850e9c773e25388a425a70c270546480427ed069e87b136a"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "4b34438f7a67ee5f45cc6132e2bad873a20324e9"
 
 [[projects]]
   digest = "1:c06d9e11d955af78ac3bbb26bd02e01d2f61f689e1a3bce2ef6fb683ef8a7f2d"
@@ -270,18 +324,31 @@
     "github.com/improbable-eng/thanos/pkg/runutil",
     "github.com/mwitkow/go-conntrack",
     "github.com/oklog/run",
+    "github.com/oklog/ulid",
     "github.com/opentracing/opentracing-go",
     "github.com/pkg/errors",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
+    "github.com/prometheus/client_golang/prometheus/testutil",
+    "github.com/prometheus/client_model/go",
     "github.com/prometheus/common/model",
     "github.com/prometheus/common/version",
     "github.com/prometheus/prometheus/discovery/targetgroup",
     "github.com/prometheus/prometheus/pkg/labels",
     "github.com/prometheus/prometheus/pkg/pool",
     "github.com/prometheus/prometheus/pkg/timestamp",
+    "github.com/prometheus/prometheus/promql",
+    "github.com/prometheus/tsdb/chunkenc",
+    "github.com/prometheus/tsdb/chunks",
+    "github.com/prometheus/tsdb/fileutil",
+    "github.com/prometheus/tsdb/index",
+    "github.com/prometheus/tsdb/labels",
+    "github.com/prometheus/tsdb/testutil",
+    "github.com/prometheus/tsdb/tsdbutil",
+    "github.com/prometheus/tsdb/wal",
     "github.com/spf13/pflag",
     "golang.org/x/net/context/ctxhttp",
+    "golang.org/x/sync/errgroup",
     "gopkg.in/alecthomas/kingpin.v2",
     "gopkg.in/yaml.v2",
   ]

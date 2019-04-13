@@ -231,17 +231,60 @@ func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.La
 			}
 		}
 	}
-	add(
-		c.PprofConfig.Allocs.PprofProfilingConfig,
-		c.PprofConfig.Block.PprofProfilingConfig,
-		c.PprofConfig.Cmdline.PprofProfilingConfig,
-		c.PprofConfig.Goroutine.PprofProfilingConfig,
-		c.PprofConfig.Heap.PprofProfilingConfig,
-		c.PprofConfig.Mutex.PprofProfilingConfig,
-		c.PprofConfig.Profile.PprofProfilingConfig,
-		c.PprofConfig.Threadcreate.PprofProfilingConfig,
-		c.PprofConfig.Trace.PprofProfilingConfig,
-	)
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Allocs != nil {
+			add(c.PprofConfig.Allocs.PprofProfilingConfig)
+		}
+	}
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Block != nil {
+			add(c.PprofConfig.Block.PprofProfilingConfig)
+		}
+	}
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Cmdline != nil {
+			add(c.PprofConfig.Cmdline.PprofProfilingConfig)
+		}
+	}
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Goroutine != nil {
+			add(c.PprofConfig.Goroutine.PprofProfilingConfig)
+		}
+	}
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Heap != nil {
+			add(c.PprofConfig.Heap.PprofProfilingConfig)
+		}
+	}
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Mutex != nil {
+			add(c.PprofConfig.Mutex.PprofProfilingConfig)
+		}
+	}
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Profile != nil {
+			add(c.PprofConfig.Profile.PprofProfilingConfig)
+		}
+	}
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Threadcreate != nil {
+			add(c.PprofConfig.Threadcreate.PprofProfilingConfig)
+		}
+	}
+
+	if c.PprofConfig != nil {
+		if c.PprofConfig.Trace != nil {
+			add(c.PprofConfig.Trace.PprofProfilingConfig)
+		}
+	}
 
 	return res
 }

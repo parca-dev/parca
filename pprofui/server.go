@@ -15,20 +15,25 @@
 package pprofui
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
-	"io"
-	"log"
+	"math"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/Go-SIP/conprof/storage"
+	"github.com/Go-SIP/conprof/storage/tsdb"
 	"github.com/alecthomas/template"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
 	"github.com/google/pprof/profile"
 	"github.com/pkg/errors"
+	"github.com/prometheus/prometheus/promql"
+	"github.com/prometheus/tsdb/labels"
 	"github.com/spf13/pflag"
 )
 
@@ -55,13 +60,15 @@ const tpl = `
 // writing include `profile` (cpu), `goroutine`, `threadcreate`,
 // `heap`, `block`, and `mutex`.
 type Server struct {
-	storage storage.Storage
+	logger log.Logger
+	db     *tsdb.DB
 }
 
 // NewServer creates a new Server backed by the supplied Storage.
-func NewServer(storage storage.Storage) *Server {
+func NewServer(logger log.Logger, db *tsdb.DB) *Server {
 	s := &Server{
-		storage: storage,
+		logger: logger,
+		db:     db,
 	}
 
 	return s
@@ -79,16 +86,48 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "" || r.URL.Path == "/" {
 		t, err := template.New("webpage").Parse(tpl)
 		if err != nil {
-			log.Fatal(err)
+			level.Error(s.logger).Log("err", err)
 		}
 
-		series, err := s.storage.List()
+		q, err := s.db.Querier(math.MinInt64, math.MaxInt64)
 		if err != nil {
-			log.Fatal(err)
+			level.Error(s.logger).Log("err", err)
 		}
 
-		escapedSeriesNames := make(map[string]string, len(series))
-		for k := range series {
+		seriesSet, err := q.Select(labels.NewMustRegexpMatcher("job", ".+"))
+		if err != nil {
+			level.Error(s.logger).Log("err", err)
+		}
+
+		seriesMap := map[string][]string{}
+		for seriesSet.Next() {
+			series := seriesSet.At()
+			i := series.Iterator()
+			ls := series.Labels()
+			sampleTimestamps := []string{}
+			for i.Next() {
+				t, _ := i.At()
+				sampleTimestamps = append(sampleTimestamps, intToString(t))
+			}
+			err = i.Err()
+			if err != nil {
+				level.Error(s.logger).Log("err", err, "series", ls.String())
+			}
+			filteredLabels := labels.Labels{}
+			for _, l := range ls {
+				if l.Name != "" {
+					filteredLabels = append(filteredLabels, l)
+				}
+			}
+			seriesMap[filteredLabels.String()] = sampleTimestamps
+		}
+		err = seriesSet.Err()
+		if err != nil {
+			level.Error(s.logger).Log("err", err)
+		}
+
+		escapedSeriesNames := make(map[string]string, len(seriesMap))
+		for k := range seriesMap {
 			escapedSeriesNames[k] = base64.URLEncoding.EncodeToString([]byte(k))
 		}
 
@@ -96,13 +135,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Series             map[string][]string
 			EscapedSeriesNames map[string]string
 		}{
-			Series:             series,
+			Series:             seriesMap,
 			EscapedSeriesNames: escapedSeriesNames,
 		}
 
 		err = t.Execute(w, data)
 		if err != nil {
-			log.Print(err)
+			level.Error(s.logger).Log("err", err)
 		}
 		return
 	}
@@ -114,13 +153,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
-	series = string(decodedSeriesName)
-	// Catch nonexistent IDs early or pprof will do a worse job at
-	// giving an informative error.
-	if err := s.storage.Get(series, timestamp, func(io.Reader) error { return nil }); err != nil {
-		msg := fmt.Sprintf("profile for series %s at timestamp %s not found: %s", series, timestamp, err)
+	seriesLabelsString := string(decodedSeriesName)
+	seriesLabels, err := promql.ParseMetricSelector(seriesLabelsString)
+	if err != nil {
+		msg := fmt.Sprintf("failed to parse series labels %v with error %v", seriesLabelsString, err)
 		http.Error(w, msg, http.StatusNotFound)
 		return
+	}
+
+	m := make(labels.Selector, len(seriesLabels))
+	for i, l := range seriesLabels {
+		m[i] = labels.NewEqualMatcher(l.Name, l.Value)
 	}
 
 	server := func(args *driver.HTTPServerArgs) error {
@@ -134,14 +177,28 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	storageFetcher := func(_ string, _, _ time.Duration) (*profile.Profile, string, error) {
 		var p *profile.Profile
-		if err := s.storage.Get(series, timestamp, func(reader io.Reader) error {
-			var err error
-			p, err = profile.Parse(reader)
-			return err
-		}); err != nil {
+
+		q, err := s.db.Querier(0, math.MaxInt64)
+		if err != nil {
+			level.Error(s.logger).Log("err", err)
+		}
+
+		ss, err := q.Select(m...)
+		if err != nil {
+			level.Error(s.logger).Log("err", err)
+		}
+
+		ss.Next()
+		s := ss.At()
+		i := s.Iterator()
+		t, err := stringToInt(timestamp)
+		if err != nil {
 			return nil, "", err
 		}
-		return p, "", nil
+		i.Seek(t)
+		_, buf := i.At()
+		p, err = profile.Parse(bytes.NewReader(buf))
+		return p, "", err
 	}
 
 	// Invoke the (library version) of `pprof` with a number of stubs.
@@ -173,4 +230,12 @@ type fetcherFn func(_ string, _, _ time.Duration) (*profile.Profile, string, err
 
 func (f fetcherFn) Fetch(s string, d, t time.Duration) (*profile.Profile, string, error) {
 	return f(s, d, t)
+}
+
+func intToString(i int64) string {
+	return strconv.FormatInt(i, 10)
+}
+func stringToInt(s string) (int64, error) {
+	i, err := strconv.ParseInt(s, 10, 64)
+	return int64(i), err
 }
