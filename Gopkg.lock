@@ -112,6 +112,14 @@
   version = "v0.2.1"
 
 [[projects]]
+  digest = "1:f97285a3b0a496dcf8801072622230d513f69175665d94de60eb042d03387f6c"
+  name = "github.com/julienschmidt/httprouter"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "348b672cd90d8190f8240323e372ecd1e66b59dc"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:a64e323dc06b73892e5bb5d040ced475c4645d456038333883f58934abbf6f72"
   name = "github.com/kr/logfmt"
@@ -322,6 +330,7 @@
     "github.com/google/pprof/driver",
     "github.com/google/pprof/profile",
     "github.com/improbable-eng/thanos/pkg/runutil",
+    "github.com/julienschmidt/httprouter",
     "github.com/mwitkow/go-conntrack",
     "github.com/oklog/run",
     "github.com/oklog/ulid",

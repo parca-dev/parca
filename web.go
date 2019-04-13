@@ -6,6 +6,7 @@ import (
 	"github.com/Go-SIP/conprof/pprofui"
 	"github.com/Go-SIP/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
+	"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,9 +30,18 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string) 
 }
 
 func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB) error {
-	server := pprofui.NewServer(logger, db)
+	ui := pprofui.New(logger, db)
 
-	mux.Handle("/", server)
+	router := httprouter.New()
+
+	router.GET("/", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		http.Redirect(w, r, "/pprof", http.StatusMovedPermanently)
+		return
+	})
+	router.GET("/pprof", ui.QueryView)
+	router.GET("/pprof/:series/:timestamp/*remainder", ui.PprofView)
+
+	mux.Handle("/", router)
 
 	return nil
 }

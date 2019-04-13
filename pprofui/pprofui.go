@@ -20,9 +20,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"path"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Go-SIP/conprof/storage/tsdb"
@@ -31,6 +29,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
 	"github.com/google/pprof/profile"
+	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/tsdb/labels"
@@ -48,25 +47,20 @@ const tpl = `
 {{range $series, $element := .Series}}
 <h4>{{ $series }}</h4>
 {{range $element }}
-<div><a href="/{{ with (index $.EscapedSeriesNames $series) }}{{ . }}{{ end }}/{{ . }}/">{{ . }}</a></div>{{else}}<div><strong>no rows</strong></div>
+<div><a href="/pprof/{{ with (index $.EscapedSeriesNames $series) }}{{ . }}{{ end }}/{{ . }}/">{{ . }}</a></div>{{else}}<div><strong>no rows</strong></div>
 {{end}}
 {{end}}
 </body>
 </html>`
 
-// A Server serves up the pprof web ui. A request to /<profiletype>
-// generates a profile of the desired type and redirects to the UI for
-// it at /<profiletype>/<id>. Valid profile types at the time of
-// writing include `profile` (cpu), `goroutine`, `threadcreate`,
-// `heap`, `block`, and `mutex`.
-type Server struct {
+type pprofUI struct {
 	logger log.Logger
 	db     *tsdb.DB
 }
 
 // NewServer creates a new Server backed by the supplied Storage.
-func NewServer(logger log.Logger, db *tsdb.DB) *Server {
-	s := &Server{
+func New(logger log.Logger, db *tsdb.DB) *pprofUI {
+	s := &pprofUI{
 		logger: logger,
 		db:     db,
 	}
@@ -74,79 +68,75 @@ func NewServer(logger log.Logger, db *tsdb.DB) *Server {
 	return s
 }
 
-func (s *Server) parsePath(reqPath string) (series string, timestamp string, remainingPath string) {
-	parts := strings.Split(path.Clean(strings.TrimPrefix(reqPath, "/")), "/")
-	if len(parts) < 2 {
-		return "", "", ""
+func (p *pprofUI) QueryView(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	t, err := template.New("webpage").Parse(tpl)
+	if err != nil {
+		level.Error(p.logger).Log("err", err)
 	}
-	return parts[0], parts[1], strings.Join(parts[2:], "/")
+
+	q, err := p.db.Querier(math.MinInt64, math.MaxInt64)
+	if err != nil {
+		level.Error(p.logger).Log("err", err)
+	}
+
+	seriesSet, err := q.Select(labels.NewMustRegexpMatcher("job", ".+"))
+	if err != nil {
+		level.Error(p.logger).Log("err", err)
+	}
+
+	seriesMap := map[string][]string{}
+	for seriesSet.Next() {
+		series := seriesSet.At()
+		i := series.Iterator()
+		ls := series.Labels()
+		sampleTimestamps := []string{}
+		for i.Next() {
+			t, _ := i.At()
+			sampleTimestamps = append(sampleTimestamps, intToString(t))
+		}
+		err = i.Err()
+		if err != nil {
+			level.Error(p.logger).Log("err", err, "series", ls.String())
+		}
+		filteredLabels := labels.Labels{}
+		for _, l := range ls {
+			if l.Name != "" {
+				filteredLabels = append(filteredLabels, l)
+			}
+		}
+		seriesMap[filteredLabels.String()] = sampleTimestamps
+	}
+	err = seriesSet.Err()
+	if err != nil {
+		level.Error(p.logger).Log("err", err)
+	}
+
+	escapedSeriesNames := make(map[string]string, len(seriesMap))
+	for k := range seriesMap {
+		escapedSeriesNames[k] = base64.URLEncoding.EncodeToString([]byte(k))
+	}
+
+	data := struct {
+		Series             map[string][]string
+		EscapedSeriesNames map[string]string
+	}{
+		Series:             seriesMap,
+		EscapedSeriesNames: escapedSeriesNames,
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		level.Error(p.logger).Log("err", err)
+	}
+	return
 }
 
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "" || r.URL.Path == "/" {
-		t, err := template.New("webpage").Parse(tpl)
-		if err != nil {
-			level.Error(s.logger).Log("err", err)
-		}
-
-		q, err := s.db.Querier(math.MinInt64, math.MaxInt64)
-		if err != nil {
-			level.Error(s.logger).Log("err", err)
-		}
-
-		seriesSet, err := q.Select(labels.NewMustRegexpMatcher("job", ".+"))
-		if err != nil {
-			level.Error(s.logger).Log("err", err)
-		}
-
-		seriesMap := map[string][]string{}
-		for seriesSet.Next() {
-			series := seriesSet.At()
-			i := series.Iterator()
-			ls := series.Labels()
-			sampleTimestamps := []string{}
-			for i.Next() {
-				t, _ := i.At()
-				sampleTimestamps = append(sampleTimestamps, intToString(t))
-			}
-			err = i.Err()
-			if err != nil {
-				level.Error(s.logger).Log("err", err, "series", ls.String())
-			}
-			filteredLabels := labels.Labels{}
-			for _, l := range ls {
-				if l.Name != "" {
-					filteredLabels = append(filteredLabels, l)
-				}
-			}
-			seriesMap[filteredLabels.String()] = sampleTimestamps
-		}
-		err = seriesSet.Err()
-		if err != nil {
-			level.Error(s.logger).Log("err", err)
-		}
-
-		escapedSeriesNames := make(map[string]string, len(seriesMap))
-		for k := range seriesMap {
-			escapedSeriesNames[k] = base64.URLEncoding.EncodeToString([]byte(k))
-		}
-
-		data := struct {
-			Series             map[string][]string
-			EscapedSeriesNames map[string]string
-		}{
-			Series:             seriesMap,
-			EscapedSeriesNames: escapedSeriesNames,
-		}
-
-		err = t.Execute(w, data)
-		if err != nil {
-			level.Error(s.logger).Log("err", err)
-		}
-		return
+func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	series, timestamp, remainingPath := ps.ByName("series"), ps.ByName("timestamp"), ps.ByName("remainder")
+	if len(r.URL.RawQuery) > 0 {
+		remainingPath = remainingPath + "?" + r.URL.RawQuery
 	}
-
-	series, timestamp, remainingPath := s.parsePath(r.URL.Path)
+	level.Debug(p.logger).Log("msg", "parsed path", "series", series, "timestamp", timestamp, "remainingPath", remainingPath)
 	decodedSeriesName, err := base64.URLEncoding.DecodeString(series)
 	if err != nil {
 		msg := fmt.Sprintf("could not decode series name: %s", err)
@@ -167,7 +157,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	server := func(args *driver.HTTPServerArgs) error {
-		handler, ok := args.Handlers["/"+remainingPath]
+		handler, ok := args.Handlers[remainingPath]
 		if !ok {
 			return errors.Errorf("unknown endpoint %s", remainingPath)
 		}
@@ -176,16 +166,16 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	storageFetcher := func(_ string, _, _ time.Duration) (*profile.Profile, string, error) {
-		var p *profile.Profile
+		var prof *profile.Profile
 
-		q, err := s.db.Querier(0, math.MaxInt64)
+		q, err := p.db.Querier(0, math.MaxInt64)
 		if err != nil {
-			level.Error(s.logger).Log("err", err)
+			level.Error(p.logger).Log("err", err)
 		}
 
 		ss, err := q.Select(m...)
 		if err != nil {
-			level.Error(s.logger).Log("err", err)
+			level.Error(p.logger).Log("err", err)
 		}
 
 		ss.Next()
@@ -197,8 +187,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		i.Seek(t)
 		_, buf := i.At()
-		p, err = profile.Parse(bytes.NewReader(buf))
-		return p, "", err
+		prof, err = profile.Parse(bytes.NewReader(buf))
+		return prof, "", err
 	}
 
 	// Invoke the (library version) of `pprof` with a number of stubs.
