@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/Go-SIP/conprof/api"
 	"github.com/Go-SIP/conprof/pprofui"
 	"github.com/Go-SIP/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
@@ -30,16 +31,19 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string) 
 }
 
 func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB) error {
-	ui := pprofui.New(logger, db)
+	ui := pprofui.New(log.With(logger, "component", "pprofui"), db)
 
 	router := httprouter.New()
+	router.RedirectTrailingSlash = false
 
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		http.Redirect(w, r, "/pprof", http.StatusMovedPermanently)
 		return
 	})
-	router.GET("/pprof", ui.QueryView)
-	router.GET("/pprof/:series/:timestamp/*remainder", ui.PprofView)
+	router.GET("/pprof/*remainder", ui.PprofView)
+
+	api := api.New(log.With(logger, "component", "pprofui"), db)
+	router.GET("/api/v1/query_range", api.QueryRange)
 
 	mux.Handle("/", router)
 

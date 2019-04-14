@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Go-SIP/conprof/storage/tsdb"
-	"github.com/alecthomas/template"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
@@ -35,23 +36,6 @@ import (
 	"github.com/prometheus/tsdb/labels"
 	"github.com/spf13/pflag"
 )
-
-const tpl = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>List Profiles</title>
-</head>
-<body>
-{{range $series, $element := .Series}}
-<h4>{{ $series }}</h4>
-{{range $element }}
-<div><a href="/pprof/{{ with (index $.EscapedSeriesNames $series) }}{{ . }}{{ end }}/{{ . }}/">{{ . }}</a></div>{{else}}<div><strong>no rows</strong></div>
-{{end}}
-{{end}}
-</body>
-</html>`
 
 type pprofUI struct {
 	logger log.Logger
@@ -68,73 +52,21 @@ func New(logger log.Logger, db *tsdb.DB) *pprofUI {
 	return s
 }
 
-func (p *pprofUI) QueryView(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	t, err := template.New("webpage").Parse(tpl)
-	if err != nil {
-		level.Error(p.logger).Log("err", err)
+func parsePath(reqPath string) (series string, timestamp string, remainingPath string) {
+	parts := strings.Split(path.Clean(strings.TrimPrefix(reqPath, "/pprof/")), "/")
+	if len(parts) < 2 {
+		return "", "", ""
 	}
-
-	q, err := p.db.Querier(math.MinInt64, math.MaxInt64)
-	if err != nil {
-		level.Error(p.logger).Log("err", err)
-	}
-
-	seriesSet, err := q.Select(labels.NewMustRegexpMatcher("job", ".+"))
-	if err != nil {
-		level.Error(p.logger).Log("err", err)
-	}
-
-	seriesMap := map[string][]string{}
-	for seriesSet.Next() {
-		series := seriesSet.At()
-		i := series.Iterator()
-		ls := series.Labels()
-		sampleTimestamps := []string{}
-		for i.Next() {
-			t, _ := i.At()
-			sampleTimestamps = append(sampleTimestamps, intToString(t))
-		}
-		err = i.Err()
-		if err != nil {
-			level.Error(p.logger).Log("err", err, "series", ls.String())
-		}
-		filteredLabels := labels.Labels{}
-		for _, l := range ls {
-			if l.Name != "" {
-				filteredLabels = append(filteredLabels, l)
-			}
-		}
-		seriesMap[filteredLabels.String()] = sampleTimestamps
-	}
-	err = seriesSet.Err()
-	if err != nil {
-		level.Error(p.logger).Log("err", err)
-	}
-
-	escapedSeriesNames := make(map[string]string, len(seriesMap))
-	for k := range seriesMap {
-		escapedSeriesNames[k] = base64.URLEncoding.EncodeToString([]byte(k))
-	}
-
-	data := struct {
-		Series             map[string][]string
-		EscapedSeriesNames map[string]string
-	}{
-		Series:             seriesMap,
-		EscapedSeriesNames: escapedSeriesNames,
-	}
-
-	err = t.Execute(w, data)
-	if err != nil {
-		level.Error(p.logger).Log("err", err)
-	}
-	return
+	return parts[0], parts[1], strings.Join(parts[2:], "/")
 }
 
 func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	series, timestamp, remainingPath := ps.ByName("series"), ps.ByName("timestamp"), ps.ByName("remainder")
+	series, timestamp, remainingPath := parsePath(r.URL.Path)
 	if len(r.URL.RawQuery) > 0 {
 		remainingPath = remainingPath + "?" + r.URL.RawQuery
+	}
+	if !strings.HasPrefix(remainingPath, "/") {
+		remainingPath = "/" + remainingPath
 	}
 	level.Debug(p.logger).Log("msg", "parsed path", "series", series, "timestamp", timestamp, "remainingPath", remainingPath)
 	decodedSeriesName, err := base64.URLEncoding.DecodeString(series)
