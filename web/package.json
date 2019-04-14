@@ -1,0 +1,42 @@
+{
+  "name": "create-react-app-typescript-redux",
+  "version": "2.0.0",
+  "dependencies": {
+    "@material-ui/core": "^3.9.3",
+    "@material-ui/icons": "^3.0.2",
+    "@material-ui/styles": "^3.0.0-alpha.10",
+    "axios": "^0.18.0",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-redux": "^7.0.2",
+    "react-router-dom": "^5.0.0",
+    "react-scripts": "2.1.8",
+    "redux-thunk": "^2.3.0",
+    "typescript": "3.3.4000"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
+  "devDependencies": {
+    "@types/jest": "24.0.11",
+    "@types/node": "11.11.6",
+    "@types/react": "16.8.8",
+    "@types/react-dom": "16.8.3",
+    "@types/react-redux": "^7.0.6",
+    "@types/react-router-dom": "^4.3.2",
+    "@types/redux-logger": "^3.0.7",
+    "eslint-plugin-react": "^7.12.4",
+    "husky": "^1.3.1",
+    "redux-devtools-extension": "^2.13.8",
+    "redux-logger": "^3.0.6"
+  }
+}
