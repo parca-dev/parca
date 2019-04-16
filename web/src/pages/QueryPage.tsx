@@ -1,5 +1,5 @@
 import { Button } from '@material-ui/core';
-import { withStyles, WithStyles, createStyles } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import { Theme } from '@material-ui/core/styles';
 import * as React from 'react';
 import { connect } from 'react-redux';
@@ -20,7 +20,7 @@ import SearchIcon from '@material-ui/icons/Search';
 import DirectionsIcon from '@material-ui/icons/Directions';
 import PropTypes from 'prop-types';
 
-const styles = (theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => ({
     root: {
         flexGrow: 1,
     },
@@ -41,53 +41,52 @@ const styles = (theme: Theme) => createStyles({
     iconButton: {
         padding: 10,
     },
-});
+}));
 
-interface Props extends WithStyles<typeof styles>, RouteComponentProps<void> {
+interface Props extends RouteComponentProps<void> {
     actions: Actions;
     query: Query;
 }
 
-class QueryPage extends React.Component<Props, RootState> {
-    render() {
-        const { classes, actions, query } = this.props;
+function QueryPage(props: Props) {
+    const classes = useStyles();
+    const { actions, query } = props;
 
-        return (
-            <div className={classes.root}>
-                <Grid container justify="center">
-                    <Grid item xs={8}>
-                        <Paper className={classes.expr} elevation={1}>
-                            <InputBase className={classes.input} fullWidth placeholder="Expression" />
-                            <IconButton className={classes.iconButton} onClick={() => actions.executeQuery("")} aria-label="Search">
-                                <SearchIcon />
-                            </IconButton>
-                        </Paper>
-                    </Grid>
-
-                    {query.result.series.map(
-                    (series: Series) => {
-                    return (
-                    <Grid item xs={8}>
-                        <Paper className={classes.paper}>
-                            <h4>{series.labelset}</h4>
-                            <ul>
-                                {series.timestamps.map(
-                                (timestamp: number) => {
-                                return (
-                                <li><a href={series.labelset + '/' + timestamp}>{timestamp}</a></li>
-                                )
-                                }
-                                )}
-                            </ul>
-                        </Paper>
-                    </Grid>
-                    )
-                    }
-                    )}
+    return (
+        <div className={classes.root}>
+            <Grid container justify="center">
+                <Grid item xs={8}>
+                    <Paper className={classes.expr} elevation={1}>
+                        <InputBase className={classes.input} fullWidth placeholder="Expression" />
+                        <IconButton className={classes.iconButton} onClick={() => actions.executeQuery("")} aria-label="Search">
+                            <SearchIcon />
+                        </IconButton>
+                    </Paper>
                 </Grid>
-            </div>
-        );
-  }
+
+                {query.result.series.map(
+                (series: Series) => {
+                return (
+                <Grid item xs={8}>
+                    <Paper className={classes.paper}>
+                        <h4>{series.labelset}</h4>
+                        <ul>
+                            {series.timestamps.map(
+                            (timestamp: number) => {
+                            return (
+                            <li><a href={series.labelset + '/' + timestamp}>{timestamp}</a></li>
+                            )
+                            }
+                            )}
+                        </ul>
+                    </Paper>
+                </Grid>
+                )
+                }
+                )}
+            </Grid>
+        </div>
+    );
 }
 
 type Actions = {
@@ -110,5 +109,5 @@ function mapDispatchToProps(dispatch: redux.Dispatch<redux.AnyAction>): Dispatch
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(QueryPage));
+export default connect(mapStateToProps, mapDispatchToProps)(QueryPage);
 
