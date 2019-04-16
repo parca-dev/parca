@@ -67,14 +67,14 @@ function QueryPage(props: Props) {
                 {query.result.series.map(
                 (series: Series) => {
                 return (
-                <Grid item xs={8}>
+                <Grid item xs={8} key={series.labelset}>
                     <Paper className={classes.paper}>
                         <h4>{series.labelset}</h4>
                         <ul>
                             {series.timestamps.map(
                             (timestamp: number) => {
                             return (
-                            <li><a href={series.labelset + '/' + timestamp}>{timestamp}</a></li>
+                            <li key={timestamp}><a href={series.labelset + '/' + timestamp}>{timestamp}</a></li>
                             )
                             }
                             )}
