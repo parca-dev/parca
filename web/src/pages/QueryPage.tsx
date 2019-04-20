@@ -1,5 +1,6 @@
 import { Button } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
+import { withStyles, WithStyles, createStyles } from '@material-ui/core';
 import { Theme } from '@material-ui/core/styles';
 import * as React from 'react';
 import { connect } from 'react-redux';
@@ -20,7 +21,7 @@ import PropTypes from 'prop-types';
 import moment from 'moment';
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip } from 'recharts';
 
-const useStyles = makeStyles((theme: Theme) => ({
+const styles = (theme: Theme) => createStyles({
     root: {
         flexGrow: 1,
     },
@@ -41,9 +42,9 @@ const useStyles = makeStyles((theme: Theme) => ({
     iconButton: {
         padding: 10,
     },
-}));
+});
 
-interface Props extends RouteComponentProps<void> {
+interface Props extends RouteComponentProps<void>, WithStyles<typeof styles> {
     actions: Actions;
     query: Query;
 }
@@ -69,50 +70,65 @@ function openProfile(props: any) {
     console.log(props);
     if (payload) {
         const data = payload;
-        window.open('http://localhost:8080/pprof/' + data.labelsetEncoded + '/' + data.timestamp + '/');
+        window.open('/pprof/' + data.labelsetEncoded + '/' + data.timestamp + '/');
     }
 }
 
-function QueryPage(props: Props) {
-    const classes = useStyles();
-    const { actions, query } = props;
+class QueryPage extends React.Component<Props, { value: string }> {
+    constructor(props: Props) {
+        super(props);
 
-    return (
-        <div className={classes.root}>
-            <Grid container justify="center">
-                <Grid item xs={8}>
-                    <Paper className={classes.expr} elevation={1}>
-                        <InputBase className={classes.input} fullWidth placeholder="Expression" />
-                        <IconButton className={classes.iconButton} onClick={() => actions.executeQuery("")} aria-label="Search">
-                            <Icon color="primary">send</Icon>
-                        </IconButton>
-                    </Paper>
-                </Grid>
+        this.state = {
+            value: "",
+        };
 
-                {query.result.series.map(
-                (series: Series) => {
-                return (
-                <Grid key={series.labelsetEncoded} item xs={8}>
-                    <Paper className={classes.paper}>
-                        <h4>{series.labelset}</h4>
-                        <div style={{ width: '100%', height: 70 }}>
-                        <ResponsiveContainer>
-                        <ScatterChart height={60} margin={{top: 10, right: 0, bottom: 0, left: 0}}>
-                            <XAxis type="number" dataKey="timestamp" domain={['auto', 'auto']} tickFormatter={(unixTime) => moment(unixTime).format('YYYY/M/D HH:mm')} />
-                            <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} />
-                            <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{ zIndex: 100 }} content={renderTooltip} />
-                            <Scatter data={series.timestamps.map((timestamp: number) => { return {labelsetEncoded: series.labelsetEncoded,timestamp: timestamp, index: 1} })} onClick={openProfile} fill='#8884d8'/>
-                        </ScatterChart>
-                        </ResponsiveContainer>
-                        </div>
-                    </Paper>
+        this.handleChange = this.handleChange.bind(this);
+    }
+
+    handleChange(event: any) {
+        this.setState({value: event.target.value})
+    }
+
+    render() {
+        const { actions, query, classes } = this.props;
+
+        return (
+            <div className={classes.root}>
+                <Grid container justify="center">
+                    <Grid item xs={8}>
+                        <Paper className={classes.expr} elevation={1}>
+                            <InputBase className={classes.input} fullWidth placeholder="Expression" value={this.state.value} onChange={this.handleChange} />
+                            <IconButton className={classes.iconButton} onClick={() => actions.executeQuery(this.state.value)} aria-label="Search">
+                                <Icon color="primary">send</Icon>
+                            </IconButton>
+                        </Paper>
+                    </Grid>
+
+                    {query.result.series.map(
+                    (series: Series) => {
+                    return (
+                    <Grid key={series.labelsetEncoded} item xs={8}>
+                        <Paper className={classes.paper}>
+                            <h4>{series.labelset}</h4>
+                            <div style={{ width: '100%', height: 70 }}>
+                                <ResponsiveContainer>
+                                    <ScatterChart height={60} margin={{top: 10, right: 0, bottom: 0, left: 0}}>
+                                        <XAxis type="number" dataKey="timestamp" domain={['auto', 'auto']} tickFormatter={(unixTime) => moment(unixTime).format('YYYY/M/D HH:mm')} />
+                                        <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} />
+                                        <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{ zIndex: 100 }} content={renderTooltip} />
+                                        <Scatter data={series.timestamps.map((timestamp: number) => { return {labelsetEncoded: series.labelsetEncoded,timestamp: timestamp, index: 1} })} onClick={openProfile} fill='#8884d8'/>
+                                    </ScatterChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </Paper>
+                    </Grid>
+                    )
+                    }
+                    )}
                 </Grid>
-                )
-                }
-                )}
-            </Grid>
-        </div>
-    );
+            </div>
+        );
+    }
 }
 
 type Actions = {
@@ -135,5 +151,6 @@ function mapDispatchToProps(dispatch: redux.Dispatch<redux.AnyAction>): Dispatch
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(QueryPage);
+export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(QueryPage));
+
 

@@ -14,10 +14,9 @@ const initialState: Query = {
 export const queryReducer = (state: Query = initialState, action: Action<any>): Query => {
     switch (action.type) {
         case ActionType.QUERY_SUCCESS:
-            console.log("state changed");
             return {
                 request: {
-                    expression: "",
+                    expression: state.request.expression,
                     loading: false,
                 },
                 result: (action as QuerySuccessAction).payload,
