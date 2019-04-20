@@ -562,7 +562,7 @@ func (c *LeveledCompactor) write(dest string, meta *BlockMeta, blocks ...BlockRe
 		}
 	}()
 
-	if err := fileutil.Fsync(df); err != nil {
+	if err := df.Sync(); err != nil {
 		return errors.Wrap(err, "sync temporary dir file")
 	}
 
@@ -916,7 +916,7 @@ func renameFile(from, to string) error {
 		return err
 	}
 
-	if err = fileutil.Fsync(pdir); err != nil {
+	if err = pdir.Sync(); err != nil {
 		pdir.Close()
 		return err
 	}

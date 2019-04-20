@@ -6,6 +6,7 @@ import (
 	"github.com/Go-SIP/conprof/api"
 	"github.com/Go-SIP/conprof/pprofui"
 	"github.com/Go-SIP/conprof/storage/tsdb"
+	"github.com/Go-SIP/conprof/web"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
@@ -36,14 +37,12 @@ func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB) error {
 	router := httprouter.New()
 	router.RedirectTrailingSlash = false
 
-	router.GET("/", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		http.Redirect(w, r, "/pprof", http.StatusMovedPermanently)
-		return
-	})
 	router.GET("/pprof/*remainder", ui.PprofView)
 
 	api := api.New(log.With(logger, "component", "pprofui"), db)
 	router.GET("/api/v1/query_range", api.QueryRange)
+
+	router.NotFound = http.FileServer(web.Assets)
 
 	mux.Handle("/", router)
 

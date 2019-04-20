@@ -2,7 +2,7 @@ import { Action, ActionType, QueryResult } from '../model/model';
 
 export function executeQuery(query: string) {
     return (dispatch: Function, getState: Function) => {
-        api<QueryResult>('http://localhost:8080/api/v1/query_range')
+        api<QueryResult>('/api/v1/query_range')
             .then((result) => {
                 dispatch({ type: ActionType.QUERY_SUCCESS, payload: result });
             })

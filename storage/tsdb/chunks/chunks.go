@@ -25,8 +25,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"github.com/Go-SIP/conprof/storage/tsdb/chunkenc"
+	"github.com/pkg/errors"
 	"github.com/prometheus/tsdb/fileutil"
 )
 
@@ -133,7 +133,7 @@ func (w *Writer) finalizeTail() error {
 	if err := w.wbuf.Flush(); err != nil {
 		return err
 	}
-	if err := fileutil.Fsync(tf); err != nil {
+	if err := tf.Sync(); err != nil {
 		return err
 	}
 	// As the file was pre-allocated, we truncate any superfluous zero bytes.
