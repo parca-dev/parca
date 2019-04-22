@@ -1,4 +1,3 @@
-
 import { Typography } from '@material-ui/core';
 import * as React from 'react';
 import { Provider } from 'react-redux';

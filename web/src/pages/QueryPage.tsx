@@ -17,9 +17,13 @@ import InputBase from '@material-ui/core/InputBase';
 import Divider from '@material-ui/core/Divider';
 import IconButton from '@material-ui/core/IconButton';
 import Icon from '@material-ui/core/Icon';
+import SendIcon from '@material-ui/icons/Send';
 import PropTypes from 'prop-types';
 import moment from 'moment';
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip } from 'recharts';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Switch from '@material-ui/core/Switch';
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 const styles = (theme: Theme) => createStyles({
     root: {
@@ -42,11 +46,22 @@ const styles = (theme: Theme) => createStyles({
     iconButton: {
         padding: 10,
     },
+    noResult: {
+        textAlign: 'center',
+        color: theme.palette.text.secondary,
+    }
 });
 
 interface Props extends RouteComponentProps<void>, WithStyles<typeof styles> {
     actions: Actions;
     query: Query;
+}
+
+interface State {
+    expression: string;
+    timeFrom: moment.Moment;
+    timeTo: moment.Moment;
+    now: boolean;
 }
 
 function renderTooltip(props: any) {
@@ -74,32 +89,118 @@ function openProfile(props: any) {
     }
 }
 
-class QueryPage extends React.Component<Props, { value: string }> {
+class QueryPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
 
         this.state = {
-            value: "",
+            expression: props.query.request.expression,
+            timeFrom: props.query.request.timeFrom,
+            timeTo: props.query.request.timeTo,
+            now: props.query.request.now,
         };
 
-        this.handleChange = this.handleChange.bind(this);
+        this.handleExpressionChange = this.handleExpressionChange.bind(this);
+        this.handleTimeFromChange = this.handleTimeFromChange.bind(this);
+        this.handleTimeToChange = this.handleTimeToChange.bind(this);
+        this.handleNowChange = this.handleNowChange.bind(this);
     }
 
-    handleChange(event: any) {
-        this.setState({value: event.target.value})
+    handleExpressionChange(event: any) {
+        this.setState({
+            expression: event.target.value,
+            timeFrom: this.state.timeFrom,
+            timeTo: this.state.timeTo,
+            now: this.state.now,
+        });
+    }
+
+    handleTimeFromChange(event: any) {
+        this.setState({
+            expression: this.state.expression,
+            timeFrom: moment(event.target.value),
+            timeTo: this.state.timeTo,
+            now: this.state.now,
+        });
+    }
+
+    handleTimeToChange(event: any) {
+        this.setState({
+            expression: this.state.expression,
+            timeFrom: this.state.timeFrom,
+            timeTo: moment(event.target.value),
+            now: this.state.now,
+        });
+    }
+
+    handleNowChange(event: any) {
+        this.setState({
+            expression: this.state.expression,
+            timeFrom: this.state.timeFrom,
+            timeTo: this.state.timeTo,
+            now: event.target.checked,
+        });
     }
 
     render() {
         const { actions, query, classes } = this.props;
+        const execute = () => {
+            if(this.state.now) {
+                actions.executeQuery(this.state.expression, this.state.timeFrom, moment(Date.now()));
+                return
+            }
+            actions.executeQuery(this.state.expression, this.state.timeFrom, this.state.timeTo);
+        }
 
         return (
             <div className={classes.root}>
                 <Grid container justify="center">
                     <Grid item xs={8}>
                         <Paper className={classes.expr} elevation={1}>
-                            <InputBase className={classes.input} fullWidth placeholder="Expression" value={this.state.value} onChange={this.handleChange} />
-                            <IconButton className={classes.iconButton} onClick={() => actions.executeQuery(this.state.value)} aria-label="Search">
-                                <Icon color="primary">send</Icon>
+                            <InputBase
+                                className={classes.input}
+                                fullWidth
+                                placeholder="Expression"
+                                value={this.state.expression}
+                                onChange={this.handleExpressionChange}
+                                  onKeyPress={(ev: any) => {
+                                      if (ev.key === 'Enter') {
+                                          execute();
+                                      }
+                                  }}
+                            />
+                            <TextField
+                                id="datetime-local-from"
+                                label="From"
+                                type="datetime-local"
+                                value={this.state.timeFrom.format('YYYY-MM-DDTHH:mm')}
+                                InputLabelProps={{
+                                shrink: true,
+                                }}
+                                onChange={this.handleTimeFromChange}
+                            />
+                            <TextField
+                                id="datetime-local-to"
+                                label="To"
+                                type="datetime-local"
+                                defaultValue={this.state.timeTo.format('YYYY-MM-DDTHH:mm')}
+                                InputLabelProps={{
+                                shrink: true,
+                                }}
+                                onChange={this.handleTimeToChange}
+                            />
+                            <FormControlLabel
+                                control={
+                                <Switch
+                                    checked={this.state.now}
+                                    onChange={this.handleNowChange}
+                                    color="primary"
+                                />
+                                }
+                                label="Now"
+                            />
+                            <IconButton className={classes.iconButton} onClick={execute} aria-label="Search">
+                                <SendIcon color="primary" />
                             </IconButton>
                         </Paper>
                     </Grid>
@@ -125,6 +226,11 @@ class QueryPage extends React.Component<Props, { value: string }> {
                     )
                     }
                     )}
+                    {!query.request.loading && query.result.series.length == 0 &&
+                        <Grid key="no-result" className={classes.noResult} item xs={8}>
+                            <h3>No result</h3>
+                        </Grid>
+                    }
                 </Grid>
             </div>
         );
@@ -132,7 +238,7 @@ class QueryPage extends React.Component<Props, { value: string }> {
 }
 
 type Actions = {
-    executeQuery: (query: string) => void
+    executeQuery: (query: string, fromTime: moment.Moment, toTime: moment.Moment) => void
 }
 
 type Dispatch = {
@@ -152,5 +258,3 @@ function mapDispatchToProps(dispatch: redux.Dispatch<redux.AnyAction>): Dispatch
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(QueryPage));
-
-

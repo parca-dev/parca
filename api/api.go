@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
-	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/Go-SIP/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
@@ -38,7 +38,19 @@ type Series struct {
 }
 
 func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	q, err := a.db.Querier(math.MinInt64, math.MaxInt64)
+	from, err := strconv.Atoi(r.URL.Query().Get("from"))
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	to, err := strconv.Atoi(r.URL.Query().Get("to"))
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	q, err := a.db.Querier(int64(from), int64(to))
 	if err != nil {
 		level.Error(a.logger).Log("err", err)
 	}
@@ -62,7 +74,7 @@ func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		level.Error(a.logger).Log("err", err)
 	}
 
-	res := &QueryResult{}
+	res := &QueryResult{Series: []Series{}}
 	for seriesSet.Next() {
 		series := seriesSet.At()
 		ls := series.Labels()

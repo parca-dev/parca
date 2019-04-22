@@ -40,7 +40,7 @@ function App(props?: Props) {
                 <div className={classes.appFrame}>
                     <AppBar className={classes.appBar}>
                         <Toolbar>
-                            <Typography variant="h6" color="inherit" noWrap={isWidthUp('sm', props.width)}>
+                            <Typography variant="title" color="inherit" noWrap={isWidthUp('sm', props.width)}>
                                 Conprof
                             </Typography>
                         </Toolbar>

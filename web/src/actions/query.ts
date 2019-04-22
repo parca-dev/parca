@@ -1,8 +1,9 @@
 import { Action, ActionType, QueryResult } from '../model/model';
+import * as moment from 'moment';
 
-export function executeQuery(query: string) {
+export function executeQuery(query: string, fromTime: moment.Moment, toTime: moment.Moment) {
     return (dispatch: Function, getState: Function) => {
-        api<QueryResult>('/api/v1/query_range?query='+encodeURIComponent(query))
+        api<QueryResult>('/api/v1/query_range?from='+fromTime.valueOf()+'&to='+toTime.valueOf()+'&query='+encodeURIComponent(query))
             .then((result) => {
                 dispatch({ type: ActionType.QUERY_SUCCESS, payload: result });
             })
@@ -22,7 +23,9 @@ function api<T>(url: string): Promise<T> {
     })
 }
 
-
 export interface QuerySuccessAction extends Action<any> {
     payload: QueryResult;
+};
+
+export interface QueryStartedAction extends Action<any> {
 };

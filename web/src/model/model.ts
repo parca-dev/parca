@@ -1,3 +1,4 @@
+import moment from 'moment';
 
 export interface Query {
     request: QueryRequest;
@@ -7,6 +8,9 @@ export interface Query {
 export interface QueryRequest {
     expression: string;
     loading: boolean;
+    timeFrom: moment.Moment;
+    timeTo: moment.Moment;
+    now: boolean;
 }
 
 export interface QueryResult {
@@ -20,6 +24,7 @@ export interface Series {
 }
 
 export enum ActionType {
+    QUERY_STARTED,
     QUERY_SUCCESS,
 }
 
