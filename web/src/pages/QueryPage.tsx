@@ -93,17 +93,28 @@ class QueryPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
 
+        let search = new URLSearchParams(props.location.search);
+        let expr = search.get("query") || props.query.request.expression;
+        let timeFrom = search.get("from") ? moment(Number(search.get("from"))) : props.query.request.timeFrom;
+        let timeTo = search.get("to") ? moment(Number(search.get("to"))) : props.query.request.timeFrom;
+        let now = (search.get("now") || "").toLowerCase() == 'false' ? false : true;
+
         this.state = {
-            expression: props.query.request.expression,
-            timeFrom: props.query.request.timeFrom,
-            timeTo: props.query.request.timeTo,
-            now: props.query.request.now,
+            expression: expr,
+            timeFrom: timeFrom,
+            timeTo: timeTo,
+            now: now,
         };
 
         this.handleExpressionChange = this.handleExpressionChange.bind(this);
         this.handleTimeFromChange = this.handleTimeFromChange.bind(this);
         this.handleTimeToChange = this.handleTimeToChange.bind(this);
         this.handleNowChange = this.handleNowChange.bind(this);
+        this.execute = this.execute.bind(this);
+    }
+
+    componentDidMount() {
+        this.execute();
     }
 
     handleExpressionChange(event: any) {
@@ -142,15 +153,27 @@ class QueryPage extends React.Component<Props, State> {
         });
     }
 
-    render() {
-        const { actions, query, classes } = this.props;
-        const execute = () => {
-            if(this.state.now) {
-                actions.executeQuery(this.state.expression, this.state.timeFrom, moment(Date.now()));
-                return
-            }
-            actions.executeQuery(this.state.expression, this.state.timeFrom, this.state.timeTo);
+    execute() {
+        if(this.state.now) {
+            this.props.actions.executeQuery(this.state.expression, this.state.timeFrom, moment(Date.now()));
+            let q: URLSearchParams = new URLSearchParams();
+            q.append("query", this.state.expression);
+            q.append("from", this.state.timeFrom.valueOf().toString());
+            q.append("now", "true");
+            this.props.history.push({search: q.toString()});
+            return
         }
+        this.props.actions.executeQuery(this.state.expression, this.state.timeFrom, this.state.timeTo);
+        let q: URLSearchParams = new URLSearchParams();
+        q.append("query", this.state.expression);
+        q.append("from", this.state.timeFrom.valueOf().toString());
+        q.append("to", this.state.timeTo.valueOf().toString());
+        q.append("now", "false");
+        this.props.history.push({search: q.toString()});
+    }
+
+    render() {
+        const { history, actions, query, classes } = this.props;
 
         return (
             <div className={classes.root}>
@@ -165,7 +188,7 @@ class QueryPage extends React.Component<Props, State> {
                                 onChange={this.handleExpressionChange}
                                   onKeyPress={(ev: any) => {
                                       if (ev.key === 'Enter') {
-                                          execute();
+                                          this.execute();
                                       }
                                   }}
                             />
@@ -199,7 +222,7 @@ class QueryPage extends React.Component<Props, State> {
                                 }
                                 label="Now"
                             />
-                            <IconButton className={classes.iconButton} onClick={execute} aria-label="Search">
+                            <IconButton className={classes.iconButton} onClick={this.execute} aria-label="Search">
                                 <SendIcon color="primary" />
                             </IconButton>
                         </Paper>

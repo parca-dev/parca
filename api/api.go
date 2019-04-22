@@ -38,13 +38,15 @@ type Series struct {
 }
 
 func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	from, err := strconv.Atoi(r.URL.Query().Get("from"))
+	fromString := r.URL.Query().Get("from")
+	from, err := strconv.Atoi(fromString)
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	to, err := strconv.Atoi(r.URL.Query().Get("to"))
+	toString := r.URL.Query().Get("to")
+	to, err := strconv.Atoi(toString)
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
@@ -56,7 +58,7 @@ func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 
 	queryString := r.URL.Query().Get("query")
-	level.Debug(a.logger).Log("query", queryString)
+	level.Debug(a.logger).Log("query", queryString, "from", from, "to", to)
 	sel, err := promql.ParseMetricSelector(queryString)
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
