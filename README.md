@@ -2,9 +2,9 @@
 
 > Note this repository is very much a proof of concept, it only works on a very basic level. Everything is prone to change, nothing is supported.
 
-Continuous profiling is the act of taking profiles of programs in a systematic way. Conprof is based on a lot of principles and even code of [Prometheus](https://prometheus.io), the service discovery mechanism and configuration works very similar to Prometheus and the general functionality is similar, as consecutive profiles of the same type and the same process behave similar to time-series, as in that they are related events of the same origin thus they are in the same series.
+Continuous profiling is the act of taking profiles of programs in a systematic way. Conprof is based on a lot of principles and even code of [Prometheus](https://prometheus.io), the service discovery mechanism and configuration works very similar to Prometheus and the general functionality is similar, as consecutive profiles of the same type and the same process behave similar to time-series, as in that they are related events of the same origin thus they are in the same series. Only that sample values in Conprof are not float64, but an arbitrary byte array.
 
-Currently only collecting [pprof](https://github.com/google/pprof) profiles from HTTP endpoint is supported.
+Currently only collecting [pprof](https://github.com/google/pprof) profiles from HTTP endpoints is supported.
 
 ### Why?
 
