@@ -27,7 +27,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Go-SIP/conprof/storage/tsdb/chunks"
+	"github.com/conprof/conprof/storage/tsdb/chunks"
 	"github.com/pkg/errors"
 	"github.com/prometheus/tsdb/fileutil"
 	"github.com/prometheus/tsdb/labels"

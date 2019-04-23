@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/Go-SIP/conprof/storage/tsdb"
+	"github.com/conprof/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"

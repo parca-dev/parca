@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/Go-SIP/conprof/storage/tsdb/chunkenc"
+	"github.com/conprof/conprof/storage/tsdb/chunkenc"
 	"github.com/pkg/errors"
 	"github.com/prometheus/tsdb/fileutil"
 )

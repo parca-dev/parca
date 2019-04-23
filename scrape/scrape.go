@@ -28,7 +28,7 @@ import (
 	"github.com/prometheus/common/version"
 	"golang.org/x/net/context/ctxhttp"
 
-	"github.com/Go-SIP/conprof/config"
+	"github.com/conprof/conprof/config"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/pool"
 	"github.com/prometheus/prometheus/pkg/timestamp"

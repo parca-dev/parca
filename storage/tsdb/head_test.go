@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	prom_testutil "github.com/prometheus/client_golang/prometheus/testutil"
-	"github.com/Go-SIP/conprof/storage/tsdb/chunkenc"
-	"github.com/Go-SIP/conprof/storage/tsdb/chunks"
+	"github.com/conprof/conprof/storage/tsdb/chunkenc"
+	"github.com/conprof/conprof/storage/tsdb/chunks"
 	"github.com/prometheus/tsdb/index"
 	"github.com/prometheus/tsdb/labels"
 	"github.com/prometheus/tsdb/testutil"

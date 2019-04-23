@@ -29,7 +29,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Go-SIP/conprof/storage/tsdb/chunkenc"
+	"github.com/conprof/conprof/storage/tsdb/chunkenc"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/ulid"

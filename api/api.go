@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Go-SIP/conprof/storage/tsdb"
+	"github.com/conprof/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/julienschmidt/httprouter"

@@ -25,7 +25,7 @@ import (
 
 	"github.com/prometheus/common/model"
 
-	"github.com/Go-SIP/conprof/config"
+	"github.com/conprof/conprof/config"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/labels"
 )

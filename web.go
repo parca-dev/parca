@@ -3,10 +3,10 @@ package main
 import (
 	"net/http"
 
-	"github.com/Go-SIP/conprof/api"
-	"github.com/Go-SIP/conprof/pprofui"
-	"github.com/Go-SIP/conprof/storage/tsdb"
-	"github.com/Go-SIP/conprof/web"
+	"github.com/conprof/conprof/api"
+	"github.com/conprof/conprof/pprofui"
+	"github.com/conprof/conprof/storage/tsdb"
+	"github.com/conprof/conprof/web"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"

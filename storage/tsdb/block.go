@@ -21,9 +21,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/Go-SIP/conprof/storage/tsdb/chunkenc"
-	"github.com/Go-SIP/conprof/storage/tsdb/chunks"
-	"github.com/Go-SIP/conprof/storage/tsdb/index"
+	"github.com/conprof/conprof/storage/tsdb/chunkenc"
+	"github.com/conprof/conprof/storage/tsdb/chunks"
+	"github.com/conprof/conprof/storage/tsdb/index"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/ulid"

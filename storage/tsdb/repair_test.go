@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Go-SIP/conprof/storage/tsdb/chunks"
+	"github.com/conprof/conprof/storage/tsdb/chunks"
 	"github.com/prometheus/tsdb/fileutil"
 	"github.com/prometheus/tsdb/index"
 	"github.com/prometheus/tsdb/labels"

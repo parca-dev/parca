@@ -18,8 +18,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Go-SIP/conprof/storage/tsdb/chunkenc"
-	"github.com/Go-SIP/conprof/storage/tsdb/chunks"
+	"github.com/conprof/conprof/storage/tsdb/chunkenc"
+	"github.com/conprof/conprof/storage/tsdb/chunks"
 	"github.com/pkg/errors"
 	"github.com/prometheus/tsdb/index"
 	"github.com/prometheus/tsdb/labels"

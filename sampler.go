@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Go-SIP/conprof/config"
-	"github.com/Go-SIP/conprof/scrape"
-	"github.com/Go-SIP/conprof/storage/tsdb"
+	"github.com/conprof/conprof/config"
+	"github.com/conprof/conprof/scrape"
+	"github.com/conprof/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"

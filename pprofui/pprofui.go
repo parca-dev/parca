@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Go-SIP/conprof/storage/tsdb"
+	"github.com/conprof/conprof/storage/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
