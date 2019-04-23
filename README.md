@@ -31,3 +31,7 @@ Open http://localhost:8080/ and write a query like `{job="conprof"}` which after
 Here's a screenshot of an instance of conprof running for a couple of minutes, and having run the query `{job="conprof", profile_path="/debug/pprof/heap"}`, plotting samples of heap profiles taken over time.
 
 ![conprof screenshot](https://raw.githubusercontent.com/conprof/conprof/master/screenshot.png)
+
+When clicking on a sample the [pprof UI](https://rakyll.org/pprof-ui/) included in the [`pprof`](https://github.com/google/pprof) toolchain will be opened, served by conprof. For example:
+
+![pprof UI screenshot](https://raw.githubusercontent.com/conprof/conprof/master/pprofui.png)
