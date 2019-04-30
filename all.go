@@ -18,11 +18,11 @@ import (
 func registerAll(m map[string]setupFunc, app *kingpin.Application, name string) {
 	cmd := app.Command(name, "All in one command.")
 
-	storagePath := cmd.Flag("storage.path", "Directory to read storage from.").
+	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
 		Default("./data").String()
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
-	retention := modelDuration(cmd.Flag("tsdb.retention", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	retention := modelDuration(cmd.Flag("tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
 		return runAll(g, mux, logger, *storagePath, *configFile, *retention)

@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/scrape"
 	"github.com/conprof/conprof/storage/tsdb"
+	"github.com/conprof/conprof/storage/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"
@@ -21,13 +23,24 @@ import (
 func registerSampler(m map[string]setupFunc, app *kingpin.Application, name string) {
 	cmd := app.Command(name, "Run a sampler, that appends profiles to a configured storage.")
 
-	storagePath := cmd.Flag("storage.path", "Directory to read storage from.").
+	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
 		Default("./data").String()
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
+	retention := modelDuration(cmd.Flag("tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
-		db, err := tsdb.Open(*storagePath, logger, prometheus.DefaultRegisterer, tsdb.DefaultOptions)
+		db, err := tsdb.Open(
+			*storagePath,
+			logger,
+			prometheus.DefaultRegisterer,
+			&tsdb.Options{
+				WALSegmentSize:    wal.DefaultSegmentSize,
+				RetentionDuration: uint64(*retention),
+				BlockRanges:       tsdb.ExponentialBlockRanges(int64(2*time.Hour)/1e6, 3, 5),
+				NoLockfile:        true,
+			},
+		)
 		if err != nil {
 			return err
 		}

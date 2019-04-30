@@ -47,7 +47,7 @@ func main() {
 		Default("info").Enum("error", "warn", "info", "debug")
 	logFormat := app.Flag("log.format", "Log format to use.").
 		Default(logFormatLogfmt).Enum(logFormatLogfmt, logFormatJSON)
-	httpBindAddr := app.Flag("listen.address", "Address to listen on with HTTP server.").
+	httpBindAddr := app.Flag("web.listen-address", "Address to listen on with HTTP server.").
 		Default(":8080").String()
 
 	cmds := map[string]setupFunc{}
