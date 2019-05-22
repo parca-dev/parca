@@ -1,5 +1,6 @@
-FROM  quay.io/prometheus/busybox:latest
-LABEL authors="Frederic Branczyk"
+FROM alpine:3.9
+
+RUN apk add --no-cache graphviz
 
 COPY conprof                  /bin/conprof
 COPY examples/conprof.yaml    /etc/conprof/config.yaml

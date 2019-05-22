@@ -11,10 +11,10 @@ github.com/cespare/xxhash
 github.com/conprof/tsdb
 github.com/conprof/tsdb/wal
 github.com/conprof/tsdb/labels
+github.com/conprof/tsdb/errors
 github.com/conprof/tsdb/chunkenc
 github.com/conprof/tsdb/chunks
 github.com/conprof/tsdb/encoding
-github.com/conprof/tsdb/errors
 github.com/conprof/tsdb/fileutil
 github.com/conprof/tsdb/goversion
 github.com/conprof/tsdb/index
