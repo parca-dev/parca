@@ -35,3 +35,11 @@ Here's a screenshot of an instance of conprof running for a couple of minutes, a
 When clicking on a sample the [pprof UI](https://rakyll.org/pprof-ui/) included in the [`pprof`](https://github.com/google/pprof) toolchain will be opened, served by conprof. For example:
 
 ![pprof UI screenshot](https://raw.githubusercontent.com/conprof/conprof/master/pprofui.png)
+
+### Building the UI
+
+- Run `npm install` and `npm run build` once in the web directory.
+- Run `make assets` to inline the assets into a go file.
+- Run `make conprof` to build the app.
+
+Note: For UI development you can run `npm start` in the web directory and it will proxy requests to the backend.
