@@ -14,7 +14,7 @@ Conprof is most useful when used together with other systems such as [Prometheus
 
 ### Quickstart
 
-Build conprof binary from the root of the repo directory (requires [bzr](https://bazaar.canonical.com/)):
+Build conprof binary from the root of the repo directory (requires [bzr](https://bazaar.canonical.com/) and [dot](https://www.graphviz.org/)):
 
 ```bash
 GO111MODULE=on go get -u github.com/conprof/conprof
