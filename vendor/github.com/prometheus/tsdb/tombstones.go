@@ -22,12 +22,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"github.com/prometheus/tsdb/encoding"
 	tsdb_errors "github.com/prometheus/tsdb/errors"
-	"github.com/prometheus/tsdb/fileutil"
 )
 
 const tombstoneFilename = "tombstones"
@@ -54,7 +51,7 @@ type TombstoneReader interface {
 	Close() error
 }
 
-func writeTombstoneFile(logger log.Logger, dir string, tr TombstoneReader) error {
+func writeTombstoneFile(dir string, tr TombstoneReader) error {
 	path := filepath.Join(dir, tombstoneFilename)
 	tmp := path + ".tmp"
 	hash := newCRC32()
@@ -65,12 +62,7 @@ func writeTombstoneFile(logger log.Logger, dir string, tr TombstoneReader) error
 	}
 	defer func() {
 		if f != nil {
-			if err := f.Close(); err != nil {
-				level.Error(logger).Log("msg", "close tmp file", "err", err.Error())
-			}
-		}
-		if err := os.RemoveAll(tmp); err != nil {
-			level.Error(logger).Log("msg", "remove tmp file", "err", err.Error())
+			f.Close()
 		}
 	}()
 
@@ -119,7 +111,7 @@ func writeTombstoneFile(logger log.Logger, dir string, tr TombstoneReader) error
 		return err
 	}
 	f = nil
-	return fileutil.Replace(tmp, path)
+	return renameFile(tmp, path)
 }
 
 // Stone holds the information on the posting and time-range

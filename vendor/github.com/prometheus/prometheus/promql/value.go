@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/storage"
 )
 
 // Value is a generic interface for values resulting from a query evaluation.
@@ -141,7 +142,7 @@ func (vec Vector) String() string {
 }
 
 // ContainsSameLabelset checks if a vector has samples with the same labelset
-// Such a behaviour is semantically undefined
+// Such a behavior is semantically undefined
 // https://github.com/prometheus/prometheus/issues/4562
 func (vec Vector) ContainsSameLabelset() bool {
 	l := make(map[uint64]struct{}, len(vec))
@@ -184,7 +185,7 @@ func (m Matrix) Less(i, j int) bool { return labels.Compare(m[i].Metric, m[j].Me
 func (m Matrix) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
 
 // ContainsSameLabelset checks if a matrix has samples with the same labelset
-// Such a behaviour is semantically undefined
+// Such a behavior is semantically undefined
 // https://github.com/prometheus/prometheus/issues/4562
 func (m Matrix) ContainsSameLabelset() bool {
 	l := make(map[uint64]struct{}, len(m))
@@ -201,8 +202,9 @@ func (m Matrix) ContainsSameLabelset() bool {
 // Result holds the resulting value of an execution or an error
 // if any occurred.
 type Result struct {
-	Err   error
-	Value Value
+	Err      error
+	Value    Value
+	Warnings storage.Warnings
 }
 
 // Vector returns a Vector if the result value is one. An error is returned if
@@ -252,4 +254,66 @@ func (r *Result) String() string {
 		return ""
 	}
 	return r.Value.String()
+}
+
+// StorageSeries simulates promql.Series as storage.Series.
+type StorageSeries struct {
+	series Series
+}
+
+// NewStorageSeries returns a StorageSeries fromfor series.
+func NewStorageSeries(series Series) *StorageSeries {
+	return &StorageSeries{
+		series: series,
+	}
+}
+
+func (ss *StorageSeries) Labels() labels.Labels {
+	return ss.series.Metric
+}
+
+// Iterator returns a new iterator of the data of the series.
+func (ss *StorageSeries) Iterator() storage.SeriesIterator {
+	return newStorageSeriesIterator(ss.series)
+}
+
+type storageSeriesIterator struct {
+	points []Point
+	curr   int
+}
+
+func newStorageSeriesIterator(series Series) *storageSeriesIterator {
+	return &storageSeriesIterator{
+		points: series.Points,
+		curr:   -1,
+	}
+}
+
+func (ssi *storageSeriesIterator) Seek(t int64) bool {
+	i := ssi.curr
+	if i < 0 {
+		i = 0
+	}
+	for ; i < len(ssi.points); i++ {
+		if ssi.points[i].T >= t {
+			ssi.curr = i
+			return true
+		}
+	}
+	ssi.curr = len(ssi.points) - 1
+	return false
+}
+
+func (ssi *storageSeriesIterator) At() (t int64, v float64) {
+	p := ssi.points[ssi.curr]
+	return p.T, p.V
+}
+
+func (ssi *storageSeriesIterator) Next() bool {
+	ssi.curr++
+	return ssi.curr < len(ssi.points)
+}
+
+func (ssi *storageSeriesIterator) Err() error {
+	return nil
 }

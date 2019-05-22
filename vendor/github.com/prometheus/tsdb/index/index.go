@@ -53,6 +53,7 @@ const (
 type indexWriterSeries struct {
 	labels labels.Labels
 	chunks []chunks.Meta // series file offset of chunks
+	offset uint32        // index file offset of series reference
 }
 
 type indexWriterSeriesSlice []*indexWriterSeries
