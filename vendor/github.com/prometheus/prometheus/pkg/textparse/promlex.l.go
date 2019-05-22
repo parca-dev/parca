@@ -16,7 +16,7 @@
 package textparse
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 )
 
 const (
@@ -44,7 +44,7 @@ yystate0:
 
 	switch yyt := l.state; yyt {
 	default:
-		panic(errors.Errorf(`invalid start condition %d`, yyt))
+		panic(fmt.Errorf(`invalid start condition %d`, yyt))
 	case 0: // start condition: INITIAL
 		goto yystart1
 	case 1: // start condition: sComment

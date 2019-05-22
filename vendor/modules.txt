@@ -3,10 +3,21 @@ github.com/alecthomas/template
 github.com/alecthomas/template/parse
 # github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf
 github.com/alecthomas/units
-# github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
+# github.com/beorn7/perks v1.0.0
 github.com/beorn7/perks/quantile
 # github.com/cespare/xxhash v1.1.0
 github.com/cespare/xxhash
+# github.com/conprof/tsdb v0.8.1-0.20190522084755-34873d48c219
+github.com/conprof/tsdb
+github.com/conprof/tsdb/wal
+github.com/conprof/tsdb/labels
+github.com/conprof/tsdb/chunkenc
+github.com/conprof/tsdb/chunks
+github.com/conprof/tsdb/encoding
+github.com/conprof/tsdb/errors
+github.com/conprof/tsdb/fileutil
+github.com/conprof/tsdb/goversion
+github.com/conprof/tsdb/index
 # github.com/go-kit/kit v0.8.0
 github.com/go-kit/kit/log
 github.com/go-kit/kit/log/level
@@ -14,7 +25,7 @@ github.com/go-kit/kit/log/level
 github.com/go-logfmt/logfmt
 # github.com/golang/protobuf v1.3.1
 github.com/golang/protobuf/proto
-# github.com/google/pprof v0.0.0-20190109223431-e84dfd68c163
+# github.com/google/pprof v0.0.0-20190515194954-54271f7e092f
 github.com/google/pprof/driver
 github.com/google/pprof/profile
 github.com/google/pprof/internal/driver
@@ -32,7 +43,7 @@ github.com/google/pprof/internal/elfexec
 github.com/google/pprof/internal/symbolz
 # github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6
 github.com/ianlancetaylor/demangle
-# github.com/improbable-eng/thanos v0.2.1
+# github.com/improbable-eng/thanos v0.4.0
 github.com/improbable-eng/thanos/pkg/runutil
 # github.com/julienschmidt/httprouter v1.2.0
 github.com/julienschmidt/httprouter
@@ -46,33 +57,30 @@ github.com/mwitkow/go-conntrack
 github.com/oklog/run
 # github.com/oklog/ulid v1.3.1
 github.com/oklog/ulid
-# github.com/opentracing/opentracing-go v1.0.2
+# github.com/opentracing/opentracing-go v1.1.0
 github.com/opentracing/opentracing-go
 github.com/opentracing/opentracing-go/log
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
-# github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
+# github.com/prometheus/client_golang v0.9.3
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/promhttp
-github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promauto
-github.com/prometheus/client_golang/prometheus/testutil
+github.com/prometheus/client_golang/prometheus/internal
 # github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.3.0
-github.com/prometheus/common/version
+# github.com/prometheus/common v0.4.1
 github.com/prometheus/common/model
+github.com/prometheus/common/version
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
-# github.com/prometheus/procfs v0.0.0-20190129233650-316cf8ccfec5
+# github.com/prometheus/procfs v0.0.0-20190521135221-be78308d8a4f
 github.com/prometheus/procfs
-github.com/prometheus/procfs/nfs
-github.com/prometheus/procfs/xfs
-github.com/prometheus/procfs/internal/util
-# github.com/prometheus/prometheus v2.9.1+incompatible
+github.com/prometheus/procfs/internal/fs
+# github.com/prometheus/prometheus v2.5.0+incompatible
 github.com/prometheus/prometheus/discovery/targetgroup
-github.com/prometheus/prometheus/promql
 github.com/prometheus/prometheus/pkg/labels
+github.com/prometheus/prometheus/promql
 github.com/prometheus/prometheus/pkg/pool
 github.com/prometheus/prometheus/pkg/timestamp
 github.com/prometheus/prometheus/pkg/gate
@@ -83,33 +91,30 @@ github.com/prometheus/prometheus/util/stats
 github.com/prometheus/prometheus/util/strutil
 github.com/prometheus/prometheus/util/testutil
 github.com/prometheus/prometheus/storage/tsdb
-# github.com/prometheus/tsdb v0.7.0
-github.com/prometheus/tsdb/labels
-github.com/prometheus/tsdb/fileutil
-github.com/prometheus/tsdb/index
-github.com/prometheus/tsdb/wal
+# github.com/prometheus/tsdb v0.8.0
+github.com/prometheus/tsdb
+github.com/prometheus/tsdb/chunkenc
 github.com/prometheus/tsdb/chunks
 github.com/prometheus/tsdb/encoding
 github.com/prometheus/tsdb/errors
-github.com/prometheus/tsdb/testutil
-github.com/prometheus/tsdb/tsdbutil
-github.com/prometheus/tsdb/chunkenc
-github.com/prometheus/tsdb
+github.com/prometheus/tsdb/fileutil
 github.com/prometheus/tsdb/goversion
-# github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371
+github.com/prometheus/tsdb/index
+github.com/prometheus/tsdb/labels
+github.com/prometheus/tsdb/wal
+# github.com/shurcooL/httpfs v0.0.0-20181222201310-74dc9339e414
 github.com/shurcooL/httpfs/vfsutil
-# github.com/shurcooL/vfsgen v0.0.0-20180711163814-62bca832be04
+# github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 github.com/shurcooL/vfsgen
 # github.com/spf13/pflag v1.0.3
 github.com/spf13/pflag
-# golang.org/x/net v0.0.0-20190311183353-d8887717615a
+# golang.org/x/net v0.0.0-20190520210107-018c4d40a106
 golang.org/x/net/context/ctxhttp
-golang.org/x/net/context
 golang.org/x/net/trace
 golang.org/x/net/internal/timeseries
-# golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
+# golang.org/x/sync v0.0.0-20190423024810-112230192c58
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20190405154228-4b34438f7a67
+# golang.org/x/sys v0.0.0-20190522044717-8097e1b27ff5
 golang.org/x/sys/unix
 # gopkg.in/alecthomas/kingpin.v2 v2.2.6
 gopkg.in/alecthomas/kingpin.v2

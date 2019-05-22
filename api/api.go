@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/conprof/conprof/storage/tsdb"
+	"github.com/conprof/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/promql"
-	tsdbLabels "github.com/prometheus/tsdb/labels"
+	tsdbLabels "github.com/conprof/tsdb/labels"
 )
 
 type API struct {

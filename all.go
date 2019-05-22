@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/conprof/conprof/storage/tsdb"
-	"github.com/conprof/conprof/storage/tsdb/wal"
+	"github.com/conprof/tsdb"
+	"github.com/conprof/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -22,7 +22,7 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string) 
 		Default("./data").String()
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
-	retention := modelDuration(cmd.Flag("tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	retention := modelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
 		return runAll(g, mux, logger, *storagePath, *configFile, *retention)

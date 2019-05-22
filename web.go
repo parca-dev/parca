@@ -6,8 +6,8 @@ import (
 
 	"github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pprofui"
-	"github.com/conprof/conprof/storage/tsdb"
-	"github.com/conprof/conprof/storage/tsdb/wal"
+	"github.com/conprof/tsdb"
+	"github.com/conprof/tsdb/wal"
 	"github.com/conprof/conprof/web"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
@@ -23,7 +23,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string) 
 
 	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
 		Default("./data").String()
-	retention := modelDuration(cmd.Flag("tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	retention := modelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
 		db, err := tsdb.Open(

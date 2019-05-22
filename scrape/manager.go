@@ -22,7 +22,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 
 	"github.com/conprof/conprof/config"
-	"github.com/conprof/conprof/storage/tsdb"
+	"github.com/conprof/tsdb"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 )
 

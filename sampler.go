@@ -8,8 +8,8 @@ import (
 
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/scrape"
-	"github.com/conprof/conprof/storage/tsdb"
-	"github.com/conprof/conprof/storage/tsdb/wal"
+	"github.com/conprof/tsdb"
+	"github.com/conprof/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"
@@ -27,7 +27,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		Default("./data").String()
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
-	retention := modelDuration(cmd.Flag("tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	retention := modelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
 		db, err := tsdb.Open(

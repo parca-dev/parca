@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/conprof/conprof/storage/tsdb"
+	"github.com/conprof/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
@@ -33,7 +33,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/prometheus/promql"
-	"github.com/prometheus/tsdb/labels"
+	"github.com/conprof/tsdb/labels"
 	"github.com/spf13/pflag"
 )
 
