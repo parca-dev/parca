@@ -28,6 +28,7 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 const styles = (theme: Theme) => createStyles({
     root: {
         flexGrow: 1,
+        fontFamily: theme.typography.fontFamily,
     },
     paper: {
         margin: '20px 0px',
@@ -45,6 +46,11 @@ const styles = (theme: Theme) => createStyles({
     },
     iconButton: {
         padding: 10,
+    },
+    labelSet: {
+        fontFamily: 'monospace',
+        padding: 10,
+        fontWeight: 'bold',
     },
     noResult: {
         textAlign: 'center',
@@ -233,7 +239,7 @@ class QueryPage extends React.Component<Props, State> {
                     return (
                     <Grid key={series.labelsetEncoded} item xs={8}>
                         <Paper className={classes.paper}>
-                            <h4>{series.labelset}</h4>
+                            <div className={classes.labelSet}>{series.labelset}</div>
                             <div style={{ width: '100%', height: 70 }}>
                                 <ResponsiveContainer>
                                     <ScatterChart height={60} margin={{top: 10, right: 0, bottom: 0, left: 0}}>

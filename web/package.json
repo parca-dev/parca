@@ -30,6 +30,7 @@
     "not ie <= 11",
     "not op_mini all"
   ],
+  "proxy": "http://localhost:8080",
   "devDependencies": {
     "@types/jest": "24.0.11",
     "@types/node": "11.11.6",
