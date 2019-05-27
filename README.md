@@ -12,6 +12,9 @@ Have you ever been in the situation where you know your application has a memory
 
 Conprof is most useful when used together with other systems such as [Prometheus](https://prometheus.io), as Prometheus can be used to identify when something happened and Conprof can be used to investigate the particular incident.
 
+This project is inspired by the [Google-Wide Profiling: A Continuous Profiling Infrastructure for Data Centers
+](https://ai.google/research/pubs/pub36575) paper.
+
 ### Quickstart
 
 Build conprof binary from the root of the repo directory (requires [bzr](https://bazaar.canonical.com/) and [dot](https://www.graphviz.org/)):
