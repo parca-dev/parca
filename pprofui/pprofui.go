@@ -15,35 +15,38 @@
 package pprofui
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
-	"math"
+	"io"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/conprof/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
 	"github.com/google/pprof/profile"
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
+	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql"
-	"github.com/conprof/tsdb/labels"
 	"github.com/spf13/pflag"
 )
 
+type Storage interface {
+	GetFile(timestamp time.Time, matchers ...*labels.Matcher) (io.ReadCloser, error)
+}
+
 type pprofUI struct {
 	logger log.Logger
-	db     *tsdb.DB
+	db     Storage
 }
 
 // NewServer creates a new Server backed by the supplied Storage.
-func New(logger log.Logger, db *tsdb.DB) *pprofUI {
+func New(logger log.Logger, db Storage) *pprofUI {
 	s := &pprofUI{
 		logger: logger,
 		db:     db,
@@ -61,14 +64,11 @@ func parsePath(reqPath string) (series string, timestamp string, remainingPath s
 }
 
 func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	series, timestamp, remainingPath := parsePath(r.URL.Path)
-	if len(r.URL.RawQuery) > 0 {
-		remainingPath = remainingPath + "?" + r.URL.RawQuery
-	}
+	series, timestampGet, remainingPath := parsePath(r.URL.Path)
 	if !strings.HasPrefix(remainingPath, "/") {
 		remainingPath = "/" + remainingPath
 	}
-	level.Debug(p.logger).Log("msg", "parsed path", "series", series, "timestamp", timestamp, "remainingPath", remainingPath)
+	level.Debug(p.logger).Log("msg", "parsed path", "series", series, "timestamp", timestampGet, "remainingPath", remainingPath)
 	decodedSeriesName, err := base64.URLEncoding.DecodeString(series)
 	if err != nil {
 		msg := fmt.Sprintf("could not decode series name: %s", err)
@@ -83,11 +83,6 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-	m := make(labels.Selector, len(seriesLabels))
-	for i, l := range seriesLabels {
-		m[i] = labels.NewEqualMatcher(l.Name, l.Value)
-	}
-
 	server := func(args *driver.HTTPServerArgs) error {
 		handler, ok := args.Handlers[remainingPath]
 		if !ok {
@@ -100,26 +95,18 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 	storageFetcher := func(_ string, _, _ time.Duration) (*profile.Profile, string, error) {
 		var prof *profile.Profile
 
-		q, err := p.db.Querier(0, math.MaxInt64)
-		if err != nil {
-			level.Error(p.logger).Log("err", err)
-		}
-
-		ss, err := q.Select(m...)
-		if err != nil {
-			level.Error(p.logger).Log("err", err)
-		}
-
-		ss.Next()
-		s := ss.At()
-		i := s.Iterator()
-		t, err := stringToInt(timestamp)
+		t, err := stringToInt(timestampGet)
 		if err != nil {
 			return nil, "", err
 		}
-		i.Seek(t)
-		_, buf := i.At()
-		prof, err = profile.Parse(bytes.NewReader(buf))
+
+		f, err := p.db.GetFile(timestamp.Time(t), seriesLabels...)
+		if err != nil {
+			return nil, "", errors.Wrap(err, "couldn't get profile file")
+		}
+
+		prof, err = profile.Parse(f)
+		f.Close()
 		return prof, "", err
 	}
 

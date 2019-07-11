@@ -46,7 +46,6 @@ import (
 	"os"
 	"time"
 
-	tsdbErrors "github.com/conprof/tsdb/errors"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
@@ -106,15 +105,4 @@ func CloseWithLogOnErr(logger log.Logger, closer io.Closer, format string, a ...
 	}
 
 	level.Warn(logger).Log("msg", "detected close error", "err", errors.Wrap(err, fmt.Sprintf(format, a...)))
-}
-
-// CloseWithErrCapture runs function and on error return error by argument including the given error (usually
-// from caller function).
-func CloseWithErrCapture(err *error, closer io.Closer, format string, a ...interface{}) {
-	merr := tsdbErrors.MultiError{}
-
-	merr.Add(*err)
-	merr.Add(errors.Wrapf(closer.Close(), format, a...))
-
-	*err = merr.Err()
 }

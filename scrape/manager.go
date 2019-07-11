@@ -14,30 +14,30 @@
 package scrape
 
 import (
+	"io"
 	"reflect"
 	"sync"
 	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/prometheus/prometheus/pkg/labels"
 
 	"github.com/conprof/conprof/config"
-	"github.com/conprof/tsdb"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 )
 
-// Appendable returns an Appender.
-type Appendable interface {
-	Appender() tsdb.Appender
+type Storage interface {
+	Create(l labels.Labels, t time.Time) (io.WriteCloser, error)
 }
 
 // NewManager is the Manager constructor
-func NewManager(logger log.Logger, app Appendable) *Manager {
+func NewManager(logger log.Logger, app Storage) *Manager {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
 	return &Manager{
-		append:        app,
+		storage:       app,
 		logger:        logger,
 		scrapeConfigs: make(map[string]*config.ScrapeConfig),
 		scrapePools:   make(map[string]*scrapePool),
@@ -50,7 +50,7 @@ func NewManager(logger log.Logger, app Appendable) *Manager {
 // when receiving new target groups form the discovery manager.
 type Manager struct {
 	logger    log.Logger
-	append    Appendable
+	storage   Storage
 	graceShut chan struct{}
 
 	mtxScrape     sync.Mutex // Guards the fields below.
@@ -112,7 +112,7 @@ func (m *Manager) reload() {
 				level.Error(m.logger).Log("msg", "error reloading target set", "err", "invalid config id:"+setName)
 				return
 			}
-			sp = newScrapePool(scrapeConfig, m.append, log.With(m.logger, "scrape_pool", setName))
+			sp = newScrapePool(scrapeConfig, m.storage, log.With(m.logger, "scrape_pool", setName))
 			m.scrapePools[setName] = sp
 		} else {
 			sp = existing

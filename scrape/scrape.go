@@ -14,7 +14,7 @@
 package scrape
 
 import (
-	"bytes"
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -31,8 +31,6 @@ import (
 	"github.com/conprof/conprof/config"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/pool"
-	"github.com/prometheus/prometheus/pkg/timestamp"
-	"github.com/conprof/tsdb/labels"
 )
 
 var (
@@ -106,7 +104,7 @@ func init() {
 
 // scrapePool manages scrapes for sets of targets.
 type scrapePool struct {
-	appendable Appendable
+	appendable Storage
 	logger     log.Logger
 
 	mtx    sync.RWMutex
@@ -123,7 +121,7 @@ type scrapePool struct {
 	newLoop func(*Target, scraper) loop
 }
 
-func newScrapePool(cfg *config.ScrapeConfig, app Appendable, logger log.Logger) *scrapePool {
+func newScrapePool(cfg *config.ScrapeConfig, app Storage, logger log.Logger) *scrapePool {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -393,7 +391,7 @@ type scrapeLoop struct {
 	lastScrapeSize int
 	buffers        *pool.Pool
 
-	appendable Appendable
+	storage Storage
 
 	ctx       context.Context
 	scrapeCtx context.Context
@@ -406,7 +404,7 @@ func newScrapeLoop(ctx context.Context,
 	sc scraper,
 	l log.Logger,
 	buffers *pool.Pool,
-	appendable Appendable,
+	storage Storage,
 ) *scrapeLoop {
 	if l == nil {
 		l = log.NewNopLogger()
@@ -415,13 +413,13 @@ func newScrapeLoop(ctx context.Context,
 		buffers = pool.New(1e3, 1e6, 3, func(sz int) interface{} { return make([]byte, 0, sz) })
 	}
 	sl := &scrapeLoop{
-		target:     t,
-		scraper:    sc,
-		buffers:    buffers,
-		appendable: appendable,
-		stopped:    make(chan struct{}),
-		l:          l,
-		ctx:        ctx,
+		target:  t,
+		scraper: sc,
+		buffers: buffers,
+		storage: storage,
+		stopped: make(chan struct{}),
+		l:       l,
+		ctx:     ctx,
 	}
 	sl.scrapeCtx, sl.cancel = context.WithCancel(ctx)
 
@@ -438,16 +436,12 @@ func (sl *scrapeLoop) run(interval, timeout time.Duration, errc chan<- error) {
 	}
 
 	var last time.Time
-	app := sl.appendable.Appender()
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	buf := bytes.NewBuffer(make([]byte, 0, 16000))
-
 mainLoop:
 	for {
-		buf.Reset()
 		select {
 		case <-sl.ctx.Done():
 			close(sl.stopped)
@@ -469,43 +463,25 @@ mainLoop:
 			)
 		}
 
-		b := sl.buffers.Get(sl.lastScrapeSize).([]byte)
-		buf := bytes.NewBuffer(b)
+		f, err := sl.storage.Create(sl.target.labels, start)
+		if err != nil {
+			level.Debug(sl.l).Log("msg", "Storage create failed", "err", err.Error())
+			errc <- err
+			continue
+		}
+		w := bufio.NewWriter(f)
 
-		scrapeErr := sl.scraper.scrape(scrapeCtx, buf)
+		scrapeErr := sl.scraper.scrape(scrapeCtx, w)
+		w.Flush()
 		cancel()
-
-		if scrapeErr == nil {
-			b = buf.Bytes()
-			// NOTE: There were issues with misbehaving clients in the past
-			// that occasionally returned empty results. We don't want those
-			// to falsely reset our buffer size.
-			if len(b) > 0 {
-				sl.lastScrapeSize = len(b)
-			}
-		} else {
+		if scrapeErr != nil {
 			level.Debug(sl.l).Log("msg", "Scrape failed", "err", scrapeErr.Error())
 			if errc != nil {
 				errc <- scrapeErr
 			}
 		}
 
-		ls := make(labels.Labels, len(sl.target.labels))
-		for _, l := range sl.target.labels {
-			ls = append(ls, labels.Label{Name: l.Name, Value: l.Value})
-		}
-
-		_, err := app.Add(ls, timestamp.FromTime(start), buf.Bytes())
-		if err != nil && errc != nil {
-			errc <- err
-		}
-
-		err = app.Commit()
-		if err != nil && errc != nil {
-			errc <- err
-		}
-
-		sl.buffers.Put(b)
+		f.Close()
 		last = start
 
 		select {
