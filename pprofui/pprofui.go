@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/conprof/tsdb"
+	"github.com/conprof/tsdb/labels"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
@@ -33,7 +34,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/prometheus/promql"
-	"github.com/conprof/tsdb/labels"
 	"github.com/spf13/pflag"
 )
 
@@ -62,9 +62,6 @@ func parsePath(reqPath string) (series string, timestamp string, remainingPath s
 
 func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	series, timestamp, remainingPath := parsePath(r.URL.Path)
-	if len(r.URL.RawQuery) > 0 {
-		remainingPath = remainingPath + "?" + r.URL.RawQuery
-	}
 	if !strings.HasPrefix(remainingPath, "/") {
 		remainingPath = "/" + remainingPath
 	}
