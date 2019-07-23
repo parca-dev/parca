@@ -15,7 +15,8 @@ import (
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/discovery/targetgroup"
+	"github.com/prometheus/prometheus/discovery"
+	sd_config "github.com/prometheus/prometheus/discovery/config"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -50,46 +51,51 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 
 func runSampler(g *run.Group, logger log.Logger, db *tsdb.DB, configFile string) error {
 	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
-	c, err := config.LoadFile(configFile)
+	cfg, err := config.LoadFile(configFile)
 	if err != nil {
 		return fmt.Errorf("could not load config: %v", err)
 	}
 
-	syncCh := make(chan map[string][]*targetgroup.Group)
+	discoveryManagerScrape := discovery.NewManager(context.Background(), log.With(logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
 
+	ctxScrape, cancelScrape := context.WithCancel(context.Background())
+	discoveryManagerScrape = discovery.NewManager(ctxScrape, log.With(logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
+
+	{
+
+		c := make(map[string]sd_config.ServiceDiscoveryConfig)
+		for _, v := range cfg.ScrapeConfigs {
+			c[v.JobName] = v.ServiceDiscoveryConfig
+		}
+		err := discoveryManagerScrape.ApplyConfig(c)
+		if err != nil {
+			level.Error(logger).Log("msg", err)
+			return err
+		}
+		// Scrape discovery manager.
+		g.Add(
+			func() error {
+				err := discoveryManagerScrape.Run()
+				level.Info(logger).Log("msg", "Scrape discovery manager stopped")
+				return err
+			},
+			func(err error) {
+				level.Info(logger).Log("msg", "Stopping scrape discovery manager...")
+				cancelScrape()
+			},
+		)
+	}
 	{
 		_, cancel := context.WithCancel(context.Background())
 		g.Add(func() error {
-			err = scrapeManager.ApplyConfig(c)
+			err = scrapeManager.ApplyConfig(cfg)
 			if err != nil {
 				return fmt.Errorf("could not apply config: %v", err)
 			}
-			scrapeManager.Run(syncCh)
-
-			return nil
+			return scrapeManager.Run(discoveryManagerScrape.SyncCh())
 		}, func(error) {
 			level.Debug(logger).Log("msg", "shutting down scrape manager")
 			scrapeManager.Stop()
-			cancel()
-			close(syncCh)
-		})
-	}
-	{
-		ctx, cancel := context.WithCancel(context.Background())
-		g.Add(func() error {
-			for _, sc := range c.ScrapeConfigs {
-				select {
-				case <-ctx.Done():
-					return nil
-				case syncCh <- map[string][]*targetgroup.Group{sc.JobName: sc.ServiceDiscoveryConfig.StaticConfigs}:
-					// continue
-				}
-			}
-			<-ctx.Done()
-
-			return nil
-		}, func(error) {
-			level.Debug(logger).Log("msg", "shutting down discovery")
 			cancel()
 		})
 	}

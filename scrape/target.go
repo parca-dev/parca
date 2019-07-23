@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/pkg/relabel"
 
 	"github.com/conprof/conprof/config"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
@@ -325,9 +326,16 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 		}
 	}
 
-	//preRelabelLabels := lb.Labels()
-	//lset = relabel.Process(preRelabelLabels, cfg.RelabelConfigs...)
-	lset = lb.Labels()
+	preRelabelLabels := lb.Labels()
+	lset = relabel.Process(preRelabelLabels, cfg.RelabelConfigs...)
+
+	// Check if the target was dropped.
+	if lset == nil {
+		return nil, preRelabelLabels, nil
+	}
+	if v := lset.Get(model.AddressLabel); v == "" {
+		return nil, nil, errors.New("no address")
+	}
 
 	if v := lset.Get(model.AddressLabel); v == "" {
 		return nil, nil, fmt.Errorf("no address")

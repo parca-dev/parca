@@ -21,8 +21,10 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
+	sd_config "github.com/prometheus/prometheus/discovery/config"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/prometheus/prometheus/pkg/relabel"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -139,10 +141,11 @@ type ScrapeConfig struct {
 
 	ProfilingConfig *ProfilingConfig `yaml:"profiling_config,omitempty"`
 
+	RelabelConfigs []*relabel.Config `yaml:"relabel_configs,omitempty"`
 	// We cannot do proper Go type embedding below as the parser will then parse
 	// values arbitrarily into the overflow maps of further-down types.
-	ServiceDiscoveryConfig ServiceDiscoveryConfig `yaml:",inline"`
-	HTTPClientConfig       HTTPClientConfig       `yaml:",inline"`
+	ServiceDiscoveryConfig sd_config.ServiceDiscoveryConfig `yaml:",inline"`
+	HTTPClientConfig       HTTPClientConfig                 `yaml:",inline"`
 }
 
 // ServiceDiscoveryConfig configures lists of different service discovery mechanisms.
