@@ -18,6 +18,11 @@ include Makefile.common
 
 DOCKER_IMAGE_NAME       ?= conprof
 
+GO111MODULE       ?= on
+export GO111MODULE
+GOPROXY           ?= https://proxy.golang.org
+export GOPROXY
+
 .PHONY: assets
 assets:
 	@echo ">> writing assets"
@@ -31,3 +36,22 @@ check_assets: assets
 		echo "Run 'make assets' and commit the changes to fix the error."; \
 		exit 1; \
 	fi
+
+# crossbuild builds all binaries for all platforms.
+.PHONY: crossbuild
+crossbuild: $(PROMU)
+	@echo ">> crossbuilding all binaries"
+	$(PROMU) crossbuild -v
+
+# docker builds docker with no tag.
+.PHONY: docker
+docker: common-build
+	@echo ">> building docker image '${DOCKER_IMAGE_NAME}'"
+	@docker build -t "${DOCKER_IMAGE_NAME}" .
+
+# docker-push pushes docker image build under `${DOCKER_IMAGE_NAME}` to quay.io/thanos/"$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
+.PHONY: docker-push
+docker-push:
+	@echo ">> pushing image"
+	@docker tag "${DOCKER_IMAGE_NAME}" quay.io/conprof/"$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
+	@docker push quay.io/conprof/"$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
