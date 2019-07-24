@@ -33,7 +33,6 @@ func (pprofFlags) ExtraUsage() string {
 }
 
 func (pprofFlags) AddExtraUsage(eu string) {
-	return
 }
 
 func (f pprofFlags) StringList(o, d, c string) *[]*string {

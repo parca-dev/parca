@@ -141,8 +141,6 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 	}); err != nil {
 		_, _ = w.Write([]byte(err.Error()))
 	}
-
-	return
 }
 
 type fetcherFn func(_ string, _, _ time.Duration) (*profile.Profile, string, error)
@@ -151,9 +149,6 @@ func (f fetcherFn) Fetch(s string, d, t time.Duration) (*profile.Profile, string
 	return f(s, d, t)
 }
 
-func intToString(i int64) string {
-	return strconv.FormatInt(i, 10)
-}
 func stringToInt(s string) (int64, error) {
 	i, err := strconv.ParseInt(s, 10, 64)
 	return int64(i), err

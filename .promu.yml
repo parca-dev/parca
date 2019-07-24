@@ -1,0 +1,46 @@
+go:
+    # Whenever the Go version is updated here, .travis.yml and
+    # .circle/config.yml should also be updated.
+    version: 1.12
+repository:
+    path: github.com/conprof/conprof
+build:
+    binaries:
+        - name: conprof
+          path: ./
+    flags: -mod=vendor -a -tags netgo
+    ldflags: |
+        -X github.com/prometheus/common/version.Version={{.Version}}
+        -X github.com/prometheus/common/version.Revision={{.Revision}}
+        -X github.com/prometheus/common/version.Branch={{.Branch}}
+        -X github.com/prometheus/common/version.BuildUser={{user}}@{{host}}
+        -X github.com/prometheus/common/version.BuildDate={{date "20060102-15:04:05"}}
+tarball:
+    files:
+        - examples/conprof.yaml
+        - LICENSE
+crossbuild:
+    platforms:
+        - linux/amd64
+        - linux/386
+        - darwin/amd64
+        - darwin/386
+        - windows/amd64
+        - windows/386
+        - freebsd/amd64
+        - freebsd/386
+        - openbsd/amd64
+        - openbsd/386
+        - netbsd/amd64
+        - netbsd/386
+        - dragonfly/amd64
+        - linux/arm
+        - linux/arm64
+        - freebsd/arm
+        - openbsd/arm
+        - linux/mips64
+        - linux/mips64le
+        - netbsd/arm
+        - linux/ppc64
+        - linux/ppc64le
+        - linux/s390x
