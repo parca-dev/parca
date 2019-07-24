@@ -29,10 +29,10 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/conprof/conprof/config"
+	"github.com/conprof/tsdb/labels"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/pool"
 	"github.com/prometheus/prometheus/pkg/timestamp"
-	"github.com/conprof/tsdb/labels"
 )
 
 var (

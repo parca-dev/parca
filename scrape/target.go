@@ -74,7 +74,9 @@ func (t *Target) String() string {
 // hash returns an identifying hash for the target.
 func (t *Target) hash() uint64 {
 	h := fnv.New64a()
+	//nolint: errcheck
 	h.Write([]byte(fmt.Sprintf("%016d", t.labels.Hash())))
+	//nolint: errcheck
 	h.Write([]byte(t.URL().String()))
 
 	return h.Sum64()
@@ -101,9 +103,7 @@ func (t *Target) Params() url.Values {
 	q := make(url.Values, len(t.params))
 	for k, values := range t.params {
 		q[k] = make([]string, len(values))
-		for i, value := range values {
-			q[k][i] = value
-		}
+		copy(q[k], values)
 	}
 	return q
 }
@@ -171,21 +171,6 @@ func (t *Target) URL() *url.URL {
 		Path:     t.labels.Get(ProfilePath),
 		RawQuery: params.Encode(),
 	}
-}
-
-func (t *Target) report(start time.Time, dur time.Duration, err error) {
-	t.mtx.Lock()
-	defer t.mtx.Unlock()
-
-	if err == nil {
-		t.health = HealthGood
-	} else {
-		t.health = HealthBad
-	}
-
-	t.lastError = err
-	t.lastScrape = start
-	t.lastScrapeDuration = dur
 }
 
 // LastError returns the error encountered during the last scrape.
@@ -296,8 +281,6 @@ type Targets []*Target
 func (ts Targets) Len() int           { return len(ts) }
 func (ts Targets) Less(i, j int) bool { return ts[i].URL().String() < ts[j].URL().String() }
 func (ts Targets) Swap(i, j int)      { ts[i], ts[j] = ts[j], ts[i] }
-
-var errSampleLimit = errors.New("sample limit exceeded")
 
 const (
 	ProfilePath = "profile_path"
