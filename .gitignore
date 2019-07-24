@@ -1,2 +1,5 @@
-conprof
+./conprof
 data/
+
+deployments/jsonnet/conprof/jsonnetfile.lock.json
+deployments/jsonnet/conprof/vendor/

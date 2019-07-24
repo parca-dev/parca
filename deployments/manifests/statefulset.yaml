@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: conprof
+  name: conprof-main
+  namespace: conprof
+spec:
+  selector:
+    matchLabels:
+      app: conprof
+  serviceName: conprof-main-governing-service
+  template:
+    metadata:
+      labels:
+        app: conprof
+    spec:
+      containers:
+      - args:
+        - all
+        - --storage.tsdb.path=/conprof
+        - --config.file=/etc/conprof/conprof.yaml
+        - --log.level=debug
+        image: quay.io/brancz/conprof:v0.1.0-dev
+        imagePullPolicy: Always
+        name: conprof
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /conprof
+          name: storage
+          readOnly: false
+        - mountPath: /etc/conprof
+          name: config
+          readOnly: false
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: conprof-main
+      volumes:
+      - emptyDir: {}
+        name: storage
+      - name: config
+        secret:
+          secretName: conprof-config
