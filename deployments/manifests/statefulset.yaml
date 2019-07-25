@@ -20,9 +20,7 @@ spec:
         - all
         - --storage.tsdb.path=/conprof
         - --config.file=/etc/conprof/conprof.yaml
-        - --log.level=debug
-        image: quay.io/brancz/conprof:v0.1.0-dev
-        imagePullPolicy: Always
+        image: quay.io/conprof/conprof:v0.1.0-dev
         name: conprof
         ports:
         - containerPort: 8080
