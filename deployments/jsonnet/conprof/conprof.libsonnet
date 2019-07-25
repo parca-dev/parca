@@ -70,7 +70,7 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
       local podLabels = { app: 'conprof' };
 
       local conprof =
-        container.new('conprof', $.conprof.config.imageRepos.conprof + ':' + $.conprof.config.versions.conprof) +
+        container.new('conprof', $.conprof.config.image) +
         container.withArgs([
           'all',
           '--storage.tsdb.path=/conprof',
