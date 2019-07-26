@@ -7,7 +7,7 @@ items:
     namespace: conprof
   roleRef:
     apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
+    kind: Role
     name: conprof-main
   subjects:
   - kind: ServiceAccount

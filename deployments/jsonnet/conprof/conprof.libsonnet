@@ -8,23 +8,27 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
       namespace: 'conprof',
       image: 'quay.io/conprof/conprof:v0.1.0-dev',
 
-      namespaces: ['conprof'],
+      namespaces: [$.conprof.config.namespace],
 
-      rawconfig: |||
-        scrape_configs:
-        - job_name: 'conprof'
-          scrape_interval: 1m
-          scrape_timeout: 1m
-          kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-              - conprof
-          relabel_configs:
-          - action: keep
-            source_labels: [__meta_kubernetes_pod_name]
-            regex: conprof.*
-      |||,
+      rawconfig:
+        {
+          scrape_configs: [{
+            job_name: 'conprof',
+            kubernetes_sd_configs: [{
+              namespaces: { names: $.conprof.config.namespaces },
+              role: 'pod',
+            }],
+            relabel_configs: [
+              {
+                action: 'keep',
+                regex: 'conprof.*',
+                source_labels: ['__meta_kubernetes_pod_name'],
+              },
+            ],
+            scrape_interval: '1m',
+            scrape_timeout: '1m',
+          }],
+        },
     },
 
     roleBindings:
@@ -36,14 +40,14 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
         roleBinding.mixin.metadata.withNamespace(namespace) +
         roleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
         roleBinding.mixin.roleRef.withName($.conprof.config.name) +
-        roleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
+        roleBinding.mixin.roleRef.mixinInstance({ kind: 'Role' }) +
         roleBinding.withSubjects([{ kind: 'ServiceAccount', name: $.conprof.config.name, namespace: $.conprof.config.namespace }]);
 
       local roleBindingList = k3.rbac.v1.roleBindingList;
       roleBindingList.new([newSpecificRoleBinding(x) for x in $.conprof.config.namespaces]),
-    clusterRole:
-      local clusterRole = k.rbac.v1.clusterRole;
-      local policyRule = clusterRole.rulesType;
+    roles:
+      local role = k.rbac.v1.role;
+      local policyRule = role.rulesType;
       local coreRule = policyRule.new() +
                        policyRule.withApiGroups(['']) +
                        policyRule.withResources([
@@ -53,12 +57,17 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
                        ]) +
                        policyRule.withVerbs(['get', 'list', 'watch']);
 
-      clusterRole.new() +
-      clusterRole.mixin.metadata.withName($.conprof.config.name) +
-      clusterRole.withRules(coreRule),
+      local newSpecificRole(namespace) =
+        role.new() +
+        role.mixin.metadata.withName($.conprof.config.name) +
+        role.mixin.metadata.withNamespace(namespace) +
+        role.withRules(coreRule);
+
+      local roleList = k3.rbac.v1.roleList;
+      roleList.new([newSpecificRole(x) for x in $.conprof.config.namespaces]),
     configsecret:
       local secret = k.core.v1.secret;
-      secret.new('conprof-config', { 'conprof.yaml': std.base64($.conprof.config.rawconfig) }) +
+      secret.new('conprof-config', { 'conprof.yaml': std.base64(std.manifestYamlDoc($.conprof.config.rawconfig)) }) +
       secret.mixin.metadata.withNamespace($.conprof.config.namespace),
     statefulset:
       local statefulset = k.apps.v1.statefulSet;
