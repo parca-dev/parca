@@ -97,6 +97,7 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
       statefulset.mixin.metadata.withName($.conprof.config.name) +
       statefulset.mixin.metadata.withNamespace($.conprof.config.namespace) +
       statefulset.mixin.metadata.withLabels(podLabels) +
+      statefulset.mixin.spec.withPodManagementPolicy('Parallel') +
       statefulset.mixin.spec.withServiceName($.conprof.config.name + '-governing-service') +
       statefulset.mixin.spec.selector.withMatchLabels(podLabels) +
       statefulset.mixin.spec.template.metadata.withLabels(podLabels) +
