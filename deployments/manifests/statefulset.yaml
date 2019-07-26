@@ -25,6 +25,7 @@ spec:
         name: conprof
         ports:
         - containerPort: 8080
+          name: http
         volumeMounts:
         - mountPath: /conprof
           name: storage

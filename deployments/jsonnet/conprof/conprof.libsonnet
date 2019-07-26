@@ -85,7 +85,7 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
           '--storage.tsdb.path=/conprof',
           '--config.file=/etc/conprof/conprof.yaml',
         ]) +
-        container.withPorts([{ containerPort: 8080 }]) +
+        container.withPorts([{ name: 'http', containerPort: 8080 }]) +
         container.withVolumeMounts([
           containerVolumeMount.new('storage', '/conprof'),
           containerVolumeMount.new('config', '/etc/conprof'),
