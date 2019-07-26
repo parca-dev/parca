@@ -6,6 +6,7 @@ metadata:
   name: conprof-main
   namespace: conprof
 spec:
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app: conprof
