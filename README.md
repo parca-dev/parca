@@ -17,7 +17,7 @@ This project is inspired by the [Google-Wide Profiling: A Continuous Profiling I
 
 ### Quickstart
 
-Build conprof binary from the root of the repo directory (requires [bzr](https://bazaar.canonical.com/) and [dot](https://www.graphviz.org/) without `$GOPROXY`):
+Build conprof binary from the root of the repo directory:
 
 ```bash
 git clone git@github.com:conprof/conprof.git
