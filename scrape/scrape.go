@@ -24,6 +24,8 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/google/pprof/profile"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
 	"golang.org/x/net/context/ctxhttp"
@@ -376,8 +378,12 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer) error {
 		return fmt.Errorf("server returned HTTP status %s", resp.Status)
 	}
 
-	_, err = io.Copy(w, resp.Body)
-	return err
+	_, err = profile.Parse(io.TeeReader(resp.Body, w))
+	if err != nil {
+		return errors.Wrap(err, "failed to parse target's pprof profile")
+	}
+
+	return nil
 }
 
 // A loop can run and be stopped again. It must not be reused after it was stopped.
@@ -483,26 +489,26 @@ mainLoop:
 			if len(b) > 0 {
 				sl.lastScrapeSize = len(b)
 			}
+
+			ls := make(labels.Labels, len(sl.target.labels))
+			for _, l := range sl.target.labels {
+				ls = append(ls, labels.Label{Name: l.Name, Value: l.Value})
+			}
+
+			_, err := app.Add(ls, timestamp.FromTime(start), buf.Bytes())
+			if err != nil && errc != nil {
+				errc <- err
+			}
+
+			err = app.Commit()
+			if err != nil && errc != nil {
+				errc <- err
+			}
 		} else {
 			level.Debug(sl.l).Log("msg", "Scrape failed", "err", scrapeErr.Error())
 			if errc != nil {
 				errc <- scrapeErr
 			}
-		}
-
-		ls := make(labels.Labels, len(sl.target.labels))
-		for _, l := range sl.target.labels {
-			ls = append(ls, labels.Label{Name: l.Name, Value: l.Value})
-		}
-
-		_, err := app.Add(ls, timestamp.FromTime(start), buf.Bytes())
-		if err != nil && errc != nil {
-			errc <- err
-		}
-
-		err = app.Commit()
-		if err != nil && errc != nil {
-			errc <- err
 		}
 
 		sl.buffers.Put(b)
