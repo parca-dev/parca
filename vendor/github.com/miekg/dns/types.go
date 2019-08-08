@@ -404,7 +404,7 @@ type RP struct {
 }
 
 func (rr *RP) String() string {
-	return rr.Hdr.String() + rr.Mbox + " " + sprintTxt([]string{rr.Txt})
+	return rr.Hdr.String() + sprintName(rr.Mbox) + " " + sprintName(rr.Txt)
 }
 
 // SOA RR. See RFC 1035.
@@ -845,8 +845,8 @@ type NSEC struct {
 
 func (rr *NSEC) String() string {
 	s := rr.Hdr.String() + sprintName(rr.NextDomain)
-	for i := 0; i < len(rr.TypeBitMap); i++ {
-		s += " " + Type(rr.TypeBitMap[i]).String()
+	for _, t := range rr.TypeBitMap {
+		s += " " + Type(t).String()
 	}
 	return s
 }
@@ -854,14 +854,22 @@ func (rr *NSEC) String() string {
 func (rr *NSEC) len(off int, compression map[string]struct{}) int {
 	l := rr.Hdr.len(off, compression)
 	l += domainNameLen(rr.NextDomain, off+l, compression, false)
-	lastwindow := uint32(2 ^ 32 + 1)
+	var lastwindow, lastlength uint16
 	for _, t := range rr.TypeBitMap {
 		window := t / 256
-		if uint32(window) != lastwindow {
-			l += 1 + 32
+		length := (t-window*256)/8 + 1
+		if window > lastwindow && lastlength != 0 { // New window, jump to the new offset
+			l += int(lastlength) + 2
+			lastlength = 0
 		}
-		lastwindow = uint32(window)
+		if window < lastwindow || length < lastlength {
+			// packDataNsec would return Error{err: "nsec bits out of order"} here, but
+			// when computing the length, we want do be liberal.
+			continue
+		}
+		lastwindow, lastlength = window, length
 	}
+	l += int(lastlength) + 2
 	return l
 }
 
@@ -1011,8 +1019,8 @@ func (rr *NSEC3) String() string {
 		" " + strconv.Itoa(int(rr.Iterations)) +
 		" " + saltToString(rr.Salt) +
 		" " + rr.NextDomain
-	for i := 0; i < len(rr.TypeBitMap); i++ {
-		s += " " + Type(rr.TypeBitMap[i]).String()
+	for _, t := range rr.TypeBitMap {
+		s += " " + Type(t).String()
 	}
 	return s
 }
@@ -1335,8 +1343,8 @@ type CSYNC struct {
 func (rr *CSYNC) String() string {
 	s := rr.Hdr.String() + strconv.FormatInt(int64(rr.Serial), 10) + " " + strconv.Itoa(int(rr.Flags))
 
-	for i := 0; i < len(rr.TypeBitMap); i++ {
-		s += " " + Type(rr.TypeBitMap[i]).String()
+	for _, t := range rr.TypeBitMap {
+		s += " " + Type(t).String()
 	}
 	return s
 }

@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/tsdb/chunkenc"
@@ -205,6 +206,8 @@ type blockQuerier struct {
 	chunks     ChunkReader
 	tombstones TombstoneReader
 
+	closed bool
+
 	mint, maxt int64
 }
 
@@ -252,13 +255,72 @@ func (q *blockQuerier) LabelValuesFor(string, labels.Label) ([]string, error) {
 }
 
 func (q *blockQuerier) Close() error {
-	var merr tsdb_errors.MultiError
+	if q.closed {
+		return errors.New("block querier already closed")
+	}
 
+	var merr tsdb_errors.MultiError
 	merr.Add(q.index.Close())
 	merr.Add(q.chunks.Close())
 	merr.Add(q.tombstones.Close())
-
+	q.closed = true
 	return merr.Err()
+}
+
+// Bitmap used by func isRegexMetaCharacter to check whether a character needs to be escaped.
+var regexMetaCharacterBytes [16]byte
+
+// isRegexMetaCharacter reports whether byte b needs to be escaped.
+func isRegexMetaCharacter(b byte) bool {
+	return b < utf8.RuneSelf && regexMetaCharacterBytes[b%16]&(1<<(b/16)) != 0
+}
+
+func init() {
+	for _, b := range []byte(`.+*?()|[]{}^$`) {
+		regexMetaCharacterBytes[b%16] |= 1 << (b / 16)
+	}
+}
+
+func findSetMatches(pattern string) []string {
+	// Return empty matches if the wrapper from Prometheus is missing.
+	if len(pattern) < 6 || pattern[:4] != "^(?:" || pattern[len(pattern)-2:] != ")$" {
+		return nil
+	}
+	escaped := false
+	sets := []*strings.Builder{&strings.Builder{}}
+	for i := 4; i < len(pattern)-2; i++ {
+		if escaped {
+			switch {
+			case isRegexMetaCharacter(pattern[i]):
+				sets[len(sets)-1].WriteByte(pattern[i])
+			case pattern[i] == '\\':
+				sets[len(sets)-1].WriteByte('\\')
+			default:
+				return nil
+			}
+			escaped = false
+		} else {
+			switch {
+			case isRegexMetaCharacter(pattern[i]):
+				if pattern[i] == '|' {
+					sets = append(sets, &strings.Builder{})
+				} else {
+					return nil
+				}
+			case pattern[i] == '\\':
+				escaped = true
+			default:
+				sets[len(sets)-1].WriteByte(pattern[i])
+			}
+		}
+	}
+	matches := make([]string, 0, len(sets))
+	for _, s := range sets {
+		if s.Len() > 0 {
+			matches = append(matches, s.String())
+		}
+	}
+	return matches
 }
 
 // PostingsForMatchers assembles a single postings iterator against the index reader
@@ -327,15 +389,6 @@ func PostingsForMatchers(ix IndexReader, ms ...labels.Matcher) (index.Postings, 
 	it := index.Intersect(its...)
 
 	for _, n := range notIts {
-		if _, ok := n.(*index.ListPostings); !ok {
-			// Best to pre-calculate the merged lists via next rather than have a ton
-			// of seeks in Without.
-			pl, err := index.ExpandPostings(n)
-			if err != nil {
-				return nil, err
-			}
-			n = index.NewListPostings(pl)
-		}
 		it = index.Without(it, n)
 	}
 
@@ -348,6 +401,14 @@ func postingsForMatcher(ix IndexReader, m labels.Matcher) (index.Postings, error
 	// Fast-path for equal matching.
 	if em, ok := m.(*labels.EqualMatcher); ok {
 		return ix.Postings(em.Name(), em.Value())
+	}
+
+	// Fast-path for set matching.
+	if em, ok := m.(*labels.RegexpMatcher); ok {
+		setMatches := findSetMatches(em.Value())
+		if len(setMatches) > 0 {
+			return postingsForSetMatcher(ix, em.Name(), setMatches)
+		}
 	}
 
 	tpls, err := ix.LabelValues(m.Name())
@@ -413,6 +474,18 @@ func inversePostingsForMatcher(ix IndexReader, m labels.Matcher) (index.Postings
 	}
 
 	return index.Merge(rit...), nil
+}
+
+func postingsForSetMatcher(ix IndexReader, name string, matches []string) (index.Postings, error) {
+	var its []index.Postings
+	for _, match := range matches {
+		if it, err := ix.Postings(name, match); err == nil {
+			its = append(its, it)
+		} else {
+			return nil, err
+		}
+	}
+	return index.Merge(its...), nil
 }
 
 func mergeStrings(a, b []string) []string {
