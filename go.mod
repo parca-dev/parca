@@ -1,6 +1,6 @@
 module github.com/conprof/conprof
 
-go 1.12
+go 1.13
 
 require (
 	github.com/conprof/tsdb v0.8.1-0.20190522132737-ee822c001f9a

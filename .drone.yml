@@ -1,0 +1,49 @@
+---
+kind: pipeline
+name: build
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  pull: always
+  image: golang:1.13
+  commands:
+  - make
+
+- name: tags
+  image: golang:1.13
+  commands:
+  - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD),latest" > .tags
+  when:
+    branch:
+    - master
+    event:
+    - push
+
+- name: docker
+  image: plugins/docker
+  settings:
+    registry: quay.io
+    repo: quay.io/conprof/conprof
+    password:
+      from_secret: quay_password
+    username:
+      from_secret: quay_username
+  when:
+    branch:
+    - master
+    event:
+    - push
+
+- name: docker-test
+  image: plugins/docker
+  settings:
+    dry_run: true
+    repo: quay.io/conprof/conprof
+  when:
+    branch:
+    event:
+    - pull-request
