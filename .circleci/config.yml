@@ -4,7 +4,7 @@ jobs:
   test:
     docker:
       # Available from https://hub.docker.com/r/circleci/golang/
-      - image: circleci/golang:1.12.7
+      - image: circleci/golang:1.13
     working_directory: /go/src/github.com/conprof/conprof
     environment:
       GO111MODULE: 'on'
@@ -12,7 +12,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-            version: 17.07.0-ce
+            version: 18.06.0-ce
       - run: make
 
   # Cross build is needed for publish_release but needs to be done outside of docker.
@@ -32,14 +32,14 @@ jobs:
   publish_master:
     docker:
       # Available from https://hub.docker.com/r/circleci/golang/
-      - image: circleci/golang:1.12.7
+      - image: circleci/golang:1.13
     working_directory: /go/src/github.com/conprof/conprof
     environment:
       GOBIN: "/go/bin"
     steps:
       - checkout
       - setup_remote_docker:
-          version: 17.07.0-ce
+          version: 18.06.0-ce
       - attach_workspace:
           at: .
       - run: ln -s .build/linux-amd64/conprof conprof
@@ -51,14 +51,14 @@ jobs:
   publish_release:
     docker:
       # Available from https://hub.docker.com/r/circleci/golang/
-      - image: circleci/golang:1.12.5
+      - image: circleci/golang:1.13
     working_directory: /go/src/github.com/conprof/conprof
     environment:
       GOBIN: "/go/bin"
     steps:
       - checkout
       - setup_remote_docker:
-          version: 17.07.0-ce
+          version: 18.06.0-ce
       - attach_workspace:
           at: .
       - run: make tarballs-release
