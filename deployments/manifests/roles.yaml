@@ -3,7 +3,10 @@ items:
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    name: conprof-main
+    labels:
+      app.kubernetes.io/name: conprof
+      app.kubernetes.io/version: v0.1.0-dev
+    name: conprof
     namespace: conprof
   rules:
   - apiGroups:

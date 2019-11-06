@@ -2,26 +2,27 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
-    app: conprof
-  name: conprof-main
+    app.kubernetes.io/name: conprof
+    app.kubernetes.io/version: v0.1.0-dev
+  name: conprof
   namespace: conprof
 spec:
   podManagementPolicy: Parallel
   selector:
     matchLabels:
-      app: conprof
-  serviceName: conprof-main-governing-service
+      app.kubernetes.io/name: conprof
+  serviceName: conprof-governing-service
   template:
     metadata:
       labels:
-        app: conprof
+        app.kubernetes.io/name: conprof
     spec:
       containers:
       - args:
         - all
         - --storage.tsdb.path=/conprof
         - --config.file=/etc/conprof/conprof.yaml
-        image: quay.io/conprof/conprof:v0.1.0-dev
+        image: quay.io/brancz/conprof:v0.1.0-dev
         name: conprof
         ports:
         - containerPort: 8080
@@ -35,7 +36,7 @@ spec:
           readOnly: false
       nodeSelector:
         kubernetes.io/os: linux
-      serviceAccountName: conprof-main
+      serviceAccountName: conprof
       volumes:
       - emptyDir: {}
         name: storage
