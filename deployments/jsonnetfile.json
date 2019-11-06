@@ -1,0 +1,13 @@
+{
+  "dependencies": [
+    {
+      "name": "conprof",
+      "source": {
+        "local": {
+          "directory": "jsonnet/conprof"
+        }
+      },
+      "version": ""
+    }
+  ]
+}
