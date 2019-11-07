@@ -127,7 +127,8 @@ func main() {
 
 		l, err := net.Listen("tcp", *httpBindAddr)
 		if err != nil {
-			runutil.CloseWithLogOnErr(logger, l, "http listener")
+			level.Error(logger).Log("msg", err)
+			os.Exit(1)
 		}
 
 		g.Add(func() error {

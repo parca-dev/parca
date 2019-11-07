@@ -51,7 +51,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			&tsdb.Options{
 				WALSegmentSize:    wal.DefaultSegmentSize,
 				RetentionDuration: uint64(*retention),
-				BlockRanges:       tsdb.ExponentialBlockRanges(int64(2*time.Hour)/1e6, 3, 5),
+				BlockRanges:       append([]int64{int64(10 * time.Minute), int64(1 * time.Hour)}, tsdb.ExponentialBlockRanges(int64(2*time.Hour)/1e6, 3, 5)...),
 				NoLockfile:        true,
 			},
 		)
