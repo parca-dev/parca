@@ -16,6 +16,7 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -40,6 +41,10 @@ func New(logger log.Logger, db *tsdb.DB) *API {
 	}
 }
 
+type LabelNamesResult struct {
+	LabelNames []string `json:"data"`
+}
+
 type QueryResult struct {
 	Series []Series `json:"series"`
 }
@@ -48,6 +53,24 @@ type Series struct {
 	LabelSet        string  `json:"labelset"`
 	LabelSetEncoded string  `json:"labelsetEncoded"`
 	Timestamps      []int64 `json:"timestamps"`
+}
+
+func (a *API) LabelNames(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	q, err := a.db.Querier(math.MinInt64, math.MaxInt64)
+	if err != nil {
+		http.Error(w, "Querier Error", http.StatusInternalServerError)
+	}
+	defer q.Close()
+	names, err := q.LabelNames()
+	if err != nil {
+		http.Error(w, "Querier Error", http.StatusInternalServerError)
+	}
+
+	res := &LabelNamesResult{LabelNames: names}
+	err = json.NewEncoder(w).Encode(res)
+	if err != nil {
+		level.Error(a.logger).Log("msg", "error marshaling json", "err", err)
+	}
 }
 
 func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

@@ -66,6 +66,7 @@ func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB) error {
 	router.GET("/pprof/*remainder", ui.PprofView)
 
 	api := api.New(log.With(logger, "component", "pprofui"), db)
+	router.GET("/api/v1/labels", api.LabelNames)
 	router.GET("/api/v1/query_range", api.QueryRange)
 
 	router.NotFound = http.FileServer(web.Assets)
