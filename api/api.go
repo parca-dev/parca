@@ -25,6 +25,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/julienschmidt/httprouter"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/promql"
 )
@@ -41,8 +42,8 @@ func New(logger log.Logger, db *tsdb.DB) *API {
 	}
 }
 
-type LabelNamesResult struct {
-	LabelNames []string `json:"data"`
+type LabelResult struct {
+	Labels []string `json:"data"`
 }
 
 type QueryResult struct {
@@ -61,12 +62,39 @@ func (a *API) LabelNames(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		http.Error(w, "Querier Error", http.StatusInternalServerError)
 	}
 	defer q.Close()
+
 	names, err := q.LabelNames()
 	if err != nil {
 		http.Error(w, "Querier Error", http.StatusInternalServerError)
 	}
 
-	res := &LabelNamesResult{LabelNames: names}
+	res := &LabelResult{Labels: names}
+	err = json.NewEncoder(w).Encode(res)
+	if err != nil {
+		level.Error(a.logger).Log("msg", "error marshaling json", "err", err)
+	}
+}
+
+func (a *API) LabelValues(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	name := ps.ByName("name")
+	if !model.LabelNameRE.MatchString(name) {
+		level.Error(a.logger).Log("msg", "invalid label name", "name", name)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	q, err := a.db.Querier(math.MinInt64, math.MaxInt64)
+	if err != nil {
+		http.Error(w, "Querier Error", http.StatusInternalServerError)
+	}
+	defer q.Close()
+
+	values, err := q.LabelValues(name)
+	if err != nil {
+		http.Error(w, "Querier Error", http.StatusInternalServerError)
+	}
+
+	res := &LabelResult{Labels: values}
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
 		level.Error(a.logger).Log("msg", "error marshaling json", "err", err)
