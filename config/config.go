@@ -27,9 +27,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	trueValue           = true
-	DefaultScrapeConfig = ScrapeConfig{
+func trueValue() *bool {
+	a := true
+	return &a
+}
+
+func DefaultScrapeConfig() ScrapeConfig {
+	return ScrapeConfig{
 		ScrapeInterval: model.Duration(time.Minute),
 		ScrapeTimeout:  model.Duration(time.Minute),
 		Scheme:         "http",
@@ -37,62 +41,62 @@ var (
 			PprofConfig: &PprofConfig{
 				Allocs: &PprofAllocsConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/allocs",
 					},
 				},
 				Block: &PprofBlockConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/block",
 					},
 				},
 				Cmdline: &PprofCmdlineConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/cmdline",
 					},
 				},
 				Goroutine: &PprofGoroutineConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/goroutine",
 					},
 				},
 				Heap: &PprofHeapConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/heap",
 					},
 				},
 				Mutex: &PprofMutexConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/mutex",
 					},
 				},
 				Profile: &PprofProfileConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/profile",
 					},
 				},
 				Threadcreate: &PprofThreadcreateConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/threadcreate",
 					},
 				},
 				Trace: &PprofTraceConfig{
 					PprofProfilingConfig{
-						Enabled: &trueValue,
+						Enabled: trueValue(),
 						Path:    "/debug/pprof/trace",
 					},
 				},
 			},
 		},
 	}
-)
+}
 
 // Config is the top-level configuration for conprof's config files.
 type Config struct {
@@ -172,7 +176,7 @@ type PprofConfig struct {
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
 func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	*c = DefaultScrapeConfig
+	*c = DefaultScrapeConfig()
 	type plain ScrapeConfig
 	if err := unmarshal((*plain)(c)); err != nil {
 		return err
