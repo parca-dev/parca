@@ -444,7 +444,6 @@ func (sl *scrapeLoop) run(interval, timeout time.Duration, errc chan<- error) {
 	}
 
 	var last time.Time
-	app := sl.appendable.Appender()
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -492,6 +491,7 @@ mainLoop:
 				ls = append(ls, labels.Label{Name: l.Name, Value: l.Value})
 			}
 
+			app := sl.appendable.Appender()
 			_, err := app.Add(ls, timestamp.FromTime(start), buf.Bytes())
 			if err != nil && errc != nil {
 				errc <- err
