@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
+    app.kubernetes.io/instance: conprof
     app.kubernetes.io/name: conprof
     app.kubernetes.io/version: v0.1.0-dev
   name: conprof
@@ -10,12 +11,15 @@ spec:
   podManagementPolicy: Parallel
   selector:
     matchLabels:
+      app.kubernetes.io/instance: conprof
       app.kubernetes.io/name: conprof
-  serviceName: conprof-governing-service
+  serviceName: conprof
   template:
     metadata:
       labels:
+        app.kubernetes.io/instance: conprof
         app.kubernetes.io/name: conprof
+        app.kubernetes.io/version: v0.1.0-dev
     spec:
       containers:
       - args:
