@@ -4,6 +4,7 @@ items:
   kind: RoleBinding
   metadata:
     labels:
+      app.kubernetes.io/instance: conprof
       app.kubernetes.io/name: conprof
       app.kubernetes.io/version: v0.1.0-dev
     name: conprof
