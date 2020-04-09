@@ -5,12 +5,11 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
   local conprof = self,
 
   config:: {
-    name:: error 'must provide name',
-    namespace:: error 'must provide namespace',
-    image:: error 'must provide image',
-    version:: error 'must set version',
-
-    namespaces:: [conprof.config.namespace],
+    name: error 'must provide name',
+    namespace: error 'must provide namespace',
+    image: error 'must provide image',
+    version: error 'must set version',
+    namespaces: [conprof.config.namespace],
 
     commonLabels:: {
       'app.kubernetes.io/name': 'conprof',
@@ -92,9 +91,11 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
 
     local roleList = k3.rbac.v1.roleList;
     roleList.new([newSpecificRole(x) for x in conprof.config.namespaces]),
-  configsecret:
+  secret:
     local secret = k.core.v1.secret;
-    secret.new('conprof-config', { 'conprof.yaml': std.base64(std.manifestYamlDoc(conprof.config.rawconfig)) }) +
+    secret.new('conprof-config', {}).withStringData({
+      'conprof.yaml': std.manifestYamlDoc(conprof.config.rawconfig),
+    }) +
     secret.mixin.metadata.withNamespace(conprof.config.namespace) +
     secret.mixin.metadata.withLabels(conprof.config.commonLabels),
   statefulset:

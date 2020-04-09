@@ -1,13 +1,15 @@
 {
+  "version": 1,
   "dependencies": [
     {
-      "name": "conprof",
       "source": {
         "local": {
           "directory": "jsonnet/conprof"
         }
       },
-      "version": ""
+      "version": "",
+      "name": "conprof"
     }
-  ]
+  ],
+  "legacyImports": true
 }
