@@ -28,6 +28,8 @@ export const queryReducer = (state: Query = initialState, action: Action<any>): 
                 },
                 result: (action as QuerySuccessAction).payload,
             };
+            case ActionType.QUERY_FAILED:
+                return initialState;
     }
     return state;
 };
