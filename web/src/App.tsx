@@ -18,8 +18,7 @@ function Routes() {
 
     return (
         <div className={classes.content}>
-            <Route exact={true} path="/" component={QueryPage} />
-            <Route exact={true} path="/explore" component={QueryPage} />
+            <Route component={QueryPage} />
         </div>
     );
 }
