@@ -1,6 +1,7 @@
 {
   "name": "create-react-app-typescript-redux",
   "version": "2.0.0",
+  "homepage": "./",
   "dependencies": {
     "@material-ui/core": "^3.9.3",
     "@material-ui/icons": "^3.0.2",
