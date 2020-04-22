@@ -26,6 +26,7 @@ export interface Series {
 export enum ActionType {
     QUERY_STARTED,
     QUERY_SUCCESS,
+    QUERY_FAILED,
 }
 
 export interface Action<T> {

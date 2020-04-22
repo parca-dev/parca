@@ -8,7 +8,7 @@ export function executeQuery(query: string, fromTime: moment.Moment, toTime: mom
                 dispatch({ type: ActionType.QUERY_SUCCESS, payload: result });
             })
             .catch(error => {
-                /* show error message */
+                dispatch({ type: ActionType.QUERY_FAILED, payload: error });
             })
     };
 }
