@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: conprof
     app.kubernetes.io/name: conprof
-    app.kubernetes.io/version: v0.1.0-dev
+    app.kubernetes.io/version: master-2020-04-24-66b9527
   name: conprof
   namespace: conprof
 spec:
@@ -19,14 +19,14 @@ spec:
       labels:
         app.kubernetes.io/instance: conprof
         app.kubernetes.io/name: conprof
-        app.kubernetes.io/version: v0.1.0-dev
+        app.kubernetes.io/version: master-2020-04-24-66b9527
     spec:
       containers:
       - args:
         - all
         - --storage.tsdb.path=/conprof
         - --config.file=/etc/conprof/conprof.yaml
-        image: quay.io/brancz/conprof:v0.1.0-dev
+        image: quay.io/conprof/conprof:master-2020-04-24-66b9527
         name: conprof
         ports:
         - containerPort: 8080
