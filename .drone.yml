@@ -9,12 +9,12 @@ platform:
 steps:
 - name: build
   pull: always
-  image: golang:1.13
+  image: golang:1.14
   commands:
   - make
 
 - name: tags
-  image: golang:1.13
+  image: golang:1.14
   commands:
   - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD),latest" > .tags
   when:
