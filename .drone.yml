@@ -58,12 +58,12 @@ platform:
 steps:
 - name: build
   pull: always
-  image: golang:1.13
+  image: golang:1.14
   commands:
   - make
 
 - name: tags
-  image: golang:1.13
+  image: golang:1.14
   commands:
   - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)-linux-arm64,latest-linux-arm64" > .tags
 
@@ -86,12 +86,12 @@ kind: pipeline
 name: manifest
 
 platform:
- os: linux
- arch: amd64
+  os: linux
+  arch: amd64
 
 steps:
 - name: tags
-  image: golang:1.13
+  image: golang:1.14
   commands:
   - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)" > .tags
   - tag=$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD); sed -i "s/TAG/$tag/g" manifest.tmpl
