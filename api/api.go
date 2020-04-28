@@ -16,6 +16,7 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -52,20 +53,20 @@ type Series struct {
 
 func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fromString := r.URL.Query().Get("from")
-	from, err := strconv.Atoi(fromString)
+	from, err := strconv.ParseInt(fromString, 10, 64)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Bad Request, unable to parse from %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
 	toString := r.URL.Query().Get("to")
-	to, err := strconv.Atoi(toString)
+	to, err := strconv.ParseInt(toString, 10, 64)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Bad Request, unable to parse to %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
-	q, err := a.db.Querier(int64(from), int64(to))
+	q, err := a.db.Querier(from, to)
 	if err != nil {
 		level.Error(a.logger).Log("err", err)
 	}
