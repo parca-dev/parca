@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: build
+name: build-amd64
 
 platform:
   os: linux
@@ -16,7 +16,7 @@ steps:
 - name: tags
   image: golang:1.14
   commands:
-  - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD),latest" > .tags
+  - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)-linux-amd64,latest-linux-amd64" > .tags
   when:
     branch:
     - master
@@ -47,3 +47,97 @@ steps:
     branch:
     event:
     - pull-request
+---
+kind: pipeline
+name: build-arm64
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: build
+  pull: always
+  image: golang:1.14
+  commands:
+  - make
+
+- name: tags
+  image: golang:1.14
+  commands:
+  - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)-linux-arm64,latest-linux-arm64" > .tags
+
+- name: docker
+  image: plugins/docker
+  settings:
+    registry: quay.io
+    repo: quay.io/conprof/conprof
+    password:
+      from_secret: quay_password
+    username:
+      from_secret: quay_username
+  when:
+    branch:
+    - master
+    event:
+    - push
+---
+kind: pipeline
+name: manifest
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: tags
+  image: golang:1.14
+  commands:
+  - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)" > .tags
+  - tag=$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD); sed -i "s/TAG/$tag/g" manifest.tmpl
+  when:
+    branch:
+    - master
+    event:
+    - push
+
+- name: manifest
+  image: plugins/manifest
+  settings:
+    password:
+      from_secret: quay_password
+    username:
+      from_secret: quay_username
+    target: quay.io/conprof/conprof:latest
+    template: quay.io/conprof/conprof:latest-OS-ARCH
+    platforms:
+      - linux/amd64
+      - linux/arm64
+  when:
+    branch:
+    - master
+    event:
+    - push
+
+
+- name: manifest-tags
+  image: plugins/manifest
+  settings:
+    dump: true
+    password:
+      from_secret: quay_password
+    username:
+      from_secret: quay_username
+    spec: manifest.tmpl
+    tags:
+      auto: false
+  when:
+    branch:
+    - master
+    event:
+    - push
+
+
+depends_on:
+- build-amd64
+- build-arm64
