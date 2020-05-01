@@ -51,12 +51,6 @@ func DefaultScrapeConfig() ScrapeConfig {
 						Path:    "/debug/pprof/block",
 					},
 				},
-				Cmdline: &PprofCmdlineConfig{
-					PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/cmdline",
-					},
-				},
 				Goroutine: &PprofGoroutineConfig{
 					PprofProfilingConfig{
 						Enabled: trueValue(),
@@ -165,7 +159,6 @@ type ProfilingConfig struct {
 type PprofConfig struct {
 	Allocs       *PprofAllocsConfig       `yaml:"allocs,omitempty"`
 	Block        *PprofBlockConfig        `yaml:"block,omitempty"`
-	Cmdline      *PprofCmdlineConfig      `yaml:"cmdline,omitempty"`
 	Goroutine    *PprofGoroutineConfig    `yaml:"goroutine,omitempty"`
 	Heap         *PprofHeapConfig         `yaml:"heap,omitempty"`
 	Mutex        *PprofMutexConfig        `yaml:"mutex,omitempty"`
@@ -190,10 +183,6 @@ type PprofAllocsConfig struct {
 }
 
 type PprofBlockConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-}
-
-type PprofCmdlineConfig struct {
 	PprofProfilingConfig `yaml:",inline"`
 }
 
