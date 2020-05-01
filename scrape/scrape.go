@@ -340,7 +340,7 @@ func (sp *scrapePool) sync(targets []*Target) {
 
 // A scraper retrieves samples and accepts a status report at the end.
 type scraper interface {
-	scrape(ctx context.Context, w io.Writer) error
+	scrape(ctx context.Context, w io.Writer, scrapeType string) error
 	offset(interval time.Duration) time.Duration
 }
 
@@ -356,7 +356,7 @@ type targetScraper struct {
 
 var userAgentHeader = fmt.Sprintf("conprof/%s", version.Version)
 
-func (s *targetScraper) scrape(ctx context.Context, w io.Writer) error {
+func (s *targetScraper) scrape(ctx context.Context, w io.Writer, scrapeType string) error {
 	if s.req == nil {
 		req, err := http.NewRequest("GET", s.URL().String(), nil)
 		if err != nil {
@@ -378,9 +378,18 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer) error {
 		return fmt.Errorf("server returned HTTP status %s", resp.Status)
 	}
 
-	_, err = profile.Parse(io.TeeReader(resp.Body, w))
-	if err != nil {
-		return errors.Wrap(err, "failed to parse target's pprof profile")
+	switch scrapeType {
+	case ProfileTraceType:
+		_, err := io.Copy(w, resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "failed to write trace profile")
+		}
+
+	default:
+		_, err = profile.Parse(io.TeeReader(resp.Body, w))
+		if err != nil {
+			return errors.Wrap(err, "failed to parse target's pprof profile")
+		}
 	}
 
 	return nil
@@ -473,8 +482,15 @@ mainLoop:
 
 		b := sl.buffers.Get(sl.lastScrapeSize).([]byte)
 		buf := bytes.NewBuffer(b)
+		var scrapeType string
+		for _, l := range sl.target.labels {
+			if l.Name == ProfileType {
+				scrapeType = l.Value
+				break
+			}
+		}
 
-		scrapeErr := sl.scraper.scrape(scrapeCtx, buf)
+		scrapeErr := sl.scraper.scrape(scrapeCtx, buf, scrapeType)
 		cancel()
 
 		if scrapeErr == nil {
