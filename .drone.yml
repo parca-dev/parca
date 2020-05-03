@@ -83,6 +83,40 @@ steps:
     - push
 ---
 kind: pipeline
+name: build-arm
+
+platform:
+  os: linux
+  arch: arm
+
+steps:
+- name: build
+  pull: always
+  image: golang:1.14
+  commands:
+  - make
+
+- name: tags
+  image: golang:1.14
+  commands:
+  - echo -n "$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)-linux-arm,latest-linux-arm" > .tags
+
+- name: docker
+  image: plugins/docker
+  settings:
+    registry: quay.io
+    repo: quay.io/conprof/conprof
+    password:
+      from_secret: quay_password
+    username:
+      from_secret: quay_username
+  when:
+    branch:
+    - master
+    event:
+    - push
+---
+kind: pipeline
 name: manifest
 
 platform:
@@ -141,3 +175,4 @@ steps:
 depends_on:
 - build-amd64
 - build-arm64
+- build-arm
