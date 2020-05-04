@@ -105,16 +105,23 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 		ss, err := q.Select(m...)
 		if err != nil {
 			level.Error(p.logger).Log("err", err)
+			return nil, "", err
 		}
 
-		ss.Next()
+		ok := ss.Next()
+		if !ok {
+			return nil, "", errors.New("could not get series set")
+		}
 		s := ss.At()
 		i := s.Iterator()
 		t, err := stringToInt(timestamp)
 		if err != nil {
 			return nil, "", err
 		}
-		i.Seek(t)
+		ok = i.Seek(t)
+		if !ok {
+			return nil, "", errors.New("could not seek series")
+		}
 		_, buf := i.At()
 		prof, err = profile.Parse(bytes.NewReader(buf))
 		return prof, "", err
