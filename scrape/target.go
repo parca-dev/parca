@@ -231,12 +231,6 @@ func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.La
 	}
 
 	if c.PprofConfig != nil {
-		if c.PprofConfig.Cmdline != nil {
-			add(c.PprofConfig.Cmdline.PprofProfilingConfig)
-		}
-	}
-
-	if c.PprofConfig != nil {
 		if c.PprofConfig.Goroutine != nil {
 			add(c.PprofConfig.Goroutine.PprofProfilingConfig)
 		}
