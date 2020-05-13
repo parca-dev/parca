@@ -38,6 +38,16 @@ check_assets: assets
 		exit 1; \
 	fi
 
+.PHONY: sync
+sync: sync-trace-pkg
+
+.PHONY: sync-trace-pkg
+sync-trace-pkg:
+	mkdir tmp && cd tmp && git clone https://github.com/golang/go.git && cd ../
+	cp -r tmp/go/src/internal/trace internal/trace 
+	rm -rf tmp
+	echo "#IMPORTANT DO NOT EDIT! This code is synced from go repository. Use make sync to update it." > internal/trace/README.md
+
 # crossbuild builds all binaries for all platforms.
 .PHONY: crossbuild
 crossbuild: $(PROMU)
