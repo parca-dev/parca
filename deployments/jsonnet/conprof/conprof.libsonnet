@@ -189,6 +189,25 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
       configmap.mixin.metadata.withNamespace(conprof.config.namespace) +
       configmap.mixin.metadata.withLabels(conprof.config.commonLabels),
 
+    statefulset+: {
+      spec+: {
+        template+: {
+          spec+: {
+            volumes:
+              std.map(
+                function(v) if v.name == 'config' then v {
+                  secret:: null,
+                  configMap: {
+                    name: conprof.configmap.metadata.name,
+                  },
+                } else v,
+                super.volumes
+              ),
+          },
+        },
+      },
+    },
+
     secret:: null,
   },
 }
