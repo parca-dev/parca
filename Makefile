@@ -13,6 +13,7 @@
 
 # Needs to be defined before including Makefile.common to auto-generate targets
 DOCKER_ARCHS ?= amd64 armv7 arm64
+GOLANGCI_LINT_OPTS = --skip-dirs internal
 
 include Makefile.common
 
@@ -36,6 +37,16 @@ check_assets: assets
 		echo "Run 'make assets' and commit the changes to fix the error."; \
 		exit 1; \
 	fi
+
+.PHONY: sync
+sync: sync-trace-pkg
+
+.PHONY: sync-trace-pkg
+sync-trace-pkg:
+	mkdir tmp && cd tmp && git clone https://github.com/golang/go.git && cd ../
+	cp -r tmp/go/src/internal/trace internal/trace 
+	rm -rf tmp
+	echo "#IMPORTANT DO NOT EDIT! This code is synced from go repository. Use make sync to update it." > internal/trace/README.md
 
 # crossbuild builds all binaries for all platforms.
 .PHONY: crossbuild
