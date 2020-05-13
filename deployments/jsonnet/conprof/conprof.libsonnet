@@ -177,4 +177,18 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
       },
     },
   },
+
+  withConfigMap:: {
+    local conprof = self,
+
+    configmap:
+      local configmap = k.core.v1.configMap;
+      configmap.new('conprof-config', {}).withData({
+        'conprof.yaml': std.manifestYamlDoc(conprof.config.rawconfig),
+      }) +
+      configmap.mixin.metadata.withNamespace(conprof.config.namespace) +
+      configmap.mixin.metadata.withLabels(conprof.config.commonLabels),
+
+    secret:: null,
+  },
 }
