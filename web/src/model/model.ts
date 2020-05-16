@@ -17,8 +17,12 @@ export interface QueryResult {
     series: Series[];
 }
 
+export interface Labels {
+  [key: string]: string;
+}
+
 export interface Series {
-    labelset: string;
+    labels: Labels;
     labelsetEncoded: string;
     timestamps: number[];
 }

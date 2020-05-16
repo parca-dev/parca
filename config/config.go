@@ -70,10 +70,11 @@ func DefaultScrapeConfig() ScrapeConfig {
 					},
 				},
 				Profile: &PprofProfileConfig{
-					PprofProfilingConfig{
+					PprofProfilingConfig: PprofProfilingConfig{
 						Enabled: trueValue(),
 						Path:    "/debug/pprof/profile",
 					},
+					Seconds: 30, // By default Go collects 30s profile.
 				},
 				Threadcreate: &PprofThreadcreateConfig{
 					PprofProfilingConfig{
@@ -82,10 +83,11 @@ func DefaultScrapeConfig() ScrapeConfig {
 					},
 				},
 				Trace: &PprofTraceConfig{
-					PprofProfilingConfig{
+					PprofProfilingConfig: PprofProfilingConfig{
 						Enabled: trueValue(),
 						Path:    "/debug/pprof/trace",
 					},
+					Seconds: 1, // By default Go collects 1s trace.
 				},
 			},
 		},
@@ -200,6 +202,7 @@ type PprofMutexConfig struct {
 
 type PprofProfileConfig struct {
 	PprofProfilingConfig `yaml:",inline"`
+	Seconds              int `yaml:"seconds"`
 }
 
 type PprofThreadcreateConfig struct {
@@ -208,6 +211,7 @@ type PprofThreadcreateConfig struct {
 
 type PprofTraceConfig struct {
 	PprofProfilingConfig `yaml:",inline"`
+	Seconds              int `yaml:"seconds"`
 }
 
 type PprofProfilingConfig struct {

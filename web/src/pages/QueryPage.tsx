@@ -86,6 +86,18 @@ function renderTooltip(props: any) {
     return null;
 }
 
+function formatLabels(labels: { [key: string]: string }) {
+    let tsName = (labels.__name__ || '') + '{';
+    const labelStrings: string[] = [];
+    for (const label in labels) {
+        if (label !== '__name__') {
+            labelStrings.push(label + '="' + labels[label] + '"');
+        }
+    }
+    tsName += labelStrings.join(', ') + '}';
+    return tsName;
+};
+
 function openProfile(props: any) {
     const { payload } = props;
     console.log(props);
@@ -239,7 +251,7 @@ class QueryPage extends React.Component<Props, State> {
                     return (
                     <Grid key={series.labelsetEncoded} item xs={8}>
                         <Paper className={classes.paper}>
-                            <div className={classes.labelSet}>{series.labelset}</div>
+                            <div className={classes.labelSet}>{formatLabels(series.labels)}</div>
                             <div style={{ width: '100%', height: 70 }}>
                                 <ResponsiveContainer>
                                     <ScatterChart height={60} margin={{top: 10, right: 0, bottom: 0, left: 0}}>

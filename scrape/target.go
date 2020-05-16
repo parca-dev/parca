@@ -19,6 +19,7 @@ import (
 	"hash/fnv"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -208,11 +209,11 @@ func (t *Target) Health() TargetHealth {
 // ForProfiles
 func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.Labels {
 	res := []labels.Labels{}
-	add := func(cfgs ...config.PprofProfilingConfig) {
+	add := func(profileType string, cfgs ...config.PprofProfilingConfig) {
 		for _, p := range cfgs {
 			if *p.Enabled {
 				l := lset.Copy()
-				l = append(l, labels.Label{Name: ProfilePath, Value: p.Path})
+				l = append(l, labels.Label{Name: ProfilePath, Value: p.Path}, labels.Label{Name: ProfileName, Value: profileType})
 				res = append(res, l)
 			}
 		}
@@ -220,49 +221,49 @@ func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.La
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Allocs != nil {
-			add(c.PprofConfig.Allocs.PprofProfilingConfig)
+			add(ProfileAllocsType, c.PprofConfig.Allocs.PprofProfilingConfig)
 		}
 	}
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Block != nil {
-			add(c.PprofConfig.Block.PprofProfilingConfig)
+			add(ProfileBlockType, c.PprofConfig.Block.PprofProfilingConfig)
 		}
 	}
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Goroutine != nil {
-			add(c.PprofConfig.Goroutine.PprofProfilingConfig)
+			add(ProfileGoroutineType, c.PprofConfig.Goroutine.PprofProfilingConfig)
 		}
 	}
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Heap != nil {
-			add(c.PprofConfig.Heap.PprofProfilingConfig)
+			add(ProfileGoroutineType, c.PprofConfig.Heap.PprofProfilingConfig)
 		}
 	}
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Mutex != nil {
-			add(c.PprofConfig.Mutex.PprofProfilingConfig)
+			add(ProfileMutexType, c.PprofConfig.Mutex.PprofProfilingConfig)
 		}
 	}
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Profile != nil {
-			add(c.PprofConfig.Profile.PprofProfilingConfig)
+			add(ProfileProfileType, c.PprofConfig.Profile.PprofProfilingConfig)
 		}
 	}
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Threadcreate != nil {
-			add(c.PprofConfig.Threadcreate.PprofProfilingConfig)
+			add(ProfileThreadCreateType, c.PprofConfig.Threadcreate.PprofProfilingConfig)
 		}
 	}
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Trace != nil {
-			add(c.PprofConfig.Trace.PprofProfilingConfig)
+			add(ProfileTraceType, c.PprofConfig.Trace.PprofProfilingConfig)
 		}
 	}
 
@@ -277,7 +278,16 @@ func (ts Targets) Less(i, j int) bool { return ts[i].URL().String() < ts[j].URL(
 func (ts Targets) Swap(i, j int)      { ts[i], ts[j] = ts[j], ts[i] }
 
 const (
-	ProfilePath = "profile_path"
+	ProfilePath             = "profile_path"
+	ProfileName             = "__name__"
+	ProfileAllocsType       = "allocs"
+	ProfileBlockType        = "block"
+	ProfileGoroutineType    = "goroutine"
+	ProfileHeapType         = "heap"
+	ProfileMutexType        = "mutex"
+	ProfileProfileType      = "profile"
+	ProfileThreadCreateType = "threadcreate"
+	ProfileTraceType        = "trace"
 )
 
 // populateLabels builds a label set from the given label set and scrape configuration.
@@ -395,11 +405,31 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 		lsets := LabelsByProfiles(lset, cfg.ProfilingConfig)
 
 		for _, lset := range lsets {
+			var profType string
+			for _, label := range lset {
+				if label.Name == ProfileName {
+					profType = label.Value
+				}
+			}
 			lbls, origLabels, err := populateLabels(lset, cfg)
 			if err != nil {
 				return nil, fmt.Errorf("instance %d in group %s: %s", i, tg, err)
 			}
 			if lbls != nil || origLabels != nil {
+				params := cfg.Params
+				switch profType {
+				case ProfileTraceType:
+					if params == nil {
+						params = url.Values{}
+					}
+					params.Add("seconds", strconv.Itoa(cfg.ProfilingConfig.PprofConfig.Trace.Seconds))
+				case ProfileProfileType:
+					if params == nil {
+						params = url.Values{}
+					}
+					params.Add("seconds", strconv.Itoa(cfg.ProfilingConfig.PprofConfig.Profile.Seconds))
+				}
+
 				targets = append(targets, NewTarget(lbls, origLabels, cfg.Params))
 			}
 		}
