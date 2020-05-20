@@ -17,13 +17,12 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"runtime"
 	"syscall"
-
-	"net/http/pprof"
 
 	"github.com/conprof/conprof/pkg/runutil"
 	"github.com/go-kit/kit/log"

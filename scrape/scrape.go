@@ -18,23 +18,24 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/conprof/conprof/config"
+	"github.com/conprof/conprof/internal/trace"
+	"github.com/conprof/tsdb/labels"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
-	"golang.org/x/net/context/ctxhttp"
-
-	"github.com/conprof/conprof/config"
-	"github.com/conprof/tsdb/labels"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/pool"
 	"github.com/prometheus/prometheus/pkg/timestamp"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 var (
@@ -320,7 +321,6 @@ func (sp *scrapePool) sync(targets []*Target) {
 		if _, ok := uniqueTargets[hash]; !ok {
 			wg.Add(1)
 			go func(l loop) {
-
 				l.stop()
 
 				wg.Done()
@@ -340,7 +340,7 @@ func (sp *scrapePool) sync(targets []*Target) {
 
 // A scraper retrieves samples and accepts a status report at the end.
 type scraper interface {
-	scrape(ctx context.Context, w io.Writer) error
+	scrape(ctx context.Context, w io.Writer, profileType string) error
 	offset(interval time.Duration) time.Duration
 }
 
@@ -356,7 +356,7 @@ type targetScraper struct {
 
 var userAgentHeader = fmt.Sprintf("conprof/%s", version.Version)
 
-func (s *targetScraper) scrape(ctx context.Context, w io.Writer) error {
+func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType string) error {
 	if s.req == nil {
 		req, err := http.NewRequest("GET", s.URL().String(), nil)
 		if err != nil {
@@ -378,9 +378,24 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer) error {
 		return fmt.Errorf("server returned HTTP status %s", resp.Status)
 	}
 
-	_, err = profile.Parse(io.TeeReader(resp.Body, w))
-	if err != nil {
-		return errors.Wrap(err, "failed to parse target's pprof profile")
+	switch profileType {
+	case ProfileTraceType:
+		// This is needed as trace.Parse fails with obscure error
+		// when you pass resp.Body
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "failed to read body")
+		}
+		_, err = trace.Parse(io.TeeReader(bytes.NewBuffer(b), w), "")
+		if err != nil {
+			return errors.Wrap(err, "failed to parse target's trace profile")
+		}
+
+	default:
+		_, err = profile.Parse(io.TeeReader(resp.Body, w))
+		if err != nil {
+			return errors.Wrap(err, "failed to parse target's pprof profile")
+		}
 	}
 
 	return nil
@@ -474,7 +489,15 @@ mainLoop:
 		b := sl.buffers.Get(sl.lastScrapeSize).([]byte)
 		buf := bytes.NewBuffer(b)
 
-		scrapeErr := sl.scraper.scrape(scrapeCtx, buf)
+		var profileType string
+		for _, l := range sl.target.labels {
+			if l.Name == ProfileName {
+				profileType = l.Value
+				break
+			}
+		}
+
+		scrapeErr := sl.scraper.scrape(scrapeCtx, buf, profileType)
 		cancel()
 
 		if scrapeErr == nil {

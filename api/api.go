@@ -46,9 +46,9 @@ type QueryResult struct {
 }
 
 type Series struct {
-	LabelSet        string  `json:"labelset"`
-	LabelSetEncoded string  `json:"labelsetEncoded"`
-	Timestamps      []int64 `json:"timestamps"`
+	Labels          map[string]string `json:"labels"`
+	LabelSetEncoded string            `json:"labelsetEncoded"`
+	Timestamps      []int64           `json:"timestamps"`
 }
 
 func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -95,13 +95,15 @@ func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		series := seriesSet.At()
 		ls := series.Labels()
 		filteredLabels := tsdbLabels.Labels{}
+		m := make(map[string]string)
 		for _, l := range ls {
 			if l.Name != "" {
 				filteredLabels = append(filteredLabels, l)
+				m[l.Name] = l.Value
 			}
 		}
 
-		resSeries := Series{LabelSet: filteredLabels.String(), LabelSetEncoded: base64.URLEncoding.EncodeToString([]byte(filteredLabels.String()))}
+		resSeries := Series{Labels: m, LabelSetEncoded: base64.URLEncoding.EncodeToString([]byte(filteredLabels.String()))}
 		i := series.Iterator()
 		for i.Next() {
 			t, _ := i.At()
