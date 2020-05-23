@@ -1,5 +1,6 @@
 JSONNET_FMT := jsonnetfmt -n 2 --max-blank-lines 2 --string-style s --comment-style s
 
+.PHONY: manifests
 manifests: $(shell find . -name 'vendor' -prune -o -name '*.libsonnet' -print -o -name '*.jsonnet' -print)
 	rm -rf manifests
 	mkdir manifests
