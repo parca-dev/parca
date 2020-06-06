@@ -8,15 +8,6 @@
         }
       },
       "version": ""
-    },
-    {
-      "source": {
-        "git": {
-          "remote": "https://github.com/ksonnet/ksonnet-lib",
-          "subdir": "ksonnet.beta.4"
-        }
-      },
-      "version": "master"
     }
   ],
   "legacyImports": true
