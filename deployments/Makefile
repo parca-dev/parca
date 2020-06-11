@@ -2,7 +2,7 @@ JSONNET_FMT := jsonnetfmt -n 2 --max-blank-lines 2 --string-style s --comment-st
 
 .PHONY: vendor
 vendor:
-	jb install ./jsonnet/conprof/
+	jb install
 
 .PHONY: manifests
 manifests: vendor $(shell find . -name 'vendor' -prune -o -name '*.libsonnet' -print -o -name '*.jsonnet' -print)
