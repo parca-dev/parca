@@ -64,6 +64,7 @@ func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB) error {
 	router.RedirectTrailingSlash = false
 
 	router.GET("/pprof/*remainder", ui.PprofView)
+	router.GET("/download/*remainder", ui.PprofDownload)
 
 	api := api.New(log.With(logger, "component", "pprofui"), db)
 	router.GET("/api/v1/query_range", api.QueryRange)

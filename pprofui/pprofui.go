@@ -60,6 +60,34 @@ func parsePath(reqPath string) (series string, timestamp string, remainingPath s
 	return parts[0], parts[1], strings.Join(parts[2:], "/")
 }
 
+func (p *pprofUI) selectProfile(m labels.Selector, timestamp int64) ([]byte, error) {
+	q, err := p.db.Querier(0, math.MaxInt64)
+	if err != nil {
+		level.Error(p.logger).Log("err", err)
+		return nil, err
+	}
+
+	ss, err := q.Select(m...)
+	if err != nil {
+		level.Error(p.logger).Log("err", err)
+		return nil, err
+	}
+
+	ok := ss.Next()
+	if !ok {
+		return nil, errors.New("could not get series set")
+	}
+	s := ss.At()
+	i := s.Iterator()
+	ok = i.Seek(timestamp)
+	if !ok {
+		return nil, errors.New("could not get series set")
+	}
+	_, buf := i.At()
+
+	return buf, nil
+}
+
 func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	series, timestamp, remainingPath := parsePath(r.URL.Path)
 	if !strings.HasPrefix(remainingPath, "/") {
@@ -68,21 +96,28 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 	level.Debug(p.logger).Log("msg", "parsed path", "series", series, "timestamp", timestamp, "remainingPath", remainingPath)
 	decodedSeriesName, err := base64.URLEncoding.DecodeString(series)
 	if err != nil {
-		msg := fmt.Sprintf("could not decode series name: %s", err)
-		http.Error(w, msg, http.StatusNotFound)
+		msg := fmt.Sprintf("could not decode series name: %s with error %v", series, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	seriesLabelsString := string(decodedSeriesName)
 	seriesLabels, err := promql.ParseMetricSelector(seriesLabelsString)
 	if err != nil {
 		msg := fmt.Sprintf("failed to parse series labels %v with error %v", seriesLabelsString, err)
-		http.Error(w, msg, http.StatusNotFound)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	m := make(labels.Selector, len(seriesLabels))
 	for i, l := range seriesLabels {
 		m[i] = labels.NewEqualMatcher(l.Name, l.Value)
+	}
+
+	t, err := stringToInt(timestamp)
+	if err != nil {
+		msg := fmt.Sprintf("failed to parse timestamp %s with error %v", timestamp, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
 	}
 
 	server := func(args *driver.HTTPServerArgs) error {
@@ -97,32 +132,10 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 	storageFetcher := func(_ string, _, _ time.Duration) (*profile.Profile, string, error) {
 		var prof *profile.Profile
 
-		q, err := p.db.Querier(0, math.MaxInt64)
+		buf, err := p.selectProfile(m, t)
 		if err != nil {
-			level.Error(p.logger).Log("err", err)
+			return prof, "", err
 		}
-
-		ss, err := q.Select(m...)
-		if err != nil {
-			level.Error(p.logger).Log("err", err)
-			return nil, "", err
-		}
-
-		ok := ss.Next()
-		if !ok {
-			return nil, "", errors.New("could not get series set")
-		}
-		s := ss.At()
-		i := s.Iterator()
-		t, err := stringToInt(timestamp)
-		if err != nil {
-			return nil, "", err
-		}
-		ok = i.Seek(t)
-		if !ok {
-			return nil, "", errors.New("could not seek series")
-		}
-		_, buf := i.At()
 		prof, err = profile.Parse(bytes.NewReader(buf))
 		return prof, "", err
 	}
@@ -150,6 +163,52 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 }
 
+func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	parts := strings.Split(path.Clean(strings.TrimPrefix(r.URL.Path, "/download/")), "/")
+	if len(parts) < 2 {
+		msg := fmt.Sprintf("don't have enough parameters")
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	series, timestamp := parts[0], parts[1]
+	level.Debug(p.logger).Log("msg", "parsed path", "series", series, "timestamp", timestamp)
+	decodedSeriesName, err := base64.URLEncoding.DecodeString(series)
+	if err != nil {
+		msg := fmt.Sprintf("could not decode series name: %s", err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	seriesLabelsString := string(decodedSeriesName)
+	seriesLabels, err := promql.ParseMetricSelector(seriesLabelsString)
+	if err != nil {
+		msg := fmt.Sprintf("failed to parse series labels %v with error %v", seriesLabelsString, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	m := make(labels.Selector, len(seriesLabels))
+	for i, l := range seriesLabels {
+		m[i] = labels.NewEqualMatcher(l.Name, l.Value)
+	}
+
+	t, err := stringToInt(timestamp)
+	if err != nil {
+		msg := fmt.Sprintf("failed to parse timestamp %s with error %v", timestamp, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	buf, err := p.selectProfile(m, t)
+	if err != nil {
+		msg := fmt.Sprintf("failed to select profile with error %v", err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=profile")
+	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
+	w.Write(buf)
+}
+
 type fetcherFn func(_ string, _, _ time.Duration) (*profile.Profile, string, error)
 
 func (f fetcherFn) Fetch(s string, d, t time.Duration) (*profile.Profile, string, error) {
@@ -158,5 +217,5 @@ func (f fetcherFn) Fetch(s string, d, t time.Duration) (*profile.Profile, string
 
 func stringToInt(s string) (int64, error) {
 	i, err := strconv.ParseInt(s, 10, 64)
-	return int64(i), err
+	return i, err
 }
