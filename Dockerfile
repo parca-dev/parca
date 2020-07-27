@@ -1,16 +1,15 @@
-FROM alpine:3.9
+FROM alpine:3.11
 
-RUN apk add --no-cache graphviz
+WORKDIR /cronprof
 
 COPY conprof                  /bin/conprof
 COPY examples/conprof.yaml    /etc/conprof/config.yaml
 
-RUN mkdir -p /conprof && \
-    chown -R nobody:nogroup etc/conprof /conprof
+RUN apk add --no-cache graphviz \
+&& chown -R nobody:nogroup etc/conprof /conprof
 
 USER       nobody
 EXPOSE     8080
-WORKDIR    /conprof
 ENTRYPOINT [ "/bin/conprof" ]
 CMD        [ "all", \
              "--storage.tsdb.path=/conprof", \
