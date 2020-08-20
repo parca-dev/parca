@@ -8,7 +8,7 @@
     "@material-ui/styles": "^3.0.0-alpha.10",
     "@types/recharts": "^1.1.16",
     "axios": "^0.18.0",
-    "bcrypt": "^4.0.1",
+    "bcrypt": "^5.0.0",
     "moment": "^2.24.0",
     "node-pre-gyp": "^0.14.0",
     "react": "^16.8.6",
