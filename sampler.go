@@ -34,7 +34,7 @@ import (
 )
 
 // registerSampler registers a sampler command.
-func registerSampler(m map[string]setupFunc, app *kingpin.Application, name string) {
+func registerSampler(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
 	cmd := app.Command(name, "Run a sampler, that appends profiles to a configured storage.")
 
 	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
@@ -58,12 +58,12 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		if err != nil {
 			return err
 		}
-		return runSampler(g, logger, db, *configFile)
+		return runSampler(g, logger, db, *configFile, reloadCh)
 	}
 }
 
-func runSampler(g *run.Group, logger log.Logger, db *tsdb.DB, configFile string) error {
-	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
+func runSampler(g *run.Group, logger log.Logger, db *tsdb.DB, configFile string, reloadCh chan struct{}) error {
+	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db, reloadCh)
 	cfg, err := config.LoadFile(configFile)
 	if err != nil {
 		return fmt.Errorf("could not load config: %v", err)

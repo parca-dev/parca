@@ -63,9 +63,10 @@ func main() {
 		Default(":8080").String()
 
 	cmds := map[string]setupFunc{}
-	registerSampler(cmds, app, "sampler")
-	registerWeb(cmds, app, "web")
-	registerAll(cmds, app, "all")
+	reloadCh := make(chan struct{}, 1)
+	registerSampler(cmds, app, "sampler", reloadCh)
+	registerWeb(cmds, app, "web", reloadCh)
+	registerAll(cmds, app, "all", reloadCh)
 
 	cmd, err := app.Parse(os.Args[1:])
 	if err != nil {
