@@ -28,7 +28,7 @@ import (
 )
 
 // registerAll registers the all command.
-func registerAll(m map[string]setupFunc, app *kingpin.Application, name string) {
+func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
 	cmd := app.Command(name, "All in one command.")
 
 	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
@@ -38,7 +38,7 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string) 
 	retention := modelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
-		return runAll(g, mux, logger, *storagePath, *configFile, *retention)
+		return runAll(g, mux, logger, *storagePath, *configFile, *retention, reloadCh)
 	}
 }
 
@@ -49,7 +49,7 @@ func modelDuration(flags *kingpin.FlagClause) *model.Duration {
 	return value
 }
 
-func runAll(g *run.Group, mux *http.ServeMux, logger log.Logger, storagePath, configFile string, retention model.Duration) error {
+func runAll(g *run.Group, mux *http.ServeMux, logger log.Logger, storagePath, configFile string, retention model.Duration, reloadCh chan struct{}) error {
 	db, err := tsdb.Open(
 		storagePath,
 		logger,
@@ -65,12 +65,12 @@ func runAll(g *run.Group, mux *http.ServeMux, logger log.Logger, storagePath, co
 		return err
 	}
 
-	err = runSampler(g, logger, db, configFile)
+	err = runSampler(g, logger, db, configFile, reloadCh)
 	if err != nil {
 		return err
 	}
 
-	err = runWeb(mux, logger, db)
+	err = runWeb(mux, logger, db, reloadCh)
 	if err != nil {
 		return err
 	}

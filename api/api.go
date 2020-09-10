@@ -30,14 +30,16 @@ import (
 )
 
 type API struct {
-	logger log.Logger
-	db     *tsdb.DB
+	logger   log.Logger
+	db       *tsdb.DB
+	reloadCh chan struct{}
 }
 
-func New(logger log.Logger, db *tsdb.DB) *API {
+func New(logger log.Logger, db *tsdb.DB, reloadCh chan struct{}) *API {
 	return &API{
-		logger: logger,
-		db:     db,
+		logger:   logger,
+		db:       db,
+		reloadCh: reloadCh,
 	}
 }
 
@@ -146,4 +148,8 @@ func convertMatcher(m *labels.Matcher) tsdbLabels.Matcher {
 		return tsdbLabels.Not(res)
 	}
 	panic("storage.convertMatcher: invalid matcher type")
+}
+
+func (a *API) Reload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	a.reloadCh <- struct{}{}
 }

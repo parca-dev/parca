@@ -31,7 +31,7 @@ import (
 )
 
 // registerSampler registers a sampler command.
-func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string) {
+func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
 	cmd := app.Command(name, "Run a web interface to view profiles from a storage.")
 
 	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
@@ -53,11 +53,11 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string) 
 		if err != nil {
 			return err
 		}
-		return runWeb(mux, logger, db)
+		return runWeb(mux, logger, db, reloadCh)
 	}
 }
 
-func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB) error {
+func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB, reloadCh chan struct{}) error {
 	ui := pprofui.New(log.With(logger, "component", "pprofui"), db)
 
 	router := httprouter.New()
@@ -66,7 +66,9 @@ func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB) error {
 	router.GET("/pprof/*remainder", ui.PprofView)
 	router.GET("/download/*remainder", ui.PprofDownload)
 
-	api := api.New(log.With(logger, "component", "pprofui"), db)
+	api := api.New(log.With(logger, "component", "pprofui"), db, reloadCh)
+
+	router.GET("/-/reload", api.Reload)
 	router.GET("/api/v1/query_range", api.QueryRange)
 
 	router.NotFound = http.FileServer(web.Assets)
