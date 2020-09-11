@@ -32,7 +32,7 @@ type Appendable interface {
 }
 
 // NewManager is the Manager constructor
-func NewManager(logger log.Logger, app Appendable, reloadCh chan struct{}) *Manager {
+func NewManager(logger log.Logger, app Appendable) *Manager {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -42,7 +42,7 @@ func NewManager(logger log.Logger, app Appendable, reloadCh chan struct{}) *Mana
 		scrapeConfigs: make(map[string]*config.ScrapeConfig),
 		scrapePools:   make(map[string]*scrapePool),
 		graceShut:     make(chan struct{}),
-		triggerReload: reloadCh,
+		triggerReload: make(chan struct{}),
 	}
 }
 
@@ -103,7 +103,7 @@ func (m *Manager) reloader() {
 func (m *Manager) reload() {
 	m.mtxScrape.Lock()
 	var wg sync.WaitGroup
-	level.Info(m.logger).Log("msg", "Reloading configuration")
+	level.Debug(m.logger).Log("msg", "Reloading scrape manager")
 	for setName, groups := range m.targetSets {
 		var sp *scrapePool
 		existing, ok := m.scrapePools[setName]
