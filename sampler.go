@@ -62,8 +62,30 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 	}
 }
 
+func getScrapeConfigs(cfg *config.Config) map[string]sd_config.ServiceDiscoveryConfig {
+	c := make(map[string]sd_config.ServiceDiscoveryConfig)
+	for _, v := range cfg.ScrapeConfigs {
+		c[v.JobName] = v.ServiceDiscoveryConfig
+	}
+	return c
+}
+
+func managerReloader(logger log.Logger, reloadCh chan struct{}, d *discovery.Manager, s *scrape.Manager, configFile string) {
+	for {
+		<-reloadCh
+		level.Info(logger).Log("msg", "Reloading configuration")
+		cfg, err := config.LoadFile(configFile)
+		if err != nil {
+			level.Error(logger).Log("could not load config: %v", err)
+		}
+
+		d.ApplyConfig(getScrapeConfigs(cfg))
+		s.ApplyConfig(cfg)
+	}
+}
+
 func runSampler(g *run.Group, logger log.Logger, db *tsdb.DB, configFile string, reloadCh chan struct{}) error {
-	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db, reloadCh)
+	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
 	cfg, err := config.LoadFile(configFile)
 	if err != nil {
 		return fmt.Errorf("could not load config: %v", err)
@@ -74,13 +96,9 @@ func runSampler(g *run.Group, logger log.Logger, db *tsdb.DB, configFile string,
 	ctxScrape, cancelScrape := context.WithCancel(context.Background())
 	discoveryManagerScrape = discovery.NewManager(ctxScrape, log.With(logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
 
+	go managerReloader(logger, reloadCh, discoveryManagerScrape, scrapeManager, configFile)
 	{
-
-		c := make(map[string]sd_config.ServiceDiscoveryConfig)
-		for _, v := range cfg.ScrapeConfigs {
-			c[v.JobName] = v.ServiceDiscoveryConfig
-		}
-		err := discoveryManagerScrape.ApplyConfig(c)
+		err := discoveryManagerScrape.ApplyConfig(getScrapeConfigs(cfg))
 		if err != nil {
 			level.Error(logger).Log("msg", err)
 			cancelScrape()
