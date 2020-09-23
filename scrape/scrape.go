@@ -25,14 +25,15 @@ import (
 
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/internal/trace"
-	"github.com/conprof/tsdb/labels"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
+	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/pool"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"golang.org/x/net/context/ctxhttp"
@@ -131,7 +132,7 @@ func newScrapePool(cfg *config.ScrapeConfig, app Appendable, logger log.Logger) 
 		logger = log.NewNopLogger()
 	}
 
-	client, err := config.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName)
+	client, err := commonconfig.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName, false, false)
 	if err != nil {
 		// Any errors that could occur here should be caught during config validation.
 		level.Error(logger).Log("msg", "Error creating HTTP client", "err", err)
@@ -211,7 +212,7 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) {
 	sp.mtx.Lock()
 	defer sp.mtx.Unlock()
 
-	client, err := config.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName)
+	client, err := commonconfig.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName, false, false)
 	if err != nil {
 		// Any errors that could occur here should be caught during config validation.
 		level.Error(sp.logger).Log("msg", "Error creating HTTP client", "err", err)
@@ -514,7 +515,7 @@ mainLoop:
 				ls = append(ls, labels.Label{Name: l.Name, Value: l.Value})
 			}
 
-			app := sl.appendable.Appender()
+			app := sl.appendable.Appender(scrapeCtx)
 			_, err := app.Add(ls, timestamp.FromTime(start), buf.Bytes())
 			if err != nil && errc != nil {
 				errc <- err

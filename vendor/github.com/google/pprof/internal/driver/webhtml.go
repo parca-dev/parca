@@ -14,10 +14,12 @@
 
 package driver
 
-import "html/template"
+import (
+	"html/template"
 
-import "github.com/google/pprof/third_party/d3"
-import "github.com/google/pprof/third_party/d3flamegraph"
+	"github.com/google/pprof/third_party/d3"
+	"github.com/google/pprof/third_party/d3flamegraph"
+)
 
 // addTemplates adds a set of template definitions to templates.
 func addTemplates(templates *template.Template) {
@@ -91,7 +93,7 @@ a {
   text-align: left;
 }
 .header input {
-  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' style='pointer-events:none;display:block;width:100%25;height:100%25;fill:#757575'%3E%3Cpath d='M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat 4px center/20px 20px;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' style='pointer-events:none;display:block;width:100%25;height:100%25;fill:%23757575'%3E%3Cpath d='M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat 4px center/20px 20px;
   border: 1px solid #d1d2d3;
   border-radius: 2px 0 0 2px;
   padding: 0.25em;
@@ -164,6 +166,73 @@ a {
   color: gray;
   pointer-events: none;
 }
+.menu-check-mark {
+  position: absolute;
+  left: 2px;
+}
+.menu-delete-btn {
+  position: absolute;
+  right: 2px;
+}
+
+{{/* Used to disable events when a modal dialog is displayed */}}
+#dialog-overlay {
+  display: none;
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(1,1,1,0.1);
+}
+
+.dialog {
+  {{/* Displayed centered horizontally near the top */}}
+  display: none;
+  position: fixed;
+  margin: 0px;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  z-index: 3;
+  font-size: 125%;
+  background-color: #ffffff;
+  box-shadow: 0 1px 5px rgba(0,0,0,.3);
+}
+.dialog-header {
+  font-size: 120%;
+  border-bottom: 1px solid #CCCCCC;
+  width: 100%;
+  text-align: center;
+  background: #EEEEEE;
+  user-select: none;
+}
+.dialog-footer {
+  border-top: 1px solid #CCCCCC;
+  width: 100%;
+  text-align: right;
+  padding: 10px;
+}
+.dialog-error {
+  margin: 10px;
+  color: red;
+}
+.dialog input {
+  margin: 10px;
+  font-size: inherit;
+}
+.dialog button {
+  margin-left: 10px;
+  font-size: inherit;
+}
+#save-dialog, #delete-dialog {
+  width: 50%;
+  max-width: 20em;
+}
+#delete-prompt {
+  padding: 10px;
+}
 
 #content {
   overflow-y: scroll;
@@ -198,6 +267,8 @@ table thead {
   font-family: 'Roboto Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 }
 table tr th {
+  position: sticky;
+  top: 0;
   background-color: #ddd;
   text-align: right;
   padding: .3em .5em;
@@ -280,6 +351,24 @@ table tr td {
     </div>
   </div>
 
+  <div id="config" class="menu-item">
+    <div class="menu-name">
+      Config
+      <i class="downArrow"></i>
+    </div>
+    <div class="submenu">
+      <a title="{{.Help.save_config}}" id="save-config">Save as ...</a>
+      <hr>
+      {{range .Configs}}
+        <a href="{{.URL}}">
+          {{if .Current}}<span class="menu-check-mark">✓</span>{{end}}
+          {{.Name}}
+          {{if .UserConfig}}<span class="menu-delete-btn" data-config={{.Name}}>🗙</span>{{end}}
+        </a>
+      {{end}}
+    </div>
+  </div>
+
   <div>
     <input id="search" type="text" placeholder="Search regexp" autocomplete="off" autocapitalize="none" size=40>
   </div>
@@ -289,6 +378,31 @@ table tr td {
     <div id="detailsbox">
       {{range .Legend}}<div>{{.}}</div>{{end}}
     </div>
+  </div>
+</div>
+
+<div id="dialog-overlay"></div>
+
+<div class="dialog" id="save-dialog">
+  <div class="dialog-header">Save options as</div>
+  <datalist id="config-list">
+    {{range .Configs}}{{if .UserConfig}}<option value="{{.Name}}" />{{end}}{{end}}
+  </datalist>
+  <input id="save-name" type="text" list="config-list" placeholder="New config" />
+  <div class="dialog-footer">
+    <span class="dialog-error" id="save-error"></span>
+    <button id="save-cancel">Cancel</button>
+    <button id="save-confirm">Save</button>
+  </div>
+</div>
+
+<div class="dialog" id="delete-dialog">
+  <div class="dialog-header" id="delete-dialog-title">Delete config</div>
+  <div id="delete-prompt"></div>
+  <div class="dialog-footer">
+    <span class="dialog-error" id="delete-error"></span>
+    <button id="delete-cancel">Cancel</button>
+    <button id="delete-confirm">Delete</button>
   </div>
 </div>
 
@@ -581,6 +695,131 @@ function initMenus() {
   }, { passive: true, capture: true });
 }
 
+function sendURL(method, url, done) {
+  fetch(url.toString(), {method: method})
+      .then((response) => { done(response.ok); })
+      .catch((error) => { done(false); });
+}
+
+// Initialize handlers for saving/loading configurations.
+function initConfigManager() {
+  'use strict';
+
+  // Initialize various elements.
+  function elem(id) {
+    const result = document.getElementById(id);
+    if (!result) console.warn('element ' + id + ' not found');
+    return result;
+  }
+  const overlay = elem('dialog-overlay');
+  const saveDialog = elem('save-dialog');
+  const saveInput = elem('save-name');
+  const saveError = elem('save-error');
+  const delDialog = elem('delete-dialog');
+  const delPrompt = elem('delete-prompt');
+  const delError = elem('delete-error');
+
+  let currentDialog = null;
+  let currentDeleteTarget = null;
+
+  function showDialog(dialog) {
+    if (currentDialog != null) {
+      overlay.style.display = 'none';
+      currentDialog.style.display = 'none';
+    }
+    currentDialog = dialog;
+    if (dialog != null) {
+      overlay.style.display = 'block';
+      dialog.style.display = 'block';
+    }
+  }
+
+  function cancelDialog(e) {
+    showDialog(null);
+  }
+
+  // Show dialog for saving the current config.
+  function showSaveDialog(e) {
+    saveError.innerText = '';
+    showDialog(saveDialog);
+    saveInput.focus();
+  }
+
+  // Commit save config.
+  function commitSave(e) {
+    const name = saveInput.value;
+    const url = new URL(document.URL);
+    // Set path relative to existing path.
+    url.pathname = new URL('./saveconfig', document.URL).pathname;
+    url.searchParams.set('config', name);
+    saveError.innerText = '';
+    sendURL('POST', url, (ok) => {
+      if (!ok) {
+        saveError.innerText = 'Save failed';
+      } else {
+        showDialog(null);
+        location.reload();  // Reload to show updated config menu
+      }
+    });
+  }
+
+  function handleSaveInputKey(e) {
+    if (e.key === 'Enter') commitSave(e);
+  }
+
+  function deleteConfig(e, elem) {
+    e.preventDefault();
+    const config = elem.dataset.config;
+    delPrompt.innerText = 'Delete ' + config + '?';
+    currentDeleteTarget = elem;
+    showDialog(delDialog);
+  }
+
+  function commitDelete(e, elem) {
+    if (!currentDeleteTarget) return;
+    const config = currentDeleteTarget.dataset.config;
+    const url = new URL('./deleteconfig', document.URL);
+    url.searchParams.set('config', config);
+    delError.innerText = '';
+    sendURL('DELETE', url, (ok) => {
+      if (!ok) {
+        delError.innerText = 'Delete failed';
+        return;
+      }
+      showDialog(null);
+      // Remove menu entry for this config.
+      if (currentDeleteTarget && currentDeleteTarget.parentElement) {
+        currentDeleteTarget.parentElement.remove();
+      }
+    });
+  }
+
+  // Bind event on elem to fn.
+  function bind(event, elem, fn) {
+    if (elem == null) return;
+    elem.addEventListener(event, fn);
+    if (event == 'click') {
+      // Also enable via touch.
+      elem.addEventListener('touchstart', fn);
+    }
+  }
+
+  bind('click', elem('save-config'), showSaveDialog);
+  bind('click', elem('save-cancel'), cancelDialog);
+  bind('click', elem('save-confirm'), commitSave);
+  bind('keydown', saveInput, handleSaveInputKey);
+
+  bind('click', elem('delete-cancel'), cancelDialog);
+  bind('click', elem('delete-confirm'), commitDelete);
+
+  // Activate deletion button for all config entries in menu.
+  for (const del of Array.from(document.getElementsByClassName('menu-delete-btn'))) {
+    bind('click', del, (e) => {
+      deleteConfig(e, del);
+    });
+  }
+}
+
 function viewer(baseUrl, nodes) {
   'use strict';
 
@@ -610,8 +849,9 @@ function viewer(baseUrl, nodes) {
 
   function handleKey(e) {
     if (e.keyCode != 13) return;
-    window.location.href =
-        updateUrl(new URL(window.location.href), 'f');
+    setHrefParams(window.location, function (params) {
+      params.set('f', search.value);
+    });
     e.preventDefault();
   }
 
@@ -650,9 +890,11 @@ function viewer(baseUrl, nodes) {
     })
 
     // add matching items that are not currently selected.
-    for (let n = 0; n < nodes.length; n++) {
-      if (!selected.has(n) && match(nodes[n])) {
-        select(n, document.getElementById('node' + n));
+    if (nodes) {
+      for (let n = 0; n < nodes.length; n++) {
+        if (!selected.has(n) && match(nodes[n])) {
+          select(n, document.getElementById('node' + n));
+        }
       }
     }
 
@@ -870,6 +1112,7 @@ function viewer(baseUrl, nodes) {
   }
 
   addAction('details', handleDetails);
+  initConfigManager();
 
   search.addEventListener('input', handleSearch);
   search.addEventListener('keydown', handleKey);
@@ -1089,6 +1332,7 @@ function viewer(baseUrl, nodes) {
       .transitionDuration(750)
       .transitionEase(d3.easeCubic)
       .inverted(true)
+      .sort(true)
       .title('')
       .tooltip(false)
       .details(document.getElementById('flamegraphdetails'));

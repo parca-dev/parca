@@ -59,7 +59,7 @@ import (
 	"os"
 	"time"
 
-	tsdbErrors "github.com/conprof/tsdb/errors"
+	tsdbErrors "github.com/conprof/db/tsdb/errors"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
