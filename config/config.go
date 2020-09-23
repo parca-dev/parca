@@ -14,14 +14,17 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
+	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
-	sd_config "github.com/prometheus/prometheus/discovery/config"
+	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/relabel"
 	"gopkg.in/yaml.v2"
@@ -97,20 +100,25 @@ func DefaultScrapeConfig() ScrapeConfig {
 // Config is the top-level configuration for conprof's config files.
 type Config struct {
 	ScrapeConfigs []*ScrapeConfig `yaml:"scrape_configs,omitempty"`
+}
 
-	// original is the input from which the config was parsed.
-	original string
+// SetDirectory joins any relative file paths with dir.
+func (c *Config) SetDirectory(dir string) {
+	for _, c := range c.ScrapeConfigs {
+		c.SetDirectory(dir)
+	}
 }
 
 // Load parses the YAML input s into a Config.
 func Load(s string) (*Config, error) {
-	cfg := Config{}
-	err := yaml.UnmarshalStrict([]byte(s), &cfg)
+	cfg := &Config{}
+
+	err := yaml.UnmarshalStrict([]byte(s), cfg)
 	if err != nil {
 		return nil, err
 	}
-	cfg.original = s
-	return &cfg, nil
+
+	return cfg, nil
 }
 
 // LoadFile parses the given YAML file into a Config.
@@ -123,6 +131,7 @@ func LoadFile(filename string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing YAML file %s: %v", filename, err)
 	}
+	cfg.SetDirectory(filepath.Dir(filename))
 	return cfg, nil
 }
 
@@ -144,8 +153,14 @@ type ScrapeConfig struct {
 	RelabelConfigs []*relabel.Config `yaml:"relabel_configs,omitempty"`
 	// We cannot do proper Go type embedding below as the parser will then parse
 	// values arbitrarily into the overflow maps of further-down types.
-	ServiceDiscoveryConfig sd_config.ServiceDiscoveryConfig `yaml:",inline"`
-	HTTPClientConfig       HTTPClientConfig                 `yaml:",inline"`
+	ServiceDiscoveryConfigs discovery.Configs             `yaml:"-"`
+	HTTPClientConfig        commonconfig.HTTPClientConfig `yaml:",inline"`
+}
+
+// SetDirectory joins any relative file paths with dir.
+func (c *ScrapeConfig) SetDirectory(dir string) {
+	c.ServiceDiscoveryConfigs.SetDirectory(dir)
+	c.HTTPClientConfig.SetDirectory(dir)
 }
 
 // ServiceDiscoveryConfig configures lists of different service discovery mechanisms.
@@ -172,11 +187,51 @@ type PprofConfig struct {
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
 func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	*c = DefaultScrapeConfig()
-	type plain ScrapeConfig
-	if err := unmarshal((*plain)(c)); err != nil {
+	if err := discovery.UnmarshalYAMLWithInlineConfigs(c, unmarshal); err != nil {
 		return err
 	}
 
+	if len(c.JobName) == 0 {
+		return errors.New("job_name is empty")
+	}
+
+	// The UnmarshalYAML method of HTTPClientConfig is not being called because it's not a pointer.
+	// We cannot make it a pointer as the parser panics for inlined pointer structs.
+	// Thus we just do its validation here.
+	if err := c.HTTPClientConfig.Validate(); err != nil {
+		return err
+	}
+
+	// Check for users putting URLs in target groups.
+	if len(c.RelabelConfigs) == 0 {
+		if err := checkStaticTargets(c.ServiceDiscoveryConfigs); err != nil {
+			return err
+		}
+	}
+
+	for _, rlcfg := range c.RelabelConfigs {
+		if rlcfg == nil {
+			return errors.New("empty or null target relabeling rule in scrape config")
+		}
+	}
+
+	return nil
+}
+
+func checkStaticTargets(configs discovery.Configs) error {
+	for _, cfg := range configs {
+		sc, ok := cfg.(discovery.StaticConfig)
+		if !ok {
+			continue
+		}
+		for _, tg := range sc {
+			for _, t := range tg.Targets {
+				if err := CheckTargetAddress(t[model.AddressLabel]); err != nil {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }
 

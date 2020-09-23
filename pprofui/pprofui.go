@@ -16,6 +16,7 @@ package pprofui
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"math"
@@ -25,15 +26,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/conprof/tsdb"
-	"github.com/conprof/tsdb/labels"
+	"github.com/conprof/db/tsdb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
 	"github.com/google/pprof/profile"
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
-	"github.com/prometheus/prometheus/promql"
+	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/promql/parser"
 	"github.com/spf13/pflag"
 )
 
@@ -61,18 +62,13 @@ func parsePath(reqPath string) (series string, timestamp string, remainingPath s
 }
 
 func (p *pprofUI) selectProfile(m labels.Selector, timestamp int64) ([]byte, error) {
-	q, err := p.db.Querier(0, math.MaxInt64)
+	q, err := p.db.Querier(context.TODO(), 0, math.MaxInt64)
 	if err != nil {
 		level.Error(p.logger).Log("err", err)
 		return nil, err
 	}
 
-	ss, err := q.Select(m...)
-	if err != nil {
-		level.Error(p.logger).Log("err", err)
-		return nil, err
-	}
-
+	ss := q.Select(false, nil, m...)
 	ok := ss.Next()
 	if !ok {
 		return nil, errors.New("could not get series set")
@@ -101,16 +97,11 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 	seriesLabelsString := string(decodedSeriesName)
-	seriesLabels, err := promql.ParseMetricSelector(seriesLabelsString)
+	m, err := parser.ParseMetricSelector(seriesLabelsString)
 	if err != nil {
 		msg := fmt.Sprintf("failed to parse series labels %v with error %v", seriesLabelsString, err)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
-	}
-
-	m := make(labels.Selector, len(seriesLabels))
-	for i, l := range seriesLabels {
-		m[i] = labels.NewEqualMatcher(l.Name, l.Value)
 	}
 
 	t, err := stringToInt(timestamp)
@@ -166,8 +157,7 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	parts := strings.Split(path.Clean(strings.TrimPrefix(r.URL.Path, "/download/")), "/")
 	if len(parts) < 2 {
-		msg := fmt.Sprintf("don't have enough parameters")
-		http.Error(w, msg, http.StatusBadRequest)
+		http.Error(w, "don't have enough parameters", http.StatusBadRequest)
 		return
 	}
 	series, timestamp := parts[0], parts[1]
@@ -179,16 +169,11 @@ func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request, ps httpr
 		return
 	}
 	seriesLabelsString := string(decodedSeriesName)
-	seriesLabels, err := promql.ParseMetricSelector(seriesLabelsString)
+	m, err := parser.ParseMetricSelector(seriesLabelsString)
 	if err != nil {
 		msg := fmt.Sprintf("failed to parse series labels %v with error %v", seriesLabelsString, err)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
-	}
-
-	m := make(labels.Selector, len(seriesLabels))
-	for i, l := range seriesLabels {
-		m[i] = labels.NewEqualMatcher(l.Name, l.Value)
 	}
 
 	t, err := stringToInt(timestamp)

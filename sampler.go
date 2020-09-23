@@ -17,20 +17,20 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/scrape"
-	"github.com/conprof/tsdb"
-	"github.com/conprof/tsdb/wal"
+	"github.com/conprof/db/tsdb"
+	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
-	sd_config "github.com/prometheus/prometheus/discovery/config"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+
+	_ "github.com/prometheus/prometheus/discovery/install" // Register service discovery implementations.
 )
 
 // registerSampler registers a sampler command.
@@ -49,10 +49,14 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			logger,
 			prometheus.DefaultRegisterer,
 			&tsdb.Options{
-				WALSegmentSize:    wal.DefaultSegmentSize,
-				RetentionDuration: uint64(*retention),
-				BlockRanges:       append([]int64{int64(10 * time.Minute), int64(1 * time.Hour)}, tsdb.ExponentialBlockRanges(int64(2*time.Hour)/1e6, 3, 5)...),
-				NoLockfile:        true,
+				RetentionDuration:      int64(*retention),
+				WALSegmentSize:         wal.DefaultSegmentSize,
+				MinBlockDuration:       tsdb.DefaultBlockDuration,
+				MaxBlockDuration:       tsdb.DefaultBlockDuration,
+				NoLockfile:             true,
+				AllowOverlappingBlocks: false,
+				WALCompression:         true,
+				StripeSize:             tsdb.DefaultStripeSize,
 			},
 		)
 		if err != nil {
@@ -62,10 +66,10 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 	}
 }
 
-func getScrapeConfigs(cfg *config.Config) map[string]sd_config.ServiceDiscoveryConfig {
-	c := make(map[string]sd_config.ServiceDiscoveryConfig)
+func getScrapeConfigs(cfg *config.Config) map[string]discovery.Configs {
+	c := make(map[string]discovery.Configs)
 	for _, v := range cfg.ScrapeConfigs {
-		c[v.JobName] = v.ServiceDiscoveryConfig
+		c[v.JobName] = v.ServiceDiscoveryConfigs
 	}
 	return c
 }
@@ -76,11 +80,18 @@ func managerReloader(logger log.Logger, reloadCh chan struct{}, d *discovery.Man
 		level.Info(logger).Log("msg", "Reloading configuration")
 		cfg, err := config.LoadFile(configFile)
 		if err != nil {
-			level.Error(logger).Log("could not load config: %v", err)
+			level.Error(logger).Log("could not load config to reload: %v", err)
 		}
 
-		d.ApplyConfig(getScrapeConfigs(cfg))
-		s.ApplyConfig(cfg)
+		err = d.ApplyConfig(getScrapeConfigs(cfg))
+		if err != nil {
+			level.Error(logger).Log("could not reload scrape configs: %v", err)
+		}
+
+		err = s.ApplyConfig(cfg)
+		if err != nil {
+			level.Error(logger).Log("could not reload config: %v", err)
+		}
 	}
 }
 

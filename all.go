@@ -15,10 +15,9 @@ package main
 
 import (
 	"net/http"
-	"time"
 
-	"github.com/conprof/tsdb"
-	"github.com/conprof/tsdb/wal"
+	"github.com/conprof/db/tsdb"
+	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -55,10 +54,14 @@ func runAll(g *run.Group, mux *http.ServeMux, logger log.Logger, storagePath, co
 		logger,
 		prometheus.DefaultRegisterer,
 		&tsdb.Options{
-			WALSegmentSize:    wal.DefaultSegmentSize,
-			RetentionDuration: uint64(retention),
-			BlockRanges:       tsdb.ExponentialBlockRanges(int64(2*time.Hour)/1e6, 3, 5),
-			NoLockfile:        true,
+			RetentionDuration:      int64(retention),
+			WALSegmentSize:         wal.DefaultSegmentSize,
+			MinBlockDuration:       tsdb.DefaultBlockDuration,
+			MaxBlockDuration:       tsdb.DefaultBlockDuration,
+			NoLockfile:             true,
+			AllowOverlappingBlocks: false,
+			WALCompression:         true,
+			StripeSize:             tsdb.DefaultStripeSize,
 		},
 	)
 	if err != nil {

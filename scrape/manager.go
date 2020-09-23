@@ -14,6 +14,7 @@
 package scrape
 
 import (
+	"context"
 	"reflect"
 	"sync"
 	"time"
@@ -22,13 +23,13 @@ import (
 	"github.com/go-kit/kit/log/level"
 
 	"github.com/conprof/conprof/config"
-	"github.com/conprof/tsdb"
+	"github.com/conprof/db/storage"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 )
 
 // Appendable returns an Appender.
 type Appendable interface {
-	Appender() tsdb.Appender
+	Appender(context.Context) storage.Appender
 }
 
 // NewManager is the Manager constructor
