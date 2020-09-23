@@ -1,6 +1,6 @@
-FROM alpine:3.11
+FROM alpine:3.12
 
-WORKDIR /cronprof
+WORKDIR /conprof
 
 COPY conprof                  /bin/conprof
 COPY examples/conprof.yaml    /etc/conprof/config.yaml
