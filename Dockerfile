@@ -6,7 +6,7 @@ COPY conprof                  /bin/conprof
 COPY examples/conprof.yaml    /etc/conprof/config.yaml
 
 RUN apk add --no-cache graphviz \
-&& chown -R nobody:nogroup etc/conprof /conprof
+    && chown -R nobody:nogroup /etc/conprof /conprof
 
 USER       nobody
 EXPOSE     8080
