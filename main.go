@@ -25,6 +25,7 @@ import (
 	"syscall"
 
 	"github.com/conprof/conprof/pkg/runutil"
+	"github.com/felixge/fgprof"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"
@@ -169,6 +170,7 @@ func registerProfile(mux *http.ServeMux) {
 	mux.Handle("/debug/pprof/heap", pprof.Handler("heap"))
 	mux.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	mux.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
+	mux.Handle("/debug/fgprof/", fgprof.Handler())
 }
 
 func registerMetrics(mux *http.ServeMux, g prometheus.Gatherer) {
