@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/conprof/db v0.0.0-20200923100233-d202624dc72c
+	github.com/felixge/fgprof v0.9.1
 	github.com/go-kit/kit v0.10.0
 	github.com/google/pprof v0.0.0-20200708004538-1a94d8640e99
 	github.com/julienschmidt/httprouter v1.3.0
