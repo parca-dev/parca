@@ -61,7 +61,6 @@ func runWeb(mux *http.ServeMux, logger log.Logger, db storage.Queryable, reloadC
 
 	router.GET("/-/reload", api.Reload)
 
-	// TODO(bwplotka): Consider replacing this with remote read https://github.com/conprof/conprof/issues/80.
 	router.GET("/api/v1/query_range", api.QueryRange)
 	router.GET("/api/v1/series", api.Series)
 	router.GET("/api/v1/labels", api.LabelNames)
