@@ -1,0 +1,104 @@
+syntax = "proto3";
+package conprof;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "storepb";
+
+option (gogoproto.sizer_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.goproto_getters_all) = false;
+
+// Do not generate XXX fields to reduce memory footprint and opening a door
+// for zero-copy casts to/from prometheus data types.
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// ProfileStore represents API against instance that allows writing profiles to.
+service ProfileStore {
+  // Write allows you to write profiles to this store.
+  rpc Write(WriteRequest) returns (WriteResponse) {}
+  rpc Series(SeriesRequest) returns (stream SeriesResponse);
+  rpc Profile(ProfileRequest) returns (ProfileResponse);
+}
+
+message WriteResponse {
+}
+
+message WriteRequest {
+  repeated ProfileSeries profileSeries = 1 [(gogoproto.nullable) = false];
+}
+
+message Label {
+  string name  = 1;
+  string value = 2;
+}
+
+// ProfileSeries represents samples and labels for a single time series.
+message ProfileSeries {
+  repeated Label labels = 1 [(gogoproto.nullable) = false];
+  repeated Sample samples = 2 [(gogoproto.nullable) = false];
+}
+
+message Sample {
+  bytes value    = 1;
+  int64 timestamp = 2;
+}
+
+message SeriesRequest {
+  int64 min_time                 = 1;
+  int64 max_time                 = 2;
+  repeated LabelMatcher matchers = 3 [(gogoproto.nullable) = false];
+  bool skip_chunks               = 4;
+}
+
+// Matcher specifies a rule, which can match or set of labels or not.
+message LabelMatcher {
+  enum Type {
+      EQ  = 0; // =
+      NEQ = 1; // !=
+      RE  = 2; // =~
+      NRE = 3; // !~
+    }
+  Type type    = 1;
+  string name  = 2;
+  string value = 3;
+}
+
+message Chunk {
+  int64 min_time = 1;
+  int64 max_time = 2;
+  enum Encoding {
+      XOR = 0;
+      None = 1;
+    }
+  Encoding type  = 3;
+  bytes data     = 4;
+}
+
+message RawProfileSeries {
+  repeated Label labels = 1 [(gogoproto.nullable) = false];
+  repeated Chunk chunks = 2 [(gogoproto.nullable) = false];
+}
+
+message SeriesResponse {
+  oneof result {
+      /// series contains 1 response series. The series labels are sorted by name.
+      RawProfileSeries series = 1;
+
+      /// warning is considered an information piece in place of series for warning purposes.
+      /// It is used to warn store API user about suspicious cases or partial response (if enabled).
+      string warning = 2;
+  }
+}
+
+message ProfileRequest {
+  int64 timestamp = 1;
+  repeated LabelMatcher matchers = 2 [(gogoproto.nullable) = false];
+}
+
+message ProfileResponse {
+  bytes data = 1;
+}

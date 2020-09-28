@@ -476,8 +476,8 @@ mainLoop:
 		}
 
 		var (
-			start             = time.Now()
-			scrapeCtx, cancel = context.WithTimeout(sl.ctx, timeout)
+			start        = time.Now()
+			scrapeCtx, _ = context.WithTimeout(sl.ctx, timeout)
 		)
 
 		// Only record after the first scrape.
@@ -499,7 +499,7 @@ mainLoop:
 		}
 
 		scrapeErr := sl.scraper.scrape(scrapeCtx, buf, profileType)
-		cancel()
+		//cancel()
 
 		if scrapeErr == nil {
 			b = buf.Bytes()
@@ -518,11 +518,13 @@ mainLoop:
 			app := sl.appendable.Appender(scrapeCtx)
 			_, err := app.Add(ls, timestamp.FromTime(start), buf.Bytes())
 			if err != nil && errc != nil {
+				level.Debug(sl.l).Log("err", err)
 				errc <- err
 			}
 
 			err = app.Commit()
 			if err != nil && errc != nil {
+				level.Debug(sl.l).Log("err", err)
 				errc <- err
 			}
 		} else {

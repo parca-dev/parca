@@ -17,50 +17,38 @@ import (
 	"net/http"
 
 	"github.com/conprof/conprof/api"
+	"github.com/conprof/conprof/pkg/store"
+	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/pprofui"
 	"github.com/conprof/conprof/web"
-	"github.com/conprof/db/tsdb"
-	"github.com/conprof/db/tsdb/wal"
+	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"google.golang.org/grpc"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-// registerSampler registers a sampler command.
+// registerWeb registers a web command.
 func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
 	cmd := app.Command(name, "Run a web interface to view profiles from a storage.")
 
-	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
-		Default("./data").String()
-	retention := modelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	storeAddress := cmd.Flag("store", "Address of statically configured store.").
+		Default("127.0.0.1:10000").String()
 
 	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
-		db, err := tsdb.Open(
-			*storagePath,
-			logger,
-			prometheus.DefaultRegisterer,
-			&tsdb.Options{
-				RetentionDuration:      int64(*retention),
-				WALSegmentSize:         wal.DefaultSegmentSize,
-				MinBlockDuration:       tsdb.DefaultBlockDuration,
-				MaxBlockDuration:       tsdb.DefaultBlockDuration,
-				NoLockfile:             true,
-				AllowOverlappingBlocks: false,
-				WALCompression:         true,
-				StripeSize:             tsdb.DefaultStripeSize,
-			},
-		)
+		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
 		if err != nil {
 			return err
 		}
-		return runWeb(mux, logger, db, reloadCh)
+		c := storepb.NewProfileStoreClient(conn)
+		return runWeb(mux, logger, store.NewGRPCQueryable(c), reloadCh)
 	}
 }
 
-func runWeb(mux *http.ServeMux, logger log.Logger, db *tsdb.DB, reloadCh chan struct{}) error {
+func runWeb(mux *http.ServeMux, logger log.Logger, db storage.Queryable, reloadCh chan struct{}) error {
 	ui := pprofui.New(log.With(logger, "component", "pprofui"), db)
 
 	router := httprouter.New()

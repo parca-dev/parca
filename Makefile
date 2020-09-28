@@ -12,6 +12,8 @@
 # limitations under the License.
 
 # Needs to be defined before including Makefile.common to auto-generate targets
+include .bingo/Variables.mk
+
 DOCKER_ARCHS ?= amd64 armv7 arm64
 GOLANGCI_LINT_OPTS = --skip-dirs internal
 
@@ -23,6 +25,16 @@ GO111MODULE       ?= on
 export GO111MODULE
 GOPROXY           ?= https://proxy.golang.org
 export GOPROXY
+
+GOBIN          ?= $(firstword $(subst :, ,${GOPATH}))/bin
+TMP_GOPATH     ?= /tmp/thanos-go
+PROTOC         ?= $(GOBIN)/protoc-$(PROTOC_VERSION)
+PROTOC_VERSION ?= 3.4.0
+GIT            ?= $(shell which git)
+
+.PHONY: test
+test:
+	go test ./...
 
 .PHONY: assets
 assets:
@@ -44,7 +56,7 @@ sync: sync-trace-pkg
 .PHONY: sync-trace-pkg
 sync-trace-pkg:
 	mkdir tmp && cd tmp && git clone https://github.com/golang/go.git && cd ../
-	cp -r tmp/go/src/internal/trace internal/trace 
+	cp -r tmp/go/src/internal/trace internal/trace
 	rm -rf tmp
 	echo "#IMPORTANT DO NOT EDIT! This code is synced from go repository. Use make sync to update it." > internal/trace/README.md
 
@@ -66,3 +78,24 @@ docker-push:
 	@echo ">> pushing image"
 	@docker tag "${DOCKER_IMAGE_NAME}" quay.io/conprof/"$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
 	@docker push quay.io/conprof/"$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
+
+.PHONY: proto
+proto: check-git $(GOIMPORTS) $(PROTOC) $(PROTOC_GEN_GOGOFAST)
+		@GOIMPORTS_BIN="$(GOIMPORTS)" PROTOC_BIN="$(PROTOC)" PROTOC_GEN_GOGOFAST_BIN="$(PROTOC_GEN_GOGOFAST)" scripts/genproto.sh
+
+$(PROTOC):
+	@mkdir -p $(TMP_GOPATH)
+	@echo ">> fetching protoc@${PROTOC_VERSION}"
+	@PROTOC_VERSION="$(PROTOC_VERSION)" TMP_GOPATH="$(TMP_GOPATH)" scripts/installprotoc.sh
+	@echo ">> installing protoc@${PROTOC_VERSION}"
+	@mv -- "$(TMP_GOPATH)/bin/protoc" "$(GOBIN)/protoc-$(PROTOC_VERSION)"
+	@echo ">> produced $(GOBIN)/protoc-$(PROTOC_VERSION)"
+
+
+.PHONY: check-git
+check-git:
+ifneq ($(GIT),)
+	@test -x $(GIT) || (echo >&2 "No git executable binary found at $(GIT)."; exit 1)
+else
+	@echo >&2 "No git binary found."; exit 1
+endif
