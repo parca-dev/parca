@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/conprof/db/tsdb"
+	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
@@ -40,11 +40,11 @@ import (
 
 type pprofUI struct {
 	logger log.Logger
-	db     *tsdb.DB
+	db     storage.Queryable
 }
 
 // NewServer creates a new Server backed by the supplied Storage.
-func New(logger log.Logger, db *tsdb.DB) *pprofUI {
+func New(logger log.Logger, db storage.Queryable) *pprofUI {
 	s := &pprofUI{
 		logger: logger,
 		db:     db,

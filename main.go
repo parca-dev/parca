@@ -66,6 +66,7 @@ func main() {
 	cmds := map[string]setupFunc{}
 	reloadCh := make(chan struct{}, 1)
 	registerSampler(cmds, app, "sampler", reloadCh)
+	registerStorage(cmds, app, "storage", reloadCh)
 	registerWeb(cmds, app, "web", reloadCh)
 	registerAll(cmds, app, "all", reloadCh)
 

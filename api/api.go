@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/conprof/db/tsdb"
+	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/julienschmidt/httprouter"
@@ -30,11 +30,11 @@ import (
 
 type API struct {
 	logger   log.Logger
-	db       *tsdb.DB
+	db       storage.Queryable
 	reloadCh chan struct{}
 }
 
-func New(logger log.Logger, db *tsdb.DB, reloadCh chan struct{}) *API {
+func New(logger log.Logger, db storage.Queryable, reloadCh chan struct{}) *API {
 	return &API{
 		logger:   logger,
 		db:       db,
@@ -52,7 +52,7 @@ type Series struct {
 	Timestamps      []int64           `json:"timestamps"`
 }
 
-func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	ctx := r.Context()
 
 	fromString := r.URL.Query().Get("from")
@@ -110,6 +110,7 @@ func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		res.Series = append(res.Series, resSeries)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
 		level.Error(a.logger).Log("msg", "error marshaling json", "err", err)
