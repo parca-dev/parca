@@ -12,12 +12,12 @@
 # limitations under the License.
 
 # Needs to be defined before including Makefile.common to auto-generate targets
-include .bingo/Variables.mk
 
 DOCKER_ARCHS ?= amd64 armv7 arm64
 GOLANGCI_LINT_OPTS = --skip-dirs internal
 
 include Makefile.common
+include .bingo/Variables.mk
 
 DOCKER_IMAGE_NAME       ?= conprof
 

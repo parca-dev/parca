@@ -79,6 +79,7 @@ func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	q, err := a.db.Querier(ctx, from, to)
 	if err != nil {
 		level.Error(a.logger).Log("err", err)
+		return
 	}
 
 	queryString := r.URL.Query().Get("query")
@@ -118,7 +119,7 @@ func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	}
 	// TODO(bwplotka): Handle warnings.
 	if set.Err() != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "exec"))
+		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(set.Err(), "exec"))
 		return
 	}
 
