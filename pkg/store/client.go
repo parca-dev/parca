@@ -1,7 +1,22 @@
+// Copyright 2020 The conprof Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package store
 
 import (
 	"context"
+	"fmt"
+	"io"
 
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/db/storage"
@@ -35,18 +50,23 @@ type grpcStoreQuerier struct {
 }
 
 func (q *grpcStoreQuerier) Select(sortSeries bool, hints *storage.SelectHints, matchers ...*labels.Matcher) storage.SeriesSet {
-	m, err := translatePromMatchers(matchers)
-	if err != nil {
-		return storage.NoopSeriesSet()
-	}
-
 	ss := &grpcSeriesSet{}
 
-	ss.stream, ss.err = q.c.Series(q.ctx, &storepb.SeriesRequest{
+	m, err := translatePromMatchers(matchers)
+	if err != nil {
+		ss.err = fmt.Errorf("translate prom matchers: %w", err)
+		return ss
+	}
+
+	ss.stream, err = q.c.Series(q.ctx, &storepb.SeriesRequest{
 		MinTime:  q.mint,
 		MaxTime:  q.maxt,
 		Matchers: m,
 	})
+	if err != nil {
+		ss.err = fmt.Errorf("series: %w", err)
+		return ss
+	}
 	return ss
 }
 
@@ -57,13 +77,15 @@ type grpcSeriesSet struct {
 }
 
 func (s *grpcSeriesSet) Next() bool {
-	if s.err != nil {
+	if s.stream == nil || s.err != nil {
 		return false
 	}
 
 	res, err := s.stream.Recv()
 	if err != nil {
-		s.err = err
+		if err != io.EOF {
+			s.err = fmt.Errorf("receive from stream: %w", err)
+		}
 		return false
 	}
 
@@ -102,9 +124,9 @@ func (s *rawChunkIterator) Next() bool {
 	}
 
 	s.pos++
-	var c chunkenc.Chunk
-	c, s.err = chunkenc.FromData(chunkenc.EncBytes, s.chunks[s.pos].Data)
-	if s.err != nil {
+	c, err := chunkenc.FromData(chunkenc.EncBytes, s.chunks[s.pos].Data)
+	if err != nil {
+		s.err = fmt.Errorf("decode chunk: %w", err)
 		return false
 	}
 	s.curIt = c.Iterator(nil)
@@ -116,9 +138,9 @@ func (s *rawChunkIterator) Seek(t int64) bool {
 	for i, c := range s.chunks {
 		if c.MinTime <= t && c.MaxTime >= t {
 			s.pos = i
-			var c chunkenc.Chunk
-			c, s.err = chunkenc.FromData(chunkenc.EncBytes, s.chunks[s.pos].Data)
-			if s.err != nil {
+			c, err := chunkenc.FromData(chunkenc.EncBytes, s.chunks[s.pos].Data)
+			if err != nil {
+				s.err = fmt.Errorf("decode chunk: %w", err)
 				return false
 			}
 			s.curIt = c.Iterator(nil)
