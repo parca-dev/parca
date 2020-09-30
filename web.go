@@ -27,6 +27,8 @@ import (
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -36,19 +38,19 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 	cmd := app.Command(name, "Run a web interface to view profiles from a storage.")
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
-		Default("127.0.0.1:10000").String()
+		Default("127.0.0.1:10901").String()
 
-	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
+	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
 		if err != nil {
-			return err
+			return probe, err
 		}
 		c := storepb.NewProfileStoreClient(conn)
-		return runWeb(mux, logger, store.NewGRPCQueryable(c), reloadCh)
+		return probe, runWeb(mux, probe, logger, store.NewGRPCQueryable(c), reloadCh)
 	}
 }
 
-func runWeb(mux *http.ServeMux, logger log.Logger, db storage.Queryable, reloadCh chan struct{}) error {
+func runWeb(mux httpMux, probe prober.Probe, logger log.Logger, db storage.Queryable, reloadCh chan struct{}) error {
 	ui := pprofui.New(log.With(logger, "component", "pprofui"), db)
 
 	router := httprouter.New()
@@ -69,6 +71,7 @@ func runWeb(mux *http.ServeMux, logger log.Logger, db storage.Queryable, reloadC
 	router.NotFound = http.FileServer(web.Assets)
 
 	mux.Handle("/", router)
+	probe.Ready()
 
 	return nil
 }
