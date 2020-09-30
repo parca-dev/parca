@@ -16,7 +16,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/pkg/store"
@@ -29,6 +28,8 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
@@ -42,18 +43,18 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
-		Default("127.0.0.1:10000").String()
+		Default("127.0.0.1:10901").String()
 
-	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
+	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
 		if err != nil {
-			return err
+			return probe, err
 		}
 		c := storepb.NewProfileStoreClient(conn)
 		if err != nil {
-			return err
+			return probe, err
 		}
-		return runSampler(g, logger, store.NewGRPCAppendable(c), *configFile, reloadCh)
+		return probe, runSampler(g, probe, logger, store.NewGRPCAppendable(c), *configFile, reloadCh)
 	}
 }
 
@@ -86,7 +87,7 @@ func managerReloader(logger log.Logger, reloadCh chan struct{}, d *discovery.Man
 	}
 }
 
-func runSampler(g *run.Group, logger log.Logger, db storage.Appendable, configFile string, reloadCh chan struct{}) error {
+func runSampler(g *run.Group, probe prober.Probe, logger log.Logger, db storage.Appendable, configFile string, reloadCh chan struct{}) error {
 	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
 	cfg, err := config.LoadFile(configFile)
 	if err != nil {
@@ -133,5 +134,7 @@ func runSampler(g *run.Group, logger log.Logger, db storage.Appendable, configFi
 			cancel()
 		})
 	}
+
+	probe.Ready()
 	return nil
 }

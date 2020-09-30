@@ -14,7 +14,6 @@
 package main
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/conprof/conprof/pkg/store"
@@ -24,14 +23,17 @@ import (
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extkingpin"
+	"github.com/thanos-io/thanos/pkg/extprom"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-type component string
+type componentString string
 
-func (c component) String() string {
+func (c componentString) String() string {
 	return string(c)
 }
 
@@ -41,11 +43,10 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 
 	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
 		Default("./data").String()
-	grpcBindAddr := ":10000"
-	grpcGracePeriod := time.Second * 30
-	retention := modelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
 
-	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
+	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
 		db, err := tsdb.Open(
 			*storagePath,
 			logger,
@@ -62,30 +63,61 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 			},
 		)
 		if err != nil {
-			return err
+			return probe, err
 		}
-		return runStorage(g, reg, logger, db, tracer, grpcBindAddr, grpcGracePeriod)
+		return runStorage(
+			comp,
+			g,
+			probe,
+			reg,
+			logger,
+			db,
+			tracer,
+			*grpcBindAddr,
+			time.Duration(*grpcGracePeriod),
+			*grpcCert,
+			*grpcKey,
+			*grpcClientCA,
+		)
 	}
 }
 
-func runStorage(g *run.Group, reg *prometheus.Registry, logger log.Logger, db *tsdb.DB, tracer opentracing.Tracer, grpcBindAddr string, grpcGracePeriod time.Duration) error {
+func runStorage(
+	comp component.Component,
+	g *run.Group,
+	probe prober.Probe,
+	reg *prometheus.Registry,
+	logger log.Logger,
+	db *tsdb.DB,
+	tracer opentracing.Tracer,
+	grpcBindAddr string,
+	grpcGracePeriod time.Duration,
+	grpcCert string,
+	grpcKey string,
+	grpcClientCA string,
+) (prober.Probe, error) {
 	grpcProbe := prober.NewGRPC()
+	statusProber := prober.Combine(
+		probe,
+		grpcProbe,
+		prober.NewInstrumentation(comp, logger, extprom.WrapRegistererWithPrefix("conprof_", reg)),
+	)
 	maxBytesPerFrame := 1024 * 1024 * 32 // 32 Mb default, might need to be tuned later on.
 	s := store.NewProfileStore(logger, db, maxBytesPerFrame)
 
-	srv := grpcserver.New(logger, reg, tracer, component("storage"), grpcProbe,
+	srv := grpcserver.New(logger, reg, tracer, comp, grpcProbe,
 		grpcserver.WithServer(store.RegisterStoreServer(s)),
 		grpcserver.WithListen(grpcBindAddr),
 		grpcserver.WithGracePeriod(grpcGracePeriod),
 	)
 
 	g.Add(func() error {
-		grpcProbe.Ready()
+		statusProber.Ready()
 		return srv.ListenAndServe()
 	}, func(err error) {
 		grpcProbe.NotReady(err)
 		srv.Shutdown(err)
 	})
 
-	return nil
+	return statusProber, nil
 }

@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/conprof/db v0.0.0-20200923100233-d202624dc72c
-	github.com/felixge/fgprof v0.9.1
 	github.com/go-kit/kit v0.10.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/gogo/status v1.0.3
@@ -18,7 +17,7 @@ require (
 	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/shurcooL/vfsgen v0.0.0-20200627165143-92b8a710ab6c
 	github.com/spf13/pflag v1.0.5
-	github.com/thanos-io/thanos v0.13.1-0.20200925144605-23831cc74dea
+	github.com/thanos-io/thanos v0.13.1-0.20200929105836-a30254dc9454
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	google.golang.org/grpc v1.30.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6

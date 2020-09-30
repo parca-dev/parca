@@ -14,8 +14,6 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/conprof/db/tsdb"
 	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
@@ -23,6 +21,9 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
+	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extkingpin"
+	"github.com/thanos-io/thanos/pkg/prober"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -34,21 +35,14 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 		Default("./data").String()
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
-	retention := modelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 
-	m[name] = func(g *run.Group, mux *http.ServeMux, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) error {
-		return runAll(g, mux, logger, *storagePath, *configFile, *retention, reloadCh)
+	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
+		return runAll(comp, g, mux, probe, logger, *storagePath, *configFile, *retention, reloadCh)
 	}
 }
 
-func modelDuration(flags *kingpin.FlagClause) *model.Duration {
-	var value = new(model.Duration)
-	flags.SetValue(value)
-
-	return value
-}
-
-func runAll(g *run.Group, mux *http.ServeMux, logger log.Logger, storagePath, configFile string, retention model.Duration, reloadCh chan struct{}) error {
+func runAll(comp component.Component, g *run.Group, mux httpMux, p prober.Probe, logger log.Logger, storagePath, configFile string, retention model.Duration, reloadCh chan struct{}) (prober.Probe, error) {
 	db, err := tsdb.Open(
 		storagePath,
 		logger,
@@ -65,18 +59,18 @@ func runAll(g *run.Group, mux *http.ServeMux, logger log.Logger, storagePath, co
 		},
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = runSampler(g, logger, db, configFile, reloadCh)
+	err = runSampler(g, p, logger, db, configFile, reloadCh)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = runWeb(mux, logger, db, reloadCh)
+	err = runWeb(mux, p, logger, db, reloadCh)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return p, nil
 }

@@ -15,25 +15,25 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"net/http"
-	"net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"runtime"
 	"syscall"
+	"time"
 
-	"github.com/conprof/conprof/pkg/runutil"
-	"github.com/felixge/fgprof"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
+	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extkingpin"
+	"github.com/thanos-io/thanos/pkg/prober"
+	httpserver "github.com/thanos-io/thanos/pkg/server/http"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -42,7 +42,11 @@ const (
 	logFormatJSON   = "json"
 )
 
-type setupFunc func(*run.Group, *http.ServeMux, log.Logger, *prometheus.Registry, opentracing.Tracer, bool) error
+type httpMux interface {
+	Handle(pattern string, handler http.Handler)
+}
+
+type setupFunc func(component.Component, *run.Group, httpMux, prober.Probe, log.Logger, *prometheus.Registry, opentracing.Tracer, bool) (prober.Probe, error)
 
 func main() {
 	if os.Getenv("DEBUG") != "" {
@@ -60,8 +64,7 @@ func main() {
 		Default("info").Enum("error", "warn", "info", "debug")
 	logFormat := app.Flag("log.format", "Log format to use.").
 		Default(logFormatLogfmt).Enum(logFormatLogfmt, logFormatJSON)
-	httpBindAddr := app.Flag("web.listen-address", "Address to listen on with HTTP server.").
-		Default(":8080").String()
+	httpBindAddr, httpGracePeriod := extkingpin.RegisterHTTPFlags(app)
 
 	cmds := map[string]setupFunc{}
 	reloadCh := make(chan struct{}, 1)
@@ -105,40 +108,42 @@ func main() {
 		logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 	}
 
-	metrics := prometheus.NewRegistry()
-	metrics.MustRegister(
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(
 		version.NewCollector("conprof"),
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
 	)
 
-	prometheus.DefaultRegisterer = metrics
+	prometheus.DefaultRegisterer = reg
 
 	var g run.Group
 	var tracer opentracing.Tracer
 	mux := http.NewServeMux()
+	httpProbe := prober.NewHTTP()
+	comp := componentString(cmd)
 
-	if err := cmds[cmd](&g, mux, logger, metrics, tracer, *logLevel == "debug"); err != nil {
+	statusProber, err := cmds[cmd](comp, &g, mux, httpProbe, logger, reg, tracer, *logLevel == "debug")
+	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "%s command failed", cmd))
 		os.Exit(1)
 	}
 
 	{
-		registerMetrics(mux, metrics)
-		registerProfile(mux)
-
-		l, err := net.Listen("tcp", *httpBindAddr)
-		if err != nil {
-			level.Error(logger).Log("msg", err)
-			os.Exit(1)
-		}
-
+		srv := httpserver.New(logger, reg, comp, httpProbe,
+			httpserver.WithListen(*httpBindAddr),
+			httpserver.WithGracePeriod(time.Duration(*httpGracePeriod)),
+		)
+		srv.Handle("/", mux)
 		g.Add(func() error {
-			level.Info(logger).Log("msg", "Listening for http", "address", *httpBindAddr)
-			return errors.Wrap(http.Serve(l, mux), "serve http")
-		}, func(error) {
-			level.Debug(logger).Log("msg", "shutting down http listener")
-			runutil.CloseWithLogOnErr(logger, l, "http listener")
+			statusProber.Healthy()
+
+			return srv.ListenAndServe()
+		}, func(err error) {
+			statusProber.NotReady(err)
+			defer statusProber.NotHealthy(err)
+
+			srv.Shutdown(err)
 		})
 	}
 
@@ -158,24 +163,6 @@ func main() {
 		os.Exit(1)
 	}
 	level.Info(logger).Log("msg", "exiting")
-}
-
-func registerProfile(mux *http.ServeMux) {
-	mux.HandleFunc("/debug/pprof/", pprof.Index)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	mux.Handle("/debug/pprof/block", pprof.Handler("block"))
-	mux.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
-	mux.Handle("/debug/pprof/heap", pprof.Handler("heap"))
-	mux.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
-	mux.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
-	mux.Handle("/debug/fgprof/", fgprof.Handler())
-}
-
-func registerMetrics(mux *http.ServeMux, g prometheus.Gatherer) {
-	mux.Handle("/metrics", promhttp.HandlerFor(g, promhttp.HandlerOpts{}))
 }
 
 func interrupt(logger log.Logger, cancel <-chan struct{}) error {
