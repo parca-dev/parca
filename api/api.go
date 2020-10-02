@@ -16,7 +16,11 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"github.com/NYTimes/gziphandler"
+	"github.com/prometheus/common/route"
+	thanosapi "github.com/thanos-io/thanos/pkg/api"
+	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
+	"github.com/thanos-io/thanos/pkg/server/http/middleware"
 	"math"
 	"net/http"
 	"strconv"
@@ -25,7 +29,6 @@ import (
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -59,35 +62,31 @@ type Series struct {
 	Timestamps      []int64           `json:"timestamps"`
 }
 
-func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (a *API) QueryRange(r *http.Request) (interface{}, []error, *thanosapi.ApiError) {
 	ctx := r.Context()
 
 	fromString := r.URL.Query().Get("from")
 	from, err := strconv.ParseInt(fromString, 10, 64)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Bad Request, unable to parse from %s", err.Error()), http.StatusBadRequest)
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
 	}
 
 	toString := r.URL.Query().Get("to")
 	to, err := strconv.ParseInt(toString, 10, 64)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Bad Request, unable to parse to %s", err.Error()), http.StatusBadRequest)
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
 	}
 
 	q, err := a.db.Querier(ctx, from, to)
 	if err != nil {
-		level.Error(a.logger).Log("err", err)
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
 	}
 
 	queryString := r.URL.Query().Get("query")
 	level.Debug(a.logger).Log("query", queryString, "from", from, "to", to)
 	sel, err := parser.ParseMetricSelector(queryString)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
 	}
 
 	set := q.Select(false, nil, sel...)
@@ -119,15 +118,10 @@ func (a *API) QueryRange(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	}
 	// TODO(bwplotka): Handle warnings.
 	if set.Err() != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(set.Err(), "exec"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: set.Err()}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
-	if err = json.NewEncoder(w).Encode(res); err != nil {
-		level.Error(a.logger).Log("msg", "error marshaling json", "err", err)
-	}
+	return res, set.Warnings(), nil
 }
 
 // PrometheusResult allows compatibility with official Prometheus format https://prometheus.io/docs/prometheus/latest/querying/api/#format-overview.
@@ -228,34 +222,34 @@ func parseTime(s string) (time.Time, error) {
 	return time.Time{}, errors.Errorf("cannot parse %q to a valid timestamp", s)
 }
 
-func (a *API) Series(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (a *API) Series(r *http.Request) (interface{}, []error, *thanosapi.ApiError) {
 	ctx := r.Context()
 
 	if err := r.ParseForm(); err != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "parse form"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorInternal, Err: errors.Wrap(err, "parse form")}
+	}
+
+	if len(r.Form["match[]"]) == 0 {
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: errors.New("no match[] parameter provided")}
 	}
 
 	start, end, err := parseMetadataTimeRange(r, defaultMetadataTimeRange)
 	if err != nil {
-		a.respondPromError(w, http.StatusBadRequest, err)
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
 	}
 
 	var matcherSets [][]*labels.Matcher
 	for _, s := range r.Form["match[]"] {
 		matchers, err := parser.ParseMetricSelector(s)
 		if err != nil {
-			a.respondPromError(w, http.StatusBadRequest, err)
-			return
+			return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
 		}
 		matcherSets = append(matcherSets, matchers)
 	}
 
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
 	if err != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "new querier"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
 	}
 
 	var (
@@ -271,84 +265,81 @@ func (a *API) Series(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 		metrics = append(metrics, set.At().Labels())
 	}
 	if set.Err() != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "exec"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorInternal, Err: err}
 	}
 
-	if err = json.NewEncoder(w).Encode(SeriesResult{Series: metrics}); err != nil {
-		level.Error(a.logger).Log("msg", "error marshaling json", "err", err)
-	}
+	return metrics, nil, nil
 }
 
-func (a *API) LabelNames(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (a *API) LabelNames(r *http.Request) (interface{}, []error, *thanosapi.ApiError) {
 	ctx := r.Context()
-
-	if err := r.ParseForm(); err != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "parse form"))
-		return
-	}
 
 	start, end, err := parseMetadataTimeRange(r, defaultMetadataTimeRange)
 	if err != nil {
-		a.respondPromError(w, http.StatusBadRequest, err)
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
 	}
 
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
 	if err != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "new querier"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
 	}
 
-	// TODO(bwplotka): Handle warnings.
-	names, _, err := q.LabelNames()
+	names, warnings, err := q.LabelNames()
 	if err != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "retrieve label names"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
 	}
 
-	if err = json.NewEncoder(w).Encode(LabelNamesResult{Names: names}); err != nil {
-		level.Error(a.logger).Log("msg", "error marshaling json", "err", err)
-	}
+	return names, warnings, nil
 }
 
-func (a *API) LabelValues(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (a *API) LabelValues(r *http.Request) (interface{}, []error, *thanosapi.ApiError) {
 	ctx := r.Context()
+	name := route.Param(ctx, "name")
 
-	name := ps.ByName("label_name")
 	if !model.LabelNameRE.MatchString(name) {
-		a.respondPromError(w, http.StatusBadRequest, errors.Errorf("invalid label name %q", name))
-	}
-
-	if err := r.ParseForm(); err != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "parse form"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: errors.Errorf("invalid label name: %q", name)}
 	}
 
 	start, end, err := parseMetadataTimeRange(r, defaultMetadataTimeRange)
 	if err != nil {
-		a.respondPromError(w, http.StatusBadRequest, err)
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
 	}
 
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
 	if err != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "new querier"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
 	}
 
-	// TODO(bwplotka): Handle warnings.
-	names, _, err := q.LabelValues(name)
+	names, warnings, err := q.LabelValues(name)
 	if err != nil {
-		a.respondPromError(w, http.StatusInternalServerError, errors.Wrap(err, "retrieve label names"))
-		return
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
 	}
 
-	if err = json.NewEncoder(w).Encode(LabelValuesResult{Values: names}); err != nil {
-		level.Error(a.logger).Log("msg", "error marshaling json", "err", err)
-	}
+	return names, warnings, nil
 }
 
-func (a *API) Reload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (a *API) Reload(w http.ResponseWriter, r *http.Request) {
 	a.reloadCh <- struct{}{}
+}
+
+// TODO: add tracer
+// Instr returns a http HandlerFunc with the instrumentation middleware.
+func GetInstr(
+	_ log.Logger,
+	ins extpromhttp.InstrumentationMiddleware,
+) thanosapi.InstrFunc {
+	instr := func(name string, f thanosapi.ApiFunc) http.HandlerFunc {
+		hf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			thanosapi.SetCORS(w)
+			if data, warnings, err := f(r); err != nil {
+				thanosapi.RespondError(w, err, data)
+			} else if data != nil {
+				thanosapi.Respond(w, data, warnings)
+			} else {
+				w.WriteHeader(http.StatusNoContent)
+			}
+		})
+		return ins.NewHandler(name, gziphandler.GzipHandler(middleware.RequestID(hf)))
+	}
+	return instr
 }

@@ -11,7 +11,9 @@ const initialState: Query = {
         now: true,
     },
     result: {
-        series: [],
+        data: {
+            series: [],
+        }
     },
 };
 

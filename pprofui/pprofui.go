@@ -31,7 +31,6 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
 	"github.com/google/pprof/profile"
-	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -84,7 +83,7 @@ func (p *pprofUI) selectProfile(m labels.Selector, timestamp int64) ([]byte, err
 	return buf, nil
 }
 
-func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request) {
 	series, timestamp, remainingPath := parsePath(r.URL.Path)
 	if !strings.HasPrefix(remainingPath, "/") {
 		remainingPath = "/" + remainingPath
@@ -154,7 +153,7 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 }
 
-func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(path.Clean(strings.TrimPrefix(r.URL.Path, "/download/")), "/")
 	if len(parts) < 2 {
 		http.Error(w, "don't have enough parameters", http.StatusBadRequest)

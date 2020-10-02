@@ -9,7 +9,7 @@ npm i
 npm start
 ```
 
-Requests to `/api` are proxied to the conprof backend on port 8080.
+Requests to `/api` are proxied to the conprof backend on port 10902.
 
 ## References
 

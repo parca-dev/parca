@@ -14,6 +14,10 @@ export interface QueryRequest {
 }
 
 export interface QueryResult {
+    data: QueryResultData;
+}
+
+export interface QueryResultData {
     series: Series[];
 }
 

@@ -14,20 +14,18 @@
 package main
 
 import (
-	"net/http"
-
-	"github.com/conprof/conprof/api"
+	conprofapi "github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/pprofui"
-	"github.com/conprof/conprof/web"
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
-	"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/route"
 	"github.com/thanos-io/thanos/pkg/component"
+	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -75,22 +73,21 @@ func runWeb(
 ) error {
 	ui := pprofui.New(log.With(logger, "component", "pprofui"), db)
 
-	router := httprouter.New()
-	router.RedirectTrailingSlash = false
+	router := route.New()
+	ins := extpromhttp.NewInstrumentationMiddleware(reg)
+	instr := conprofapi.GetInstr(logger, ins)
 
-	router.GET("/pprof/*remainder", ui.PprofView)
-	router.GET("/download/*remainder", ui.PprofDownload)
+	router.Get("/pprof/*remainder", ui.PprofView)
+	router.Get("/download/*remainder", ui.PprofDownload)
 
-	api := api.New(log.With(logger, "component", "pprofui"), db, reloadCh)
+	api := conprofapi.New(log.With(logger, "component", "pprofui"), db, reloadCh)
 
-	router.GET("/-/reload", api.Reload)
+	router.Get("/-/reload", api.Reload)
 
-	router.GET("/api/v1/query_range", api.QueryRange)
-	router.GET("/api/v1/series", api.Series)
-	router.GET("/api/v1/labels", api.LabelNames)
-	router.GET("/api/v1/label/:label_name/values", api.LabelValues)
-
-	router.NotFound = http.FileServer(web.Assets)
+	router.Get("/api/v1/query_range", instr("query_range", api.QueryRange))
+	router.Get("/api/v1/series", instr("series", api.Series))
+	router.Get("/api/v1/labels", instr("label_names", api.LabelNames))
+	router.Get("/api/v1/label/:name/values", instr("label_values", api.LabelValues))
 
 	mux.Handle("/", cors(corsOrigin, corsMethods, router))
 	probe.Ready()
