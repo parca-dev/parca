@@ -46,11 +46,11 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 			return probe, err
 		}
 		c := storepb.NewProfileStoreClient(conn)
-		return probe, runWeb(mux, probe, logger, store.NewGRPCQueryable(c), reloadCh)
+		return probe, runWeb(mux, probe, reg, logger, store.NewGRPCQueryable(c), reloadCh)
 	}
 }
 
-func runWeb(mux httpMux, probe prober.Probe, logger log.Logger, db storage.Queryable, reloadCh chan struct{}) error {
+func runWeb(mux httpMux, probe prober.Probe, reg prometheus.Registerer, logger log.Logger, db storage.Queryable, reloadCh chan struct{}) error {
 	ui := pprofui.New(log.With(logger, "component", "pprofui"), db)
 
 	router := httprouter.New()
