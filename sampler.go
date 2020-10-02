@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 
 	"github.com/conprof/conprof/config"
@@ -31,6 +32,7 @@ import (
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	_ "github.com/prometheus/prometheus/discovery/install" // Register service discovery implementations.
@@ -44,9 +46,20 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		Default("conprof.yaml").String()
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
+	insecure := cmd.Flag("insecure", "Send gRPC requests via plaintext instead of TLS.").Default("false").Bool()
+	insecureSkipVerify := cmd.Flag("insecure-skip-verify", "Skip TLS certificate verification.").Default("false").Bool()
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
-		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
+		opts := []grpc.DialOption{}
+		if *insecure {
+			opts = append(opts, grpc.WithInsecure())
+		} else {
+			config := &tls.Config{
+				InsecureSkipVerify: *insecureSkipVerify,
+			}
+			opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(config)))
+		}
+		conn, err := grpc.Dial(*storeAddress, opts...)
 		if err != nil {
 			return probe, err
 		}
