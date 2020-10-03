@@ -266,7 +266,7 @@ func TestStore(t *testing.T) {
 		t.Fatalf("Unexpected series in query result. Expected 1, got %d", queryResultLen)
 	}
 
-	series := queryResult.Series[0]
+	series := queryResult[0]
 
 	expectedLabels := map[string]string{"__name__": "allocs"}
 	if !reflect.DeepEqual(series.Labels, expectedLabels) {

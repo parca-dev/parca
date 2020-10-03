@@ -53,10 +53,6 @@ func New(logger log.Logger, db storage.Queryable, reloadCh chan struct{}) *API {
 	}
 }
 
-type QueryResult struct {
-	Series []Series `json:"series"`
-}
-
 type Series struct {
 	Labels          map[string]string `json:"labels"`
 	LabelSetEncoded string            `json:"labelsetEncoded"`
@@ -91,7 +87,7 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *thanosapi.ApiE
 	}
 
 	set := q.Select(false, nil, sel...)
-	res := &QueryResult{Series: []Series{}}
+	res := []Series{}
 	for set.Next() {
 		series := set.At()
 		ls := series.Labels()
@@ -115,7 +111,7 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *thanosapi.ApiE
 			level.Error(a.logger).Log("err", err, "series", ls.String())
 		}
 
-		res.Series = append(res.Series, resSeries)
+		res = append(res, resSeries)
 	}
 	if set.Err() != nil {
 		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: set.Err()}

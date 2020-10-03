@@ -246,7 +246,7 @@ class QueryPage extends React.Component<Props, State> {
                         </Paper>
                     </Grid>
 
-                    {query.result.data.series.map(
+                    {query.result.data.map(
                     (series: Series) => {
                     return (
                     <Grid key={series.labelsetEncoded} item xs={8}>
@@ -267,7 +267,7 @@ class QueryPage extends React.Component<Props, State> {
                     )
                     }
                     )}
-                    {!query.request.loading && query.result.data.series.length == 0 &&
+                    {!query.request.loading && query.result.data.length == 0 &&
                         <Grid key="no-result" className={classes.noResult} item xs={8}>
                             <h3>No result</h3>
                         </Grid>
