@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
 	"math"
 	"net/http"
 	"path"
@@ -27,15 +26,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
 	"github.com/google/pprof/profile"
+	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/promql/parser"
 	"github.com/spf13/pflag"
+
+	"github.com/conprof/db/storage"
 )
 
 type pprofUI struct {

@@ -3,8 +3,8 @@ module github.com/conprof/conprof
 go 1.14
 
 require (
+	github.com/NYTimes/gziphandler v1.1.1
 	github.com/conprof/db v0.0.0-20200923100233-d202624dc72c
-	github.com/cortexproject/cortex v1.3.1-0.20200923145333-8587ea61fe17 // indirect
 	github.com/go-kit/kit v0.10.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/gogo/status v1.0.3
