@@ -111,8 +111,6 @@ class QueryPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
 
-        console.log('newnewnew');
-
         let search = new URLSearchParams(props.location.search);
         let expr = search.get("query") || props.query.request.expression;
         let timeFrom = search.get("from") ? moment(Number(search.get("from"))) : props.query.request.timeFrom;

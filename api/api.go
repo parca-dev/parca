@@ -15,25 +15,26 @@ package api
 
 import (
 	"encoding/base64"
-	"encoding/json"
-	"github.com/NYTimes/gziphandler"
-	"github.com/prometheus/common/route"
-	thanosapi "github.com/thanos-io/thanos/pkg/api"
-	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
-	"github.com/thanos-io/thanos/pkg/server/http/middleware"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/conprof/db/storage"
+	"github.com/NYTimes/gziphandler"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/common/route"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
+	thanosapi "github.com/thanos-io/thanos/pkg/api"
+	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
+	"github.com/thanos-io/thanos/pkg/server/http/middleware"
+
+	"github.com/conprof/db/storage"
 )
 
 var defaultMetadataTimeRange = 24 * time.Hour
@@ -116,60 +117,11 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *thanosapi.ApiE
 
 		res.Series = append(res.Series, resSeries)
 	}
-	// TODO(bwplotka): Handle warnings.
 	if set.Err() != nil {
 		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: set.Err()}
 	}
 
 	return res, set.Warnings(), nil
-}
-
-// PrometheusResult allows compatibility with official Prometheus format https://prometheus.io/docs/prometheus/latest/querying/api/#format-overview.
-type PrometheusResult struct {
-	Err error
-}
-
-func (r PrometheusResult) MarshalJSON() ([]byte, error) {
-	s := struct {
-		Status string `json:"status"`
-		Error  string `json:"error,omitempty"`
-	}{Status: "success"}
-
-	if r.Err != nil {
-		s.Status = "error"
-		s.Error = r.Err.Error()
-	}
-
-	return json.Marshal(s)
-}
-
-type SeriesResult struct {
-	PrometheusResult
-
-	Series []labels.Labels `json:"data"`
-}
-
-type LabelNamesResult struct {
-	PrometheusResult
-
-	Names []string `json:"data"`
-}
-
-type LabelValuesResult struct {
-	PrometheusResult
-
-	Values []string `json:"data"`
-}
-
-func (a *API) respondPromError(w http.ResponseWriter, code int, err error) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(code)
-
-	if eerr := json.NewEncoder(w).Encode(PrometheusResult{Err: err}); eerr != nil {
-		level.Error(a.logger).Log("msg", "error marshalling json while handling other error", "marshaling_err", eerr, "err", err)
-	}
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {
@@ -318,7 +270,7 @@ func (a *API) LabelValues(r *http.Request) (interface{}, []error, *thanosapi.Api
 	return names, warnings, nil
 }
 
-func (a *API) Reload(w http.ResponseWriter, r *http.Request) {
+func (a *API) Reload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	a.reloadCh <- struct{}{}
 }
 
@@ -327,8 +279,8 @@ func (a *API) Reload(w http.ResponseWriter, r *http.Request) {
 func GetInstr(
 	_ log.Logger,
 	ins extpromhttp.InstrumentationMiddleware,
-) thanosapi.InstrFunc {
-	instr := func(name string, f thanosapi.ApiFunc) http.HandlerFunc {
+) func(name string, f thanosapi.ApiFunc) httprouter.Handle {
+	instr := func(name string, f thanosapi.ApiFunc) httprouter.Handle {
 		hf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			thanosapi.SetCORS(w)
 			if data, warnings, err := f(r); err != nil {
@@ -339,7 +291,9 @@ func GetInstr(
 				w.WriteHeader(http.StatusNoContent)
 			}
 		})
-		return ins.NewHandler(name, gziphandler.GzipHandler(middleware.RequestID(hf)))
+		return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+			ins.NewHandler(name, gziphandler.GzipHandler(middleware.RequestID(hf))).ServeHTTP(w, r)
+		}
 	}
 	return instr
 }
