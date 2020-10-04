@@ -14,27 +14,27 @@
 package api
 
 import (
+	"context"
 	"encoding/base64"
+	"github.com/NYTimes/gziphandler"
+	"github.com/julienschmidt/httprouter"
+	"github.com/prometheus/common/route"
+	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
+	"github.com/thanos-io/thanos/pkg/server/http/middleware"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/NYTimes/gziphandler"
+	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/common/route"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
 	thanosapi "github.com/thanos-io/thanos/pkg/api"
-	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
-	"github.com/thanos-io/thanos/pkg/server/http/middleware"
-
-	"github.com/conprof/db/storage"
 )
 
 var defaultMetadataTimeRange = 24 * time.Hour
@@ -270,6 +270,8 @@ func (a *API) Reload(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	a.reloadCh <- struct{}{}
 }
 
+type ApiFunc func(w http.ResponseWriter, r *http.Request, params httprouter.Params) (interface{}, []error, *thanosapi.ApiError)
+
 // TODO: add tracer
 // Instr returns a http HandlerFunc with the instrumentation middleware.
 func GetInstr(
@@ -287,8 +289,14 @@ func GetInstr(
 				w.WriteHeader(http.StatusNoContent)
 			}
 		})
-		return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-			ins.NewHandler(name, gziphandler.GzipHandler(middleware.RequestID(hf))).ServeHTTP(w, r)
+		return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+			ctx, cancel := context.WithCancel(r.Context())
+			defer cancel()
+
+			for _, p := range params {
+				ctx = route.WithParam(ctx, p.Key, p.Value)
+			}
+			ins.NewHandler(name, gziphandler.GzipHandler(middleware.RequestID(hf))).ServeHTTP(w, r.WithContext(ctx))
 		}
 	}
 	return instr

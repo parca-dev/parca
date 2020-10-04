@@ -14,10 +14,12 @@
 package main
 
 import (
-	"net/http"
-
+	"github.com/conprof/conprof/web"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
+	"net/http"
+
+	//"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,7 +33,6 @@ import (
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/pprofui"
-	"github.com/conprof/conprof/web"
 	"github.com/conprof/db/storage"
 )
 
