@@ -82,7 +82,7 @@ func runWeb(
 	router := httprouter.New()
 	router.RedirectTrailingSlash = false
 	ins := extpromhttp.NewInstrumentationMiddleware(reg)
-	instr := conprofapi.GetInstr(logger, ins)
+	instr := conprofapi.Instr(logger, ins)
 
 	router.GET("/pprof/*remainder", ui.PprofView)
 	router.GET("/download/*remainder", ui.PprofDownload)

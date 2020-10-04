@@ -18,7 +18,7 @@ require (
 	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/shurcooL/vfsgen v0.0.0-20200627165143-92b8a710ab6c
 	github.com/spf13/pflag v1.0.5
-	github.com/thanos-io/thanos v0.13.1-0.20201002105236-bb1662a1d13c
+	github.com/thanos-io/thanos v0.13.1-0.20201002084234-fcb7cc387dce
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	google.golang.org/grpc v1.30.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6

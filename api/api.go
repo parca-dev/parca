@@ -16,25 +16,26 @@ package api
 import (
 	"context"
 	"encoding/base64"
-	"github.com/NYTimes/gziphandler"
-	"github.com/julienschmidt/httprouter"
-	"github.com/prometheus/common/route"
-	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
-	"github.com/thanos-io/thanos/pkg/server/http/middleware"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/conprof/db/storage"
+	"github.com/NYTimes/gziphandler"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/common/route"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
 	thanosapi "github.com/thanos-io/thanos/pkg/api"
+	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
+	"github.com/thanos-io/thanos/pkg/server/http/middleware"
+
+	"github.com/conprof/db/storage"
 )
 
 var defaultMetadataTimeRange = 24 * time.Hour
@@ -106,14 +107,14 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *thanosapi.ApiE
 			t, _ := i.At()
 			resSeries.Timestamps = append(resSeries.Timestamps, t)
 		}
-		err = i.Err()
-		if err != nil {
+
+		if err := i.Err(); err != nil {
 			level.Error(a.logger).Log("err", err, "series", ls.String())
 		}
 
 		res = append(res, resSeries)
 	}
-	if set.Err() != nil {
+	if err := set.Err(); err != nil {
 		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: set.Err()}
 	}
 
@@ -274,7 +275,7 @@ type ApiFunc func(w http.ResponseWriter, r *http.Request, params httprouter.Para
 
 // TODO: add tracer
 // Instr returns a http HandlerFunc with the instrumentation middleware.
-func GetInstr(
+func Instr(
 	_ log.Logger,
 	ins extpromhttp.InstrumentationMiddleware,
 ) func(name string, f thanosapi.ApiFunc) httprouter.Handle {

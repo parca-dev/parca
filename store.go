@@ -14,6 +14,7 @@
 package main
 
 import (
+	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -43,8 +44,8 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 
 	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
 		Default("./data").String()
-	retention := modelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
-	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := regGRPCFlags(cmd)
+	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
 		db, err := tsdb.Open(

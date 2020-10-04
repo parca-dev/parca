@@ -355,7 +355,7 @@ github.com/sirupsen/logrus
 # github.com/spf13/pflag v1.0.5
 ## explicit
 github.com/spf13/pflag
-# github.com/thanos-io/thanos v0.13.1-0.20201002105236-bb1662a1d13c
+# github.com/thanos-io/thanos v0.13.1-0.20201002084234-fcb7cc387dce
 ## explicit
 github.com/thanos-io/thanos/pkg/api
 github.com/thanos-io/thanos/pkg/component
