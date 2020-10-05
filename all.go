@@ -67,7 +67,7 @@ func runAll(comp component.Component, g *run.Group, mux httpMux, p prober.Probe,
 		return nil, err
 	}
 
-	err = runWeb(mux, p, reg, logger, db, reloadCh)
+	err = runWeb(mux, p, reg, logger, db, reloadCh, "", "")
 	if err != nil {
 		return nil, err
 	}

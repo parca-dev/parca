@@ -40,17 +40,39 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
 
+	corsOrigin := cmd.Flag("cors.access-control-allow-origin", "Cross-origin resource sharing allowed origins.").
+		Default("").String()
+	corsMethods := cmd.Flag("cors.access-control-allow-methods", "Cross-origin resource sharing allowed methods.").
+		Default("").String()
+
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
 		if err != nil {
 			return probe, err
 		}
 		c := storepb.NewProfileStoreClient(conn)
-		return probe, runWeb(mux, probe, reg, logger, store.NewGRPCQueryable(c), reloadCh)
+		return probe, runWeb(
+			mux,
+			probe,
+			reg,
+			logger,
+			store.NewGRPCQueryable(c),
+			reloadCh,
+			*corsOrigin,
+			*corsMethods,
+		)
 	}
 }
 
-func runWeb(mux httpMux, probe prober.Probe, reg prometheus.Registerer, logger log.Logger, db storage.Queryable, reloadCh chan struct{}) error {
+func runWeb(
+	mux httpMux,
+	probe prober.Probe,
+	reg prometheus.Registerer,
+	logger log.Logger,
+	db storage.Queryable,
+	reloadCh chan struct{},
+	corsOrigin, corsMethods string,
+) error {
 	ui := pprofui.New(log.With(logger, "component", "pprofui"), db)
 
 	router := httprouter.New()
@@ -70,8 +92,20 @@ func runWeb(mux httpMux, probe prober.Probe, reg prometheus.Registerer, logger l
 
 	router.NotFound = http.FileServer(web.Assets)
 
-	mux.Handle("/", router)
+	mux.Handle("/", cors(corsOrigin, corsMethods, router))
 	probe.Ready()
 
 	return nil
+}
+
+func cors(corsOrigin, corsMethods string, h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if corsOrigin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
+		}
+		if corsMethods != "" {
+			w.Header().Set("Access-Control-Allow-Methods", corsMethods)
+		}
+		h.ServeHTTP(w, r)
+	})
 }
