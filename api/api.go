@@ -75,6 +75,11 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *thanosapi.ApiE
 		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
 	}
 
+	if to < from {
+		err := errors.New("to timestamp must not be before from time")
+		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
+	}
+
 	q, err := a.db.Querier(ctx, from, to)
 	if err != nil {
 		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
