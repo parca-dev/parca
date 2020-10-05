@@ -31,6 +31,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
 	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/prober"
 	httpserver "github.com/thanos-io/thanos/pkg/server/http"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -63,7 +64,7 @@ func main() {
 		Default("info").Enum("error", "warn", "info", "debug")
 	logFormat := app.Flag("log.format", "Log format to use.").
 		Default(logFormatLogfmt).Enum(logFormatLogfmt, logFormatJSON)
-	httpBindAddr, httpGracePeriod := regHTTPFlags(app)
+	httpBindAddr, httpGracePeriod := extkingpin.RegisterHTTPFlags(app)
 
 	cmds := map[string]setupFunc{}
 	reloadCh := make(chan struct{}, 1)
