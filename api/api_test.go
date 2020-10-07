@@ -25,13 +25,12 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
-	"github.com/gogo/status"
 	"github.com/prometheus/common/route"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
-	thanosapi "github.com/thanos-io/thanos/pkg/api"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
@@ -70,7 +69,7 @@ func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileS
 			},
 		},
 	})); err != nil {
-		return status.Error(codes.Aborted, err.Error())
+		return grpcstatus.Error(codes.Aborted, err.Error())
 	}
 	return nil
 }
@@ -80,11 +79,11 @@ func (s *fakeProfileStore) Profile(ctx context.Context, r *storepb.ProfileReques
 }
 
 type endpointTestCase struct {
-	endpoint thanosapi.ApiFunc
+	endpoint ApiFunc
 	params   map[string]string
 	query    url.Values
 	response interface{}
-	errType  thanosapi.ErrorType
+	errType  ErrorType
 }
 
 func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
@@ -108,7 +107,7 @@ func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
 
 		resp, _, apiErr := test.endpoint(req.WithContext(ctx))
 		if apiErr != nil {
-			if test.errType == thanosapi.ErrorNone {
+			if test.errType == ErrorNone {
 				t.Fatalf("Unexpected error: %s", apiErr)
 			}
 			if test.errType != apiErr.Typ {
@@ -116,7 +115,7 @@ func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
 			}
 			return
 		}
-		if test.errType != thanosapi.ErrorNone {
+		if test.errType != ErrorNone {
 			t.Fatalf("Expected error of type %q but got none", test.errType)
 		}
 
@@ -149,19 +148,19 @@ func TestAPIQueryRangeGRPCCall(t *testing.T) {
 		{
 			endpoint: api.QueryRange,
 			query:    url.Values{"query": []string{"allocs"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 		// Invalid format.
 		{
 			endpoint: api.QueryRange,
 			query:    url.Values{"query": []string{"allocs"}, "from": []string{"aaa"}, "to": []string{"10"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 		// to time before from time
 		{
 			endpoint: api.QueryRange,
 			query:    url.Values{"query": []string{"allocs"}, "from": []string{"9"}, "to": []string{"1"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 	}
 
@@ -216,13 +215,13 @@ func TestAPILabelNames(t *testing.T) {
 		{
 			endpoint: api.LabelNames,
 			query:    url.Values{"start": []string{"aaa"}, "end": []string{"10"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 		// to time before from time
 		{
 			endpoint: api.LabelNames,
 			query:    url.Values{"start": []string{"9"}, "end": []string{"1"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 	}
 
@@ -279,13 +278,13 @@ func TestAPILabelValues(t *testing.T) {
 		{
 			endpoint: api.LabelValues,
 			query:    url.Values{"start": []string{"aaa"}, "end": []string{"10"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 		// to time before from time
 		{
 			endpoint: api.LabelValues,
 			query:    url.Values{"start": []string{"9"}, "end": []string{"1"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 	}
 
@@ -333,7 +332,7 @@ func TestAPISeries(t *testing.T) {
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.Series,
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 		{
 			endpoint: api.Series,
@@ -348,13 +347,13 @@ func TestAPISeries(t *testing.T) {
 		{
 			endpoint: api.Series,
 			query:    url.Values{"start": []string{"aaa"}, "end": []string{"10"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 		// to time before from time
 		{
 			endpoint: api.Series,
 			query:    url.Values{"start": []string{"9"}, "end": []string{"1"}},
-			errType:  thanosapi.ErrorBadData,
+			errType:  ErrorBadData,
 		},
 	}
 

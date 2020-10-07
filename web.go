@@ -85,6 +85,7 @@ func runWeb(
 	router.GET("/-/reload", api.Reload)
 
 	router.GET("/api/v1/query_range", instr("query_range", api.QueryRange))
+	router.GET("/api/v1/query", instr("query", api.Query))
 	router.GET("/api/v1/series", instr("series", api.Series))
 	router.GET("/api/v1/labels", instr("label_names", api.LabelNames))
 	router.GET("/api/v1/label/:name/values", instr("label_values", api.LabelValues))

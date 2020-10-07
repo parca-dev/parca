@@ -34,7 +34,7 @@ GIT            ?= $(shell which git)
 
 .PHONY: test
 test:
-	go test ./...
+	go test $(pkgs)
 
 .PHONY: assets
 assets:
@@ -99,3 +99,11 @@ ifneq ($(GIT),)
 else
 	@echo >&2 "No git binary found."; exit 1
 endif
+
+internal/pprof:
+	rm -rf internal/pprof
+	rm -rf tmp
+	git clone https://github.com/google/pprof tmp/pprof
+	cp -r tmp/pprof/internal internal/pprof
+	find internal/pprof -type f -exec sed -i 's/github.com\/google\/pprof\/internal/github.com\/conprof\/conprof\/internal\/pprof/g' {} +
+	rm -rf tmp
