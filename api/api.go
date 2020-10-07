@@ -286,7 +286,6 @@ func Instr(
 ) func(name string, f thanosapi.ApiFunc) httprouter.Handle {
 	instr := func(name string, f thanosapi.ApiFunc) httprouter.Handle {
 		hf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			thanosapi.SetCORS(w)
 			if data, warnings, err := f(r); err != nil {
 				thanosapi.RespondError(w, err, data)
 			} else if data != nil {

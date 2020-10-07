@@ -14,7 +14,6 @@
 package main
 
 import (
-	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -22,6 +21,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/extprom"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
