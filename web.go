@@ -14,10 +14,11 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/conprof/conprof/web"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
-	"net/http"
 
 	//"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
@@ -43,11 +44,6 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
 
-	corsOrigin := cmd.Flag("cors.access-control-allow-origin", "Cross-origin resource sharing allowed origins.").
-		Default("").String()
-	corsMethods := cmd.Flag("cors.access-control-allow-methods", "Cross-origin resource sharing allowed methods.").
-		Default("").String()
-
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
 		if err != nil {
@@ -61,8 +57,6 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 			logger,
 			store.NewGRPCQueryable(c),
 			reloadCh,
-			*corsOrigin,
-			*corsMethods,
 		)
 	}
 }
@@ -74,7 +68,6 @@ func runWeb(
 	logger log.Logger,
 	db storage.Queryable,
 	reloadCh chan struct{},
-	corsOrigin, corsMethods string,
 ) error {
 	logger = log.With(logger, "component", "pprofui")
 	ui := pprofui.New(logger, db)
@@ -97,20 +90,8 @@ func runWeb(
 	router.GET("/api/v1/label/:name/values", instr("label_values", api.LabelValues))
 
 	router.NotFound = http.FileServer(web.Assets)
-	mux.Handle("/", cors(corsOrigin, corsMethods, router))
+	mux.Handle("/", router)
 	probe.Ready()
 
 	return nil
-}
-
-func cors(corsOrigin, corsMethods string, h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if corsOrigin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
-		}
-		if corsMethods != "" {
-			w.Header().Set("Access-Control-Allow-Methods", corsMethods)
-		}
-		h.ServeHTTP(w, r)
-	})
 }
