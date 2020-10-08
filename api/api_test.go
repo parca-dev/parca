@@ -127,7 +127,8 @@ func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
 }
 
 func TestAPIQueryRangeGRPCCall(t *testing.T) {
-	api := createFakeGRPCAPI(t)
+	api, closer := createFakeGRPCAPI(t)
+	defer closer.Close()
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.QueryRange,
@@ -364,12 +365,11 @@ func TestAPISeries(t *testing.T) {
 	}
 }
 
-func createFakeGRPCAPI(t *testing.T) *API {
+func createFakeGRPCAPI(t *testing.T) (*API, io.Closer) {
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
 	}
-	defer lis.Close()
 	grpcServer := grpc.NewServer()
 	storepb.RegisterProfileStoreServer(grpcServer, &fakeProfileStore{})
 	go grpcServer.Serve(lis)
@@ -383,5 +383,5 @@ func createFakeGRPCAPI(t *testing.T) *API {
 
 	c := storepb.NewProfileStoreClient(conn)
 	q := store.NewGRPCQueryable(c)
-	return New(log.NewNopLogger(), q, make(chan struct{}))
+	return New(log.NewNopLogger(), q, make(chan struct{})), lis
 }
