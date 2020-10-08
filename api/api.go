@@ -176,11 +176,17 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 
 	switch r.URL.Query().Get("report") {
 	case "top":
-		rep, err := generateTopReport(profile)
+		top, err := generateTopReport(profile)
 		if err != nil {
 			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 		}
-		return rep, nil, nil
+		return top, nil, nil
+	case "flamegraph":
+		fg, err := generateFlamegraphReport(profile)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
+		return fg, nil, nil
 	case "svg":
 		return &svgRenderer{profile: profile}, nil, nil
 	default:
