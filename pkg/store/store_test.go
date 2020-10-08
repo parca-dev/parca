@@ -238,7 +238,11 @@ func TestStore(t *testing.T) {
 	httpapi := api.New(log.NewNopLogger(), q, make(chan struct{}))
 
 	req := httptest.NewRequest("GET", "http://example.com/query_range?from=0&to=10&query=allocs", nil)
-	result, warnings, err := httpapi.QueryRange(req)
+
+	result, warnings, apiErr := httpapi.QueryRange(req)
+	if apiErr != nil && apiErr.Err != nil {
+		t.Fatalf("Unexpected err: %v", apiErr)
+	}
 
 	series, ok := result.([]api.Series)
 	if !ok {
