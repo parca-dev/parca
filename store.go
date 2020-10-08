@@ -16,9 +16,6 @@ package main
 import (
 	"time"
 
-	"github.com/conprof/conprof/pkg/store"
-	"github.com/conprof/db/tsdb"
-	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -29,6 +26,10 @@ import (
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+
+	"github.com/conprof/conprof/pkg/store"
+	"github.com/conprof/db/tsdb"
+	"github.com/conprof/db/tsdb/wal"
 )
 
 type componentString string

@@ -26,7 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/driver"
@@ -36,6 +35,8 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/promql/parser"
 	"github.com/spf13/pflag"
+
+	"github.com/conprof/db/storage"
 )
 
 type pprofUI struct {
@@ -84,7 +85,7 @@ func (p *pprofUI) selectProfile(m labels.Selector, timestamp int64) ([]byte, err
 	return buf, nil
 }
 
-func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	series, timestamp, remainingPath := parsePath(r.URL.Path)
 	if !strings.HasPrefix(remainingPath, "/") {
 		remainingPath = "/" + remainingPath
@@ -154,7 +155,7 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 }
 
-func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	parts := strings.Split(path.Clean(strings.TrimPrefix(r.URL.Path, "/download/")), "/")
 	if len(parts) < 2 {
 		http.Error(w, "don't have enough parameters", http.StatusBadRequest)

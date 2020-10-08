@@ -3,6 +3,7 @@ module github.com/conprof/conprof
 go 1.14
 
 require (
+	github.com/NYTimes/gziphandler v1.1.1
 	github.com/conprof/db v0.0.0-20200923100233-d202624dc72c
 	github.com/go-kit/kit v0.10.0
 	github.com/gogo/protobuf v1.3.1
@@ -13,7 +14,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
-	github.com/prometheus/common v0.13.0
+	github.com/prometheus/common v0.14.0
 	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/shurcooL/vfsgen v0.0.0-20200627165143-92b8a710ab6c
 	github.com/spf13/pflag v1.0.5

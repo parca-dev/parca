@@ -115,7 +115,7 @@ class QueryPage extends React.Component<Props, State> {
         let expr = search.get("query") || props.query.request.expression;
         let timeFrom = search.get("from") ? moment(Number(search.get("from"))) : props.query.request.timeFrom;
         let timeTo = search.get("to") ? moment(Number(search.get("to"))) : props.query.request.timeFrom;
-        let now = (search.get("now") || "").toLowerCase() == 'false' ? false : true;
+        let now = (search.get("now") || "").toLowerCase() != 'false';
 
         this.state = {
             expression: expr,
@@ -246,7 +246,7 @@ class QueryPage extends React.Component<Props, State> {
                         </Paper>
                     </Grid>
 
-                    {query.result.series.map(
+                    {query.result.data.map(
                     (series: Series) => {
                     return (
                     <Grid key={series.labelsetEncoded} item xs={8}>
@@ -267,7 +267,7 @@ class QueryPage extends React.Component<Props, State> {
                     )
                     }
                     )}
-                    {!query.request.loading && query.result.series.length == 0 &&
+                    {!query.request.loading && query.result.data.length == 0 &&
                         <Grid key="no-result" className={classes.noResult} item xs={8}>
                             <h3>No result</h3>
                         </Grid>

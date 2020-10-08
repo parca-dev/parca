@@ -14,7 +14,7 @@ export interface QueryRequest {
 }
 
 export interface QueryResult {
-    series: Series[];
+    data: Series[];
 }
 
 export interface Labels {

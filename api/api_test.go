@@ -15,21 +15,28 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
-	"net/http/httptest"
+	"net/http"
+	"net/url"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/go-kit/kit/log"
+	"github.com/gogo/status"
+	"github.com/prometheus/common/route"
+	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/pkg/timestamp"
+	thanosapi "github.com/thanos-io/thanos/pkg/api"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
+	"github.com/conprof/conprof/pkg/testutil"
 	"github.com/conprof/db/tsdb/chunkenc"
-	"github.com/go-kit/kit/log"
-	"github.com/gogo/status"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 type fakeProfileStore struct{}
@@ -72,12 +79,297 @@ func (s *fakeProfileStore) Profile(ctx context.Context, r *storepb.ProfileReques
 	return nil, nil
 }
 
+type endpointTestCase struct {
+	endpoint thanosapi.ApiFunc
+	params   map[string]string
+	query    url.Values
+	response interface{}
+	errType  thanosapi.ErrorType
+}
+
+func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
+	return t.Run(name, func(t *testing.T) {
+		// Build a context with the correct request params.
+		ctx := context.Background()
+		for p, v := range test.params {
+			ctx = route.WithParam(ctx, p, v)
+		}
+
+		reqURL := "http://example.com"
+		params := test.query.Encode()
+
+		var body io.Reader
+		reqURL += "?" + params
+
+		req, err := http.NewRequest(http.MethodGet, reqURL, body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		resp, _, apiErr := test.endpoint(req.WithContext(ctx))
+		if apiErr != nil {
+			if test.errType == thanosapi.ErrorNone {
+				t.Fatalf("Unexpected error: %s", apiErr)
+			}
+			if test.errType != apiErr.Typ {
+				t.Fatalf("Expected error of type %q but got type %q", test.errType, apiErr.Typ)
+			}
+			return
+		}
+		if test.errType != thanosapi.ErrorNone {
+			t.Fatalf("Expected error of type %q but got none", test.errType)
+		}
+
+		if !reflect.DeepEqual(resp, test.response) {
+			t.Fatalf("Response does not match, expected:\n%+v\ngot:\n%+v", test.response, resp)
+		}
+	})
+}
+
 func TestAPIQueryRangeGRPCCall(t *testing.T) {
+	api, closer := createFakeGRPCAPI(t)
+	defer closer.Close()
+	var tests = []endpointTestCase{
+		{
+			endpoint: api.QueryRange,
+			query: url.Values{
+				"query": []string{"allocs"},
+				"from":  []string{"0"},
+				"to":    []string{"10"},
+			},
+			response: []Series{
+				{
+					Labels:          map[string]string{"__name__": "allocs"},
+					LabelSetEncoded: "e19fbmFtZV9fPSJhbGxvY3MifQ==",
+					Timestamps:      []int64{1, 5},
+				},
+			},
+		},
+		// from and to not set.
+		{
+			endpoint: api.QueryRange,
+			query:    url.Values{"query": []string{"allocs"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+		// Invalid format.
+		{
+			endpoint: api.QueryRange,
+			query:    url.Values{"query": []string{"allocs"}, "from": []string{"aaa"}, "to": []string{"10"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+		// to time before from time
+		{
+			endpoint: api.QueryRange,
+			query:    url.Values{"query": []string{"allocs"}, "from": []string{"9"}, "to": []string{"1"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+	}
+
+	for i, test := range tests {
+		if ok := testEndpoint(t, test, fmt.Sprintf("#%d %s", i, test.query.Encode())); !ok {
+			return
+		}
+	}
+}
+
+func TestAPILabelNames(t *testing.T) {
+	lbls := []labels.Labels{
+		{
+			labels.Label{Name: "__name__", Value: "allocs"},
+			labels.Label{Name: "foo", Value: "bar"},
+		},
+		{
+			labels.Label{Name: "__name__", Value: "goroutine"},
+			labels.Label{Name: "foo", Value: "boo"},
+		},
+	}
+
+	db, err := testutil.NewTSDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		db.Close()
+	}()
+
+	app := db.Appender(context.Background())
+	for _, lbl := range lbls {
+		for i := int64(0); i < 10; i++ {
+			_, err := app.Add(lbl, timestamp.FromTime(time.Now()), []byte{byte(i)})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if err := app.Commit(); err != nil {
+		t.Fatal(err)
+	}
+
+	api := API{log.NewNopLogger(), db, make(chan struct{})}
+	var tests = []endpointTestCase{
+		{
+			endpoint: api.LabelNames,
+			query:    url.Values{},
+			response: []string{"__name__", "foo"},
+		},
+		// Invalid format.
+		{
+			endpoint: api.LabelNames,
+			query:    url.Values{"start": []string{"aaa"}, "end": []string{"10"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+		// to time before from time
+		{
+			endpoint: api.LabelNames,
+			query:    url.Values{"start": []string{"9"}, "end": []string{"1"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+	}
+
+	for i, test := range tests {
+		if ok := testEndpoint(t, test, fmt.Sprintf("#%d %s", i, test.query.Encode())); !ok {
+			return
+		}
+	}
+}
+
+func TestAPILabelValues(t *testing.T) {
+	lbls := []labels.Labels{
+		{
+			labels.Label{Name: "__name__", Value: "allocs"},
+			labels.Label{Name: "foo", Value: "bar"},
+		},
+		{
+			labels.Label{Name: "__name__", Value: "goroutine"},
+			labels.Label{Name: "foo", Value: "boo"},
+		},
+	}
+
+	db, err := testutil.NewTSDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		db.Close()
+	}()
+
+	app := db.Appender(context.Background())
+	for _, lbl := range lbls {
+		for i := int64(0); i < 10; i++ {
+			_, err := app.Add(lbl, timestamp.FromTime(time.Now()), []byte{byte(i)})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if err := app.Commit(); err != nil {
+		t.Fatal(err)
+	}
+
+	api := API{log.NewNopLogger(), db, make(chan struct{})}
+	var tests = []endpointTestCase{
+		{
+			endpoint: api.LabelValues,
+			params: map[string]string{
+				"name": "__name__",
+			},
+			response: []string{"allocs", "goroutine"},
+		},
+		// Invalid format.
+		{
+			endpoint: api.LabelValues,
+			query:    url.Values{"start": []string{"aaa"}, "end": []string{"10"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+		// to time before from time
+		{
+			endpoint: api.LabelValues,
+			query:    url.Values{"start": []string{"9"}, "end": []string{"1"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+	}
+
+	for i, test := range tests {
+		if ok := testEndpoint(t, test, fmt.Sprintf("#%d %s", i, test.query.Encode())); !ok {
+			return
+		}
+	}
+}
+
+func TestAPISeries(t *testing.T) {
+	lbls := []labels.Labels{
+		{
+			labels.Label{Name: "__name__", Value: "allocs"},
+			labels.Label{Name: "foo", Value: "bar"},
+		},
+		{
+			labels.Label{Name: "__name__", Value: "goroutine"},
+			labels.Label{Name: "foo", Value: "boo"},
+		},
+	}
+
+	db, err := testutil.NewTSDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		db.Close()
+	}()
+
+	app := db.Appender(context.Background())
+	for _, lbl := range lbls {
+		for i := int64(0); i < 10; i++ {
+			_, err := app.Add(lbl, timestamp.FromTime(time.Now()), []byte{byte(i)})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if err := app.Commit(); err != nil {
+		t.Fatal(err)
+	}
+
+	api := API{log.NewNopLogger(), db, make(chan struct{})}
+	var tests = []endpointTestCase{
+		{
+			endpoint: api.Series,
+			errType:  thanosapi.ErrorBadData,
+		},
+		{
+			endpoint: api.Series,
+			query: url.Values{
+				"match[]": []string{`allocs`},
+			},
+			response: []labels.Labels{
+				labels.FromStrings("__name__", "allocs", "foo", "bar"),
+			},
+		},
+		// Invalid format.
+		{
+			endpoint: api.Series,
+			query:    url.Values{"start": []string{"aaa"}, "end": []string{"10"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+		// to time before from time
+		{
+			endpoint: api.Series,
+			query:    url.Values{"start": []string{"9"}, "end": []string{"1"}},
+			errType:  thanosapi.ErrorBadData,
+		},
+	}
+
+	for i, test := range tests {
+		if ok := testEndpoint(t, test, fmt.Sprintf("#%d %s", i, test.query.Encode())); !ok {
+			return
+		}
+	}
+}
+
+func createFakeGRPCAPI(t *testing.T) (*API, io.Closer) {
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
 	}
-	defer lis.Close()
 	grpcServer := grpc.NewServer()
 	storepb.RegisterProfileStoreServer(grpcServer, &fakeProfileStore{})
 	go grpcServer.Serve(lis)
@@ -88,47 +380,8 @@ func TestAPIQueryRangeGRPCCall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	c := storepb.NewProfileStoreClient(conn)
 	q := store.NewGRPCQueryable(c)
-	api := New(log.NewNopLogger(), q, make(chan struct{}))
-
-	req := httptest.NewRequest("GET", "http://example.com/query_range?from=0&to=10&query=allocs", nil)
-	w := httptest.NewRecorder()
-	api.QueryRange(w, req, nil)
-
-	resp := w.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	if resp.StatusCode != 200 {
-		t.Fatalf("Unexpected status code, expected 200, got %d", resp.StatusCode)
-	}
-
-	expectedContentType := "application/json"
-	gotContentType := resp.Header.Get("Content-Type")
-	if gotContentType != expectedContentType {
-		t.Fatalf("Unexpected Content-Type, expected %s, got %s", expectedContentType, gotContentType)
-	}
-
-	queryResult := QueryResult{}
-	err = json.Unmarshal(body, &queryResult)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal query result")
-	}
-
-	queryResultLen := len(queryResult.Series)
-	if queryResultLen != 1 {
-		t.Fatalf("Unexpected series in query result. Expected 1, got %d", queryResultLen)
-	}
-
-	series := queryResult.Series[0]
-
-	expectedLabels := map[string]string{"__name__": "allocs"}
-	if !reflect.DeepEqual(series.Labels, expectedLabels) {
-		t.Fatalf("Unexpected labels, expected %s, got %s", fmt.Sprintf("%#+v", expectedLabels), fmt.Sprintf("%#+v", series.Labels))
-	}
-
-	expectedTimestamps := []int64{1, 5}
-	if !reflect.DeepEqual(series.Timestamps, expectedTimestamps) {
-		t.Fatalf("Unexpected timestamps, expected %s, got %s", fmt.Sprintf("%#+v", expectedTimestamps), fmt.Sprintf("%#+v", series.Timestamps))
-	}
+	return New(log.NewNopLogger(), q, make(chan struct{})), lis
 }
