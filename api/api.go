@@ -14,20 +14,14 @@
 package api
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
-	"os"
-	"os/exec"
 	"strconv"
 	"time"
 
-	"github.com/conprof/conprof/internal/pprof/plugin"
-	"github.com/conprof/conprof/internal/pprof/report"
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -192,182 +186,6 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	default:
 		return &svgRenderer{profile: profile}, nil, nil
 	}
-}
-
-type textItem struct {
-	Name        string `json:"name,omitempty"`
-	InlineLabel string `json:"inlineLabel,omitempty"`
-	Flat        int64  `json:"flat,omitempty"`
-	Cum         int64  `json:"cum,omitempty"`
-	FlatFormat  string `json:"flatFormat,omitempty"`
-	CumFormat   string `json:"cumFormat,omitempty"`
-}
-
-type topReport struct {
-	Labels []string   `json:"labels,omitempty"`
-	Items  []textItem `json:"items,omitempty"`
-}
-
-func generateTopReport(p *profile.Profile) (*topReport, error) {
-	numLabelUnits, _ := p.NumLabelUnits()
-	p.Aggregate(false, true, true, true, false)
-
-	value, meanDiv, sample, err := sampleFormat(p, "", false)
-	if err != nil {
-		return nil, err
-	}
-
-	stype := sample.Type
-
-	rep := report.NewDefault(p, report.Options{
-		OutputFormat:  report.Text,
-		OutputUnit:    "minimum",
-		Ratio:         1,
-		NumLabelUnits: numLabelUnits,
-
-		SampleValue:       value,
-		SampleMeanDivisor: meanDiv,
-		SampleType:        stype,
-		SampleUnit:        sample.Unit,
-
-		NodeCount:    500,
-		NodeFraction: 0.005,
-		EdgeFraction: 0.001,
-	})
-
-	items, labels := report.TextItems(rep)
-	res := &topReport{
-		Labels: labels,
-		Items:  make([]textItem, 0, len(items)),
-	}
-
-	for _, i := range items {
-		res.Items = append(res.Items, textItem{
-			Name:        i.Name,
-			InlineLabel: i.InlineLabel,
-			Flat:        i.Flat,
-			Cum:         i.Cum,
-			FlatFormat:  i.FlatFormat,
-			CumFormat:   i.CumFormat,
-		})
-	}
-
-	return res, nil
-}
-
-type svgRenderer struct {
-	profile *profile.Profile
-}
-
-func (r *svgRenderer) Render(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "image/svg+xml")
-	numLabelUnits, _ := r.profile.NumLabelUnits()
-	r.profile.Aggregate(false, true, true, true, false)
-
-	value, meanDiv, sample, err := sampleFormat(r.profile, "", false)
-	if err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
-	}
-
-	stype := sample.Type
-
-	rep := report.NewDefault(r.profile, report.Options{
-		OutputFormat:  report.Dot,
-		OutputUnit:    "minimum",
-		Ratio:         1,
-		NumLabelUnits: numLabelUnits,
-
-		SampleValue:       value,
-		SampleMeanDivisor: meanDiv,
-		SampleType:        stype,
-		SampleUnit:        sample.Unit,
-
-		NodeCount:    80,
-		NodeFraction: 0.005,
-		EdgeFraction: 0.001,
-	})
-
-	input := bytes.NewBuffer(nil)
-	if err := report.Generate(input, rep, &fakeObjTool{}); err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
-	}
-
-	cmd := exec.Command("dot", "-Tsvg")
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = input, w, os.Stderr
-	if err := cmd.Run(); err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
-	}
-}
-
-type sampleValueFunc func([]int64) int64
-
-// sampleFormat returns a function to extract values out of a profile.Sample,
-// and the type/units of those values.
-func sampleFormat(p *profile.Profile, sampleIndex string, mean bool) (value, meanDiv sampleValueFunc, v *profile.ValueType, err error) {
-	if len(p.SampleType) == 0 {
-		return nil, nil, nil, fmt.Errorf("profile has no samples")
-	}
-	index, err := p.SampleIndexByName(sampleIndex)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	value = valueExtractor(index)
-	if mean {
-		meanDiv = valueExtractor(0)
-	}
-	v = p.SampleType[index]
-	return
-}
-
-func valueExtractor(ix int) sampleValueFunc {
-	return func(v []int64) int64 {
-		return v[ix]
-	}
-}
-
-type fakeObjTool struct {
-}
-
-func (t *fakeObjTool) Open(file string, start, limit, offset uint64) (plugin.ObjFile, error) {
-	panic("Unimplemented")
-	return nil, nil
-}
-
-func (t *fakeObjTool) Disasm(file string, start, end uint64, intelSyntax bool) ([]plugin.Inst, error) {
-	panic("Unimplemented")
-	return nil, nil
-}
-
-// PrometheusResult allows compatibility with official Prometheus format https://prometheus.io/docs/prometheus/latest/querying/api/#format-overview.
-type PrometheusResult struct {
-	Err error
-}
-
-func (r PrometheusResult) MarshalJSON() ([]byte, error) {
-	s := struct {
-		Status string `json:"status"`
-		Error  string `json:"error,omitempty"`
-	}{Status: "success"}
-
-	if r.Err != nil {
-		s.Status = "error"
-		s.Error = r.Err.Error()
-	}
-
-	return json.Marshal(s)
-}
-
-type SeriesResult struct {
-	PrometheusResult
-
-	Series []labels.Labels `json:"data"`
-}
-
-type LabelNamesResult struct {
-	PrometheusResult
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {
