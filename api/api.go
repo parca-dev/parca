@@ -187,11 +187,23 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 		}
 		return fg, nil, nil
+	case "proto":
+		return &protoRenderer{profile: profile}, nil, nil
 	case "svg":
 		return &svgRenderer{profile: profile}, nil, nil
 	default:
 		return &svgRenderer{profile: profile}, nil, nil
 	}
+}
+
+type protoRenderer struct {
+	profile *profile.Profile
+}
+
+func (r *protoRenderer) Render(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/vnd.google.protobuf+gzip")
+	w.Header().Set("Content-Disposition", "attachment;filename=profile.pb.gz")
+	r.profile.Write(w)
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {
