@@ -117,7 +117,7 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 		res = append(res, resSeries)
 	}
 	if err := set.Err(); err != nil {
-		return nil, nil, &ApiError{Typ: ErrorExec, Err: set.Err()}
+		return nil, nil, &ApiError{Typ: ErrorInternal, Err: set.Err()}
 	}
 
 	return res, set.Warnings(), nil
