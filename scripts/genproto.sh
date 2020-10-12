@@ -24,6 +24,12 @@ cp ${PROTOC_GEN_GOGOFAST_BIN} /tmp/protobin/protoc-gen-gogofast
 PATH=${PATH}:/tmp/protobin
 GOGOPROTO_ROOT="$(GO111MODULE=on go list -modfile=.bingo/protoc-gen-gogofast.mod -f '{{ .Dir }}' -m github.com/gogo/protobuf)"
 GOGOPROTO_PATH="${GOGOPROTO_ROOT}:${GOGOPROTO_ROOT}/protobuf"
+DEP_PATH="/tmp/proto-gen-thanos-dependency"
+THANOS_PATH="${DEP_PATH}/github.com/thanos-io/thanos"
+
+rm -rf "${DEP_PATH}"
+mkdir -p "${THANOS_PATH}"
+git clone https://github.com/thanos-io/thanos "${THANOS_PATH}"
 
 DIRS="store/storepb/"
 echo "generating code"
@@ -31,6 +37,7 @@ pushd "pkg"
 for dir in ${DIRS}; do
   ${PROTOC_BIN} --gogofast_out=Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,plugins=grpc:. \
     -I=. \
+    -I="${DEP_PATH}" \
     -I="${GOGOPROTO_PATH}" \
     ${dir}/*.proto
 

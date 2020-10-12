@@ -2,6 +2,7 @@ syntax = "proto3";
 package conprof;
 
 import "gogoproto/gogo.proto";
+import "github.com/thanos-io/thanos/pkg/store/labelpb/types.proto";
 
 option go_package = "storepb";
 
@@ -31,14 +32,9 @@ message WriteRequest {
   repeated ProfileSeries profileSeries = 1 [(gogoproto.nullable) = false];
 }
 
-message Label {
-  string name  = 1;
-  string value = 2;
-}
-
 // ProfileSeries represents samples and labels for a single time series.
 message ProfileSeries {
-  repeated Label labels = 1 [(gogoproto.nullable) = false];
+  repeated thanos.FullCopyLabel labels = 1 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/thanos-io/thanos/pkg/store/labelpb.Label"];
   repeated Sample samples = 2 [(gogoproto.nullable) = false];
 }
 
@@ -67,20 +63,25 @@ message LabelMatcher {
   string value = 3;
 }
 
-message Chunk {
+message AggrChunk {
   int64 min_time = 1;
   int64 max_time = 2;
+
+  Chunk raw     = 3;
+}
+
+message Chunk {
   enum Encoding {
       XOR = 0;
       None = 1;
     }
-  Encoding type  = 3;
-  bytes data     = 4;
+  Encoding type  = 1;
+  bytes data     = 2;
 }
 
 message RawProfileSeries {
-  repeated Label labels = 1 [(gogoproto.nullable) = false];
-  repeated Chunk chunks = 2 [(gogoproto.nullable) = false];
+  repeated thanos.FullCopyLabel labels = 1 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/thanos-io/thanos/pkg/store/labelpb.Label"];
+  repeated AggrChunk chunks = 2 [(gogoproto.nullable) = false];
 }
 
 message SeriesResponse {

@@ -9,6 +9,7 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/gogo/status v1.0.3
 	github.com/google/pprof v0.0.0-20200708004538-1a94d8640e99
+	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/oklog/run v1.1.0
 	github.com/opentracing/opentracing-go v1.2.0

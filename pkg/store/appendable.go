@@ -20,6 +20,7 @@ import (
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/db/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/thanos-io/thanos/pkg/store/labelpb"
 )
 
 type grpcStoreAppendable struct {
@@ -63,7 +64,7 @@ func (a *grpcStoreAppender) Commit() error {
 	_, err := a.c.Write(a.ctx, &storepb.WriteRequest{
 		ProfileSeries: []storepb.ProfileSeries{
 			{
-				Labels: translatePromLabels(a.l),
+				Labels: labelpb.LabelsFromPromLabels(a.l),
 				Samples: []storepb.Sample{
 					{
 						Timestamp: a.t,
