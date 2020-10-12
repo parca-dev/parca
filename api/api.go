@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/conprof/conprof/internal/pprof/measurement"
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -148,14 +149,14 @@ func (a *API) findProfile(ctx context.Context, time int64, sel []*labels.Matcher
 	return nil, set.Err()
 }
 
-func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
+func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, *ApiError) {
 	ctx := r.Context()
 
 	timeString := r.URL.Query().Get("time")
 	time, err := strconv.ParseInt(timeString, 10, 64)
 	if err != nil {
 		err = fmt.Errorf("unable to parse time: %w", err)
-		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	queryString := r.URL.Query().Get("query")
@@ -164,14 +165,103 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	sel, err := parser.ParseMetricSelector(queryString)
 	if err != nil {
 		err = fmt.Errorf("unable to parse query: %w", err)
-		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	profile, err := a.findProfile(ctx, time, sel)
 	// TODO(bwplotka): Handle warnings.
 	if err != nil {
 		err = fmt.Errorf("unable to find profile: %w", err)
-		return nil, nil, &ApiError{Typ: ErrorInternal, Err: err}
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	return profile, nil
+}
+
+func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
+	ctx := r.Context()
+
+	timeAString := r.URL.Query().Get("time_a")
+	timeA, err := strconv.ParseInt(timeAString, 10, 64)
+	if err != nil {
+		err = fmt.Errorf("unable to parse time_a: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	queryAString := r.URL.Query().Get("query_a")
+	selA, err := parser.ParseMetricSelector(queryAString)
+	if err != nil {
+		err = fmt.Errorf("unable to parse query_a: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	timeBString := r.URL.Query().Get("time_b")
+	timeB, err := strconv.ParseInt(timeBString, 10, 64)
+	if err != nil {
+		err = fmt.Errorf("unable to parse time_b: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	queryBString := r.URL.Query().Get("query_b")
+	selB, err := parser.ParseMetricSelector(queryBString)
+	if err != nil {
+		err = fmt.Errorf("unable to parse query_b: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	profileA, err := a.findProfile(ctx, timeA, selA)
+	if err != nil {
+		err = fmt.Errorf("unable to find profile A: %w", err)
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	profileB, err := a.findProfile(ctx, timeB, selB)
+	if err != nil {
+		err = fmt.Errorf("unable to find profile B: %w", err)
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	// compare totals of profiles, skip this to subtract profiles from each other
+	profileA.SetLabel("pprof::base", []string{"true"})
+
+	profileA.Scale(-1)
+
+	profiles := []*profile.Profile{profileA, profileB}
+
+	// Merge profiles.
+	if err := measurement.ScaleProfiles(profiles); err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	p, err := profile.Merge(profiles)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	return p, nil
+}
+
+func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
+	var (
+		profile *profile.Profile
+		apiErr  *ApiError
+	)
+	switch r.URL.Query().Get("type") {
+	case "diff":
+		profile, apiErr = a.DiffProfiles(r)
+		if apiErr != nil {
+			return nil, nil, apiErr
+		}
+	case "single":
+		profile, apiErr = a.SingleProfileQuery(r)
+		if apiErr != nil {
+			return nil, nil, apiErr
+		}
+	default:
+		profile, apiErr = a.SingleProfileQuery(r)
+		if apiErr != nil {
+			return nil, nil, apiErr
+		}
 	}
 
 	switch r.URL.Query().Get("report") {
