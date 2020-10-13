@@ -239,7 +239,7 @@ func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.La
 
 	if c.PprofConfig != nil {
 		if c.PprofConfig.Heap != nil {
-			add(ProfileGoroutineType, c.PprofConfig.Heap.PprofProfilingConfig)
+			add(ProfileHeapType, c.PprofConfig.Heap.PprofProfilingConfig)
 		}
 	}
 
