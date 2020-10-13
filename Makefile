@@ -27,7 +27,7 @@ GOPROXY           ?= https://proxy.golang.org
 export GOPROXY
 
 GOBIN          ?= $(firstword $(subst :, ,${GOPATH}))/bin
-TMP_GOPATH     ?= /tmp/thanos-go
+TMP_GOPATH     ?= /tmp/conprof-go
 PROTOC         ?= $(GOBIN)/protoc-$(PROTOC_VERSION)
 PROTOC_VERSION ?= 3.4.0
 GIT            ?= $(shell which git)
@@ -72,7 +72,7 @@ docker: common-build
 	@echo ">> building docker image '${DOCKER_IMAGE_NAME}'"
 	@docker build -t "${DOCKER_IMAGE_NAME}" .
 
-# docker-push pushes docker image build under `${DOCKER_IMAGE_NAME}` to quay.io/thanos/"$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
+# docker-push pushes docker image build under `${DOCKER_IMAGE_NAME}` to quay.io/conprof/"$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
 .PHONY: docker-push
 docker-push:
 	@echo ">> pushing image"
