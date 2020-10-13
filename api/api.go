@@ -87,7 +87,7 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	level.Debug(a.logger).Log("query", queryString, "from", from, "to", to)
 	sel, err := parser.ParseMetricSelector(queryString)
 	if err != nil {
-		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	set := q.Select(false, nil, sel...)
@@ -241,6 +241,68 @@ func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 	return p, nil
 }
 
+func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, *ApiError) {
+	ctx := r.Context()
+
+	fromString := r.URL.Query().Get("from")
+	from, err := strconv.ParseInt(fromString, 10, 64)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	toString := r.URL.Query().Get("to")
+	to, err := strconv.ParseInt(toString, 10, 64)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	if to < from {
+		err := errors.New("to timestamp must not be before from time")
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	queryString := r.URL.Query().Get("query")
+	sel, err := parser.ParseMetricSelector(queryString)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	q, err := a.db.Querier(ctx, from, to)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorExec, Err: err}
+	}
+
+	set := q.Select(false, nil, sel...)
+	profiles := []*profile.Profile{}
+	for set.Next() {
+		series := set.At()
+		i := series.Iterator()
+		for i.Next() {
+			_, b := i.At()
+			p, err := profile.ParseData(b)
+			if err != nil {
+				level.Error(a.logger).Log("err", err)
+			}
+			profiles = append(profiles, p)
+		}
+
+		if err := i.Err(); err != nil {
+			level.Error(a.logger).Log("err", err)
+		}
+	}
+	if err := set.Err(); err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: set.Err()}
+	}
+
+	// TODO(brancz): This will eventually need to be batched to limit memory use per request.
+	p, err := profile.Merge(profiles)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	return p, nil
+}
+
 func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	var (
 		profile *profile.Profile
@@ -249,6 +311,11 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	switch r.URL.Query().Get("type") {
 	case "diff":
 		profile, apiErr = a.DiffProfiles(r)
+		if apiErr != nil {
+			return nil, nil, apiErr
+		}
+	case "merge":
+		profile, apiErr = a.MergeProfiles(r)
 		if apiErr != nil {
 			return nil, nil, apiErr
 		}
