@@ -278,7 +278,7 @@ func (ts Targets) Less(i, j int) bool { return ts[i].URL().String() < ts[j].URL(
 func (ts Targets) Swap(i, j int)      { ts[i], ts[j] = ts[j], ts[i] }
 
 const (
-	ProfilePath             = "profile_path"
+	ProfilePath             = "__profile_path__"
 	ProfileName             = "__name__"
 	ProfileAllocsType       = "allocs"
 	ProfileBlockType        = "block"

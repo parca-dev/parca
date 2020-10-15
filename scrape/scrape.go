@@ -508,13 +508,16 @@ mainLoop:
 				sl.lastScrapeSize = len(b)
 			}
 
-			ls := make(labels.Labels, len(sl.target.labels))
+			tl := sl.target.Labels()
 			for _, l := range sl.target.labels {
-				ls = append(ls, labels.Label{Name: l.Name, Value: l.Value})
+				if l.Name == "__name__" {
+					tl = append(tl, labels.Label{Name: l.Name, Value: l.Value})
+				}
 			}
+			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			app := sl.appendable.Appender(sl.ctx)
-			_, err := app.Add(ls, timestamp.FromTime(start), buf.Bytes())
+			_, err := app.Add(tl, timestamp.FromTime(start), buf.Bytes())
 			if err != nil && errc != nil {
 				level.Debug(sl.l).Log("err", err)
 				errc <- err
