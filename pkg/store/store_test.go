@@ -34,6 +34,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/thanos-io/thanos/pkg/store/labelpb"
 	"google.golang.org/grpc"
 )
 
@@ -77,7 +78,7 @@ func TestStoreWrite(t *testing.T) {
 	_, err := s.Write(context.Background(), &storepb.WriteRequest{
 		ProfileSeries: []storepb.ProfileSeries{
 			{
-				Labels: []storepb.Label{
+				Labels: []labelpb.Label{
 					{
 						Name:  "__name__",
 						Value: "allocs",

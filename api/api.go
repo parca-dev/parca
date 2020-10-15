@@ -360,7 +360,11 @@ type protoRenderer struct {
 func (r *protoRenderer) Render(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/vnd.google.protobuf+gzip")
 	w.Header().Set("Content-Disposition", "attachment;filename=profile.pb.gz")
-	r.profile.Write(w)
+	err := r.profile.Write(w)
+	if err != nil {
+		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
+		return
+	}
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {

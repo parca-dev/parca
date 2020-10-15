@@ -34,7 +34,10 @@ type treeNode struct {
 // Largely copied from https://github.com/google/pprof/blob/master/internal/driver/flamegraph.go
 func generateFlamegraphReport(p *profile.Profile) (*treeNode, error) {
 	numLabelUnits, _ := p.NumLabelUnits()
-	p.Aggregate(false, true, true, true, false)
+	err := p.Aggregate(false, true, true, true, false)
+	if err != nil {
+		return nil, err
+	}
 
 	value, meanDiv, sample, err := sampleFormat(p, "", false)
 	if err != nil {
@@ -63,7 +66,6 @@ func generateFlamegraphReport(p *profile.Profile) (*treeNode, error) {
 	var nodes []*treeNode
 	nroots := 0
 	rootValue := int64(0)
-	nodeArr := []string{}
 	nodeMap := map[*graph.Node]*treeNode{}
 	// Make all nodes and the map, collect the roots.
 	for _, n := range g.Nodes {
@@ -83,8 +85,6 @@ func generateFlamegraphReport(p *profile.Profile) (*treeNode, error) {
 			rootValue += v
 		}
 		nodeMap[n] = node
-		// Get all node names into an array.
-		nodeArr = append(nodeArr, n.Info.Name)
 	}
 	// Populate the child links.
 	for _, n := range g.Nodes {

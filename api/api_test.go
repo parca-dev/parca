@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/common/route"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
+	"github.com/thanos-io/thanos/pkg/store/labelpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
@@ -54,18 +55,20 @@ func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileS
 	app.Append(5, []byte{})
 
 	if err := srv.Send(storepb.NewSeriesResponse(&storepb.RawProfileSeries{
-		Labels: []storepb.Label{
+		Labels: []labelpb.Label{
 			{
 				Name:  "__name__",
 				Value: "allocs",
 			},
 		},
-		Chunks: []storepb.Chunk{
+		Chunks: []storepb.AggrChunk{
 			{
 				MinTime: 0,
 				MaxTime: 10,
-				Type:    1,
-				Data:    c.Bytes(),
+				Raw: &storepb.Chunk{
+					Type: 1,
+					Data: c.Bytes(),
+				},
 			},
 		},
 	})); err != nil {

@@ -22,6 +22,7 @@ import (
 	"github.com/conprof/db/tsdb/chunkenc"
 	"github.com/gogo/status"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/thanos-io/thanos/pkg/store/labelpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -42,18 +43,20 @@ func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileS
 	app.Append(5, []byte{})
 
 	if err := srv.Send(storepb.NewSeriesResponse(&storepb.RawProfileSeries{
-		Labels: []storepb.Label{
+		Labels: []labelpb.Label{
 			{
 				Name:  "x",
 				Value: "y",
 			},
 		},
-		Chunks: []storepb.Chunk{
+		Chunks: []storepb.AggrChunk{
 			{
 				MinTime: 0,
 				MaxTime: 10,
-				Type:    1,
-				Data:    c.Bytes(),
+				Raw: &storepb.Chunk{
+					Type: 1,
+					Data: c.Bytes(),
+				},
 			},
 		},
 	})); err != nil {

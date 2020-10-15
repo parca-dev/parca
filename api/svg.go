@@ -23,6 +23,7 @@ import (
 	"github.com/conprof/conprof/internal/pprof/plugin"
 	"github.com/conprof/conprof/internal/pprof/report"
 	"github.com/google/pprof/profile"
+	"github.com/pkg/errors"
 )
 
 type svgRenderer struct {
@@ -32,7 +33,11 @@ type svgRenderer struct {
 func (r *svgRenderer) Render(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "image/svg+xml")
 	numLabelUnits, _ := r.profile.NumLabelUnits()
-	r.profile.Aggregate(false, true, true, true, false)
+	err := r.profile.Aggregate(false, true, true, true, false)
+	if err != nil {
+		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
+		return
+	}
 
 	value, meanDiv, sample, err := sampleFormat(r.profile, "", false)
 	if err != nil {
@@ -102,11 +107,9 @@ type fakeObjTool struct {
 }
 
 func (t *fakeObjTool) Open(file string, start, limit, offset uint64) (plugin.ObjFile, error) {
-	panic("Unimplemented")
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (t *fakeObjTool) Disasm(file string, start, end uint64, intelSyntax bool) ([]plugin.Inst, error) {
-	panic("Unimplemented")
-	return nil, nil
+	return nil, errors.New("not implemented")
 }

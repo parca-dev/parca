@@ -34,7 +34,10 @@ type topReport struct {
 
 func generateTopReport(p *profile.Profile) (*topReport, error) {
 	numLabelUnits, _ := p.NumLabelUnits()
-	p.Aggregate(false, true, true, true, false)
+	err := p.Aggregate(false, true, true, true, false)
+	if err != nil {
+		return nil, err
+	}
 
 	value, meanDiv, sample, err := sampleFormat(p, "", false)
 	if err != nil {
