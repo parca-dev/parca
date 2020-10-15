@@ -60,7 +60,7 @@ $(warning Some recipes may not work as expected as the current Go runtime is '$(
 	endif
 endif
 PROMU        := $(FIRST_GOPATH)/bin/promu
-pkgs          = ./...
+pkgs          = $(shell $(GO) list ./... | grep -v internal)
 
 ifeq (arm, $(GOHOSTARCH))
 	GOHOSTARM ?= $(shell GOARM= $(GO) env GOARM)

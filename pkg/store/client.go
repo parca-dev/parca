@@ -22,6 +22,7 @@ import (
 	"github.com/conprof/db/storage"
 	"github.com/conprof/db/tsdb/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/thanos-io/thanos/pkg/store/labelpb"
 )
 
 type grpcStoreClient struct {
@@ -58,7 +59,7 @@ func (q *grpcStoreQuerier) Select(sortSeries bool, hints *storage.SelectHints, m
 		return ss
 	}
 
-	ss.stream, err = q.c.Series(q.ctx, &storepb.SeriesRequest{
+	stream, err := q.c.Series(q.ctx, &storepb.SeriesRequest{
 		MinTime:  q.mint,
 		MaxTime:  q.maxt,
 		Matchers: m,
@@ -67,47 +68,48 @@ func (q *grpcStoreQuerier) Select(sortSeries bool, hints *storage.SelectHints, m
 		ss.err = fmt.Errorf("series: %w", err)
 		return ss
 	}
+
+	ss.set = storepb.MergeSeriesSets(&grpcChunkSeriesSet{
+		stream: stream,
+	})
+
 	return ss
 }
 
 type grpcSeriesSet struct {
-	stream    storepb.ProfileStore_SeriesClient
+	set       storepb.SeriesSet
 	curSeries *protoSeries
 	err       error
 }
 
 func (s *grpcSeriesSet) Next() bool {
-	if s.stream == nil || s.err != nil {
+	if !s.set.Next() {
 		return false
 	}
-
-	res, err := s.stream.Recv()
-	if err != nil {
-		if err != io.EOF {
-			s.err = fmt.Errorf("receive from stream: %w", err)
-		}
-		return false
+	l, c := s.set.At()
+	s.curSeries = &protoSeries{
+		labels: l,
+		chunks: c,
 	}
-
-	s.curSeries = &protoSeries{s: res.GetSeries()}
 
 	return true
 }
 
 type protoSeries struct {
-	s *storepb.RawProfileSeries
+	labels labels.Labels
+	chunks []storepb.AggrChunk
 }
 
 func (s *protoSeries) Labels() labels.Labels {
-	return translatePbLabels(s.s.Labels)
+	return s.labels
 }
 
 func (s *protoSeries) Iterator() chunkenc.Iterator {
-	return &rawChunkIterator{chunks: s.s.Chunks, pos: -1}
+	return &rawChunkIterator{chunks: s.chunks, pos: -1}
 }
 
 type rawChunkIterator struct {
-	chunks []storepb.Chunk
+	chunks []storepb.AggrChunk
 	curIt  chunkenc.Iterator
 	pos    int
 	err    error
@@ -124,7 +126,7 @@ func (s *rawChunkIterator) Next() bool {
 	}
 
 	s.pos++
-	c, err := chunkenc.FromData(chunkenc.EncBytes, s.chunks[s.pos].Data)
+	c, err := chunkenc.FromData(chunkenc.EncBytes, s.chunks[s.pos].Raw.Data)
 	if err != nil {
 		s.err = fmt.Errorf("decode chunk: %w", err)
 		return false
@@ -138,7 +140,7 @@ func (s *rawChunkIterator) Seek(t int64) bool {
 	for i, c := range s.chunks {
 		if c.MinTime <= t && c.MaxTime >= t {
 			s.pos = i
-			c, err := chunkenc.FromData(chunkenc.EncBytes, s.chunks[s.pos].Data)
+			c, err := chunkenc.FromData(chunkenc.EncBytes, s.chunks[s.pos].Raw.Data)
 			if err != nil {
 				s.err = fmt.Errorf("decode chunk: %w", err)
 				return false
@@ -180,4 +182,36 @@ func (q *grpcStoreQuerier) LabelNames() ([]string, storage.Warnings, error) {
 
 func (q *grpcStoreQuerier) Close() error {
 	return nil
+}
+
+type grpcChunkSeriesSet struct {
+	stream    storepb.ProfileStore_SeriesClient
+	curSeries *storepb.RawProfileSeries
+	err       error
+}
+
+func (s *grpcChunkSeriesSet) Next() bool {
+	if s.stream == nil || s.err != nil {
+		return false
+	}
+
+	res, err := s.stream.Recv()
+	if err != nil {
+		if err != io.EOF {
+			s.err = fmt.Errorf("receive from stream: %w", err)
+		}
+		return false
+	}
+
+	s.curSeries = res.GetSeries()
+
+	return true
+}
+
+func (s *grpcChunkSeriesSet) At() (labels.Labels, []storepb.AggrChunk) {
+	return labelpb.LabelsToPromLabels(s.curSeries.Labels), s.curSeries.Chunks
+}
+
+func (s *grpcChunkSeriesSet) Err() error {
+	return s.err
 }

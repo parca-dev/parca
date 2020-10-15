@@ -238,6 +238,7 @@ github.com/hashicorp/serf/coordinate
 github.com/hetznercloud/hcloud-go/hcloud
 github.com/hetznercloud/hcloud-go/hcloud/schema
 # github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6
+## explicit
 github.com/ianlancetaylor/demangle
 # github.com/jmespath/go-jmespath v0.3.0
 github.com/jmespath/go-jmespath
@@ -357,13 +358,11 @@ github.com/sirupsen/logrus
 github.com/spf13/pflag
 # github.com/thanos-io/thanos v0.13.1-0.20201002084234-fcb7cc387dce
 ## explicit
-github.com/thanos-io/thanos/pkg/api
 github.com/thanos-io/thanos/pkg/component
 github.com/thanos-io/thanos/pkg/extflag
 github.com/thanos-io/thanos/pkg/extkingpin
 github.com/thanos-io/thanos/pkg/extprom
 github.com/thanos-io/thanos/pkg/extprom/http
-github.com/thanos-io/thanos/pkg/logging
 github.com/thanos-io/thanos/pkg/prober
 github.com/thanos-io/thanos/pkg/server/grpc
 github.com/thanos-io/thanos/pkg/server/http

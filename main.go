@@ -64,6 +64,10 @@ func main() {
 		Default("info").Enum("error", "warn", "info", "debug")
 	logFormat := app.Flag("log.format", "Log format to use.").
 		Default(logFormatLogfmt).Enum(logFormatLogfmt, logFormatJSON)
+	corsOrigin := app.Flag("cors.access-control-allow-origin", "Cross-origin resource sharing allowed origins.").
+		Default("").String()
+	corsMethods := app.Flag("cors.access-control-allow-methods", "Cross-origin resource sharing allowed methods.").
+		Default("").String()
 	httpBindAddr, httpGracePeriod := extkingpin.RegisterHTTPFlags(app)
 
 	cmds := map[string]setupFunc{}
@@ -134,7 +138,7 @@ func main() {
 			httpserver.WithListen(*httpBindAddr),
 			httpserver.WithGracePeriod(time.Duration(*httpGracePeriod)),
 		)
-		srv.Handle("/", mux)
+		srv.Handle("/", cors(*corsOrigin, *corsMethods, mux))
 		g.Add(func() error {
 			statusProber.Healthy()
 
@@ -175,4 +179,16 @@ func interrupt(logger log.Logger, cancel <-chan struct{}) error {
 	case <-cancel:
 		return errors.New("canceled")
 	}
+}
+
+func cors(corsOrigin, corsMethods string, h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if corsOrigin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
+		}
+		if corsMethods != "" {
+			w.Header().Set("Access-Control-Allow-Methods", corsMethods)
+		}
+		h.ServeHTTP(w, r)
+	})
 }

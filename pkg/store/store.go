@@ -23,6 +23,7 @@ import (
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/thanos-io/thanos/pkg/store/labelpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -122,14 +123,14 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileStore
 	set := q.Select(false, nil, m...)
 	for set.Next() {
 		series := set.At()
-		labels := translatePromLabels(series.Labels())
+		labels := labelpb.LabelsFromPromLabels(series.Labels())
 		bytesLeftForChunks := s.maxBytesPerFrame
 		for _, lbl := range labels {
 			bytesLeftForChunks -= lbl.Size()
 		}
 		frameBytesLeft := bytesLeftForChunks
 
-		seriesChunks := []storepb.Chunk{}
+		seriesChunks := []storepb.AggrChunk{}
 
 		chIter := series.Iterator()
 		isNext := chIter.Next()
@@ -139,11 +140,13 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileStore
 				return status.Errorf(codes.Internal, "TSDBStore: found not populated chunk returned by SeriesSet at ref: %v", chk.Ref)
 			}
 
-			c := storepb.Chunk{
+			c := storepb.AggrChunk{
 				MinTime: chk.MinTime,
 				MaxTime: chk.MaxTime,
-				Type:    storepb.Chunk_Encoding(chk.Chunk.Encoding() - 1), // Proto chunk encoding is one off to TSDB one.
-				Data:    chk.Chunk.Bytes(),
+				Raw: &storepb.Chunk{
+					Type: storepb.Chunk_Encoding(chk.Chunk.Encoding() - 1), // Proto chunk encoding is one off to TSDB one.
+					Data: chk.Chunk.Bytes(),
+				},
 			}
 			frameBytesLeft -= c.Size()
 			seriesChunks = append(seriesChunks, c)
@@ -159,7 +162,7 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileStore
 
 			if isNext {
 				frameBytesLeft = bytesLeftForChunks
-				seriesChunks = make([]storepb.Chunk, 0, len(seriesChunks))
+				seriesChunks = make([]storepb.AggrChunk, 0, len(seriesChunks))
 			}
 		}
 		if err := chIter.Err(); err != nil {
@@ -177,30 +180,6 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileStore
 		}
 	}
 	return nil
-}
-
-func translatePromLabels(lbls []labels.Label) []storepb.Label {
-	res := make([]storepb.Label, 0, len(lbls))
-	for _, l := range lbls {
-		res = append(res, storepb.Label{
-			Name:  l.Name,
-			Value: l.Value,
-		})
-	}
-
-	return res
-}
-
-func translatePbLabels(lbls []storepb.Label) []labels.Label {
-	res := make([]labels.Label, 0, len(lbls))
-	for _, l := range lbls {
-		res = append(res, labels.Label{
-			Name:  l.Name,
-			Value: l.Value,
-		})
-	}
-
-	return res
 }
 
 func translatePbMatchers(ms []storepb.LabelMatcher) (res []*labels.Matcher, err error) {

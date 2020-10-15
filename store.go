@@ -103,7 +103,7 @@ func runStorage(
 		grpcProbe,
 		prober.NewInstrumentation(comp, logger, extprom.WrapRegistererWithPrefix("conprof_", reg)),
 	)
-	maxBytesPerFrame := 1024 * 1024 * 32 // 32 Mb default, might need to be tuned later on.
+	maxBytesPerFrame := 1024 * 1024 * 2 // 2 Mb default, might need to be tuned later on.
 	s := store.NewProfileStore(logger, db, maxBytesPerFrame)
 
 	srv := grpcserver.New(logger, reg, tracer, comp, grpcProbe,

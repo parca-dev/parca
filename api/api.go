@@ -16,14 +16,17 @@ package api
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/NYTimes/gziphandler"
+	"github.com/conprof/conprof/internal/pprof/measurement"
+	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/google/pprof/profile"
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/model"
@@ -31,11 +34,6 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
-	thanosapi "github.com/thanos-io/thanos/pkg/api"
-	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
-	"github.com/thanos-io/thanos/pkg/server/http/middleware"
-
-	"github.com/conprof/db/storage"
 )
 
 var defaultMetadataTimeRange = 24 * time.Hour
@@ -60,36 +58,36 @@ type Series struct {
 	Timestamps      []int64           `json:"timestamps"`
 }
 
-func (a *API) QueryRange(r *http.Request) (interface{}, []error, *thanosapi.ApiError) {
+func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	ctx := r.Context()
 
 	fromString := r.URL.Query().Get("from")
 	from, err := strconv.ParseInt(fromString, 10, 64)
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	toString := r.URL.Query().Get("to")
 	to, err := strconv.ParseInt(toString, 10, 64)
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	if to < from {
 		err := errors.New("to timestamp must not be before from time")
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	q, err := a.db.Querier(ctx, from, to)
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
 	queryString := r.URL.Query().Get("query")
 	level.Debug(a.logger).Log("query", queryString, "from", from, "to", to)
 	sel, err := parser.ParseMetricSelector(queryString)
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	set := q.Select(false, nil, sel...)
@@ -120,10 +118,249 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *thanosapi.ApiE
 		res = append(res, resSeries)
 	}
 	if err := set.Err(); err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: set.Err()}
+		return nil, nil, &ApiError{Typ: ErrorInternal, Err: set.Err()}
 	}
 
 	return res, set.Warnings(), nil
+}
+
+func (a *API) findProfile(ctx context.Context, time int64, sel []*labels.Matcher) (*profile.Profile, error) {
+	q, err := a.db.Querier(ctx, time, time)
+	if err != nil {
+		return nil, err
+	}
+
+	set := q.Select(false, nil, sel...)
+	for set.Next() {
+		series := set.At()
+		i := series.Iterator()
+		for i.Next() {
+			t, b := i.At()
+			if t == time {
+				return profile.ParseData(b)
+			}
+		}
+		err = i.Err()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, set.Err()
+}
+
+func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, *ApiError) {
+	ctx := r.Context()
+
+	timeString := r.URL.Query().Get("time")
+	time, err := strconv.ParseInt(timeString, 10, 64)
+	if err != nil {
+		err = fmt.Errorf("unable to parse time: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	queryString := r.URL.Query().Get("query")
+
+	level.Debug(a.logger).Log("query", queryString, "time", time)
+	sel, err := parser.ParseMetricSelector(queryString)
+	if err != nil {
+		err = fmt.Errorf("unable to parse query: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	profile, err := a.findProfile(ctx, time, sel)
+	// TODO(bwplotka): Handle warnings.
+	if err != nil {
+		err = fmt.Errorf("unable to find profile: %w", err)
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	return profile, nil
+}
+
+func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
+	ctx := r.Context()
+
+	timeAString := r.URL.Query().Get("time_a")
+	timeA, err := strconv.ParseInt(timeAString, 10, 64)
+	if err != nil {
+		err = fmt.Errorf("unable to parse time_a: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	queryAString := r.URL.Query().Get("query_a")
+	selA, err := parser.ParseMetricSelector(queryAString)
+	if err != nil {
+		err = fmt.Errorf("unable to parse query_a: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	timeBString := r.URL.Query().Get("time_b")
+	timeB, err := strconv.ParseInt(timeBString, 10, 64)
+	if err != nil {
+		err = fmt.Errorf("unable to parse time_b: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	queryBString := r.URL.Query().Get("query_b")
+	selB, err := parser.ParseMetricSelector(queryBString)
+	if err != nil {
+		err = fmt.Errorf("unable to parse query_b: %w", err)
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	profileA, err := a.findProfile(ctx, timeA, selA)
+	if err != nil {
+		err = fmt.Errorf("unable to find profile A: %w", err)
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	profileB, err := a.findProfile(ctx, timeB, selB)
+	if err != nil {
+		err = fmt.Errorf("unable to find profile B: %w", err)
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	// compare totals of profiles, skip this to subtract profiles from each other
+	profileA.SetLabel("pprof::base", []string{"true"})
+
+	profileA.Scale(-1)
+
+	profiles := []*profile.Profile{profileA, profileB}
+
+	// Merge profiles.
+	if err := measurement.ScaleProfiles(profiles); err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	p, err := profile.Merge(profiles)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	return p, nil
+}
+
+func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, *ApiError) {
+	ctx := r.Context()
+
+	fromString := r.URL.Query().Get("from")
+	from, err := strconv.ParseInt(fromString, 10, 64)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	toString := r.URL.Query().Get("to")
+	to, err := strconv.ParseInt(toString, 10, 64)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	if to < from {
+		err := errors.New("to timestamp must not be before from time")
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	queryString := r.URL.Query().Get("query")
+	sel, err := parser.ParseMetricSelector(queryString)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	}
+
+	q, err := a.db.Querier(ctx, from, to)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorExec, Err: err}
+	}
+
+	set := q.Select(false, nil, sel...)
+	profiles := []*profile.Profile{}
+	for set.Next() {
+		series := set.At()
+		i := series.Iterator()
+		for i.Next() {
+			_, b := i.At()
+			p, err := profile.ParseData(b)
+			if err != nil {
+				level.Error(a.logger).Log("err", err)
+			}
+			profiles = append(profiles, p)
+		}
+
+		if err := i.Err(); err != nil {
+			level.Error(a.logger).Log("err", err)
+		}
+	}
+	if err := set.Err(); err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: set.Err()}
+	}
+
+	// TODO(brancz): This will eventually need to be batched to limit memory use per request.
+	p, err := profile.Merge(profiles)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	return p, nil
+}
+
+func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
+	var (
+		profile *profile.Profile
+		apiErr  *ApiError
+	)
+	switch r.URL.Query().Get("type") {
+	case "diff":
+		profile, apiErr = a.DiffProfiles(r)
+		if apiErr != nil {
+			return nil, nil, apiErr
+		}
+	case "merge":
+		profile, apiErr = a.MergeProfiles(r)
+		if apiErr != nil {
+			return nil, nil, apiErr
+		}
+	case "single":
+		profile, apiErr = a.SingleProfileQuery(r)
+		if apiErr != nil {
+			return nil, nil, apiErr
+		}
+	default:
+		profile, apiErr = a.SingleProfileQuery(r)
+		if apiErr != nil {
+			return nil, nil, apiErr
+		}
+	}
+
+	switch r.URL.Query().Get("report") {
+	case "top":
+		top, err := generateTopReport(profile)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
+		return top, nil, nil
+	case "flamegraph":
+		fg, err := generateFlamegraphReport(profile)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
+		return fg, nil, nil
+	case "proto":
+		return &protoRenderer{profile: profile}, nil, nil
+	case "svg":
+		return &svgRenderer{profile: profile}, nil, nil
+	default:
+		return &svgRenderer{profile: profile}, nil, nil
+	}
+}
+
+type protoRenderer struct {
+	profile *profile.Profile
+}
+
+func (r *protoRenderer) Render(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/vnd.google.protobuf+gzip")
+	w.Header().Set("Content-Disposition", "attachment;filename=profile.pb.gz")
+	r.profile.Write(w)
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {
@@ -176,34 +413,34 @@ func parseTime(s string) (time.Time, error) {
 	return time.Time{}, errors.Errorf("cannot parse %q to a valid timestamp", s)
 }
 
-func (a *API) Series(r *http.Request) (interface{}, []error, *thanosapi.ApiError) {
+func (a *API) Series(r *http.Request) (interface{}, []error, *ApiError) {
 	ctx := r.Context()
 
 	if err := r.ParseForm(); err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorInternal, Err: errors.Wrap(err, "parse form")}
+		return nil, nil, &ApiError{Typ: ErrorInternal, Err: errors.Wrap(err, "parse form")}
 	}
 
 	if len(r.Form["match[]"]) == 0 {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: errors.New("no match[] parameter provided")}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: errors.New("no match[] parameter provided")}
 	}
 
 	start, end, err := parseMetadataTimeRange(r, defaultMetadataTimeRange)
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	var matcherSets [][]*labels.Matcher
 	for _, s := range r.Form["match[]"] {
 		matchers, err := parser.ParseMetricSelector(s)
 		if err != nil {
-			return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 		matcherSets = append(matcherSets, matchers)
 	}
 
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
 	var (
@@ -219,54 +456,54 @@ func (a *API) Series(r *http.Request) (interface{}, []error, *thanosapi.ApiError
 		metrics = append(metrics, set.At().Labels())
 	}
 	if set.Err() != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorInternal, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
 
 	return metrics, nil, nil
 }
 
-func (a *API) LabelNames(r *http.Request) (interface{}, []error, *thanosapi.ApiError) {
+func (a *API) LabelNames(r *http.Request) (interface{}, []error, *ApiError) {
 	ctx := r.Context()
 
 	start, end, err := parseMetadataTimeRange(r, defaultMetadataTimeRange)
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
 	names, warnings, err := q.LabelNames()
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
 	return names, warnings, nil
 }
 
-func (a *API) LabelValues(r *http.Request) (interface{}, []error, *thanosapi.ApiError) {
+func (a *API) LabelValues(r *http.Request) (interface{}, []error, *ApiError) {
 	ctx := r.Context()
 	name := route.Param(ctx, "name")
 
 	if !model.LabelNameRE.MatchString(name) {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: errors.Errorf("invalid label name: %q", name)}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: errors.Errorf("invalid label name: %q", name)}
 	}
 
 	start, end, err := parseMetadataTimeRange(r, defaultMetadataTimeRange)
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorBadData, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
 	names, warnings, err := q.LabelValues(name)
 	if err != nil {
-		return nil, nil, &thanosapi.ApiError{Typ: thanosapi.ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
 	return names, warnings, nil
@@ -274,35 +511,4 @@ func (a *API) LabelValues(r *http.Request) (interface{}, []error, *thanosapi.Api
 
 func (a *API) Reload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	a.reloadCh <- struct{}{}
-}
-
-type ApiFunc func(w http.ResponseWriter, r *http.Request, params httprouter.Params) (interface{}, []error, *thanosapi.ApiError)
-
-// TODO: add tracer
-// Instr returns a http HandlerFunc with the instrumentation middleware.
-func Instr(
-	_ log.Logger,
-	ins extpromhttp.InstrumentationMiddleware,
-) func(name string, f thanosapi.ApiFunc) httprouter.Handle {
-	instr := func(name string, f thanosapi.ApiFunc) httprouter.Handle {
-		hf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if data, warnings, err := f(r); err != nil {
-				thanosapi.RespondError(w, err, data)
-			} else if data != nil {
-				thanosapi.Respond(w, data, warnings)
-			} else {
-				w.WriteHeader(http.StatusNoContent)
-			}
-		})
-		return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-			ctx, cancel := context.WithCancel(r.Context())
-			defer cancel()
-
-			for _, p := range params {
-				ctx = route.WithParam(ctx, p.Key, p.Value)
-			}
-			ins.NewHandler(name, gziphandler.GzipHandler(middleware.RequestID(hf))).ServeHTTP(w, r.WithContext(ctx))
-		}
-	}
-	return instr
 }
