@@ -339,13 +339,13 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 		}
 		return meta, nil, nil
 	case "top":
-		top, err := generateTopReport(profile)
+		top, err := generateTopReport(profile, r.URL.Query().Get("sample_index"))
 		if err != nil {
 			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 		}
 		return top, nil, nil
 	case "flamegraph":
-		fg, err := generateFlamegraphReport(profile)
+		fg, err := generateFlamegraphReport(profile, r.URL.Query().Get("sample_index"))
 		if err != nil {
 			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 		}
@@ -353,9 +353,17 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	case "proto":
 		return &protoRenderer{profile: profile}, nil, nil
 	case "svg":
-		return &svgRenderer{profile: profile}, nil, nil
+		return &svgRenderer{
+			logger:      a.logger,
+			profile:     profile,
+			sampleIndex: r.URL.Query().Get("sample_index"),
+		}, nil, nil
 	default:
-		return &svgRenderer{profile: profile}, nil, nil
+		return &svgRenderer{
+			logger:      a.logger,
+			profile:     profile,
+			sampleIndex: r.URL.Query().Get("sample_index"),
+		}, nil, nil
 	}
 }
 

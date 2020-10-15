@@ -22,12 +22,16 @@ import (
 
 	"github.com/conprof/conprof/internal/pprof/plugin"
 	"github.com/conprof/conprof/internal/pprof/report"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
 	"github.com/pkg/errors"
 )
 
 type svgRenderer struct {
-	profile *profile.Profile
+	logger      log.Logger
+	profile     *profile.Profile
+	sampleIndex string
 }
 
 func (r *svgRenderer) Render(w http.ResponseWriter) {
@@ -39,15 +43,16 @@ func (r *svgRenderer) Render(w http.ResponseWriter) {
 		return
 	}
 
-	value, meanDiv, sample, err := sampleFormat(r.profile, "", false)
+	value, meanDiv, sample, err := sampleFormat(r.profile, r.sampleIndex, false)
 	if err != nil {
 		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
 		return
 	}
+	level.Debug(r.logger).Log("sample-type", sample.Type)
 
 	stype := sample.Type
 
-	rep := report.NewDefault(r.profile, report.Options{
+	rep := report.New(r.profile, &report.Options{
 		OutputFormat:  report.Dot,
 		OutputUnit:    "minimum",
 		Ratio:         1,
