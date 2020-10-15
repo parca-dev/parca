@@ -332,6 +332,12 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	}
 
 	switch r.URL.Query().Get("report") {
+	case "meta":
+		meta, err := generateMetaReport(profile)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
+		return meta, nil, nil
 	case "top":
 		top, err := generateTopReport(profile)
 		if err != nil {
@@ -351,6 +357,32 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	default:
 		return &svgRenderer{profile: profile}, nil, nil
 	}
+}
+
+type valueType struct {
+	Type string `json:"type,omitempty"`
+}
+
+type metaReport struct {
+	SampleTypes       []valueType `json:"sampleTypes"`
+	DefaultSampleType string      `json:"defaultSampleType"`
+}
+
+func generateMetaReport(profile *profile.Profile) (*metaReport, error) {
+	index, err := profile.SampleIndexByName("")
+	if err != nil {
+		return nil, err
+	}
+
+	res := &metaReport{
+		SampleTypes:       []valueType{},
+		DefaultSampleType: profile.SampleType[index].Type,
+	}
+	for _, t := range profile.SampleType {
+		res.SampleTypes = append(res.SampleTypes, valueType{t.Type})
+	}
+
+	return res, nil
 }
 
 type protoRenderer struct {
