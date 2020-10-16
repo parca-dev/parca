@@ -27,7 +27,7 @@ GO111MODULE=on GOPROXY=https://proxy.golang.org go install -v
 Run the example:
 
 ```bash
-conprof all --config.file examples/conprof.yaml --web.listen-address :8080 --storage.tsdb.path ./data
+conprof all --config.file examples/conprof.yaml --http-address :8080 --storage.tsdb.path ./data
 ```
 
 Open `http://localhost:8080/` and write a query like `{job="conprof"}` which after a short amount of time (1 minute should show some data point that can be clicked on). This is conprof profiling itself so the you run it the more data you get.
