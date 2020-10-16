@@ -32,21 +32,21 @@ type topReport struct {
 	Items  []textItem `json:"items,omitempty"`
 }
 
-func generateTopReport(p *profile.Profile) (*topReport, error) {
+func generateTopReport(p *profile.Profile, sampleIndex string) (*topReport, error) {
 	numLabelUnits, _ := p.NumLabelUnits()
 	err := p.Aggregate(false, true, true, true, false)
 	if err != nil {
 		return nil, err
 	}
 
-	value, meanDiv, sample, err := sampleFormat(p, "", false)
+	value, meanDiv, sample, err := sampleFormat(p, sampleIndex, false)
 	if err != nil {
 		return nil, err
 	}
 
 	stype := sample.Type
 
-	rep := report.NewDefault(p, report.Options{
+	rep := report.New(p, &report.Options{
 		OutputFormat:  report.Text,
 		OutputUnit:    "minimum",
 		Ratio:         1,

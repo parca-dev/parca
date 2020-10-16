@@ -393,9 +393,22 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 		}
 
 	default:
-		_, err = profile.Parse(io.TeeReader(resp.Body, w))
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "failed to read body")
+		}
+
+		p, err := profile.ParseData(b)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse target's pprof profile")
+		}
+
+		if len(p.Sample) == 0 {
+			return fmt.Errorf("empty %s profile from %s", profileType, s.req.URL.String())
+		}
+
+		if err := p.Write(w); err != nil {
+			return fmt.Errorf("write profile: %w", err)
 		}
 	}
 
@@ -509,11 +522,7 @@ mainLoop:
 			}
 
 			tl := sl.target.Labels()
-			for _, l := range sl.target.labels {
-				if l.Name == "__name__" {
-					tl = append(tl, labels.Label{Name: l.Name, Value: l.Value})
-				}
-			}
+			tl = append(tl, labels.Label{Name: "__name__", Value: profileType})
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			app := sl.appendable.Appender(sl.ctx)

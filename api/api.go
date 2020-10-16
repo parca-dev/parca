@@ -174,6 +174,9 @@ func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, *ApiError) 
 		err = fmt.Errorf("unable to find profile: %w", err)
 		return nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
+	if profile == nil {
+		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile not found")}
+	}
 
 	return profile, nil
 }
@@ -214,11 +217,17 @@ func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 		err = fmt.Errorf("unable to find profile A: %w", err)
 		return nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
+	if profileA == nil {
+		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile A not found")}
+	}
 
 	profileB, err := a.findProfile(ctx, timeB, selB)
 	if err != nil {
 		err = fmt.Errorf("unable to find profile B: %w", err)
 		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+	if profileB == nil {
+		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile B not found")}
 	}
 
 	// compare totals of profiles, skip this to subtract profiles from each other
@@ -332,14 +341,20 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	}
 
 	switch r.URL.Query().Get("report") {
+	case "meta":
+		meta, err := generateMetaReport(profile)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
+		return meta, nil, nil
 	case "top":
-		top, err := generateTopReport(profile)
+		top, err := generateTopReport(profile, r.URL.Query().Get("sample_index"))
 		if err != nil {
 			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 		}
 		return top, nil, nil
 	case "flamegraph":
-		fg, err := generateFlamegraphReport(profile)
+		fg, err := generateFlamegraphReport(profile, r.URL.Query().Get("sample_index"))
 		if err != nil {
 			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 		}
@@ -347,10 +362,44 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	case "proto":
 		return &protoRenderer{profile: profile}, nil, nil
 	case "svg":
-		return &svgRenderer{profile: profile}, nil, nil
+		return &svgRenderer{
+			logger:      a.logger,
+			profile:     profile,
+			sampleIndex: r.URL.Query().Get("sample_index"),
+		}, nil, nil
 	default:
-		return &svgRenderer{profile: profile}, nil, nil
+		return &svgRenderer{
+			logger:      a.logger,
+			profile:     profile,
+			sampleIndex: r.URL.Query().Get("sample_index"),
+		}, nil, nil
 	}
+}
+
+type valueType struct {
+	Type string `json:"type,omitempty"`
+}
+
+type metaReport struct {
+	SampleTypes       []valueType `json:"sampleTypes"`
+	DefaultSampleType string      `json:"defaultSampleType"`
+}
+
+func generateMetaReport(profile *profile.Profile) (*metaReport, error) {
+	index, err := profile.SampleIndexByName("")
+	if err != nil {
+		return nil, err
+	}
+
+	res := &metaReport{
+		SampleTypes:       []valueType{},
+		DefaultSampleType: profile.SampleType[index].Type,
+	}
+	for _, t := range profile.SampleType {
+		res.SampleTypes = append(res.SampleTypes, valueType{t.Type})
+	}
+
+	return res, nil
 }
 
 type protoRenderer struct {
