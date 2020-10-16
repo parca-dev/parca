@@ -218,50 +218,26 @@ func (a *API) profileByParameters(ctx context.Context, mode, time, query, from, 
 func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 	ctx := r.Context()
 
-	timeAString := r.URL.Query().Get("time_a")
-	timeA, err := strconv.ParseInt(timeAString, 10, 64)
-	if err != nil {
-		err = fmt.Errorf("unable to parse time_a: %w", err)
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
+	profileA, apiErr := a.profileByParameters(ctx,
+		r.URL.Query().Get("mode_a"),
+		r.URL.Query().Get("time_a"),
+		r.URL.Query().Get("query_a"),
+		r.URL.Query().Get("from_a"),
+		r.URL.Query().Get("to_a"),
+	)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 
-	queryAString := r.URL.Query().Get("query_a")
-	selA, err := parser.ParseMetricSelector(queryAString)
-	if err != nil {
-		err = fmt.Errorf("unable to parse query_a: %w", err)
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
-
-	timeBString := r.URL.Query().Get("time_b")
-	timeB, err := strconv.ParseInt(timeBString, 10, 64)
-	if err != nil {
-		err = fmt.Errorf("unable to parse time_b: %w", err)
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
-
-	queryBString := r.URL.Query().Get("query_b")
-	selB, err := parser.ParseMetricSelector(queryBString)
-	if err != nil {
-		err = fmt.Errorf("unable to parse query_b: %w", err)
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
-
-	profileA, err := a.findProfile(ctx, timeA, selA)
-	if err != nil {
-		err = fmt.Errorf("unable to find profile A: %w", err)
-		return nil, &ApiError{Typ: ErrorInternal, Err: err}
-	}
-	if profileA == nil {
-		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile A not found")}
-	}
-
-	profileB, err := a.findProfile(ctx, timeB, selB)
-	if err != nil {
-		err = fmt.Errorf("unable to find profile B: %w", err)
-		return nil, &ApiError{Typ: ErrorInternal, Err: err}
-	}
-	if profileB == nil {
-		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile B not found")}
+	profileB, apiErr := a.profileByParameters(ctx,
+		r.URL.Query().Get("mode_b"),
+		r.URL.Query().Get("time_b"),
+		r.URL.Query().Get("query_b"),
+		r.URL.Query().Get("from_b"),
+		r.URL.Query().Get("to_b"),
+	)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 
 	// compare totals of profiles, skip this to subtract profiles from each other
