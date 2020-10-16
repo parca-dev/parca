@@ -152,33 +152,67 @@ func (a *API) findProfile(ctx context.Context, time int64, sel []*labels.Matcher
 func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, *ApiError) {
 	ctx := r.Context()
 
-	timeString := r.URL.Query().Get("time")
-	time, err := strconv.ParseInt(timeString, 10, 64)
-	if err != nil {
-		err = fmt.Errorf("unable to parse time: %w", err)
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
+	return a.profileByParameters(
+		ctx,
+		"single",
+		r.URL.Query().Get("time"),
+		r.URL.Query().Get("query"),
+		"",
+		"",
+	)
+}
 
-	queryString := r.URL.Query().Get("query")
+func (a *API) profileByParameters(ctx context.Context, mode, time, query, from, to string) (*profile.Profile, *ApiError) {
+	switch mode {
+	case "merge":
+		f, err := strconv.ParseInt(from, 10, 64)
+		if err != nil {
+			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+		}
 
-	level.Debug(a.logger).Log("query", queryString, "time", time)
-	sel, err := parser.ParseMetricSelector(queryString)
-	if err != nil {
-		err = fmt.Errorf("unable to parse query: %w", err)
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
+		t, err := strconv.ParseInt(to, 10, 64)
+		if err != nil {
+			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+		}
 
-	profile, err := a.findProfile(ctx, time, sel)
-	// TODO(bwplotka): Handle warnings.
-	if err != nil {
-		err = fmt.Errorf("unable to find profile: %w", err)
-		return nil, &ApiError{Typ: ErrorInternal, Err: err}
-	}
-	if profile == nil {
-		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile not found")}
-	}
+		if t < f {
+			err := errors.New("to timestamp must not be before from time")
+			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+		}
 
-	return profile, nil
+		sel, err := parser.ParseMetricSelector(query)
+		if err != nil {
+			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+		}
+
+		return a.mergeProfiles(ctx, f, t, sel)
+	case "single":
+		t, err := strconv.ParseInt(time, 10, 64)
+		if err != nil {
+			err = fmt.Errorf("unable to parse time: %w", err)
+			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+		}
+
+		sel, err := parser.ParseMetricSelector(query)
+		if err != nil {
+			err = fmt.Errorf("unable to parse query: %w", err)
+			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+		}
+
+		profile, err := a.findProfile(ctx, t, sel)
+		// TODO(bwplotka): Handle warnings.
+		if err != nil {
+			err = fmt.Errorf("unable to find profile: %w", err)
+			return nil, &ApiError{Typ: ErrorInternal, Err: err}
+		}
+		if profile == nil {
+			return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile not found")}
+		}
+
+		return profile, nil
+	default:
+		return nil, &ApiError{Typ: ErrorBadData, Err: errors.New("no mode specified")}
+	}
 }
 
 func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
@@ -250,32 +284,7 @@ func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 	return p, nil
 }
 
-func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, *ApiError) {
-	ctx := r.Context()
-
-	fromString := r.URL.Query().Get("from")
-	from, err := strconv.ParseInt(fromString, 10, 64)
-	if err != nil {
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
-
-	toString := r.URL.Query().Get("to")
-	to, err := strconv.ParseInt(toString, 10, 64)
-	if err != nil {
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
-
-	if to < from {
-		err := errors.New("to timestamp must not be before from time")
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
-
-	queryString := r.URL.Query().Get("query")
-	sel, err := parser.ParseMetricSelector(queryString)
-	if err != nil {
-		return nil, &ApiError{Typ: ErrorBadData, Err: err}
-	}
-
+func (a *API) mergeProfiles(ctx context.Context, from, to int64, sel []*labels.Matcher) (*profile.Profile, *ApiError) {
 	q, err := a.db.Querier(ctx, from, to)
 	if err != nil {
 		return nil, &ApiError{Typ: ErrorExec, Err: err}
@@ -310,6 +319,19 @@ func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 	}
 
 	return p, nil
+}
+
+func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, *ApiError) {
+	ctx := r.Context()
+
+	return a.profileByParameters(
+		ctx,
+		"merge",
+		"",
+		r.URL.Query().Get("query"),
+		r.URL.Query().Get("from"),
+		r.URL.Query().Get("to"),
+	)
 }
 
 func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
