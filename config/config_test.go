@@ -19,7 +19,7 @@ func TestLoad(t *testing.T) {
 	_, err := Load(`scrape_configs:
 - job_name: 'test'
   static_configs:
-  - targets: ['loaclhost:8080']`)
+  - targets: ['localhost:8080']`)
 	if err != nil {
 		t.Fatal(err)
 	}
