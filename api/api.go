@@ -174,6 +174,9 @@ func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, *ApiError) 
 		err = fmt.Errorf("unable to find profile: %w", err)
 		return nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
+	if profile == nil {
+		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile not found")}
+	}
 
 	return profile, nil
 }
@@ -214,11 +217,17 @@ func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 		err = fmt.Errorf("unable to find profile A: %w", err)
 		return nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
+	if profileA == nil {
+		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile A not found")}
+	}
 
 	profileB, err := a.findProfile(ctx, timeB, selB)
 	if err != nil {
 		err = fmt.Errorf("unable to find profile B: %w", err)
 		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+	if profileB == nil {
+		return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile B not found")}
 	}
 
 	// compare totals of profiles, skip this to subtract profiles from each other
