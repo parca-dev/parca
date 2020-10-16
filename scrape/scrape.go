@@ -522,11 +522,7 @@ mainLoop:
 			}
 
 			tl := sl.target.Labels()
-			for _, l := range sl.target.labels {
-				if l.Name == "__name__" {
-					tl = append(tl, labels.Label{Name: l.Name, Value: l.Value})
-				}
-			}
+			tl = append(tl, labels.Label{Name: "__name__", Value: profileType})
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			app := sl.appendable.Appender(sl.ctx)
