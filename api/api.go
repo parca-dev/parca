@@ -315,7 +315,7 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 		profile *profile.Profile
 		apiErr  *ApiError
 	)
-	switch r.URL.Query().Get("type") {
+	switch r.URL.Query().Get("mode") {
 	case "diff":
 		profile, apiErr = a.DiffProfiles(r)
 		if apiErr != nil {
