@@ -1,6 +1,6 @@
 # conprof - Continuous Profiling
 
-> NOTE: ConProf is already used on production however it's still in active devlopment phase. APIs are prone to change. Otherwise you are welcome to use ConProf and don't forget to give usRE feedback!
+> NOTE: Conprof is already used on production however it's still in active devlopment phase. APIs are prone to change. Otherwise you are welcome to use Conprof and don't forget to give us feedback!
 
 Continuous profiling is the act of taking profiles of programs in a systematic way. Conprof is based on a lot of principles and even code of [Prometheus](https://prometheus.io), the service discovery mechanism and configuration works very similar to Prometheus and the general functionality is similar, as consecutive profiles of the same type and the same process behave similar to time-series, as in that they are related events of the same origin thus they are in the same series. Only that sample values in Conprof are not float64, but an arbitrary byte array.
 
