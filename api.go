@@ -14,9 +14,6 @@
 package main
 
 import (
-	"net/http"
-
-	"github.com/conprof/conprof/web"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
 
@@ -33,13 +30,12 @@ import (
 	conprofapi "github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
-	"github.com/conprof/conprof/pprofui"
 	"github.com/conprof/db/storage"
 )
 
-// registerWeb registers a web command.
-func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
-	cmd := app.Command(name, "Run a web interface to view profiles from a storage.")
+// registerApi registers a API command.
+func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) {
+	cmd := app.Command(name, "Run an API to query profiles from a storage.")
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
@@ -50,39 +46,31 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 			return probe, err
 		}
 		c := storepb.NewReadableProfileStoreClient(conn)
-		return probe, runWeb(
+		return probe, runApi(
 			mux,
 			probe,
 			reg,
 			logger,
 			store.NewGRPCQueryable(c),
-			reloadCh,
 		)
 	}
 }
 
-func runWeb(
+func runApi(
 	mux httpMux,
 	probe prober.Probe,
 	reg prometheus.Registerer,
 	logger log.Logger,
 	db storage.Queryable,
-	reloadCh chan struct{},
 ) error {
-	logger = log.With(logger, "component", "pprofui")
-	ui := pprofui.New(logger, db)
+	logger = log.With(logger, "component", "api")
 
 	router := httprouter.New()
 	router.RedirectTrailingSlash = false
 	ins := extpromhttp.NewInstrumentationMiddleware(reg)
 	instr := conprofapi.Instr(logger, ins)
 
-	router.GET("/pprof/*remainder", ui.PprofView)
-	router.GET("/download/*remainder", ui.PprofDownload)
-
-	api := conprofapi.New(logger, db, reloadCh)
-
-	router.GET("/-/reload", api.Reload)
+	api := conprofapi.New(logger, db, nil)
 
 	router.GET("/api/v1/query_range", instr("query_range", api.QueryRange))
 	router.GET("/api/v1/query", instr("query", api.Query))
@@ -90,7 +78,6 @@ func runWeb(
 	router.GET("/api/v1/labels", instr("label_names", api.LabelNames))
 	router.GET("/api/v1/label/:name/values", instr("label_values", api.LabelValues))
 
-	router.NotFound = http.FileServer(web.Assets)
 	mux.Handle("/", router)
 	probe.Ready()
 

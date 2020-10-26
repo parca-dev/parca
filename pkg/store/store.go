@@ -41,9 +41,15 @@ type profileStore struct {
 	maxBytesPerFrame int
 }
 
-func RegisterStoreServer(storeSrv storepb.ProfileStoreServer) func(*grpc.Server) {
+func RegisterReadableStoreServer(storeSrv storepb.ReadableProfileStoreServer) func(*grpc.Server) {
 	return func(s *grpc.Server) {
-		storepb.RegisterProfileStoreServer(s, storeSrv)
+		storepb.RegisterReadableProfileStoreServer(s, storeSrv)
+	}
+}
+
+func RegisterWritableStoreServer(storeSrv storepb.WritableProfileStoreServer) func(*grpc.Server) {
+	return func(s *grpc.Server) {
+		storepb.RegisterWritableProfileStoreServer(s, storeSrv)
 	}
 }
 
@@ -55,7 +61,8 @@ func NewProfileStore(logger log.Logger, db db, maxBytesPerFrame int) *profileSto
 	}
 }
 
-var _ storepb.ProfileStoreServer = &profileStore{}
+var _ storepb.ReadableProfileStoreServer = &profileStore{}
+var _ storepb.WritableProfileStoreServer = &profileStore{}
 
 func (s *profileStore) Write(ctx context.Context, r *storepb.WriteRequest) (*storepb.WriteResponse, error) {
 	app := s.db.Appender(ctx)
@@ -108,7 +115,7 @@ func (s *profileStore) Profile(ctx context.Context, r *storepb.ProfileRequest) (
 	}, nil
 }
 
-func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileStore_SeriesServer) error {
+func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProfileStore_SeriesServer) error {
 	m, err := translatePbMatchers(r.Matchers)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "could not translate matchers: %v", err)

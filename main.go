@@ -75,6 +75,7 @@ func main() {
 	registerSampler(cmds, app, "sampler", reloadCh)
 	registerStorage(cmds, app, "storage", reloadCh)
 	registerWeb(cmds, app, "web", reloadCh)
+	registerApi(cmds, app, "api")
 	registerAll(cmds, app, "all", reloadCh)
 
 	cmd, err := app.Parse(os.Args[1:])

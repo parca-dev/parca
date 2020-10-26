@@ -24,17 +24,17 @@ import (
 )
 
 type grpcStoreAppendable struct {
-	c storepb.ProfileStoreClient
+	c storepb.WritableProfileStoreClient
 }
 
-func NewGRPCAppendable(c storepb.ProfileStoreClient) *grpcStoreAppendable {
+func NewGRPCAppendable(c storepb.WritableProfileStoreClient) *grpcStoreAppendable {
 	return &grpcStoreAppendable{
 		c: c,
 	}
 }
 
 type grpcStoreAppender struct {
-	c storepb.ProfileStoreClient
+	c storepb.WritableProfileStoreClient
 
 	ctx context.Context
 	l   labels.Labels

@@ -38,6 +38,20 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install" // Register service discovery implementations.
 )
 
+type perRequestBearerToken struct {
+	token string
+}
+
+func (t *perRequestBearerToken) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	return map[string]string{
+		"authorization": "Bearer " + t.token,
+	}, nil
+}
+
+func (t *perRequestBearerToken) RequireTransportSecurity() bool {
+	return true
+}
+
 // registerSampler registers a sampler command.
 func registerSampler(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
 	cmd := app.Command(name, "Run a sampler, that appends profiles to a configured storage.")
@@ -46,6 +60,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		Default("conprof.yaml").String()
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
+	bearerToken := cmd.Flag("bearer-token", "Bearer token to authenticate with store.").String()
 	insecure := cmd.Flag("insecure", "Send gRPC requests via plaintext instead of TLS.").Default("false").Bool()
 	insecureSkipVerify := cmd.Flag("insecure-skip-verify", "Skip TLS certificate verification.").Default("false").Bool()
 
@@ -59,11 +74,16 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			}
 			opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(config)))
 		}
+
+		if bearerToken != nil {
+			opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{token: *bearerToken}))
+		}
+
 		conn, err := grpc.Dial(*storeAddress, opts...)
 		if err != nil {
 			return probe, err
 		}
-		c := storepb.NewProfileStoreClient(conn)
+		c := storepb.NewWritableProfileStoreClient(conn)
 		if err != nil {
 			return probe, err
 		}

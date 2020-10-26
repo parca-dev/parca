@@ -107,7 +107,8 @@ func runStorage(
 	s := store.NewProfileStore(logger, db, maxBytesPerFrame)
 
 	srv := grpcserver.New(logger, reg, tracer, comp, grpcProbe,
-		grpcserver.WithServer(store.RegisterStoreServer(s)),
+		grpcserver.WithServer(store.RegisterReadableStoreServer(s)),
+		grpcserver.WithServer(store.RegisterWritableStoreServer(s)),
 		grpcserver.WithListen(grpcBindAddr),
 		grpcserver.WithGracePeriod(grpcGracePeriod),
 	)
