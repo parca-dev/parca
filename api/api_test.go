@@ -45,7 +45,7 @@ func (s *fakeProfileStore) Write(ctx context.Context, r *storepb.WriteRequest) (
 	return nil, nil
 }
 
-func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileStore_SeriesServer) error {
+func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProfileStore_SeriesServer) error {
 	c := chunkenc.NewBytesChunk()
 	app, err := c.Appender()
 	if err != nil {
@@ -373,7 +373,8 @@ func createFakeGRPCAPI(t *testing.T) (*API, io.Closer) {
 		t.Fatalf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	storepb.RegisterProfileStoreServer(grpcServer, &fakeProfileStore{})
+	storepb.RegisterReadableProfileStoreServer(grpcServer, &fakeProfileStore{})
+	storepb.RegisterWritableProfileStoreServer(grpcServer, &fakeProfileStore{})
 	go grpcServer.Serve(lis)
 
 	storeAddress := lis.Addr().String()
@@ -383,7 +384,7 @@ func createFakeGRPCAPI(t *testing.T) (*API, io.Closer) {
 		t.Fatal(err)
 	}
 
-	c := storepb.NewProfileStoreClient(conn)
+	c := storepb.NewReadableProfileStoreClient(conn)
 	q := store.NewGRPCQueryable(c)
 	return New(log.NewNopLogger(), q, make(chan struct{})), lis
 }

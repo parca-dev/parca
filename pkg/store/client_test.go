@@ -33,7 +33,7 @@ func (s *fakeProfileStore) Write(ctx context.Context, r *storepb.WriteRequest) (
 	return nil, nil
 }
 
-func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.ProfileStore_SeriesServer) error {
+func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProfileStore_SeriesServer) error {
 	c := chunkenc.NewBytesChunk()
 	app, err := c.Appender()
 	if err != nil {
@@ -76,7 +76,9 @@ func TestAPIQueryRangeGRPCCall(t *testing.T) {
 	}
 	defer lis.Close()
 	grpcServer := grpc.NewServer()
-	storepb.RegisterProfileStoreServer(grpcServer, &fakeProfileStore{})
+	s := &fakeProfileStore{}
+	storepb.RegisterWritableProfileStoreServer(grpcServer, s)
+	storepb.RegisterReadableProfileStoreServer(grpcServer, s)
 	go grpcServer.Serve(lis)
 
 	storeAddress := lis.Addr().String()
@@ -85,7 +87,7 @@ func TestAPIQueryRangeGRPCCall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := storepb.NewProfileStoreClient(conn)
+	c := storepb.NewReadableProfileStoreClient(conn)
 	q := NewGRPCQueryable(c)
 
 	qr, err := q.Querier(context.Background(), 0, 10)

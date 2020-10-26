@@ -123,7 +123,7 @@ func TestGRPCAppendable(t *testing.T) {
 	grpcServer := grpc.NewServer()
 	a := &fakeAppender{}
 	s := NewProfileStore(log.NewNopLogger(), a, 100000)
-	storepb.RegisterProfileStoreServer(grpcServer, s)
+	storepb.RegisterWritableProfileStoreServer(grpcServer, s)
 	go grpcServer.Serve(lis)
 
 	storeAddress := lis.Addr().String()
@@ -132,7 +132,7 @@ func TestGRPCAppendable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := storepb.NewProfileStoreClient(conn)
+	c := storepb.NewWritableProfileStoreClient(conn)
 	q := NewGRPCAppendable(c)
 
 	app := q.Appender(context.Background())
@@ -203,7 +203,8 @@ func TestStore(t *testing.T) {
 	defer lis.Close()
 	grpcServer := grpc.NewServer()
 	s := NewProfileStore(log.NewNopLogger(), db, 100000)
-	storepb.RegisterProfileStoreServer(grpcServer, s)
+	storepb.RegisterWritableProfileStoreServer(grpcServer, s)
+	storepb.RegisterReadableProfileStoreServer(grpcServer, s)
 	go grpcServer.Serve(lis)
 
 	storeAddress := lis.Addr().String()
@@ -212,7 +213,7 @@ func TestStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := storepb.NewProfileStoreClient(conn)
+	c := storepb.NewWritableProfileStoreClient(conn)
 	a := NewGRPCAppendable(c)
 
 	app := a.Appender(context.Background())
@@ -234,7 +235,8 @@ func TestStore(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	q := NewGRPCQueryable(c)
+	rc := storepb.NewReadableProfileStoreClient(conn)
+	q := NewGRPCQueryable(rc)
 
 	httpapi := api.New(log.NewNopLogger(), q, make(chan struct{}))
 
