@@ -45,7 +45,7 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 		if err != nil {
 			return probe, err
 		}
-		c := storepb.NewProfileStoreClient(conn)
+		c := storepb.NewReadableProfileStoreClient(conn)
 		return probe, runApi(
 			mux,
 			probe,

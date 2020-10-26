@@ -83,7 +83,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		if err != nil {
 			return probe, err
 		}
-		c := storepb.NewProfileStoreClient(conn)
+		c := storepb.NewWritableProfileStoreClient(conn)
 		if err != nil {
 			return probe, err
 		}

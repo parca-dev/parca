@@ -26,10 +26,10 @@ import (
 )
 
 type grpcStoreClient struct {
-	c storepb.ProfileStoreClient
+	c storepb.ReadableProfileStoreClient
 }
 
-func NewGRPCQueryable(c storepb.ProfileStoreClient) *grpcStoreClient {
+func NewGRPCQueryable(c storepb.ReadableProfileStoreClient) *grpcStoreClient {
 	return &grpcStoreClient{
 		c: c,
 	}
@@ -47,7 +47,7 @@ func (c *grpcStoreClient) Querier(ctx context.Context, mint, maxt int64) (storag
 type grpcStoreQuerier struct {
 	ctx        context.Context
 	mint, maxt int64
-	c          storepb.ProfileStoreClient
+	c          storepb.ReadableProfileStoreClient
 }
 
 func (q *grpcStoreQuerier) Select(sortSeries bool, hints *storage.SelectHints, matchers ...*labels.Matcher) storage.SeriesSet {
@@ -185,7 +185,7 @@ func (q *grpcStoreQuerier) Close() error {
 }
 
 type grpcChunkSeriesSet struct {
-	stream    storepb.ProfileStore_SeriesClient
+	stream    storepb.ReadableProfileStore_SeriesClient
 	curSeries *storepb.RawProfileSeries
 	err       error
 }

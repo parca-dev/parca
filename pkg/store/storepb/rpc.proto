@@ -17,10 +17,13 @@ option (gogoproto.goproto_unkeyed_all) = false;
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 
-// ProfileStore represents API against instance that allows writing profiles to.
-service ProfileStore {
-  // Write allows you to write profiles to this store.
+// WritableProfileStore represents API against instance that allows writing profiles to.
+service WritableProfileStore {
   rpc Write(WriteRequest) returns (WriteResponse) {}
+}
+
+// ReadableProfileStore represents API against instance that allows reading profiles from.
+service ReadableProfileStore {
   rpc Series(SeriesRequest) returns (stream SeriesResponse);
   rpc Profile(ProfileRequest) returns (ProfileResponse);
 }
@@ -34,7 +37,7 @@ message WriteRequest {
 
 // ProfileSeries represents samples and labels for a single time series.
 message ProfileSeries {
-  repeated thanos.FullCopyLabel labels = 1 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/thanos-io/thanos/pkg/store/labelpb.Label"];
+  repeated thanos.Label labels = 1 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/thanos-io/thanos/pkg/store/labelpb.Label"];
   repeated Sample samples = 2 [(gogoproto.nullable) = false];
 }
 
@@ -80,7 +83,7 @@ message Chunk {
 }
 
 message RawProfileSeries {
-  repeated thanos.FullCopyLabel labels = 1 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/thanos-io/thanos/pkg/store/labelpb.Label"];
+  repeated thanos.Label labels = 1 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/thanos-io/thanos/pkg/store/labelpb.Label"];
   repeated AggrChunk chunks = 2 [(gogoproto.nullable) = false];
 }
 
