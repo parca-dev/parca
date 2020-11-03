@@ -75,7 +75,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(config)))
 		}
 
-		if bearerToken != nil {
+		if *bearerToken != "" {
 			opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{token: *bearerToken}))
 		}
 
