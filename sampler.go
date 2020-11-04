@@ -17,6 +17,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/pkg/store"
@@ -61,6 +62,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
 	bearerToken := cmd.Flag("bearer-token", "Bearer token to authenticate with store.").String()
+	bearerTokenFile := cmd.Flag("bearer-token-file", "File to read bearer token from to authenticate with store.").String()
 	insecure := cmd.Flag("insecure", "Send gRPC requests via plaintext instead of TLS.").Default("false").Bool()
 	insecureSkipVerify := cmd.Flag("insecure-skip-verify", "Skip TLS certificate verification.").Default("false").Bool()
 
@@ -75,8 +77,16 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(config)))
 		}
 
-		if bearerToken != nil {
+		if bearerToken != nil && *bearerToken != "" {
 			opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{token: *bearerToken}))
+		}
+
+		if bearerTokenFile != nil && *bearerTokenFile != "" {
+			b, err := ioutil.ReadFile(*bearerTokenFile)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read bearer token from file: %w", err)
+			}
+			opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{token: string(b)}))
 		}
 
 		conn, err := grpc.Dial(*storeAddress, opts...)
