@@ -97,7 +97,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		if err != nil {
 			return probe, err
 		}
-		return probe, runSampler(g, probe, logger, store.NewGRPCAppendable(c), *configFile, reloadCh)
+		return probe, runSampler(g, probe, logger, store.NewGRPCAppendable(logger, c), *configFile, reloadCh)
 	}
 }
 

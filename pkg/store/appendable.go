@@ -19,22 +19,27 @@ import (
 
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/db/storage"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/thanos-io/thanos/pkg/store/labelpb"
 )
 
 type grpcStoreAppendable struct {
-	c storepb.WritableProfileStoreClient
+	logger log.Logger
+	c      storepb.WritableProfileStoreClient
 }
 
-func NewGRPCAppendable(c storepb.WritableProfileStoreClient) *grpcStoreAppendable {
+func NewGRPCAppendable(logger log.Logger, c storepb.WritableProfileStoreClient) *grpcStoreAppendable {
 	return &grpcStoreAppendable{
-		c: c,
+		logger: logger,
+		c:      c,
 	}
 }
 
 type grpcStoreAppender struct {
-	c storepb.WritableProfileStoreClient
+	logger log.Logger
+	c      storepb.WritableProfileStoreClient
 
 	ctx context.Context
 	l   labels.Labels
@@ -44,8 +49,9 @@ type grpcStoreAppender struct {
 
 func (a *grpcStoreAppendable) Appender(ctx context.Context) storage.Appender {
 	return &grpcStoreAppender{
-		c:   a.c,
-		ctx: ctx,
+		logger: a.logger,
+		c:      a.c,
+		ctx:    ctx,
 	}
 }
 
@@ -61,6 +67,7 @@ func (a *grpcStoreAppender) AddFast(ref uint64, t int64, v []byte) error {
 }
 
 func (a *grpcStoreAppender) Commit() error {
+	level.Debug(a.logger).Log("msg", "send write request")
 	_, err := a.c.Write(a.ctx, &storepb.WriteRequest{
 		ProfileSeries: []storepb.ProfileSeries{
 			{
@@ -74,6 +81,9 @@ func (a *grpcStoreAppender) Commit() error {
 			},
 		},
 	})
+	if err != nil {
+		level.Debug(a.logger).Log("msg", "failed to send profile", "err", err)
+	}
 	return err
 }
 
