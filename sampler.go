@@ -40,7 +40,8 @@ import (
 )
 
 type perRequestBearerToken struct {
-	token string
+	token    string
+	insecure bool
 }
 
 func (t *perRequestBearerToken) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
@@ -50,7 +51,7 @@ func (t *perRequestBearerToken) GetRequestMetadata(ctx context.Context, uri ...s
 }
 
 func (t *perRequestBearerToken) RequireTransportSecurity() bool {
-	return true
+	return !t.insecure
 }
 
 // registerSampler registers a sampler command.
@@ -78,7 +79,10 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		}
 
 		if bearerToken != nil && *bearerToken != "" {
-			opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{token: *bearerToken}))
+			opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{
+				token:    *bearerToken,
+				insecure: *insecure,
+			}))
 		}
 
 		if bearerTokenFile != nil && *bearerTokenFile != "" {
@@ -86,7 +90,10 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			if err != nil {
 				return nil, fmt.Errorf("failed to read bearer token from file: %w", err)
 			}
-			opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{token: string(b)}))
+			opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{
+				token:    string(b),
+				insecure: *insecure,
+			}))
 		}
 
 		conn, err := grpc.Dial(*storeAddress, opts...)
