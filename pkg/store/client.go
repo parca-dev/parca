@@ -15,6 +15,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -173,11 +174,32 @@ func (s *grpcSeriesSet) Warnings() storage.Warnings {
 }
 
 func (q *grpcStoreQuerier) LabelValues(name string) ([]string, storage.Warnings, error) {
-	return nil, nil, nil
+	resp, err := q.c.LabelValues(q.ctx, &storepb.LabelValuesRequest{
+		Label: name,
+		Start: q.mint,
+		End:   q.maxt,
+	})
+
+	warnings := make(storage.Warnings, 0, len(resp.Warnings))
+	for _, w := range resp.Warnings {
+		warnings = append(warnings, errors.New(w))
+	}
+
+	return resp.Values, warnings, err
 }
 
 func (q *grpcStoreQuerier) LabelNames() ([]string, storage.Warnings, error) {
-	return nil, nil, nil
+	resp, err := q.c.LabelNames(q.ctx, &storepb.LabelNamesRequest{
+		Start: q.mint,
+		End:   q.maxt,
+	})
+
+	warnings := make(storage.Warnings, 0, len(resp.Warnings))
+	for _, w := range resp.Warnings {
+		warnings = append(warnings, errors.New(w))
+	}
+
+	return resp.Names, warnings, err
 }
 
 func (q *grpcStoreQuerier) Close() error {

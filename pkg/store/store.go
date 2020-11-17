@@ -189,6 +189,46 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProf
 	return nil
 }
 
+func (s *profileStore) LabelNames(ctx context.Context, r *storepb.LabelNamesRequest) (*storepb.LabelNamesResponse, error) {
+	q, err := s.db.Querier(ctx, r.Start, r.End)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer runutil.CloseWithLogOnErr(s.logger, q, "close tsdb chunk querier series")
+
+	labelNames, warnings, err := q.LabelNames()
+
+	warningStrings := make([]string, 0, len(warnings))
+	for _, w := range warnings {
+		warningStrings = append(warningStrings, w.Error())
+	}
+
+	return &storepb.LabelNamesResponse{
+		Names:    labelNames,
+		Warnings: warningStrings,
+	}, err
+}
+
+func (s *profileStore) LabelValues(ctx context.Context, r *storepb.LabelValuesRequest) (*storepb.LabelValuesResponse, error) {
+	q, err := s.db.Querier(ctx, r.Start, r.End)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer runutil.CloseWithLogOnErr(s.logger, q, "close tsdb chunk querier series")
+
+	labelNames, warnings, err := q.LabelValues(r.Label)
+
+	warningStrings := make([]string, 0, len(warnings))
+	for _, w := range warnings {
+		warningStrings = append(warningStrings, w.Error())
+	}
+
+	return &storepb.LabelValuesResponse{
+		Values:   labelNames,
+		Warnings: warningStrings,
+	}, err
+}
+
 func translatePbMatchers(ms []storepb.LabelMatcher) (res []*labels.Matcher, err error) {
 	for _, m := range ms {
 		r, err := translatePbMatcher(m)
