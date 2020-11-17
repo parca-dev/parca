@@ -81,6 +81,14 @@ func (s *fakeProfileStore) Profile(ctx context.Context, r *storepb.ProfileReques
 	return nil, nil
 }
 
+func (s *fakeProfileStore) LabelNames(ctx context.Context, r *storepb.LabelNamesRequest) (*storepb.LabelNamesResponse, error) {
+	return nil, nil
+}
+
+func (s *fakeProfileStore) LabelValues(ctx context.Context, r *storepb.LabelValuesRequest) (*storepb.LabelValuesResponse, error) {
+	return nil, nil
+}
+
 type endpointTestCase struct {
 	endpoint ApiFunc
 	params   map[string]string
