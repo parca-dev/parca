@@ -133,7 +133,7 @@ func TestGRPCAppendable(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := storepb.NewWritableProfileStoreClient(conn)
-	q := NewGRPCAppendable(c)
+	q := NewGRPCAppendable(log.NewNopLogger(), c)
 
 	app := q.Appender(context.Background())
 	_, err = app.Add(labels.Labels{
@@ -214,7 +214,7 @@ func TestStore(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := storepb.NewWritableProfileStoreClient(conn)
-	a := NewGRPCAppendable(c)
+	a := NewGRPCAppendable(log.NewNopLogger(), c)
 
 	app := a.Appender(context.Background())
 	_, err = app.Add(labels.Labels{

@@ -24,8 +24,25 @@ service WritableProfileStore {
 
 // ReadableProfileStore represents API against instance that allows reading profiles from.
 service ReadableProfileStore {
+  /// Series streams each Series (Labels and chunk/downsampling chunk) for given label matchers and time range.
+  ///
+  /// Series should strictly stream full series after series, optionally split by time. This means that a single frame can contain
+  /// partition of the single series, but once a new series is started to be streamed it means that no more data will
+  /// be sent for previous one.
+  /// Series has to be sorted.
+  ///
+  /// There is no requirements on chunk sorting, however it is recommended to have chunk sorted by chunk min time.
+  /// This heavily optimizes the resource usage on Querier / Federated Queries.
   rpc Series(SeriesRequest) returns (stream SeriesResponse);
+
+  /// Profile returns the raw bytes of the profile requested with an exact label match and exact timestamp.
   rpc Profile(ProfileRequest) returns (ProfileResponse);
+
+  /// LabelNames returns all label names that are available.
+  rpc LabelNames(LabelNamesRequest) returns (LabelNamesResponse);
+
+  /// LabelValues returns all label values for given label name.
+  rpc LabelValues(LabelValuesRequest) returns (LabelValuesResponse);
 }
 
 message WriteResponse {
@@ -105,4 +122,25 @@ message ProfileRequest {
 
 message ProfileResponse {
   bytes data = 1;
+}
+
+message LabelNamesRequest {
+  int64 start = 1;
+  int64 end = 2;
+}
+
+message LabelNamesResponse {
+  repeated string names    = 1;
+  repeated string warnings = 2;
+}
+
+message LabelValuesRequest {
+  string label = 1;
+  int64 start = 2;
+  int64 end = 3;
+}
+
+message LabelValuesResponse {
+  repeated string values   = 1;
+  repeated string warnings = 2;
 }

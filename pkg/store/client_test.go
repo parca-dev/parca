@@ -69,6 +69,14 @@ func (s *fakeProfileStore) Profile(ctx context.Context, r *storepb.ProfileReques
 	return nil, nil
 }
 
+func (s *fakeProfileStore) LabelNames(ctx context.Context, r *storepb.LabelNamesRequest) (*storepb.LabelNamesResponse, error) {
+	return nil, nil
+}
+
+func (s *fakeProfileStore) LabelValues(ctx context.Context, r *storepb.LabelValuesRequest) (*storepb.LabelValuesResponse, error) {
+	return nil, nil
+}
+
 func TestAPIQueryRangeGRPCCall(t *testing.T) {
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
