@@ -430,7 +430,7 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 					params.Add("seconds", strconv.Itoa(cfg.ProfilingConfig.PprofConfig.Profile.Seconds))
 				}
 
-				targets = append(targets, NewTarget(lbls, origLabels, cfg.Params))
+				targets = append(targets, NewTarget(lbls, origLabels, params))
 			}
 		}
 	}
