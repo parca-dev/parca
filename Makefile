@@ -14,15 +14,13 @@
 # Needs to be defined before including Makefile.common to auto-generate targets
 
 DOCKER_ARCHS ?= amd64 armv7 arm64
-GOLANGCI_LINT_OPTS = --skip-dirs internal
+GOLANGCI_LINT_OPTS = --skip-dirs=internal --modules-download-mode=readonly
 
 include Makefile.common
 include .bingo/Variables.mk
 
 DOCKER_IMAGE_NAME       ?= conprof
 
-GO111MODULE       ?= on
-export GO111MODULE
 GOPROXY           ?= https://proxy.golang.org
 export GOPROXY
 
@@ -39,7 +37,7 @@ test:
 .PHONY: assets
 assets:
 	@echo ">> writing assets"
-	cd $(PREFIX)/web && GO111MODULE=$(GO111MODULE) $(GO) generate -x -v $(GOOPTS)
+	cd $(PREFIX)/web && $(GO) generate -x -v $(GOOPTS)
 	@$(GOFMT) -w ./web
 
 .PHONY: check_assets

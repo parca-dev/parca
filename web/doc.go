@@ -19,4 +19,4 @@ import (
 	_ "github.com/shurcooL/vfsgen"
 )
 
-//go:generate go run -mod=vendor -tags=dev assets_generate.go
+//go:generate go run -mod=mod assets_generate.go
