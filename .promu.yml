@@ -8,7 +8,7 @@ build:
     binaries:
         - name: conprof
           path: ./
-    flags: -mod=vendor -a -tags netgo
+    flags: -a -tags netgo
     ldflags: |
         -X github.com/prometheus/common/version.Version={{.Version}}
         -X github.com/prometheus/common/version.Revision={{.Revision}}
