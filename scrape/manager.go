@@ -43,7 +43,7 @@ func NewManager(logger log.Logger, app Appendable) *Manager {
 		scrapeConfigs: make(map[string]*config.ScrapeConfig),
 		scrapePools:   make(map[string]*scrapePool),
 		graceShut:     make(chan struct{}),
-		triggerReload: make(chan struct{}),
+		triggerReload: make(chan struct{}, 1),
 	}
 }
 
