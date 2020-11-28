@@ -144,10 +144,8 @@ func runSampler(g *run.Group, probe prober.Probe, logger log.Logger, db storage.
 		return fmt.Errorf("could not load config: %v", err)
 	}
 
-	discoveryManagerScrape := discovery.NewManager(context.Background(), log.With(logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
-
 	ctxScrape, cancelScrape := context.WithCancel(context.Background())
-	discoveryManagerScrape = discovery.NewManager(ctxScrape, log.With(logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
+	discoveryManagerScrape := discovery.NewManager(ctxScrape, log.With(logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
 
 	go managerReloader(logger, reloadCh, discoveryManagerScrape, scrapeManager, configFile)
 	{
