@@ -60,7 +60,7 @@ $(warning Some recipes may not work as expected as the current Go runtime is '$(
 	endif
 endif
 PROMU        := $(FIRST_GOPATH)/bin/promu
-pkgs          = $(shell $(GO) list ./... | grep -v internal | sed 's/github\.com\/conprof\/conprof/\./g')
+pkgs          = $(shell $(GO) list ./... | grep -v internal | grep -v test/e2e | sed 's/github\.com\/conprof\/conprof/\./g')
 
 ifeq (arm, $(GOHOSTARCH))
 	GOHOSTARM ?= $(shell GOARM= $(GO) env GOARM)
