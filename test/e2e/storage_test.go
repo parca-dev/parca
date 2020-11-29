@@ -169,9 +169,8 @@ type sample struct {
 	v []byte
 }
 
-func newSample(t int64, v []byte) tsdbutil.Sample { return sample{t, v} }
-func (s sample) T() int64                         { return s.t }
-func (s sample) V() []byte                        { return s.v }
+func (s sample) T() int64  { return s.t }
+func (s sample) V() []byte { return s.v }
 
 // query runs a matcher query against the querier and fully expands its data.
 func query(t testing.TB, q storage.Querier, matchers ...*labels.Matcher) map[string][]tsdbutil.Sample {
