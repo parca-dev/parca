@@ -89,6 +89,17 @@ $(PROTOC):
 	@mv -- "$(TMP_GOPATH)/bin/protoc" "$(GOBIN)/protoc-$(PROTOC_VERSION)"
 	@echo ">> produced $(GOBIN)/protoc-$(PROTOC_VERSION)"
 
+.PHONY: test-e2e
+test-e2e: ## Runs all Conprof e2e docker-based e2e tests from test/e2e. Required access to docker daemon.
+test-e2e: #docker
+	@echo ">> cleaning docker environment."
+	@docker system prune -f --volumes
+	@echo ">> cleaning e2e test garbage."
+	@rm -rf ./test/e2e/e2e_integration_test*
+	@echo ">> running /test/e2e tests."
+	# NOTE(bwplotka):
+	# 	# * If you see errors on CI (timeouts), but not locally, try to add -parallel 1 to limit to single CPU to reproduce small 1CPU machine.
+	@go test $(GOTEST_OPTS) ./test/e2e/...
 
 .PHONY: check-git
 check-git:
