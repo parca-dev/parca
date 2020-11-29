@@ -179,6 +179,8 @@ github.com/cockroachdb/datadriven v0.0.0-20190809214429-80d97fb3cbaa/go.mod h1:z
 github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd/go.mod h1:sE/e/2PUdi/liOCUjSTXgM1o87ZssimdTWN964YiIeI=
 github.com/conprof/db v0.0.0-20200923100233-d202624dc72c h1:jlXkz8obVpL4LnB2c2+V3kZpP2vcicRGipLmsB1c7FQ=
 github.com/conprof/db v0.0.0-20200923100233-d202624dc72c/go.mod h1:Cex3za2pwlI7pw22GG2syTBrvpEE39M2rPCJpAWQNCE=
+github.com/conprof/db v0.0.0-20201127160752-924d2beb27cf h1:F+27cq1nZJ0V7GV0Z5xlAgZDGhQeq/rIzyvUCcdwl+Y=
+github.com/conprof/db v0.0.0-20201127160752-924d2beb27cf/go.mod h1:Cex3za2pwlI7pw22GG2syTBrvpEE39M2rPCJpAWQNCE=
 github.com/containerd/containerd v1.2.7/go.mod h1:bC6axHOhabU15QhwfG7w5PipXdVtMXFTttgp+kVtyUA=
 github.com/containerd/containerd v1.3.4 h1:3o0smo5SKY7H6AJCmJhsnCjR2/V2T8VmiHt7seN2/kI=
 github.com/containerd/containerd v1.3.4/go.mod h1:bC6axHOhabU15QhwfG7w5PipXdVtMXFTttgp+kVtyUA=

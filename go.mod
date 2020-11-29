@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/conprof/db v0.0.0-20200923100233-d202624dc72c
+	github.com/conprof/db v0.0.0-20201127160752-924d2beb27cf
 	github.com/go-kit/kit v0.10.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/gogo/status v1.0.3
