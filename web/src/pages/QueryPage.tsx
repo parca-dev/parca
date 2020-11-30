@@ -98,15 +98,6 @@ function formatLabels(labels: { [key: string]: string }) {
     return tsName;
 };
 
-function openProfile(props: any) {
-    const { payload } = props;
-    console.log(props);
-    if (payload) {
-        const data = payload;
-        window.open('/pprof/' + data.labelsetEncoded + '/' + data.timestamp + '/');
-    }
-}
-
 class QueryPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
@@ -193,6 +184,17 @@ class QueryPage extends React.Component<Props, State> {
     render() {
         const { history, actions, query, classes } = this.props;
 
+        const openProfile = (props: any) => {
+            const { payload } = props;
+            console.log(props);
+            if (payload) {
+                const data = payload;
+                const q = `{${Object.entries(data.labels).map(([labelName, labelValue]) => `${labelName}="${labelValue}"`).join(",")}}`;
+
+                window.open('/pprof/' + btoa(q) + '/' + data.timestamp + '/');
+            }
+        }
+
         return (
             <div className={classes.root}>
                 <Grid container justify="center">
@@ -247,25 +249,25 @@ class QueryPage extends React.Component<Props, State> {
                     </Grid>
 
                     {query.result.data.map(
-                    (series: Series) => {
-                    return (
-                    <Grid key={series.labelsetEncoded} item xs={8}>
-                        <Paper className={classes.paper}>
-                            <div className={classes.labelSet}>{formatLabels(series.labels)}</div>
-                            <div style={{ width: '100%', height: 70 }}>
-                                <ResponsiveContainer>
-                                    <ScatterChart height={60} margin={{top: 10, right: 0, bottom: 0, left: 0}}>
-                                        <XAxis type="number" dataKey="timestamp" domain={['auto', 'auto']} tickFormatter={(unixTime) => moment(unixTime).format('YYYY/M/D HH:mm')} />
-                                        <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} />
-                                        <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{ zIndex: 100 }} content={renderTooltip} />
-                                        <Scatter data={series.timestamps.map((timestamp: number) => { return {labelsetEncoded: series.labelsetEncoded,timestamp: timestamp, index: 1} })} onClick={openProfile} fill='#8884d8'/>
-                                    </ScatterChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </Paper>
-                    </Grid>
-                    )
-                    }
+                        (series: Series, i: number) => {
+                            return (
+                                <Grid key={series.labelsetEncoded} item xs={8}>
+                                    <Paper className={classes.paper}>
+                                        <div className={classes.labelSet}>{formatLabels(series.labels)}</div>
+                                        <div style={{ width: '100%', height: 70 }}>
+                                            <ResponsiveContainer>
+                                                <ScatterChart height={60} margin={{top: 10, right: 0, bottom: 0, left: 0}}>
+                                                    <XAxis type="number" dataKey="timestamp" domain={['auto', 'auto']} tickFormatter={(unixTime) => moment(unixTime).format('YYYY/M/D HH:mm')} />
+                                                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} />
+                                                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{ zIndex: 100 }} content={renderTooltip} />
+                                                    <Scatter data={series.timestamps.map((timestamp: number) => { return {labels: series.labels, timestamp: timestamp, index: 1} })} onClick={openProfile} fill='#8884d8'/>
+                                                </ScatterChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </Paper>
+                                </Grid>
+                            )
+                        }
                     )}
                     {!query.request.loading && query.result.data.length == 0 &&
                         <Grid key="no-result" className={classes.noResult} item xs={8}>
