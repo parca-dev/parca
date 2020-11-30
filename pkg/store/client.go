@@ -84,7 +84,7 @@ type grpcSeriesSet struct {
 }
 
 func (s *grpcSeriesSet) Next() bool {
-	if !s.set.Next() {
+	if s.set == nil || !s.set.Next() {
 		return false
 	}
 	l, c := s.set.At()
