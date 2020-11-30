@@ -15,7 +15,6 @@ package api
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"math"
 	"net/http"
@@ -53,9 +52,8 @@ func New(logger log.Logger, db storage.Queryable, reloadCh chan struct{}) *API {
 }
 
 type Series struct {
-	Labels          map[string]string `json:"labels"`
-	LabelSetEncoded string            `json:"labelsetEncoded"`
-	Timestamps      []int64           `json:"timestamps"`
+	Labels     map[string]string `json:"labels"`
+	Timestamps []int64           `json:"timestamps"`
 }
 
 func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
@@ -64,13 +62,13 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	fromString := r.URL.Query().Get("from")
 	from, err := strconv.ParseInt(fromString, 10, 64)
 	if err != nil {
-		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: fmt.Errorf("failed to parse \"from\" time: %w", err)}
 	}
 
 	toString := r.URL.Query().Get("to")
 	to, err := strconv.ParseInt(toString, 10, 64)
 	if err != nil {
-		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: fmt.Errorf("failed to parse \"to\" time: %w", err)}
 	}
 
 	if to < from {
@@ -95,16 +93,8 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	for set.Next() {
 		series := set.At()
 		ls := series.Labels()
-		filteredLabels := labels.Labels{}
-		m := make(map[string]string)
-		for _, l := range ls {
-			if l.Name != "" {
-				filteredLabels = append(filteredLabels, l)
-				m[l.Name] = l.Value
-			}
-		}
 
-		resSeries := Series{Labels: m, LabelSetEncoded: base64.URLEncoding.EncodeToString([]byte(filteredLabels.String()))}
+		resSeries := Series{Labels: ls.Map()}
 		i := series.Iterator()
 		for i.Next() {
 			t, _ := i.At()

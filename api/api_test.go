@@ -149,9 +149,8 @@ func TestAPIQueryRangeGRPCCall(t *testing.T) {
 			},
 			response: []Series{
 				{
-					Labels:          map[string]string{"__name__": "allocs"},
-					LabelSetEncoded: "e19fbmFtZV9fPSJhbGxvY3MifQ==",
-					Timestamps:      []int64{1, 5},
+					Labels:     map[string]string{"__name__": "allocs"},
+					Timestamps: []int64{1, 5},
 				},
 			},
 		},
