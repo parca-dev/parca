@@ -72,3 +72,22 @@ func NewStorage(sharedDir string, networkName string, name string, dirSuffix str
 
 	return storage, nil
 }
+
+func NewAPI(networkName string, name string, storeAddress string) (*e2e.HTTPService, error) {
+	api := e2e.NewHTTPService(
+		fmt.Sprintf("api-%v", name),
+		DefaultImage(),
+		e2e.NewCommand("api", e2e.BuildArgs(map[string]string{
+			"--debug.name":   fmt.Sprintf("api-%v", name),
+			"--http-address": ":8080",
+			"--log.level":    logLevel,
+			"--store":        storeAddress,
+		})...),
+		e2e.NewHTTPReadinessProbe(8080, "/-/ready", 200, 200),
+		8080,
+	)
+	api.SetUser(strconv.Itoa(os.Getuid()))
+	api.SetBackoff(defaultBackoffConfig)
+
+	return api, nil
+}
