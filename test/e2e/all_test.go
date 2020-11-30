@@ -1,0 +1,81 @@
+package e2e
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"math"
+	"net/http"
+	"net/url"
+	"testing"
+	"time"
+
+	"github.com/conprof/conprof/api"
+	"github.com/conprof/conprof/test/e2e/e2econprof"
+	"github.com/cortexproject/cortex/integration/e2e"
+	"github.com/prometheus/tsdb/testutil"
+)
+
+func TestAll(t *testing.T) {
+	t.Parallel()
+
+	t.Run("append-restart-append-read", func(t *testing.T) {
+		t.Parallel()
+
+		//ctx := context.Background()
+		s, err := e2e.NewScenario("e2e_test_append_restart_append_read")
+		testutil.Ok(t, err)
+		t.Cleanup(e2econprof.CleanScenario(t, s))
+
+		all1, err := e2econprof.NewAll(s.SharedDir(), s.NetworkName(), "1", "test", e2econprof.DefaultScrapeConfig())
+		testutil.Ok(t, err)
+		testutil.Ok(t, s.StartAndWaitReady(all1))
+
+		// Let it scrape some samples.
+		time.Sleep(10 * time.Second)
+
+		res1 := queryRange(t, all1.HTTPEndpoint())
+		testutil.Equals(t, 1, len(res1.Data), "Unexpected amount of series")
+
+		err = all1.Stop()
+		testutil.Ok(t, err)
+
+		all2, err := e2econprof.NewAll(s.SharedDir(), s.NetworkName(), "2", "test", e2econprof.DefaultScrapeConfig())
+		testutil.Ok(t, err)
+		testutil.Ok(t, s.StartAndWaitReady(all2))
+
+		// Let it scrape some new samples after the restart.
+		time.Sleep(10 * time.Second)
+
+		res2 := queryRange(t, all2.HTTPEndpoint())
+		testutil.Equals(t, 1, len(res2.Data), "Unexpected amount of series: %#+v", res2.Data)
+	})
+}
+
+type queryRangeResult struct {
+	Status string       `json:"status"`
+	Data   []api.Series `json:"data"`
+}
+
+func queryRange(t *testing.T, hostPort string) *queryRangeResult {
+	u := url.URL{
+		Scheme:   "http",
+		Host:     hostPort,
+		Path:     "api/v1/query_range",
+		RawQuery: fmt.Sprintf("query=heap&from=%d&to=%d", math.MinInt64, math.MaxInt64),
+	}
+	resp, err := http.Get(u.String())
+	testutil.Ok(t, err)
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	testutil.Ok(t, err)
+
+	testutil.Equals(t, http.StatusOK, resp.StatusCode, string(body))
+
+	res := queryRangeResult{}
+	err = json.Unmarshal(body, &res)
+	testutil.Ok(t, err)
+
+	return &res
+}
