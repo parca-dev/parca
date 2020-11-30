@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"math"
 	"net/http"
 	"path"
 	"strconv"
@@ -63,7 +62,7 @@ func parsePath(reqPath string) (series string, timestamp string, remainingPath s
 }
 
 func (p *pprofUI) selectProfile(m labels.Selector, timestamp int64) ([]byte, error) {
-	q, err := p.db.Querier(context.TODO(), 0, math.MaxInt64)
+	q, err := p.db.Querier(context.TODO(), timestamp, timestamp)
 	if err != nil {
 		level.Error(p.logger).Log("err", err)
 		return nil, err
