@@ -16,11 +16,17 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"math"
+	"net/http"
+	"net/url"
 	"runtime/pprof"
 	"testing"
 	"time"
 
+	"github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/test/e2e/e2econprof"
@@ -61,11 +67,11 @@ func TestStorage(t *testing.T) {
 
 		d := s.SharedDir()
 
-		st, err := e2econprof.NewStorage(d, s.NetworkName(), "test", "test")
+		st1, err := e2econprof.NewStorage(d, s.NetworkName(), "1", "test")
 		testutil.Ok(t, err)
-		testutil.Ok(t, s.StartAndWaitReady(st))
+		testutil.Ok(t, s.StartAndWaitReady(st1))
 
-		grpcAddress := st.GRPCEndpoint()
+		grpcAddress := st1.GRPCEndpoint()
 		conn, err := grpc.Dial(grpcAddress, grpc.WithInsecure())
 		if err != nil {
 			t.Fatal(err)
@@ -98,14 +104,15 @@ func TestStorage(t *testing.T) {
 
 		err = conn.Close()
 		testutil.Ok(t, err)
-		err = st.Stop()
+		err = st1.Stop()
 		testutil.Ok(t, err)
 
-		st, err = e2econprof.NewStorage(d, s.NetworkName(), "test-restart", "test")
+		st2, err := e2econprof.NewStorage(d, s.NetworkName(), "2", "test")
 		testutil.Ok(t, err)
-		testutil.Ok(t, s.StartAndWaitReady(st))
+		testutil.Ok(t, s.StartAndWaitReady(st2))
+		defer st2.Stop()
 
-		grpcAddress = st.GRPCEndpoint()
+		grpcAddress = st2.GRPCEndpoint()
 		conn, err = grpc.Dial(grpcAddress, grpc.WithInsecure())
 		if err != nil {
 			t.Fatal(err)
@@ -136,31 +143,36 @@ func TestStorage(t *testing.T) {
 			time.Sleep(100 * time.Millisecond)
 		}
 
-		rc := storepb.NewReadableProfileStoreClient(conn)
-		q := store.NewGRPCQueryable(rc)
-
-		querier, err := q.Querier(
-			context.TODO(),
-			math.MinInt64,
-			math.MaxInt64,
-		)
+		a, err := e2econprof.NewAPI(s.NetworkName(), "1", st2.GRPCNetworkEndpoint())
 		testutil.Ok(t, err)
-		seriesSet := query(t, querier, labels.MustNewMatcher(labels.MatchEqual, "__name__", "heap"))
+		testutil.Ok(t, s.StartAndWaitReady(a))
+		defer a.Stop()
 
-		testutil.Equals(t, 1, len(seriesSet), "Unexpected number of series returned")
-
-		seriesSamples := seriesSet[`{__name__="heap"}`]
-
-		sampleEqual := func(s1, s2 tsdbutil.Sample) bool {
-			return s1.T() == s2.T() && bytes.Equal(s1.V(), s2.V())
+		u := url.URL{
+			Scheme:   "http",
+			Host:     a.HTTPEndpoint(),
+			Path:     "api/v1/query_range",
+			RawQuery: fmt.Sprintf("query=heap&from=%d&to=%d", math.MinInt64, math.MaxInt64),
 		}
+		resp, err := http.Get(u.String())
+		testutil.Ok(t, err)
+		defer resp.Body.Close()
 
-		expectedSamples := append(firstSampleSet, secondSampleSet...)
-		testutil.Equals(t, len(expectedSamples), len(seriesSamples), "Unexpected number of samples returned")
+		body, err := ioutil.ReadAll(resp.Body)
+		testutil.Ok(t, err)
 
-		for i, expectedSample := range expectedSamples {
-			testutil.Equals(t, true, sampleEqual(expectedSample, seriesSamples[i]), "Unexpected sample")
-		}
+		testutil.Equals(t, http.StatusOK, resp.StatusCode, string(body))
+
+		res := struct {
+			Status string       `json:"status"`
+			Data   []api.Series `json:"data"`
+		}{}
+
+		err = json.Unmarshal(body, &res)
+		testutil.Ok(t, err)
+
+		testutil.Equals(t, 1, len(res.Data), "Unexpected amount of series")
+		testutil.Equals(t, 100, len(res.Data[0].Timestamps), "Unexpected amount of samples")
 	})
 }
 
