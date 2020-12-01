@@ -131,6 +131,25 @@ scrape_configs:
   # Quick scrapes for test purposes.
   scrape_interval: 1s
   scrape_timeout: 1s
+  profiling_config:
+    pprof_config:
+      allocs:
+        enabled: false
+      block:
+        enabled: false
+      goroutine:
+        enabled: false
+      heap:
+        enabled: true
+        path: /debug/pprof/heap
+      mutex:
+        enabled: false
+      profile:
+        enabled: false
+      threadcreate:
+        enabled: false
+      trace:
+        enabled: false
   static_configs:
   - targets: ['localhost:8080']
 `)

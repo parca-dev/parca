@@ -25,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/test/e2e/e2econprof"
@@ -205,11 +204,6 @@ func TestStorage(t *testing.T) {
 		testutil.Equals(t, 1, len(res.Data), "Unexpected amount of series")
 		testutil.Equals(t, 101, len(res.Data[0].Timestamps), "Unexpected amount of samples: %s", string(body))
 	})
-}
-
-type queryRangeResult struct {
-	Status string       `json:"status"`
-	Data   []api.Series `json:"data"`
 }
 
 type sample struct {
