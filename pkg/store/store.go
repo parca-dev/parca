@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/conprof/conprof/pkg/runutil"
 	"github.com/conprof/conprof/pkg/store/storepb"
@@ -67,13 +68,15 @@ var _ storepb.WritableProfileStoreServer = &profileStore{}
 func (s *profileStore) Write(ctx context.Context, r *storepb.WriteRequest) (*storepb.WriteResponse, error) {
 	app := s.db.Appender(ctx)
 	for _, series := range r.ProfileSeries {
-		ls := make([]labels.Label, 0, len(series.Labels))
+		ls := make(labels.Labels, 0, len(series.Labels))
 		for _, l := range series.Labels {
 			ls = append(ls, labels.Label{
 				Name:  l.Name,
 				Value: l.Value,
 			})
 		}
+		// Sorting must be ensured at insertion time.
+		sort.Sort(ls)
 
 		for _, sample := range series.Samples {
 			_, err := app.Add(ls, sample.Timestamp, sample.Value)
