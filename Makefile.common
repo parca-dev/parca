@@ -99,7 +99,7 @@ DOCKERFILE_PATH         ?= ./Dockerfile
 DOCKERBUILD_CONTEXT     ?= ./
 DOCKER_REPO             ?= quay.io/conprof
 
-DOCKER_ARCHS            ?= amd64
+DOCKER_ARCHS            ?= amd64 arm arm64
 
 BUILD_DOCKER_ARCHS = $(addprefix common-docker-,$(DOCKER_ARCHS))
 PUBLISH_DOCKER_ARCHS = $(addprefix common-docker-publish-,$(DOCKER_ARCHS))
