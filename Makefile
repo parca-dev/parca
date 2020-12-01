@@ -67,6 +67,8 @@ crossbuild: $(PROMU)
 # docker builds docker with no tag.
 .PHONY: docker
 docker: common-build
+	mkdir -p .build/linux-amd64/
+	mv conprof .build/linux-amd64/conprof
 	@echo ">> building docker image '${DOCKER_IMAGE_NAME}'"
 	@docker build -t "${DOCKER_IMAGE_NAME}" .
 
@@ -91,7 +93,7 @@ $(PROTOC):
 
 .PHONY: test-e2e
 test-e2e: ## Runs all Conprof e2e docker-based e2e tests from test/e2e. Required access to docker daemon.
-test-e2e: #docker
+test-e2e: docker
 	@echo ">> cleaning docker environment."
 	@docker system prune -f --volumes
 	@echo ">> cleaning e2e test garbage."
