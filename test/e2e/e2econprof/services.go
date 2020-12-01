@@ -15,6 +15,7 @@ package e2econprof
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -90,4 +91,68 @@ func NewAPI(networkName string, name string, storeAddress string) (*e2e.HTTPServ
 	api.SetBackoff(defaultBackoffConfig)
 
 	return api, nil
+}
+
+func NewAll(sharedDir, networkName, name, dirSuffix, config string) (*e2e.HTTPService, error) {
+	dir := filepath.Join(sharedDir, "data", "all", dirSuffix)
+	dataDir := filepath.Join(dir, "data")
+	container := filepath.Join(e2e.ContainerSharedDir, "data", "all", dirSuffix)
+	if err := os.MkdirAll(dataDir, 0777); err != nil {
+		return nil, errors.Wrap(err, "create storage dir")
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(dir, "conprof.yaml"), []byte(config), 0666); err != nil {
+		return nil, errors.Wrap(err, "creating conprof config failed")
+	}
+
+	all := e2e.NewHTTPService(
+		fmt.Sprintf("all-%v", name),
+		DefaultImage(),
+		e2e.NewCommand("all", e2e.BuildArgs(map[string]string{
+			"--debug.name":        fmt.Sprintf("storage-%v", name),
+			"--http-address":      ":8080",
+			"--storage.tsdb.path": filepath.Join(container, "data"),
+			"--log.level":         logLevel,
+			"--config.file":       filepath.Join(container, "conprof.yaml"),
+		})...),
+		e2e.NewHTTPReadinessProbe(8080, "/-/ready", 200, 200),
+		8080,
+	)
+	all.SetUser(strconv.Itoa(os.Getuid()))
+	all.SetBackoff(defaultBackoffConfig)
+
+	return all, nil
+}
+
+func DefaultScrapeConfig() string {
+	config := fmt.Sprintf(`
+scrape_configs:
+- job_name: 'conprof'
+  # Quick scrapes for test purposes.
+  scrape_interval: 1s
+  scrape_timeout: 1s
+  profiling_config:
+    pprof_config:
+      allocs:
+        enabled: false
+      block:
+        enabled: false
+      goroutine:
+        enabled: false
+      heap:
+        enabled: true
+        path: /debug/pprof/heap
+      mutex:
+        enabled: false
+      profile:
+        enabled: false
+      threadcreate:
+        enabled: false
+      trace:
+        enabled: false
+  static_configs:
+  - targets: ['localhost:8080']
+`)
+
+	return config
 }

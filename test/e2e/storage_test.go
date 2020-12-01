@@ -19,14 +19,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"net/url"
 	"runtime/pprof"
 	"testing"
 	"time"
 
-	"github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/test/e2e/e2econprof"
@@ -81,6 +79,8 @@ func TestStorage(t *testing.T) {
 
 		firstSampleSet := []*testSample{}
 
+		startTime := time.Now()
+
 		for i := 0; i < 50; i++ {
 			app := db.Appender(ctx)
 
@@ -93,7 +93,21 @@ func TestStorage(t *testing.T) {
 			}
 			firstSampleSet = append(firstSampleSet, sample)
 
-			_, err = app.Add(labels.FromStrings("__name__", "heap"), sample.timestamp, sample.value)
+			_, err = app.Add(labels.FromStrings(
+				"__name__", "heap",
+				"instance", "localhost:10902",
+				"job", "conprof",
+			), sample.timestamp, sample.value)
+			testutil.Ok(t, err)
+
+			err = app.Commit()
+			testutil.Ok(t, err)
+
+			_, err = app.Add(labels.FromStrings(
+				"__name__", "allocs",
+				"instance", "localhost:10902",
+				"job", "conprof",
+			), sample.timestamp, sample.value)
 			testutil.Ok(t, err)
 
 			err = app.Commit()
@@ -104,7 +118,7 @@ func TestStorage(t *testing.T) {
 
 		err = conn.Close()
 		testutil.Ok(t, err)
-		err = st1.Stop()
+		err = st1.Kill()
 		testutil.Ok(t, err)
 
 		st2, err := e2econprof.NewStorage(d, s.NetworkName(), "2", "test")
@@ -122,7 +136,7 @@ func TestStorage(t *testing.T) {
 
 		secondSampleSet := []*testSample{}
 
-		for i := 0; i < 50; i++ {
+		for i := 0; i < 51; i++ {
 			app := db.Appender(ctx)
 
 			b := bytes.NewBuffer(nil)
@@ -134,7 +148,21 @@ func TestStorage(t *testing.T) {
 			}
 			secondSampleSet = append(secondSampleSet, sample)
 
-			_, err = app.Add(labels.FromStrings("__name__", "heap"), sample.timestamp, sample.value)
+			_, err = app.Add(labels.FromStrings(
+				"__name__", "heap",
+				"instance", "localhost:10902",
+				"job", "conprof",
+			), sample.timestamp, sample.value)
+			testutil.Ok(t, err)
+
+			err = app.Commit()
+			testutil.Ok(t, err)
+
+			_, err = app.Add(labels.FromStrings(
+				"__name__", "allocs",
+				"instance", "localhost:10902",
+				"job", "conprof",
+			), sample.timestamp, sample.value)
 			testutil.Ok(t, err)
 
 			err = app.Commit()
@@ -148,11 +176,16 @@ func TestStorage(t *testing.T) {
 		testutil.Ok(t, s.StartAndWaitReady(a))
 		defer a.Stop()
 
+		q := url.Values{}
+		q.Set("query", "heap{instance=\"localhost:10902\",job=\"conprof\"}")
+		q.Set("from", fmt.Sprintf("%d", timestamp.FromTime(startTime)))
+		q.Set("to", fmt.Sprintf("%d", timestamp.FromTime(time.Now())))
+
 		u := url.URL{
 			Scheme:   "http",
 			Host:     a.HTTPEndpoint(),
 			Path:     "api/v1/query_range",
-			RawQuery: fmt.Sprintf("query=heap&from=%d&to=%d", math.MinInt64, math.MaxInt64),
+			RawQuery: q.Encode(),
 		}
 		resp, err := http.Get(u.String())
 		testutil.Ok(t, err)
@@ -163,16 +196,13 @@ func TestStorage(t *testing.T) {
 
 		testutil.Equals(t, http.StatusOK, resp.StatusCode, string(body))
 
-		res := struct {
-			Status string       `json:"status"`
-			Data   []api.Series `json:"data"`
-		}{}
+		res := queryRangeResult{}
 
 		err = json.Unmarshal(body, &res)
 		testutil.Ok(t, err)
 
 		testutil.Equals(t, 1, len(res.Data), "Unexpected amount of series")
-		testutil.Equals(t, 100, len(res.Data[0].Timestamps), "Unexpected amount of samples")
+		testutil.Equals(t, 101, len(res.Data[0].Timestamps), "Unexpected amount of samples: %s", string(body))
 	})
 }
 

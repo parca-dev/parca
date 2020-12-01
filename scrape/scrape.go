@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 
@@ -523,6 +524,8 @@ mainLoop:
 
 			tl := sl.target.Labels()
 			tl = append(tl, labels.Label{Name: "__name__", Value: profileType})
+			// Must ensure label-set is sorted
+			sort.Sort(tl)
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			app := sl.appendable.Appender(sl.ctx)

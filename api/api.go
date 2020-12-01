@@ -88,7 +88,7 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
-	set := q.Select(false, nil, sel...)
+	set := q.Select(true, nil, sel...)
 	res := []Series{}
 	for set.Next() {
 		series := set.At()
