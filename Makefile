@@ -30,10 +30,6 @@ PROTOC         ?= $(GOBIN)/protoc-$(PROTOC_VERSION)
 PROTOC_VERSION ?= 3.4.0
 GIT            ?= $(shell which git)
 
-.PHONY: test
-test:
-	go test $(pkgs)
-
 .PHONY: assets
 assets:
 	@echo ">> writing assets"
@@ -91,7 +87,7 @@ $(PROTOC):
 
 .PHONY: test-e2e
 test-e2e: ## Runs all Conprof e2e docker-based e2e tests from test/e2e. Required access to docker daemon.
-test-e2e: #docker
+test-e2e: docker
 	@echo ">> cleaning docker environment."
 	@docker system prune -f --volumes
 	@echo ">> cleaning e2e test garbage."
