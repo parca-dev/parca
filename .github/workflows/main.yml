@@ -38,9 +38,13 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+      - name: Get branch name
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
       - name: Build and publish docker images
         if: "github.ref == 'refs/heads/master'"
-        run: DOCKER_IMAGE_TAG="$(git rev-parse --abbrev-ref HEAD | tr / -)-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)" make common-docker common-docker-tag-latest common-docker-publish common-docker-manifest
+        run: DOCKER_IMAGE_TAG="${BRANCH_NAME}-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)" make common-docker common-docker-publish common-docker-manifest
   lint:
     runs-on: ubuntu-latest
     name: Linters (Static Analysis) for Go
