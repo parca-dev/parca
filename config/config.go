@@ -85,13 +85,6 @@ func DefaultScrapeConfig() ScrapeConfig {
 						Path:    "/debug/pprof/threadcreate",
 					},
 				},
-				Trace: &PprofTraceConfig{
-					PprofProfilingConfig: PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/trace",
-					},
-					Seconds: 1, // By default Go collects 1s trace.
-				},
 			},
 		},
 	}
@@ -181,7 +174,6 @@ type PprofConfig struct {
 	Mutex        *PprofMutexConfig        `yaml:"mutex,omitempty"`
 	Profile      *PprofProfileConfig      `yaml:"profile,omitempty"`
 	Threadcreate *PprofThreadcreateConfig `yaml:"threadcreate,omitempty"`
-	Trace        *PprofTraceConfig        `yaml:"trace,omitempty"`
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
@@ -262,11 +254,6 @@ type PprofProfileConfig struct {
 
 type PprofThreadcreateConfig struct {
 	PprofProfilingConfig `yaml:",inline"`
-}
-
-type PprofTraceConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-	Seconds              int `yaml:"seconds"`
 }
 
 type PprofProfilingConfig struct {

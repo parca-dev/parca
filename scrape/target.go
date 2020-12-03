@@ -261,12 +261,6 @@ func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.La
 		}
 	}
 
-	if c.PprofConfig != nil {
-		if c.PprofConfig.Trace != nil {
-			add(ProfileTraceType, c.PprofConfig.Trace.PprofProfilingConfig)
-		}
-	}
-
 	return res
 }
 
@@ -418,11 +412,6 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 			if lbls != nil || origLabels != nil {
 				params := cfg.Params
 				switch profType {
-				case ProfileTraceType:
-					if params == nil {
-						params = url.Values{}
-					}
-					params.Add("seconds", strconv.Itoa(cfg.ProfilingConfig.PprofConfig.Trace.Seconds))
 				case ProfileProfileType:
 					if params == nil {
 						params = url.Values{}
