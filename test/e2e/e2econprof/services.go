@@ -148,8 +148,6 @@ scrape_configs:
         enabled: false
       threadcreate:
         enabled: false
-      trace:
-        enabled: false
   static_configs:
   - targets: ['localhost:8080']
 `)
