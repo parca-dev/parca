@@ -29,6 +29,7 @@ type textItem struct {
 
 type topReport struct {
 	Labels []string   `json:"labels,omitempty"`
+	Total  int64      `json:"total"`
 	Items  []textItem `json:"items,omitempty"`
 }
 
@@ -65,6 +66,7 @@ func generateTopReport(p *profile.Profile, sampleIndex string) (*topReport, erro
 	items, labels := report.TextItems(rep)
 	res := &topReport{
 		Labels: labels,
+		Total:  rep.Total(),
 		Items:  make([]textItem, 0, len(items)),
 	}
 
