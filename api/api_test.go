@@ -221,6 +221,11 @@ func TestAPILabelNames(t *testing.T) {
 			query:    url.Values{},
 			response: []string{"__name__", "foo"},
 		},
+		{
+			endpoint: api.LabelNames,
+			query:    url.Values{"match[]": []string{"allocs"}},
+			response: []string{"foo"},
+		},
 		// Invalid format.
 		{
 			endpoint: api.LabelNames,
@@ -283,6 +288,14 @@ func TestAPILabelValues(t *testing.T) {
 				"name": "__name__",
 			},
 			response: []string{"allocs", "goroutine"},
+		},
+		{
+			endpoint: api.LabelValues,
+			params: map[string]string{
+				"name": "__name__",
+			},
+			query:    url.Values{"match[]": []string{"{foo=\"bar\"}"}},
+			response: []string{"allocs"},
 		},
 		// Invalid format.
 		{
