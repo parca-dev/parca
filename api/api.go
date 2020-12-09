@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -511,14 +512,53 @@ func (a *API) LabelNames(r *http.Request) (interface{}, []error, *ApiError) {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
+	matcherSets := [][]*labels.Matcher{}
+	exactMatches := map[string]struct{}{}
+	for _, s := range r.Form["match[]"] {
+		matchers, err := parser.ParseMetricSelector(s)
+		if err != nil {
+			return nil, nil, &ApiError{
+				Typ: ErrorBadData,
+				Err: err,
+			}
+		}
+		matcherSets = append(matcherSets, matchers)
+		for _, m := range matchers {
+			if m.Type == labels.MatchEqual {
+				exactMatches[m.Name] = struct{}{}
+			}
+		}
+	}
+
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
 	if err != nil {
 		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
-	names, warnings, err := q.LabelNames()
-	if err != nil {
-		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+	hints := &storage.SelectHints{
+		Start: timestamp.FromTime(start),
+		End:   timestamp.FromTime(end),
+		Func:  "series", // There is no series function, this token is used for lookups that don't need samples.
+	}
+
+	var names []string
+	var warnings storage.Warnings
+	if len(r.Form["match[]"]) > 0 {
+		// Get all series which match matchers.
+		var sets []storage.SeriesSet
+		for _, mset := range matcherSets {
+			s := q.Select(false, hints, mset...)
+			sets = append(sets, s)
+		}
+		names, warnings, err = labelNamesByMatchers(sets, exactMatches)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
+	} else {
+		names, warnings, err = q.LabelNames()
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
 	}
 
 	return names, warnings, nil
@@ -537,17 +577,98 @@ func (a *API) LabelValues(r *http.Request) (interface{}, []error, *ApiError) {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
+	var matcherSets [][]*labels.Matcher
+	for _, s := range r.Form["match[]"] {
+		matchers, err := parser.ParseMetricSelector(s)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
+		}
+		matcherSets = append(matcherSets, matchers)
+	}
+
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
 	if err != nil {
 		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
-	names, warnings, err := q.LabelValues(name)
-	if err != nil {
-		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+	hints := &storage.SelectHints{
+		Start: timestamp.FromTime(start),
+		End:   timestamp.FromTime(end),
+		Func:  "series", // There is no series function, this token is used for lookups that don't need samples.
 	}
 
-	return names, warnings, nil
+	var vals []string
+	var warnings storage.Warnings
+	if len(r.Form["match[]"]) > 0 {
+		// Get all series which match matchers.
+		var sets []storage.SeriesSet
+		for _, mset := range matcherSets {
+			s := q.Select(false, hints, mset...)
+			sets = append(sets, s)
+		}
+		vals, warnings, err = labelValuesByMatchers(sets, name)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
+	} else {
+		vals, warnings, err = q.LabelValues(name)
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
+		}
+	}
+
+	return vals, warnings, nil
+}
+
+// LabelValuesByMatchers uses matchers to filter out matching series, then label values are extracted.
+func labelValuesByMatchers(sets []storage.SeriesSet, name string) ([]string, storage.Warnings, error) {
+	set := storage.NewMergeSeriesSet(sets, storage.ChainedSeriesMerge)
+	labelValuesSet := make(map[string]struct{})
+	for set.Next() {
+		series := set.At()
+		labelValue := series.Labels().Get(name)
+		labelValuesSet[labelValue] = struct{}{}
+	}
+
+	warnings := set.Warnings()
+	if set.Err() != nil {
+		return nil, warnings, set.Err()
+	}
+	// Convert the map to an array.
+	labelValues := make([]string, 0, len(labelValuesSet))
+	for key := range labelValuesSet {
+		labelValues = append(labelValues, key)
+	}
+	sort.Strings(labelValues)
+	return labelValues, warnings, nil
+}
+
+// LabelNamesByMatchers uses matchers to filter out matching series, then label names are extracted.
+func labelNamesByMatchers(sets []storage.SeriesSet, exactMatches map[string]struct{}) ([]string, storage.Warnings, error) {
+	set := storage.NewMergeSeriesSet(sets, storage.ChainedSeriesMerge)
+	labelNamesSet := make(map[string]struct{})
+	for set.Next() {
+		series := set.At()
+		labelNames := series.Labels()
+		for _, labelName := range labelNames {
+			// Skip label names that we have exact matches for.
+			if _, found := exactMatches[labelName.Name]; !found {
+				labelNamesSet[labelName.Name] = struct{}{}
+			}
+		}
+	}
+
+	warnings := set.Warnings()
+	if set.Err() != nil {
+		return nil, warnings, set.Err()
+	}
+	// Convert the map to an array.
+	labelNames := make([]string, 0, len(labelNamesSet))
+	for key := range labelNamesSet {
+		labelNames = append(labelNames, key)
+	}
+	sort.Strings(labelNames)
+	return labelNames, warnings, nil
 }
 
 func (a *API) Reload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
