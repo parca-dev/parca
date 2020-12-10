@@ -43,6 +43,8 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
+	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
+		Default("64MB").Bytes()
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
@@ -57,6 +59,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 			logger,
 			store.NewGRPCQueryable(c),
 			reloadCh,
+			int64(*maxMergeBatchSize),
 		)
 	}
 }
@@ -68,6 +71,7 @@ func runWeb(
 	logger log.Logger,
 	db storage.Queryable,
 	reloadCh chan struct{},
+	maxMergeBatchSize int64,
 ) error {
 	logger = log.With(logger, "component", "pprofui")
 	ui := pprofui.New(logger, db)
@@ -80,7 +84,7 @@ func runWeb(
 	router.GET("/pprof/*remainder", ui.PprofView)
 	router.GET("/download/*remainder", ui.PprofDownload)
 
-	api := conprofapi.New(logger, db, reloadCh)
+	api := conprofapi.New(logger, db, reloadCh, maxMergeBatchSize)
 
 	router.GET("/-/reload", api.Reload)
 

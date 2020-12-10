@@ -39,16 +39,23 @@ import (
 var defaultMetadataTimeRange = 24 * time.Hour
 
 type API struct {
-	logger   log.Logger
-	db       storage.Queryable
-	reloadCh chan struct{}
+	logger            log.Logger
+	db                storage.Queryable
+	reloadCh          chan struct{}
+	maxMergeBatchSize int64
 }
 
-func New(logger log.Logger, db storage.Queryable, reloadCh chan struct{}) *API {
+func New(
+	logger log.Logger,
+	db storage.Queryable,
+	reloadCh chan struct{},
+	maxMergeBatchSize int64,
+) *API {
 	return &API{
-		logger:   logger,
-		db:       db,
-		reloadCh: reloadCh,
+		logger:            logger,
+		db:                db,
+		reloadCh:          reloadCh,
+		maxMergeBatchSize: maxMergeBatchSize,
 	}
 }
 
@@ -249,56 +256,6 @@ func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 	}
 
 	return p, nil
-}
-
-func (a *API) mergeProfiles(ctx context.Context, from, to int64, sel []*labels.Matcher) (*profile.Profile, *ApiError) {
-	q, err := a.db.Querier(ctx, from, to)
-	if err != nil {
-		return nil, &ApiError{Typ: ErrorExec, Err: err}
-	}
-
-	set := q.Select(false, nil, sel...)
-	profiles := []*profile.Profile{}
-	for set.Next() {
-		series := set.At()
-		i := series.Iterator()
-		for i.Next() {
-			_, b := i.At()
-			p, err := profile.ParseData(b)
-			if err != nil {
-				level.Error(a.logger).Log("err", err)
-			}
-			profiles = append(profiles, p)
-		}
-
-		if err := i.Err(); err != nil {
-			level.Error(a.logger).Log("err", err)
-		}
-	}
-	if err := set.Err(); err != nil {
-		return nil, &ApiError{Typ: ErrorInternal, Err: set.Err()}
-	}
-
-	// TODO(brancz): This will eventually need to be batched to limit memory use per request.
-	p, err := profile.Merge(profiles)
-	if err != nil {
-		return nil, &ApiError{Typ: ErrorInternal, Err: err}
-	}
-
-	return p, nil
-}
-
-func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, *ApiError) {
-	ctx := r.Context()
-
-	return a.profileByParameters(
-		ctx,
-		"merge",
-		"",
-		r.URL.Query().Get("query"),
-		r.URL.Query().Get("from"),
-		r.URL.Query().Get("to"),
-	)
 }
 
 func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {

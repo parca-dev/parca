@@ -238,7 +238,7 @@ func TestStore(t *testing.T) {
 	rc := storepb.NewReadableProfileStoreClient(conn)
 	q := NewGRPCQueryable(rc)
 
-	httpapi := api.New(log.NewNopLogger(), q, make(chan struct{}))
+	httpapi := api.New(log.NewNopLogger(), q, make(chan struct{}), api.DefaultMergeBatchSize)
 
 	req := httptest.NewRequest("GET", "http://example.com/query_range?from=0&to=10&query=allocs", nil)
 
