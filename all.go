@@ -36,13 +36,39 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
 	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
+	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
+		Default("64MB").Bytes()
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
-		return runAll(comp, g, mux, probe, reg, logger, *storagePath, *configFile, *retention, reloadCh)
+		return runAll(
+			comp,
+			g,
+			mux,
+			probe,
+			reg,
+			logger,
+			*storagePath,
+			*configFile,
+			*retention,
+			reloadCh,
+			int64(*maxMergeBatchSize),
+		)
 	}
 }
 
-func runAll(comp component.Component, g *run.Group, mux httpMux, p prober.Probe, reg prometheus.Registerer, logger log.Logger, storagePath, configFile string, retention model.Duration, reloadCh chan struct{}) (prober.Probe, error) {
+func runAll(
+	comp component.Component,
+	g *run.Group,
+	mux httpMux,
+	p prober.Probe,
+	reg prometheus.Registerer,
+	logger log.Logger,
+	storagePath,
+	configFile string,
+	retention model.Duration,
+	reloadCh chan struct{},
+	maxMergeBatchSize int64,
+) (prober.Probe, error) {
 	db, err := tsdb.Open(
 		storagePath,
 		logger,
@@ -67,7 +93,7 @@ func runAll(comp component.Component, g *run.Group, mux httpMux, p prober.Probe,
 		return nil, err
 	}
 
-	err = runWeb(mux, p, reg, logger, db, reloadCh)
+	err = runWeb(mux, p, reg, logger, db, reloadCh, maxMergeBatchSize)
 	if err != nil {
 		return nil, err
 	}

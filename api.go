@@ -39,6 +39,8 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
+	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
+		Default("64MB").Bytes()
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
@@ -52,6 +54,7 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 			reg,
 			logger,
 			store.NewGRPCQueryable(c),
+			int64(*maxMergeBatchSize),
 		)
 	}
 }
@@ -62,6 +65,7 @@ func runApi(
 	reg prometheus.Registerer,
 	logger log.Logger,
 	db storage.Queryable,
+	maxMergeBatchSize int64,
 ) error {
 	logger = log.With(logger, "component", "api")
 
@@ -70,7 +74,7 @@ func runApi(
 	ins := extpromhttp.NewInstrumentationMiddleware(reg)
 	instr := conprofapi.Instr(logger, ins)
 
-	api := conprofapi.New(logger, db, nil)
+	api := conprofapi.New(logger, db, nil, maxMergeBatchSize)
 
 	router.GET("/api/v1/query_range", instr("query_range", api.QueryRange))
 	router.GET("/api/v1/query", instr("query", api.Query))

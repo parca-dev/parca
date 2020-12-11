@@ -214,7 +214,7 @@ func TestAPILabelNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{})}
+	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.LabelNames,
@@ -280,7 +280,7 @@ func TestAPILabelValues(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{})}
+	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.LabelValues,
@@ -351,7 +351,7 @@ func TestAPISeries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{})}
+	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.Series,
@@ -406,5 +406,5 @@ func createFakeGRPCAPI(t *testing.T) (*API, io.Closer) {
 
 	c := storepb.NewReadableProfileStoreClient(conn)
 	q := store.NewGRPCQueryable(c)
-	return New(log.NewNopLogger(), q, make(chan struct{})), lis
+	return New(log.NewNopLogger(), q, make(chan struct{}), DefaultMergeBatchSize), lis
 }
