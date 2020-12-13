@@ -470,7 +470,6 @@ func (a *API) LabelNames(r *http.Request) (interface{}, []error, *ApiError) {
 	}
 
 	matcherSets := [][]*labels.Matcher{}
-	exactMatches := map[string]struct{}{}
 	for _, s := range r.Form["match[]"] {
 		matchers, err := parser.ParseMetricSelector(s)
 		if err != nil {
@@ -480,11 +479,6 @@ func (a *API) LabelNames(r *http.Request) (interface{}, []error, *ApiError) {
 			}
 		}
 		matcherSets = append(matcherSets, matchers)
-		for _, m := range matchers {
-			if m.Type == labels.MatchEqual {
-				exactMatches[m.Name] = struct{}{}
-			}
-		}
 	}
 
 	q, err := a.db.Querier(ctx, timestamp.FromTime(start), timestamp.FromTime(end))
@@ -507,7 +501,7 @@ func (a *API) LabelNames(r *http.Request) (interface{}, []error, *ApiError) {
 			s := q.Select(false, hints, mset...)
 			sets = append(sets, s)
 		}
-		names, warnings, err = labelNamesByMatchers(sets, exactMatches)
+		names, warnings, err = labelNamesByMatchers(sets)
 		if err != nil {
 			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 		}
@@ -601,17 +595,14 @@ func labelValuesByMatchers(sets []storage.SeriesSet, name string) ([]string, sto
 }
 
 // LabelNamesByMatchers uses matchers to filter out matching series, then label names are extracted.
-func labelNamesByMatchers(sets []storage.SeriesSet, exactMatches map[string]struct{}) ([]string, storage.Warnings, error) {
+func labelNamesByMatchers(sets []storage.SeriesSet) ([]string, storage.Warnings, error) {
 	set := storage.NewMergeSeriesSet(sets, storage.ChainedSeriesMerge)
 	labelNamesSet := make(map[string]struct{})
 	for set.Next() {
 		series := set.At()
 		labelNames := series.Labels()
 		for _, labelName := range labelNames {
-			// Skip label names that we have exact matches for.
-			if _, found := exactMatches[labelName.Name]; !found {
-				labelNamesSet[labelName.Name] = struct{}{}
-			}
+			labelNamesSet[labelName.Name] = struct{}{}
 		}
 	}
 
