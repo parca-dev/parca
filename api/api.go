@@ -67,24 +67,22 @@ type Series struct {
 func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	ctx := r.Context()
 
-	fromString := r.URL.Query().Get("from")
-	from, err := strconv.ParseInt(fromString, 10, 64)
+	from, err := parseTime(r.URL.Query().Get("from"))
 	if err != nil {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: fmt.Errorf("failed to parse \"from\" time: %w", err)}
 	}
 
-	toString := r.URL.Query().Get("to")
-	to, err := strconv.ParseInt(toString, 10, 64)
+	to, err := parseTime(r.URL.Query().Get("to"))
 	if err != nil {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: fmt.Errorf("failed to parse \"to\" time: %w", err)}
 	}
 
-	if to < from {
+	if to.Before(from) {
 		err := errors.New("to timestamp must not be before from time")
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
-	q, err := a.db.Querier(ctx, from, to)
+	q, err := a.db.Querier(ctx, timestamp.FromTime(from), timestamp.FromTime(to))
 	if err != nil {
 		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
@@ -122,8 +120,8 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	return res, set.Warnings(), nil
 }
 
-func (a *API) findProfile(ctx context.Context, time int64, sel []*labels.Matcher) (*profile.Profile, error) {
-	q, err := a.db.Querier(ctx, time, time)
+func (a *API) findProfile(ctx context.Context, time time.Time, sel []*labels.Matcher) (*profile.Profile, error) {
+	q, err := a.db.Querier(ctx, timestamp.FromTime(time), timestamp.FromTime(time))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +132,7 @@ func (a *API) findProfile(ctx context.Context, time int64, sel []*labels.Matcher
 		i := series.Iterator()
 		for i.Next() {
 			t, b := i.At()
-			if t == time {
+			if t == timestamp.FromTime(time) {
 				return profile.ParseData(b)
 			}
 		}
@@ -163,17 +161,17 @@ func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, *ApiError) 
 func (a *API) profileByParameters(ctx context.Context, mode, time, query, from, to string) (*profile.Profile, *ApiError) {
 	switch mode {
 	case "merge":
-		f, err := strconv.ParseInt(from, 10, 64)
+		f, err := parseTime(from)
 		if err != nil {
 			return nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 
-		t, err := strconv.ParseInt(to, 10, 64)
+		t, err := parseTime(to)
 		if err != nil {
 			return nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 
-		if t < f {
+		if t.Before(f) {
 			err := errors.New("to timestamp must not be before from time")
 			return nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
@@ -185,7 +183,7 @@ func (a *API) profileByParameters(ctx context.Context, mode, time, query, from, 
 
 		return a.mergeProfiles(ctx, f, t, sel)
 	case "single":
-		t, err := strconv.ParseInt(time, 10, 64)
+		t, err := parseTime(time)
 		if err != nil {
 			err = fmt.Errorf("unable to parse time: %w", err)
 			return nil, &ApiError{Typ: ErrorBadData, Err: err}
@@ -400,16 +398,21 @@ func parseTimeParam(r *http.Request, paramName string, defaultValue time.Time) (
 	return result, nil
 }
 
+const millisInSecond = 1000
+const nsInSecond = 1000000
+
+// Converts Unix Epoch from milliseconds to time.Time
+func fromUnixMilli(ms int64) time.Time {
+	return time.Unix(ms/int64(millisInSecond), (ms%int64(millisInSecond))*int64(nsInSecond))
+}
+
 func parseTime(s string) (time.Time, error) {
-	if t, err := strconv.ParseFloat(s, 64); err == nil {
-		s, ns := math.Modf(t)
-		ns = math.Round(ns*1000) / 1000
-		return time.Unix(int64(s), int64(ns*float64(time.Second))), nil
+	t, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("cannot parse %q to an int: %w", s, err)
 	}
-	if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
-		return t, nil
-	}
-	return time.Time{}, errors.Errorf("cannot parse %q to a valid timestamp", s)
+
+	return fromUnixMilli(t), nil
 }
 
 func (a *API) Series(r *http.Request) (interface{}, []error, *ApiError) {

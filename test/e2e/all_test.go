@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"net/url"
 	"testing"
@@ -26,6 +25,7 @@ import (
 	"github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/test/e2e/e2econprof"
 	"github.com/cortexproject/cortex/integration/e2e"
+	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/tsdb/testutil"
 )
 
@@ -34,6 +34,8 @@ func TestAll(t *testing.T) {
 
 	t.Run("append-restart-append-read", func(t *testing.T) {
 		t.Parallel()
+
+		start := time.Now()
 
 		//ctx := context.Background()
 		s, err := e2e.NewScenario("e2e_test_append_restart_append_read")
@@ -47,7 +49,7 @@ func TestAll(t *testing.T) {
 		// Let it scrape some samples.
 		time.Sleep(10 * time.Second)
 
-		res1 := queryRange(t, all1.HTTPEndpoint())
+		res1 := queryRange(t, all1.HTTPEndpoint(), timestamp.FromTime(start), timestamp.FromTime(time.Now()))
 		testutil.Equals(t, 1, len(res1.Data), "Unexpected amount of series")
 
 		err = all1.Stop()
@@ -60,7 +62,7 @@ func TestAll(t *testing.T) {
 		// Let it scrape some new samples after the restart.
 		time.Sleep(10 * time.Second)
 
-		res2 := queryRange(t, all2.HTTPEndpoint())
+		res2 := queryRange(t, all2.HTTPEndpoint(), timestamp.FromTime(start), timestamp.FromTime(time.Now()))
 		testutil.Equals(t, 1, len(res2.Data), "Unexpected amount of series: %#+v", res2.Data)
 	})
 }
@@ -70,12 +72,12 @@ type queryRangeResult struct {
 	Data   []api.Series `json:"data"`
 }
 
-func queryRange(t *testing.T, hostPort string) *queryRangeResult {
+func queryRange(t *testing.T, hostPort string, from int64, to int64) *queryRangeResult {
 	u := url.URL{
 		Scheme:   "http",
 		Host:     hostPort,
 		Path:     "api/v1/query_range",
-		RawQuery: fmt.Sprintf("query=heap&from=%d&to=%d", math.MinInt64, math.MaxInt64),
+		RawQuery: fmt.Sprintf("query=heap&from=%d&to=%d", from, to),
 	}
 	resp, err := http.Get(u.String())
 	testutil.Ok(t, err)
