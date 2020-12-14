@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/conprof/db/storage"
 	"github.com/conprof/db/tsdb/chunkenc"
 	"github.com/google/pprof/profile"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/pkg/timestamp"
 )
 
 var DefaultMergeBatchSize = int64(1024 * 1024 * 64) // 64Mb
@@ -83,8 +85,8 @@ func (i *batchIterator) Err() error {
 	return i.err
 }
 
-func (a *API) mergeProfiles(ctx context.Context, from, to int64, sel []*labels.Matcher) (*profile.Profile, *ApiError) {
-	q, err := a.db.Querier(ctx, from, to)
+func (a *API) mergeProfiles(ctx context.Context, from, to time.Time, sel []*labels.Matcher) (*profile.Profile, *ApiError) {
+	q, err := a.db.Querier(ctx, timestamp.FromTime(from), timestamp.FromTime(to))
 	if err != nil {
 		return nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
