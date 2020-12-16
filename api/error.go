@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/common/route"
 	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
 	"github.com/thanos-io/thanos/pkg/server/http/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type Status string
@@ -95,7 +96,7 @@ func Instr(
 			for _, p := range params {
 				ctx = route.WithParam(ctx, p.Key, p.Value)
 			}
-			ins.NewHandler(name, gziphandler.GzipHandler(middleware.RequestID(hf))).ServeHTTP(w, r.WithContext(ctx))
+			otelhttp.NewHandler(ins.NewHandler(name, gziphandler.GzipHandler(middleware.RequestID(hf))), name).ServeHTTP(w, r.WithContext(ctx))
 		}
 	}
 	return instr

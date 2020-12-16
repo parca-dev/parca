@@ -22,13 +22,19 @@ import (
 	"github.com/conprof/conprof/pkg/runutil"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/db/storage"
+	"github.com/conprof/db/tsdb"
+	"github.com/conprof/db/tsdb/chunkenc"
 	"github.com/go-kit/kit/log"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/thanos-io/thanos/pkg/store/labelpb"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/label"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var tracer = otel.Tracer("store-server")
 
 type db interface {
 	storage.Queryable
@@ -119,18 +125,33 @@ func (s *profileStore) Profile(ctx context.Context, r *storepb.ProfileRequest) (
 }
 
 func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProfileStore_SeriesServer) error {
+	ctx := srv.Context()
 	m, err := translatePbMatchers(r.Matchers)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "could not translate matchers: %v", err)
 	}
 
-	q, err := s.db.ChunkQuerier(srv.Context(), r.MinTime, r.MaxTime)
+	q, err := s.db.ChunkQuerier(ctx, r.MinTime, r.MaxTime)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 	defer runutil.CloseWithLogOnErr(s.logger, q, "close tsdb chunk querier series")
 
-	set := q.Select(false, nil, m...)
+	_, span := tracer.Start(ctx, "iterate-chunk-series-set")
+	if r.SelectHints != nil {
+		span.SetAttributes(label.Key("select-hint-min").Int64(r.SelectHints.Start))
+		span.SetAttributes(label.Key("select-hint-max").Int64(r.SelectHints.End))
+		span.SetAttributes(label.Key("select-hint-func").String(r.SelectHints.Func))
+	}
+	defer span.End()
+
+	set := q.Select(false, storepb.TsdbSelectHints(r.SelectHints), m...)
+
+	var (
+		it chunkenc.Iterator = nil
+		b  []byte            = nil
+	)
+
 	for set.Next() {
 		series := set.At()
 		labels := labelpb.LabelsFromPromLabels(series.Labels())
@@ -150,12 +171,26 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProf
 				return status.Errorf(codes.Internal, "TSDBStore: found not populated chunk returned by SeriesSet at ref: %v", chk.Ref)
 			}
 
+			tc := chk.Chunk
+			if r.SelectHints != nil && r.SelectHints.Func == "timestamps" {
+				it, tc, err = tsdb.ReencodeChunk(&tsdb.TimestampChunk{tc}, it)
+				if err != nil {
+					return status.Error(codes.Aborted, err.Error())
+				}
+			}
+
+			if r.SelectHints != nil && r.SelectHints.Func == "series" {
+				b = nil
+			} else {
+				b = tc.Bytes()
+			}
+
 			c := storepb.AggrChunk{
 				MinTime: chk.MinTime,
 				MaxTime: chk.MaxTime,
 				Raw: &storepb.Chunk{
 					Type: storepb.Chunk_Encoding(chk.Chunk.Encoding() - 1), // Proto chunk encoding is one off to TSDB one.
-					Data: chk.Chunk.Bytes(),
+					Data: b,
 				},
 			}
 			frameBytesLeft -= c.Size()

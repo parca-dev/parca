@@ -2,6 +2,7 @@ syntax = "proto3";
 package conprof;
 
 import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
 import "github.com/thanos-io/thanos/pkg/store/labelpb/types.proto";
 
 option go_package = "storepb";
@@ -63,11 +64,18 @@ message Sample {
   int64 timestamp = 2;
 }
 
+message SelectHints {
+  int64 start = 1;
+  int64 end   = 2;
+  string func = 3;
+}
+
 message SeriesRequest {
   int64 min_time                 = 1;
   int64 max_time                 = 2;
   repeated LabelMatcher matchers = 3 [(gogoproto.nullable) = false];
   bool skip_chunks               = 4;
+  SelectHints select_hints       = 5;
 }
 
 // Matcher specifies a rule, which can match or set of labels or not.

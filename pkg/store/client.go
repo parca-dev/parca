@@ -61,9 +61,10 @@ func (q *grpcStoreQuerier) Select(sortSeries bool, hints *storage.SelectHints, m
 	}
 
 	stream, err := q.c.Series(q.ctx, &storepb.SeriesRequest{
-		MinTime:  q.mint,
-		MaxTime:  q.maxt,
-		Matchers: m,
+		MinTime:     q.mint,
+		MaxTime:     q.maxt,
+		Matchers:    m,
+		SelectHints: storepb.PbSelectHints(hints),
 	})
 	if err != nil {
 		ss.err = fmt.Errorf("series: %w", err)

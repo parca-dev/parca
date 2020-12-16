@@ -23,8 +23,13 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	github.com/thanos-io/thanos v0.17.1
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.15.1
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.15.1
+	go.opentelemetry.io/otel v0.15.0
+	go.opentelemetry.io/otel/exporters/otlp v0.15.0
+	go.opentelemetry.io/otel/sdk v0.15.0
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
-	google.golang.org/grpc v1.33.1
+	google.golang.org/grpc v1.34.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -32,6 +37,8 @@ require (
 replace github.com/prometheus/prometheus => github.com/prometheus/prometheus v1.8.2-0.20201130085533-a6e18916ab40
 
 replace k8s.io/client-go => k8s.io/client-go v0.19.4
+
+replace github.com/conprof/db => ../db
 
 // We can't upgrade to grpc 1.30.0 until go.etcd.io/etcd will support it.
 replace google.golang.org/grpc => google.golang.org/grpc v1.29.1

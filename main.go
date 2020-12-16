@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,7 +27,6 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
@@ -34,6 +34,12 @@ import (
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/prober"
 	httpserver "github.com/thanos-io/thanos/pkg/server/http"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/semconv"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -46,7 +52,7 @@ type httpMux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-type setupFunc func(component.Component, *run.Group, httpMux, prober.Probe, log.Logger, *prometheus.Registry, opentracing.Tracer, bool) (prober.Probe, error)
+type setupFunc func(component.Component, *run.Group, httpMux, prober.Probe, log.Logger, *prometheus.Registry, bool) (prober.Probe, error)
 
 func main() {
 	if os.Getenv("DEBUG") != "" {
@@ -64,6 +70,8 @@ func main() {
 		Default("info").Enum("error", "warn", "info", "debug")
 	logFormat := app.Flag("log.format", "Log format to use.").
 		Default(logFormatLogfmt).Enum(logFormatLogfmt, logFormatJSON)
+	otlpAddress := app.Flag("otlp-address", "OpenTelemetry collector address to send traces to.").
+		Default("").String()
 	corsOrigin := app.Flag("cors.access-control-allow-origin", "Cross-origin resource sharing allowed origins.").
 		Default("").String()
 	corsMethods := app.Flag("cors.access-control-allow-methods", "Cross-origin resource sharing allowed methods.").
@@ -123,12 +131,14 @@ func main() {
 	prometheus.DefaultRegisterer = reg
 
 	var g run.Group
-	var tracer opentracing.Tracer
 	mux := http.NewServeMux()
 	httpProbe := prober.NewHTTP()
 	comp := componentString(cmd)
+	if *otlpAddress != "" {
+		initTracer(logger, cmd, *otlpAddress)
+	}
 
-	statusProber, err := cmds[cmd](comp, &g, mux, httpProbe, logger, reg, tracer, *logLevel == "debug")
+	statusProber, err := cmds[cmd](comp, &g, mux, httpProbe, logger, reg, *logLevel == "debug")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "%s command failed", cmd))
 		os.Exit(1)
@@ -192,4 +202,43 @@ func cors(corsOrigin, corsMethods string, h http.Handler) http.Handler {
 		}
 		h.ServeHTTP(w, r)
 	})
+}
+
+func initTracer(logger log.Logger, serviceName string, otlpAddress string) func() {
+	ctx := context.Background()
+	exporter, err := otlp.NewExporter(
+		ctx,
+		otlp.WithInsecure(),
+		otlp.WithAddress(otlpAddress),
+	)
+	handleErr(logger, err, "failed to create exporter")
+
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String(serviceName),
+		),
+	)
+	handleErr(logger, err, "failed to create resource")
+
+	bsp := sdktrace.NewBatchSpanProcessor(exporter)
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithConfig(sdktrace.Config{DefaultSampler: sdktrace.AlwaysSample()}),
+		sdktrace.WithResource(res),
+		sdktrace.WithSpanProcessor(bsp),
+	)
+
+	// set global propagator to tracecontext (the default is no-op).
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTracerProvider(tracerProvider)
+
+	return func() {
+		handleErr(logger, exporter.Shutdown(context.Background()), "failed to stop exporter")
+	}
+}
+
+func handleErr(logger log.Logger, err error, message string) {
+	if err != nil {
+		level.Error(logger).Log("msg", message, "err", err)
+		os.Exit(1)
+	}
 }

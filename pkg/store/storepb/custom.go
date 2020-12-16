@@ -19,6 +19,7 @@ package storepb
 import (
 	"bytes"
 
+	"github.com/conprof/db/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/thanos-io/thanos/pkg/store/labelpb"
 )
@@ -301,4 +302,26 @@ func (m *Chunk) Compare(b *Chunk) int {
 // PromLabels return Prometheus labels.Labels without extra allocation.
 func (m *RawProfileSeries) PromLabels() labels.Labels {
 	return labelpb.LabelsToPromLabels(m.Labels)
+}
+
+func TsdbSelectHints(h *SelectHints) *storage.SelectHints {
+	if h == nil {
+		return nil
+	}
+	return &storage.SelectHints{
+		Start: h.Start,
+		End:   h.End,
+		Func:  h.Func,
+	}
+}
+
+func PbSelectHints(h *storage.SelectHints) *SelectHints {
+	if h == nil {
+		return nil
+	}
+	return &SelectHints{
+		Start: h.Start,
+		End:   h.End,
+		Func:  h.Func,
+	}
 }
