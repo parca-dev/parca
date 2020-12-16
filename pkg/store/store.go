@@ -126,6 +126,11 @@ func (s *profileStore) Profile(ctx context.Context, r *storepb.ProfileRequest) (
 
 func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProfileStore_SeriesServer) error {
 	ctx := srv.Context()
+
+	if r.SelectHints != nil && r.SelectHints.Func == "series" {
+		return s.noopChunks(r, srv)
+	}
+
 	m, err := translatePbMatchers(r.Matchers)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "could not translate matchers: %v", err)
@@ -149,7 +154,6 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProf
 
 	var (
 		it chunkenc.Iterator = nil
-		b  []byte            = nil
 	)
 
 	for set.Next() {
@@ -179,18 +183,12 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProf
 				}
 			}
 
-			if r.SelectHints != nil && r.SelectHints.Func == "series" {
-				b = nil
-			} else {
-				b = tc.Bytes()
-			}
-
 			c := storepb.AggrChunk{
 				MinTime: chk.MinTime,
 				MaxTime: chk.MaxTime,
 				Raw: &storepb.Chunk{
 					Type: storepb.Chunk_Encoding(chk.Chunk.Encoding() - 1), // Proto chunk encoding is one off to TSDB one.
-					Data: b,
+					Data: tc.Bytes(),
 				},
 			}
 			frameBytesLeft -= c.Size()
@@ -212,6 +210,45 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProf
 		}
 		if err := chIter.Err(); err != nil {
 			return status.Error(codes.Internal, fmt.Errorf("chunk iter: %w", err).Error())
+		}
+	}
+
+	if err := set.Err(); err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	for _, w := range set.Warnings() {
+		if err := srv.Send(storepb.NewWarnSeriesResponse(w)); err != nil {
+			return status.Error(codes.Aborted, err.Error())
+		}
+	}
+	return nil
+}
+
+func (s *profileStore) noopChunks(r *storepb.SeriesRequest, srv storepb.ReadableProfileStore_SeriesServer) error {
+	ctx := srv.Context()
+
+	m, err := translatePbMatchers(r.Matchers)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "could not translate matchers: %v", err)
+	}
+
+	q, err := s.db.Querier(ctx, r.MinTime, r.MaxTime)
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+	defer runutil.CloseWithLogOnErr(s.logger, q, "close tsdb chunk querier series")
+
+	_, span := tracer.Start(ctx, "iterate-series-set-noop-chunks")
+	defer span.End()
+
+	set := q.Select(false, storepb.TsdbSelectHints(r.SelectHints), m...)
+
+	for set.Next() {
+		series := set.At()
+		labels := labelpb.LabelsFromPromLabels(series.Labels())
+		if err := srv.Send(storepb.NewSeriesResponse(&storepb.RawProfileSeries{Labels: labels})); err != nil {
+			return status.Error(codes.Aborted, err.Error())
 		}
 	}
 
