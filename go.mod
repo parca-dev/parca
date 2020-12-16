@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/conprof/db v0.0.0-20201130161955-c30ac9d48d6b
+	github.com/conprof/db v0.0.0-20201217141952-41a07eb32021
 	github.com/cortexproject/cortex v1.5.1-0.20201111110551-ba512881b076
 	github.com/go-kit/kit v0.10.0
 	github.com/gogo/protobuf v1.3.1
@@ -37,8 +37,6 @@ require (
 replace github.com/prometheus/prometheus => github.com/prometheus/prometheus v1.8.2-0.20201130085533-a6e18916ab40
 
 replace k8s.io/client-go => k8s.io/client-go v0.19.4
-
-replace github.com/conprof/db => ../db
 
 // We can't upgrade to grpc 1.30.0 until go.etcd.io/etcd will support it.
 replace google.golang.org/grpc => google.golang.org/grpc v1.29.1

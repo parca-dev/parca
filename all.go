@@ -76,7 +76,7 @@ func runAll(
 			RetentionDuration:      int64(retention),
 			WALSegmentSize:         wal.DefaultSegmentSize,
 			MinBlockDuration:       tsdb.DefaultBlockDuration,
-			MaxBlockDuration:       tsdb.DefaultBlockDuration,
+			MaxBlockDuration:       int64(retention) / 10,
 			NoLockfile:             true,
 			AllowOverlappingBlocks: false,
 			WALCompression:         true,
