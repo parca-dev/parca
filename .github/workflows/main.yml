@@ -101,6 +101,10 @@ jobs:
         with:
           go-version: 1.15.x
 
+      # We call out to graphviz
+      - name: Install graphviz
+        run: sudo apt-get install graphviz
+
       - name: Check out code into the Go module directory.
         uses: actions/checkout@v2
 
