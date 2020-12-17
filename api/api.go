@@ -284,80 +284,11 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 		}
 	}
 
-	switch r.URL.Query().Get("report") {
-	case "meta":
-		meta, err := generateMetaReport(profile)
-		if err != nil {
-			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
-		}
-		return meta, nil, nil
-	case "top":
-		top, err := generateTopReport(profile, r.URL.Query().Get("sample_index"))
-		if err != nil {
-			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
-		}
-		return top, nil, nil
-	case "flamegraph":
-		fg, err := generateFlamegraphReport(profile, r.URL.Query().Get("sample_index"))
-		if err != nil {
-			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
-		}
-		return fg, nil, nil
-	case "proto":
-		return &protoRenderer{profile: profile}, nil, nil
-	case "svg":
-		return &svgRenderer{
-			logger:      a.logger,
-			profile:     profile,
-			sampleIndex: r.URL.Query().Get("sample_index"),
-		}, nil, nil
-	default:
-		return &svgRenderer{
-			logger:      a.logger,
-			profile:     profile,
-			sampleIndex: r.URL.Query().Get("sample_index"),
-		}, nil, nil
-	}
-}
-
-type valueType struct {
-	Type string `json:"type,omitempty"`
-}
-
-type metaReport struct {
-	SampleTypes       []valueType `json:"sampleTypes"`
-	DefaultSampleType string      `json:"defaultSampleType"`
-}
-
-func generateMetaReport(profile *profile.Profile) (*metaReport, error) {
-	index, err := profile.SampleIndexByName("")
-	if err != nil {
-		return nil, err
-	}
-
-	res := &metaReport{
-		SampleTypes:       []valueType{},
-		DefaultSampleType: profile.SampleType[index].Type,
-	}
-	for _, t := range profile.SampleType {
-		res.SampleTypes = append(res.SampleTypes, valueType{t.Type})
-	}
-
-	return res, nil
-}
-
-type protoRenderer struct {
-	profile *profile.Profile
-}
-
-func (r *protoRenderer) Render(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/vnd.google.protobuf+gzip")
-	w.Header().Set("Content-Disposition", "attachment;filename=profile.pb.gz")
-	err := r.profile.Write(w)
-	if err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
-	}
+	return &ProfileResponseRenderer{
+		logger:  a.logger,
+		profile: profile,
+		req:     r,
+	}, nil, nil
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {

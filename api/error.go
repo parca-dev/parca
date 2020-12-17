@@ -21,17 +21,18 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/common/route"
 	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
 	"github.com/thanos-io/thanos/pkg/server/http/middleware"
 )
 
-type status string
+type Status string
 
 const (
-	StatusSuccess status = "success"
-	StatusError   status = "error"
+	StatusSuccess Status = "success"
+	StatusError   Status = "error"
 )
 
 type ErrorType string
@@ -55,16 +56,16 @@ func (e *ApiError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Typ, e.Err)
 }
 
-type response struct {
-	Status    status      `json:"status"`
+type Response struct {
+	Status    Status      `json:"status"`
 	Data      interface{} `json:"data,omitempty"`
 	ErrorType ErrorType   `json:"errorType,omitempty"`
 	Error     string      `json:"error,omitempty"`
 	Warnings  []string    `json:"warnings,omitempty"`
 }
 
-type httpResponseRenderer interface {
-	Render(w http.ResponseWriter)
+type HttpResponseRenderer interface {
+	Render(w http.ResponseWriter) error
 }
 
 type ApiFunc func(r *http.Request) (interface{}, []error, *ApiError)
@@ -72,14 +73,20 @@ type ApiFunc func(r *http.Request) (interface{}, []error, *ApiError)
 // TODO: add tracer
 // Instr returns a http HandlerFunc with the instrumentation middleware.
 func Instr(
-	_ log.Logger,
+	logger log.Logger,
 	ins extpromhttp.InstrumentationMiddleware,
 ) func(name string, f ApiFunc) httprouter.Handle {
 	instr := func(name string, f ApiFunc) httprouter.Handle {
 		hf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			data, warnings, err := f(r)
-			ren := chooseRenderer(data, warnings, err)
-			ren.Render(w)
+			data, warnings, apiErr := f(r)
+			ren := chooseRenderer(data, warnings, apiErr)
+			err := ren.Render(w)
+			if err != nil {
+				// Attempt to show the user the error.
+				ren = chooseRenderer(nil, nil, &ApiError{Typ: ErrorInternal, Err: err})
+				renErr := ren.Render(w)
+				level.Error(logger).Log("msg", "failed to render error", "err", err, "render_error", renErr)
+			}
 		})
 		return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 			ctx, cancel := context.WithCancel(r.Context())
@@ -94,55 +101,60 @@ func Instr(
 	return instr
 }
 
-func chooseRenderer(data interface{}, warnings []error, err *ApiError) httpResponseRenderer {
+func chooseRenderer(data interface{}, warnings []error, err *ApiError) HttpResponseRenderer {
 	if err != nil {
-		return &errorResponse{Data: data, ApiErr: err}
+		return &ErrorResponse{Data: data, ApiErr: err}
 	}
 	if data != nil {
-		if v, ok := data.(httpResponseRenderer); ok {
+		if v, ok := data.(HttpResponseRenderer); ok {
 			return v
 		}
 
-		return &successResponse{Data: data, Warnings: warnings}
+		return &SuccessResponse{Data: data, Warnings: warnings}
 	} else {
-		return &emptyResponse{}
+		return &EmptyResponse{}
 	}
 }
 
-type emptyResponse struct{}
+type EmptyResponse struct{}
 
-func (r *emptyResponse) Render(w http.ResponseWriter) {
+func (r *EmptyResponse) Render(w http.ResponseWriter) error {
 	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
-type successResponse struct {
+type SuccessResponse struct {
 	Data     interface{}
 	Warnings []error
 }
 
-func (r *successResponse) Render(w http.ResponseWriter) {
+func NewSuccessResponse(data interface{}) *SuccessResponse {
+	return &SuccessResponse{Data: data}
+}
+
+func (r *SuccessResponse) Render(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	if len(r.Warnings) > 0 {
 		w.Header().Set("Cache-Control", "no-store")
 	}
 	w.WriteHeader(http.StatusOK)
 
-	resp := &response{
+	resp := &Response{
 		Status: StatusSuccess,
 		Data:   r.Data,
 	}
 	for _, warn := range r.Warnings {
 		resp.Warnings = append(resp.Warnings, warn.Error())
 	}
-	_ = json.NewEncoder(w).Encode(resp)
+	return json.NewEncoder(w).Encode(resp)
 }
 
-type errorResponse struct {
+type ErrorResponse struct {
 	Data   interface{}
 	ApiErr *ApiError
 }
 
-func (r *errorResponse) Render(w http.ResponseWriter) {
+func (r *ErrorResponse) Render(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 
@@ -163,7 +175,7 @@ func (r *errorResponse) Render(w http.ResponseWriter) {
 	}
 	w.WriteHeader(code)
 
-	_ = json.NewEncoder(w).Encode(&response{
+	return json.NewEncoder(w).Encode(&Response{
 		Status:    StatusError,
 		ErrorType: r.ApiErr.Typ,
 		Error:     r.ApiErr.Err.Error(),
