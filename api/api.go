@@ -284,80 +284,113 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 		}
 	}
 
-	switch r.URL.Query().Get("report") {
-	case "meta":
-		meta, err := generateMetaReport(profile)
-		if err != nil {
-			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
-		}
-		return meta, nil, nil
-	case "top":
-		top, err := generateTopReport(profile, r.URL.Query().Get("sample_index"))
-		if err != nil {
-			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
-		}
-		return top, nil, nil
-	case "flamegraph":
-		fg, err := generateFlamegraphReport(profile, r.URL.Query().Get("sample_index"))
-		if err != nil {
-			return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
-		}
-		return fg, nil, nil
-	case "proto":
-		return &protoRenderer{profile: profile}, nil, nil
-	case "svg":
-		return &svgRenderer{
-			logger:      a.logger,
-			profile:     profile,
-			sampleIndex: r.URL.Query().Get("sample_index"),
-		}, nil, nil
-	default:
-		return &svgRenderer{
-			logger:      a.logger,
-			profile:     profile,
-			sampleIndex: r.URL.Query().Get("sample_index"),
-		}, nil, nil
+	return &ProfileResponseRenderer{
+		logger:  a.logger,
+		profile: profile,
+		req:     r,
+	}, nil, nil
+}
+
+type ProfileResponseRenderer struct {
+	logger  log.Logger
+	profile *profile.Profile
+	req     *http.Request
+}
+
+func NewProfileResponseRenderer(
+	logger log.Logger,
+	profile *profile.Profile,
+	req *http.Request,
+) *ProfileResponseRenderer {
+	return &ProfileResponseRenderer{
+		logger:  logger,
+		profile: profile,
+		req:     req,
 	}
 }
 
-type valueType struct {
+func (r *ProfileResponseRenderer) Render(w http.ResponseWriter) error {
+	switch r.req.URL.Query().Get("report") {
+	case "meta":
+		meta, err := GenerateMetaReport(r.profile)
+		if err != nil {
+			return err
+		}
+
+		return NewSuccessResponse(meta).Render(w)
+	case "top":
+		top, err := generateTopReport(r.profile, r.req.URL.Query().Get("sample_index"))
+		if err != nil {
+			return err
+		}
+
+		return NewSuccessResponse(top).Render(w)
+	case "flamegraph":
+		fg, err := generateFlamegraphReport(r.profile, r.req.URL.Query().Get("sample_index"))
+		if err != nil {
+			return err
+		}
+
+		return NewSuccessResponse(fg).Render(w)
+	case "proto":
+		return NewProtoRenderer(r.profile).Render(w)
+	case "svg":
+		return NewSVGRenderer(
+			r.logger,
+			r.profile,
+			r.req.URL.Query().Get("sample_index"),
+		).Render(w)
+	default:
+		return NewSVGRenderer(
+			r.logger,
+			r.profile,
+			r.req.URL.Query().Get("sample_index"),
+		).Render(w)
+	}
+}
+
+type ValueType struct {
 	Type string `json:"type,omitempty"`
 }
 
-type metaReport struct {
-	SampleTypes       []valueType `json:"sampleTypes"`
+type MetaReport struct {
+	SampleTypes       []ValueType `json:"sampleTypes"`
 	DefaultSampleType string      `json:"defaultSampleType"`
 }
 
-func generateMetaReport(profile *profile.Profile) (*metaReport, error) {
+func GenerateMetaReport(profile *profile.Profile) (*MetaReport, error) {
 	index, err := profile.SampleIndexByName("")
 	if err != nil {
 		return nil, err
 	}
 
-	res := &metaReport{
-		SampleTypes:       []valueType{},
+	res := &MetaReport{
+		SampleTypes:       []ValueType{},
 		DefaultSampleType: profile.SampleType[index].Type,
 	}
 	for _, t := range profile.SampleType {
-		res.SampleTypes = append(res.SampleTypes, valueType{t.Type})
+		res.SampleTypes = append(res.SampleTypes, ValueType{t.Type})
 	}
 
 	return res, nil
 }
 
-type protoRenderer struct {
+type ProtoRenderer struct {
 	profile *profile.Profile
 }
 
-func (r *protoRenderer) Render(w http.ResponseWriter) {
+func NewProtoRenderer(profile *profile.Profile) *ProtoRenderer {
+	return &ProtoRenderer{profile: profile}
+}
+
+func (r *ProtoRenderer) Render(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/vnd.google.protobuf+gzip")
 	w.Header().Set("Content-Disposition", "attachment;filename=profile.pb.gz")
 	err := r.profile.Write(w)
 	if err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
+		return err
 	}
+	return nil
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {

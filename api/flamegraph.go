@@ -22,19 +22,19 @@ import (
 	"github.com/google/pprof/profile"
 )
 
-type treeNode struct {
+type TreeNode struct {
 	Name      string      `json:"n"`
 	FullName  string      `json:"f"`
 	Cum       int64       `json:"v"`
 	CumFormat string      `json:"l"`
 	Percent   string      `json:"p"`
-	Children  []*treeNode `json:"c"`
+	Children  []*TreeNode `json:"c"`
 }
 
 // Largely copied from https://github.com/google/pprof/blob/master/internal/driver/flamegraph.go
-func generateFlamegraphReport(p *profile.Profile, sampleIndex string) (*treeNode, error) {
+func generateFlamegraphReport(p *profile.Profile, sampleIndex string) (*TreeNode, error) {
 	numLabelUnits, _ := p.NumLabelUnits()
-	err := p.Aggregate(false, true, true, true, false)
+	err := p.Aggregate(true, true, false, false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func generateFlamegraphReport(p *profile.Profile, sampleIndex string) (*treeNode
 	stype := sample.Type
 
 	rep := report.New(p, &report.Options{
-		OutputFormat:  report.Text,
+		OutputFormat:  report.Dot,
 		OutputUnit:    "minimum",
 		Ratio:         1,
 		NumLabelUnits: numLabelUnits,
@@ -63,15 +63,15 @@ func generateFlamegraphReport(p *profile.Profile, sampleIndex string) (*treeNode
 	})
 
 	g, config := report.GetDOT(rep)
-	var nodes []*treeNode
+	var nodes []*TreeNode
 	nroots := 0
 	rootValue := int64(0)
-	nodeMap := map[*graph.Node]*treeNode{}
+	nodeMap := map[*graph.Node]*TreeNode{}
 	// Make all nodes and the map, collect the roots.
 	for _, n := range g.Nodes {
 		v := n.CumValue()
 		fullName := n.Info.PrintableName()
-		node := &treeNode{
+		node := &TreeNode{
 			Name:      graph.ShortenFunctionName(fullName),
 			FullName:  fullName,
 			Cum:       v,
@@ -94,7 +94,7 @@ func generateFlamegraphReport(p *profile.Profile, sampleIndex string) (*treeNode
 		}
 	}
 
-	return &treeNode{
+	return &TreeNode{
 		Name:      "root",
 		FullName:  "root",
 		Cum:       rootValue,

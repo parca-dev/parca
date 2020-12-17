@@ -23,33 +23,36 @@ import (
 	"github.com/conprof/conprof/internal/pprof/plugin"
 	"github.com/conprof/conprof/internal/pprof/report"
 	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
 	"github.com/pkg/errors"
 )
 
-type svgRenderer struct {
+type SVGRenderer struct {
 	logger      log.Logger
 	profile     *profile.Profile
 	sampleIndex string
 }
 
-func (r *svgRenderer) Render(w http.ResponseWriter) {
+func NewSVGRenderer(logger log.Logger, profile *profile.Profile, sampleIndex string) *SVGRenderer {
+	return &SVGRenderer{
+		logger:      logger,
+		profile:     profile,
+		sampleIndex: sampleIndex,
+	}
+}
+
+func (r *SVGRenderer) Render(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "image/svg+xml")
 	numLabelUnits, _ := r.profile.NumLabelUnits()
 	err := r.profile.Aggregate(false, true, true, true, false)
 	if err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
+		return err
 	}
 
 	value, meanDiv, sample, err := sampleFormat(r.profile, r.sampleIndex, false)
 	if err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
+		return err
 	}
-	level.Debug(r.logger).Log("sample-type", sample.Type)
-
 	stype := sample.Type
 
 	rep := report.New(r.profile, &report.Options{
@@ -70,16 +73,16 @@ func (r *svgRenderer) Render(w http.ResponseWriter) {
 
 	input := bytes.NewBuffer(nil)
 	if err := report.Generate(input, rep, &fakeObjTool{}); err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
+		return err
 	}
 
 	cmd := exec.Command("dot", "-Tsvg")
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = input, w, os.Stderr
 	if err := cmd.Run(); err != nil {
-		chooseRenderer(nil, nil, &ApiError{Typ: ErrorExec, Err: err}).Render(w)
-		return
+		return err
 	}
+
+	return nil
 }
 
 type sampleValueFunc func([]int64) int64
