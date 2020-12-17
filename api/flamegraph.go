@@ -52,14 +52,12 @@ func generateFlamegraphReport(p *profile.Profile, sampleIndex string) (*TreeNode
 		Ratio:         1,
 		NumLabelUnits: numLabelUnits,
 
+		CallTree: true,
+
 		SampleValue:       value,
 		SampleMeanDivisor: meanDiv,
 		SampleType:        stype,
 		SampleUnit:        sample.Unit,
-
-		NodeCount:    80,
-		NodeFraction: 0.005,
-		EdgeFraction: 0.001,
 	})
 
 	g, config := report.GetDOT(rep)
