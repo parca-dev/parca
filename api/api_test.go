@@ -74,6 +74,27 @@ func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.Readable
 	})); err != nil {
 		return grpcstatus.Error(codes.Aborted, err.Error())
 	}
+
+	if err := srv.Send(storepb.NewSeriesResponse(&storepb.RawProfileSeries{
+		Labels: []labelpb.Label{
+			{
+				Name:  "__name__",
+				Value: "heap",
+			},
+		},
+		Chunks: []storepb.AggrChunk{
+			{
+				MinTime: 0,
+				MaxTime: 10,
+				Raw: &storepb.Chunk{
+					Type: 1,
+					Data: c.Bytes(),
+				},
+			},
+		},
+	})); err != nil {
+		return grpcstatus.Error(codes.Aborted, err.Error())
+	}
 	return nil
 }
 
@@ -94,6 +115,7 @@ type endpointTestCase struct {
 	params   map[string]string
 	query    url.Values
 	response interface{}
+	warn     []error
 	errType  ErrorType
 }
 
@@ -116,7 +138,7 @@ func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
 			t.Fatal(err)
 		}
 
-		resp, _, apiErr := test.endpoint(req.WithContext(ctx))
+		resp, warn, apiErr := test.endpoint(req.WithContext(ctx))
 		if apiErr != nil {
 			if test.errType == ErrorNone {
 				t.Fatalf("Unexpected error: %s", apiErr)
@@ -128,6 +150,9 @@ func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
 		}
 		if test.errType != ErrorNone {
 			t.Fatalf("Expected error of type %q but got none", test.errType)
+		}
+		if !reflect.DeepEqual(warn, test.warn) {
+			t.Fatalf("Warnings do not match, expected:\n%+v\ngot:\n%+v", test.warn, warn)
 		}
 
 		if !reflect.DeepEqual(resp, test.response) {
@@ -147,6 +172,27 @@ func TestAPIQueryRangeGRPCCall(t *testing.T) {
 				"from":  []string{"0"},
 				"to":    []string{"10"},
 			},
+			response: []Series{
+				{
+					Labels:     map[string]string{"__name__": "allocs"},
+					Timestamps: []int64{1, 5},
+				},
+				{
+					Labels:     map[string]string{"__name__": "heap"},
+					Timestamps: []int64{1, 5},
+				},
+			},
+		},
+		// limit to 1 series
+		{
+			endpoint: api.QueryRange,
+			query: url.Values{
+				"query": []string{"allocs"},
+				"from":  []string{"0"},
+				"to":    []string{"10"},
+				"limit": []string{"1"},
+			},
+			warn: []error{fmt.Errorf("retrieved %d series, more available", 1)},
 			response: []Series{
 				{
 					Labels:     map[string]string{"__name__": "allocs"},

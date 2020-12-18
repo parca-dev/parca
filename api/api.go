@@ -77,6 +77,17 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: fmt.Errorf("failed to parse \"to\" time: %w", err)}
 	}
 
+	limitString := r.URL.Query().Get("limit")
+	applyLimit := (limitString != "")
+	limit := 0
+	if applyLimit {
+		var err error
+		limit, err = strconv.Atoi(r.URL.Query().Get("limit"))
+		if err != nil {
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: fmt.Errorf("failed to parse \"limit\": %w", err)}
+		}
+	}
+
 	if to.Before(from) {
 		err := errors.New("to timestamp must not be before from time")
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
@@ -100,6 +111,8 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 		Func:  "timestamps",
 	}, sel...)
 	res := []Series{}
+	j := 0
+	limitReached := false
 	for set.Next() {
 		series := set.At()
 		ls := series.Labels()
@@ -116,12 +129,22 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 		}
 
 		res = append(res, resSeries)
+		j++
+		if applyLimit && j == limit {
+			limitReached = true
+			break
+		}
 	}
 	if err := set.Err(); err != nil {
 		return nil, nil, &ApiError{Typ: ErrorInternal, Err: set.Err()}
 	}
 
-	return res, set.Warnings(), nil
+	warn := set.Warnings()
+	if limitReached {
+		warn = append(warn, fmt.Errorf("retrieved %d series, more available", j))
+	}
+
+	return res, warn, nil
 }
 
 func (a *API) findProfile(ctx context.Context, time time.Time, sel []*labels.Matcher) (*profile.Profile, error) {
