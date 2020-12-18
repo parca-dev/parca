@@ -22,7 +22,6 @@ import (
 
 	//"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
 	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
@@ -46,7 +45,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 
-	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, tracer opentracing.Tracer, debugLogging bool) (prober.Probe, error) {
+	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
 		if err != nil {
 			return probe, err

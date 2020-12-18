@@ -94,7 +94,11 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
-	set := q.Select(true, nil, sel...)
+	set := q.Select(true, &storage.SelectHints{
+		Start: timestamp.FromTime(from),
+		End:   timestamp.FromTime(to),
+		Func:  "timestamps",
+	}, sel...)
 	res := []Series{}
 	for set.Next() {
 		series := set.At()
@@ -381,7 +385,11 @@ func (a *API) Series(r *http.Request) (interface{}, []error, *ApiError) {
 		sets    []storage.SeriesSet
 	)
 	for _, mset := range matcherSets {
-		sets = append(sets, q.Select(false, nil, mset...))
+		sets = append(sets, q.Select(false, &storage.SelectHints{
+			Start: timestamp.FromTime(start),
+			End:   timestamp.FromTime(end),
+			Func:  "series",
+		}, mset...))
 	}
 
 	set := storage.NewMergeSeriesSet(sets, storage.ChainedSeriesMerge)
