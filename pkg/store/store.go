@@ -177,7 +177,7 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProf
 
 			tc := chk.Chunk
 			if r.SelectHints != nil && r.SelectHints.Func == "timestamps" {
-				it, tc, err = tsdb.ReencodeChunk(&tsdb.TimestampChunk{tc}, it)
+				it, tc, err = tsdb.ReencodeChunk(&tsdb.TimestampChunk{Chunk: tc}, it)
 				if err != nil {
 					return status.Error(codes.Aborted, err.Error())
 				}
