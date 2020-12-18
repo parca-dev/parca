@@ -385,7 +385,11 @@ func (a *API) Series(r *http.Request) (interface{}, []error, *ApiError) {
 		sets    []storage.SeriesSet
 	)
 	for _, mset := range matcherSets {
-		sets = append(sets, q.Select(false, &storage.SelectHints{Func: "series"}, mset...))
+		sets = append(sets, q.Select(false, &storage.SelectHints{
+			Start: timestamp.FromTime(start),
+			End:   timestamp.FromTime(end),
+			Func:  "series",
+		}, mset...))
 	}
 
 	set := storage.NewMergeSeriesSet(sets, storage.ChainedSeriesMerge)
