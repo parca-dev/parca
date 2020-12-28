@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/conprof/db/storage"
@@ -109,4 +110,38 @@ func TestBatchIteratorMultipleSeries(t *testing.T) {
 	require.True(t, i.Next())
 	require.EqualValues(t, [][]byte{[]byte("e")}, i.Batch())
 	require.False(t, i.Next())
+}
+
+func TestMergeSeriesSet(t *testing.T) {
+	b, err := ioutil.ReadFile("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+
+	set := newSliceSeriesSet([]storage.Series{
+		storage.NewListSeries(labels.Labels{{Name: "instance", Value: "a"}}, []tsdbutil.Sample{
+			&sample{t: 0, v: b},
+		}),
+		storage.NewListSeries(labels.Labels{{Name: "instance", Value: "b"}}, []tsdbutil.Sample{
+			&sample{t: 0, v: b},
+			&sample{t: 0, v: b},
+			&sample{t: 0, v: b},
+			&sample{t: 0, v: b},
+		}),
+	})
+
+	_, err = mergeSeriesSet(set, 2)
+	require.NoError(t, err)
+}
+
+func TestMergeSeriesSetSingleSample(t *testing.T) {
+	b, err := ioutil.ReadFile("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+
+	set := newSliceSeriesSet([]storage.Series{
+		storage.NewListSeries(labels.Labels{{Name: "instance", Value: "a"}}, []tsdbutil.Sample{
+			&sample{t: 0, v: b},
+		}),
+	})
+
+	_, err = mergeSeriesSet(set, 2)
+	require.NoError(t, err)
 }
