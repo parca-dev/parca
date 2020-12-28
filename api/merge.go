@@ -92,9 +92,18 @@ func (a *API) mergeProfiles(ctx context.Context, from, to time.Time, sel []*labe
 	}
 
 	set := q.Select(false, nil, sel...)
-	bi := newBatchIterator(set, a.maxMergeBatchSize)
+	mergedProfile, err := mergeSeriesSet(set, a.maxMergeBatchSize)
+	if err != nil {
+		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
+	return mergedProfile, nil
+}
+
+func mergeSeriesSet(set storage.SeriesSet, maxMergeBatchSize int64) (*profile.Profile, error) {
+	bi := newBatchIterator(set, maxMergeBatchSize)
 	profiles := []*profile.Profile{}
-	acc := &profile.Profile{}
+	var acc *profile.Profile = nil
 	for bi.Next() {
 		profiles = profiles[:0]
 		batch := bi.Batch()
@@ -102,19 +111,24 @@ func (a *API) mergeProfiles(ctx context.Context, from, to time.Time, sel []*labe
 		for _, b := range batch {
 			p, err := profile.ParseData(b)
 			if err != nil {
-				return nil, &ApiError{Typ: ErrorInternal, Err: err}
+				return nil, err
 			}
 			profiles = append(profiles, p)
 		}
 
+		if acc == nil && len(profiles) > 0 {
+			acc = profiles[0]
+			profiles = profiles[1:]
+		}
+
 		var err error
-		acc, err = profile.Merge(append(profiles, acc))
+		acc, err = profile.Merge(append([]*profile.Profile{acc}, profiles...))
 		if err != nil {
-			return nil, &ApiError{Typ: ErrorInternal, Err: err}
+			return nil, err
 		}
 	}
 	if err := bi.Err(); err != nil {
-		return nil, &ApiError{Typ: ErrorInternal, Err: set.Err()}
+		return nil, set.Err()
 	}
 
 	return acc, nil
