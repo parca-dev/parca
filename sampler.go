@@ -26,16 +26,16 @@ import (
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
+	_ "github.com/prometheus/prometheus/discovery/install" // Register service discovery implementations.
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-
-	_ "github.com/prometheus/prometheus/discovery/install" // Register service discovery implementations.
 )
 
 type perRequestBearerToken struct {
@@ -67,7 +67,15 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 	insecureSkipVerify := cmd.Flag("insecure-skip-verify", "Skip TLS certificate verification.").Default("false").Bool()
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
-		opts := []grpc.DialOption{}
+		met := grpc_prometheus.NewClientMetrics()
+		met.EnableClientHandlingTimeHistogram()
+		reg.MustRegister(met)
+
+		opts := []grpc.DialOption{
+			grpc.WithUnaryInterceptor(
+				met.UnaryClientInterceptor(),
+			),
+		}
 		if *insecure {
 			opts = append(opts, grpc.WithInsecure())
 		} else {

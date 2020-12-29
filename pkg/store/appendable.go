@@ -82,7 +82,7 @@ func (a *grpcStoreAppender) Commit() error {
 		},
 	})
 	if err != nil {
-		level.Debug(a.logger).Log("msg", "failed to send profile", "err", err)
+		level.Error(a.logger).Log("msg", "failed to send profile", "err", err)
 	}
 	return err
 }
