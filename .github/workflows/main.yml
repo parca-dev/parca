@@ -44,7 +44,7 @@ jobs:
 
       - name: Build and publish docker images
         if: "github.ref == 'refs/heads/master'"
-        run: DOCKER_IMAGE_TAG="${BRANCH_NAME}-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)" make common-docker common-docker-publish common-docker-manifest
+        run: DOCKER_REPO="${{ secrets.QUAY_REPO }}" DOCKER_IMAGE_TAG="${BRANCH_NAME}-$(date +%Y-%m-%d)-$(git rev-parse --short HEAD)" make common-docker common-docker-publish common-docker-manifest
   lint:
     runs-on: ubuntu-latest
     name: Linters (Static Analysis) for Go
