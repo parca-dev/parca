@@ -34,6 +34,8 @@ Additionally, Google has written about continuous profiling in their whitepaper:
 
 ### Quickstart
 
+Pre-built container images (for linux-amd64, linux-arm64, linux-armv7) can be found at: https://quay.io/repository/conprof/conprof .
+
 Build conprof binary from the root of the repo directory:
 
 ```bash
