@@ -14,6 +14,7 @@
 package api
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/conprof/conprof/internal/pprof/graph"
@@ -90,6 +91,7 @@ func generateFlamegraphReport(p *profile.Profile, sampleIndex string) (*TreeNode
 		for child := range n.Out {
 			node.Children = append(node.Children, nodeMap[child])
 		}
+		sort.Slice(node.Children, func(i, j int) bool { return node.Children[i].FullName < node.Children[j].FullName })
 	}
 
 	return &TreeNode{
