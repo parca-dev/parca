@@ -87,7 +87,7 @@ func runAll(
 		return nil, err
 	}
 
-	err = runSampler(g, p, logger, db, configFile, reloadCh)
+	err = runSampler(g, p, logger, db, configFile, nil, reloadCh)
 	if err != nil {
 		return nil, err
 	}

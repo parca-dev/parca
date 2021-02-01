@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/pkg/store"
@@ -59,6 +60,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
+	targets := cmd.Flag("target", "Targets to scrape.").Strings()
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
 	bearerToken := cmd.Flag("bearer-token", "Bearer token to authenticate with store.").String()
@@ -111,7 +113,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		if err != nil {
 			return probe, err
 		}
-		return probe, runSampler(g, probe, logger, store.NewGRPCAppendable(logger, c), *configFile, reloadCh)
+		return probe, runSampler(g, probe, logger, store.NewGRPCAppendable(logger, c), *configFile, *targets, reloadCh)
 	}
 }
 
@@ -144,11 +146,47 @@ func managerReloader(logger log.Logger, reloadCh chan struct{}, d *discovery.Man
 	}
 }
 
-func runSampler(g *run.Group, probe prober.Probe, logger log.Logger, db storage.Appendable, configFile string, reloadCh chan struct{}) error {
+func runSampler(g *run.Group, probe prober.Probe, logger log.Logger, db storage.Appendable, configFile string, targets []string, reloadCh chan struct{}) error {
 	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
-	cfg, err := config.LoadFile(configFile)
-	if err != nil {
-		return fmt.Errorf("could not load config: %v", err)
+	var (
+		cfg *config.Config
+		err error
+	)
+	if len(targets) > 0 {
+		targetStrings := []string{}
+		for _, t := range targets {
+			targetStrings = append(targetStrings, fmt.Sprintf("\"%s\"", t))
+		}
+		tmpfile, err := ioutil.TempFile("", "conprof")
+		if err != nil {
+			return fmt.Errorf("could not create tempfile: %v", err)
+		}
+
+		content := fmt.Sprintf(`
+scrape_configs:
+- job_name: 'default'
+  scrape_interval: 1m
+  scrape_timeout: 1m
+  static_configs:
+  - targets: [%s]
+`, strings.Join(targetStrings, ","))
+		if _, err := tmpfile.Write([]byte(content)); err != nil {
+			return fmt.Errorf("could write tempfile: %v", err)
+		}
+		if err := tmpfile.Close(); err != nil {
+			return fmt.Errorf("could close tempfile: %v", err)
+		}
+
+		configFile = tmpfile.Name()
+		cfg, err = config.LoadFile(configFile)
+		if err != nil {
+			return fmt.Errorf("could not load config: %v", err)
+		}
+	} else {
+		cfg, err = config.LoadFile(configFile)
+		if err != nil {
+			return fmt.Errorf("could not load config: %v", err)
+		}
 	}
 
 	ctxScrape, cancelScrape := context.WithCancel(context.Background())
