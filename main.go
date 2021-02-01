@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"syscall"
@@ -163,33 +162,13 @@ func main() {
 	}
 
 	// Listen for termination signals.
-	{
-		cancel := make(chan struct{})
-		g.Add(func() error {
-			return interrupt(logger, cancel)
-		}, func(error) {
-			level.Debug(logger).Log("msg", "shutting down interrupt handler")
-			close(cancel)
-		})
-	}
+	g.Add(run.SignalHandler(context.Background(), syscall.SIGINT, syscall.SIGTERM))
 
 	if err := g.Run(); err != nil {
 		level.Error(logger).Log("msg", "running command failed", "err", err)
 		os.Exit(1)
 	}
 	level.Info(logger).Log("msg", "exiting")
-}
-
-func interrupt(logger log.Logger, cancel <-chan struct{}) error {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	case s := <-c:
-		level.Info(logger).Log("msg", "caught signal. Exiting.", "signal", s)
-		return nil
-	case <-cancel:
-		return errors.New("canceled")
-	}
 }
 
 func cors(corsOrigin, corsMethods string, h http.Handler) http.Handler {
