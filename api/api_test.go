@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/pkg/testutil"
@@ -261,7 +263,7 @@ func TestAPILabelNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize}
+	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.LabelNames,
@@ -327,7 +329,7 @@ func TestAPILabelValues(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize}
+	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.LabelValues,
@@ -398,7 +400,7 @@ func TestAPISeries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize}
+	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.Series,

@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
-	"github.com/conprof/conprof/internal/pprof/measurement"
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -34,6 +34,9 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
+
+	"github.com/conprof/conprof/config"
+	"github.com/conprof/conprof/internal/pprof/measurement"
 )
 
 var defaultMetadataTimeRange = 24 * time.Hour
@@ -43,6 +46,9 @@ type API struct {
 	db                storage.Queryable
 	reloadCh          chan struct{}
 	maxMergeBatchSize int64
+
+	mu     sync.RWMutex
+	config *config.Config
 }
 
 func New(
@@ -57,6 +63,14 @@ func New(
 		reloadCh:          reloadCh,
 		maxMergeBatchSize: maxMergeBatchSize,
 	}
+}
+
+func (a *API) ApplyConfig(c *config.Config) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.config = c
+	return nil
 }
 
 type Series struct {
@@ -586,4 +600,17 @@ func labelNamesByMatchers(sets []storage.SeriesSet) ([]string, storage.Warnings,
 
 func (a *API) Reload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	a.reloadCh <- struct{}{}
+}
+
+type conprofConfig struct {
+	YAML string `json:"yaml"`
+}
+
+func (a *API) Config(_ *http.Request) (interface{}, []error, *ApiError) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return conprofConfig{
+		YAML: a.config.String(),
+	}, nil, nil
 }

@@ -95,6 +95,14 @@ type Config struct {
 	ScrapeConfigs []*ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
 
+func (c Config) String() string {
+	b, err := yaml.Marshal(c)
+	if err != nil {
+		return fmt.Sprintf("<error creating config string: %s>", err)
+	}
+	return string(b)
+}
+
 // SetDirectory joins any relative file paths with dir.
 func (c *Config) SetDirectory(dir string) {
 	for _, c := range c.ScrapeConfigs {

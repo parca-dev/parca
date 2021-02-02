@@ -23,11 +23,11 @@ import (
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/prober"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 // registerAll registers the all command.
-func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
+func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}, reloaders *configReloaders) {
 	cmd := app.Command(name, "All in one command.")
 
 	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
@@ -50,6 +50,7 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 			*configFile,
 			*retention,
 			reloadCh,
+			reloaders,
 			int64(*maxMergeBatchSize),
 		)
 	}
@@ -66,6 +67,7 @@ func runAll(
 	configFile string,
 	retention model.Duration,
 	reloadCh chan struct{},
+	reloaders *configReloaders,
 	maxMergeBatchSize int64,
 ) (prober.Probe, error) {
 	db, err := tsdb.Open(
@@ -87,12 +89,12 @@ func runAll(
 		return nil, err
 	}
 
-	err = runSampler(g, p, logger, db, configFile, nil, reloadCh)
+	err = runSampler(g, p, logger, db, configFile, nil, reloadCh, reloaders)
 	if err != nil {
 		return nil, err
 	}
 
-	err = runWeb(mux, p, reg, logger, db, reloadCh, maxMergeBatchSize)
+	err = runWeb(mux, p, reg, logger, db, reloadCh, reloaders, maxMergeBatchSize)
 	if err != nil {
 		return nil, err
 	}

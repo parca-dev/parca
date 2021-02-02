@@ -16,28 +16,26 @@ package main
 import (
 	"net/http"
 
-	"github.com/conprof/conprof/web"
+	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
-
-	//"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
 	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 
 	conprofapi "github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/pprofui"
-	"github.com/conprof/db/storage"
+	"github.com/conprof/conprof/web"
 )
 
 // registerWeb registers a web command.
-func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
+func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}, reloaders *configReloaders) {
 	cmd := app.Command(name, "Run a web interface to view profiles from a storage.")
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
@@ -58,6 +56,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 			logger,
 			store.NewGRPCQueryable(c),
 			reloadCh,
+			reloaders,
 			int64(*maxMergeBatchSize),
 		)
 	}
@@ -70,6 +69,7 @@ func runWeb(
 	logger log.Logger,
 	db storage.Queryable,
 	reloadCh chan struct{},
+	reloaders *configReloaders,
 	maxMergeBatchSize int64,
 ) error {
 	logger = log.With(logger, "component", "pprofui")
@@ -85,6 +85,8 @@ func runWeb(
 
 	api := conprofapi.New(logger, db, reloadCh, maxMergeBatchSize)
 
+	reloaders.Register(api.ApplyConfig)
+
 	router.GET("/-/reload", api.Reload)
 
 	router.GET("/api/v1/query_range", instr("query_range", api.QueryRange))
@@ -92,6 +94,7 @@ func runWeb(
 	router.GET("/api/v1/series", instr("series", api.Series))
 	router.GET("/api/v1/labels", instr("label_names", api.LabelNames))
 	router.GET("/api/v1/label/:name/values", instr("label_values", api.LabelValues))
+	router.GET("/api/v1/status/config", instr("config", api.Config))
 
 	router.NotFound = http.FileServer(web.Assets)
 	mux.Handle("/", router)

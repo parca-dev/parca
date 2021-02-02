@@ -39,7 +39,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
+
+	"github.com/conprof/conprof/config"
 )
 
 const (
@@ -52,6 +54,14 @@ type httpMux interface {
 }
 
 type setupFunc func(component.Component, *run.Group, httpMux, prober.Probe, log.Logger, *prometheus.Registry, bool) (prober.Probe, error)
+
+type configReloaders struct {
+	funcs []func(*config.Config) error
+}
+
+func (r *configReloaders) Register(reloader func(*config.Config) error) {
+	r.funcs = append(r.funcs, reloader)
+}
 
 func main() {
 	if os.Getenv("DEBUG") != "" {
@@ -79,11 +89,14 @@ func main() {
 
 	cmds := map[string]setupFunc{}
 	reloadCh := make(chan struct{}, 1)
-	registerSampler(cmds, app, "sampler", reloadCh)
+
+	reloaders := &configReloaders{}
+
+	registerSampler(cmds, app, "sampler", reloadCh, reloaders)
 	registerStorage(cmds, app, "storage", reloadCh)
-	registerWeb(cmds, app, "web", reloadCh)
+	registerWeb(cmds, app, "web", reloadCh, reloaders)
 	registerApi(cmds, app, "api")
-	registerAll(cmds, app, "all", reloadCh)
+	registerAll(cmds, app, "all", reloadCh, reloaders)
 
 	cmd, err := app.Parse(os.Args[1:])
 	if err != nil {

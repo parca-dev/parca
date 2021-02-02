@@ -25,12 +25,13 @@ import (
 	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
+
+	"github.com/conprof/db/storage"
 
 	conprofapi "github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
-	"github.com/conprof/db/storage"
 )
 
 // registerApi registers a API command.
