@@ -20,10 +20,6 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/conprof/conprof/config"
-	"github.com/conprof/conprof/pkg/store"
-	"github.com/conprof/conprof/pkg/store/storepb"
-	"github.com/conprof/conprof/scrape"
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -36,7 +32,12 @@ import (
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
+
+	"github.com/conprof/conprof/config"
+	"github.com/conprof/conprof/pkg/store"
+	"github.com/conprof/conprof/pkg/store/storepb"
+	"github.com/conprof/conprof/scrape"
 )
 
 type perRequestBearerToken struct {
@@ -55,7 +56,7 @@ func (t *perRequestBearerToken) RequireTransportSecurity() bool {
 }
 
 // registerSampler registers a sampler command.
-func registerSampler(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
+func registerSampler(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}, reloaders *configReloaders) {
 	cmd := app.Command(name, "Run a sampler, that appends profiles to a configured storage.")
 
 	configFile := cmd.Flag("config.file", "Config file to use.").
@@ -110,10 +111,7 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			return probe, err
 		}
 		c := storepb.NewWritableProfileStoreClient(conn)
-		if err != nil {
-			return probe, err
-		}
-		return probe, runSampler(g, probe, logger, store.NewGRPCAppendable(logger, c), *configFile, *targets, reloadCh)
+		return probe, runSampler(g, probe, logger, store.NewGRPCAppendable(logger, c), *configFile, *targets, reloadCh, reloaders)
 	}
 }
 
@@ -125,7 +123,7 @@ func getScrapeConfigs(cfg *config.Config) map[string]discovery.Configs {
 	return c
 }
 
-func managerReloader(logger log.Logger, reloadCh chan struct{}, d *discovery.Manager, s *scrape.Manager, configFile string) {
+func managerReloader(logger log.Logger, reloadCh chan struct{}, configFile string, reloaders *configReloaders) {
 	for {
 		<-reloadCh
 		level.Info(logger).Log("msg", "Reloading configuration")
@@ -134,20 +132,27 @@ func managerReloader(logger log.Logger, reloadCh chan struct{}, d *discovery.Man
 			level.Error(logger).Log("could not load config to reload: %v", err)
 		}
 
-		err = d.ApplyConfig(getScrapeConfigs(cfg))
-		if err != nil {
-			level.Error(logger).Log("could not reload scrape configs: %v", err)
-		}
-
-		err = s.ApplyConfig(cfg)
-		if err != nil {
-			level.Error(logger).Log("could not reload config: %v", err)
+		for _, reloader := range reloaders.funcs {
+			if err := reloader(cfg); err != nil {
+				level.Error(logger).Log("could not reload scrape configs: %v", err)
+			}
 		}
 	}
 }
 
-func runSampler(g *run.Group, probe prober.Probe, logger log.Logger, db storage.Appendable, configFile string, targets []string, reloadCh chan struct{}) error {
+func runSampler(
+	g *run.Group,
+	probe prober.Probe,
+	logger log.Logger,
+	db storage.Appendable,
+	configFile string,
+	targets []string,
+	reloadCh chan struct{},
+	reloaders *configReloaders,
+) error {
 	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
+	reloaders.Register(scrapeManager.ApplyConfig)
+
 	var (
 		cfg *config.Config
 		err error
@@ -192,7 +197,15 @@ scrape_configs:
 	ctxScrape, cancelScrape := context.WithCancel(context.Background())
 	discoveryManagerScrape := discovery.NewManager(ctxScrape, log.With(logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
 
-	go managerReloader(logger, reloadCh, discoveryManagerScrape, scrapeManager, configFile)
+	reloaders.Register(func(cfg *config.Config) error {
+		c := getScrapeConfigs(cfg)
+		for _, v := range cfg.ScrapeConfigs {
+			c[v.JobName] = v.ServiceDiscoveryConfigs
+		}
+		return discoveryManagerScrape.ApplyConfig(c)
+	})
+
+	go managerReloader(logger, reloadCh, configFile, reloaders)
 	{
 		err := discoveryManagerScrape.ApplyConfig(getScrapeConfigs(cfg))
 		if err != nil {
