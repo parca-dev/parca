@@ -177,6 +177,9 @@ func main() {
 	// Listen for termination signals.
 	g.Add(run.SignalHandler(context.Background(), syscall.SIGINT, syscall.SIGTERM))
 
+	// Synchronize all reloaders for the first time
+	reloadCh <- struct{}{}
+
 	if err := g.Run(); err != nil {
 		level.Error(logger).Log("msg", "running command failed", "err", err)
 		os.Exit(1)
