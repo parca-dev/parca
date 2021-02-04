@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/route"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
@@ -263,7 +264,7 @@ func TestAPILabelNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
+	api := API{log.NewNopLogger(), prometheus.NewRegistry(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.LabelNames,
@@ -329,7 +330,7 @@ func TestAPILabelValues(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
+	api := API{log.NewNopLogger(), prometheus.NewRegistry(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.LabelValues,
@@ -400,7 +401,7 @@ func TestAPISeries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
+	api := API{log.NewNopLogger(), prometheus.NewRegistry(), db, make(chan struct{}), DefaultMergeBatchSize, sync.RWMutex{}, &config.Config{}}
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.Series,
@@ -455,5 +456,5 @@ func createFakeGRPCAPI(t *testing.T) (*API, io.Closer) {
 
 	c := storepb.NewReadableProfileStoreClient(conn)
 	q := store.NewGRPCQueryable(c)
-	return New(log.NewNopLogger(), q, make(chan struct{}), DefaultMergeBatchSize), lis
+	return New(log.NewNopLogger(), prometheus.NewRegistry(), q, make(chan struct{}), DefaultMergeBatchSize), lis
 }
