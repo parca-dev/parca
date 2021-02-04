@@ -14,6 +14,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/conprof/db/tsdb"
 	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
@@ -94,8 +96,12 @@ func runAll(
 		return nil, err
 	}
 
-	err = runWeb(mux, p, reg, logger, db, reloadCh, reloaders, maxMergeBatchSize)
-	if err != nil {
+	w := NewWeb(mux, db, maxMergeBatchSize,
+		WebLogger(logger),
+		WebRegistry(reg),
+		WebReloaders(reloaders),
+	)
+	if err = w.Run(context.TODO(), reloadCh); err != nil {
 		return nil, err
 	}
 

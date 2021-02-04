@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/conprof/db/storage"
@@ -48,37 +49,79 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 			return probe, err
 		}
 		c := storepb.NewReadableProfileStoreClient(conn)
-		return probe, runWeb(
-			mux,
-			probe,
-			reg,
-			logger,
-			store.NewGRPCQueryable(c),
-			reloadCh,
-			reloaders,
-			int64(*maxMergeBatchSize),
+
+		w := NewWeb(mux, store.NewGRPCQueryable(c), int64(*maxMergeBatchSize),
+			WebLogger(logger),
+			WebRegistry(reg),
+			WebReloaders(reloaders),
 		)
+		err = w.Run(context.Background(), reloadCh)
+		if err != nil {
+			return probe, err
+		}
+
+		probe.Ready()
+
+		return probe, nil
 	}
 }
 
-func runWeb(
-	mux httpMux,
-	probe prober.Probe,
-	reg *prometheus.Registry,
-	logger log.Logger,
-	db storage.Queryable,
-	reloadCh chan struct{},
-	reloaders *configReloaders,
-	maxMergeBatchSize int64,
-) error {
-	logger = log.With(logger, "component", "pprofui")
-	ui := pprofui.New(logger, db)
+type Web struct {
+	mux               httpMux
+	logger            log.Logger
+	registry          *prometheus.Registry
+	db                storage.Queryable
+	reloaders         *configReloaders
+	maxMergeBatchSize int64
+}
 
+func NewWeb(mux httpMux, db storage.Queryable, maxMergeBatchSize int64, opts ...WebOption) *Web {
+	w := &Web{
+		mux:               mux,
+		logger:            log.NewNopLogger(),
+		registry:          prometheus.NewRegistry(),
+		db:                db,
+		reloaders:         nil,
+		maxMergeBatchSize: maxMergeBatchSize,
+	}
+
+	for _, opt := range opts {
+		opt(w)
+	}
+
+	return w
+}
+
+type WebOption func(w *Web)
+
+func WebLogger(logger log.Logger) WebOption {
+	return func(w *Web) {
+		w.logger = logger
+	}
+}
+
+func WebRegistry(registry *prometheus.Registry) WebOption {
+	return func(w *Web) {
+		w.registry = registry
+	}
+}
+
+func WebReloaders(reloaders *configReloaders) WebOption {
+	return func(w *Web) {
+		w.reloaders = reloaders
+	}
+}
+
+func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
+	ui := pprofui.New(log.With(w.logger, "component", "pprofui"), w.db)
+
+	api := conprofapi.New(log.With(w.logger, "component", "api"), w.registry, w.db, reloadCh, w.maxMergeBatchSize)
 	const apiPrefix = "/api/v1/"
-	api := conprofapi.New(logger, reg, db, reloadCh, maxMergeBatchSize)
-	mux.Handle(apiPrefix, api.Routes(apiPrefix))
+	w.mux.Handle(apiPrefix, api.Routes(apiPrefix))
 
-	reloaders.Register(api.ApplyConfig)
+	if w.reloaders != nil {
+		w.reloaders.Register(api.ApplyConfig)
+	}
 
 	router := httprouter.New()
 	router.RedirectTrailingSlash = false
@@ -88,9 +131,7 @@ func runWeb(
 	router.GET("/download/*remainder", ui.PprofDownload)
 	router.NotFound = http.FileServer(web.Assets)
 
-	mux.Handle("/", router)
-
-	probe.Ready()
+	w.mux.Handle("/", router)
 
 	return nil
 }
