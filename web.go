@@ -53,7 +53,6 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 		w := NewWeb(mux, store.NewGRPCQueryable(c), int64(*maxMergeBatchSize),
 			WebLogger(logger),
 			WebRegistry(reg),
-			WebReloaders(reloaders),
 		)
 		err = w.Run(context.Background(), reloadCh)
 		if err != nil {
@@ -73,6 +72,7 @@ type Web struct {
 	db                storage.Queryable
 	reloaders         *configReloaders
 	maxMergeBatchSize int64
+	targets           func(context.Context) conprofapi.TargetRetriever
 }
 
 func NewWeb(mux httpMux, db storage.Queryable, maxMergeBatchSize int64, opts ...WebOption) *Web {
@@ -83,6 +83,9 @@ func NewWeb(mux httpMux, db storage.Queryable, maxMergeBatchSize int64, opts ...
 		db:                db,
 		reloaders:         nil,
 		maxMergeBatchSize: maxMergeBatchSize,
+		targets: func(ctx context.Context) conprofapi.TargetRetriever {
+			return nil
+		},
 	}
 
 	for _, opt := range opts {
@@ -112,10 +115,16 @@ func WebReloaders(reloaders *configReloaders) WebOption {
 	}
 }
 
+func WebTargets(targets func(context.Context) conprofapi.TargetRetriever) WebOption {
+	return func(w *Web) {
+		w.targets = targets
+	}
+}
+
 func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
 	ui := pprofui.New(log.With(w.logger, "component", "pprofui"), w.db)
 
-	api := conprofapi.New(log.With(w.logger, "component", "api"), w.registry, w.db, reloadCh, w.maxMergeBatchSize)
+	api := conprofapi.New(log.With(w.logger, "component", "api"), w.registry, w.db, reloadCh, w.maxMergeBatchSize, w.targets)
 	const apiPrefix = "/api/v1/"
 	w.mux.Handle(apiPrefix, api.Routes(apiPrefix))
 

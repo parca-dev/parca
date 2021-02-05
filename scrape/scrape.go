@@ -24,8 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/conprof/conprof/config"
-	"github.com/conprof/conprof/internal/trace"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
@@ -38,6 +36,9 @@ import (
 	"github.com/prometheus/prometheus/pkg/pool"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/conprof/conprof/config"
+	"github.com/conprof/conprof/internal/trace"
 )
 
 var (
@@ -540,15 +541,25 @@ mainLoop:
 				level.Debug(sl.l).Log("err", err)
 				errc <- err
 			}
+
+			sl.target.health = HealthGood
+			sl.target.lastScrapeDuration = time.Since(start)
+			sl.target.lastError = nil
 		} else {
 			level.Debug(sl.l).Log("msg", "Scrape failed", "err", scrapeErr.Error())
 			if errc != nil {
 				errc <- scrapeErr
 			}
+
+			sl.target.health = HealthBad
+			sl.target.lastScrapeDuration = time.Since(start)
+			sl.target.lastError = scrapeErr
 		}
 
 		sl.buffers.Put(b)
 		last = start
+
+		sl.target.lastScrape = last
 
 		select {
 		case <-sl.ctx.Done():

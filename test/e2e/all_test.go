@@ -22,11 +22,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/conprof/conprof/api"
-	"github.com/conprof/conprof/test/e2e/e2econprof"
 	"github.com/cortexproject/cortex/integration/e2e"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/tsdb/testutil"
+
+	"github.com/conprof/conprof/api"
+	"github.com/conprof/conprof/test/e2e/e2econprof"
 )
 
 func TestAll(t *testing.T) {
