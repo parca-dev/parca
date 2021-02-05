@@ -22,7 +22,6 @@ import (
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
-	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -65,7 +64,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 func runWeb(
 	mux httpMux,
 	probe prober.Probe,
-	reg prometheus.Registerer,
+	reg *prometheus.Registry,
 	logger log.Logger,
 	db storage.Queryable,
 	reloadCh chan struct{},
@@ -75,29 +74,22 @@ func runWeb(
 	logger = log.With(logger, "component", "pprofui")
 	ui := pprofui.New(logger, db)
 
-	router := httprouter.New()
-	router.RedirectTrailingSlash = false
-	ins := extpromhttp.NewInstrumentationMiddleware(reg)
-	instr := conprofapi.Instr(logger, ins)
-
-	router.GET("/pprof/*remainder", ui.PprofView)
-	router.GET("/download/*remainder", ui.PprofDownload)
-
-	api := conprofapi.New(logger, db, reloadCh, maxMergeBatchSize)
+	const apiPrefix = "/api/v1/"
+	api := conprofapi.New(logger, reg, db, reloadCh, maxMergeBatchSize)
+	mux.Handle(apiPrefix, api.Routes(apiPrefix))
 
 	reloaders.Register(api.ApplyConfig)
 
+	router := httprouter.New()
+	router.RedirectTrailingSlash = false
+
 	router.GET("/-/reload", api.Reload)
-
-	router.GET("/api/v1/query_range", instr("query_range", api.QueryRange))
-	router.GET("/api/v1/query", instr("query", api.Query))
-	router.GET("/api/v1/series", instr("series", api.Series))
-	router.GET("/api/v1/labels", instr("label_names", api.LabelNames))
-	router.GET("/api/v1/label/:name/values", instr("label_values", api.LabelValues))
-	router.GET("/api/v1/status/config", instr("config", api.Config))
-
+	router.GET("/pprof/*remainder", ui.PprofView)
+	router.GET("/download/*remainder", ui.PprofDownload)
 	router.NotFound = http.FileServer(web.Assets)
+
 	mux.Handle("/", router)
+
 	probe.Ready()
 
 	return nil

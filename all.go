@@ -61,7 +61,7 @@ func runAll(
 	g *run.Group,
 	mux httpMux,
 	p prober.Probe,
-	reg prometheus.Registerer,
+	reg *prometheus.Registry,
 	logger log.Logger,
 	storagePath,
 	configFile string,

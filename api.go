@@ -15,14 +15,12 @@ package main
 
 import (
 	"github.com/go-kit/kit/log"
-	"github.com/julienschmidt/httprouter"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 
 	//"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
-	extpromhttp "github.com/thanos-io/thanos/pkg/extprom/http"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -72,27 +70,17 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 func runApi(
 	mux httpMux,
 	probe prober.Probe,
-	reg prometheus.Registerer,
+	reg *prometheus.Registry,
 	logger log.Logger,
 	db storage.Queryable,
 	maxMergeBatchSize int64,
 ) error {
 	logger = log.With(logger, "component", "api")
 
-	router := httprouter.New()
-	router.RedirectTrailingSlash = false
-	ins := extpromhttp.NewInstrumentationMiddleware(reg)
-	instr := conprofapi.Instr(logger, ins)
+	const apiPrefix = "/api/v1/"
+	api := conprofapi.New(logger, reg, db, nil, maxMergeBatchSize)
+	mux.Handle(apiPrefix, api.Routes(apiPrefix))
 
-	api := conprofapi.New(logger, db, nil, maxMergeBatchSize)
-
-	router.GET("/api/v1/query_range", instr("query_range", api.QueryRange))
-	router.GET("/api/v1/query", instr("query", api.Query))
-	router.GET("/api/v1/series", instr("series", api.Series))
-	router.GET("/api/v1/labels", instr("label_names", api.LabelNames))
-	router.GET("/api/v1/label/:name/values", instr("label_values", api.LabelValues))
-
-	mux.Handle("/", router)
 	probe.Ready()
 
 	return nil
