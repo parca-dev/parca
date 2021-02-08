@@ -14,18 +14,15 @@
 package main
 
 import (
+	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-
-	//"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/prober"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"gopkg.in/alecthomas/kingpin.v2"
-
-	"github.com/conprof/db/storage"
 
 	conprofapi "github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
@@ -78,7 +75,7 @@ func runApi(
 	logger = log.With(logger, "component", "api")
 
 	const apiPrefix = "/api/v1/"
-	api := conprofapi.New(logger, reg, db, nil, maxMergeBatchSize)
+	api := conprofapi.New(logger, reg, db, nil, maxMergeBatchSize, conprofapi.NoTargets)
 	mux.Handle(apiPrefix, api.Routes(apiPrefix))
 
 	probe.Ready()

@@ -111,7 +111,20 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			return probe, err
 		}
 		c := storepb.NewWritableProfileStoreClient(conn)
-		return probe, runSampler(g, probe, logger, store.NewGRPCAppendable(logger, c), *configFile, *targets, reloadCh, reloaders)
+
+		s, err := NewSampler(store.NewGRPCAppendable(logger, c), *configFile, reloaders,
+			SamplerTargets(*targets),
+		)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.Run(context.TODO(), g, reloadCh); err != nil {
+			return nil, err
+		}
+
+		probe.Ready()
+
+		return probe, nil
 	}
 }
 
@@ -140,24 +153,43 @@ func managerReloader(logger log.Logger, reloadCh chan struct{}, configFile strin
 	}
 }
 
-func runSampler(
-	g *run.Group,
-	probe prober.Probe,
-	logger log.Logger,
-	db storage.Appendable,
-	configFile string,
-	targets []string,
-	reloadCh chan struct{},
-	reloaders *configReloaders,
-) error {
-	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
-	reloaders.Register(scrapeManager.ApplyConfig)
+type Sampler struct {
+	logger        log.Logger
+	db            storage.Appendable
+	configFile    string
+	cfg           *config.Config
+	reloaders     *configReloaders
+	scrapeManager *scrape.Manager
+}
 
-	var (
-		cfg *config.Config
-		err error
-	)
-	if len(targets) > 0 {
+type SamplerOption func(*Sampler) error
+
+func NewSampler(db storage.Appendable, configFile string, reloaders *configReloaders, opts ...SamplerOption) (*Sampler, error) {
+	cfg, err := config.LoadFile(configFile)
+	if err != nil {
+		return nil, fmt.Errorf("could not load config: %v", err)
+	}
+
+	s := &Sampler{
+		logger:        log.NewNopLogger(),
+		db:            db,
+		configFile:    configFile,
+		cfg:           cfg,
+		reloaders:     reloaders,
+		scrapeManager: scrape.NewManager(log.With(log.NewNopLogger(), "component", "scrape-manager"), db),
+	}
+
+	for _, opt := range opts {
+		if err := opt(s); err != nil {
+			return s, err
+		}
+	}
+
+	return s, nil
+}
+
+func SamplerTargets(targets []string) SamplerOption {
+	return func(s *Sampler) error {
 		targetStrings := []string{}
 		for _, t := range targets {
 			targetStrings = append(targetStrings, fmt.Sprintf("\"%s\"", t))
@@ -182,22 +214,30 @@ scrape_configs:
 			return fmt.Errorf("could close tempfile: %v", err)
 		}
 
-		configFile = tmpfile.Name()
-		cfg, err = config.LoadFile(configFile)
+		s.configFile = tmpfile.Name()
+		s.cfg, err = config.LoadFile(s.configFile)
 		if err != nil {
 			return fmt.Errorf("could not load config: %v", err)
 		}
-	} else {
-		cfg, err = config.LoadFile(configFile)
-		if err != nil {
-			return fmt.Errorf("could not load config: %v", err)
-		}
+
+		return nil
 	}
+}
+
+func SamplerScraper(scraper *scrape.Manager) SamplerOption {
+	return func(s *Sampler) error {
+		s.scrapeManager = scraper
+		return nil
+	}
+}
+
+func (s *Sampler) Run(_ context.Context, g *run.Group, reloadCh chan struct{}) error {
+	s.reloaders.Register(s.scrapeManager.ApplyConfig)
 
 	ctxScrape, cancelScrape := context.WithCancel(context.Background())
-	discoveryManagerScrape := discovery.NewManager(ctxScrape, log.With(logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
+	discoveryManagerScrape := discovery.NewManager(ctxScrape, log.With(s.logger, "component", "discovery manager scrape"), discovery.Name("scrape"))
 
-	reloaders.Register(func(cfg *config.Config) error {
+	s.reloaders.Register(func(cfg *config.Config) error {
 		c := getScrapeConfigs(cfg)
 		for _, v := range cfg.ScrapeConfigs {
 			c[v.JobName] = v.ServiceDiscoveryConfigs
@@ -205,11 +245,11 @@ scrape_configs:
 		return discoveryManagerScrape.ApplyConfig(c)
 	})
 
-	go managerReloader(logger, reloadCh, configFile, reloaders)
+	go managerReloader(s.logger, reloadCh, s.configFile, s.reloaders)
 	{
-		err := discoveryManagerScrape.ApplyConfig(getScrapeConfigs(cfg))
+		err := discoveryManagerScrape.ApplyConfig(getScrapeConfigs(s.cfg))
 		if err != nil {
-			level.Error(logger).Log("msg", err)
+			level.Error(s.logger).Log("msg", err)
 			cancelScrape()
 			return err
 		}
@@ -217,11 +257,11 @@ scrape_configs:
 		g.Add(
 			func() error {
 				err := discoveryManagerScrape.Run()
-				level.Info(logger).Log("msg", "Scrape discovery manager stopped")
+				level.Info(s.logger).Log("msg", "Scrape discovery manager stopped")
 				return err
 			},
 			func(err error) {
-				level.Info(logger).Log("msg", "Stopping scrape discovery manager...")
+				level.Info(s.logger).Log("msg", "Stopping scrape discovery manager...")
 				cancelScrape()
 			},
 		)
@@ -229,18 +269,17 @@ scrape_configs:
 	{
 		_, cancel := context.WithCancel(context.Background())
 		g.Add(func() error {
-			err = scrapeManager.ApplyConfig(cfg)
+			err := s.scrapeManager.ApplyConfig(s.cfg)
 			if err != nil {
 				return fmt.Errorf("could not apply config: %v", err)
 			}
-			return scrapeManager.Run(discoveryManagerScrape.SyncCh())
+			return s.scrapeManager.Run(discoveryManagerScrape.SyncCh())
 		}, func(error) {
-			level.Debug(logger).Log("msg", "shutting down scrape manager")
-			scrapeManager.Stop()
+			level.Debug(s.logger).Log("msg", "shutting down scrape manager")
+			s.scrapeManager.Stop()
 			cancel()
 		})
 	}
 
-	probe.Ready()
 	return nil
 }

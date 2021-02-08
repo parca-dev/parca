@@ -14,6 +14,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/conprof/db/tsdb"
 	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
@@ -24,6 +26,9 @@ import (
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"gopkg.in/alecthomas/kingpin.v2"
+
+	conprofapi "github.com/conprof/conprof/api"
+	"github.com/conprof/conprof/scrape"
 )
 
 // registerAll registers the all command.
@@ -89,15 +94,31 @@ func runAll(
 		return nil, err
 	}
 
-	err = runSampler(g, p, logger, db, configFile, nil, reloadCh, reloaders)
+	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
+
+	s, err := NewSampler(db, configFile, reloaders,
+		SamplerScraper(scrapeManager),
+	)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.Run(context.TODO(), g, reloadCh); err != nil {
 		return nil, err
 	}
 
-	err = runWeb(mux, p, reg, logger, db, reloadCh, reloaders, maxMergeBatchSize)
-	if err != nil {
+	w := NewWeb(mux, db, maxMergeBatchSize,
+		WebLogger(logger),
+		WebRegistry(reg),
+		WebReloaders(reloaders),
+		WebTargets(func(ctx context.Context) conprofapi.TargetRetriever {
+			return scrapeManager
+		}),
+	)
+	if err = w.Run(context.TODO(), reloadCh); err != nil {
 		return nil, err
 	}
+
+	p.Ready()
 
 	return p, nil
 }

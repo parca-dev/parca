@@ -17,10 +17,13 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net"
 	"net/http"
+	"net/url"
 	"path"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -40,9 +43,32 @@ import (
 
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/internal/pprof/measurement"
+	"github.com/conprof/conprof/scrape"
 )
 
-var defaultMetadataTimeRange = 24 * time.Hour
+var (
+	defaultMetadataTimeRange = 24 * time.Hour
+	LocalhostRepresentations = []string{"127.0.0.1", "localhost"}
+)
+
+type TargetRetriever interface {
+	TargetsActive() map[string][]*scrape.Target
+	TargetsDropped() map[string][]*scrape.Target
+}
+
+// NoTargets is passed to the API when only the API is served and no scraping is happening.
+var NoTargets = func(_ context.Context) TargetRetriever { return NoTargetRetriever{} }
+
+// NoTargetRetriever is passed to the API when only the API is served and no scraping is happening.
+type NoTargetRetriever struct{}
+
+func (t NoTargetRetriever) TargetsActive() map[string][]*scrape.Target {
+	return map[string][]*scrape.Target{}
+}
+
+func (t NoTargetRetriever) TargetsDropped() map[string][]*scrape.Target {
+	return map[string][]*scrape.Target{}
+}
 
 type API struct {
 	logger            log.Logger
@@ -50,6 +76,8 @@ type API struct {
 	db                storage.Queryable
 	reloadCh          chan struct{}
 	maxMergeBatchSize int64
+	targets           func(context.Context) TargetRetriever
+	globalURLOptions  GlobalURLOptions
 
 	mu     sync.RWMutex
 	config *config.Config
@@ -61,6 +89,7 @@ func New(
 	db storage.Queryable,
 	reloadCh chan struct{},
 	maxMergeBatchSize int64,
+	targets func(ctx context.Context) TargetRetriever,
 ) *API {
 	return &API{
 		logger:            logger,
@@ -68,6 +97,12 @@ func New(
 		db:                db,
 		reloadCh:          reloadCh,
 		maxMergeBatchSize: maxMergeBatchSize,
+		targets:           targets,
+		globalURLOptions: GlobalURLOptions{ // TODO pass into from flags
+			ListenAddress: "0.0.0.0:10902",
+			Host:          "0.0.0.0:10902",
+			Scheme:        "http",
+		},
 	}
 }
 
@@ -84,6 +119,7 @@ func (a *API) Routes(prefix string) http.Handler {
 	r.GET(path.Join(prefix, "/labels"), instr("label_names", a.LabelNames))
 	r.GET(path.Join(prefix, "/label/:name/values"), instr("label_values", a.LabelValues))
 	r.GET(path.Join(prefix, "/status/config"), instr("config", a.Config))
+	r.GET(path.Join(prefix, "/targets"), instr("targets", a.Targets))
 
 	return r
 }
@@ -636,4 +672,160 @@ func (a *API) Config(_ *http.Request) (interface{}, []error, *ApiError) {
 	return conprofConfig{
 		YAML: a.config.String(),
 	}, nil, nil
+}
+
+// TargetDiscovery has all the active targets.
+type TargetDiscovery struct {
+	ActiveTargets  []*Target        `json:"activeTargets"`
+	DroppedTargets []*DroppedTarget `json:"droppedTargets"`
+}
+
+// Target has the information for one target.
+type Target struct {
+	// Labels before any processing.
+	DiscoveredLabels map[string]string `json:"discoveredLabels"`
+	// Any labels that are added to this target and its metrics.
+	Labels map[string]string `json:"labels"`
+
+	ScrapePool string `json:"scrapePool"`
+	ScrapeURL  string `json:"scrapeUrl"`
+	GlobalURL  string `json:"globalUrl"`
+
+	LastError          string              `json:"lastError"`
+	LastScrape         time.Time           `json:"lastScrape"`
+	LastScrapeDuration float64             `json:"lastScrapeDuration"`
+	Health             scrape.TargetHealth `json:"health"`
+}
+
+// DroppedTarget has the information for one target that was dropped during relabelling.
+type DroppedTarget struct {
+	// Labels before any processing.
+	DiscoveredLabels map[string]string `json:"discoveredLabels"`
+}
+
+func (a *API) Targets(r *http.Request) (interface{}, []error, *ApiError) {
+	sortKeys := func(targets map[string][]*scrape.Target) ([]string, int) {
+		var n int
+		keys := make([]string, 0, len(targets))
+		for k := range targets {
+			keys = append(keys, k)
+			n += len(targets[k])
+		}
+		sort.Strings(keys)
+		return keys, n
+	}
+	flatten := func(targets map[string][]*scrape.Target) []*scrape.Target {
+		keys, n := sortKeys(targets)
+		res := make([]*scrape.Target, 0, n)
+		for _, k := range keys {
+			res = append(res, targets[k]...)
+		}
+		return res
+	}
+
+	state := strings.ToLower(r.URL.Query().Get("state"))
+	showActive := state == "" || state == "any" || state == "active"
+	showDropped := state == "" || state == "any" || state == "dropped"
+
+	res := &TargetDiscovery{
+		ActiveTargets:  []*Target{},
+		DroppedTargets: []*DroppedTarget{},
+	}
+
+	if showActive {
+		targets := a.targets(r.Context()).TargetsActive()
+		activeKeys, numTargets := sortKeys(targets)
+		res.ActiveTargets = make([]*Target, 0, numTargets)
+
+		for _, key := range activeKeys {
+			for _, target := range targets[key] {
+				lastErrStr := ""
+				lastErr := target.LastError()
+				if lastErr != nil {
+					lastErrStr = lastErr.Error()
+				}
+
+				globalURL, err := getGlobalURL(target.URL(), a.globalURLOptions)
+
+				res.ActiveTargets = append(res.ActiveTargets, &Target{
+					DiscoveredLabels: target.DiscoveredLabels().Map(),
+					Labels:           target.Labels().Map(),
+					ScrapePool:       key,
+					ScrapeURL:        target.URL().String(),
+					GlobalURL:        globalURL.String(),
+					LastError: func() string {
+						if err == nil && lastErrStr == "" {
+							return ""
+						} else if err != nil {
+							return errors.Wrapf(err, lastErrStr).Error()
+						}
+						return lastErrStr
+					}(),
+					LastScrape:         target.LastScrape(),
+					LastScrapeDuration: target.LastScrapeDuration().Seconds(),
+					Health:             target.Health(),
+				})
+			}
+		}
+	}
+
+	if showDropped {
+		dropped := flatten(a.targets(r.Context()).TargetsDropped())
+		res.DroppedTargets = make([]*DroppedTarget, 0, len(dropped))
+		for _, t := range dropped {
+			res.DroppedTargets = append(res.DroppedTargets, &DroppedTarget{
+				DiscoveredLabels: t.DiscoveredLabels().Map(),
+			})
+		}
+	}
+
+	return res, nil, nil
+}
+
+// GlobalURLOptions contains fields used for deriving the global URL for local targets.
+type GlobalURLOptions struct {
+	ListenAddress string
+	Host          string
+	Scheme        string
+}
+
+func getGlobalURL(u *url.URL, opts GlobalURLOptions) (*url.URL, error) {
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return u, err
+	}
+
+	for _, lhr := range LocalhostRepresentations {
+		if host == lhr {
+			_, ownPort, err := net.SplitHostPort(opts.ListenAddress)
+			if err != nil {
+				return u, err
+			}
+
+			if port == ownPort {
+				// Only in the case where the target is on localhost and its port is
+				// the same as the one we're listening on, we know for sure that
+				// we're monitoring our own process and that we need to change the
+				// scheme, hostname, and port to the externally reachable ones as
+				// well. We shouldn't need to touch the path at all, since if a
+				// path prefix is defined, the path under which we scrape ourselves
+				// should already contain the prefix.
+				u.Scheme = opts.Scheme
+				u.Host = opts.Host
+			} else {
+				// Otherwise, we only know that localhost is not reachable
+				// externally, so we replace only the hostname by the one in the
+				// external URL. It could be the wrong hostname for the service on
+				// this port, but it's still the best possible guess.
+				host, _, err := net.SplitHostPort(opts.Host)
+				if err != nil {
+					return u, err
+				}
+				u.Host = host + ":" + port
+			}
+			break
+		}
+	}
+
+	return u, nil
 }
