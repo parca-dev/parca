@@ -112,9 +112,14 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		}
 		c := storepb.NewWritableProfileStoreClient(conn)
 
-		s, err := NewSampler(store.NewGRPCAppendable(logger, c), *configFile, reloaders,
-			SamplerTargets(*targets),
-		)
+		var samplerOpts []SamplerOption
+		if len(*targets) > 0 {
+			samplerOpts = append(samplerOpts, SamplerTargets(*targets))
+		} else {
+			samplerOpts = append(samplerOpts, SamplerConfig(*configFile))
+		}
+
+		s, err := NewSampler(store.NewGRPCAppendable(logger, c), reloaders, samplerOpts...)
 		if err != nil {
 			return nil, err
 		}
@@ -164,17 +169,10 @@ type Sampler struct {
 
 type SamplerOption func(*Sampler) error
 
-func NewSampler(db storage.Appendable, configFile string, reloaders *configReloaders, opts ...SamplerOption) (*Sampler, error) {
-	cfg, err := config.LoadFile(configFile)
-	if err != nil {
-		return nil, fmt.Errorf("could not load config: %v", err)
-	}
-
+func NewSampler(db storage.Appendable, reloaders *configReloaders, opts ...SamplerOption) (*Sampler, error) {
 	s := &Sampler{
 		logger:        log.NewNopLogger(),
 		db:            db,
-		configFile:    configFile,
-		cfg:           cfg,
 		reloaders:     reloaders,
 		scrapeManager: scrape.NewManager(log.With(log.NewNopLogger(), "component", "scrape-manager"), db),
 	}
@@ -185,7 +183,25 @@ func NewSampler(db storage.Appendable, configFile string, reloaders *configReloa
 		}
 	}
 
+	if s.cfg == nil {
+		return nil, fmt.Errorf("provide config either by config file or targets")
+	}
+
 	return s, nil
+}
+
+func SamplerConfig(file string) SamplerOption {
+	return func(s *Sampler) error {
+		cfg, err := config.LoadFile(file)
+		if err != nil {
+			return fmt.Errorf("could not load config: %w", err)
+		}
+
+		s.configFile = file
+		s.cfg = cfg
+
+		return nil
+	}
 }
 
 func SamplerTargets(targets []string) SamplerOption {
@@ -215,10 +231,11 @@ scrape_configs:
 		}
 
 		s.configFile = tmpfile.Name()
-		s.cfg, err = config.LoadFile(s.configFile)
+		cfg, err := config.LoadFile(s.configFile)
 		if err != nil {
 			return fmt.Errorf("could not load config: %v", err)
 		}
+		s.cfg = cfg
 
 		return nil
 	}

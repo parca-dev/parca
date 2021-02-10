@@ -96,8 +96,9 @@ func runAll(
 
 	scrapeManager := scrape.NewManager(log.With(logger, "component", "scrape-manager"), db)
 
-	s, err := NewSampler(db, configFile, reloaders,
+	s, err := NewSampler(db, reloaders,
 		SamplerScraper(scrapeManager),
+		SamplerConfig(configFile),
 	)
 	if err != nil {
 		return nil, err
