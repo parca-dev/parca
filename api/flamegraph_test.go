@@ -36,3 +36,18 @@ func TestConsistentFlamegraph(t *testing.T) {
 		}
 	}
 }
+
+func TestDiffFlamegraph(t *testing.T) {
+	f, err := os.Open("testdata/diff.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(f)
+	require.NoError(t, err)
+
+	root, err := generateFlamegraphReport(p, "")
+	// Can create the graph nodes without error.
+	require.NoError(t, err)
+
+	_, err = json.Marshal(root)
+	// Marshals successfully to json.
+	require.NoError(t, err)
+}
