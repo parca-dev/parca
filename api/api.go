@@ -151,7 +151,7 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	}
 
 	limitString := r.URL.Query().Get("limit")
-	applyLimit := (limitString != "")
+	applyLimit := limitString != ""
 	limit := 0
 	if applyLimit {
 		var err error
@@ -166,12 +166,16 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
 
+	queryString := r.URL.Query().Get("query")
+	if queryString == "" {
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: errors.New("query cannot be empty")}
+	}
+
 	q, err := a.db.Querier(ctx, timestamp.FromTime(from), timestamp.FromTime(to))
 	if err != nil {
 		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
-	queryString := r.URL.Query().Get("query")
 	level.Debug(a.logger).Log("query", queryString, "from", from, "to", to)
 	sel, err := parser.ParseMetricSelector(queryString)
 	if err != nil {

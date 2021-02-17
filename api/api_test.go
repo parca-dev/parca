@@ -221,6 +221,11 @@ func TestAPIQueryRangeGRPCCall(t *testing.T) {
 			query:    url.Values{"query": []string{"allocs"}, "from": []string{"9"}, "to": []string{"1"}},
 			errType:  ErrorBadData,
 		},
+		// empty query parameter
+		{
+			endpoint: api.QueryRange,
+			errType:  ErrorBadData,
+		},
 	}
 
 	for i, test := range tests {
