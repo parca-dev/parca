@@ -36,20 +36,26 @@ Additionally, Google has written about continuous profiling in their whitepaper:
 
 Pre-built container images (for linux-amd64, linux-arm64, linux-armv7) can be found at: https://quay.io/repository/conprof/conprof .
 
-Build conprof binary from the root of the repo directory:
+Run the pre-built docker container (here we're using the `master-2021-02-15-56c07ca` tag, but choose any version you want to use from the above container image repo):
+
+```bash
+docker run --network host --rm -it -v /etc/passwd:/etc/passwd -u `id -u`:`id -g` -v `pwd`:`pwd`:z -w `pwd` quay.io/conprof/conprof:master-2021-02-15-56c07ca all --config.file examples/conprof.yaml --http-address :10902 --storage.tsdb.path ./data
+```
+
+You can also build the conprof binary yourself from the root of the repo directory:
 
 ```bash
 git clone git@github.com:conprof/conprof.git
 GO111MODULE=on GOPROXY=https://proxy.golang.org go install -v
 ```
 
-Run the example:
+Run the example with the binary you built:
 
 ```bash
-conprof all --config.file examples/conprof.yaml --http-address :8080 --storage.tsdb.path ./data
+conprof all --config.file examples/conprof.yaml --http-address :10902 --storage.tsdb.path ./data
 ```
 
-Open `http://localhost:8080/` and write a query like `{job="conprof"}` which after a short amount of time (1 minute should show some data point that can be clicked on). This is conprof profiling itself so the you run it the more data you get.
+Whether you use the simple process or docker, open `http://localhost:10902/` and write a query like `{job="conprof"}` which after a short amount of time (1 minute should show some data point that can be clicked on). This is conprof profiling itself so the you run it the more data you get.
 
 Here's a screenshot of an instance of conprof running for a couple of minutes, and having run the query `{job="conprof", profile_path="/debug/pprof/heap"}`, plotting samples of heap profiles taken over time.
 
