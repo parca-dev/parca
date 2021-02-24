@@ -15,10 +15,15 @@ import { RootState } from './reducers/index';
 
 function Routes() {
     const classes = useStyles();
+    const pathPrefix = window.location.pathname == '/' ? '' : window.location.pathname;
 
     return (
         <div className={classes.content}>
-            <Route component={QueryPage} />
+            <Route
+                render={(props) => (
+                    <QueryPage {...props} pathPrefix={pathPrefix} />
+                )}
+            />
         </div>
     );
 }

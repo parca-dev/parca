@@ -61,6 +61,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props extends RouteComponentProps<void>, WithStyles<typeof styles> {
     actions: Actions;
     query: Query;
+    pathPrefix: string;
 }
 
 interface State {
@@ -164,7 +165,7 @@ class QueryPage extends React.Component<Props, State> {
 
     execute() {
         if(this.state.now) {
-            this.props.actions.executeQuery(this.state.expression, this.state.timeFrom, moment(Date.now()));
+            this.props.actions.executeQuery(this.props.pathPrefix, this.state.expression, this.state.timeFrom, moment(Date.now()));
             let q: URLSearchParams = new URLSearchParams();
             q.append("query", this.state.expression);
             q.append("from", this.state.timeFrom.valueOf().toString());
@@ -172,7 +173,7 @@ class QueryPage extends React.Component<Props, State> {
             this.props.history.push({search: q.toString()});
             return
         }
-        this.props.actions.executeQuery(this.state.expression, this.state.timeFrom, this.state.timeTo);
+        this.props.actions.executeQuery(this.props.pathPrefix, this.state.expression, this.state.timeFrom, this.state.timeTo);
         let q: URLSearchParams = new URLSearchParams();
         q.append("query", this.state.expression);
         q.append("from", this.state.timeFrom.valueOf().toString());
@@ -251,7 +252,7 @@ class QueryPage extends React.Component<Props, State> {
                     {query.result.data.map(
                         (series: Series, i: number) => {
                             return (
-                                <Grid key={series.labelsetEncoded} item xs={8}>
+                                <Grid key={i} item xs={8}>
                                     <Paper className={classes.paper}>
                                         <div className={classes.labelSet}>{formatLabels(series.labels)}</div>
                                         <div style={{ width: '100%', height: 70 }}>
@@ -281,7 +282,7 @@ class QueryPage extends React.Component<Props, State> {
 }
 
 type Actions = {
-    executeQuery: (query: string, fromTime: moment.Moment, toTime: moment.Moment) => void
+    executeQuery: (pathPrefix: string, query: string, fromTime: moment.Moment, toTime: moment.Moment) => void
 }
 
 type Dispatch = {
