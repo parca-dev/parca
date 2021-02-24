@@ -11,7 +11,7 @@ spec:
   clusterIP: None
   ports:
   - name: http
-    port: 8080
+    port: 10902
     targetPort: http
   selector:
     app.kubernetes.io/instance: conprof

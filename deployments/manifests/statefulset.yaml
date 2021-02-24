@@ -29,7 +29,7 @@ spec:
         image: quay.io/conprof/conprof:master-2020-05-20-8e0ac0f
         name: conprof
         ports:
-        - containerPort: 8080
+        - containerPort: 10902
           name: http
         volumeMounts:
         - mountPath: /conprof

@@ -113,7 +113,7 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
         '--storage.tsdb.path=/conprof',
         '--config.file=/etc/conprof/conprof.yaml',
       ]) +
-      container.withPorts([{ name: 'http', containerPort: 8080 }]) +
+      container.withPorts([{ name: 'http', containerPort: 10902 }]) +
       container.withVolumeMounts([
         containerVolumeMount.new('storage', '/conprof'),
         containerVolumeMount.new('config', '/etc/conprof'),
@@ -147,7 +147,7 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
     local service = k.core.v1.service;
     local servicePort = service.mixin.spec.portsType;
 
-    local httpPort = servicePort.newNamed('http', 8080, 'http');
+    local httpPort = servicePort.newNamed('http', 10902, 'http');
 
     service.new(conprof.config.name, conprof.config.podLabelSelector, [httpPort]) +
     service.mixin.metadata.withNamespace(conprof.config.namespace) +
