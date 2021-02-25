@@ -1,7 +1,7 @@
 import { Action, ActionType, QueryResult } from '../model/model';
 import * as moment from 'moment';
 
-function pathJoin(parts: string[], sep: string){
+export function pathJoin(parts: string[], sep: string){
    var separator = sep || '/';
    var replace   = new RegExp(separator+'{1,}', 'g');
    return parts.join(separator).replace(replace, separator);
