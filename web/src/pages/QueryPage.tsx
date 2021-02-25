@@ -11,7 +11,7 @@ import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
 import { GridSpacing } from '@material-ui/core/Grid';
 import { RootState } from '../reducers/index';
-import { executeQuery } from '../actions/query';
+import { pathJoin, executeQuery } from '../actions/query';
 import { Query, Series } from '../model/model';
 import InputBase from '@material-ui/core/InputBase';
 import Divider from '@material-ui/core/Divider';
@@ -192,7 +192,7 @@ class QueryPage extends React.Component<Props, State> {
                 const data = payload;
                 const q = `{${Object.entries(data.labels).map(([labelName, labelValue]) => `${labelName}="${labelValue}"`).join(",")}}`;
 
-                window.open('/pprof/' + btoa(q) + '/' + data.timestamp + '/');
+                window.open(pathJoin([this.props.pathPrefix, '/pprof'], '/') + '/' + btoa(q) + '/' + data.timestamp + '/');
             }
         }
 
