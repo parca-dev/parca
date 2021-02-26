@@ -1,10 +1,12 @@
 package api
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os/exec"
 	"testing"
 
 	"github.com/go-kit/kit/log"
@@ -66,9 +68,7 @@ func TestRenderSVG(t *testing.T) {
 	)
 
 	w := httptest.NewRecorder()
-
-	err = r.Render(w)
-	require.NoError(t, err)
+	tryRender(t, r, w)
 
 	res := w.Result()
 	require.Equal(t, http.StatusOK, res.StatusCode)
@@ -134,4 +134,22 @@ func TestRenderTop(t *testing.T) {
 
 	res := w.Result()
 	require.Equal(t, http.StatusOK, res.StatusCode)
+}
+
+// A renderer renders output to an http.ResponseWriter.
+type renderer interface {
+	Render(w http.ResponseWriter) error
+}
+
+// tryRender calls r.Render but skips a test if certain conditions are not met.
+func tryRender(t *testing.T, r renderer, w http.ResponseWriter) {
+	t.Helper()
+
+	err := r.Render(w)
+	if errors.Is(err, exec.ErrNotFound) {
+		// SVG renderer requires a graphviz installation.
+		t.Skipf("skipping, missing executable: %v", err)
+	}
+
+	require.NoError(t, err)
 }

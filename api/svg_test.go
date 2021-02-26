@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSVGRengerer(t *testing.T) {
+func TestSVGRenderer(t *testing.T) {
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 	p, err := profile.Parse(f)
@@ -18,8 +18,7 @@ func TestSVGRengerer(t *testing.T) {
 
 	r := NewSVGRenderer(log.NewNopLogger(), p, "")
 	rec := httptest.NewRecorder()
-	err = r.Render(rec)
-	require.NoError(t, err)
+	tryRender(t, r, rec)
 
 	require.Greater(t, len(rec.Body.Bytes()), 0)
 }
