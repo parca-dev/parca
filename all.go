@@ -15,13 +15,13 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/conprof/db/tsdb"
 	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/model"
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/prober"
@@ -53,7 +53,7 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 			logger,
 			*storagePath,
 			*configFile,
-			*retention,
+			time.Duration(*retention),
 			reloadCh,
 			reloaders,
 			int64(*maxMergeBatchSize),
@@ -70,7 +70,7 @@ func runAll(
 	logger log.Logger,
 	storagePath,
 	configFile string,
-	retention model.Duration,
+	retention time.Duration,
 	reloadCh chan struct{},
 	reloaders *configReloaders,
 	maxMergeBatchSize int64,
@@ -80,10 +80,10 @@ func runAll(
 		logger,
 		prometheus.DefaultRegisterer,
 		&tsdb.Options{
-			RetentionDuration:      int64(retention),
+			RetentionDuration:      retention.Milliseconds(),
 			WALSegmentSize:         wal.DefaultSegmentSize,
 			MinBlockDuration:       tsdb.DefaultBlockDuration,
-			MaxBlockDuration:       int64(retention) / 10,
+			MaxBlockDuration:       retention.Milliseconds() / 10,
 			NoLockfile:             true,
 			AllowOverlappingBlocks: false,
 			WALCompression:         true,

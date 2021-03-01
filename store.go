@@ -55,10 +55,10 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 			logger,
 			prometheus.DefaultRegisterer,
 			&tsdb.Options{
-				RetentionDuration:      int64(*retention),
+				RetentionDuration:      time.Duration(*retention).Milliseconds(),
 				WALSegmentSize:         wal.DefaultSegmentSize,
 				MinBlockDuration:       tsdb.DefaultBlockDuration,
-				MaxBlockDuration:       int64(*retention) / 10,
+				MaxBlockDuration:       time.Duration(*retention).Milliseconds() / 10,
 				NoLockfile:             true,
 				AllowOverlappingBlocks: false,
 				WALCompression:         true,
