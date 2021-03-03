@@ -1,6 +1,7 @@
 # conprof - Continuous Profiling
 
 [![Docker Repository on Quay](https://quay.io/repository/conprof/conprof/status "Docker Repository on Quay")](https://quay.io/repository/conprof/conprof)
+[![Discord chat](https://img.shields.io/discord/813669360513056790)](https://discord.com/invite/knw3u5X9bs)
 
 Conprof is a continuous profiling project. Continuous profiling is the act of taking profiles of programs in a systematic way. Conprof collects, stores and makes profiles available to be queried over time.
 
