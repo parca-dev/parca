@@ -34,6 +34,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"gopkg.in/alecthomas/kingpin.v2"
 
+	conprofapi "github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
@@ -112,20 +113,33 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 		}
 		c := storepb.NewWritableProfileStoreClient(conn)
 
-		var samplerOpts []SamplerOption
+		db := store.NewGRPCAppendable(logger, c)
+		scrapeManager := scrape.NewManager(log.With(log.NewNopLogger(), "component", "scrape-manager"), db)
+
+		samplerOpts := []SamplerOption{
+			SamplerScraper(scrapeManager),
+		}
 		if len(*targets) > 0 {
 			samplerOpts = append(samplerOpts, SamplerTargets(*targets))
 		} else {
 			samplerOpts = append(samplerOpts, SamplerConfig(*configFile))
 		}
 
-		s, err := NewSampler(store.NewGRPCAppendable(logger, c), reloaders, samplerOpts...)
+		s, err := NewSampler(db, reloaders, samplerOpts...)
 		if err != nil {
 			return nil, err
 		}
 		if err := s.Run(context.TODO(), g, reloadCh); err != nil {
 			return nil, err
 		}
+
+		api := conprofapi.New(logger, reg, NopQuerier{}, reloadCh, 64*1024*1024,
+			func(ctx context.Context) conprofapi.TargetRetriever {
+				return scrapeManager
+			},
+		)
+		const apiPrefix = "/api/v1/"
+		mux.Handle(apiPrefix, api.Routes(apiPrefix))
 
 		probe.Ready()
 
@@ -299,4 +313,10 @@ func (s *Sampler) Run(_ context.Context, g *run.Group, reloadCh chan struct{}) e
 	}
 
 	return nil
+}
+
+type NopQuerier struct{}
+
+func (q NopQuerier) Querier(ctx context.Context, mint, maxt int64) (storage.Querier, error) {
+	return nil, fmt.Errorf("sampler has no TSDB")
 }
