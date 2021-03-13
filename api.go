@@ -75,7 +75,7 @@ func runApi(
 	logger = log.With(logger, "component", "api")
 
 	const apiPrefix = "/api/v1/"
-	api := conprofapi.New(logger, reg, nil,
+	api := conprofapi.New(logger, reg,
 		conprofapi.WithDB(db),
 		conprofapi.WithMaxMergeBatchSize(maxMergeBatchSize),
 		conprofapi.WithPrefix(apiPrefix),
