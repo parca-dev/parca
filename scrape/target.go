@@ -75,11 +75,8 @@ func (t *Target) String() string {
 // hash returns an identifying hash for the target.
 func (t *Target) hash() uint64 {
 	h := fnv.New64a()
-	//nolint: errcheck
-	h.Write([]byte(fmt.Sprintf("%016d", t.labels.Hash())))
-	//nolint: errcheck
-	h.Write([]byte(t.URL().String()))
-
+	_, _ = h.Write([]byte(fmt.Sprintf("%016d", t.labels.Hash())))
+	_, _ = h.Write([]byte(t.URL().String()))
 	return h.Sum64()
 }
 
@@ -220,48 +217,13 @@ func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.La
 	}
 
 	if c.PprofConfig != nil {
-		if c.PprofConfig.Allocs != nil {
-			add(ProfileAllocsType, c.PprofConfig.Allocs.PprofProfilingConfig)
-		}
-	}
-
-	if c.PprofConfig != nil {
-		if c.PprofConfig.Block != nil {
-			add(ProfileBlockType, c.PprofConfig.Block.PprofProfilingConfig)
-		}
-	}
-
-	if c.PprofConfig != nil {
-		if c.PprofConfig.Goroutine != nil {
-			add(ProfileGoroutineType, c.PprofConfig.Goroutine.PprofProfilingConfig)
-		}
-	}
-
-	if c.PprofConfig != nil {
-		if c.PprofConfig.Heap != nil {
-			add(ProfileHeapType, c.PprofConfig.Heap.PprofProfilingConfig)
-		}
-	}
-
-	if c.PprofConfig != nil {
-		if c.PprofConfig.Mutex != nil {
-			add(ProfileMutexType, c.PprofConfig.Mutex.PprofProfilingConfig)
-		}
-	}
-
-	if c.PprofConfig != nil {
-		if c.PprofConfig.Profile != nil {
-			add(ProfileProfileType, c.PprofConfig.Profile.PprofProfilingConfig)
-		}
-	}
-
-	if c.PprofConfig != nil {
-		if c.PprofConfig.Threadcreate != nil {
-			add(ProfileThreadCreateType, c.PprofConfig.Threadcreate.PprofProfilingConfig)
+		for profilingType, profilingConfig := range c.PprofConfig {
+			add(profilingType, *profilingConfig)
 		}
 	}
 
 	return res
+
 }
 
 // Targets is a sortable list of targets.
@@ -272,16 +234,10 @@ func (ts Targets) Less(i, j int) bool { return ts[i].URL().String() < ts[j].URL(
 func (ts Targets) Swap(i, j int)      { ts[i], ts[j] = ts[j], ts[i] }
 
 const (
-	ProfilePath             = "__profile_path__"
-	ProfileName             = "__name__"
-	ProfileAllocsType       = "allocs"
-	ProfileBlockType        = "block"
-	ProfileGoroutineType    = "goroutine"
-	ProfileHeapType         = "heap"
-	ProfileMutexType        = "mutex"
-	ProfileProfileType      = "profile"
-	ProfileThreadCreateType = "threadcreate"
-	ProfileTraceType        = "trace"
+	ProfilePath        = "__profile_path__"
+	ProfileName        = "__name__"
+	ProfileProfileType = "profile"
+	ProfileTraceType   = "trace"
 )
 
 // populateLabels builds a label set from the given label set and scrape configuration.
@@ -416,7 +372,7 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 					if params == nil {
 						params = url.Values{}
 					}
-					params.Add("seconds", strconv.Itoa(cfg.ProfilingConfig.PprofConfig.Profile.Seconds))
+					params.Add("seconds", strconv.Itoa(cfg.ProfilingConfig.PprofConfig[ProfileProfileType].Seconds))
 				}
 
 				targets = append(targets, NewTarget(lbls, origLabels, params))

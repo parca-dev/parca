@@ -41,49 +41,35 @@ func DefaultScrapeConfig() ScrapeConfig {
 		ScrapeTimeout:  model.Duration(time.Minute),
 		Scheme:         "http",
 		ProfilingConfig: &ProfilingConfig{
-			PprofConfig: &PprofConfig{
-				Allocs: &PprofAllocsConfig{
-					PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/allocs",
-					},
+			PprofConfig: PprofConfig{
+				"allocs": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/allocs",
 				},
-				Block: &PprofBlockConfig{
-					PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/block",
-					},
+				"block": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/block",
 				},
-				Goroutine: &PprofGoroutineConfig{
-					PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/goroutine",
-					},
+				"goroutine": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/goroutine",
 				},
-				Heap: &PprofHeapConfig{
-					PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/heap",
-					},
+				"heap": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/heap",
 				},
-				Mutex: &PprofMutexConfig{
-					PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/mutex",
-					},
+				"mutex": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/mutex",
 				},
-				Profile: &PprofProfileConfig{
-					PprofProfilingConfig: PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/profile",
-					},
+				"profile": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/profile",
 					Seconds: 30, // By default Go collects 30s profile.
 				},
-				Threadcreate: &PprofThreadcreateConfig{
-					PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/threadcreate",
-					},
+				"threadcreate": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/threadcreate",
 				},
 			},
 		},
@@ -171,25 +157,46 @@ type ServiceDiscoveryConfig struct {
 }
 
 type ProfilingConfig struct {
-	PprofConfig *PprofConfig `yaml:"pprof_config,omitempty"`
+	PprofConfig PprofConfig `yaml:"pprof_config,omitempty"`
 }
 
-type PprofConfig struct {
-	Allocs       *PprofAllocsConfig       `yaml:"allocs,omitempty"`
-	Block        *PprofBlockConfig        `yaml:"block,omitempty"`
-	Goroutine    *PprofGoroutineConfig    `yaml:"goroutine,omitempty"`
-	Heap         *PprofHeapConfig         `yaml:"heap,omitempty"`
-	Mutex        *PprofMutexConfig        `yaml:"mutex,omitempty"`
-	Profile      *PprofProfileConfig      `yaml:"profile,omitempty"`
-	Threadcreate *PprofThreadcreateConfig `yaml:"threadcreate,omitempty"`
-}
+type PprofConfig map[string]*PprofProfilingConfig
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
 func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	*c = DefaultScrapeConfig()
-	if err := discovery.UnmarshalYAMLWithInlineConfigs(c, unmarshal); err != nil {
+	defaults := DefaultScrapeConfig()
+	unmarshalled := ScrapeConfig{
+		ScrapeInterval: defaults.ScrapeInterval,
+		ScrapeTimeout:  defaults.ScrapeTimeout,
+		Scheme:         defaults.Scheme,
+	}
+	if err := discovery.UnmarshalYAMLWithInlineConfigs(&unmarshalled, unmarshal); err != nil {
 		return err
 	}
+
+	if unmarshalled.ProfilingConfig == nil {
+		unmarshalled.ProfilingConfig = defaults.ProfilingConfig
+	} else {
+		// Merge unmarshalled config with defaults
+		for pt, pc := range defaults.ProfilingConfig.PprofConfig {
+			// nothing set yet so simply use the default
+			if unmarshalled.ProfilingConfig.PprofConfig[pt] == nil {
+				unmarshalled.ProfilingConfig.PprofConfig[pt] = pc
+				continue
+			}
+			if unmarshalled.ProfilingConfig.PprofConfig[pt].Enabled == nil {
+				unmarshalled.ProfilingConfig.PprofConfig[pt].Enabled = trueValue()
+			}
+			if unmarshalled.ProfilingConfig.PprofConfig[pt].Path == "" {
+				unmarshalled.ProfilingConfig.PprofConfig[pt].Path = pc.Path
+			}
+			if unmarshalled.ProfilingConfig.PprofConfig[pt].Seconds == 0 {
+				unmarshalled.ProfilingConfig.PprofConfig[pt].Seconds = pc.Seconds
+			}
+		}
+	}
+
+	*c = unmarshalled
 
 	if len(c.JobName) == 0 {
 		return errors.New("job_name is empty")
@@ -235,38 +242,10 @@ func checkStaticTargets(configs discovery.Configs) error {
 	return nil
 }
 
-type PprofAllocsConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-}
-
-type PprofBlockConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-}
-
-type PprofGoroutineConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-}
-
-type PprofHeapConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-}
-
-type PprofMutexConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-}
-
-type PprofProfileConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-	Seconds              int `yaml:"seconds"`
-}
-
-type PprofThreadcreateConfig struct {
-	PprofProfilingConfig `yaml:",inline"`
-}
-
 type PprofProfilingConfig struct {
 	Enabled *bool  `yaml:"enabled,omitempty"`
 	Path    string `yaml:"path,omitempty"`
+	Seconds int    `yaml:"seconds"`
 }
 
 // CheckTargetAddress checks if target address is valid.
