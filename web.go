@@ -124,9 +124,15 @@ func WebTargets(targets func(context.Context) conprofapi.TargetRetriever) WebOpt
 func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
 	ui := pprofui.New(log.With(w.logger, "component", "pprofui"), w.db)
 
-	api := conprofapi.New(log.With(w.logger, "component", "api"), w.registry, w.db, reloadCh, w.maxMergeBatchSize, w.targets)
 	const apiPrefix = "/api/v1/"
-	w.mux.Handle(apiPrefix, api.Routes(apiPrefix))
+	api := conprofapi.New(log.With(w.logger, "component", "api"), w.registry,
+		conprofapi.WithDB(w.db),
+		conprofapi.WithMaxMergeBatchSize(w.maxMergeBatchSize),
+		conprofapi.WithReloadChannel(reloadCh),
+		conprofapi.WithTargets(w.targets),
+		conprofapi.WithPrefix(apiPrefix),
+	)
+	w.mux.Handle(apiPrefix, api.Routes())
 
 	if w.reloaders != nil {
 		w.reloaders.Register(api.ApplyConfig)

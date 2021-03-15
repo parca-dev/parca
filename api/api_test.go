@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 
@@ -35,7 +34,6 @@ import (
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
-	"github.com/conprof/conprof/config"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/pkg/testutil"
@@ -269,7 +267,7 @@ func TestAPILabelNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), prometheus.NewRegistry(), db, make(chan struct{}), DefaultMergeBatchSize, nil, GlobalURLOptions{}, sync.RWMutex{}, &config.Config{}}
+	api := New(log.NewNopLogger(), prometheus.NewRegistry(), WithDB(db))
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.LabelNames,
@@ -335,7 +333,8 @@ func TestAPILabelValues(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), prometheus.NewRegistry(), db, make(chan struct{}), DefaultMergeBatchSize, nil, GlobalURLOptions{}, sync.RWMutex{}, &config.Config{}}
+	//api := API{log.NewNopLogger(), prometheus.NewRegistry(), db, make(chan struct{}), DefaultMergeBatchSize, nil, GlobalURLOptions{}, sync.RWMutex{}, &config.Config{}}
+	api := New(log.NewNopLogger(), prometheus.NewRegistry(), WithDB(db))
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.LabelValues,
@@ -406,7 +405,7 @@ func TestAPISeries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := API{log.NewNopLogger(), prometheus.NewRegistry(), db, make(chan struct{}), DefaultMergeBatchSize, nil, GlobalURLOptions{}, sync.RWMutex{}, &config.Config{}}
+	api := New(log.NewNopLogger(), prometheus.NewRegistry(), WithDB(db))
 	var tests = []endpointTestCase{
 		{
 			endpoint: api.Series,
@@ -461,5 +460,5 @@ func createFakeGRPCAPI(t *testing.T) (*API, io.Closer) {
 
 	c := storepb.NewReadableProfileStoreClient(conn)
 	q := store.NewGRPCQueryable(c)
-	return New(log.NewNopLogger(), prometheus.NewRegistry(), q, make(chan struct{}), DefaultMergeBatchSize, NoTargets), lis
+	return New(log.NewNopLogger(), prometheus.NewRegistry(), WithDB(q)), lis
 }

@@ -133,13 +133,15 @@ func registerSampler(m map[string]setupFunc, app *kingpin.Application, name stri
 			return nil, err
 		}
 
-		api := conprofapi.New(logger, reg, NopQuerier{}, reloadCh, 64*1024*1024,
-			func(ctx context.Context) conprofapi.TargetRetriever {
-				return scrapeManager
-			},
-		)
 		const apiPrefix = "/api/v1/"
-		mux.Handle(apiPrefix, api.Routes(apiPrefix))
+		api := conprofapi.New(logger, reg,
+			conprofapi.WithPrefix(apiPrefix),
+			conprofapi.WithReloadChannel(reloadCh),
+			conprofapi.WithTargets(func(ctx context.Context) conprofapi.TargetRetriever {
+				return scrapeManager
+			}),
+		)
+		mux.Handle(apiPrefix, api.Routes())
 
 		probe.Ready()
 
@@ -313,10 +315,4 @@ func (s *Sampler) Run(_ context.Context, g *run.Group, reloadCh chan struct{}) e
 	}
 
 	return nil
-}
-
-type NopQuerier struct{}
-
-func (q NopQuerier) Querier(ctx context.Context, mint, maxt int64) (storage.Querier, error) {
-	return nil, fmt.Errorf("sampler has no TSDB")
 }

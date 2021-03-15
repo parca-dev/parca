@@ -78,48 +78,91 @@ type API struct {
 	maxMergeBatchSize int64
 	targets           func(context.Context) TargetRetriever
 	globalURLOptions  GlobalURLOptions
+	prefix            string
 
 	mu     sync.RWMutex
 	config *config.Config
 }
 
+type Option func(*API)
+
 func New(
 	logger log.Logger,
 	registry *prometheus.Registry,
-	db storage.Queryable,
-	reloadCh chan struct{},
-	maxMergeBatchSize int64,
-	targets func(ctx context.Context) TargetRetriever,
+
+	opts ...Option,
 ) *API {
-	return &API{
-		logger:            logger,
-		registry:          registry,
-		db:                db,
-		reloadCh:          reloadCh,
-		maxMergeBatchSize: maxMergeBatchSize,
-		targets:           targets,
+	a := &API{
+		logger:   logger,
+		registry: registry,
+		prefix:   "/api/v1/",
+		reloadCh: make(chan struct{}),
 		globalURLOptions: GlobalURLOptions{ // TODO pass into from flags
 			ListenAddress: "0.0.0.0:10902",
 			Host:          "0.0.0.0:10902",
 			Scheme:        "http",
 		},
 	}
+
+	for _, opt := range opts {
+		opt(a)
+	}
+
+	return a
+}
+
+func WithDB(db storage.Queryable) Option {
+	return func(a *API) {
+		a.db = db
+	}
+}
+
+func WithMaxMergeBatchSize(max int64) Option {
+	return func(a *API) {
+		a.maxMergeBatchSize = max
+	}
+}
+
+func WithTargets(targets func(ctx context.Context) TargetRetriever) Option {
+	return func(a *API) {
+		a.targets = targets
+	}
+}
+
+func WithPrefix(prefix string) Option {
+	return func(a *API) {
+		if !strings.HasSuffix(prefix, "/") {
+			prefix += "/"
+		}
+		a.prefix = prefix
+	}
+}
+
+func WithReloadChannel(reloadCh chan struct{}) Option {
+	return func(a *API) {
+		a.reloadCh = reloadCh
+	}
 }
 
 // Routes returns a http.Handler containing all routes of the API so that it can be mounted into a mux.
-func (a *API) Routes(prefix string) http.Handler {
+func (a *API) Routes() http.Handler {
 	r := httprouter.New()
 	r.RedirectTrailingSlash = false
 	ins := extpromhttp.NewInstrumentationMiddleware(a.registry)
 	instr := Instr(a.logger, ins)
 
-	r.GET(path.Join(prefix, "/query_range"), instr("query_range", a.QueryRange))
-	r.GET(path.Join(prefix, "/query"), instr("query", a.Query))
-	r.GET(path.Join(prefix, "/series"), instr("series", a.Series))
-	r.GET(path.Join(prefix, "/labels"), instr("label_names", a.LabelNames))
-	r.GET(path.Join(prefix, "/label/:name/values"), instr("label_values", a.LabelValues))
-	r.GET(path.Join(prefix, "/status/config"), instr("config", a.Config))
-	r.GET(path.Join(prefix, "/targets"), instr("targets", a.Targets))
+	if a.db != nil {
+		r.GET(path.Join(a.prefix, "/query_range"), instr("query_range", a.QueryRange))
+		r.GET(path.Join(a.prefix, "/query"), instr("query", a.Query))
+		r.GET(path.Join(a.prefix, "/series"), instr("series", a.Series))
+		r.GET(path.Join(a.prefix, "/labels"), instr("label_names", a.LabelNames))
+		r.GET(path.Join(a.prefix, "/label/:name/values"), instr("label_values", a.LabelValues))
+	}
+	if a.config != nil {
+		r.GET(path.Join(a.prefix, "/status/config"), instr("config", a.Config))
+	}
+
+	r.GET(path.Join(a.prefix, "/targets"), instr("targets", a.Targets))
 
 	return r
 }
