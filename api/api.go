@@ -273,13 +273,16 @@ func (a *API) findProfile(ctx context.Context, time time.Time, sel []*labels.Mat
 		return nil, err
 	}
 
+	requestedTime := timestamp.FromTime(time)
+
 	set := q.Select(false, nil, sel...)
 	for set.Next() {
 		series := set.At()
 		i := series.Iterator()
 		for i.Next() {
 			t, b := i.At()
-			if t == timestamp.FromTime(time) {
+			if t >= requestedTime {
+				// First profile whose timestamp is larger than or equal to the timestamp being searched for.
 				return profile.ParseData(b)
 			}
 		}
