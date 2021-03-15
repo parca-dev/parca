@@ -164,10 +164,39 @@ type PprofConfig map[string]*PprofProfilingConfig
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
 func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	*c = DefaultScrapeConfig()
-	if err := discovery.UnmarshalYAMLWithInlineConfigs(c, unmarshal); err != nil {
+	defaults := DefaultScrapeConfig()
+	unmarshalled := ScrapeConfig{
+		ScrapeInterval: defaults.ScrapeInterval,
+		ScrapeTimeout:  defaults.ScrapeTimeout,
+		Scheme:         defaults.Scheme,
+	}
+	if err := discovery.UnmarshalYAMLWithInlineConfigs(&unmarshalled, unmarshal); err != nil {
 		return err
 	}
+
+	if unmarshalled.ProfilingConfig == nil {
+		unmarshalled.ProfilingConfig = defaults.ProfilingConfig
+	} else {
+		// Merge unmarshalled config with defaults
+		for pt, pc := range defaults.ProfilingConfig.PprofConfig {
+			// nothing set yet so simply use the default
+			if unmarshalled.ProfilingConfig.PprofConfig[pt] == nil {
+				unmarshalled.ProfilingConfig.PprofConfig[pt] = pc
+				continue
+			}
+			if unmarshalled.ProfilingConfig.PprofConfig[pt].Enabled == nil {
+				unmarshalled.ProfilingConfig.PprofConfig[pt].Enabled = trueValue()
+			}
+			if unmarshalled.ProfilingConfig.PprofConfig[pt].Path == "" {
+				unmarshalled.ProfilingConfig.PprofConfig[pt].Path = pc.Path
+			}
+			if unmarshalled.ProfilingConfig.PprofConfig[pt].Seconds == 0 {
+				unmarshalled.ProfilingConfig.PprofConfig[pt].Seconds = pc.Seconds
+			}
+		}
+	}
+
+	*c = unmarshalled
 
 	if len(c.JobName) == 0 {
 		return errors.New("job_name is empty")
