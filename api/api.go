@@ -267,21 +267,24 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	return res, warn, nil
 }
 
-func (a *API) findProfile(ctx context.Context, time time.Time, sel []*labels.Matcher) (*profile.Profile, error) {
-	q, err := a.db.Querier(ctx, timestamp.FromTime(time), timestamp.FromTime(time))
+func (a *API) findProfile(ctx context.Context, t time.Time, sel []*labels.Matcher) (*profile.Profile, error) {
+	// Timestamps don't have to match exactly and staleness kicks in within 5
+	// minutes of no samples, so we need to search the range of -5min to +5min
+	// for possible samples.
+	q, err := a.db.Querier(ctx, timestamp.FromTime(t.Add(-time.Minute*5)), timestamp.FromTime(t.Add(time.Minute*5)))
 	if err != nil {
 		return nil, err
 	}
 
-	requestedTime := timestamp.FromTime(time)
+	requestedTime := timestamp.FromTime(t)
 
 	set := q.Select(false, nil, sel...)
 	for set.Next() {
 		series := set.At()
 		i := series.Iterator()
 		for i.Next() {
-			t, b := i.At()
-			if t >= requestedTime {
+			ts, b := i.At()
+			if ts >= requestedTime {
 				// First profile whose timestamp is larger than or equal to the timestamp being searched for.
 				return profile.ParseData(b)
 			}
