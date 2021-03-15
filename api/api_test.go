@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -54,8 +55,14 @@ func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.Readable
 	if err != nil {
 		return err
 	}
-	app.Append(1, []byte{})
-	app.Append(5, []byte{})
+
+	b, err := ioutil.ReadFile("./testdata/alloc_objects.pb.gz")
+	if err != nil {
+		return err
+	}
+
+	app.Append(1, b)
+	app.Append(5, b)
 
 	if err := srv.Send(storepb.NewSeriesResponse(&storepb.RawProfileSeries{
 		Labels: []labelpb.Label{
@@ -158,10 +165,31 @@ func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
 			t.Fatalf("Warnings do not match, expected:\n%+v\ngot:\n%+v", test.warn, warn)
 		}
 
-		if !reflect.DeepEqual(resp, test.response) {
+		if test.response != nil && !reflect.DeepEqual(resp, test.response) {
 			t.Fatalf("Response does not match, expected:\n%+v\ngot:\n%+v", test.response, resp)
 		}
 	})
+}
+
+func TestAPIQuery(t *testing.T) {
+	api, closer := createFakeGRPCAPI(t)
+	defer closer.Close()
+	var tests = []endpointTestCase{
+		{
+			endpoint: api.Query,
+			query: url.Values{
+				"mode":  []string{"single"},
+				"query": []string{"allocs"},
+				"time":  []string{"3"},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		if ok := testEndpoint(t, test, fmt.Sprintf("#%d %s", i, test.query.Encode())); !ok {
+			return
+		}
+	}
 }
 
 func TestAPIQueryRangeGRPCCall(t *testing.T) {
