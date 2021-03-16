@@ -190,6 +190,57 @@ func TestAPIQuery(t *testing.T) {
 	}
 }
 
+func TestAPIQueryDB(t *testing.T) {
+	lbl := labels.Labels{
+		labels.Label{Name: "__name__", Value: "allocs"},
+		labels.Label{Name: "foo", Value: "bar"},
+	}
+
+	db, err := testutil.NewTSDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		db.Close()
+	}()
+
+	b, err := ioutil.ReadFile("./testdata/alloc_objects.pb.gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	app := db.Appender(context.Background())
+	_, err = app.Add(lbl, 1, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = app.Add(lbl, 5, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := app.Commit(); err != nil {
+		t.Fatal(err)
+	}
+
+	api := New(log.NewNopLogger(), prometheus.NewRegistry(), WithDB(db))
+	var tests = []endpointTestCase{
+		{
+			endpoint: api.Query,
+			query: url.Values{
+				"mode":  []string{"single"},
+				"query": []string{"allocs"},
+				"time":  []string{"3"},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		if ok := testEndpoint(t, test, fmt.Sprintf("#%d %s", i, test.query.Encode())); !ok {
+			return
+		}
+	}
+}
+
 func TestAPIQueryRangeGRPCCall(t *testing.T) {
 	api, closer := createFakeGRPCAPI(t)
 	defer closer.Close()
