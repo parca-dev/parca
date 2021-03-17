@@ -183,12 +183,17 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProf
 				}
 			}
 
+			tcBytes, err := tc.Bytes()
+			if err != nil {
+				return err
+			}
+
 			c := storepb.AggrChunk{
 				MinTime: chk.MinTime,
 				MaxTime: chk.MaxTime,
 				Raw: &storepb.Chunk{
 					Type: storepb.Chunk_Encoding(chk.Chunk.Encoding() - 1), // Proto chunk encoding is one off to TSDB one.
-					Data: tc.Bytes(),
+					Data: tcBytes,
 				},
 			}
 			frameBytesLeft -= c.Size()
