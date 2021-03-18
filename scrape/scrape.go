@@ -409,7 +409,7 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 			return fmt.Errorf("empty %s profile from %s", profileType, s.req.URL.String())
 		}
 
-		if err := p.Write(w); err != nil {
+		if err := p.WriteUncompressed(w); err != nil {
 			return fmt.Errorf("write profile: %w", err)
 		}
 	}

@@ -42,6 +42,11 @@ func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.Readable
 	app.Append(1, []byte{})
 	app.Append(5, []byte{})
 
+	cbytes, err := c.Bytes()
+	if err != nil {
+		return err
+	}
+
 	if err := srv.Send(storepb.NewSeriesResponse(&storepb.RawProfileSeries{
 		Labels: []labelpb.Label{
 			{
@@ -55,7 +60,7 @@ func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.Readable
 				MaxTime: 10,
 				Raw: &storepb.Chunk{
 					Type: 1,
-					Data: c.Bytes(),
+					Data: cbytes,
 				},
 			},
 		},
