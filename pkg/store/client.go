@@ -180,6 +180,9 @@ func (q *grpcStoreQuerier) LabelValues(name string) ([]string, storage.Warnings,
 		Start: q.mint,
 		End:   q.maxt,
 	})
+	if err != nil {
+		return nil, nil, err
+	}
 
 	warnings := make(storage.Warnings, 0, len(resp.Warnings))
 	for _, w := range resp.Warnings {
@@ -194,6 +197,9 @@ func (q *grpcStoreQuerier) LabelNames() ([]string, storage.Warnings, error) {
 		Start: q.mint,
 		End:   q.maxt,
 	})
+	if err != nil {
+		return nil, nil, err
+	}
 
 	warnings := make(storage.Warnings, 0, len(resp.Warnings))
 	for _, w := range resp.Warnings {
