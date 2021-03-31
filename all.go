@@ -31,6 +31,14 @@ import (
 	"github.com/conprof/conprof/scrape"
 )
 
+type grpcSettings struct {
+	grpcBindAddr    string
+	grpcGracePeriod time.Duration
+	grpcCert        string
+	grpcKey         string
+	grpcClientCA    string
+}
+
 // registerAll registers the all command.
 func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}, reloaders *configReloaders) {
 	cmd := app.Command(name, "All in one command.")
@@ -42,6 +50,7 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
+	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
 		return runAll(
@@ -57,6 +66,13 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 			reloadCh,
 			reloaders,
 			int64(*maxMergeBatchSize),
+			&grpcSettings{
+				grpcBindAddr:    *grpcBindAddr,
+				grpcGracePeriod: time.Duration(*grpcGracePeriod),
+				grpcCert:        *grpcCert,
+				grpcKey:         *grpcKey,
+				grpcClientCA:    *grpcClientCA,
+			},
 		)
 	}
 }
@@ -74,6 +90,7 @@ func runAll(
 	reloadCh chan struct{},
 	reloaders *configReloaders,
 	maxMergeBatchSize int64,
+	srv *grpcSettings,
 ) (prober.Probe, error) {
 	db, err := tsdb.Open(
 		storagePath,
@@ -116,6 +133,24 @@ func runAll(
 		}),
 	)
 	if err = w.Run(context.TODO(), reloadCh); err != nil {
+		return nil, err
+	}
+
+	// run the grpc writable API
+	p, err = runStorage(
+		comp,
+		g,
+		p,
+		reg,
+		logger,
+		db,
+		srv.grpcBindAddr,
+		srv.grpcGracePeriod,
+		srv.grpcCert,
+		srv.grpcKey,
+		srv.grpcClientCA,
+	)
+	if err != nil {
 		return nil, err
 	}
 
