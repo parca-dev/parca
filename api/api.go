@@ -34,6 +34,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/common/route"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -79,6 +80,7 @@ type API struct {
 	targets           func(context.Context) TargetRetriever
 	globalURLOptions  GlobalURLOptions
 	prefix            string
+	queryRangeHist    prometheus.Histogram
 
 	mu     sync.RWMutex
 	config *config.Config
@@ -92,6 +94,7 @@ func New(
 
 	opts ...Option,
 ) *API {
+
 	a := &API{
 		logger:   logger,
 		registry: registry,
@@ -102,6 +105,11 @@ func New(
 			Host:          "0.0.0.0:10902",
 			Scheme:        "http",
 		},
+		queryRangeHist: promauto.With(registry).NewHistogram(prometheus.HistogramOpts{
+			Name:    "query_range_duration_seconds",
+			Help:    "A histogram of the duration of the query range",
+			Buckets: prometheus.ExponentialBuckets(15*60, 2, 10), // smallest bucket 15m
+		}),
 	}
 
 	for _, opt := range opts {
@@ -224,6 +232,9 @@ func (a *API) QueryRange(r *http.Request) (interface{}, []error, *ApiError) {
 	if err != nil {
 		return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 	}
+
+	// Record query window
+	a.queryRangeHist.Observe(to.Sub(from).Seconds())
 
 	set := q.Select(true, &storage.SelectHints{
 		Start: timestamp.FromTime(from),
