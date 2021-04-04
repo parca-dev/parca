@@ -92,15 +92,16 @@ func (a *API) mergeProfiles(ctx context.Context, from, to time.Time, sel []*labe
 	}
 
 	set := q.Select(false, nil, sel...)
-	mergedProfile, err := a.mergeSeriesSet(set, a.maxMergeBatchSize)
+	mergedProfile, count, err := mergeSeriesSet(set, a.maxMergeBatchSize)
 	if err != nil {
 		return nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
+	a.mergeSizeHist.Observe(float64(count))
 
 	return mergedProfile, nil
 }
 
-func (a *API) mergeSeriesSet(set storage.SeriesSet, maxMergeBatchSize int64) (*profile.Profile, error) {
+func mergeSeriesSet(set storage.SeriesSet, maxMergeBatchSize int64) (*profile.Profile, int, error) {
 	bi := newBatchIterator(set, maxMergeBatchSize)
 	profiles := []*profile.Profile{}
 	var acc *profile.Profile = nil
@@ -112,7 +113,7 @@ func (a *API) mergeSeriesSet(set storage.SeriesSet, maxMergeBatchSize int64) (*p
 		for _, b := range batch {
 			p, err := profile.ParseData(b)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			profiles = append(profiles, p)
 		}
@@ -125,17 +126,16 @@ func (a *API) mergeSeriesSet(set storage.SeriesSet, maxMergeBatchSize int64) (*p
 		var err error
 		acc, err = profile.Merge(append([]*profile.Profile{acc}, profiles...))
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		count += len(profiles)
 	}
-	a.mergeSizeHist.Observe(float64(count))
 	if err := bi.Err(); err != nil {
-		return nil, set.Err()
+		return nil, 0, set.Err()
 	}
 
-	return acc, nil
+	return acc, count, nil
 }
 
 func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, *ApiError) {
