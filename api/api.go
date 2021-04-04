@@ -81,6 +81,7 @@ type API struct {
 	globalURLOptions  GlobalURLOptions
 	prefix            string
 	queryRangeHist    prometheus.Histogram
+	mergeSizeHist     prometheus.Histogram
 
 	mu     sync.RWMutex
 	config *config.Config
@@ -109,6 +110,11 @@ func New(
 			Name:    "query_range_duration_seconds",
 			Help:    "A histogram of the duration of the query range",
 			Buckets: prometheus.ExponentialBuckets(15*60, 2, 10), // smallest bucket 15m
+		}),
+		mergeSizeHist: promauto.With(registry).NewHistogram(prometheus.HistogramOpts{
+			Name:    "merge_size_num_profiles",
+			Help:    "A histogram of number of profiles merged",
+			Buckets: prometheus.LinearBuckets(10, 10, 10),
 		}),
 	}
 
