@@ -128,7 +128,7 @@ func TestMergeSeriesSet(t *testing.T) {
 		}),
 	})
 
-	_, err = mergeSeriesSet(set, 2)
+	_, _, err = mergeSeriesSet(set, 2)
 	require.NoError(t, err)
 }
 
@@ -142,6 +142,6 @@ func TestMergeSeriesSetSingleSample(t *testing.T) {
 		}),
 	})
 
-	_, err = mergeSeriesSet(set, 2)
+	_, _, err = mergeSeriesSet(set, 2)
 	require.NoError(t, err)
 }
