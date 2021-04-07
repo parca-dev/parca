@@ -16,13 +16,16 @@ package main
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/julienschmidt/httprouter"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/model"
 	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -42,6 +45,8 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 		Default("127.0.0.1:10901").String()
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
+	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
+		Default("10s"))
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(*storeAddress, grpc.WithInsecure())
@@ -50,7 +55,11 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 		}
 		c := storepb.NewReadableProfileStoreClient(conn)
 
-		w := NewWeb(mux, store.NewGRPCQueryable(c), int64(*maxMergeBatchSize),
+		w := NewWeb(
+			mux,
+			store.NewGRPCQueryable(c),
+			int64(*maxMergeBatchSize),
+			*queryTimeout,
 			WebLogger(logger),
 			WebRegistry(reg),
 		)
@@ -72,10 +81,17 @@ type Web struct {
 	db                storage.Queryable
 	reloaders         *configReloaders
 	maxMergeBatchSize int64
+	queryTimeout      model.Duration
 	targets           func(context.Context) conprofapi.TargetRetriever
 }
 
-func NewWeb(mux httpMux, db storage.Queryable, maxMergeBatchSize int64, opts ...WebOption) *Web {
+func NewWeb(
+	mux httpMux,
+	db storage.Queryable,
+	maxMergeBatchSize int64,
+	queryTimeout model.Duration,
+	opts ...WebOption,
+) *Web {
 	w := &Web{
 		mux:               mux,
 		logger:            log.NewNopLogger(),
@@ -83,6 +99,7 @@ func NewWeb(mux httpMux, db storage.Queryable, maxMergeBatchSize int64, opts ...
 		db:                db,
 		reloaders:         nil,
 		maxMergeBatchSize: maxMergeBatchSize,
+		queryTimeout:      queryTimeout,
 		targets: func(ctx context.Context) conprofapi.TargetRetriever {
 			return nil
 		},
@@ -131,6 +148,7 @@ func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
 		conprofapi.WithReloadChannel(reloadCh),
 		conprofapi.WithTargets(w.targets),
 		conprofapi.WithPrefix(apiPrefix),
+		conprofapi.WithQueryTimeout(time.Duration(w.queryTimeout)),
 	)
 	w.mux.Handle(apiPrefix, api.Routes())
 

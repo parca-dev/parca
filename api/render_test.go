@@ -33,6 +33,7 @@ func TestRenderFlamegraph(t *testing.T) {
 	r := NewProfileResponseRenderer(
 		log.NewNopLogger(),
 		p,
+		nil,
 		req,
 	)
 
@@ -64,6 +65,7 @@ func TestRenderSVG(t *testing.T) {
 	r := NewProfileResponseRenderer(
 		log.NewNopLogger(),
 		p,
+		nil,
 		req,
 	)
 
@@ -93,6 +95,7 @@ func TestRenderMeta(t *testing.T) {
 	r := NewProfileResponseRenderer(
 		log.NewNopLogger(),
 		p,
+		nil,
 		req,
 	)
 
@@ -124,6 +127,7 @@ func TestRenderTop(t *testing.T) {
 	r := NewProfileResponseRenderer(
 		log.NewNopLogger(),
 		p,
+		nil,
 		req,
 	)
 

@@ -22,6 +22,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/model"
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/prober"
@@ -51,6 +52,8 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
+	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
+		Default("10s"))
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
 		return runAll(
@@ -66,6 +69,7 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 			reloadCh,
 			reloaders,
 			int64(*maxMergeBatchSize),
+			*queryTimeout,
 			&grpcSettings{
 				grpcBindAddr:    *grpcBindAddr,
 				grpcGracePeriod: time.Duration(*grpcGracePeriod),
@@ -90,6 +94,7 @@ func runAll(
 	reloadCh chan struct{},
 	reloaders *configReloaders,
 	maxMergeBatchSize int64,
+	queryTimeout model.Duration,
 	srv *grpcSettings,
 ) (prober.Probe, error) {
 	db, err := tsdb.Open(
@@ -124,7 +129,7 @@ func runAll(
 		return nil, err
 	}
 
-	w := NewWeb(mux, db, maxMergeBatchSize,
+	w := NewWeb(mux, db, maxMergeBatchSize, queryTimeout,
 		WebLogger(logger),
 		WebRegistry(reg),
 		WebReloaders(reloaders),

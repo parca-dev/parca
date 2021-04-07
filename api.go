@@ -14,11 +14,15 @@
 package main
 
 import (
+	"time"
+
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/model"
 	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -37,6 +41,8 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 		Default("127.0.0.1:10901").String()
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
+	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
+		Default("10s"))
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
 		conn, err := grpc.Dial(
@@ -60,6 +66,7 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 			logger,
 			store.NewGRPCQueryable(c),
 			int64(*maxMergeBatchSize),
+			*queryTimeout,
 		)
 	}
 }
@@ -71,6 +78,7 @@ func runApi(
 	logger log.Logger,
 	db storage.Queryable,
 	maxMergeBatchSize int64,
+	queryTimeout model.Duration,
 ) error {
 	logger = log.With(logger, "component", "api")
 
@@ -79,6 +87,7 @@ func runApi(
 		conprofapi.WithDB(db),
 		conprofapi.WithMaxMergeBatchSize(maxMergeBatchSize),
 		conprofapi.WithPrefix(apiPrefix),
+		conprofapi.WithQueryTimeout(time.Duration(queryTimeout)),
 	)
 	mux.Handle(apiPrefix, api.Routes())
 

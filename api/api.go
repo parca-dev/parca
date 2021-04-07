@@ -82,6 +82,7 @@ type API struct {
 	prefix            string
 	queryRangeHist    prometheus.Histogram
 	mergeSizeHist     prometheus.Histogram
+	queryTimeout      time.Duration
 
 	mu     sync.RWMutex
 	config *config.Config
@@ -155,6 +156,12 @@ func WithPrefix(prefix string) Option {
 func WithReloadChannel(reloadCh chan struct{}) Option {
 	return func(a *API) {
 		a.reloadCh = reloadCh
+	}
+}
+
+func WithQueryTimeout(t time.Duration) Option {
+	return func(a *API) {
+		a.queryTimeout = t
 	}
 }
 
@@ -315,7 +322,7 @@ func (a *API) findProfile(ctx context.Context, t time.Time, sel []*labels.Matche
 	return nil, set.Err()
 }
 
-func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, *ApiError) {
+func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, storage.Warnings, *ApiError) {
 	ctx := r.Context()
 
 	return a.profileByParameters(
@@ -328,27 +335,27 @@ func (a *API) SingleProfileQuery(r *http.Request) (*profile.Profile, *ApiError) 
 	)
 }
 
-func (a *API) profileByParameters(ctx context.Context, mode, time, query, from, to string) (*profile.Profile, *ApiError) {
+func (a *API) profileByParameters(ctx context.Context, mode, time, query, from, to string) (*profile.Profile, storage.Warnings, *ApiError) {
 	switch mode {
 	case "merge":
 		f, err := parseTime(from)
 		if err != nil {
-			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 
 		t, err := parseTime(to)
 		if err != nil {
-			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 
 		if t.Before(f) {
 			err := errors.New("to timestamp must not be before from time")
-			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 
 		sel, err := parser.ParseMetricSelector(query)
 		if err != nil {
-			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 
 		return a.mergeProfiles(ctx, f, t, sel)
@@ -356,35 +363,35 @@ func (a *API) profileByParameters(ctx context.Context, mode, time, query, from, 
 		t, err := parseTime(time)
 		if err != nil {
 			err = fmt.Errorf("unable to parse time: %w", err)
-			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 
 		sel, err := parser.ParseMetricSelector(query)
 		if err != nil {
 			err = fmt.Errorf("unable to parse query: %w", err)
-			return nil, &ApiError{Typ: ErrorBadData, Err: err}
+			return nil, nil, &ApiError{Typ: ErrorBadData, Err: err}
 		}
 
 		profile, err := a.findProfile(ctx, t, sel)
 		// TODO(bwplotka): Handle warnings.
 		if err != nil {
 			err = fmt.Errorf("unable to find profile: %w", err)
-			return nil, &ApiError{Typ: ErrorInternal, Err: err}
+			return nil, nil, &ApiError{Typ: ErrorInternal, Err: err}
 		}
 		if profile == nil {
-			return nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile not found")}
+			return nil, nil, &ApiError{Typ: ErrorNotFound, Err: errors.New("profile not found")}
 		}
 
-		return profile, nil
+		return profile, nil, nil
 	default:
-		return nil, &ApiError{Typ: ErrorBadData, Err: errors.New("no mode specified")}
+		return nil, nil, &ApiError{Typ: ErrorBadData, Err: errors.New("no mode specified")}
 	}
 }
 
-func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
+func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, storage.Warnings, *ApiError) {
 	ctx := r.Context()
 
-	profileA, apiErr := a.profileByParameters(ctx,
+	profileA, warningsA, apiErr := a.profileByParameters(ctx,
 		r.URL.Query().Get("mode_a"),
 		r.URL.Query().Get("time_a"),
 		r.URL.Query().Get("query_a"),
@@ -392,10 +399,10 @@ func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 		r.URL.Query().Get("to_a"),
 	)
 	if apiErr != nil {
-		return nil, apiErr
+		return nil, nil, apiErr
 	}
 
-	profileB, apiErr := a.profileByParameters(ctx,
+	profileB, warningsB, apiErr := a.profileByParameters(ctx,
 		r.URL.Query().Get("mode_b"),
 		r.URL.Query().Get("time_b"),
 		r.URL.Query().Get("query_b"),
@@ -403,8 +410,10 @@ func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 		r.URL.Query().Get("to_b"),
 	)
 	if apiErr != nil {
-		return nil, apiErr
+		return nil, nil, apiErr
 	}
+
+	warnings := append(warningsA, warningsB...)
 
 	// compare totals of profiles, skip this to subtract profiles from each other
 	profileA.SetLabel("pprof::base", []string{"true"})
@@ -415,40 +424,47 @@ func (a *API) DiffProfiles(r *http.Request) (*profile.Profile, *ApiError) {
 
 	// Merge profiles.
 	if err := measurement.ScaleProfiles(profiles); err != nil {
-		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
 
 	p, err := profile.Merge(profiles)
 	if err != nil {
-		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
 
-	return p, nil
+	return p, warnings, nil
 }
 
 func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	var (
-		profile *profile.Profile
-		apiErr  *ApiError
+		profile  *profile.Profile
+		warnings storage.Warnings
+		apiErr   *ApiError
 	)
+
+	ctx, cancel := context.WithTimeout(r.Context(), a.queryTimeout)
+	defer cancel()
+
+	r = r.WithContext(ctx)
+
 	switch r.URL.Query().Get("mode") {
 	case "diff":
-		profile, apiErr = a.DiffProfiles(r)
+		profile, warnings, apiErr = a.DiffProfiles(r)
 		if apiErr != nil {
 			return nil, nil, apiErr
 		}
 	case "merge":
-		profile, apiErr = a.MergeProfiles(r)
+		profile, warnings, apiErr = a.MergeProfiles(r)
 		if apiErr != nil {
 			return nil, nil, apiErr
 		}
 	case "single":
-		profile, apiErr = a.SingleProfileQuery(r)
+		profile, warnings, apiErr = a.SingleProfileQuery(r)
 		if apiErr != nil {
 			return nil, nil, apiErr
 		}
 	default:
-		profile, apiErr = a.SingleProfileQuery(r)
+		profile, warnings, apiErr = a.SingleProfileQuery(r)
 		if apiErr != nil {
 			return nil, nil, apiErr
 		}
@@ -458,7 +474,7 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 		logger:  a.logger,
 		profile: profile,
 		req:     r,
-	}, nil, nil
+	}, warnings, nil
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {

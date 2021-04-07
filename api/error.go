@@ -129,8 +129,8 @@ type SuccessResponse struct {
 	Warnings []error
 }
 
-func NewSuccessResponse(data interface{}) *SuccessResponse {
-	return &SuccessResponse{Data: data}
+func NewSuccessResponse(data interface{}, warnings []error) *SuccessResponse {
+	return &SuccessResponse{Data: data, Warnings: warnings}
 }
 
 func (r *SuccessResponse) Render(w http.ResponseWriter) error {

@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,6 +31,7 @@ import (
 	"github.com/prometheus/common/route"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
+	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/store/labelpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -48,6 +50,13 @@ func (s *fakeProfileStore) Write(ctx context.Context, r *storepb.WriteRequest) (
 }
 
 func (s *fakeProfileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProfileStore_SeriesServer) error {
+	ctx := srv.Context()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	c := chunkenc.NewBytesChunk()
 	app, err := c.Appender()
 	if err != nil {
@@ -137,26 +146,30 @@ type endpointTestCase struct {
 	errType  ErrorType
 }
 
+func executeEndpoint(t *testing.T, test endpointTestCase) (interface{}, []error, *ApiError) {
+	// Build a context with the correct request params.
+	ctx := context.Background()
+	for p, v := range test.params {
+		ctx = route.WithParam(ctx, p, v)
+	}
+
+	reqURL := "http://example.com"
+	params := test.query.Encode()
+
+	var body io.Reader
+	reqURL += "?" + params
+
+	req, err := http.NewRequest(http.MethodGet, reqURL, body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return test.endpoint(req.WithContext(ctx))
+}
+
 func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
 	return t.Run(name, func(t *testing.T) {
-		// Build a context with the correct request params.
-		ctx := context.Background()
-		for p, v := range test.params {
-			ctx = route.WithParam(ctx, p, v)
-		}
-
-		reqURL := "http://example.com"
-		params := test.query.Encode()
-
-		var body io.Reader
-		reqURL += "?" + params
-
-		req, err := http.NewRequest(http.MethodGet, reqURL, body)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		resp, warn, apiErr := test.endpoint(req.WithContext(ctx))
+		resp, warn, apiErr := executeEndpoint(t, test)
 		if apiErr != nil {
 			if test.errType == ErrorNone {
 				t.Fatalf("Unexpected error: %s", apiErr)
@@ -166,6 +179,7 @@ func testEndpoint(t *testing.T, test endpointTestCase, name string) bool {
 			}
 			return
 		}
+
 		if test.errType != ErrorNone {
 			t.Fatalf("Expected error of type %q but got none", test.errType)
 		}
@@ -198,6 +212,28 @@ func TestAPIQuery(t *testing.T) {
 			return
 		}
 	}
+}
+
+func TestAPIMergeTimeout(t *testing.T) {
+	s := store.NewEndlessProfileStore()
+
+	api, closer := createGRPCAPI(t, s, s)
+	defer closer.Close()
+	var testCase = endpointTestCase{
+		endpoint: api.Query,
+		query: url.Values{
+			"mode":   []string{"merge"},
+			"query":  []string{"allocs"},
+			"from":   []string{"0"},
+			"to":     []string{"3"},
+			"report": []string{"meta"},
+		},
+	}
+
+	_, warn, _ := executeEndpoint(t, testCase)
+	require.Equal(t, 1, len(warn))
+	require.True(t, strings.HasPrefix(warn[0].Error(), "merge timeout exceeded, used partial merge of "))
+	require.True(t, strings.HasSuffix(warn[0].Error(), " samples"))
 }
 
 func TestAPIQueryDB(t *testing.T) {
@@ -549,5 +585,37 @@ func createFakeGRPCAPI(t *testing.T) (*API, io.Closer) {
 
 	c := storepb.NewReadableProfileStoreClient(conn)
 	q := store.NewGRPCQueryable(c)
-	return New(log.NewNopLogger(), prometheus.NewRegistry(), WithDB(q)), lis
+	return New(
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		WithDB(q),
+		WithQueryTimeout(200*time.Millisecond),
+	), lis
+}
+
+func createGRPCAPI(t *testing.T, read storepb.ReadableProfileStoreServer, write storepb.WritableProfileStoreServer) (*API, io.Closer) {
+	lis, err := net.Listen("tcp", ":0")
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+	grpcServer := grpc.NewServer()
+	storepb.RegisterReadableProfileStoreServer(grpcServer, read)
+	storepb.RegisterWritableProfileStoreServer(grpcServer, write)
+	go grpcServer.Serve(lis)
+
+	storeAddress := lis.Addr().String()
+
+	conn, err := grpc.Dial(storeAddress, grpc.WithInsecure())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := storepb.NewReadableProfileStoreClient(conn)
+	q := store.NewGRPCQueryable(c)
+	return New(
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		WithDB(q),
+		WithQueryTimeout(200*time.Millisecond),
+	), lis
 }
