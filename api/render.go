@@ -8,20 +8,23 @@ import (
 )
 
 type ProfileResponseRenderer struct {
-	logger  log.Logger
-	profile *profile.Profile
-	req     *http.Request
+	logger   log.Logger
+	profile  *profile.Profile
+	warnings []error
+	req      *http.Request
 }
 
 func NewProfileResponseRenderer(
 	logger log.Logger,
 	profile *profile.Profile,
+	warnings []error,
 	req *http.Request,
 ) *ProfileResponseRenderer {
 	return &ProfileResponseRenderer{
-		logger:  logger,
-		profile: profile,
-		req:     req,
+		logger:   logger,
+		profile:  profile,
+		warnings: warnings,
+		req:      req,
 	}
 }
 
@@ -33,21 +36,21 @@ func (r *ProfileResponseRenderer) Render(w http.ResponseWriter) error {
 			return err
 		}
 
-		return NewSuccessResponse(meta).Render(w)
+		return NewSuccessResponse(meta, r.warnings).Render(w)
 	case "top":
 		top, err := generateTopReport(r.profile, r.req.URL.Query().Get("sample_index"))
 		if err != nil {
 			return err
 		}
 
-		return NewSuccessResponse(top).Render(w)
+		return NewSuccessResponse(top, r.warnings).Render(w)
 	case "flamegraph":
 		fg, err := generateFlamegraphReport(r.profile, r.req.URL.Query().Get("sample_index"))
 		if err != nil {
 			return err
 		}
 
-		return NewSuccessResponse(fg).Render(w)
+		return NewSuccessResponse(fg, r.warnings).Render(w)
 	case "proto":
 		return NewProtoRenderer(r.profile).Render(w)
 	case "svg":

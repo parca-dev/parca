@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"io/ioutil"
 	"testing"
 
@@ -128,7 +129,7 @@ func TestMergeSeriesSet(t *testing.T) {
 		}),
 	})
 
-	_, _, err = mergeSeriesSet(set, 2)
+	_, _, err = mergeSeriesSet(context.Background(), set, 2)
 	require.NoError(t, err)
 }
 
@@ -142,6 +143,6 @@ func TestMergeSeriesSetSingleSample(t *testing.T) {
 		}),
 	})
 
-	_, _, err = mergeSeriesSet(set, 2)
+	_, _, err = mergeSeriesSet(context.Background(), set, 2)
 	require.NoError(t, err)
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,7 +13,21 @@ import (
 	"github.com/prometheus/prometheus/pkg/timestamp"
 )
 
-var DefaultMergeBatchSize = int64(1024 * 1024 * 64) // 64Mb
+var (
+	DefaultMergeBatchSize = int64(1024 * 1024 * 64) // 64Mb
+)
+
+type MergeTimeoutError struct {
+	mergedSamplesCount int
+}
+
+func NewMergeTimeoutError(count int) *MergeTimeoutError {
+	return &MergeTimeoutError{mergedSamplesCount: count}
+}
+
+func (e *MergeTimeoutError) Error() string {
+	return fmt.Sprintf("merge timeout exceeded, used partial merge of %d samples", e.mergedSamplesCount)
+}
 
 type batchIterator struct {
 	set          storage.SeriesSet
@@ -85,23 +100,27 @@ func (i *batchIterator) Err() error {
 	return i.err
 }
 
-func (a *API) mergeProfiles(ctx context.Context, from, to time.Time, sel []*labels.Matcher) (*profile.Profile, *ApiError) {
+func (a *API) mergeProfiles(ctx context.Context, from, to time.Time, sel []*labels.Matcher) (*profile.Profile, storage.Warnings, *ApiError) {
 	q, err := a.db.Querier(ctx, timestamp.FromTime(from), timestamp.FromTime(to))
 	if err != nil {
-		return nil, &ApiError{Typ: ErrorExec, Err: err}
+		return nil, nil, &ApiError{Typ: ErrorExec, Err: err}
 	}
 
 	set := q.Select(false, nil, sel...)
-	mergedProfile, count, err := mergeSeriesSet(set, a.maxMergeBatchSize)
-	if err != nil {
-		return nil, &ApiError{Typ: ErrorInternal, Err: err}
+	mergedProfile, count, err := mergeSeriesSet(ctx, set, a.maxMergeBatchSize)
+	if err != nil && err != context.DeadlineExceeded {
+		return nil, nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+	var warnings storage.Warnings = nil
+	if err != nil && err == context.DeadlineExceeded {
+		warnings = append(warnings, NewMergeTimeoutError(count))
 	}
 	a.mergeSizeHist.Observe(float64(count))
 
-	return mergedProfile, nil
+	return mergedProfile, warnings, nil
 }
 
-func mergeSeriesSet(set storage.SeriesSet, maxMergeBatchSize int64) (*profile.Profile, int, error) {
+func mergeSeriesSet(ctx context.Context, set storage.SeriesSet, maxMergeBatchSize int64) (*profile.Profile, int, error) {
 	bi := newBatchIterator(set, maxMergeBatchSize)
 	profiles := []*profile.Profile{}
 	var acc *profile.Profile = nil
@@ -132,13 +151,13 @@ func mergeSeriesSet(set storage.SeriesSet, maxMergeBatchSize int64) (*profile.Pr
 		count += len(profiles)
 	}
 	if err := bi.Err(); err != nil {
-		return nil, 0, set.Err()
+		return nil, 0, bi.Err()
 	}
 
-	return acc, count, nil
+	return acc, count, ctx.Err()
 }
 
-func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, *ApiError) {
+func (a *API) MergeProfiles(r *http.Request) (*profile.Profile, storage.Warnings, *ApiError) {
 	ctx := r.Context()
 
 	return a.profileByParameters(
