@@ -230,10 +230,11 @@ func TestAPIMergeTimeout(t *testing.T) {
 		},
 	}
 
-	_, warn, _ := executeEndpoint(t, testCase)
+	resp, warn, _ := executeEndpoint(t, testCase)
 	require.Equal(t, 1, len(warn))
 	require.True(t, strings.HasPrefix(warn[0].Error(), "merge timeout exceeded, used partial merge of "))
 	require.True(t, strings.HasSuffix(warn[0].Error(), " samples"))
+	require.NotNil(t, resp.(*ProfileResponseRenderer).profile)
 }
 
 func TestAPIQueryDB(t *testing.T) {

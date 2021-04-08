@@ -28,7 +28,7 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/thanos-io/thanos/pkg/store/labelpb"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -144,9 +144,9 @@ func (s *profileStore) Series(r *storepb.SeriesRequest, srv storepb.ReadableProf
 
 	_, span := tracer.Start(ctx, "iterate-chunk-series-set")
 	if r.SelectHints != nil {
-		span.SetAttributes(label.Key("select-hint-min").Int64(r.SelectHints.Start))
-		span.SetAttributes(label.Key("select-hint-max").Int64(r.SelectHints.End))
-		span.SetAttributes(label.Key("select-hint-func").String(r.SelectHints.Func))
+		span.SetAttributes(attribute.Key("select-hint-min").Int64(r.SelectHints.Start))
+		span.SetAttributes(attribute.Key("select-hint-max").Int64(r.SelectHints.End))
+		span.SetAttributes(attribute.Key("select-hint-func").String(r.SelectHints.Func))
 	}
 	defer span.End()
 

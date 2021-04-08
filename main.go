@@ -35,6 +35,7 @@ import (
 	httpserver "github.com/thanos-io/thanos/pkg/server/http"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -201,11 +202,11 @@ func cors(corsOrigin, corsMethods string, h http.Handler) http.Handler {
 
 func initTracer(logger log.Logger, serviceName string, otlpAddress string) func() {
 	ctx := context.Background()
-	exporter, err := otlp.NewExporter(
-		ctx,
-		otlp.WithInsecure(),
-		otlp.WithAddress(otlpAddress),
+	driver := otlpgrpc.NewDriver(
+		otlpgrpc.WithInsecure(),
+		otlpgrpc.WithEndpoint(otlpAddress),
 	)
+	exporter, err := otlp.NewExporter(ctx, driver)
 	handleErr(logger, err, "failed to create exporter")
 
 	res, err := resource.New(ctx,
@@ -217,7 +218,7 @@ func initTracer(logger log.Logger, serviceName string, otlpAddress string) func(
 
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
 	tracerProvider := sdktrace.NewTracerProvider(
-		sdktrace.WithConfig(sdktrace.Config{DefaultSampler: sdktrace.AlwaysSample()}),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithResource(res),
 		sdktrace.WithSpanProcessor(bsp),
 	)

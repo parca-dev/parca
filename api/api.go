@@ -471,9 +471,10 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 	}
 
 	return &ProfileResponseRenderer{
-		logger:  a.logger,
-		profile: profile,
-		req:     r,
+		logger:   a.logger,
+		profile:  profile,
+		warnings: warnings,
+		req:      r,
 	}, warnings, nil
 }
 

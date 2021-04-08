@@ -129,29 +129,49 @@ func mergeSeriesSet(ctx context.Context, set storage.SeriesSet, maxMergeBatchSiz
 		profiles = profiles[:0]
 		batch := bi.Batch()
 
-		for _, b := range batch {
-			p, err := profile.ParseData(b)
+		if acc == nil && len(batch) > 0 {
+			firstProfileBytes := batch[0]
+			var err error
+			acc, err = profile.ParseData(firstProfileBytes)
 			if err != nil {
 				return nil, 0, err
+			}
+
+			// Process all but the first profile as we have already parsed it
+			// to be the base profile.
+			batch = batch[1:]
+		}
+
+		for _, b := range batch {
+			select {
+			case <-ctx.Done():
+				return acc, count, ctx.Err()
+			default:
+			}
+
+			p, err := profile.ParseData(b)
+			if err != nil {
+				return acc, count, err
 			}
 			profiles = append(profiles, p)
 		}
 
-		if acc == nil && len(profiles) > 0 {
-			acc = profiles[0]
-			profiles = profiles[1:]
+		select {
+		case <-ctx.Done():
+			return acc, count, ctx.Err()
+		default:
 		}
 
-		var err error
-		acc, err = profile.Merge(append([]*profile.Profile{acc}, profiles...))
+		newAcc, err := profile.Merge(append([]*profile.Profile{acc}, profiles...))
 		if err != nil {
-			return nil, 0, err
+			return acc, count, err
 		}
 
+		acc = newAcc
 		count += len(profiles)
 	}
 	if err := bi.Err(); err != nil {
-		return nil, 0, bi.Err()
+		return acc, count, bi.Err()
 	}
 
 	return acc, count, ctx.Err()
