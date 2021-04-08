@@ -43,8 +43,9 @@ func (s *EndlessProfileStore) Series(r *storepb.SeriesRequest, srv storepb.Reada
 		return err
 	}
 
-	app.Append(1, b)
-	app.Append(5, b)
+	for j := int64(0); j < 12; j++ {
+		app.Append(j, b)
+	}
 
 	cbytes, err := c.Bytes()
 	if err != nil {
@@ -67,7 +68,7 @@ func (s *EndlessProfileStore) Series(r *storepb.SeriesRequest, srv storepb.Reada
 			Chunks: []storepb.AggrChunk{
 				{
 					MinTime: 0,
-					MaxTime: 10,
+					MaxTime: 12,
 					Raw: &storepb.Chunk{
 						Type: 1,
 						Data: cbytes,
