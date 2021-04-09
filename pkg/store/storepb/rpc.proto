@@ -51,6 +51,7 @@ message WriteResponse {
 
 message WriteRequest {
   repeated ProfileSeries profileSeries = 1 [(gogoproto.nullable) = false];
+  string tenant = 2;
 }
 
 // ProfileSeries represents samples and labels for a single time series.
