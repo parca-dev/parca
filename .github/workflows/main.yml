@@ -67,6 +67,9 @@ jobs:
       - name: Format.
         run: make format
 
+      - name: License.
+        run: make check_license
+
       - name: Linting & vetting.
         run: make lint
   e2e:
