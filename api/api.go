@@ -71,6 +71,10 @@ func (t NoTargetRetriever) TargetsDropped() map[string][]*scrape.Target {
 	return map[string][]*scrape.Target{}
 }
 
+type Symbolizer interface {
+	Symbolize(context.Context, *profile.Profile) error
+}
+
 type API struct {
 	logger            log.Logger
 	registry          *prometheus.Registry
@@ -83,6 +87,8 @@ type API struct {
 	queryRangeHist    prometheus.Histogram
 	mergeSizeHist     prometheus.Histogram
 	queryTimeout      time.Duration
+
+	symbolizer Symbolizer
 
 	mu     sync.RWMutex
 	config *config.Config
@@ -129,6 +135,12 @@ func New(
 func WithDB(db storage.Queryable) Option {
 	return func(a *API) {
 		a.db = db
+	}
+}
+
+func WithSymbolizer(s Symbolizer) Option {
+	return func(a *API) {
+		a.symbolizer = s
 	}
 }
 
@@ -470,12 +482,26 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 		}
 	}
 
+	// Attempt to symbolize all unsymbolized data.
+	err := a.symbolizeProfile(r.Context(), profile)
+	if apiErr != nil {
+		return nil, nil, &ApiError{Typ: ErrorInternal, Err: err}
+	}
+
 	return &ProfileResponseRenderer{
 		logger:   a.logger,
 		profile:  profile,
 		warnings: warnings,
 		req:      r,
 	}, warnings, nil
+}
+
+func (a *API) symbolizeProfile(ctx context.Context, p *profile.Profile) error {
+	if a.symbolizer != nil {
+		return a.symbolizer.Symbolize(ctx, p)
+	}
+
+	return nil
 }
 
 func parseMetadataTimeRange(r *http.Request, defaultMetadataTimeRange time.Duration) (time.Time, time.Time, error) {

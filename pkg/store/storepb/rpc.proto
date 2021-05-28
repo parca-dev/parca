@@ -23,6 +23,12 @@ service WritableProfileStore {
   rpc Write(WriteRequest) returns (WriteResponse) {}
 }
 
+// SymbolStore represents an API that can be asked which symbols exist and upload symbols.
+service SymbolStore {
+  rpc Exists(SymbolExistsRequest) returns (SymbolExistsResponse) {}
+  rpc Upload(stream SymbolUploadRequest) returns (SymbolUploadResponse) {}
+}
+
 // ReadableProfileStore represents API against instance that allows reading profiles from.
 service ReadableProfileStore {
   /// Series streams each Series (Labels and chunk/downsampling chunk) for given label matchers and time range.
@@ -152,4 +158,28 @@ message LabelValuesRequest {
 message LabelValuesResponse {
   repeated string values   = 1;
   repeated string warnings = 2;
+}
+
+message SymbolExistsRequest {
+  string id = 1;
+}
+
+message SymbolExistsResponse {
+  bool exists = 1;
+}
+
+message SymbolUploadRequest {
+  oneof data {
+    SymbolUploadInfo info = 1;
+    bytes chunk_data = 2;
+  }
+}
+
+message SymbolUploadInfo {
+  string id = 1;
+}
+
+message SymbolUploadResponse {
+  string id = 1;
+  uint64 size = 2;
 }

@@ -31,6 +31,7 @@ import (
 	conprofapi "github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
+	"github.com/conprof/conprof/symbol"
 )
 
 // registerApi registers a API command.
@@ -39,6 +40,7 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
+	symbolServerURL := cmd.Flag("symbol-server-url", "Symbol server to request to symbolize native stacktraces.").String()
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
@@ -67,6 +69,7 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 			store.NewGRPCQueryable(c),
 			int64(*maxMergeBatchSize),
 			*queryTimeout,
+			*symbolServerURL,
 		)
 	}
 }
@@ -79,8 +82,15 @@ func runApi(
 	db storage.Queryable,
 	maxMergeBatchSize int64,
 	queryTimeout model.Duration,
+	symbolServerURL string,
 ) error {
 	logger = log.With(logger, "component", "api")
+
+	var s *symbol.Symbolizer = nil
+	if symbolServerURL != "" {
+		c := symbol.NewSymbolServerClient(symbolServerURL)
+		s = symbol.NewSymbolizer(c)
+	}
 
 	const apiPrefix = "/api/v1/"
 	api := conprofapi.New(logger, reg,
@@ -88,6 +98,7 @@ func runApi(
 		conprofapi.WithMaxMergeBatchSize(maxMergeBatchSize),
 		conprofapi.WithPrefix(apiPrefix),
 		conprofapi.WithQueryTimeout(time.Duration(queryTimeout)),
+		conprofapi.WithSymbolizer(s),
 	)
 	mux.Handle(apiPrefix, api.Routes())
 

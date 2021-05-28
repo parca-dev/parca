@@ -34,6 +34,7 @@ import (
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/conprof/conprof/pprofui"
+	"github.com/conprof/conprof/symbol"
 	"github.com/conprof/conprof/web"
 )
 
@@ -43,6 +44,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
+	symbolServerURL := cmd.Flag("symbol-server-url", "Symbol server to request to symbolize native stacktraces.").String()
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
@@ -55,6 +57,12 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 		}
 		c := storepb.NewReadableProfileStoreClient(conn)
 
+		var s *symbol.Symbolizer = nil
+		if *symbolServerURL != "" {
+			c := symbol.NewSymbolServerClient(*symbolServerURL)
+			s = symbol.NewSymbolizer(c)
+		}
+
 		w := NewWeb(
 			mux,
 			store.NewGRPCQueryable(c),
@@ -62,6 +70,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 			*queryTimeout,
 			WebLogger(logger),
 			WebRegistry(reg),
+			WebSymbolizer(s),
 		)
 		err = w.Run(context.Background(), reloadCh)
 		if err != nil {
@@ -83,6 +92,7 @@ type Web struct {
 	maxMergeBatchSize int64
 	queryTimeout      model.Duration
 	targets           func(context.Context) conprofapi.TargetRetriever
+	symbolizer        *symbol.Symbolizer
 }
 
 func NewWeb(
@@ -120,6 +130,12 @@ func WebLogger(logger log.Logger) WebOption {
 	}
 }
 
+func WebSymbolizer(s *symbol.Symbolizer) WebOption {
+	return func(w *Web) {
+		w.symbolizer = s
+	}
+}
+
 func WebRegistry(registry *prometheus.Registry) WebOption {
 	return func(w *Web) {
 		w.registry = registry
@@ -149,6 +165,7 @@ func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
 		conprofapi.WithTargets(w.targets),
 		conprofapi.WithPrefix(apiPrefix),
 		conprofapi.WithQueryTimeout(time.Duration(w.queryTimeout)),
+		conprofapi.WithSymbolizer(w.symbolizer),
 	)
 	w.mux.Handle(apiPrefix, api.Routes())
 

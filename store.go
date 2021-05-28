@@ -21,10 +21,13 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extflag"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/extprom"
+	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -32,6 +35,8 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/conprof/conprof/pkg/store"
+	"github.com/conprof/conprof/pkg/store/storepb"
+	"github.com/conprof/conprof/symbol"
 )
 
 type componentString string
@@ -48,6 +53,7 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 		Default("./data").String()
 	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
+	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", true)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
 		db, err := tsdb.Open(
@@ -75,6 +81,7 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 			reg,
 			logger,
 			db,
+			objStoreConfig,
 			*grpcBindAddr,
 			time.Duration(*grpcGracePeriod),
 			*grpcCert,
@@ -91,6 +98,7 @@ func runStorage(
 	reg *prometheus.Registry,
 	logger log.Logger,
 	db *tsdb.DB,
+	objStoreConfig extflag.PathOrContent,
 	grpcBindAddr string,
 	grpcGracePeriod time.Duration,
 	grpcCert string,
@@ -106,9 +114,24 @@ func runStorage(
 	maxBytesPerFrame := 1024 * 1024 * 2 // 2 Mb default, might need to be tuned later on.
 	s := store.NewProfileStore(logger, db, maxBytesPerFrame)
 
+	confContentYaml, err := objStoreConfig.Content()
+	if err != nil {
+		return nil, err
+	}
+
+	var sym storepb.SymbolStoreServer
+	if len(confContentYaml) > 0 {
+		bkt, err := client.NewBucket(logger, confContentYaml, reg, comp.String())
+		if err != nil {
+			return nil, errors.Wrap(err, "create bucket client")
+		}
+		sym = symbol.NewSymbolStore(logger, bkt)
+	}
+
 	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, nil, nil, comp, grpcProbe,
 		grpcserver.WithServer(store.RegisterReadableStoreServer(s)),
 		grpcserver.WithServer(store.RegisterWritableStoreServer(s)),
+		grpcserver.WithServer(store.RegisterSymbolStore(sym)),
 		grpcserver.WithListen(grpcBindAddr),
 		grpcserver.WithGracePeriod(grpcGracePeriod),
 		grpcserver.WithGRPCServerOption(
