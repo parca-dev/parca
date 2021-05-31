@@ -92,7 +92,7 @@ func (s *profileStore) Write(ctx context.Context, r *storepb.WriteRequest) (*sto
 		}
 	}
 
-	return nil, app.Commit()
+	return &storepb.WriteResponse{}, app.Commit()
 }
 
 func (s *profileStore) Profile(ctx context.Context, r *storepb.ProfileRequest) (*storepb.ProfileResponse, error) {
