@@ -86,10 +86,10 @@ func runApi(
 ) error {
 	logger = log.With(logger, "component", "api")
 
-	var s *symbol.Symbolizer = nil
+	var s *symbol.Symbolizer
 	if symbolServerURL != "" {
 		c := symbol.NewSymbolServerClient(symbolServerURL)
-		s = symbol.NewSymbolizer(c)
+		s = symbol.NewSymbolizer(logger, c)
 	}
 
 	const apiPrefix = "/api/v1/"

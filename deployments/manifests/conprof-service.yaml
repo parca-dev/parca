@@ -4,15 +4,17 @@ metadata:
   labels:
     app.kubernetes.io/instance: conprof
     app.kubernetes.io/name: conprof
-    app.kubernetes.io/version: master-2020-05-20-8e0ac0f
+    app.kubernetes.io/version: 87e6b61b1feb
   name: conprof
   namespace: conprof
 spec:
-  clusterIP: None
   ports:
   - name: http
     port: 10902
     targetPort: http
+  - name: grpc
+    port: 10901
+    targetPort: grpc
   selector:
     app.kubernetes.io/instance: conprof
     app.kubernetes.io/name: conprof

@@ -60,7 +60,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 		var s *symbol.Symbolizer = nil
 		if *symbolServerURL != "" {
 			c := symbol.NewSymbolServerClient(*symbolServerURL)
-			s = symbol.NewSymbolizer(c)
+			s = symbol.NewSymbolizer(logger, c)
 		}
 
 		w := NewWeb(
@@ -155,7 +155,7 @@ func WebTargets(targets func(context.Context) conprofapi.TargetRetriever) WebOpt
 }
 
 func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
-	ui := pprofui.New(log.With(w.logger, "component", "pprofui"), w.db)
+	ui := pprofui.New(log.With(w.logger, "component", "pprofui"), w.db, w.symbolizer)
 
 	const apiPrefix = "/api/v1/"
 	api := conprofapi.New(log.With(w.logger, "component", "api"), w.registry,

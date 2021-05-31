@@ -53,7 +53,7 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 		Default("./data").String()
 	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
-	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", true)
+	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
 		db, err := tsdb.Open(

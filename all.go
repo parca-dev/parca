@@ -20,6 +20,7 @@ import (
 	"github.com/conprof/db/tsdb"
 	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
@@ -57,7 +58,7 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
 		Default("10s"))
-	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", true)
+	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
 		return runAll(
@@ -137,10 +138,11 @@ func runAll(
 		return nil, err
 	}
 
-	var sym *symbol.Symbolizer = nil
+	var sym *symbol.Symbolizer
 	if symbolServerURL != "" {
+		level.Debug(logger).Log("msg", "configuring symbol server", "url", symbolServerURL)
 		c := symbol.NewSymbolServerClient(symbolServerURL)
-		sym = symbol.NewSymbolizer(c)
+		sym = symbol.NewSymbolizer(logger, c)
 	}
 
 	w := NewWeb(mux, db, maxMergeBatchSize, queryTimeout,

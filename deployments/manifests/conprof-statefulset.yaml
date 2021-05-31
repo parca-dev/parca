@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: conprof
     app.kubernetes.io/name: conprof
-    app.kubernetes.io/version: master-2020-05-20-8e0ac0f
+    app.kubernetes.io/version: 87e6b61b1feb
   name: conprof
   namespace: conprof
 spec:
@@ -19,18 +19,28 @@ spec:
       labels:
         app.kubernetes.io/instance: conprof
         app.kubernetes.io/name: conprof
-        app.kubernetes.io/version: master-2020-05-20-8e0ac0f
+        app.kubernetes.io/version: 87e6b61b1feb
     spec:
       containers:
       - args:
         - all
         - --storage.tsdb.path=/conprof
         - --config.file=/etc/conprof/conprof.yaml
-        image: quay.io/conprof/conprof:master-2020-05-20-8e0ac0f
+        - --symbol-server-url=http://symbolicator.conprof.svc:3021/symbolicate
+        - --objstore.config=$(OBJSTORE_CONFIG)
+        env:
+        - name: OBJSTORE_CONFIG
+          valueFrom:
+            secretKeyRef:
+              key: conprof.yaml
+              name: conprof-objectstorage
+        image: quay.io/brancz/conprof:ce33dfad53fb
         name: conprof
         ports:
         - containerPort: 10902
           name: http
+        - containerPort: 10901
+          name: grpc
         volumeMounts:
         - mountPath: /conprof
           name: storage
@@ -46,4 +56,4 @@ spec:
         name: storage
       - name: config
         secret:
-          secretName: conprof-config
+          secretName: conprof

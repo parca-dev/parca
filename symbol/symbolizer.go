@@ -1,19 +1,36 @@
+// Copyright 2021 The conprof Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package symbol
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
 )
 
 type Symbolizer struct {
-	c *SymbolServerClient
+	logger log.Logger
+	c      *SymbolServerClient
 }
 
-func NewSymbolizer(c *SymbolServerClient) *Symbolizer {
+func NewSymbolizer(logger log.Logger, c *SymbolServerClient) *Symbolizer {
 	return &Symbolizer{
-		c: c,
+		logger: logger,
+		c:      c,
 	}
 }
 
@@ -21,7 +38,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, p *profile.Profile) error {
 	mappings := map[uint64]*profile.Mapping{}
 	locationIdxs := map[int]struct{}{}
 	for i, location := range p.Location {
-		if len(location.Line) == 0 {
+		if len(location.Line) == 0 && location.Mapping != nil {
 			locationIdxs[i] = struct{}{}
 			mappings[location.Mapping.ID] = location.Mapping
 		}
@@ -41,7 +58,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, p *profile.Profile) error {
 
 	locationAddrToIdx := map[string]int{}
 	for locationIdx := range locationIdxs {
-		locationAddr := fmt.Sprintf("%x", p.Location[locationIdx].Address)
+		locationAddr := fmt.Sprintf("0x%x", p.Location[locationIdx].Address)
 		locationAddrToIdx[locationAddr] = locationIdx
 		r.Stacktraces[0].Frames = append(r.Stacktraces[0].Frames, Frame{
 			InstructionAddr: locationAddr,
@@ -52,10 +69,11 @@ func (s *Symbolizer) Symbolize(ctx context.Context, p *profile.Profile) error {
 		r.Modules = append(r.Modules, Module{
 			Type:      "elf",
 			CodeID:    mapping.BuildID,
-			ImageAddr: fmt.Sprintf("%x", mapping.Start),
+			ImageAddr: fmt.Sprintf("0x%x", mapping.Start),
 		})
 	}
 
+	level.Debug(s.logger).Log("msg", "remote symbolization request")
 	res, err := s.c.Symbolicate(ctx, r)
 	if err != nil {
 		return err
@@ -65,17 +83,18 @@ func (s *Symbolizer) Symbolize(ctx context.Context, p *profile.Profile) error {
 	for _, stacktrace := range res.Stacktraces {
 		for _, frame := range stacktrace.Frames {
 			var f *profile.Function
-			fIdx, ok := functionIdx[fmt.Sprintf("%s:%s", frame.Function, frame.AbsPath)]
+			fIdx, ok := functionIdx[frame.Function+":"+frame.AbsPath]
 			if !ok {
 				f = &profile.Function{
-					ID:       uint64(len(p.Function)),
+					ID:       uint64(len(p.Function)) + 1,
 					Name:     frame.Function,
 					Filename: frame.AbsPath,
 				}
 				p.Function = append(p.Function, f)
 				fIdx = len(p.Function) - 1
-				functionIdx[fmt.Sprintf("%s:%s", frame.Function, frame.AbsPath)] = fIdx
+				functionIdx[frame.Function+":"+frame.AbsPath] = fIdx
 			}
+			f = p.Function[fIdx]
 			l := p.Location[locationAddrToIdx[frame.InstructionAddr]]
 			l.Line = append(l.Line, profile.Line{
 				Function: f,

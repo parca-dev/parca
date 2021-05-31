@@ -484,7 +484,7 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 
 	// Attempt to symbolize all unsymbolized data.
 	err := a.symbolizeProfile(r.Context(), profile)
-	if apiErr != nil {
+	if err != nil {
 		return nil, nil, &ApiError{Typ: ErrorInternal, Err: err}
 	}
 
@@ -497,7 +497,9 @@ func (a *API) Query(r *http.Request) (interface{}, []error, *ApiError) {
 }
 
 func (a *API) symbolizeProfile(ctx context.Context, p *profile.Profile) error {
+	level.Debug(a.logger).Log("msg", "remote symbolizing decision", "decision", a.symbolizer != nil)
 	if a.symbolizer != nil {
+		level.Debug(a.logger).Log("msg", "attempt remote symbolizing profile")
 		return a.symbolizer.Symbolize(ctx, p)
 	}
 
