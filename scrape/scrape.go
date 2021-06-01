@@ -134,7 +134,7 @@ func newScrapePool(cfg *config.ScrapeConfig, app Appendable, logger log.Logger) 
 		logger = log.NewNopLogger()
 	}
 
-	client, err := commonconfig.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName, false, false)
+	client, err := commonconfig.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName)
 	if err != nil {
 		// Any errors that could occur here should be caught during config validation.
 		level.Error(logger).Log("msg", "Error creating HTTP client", "err", err)
@@ -214,7 +214,7 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) {
 	sp.mtx.Lock()
 	defer sp.mtx.Unlock()
 
-	client, err := commonconfig.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName, false, false)
+	client, err := commonconfig.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName)
 	if err != nil {
 		// Any errors that could occur here should be caught during config validation.
 		level.Error(sp.logger).Log("msg", "Error creating HTTP client", "err", err)

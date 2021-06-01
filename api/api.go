@@ -169,7 +169,7 @@ func WithQueryTimeout(t time.Duration) Option {
 func (a *API) Routes() http.Handler {
 	r := httprouter.New()
 	r.RedirectTrailingSlash = false
-	ins := extpromhttp.NewInstrumentationMiddleware(a.registry)
+	ins := extpromhttp.NewInstrumentationMiddleware(a.registry, nil)
 	instr := Instr(a.logger, ins)
 
 	if a.db != nil {

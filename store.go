@@ -106,7 +106,7 @@ func runStorage(
 	maxBytesPerFrame := 1024 * 1024 * 2 // 2 Mb default, might need to be tuned later on.
 	s := store.NewProfileStore(logger, db, maxBytesPerFrame)
 
-	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, comp, grpcProbe,
+	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, nil, nil, comp, grpcProbe,
 		grpcserver.WithServer(store.RegisterReadableStoreServer(s)),
 		grpcserver.WithServer(store.RegisterWritableStoreServer(s)),
 		grpcserver.WithListen(grpcBindAddr),

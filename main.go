@@ -86,7 +86,7 @@ func main() {
 		Default("").String()
 	corsMethods := app.Flag("cors.access-control-allow-methods", "Cross-origin resource sharing allowed methods.").
 		Default("").String()
-	httpBindAddr, httpGracePeriod := extkingpin.RegisterHTTPFlags(app)
+	httpBindAddr, httpGracePeriod, _ := extkingpin.RegisterHTTPFlags(app)
 
 	cmds := map[string]setupFunc{}
 	reloadCh := make(chan struct{}, 1)
