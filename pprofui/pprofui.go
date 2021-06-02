@@ -169,67 +169,6 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, _ httprouter
 	}
 }
 
-func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	parts := strings.Split(path.Clean(strings.TrimPrefix(r.URL.Path, "/download/")), "/")
-	if len(parts) < 2 {
-		http.Error(w, "don't have enough parameters", http.StatusBadRequest)
-		return
-	}
-	series, timestamp := parts[0], parts[1]
-	level.Debug(p.logger).Log("msg", "parsed path", "series", series, "timestamp", timestamp)
-	decodedSeriesName, err := base64.URLEncoding.DecodeString(series)
-	if err != nil {
-		msg := fmt.Sprintf("could not decode series name: %s", err)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-	seriesLabelsString := string(decodedSeriesName)
-	m, err := parser.ParseMetricSelector(seriesLabelsString)
-	if err != nil {
-		msg := fmt.Sprintf("failed to parse series labels %v with error %v", seriesLabelsString, err)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-
-	t, err := stringToInt(timestamp)
-	if err != nil {
-		msg := fmt.Sprintf("failed to parse timestamp %s with error %v", timestamp, err)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-	buf, err := p.selectProfile(m, t)
-	if err != nil {
-		msg := fmt.Sprintf("failed to select profile with error %v", err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-
-	prof, err := profile.Parse(bytes.NewReader(buf))
-	if err != nil {
-		msg := fmt.Sprintf("failed to parse profile: %v", err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-
-	if p.symbolizer != nil {
-		err = p.symbolizer.Symbolize(r.Context(), prof)
-		if err != nil {
-			msg := fmt.Sprintf("failed to symbolize profile: %v", err)
-			http.Error(w, msg, http.StatusInternalServerError)
-			return
-		}
-	}
-
-	w.Header().Set("Content-Disposition", "attachment; filename=profile")
-	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
-	err = prof.Write(w)
-	if err != nil {
-		msg := fmt.Sprintf("failed to write profile: %v", err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-}
-
 type fetcherFn func(_ string, _, _ time.Duration) (*profile.Profile, string, error)
 
 func (f fetcherFn) Fetch(s string, d, t time.Duration) (*profile.Profile, string, error) {

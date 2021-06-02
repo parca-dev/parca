@@ -16,6 +16,7 @@ package report
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,9 +25,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/pprof/profile"
-
 	"github.com/conprof/conprof/internal/pprof/binutils"
+	"github.com/google/pprof/profile"
 )
 
 func TestWebList(t *testing.T) {
@@ -47,10 +47,78 @@ func TestWebList(t *testing.T) {
 	}
 	output := buf.String()
 
-	for _, expect := range []string{"func busyLoop", "callq", "math.Abs"} {
-		if !strings.Contains(output, expect) {
+	for _, expect := range []string{"func busyLoop", "callq.*mapassign"} {
+		if match, _ := regexp.MatchString(expect, output); !match {
 			t.Errorf("weblist output does not contain '%s':\n%s", expect, output)
 		}
+	}
+}
+
+func TestSourceSyntheticAddress(t *testing.T) {
+	testSourceMapping(t, true)
+}
+
+func TestSourceMissingMapping(t *testing.T) {
+	testSourceMapping(t, false)
+}
+
+// testSourceMapping checks that source info is found even when no applicable
+// Mapping/objectFile exists. The locations used in the test are either zero
+// (if zeroAddress is true), or non-zero (otherwise).
+func testSourceMapping(t *testing.T, zeroAddress bool) {
+	nextAddr := uint64(0)
+
+	makeLoc := func(name, fname string, line int64) *profile.Location {
+		if !zeroAddress {
+			nextAddr++
+		}
+		return &profile.Location{
+			Address: nextAddr,
+			Line: []profile.Line{
+				{
+					Function: &profile.Function{Name: name, Filename: fname},
+					Line:     line,
+				},
+			},
+		}
+	}
+
+	// Create profile that will need synthetic addresses since it has no mappings.
+	foo100 := makeLoc("foo", "foo.go", 100)
+	bar50 := makeLoc("bar", "bar.go", 50)
+	prof := &profile.Profile{
+		Sample: []*profile.Sample{
+			{
+				Value:    []int64{9},
+				Location: []*profile.Location{foo100, bar50},
+			},
+			{
+				Value:    []int64{17},
+				Location: []*profile.Location{bar50},
+			},
+		},
+	}
+	rpt := &Report{
+		prof: prof,
+		options: &Options{
+			Symbol:      regexp.MustCompile("foo|bar"),
+			SampleValue: func(s []int64) int64 { return s[0] },
+		},
+		formatValue: func(v int64) string { return fmt.Sprint(v) },
+	}
+
+	var out bytes.Buffer
+	err := PrintWebList(&out, rpt, nil, -1)
+	if err != nil {
+		t.Fatalf("PrintWebList returned unexpected error: %v", err)
+	}
+	got := out.String()
+	expect := regexp.MustCompile(
+		`(?s)` + // Allow "." to match newline
+			`bar\.go.* 50\b.* 17 +26 .*` +
+			`foo\.go.* 100\b.* 9 +9 `)
+	if !expect.MatchString(got) {
+		t.Errorf("expected regular expression %v does not match  output:\n%s\n", expect, got)
 	}
 }
 
@@ -165,6 +233,28 @@ func TestIndentation(t *testing.T) {
 	} {
 		if n := indentation(c.str); n != c.wantIndent {
 			t.Errorf("indentation(%v): got %d, want %d", c.str, n, c.wantIndent)
+		}
+	}
+}
+
+func TestRightPad(t *testing.T) {
+	for _, c := range []struct {
+		pad    int
+		in     string
+		expect string
+	}{
+		{0, "", ""},
+		{4, "", "    "},
+		{4, "x", "x   "},
+		{4, "abcd", "abcd"},   // No padding because of overflow
+		{4, "abcde", "abcde"}, // No padding because of overflow
+		{10, "\tx", "        x "},
+		{10, "w\txy\tz", "w       xy      z"},
+		{20, "w\txy\tz", "w       xy      z   "},
+	} {
+		out := rightPad(c.in, c.pad)
+		if out != c.expect {
+			t.Errorf("rightPad(%q, %d): got %q, want %q", c.in, c.pad, out, c.expect)
 		}
 	}
 }
