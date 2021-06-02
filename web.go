@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
+	"github.com/thanos-io/thanos/pkg/logging"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"google.golang.org/grpc"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -93,6 +94,7 @@ type Web struct {
 	queryTimeout      model.Duration
 	targets           func(context.Context) conprofapi.TargetRetriever
 	symbolizer        *symbol.Symbolizer
+	httpLogOpts       []logging.Option
 }
 
 func NewWeb(
@@ -130,6 +132,12 @@ func WebLogger(logger log.Logger) WebOption {
 	}
 }
 
+func WebLogOpts(httpLogOpts ...logging.Option) WebOption {
+	return func(w *Web) {
+		w.httpLogOpts = httpLogOpts
+	}
+}
+
 func WebSymbolizer(s *symbol.Symbolizer) WebOption {
 	return func(w *Web) {
 		w.symbolizer = s
@@ -157,6 +165,8 @@ func WebTargets(targets func(context.Context) conprofapi.TargetRetriever) WebOpt
 func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
 	ui := pprofui.New(log.With(w.logger, "component", "pprofui"), w.db, w.symbolizer)
 
+	logMiddleware := logging.NewHTTPServerMiddleware(w.logger, w.httpLogOpts...)
+
 	const apiPrefix = "/api/v1/"
 	api := conprofapi.New(log.With(w.logger, "component", "api"), w.registry,
 		conprofapi.WithDB(w.db),
@@ -167,7 +177,7 @@ func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
 		conprofapi.WithQueryTimeout(time.Duration(w.queryTimeout)),
 		conprofapi.WithSymbolizer(w.symbolizer),
 	)
-	w.mux.Handle(apiPrefix, api.Routes())
+	w.mux.Handle(apiPrefix, logMiddleware.HTTPMiddleware("api", api.Routes()))
 
 	if w.reloaders != nil {
 		w.reloaders.Register(api.ApplyConfig)

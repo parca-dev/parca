@@ -22,6 +22,8 @@ import (
 	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/oklog/run"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -31,6 +33,7 @@ import (
 	"github.com/thanos-io/thanos/pkg/extflag"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/extprom"
+	"github.com/thanos-io/thanos/pkg/logging"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
@@ -69,8 +72,19 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
 		Default("10s"))
 	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false)
+	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
+		httpLogOpts, err := logging.ParseHTTPOptions("", reqLogConfig)
+		if err != nil {
+			return probe, errors.Wrap(err, "error while parsing config for request logging")
+		}
+
+		tagOpts, grpcLogOpts, err := logging.ParsegRPCOptions("", reqLogConfig)
+		if err != nil {
+			return probe, errors.Wrap(err, "error while parsing config for request logging")
+		}
+
 		return runAll(
 			comp,
 			g,
@@ -78,6 +92,9 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 			probe,
 			reg,
 			logger,
+			httpLogOpts,
+			grpcLogOpts,
+			tagOpts,
 			*storagePath,
 			*configFile,
 			time.Duration(*retention),
@@ -105,6 +122,9 @@ func runAll(
 	probe prober.Probe,
 	reg *prometheus.Registry,
 	logger log.Logger,
+	httpLogOpts []logging.Option,
+	grpcLogOpts []grpc_logging.Option,
+	tagOpts []tags.Option,
 	storagePath,
 	configFile string,
 	retention time.Duration,
@@ -163,6 +183,7 @@ func runAll(
 			return scrapeManager
 		}),
 		WebSymbolizer(sym),
+		WebLogOpts(httpLogOpts...),
 	)
 	if err = w.Run(context.TODO(), reloadCh); err != nil {
 		return nil, err
@@ -191,7 +212,7 @@ func runAll(
 		symStore = symbol.NewSymbolStore(logger, bkt)
 	}
 
-	gsrv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, nil, nil, comp, grpcProbe,
+	gsrv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, grpcLogOpts, tagOpts, comp, grpcProbe,
 		grpcserver.WithServer(store.RegisterReadableStoreServer(s)),
 		grpcserver.WithServer(store.RegisterWritableStoreServer(s)),
 		grpcserver.WithServer(store.RegisterSymbolStore(symStore)),

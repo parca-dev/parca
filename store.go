@@ -19,12 +19,16 @@ import (
 	"github.com/conprof/db/tsdb"
 	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
+	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/oklog/run"
 	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/extprom"
+	"github.com/thanos-io/thanos/pkg/logging"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -48,8 +52,14 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 		Default("./data").String()
 	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
+	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
+		tagOpts, grpcLogOpts, err := logging.ParsegRPCOptions("", reqLogConfig)
+		if err != nil {
+			return probe, errors.Wrap(err, "error while parsing config for request logging")
+		}
+
 		db, err := tsdb.Open(
 			*storagePath,
 			logger,
@@ -74,6 +84,8 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 			probe,
 			reg,
 			logger,
+			grpcLogOpts,
+			tagOpts,
 			db,
 			*grpcBindAddr,
 			time.Duration(*grpcGracePeriod),
@@ -90,6 +102,8 @@ func runStorage(
 	probe prober.Probe,
 	reg *prometheus.Registry,
 	logger log.Logger,
+	grpcLogOpts []grpc_logging.Option,
+	tagOpts []tags.Option,
 	db *tsdb.DB,
 	grpcBindAddr string,
 	grpcGracePeriod time.Duration,
@@ -106,7 +120,7 @@ func runStorage(
 	maxBytesPerFrame := 1024 * 1024 * 2 // 2 Mb default, might need to be tuned later on.
 	s := store.NewProfileStore(logger, db, maxBytesPerFrame)
 
-	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, nil, nil, comp, grpcProbe,
+	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, grpcLogOpts, tagOpts, comp, grpcProbe,
 		grpcserver.WithServer(store.RegisterReadableStoreServer(s)),
 		grpcserver.WithServer(store.RegisterWritableStoreServer(s)),
 		grpcserver.WithListen(grpcBindAddr),

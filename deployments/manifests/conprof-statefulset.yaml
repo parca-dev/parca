@@ -34,7 +34,7 @@ spec:
             secretKeyRef:
               key: conprof.yaml
               name: conprof-objectstorage
-        image: quay.io/brancz/conprof:4807db7a9592
+        image: quay.io/brancz/conprof:9c385f215385
         name: conprof
         ports:
         - containerPort: 10902

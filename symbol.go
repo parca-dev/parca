@@ -17,6 +17,8 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
+	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/oklog/run"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -25,6 +27,7 @@ import (
 	"github.com/thanos-io/thanos/pkg/extflag"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/extprom"
+	"github.com/thanos-io/thanos/pkg/logging"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
@@ -42,14 +45,21 @@ func registerSymbol(m map[string]setupFunc, app *kingpin.Application, name strin
 
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
 	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false)
+	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
+		tagOpts, grpcLogOpts, err := logging.ParsegRPCOptions("", reqLogConfig)
+		if err != nil {
+			return probe, errors.Wrap(err, "error while parsing config for request logging")
+		}
 		return runSymbol(
 			comp,
 			g,
 			probe,
 			reg,
 			logger,
+			grpcLogOpts,
+			tagOpts,
 			objStoreConfig,
 			*grpcBindAddr,
 			time.Duration(*grpcGracePeriod),
@@ -66,6 +76,8 @@ func runSymbol(
 	probe prober.Probe,
 	reg *prometheus.Registry,
 	logger log.Logger,
+	grpcLogOpts []grpc_logging.Option,
+	tagOpts []tags.Option,
 	objStoreConfig extflag.PathOrContent,
 	grpcBindAddr string,
 	grpcGracePeriod time.Duration,
@@ -91,7 +103,7 @@ func runSymbol(
 	}
 	sym := symbol.NewSymbolStore(logger, bkt)
 
-	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, nil, nil, comp, grpcProbe,
+	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, grpcLogOpts, tagOpts, comp, grpcProbe,
 		grpcserver.WithServer(store.RegisterSymbolStore(sym)),
 		grpcserver.WithListen(grpcBindAddr),
 		grpcserver.WithGracePeriod(grpcGracePeriod),

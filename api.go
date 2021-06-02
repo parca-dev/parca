@@ -20,10 +20,12 @@ import (
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
+	"github.com/thanos-io/thanos/pkg/logging"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -46,8 +48,14 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 		Default("64MB").Bytes()
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
 		Default("10s"))
+	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
+		httpLogOpts, err := logging.ParseHTTPOptions("", reqLogConfig)
+		if err != nil {
+			return probe, errors.Wrap(err, "error while parsing config for request logging")
+		}
+
 		conn, err := grpc.Dial(
 			*storeAddress,
 			grpc.WithInsecure(),
@@ -67,6 +75,7 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 			probe,
 			reg,
 			logger,
+			httpLogOpts,
 			store.NewGRPCQueryable(c),
 			int64(*maxMergeBatchSize),
 			*queryTimeout,
@@ -80,6 +89,7 @@ func runApi(
 	probe prober.Probe,
 	reg *prometheus.Registry,
 	logger log.Logger,
+	httpLogOpts []logging.Option,
 	db storage.Queryable,
 	maxMergeBatchSize int64,
 	queryTimeout model.Duration,
@@ -93,6 +103,8 @@ func runApi(
 		s = symbol.NewSymbolizer(logger, c)
 	}
 
+	logMiddleware := logging.NewHTTPServerMiddleware(logger, httpLogOpts...)
+
 	const apiPrefix = "/api/v1/"
 	api := conprofapi.New(logger, reg,
 		conprofapi.WithDB(db),
@@ -101,7 +113,7 @@ func runApi(
 		conprofapi.WithQueryTimeout(time.Duration(queryTimeout)),
 		conprofapi.WithSymbolizer(s),
 	)
-	mux.Handle(apiPrefix, api.Routes())
+	mux.Handle(apiPrefix, logMiddleware.HTTPMiddleware("api", api.Routes()))
 
 	probe.Ready()
 
