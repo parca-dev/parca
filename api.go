@@ -14,15 +14,18 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/conprof/db/storage"
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	"github.com/thanos-io/thanos/pkg/component"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
+	"github.com/thanos-io/thanos/pkg/logging"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -31,6 +34,7 @@ import (
 	conprofapi "github.com/conprof/conprof/api"
 	"github.com/conprof/conprof/pkg/store"
 	"github.com/conprof/conprof/pkg/store/storepb"
+	"github.com/conprof/conprof/symbol"
 )
 
 // registerApi registers a API command.
@@ -39,12 +43,19 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
+	symbolServerURL := cmd.Flag("symbol-server-url", "Symbol server to request to symbolize native stacktraces. When not configured, non-symbolized stack traces will just show their memory address.").String()
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
 		Default("10s"))
+	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
+		httpLogOpts, err := logging.ParseHTTPOptions("", reqLogConfig)
+		if err != nil {
+			return probe, errors.Wrap(err, "error while parsing config for request logging")
+		}
+
 		conn, err := grpc.Dial(
 			*storeAddress,
 			grpc.WithInsecure(),
@@ -64,9 +75,11 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 			probe,
 			reg,
 			logger,
+			httpLogOpts,
 			store.NewGRPCQueryable(c),
 			int64(*maxMergeBatchSize),
 			*queryTimeout,
+			*symbolServerURL,
 		)
 	}
 }
@@ -76,11 +89,21 @@ func runApi(
 	probe prober.Probe,
 	reg *prometheus.Registry,
 	logger log.Logger,
+	httpLogOpts []logging.Option,
 	db storage.Queryable,
 	maxMergeBatchSize int64,
 	queryTimeout model.Duration,
+	symbolServerURL string,
 ) error {
 	logger = log.With(logger, "component", "api")
+
+	var s *symbol.Symbolizer
+	if symbolServerURL != "" {
+		c := symbol.NewSymbolServerClient(http.DefaultClient, symbolServerURL)
+		s = symbol.NewSymbolizer(logger, c)
+	}
+
+	logMiddleware := logging.NewHTTPServerMiddleware(logger, httpLogOpts...)
 
 	const apiPrefix = "/api/v1/"
 	api := conprofapi.New(logger, reg,
@@ -88,8 +111,9 @@ func runApi(
 		conprofapi.WithMaxMergeBatchSize(maxMergeBatchSize),
 		conprofapi.WithPrefix(apiPrefix),
 		conprofapi.WithQueryTimeout(time.Duration(queryTimeout)),
+		conprofapi.WithSymbolizer(s),
 	)
-	mux.Handle(apiPrefix, api.Routes())
+	mux.Handle(apiPrefix, logMiddleware.HTTPMiddleware("api", api.Routes()))
 
 	probe.Ready()
 

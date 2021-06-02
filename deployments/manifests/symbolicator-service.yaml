@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: symbolicator
+    app.kubernetes.io/name: symbolicator
+  name: symbolicator
+  namespace: conprof
+spec:
+  ports:
+  - port: 3021
+    protocol: TCP
+    targetPort: 3021
+  selector:
+    app.kubernetes.io/instance: symbolicator
+    app.kubernetes.io/name: symbolicator
+  type: ClusterIP

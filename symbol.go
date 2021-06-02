@@ -16,8 +16,6 @@ package main
 import (
 	"time"
 
-	"github.com/conprof/db/tsdb"
-	"github.com/conprof/db/tsdb/wal"
 	"github.com/go-kit/kit/log"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
@@ -26,9 +24,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/thanos/pkg/component"
+	"github.com/thanos-io/thanos/pkg/extflag"
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/extprom"
 	"github.com/thanos-io/thanos/pkg/logging"
+	objstore "github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -36,22 +36,15 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/conprof/conprof/pkg/store"
+	"github.com/conprof/conprof/symbol"
 )
 
-type componentString string
+// registerSymbol registers a symbol command.
+func registerSymbol(m map[string]setupFunc, app *kingpin.Application, name string) {
+	cmd := app.Command(name, "Run a symbol management server that allows checking for existence and uploading symbols.")
 
-func (c componentString) String() string {
-	return string(c)
-}
-
-// registerStorage registers a sampler command.
-func registerStorage(m map[string]setupFunc, app *kingpin.Application, name string, reloadCh chan struct{}) {
-	cmd := app.Command(name, "Run a sampler, that appends profiles to a configured storage.")
-
-	storagePath := cmd.Flag("storage.tsdb.path", "Directory to read storage from.").
-		Default("./data").String()
-	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
+	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false)
 	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
@@ -59,26 +52,7 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 		if err != nil {
 			return probe, errors.Wrap(err, "error while parsing config for request logging")
 		}
-
-		db, err := tsdb.Open(
-			*storagePath,
-			logger,
-			prometheus.DefaultRegisterer,
-			&tsdb.Options{
-				RetentionDuration:      time.Duration(*retention).Milliseconds(),
-				WALSegmentSize:         wal.DefaultSegmentSize,
-				MinBlockDuration:       tsdb.DefaultBlockDuration,
-				MaxBlockDuration:       time.Duration(*retention).Milliseconds() / 10,
-				NoLockfile:             true,
-				AllowOverlappingBlocks: false,
-				WALCompression:         true,
-				StripeSize:             tsdb.DefaultStripeSize,
-			},
-		)
-		if err != nil {
-			return probe, err
-		}
-		return runStorage(
+		return runSymbol(
 			comp,
 			g,
 			probe,
@@ -86,7 +60,7 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 			logger,
 			grpcLogOpts,
 			tagOpts,
-			db,
+			objStoreConfig,
 			*grpcBindAddr,
 			time.Duration(*grpcGracePeriod),
 			*grpcCert,
@@ -96,7 +70,7 @@ func registerStorage(m map[string]setupFunc, app *kingpin.Application, name stri
 	}
 }
 
-func runStorage(
+func runSymbol(
 	comp component.Component,
 	g *run.Group,
 	probe prober.Probe,
@@ -104,7 +78,7 @@ func runStorage(
 	logger log.Logger,
 	grpcLogOpts []grpc_logging.Option,
 	tagOpts []tags.Option,
-	db *tsdb.DB,
+	objStoreConfig extflag.PathOrContent,
 	grpcBindAddr string,
 	grpcGracePeriod time.Duration,
 	grpcCert string,
@@ -117,12 +91,20 @@ func runStorage(
 		grpcProbe,
 		prober.NewInstrumentation(comp, logger, extprom.WrapRegistererWithPrefix("conprof_", reg)),
 	)
-	maxBytesPerFrame := 1024 * 1024 * 2 // 2 Mb default, might need to be tuned later on.
-	s := store.NewProfileStore(logger, db, maxBytesPerFrame)
+
+	confContentYaml, err := objStoreConfig.Content()
+	if err != nil {
+		return nil, err
+	}
+
+	bkt, err := objstore.NewBucket(logger, confContentYaml, reg, comp.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "create object store bucket client")
+	}
+	sym := symbol.NewSymbolStore(logger, bkt)
 
 	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, grpcLogOpts, tagOpts, comp, grpcProbe,
-		grpcserver.WithServer(store.RegisterReadableStoreServer(s)),
-		grpcserver.WithServer(store.RegisterWritableStoreServer(s)),
+		grpcserver.WithServer(store.RegisterSymbolStore(sym)),
 		grpcserver.WithListen(grpcBindAddr),
 		grpcserver.WithGracePeriod(grpcGracePeriod),
 		grpcserver.WithGRPCServerOption(

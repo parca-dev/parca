@@ -1,6 +1,3 @@
-local k3 = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
-local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
-
 {
   local conprof = self,
 
@@ -10,6 +7,9 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
     image: error 'must provide image',
     version: error 'must set version',
     namespaces: [conprof.config.namespace],
+
+    symbolServerURL: '',
+    bucketConfig: null,
 
     commonLabels:: {
       'app.kubernetes.io/name': 'conprof',
@@ -55,104 +55,224 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
     },
   },
 
-  roleBindings:
-    local roleBinding = k.rbac.v1.roleBinding;
+  roleBindings: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'RoleBindingList',
+    items: [
+      {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'RoleBinding',
+        metadata: {
+          labels: conprof.config.commonLabels,
+          name: conprof.config.name,
+          namespace: conprof.config.namespace,
+        },
+        roleRef: {
+          apiGroup: 'rbac.authorization.k8s.io',
+          kind: 'Role',
+          name: conprof.config.name,
+        },
+        subjects: [
+          {
+            kind: 'ServiceAccount',
+            name: conprof.serviceAccount.metadata.name,
+            namespace: namespace,
+          },
+        ],
+      }
+      for namespace in conprof.config.namespaces
+    ],
+  },
 
-    local newSpecificRoleBinding(namespace) =
-      roleBinding.new() +
-      roleBinding.mixin.metadata.withName(conprof.config.name) +
-      roleBinding.mixin.metadata.withNamespace(namespace) +
-      roleBinding.mixin.metadata.withLabels(conprof.config.commonLabels) +
-      roleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
-      roleBinding.mixin.roleRef.withName(conprof.config.name) +
-      roleBinding.mixin.roleRef.mixinInstance({ kind: 'Role' }) +
-      roleBinding.withSubjects([{ kind: 'ServiceAccount', name: conprof.config.name, namespace: conprof.config.namespace }]);
+  roles: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'RoleList',
+    items: [
+      {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'Role',
+        metadata: {
+          labels: conprof.config.commonLabels,
+          name: conprof.config.name,
+          namespace: conprof.config.namespace,
+        },
+        rules: [
+          {
+            apiGroups: [
+              '',
+            ],
+            resources: [
+              'services',
+              'endpoints',
+              'pods',
+            ],
+            verbs: [
+              'get',
+              'list',
+              'watch',
+            ],
+          },
+        ],
+      }
+      for namespace in conprof.config.namespaces
+    ],
+  },
 
-    local roleBindingList = k3.rbac.v1.roleBindingList;
-    roleBindingList.new([newSpecificRoleBinding(x) for x in conprof.config.namespaces]),
-  roles:
-    local role = k.rbac.v1.role;
-    local policyRule = role.rulesType;
-    local coreRule = policyRule.new() +
-                     policyRule.withApiGroups(['']) +
-                     policyRule.withResources([
-                       'services',
-                       'endpoints',
-                       'pods',
-                     ]) +
-                     policyRule.withVerbs(['get', 'list', 'watch']);
-
-    local newSpecificRole(namespace) =
-      role.new() +
-      role.mixin.metadata.withName(conprof.config.name) +
-      role.mixin.metadata.withNamespace(namespace) +
-      role.mixin.metadata.withLabels(conprof.config.commonLabels) +
-      role.withRules(coreRule);
-
-    local roleList = k3.rbac.v1.roleList;
-    roleList.new([newSpecificRole(x) for x in conprof.config.namespaces]),
-  secret:
-    local secret = k.core.v1.secret;
-    secret.new('conprof-config', {}).withStringData({
+  secret: {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      labels: conprof.config.commonLabels,
+      name: conprof.config.name,
+      namespace: conprof.config.namespace,
+    },
+    stringData: {
       'conprof.yaml': std.manifestYamlDoc(conprof.config.rawconfig),
-    }) +
-    secret.mixin.metadata.withNamespace(conprof.config.namespace) +
-    secret.mixin.metadata.withLabels(conprof.config.commonLabels),
-  statefulset:
-    local statefulset = k.apps.v1.statefulSet;
-    local container = statefulset.mixin.spec.template.spec.containersType;
-    local volume = statefulset.mixin.spec.template.spec.volumesType;
-    local containerPort = container.portsType;
-    local containerVolumeMount = container.volumeMountsType;
-    local podSelector = statefulset.mixin.spec.template.spec.selectorType;
+    },
+  },
 
-    local c = [
-      container.new('conprof', conprof.config.image) +
-      container.withArgs([
-        'all',
-        '--storage.tsdb.path=/conprof',
-        '--config.file=/etc/conprof/conprof.yaml',
-      ]) +
-      container.withPorts([{ name: 'http', containerPort: 10902 }]) +
-      container.withVolumeMounts([
-        containerVolumeMount.new('storage', '/conprof'),
-        containerVolumeMount.new('config', '/etc/conprof'),
-      ],),
-    ];
+  objectStorageSecret: if conprof.config.bucketConfig == null then {} else {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      labels: conprof.config.commonLabels,
+      name: conprof.config.name + '-objectstorage',
+      namespace: conprof.config.namespace,
+    },
+    stringData: {
+      'conprof.yaml': std.manifestYamlDoc({
+        type: 's3',
+        config: {
+          bucket: conprof.config.bucketConfig.bucketName,
+          endpoint: conprof.config.bucketConfig.endpoint,
+          insecure: conprof.config.bucketConfig.insecure,
+          access_key: conprof.config.bucketConfig.accessKey,
+          secret_key: conprof.config.bucketConfig.secretKey,
+        },
+      }),
+    },
+  },
 
-    { apiVersion: 'apps/v1', kind: 'StatefulSet' } +
-    statefulset.mixin.metadata.withName(conprof.config.name) +
-    statefulset.mixin.metadata.withNamespace(conprof.config.namespace) +
-    statefulset.mixin.metadata.withLabels(conprof.config.commonLabels) +
-    statefulset.mixin.spec.withPodManagementPolicy('Parallel') +
-    statefulset.mixin.spec.withServiceName(conprof.config.name) +
-    statefulset.mixin.spec.selector.withMatchLabels(conprof.config.podLabelSelector) +
-    statefulset.mixin.spec.template.metadata.withLabels(conprof.config.commonLabels) +
-    statefulset.mixin.spec.template.spec.withContainers(c) +
-    statefulset.mixin.spec.template.spec.withNodeSelector({ 'kubernetes.io/os': 'linux' }) +
-    statefulset.mixin.spec.template.spec.withVolumes([
-      volume.fromEmptyDir('storage'),
-      volume.fromSecret('config', 'conprof-config'),
-    ]) +
-    statefulset.mixin.spec.template.spec.withServiceAccountName(conprof.config.name),
+  statefulset: {
+    apiVersion: 'apps/v1',
+    kind: 'StatefulSet',
+    metadata: {
+      labels: conprof.config.commonLabels,
+      name: conprof.config.name,
+      namespace: conprof.config.namespace,
+    },
+    spec: {
+      podManagementPolicy: 'Parallel',
+      selector: {
+        matchLabels: conprof.config.podLabelSelector,
+      },
+      serviceName: conprof.service.metadata.name,
+      template: {
+        metadata: {
+          labels: conprof.config.commonLabels,
+        },
+        spec: {
+          containers: [
+            {
+              args: [
+                'all',
+                '--storage.tsdb.path=/conprof',
+                '--config.file=/etc/conprof/conprof.yaml',
+              ] + if conprof.config.symbolServerURL == '' then [] else [
+                '--symbol-server-url=' + conprof.config.symbolServerURL,
+              ] + if conprof.config.bucketConfig == null then [] else [
+                '--objstore.config=$(OBJSTORE_CONFIG)',
+              ],
+              image: conprof.config.image,
+              name: 'conprof',
+              env: if conprof.config.bucketConfig == null then [] else [{
+                name: 'OBJSTORE_CONFIG',
+                valueFrom: {
+                  secretKeyRef: {
+                    key: 'conprof.yaml',
+                    name: conprof.objectStorageSecret.metadata.name,
+                  },
+                },
+              }],
+              ports: [
+                {
+                  containerPort: 10902,
+                  name: 'http',
+                },
+                {
+                  containerPort: 10901,
+                  name: 'grpc',
+                },
+              ],
+              volumeMounts: [
+                {
+                  mountPath: '/conprof',
+                  name: 'storage',
+                  readOnly: false,
+                },
+                {
+                  mountPath: '/etc/conprof',
+                  name: 'config',
+                  readOnly: false,
+                },
+              ],
+            },
+          ],
+          nodeSelector: {
+            'kubernetes.io/os': 'linux',
+          },
+          serviceAccountName: conprof.serviceAccount.metadata.name,
+          volumes: [
+            {
+              emptyDir: {},
+              name: 'storage',
+            },
+            {
+              name: 'config',
+              secret: {
+                secretName: conprof.secret.metadata.name,
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
 
-  serviceAccount:
-    local serviceAccount = k.core.v1.serviceAccount;
+  serviceAccount: {
+    apiVersion: 'v1',
+    kind: 'ServiceAccount',
+    metadata: {
+      labels: conprof.config.commonLabels,
+      name: conprof.config.name,
+      namespace: conprof.config.namespace,
+    },
+  },
 
-    serviceAccount.new(conprof.config.name) +
-    serviceAccount.mixin.metadata.withNamespace(conprof.config.namespace) +
-    serviceAccount.mixin.metadata.withLabels(conprof.config.commonLabels),
-
-  service:
-    local service = k.core.v1.service;
-    local servicePort = service.mixin.spec.portsType;
-
-    local httpPort = servicePort.newNamed('http', 10902, 'http');
-
-    service.new(conprof.config.name, conprof.config.podLabelSelector, [httpPort]) +
-    service.mixin.metadata.withNamespace(conprof.config.namespace) +
-    service.mixin.metadata.withLabels(conprof.config.commonLabels) +
-    service.mixin.spec.withClusterIp('None'),
+  service: {
+    apiVersion: 'v1',
+    kind: 'Service',
+    metadata: {
+      labels: conprof.config.commonLabels,
+      name: conprof.config.name,
+      namespace: conprof.config.namespace,
+    },
+    spec: {
+      ports: [
+        {
+          name: 'http',
+          port: 10902,
+          targetPort: 'http',
+        },
+        {
+          name: 'grpc',
+          port: 10901,
+          targetPort: 'grpc',
+        },
+      ],
+      selector: conprof.config.podLabelSelector,
+    },
+  },
 
   withServiceMonitor:: {
     local conprof = self,
@@ -181,13 +301,18 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
   withConfigMap:: {
     local conprof = self,
 
-    configmap:
-      local configmap = k.core.v1.configMap;
-      configmap.new('conprof-config', {}).withData({
+    configmap: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: 'conprof',
+        namespace: conprof.config.namespace,
+        labels: conprof.config.commonLabels,
+      },
+      data: {
         'conprof.yaml': std.manifestYamlDoc(conprof.config.rawconfig),
-      }) +
-      configmap.mixin.metadata.withNamespace(conprof.config.namespace) +
-      configmap.mixin.metadata.withLabels(conprof.config.commonLabels),
+      },
+    },
 
     statefulset+: {
       spec+: {

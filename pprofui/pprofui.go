@@ -35,19 +35,22 @@ import (
 	"github.com/prometheus/prometheus/promql/parser"
 	"github.com/spf13/pflag"
 
+	"github.com/conprof/conprof/symbol"
 	"github.com/conprof/db/storage"
 )
 
 type pprofUI struct {
-	logger log.Logger
-	db     storage.Queryable
+	logger     log.Logger
+	db         storage.Queryable
+	symbolizer *symbol.Symbolizer
 }
 
 // NewServer creates a new Server backed by the supplied Storage.
-func New(logger log.Logger, db storage.Queryable) *pprofUI {
+func New(logger log.Logger, db storage.Queryable, symbolizer *symbol.Symbolizer) *pprofUI {
 	s := &pprofUI{
-		logger: logger,
-		db:     db,
+		logger:     logger,
+		db:         db,
+		symbolizer: symbolizer,
 	}
 
 	return s
@@ -127,7 +130,19 @@ func (p *pprofUI) PprofView(w http.ResponseWriter, r *http.Request, _ httprouter
 		if err != nil {
 			return prof, "", err
 		}
+
 		prof, err = profile.Parse(bytes.NewReader(buf))
+		if err != nil {
+			return prof, "", err
+		}
+
+		if p.symbolizer != nil {
+			err = p.symbolizer.Symbolize(r.Context(), prof)
+			if err != nil {
+				return prof, "", err
+			}
+		}
+
 		return prof, "", err
 	}
 
@@ -189,9 +204,30 @@ func (p *pprofUI) PprofDownload(w http.ResponseWriter, r *http.Request, _ httpro
 		return
 	}
 
+	prof, err := profile.Parse(bytes.NewReader(buf))
+	if err != nil {
+		msg := fmt.Sprintf("failed to parse profile: %v", err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	if p.symbolizer != nil {
+		err = p.symbolizer.Symbolize(r.Context(), prof)
+		if err != nil {
+			msg := fmt.Sprintf("failed to symbolize profile: %v", err)
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
+	}
+
 	w.Header().Set("Content-Disposition", "attachment; filename=profile")
 	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
-	w.Write(buf)
+	err = prof.Write(w)
+	if err != nil {
+		msg := fmt.Sprintf("failed to write profile: %v", err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
 }
 
 type fetcherFn func(_ string, _, _ time.Duration) (*profile.Profile, string, error)

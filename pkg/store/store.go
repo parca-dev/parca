@@ -48,6 +48,14 @@ type profileStore struct {
 	maxBytesPerFrame int
 }
 
+func RegisterSymbolStore(storeSrv storepb.SymbolStoreServer) func(*grpc.Server) {
+	return func(s *grpc.Server) {
+		if storeSrv != nil {
+			storepb.RegisterSymbolStoreServer(s, storeSrv)
+		}
+	}
+}
+
 func RegisterReadableStoreServer(storeSrv storepb.ReadableProfileStoreServer) func(*grpc.Server) {
 	return func(s *grpc.Server) {
 		storepb.RegisterReadableProfileStoreServer(s, storeSrv)
