@@ -54,7 +54,7 @@ local conprof = (import 'conprof/conprof.libsonnet') {
   config+:: {
     name: 'conprof',
     namespace: ns.metadata.name,
-    image: 'quay.io/brancz/conprof:9c385f215385',
+    image: 'quay.io/brancz/conprof:6b49fb023d54',
     version: '87e6b61b1feb',
     bucketConfig: bucketConfig,
     symbolServerURL: 'http://%s.%s.svc:3021/symbolicate' % [symbolicator.service.metadata.name, symbolicator.service.metadata.namespace],

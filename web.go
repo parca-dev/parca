@@ -188,7 +188,6 @@ func (w *Web) Run(_ context.Context, reloadCh chan struct{}) error {
 
 	router.GET("/-/reload", api.Reload)
 	router.GET("/pprof/*remainder", ui.PprofView)
-	router.GET("/download/*remainder", ui.PprofDownload)
 	router.NotFound = http.FileServer(web.Assets)
 
 	w.mux.Handle("/", router)

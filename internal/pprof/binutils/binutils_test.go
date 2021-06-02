@@ -16,6 +16,8 @@ package binutils
 
 import (
 	"bytes"
+	"debug/elf"
+	"errors"
 	"fmt"
 	"math"
 	"path/filepath"
@@ -25,6 +27,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/conprof/conprof/internal/pprof/elfexec/testelf"
 	"github.com/conprof/conprof/internal/pprof/plugin"
 )
 
@@ -119,39 +122,111 @@ func (a *mockAddr2liner) close() {
 }
 
 func TestAddr2LinerLookup(t *testing.T) {
-	const oddSizedData = `
-00001000 T 0x1000
-00002000 T 0x2000
-00003000 T 0x3000
-`
-	const evenSizedData = `
-0000000000001000 T 0x1000
-0000000000002000 T 0x2000
-0000000000003000 T 0x3000
-0000000000004000 T 0x4000
-`
-	for _, d := range []string{oddSizedData, evenSizedData} {
-		a, err := parseAddr2LinerNM(0, bytes.NewBufferString(d))
-		if err != nil {
-			t.Errorf("nm parse error: %v", err)
-			continue
-		}
-		for address, want := range map[uint64]string{
-			0x1000: "0x1000",
-			0x1001: "0x1000",
-			0x1FFF: "0x1000",
-			0x2000: "0x2000",
-			0x2001: "0x2000",
-		} {
-			if got, _ := a.addrInfo(address); !checkAddress(got, address, want) {
-				t.Errorf("%x: got %v, want %s", address, got, want)
+	for _, tc := range []struct {
+		desc             string
+		nmOutput         string
+		wantSymbolized   map[uint64]string
+		wantUnsymbolized []uint64
+	}{
+		{
+			desc: "odd symbol count",
+			nmOutput: `
+0x1000 T 1000 100
+0x2000 T 2000 120
+0x3000 T 3000 130
+`,
+			wantSymbolized: map[uint64]string{
+				0x1000: "0x1000",
+				0x1001: "0x1000",
+				0x1FFF: "0x1000",
+				0x2000: "0x2000",
+				0x2001: "0x2000",
+				0x3000: "0x3000",
+				0x312f: "0x3000",
+			},
+			wantUnsymbolized: []uint64{0x0fff, 0x3130},
+		},
+		{
+			desc: "even symbol count",
+			nmOutput: `
+0x1000 T 1000 100
+0x2000 T 2000 120
+0x3000 T 3000 130
+0x4000 T 4000 140
+`,
+			wantSymbolized: map[uint64]string{
+				0x1000: "0x1000",
+				0x1001: "0x1000",
+				0x1FFF: "0x1000",
+				0x2000: "0x2000",
+				0x2fff: "0x2000",
+				0x3000: "0x3000",
+				0x3fff: "0x3000",
+				0x4000: "0x4000",
+				0x413f: "0x4000",
+			},
+			wantUnsymbolized: []uint64{0x0fff, 0x4140},
+		},
+		{
+			desc: "different symbol types",
+			nmOutput: `
+absolute_0x100 a 100
+absolute_0x200 A 200
+text_0x1000 t 1000 100
+bss_0x2000 b 2000 120
+data_0x3000 d 3000 130
+rodata_0x4000 r 4000 140
+weak_0x5000 v 5000 150
+text_0x6000 T 6000 160
+bss_0x7000 B 7000 170
+data_0x8000 D 8000 180
+rodata_0x9000 R 9000 190
+weak_0xa000 V a000 1a0
+weak_0xb000 W b000 1b0
+`,
+			wantSymbolized: map[uint64]string{
+				0x1000: "text_0x1000",
+				0x1FFF: "text_0x1000",
+				0x2000: "bss_0x2000",
+				0x211f: "bss_0x2000",
+				0x3000: "data_0x3000",
+				0x312f: "data_0x3000",
+				0x4000: "rodata_0x4000",
+				0x413f: "rodata_0x4000",
+				0x5000: "weak_0x5000",
+				0x514f: "weak_0x5000",
+				0x6000: "text_0x6000",
+				0x6fff: "text_0x6000",
+				0x7000: "bss_0x7000",
+				0x716f: "bss_0x7000",
+				0x8000: "data_0x8000",
+				0x817f: "data_0x8000",
+				0x9000: "rodata_0x9000",
+				0x918f: "rodata_0x9000",
+				0xa000: "weak_0xa000",
+				0xa19f: "weak_0xa000",
+				0xb000: "weak_0xb000",
+				0xb1af: "weak_0xb000",
+			},
+			wantUnsymbolized: []uint64{0x100, 0x200, 0x0fff, 0x2120, 0x3130, 0x4140, 0x5150, 0x7170, 0x8180, 0x9190, 0xa1a0, 0xb1b0},
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			a, err := parseAddr2LinerNM(0, bytes.NewBufferString(tc.nmOutput))
+			if err != nil {
+				t.Fatalf("nm parse error: %v", err)
 			}
-		}
-		for _, unknown := range []uint64{0x0fff, 0x4001} {
-			if got, _ := a.addrInfo(unknown); got != nil {
-				t.Errorf("%x: got %v, want nil", unknown, got)
+			for address, want := range tc.wantSymbolized {
+				if got, _ := a.addrInfo(address); !checkAddress(got, address, want) {
+					t.Errorf("%x: got %v, want %s", address, got, want)
+				}
 			}
-		}
+			for _, unknown := range tc.wantUnsymbolized {
+				if got, _ := a.addrInfo(unknown); got != nil {
+					t.Errorf("%x: got %v, want nil", unknown, got)
+				}
+			}
+		})
 	}
 }
 
@@ -184,7 +259,13 @@ func skipUnlessLinuxAmd64(t *testing.T) {
 
 func skipUnlessDarwinAmd64(t *testing.T) {
 	if runtime.GOOS != "darwin" || runtime.GOARCH != "amd64" {
-		t.Skip("This test only works on x86-64 Mac")
+		t.Skip("This test only works on x86-64 macOS")
+	}
+}
+
+func skipUnlessWindowsAmd64(t *testing.T) {
+	if runtime.GOOS != "windows" || runtime.GOARCH != "amd64" {
+		t.Skip("This test only works on x86-64 Windows")
 	}
 }
 
@@ -195,9 +276,16 @@ func testDisasm(t *testing.T, intelSyntax bool) {
 	}
 
 	bu := &Binutils{}
-	testexe := "exe_linux_64"
-	if runtime.GOOS == "darwin" {
+	var testexe string
+	switch runtime.GOOS {
+	case "linux":
+		testexe = "exe_linux_64"
+	case "darwin":
 		testexe = "exe_mac_64"
+	case "windows":
+		testexe = "exe_windows_64.exe"
+	default:
+		t.Skipf("unsupported OS %q", runtime.GOOS)
 	}
 
 	insts, err := bu.Disasm(filepath.Join("testdata", testexe), 0, math.MaxUint64, intelSyntax)
@@ -206,7 +294,7 @@ func testDisasm(t *testing.T, intelSyntax bool) {
 	}
 	mainCount := 0
 	for _, x := range insts {
-		// Mac symbols have a leading underscore.
+		// macOS symbols have a leading underscore.
 		if x.Function == "main" || x.Function == "_main" {
 			mainCount++
 		}
@@ -217,11 +305,17 @@ func testDisasm(t *testing.T, intelSyntax bool) {
 }
 
 func TestDisasm(t *testing.T) {
-	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
-		t.Skip("This test only works on Linux or Mac")
+	if (runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "windows") || runtime.GOARCH != "amd64" {
+		t.Skip("This test only works on x86-64 Linux, macOS or Windows")
+	}
+	testDisasm(t, false)
+}
+
+func TestDisasmIntelSyntax(t *testing.T) {
+	if (runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "windows") || runtime.GOARCH != "amd64" {
+		t.Skip("This test only works on x86_64 Linux, macOS or Windows as it tests Intel asm syntax")
 	}
 	testDisasm(t, true)
-	testDisasm(t, false)
 }
 
 func findSymbol(syms []*plugin.Sym, name string) *plugin.Sym {
@@ -245,7 +339,6 @@ func TestObjFile(t *testing.T) {
 		start, limit, offset uint64
 		addr                 uint64
 	}{
-		{"fake mapping", 0, math.MaxUint64, 0, 0x40052d},
 		{"fixed load address", 0x400000, 0x4006fc, 0, 0x40052d},
 		// True user-mode ASLR binaries are ET_DYN rather than ET_EXEC so this case
 		// is a bit artificial except that it approximates the
@@ -268,17 +361,22 @@ func TestObjFile(t *testing.T) {
 			if m == nil {
 				t.Fatalf("Symbols: did not find main")
 			}
-			for _, addr := range []uint64{m.Start + f.Base(), tc.addr} {
-				gotFrames, err := f.SourceLine(addr)
-				if err != nil {
-					t.Fatalf("SourceLine: unexpected error %v", err)
-				}
-				wantFrames := []plugin.Frame{
-					{Func: "main", File: "/tmp/hello.c", Line: 3},
-				}
-				if !reflect.DeepEqual(gotFrames, wantFrames) {
-					t.Fatalf("SourceLine for main: got %v; want %v\n", gotFrames, wantFrames)
-				}
+			addr, err := f.ObjAddr(tc.addr)
+			if err != nil {
+				t.Fatalf("ObjAddr(%x) failed: %v", tc.addr, err)
+			}
+			if addr != m.Start {
+				t.Errorf("ObjAddr(%x) got %x, want %x", tc.addr, addr, m.Start)
+			}
+			gotFrames, err := f.SourceLine(tc.addr)
+			if err != nil {
+				t.Fatalf("SourceLine: unexpected error %v", err)
+			}
+			wantFrames := []plugin.Frame{
+				{Func: "main", File: "/tmp/hello.c", Line: 3},
+			}
+			if !reflect.DeepEqual(gotFrames, wantFrames) {
+				t.Fatalf("SourceLine for main: got %v; want %v\n", gotFrames, wantFrames)
 			}
 		})
 	}
@@ -325,7 +423,7 @@ func TestMachoFiles(t *testing.T) {
 			}
 			t.Logf("binutils: %v", bu)
 			if runtime.GOOS == "darwin" && !bu.rep.addr2lineFound && !bu.rep.llvmSymbolizerFound {
-				// On OSX user needs to install gaddr2line or llvm-symbolizer with
+				// On macOS, user needs to install gaddr2line or llvm-symbolizer with
 				// Homebrew, skip the test when the environment doesn't have it
 				// installed.
 				t.Skip("couldn't find addr2line or gaddr2line")
@@ -357,33 +455,89 @@ func TestLLVMSymbolizer(t *testing.T) {
 	}
 
 	cmd := filepath.Join("testdata", "fake-llvm-symbolizer")
-	symbolizer, err := newLLVMSymbolizer(cmd, "foo", 0)
-	if err != nil {
-		t.Fatalf("newLLVMSymbolizer: unexpected error %v", err)
-	}
-	defer symbolizer.rw.close()
-
 	for _, c := range []struct {
 		addr   uint64
+		isData bool
 		frames []plugin.Frame
 	}{
-		{0x10, []plugin.Frame{
+		{0x10, false, []plugin.Frame{
 			{Func: "Inlined_0x10", File: "foo.h", Line: 0},
 			{Func: "Func_0x10", File: "foo.c", Line: 2},
 		}},
-		{0x20, []plugin.Frame{
-			{Func: "Inlined_0x20", File: "foo.h", Line: 0},
-			{Func: "Func_0x20", File: "foo.c", Line: 2},
+		{0x20, true, []plugin.Frame{
+			{Func: "foo_0x20", File: "0x20 8"},
 		}},
 	} {
-		frames, err := symbolizer.addrInfo(c.addr)
-		if err != nil {
-			t.Errorf("LLVM: unexpected error %v", err)
-			continue
+		desc := fmt.Sprintf("Code %x", c.addr)
+		if c.isData {
+			desc = fmt.Sprintf("Data %x", c.addr)
 		}
-		if !reflect.DeepEqual(frames, c.frames) {
-			t.Errorf("LLVM: expect %v; got %v\n", c.frames, frames)
-		}
+		t.Run(desc, func(t *testing.T) {
+			symbolizer, err := newLLVMSymbolizer(cmd, "foo", 0, c.isData)
+			if err != nil {
+				t.Fatalf("newLLVMSymbolizer: unexpected error %v", err)
+			}
+			defer symbolizer.rw.close()
+
+			frames, err := symbolizer.addrInfo(c.addr)
+			if err != nil {
+				t.Fatalf("LLVM: unexpected error %v", err)
+			}
+			if !reflect.DeepEqual(frames, c.frames) {
+				t.Errorf("LLVM: expect %v; got %v\n", c.frames, frames)
+			}
+		})
+	}
+}
+
+func TestPEFile(t *testing.T) {
+	// If this test fails, check the address for main function in testdata/exe_windows_64.exe
+	// using the command 'nm -n '. Update the hardcoded addresses below to match
+	// the addresses from the output.
+	skipUnlessWindowsAmd64(t)
+	for _, tc := range []struct {
+		desc                 string
+		start, limit, offset uint64
+		addr                 uint64
+	}{
+		{"fake mapping", 0, math.MaxUint64, 0, 0x140001594},
+		{"fixed load address", 0x140000000, 0x140002000, 0, 0x140001594},
+		{"simulated ASLR address", 0x150000000, 0x150002000, 0, 0x150001594},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			bu := &Binutils{}
+			f, err := bu.Open(filepath.Join("testdata", "exe_windows_64.exe"), tc.start, tc.limit, tc.offset)
+			if err != nil {
+				t.Fatalf("Open: unexpected error %v", err)
+			}
+			defer f.Close()
+			syms, err := f.Symbols(regexp.MustCompile("main"), 0)
+			if err != nil {
+				t.Fatalf("Symbols: unexpected error %v", err)
+			}
+
+			m := findSymbol(syms, "main")
+			if m == nil {
+				t.Fatalf("Symbols: did not find main")
+			}
+			addr, err := f.ObjAddr(tc.addr)
+			if err != nil {
+				t.Fatalf("ObjAddr(%x) failed: %v", tc.addr, err)
+			}
+			if addr != m.Start {
+				t.Errorf("ObjAddr(%x) got %x, want %x", tc.addr, addr, m.Start)
+			}
+			gotFrames, err := f.SourceLine(tc.addr)
+			if err != nil {
+				t.Fatalf("SourceLine: unexpected error %v", err)
+			}
+			wantFrames := []plugin.Frame{
+				{Func: "main", File: "hello.c", Line: 3},
+			}
+			if !reflect.DeepEqual(gotFrames, wantFrames) {
+				t.Fatalf("SourceLine for main: got %v; want %v\n", gotFrames, wantFrames)
+			}
+		})
 	}
 }
 
@@ -501,5 +655,276 @@ func TestObjdumpVersionChecks(t *testing.T) {
 		if got := isBuObjdump(tc.ver); got != tc.want {
 			t.Errorf("%v: got %v, want %v", tc.desc, got, tc.want)
 		}
+	}
+}
+
+func TestMatchUniqueHeader(t *testing.T) {
+	for _, tc := range []struct {
+		desc       string
+		headers    []*elf.ProgHeader
+		fileOffset uint64
+		wantError  bool
+		want       *elf.ProgHeader
+	}{
+		{
+			desc:      "no headers, want error",
+			headers:   nil,
+			wantError: true,
+		},
+		{
+			desc:       "one header, file offset is irrelevant",
+			headers:    []*elf.ProgHeader{{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000}},
+			fileOffset: 0xdeadbeef,
+			want:       &elf.ProgHeader{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+		},
+		{
+			desc: "three headers, BSS in last segment, file offset selects first header",
+			headers: []*elf.ProgHeader{
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x1f0, Memsz: 0x1f0, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xe70, Vaddr: 0x400e70, Paddr: 0x400e70, Filesz: 0x90, Memsz: 0x100, Align: 0x200000},
+			},
+			fileOffset: 0xc79,
+			want:       &elf.ProgHeader{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+		},
+		{
+			desc: "three headers, BSS in last segment, file offset selects second header",
+			headers: []*elf.ProgHeader{
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x1f0, Memsz: 0x1f0, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xe70, Vaddr: 0x400e70, Paddr: 0x400e70, Filesz: 0x90, Memsz: 0x100, Align: 0x200000},
+			},
+			fileOffset: 0xc80,
+			want:       &elf.ProgHeader{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x1f0, Memsz: 0x1f0, Align: 0x200000},
+		},
+		{
+			desc: "three headers, BSS in last segment, file offset selects third header",
+			headers: []*elf.ProgHeader{
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x1f0, Memsz: 0x1f0, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xe70, Vaddr: 0x400e70, Paddr: 0x400e70, Filesz: 0x90, Memsz: 0x100, Align: 0x200000},
+			},
+			fileOffset: 0xef0,
+			want:       &elf.ProgHeader{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xe70, Vaddr: 0x400e70, Paddr: 0x400e70, Filesz: 0x90, Memsz: 0x100, Align: 0x200000},
+		},
+		{
+			desc: "three headers, BSS in last segment, file offset in uninitialized section selects third header",
+			headers: []*elf.ProgHeader{
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x1f0, Memsz: 0x1f0, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xe70, Vaddr: 0x400e70, Paddr: 0x400e70, Filesz: 0x90, Memsz: 0x100, Align: 0x200000},
+			},
+			fileOffset: 0xf40,
+			want:       &elf.ProgHeader{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xe70, Vaddr: 0x400e70, Paddr: 0x400e70, Filesz: 0x90, Memsz: 0x100, Align: 0x200000},
+		},
+		{
+			desc: "three headers, BSS in last segment, file offset past any segment gives error",
+			headers: []*elf.ProgHeader{
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x1f0, Memsz: 0x1f0, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xe70, Vaddr: 0x400e70, Paddr: 0x400e70, Filesz: 0x90, Memsz: 0x100, Align: 0x200000},
+			},
+			fileOffset: 0xf70,
+			wantError:  true,
+		},
+		{
+			desc: "three headers, BSS in second segment, file offset in mapped section selects second header",
+			headers: []*elf.ProgHeader{
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x100, Memsz: 0x1f0, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xd80, Vaddr: 0x400d80, Paddr: 0x400d80, Filesz: 0x100, Memsz: 0x100, Align: 0x200000},
+			},
+			fileOffset: 0xd79,
+			want:       &elf.ProgHeader{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x100, Memsz: 0x1f0, Align: 0x200000},
+		},
+		{
+			desc: "three headers, BSS in second segment, file offset in unmapped section gives error",
+			headers: []*elf.ProgHeader{
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_X, Off: 0, Vaddr: 0, Paddr: 0, Filesz: 0xc80, Memsz: 0xc80, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xc80, Vaddr: 0x200c80, Paddr: 0x200c80, Filesz: 0x100, Memsz: 0x1f0, Align: 0x200000},
+				{Type: elf.PT_LOAD, Flags: elf.PF_R | elf.PF_W, Off: 0xd80, Vaddr: 0x400d80, Paddr: 0x400d80, Filesz: 0x100, Memsz: 0x100, Align: 0x200000},
+			},
+			fileOffset: 0xd80,
+			wantError:  true,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			got, err := matchUniqueHeader(tc.headers, tc.fileOffset)
+			if (err != nil) != tc.wantError {
+				t.Errorf("got error %v, want any error=%v", err, tc.wantError)
+			}
+			if err != nil {
+				return
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("got program header %#v, want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestComputeBase(t *testing.T) {
+	realELFOpen := elfOpen
+	defer func() {
+		elfOpen = realELFOpen
+	}()
+	addHeaderTypeToELFFile := func(f *elf.File, ht elf.Type) *elf.File {
+		f.FileHeader = elf.FileHeader{Type: ht}
+		return f
+	}
+
+	for _, tc := range []struct {
+		desc       string
+		file       *elf.File
+		openErr    error
+		mapping    *elfMapping
+		addr       uint64
+		wantError  bool
+		wantBase   uint64
+		wantIsData bool
+	}{
+		{
+			desc:       "no elf mapping, no error",
+			mapping:    nil,
+			addr:       0x1000,
+			wantBase:   0,
+			wantIsData: false,
+		},
+		{
+			desc:      "address outside mapping bounds means error",
+			file:      &elf.File{},
+			mapping:   &elfMapping{start: 0x2000, limit: 0x5000, offset: 0x1000},
+			addr:      0x1000,
+			wantError: true,
+		},
+		{
+			desc:      "elf.Open failing means error",
+			file:      &elf.File{FileHeader: elf.FileHeader{Type: elf.ET_EXEC}},
+			openErr:   errors.New("elf.Open failed"),
+			mapping:   &elfMapping{start: 0x2000, limit: 0x5000, offset: 0x1000},
+			addr:      0x4000,
+			wantError: true,
+		},
+		{
+			desc:       "no loadable segments, no error",
+			file:       &elf.File{FileHeader: elf.FileHeader{Type: elf.ET_EXEC}},
+			mapping:    &elfMapping{start: 0x2000, limit: 0x5000, offset: 0x1000},
+			addr:       0x4000,
+			wantBase:   0,
+			wantIsData: false,
+		},
+		{
+			desc:      "unsupported executable type, Get Base returns error",
+			file:      &elf.File{FileHeader: elf.FileHeader{Type: elf.ET_NONE}},
+			mapping:   &elfMapping{start: 0x2000, limit: 0x5000, offset: 0x1000},
+			addr:      0x4000,
+			wantError: true,
+		},
+		{
+			desc:       "tiny file select executable segment by offset",
+			file:       addHeaderTypeToELFFile(&testelf.TinyFile, elf.ET_EXEC),
+			mapping:    &elfMapping{start: 0x5000000, limit: 0x5001000, offset: 0x0},
+			addr:       0x5000c00,
+			wantBase:   0x5000000,
+			wantIsData: false,
+		},
+		{
+			desc:       "tiny file select data segment by offset",
+			file:       addHeaderTypeToELFFile(&testelf.TinyFile, elf.ET_EXEC),
+			mapping:    &elfMapping{start: 0x5200000, limit: 0x5201000, offset: 0x0},
+			addr:       0x5200c80,
+			wantBase:   0x5000000,
+			wantIsData: true,
+		},
+		{
+			desc:      "tiny file offset outside any segment means error",
+			file:      addHeaderTypeToELFFile(&testelf.TinyFile, elf.ET_EXEC),
+			mapping:   &elfMapping{start: 0x5200000, limit: 0x5201000, offset: 0x0},
+			addr:      0x5200e70,
+			wantError: true,
+		},
+		{
+			desc:       "tiny file with bad BSS segment selects data segment by offset in initialized section",
+			file:       addHeaderTypeToELFFile(&testelf.TinyBadBSSFile, elf.ET_EXEC),
+			mapping:    &elfMapping{start: 0x5200000, limit: 0x5201000, offset: 0x0},
+			addr:       0x5200d79,
+			wantBase:   0x5000000,
+			wantIsData: true,
+		},
+		{
+			desc:      "tiny file with bad BSS segment with offset in uninitialized section means error",
+			file:      addHeaderTypeToELFFile(&testelf.TinyBadBSSFile, elf.ET_EXEC),
+			mapping:   &elfMapping{start: 0x5200000, limit: 0x5201000, offset: 0x0},
+			addr:      0x5200d80,
+			wantError: true,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			elfOpen = func(_ string) (*elf.File, error) {
+				return tc.file, tc.openErr
+			}
+			f := file{m: tc.mapping}
+			err := f.computeBase(tc.addr)
+			if (err != nil) != tc.wantError {
+				t.Errorf("got error %v, want any error=%v", err, tc.wantError)
+			}
+			if err != nil {
+				return
+			}
+			if f.base != tc.wantBase {
+				t.Errorf("got base %x, want %x", f.base, tc.wantBase)
+			}
+			if f.isData != tc.wantIsData {
+				t.Errorf("got isData %v, want %v", f.isData, tc.wantIsData)
+			}
+		})
+	}
+}
+
+func TestELFObjAddr(t *testing.T) {
+	// The exe_linux_64 has two loadable program headers:
+	//  LOAD           0x0000000000000000 0x0000000000400000 0x0000000000400000
+	//                 0x00000000000006fc 0x00000000000006fc  R E    0x200000
+	//  LOAD           0x0000000000000e10 0x0000000000600e10 0x0000000000600e10
+	//                 0x0000000000000230 0x0000000000000238  RW     0x200000
+	name := filepath.Join("testdata", "exe_linux_64")
+
+	for _, tc := range []struct {
+		desc                 string
+		start, limit, offset uint64
+		wantOpenError        bool
+		addr                 uint64
+		wantObjAddr          uint64
+		wantAddrError        bool
+	}{
+		{"exec mapping, good address", 0x5400000, 0x5401000, 0, false, 0x5400400, 0x400400, false},
+		{"exec mapping, address outside segment", 0x5400000, 0x5401000, 0, false, 0x5400800, 0x400800, false},
+		{"short data mapping, good address", 0x5600e00, 0x5602000, 0xe00, false, 0x5600e10, 0x600e10, false},
+		{"short data mapping, address outside segment", 0x5600e00, 0x5602000, 0xe00, false, 0x5600e00, 0x600e00, false},
+		{"page aligned data mapping, good address", 0x5600000, 0x5602000, 0, false, 0x5601000, 0x601000, false},
+		{"page aligned data mapping, address outside segment", 0x5600000, 0x5602000, 0, false, 0x5601048, 0x601048, false},
+		{"bad file offset, no matching segment", 0x5600000, 0x5602000, 0x2000, false, 0x5600e10, 0, true},
+		{"large mapping size, match by sample offset", 0x5600000, 0x5603000, 0, false, 0x5600e10, 0x600e10, false},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			b := binrep{}
+			o, err := b.openELF(name, tc.start, tc.limit, tc.offset)
+			if (err != nil) != tc.wantOpenError {
+				t.Errorf("openELF got error %v, want any error=%v", err, tc.wantOpenError)
+			}
+			if err != nil {
+				return
+			}
+			got, err := o.ObjAddr(tc.addr)
+			if (err != nil) != tc.wantAddrError {
+				t.Errorf("ObjAddr got error %v, want any error=%v", err, tc.wantAddrError)
+			}
+			if err != nil {
+				return
+			}
+			if got != tc.wantObjAddr {
+				t.Errorf("got ObjAddr %x; want %x\n", got, tc.wantObjAddr)
+			}
+		})
 	}
 }

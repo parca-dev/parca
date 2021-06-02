@@ -9,7 +9,7 @@ require (
 	github.com/go-kit/kit v0.10.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/gogo/status v1.0.3
-	github.com/google/pprof v0.0.0-20210504235042-3a04a4d88a10
+	github.com/google/pprof v0.0.0-20210601050228-01bbb1931b22
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20201207153454-9f6bf00c00a7
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639
