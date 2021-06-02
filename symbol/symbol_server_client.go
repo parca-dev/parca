@@ -21,12 +21,14 @@ import (
 )
 
 type SymbolServerClient struct {
-	url string
+	httpClient *http.Client
+	url        string
 }
 
-func NewSymbolServerClient(url string) *SymbolServerClient {
+func NewSymbolServerClient(httpClient *http.Client, url string) *SymbolServerClient {
 	return &SymbolServerClient{
-		url: url,
+		httpClient: httpClient,
+		url:        url,
 	}
 }
 
@@ -74,7 +76,7 @@ func (c *SymbolServerClient) Symbolicate(ctx context.Context, r *SymbolicateRequ
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

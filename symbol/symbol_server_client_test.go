@@ -38,7 +38,7 @@ func TestSymbolServerClient(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewSymbolServerClient(ts.URL)
+	c := NewSymbolServerClient(http.DefaultClient, ts.URL)
 	res, err := c.Symbolicate(context.Background(), &SymbolicateRequest{
 		Modules: []Module{{
 			Type:      "elf",

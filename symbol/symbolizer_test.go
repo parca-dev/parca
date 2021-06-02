@@ -37,7 +37,7 @@ func TestSymbolizer(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := NewSymbolizer(log.NewNopLogger(), NewSymbolServerClient(ts.URL))
+	s := NewSymbolizer(log.NewNopLogger(), NewSymbolServerClient(http.DefaultClient, ts.URL))
 	m := &profile.Mapping{
 		ID:      uint64(1),
 		Start:   0x400000,
@@ -72,7 +72,7 @@ func TestSymbolizer(t *testing.T) {
 
 func TestRealSymbolizer(t *testing.T) {
 	t.Skip()
-	s := NewSymbolizer(log.NewNopLogger(), NewSymbolServerClient("http://localhost:3021/symbolicate"))
+	s := NewSymbolizer(log.NewNopLogger(), NewSymbolServerClient(http.DefaultClient, "http://localhost:3021/symbolicate"))
 	f, err := os.Open("testdata/profile.pb.gz")
 	require.NoError(t, err)
 	p, err := profile.Parse(f)

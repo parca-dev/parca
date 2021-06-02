@@ -97,6 +97,7 @@ func main() {
 	registerStorage(cmds, app, "storage", reloadCh)
 	registerWeb(cmds, app, "web", reloadCh, reloaders)
 	registerApi(cmds, app, "api")
+	registerSymbol(cmds, app, "symbol")
 	registerAll(cmds, app, "all", reloadCh, reloaders)
 
 	cmd, err := app.Parse(os.Args[1:])

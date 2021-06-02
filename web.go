@@ -59,7 +59,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 
 		var s *symbol.Symbolizer = nil
 		if *symbolServerURL != "" {
-			c := symbol.NewSymbolServerClient(*symbolServerURL)
+			c := symbol.NewSymbolServerClient(http.DefaultClient, *symbolServerURL)
 			s = symbol.NewSymbolizer(logger, c)
 		}
 

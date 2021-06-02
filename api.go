@@ -14,6 +14,7 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/conprof/db/storage"
@@ -88,7 +89,7 @@ func runApi(
 
 	var s *symbol.Symbolizer
 	if symbolServerURL != "" {
-		c := symbol.NewSymbolServerClient(symbolServerURL)
+		c := symbol.NewSymbolServerClient(http.DefaultClient, symbolServerURL)
 		s = symbol.NewSymbolizer(logger, c)
 	}
 
