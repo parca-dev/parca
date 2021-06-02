@@ -28,7 +28,7 @@ import (
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/extprom"
 	"github.com/thanos-io/thanos/pkg/logging"
-	"github.com/thanos-io/thanos/pkg/objstore/client"
+	objstore "github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -97,9 +97,9 @@ func runSymbol(
 		return nil, err
 	}
 
-	bkt, err := client.NewBucket(logger, confContentYaml, reg, comp.String())
+	bkt, err := objstore.NewBucket(logger, confContentYaml, reg, comp.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "create bucket client")
+		return nil, errors.Wrap(err, "create object store bucket client")
 	}
 	sym := symbol.NewSymbolStore(logger, bkt)
 

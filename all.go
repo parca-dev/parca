@@ -34,7 +34,7 @@ import (
 	"github.com/thanos-io/thanos/pkg/extkingpin"
 	"github.com/thanos-io/thanos/pkg/extprom"
 	"github.com/thanos-io/thanos/pkg/logging"
-	"github.com/thanos-io/thanos/pkg/objstore/client"
+	objstore "github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/prober"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -64,14 +64,14 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 		Default("./data").String()
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
-	symbolServerURL := cmd.Flag("symbol-server-url", "Symbol server to request to symbolize native stacktraces.").String()
+	symbolServerURL := cmd.Flag("symbol-server-url", "Symbol server to request to symbolize native stacktraces. When not configured, non-symbolized stack traces will just show their memory address.").String()
 	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
 		Default("10s"))
-	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false)
+	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false, "When not set, the gRPC server will be started without serving the symbol management service.")
 	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
@@ -205,9 +205,9 @@ func runAll(
 
 	var symStore storepb.SymbolStoreServer
 	if len(confContentYaml) > 0 {
-		bkt, err := client.NewBucket(logger, confContentYaml, reg, comp.String())
+		bkt, err := objstore.NewBucket(logger, confContentYaml, reg, comp.String())
 		if err != nil {
-			return nil, errors.Wrap(err, "create bucket client")
+			return nil, errors.Wrap(err, "create object store bucket client")
 		}
 		symStore = symbol.NewSymbolStore(logger, bkt)
 	}
