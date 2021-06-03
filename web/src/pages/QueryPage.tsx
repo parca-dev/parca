@@ -1,7 +1,5 @@
-import { Button } from '@material-ui/core';
-import { makeStyles } from '@material-ui/styles';
-import { withStyles, WithStyles, createStyles } from '@material-ui/core';
-import { Theme } from '@material-ui/core/styles';
+import { withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, StyleRulesCallback } from '@material-ui/core/styles';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import * as redux from 'redux';
@@ -9,43 +7,35 @@ import { RouteComponentProps } from 'react-router-dom';
 import TextField from '@material-ui/core/TextField';
 import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
-import { GridSpacing } from '@material-ui/core/Grid';
 import { RootState } from '../reducers/index';
 import { pathJoin, executeQuery } from '../actions/query';
 import { Query, Series } from '../model/model';
-import InputBase from '@material-ui/core/InputBase';
-import Divider from '@material-ui/core/Divider';
-import IconButton from '@material-ui/core/IconButton';
-import Icon from '@material-ui/core/Icon';
+import Button from '@material-ui/core/Button';
 import SendIcon from '@material-ui/icons/Send';
-import PropTypes from 'prop-types';
 import moment from 'moment';
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip } from 'recharts';
+import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip } from 'recharts';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Switch from '@material-ui/core/Switch';
-import LinearProgress from '@material-ui/core/LinearProgress';
 
-const styles = (theme: Theme) => createStyles({
-    root: {
-        flexGrow: 1,
-        fontFamily: theme.typography.fontFamily,
+const styles: StyleRulesCallback<Theme, Props> = (theme: Theme) => ({
+    queryPageRoot: {
+        padding: '0px 10px',
     },
     paper: {
         margin: '20px 0px',
         padding: 10,
     },
     expr: {
-        margin: '20px 0px',
-        padding: '2px 4px',
-        display: 'flex',
-        alignItems: 'center',
+        margin: '10px 0px',
+        padding: '2px 4px 2px 4px',
+        width: '100%',
     },
     input: {
         marginLeft: 8,
-        flex: 1,
     },
-    iconButton: {
+    queryButton: {
         padding: 10,
+        width: '100%',
     },
     labelSet: {
         fontFamily: 'monospace',
@@ -54,11 +44,10 @@ const styles = (theme: Theme) => createStyles({
     },
     noResult: {
         textAlign: 'center',
-        color: theme.palette.text.secondary,
     }
 });
 
-interface Props extends RouteComponentProps<void>, WithStyles<typeof styles> {
+interface Props extends RouteComponentProps<{}> {
     actions: Actions;
     query: Query;
     pathPrefix: string;
@@ -99,15 +88,15 @@ function formatLabels(labels: { [key: string]: string }) {
     return tsName;
 };
 
-class QueryPage extends React.Component<Props, State> {
-    constructor(props: Props) {
+class QueryPage extends React.Component<Props & WithStyles<typeof styles>, State> {
+    constructor(props: Props & WithStyles<typeof styles>) {
         super(props);
 
         let search = new URLSearchParams(props.location.search);
         let expr = search.get("query") || props.query.request.expression;
         let timeFrom = search.get("from") ? moment(Number(search.get("from"))) : props.query.request.timeFrom;
         let timeTo = search.get("to") ? moment(Number(search.get("to"))) : props.query.request.timeFrom;
-        let now = (search.get("now") || "").toLowerCase() != 'false';
+        let now = (search.get("now") || "").toLowerCase() !== 'false';
 
         this.state = {
             expression: expr,
@@ -183,7 +172,7 @@ class QueryPage extends React.Component<Props, State> {
     }
 
     render() {
-        const { history, actions, query, classes } = this.props;
+        const { query, classes } = this.props;
 
         const openProfile = (props: any) => {
             const { payload } = props;
@@ -197,62 +186,75 @@ class QueryPage extends React.Component<Props, State> {
         }
 
         return (
-            <div className={classes.root}>
-                <Grid container justify="center">
-                    <Grid item xs={8}>
-                        <Paper className={classes.expr} elevation={1}>
-                            <InputBase
-                                className={classes.input}
-                                fullWidth
-                                placeholder="Expression"
-                                value={this.state.expression}
-                                onChange={this.handleExpressionChange}
-                                  onKeyPress={(ev: any) => {
-                                      if (ev.key === 'Enter') {
-                                          this.execute();
-                                      }
-                                  }}
-                            />
-                            <TextField
-                                id="datetime-local-from"
-                                label="From"
-                                type="datetime-local"
-                                value={this.state.timeFrom.format('YYYY-MM-DDTHH:mm')}
-                                InputLabelProps={{
-                                shrink: true,
-                                }}
-                                onChange={this.handleTimeFromChange}
-                            />
-                            <TextField
-                                id="datetime-local-to"
-                                label="To"
-                                type="datetime-local"
-                                defaultValue={this.state.timeTo.format('YYYY-MM-DDTHH:mm')}
-                                InputLabelProps={{
-                                shrink: true,
-                                }}
-                                onChange={this.handleTimeToChange}
-                            />
-                            <FormControlLabel
-                                control={
-                                <Switch
-                                    checked={this.state.now}
-                                    onChange={this.handleNowChange}
-                                    color="primary"
+            <div className={classes.queryPageRoot}>
+                <Grid container direction="row" justify="flex-start" alignItems="flex-start">
+                    <Paper className={classes.expr} elevation={1}>
+                        <Grid container spacing={1}>
+                            <Grid item xs>
+                                <TextField
+                                    className={classes.input}
+                                    fullWidth
+                                    label="Query"
+                                    placeholder="Expression"
+                                    value={this.state.expression}
+                                    onChange={this.handleExpressionChange}
+                                    onKeyPress={(ev: any) => {
+                                        if (ev.key === 'Enter') {
+                                            this.execute();
+                                        }
+                                    }}
                                 />
-                                }
-                                label="Now"
-                            />
-                            <IconButton className={classes.iconButton} onClick={this.execute} aria-label="Search">
-                                <SendIcon color="primary" />
-                            </IconButton>
-                        </Paper>
-                    </Grid>
+                            </Grid>
+                            <Grid item xs={2}>
+                                <TextField
+                                    id="datetime-local-from"
+                                    label="From"
+                                    type="datetime-local"
+                                    value={this.state.timeFrom.format('YYYY-MM-DDTHH:mm')}
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    onChange={this.handleTimeFromChange}
+                                />
+                            </Grid>
+                            <Grid item xs={2}>
+                                <TextField
+                                    id="datetime-local-to"
+                                    label="To"
+                                    type="datetime-local"
+                                    defaultValue={this.state.timeTo.format('YYYY-MM-DDTHH:mm')}
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    onChange={this.handleTimeToChange}
+                                />
+                            </Grid>
+                            <Grid item xs={1}>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={this.state.now}
+                                            onChange={this.handleNowChange}
+                                            color="primary"
+                                        />
+                                    }
+                                    label="Now"
+                                />
+                            </Grid>
+                            <Grid item xs={1}>
+                                <Button className={classes.queryButton} variant="contained" color="primary" onClick={this.execute}>
+                                    Query
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Paper>
+                </Grid>
 
-                    {query.result.data.map(
-                        (series: Series, i: number) => {
-                            return (
-                                <Grid key={i} item xs={8}>
+                {query.result.data.map(
+                    (series: Series, i: number) => {
+                        return (
+                            <Grid key={i} container direction="row" justify="flex-start" alignItems="flex-start">
+                                <Grid item xs>
                                     <Paper className={classes.paper}>
                                         <div className={classes.labelSet}>{formatLabels(series.labels)}</div>
                                         <div style={{ width: '100%', height: 70 }}>
@@ -267,15 +269,17 @@ class QueryPage extends React.Component<Props, State> {
                                         </div>
                                     </Paper>
                                 </Grid>
-                            )
-                        }
-                    )}
-                    {!query.request.loading && query.result.data.length == 0 &&
-                        <Grid key="no-result" className={classes.noResult} item xs={8}>
+                            </Grid>
+                        )
+                    }
+                )}
+                {!query.request.loading && query.result.data.length === 0 &&
+                    <Grid container direction="row" justify="flex-start" alignItems="flex-start">
+                        <Grid key="no-result" className={classes.noResult} item xs>
                             <h3>No result</h3>
                         </Grid>
-                    }
-                </Grid>
+                    </Grid>
+                }
             </div>
         );
     }
@@ -290,15 +294,15 @@ type Dispatch = {
 }
 
 function mapStateToProps(state: RootState) {
-  return {
-    query: state.query,
-  };
+    return {
+        query: state.query,
+    };
 }
 
 function mapDispatchToProps(dispatch: redux.Dispatch<redux.AnyAction>): Dispatch {
-  return {
-      actions: redux.bindActionCreators({executeQuery}, dispatch),
-  };
+    return {
+        actions: redux.bindActionCreators({executeQuery}, dispatch),
+    };
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(QueryPage));

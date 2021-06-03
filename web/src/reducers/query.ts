@@ -1,4 +1,4 @@
-import { Action, ActionType, Query, QueryResult } from '../model/model';
+import { Action, ActionType, Query } from '../model/model';
 import { QuerySuccessAction } from '../actions/query';
 import moment from 'moment';
 

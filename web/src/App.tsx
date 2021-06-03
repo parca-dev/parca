@@ -1,10 +1,6 @@
-import { AppBar, Badge, Divider, Drawer as DrawerMui, Hidden, IconButton, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography, withWidth } from '@material-ui/core';
-import { Theme } from '@material-ui/core/styles';
+import { AppBar, Toolbar, Typography, withWidth } from '@material-ui/core';
+import { Theme, makeStyles, createStyles } from '@material-ui/core/styles';
 import { isWidthUp, WithWidth } from '@material-ui/core/withWidth';
-import FormatListNumberedIcon from '@material-ui/icons/FormatListNumbered';
-import HomeIcon from '@material-ui/icons/Home';
-import MenuIcon from '@material-ui/icons/Menu';
-import { makeStyles } from '@material-ui/styles';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { Route, RouteComponentProps, Router } from 'react-router-dom';
@@ -15,7 +11,7 @@ import { RootState } from './reducers/index';
 
 function Routes() {
     const classes = useStyles();
-    const pathPrefix = window.location.pathname == '/' ? '' : window.location.pathname;
+    const pathPrefix = window.location.pathname === '/' ? '' : window.location.pathname;
 
     return (
         <div className={classes.content}>
@@ -44,7 +40,7 @@ function App(props?: Props) {
                 <div className={classes.appFrame}>
                     <AppBar className={classes.appBar}>
                         <Toolbar>
-                            <Typography variant="title" color="inherit" noWrap={isWidthUp('sm', props.width)}>
+                            <Typography variant="h6" color="inherit" noWrap={isWidthUp('sm', props.width)}>
                                 Conprof
                             </Typography>
                         </Toolbar>
@@ -57,8 +53,7 @@ function App(props?: Props) {
 
 }
 
-const drawerWidth = 240;
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles(theme => ({
     root: {
         width: '100%',
         zIndex: 1,
@@ -70,10 +65,10 @@ const useStyles = makeStyles((theme: Theme) => ({
         width: '100%',
         height: '100%',
     },
-    appBar: {
+    appBar: props => ({
         zIndex: theme.zIndex.drawer + 1,
         position: 'absolute',
-    },
+    }),
     navIconHide: {
         [theme.breakpoints.up('md')]: {
             display: 'none',
