@@ -11,14 +11,18 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
+    "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve",
-    "sourceMap": true
+    "jsx": "react-jsx",
+    "sourceMap": true,
+    "typeRoots": [
+        "node_modules/@types"
+    ]
   },
   "include": [
     "src"
