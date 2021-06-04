@@ -18,11 +18,27 @@ package storepb
 
 import (
 	"bytes"
+	context "context"
 
 	"github.com/conprof/db/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/thanos-io/thanos/pkg/store/labelpb"
+	grpc "google.golang.org/grpc"
 )
+
+type SymbolizeClient struct {
+	c SymbolStoreClient
+}
+
+func (c *SymbolizeClient) Symbolize(ctx context.Context, r *SymbolizeRequest) (*SymbolizeResponse, error) {
+	return c.c.Symbolize(ctx, r)
+}
+
+func NewSymbolizeClient(conn *grpc.ClientConn) *SymbolizeClient {
+	return &SymbolizeClient{
+		c: NewSymbolStoreClient(conn),
+	}
+}
 
 func NewWarnSeriesResponse(err error) *SeriesResponse {
 	return &SeriesResponse{

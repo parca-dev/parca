@@ -24,9 +24,9 @@ spec:
       containers:
       - args:
         - all
+        - --log.level=debug
         - --storage.tsdb.path=/conprof
         - --config.file=/etc/conprof/conprof.yaml
-        - --symbol-server-url=http://symbolicator.conprof.svc:3021/symbolicate
         - --objstore.config=$(OBJSTORE_CONFIG)
         env:
         - name: OBJSTORE_CONFIG
@@ -34,7 +34,7 @@ spec:
             secretKeyRef:
               key: conprof.yaml
               name: conprof-objectstorage
-        image: quay.io/brancz/conprof:6b49fb023d54
+        image: quay.io/brancz/conprof:08a162ee22cd
         name: conprof
         ports:
         - containerPort: 10902
@@ -42,6 +42,9 @@ spec:
         - containerPort: 10901
           name: grpc
         volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+          readOnly: false
         - mountPath: /conprof
           name: storage
           readOnly: false
@@ -52,6 +55,8 @@ spec:
         kubernetes.io/os: linux
       serviceAccountName: conprof
       volumes:
+      - emptyDir: {}
+        name: tmp
       - emptyDir: {}
         name: storage
       - name: config

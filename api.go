@@ -14,7 +14,6 @@
 package main
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/conprof/db/storage"
@@ -43,7 +42,7 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
-	symbolServerURL := cmd.Flag("symbol-server-url", "Symbol server to request to symbolize native stacktraces. When not configured, non-symbolized stack traces will just show their memory address.").String()
+	symbolServer := cmd.Flag("symbol-server", "Symbol server to request to symbolize native stacktraces. When not configured, non-symbolized stack traces will just show their memory address.").String()
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
@@ -79,7 +78,7 @@ func registerApi(m map[string]setupFunc, app *kingpin.Application, name string) 
 			store.NewGRPCQueryable(c),
 			int64(*maxMergeBatchSize),
 			*queryTimeout,
-			*symbolServerURL,
+			*symbolServer,
 		)
 	}
 }
@@ -93,13 +92,17 @@ func runApi(
 	db storage.Queryable,
 	maxMergeBatchSize int64,
 	queryTimeout model.Duration,
-	symbolServerURL string,
+	symbolServer string,
 ) error {
 	logger = log.With(logger, "component", "api")
 
 	var s *symbol.Symbolizer
-	if symbolServerURL != "" {
-		c := symbol.NewSymbolServerClient(http.DefaultClient, symbolServerURL)
+	if symbolServer != "" {
+		conn, err := grpc.Dial(symbolServer, grpc.WithInsecure())
+		if err != nil {
+			return err
+		}
+		c := storepb.NewSymbolizeClient(conn)
 		s = symbol.NewSymbolizer(logger, c)
 	}
 

@@ -15,8 +15,8 @@ package symbol
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
@@ -24,10 +24,14 @@ import (
 
 type Symbolizer struct {
 	logger log.Logger
-	c      *SymbolServerClient
+	c      SymbolizeClient
 }
 
-func NewSymbolizer(logger log.Logger, c *SymbolServerClient) *Symbolizer {
+type SymbolizeClient interface {
+	Symbolize(context.Context, *storepb.SymbolizeRequest) (*storepb.SymbolizeResponse, error)
+}
+
+func NewSymbolizer(logger log.Logger, c SymbolizeClient) *Symbolizer {
 	return &Symbolizer{
 		logger: logger,
 		c:      c,
@@ -35,71 +39,76 @@ func NewSymbolizer(logger log.Logger, c *SymbolServerClient) *Symbolizer {
 }
 
 func (s *Symbolizer) Symbolize(ctx context.Context, p *profile.Profile) error {
-	mappings := map[uint64]*profile.Mapping{}
-	locationIdxs := map[int]struct{}{}
-	for i, location := range p.Location {
-		if len(location.Line) == 0 && location.Mapping != nil {
-			locationIdxs[i] = struct{}{}
-			mappings[location.Mapping.ID] = location.Mapping
+	mappingIndices := map[string]int{}
+	mappings := []*storepb.Mapping{}
+	for _, location := range p.Location {
+		if len(location.Line) == 0 && location.Mapping != nil && len(location.Mapping.BuildID) > 0 {
+			mappingIdx, ok := mappingIndices[location.Mapping.BuildID]
+			if !ok {
+				mappingIdx = len(mappings)
+				mappingIndices[location.Mapping.BuildID] = mappingIdx
+				mappings = append(mappings, &storepb.Mapping{
+					BuildId:     location.Mapping.BuildID,
+					MemoryStart: location.Mapping.Start,
+					MemoryLimit: location.Mapping.Limit,
+					FileOffset:  location.Mapping.Offset,
+				})
+			}
+			mapping := mappings[mappingIdx]
+			mapping.Locations = append(mapping.Locations, &storepb.Location{
+				Address: location.Address,
+			})
 		}
 	}
 
-	if len(locationIdxs) == 0 {
+	if len(mappings) == 0 {
 		// Nothing to symbolize.
 		return nil
 	}
 
-	r := &SymbolicateRequest{
-		Stacktraces: []Stacktrace{{
-			Frames: make([]Frame, 0, len(locationIdxs)),
-		}},
-		Modules: make([]Module, 0, len(mappings)),
-	}
-
-	locationAddrToIdx := map[string]int{}
-	for locationIdx := range locationIdxs {
-		locationAddr := fmt.Sprintf("0x%x", p.Location[locationIdx].Address)
-		locationAddrToIdx[locationAddr] = locationIdx
-		r.Stacktraces[0].Frames = append(r.Stacktraces[0].Frames, Frame{
-			InstructionAddr: locationAddr,
-		})
-	}
-
-	for _, mapping := range mappings {
-		r.Modules = append(r.Modules, Module{
-			Type:      "elf",
-			CodeID:    mapping.BuildID,
-			ImageAddr: fmt.Sprintf("0x%x", mapping.Start),
-		})
-	}
-
 	level.Debug(s.logger).Log("msg", "remote symbolization request")
-	res, err := s.c.Symbolicate(ctx, r)
+	res, err := s.c.Symbolize(ctx, &storepb.SymbolizeRequest{
+		Mappings: mappings,
+	})
 	if err != nil {
 		return err
 	}
 
+	mappingLocationIdx := map[string]map[uint64]int{}
+	for _, mapping := range res.Mappings {
+		locationIdx := map[uint64]int{}
+		for i, location := range mapping.Locations {
+			locationIdx[location.Address] = i
+		}
+		mappingLocationIdx[mapping.BuildId] = locationIdx
+	}
+
 	functionIdx := map[string]int{}
-	for _, stacktrace := range res.Stacktraces {
-		for _, frame := range stacktrace.Frames {
-			var f *profile.Function
-			fIdx, ok := functionIdx[frame.Function+":"+frame.AbsPath]
-			if !ok {
-				f = &profile.Function{
-					ID:       uint64(len(p.Function)) + 1,
-					Name:     frame.Function,
-					Filename: frame.AbsPath,
+	for _, location := range p.Location {
+		if len(location.Line) == 0 && location.Mapping != nil && len(location.Mapping.BuildID) > 0 {
+			m := res.Mappings[mappingIndices[location.Mapping.BuildID]]
+			locationIndices := mappingLocationIdx[location.Mapping.BuildID]
+
+			l := m.Locations[locationIndices[location.Address]]
+			for _, line := range l.Lines {
+				var f *profile.Function
+				fIdx, ok := functionIdx[line.Function.Name+":"+line.Function.Filename]
+				if !ok {
+					f = &profile.Function{
+						ID:       uint64(len(p.Function)) + 1,
+						Name:     line.Function.Name,
+						Filename: line.Function.Filename,
+					}
+					p.Function = append(p.Function, f)
+					fIdx = len(p.Function) - 1
+					functionIdx[line.Function.Name+":"+line.Function.Filename] = fIdx
 				}
-				p.Function = append(p.Function, f)
-				fIdx = len(p.Function) - 1
-				functionIdx[frame.Function+":"+frame.AbsPath] = fIdx
+				f = p.Function[fIdx]
+				location.Line = append(location.Line, profile.Line{
+					Function: f,
+					Line:     line.Line,
+				})
 			}
-			f = p.Function[fIdx]
-			l := p.Location[locationAddrToIdx[frame.InstructionAddr]]
-			l.Line = append(l.Line, profile.Line{
-				Function: f,
-				Line:     int64(frame.LineNo),
-			})
 		}
 	}
 

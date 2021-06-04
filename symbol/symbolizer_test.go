@@ -15,32 +15,44 @@ package symbol
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"net"
 	"os"
 	"testing"
 
+	"github.com/conprof/conprof/pkg/store/storepb"
 	"github.com/go-kit/kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
+	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
+	"google.golang.org/grpc"
 )
 
 func TestSymbolizer(t *testing.T) {
-	expResp := testResponse()
+	bucket, err := filesystem.NewBucket("testdata/")
+	require.NoError(t, err)
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := json.NewEncoder(w).Encode(expResp)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}))
-	defer ts.Close()
+	dir, err := os.MkdirTemp("", "symbolizer-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir) // clean up
 
-	s := NewSymbolizer(log.NewNopLogger(), NewSymbolServerClient(http.DefaultClient, ts.URL))
+	st := NewSymbolStore(log.NewNopLogger(), bucket, dir)
+	lis, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
+	defer lis.Close()
+	grpcServer := grpc.NewServer()
+	storepb.RegisterSymbolStoreServer(grpcServer, st)
+	go grpcServer.Serve(lis)
+
+	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())
+	require.NoError(t, err)
+	defer conn.Close()
+
+	c := storepb.NewSymbolizeClient(conn)
+	s := NewSymbolizer(log.NewNopLogger(), c)
 	m := &profile.Mapping{
 		ID:      uint64(1),
-		Start:   0x400000,
+		Start:   4194304,
+		Limit:   4603904,
 		BuildID: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
 	}
 	p := &profile.Profile{
@@ -51,7 +63,7 @@ func TestSymbolizer(t *testing.T) {
 		Mapping: []*profile.Mapping{m},
 	}
 
-	err := s.Symbolize(context.Background(), p)
+	err = s.Symbolize(context.Background(), p)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(p.Location))
@@ -71,13 +83,33 @@ func TestSymbolizer(t *testing.T) {
 }
 
 func TestRealSymbolizer(t *testing.T) {
-	t.Skip()
-	s := NewSymbolizer(log.NewNopLogger(), NewSymbolServerClient(http.DefaultClient, "http://localhost:3021/symbolicate"))
+	bucket, err := filesystem.NewBucket("testdata/")
+	require.NoError(t, err)
+
+	dir, err := os.MkdirTemp("", "symbolizer-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir) // clean up
+
+	st := NewSymbolStore(log.NewNopLogger(), bucket, dir)
+	lis, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
+	defer lis.Close()
+	grpcServer := grpc.NewServer()
+	storepb.RegisterSymbolStoreServer(grpcServer, st)
+	go grpcServer.Serve(lis)
+
+	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())
+	require.NoError(t, err)
+	defer conn.Close()
+
+	c := storepb.NewSymbolizeClient(conn)
+	s := NewSymbolizer(log.NewNopLogger(), c)
 	f, err := os.Open("testdata/profile.pb.gz")
 	require.NoError(t, err)
 	p, err := profile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, p.CheckValid())
+
 	err = s.Symbolize(context.Background(), p)
 	require.NoError(t, err)
 	require.NoError(t, p.CheckValid())

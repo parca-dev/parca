@@ -28,7 +28,7 @@ import (
 
 func TestSymbolServer(t *testing.T) {
 	bucket := objstore.NewInMemBucket()
-	s := NewSymbolStore(log.NewNopLogger(), bucket)
+	s := NewSymbolStore(log.NewNopLogger(), bucket, "/tmp")
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
@@ -56,7 +56,7 @@ func TestSymbolServer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(3072), size)
 
-	obj, ok := bucket.Objects()["ab/cd/debuginfo"]
+	obj, ok := bucket.Objects()["abcd/debuginfo"]
 	require.True(t, ok)
 	require.Equal(t, 3072, len(obj))
 

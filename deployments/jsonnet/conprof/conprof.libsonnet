@@ -8,7 +8,7 @@
     version: error 'must set version',
     namespaces: [conprof.config.namespace],
 
-    symbolServerURL: '',
+    symbolServer: '',
     bucketConfig: null,
 
     commonLabels:: {
@@ -140,16 +140,7 @@
       namespace: conprof.config.namespace,
     },
     stringData: {
-      'conprof.yaml': std.manifestYamlDoc({
-        type: 's3',
-        config: {
-          bucket: conprof.config.bucketConfig.bucketName,
-          endpoint: conprof.config.bucketConfig.endpoint,
-          insecure: conprof.config.bucketConfig.insecure,
-          access_key: conprof.config.bucketConfig.accessKey,
-          secret_key: conprof.config.bucketConfig.secretKey,
-        },
-      }),
+      'conprof.yaml': std.manifestYamlDoc(conprof.config.bucketConfig),
     },
   },
 
@@ -178,11 +169,15 @@
                 'all',
                 '--storage.tsdb.path=/conprof',
                 '--config.file=/etc/conprof/conprof.yaml',
-              ] + if conprof.config.symbolServerURL == '' then [] else [
-                '--symbol-server-url=' + conprof.config.symbolServerURL,
-              ] + if conprof.config.bucketConfig == null then [] else [
-                '--objstore.config=$(OBJSTORE_CONFIG)',
-              ],
+              ] + (
+                if conprof.config.symbolServer == '' then [] else [
+                  '--symbol-server=' + conprof.config.symbolServer,
+                ]
+              ) + (
+                if conprof.config.bucketConfig == null then [] else [
+                  '--objstore.config=$(OBJSTORE_CONFIG)',
+                ]
+              ),
               image: conprof.config.image,
               name: 'conprof',
               env: if conprof.config.bucketConfig == null then [] else [{
@@ -206,6 +201,11 @@
               ],
               volumeMounts: [
                 {
+                  mountPath: '/tmp',
+                  name: 'tmp',
+                  readOnly: false,
+                },
+                {
                   mountPath: '/conprof',
                   name: 'storage',
                   readOnly: false,
@@ -223,6 +223,10 @@
           },
           serviceAccountName: conprof.serviceAccount.metadata.name,
           volumes: [
+            {
+              emptyDir: {},
+              name: 'tmp',
+            },
             {
               emptyDir: {},
               name: 'storage',

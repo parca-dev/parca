@@ -45,6 +45,8 @@ func registerSymbol(m map[string]setupFunc, app *kingpin.Application, name strin
 
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
 	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false)
+	symbolCache := cmd.Flag("symbol-cache", "Directory to use to cache symbol data from object storage.").
+		Default("/tmp").String()
 	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
 	m[name] = func(comp component.Component, g *run.Group, mux httpMux, probe prober.Probe, logger log.Logger, reg *prometheus.Registry, debugLogging bool) (prober.Probe, error) {
@@ -60,6 +62,7 @@ func registerSymbol(m map[string]setupFunc, app *kingpin.Application, name strin
 			logger,
 			grpcLogOpts,
 			tagOpts,
+			*symbolCache,
 			objStoreConfig,
 			*grpcBindAddr,
 			time.Duration(*grpcGracePeriod),
@@ -78,6 +81,7 @@ func runSymbol(
 	logger log.Logger,
 	grpcLogOpts []grpc_logging.Option,
 	tagOpts []tags.Option,
+	symbolCache string,
 	objStoreConfig extflag.PathOrContent,
 	grpcBindAddr string,
 	grpcGracePeriod time.Duration,
@@ -101,7 +105,7 @@ func runSymbol(
 	if err != nil {
 		return nil, errors.Wrap(err, "create object store bucket client")
 	}
-	sym := symbol.NewSymbolStore(logger, bkt)
+	sym := symbol.NewSymbolStore(logger, bkt, symbolCache)
 
 	srv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, grpcLogOpts, tagOpts, comp, grpcProbe,
 		grpcserver.WithServer(store.RegisterSymbolStore(sym)),

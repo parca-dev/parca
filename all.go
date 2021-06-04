@@ -15,7 +15,6 @@ package main
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/conprof/db/tsdb"
@@ -64,13 +63,15 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 		Default("./data").String()
 	configFile := cmd.Flag("config.file", "Config file to use.").
 		Default("conprof.yaml").String()
-	symbolServerURL := cmd.Flag("symbol-server-url", "Symbol server to request to symbolize native stacktraces. When not configured, non-symbolized stack traces will just show their memory address.").String()
 	retention := extkingpin.ModelDuration(cmd.Flag("storage.tsdb.retention.time", "How long to retain raw samples on local storage. 0d - disables this retention").Default("15d"))
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 	grpcBindAddr, grpcGracePeriod, grpcCert, grpcKey, grpcClientCA := extkingpin.RegisterGRPCFlags(cmd)
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
 		Default("10s"))
+	symbolServer := cmd.Flag("symbol-server", "Symbol server to request to symbolize native stacktraces. When not configured, non-symbolized stack traces will just show their memory address.").String()
+	symbolCache := cmd.Flag("symbol-cache", "Directory to use to cache symbol data from object storage.").
+		Default("/tmp").String()
 	objStoreConfig := *extkingpin.RegisterCommonObjStoreFlags(cmd, "", false, "When not set, the gRPC server will be started without serving the symbol management service.")
 	reqLogConfig := extkingpin.RegisterRequestLoggingFlags(cmd)
 
@@ -102,7 +103,8 @@ func registerAll(m map[string]setupFunc, app *kingpin.Application, name string, 
 			reloaders,
 			int64(*maxMergeBatchSize),
 			*queryTimeout,
-			*symbolServerURL,
+			*symbolServer,
+			*symbolCache,
 			objStoreConfig,
 			&grpcSettings{
 				grpcBindAddr:    *grpcBindAddr,
@@ -132,7 +134,8 @@ func runAll(
 	reloaders *configReloaders,
 	maxMergeBatchSize int64,
 	queryTimeout model.Duration,
-	symbolServerURL string,
+	symbolServer string,
+	symbolCache string,
 	objStoreConfig extflag.PathOrContent,
 	srv *grpcSettings,
 ) (prober.Probe, error) {
@@ -168,11 +171,33 @@ func runAll(
 		return nil, err
 	}
 
+	confContentYaml, err := objStoreConfig.Content()
+	if err != nil {
+		return nil, err
+	}
+
+	var symStore storepb.SymbolStoreServer
+	if len(confContentYaml) > 0 {
+		bkt, err := objstore.NewBucket(logger, confContentYaml, reg, comp.String())
+		if err != nil {
+			return nil, errors.Wrap(err, "create object store bucket client")
+		}
+		symStore = symbol.NewSymbolStore(logger, bkt, symbolCache)
+	}
+
 	var sym *symbol.Symbolizer
-	if symbolServerURL != "" {
-		level.Debug(logger).Log("msg", "configuring symbol server", "url", symbolServerURL)
-		c := symbol.NewSymbolServerClient(http.DefaultClient, symbolServerURL)
+	if symbolServer != "" {
+		level.Debug(logger).Log("msg", "configuring symbol server", "url", symbolServer)
+		conn, err := grpc.Dial(symbolServer, grpc.WithInsecure())
+		if err != nil {
+			return nil, err
+		}
+		c := storepb.NewSymbolizeClient(conn)
 		sym = symbol.NewSymbolizer(logger, c)
+	}
+	if symStore != nil {
+		level.Debug(logger).Log("msg", "using in-process symbol server")
+		sym = symbol.NewSymbolizer(logger, symStore)
 	}
 
 	w := NewWeb(mux, db, maxMergeBatchSize, queryTimeout,
@@ -197,20 +222,6 @@ func runAll(
 	)
 	maxBytesPerFrame := 1024 * 1024 * 2 // 2 Mb default, might need to be tuned later on.
 	s := store.NewProfileStore(logger, db, maxBytesPerFrame)
-
-	confContentYaml, err := objStoreConfig.Content()
-	if err != nil {
-		return nil, err
-	}
-
-	var symStore storepb.SymbolStoreServer
-	if len(confContentYaml) > 0 {
-		bkt, err := objstore.NewBucket(logger, confContentYaml, reg, comp.String())
-		if err != nil {
-			return nil, errors.Wrap(err, "create object store bucket client")
-		}
-		symStore = symbol.NewSymbolStore(logger, bkt)
-	}
 
 	gsrv := grpcserver.New(logger, reg, &opentracing.NoopTracer{}, grpcLogOpts, tagOpts, comp, grpcProbe,
 		grpcserver.WithServer(store.RegisterReadableStoreServer(s)),
