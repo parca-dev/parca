@@ -17,7 +17,7 @@ jobs:
       - name: Install Go.
         uses: actions/setup-go@v1
         with:
-          go-version: 1.15.x
+          go-version: 1.16.x
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
@@ -57,7 +57,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15.x
+          go-version: 1.16.x
 
       - uses: actions/cache@v1
         with:
@@ -81,7 +81,7 @@ jobs:
       - name: Install Go.
         uses: actions/setup-go@v1
         with:
-          go-version: 1.15.x
+          go-version: 1.16.x
 
       - name: Check out code into the Go module directory.
         uses: actions/checkout@v2
@@ -102,7 +102,7 @@ jobs:
       - name: Install Go.
         uses: actions/setup-go@v1
         with:
-          go-version: 1.15.x
+          go-version: 1.16.x
 
       # We call out to graphviz
       - name: Install graphviz
