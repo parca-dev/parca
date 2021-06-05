@@ -35,7 +35,9 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir) // clean up
 
-	st := NewSymbolStore(log.NewNopLogger(), bucket, dir)
+	w := log.NewSyncWriter(os.Stderr)
+	logger := log.NewLogfmtLogger(w)
+	st := NewSymbolStore(logger, bucket, dir)
 	lis, err := net.Listen("tcp", ":0")
 	require.NoError(t, err)
 	defer lis.Close()

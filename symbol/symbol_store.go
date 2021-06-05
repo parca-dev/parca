@@ -41,10 +41,12 @@ type SymbolStore struct {
 }
 
 func NewSymbolStore(logger log.Logger, bucket objstore.Bucket, cacheDir string) *SymbolStore {
+	bu := &binutils.Binutils{}
+	level.Debug(logger).Log("msg", "initializing binutils", "binutils", bu.String())
 	return &SymbolStore{
 		logger:   logger,
 		bucket:   bucket,
-		bu:       &binutils.Binutils{},
+		bu:       bu,
 		cacheDir: cacheDir,
 	}
 }
