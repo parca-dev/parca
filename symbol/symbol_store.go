@@ -19,6 +19,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"io/ioutil"
+	"os"
+	"path"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -26,18 +29,25 @@ import (
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"google.golang.org/grpc/codes"
 
+	"github.com/conprof/conprof/internal/pprof/binutils"
 	"github.com/conprof/conprof/pkg/store/storepb"
 )
 
 type SymbolStore struct {
-	bucket objstore.Bucket
-	logger log.Logger
+	bucket   objstore.Bucket
+	logger   log.Logger
+	bu       *binutils.Binutils
+	cacheDir string
 }
 
-func NewSymbolStore(logger log.Logger, bucket objstore.Bucket) *SymbolStore {
+func NewSymbolStore(logger log.Logger, bucket objstore.Bucket, cacheDir string) *SymbolStore {
+	bu := &binutils.Binutils{}
+	level.Debug(logger).Log("msg", "initializing binutils", "binutils", bu.String())
 	return &SymbolStore{
-		logger: logger,
-		bucket: bucket,
+		logger:   logger,
+		bucket:   bucket,
+		bu:       bu,
+		cacheDir: cacheDir,
 	}
 }
 
@@ -59,7 +69,7 @@ func (s *SymbolStore) Exists(ctx context.Context, req *storepb.SymbolExistsReque
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	path := req.Id[:2] + "/" + req.Id[2:]
+	path := req.Id
 
 	found := false
 	err = s.bucket.Iter(ctx, path, func(_ string) error {
@@ -89,7 +99,7 @@ func (s *SymbolStore) Upload(stream storepb.SymbolStore_UploadServer) error {
 	if err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
-	path := id[:2] + "/" + id[2:] + "/debuginfo"
+	path := id + "/debuginfo"
 
 	r := &UploadReader{stream: stream}
 	err = s.bucket.Upload(stream.Context(), path, r)
@@ -161,4 +171,74 @@ func contextError(ctx context.Context) error {
 	default:
 		return nil
 	}
+}
+
+func (s *SymbolStore) Symbolize(ctx context.Context, req *storepb.SymbolizeRequest) (*storepb.SymbolizeResponse, error) {
+	for _, m := range req.Mappings {
+		mappingPath := path.Join(s.cacheDir, m.BuildId, "debuginfo")
+		if _, err := os.Stat(mappingPath); os.IsNotExist(err) {
+			r, err := s.bucket.Get(ctx, path.Join(m.BuildId, "debuginfo"))
+			if s.bucket.IsObjNotFoundErr(err) {
+				level.Debug(s.logger).Log("msg", "object not found", "object", m.BuildId)
+				continue
+			}
+			if err != nil {
+				level.Error(s.logger).Log("msg", "failed to get object", "object", m.BuildId, "err", err)
+				return nil, err
+			}
+			tmpfile, err := ioutil.TempFile("", "symbol-download")
+			if err != nil {
+				level.Error(s.logger).Log("msg", "failed to create tmp file")
+				return nil, err
+			}
+			_, err = io.Copy(tmpfile, r)
+			if err != nil {
+				os.Remove(tmpfile.Name())
+				return nil, err
+			}
+			if err := tmpfile.Close(); err != nil {
+				os.Remove(tmpfile.Name())
+				return nil, err
+			}
+
+			err = os.MkdirAll(path.Join(s.cacheDir, m.BuildId), 0700)
+			if err != nil {
+				os.Remove(tmpfile.Name())
+				return nil, err
+			}
+			// Need to use rename to make the "creation" atomic.
+			if err := os.Rename(tmpfile.Name(), mappingPath); err != nil {
+				os.Remove(tmpfile.Name())
+				return nil, err
+			}
+		}
+
+		objFile, err := s.bu.Open(mappingPath, m.MemoryStart, m.MemoryLimit, m.FileOffset)
+		if err != nil {
+			level.Error(s.logger).Log("msg", "failed to open object file", "mappingpath", mappingPath, "start", m.MemoryStart, "limit", m.MemoryLimit, "offset", m.FileOffset, "err", err)
+			return nil, err
+		}
+
+		for _, location := range m.Locations {
+			frames, err := objFile.SourceLine(location.Address)
+			if err != nil {
+				level.Debug(s.logger).Log("msg", "failed to open object file", "mappingpath", mappingPath, "start", m.MemoryStart, "limit", m.MemoryLimit, "offset", m.FileOffset, "address", location.Address, "err", err)
+				continue
+			}
+
+			for _, frame := range frames {
+				location.Lines = append(location.Lines, &storepb.Line{
+					Line: int64(frame.Line),
+					Function: &storepb.Function{
+						Name:     frame.Func,
+						Filename: frame.File,
+					},
+				})
+			}
+		}
+	}
+
+	return &storepb.SymbolizeResponse{
+		Mappings: req.Mappings,
+	}, nil
 }

@@ -45,7 +45,7 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 
 	storeAddress := cmd.Flag("store", "Address of statically configured store.").
 		Default("127.0.0.1:10901").String()
-	symbolServerURL := cmd.Flag("symbol-server-url", "Symbol server to request to symbolize native stacktraces.").String()
+	symbolServer := cmd.Flag("symbol-server", "Symbol server to request to symbolize native stacktraces.").String()
 	maxMergeBatchSize := cmd.Flag("max-merge-batch-size", "Bytes loaded in one batch for merging. This is to limit the amount of memory a merge query can use.").
 		Default("64MB").Bytes()
 	queryTimeout := extkingpin.ModelDuration(cmd.Flag("query.timeout", "Maximum time to process query by query node.").
@@ -59,8 +59,12 @@ func registerWeb(m map[string]setupFunc, app *kingpin.Application, name string, 
 		c := storepb.NewReadableProfileStoreClient(conn)
 
 		var s *symbol.Symbolizer = nil
-		if *symbolServerURL != "" {
-			c := symbol.NewSymbolServerClient(http.DefaultClient, *symbolServerURL)
+		if *symbolServer != "" {
+			conn, err := grpc.Dial(*symbolServer, grpc.WithInsecure())
+			if err != nil {
+				return probe, err
+			}
+			c := storepb.NewSymbolizeClient(conn)
 			s = symbol.NewSymbolizer(logger, c)
 		}
 

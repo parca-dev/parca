@@ -8,22 +8,6 @@
         }
       },
       "version": ""
-    },
-    {
-      "source": {
-        "local": {
-          "directory": "jsonnet/symbolicator"
-        }
-      },
-      "version": ""
-    },
-    {
-      "source": {
-        "local": {
-          "directory": "jsonnet/minio"
-        }
-      },
-      "version": ""
     }
   ],
   "legacyImports": true

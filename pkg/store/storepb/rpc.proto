@@ -27,6 +27,7 @@ service WritableProfileStore {
 service SymbolStore {
   rpc Exists(SymbolExistsRequest) returns (SymbolExistsResponse) {}
   rpc Upload(stream SymbolUploadRequest) returns (SymbolUploadResponse) {}
+  rpc Symbolize(SymbolizeRequest) returns (SymbolizeResponse) {}
 }
 
 // ReadableProfileStore represents API against instance that allows reading profiles from.
@@ -182,4 +183,35 @@ message SymbolUploadInfo {
 message SymbolUploadResponse {
   string id = 1;
   uint64 size = 2;
+}
+
+message SymbolizeRequest {
+  repeated Mapping mappings = 1;
+}
+
+message SymbolizeResponse {
+  repeated Mapping mappings = 1;
+}
+
+message Mapping {
+  string build_id = 1;
+  uint64 memory_start = 2;
+  uint64 memory_limit = 3;
+  uint64 file_offset = 4;
+  repeated Location locations = 5;
+}
+
+message Location {
+  uint64 address = 1;
+  repeated Line lines = 2;
+}
+
+message Line {
+  int64 line = 1;
+  Function function = 2;
+}
+
+message Function {
+  string name = 1;
+  string filename = 2;
 }
