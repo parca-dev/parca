@@ -106,7 +106,7 @@ jobs:
 
       # We call out to graphviz
       - name: Install graphviz
-        run: sudo apt-get install graphviz binutils
+        run: sudo apt-get install graphviz llvm
 
       - name: Check out code into the Go module directory.
         uses: actions/checkout@v2
