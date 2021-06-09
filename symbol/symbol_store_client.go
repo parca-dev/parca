@@ -16,6 +16,7 @@ package symbol
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/conprof/conprof/pkg/store/storepb"
@@ -45,7 +46,7 @@ func (c *SymbolStoreClient) Exists(ctx context.Context, id string) (bool, error)
 func (c *SymbolStoreClient) Upload(ctx context.Context, id string, r io.Reader) (uint64, error) {
 	stream, err := c.c.Upload(ctx)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("initiate upload: %w", err)
 	}
 
 	err = stream.Send(&storepb.SymbolUploadRequest{
@@ -56,19 +57,20 @@ func (c *SymbolStoreClient) Upload(ctx context.Context, id string, r io.Reader) 
 		},
 	})
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("send upload info: %w", err)
 	}
 
 	reader := bufio.NewReader(r)
 	buffer := make([]byte, 1024)
 
+	bytesSent := 0
 	for {
 		n, err := reader.Read(buffer)
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("read next chunk (%d bytes sent so far): %w", bytesSent, err)
 		}
 
 		err = stream.Send(&storepb.SymbolUploadRequest{
@@ -77,13 +79,14 @@ func (c *SymbolStoreClient) Upload(ctx context.Context, id string, r io.Reader) 
 			},
 		})
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("send next chunk (%d bytes sent so far): %w", bytesSent, err)
 		}
+		bytesSent += n
 	}
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("close and receive: %w:", err)
 	}
 	return res.Size_, nil
 }

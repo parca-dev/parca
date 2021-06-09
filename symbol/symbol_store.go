@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -125,22 +126,28 @@ func (r *UploadReader) Read(p []byte) (int, error) {
 	if r.cur == nil {
 		var err error
 		r.cur, err = r.next()
+		if err == io.EOF {
+			return 0, io.EOF
+		}
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("get first upload chunk: %w", err)
 		}
 	}
 	i, err := r.cur.Read(p)
 	if err != nil && err != io.EOF {
-		return 0, err
+		return 0, fmt.Errorf("read upload chunk (%d bytes read so far): %w", r.size, err)
 	}
 	if err == io.EOF {
 		r.cur, err = r.next()
 		if err == io.EOF {
-			return 0, err
+			return 0, io.EOF
+		}
+		if err != nil {
+			return 0, fmt.Errorf("get next upload chunk (%d bytes read so far): %w", r.size, err)
 		}
 		i, err = r.cur.Read(p)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("read next upload chunk (%d bytes read so far): %w", r.size, err)
 		}
 	}
 
@@ -155,8 +162,11 @@ func (r *UploadReader) next() (io.Reader, error) {
 	}
 
 	req, err := r.stream.Recv()
+	if err == io.EOF {
+		return nil, io.EOF
+	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("receive from stream: %w", err)
 	}
 
 	return bytes.NewBuffer(req.GetChunkData()), nil
@@ -184,39 +194,39 @@ func (s *SymbolStore) Symbolize(ctx context.Context, req *storepb.SymbolizeReque
 			}
 			if err != nil {
 				level.Error(s.logger).Log("msg", "failed to get object", "object", m.BuildId, "err", err)
-				return nil, err
+				return nil, fmt.Errorf("get object from object storage: %w", err)
 			}
 			tmpfile, err := ioutil.TempFile("", "symbol-download")
 			if err != nil {
 				level.Error(s.logger).Log("msg", "failed to create tmp file")
-				return nil, err
+				return nil, fmt.Errorf("create temp file: %w", err)
 			}
 			_, err = io.Copy(tmpfile, r)
 			if err != nil {
 				os.Remove(tmpfile.Name())
-				return nil, err
+				return nil, fmt.Errorf("copy object storage file to local temp file: %w", err)
 			}
 			if err := tmpfile.Close(); err != nil {
 				os.Remove(tmpfile.Name())
-				return nil, err
+				return nil, fmt.Errorf("close tempfile to write object file: %w", err)
 			}
 
 			err = os.MkdirAll(path.Join(s.cacheDir, m.BuildId), 0700)
 			if err != nil {
 				os.Remove(tmpfile.Name())
-				return nil, err
+				return nil, fmt.Errorf("create object file directory: %w", err)
 			}
 			// Need to use rename to make the "creation" atomic.
 			if err := os.Rename(tmpfile.Name(), mappingPath); err != nil {
 				os.Remove(tmpfile.Name())
-				return nil, err
+				return nil, fmt.Errorf("atomically move downloaded object file: %w", err)
 			}
 		}
 
 		objFile, err := s.bu.Open(mappingPath, m.MemoryStart, m.MemoryLimit, m.FileOffset)
 		if err != nil {
 			level.Error(s.logger).Log("msg", "failed to open object file", "mappingpath", mappingPath, "start", m.MemoryStart, "limit", m.MemoryLimit, "offset", m.FileOffset, "err", err)
-			return nil, err
+			return nil, fmt.Errorf("open object file: %w", err)
 		}
 
 		for _, location := range m.Locations {
