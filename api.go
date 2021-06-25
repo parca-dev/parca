@@ -98,7 +98,16 @@ func runApi(
 
 	var s *symbol.Symbolizer
 	if symbolServer != "" {
-		conn, err := grpc.Dial(symbolServer, grpc.WithInsecure())
+		conn, err := grpc.Dial(
+			symbolServer,
+			grpc.WithInsecure(),
+			grpc.WithUnaryInterceptor(
+				otelgrpc.UnaryClientInterceptor(),
+			),
+			grpc.WithStreamInterceptor(
+				otelgrpc.StreamClientInterceptor(),
+			),
+		)
 		if err != nil {
 			return err
 		}
