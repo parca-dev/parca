@@ -1,4 +1,4 @@
-package chunk
+package storage
 
 import (
 	"os"
@@ -35,6 +35,7 @@ func TestChunk(t *testing.T) {
 	require.Equal(t, 2, len(it.data.Periods))
 
 	f, err = os.Create("result-profile1.pb.gz")
+	defer os.Remove("result-profile1.pb.gz")
 	require.NoError(t, err)
 	require.True(t, it.Next())
 	resp1 := it.At()
@@ -43,6 +44,7 @@ func TestChunk(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	f, err = os.Create("result-profile2.pb.gz")
+	defer os.Remove("result-profile2.pb.gz")
 	require.NoError(t, err)
 	require.True(t, it.Next())
 	resp2 := it.At()
