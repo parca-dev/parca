@@ -1,3 +1,16 @@
+// Copyright 2021 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Copyright 2017 The Prometheus Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,10 +27,9 @@
 package chunkenc
 
 import (
+	"fmt"
 	"math"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 // Encoding is the identifier for a chunk encoding.
@@ -68,7 +80,7 @@ type Chunk interface {
 
 // Appender adds sample pairs to a chunk.
 type Appender interface {
-	Append(int64, float64)
+	Append(int64, int64)
 }
 
 // Iterator is a simple iterator that can only get the next value.
@@ -83,7 +95,7 @@ type Iterator interface {
 	Seek(t int64) bool
 	// At returns the current timestamp/value pair.
 	// Before the iterator has advanced At behaviour is unspecified.
-	At() (int64, float64)
+	At() (int64, int64)
 	// Err returns the current error. It should be used only after iterator is
 	// exhausted, that is `Next` or `Seek` returns false.
 	Err() error
@@ -96,10 +108,10 @@ func NewNopIterator() Iterator {
 
 type nopIterator struct{}
 
-func (nopIterator) Seek(int64) bool      { return false }
-func (nopIterator) At() (int64, float64) { return math.MinInt64, 0 }
-func (nopIterator) Next() bool           { return false }
-func (nopIterator) Err() error           { return nil }
+func (nopIterator) Seek(int64) bool    { return false }
+func (nopIterator) At() (int64, int64) { return math.MinInt64, 0 }
+func (nopIterator) Next() bool         { return false }
+func (nopIterator) Err() error         { return nil }
 
 // Pool is used to create and reuse chunk references to avoid allocations.
 type Pool interface {
@@ -131,7 +143,7 @@ func (p *pool) Get(e Encoding, b []byte) (Chunk, error) {
 		c.b.count = 0
 		return c, nil
 	}
-	return nil, errors.Errorf("invalid chunk encoding %q", e)
+	return nil, fmt.Errorf("invalid chunk encoding %q", e)
 }
 
 func (p *pool) Put(c Chunk) error {
@@ -148,7 +160,7 @@ func (p *pool) Put(c Chunk) error {
 		xc.b.count = 0
 		p.xor.Put(c)
 	default:
-		return errors.Errorf("invalid chunk encoding %q", c.Encoding())
+		return fmt.Errorf("invalid chunk encoding %q", c.Encoding())
 	}
 	return nil
 }
@@ -161,5 +173,5 @@ func FromData(e Encoding, d []byte) (Chunk, error) {
 	case EncXOR:
 		return &XORChunk{b: bstream{count: 0, stream: d}}, nil
 	}
-	return nil, errors.Errorf("invalid chunk encoding %q", e)
+	return nil, fmt.Errorf("invalid chunk encoding %q", e)
 }

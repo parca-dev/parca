@@ -1,3 +1,16 @@
+// Copyright 2021 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Copyright 2017 The Prometheus Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -140,14 +153,14 @@ type xorAppender struct {
 	b *bstream
 
 	t      int64
-	v      float64
+	v      int64
 	tDelta uint64
 
 	leading  uint8
 	trailing uint8
 }
 
-func (a *xorAppender) Append(t int64, v float64) {
+func (a *xorAppender) Append(t int64, v int64) {
 	var tDelta uint64
 	num := binary.BigEndian.Uint16(a.b.bytes())
 
@@ -156,8 +169,7 @@ func (a *xorAppender) Append(t int64, v float64) {
 		for _, b := range buf[:binary.PutVarint(buf, t)] {
 			a.b.writeByte(b)
 		}
-		b := math.Float64bits(v)
-		a.b.writeBits(b, 64)
+		a.b.writeBits(uint64(v), 64)
 
 	} else if num == 1 {
 		tDelta = uint64(t - a.t)
@@ -205,8 +217,8 @@ func bitRange(x int64, nbits uint8) bool {
 	return -((1<<(nbits-1))-1) <= x && x <= 1<<(nbits-1)
 }
 
-func (a *xorAppender) writeVDelta(v float64) {
-	vDelta := math.Float64bits(v) ^ math.Float64bits(a.v)
+func (a *xorAppender) writeVDelta(v int64) {
+	vDelta := uint64(v) ^ uint64(a.v)
 
 	if vDelta == 0 {
 		a.b.writeBit(zero)
@@ -246,7 +258,7 @@ type xorIterator struct {
 	numRead  uint16
 
 	t   int64
-	val float64
+	val int64
 
 	leading  uint8
 	trailing uint8
@@ -268,7 +280,7 @@ func (it *xorIterator) Seek(t int64) bool {
 	return true
 }
 
-func (it *xorIterator) At() (int64, float64) {
+func (it *xorIterator) At() (int64, int64) {
 	return it.t, it.val
 }
 
@@ -308,7 +320,7 @@ func (it *xorIterator) Next() bool {
 			return false
 		}
 		it.t = t
-		it.val = math.Float64frombits(v)
+		it.val = int64(v) // internall XORed as uint64 but when reading back we want to interpret as int64
 
 		it.numRead++
 		return true
@@ -446,9 +458,9 @@ func (it *xorIterator) readValue() bool {
 			it.err = err
 			return false
 		}
-		vbits := math.Float64bits(it.val)
+		vbits := uint64(it.val)
 		vbits ^= bits << it.trailing
-		it.val = math.Float64frombits(vbits)
+		it.val = int64(vbits)
 	}
 
 	it.numRead++

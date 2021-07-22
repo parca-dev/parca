@@ -1,3 +1,16 @@
+// Copyright 2021 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Copyright 2017 The Prometheus Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +37,7 @@ import (
 
 type pair struct {
 	t int64
-	v float64
+	v int64
 }
 
 func TestChunk(t *testing.T) {
@@ -47,14 +60,14 @@ func testChunk(t *testing.T, c Chunk) {
 	var exp []pair
 	var (
 		ts = int64(1234123324)
-		v  = 1243535.123
+		v  = int64(1243535)
 	)
 	for i := 0; i < 300; i++ {
 		ts += int64(rand.Intn(10000) + 1)
 		if i%2 == 0 {
-			v += float64(rand.Intn(1000000))
+			v += int64(rand.Intn(1000000))
 		} else {
-			v -= float64(rand.Intn(1000000))
+			v -= int64(rand.Intn(1000000))
 		}
 
 		// Start with a new appender every 10th sample. This emulates starting
@@ -112,14 +125,14 @@ func testChunk(t *testing.T, c Chunk) {
 func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 	var (
 		t   = int64(1234123324)
-		v   = 1243535.123
+		v   = int64(1243535)
 		exp []pair
 	)
 	for i := 0; i < b.N; i++ {
 		// t += int64(rand.Intn(10000) + 1)
 		t += int64(1000)
 		// v = rand.Float64()
-		v += float64(100)
+		v += 100
 		exp = append(exp, pair{t: t, v: v})
 	}
 
@@ -148,7 +161,7 @@ func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 
 	b.Log("num", b.N, "created chunks", len(chunks))
 
-	res := make([]float64, 0, 1024)
+	res := make([]int64, 0, 1024)
 
 	var it Iterator
 	for i := 0; i < len(chunks); i++ {
@@ -181,14 +194,14 @@ func BenchmarkXORAppender(b *testing.B) {
 func benchmarkAppender(b *testing.B, newChunk func() Chunk) {
 	var (
 		t = int64(1234123324)
-		v = 1243535.123
+		v = int64(1243535)
 	)
 	var exp []pair
 	for i := 0; i < b.N; i++ {
 		// t += int64(rand.Intn(10000) + 1)
 		t += int64(1000)
 		// v = rand.Float64()
-		v += float64(100)
+		v += int64(100)
 		exp = append(exp, pair{t: t, v: v})
 	}
 
