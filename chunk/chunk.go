@@ -1,8 +1,14 @@
 package chunk
 
+type ChunkIterator interface {
+	Next() bool
+	At() int64
+	Err() error
+}
+
 type Chunk interface {
 	AppendAt(i int, v int64) error
-	Values() []int64
+	Iterator() ChunkIterator
 }
 
 func NewFakeChunk() *FakeChunk {
@@ -27,6 +33,28 @@ func (c *FakeChunk) AppendAt(i int, v int64) error {
 	return nil
 }
 
-func (c *FakeChunk) Values() []int64 {
-	return c.values
+type FakeChunkIterator struct {
+	i      int
+	values []int64
+}
+
+func (c *FakeChunk) Iterator() ChunkIterator {
+	return &FakeChunkIterator{
+		values: c.values,
+		i:      -1,
+	}
+}
+
+func (c *FakeChunkIterator) Next() bool {
+	c.i++
+
+	return len(c.values) > c.i
+}
+
+func (c *FakeChunkIterator) At() int64 {
+	return c.values[c.i]
+}
+
+func (c *FakeChunkIterator) Err() error {
+	return nil
 }

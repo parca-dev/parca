@@ -55,7 +55,7 @@ import (
 //	require.False(t, it.Next())
 //}
 
-func TestProfileTree(t *testing.T) {
+func TestProfileTreeInsert(t *testing.T) {
 	pt := &ProfileTree{}
 	pt.Insert(makeSample(2, []uint64{2, 1}))
 	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
@@ -63,25 +63,27 @@ func TestProfileTree(t *testing.T) {
 
 	require.Equal(t, &ProfileTree{
 		Roots: &ProfileTreeNode{
-			CumulativeValues: []*ProfileTreeValueNode{{Value: 6}},
+			cumulativeValues: []*ProfileTreeValueNode{{Value: 6}},
+			// Roots always have the LocationID 0.
+			locationID: 0,
 			Children: []*ProfileTreeNode{{
-				LocationID:       1,
-				CumulativeValues: []*ProfileTreeValueNode{{Value: 6}},
+				locationID:       1,
+				cumulativeValues: []*ProfileTreeValueNode{{Value: 6}},
 				Children: []*ProfileTreeNode{{
-					LocationID:       2,
-					CumulativeValues: []*ProfileTreeValueNode{{Value: 6}},
-					FlatValues:       []*ProfileTreeValueNode{{Value: 2}},
+					locationID:       2,
+					cumulativeValues: []*ProfileTreeValueNode{{Value: 6}},
+					flatValues:       []*ProfileTreeValueNode{{Value: 2}},
 					Children: []*ProfileTreeNode{{
-						LocationID:       3,
-						CumulativeValues: []*ProfileTreeValueNode{{Value: 4}},
+						locationID:       3,
+						cumulativeValues: []*ProfileTreeValueNode{{Value: 4}},
 						Children: []*ProfileTreeNode{{
-							LocationID:       4,
-							CumulativeValues: []*ProfileTreeValueNode{{Value: 3}},
-							FlatValues:       []*ProfileTreeValueNode{{Value: 3}},
+							locationID:       4,
+							cumulativeValues: []*ProfileTreeValueNode{{Value: 3}},
+							flatValues:       []*ProfileTreeValueNode{{Value: 3}},
 						}, {
-							LocationID:       5,
-							CumulativeValues: []*ProfileTreeValueNode{{Value: 1}},
-							FlatValues:       []*ProfileTreeValueNode{{Value: 1}},
+							locationID:       5,
+							cumulativeValues: []*ProfileTreeValueNode{{Value: 1}},
+							flatValues:       []*ProfileTreeValueNode{{Value: 1}},
 						}},
 					}},
 				}},
@@ -89,28 +91,28 @@ func TestProfileTree(t *testing.T) {
 	}, pt)
 }
 
-func TestSeriesTree(t *testing.T) {
+func TestMemSeriesTree(t *testing.T) {
 	pt1 := &ProfileTree{}
 	pt1.Insert(makeSample(2, []uint64{2, 1}))
 	pt1.Insert(makeSample(2, []uint64{4, 1}))
 
-	st := &SeriesTree{}
+	st := &MemSeriesTree{}
 	st.Insert(0, pt1)
 
-	require.Equal(t, &SeriesTree{
-		Roots: &SeriesTreeNode{
-			CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(4)}},
-			Children: []*SeriesTreeNode{{
+	require.Equal(t, &MemSeriesTree{
+		Roots: &MemSeriesTreeNode{
+			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(4)}},
+			Children: []*MemSeriesTreeNode{{
 				LocationID:       1,
-				CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(4)}},
-				Children: []*SeriesTreeNode{{
+				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(4)}},
+				Children: []*MemSeriesTreeNode{{
 					LocationID:       2,
-					CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
-					FlatValues:       []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
 				}, {
 					LocationID:       4,
-					CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
-					FlatValues:       []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
 				}},
 			}}},
 	}, st)
@@ -120,27 +122,80 @@ func TestSeriesTree(t *testing.T) {
 
 	st.Insert(1, pt2)
 
-	require.Equal(t, &SeriesTree{
-		Roots: &SeriesTreeNode{
-			CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(4, 2)}},
-			Children: []*SeriesTreeNode{{
+	require.Equal(t, &MemSeriesTree{
+		Roots: &MemSeriesTreeNode{
+			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(4, 2)}},
+			Children: []*MemSeriesTreeNode{{
 				LocationID:       1,
-				CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(4, 2)}},
-				Children: []*SeriesTreeNode{{
+				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(4, 2)}},
+				Children: []*MemSeriesTreeNode{{
 					LocationID:       2,
-					CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
-					FlatValues:       []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
 				}, {
 					LocationID:       3,
-					CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(0, 2)}},
-					FlatValues:       []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(0, 2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(0, 2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(0, 2)}},
 				}, {
 					LocationID:       4,
-					CumulativeValues: []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
-					FlatValues:       []*SeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
 				}},
 			}}},
 	}, st)
+}
+
+func TestMemSeriesIterator(t *testing.T) {
+	pt := &ProfileTree{}
+	pt.Insert(makeSample(2, []uint64{2, 1}))
+	pt.Insert(makeSample(2, []uint64{4, 1}))
+
+	st := &MemSeries{}
+	st.append(pt)
+
+	it := st.Iterator()
+	require.True(t, it.Next())
+	require.NoError(t, it.Err())
+
+	instantProfile := it.At()
+	require.Equal(t, InstantProfileMeta{}, instantProfile.ProfileMeta())
+
+	res := []uint64{}
+	WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) {
+		res = append(res, n.LocationID())
+	})
+
+	require.Equal(t, []uint64{0, 1, 2, 4}, res)
+}
+
+func TestIteratorConsistency(t *testing.T) {
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	s := &MemSeries{}
+	require.NoError(t, s.Append(p1))
+
+	profileTree, err := s.prepareSamplesForInsert(p1)
+	require.NoError(t, err)
+
+	res1 := []uint64{}
+	WalkProfileTree(profileTree, func(n InstantProfileTreeNode) {
+		res1 = append(res1, n.LocationID())
+	})
+
+	sit := s.Iterator()
+	require.True(t, sit.Next())
+	require.NoError(t, sit.Err())
+
+	res2 := []uint64{}
+	WalkProfileTree(sit.At().ProfileTree(), func(n InstantProfileTreeNode) {
+		res2 = append(res2, n.LocationID())
+	})
+
+	require.Equal(t, res1, res2)
 }
 
 func TestRealInsert(t *testing.T) {
@@ -158,7 +213,7 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	s := &Series{}
+	s := &MemSeries{}
 	require.NoError(t, s.Append(p1))
 	require.NoError(t, s.Append(p2))
 }

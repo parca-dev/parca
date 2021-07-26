@@ -10,206 +10,168 @@ import (
 	"github.com/parca-dev/storage/chunk"
 )
 
-type SeriesTreeValueNode struct {
+type MemSeriesTreeValueNode struct {
 	Values   chunk.Chunk
 	Label    map[string][]string
 	NumLabel map[string][]int64
 	NumUnit  map[string][]string
 }
 
-type SeriesTreeNode struct {
+type MemSeriesTreeNode struct {
 	LocationID       uint64
-	FlatValues       []*SeriesTreeValueNode
-	CumulativeValues []*SeriesTreeValueNode
-	Children         []*SeriesTreeNode
+	FlatValues       []*MemSeriesTreeValueNode
+	CumulativeValues []*MemSeriesTreeValueNode
+	Children         []*MemSeriesTreeNode
 }
 
-type SeriesTree struct {
-	Roots *SeriesTreeNode
+type MemSeriesTree struct {
+	Roots *MemSeriesTreeNode
 }
 
-func (t *SeriesTree) Insert(i int, profileTree *ProfileTree) {
+func (t *MemSeriesTree) Iterator() *MemSeriesTreeIterator {
+	return NewMemSeriesTreeIterator(t)
+}
+
+func (t *MemSeriesTree) Insert(i int, profileTree *ProfileTree) {
 	if t.Roots == nil {
-		t.Roots = &SeriesTreeNode{}
+		t.Roots = &MemSeriesTreeNode{}
 	}
 
-	t.insert(i, t.Roots, profileTree.Roots)
-}
+	pit := profileTree.Iterator()
+	sit := t.Iterator()
 
-type ProfileTreeStackEntry struct {
-	node  *ProfileTreeNode
-	child int
-}
+	for pit.HasMore() {
+		if pit.NextChild() {
+			profileTreeChild := pit.At()
+			pId := profileTreeChild.LocationID()
 
-type SeriesTreeStackEntry struct {
-	node  *SeriesTreeNode
-	child int
-}
+			done := false
+			for {
+				if !sit.NextChild() {
+					node := sit.Node()
+					seriesTreeChild := &MemSeriesTreeNode{
+						LocationID: pId,
+					}
+					if len(profileTreeChild.FlatValues()) > 0 {
+						if seriesTreeChild.FlatValues == nil {
+							seriesTreeChild.FlatValues = []*MemSeriesTreeValueNode{{
+								Values: chunk.NewFakeChunk(),
+							}}
+						}
+						seriesTreeChild.FlatValues[0].Values.AppendAt(i, profileTreeChild.FlatValues()[0].Value)
+					}
+					if seriesTreeChild.CumulativeValues == nil {
+						seriesTreeChild.CumulativeValues = []*MemSeriesTreeValueNode{{
+							Values: chunk.NewFakeChunk(),
+						}}
+					}
+					seriesTreeChild.CumulativeValues[0].Values.AppendAt(i, profileTreeChild.CumulativeValues()[0].Value)
+					node.Children = append(node.Children, seriesTreeChild)
 
-func (t *SeriesTree) insert(i int, seriesRoot *SeriesTreeNode, profileRoot *ProfileTreeNode) {
-	// Put a fake node round the roots so the cumulative values of the roots are also appended.
-	seriesTreeStack := []SeriesTreeStackEntry{{
-		node:  &SeriesTreeNode{Children: []*SeriesTreeNode{seriesRoot}},
-		child: 0,
-	}}
-	profileTreeStack := []ProfileTreeStackEntry{{
-		node:  &ProfileTreeNode{Children: []*ProfileTreeNode{profileRoot}},
-		child: 0,
-	}}
-
-	curSeriesStackItem := seriesTreeStack[0]
-	curProfileStackItem := profileTreeStack[0]
-
-	for len(profileTreeStack) > 0 {
-		if (len(curSeriesStackItem.node.Children) <= curSeriesStackItem.child &&
-			len(curProfileStackItem.node.Children) <= curProfileStackItem.child) ||
-			len(curProfileStackItem.node.Children) <= curProfileStackItem.child {
-
-			// We're at the end of the children array of both nodes, so we go
-			// one node up the stack to see what else needs to be done there.
-
-			curSeriesStackItem = seriesTreeStack[len(seriesTreeStack)-1]
-			curSeriesStackItem.child++
-			seriesTreeStack = seriesTreeStack[:len(seriesTreeStack)-1]
-
-			curProfileStackItem = profileTreeStack[len(profileTreeStack)-1]
-			curProfileStackItem.child++
-			profileTreeStack = profileTreeStack[:len(profileTreeStack)-1]
-			continue
-		}
-
-		if len(curSeriesStackItem.node.Children) == curSeriesStackItem.child &&
-			len(curProfileStackItem.node.Children) > curProfileStackItem.child {
-
-			// This means the series-tree-node is at the end of its known children, but the profile-tree still has children so we append the next one.
-
-			profileNodeChild := curProfileStackItem.node.Children[curProfileStackItem.child]
-			newSeriesNode := &SeriesTreeNode{
-				LocationID: profileNodeChild.LocationID,
+					pit.StepInto()
+					sit.StepInto()
+					done = true
+					break
+				}
+				sId := sit.At().LocationID
+				if pId == sId || pId < sId {
+					break
+				}
 			}
-			if len(profileNodeChild.FlatValues) > 0 {
-				newSeriesNode.FlatValues = []*SeriesTreeValueNode{{
-					Values: chunk.NewFakeChunk(),
-				}}
-				newSeriesNode.FlatValues[0].Values.AppendAt(
-					i,
-					profileNodeChild.FlatValues[0].Value,
-				)
+			if done {
+				continue
 			}
 
-			newSeriesNode.CumulativeValues = []*SeriesTreeValueNode{{
-				Values: chunk.NewFakeChunk(),
-			}}
-			newSeriesNode.CumulativeValues[0].Values.AppendAt(
-				i,
-				profileNodeChild.CumulativeValues[0].Value,
-			)
-			curSeriesStackItem.node.Children = append(curSeriesStackItem.node.Children, newSeriesNode)
+			seriesTreeChild := sit.At()
+			sId := seriesTreeChild.LocationID
 
-			curSeriesStackItem = SeriesTreeStackEntry{
-				node:  newSeriesNode,
-				child: 0,
-			}
-			seriesTreeStack = append(seriesTreeStack, curSeriesStackItem)
-			curProfileStackItem = ProfileTreeStackEntry{
-				node:  profileNodeChild,
-				child: 0,
-			}
-			profileTreeStack = append(profileTreeStack, curProfileStackItem)
-			continue
-		}
-
-		loc1 := curSeriesStackItem.node.Children[curSeriesStackItem.child].LocationID
-		loc2 := curProfileStackItem.node.Children[curProfileStackItem.child].LocationID
-
-		if loc1 < loc2 {
-			// Nothing to insert as current location is smaller than the one to insert. And larger ones may still come.
-			curSeriesStackItem.child++
-			continue
-		}
-
-		if loc1 > loc2 {
-			// The node with the location id in the profile-tree is smaller, this means this node is not present yet in the series-tree, so it has to be added at the current child position.
-			newChildren := make([]*SeriesTreeNode, len(curSeriesStackItem.node.Children)+1)
-			copy(newChildren, curSeriesStackItem.node.Children[:curSeriesStackItem.child])
-			child := &SeriesTreeNode{
-				LocationID: curProfileStackItem.node.Children[curProfileStackItem.child].LocationID,
-			}
-			newChildren[curSeriesStackItem.child] = child
-			copy(newChildren[curSeriesStackItem.child+1:], curSeriesStackItem.node.Children[curSeriesStackItem.child:])
-			curSeriesStackItem.node.Children = newChildren
-			continue
-		}
-
-		if loc1 == loc2 {
-			// Locations are identical this means we need to add values and go one step deeper into the trees.
-
-			if len(curProfileStackItem.node.Children[curProfileStackItem.child].FlatValues) > 0 {
-				// It's possible that a node has no flat value, and only a cumulative value.
-				if len(curSeriesStackItem.node.Children[curSeriesStackItem.child].FlatValues) == 0 {
-					curSeriesStackItem.node.Children[curSeriesStackItem.child].FlatValues = []*SeriesTreeValueNode{{
+			if pId == sId {
+				if len(profileTreeChild.FlatValues()) > 0 {
+					if seriesTreeChild.FlatValues == nil {
+						seriesTreeChild.FlatValues = []*MemSeriesTreeValueNode{{
+							Values: chunk.NewFakeChunk(),
+						}}
+					}
+					seriesTreeChild.FlatValues[0].Values.AppendAt(i, profileTreeChild.FlatValues()[0].Value)
+				}
+				if seriesTreeChild.CumulativeValues == nil {
+					seriesTreeChild.CumulativeValues = []*MemSeriesTreeValueNode{{
 						Values: chunk.NewFakeChunk(),
 					}}
 				}
-				curSeriesStackItem.node.Children[curSeriesStackItem.child].FlatValues[0].Values.AppendAt(
-					i,
-					curProfileStackItem.node.Children[curProfileStackItem.child].FlatValues[0].Value,
-				)
+				seriesTreeChild.CumulativeValues[0].Values.AppendAt(i, profileTreeChild.CumulativeValues()[0].Value)
+				pit.StepInto()
+				sit.StepInto()
+				continue
 			}
 
-			if len(curSeriesStackItem.node.Children[curSeriesStackItem.child].CumulativeValues) == 0 {
-				curSeriesStackItem.node.Children[curSeriesStackItem.child].CumulativeValues = []*SeriesTreeValueNode{{
+			if pId < sId {
+				// The node with the location id in the profile-tree is smaller, this means this node is not present yet in the series-tree, so it has to be added at the current child position.
+				node := sit.Node()
+				childIndex := sit.ChildIndex()
+				newChildren := make([]*MemSeriesTreeNode, len(node.Children)+1)
+				copy(newChildren, node.Children[:childIndex])
+				newChild := &MemSeriesTreeNode{
+					LocationID: pId,
+				}
+				if len(profileTreeChild.FlatValues()) > 0 {
+					newChild.FlatValues = []*MemSeriesTreeValueNode{{
+						Values: chunk.NewFakeChunk(),
+					}}
+					newChild.FlatValues[0].Values.AppendAt(i, profileTreeChild.FlatValues()[0].Value)
+				}
+				newChild.CumulativeValues = []*MemSeriesTreeValueNode{{
 					Values: chunk.NewFakeChunk(),
 				}}
-			}
-			curSeriesStackItem.node.Children[curSeriesStackItem.child].CumulativeValues[0].Values.AppendAt(
-				i,
-				curProfileStackItem.node.Children[curProfileStackItem.child].CumulativeValues[0].Value,
-			)
+				newChild.CumulativeValues[0].Values.AppendAt(i, profileTreeChild.CumulativeValues()[0].Value)
+				newChildren[childIndex] = newChild
+				copy(newChildren[childIndex+1:], node.Children[childIndex:])
+				node.Children = newChildren
 
-			// Node from profile-tree was already present in the series-tree.
-			// So we go one step further down.
-
-			curSeriesStackItem = SeriesTreeStackEntry{
-				node:  curSeriesStackItem.node.Children[curSeriesStackItem.child],
-				child: 0,
+				pit.StepInto()
+				sit.StepInto()
+				continue
 			}
-			seriesTreeStack = append(seriesTreeStack, curSeriesStackItem)
-
-			curProfileStackItem = ProfileTreeStackEntry{
-				node:  curProfileStackItem.node.Children[curProfileStackItem.child],
-				child: 0,
-			}
-			profileTreeStack = append(profileTreeStack, curProfileStackItem)
 		}
+		pit.StepUp()
+		sit.StepUp()
 	}
-}
-
-type ProfileTreeValueNode struct {
-	Value    int64
-	Label    map[string][]string
-	NumLabel map[string][]int64
-	NumUnit  map[string][]string
 }
 
 type ProfileTreeNode struct {
-	LocationID       uint64
-	FlatValues       []*ProfileTreeValueNode
-	CumulativeValues []*ProfileTreeValueNode
+	locationID       uint64
+	flatValues       []*ProfileTreeValueNode
+	cumulativeValues []*ProfileTreeValueNode
 	Children         []*ProfileTreeNode
 }
 
-func (n *ProfileTreeNode) ChildWithID(id uint64) *ProfileTreeNode {
-	for _, child := range n.Children {
-		if child.LocationID == id {
-			return child
-		}
+func (n *ProfileTreeNode) LocationID() uint64 {
+	return n.locationID
+}
+
+func (n *ProfileTreeNode) CumulativeValue() int64 {
+	res := int64(0)
+	for _, cv := range n.cumulativeValues {
+		res += cv.Value
 	}
-	return nil
+
+	return res
+}
+
+func (n *ProfileTreeNode) CumulativeValues() []*ProfileTreeValueNode {
+	return n.cumulativeValues
+}
+
+func (n *ProfileTreeNode) FlatValues() []*ProfileTreeValueNode {
+	return n.flatValues
 }
 
 type ProfileTree struct {
 	Roots *ProfileTreeNode
+}
+
+func (t *ProfileTree) Iterator() InstantProfileTreeIterator {
+	return NewProfileTreeIterator(t)
 }
 
 func (t *ProfileTree) Insert(sample *profile.Sample) {
@@ -226,8 +188,8 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 		var child *ProfileTreeNode
 
 		// Binary search for child in list. If it exists continue to use the existing one.
-		i := sort.Search(len(cur.Children), func(i int) bool { return cur.Children[i].LocationID >= nextId })
-		if i < len(cur.Children) && cur.Children[i].LocationID == nextId {
+		i := sort.Search(len(cur.Children), func(i int) bool { return cur.Children[i].LocationID() >= nextId })
+		if i < len(cur.Children) && cur.Children[i].LocationID() == nextId {
 			// Child with this ID already exists.
 			child = cur.Children[i]
 		} else {
@@ -235,33 +197,33 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 			newChildren := make([]*ProfileTreeNode, len(cur.Children)+1)
 			copy(newChildren, cur.Children[:i])
 			child = &ProfileTreeNode{
-				LocationID: nextId,
+				locationID: nextId,
 			}
 			newChildren[i] = child
 			copy(newChildren[i+1:], cur.Children[i:])
 			cur.Children = newChildren
 		}
 
-		if cur.CumulativeValues == nil {
-			cur.CumulativeValues = []*ProfileTreeValueNode{{}}
+		if cur.cumulativeValues == nil {
+			cur.cumulativeValues = []*ProfileTreeValueNode{{}}
 		}
-		cur.CumulativeValues[0].Value += sample.Value[0]
+		cur.cumulativeValues[0].Value += sample.Value[0]
 
 		cur = child
 	}
 
-	if cur.CumulativeValues == nil {
-		cur.CumulativeValues = []*ProfileTreeValueNode{{}}
+	if cur.cumulativeValues == nil {
+		cur.cumulativeValues = []*ProfileTreeValueNode{{}}
 	}
-	cur.CumulativeValues[0].Value += sample.Value[0]
+	cur.cumulativeValues[0].Value += sample.Value[0]
 
-	if cur.FlatValues == nil {
-		cur.FlatValues = []*ProfileTreeValueNode{{}}
+	if cur.flatValues == nil {
+		cur.flatValues = []*ProfileTreeValueNode{{}}
 	}
-	cur.FlatValues[0].Value += sample.Value[0]
+	cur.flatValues[0].Value += sample.Value[0]
 }
 
-type Series struct {
+type MemSeries struct {
 	p *profile.Profile
 
 	// Memoization tables for profile entities.
@@ -277,16 +239,16 @@ type Series struct {
 	durations  chunk.Chunk
 	periods    chunk.Chunk
 
-	seriesTree *SeriesTree
+	seriesTree *MemSeriesTree
 	i          int
 }
 
-func NewSeries() *Series {
-	return &Series{
+func NewMemSeries() *MemSeries {
+	return &MemSeries{
 		timestamps: chunk.NewFakeChunk(),
 		durations:  chunk.NewFakeChunk(),
 		periods:    chunk.NewFakeChunk(),
-		seriesTree: &SeriesTree{},
+		seriesTree: &MemSeriesTree{},
 	}
 }
 
@@ -326,23 +288,27 @@ type mappingKey struct {
 	buildIDOrFile string
 }
 
-func (s *Series) Append(value *profile.Profile) error {
+func (s *MemSeries) Append(value *profile.Profile) error {
 	profileTree, err := s.prepareSamplesForInsert(value)
 	if err != nil {
 		return err
 	}
 
-	if s.seriesTree == nil {
-		s.seriesTree = &SeriesTree{}
-	}
-
-	s.seriesTree.Insert(s.i, profileTree)
-	s.i++
+	s.append(profileTree)
 
 	return nil
 }
 
-func (s *Series) prepareSamplesForInsert(value *profile.Profile) (*ProfileTree, error) {
+func (s *MemSeries) append(profileTree *ProfileTree) {
+	if s.seriesTree == nil {
+		s.seriesTree = &MemSeriesTree{}
+	}
+
+	s.seriesTree.Insert(s.i, profileTree)
+	s.i++
+}
+
+func (s *MemSeries) prepareSamplesForInsert(value *profile.Profile) (*ProfileTree, error) {
 	if s.p == nil {
 		s.p = &profile.Profile{
 			PeriodType: value.PeriodType,
@@ -399,7 +365,202 @@ func (s *Series) prepareSamplesForInsert(value *profile.Profile) (*ProfileTree, 
 	return profileTree, nil
 }
 
-//func (s *Series) Iterator() *SeriesIterator {
+type MemSeriesIteratorTree struct {
+	Roots *MemSeriesIteratorTreeNode
+}
+
+type MemSeriesIteratorTreeValueNode struct {
+	Values   chunk.ChunkIterator
+	Label    map[string][]string
+	NumLabel map[string][]int64
+	NumUnit  map[string][]string
+}
+
+type MemSeriesIteratorTreeNode struct {
+	locationID       uint64
+	flatValues       []*MemSeriesIteratorTreeValueNode
+	cumulativeValues []*MemSeriesIteratorTreeValueNode
+	Children         []*MemSeriesIteratorTreeNode
+}
+
+func (n *MemSeriesIteratorTreeNode) LocationID() uint64 {
+	return n.locationID
+}
+
+func (n *MemSeriesIteratorTreeNode) CumulativeValue() int64 {
+	res := int64(0)
+	for _, v := range n.cumulativeValues {
+		res += v.Values.At()
+	}
+	return res
+}
+
+func (n *MemSeriesIteratorTreeNode) CumulativeValues() []*ProfileTreeValueNode {
+	res := make([]*ProfileTreeValueNode, 0, len(n.cumulativeValues))
+
+	for _, v := range n.cumulativeValues {
+		res = append(res, &ProfileTreeValueNode{
+			Value:    v.Values.At(),
+			Label:    v.Label,
+			NumLabel: v.NumLabel,
+			NumUnit:  v.NumUnit,
+		})
+	}
+
+	return res
+}
+
+func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
+	res := make([]*ProfileTreeValueNode, 0, len(n.flatValues))
+
+	for _, v := range n.flatValues {
+		res = append(res, &ProfileTreeValueNode{
+			Value:    v.Values.At(),
+			Label:    v.Label,
+			NumLabel: v.NumLabel,
+			NumUnit:  v.NumUnit,
+		})
+	}
+
+	return res
+}
+
+type MemSeriesIterator struct {
+	tree *MemSeriesIteratorTree
+}
+
+func (s *MemSeries) Iterator() *MemSeriesIterator {
+	root := &MemSeriesIteratorTreeNode{}
+
+	for _, v := range s.seriesTree.Roots.CumulativeValues {
+		root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
+			Values:   v.Values.Iterator(),
+			Label:    v.Label,
+			NumLabel: v.NumLabel,
+			NumUnit:  v.NumUnit,
+		})
+	}
+
+	res := &MemSeriesIterator{
+		tree: &MemSeriesIteratorTree{
+			Roots: root,
+		},
+	}
+
+	memItStack := MemSeriesIteratorTreeStack{{
+		node:  root,
+		child: 0,
+	}}
+
+	it := s.seriesTree.Iterator()
+
+	for it.HasMore() {
+		if it.NextChild() {
+			child := it.At()
+
+			n := &MemSeriesIteratorTreeNode{
+				locationID:       child.LocationID,
+				flatValues:       make([]*MemSeriesIteratorTreeValueNode, 0, len(child.FlatValues)),
+				cumulativeValues: make([]*MemSeriesIteratorTreeValueNode, 0, len(child.CumulativeValues)),
+				Children:         make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
+			}
+
+			for _, v := range child.FlatValues {
+				n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
+					Values:   v.Values.Iterator(),
+					Label:    v.Label,
+					NumLabel: v.NumLabel,
+					NumUnit:  v.NumUnit,
+				})
+			}
+
+			for _, v := range child.CumulativeValues {
+				n.cumulativeValues = append(n.cumulativeValues, &MemSeriesIteratorTreeValueNode{
+					Values:   v.Values.Iterator(),
+					Label:    v.Label,
+					NumLabel: v.NumLabel,
+					NumUnit:  v.NumUnit,
+				})
+			}
+
+			cur := memItStack.Peek()
+			cur.node.Children = append(cur.node.Children, n)
+
+			memItStack.Push(&MemSeriesIteratorTreeStackEntry{
+				node:  n,
+				child: 0,
+			})
+			it.StepInto()
+			continue
+		}
+		it.StepUp()
+		memItStack.Pop()
+	}
+
+	return res
+}
+
+func (it *MemSeriesIterator) Next() bool {
+	iit := NewMemSeriesIteratorTreeIterator(it.tree)
+
+	for iit.HasMore() {
+		if iit.NextChild() {
+			child := iit.At().(*MemSeriesIteratorTreeNode)
+
+			for _, v := range child.flatValues {
+				if !v.Values.Next() {
+					return false
+				}
+			}
+
+			for _, v := range child.cumulativeValues {
+				if !v.Values.Next() {
+					return false
+				}
+			}
+
+			iit.StepInto()
+			continue
+		}
+		iit.StepUp()
+	}
+
+	return true
+}
+
+type MemSeriesInstantProfile struct {
+	itt *MemSeriesIteratorTree
+}
+
+type MemSeriesInstantProfileTree struct {
+	itt *MemSeriesIteratorTree
+}
+
+func (t *MemSeriesInstantProfileTree) Iterator() InstantProfileTreeIterator {
+	return NewMemSeriesIteratorTreeIterator(t.itt)
+}
+
+func (p *MemSeriesInstantProfile) ProfileTree() InstantProfileTree {
+	return &MemSeriesInstantProfileTree{
+		itt: p.itt,
+	}
+}
+
+func (p *MemSeriesInstantProfile) ProfileMeta() InstantProfileMeta {
+	return InstantProfileMeta{}
+}
+
+func (it *MemSeriesIterator) At() InstantProfile {
+	return &MemSeriesInstantProfile{
+		itt: it.tree,
+	}
+}
+
+func (it *MemSeriesIterator) Err() error {
+	return nil
+}
+
+//func (s *MemSeries) Iterator() *SeriesIterator {
 //	return &SeriesIterator{
 //		series: s,
 //		data:   s.chunk.Data(),
