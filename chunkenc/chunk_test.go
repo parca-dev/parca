@@ -57,13 +57,10 @@ func testChunk(t *testing.T, c Chunk) {
 	app, err := c.Appender()
 	require.NoError(t, err)
 
-	var exp []pair
-	var (
-		ts = int64(1234123324)
-		v  = int64(1243535)
-	)
+	var exp []int64
+	var v = int64(1243535)
+
 	for i := 0; i < 300; i++ {
-		ts += int64(rand.Intn(10000) + 1)
 		if i%2 == 0 {
 			v += int64(rand.Intn(1000000))
 		} else {
@@ -77,49 +74,42 @@ func testChunk(t *testing.T, c Chunk) {
 			require.NoError(t, err)
 		}
 
-		app.Append(ts, v)
-		exp = append(exp, pair{t: ts, v: v})
+		app.Append(v)
+		exp = append(exp, v)
 	}
 
 	// 1. Expand iterator in simple case.
 	it1 := c.Iterator(nil)
-	var res1 []pair
+	var res1 []int64
 	for it1.Next() {
-		ts, v := it1.At()
-		res1 = append(res1, pair{t: ts, v: v})
+		res1 = append(res1, it1.At())
 	}
 	require.NoError(t, it1.Err())
 	require.Equal(t, exp, res1)
 
 	// 2. Expand second iterator while reusing first one.
 	it2 := c.Iterator(it1)
-	var res2 []pair
+	var res2 []int64
 	for it2.Next() {
-		ts, v := it2.At()
-		res2 = append(res2, pair{t: ts, v: v})
+		res2 = append(res2, it2.At())
 	}
 	require.NoError(t, it2.Err())
 	require.Equal(t, exp, res2)
 
 	// 3. Test iterator Seek.
-	mid := len(exp) / 2
+	mid := int64(len(exp) / 2)
 
 	it3 := c.Iterator(nil)
-	var res3 []pair
-	require.Equal(t, true, it3.Seek(exp[mid].t))
-	// Below ones should not matter.
-	require.Equal(t, true, it3.Seek(exp[mid].t))
-	require.Equal(t, true, it3.Seek(exp[mid].t))
-	ts, v = it3.At()
-	res3 = append(res3, pair{t: ts, v: v})
+	var res3 []int64
+	require.Equal(t, true, it3.Seek(mid))
+	res3 = append(res3, it3.At())
 
 	for it3.Next() {
-		ts, v := it3.At()
-		res3 = append(res3, pair{t: ts, v: v})
+		res3 = append(res3, it3.At())
 	}
 	require.NoError(t, it3.Err())
-	require.Equal(t, exp[mid:], res3)
-	require.Equal(t, false, it3.Seek(exp[len(exp)-1].t+1))
+	require.Equal(t, exp[mid-1:], res3)
+	require.Equal(t, false, it3.Seek(int64(len(exp)+1)))
 }
 
 func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
@@ -149,7 +139,7 @@ func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 			if j > 250 {
 				break
 			}
-			a.Append(p.t, p.v)
+			a.Append(p.v)
 			i++
 			j++
 		}
@@ -169,8 +159,7 @@ func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 		it := c.Iterator(it)
 
 		for it.Next() {
-			_, v := it.At()
-			res = append(res, v)
+			res = append(res, it.At())
 		}
 		if it.Err() != io.EOF {
 			require.NoError(b, it.Err())
@@ -221,7 +210,7 @@ func benchmarkAppender(b *testing.B, newChunk func() Chunk) {
 			if j > 250 {
 				break
 			}
-			a.Append(p.t, p.v)
+			a.Append(p.v)
 			i++
 			j++
 		}

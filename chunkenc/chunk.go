@@ -28,7 +28,6 @@ package chunkenc
 
 import (
 	"fmt"
-	"math"
 	"sync"
 )
 
@@ -80,7 +79,7 @@ type Chunk interface {
 
 // Appender adds sample pairs to a chunk.
 type Appender interface {
-	Append(int64, int64)
+	Append(int64)
 }
 
 // Iterator is a simple iterator that can only get the next value.
@@ -88,14 +87,14 @@ type Appender interface {
 type Iterator interface {
 	// Next advances the iterator by one.
 	Next() bool
-	// Seek advances the iterator forward to the first sample with the timestamp equal or greater than t.
+	// Seek advances the iterator forward to the sample at the given index.
 	// If current sample found by previous `Next` or `Seek` operation already has this property, Seek has no effect.
 	// Seek returns true, if such sample exists, false otherwise.
 	// Iterator is exhausted when the Seek returns false.
-	Seek(t int64) bool
+	Seek(index int64) bool
 	// At returns the current timestamp/value pair.
 	// Before the iterator has advanced At behaviour is unspecified.
-	At() (int64, int64)
+	At() int64
 	// Err returns the current error. It should be used only after iterator is
 	// exhausted, that is `Next` or `Seek` returns false.
 	Err() error
@@ -108,10 +107,10 @@ func NewNopIterator() Iterator {
 
 type nopIterator struct{}
 
-func (nopIterator) Seek(int64) bool    { return false }
-func (nopIterator) At() (int64, int64) { return math.MinInt64, 0 }
-func (nopIterator) Next() bool         { return false }
-func (nopIterator) Err() error         { return nil }
+func (nopIterator) Seek(int64) bool { return false }
+func (nopIterator) At() int64       { return 0 }
+func (nopIterator) Next() bool      { return false }
+func (nopIterator) Err() error      { return nil }
 
 // Pool is used to create and reuse chunk references to avoid allocations.
 type Pool interface {

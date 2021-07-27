@@ -160,9 +160,12 @@ type xorAppender struct {
 	trailing uint8
 }
 
-func (a *xorAppender) Append(t int64, v int64) {
+func (a *xorAppender) Append(v int64) {
 	var tDelta uint64
 	num := binary.BigEndian.Uint16(a.b.bytes())
+
+	// We "fake" timestamps by simply using the current num+1 as next timestamp - or rather index.
+	t := int64(num + 1)
 
 	if num == 0 {
 		buf := make([]byte, binary.MaxVarintLen64)
@@ -267,12 +270,12 @@ type xorIterator struct {
 	err    error
 }
 
-func (it *xorIterator) Seek(t int64) bool {
+func (it *xorIterator) Seek(index int64) bool {
 	if it.err != nil {
 		return false
 	}
 
-	for t > it.t || it.numRead == 0 {
+	for index > it.t || it.numRead == 0 {
 		if !it.Next() {
 			return false
 		}
@@ -280,8 +283,8 @@ func (it *xorIterator) Seek(t int64) bool {
 	return true
 }
 
-func (it *xorIterator) At() (int64, int64) {
-	return it.t, it.val
+func (it *xorIterator) At() int64 {
+	return it.val
 }
 
 func (it *xorIterator) Err() error {
