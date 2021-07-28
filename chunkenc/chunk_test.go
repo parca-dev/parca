@@ -110,6 +110,18 @@ func testChunk(t *testing.T, c Chunk) {
 	require.NoError(t, it3.Err())
 	require.Equal(t, exp[mid:], res3)
 	require.Equal(t, false, it3.Seek(uint16(len(exp))))
+
+	// 4. Append at a given index with 0 leading up to it
+	app.AppendAt(310, 42)
+
+	it4 := c.Iterator(nil)
+	var res4 []int64
+	require.Equal(t, true, it4.Seek(300)) // Seek to where zeros start
+	for it4.Next() {
+		res4 = append(res4, it4.At())
+	}
+	require.NoError(t, it4.Err())
+	require.Equal(t, []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 42}, res4)
 }
 
 func benchmarkIterator(b *testing.B, newChunk func() Chunk) {

@@ -80,6 +80,7 @@ type Chunk interface {
 // Appender adds sample pairs to a chunk.
 type Appender interface {
 	Append(int64)
+	AppendAt(uint16, int64)
 }
 
 // Iterator is a simple iterator that can only get the next value.
