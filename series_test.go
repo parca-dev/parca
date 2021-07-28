@@ -146,26 +146,57 @@ func TestMemSeriesTree(t *testing.T) {
 }
 
 func TestMemSeriesIterator(t *testing.T) {
-	pt := &ProfileTree{}
-	pt.Insert(makeSample(2, []uint64{2, 1}))
-	pt.Insert(makeSample(2, []uint64{4, 1}))
+	pt1 := &ProfileTree{}
+	pt1.Insert(makeSample(2, []uint64{2, 1}))
+	pt1.Insert(makeSample(2, []uint64{4, 1}))
 
-	st := &MemSeries{}
-	st.append(pt)
+	pt2 := &ProfileTree{}
+	pt2.Insert(makeSample(2, []uint64{3, 1}))
+	pt2.Insert(makeSample(2, []uint64{4, 1}))
+
+	st := &MemSeries{
+		timestamps: &chunk.FakeChunk{Values: []int64{1, 2}},
+		durations:  &chunk.FakeChunk{Values: []int64{1e9, 1e9}},
+		periods:    &chunk.FakeChunk{Values: []int64{100, 100}},
+	}
+	st.append(pt1)
+	st.append(pt2)
 
 	it := st.Iterator()
 	require.True(t, it.Next())
 	require.NoError(t, it.Err())
 
 	instantProfile := it.At()
-	require.Equal(t, InstantProfileMeta{}, instantProfile.ProfileMeta())
+	require.Equal(t, InstantProfileMeta{
+		Timestamp: 1,
+		Duration:  1e9,
+		Period:    100,
+	}, instantProfile.ProfileMeta())
 
 	res := []uint64{}
 	WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) {
 		res = append(res, n.LocationID())
 	})
 
-	require.Equal(t, []uint64{0, 1, 2, 4}, res)
+	require.Equal(t, []uint64{0, 1, 2, 3, 4}, res)
+
+	require.True(t, it.Next())
+	require.NoError(t, it.Err())
+
+	instantProfile = it.At()
+	require.Equal(t, InstantProfileMeta{
+		Timestamp: 2,
+		Duration:  1e9,
+		Period:    100,
+	}, instantProfile.ProfileMeta())
+
+	res = []uint64{}
+	WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) {
+		res = append(res, n.LocationID())
+	})
+
+	require.Equal(t, []uint64{0, 1, 2, 3, 4}, res)
+	require.False(t, it.Next())
 }
 
 func TestIteratorConsistency(t *testing.T) {

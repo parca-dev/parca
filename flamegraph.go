@@ -78,14 +78,17 @@ func generateFlamegraph(locations Locations, it InstantProfileTreeIterator) (*Tr
 	for it.HasMore() {
 		if it.NextChild() {
 			child := it.At()
-			l, err := locations.GetByID(child.LocationID())
-			if err != nil {
-				return nil, err
+			cumulative := child.CumulativeValue()
+			if cumulative > 0 {
+				l, err := locations.GetByID(child.LocationID())
+				if err != nil {
+					return nil, err
+				}
+				outerMost, innerMost := locationToTreeNodes(l, cumulative)
+				flamegraphStack.Peek().AddChild(outerMost)
+				flamegraphStack.Push(innerMost)
+				it.StepInto()
 			}
-			outerMost, innerMost := locationToTreeNodes(l, child.CumulativeValue())
-			flamegraphStack.Peek().AddChild(outerMost)
-			flamegraphStack.Push(innerMost)
-			it.StepInto()
 			continue
 		}
 		it.StepUp()
