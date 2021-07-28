@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package parca.api;
-option go_package = "github.com/parca-dev/proto/api/go";
+option go_package = "github.com/parca-dev/proto/api";
 
 import "google/api/annotations.proto";
 
@@ -38,7 +38,7 @@ service API {
 
     rpc Write(WriteRequest) returns (WriteResponse) {
         option (google.api.http) = {
-            get: "/profile"
+            post: "/profile"
         };
     }
 }
@@ -55,7 +55,9 @@ message SeriesResponse{}
 message LabelsRequest{}
 message LabelsResponse{}
 
-message ValuesRequest{}
+message ValuesRequest{
+    string name = 1;
+}
 message ValuesResponse{}
 
 message WriteRequest{}

@@ -2,7 +2,7 @@ version: v1beta1
 build:
   roots:
     - proto
-    - vendor/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
+    - proto-vendor
 lint:
   use:
     - STYLE_BASIC
