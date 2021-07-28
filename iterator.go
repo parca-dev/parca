@@ -247,6 +247,10 @@ func (i *MemSeriesIteratorTreeIterator) NextChild() bool {
 }
 
 func (i *MemSeriesIteratorTreeIterator) At() InstantProfileTreeNode {
+	return i.at()
+}
+
+func (i *MemSeriesIteratorTreeIterator) at() *MemSeriesIteratorTreeNode {
 	return i.stack.Peek().node.Children[i.stack.Peek().child]
 }
 

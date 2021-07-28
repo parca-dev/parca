@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -8,6 +9,10 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/storage/chunk"
+)
+
+var (
+	ErrOutOfOrderSample = errors.New("out of order sample")
 )
 
 type MemSeriesTreeValueNode struct {
@@ -226,6 +231,9 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 type MemSeries struct {
 	p *profile.Profile
 
+	periodType ValueType
+	sampleType ValueType
+
 	// Memoization tables for profile entities.
 	stacktraceIDs map[[16]byte]*Stacktrace
 	stacktraces   map[stacktraceKey]*Stacktrace
@@ -233,11 +241,10 @@ type MemSeries struct {
 	functions     map[functionKey]*profile.Function
 	mappings      map[mappingKey]*profile.Mapping
 
-	sampleNumber uint64
-
-	timestamps chunk.Chunk
-	durations  chunk.Chunk
-	periods    chunk.Chunk
+	minTime, maxTime int64
+	timestamps       chunk.Chunk
+	durations        chunk.Chunk
+	periods          chunk.Chunk
 
 	seriesTree *MemSeriesTree
 	i          int
@@ -296,6 +303,39 @@ func (s *MemSeries) Append(value *profile.Profile) error {
 
 	s.append(profileTree)
 
+	if s.timestamps == nil {
+		s.timestamps = chunk.NewFakeChunk()
+	}
+
+	// We store millisecond timestamp resolution not nanos.
+	timestamp := value.TimeNanos / 1000000
+
+	if timestamp <= s.maxTime {
+		return ErrOutOfOrderSample
+	}
+
+	if err := s.timestamps.AppendAt(s.i, timestamp); err != nil {
+		return err
+	}
+
+	if s.durations == nil {
+		s.durations = chunk.NewFakeChunk()
+	}
+
+	if err := s.durations.AppendAt(s.i, value.DurationNanos); err != nil {
+		return err
+	}
+
+	if s.periods == nil {
+		s.periods = chunk.NewFakeChunk()
+	}
+
+	if err := s.periods.AppendAt(s.i, value.Period); err != nil {
+		return err
+	}
+
+	s.maxTime = timestamp
+
 	return nil
 }
 
@@ -310,16 +350,16 @@ func (s *MemSeries) append(profileTree *ProfileTree) {
 
 func (s *MemSeries) prepareSamplesForInsert(value *profile.Profile) (*ProfileTree, error) {
 	if s.p == nil {
-		s.p = &profile.Profile{
-			PeriodType: value.PeriodType,
-			SampleType: value.SampleType[:1],
-		}
+		s.p = &profile.Profile{}
+
+		s.periodType = ValueType{Type: value.PeriodType.Type, Unit: value.PeriodType.Unit}
+		s.sampleType = ValueType{Type: value.SampleType[0].Type, Unit: value.SampleType[0].Unit}
 		s.locations = make(map[locationKey]*profile.Location, len(value.Location))
 		s.functions = make(map[functionKey]*profile.Function, len(value.Function))
 		s.mappings = make(map[mappingKey]*profile.Mapping, len(value.Mapping))
 	}
 
-	if err := compatibleProfiles(s.p, value); err != nil {
+	if err := compatibleProfiles(s, value); err != nil {
 		return nil, err
 	}
 
@@ -390,7 +430,9 @@ func (n *MemSeriesIteratorTreeNode) LocationID() uint64 {
 func (n *MemSeriesIteratorTreeNode) CumulativeValue() int64 {
 	res := int64(0)
 	for _, v := range n.cumulativeValues {
-		res += v.Values.At()
+		if v.Values != nil {
+			res += v.Values.At()
+		}
 	}
 	return res
 }
@@ -426,7 +468,13 @@ func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
 }
 
 type MemSeriesIterator struct {
-	tree *MemSeriesIteratorTree
+	tree               *MemSeriesIteratorTree
+	timestampsIterator chunk.ChunkIterator
+	durationsIterator  chunk.ChunkIterator
+	periodsIterator    chunk.ChunkIterator
+
+	series *MemSeries
+	i      int
 }
 
 func (s *MemSeries) Iterator() *MemSeriesIterator {
@@ -445,6 +493,11 @@ func (s *MemSeries) Iterator() *MemSeriesIterator {
 		tree: &MemSeriesIteratorTree{
 			Roots: root,
 		},
+		timestampsIterator: s.timestamps.Iterator(),
+		durationsIterator:  s.durations.Iterator(),
+		periodsIterator:    s.periods.Iterator(),
+		series:             s,
+		i:                  s.i,
 	}
 
 	memItStack := MemSeriesIteratorTreeStack{{
@@ -501,11 +554,26 @@ func (s *MemSeries) Iterator() *MemSeriesIterator {
 }
 
 func (it *MemSeriesIterator) Next() bool {
-	iit := NewMemSeriesIteratorTreeIterator(it.tree)
+	if it.i == 0 {
+		return false
+	}
 
+	if !it.timestampsIterator.Next() {
+		return false
+	}
+
+	if !it.durationsIterator.Next() {
+		return false
+	}
+
+	if !it.periodsIterator.Next() {
+		return false
+	}
+
+	iit := NewMemSeriesIteratorTreeIterator(it.tree)
 	for iit.HasMore() {
 		if iit.NextChild() {
-			child := iit.At().(*MemSeriesIteratorTreeNode)
+			child := iit.at()
 
 			for _, v := range child.flatValues {
 				if !v.Values.Next() {
@@ -525,11 +593,13 @@ func (it *MemSeriesIterator) Next() bool {
 		iit.StepUp()
 	}
 
+	it.i--
 	return true
 }
 
 type MemSeriesInstantProfile struct {
 	itt *MemSeriesIteratorTree
+	it  *MemSeriesIterator
 }
 
 type MemSeriesInstantProfileTree struct {
@@ -547,77 +617,25 @@ func (p *MemSeriesInstantProfile) ProfileTree() InstantProfileTree {
 }
 
 func (p *MemSeriesInstantProfile) ProfileMeta() InstantProfileMeta {
-	return InstantProfileMeta{}
+	return InstantProfileMeta{
+		PeriodType: p.it.series.periodType,
+		SampleType: p.it.series.sampleType,
+		Timestamp:  p.it.timestampsIterator.At(),
+		Duration:   p.it.durationsIterator.At(),
+		Period:     p.it.periodsIterator.At(),
+	}
 }
 
 func (it *MemSeriesIterator) At() InstantProfile {
 	return &MemSeriesInstantProfile{
 		itt: it.tree,
+		it:  it,
 	}
 }
 
 func (it *MemSeriesIterator) Err() error {
 	return nil
 }
-
-//func (s *MemSeries) Iterator() *SeriesIterator {
-//	return &SeriesIterator{
-//		series: s,
-//		data:   s.chunk.Data(),
-//		i:      0,
-//	}
-//}
-//
-//type SeriesIterator struct {
-//	series *Series
-//	data   chunk.DecodedData
-//	i      int
-//	cur    *profile.Profile
-//	err    error
-//}
-//
-//func (it *SeriesIterator) Next() bool {
-//	if it.i >= len(it.data.Timestamps) {
-//		return false
-//	}
-//
-//	p := &profile.Profile{
-//		PeriodType:    it.series.p.PeriodType,
-//		SampleType:    it.series.p.SampleType,
-//		TimeNanos:     it.data.Timestamps[it.i],
-//		DurationNanos: it.data.Durations[it.i],
-//		Period:        it.data.Periods[it.i],
-//		Location:      it.series.p.Location,
-//		Function:      it.series.p.Function,
-//		Mapping:       it.series.p.Mapping,
-//	}
-//
-//	for _, stacktrace := range it.data.Stacktraces {
-//		if stacktrace.Values[it.i] != 0 {
-//			st := it.series.stacktraceIDs[stacktrace.StacktraceID]
-//			p.Sample = append(p.Sample, &profile.Sample{
-//				Location: st.Location,
-//				Label:    st.Label,
-//				NumLabel: st.NumLabel,
-//				NumUnit:  st.NumUnit,
-//				Value:    []int64{stacktrace.Values[it.i]},
-//			})
-//		}
-//	}
-//
-//	it.cur = p
-//	it.i++
-//
-//	return true
-//}
-//
-//func (it *SeriesIterator) At() *profile.Profile {
-//	return it.cur
-//}
-//
-//func (it *SeriesIterator) Err() error {
-//	return it.err
-//}
 
 type profileNormalizer struct {
 	p *profile.Profile
@@ -865,20 +883,20 @@ func makeMappingKey(m *profile.Mapping) mappingKey {
 // compatible determines if two profiles can be compared/merged.
 // returns nil if the profiles are compatible; otherwise an error with
 // details on the incompatibility.
-func compatibleProfiles(p *profile.Profile, pb *profile.Profile) error {
-	if !equalValueType(p.PeriodType, pb.PeriodType) {
-		return fmt.Errorf("incompatible period types %v and %v", p.PeriodType, pb.PeriodType)
+func compatibleProfiles(s *MemSeries, pb *profile.Profile) error {
+	if !equalValueType(s.periodType, pb.PeriodType) {
+		return fmt.Errorf("incompatible period types %v and %v", s.periodType, pb.PeriodType)
 	}
 
-	if !equalValueType(p.SampleType[0], pb.SampleType[0]) {
-		return fmt.Errorf("incompatible sample types %v and %v", p.SampleType, pb.SampleType)
+	if !equalValueType(s.sampleType, pb.SampleType[0]) {
+		return fmt.Errorf("incompatible sample types %v and %v", s.sampleType, pb.SampleType)
 	}
 	return nil
 }
 
 // equalValueType returns true if the two value types are semantically
 // equal. It ignores the internal fields used during encode/decode.
-func equalValueType(st1, st2 *profile.ValueType) bool {
+func equalValueType(st1 ValueType, st2 *profile.ValueType) bool {
 	return st1.Type == st2.Type && st1.Unit == st2.Unit
 }
 

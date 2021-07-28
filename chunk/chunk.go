@@ -17,19 +17,19 @@ func NewFakeChunk() *FakeChunk {
 
 func MustFakeChunk(v ...int64) *FakeChunk {
 	return &FakeChunk{
-		values: v,
+		Values: v,
 	}
 }
 
 type FakeChunk struct {
-	values []int64
+	Values []int64
 }
 
 func (c *FakeChunk) AppendAt(i int, v int64) error {
-	for len(c.values) < i {
-		c.values = append(c.values, 0)
+	for len(c.Values) < i {
+		c.Values = append(c.Values, 0)
 	}
-	c.values = append(c.values, v)
+	c.Values = append(c.Values, v)
 	return nil
 }
 
@@ -40,7 +40,7 @@ type FakeChunkIterator struct {
 
 func (c *FakeChunk) Iterator() ChunkIterator {
 	return &FakeChunkIterator{
-		values: c.values,
+		values: c.Values,
 		i:      -1,
 	}
 }
@@ -48,10 +48,18 @@ func (c *FakeChunk) Iterator() ChunkIterator {
 func (c *FakeChunkIterator) Next() bool {
 	c.i++
 
-	return len(c.values) > c.i
+	return true
 }
 
+// At returns the current value of the iterator. It will continue to return 0s
+// for indices greater than the size of values known. This is important because
+// values for stack traces can be sparse, and the series tracks how many
+// samples have truly been written, and 0 values in profiles are a no-op value,
+// it's equivalent to the stack trace not existing.
 func (c *FakeChunkIterator) At() int64 {
+	if len(c.values) <= c.i {
+		return int64(0)
+	}
 	return c.values[c.i]
 }
 
