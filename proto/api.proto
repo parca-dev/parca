@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package parca.api;
+option go_package = "github.com/parca-dev/proto/api/go";
+
+import "google/api/annotations.proto";
+
+service API {
+    rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
+        option (google.api.http) = {
+            get: "/query_range"
+        };
+    }
+
+    rpc Query(QueryRequest) returns (QueryResponse) {
+        option (google.api.http) = {
+            get: "/query"
+        };
+    }
+
+    rpc Series(SeriesRequest) returns (SeriesResponse) {
+        option (google.api.http) = {
+            get: "/series"
+        };
+    }
+
+    rpc Labels(LabelsRequest) returns (LabelsResponse) {
+        option (google.api.http) = {
+            get: "/labels"
+        };
+    }
+
+    rpc Values(ValuesRequest) returns (ValuesResponse) {
+        option (google.api.http) = {
+            get: "/labels/{name}/values"
+        };
+    }
+
+    rpc Write(WriteRequest) returns (WriteResponse) {
+        option (google.api.http) = {
+            get: "/profile"
+        };
+    }
+}
+
+message QueryRangeRequest{}
+message QueryRangeResponse{}
+
+message QueryRequest{}
+message QueryResponse{}
+
+message SeriesRequest{}
+message SeriesResponse{}
+
+message LabelsRequest{}
+message LabelsResponse{}
+
+message ValuesRequest{}
+message ValuesResponse{}
+
+message WriteRequest{}
+message WriteResponse{}
