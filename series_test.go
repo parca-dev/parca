@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/storage/chunk"
+	"github.com/parca-dev/storage/chunkenc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -101,18 +102,18 @@ func TestMemSeriesTree(t *testing.T) {
 
 	require.Equal(t, &MemSeriesTree{
 		Roots: &MemSeriesTreeNode{
-			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(4)}},
+			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4)}},
 			Children: []*MemSeriesTreeNode{{
 				LocationID:       1,
-				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(4)}},
+				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4)}},
 				Children: []*MemSeriesTreeNode{{
 					LocationID:       2,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
 				}, {
 					LocationID:       4,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
 				}},
 			}}},
 	}, st)
@@ -124,22 +125,23 @@ func TestMemSeriesTree(t *testing.T) {
 
 	require.Equal(t, &MemSeriesTree{
 		Roots: &MemSeriesTreeNode{
-			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(4, 2)}},
+			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 2)}},
 			Children: []*MemSeriesTreeNode{{
 				LocationID:       1,
-				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(4, 2)}},
+				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 2)}},
 				Children: []*MemSeriesTreeNode{{
 					LocationID:       2,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
 				}, {
 					LocationID:       3,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(0, 2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(0, 2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(0, 2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(0, 2)}},
+					// 0,2,0,0,0,0,0,0,0,0,255,0,0,0,0,8
 				}, {
 					LocationID:       4,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunk.MustFakeChunk(2)}},
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
 				}},
 			}}},
 	}, st)
