@@ -37,7 +37,7 @@ func (t *MemSeriesTree) Iterator() *MemSeriesTreeIterator {
 	return NewMemSeriesTreeIterator(t)
 }
 
-func (t *MemSeriesTree) Insert(i int, profileTree *ProfileTree) {
+func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
 	if t.Roots == nil {
 		t.Roots = &MemSeriesTreeNode{}
 	}
@@ -247,7 +247,7 @@ type MemSeries struct {
 	periods          chunk.Chunk
 
 	seriesTree *MemSeriesTree
-	i          int
+	i          uint16
 }
 
 func NewMemSeries() *MemSeries {
@@ -474,7 +474,7 @@ type MemSeriesIterator struct {
 	periodsIterator    chunk.ChunkIterator
 
 	series *MemSeries
-	i      int
+	i      uint16
 }
 
 func (s *MemSeries) Iterator() *MemSeriesIterator {
