@@ -58,7 +58,6 @@ package chunkenc
 
 import (
 	"encoding/binary"
-	"math"
 	"math/bits"
 )
 
@@ -115,9 +114,7 @@ func (c *XORChunk) Appender() (Appender, error) {
 
 	a := &xorAppender{
 		b:        &c.b,
-		t:        it.t,
 		v:        it.val,
-		tDelta:   it.tDelta,
 		leading:  it.leading,
 		trailing: it.trailing,
 	}
@@ -140,7 +137,6 @@ func (c *XORChunk) iterator(it Iterator) *xorIterator {
 		// We skip that for actual samples.
 		br:       newBReader(c.b.bytes()[2:]),
 		numTotal: binary.BigEndian.Uint16(c.b.bytes()),
-		t:        math.MinInt64,
 	}
 }
 
@@ -152,72 +148,23 @@ func (c *XORChunk) Iterator(it Iterator) Iterator {
 type xorAppender struct {
 	b *bstream
 
-	t      int64
-	v      int64
-	tDelta uint64
+	v int64
 
 	leading  uint8
 	trailing uint8
 }
 
 func (a *xorAppender) Append(v int64) {
-	var tDelta uint64
 	num := binary.BigEndian.Uint16(a.b.bytes())
 
-	// We "fake" timestamps by simply using the current num+1 as next timestamp - or rather index.
-	t := int64(num + 1)
-
 	if num == 0 {
-		buf := make([]byte, binary.MaxVarintLen64)
-		for _, b := range buf[:binary.PutVarint(buf, t)] {
-			a.b.writeByte(b)
-		}
 		a.b.writeBits(uint64(v), 64)
-
-	} else if num == 1 {
-		tDelta = uint64(t - a.t)
-
-		buf := make([]byte, binary.MaxVarintLen64)
-		for _, b := range buf[:binary.PutUvarint(buf, tDelta)] {
-			a.b.writeByte(b)
-		}
-
-		a.writeVDelta(v)
-
 	} else {
-		tDelta = uint64(t - a.t)
-		dod := int64(tDelta - a.tDelta)
-
-		// Gorilla has a max resolution of seconds, Prometheus milliseconds.
-		// Thus we use higher value range steps with larger bit size.
-		switch {
-		case dod == 0:
-			a.b.writeBit(zero)
-		case bitRange(dod, 14):
-			a.b.writeBits(0b10, 2)
-			a.b.writeBits(uint64(dod), 14)
-		case bitRange(dod, 17):
-			a.b.writeBits(0b110, 3)
-			a.b.writeBits(uint64(dod), 17)
-		case bitRange(dod, 20):
-			a.b.writeBits(0b1110, 4)
-			a.b.writeBits(uint64(dod), 20)
-		default:
-			a.b.writeBits(0b1111, 4)
-			a.b.writeBits(uint64(dod), 64)
-		}
-
 		a.writeVDelta(v)
 	}
 
-	a.t = t
 	a.v = v
 	binary.BigEndian.PutUint16(a.b.bytes(), num+1)
-	a.tDelta = tDelta
-}
-
-func bitRange(x int64, nbits uint8) bool {
-	return -((1<<(nbits-1))-1) <= x && x <= 1<<(nbits-1)
 }
 
 func (a *xorAppender) writeVDelta(v int64) {
@@ -260,22 +207,20 @@ type xorIterator struct {
 	numTotal uint16
 	numRead  uint16
 
-	t   int64
 	val int64
 
 	leading  uint8
 	trailing uint8
 
-	tDelta uint64
-	err    error
+	err error
 }
 
-func (it *xorIterator) Seek(index int64) bool {
+func (it *xorIterator) Seek(index uint16) bool {
 	if it.err != nil {
 		return false
 	}
 
-	for index > it.t || it.numRead == 0 {
+	for it.numRead <= index || it.numRead == 0 {
 		if !it.Next() {
 			return false
 		}
@@ -298,11 +243,9 @@ func (it *xorIterator) Reset(b []byte) {
 	it.numTotal = binary.BigEndian.Uint16(b)
 
 	it.numRead = 0
-	it.t = 0
 	it.val = 0
 	it.leading = 0
 	it.trailing = 0
-	it.tDelta = 0
 	it.err = nil
 }
 
@@ -312,91 +255,16 @@ func (it *xorIterator) Next() bool {
 	}
 
 	if it.numRead == 0 {
-		t, err := binary.ReadVarint(&it.br)
-		if err != nil {
-			it.err = err
-			return false
-		}
 		v, err := it.br.readBits(64)
 		if err != nil {
 			it.err = err
 			return false
 		}
-		it.t = t
-		it.val = int64(v) // internall XORed as uint64 but when reading back we want to interpret as int64
+		it.val = int64(v) // internally XORed as uint64 but when reading back we want to interpret as int64
 
 		it.numRead++
 		return true
 	}
-	if it.numRead == 1 {
-		tDelta, err := binary.ReadUvarint(&it.br)
-		if err != nil {
-			it.err = err
-			return false
-		}
-		it.tDelta = tDelta
-		it.t = it.t + int64(it.tDelta)
-
-		return it.readValue()
-	}
-
-	var d byte
-	// read delta-of-delta
-	for i := 0; i < 4; i++ {
-		d <<= 1
-		bit, err := it.br.readBitFast()
-		if err != nil {
-			bit, err = it.br.readBit()
-		}
-		if err != nil {
-			it.err = err
-			return false
-		}
-		if bit == zero {
-			break
-		}
-		d |= 1
-	}
-	var sz uint8
-	var dod int64
-	switch d {
-	case 0b0:
-		// dod == 0
-	case 0b10:
-		sz = 14
-	case 0b110:
-		sz = 17
-	case 0b1110:
-		sz = 20
-	case 0b1111:
-		// Do not use fast because it's very unlikely it will succeed.
-		bits, err := it.br.readBits(64)
-		if err != nil {
-			it.err = err
-			return false
-		}
-
-		dod = int64(bits)
-	}
-
-	if sz != 0 {
-		bits, err := it.br.readBitsFast(sz)
-		if err != nil {
-			bits, err = it.br.readBits(sz)
-		}
-		if err != nil {
-			it.err = err
-			return false
-		}
-		if bits > (1 << (sz - 1)) {
-			// or something
-			bits = bits - (1 << sz)
-		}
-		dod = int64(bits)
-	}
-
-	it.tDelta = uint64(int64(it.tDelta) + dod)
-	it.t = it.t + int64(it.tDelta)
 
 	return it.readValue()
 }

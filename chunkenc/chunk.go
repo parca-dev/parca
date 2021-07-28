@@ -91,7 +91,7 @@ type Iterator interface {
 	// If current sample found by previous `Next` or `Seek` operation already has this property, Seek has no effect.
 	// Seek returns true, if such sample exists, false otherwise.
 	// Iterator is exhausted when the Seek returns false.
-	Seek(index int64) bool
+	Seek(index uint16) bool
 	// At returns the current timestamp/value pair.
 	// Before the iterator has advanced At behaviour is unspecified.
 	At() int64
@@ -107,10 +107,10 @@ func NewNopIterator() Iterator {
 
 type nopIterator struct{}
 
-func (nopIterator) Seek(int64) bool { return false }
-func (nopIterator) At() int64       { return 0 }
-func (nopIterator) Next() bool      { return false }
-func (nopIterator) Err() error      { return nil }
+func (nopIterator) Seek(uint16) bool { return false }
+func (nopIterator) At() int64        { return 0 }
+func (nopIterator) Next() bool       { return false }
+func (nopIterator) Err() error       { return nil }
 
 // Pool is used to create and reuse chunk references to avoid allocations.
 type Pool interface {

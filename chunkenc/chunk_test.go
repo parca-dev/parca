@@ -57,7 +57,7 @@ func testChunk(t *testing.T, c Chunk) {
 	app, err := c.Appender()
 	require.NoError(t, err)
 
-	var exp []int64
+	exp := make([]int64, 0, 300)
 	var v = int64(1243535)
 
 	for i := 0; i < 300; i++ {
@@ -80,7 +80,7 @@ func testChunk(t *testing.T, c Chunk) {
 
 	// 1. Expand iterator in simple case.
 	it1 := c.Iterator(nil)
-	var res1 []int64
+	res1 := make([]int64, 0, len(exp))
 	for it1.Next() {
 		res1 = append(res1, it1.At())
 	}
@@ -89,7 +89,7 @@ func testChunk(t *testing.T, c Chunk) {
 
 	// 2. Expand second iterator while reusing first one.
 	it2 := c.Iterator(it1)
-	var res2 []int64
+	res2 := make([]int64, 0, len(exp))
 	for it2.Next() {
 		res2 = append(res2, it2.At())
 	}
@@ -97,7 +97,7 @@ func testChunk(t *testing.T, c Chunk) {
 	require.Equal(t, exp, res2)
 
 	// 3. Test iterator Seek.
-	mid := int64(len(exp) / 2)
+	mid := uint16(len(exp) / 2)
 
 	it3 := c.Iterator(nil)
 	var res3 []int64
@@ -108,8 +108,8 @@ func testChunk(t *testing.T, c Chunk) {
 		res3 = append(res3, it3.At())
 	}
 	require.NoError(t, it3.Err())
-	require.Equal(t, exp[mid-1:], res3)
-	require.Equal(t, false, it3.Seek(int64(len(exp)+1)))
+	require.Equal(t, exp[mid:], res3)
+	require.Equal(t, false, it3.Seek(uint16(len(exp))))
 }
 
 func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
