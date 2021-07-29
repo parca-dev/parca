@@ -351,9 +351,18 @@ func (it *xorIterator) readValue() bool {
 // This is mostly helpful in tests.
 func FromValuesXOR(values ...int64) Chunk {
 	c := NewXORChunk()
-	app, _ := c.Appender()
 	for _, v := range values {
+		app, _ := c.Appender()
 		app.Append(v)
 	}
+	return c
+}
+
+// FromValuesXORAt inserts a value at the given index in a Chunk.
+// This extra helper is necessary because FromValuesXOR(0,0,3) results in different bytes than FromValuesXORAt(2,3).
+func FromValuesXORAt(index uint16, value int64) Chunk {
+	c := NewXORChunk()
+	app, _ := c.Appender()
+	app.AppendAt(index, value)
 	return c
 }

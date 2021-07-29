@@ -118,26 +118,58 @@ func TestMemSeriesTree(t *testing.T) {
 			}}},
 	}, st)
 
+	// Merging another profileTree onto the existing one
 	pt2 := &ProfileTree{}
-	pt2.Insert(makeSample(2, []uint64{3, 1}))
-
+	pt2.Insert(makeSample(3, []uint64{2, 1}))
 	st.Insert(1, pt2)
 
 	require.Equal(t, &MemSeriesTree{
 		Roots: &MemSeriesTreeNode{
-			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 2)}},
+			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 3)}},
 			Children: []*MemSeriesTreeNode{{
 				LocationID:       1,
-				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 2)}},
+				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 3)}},
 				Children: []*MemSeriesTreeNode{{
 					LocationID:       2,
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2, 3)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2, 3)}},
+				}, {
+					LocationID:       4,
 					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
 					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
+				}},
+			}}},
+	}, st)
+
+	// Merging another profileTree onto the existing one with one new Location
+	pt3 := &ProfileTree{}
+	pt3.Insert(makeSample(2, []uint64{3, 1}))
+	st.Insert(2, pt3)
+
+	// These require.Equal assertions are exactly the same as below, although you know exactly what line breaks.
+	require.Equal(t, chunkenc.FromValuesXOR(4, 3, 2), st.Roots.CumulativeValues[0].Values)
+	require.Equal(t, chunkenc.FromValuesXOR(4, 3, 2), st.Roots.Children[0].CumulativeValues[0].Values)            // Location: 1
+	require.Equal(t, chunkenc.FromValuesXOR(2, 3), st.Roots.Children[0].Children[0].CumulativeValues[0].Values)   // Location: 2
+	require.Equal(t, chunkenc.FromValuesXOR(2, 3), st.Roots.Children[0].Children[0].FlatValues[0].Values)         // Location: 2
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 2), st.Roots.Children[0].Children[1].CumulativeValues[0].Values) // Location: 3
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 2), st.Roots.Children[0].Children[1].FlatValues[0].Values)       // Location: 3
+	require.Equal(t, chunkenc.FromValuesXOR(2), st.Roots.Children[0].Children[2].CumulativeValues[0].Values)      // Location: 4
+	require.Equal(t, chunkenc.FromValuesXOR(2), st.Roots.Children[0].Children[2].FlatValues[0].Values)            // Location: 4
+
+	require.Equal(t, &MemSeriesTree{
+		Roots: &MemSeriesTreeNode{
+			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 3, 2)}},
+			Children: []*MemSeriesTreeNode{{
+				LocationID:       1,
+				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 3, 2)}},
+				Children: []*MemSeriesTreeNode{{
+					LocationID:       2,
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2, 3)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2, 3)}},
 				}, {
 					LocationID:       3,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(0, 2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(0, 2)}},
-					// 0,2,0,0,0,0,0,0,0,0,255,0,0,0,0,8
+					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXORAt(2, 2)}},
+					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXORAt(2, 2)}},
 				}, {
 					LocationID:       4,
 					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
