@@ -66,3 +66,16 @@ type ProfileSeriesIterator interface {
 type ProfileSeries interface {
 	Iterator() ProfileSeriesIterator
 }
+
+type Profile struct {
+	tree *ProfileTree
+	meta InstantProfileMeta
+}
+
+func (p *Profile) ProfileTree() InstantProfileTree {
+	return p.tree
+}
+
+func (p *Profile) ProfileMeta() InstantProfileMeta {
+	return p.meta
+}

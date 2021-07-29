@@ -37,7 +37,6 @@ func (s *ProfileTreeStack) Size() int {
 type ProfileTreeIterator struct {
 	tree  *ProfileTree
 	stack ProfileTreeStack
-	cur   *ProfileTreeStackEntry
 }
 
 func NewProfileTreeIterator(t *ProfileTree) *ProfileTreeIterator {
@@ -48,7 +47,6 @@ func NewProfileTreeIterator(t *ProfileTree) *ProfileTreeIterator {
 	return &ProfileTreeIterator{
 		tree:  t,
 		stack: ProfileTreeStack{root},
-		cur:   root,
 	}
 }
 
@@ -122,7 +120,6 @@ func (s *MemSeriesTreeStack) Size() int {
 }
 
 type MemSeriesTreeIterator struct {
-	tree  *MemSeriesTree
 	stack MemSeriesTreeStack
 }
 
@@ -132,7 +129,6 @@ func NewMemSeriesTreeIterator(t *MemSeriesTree) *MemSeriesTreeIterator {
 		child: -1,
 	}
 	return &MemSeriesTreeIterator{
-		tree:  t,
 		stack: MemSeriesTreeStack{root},
 	}
 }
