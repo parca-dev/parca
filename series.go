@@ -38,7 +38,7 @@ func (t *MemSeriesTree) Iterator() *MemSeriesTreeIterator {
 	return NewMemSeriesTreeIterator(t)
 }
 
-func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
+func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 	if t.Roots == nil {
 		t.Roots = &MemSeriesTreeNode{}
 	}
@@ -66,7 +66,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
 						}
 						app, err := seriesTreeChild.FlatValues[0].Values.Appender()
 						if err != nil {
-							// TODO
+							return err
 						}
 						app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
 					}
@@ -77,7 +77,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
 					}
 					app, err := seriesTreeChild.CumulativeValues[0].Values.Appender()
 					if err != nil {
-						// TODO
+						return err
 					}
 					app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
 
@@ -112,7 +112,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
 					}
 					app, err := seriesTreeChild.FlatValues[0].Values.Appender()
 					if err != nil {
-						// TODO
+						return err
 					}
 					app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
 				}
@@ -123,6 +123,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
 				}
 				app, err := seriesTreeChild.CumulativeValues[0].Values.Appender()
 				if err != nil {
+					return err
 				}
 				app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
 
@@ -147,7 +148,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
 					}}
 					app, err := newChild.FlatValues[0].Values.Appender()
 					if err != nil {
-						// TODO
+						return err
 					}
 					app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
 				}
@@ -156,7 +157,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
 				}}
 				app, err := newChild.CumulativeValues[0].Values.Appender()
 				if err != nil {
-					// TODO
+					return err
 				}
 				app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
 
@@ -172,6 +173,8 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) {
 		pit.StepUp()
 		sit.StepUp()
 	}
+
+	return nil
 }
 
 type ProfileTreeNode struct {

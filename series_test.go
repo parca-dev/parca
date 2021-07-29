@@ -98,7 +98,8 @@ func TestMemSeriesTree(t *testing.T) {
 	pt1.Insert(makeSample(2, []uint64{4, 1}))
 
 	st := &MemSeriesTree{}
-	st.Insert(0, pt1)
+	err := st.Insert(0, pt1)
+	require.NoError(t, err)
 
 	require.Equal(t, &MemSeriesTree{
 		Roots: &MemSeriesTreeNode{
@@ -121,7 +122,8 @@ func TestMemSeriesTree(t *testing.T) {
 	// Merging another profileTree onto the existing one
 	pt2 := &ProfileTree{}
 	pt2.Insert(makeSample(3, []uint64{2, 1}))
-	st.Insert(1, pt2)
+	err = st.Insert(1, pt2)
+	require.NoError(t, err)
 
 	require.Equal(t, &MemSeriesTree{
 		Roots: &MemSeriesTreeNode{
@@ -144,7 +146,8 @@ func TestMemSeriesTree(t *testing.T) {
 	// Merging another profileTree onto the existing one with one new Location
 	pt3 := &ProfileTree{}
 	pt3.Insert(makeSample(2, []uint64{3, 1}))
-	st.Insert(2, pt3)
+	err = st.Insert(2, pt3)
+	require.NoError(t, err)
 
 	// These require.Equal assertions are exactly the same as below, although you know exactly what line breaks.
 	require.Equal(t, chunkenc.FromValuesXOR(4, 3, 2), st.Roots.CumulativeValues[0].Values)
