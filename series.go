@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/storage/chunk"
+	"github.com/parca-dev/storage/chunkenc"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 )
 
 type MemSeriesTreeValueNode struct {
-	Values   chunk.Chunk
+	Values   chunkenc.Chunk
 	Label    map[string][]string
 	NumLabel map[string][]int64
 	NumUnit  map[string][]string
@@ -37,7 +38,7 @@ func (t *MemSeriesTree) Iterator() *MemSeriesTreeIterator {
 	return NewMemSeriesTreeIterator(t)
 }
 
-func (t *MemSeriesTree) Insert(i int, profileTree *ProfileTree) {
+func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 	if t.Roots == nil {
 		t.Roots = &MemSeriesTreeNode{}
 	}
@@ -60,17 +61,26 @@ func (t *MemSeriesTree) Insert(i int, profileTree *ProfileTree) {
 					if len(profileTreeChild.FlatValues()) > 0 {
 						if seriesTreeChild.FlatValues == nil {
 							seriesTreeChild.FlatValues = []*MemSeriesTreeValueNode{{
-								Values: chunk.NewFakeChunk(),
+								Values: chunkenc.NewXORChunk(),
 							}}
 						}
-						seriesTreeChild.FlatValues[0].Values.AppendAt(i, profileTreeChild.FlatValues()[0].Value)
+						app, err := seriesTreeChild.FlatValues[0].Values.Appender()
+						if err != nil {
+							return err
+						}
+						app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
 					}
 					if seriesTreeChild.CumulativeValues == nil {
 						seriesTreeChild.CumulativeValues = []*MemSeriesTreeValueNode{{
-							Values: chunk.NewFakeChunk(),
+							Values: chunkenc.NewXORChunk(),
 						}}
 					}
-					seriesTreeChild.CumulativeValues[0].Values.AppendAt(i, profileTreeChild.CumulativeValues()[0].Value)
+					app, err := seriesTreeChild.CumulativeValues[0].Values.Appender()
+					if err != nil {
+						return err
+					}
+					app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
+
 					node.Children = append(node.Children, seriesTreeChild)
 
 					pit.StepInto()
@@ -90,28 +100,41 @@ func (t *MemSeriesTree) Insert(i int, profileTree *ProfileTree) {
 			seriesTreeChild := sit.At()
 			sId := seriesTreeChild.LocationID
 
+			// The node with the location id in the profile-tree is the same,
+			// this means this node present in the series-tree, so we need add the new values to the existing node.
 			if pId == sId {
 				if len(profileTreeChild.FlatValues()) > 0 {
+					// REVIEW: I don't think this can ever be nil, can it? It'll have existing values if pId == sId?!
 					if seriesTreeChild.FlatValues == nil {
 						seriesTreeChild.FlatValues = []*MemSeriesTreeValueNode{{
-							Values: chunk.NewFakeChunk(),
+							Values: chunkenc.NewXORChunk(),
 						}}
 					}
-					seriesTreeChild.FlatValues[0].Values.AppendAt(i, profileTreeChild.FlatValues()[0].Value)
+					app, err := seriesTreeChild.FlatValues[0].Values.Appender()
+					if err != nil {
+						return err
+					}
+					app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
 				}
 				if seriesTreeChild.CumulativeValues == nil {
 					seriesTreeChild.CumulativeValues = []*MemSeriesTreeValueNode{{
-						Values: chunk.NewFakeChunk(),
+						Values: chunkenc.NewXORChunk(),
 					}}
 				}
-				seriesTreeChild.CumulativeValues[0].Values.AppendAt(i, profileTreeChild.CumulativeValues()[0].Value)
+				app, err := seriesTreeChild.CumulativeValues[0].Values.Appender()
+				if err != nil {
+					return err
+				}
+				app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
+
 				pit.StepInto()
 				sit.StepInto()
 				continue
 			}
 
+			// The node with the location id in the profile-tree is smaller,
+			// this means this node is not present yet in the series-tree, so it has to be added at the current child position.
 			if pId < sId {
-				// The node with the location id in the profile-tree is smaller, this means this node is not present yet in the series-tree, so it has to be added at the current child position.
 				node := sit.Node()
 				childIndex := sit.ChildIndex()
 				newChildren := make([]*MemSeriesTreeNode, len(node.Children)+1)
@@ -121,14 +144,23 @@ func (t *MemSeriesTree) Insert(i int, profileTree *ProfileTree) {
 				}
 				if len(profileTreeChild.FlatValues()) > 0 {
 					newChild.FlatValues = []*MemSeriesTreeValueNode{{
-						Values: chunk.NewFakeChunk(),
+						Values: chunkenc.NewXORChunk(),
 					}}
-					newChild.FlatValues[0].Values.AppendAt(i, profileTreeChild.FlatValues()[0].Value)
+					app, err := newChild.FlatValues[0].Values.Appender()
+					if err != nil {
+						return err
+					}
+					app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
 				}
 				newChild.CumulativeValues = []*MemSeriesTreeValueNode{{
-					Values: chunk.NewFakeChunk(),
+					Values: chunkenc.NewXORChunk(),
 				}}
-				newChild.CumulativeValues[0].Values.AppendAt(i, profileTreeChild.CumulativeValues()[0].Value)
+				app, err := newChild.CumulativeValues[0].Values.Appender()
+				if err != nil {
+					return err
+				}
+				app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
+
 				newChildren[childIndex] = newChild
 				copy(newChildren[childIndex+1:], node.Children[childIndex:])
 				node.Children = newChildren
@@ -141,6 +173,8 @@ func (t *MemSeriesTree) Insert(i int, profileTree *ProfileTree) {
 		pit.StepUp()
 		sit.StepUp()
 	}
+
+	return nil
 }
 
 type ProfileTreeNode struct {
@@ -242,7 +276,7 @@ type MemSeries struct {
 	periods          chunk.Chunk
 
 	seriesTree *MemSeriesTree
-	i          int
+	i          uint16
 }
 
 func NewMemSeries(metaStore ProfileMetaStore) *MemSeries {
@@ -377,7 +411,7 @@ type MemSeriesIteratorTree struct {
 }
 
 type MemSeriesIteratorTreeValueNode struct {
-	Values   chunk.ChunkIterator
+	Values   chunkenc.Iterator
 	Label    map[string][]string
 	NumLabel map[string][]int64
 	NumUnit  map[string][]string
@@ -441,7 +475,7 @@ type MemSeriesIterator struct {
 	periodsIterator    chunk.ChunkIterator
 
 	series *MemSeries
-	i      int
+	i      uint16
 }
 
 func (s *MemSeries) Iterator() *MemSeriesIterator {
@@ -449,7 +483,7 @@ func (s *MemSeries) Iterator() *MemSeriesIterator {
 
 	for _, v := range s.seriesTree.Roots.CumulativeValues {
 		root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-			Values:   v.Values.Iterator(),
+			Values:   v.Values.Iterator(nil),
 			Label:    v.Label,
 			NumLabel: v.NumLabel,
 			NumUnit:  v.NumUnit,
@@ -487,7 +521,7 @@ func (s *MemSeries) Iterator() *MemSeriesIterator {
 
 			for _, v := range child.FlatValues {
 				n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
-					Values:   v.Values.Iterator(),
+					Values:   v.Values.Iterator(nil),
 					Label:    v.Label,
 					NumLabel: v.NumLabel,
 					NumUnit:  v.NumUnit,
@@ -496,7 +530,7 @@ func (s *MemSeries) Iterator() *MemSeriesIterator {
 
 			for _, v := range child.CumulativeValues {
 				n.cumulativeValues = append(n.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-					Values:   v.Values.Iterator(),
+					Values:   v.Values.Iterator(nil),
 					Label:    v.Label,
 					NumLabel: v.NumLabel,
 					NumUnit:  v.NumUnit,
@@ -543,15 +577,11 @@ func (it *MemSeriesIterator) Next() bool {
 			child := iit.at()
 
 			for _, v := range child.flatValues {
-				if !v.Values.Next() {
-					return false
-				}
+				v.Values.Next()
 			}
 
 			for _, v := range child.cumulativeValues {
-				if !v.Values.Next() {
-					return false
-				}
+				v.Values.Next()
 			}
 
 			iit.StepInto()

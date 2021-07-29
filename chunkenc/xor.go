@@ -167,6 +167,15 @@ func (a *xorAppender) Append(v int64) {
 	binary.BigEndian.PutUint16(a.b.bytes(), num+1)
 }
 
+func (a *xorAppender) AppendAt(index uint16, v int64) {
+	num := binary.BigEndian.Uint16(a.b.bytes())
+	// TODO(metalmatze): We should be able to write sequence of zeros to the stream directly (no loops)
+	for i := num; i < index; i++ {
+		a.Append(0)
+	}
+	a.Append(v)
+}
+
 func (a *xorAppender) writeVDelta(v int64) {
 	vDelta := uint64(v) ^ uint64(a.v)
 
@@ -336,4 +345,24 @@ func (it *xorIterator) readValue() bool {
 
 	it.numRead++
 	return true
+}
+
+// FromValuesXOR takes a sequence of values and returns a new populated Chunk.
+// This is mostly helpful in tests.
+func FromValuesXOR(values ...int64) Chunk {
+	c := NewXORChunk()
+	for _, v := range values {
+		app, _ := c.Appender()
+		app.Append(v)
+	}
+	return c
+}
+
+// FromValuesXORAt inserts a value at the given index in a Chunk.
+// This extra helper is necessary because FromValuesXOR(0,0,3) results in different bytes than FromValuesXORAt(2,3).
+func FromValuesXORAt(index uint16, value int64) Chunk {
+	c := NewXORChunk()
+	app, _ := c.Appender()
+	app.AppendAt(index, value)
+	return c
 }

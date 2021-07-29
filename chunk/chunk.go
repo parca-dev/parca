@@ -7,7 +7,7 @@ type ChunkIterator interface {
 }
 
 type Chunk interface {
-	AppendAt(i int, v int64) error
+	AppendAt(i uint16, v int64) error
 	Iterator() ChunkIterator
 }
 
@@ -25,8 +25,8 @@ type FakeChunk struct {
 	Values []int64
 }
 
-func (c *FakeChunk) AppendAt(i int, v int64) error {
-	for len(c.Values) < i {
+func (c *FakeChunk) AppendAt(i uint16, v int64) error {
+	for uint16(len(c.Values)) < i {
 		c.Values = append(c.Values, 0)
 	}
 	c.Values = append(c.Values, v)
