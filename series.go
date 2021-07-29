@@ -607,15 +607,11 @@ func (it *MemSeriesIterator) Next() bool {
 			child := iit.at()
 
 			for _, v := range child.flatValues {
-				if !v.Values.Next() {
-					return false
-				}
+				v.Values.Next()
 			}
 
 			for _, v := range child.cumulativeValues {
-				if !v.Values.Next() {
-					return false
-				}
+				v.Values.Next()
 			}
 
 			iit.StepInto()

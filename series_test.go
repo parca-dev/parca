@@ -214,7 +214,7 @@ func TestMemSeriesIterator(t *testing.T) {
 
 	require.Equal(t, []uint64{0, 1, 2, 3, 4}, res)
 
-	require.False(t, it.Next())
+	require.True(t, it.Next())
 	require.NoError(t, it.Err())
 
 	instantProfile = it.At()
