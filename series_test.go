@@ -206,7 +206,8 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	s := &MemSeries{}
+	l := NewInMemoryProfileMetaStore()
+	s := NewMemSeries(l)
 	require.NoError(t, s.Append(p1))
 
 	profileTree, err := s.prepareSamplesForInsert(p1)
@@ -230,6 +231,19 @@ func TestIteratorConsistency(t *testing.T) {
 }
 
 func TestRealInsert(t *testing.T) {
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	l := NewInMemoryProfileMetaStore()
+	s := NewMemSeries(l)
+	require.NoError(t, s.Append(p))
+	require.Equal(t, len(p.Location), len(l.locations))
+}
+
+func TestRealInserts(t *testing.T) {
 	os.Remove("result-profile1.pb.gz")
 	os.Remove("result-profile2.pb.gz")
 
@@ -244,7 +258,8 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	s := &MemSeries{}
+	l := NewInMemoryProfileMetaStore()
+	s := NewMemSeries(l)
 	require.NoError(t, s.Append(p1))
 	require.NoError(t, s.Append(p2))
 }

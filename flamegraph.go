@@ -53,7 +53,7 @@ func (s *TreeStack) Size() int {
 }
 
 type Locations interface {
-	GetByID(id uint64) (*profile.Location, error)
+	GetLocationByID(id uint64) (*profile.Location, error)
 }
 
 func generateFlamegraph(locations Locations, it InstantProfileTreeIterator) (*TreeNode, error) {
@@ -80,7 +80,7 @@ func generateFlamegraph(locations Locations, it InstantProfileTreeIterator) (*Tr
 			child := it.At()
 			cumulative := child.CumulativeValue()
 			if cumulative > 0 {
-				l, err := locations.GetByID(child.LocationID())
+				l, err := locations.GetLocationByID(child.LocationID())
 				if err != nil {
 					return nil, err
 				}

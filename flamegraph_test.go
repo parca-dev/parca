@@ -74,7 +74,7 @@ type fakeLocations struct {
 	m map[uint64]*profile.Location
 }
 
-func (l *fakeLocations) GetByID(id uint64) (*profile.Location, error) {
+func (l *fakeLocations) GetLocationByID(id uint64) (*profile.Location, error) {
 	return l.m[id], nil
 }
 
@@ -132,13 +132,9 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *TreeNode {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	s := &MemSeries{}
+	l := NewInMemoryProfileMetaStore()
+	s := NewMemSeries(l)
 	require.NoError(t, s.Append(p1))
-
-	l := &fakeLocations{m: map[uint64]*profile.Location{}}
-	for _, loc := range s.locations {
-		l.m[loc.ID] = loc
-	}
 
 	profileTree, err := s.prepareSamplesForInsert(p1)
 	require.NoError(t, err)
@@ -160,13 +156,9 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *TreeNode {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	s := &MemSeries{}
+	l := NewInMemoryProfileMetaStore()
+	s := NewMemSeries(l)
 	require.NoError(t, s.Append(p1))
-
-	l := &fakeLocations{m: map[uint64]*profile.Location{}}
-	for _, loc := range s.locations {
-		l.m[loc.ID] = loc
-	}
 
 	it := s.Iterator()
 	require.True(t, it.Next())
@@ -193,13 +185,9 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	s := &MemSeries{}
+	l := NewInMemoryProfileMetaStore()
+	s := NewMemSeries(l)
 	require.NoError(b, s.Append(p1))
-
-	l := &fakeLocations{m: map[uint64]*profile.Location{}}
-	for _, loc := range s.locations {
-		l.m[loc.ID] = loc
-	}
 
 	profileTree, err := s.prepareSamplesForInsert(p1)
 	require.NoError(b, err)

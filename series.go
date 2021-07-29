@@ -234,12 +234,7 @@ type MemSeries struct {
 	periodType ValueType
 	sampleType ValueType
 
-	// Memoization tables for profile entities.
-	stacktraceIDs map[[16]byte]*Stacktrace
-	stacktraces   map[stacktraceKey]*Stacktrace
-	locations     map[locationKey]*profile.Location
-	functions     map[functionKey]*profile.Function
-	mappings      map[mappingKey]*profile.Mapping
+	metaStore ProfileMetaStore
 
 	minTime, maxTime int64
 	timestamps       chunk.Chunk
@@ -250,12 +245,13 @@ type MemSeries struct {
 	i          int
 }
 
-func NewMemSeries() *MemSeries {
+func NewMemSeries(metaStore ProfileMetaStore) *MemSeries {
 	return &MemSeries{
 		timestamps: chunk.NewFakeChunk(),
 		durations:  chunk.NewFakeChunk(),
 		periods:    chunk.NewFakeChunk(),
 		seriesTree: &MemSeriesTree{},
+		metaStore:  metaStore,
 	}
 }
 
@@ -274,25 +270,9 @@ type stacktraceKey struct {
 	numlabels string
 }
 
-type locationKey struct {
-	addr, mappingID uint64
-	lines           string
-	isFolded        bool
-}
-
-type functionKey struct {
-	startLine                  int64
-	name, systemName, fileName string
-}
-
 type mapInfo struct {
 	m      *profile.Mapping
 	offset int64
-}
-
-type mappingKey struct {
-	size, offset  uint64
-	buildIDOrFile string
 }
 
 func (s *MemSeries) Append(value *profile.Profile) error {
@@ -354,9 +334,6 @@ func (s *MemSeries) prepareSamplesForInsert(value *profile.Profile) (*ProfileTre
 
 		s.periodType = ValueType{Type: value.PeriodType.Type, Unit: value.PeriodType.Unit}
 		s.sampleType = ValueType{Type: value.SampleType[0].Type, Unit: value.SampleType[0].Unit}
-		s.locations = make(map[locationKey]*profile.Location, len(value.Location))
-		s.functions = make(map[functionKey]*profile.Function, len(value.Function))
-		s.mappings = make(map[mappingKey]*profile.Mapping, len(value.Mapping))
 	}
 
 	if err := compatibleProfiles(s, value); err != nil {
@@ -366,9 +343,7 @@ func (s *MemSeries) prepareSamplesForInsert(value *profile.Profile) (*ProfileTre
 	pn := &profileNormalizer{
 		p: s.p,
 
-		locations: s.locations,
-		functions: s.functions,
-		mappings:  s.mappings,
+		metaStore: s.metaStore,
 
 		samples: make(map[stacktraceKey]*profile.Sample, len(value.Sample)),
 
@@ -376,14 +351,6 @@ func (s *MemSeries) prepareSamplesForInsert(value *profile.Profile) (*ProfileTre
 		locationsByID: make(map[uint64]*profile.Location, len(value.Location)),
 		functionsByID: make(map[uint64]*profile.Function, len(value.Function)),
 		mappingsByID:  make(map[uint64]mapInfo, len(value.Mapping)),
-	}
-
-	if len(pn.mappings) == 0 && len(value.Mapping) > 0 {
-		// The Mapping list has the property that the first mapping
-		// represents the main binary. Take the first Mapping we see,
-		// otherwise the operations below will add mappings in an
-		// arbitrary order.
-		pn.mapMapping(value.Mapping[0])
 	}
 
 	samples := make([]*profile.Sample, 0, len(value.Sample))
@@ -647,9 +614,7 @@ type profileNormalizer struct {
 
 	// Memoization tables for profile entities.
 	samples   map[stacktraceKey]*profile.Sample
-	locations map[locationKey]*profile.Location
-	functions map[functionKey]*profile.Function
-	mappings  map[mappingKey]*profile.Mapping
+	metaStore ProfileMetaStore
 
 	// A slice of samples for each unique stack trace.
 	c *chunk.Chunk
@@ -706,7 +671,6 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 
 	mi := pn.mapMapping(src.Mapping)
 	l := &profile.Location{
-		ID:       uint64(len(pn.p.Location) + 1),
 		Mapping:  mi.m,
 		Address:  uint64(int64(src.Address) + mi.offset),
 		Line:     make([]profile.Line, len(src.Line)),
@@ -717,14 +681,14 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 	}
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
-	k := makeLocationKey(l)
-	if ll, ok := pn.locations[k]; ok {
+	k := MakeLocationKey(l)
+	ll, err := pn.metaStore.GetLocationByKey(k)
+	if err != ErrLocationNotFound {
 		pn.locationsByID[src.ID] = ll
 		return ll
 	}
 	pn.locationsByID[src.ID] = l
-	pn.locations[k] = l
-	pn.p.Location = append(pn.p.Location, l)
+	pn.metaStore.CreateLocation(l)
 	return l
 }
 
@@ -738,14 +702,14 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	}
 
 	// Check memoization tables.
-	mk := makeMappingKey(src)
-	if m, ok := pn.mappings[mk]; ok {
+	mk := MakeMappingKey(src)
+	m, err := pn.metaStore.GetMappingByKey(mk)
+	if err != ErrMappingNotFound {
 		mi := mapInfo{m, int64(m.Start) - int64(src.Start)}
 		pn.mappingsByID[src.ID] = mi
 		return mi
 	}
-	m := &profile.Mapping{
-		ID:              uint64(len(pn.p.Mapping) + 1),
+	m = &profile.Mapping{
 		Start:           src.Start,
 		Limit:           src.Limit,
 		Offset:          src.Offset,
@@ -759,7 +723,7 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	pn.p.Mapping = append(pn.p.Mapping, m)
 
 	// Update memoization tables.
-	pn.mappings[mk] = m
+	pn.metaStore.CreateMapping(m)
 	mi := mapInfo{m, 0}
 	pn.mappingsByID[src.ID] = mi
 	return mi
@@ -780,21 +744,20 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 	if f, ok := pn.functionsByID[src.ID]; ok {
 		return f
 	}
-	k := makeFunctionKey(src)
-	if f, ok := pn.functions[k]; ok {
+	k := MakeFunctionKey(src)
+	f, err := pn.metaStore.GetFunctionByKey(k)
+	if err != ErrFunctionNotFound {
 		pn.functionsByID[src.ID] = f
 		return f
 	}
-	f := &profile.Function{
-		ID:         uint64(len(pn.p.Function) + 1),
+	f = &profile.Function{
 		Name:       src.Name,
 		SystemName: src.SystemName,
 		Filename:   src.Filename,
 		StartLine:  src.StartLine,
 	}
-	pn.functions[k] = f
+	pn.metaStore.CreateFunction(f)
 	pn.functionsByID[src.ID] = f
-	pn.p.Function = append(pn.p.Function, f)
 	return f
 }
 
@@ -822,62 +785,6 @@ func makeStacktraceKey(sample *profile.Sample) stacktraceKey {
 		strings.Join(labels, ""),
 		strings.Join(numlabels, ""),
 	}
-}
-
-func makeLocationKey(l *profile.Location) locationKey {
-	key := locationKey{
-		addr:     l.Address,
-		isFolded: l.IsFolded,
-	}
-	if l.Mapping != nil {
-		// Normalizes address to handle address space randomization.
-		key.addr -= l.Mapping.Start
-		key.mappingID = l.Mapping.ID
-	}
-	lines := make([]string, len(l.Line)*2)
-	for i, line := range l.Line {
-		if line.Function != nil {
-			lines[i*2] = strconv.FormatUint(line.Function.ID, 16)
-		}
-		lines[i*2+1] = strconv.FormatInt(line.Line, 16)
-	}
-	key.lines = strings.Join(lines, "|")
-	return key
-}
-
-func makeFunctionKey(f *profile.Function) functionKey {
-	return functionKey{
-		f.StartLine,
-		f.Name,
-		f.SystemName,
-		f.Filename,
-	}
-}
-
-func makeMappingKey(m *profile.Mapping) mappingKey {
-	// Normalize addresses to handle address space randomization.
-	// Round up to next 4K boundary to avoid minor discrepancies.
-	const mapsizeRounding = 0x1000
-
-	size := m.Limit - m.Start
-	size = size + mapsizeRounding - 1
-	size = size - (size % mapsizeRounding)
-	key := mappingKey{
-		size:   size,
-		offset: m.Offset,
-	}
-
-	switch {
-	case m.BuildID != "":
-		key.buildIDOrFile = m.BuildID
-	case m.File != "":
-		key.buildIDOrFile = m.File
-	default:
-		// A mapping containing neither build ID nor file name is a fake mapping. A
-		// key with empty buildIDOrFile is used for fake mappings so that they are
-		// treated as the same mapping during merging.
-	}
-	return key
 }
 
 // compatible determines if two profiles can be compared/merged.
