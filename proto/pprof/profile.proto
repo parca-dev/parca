@@ -42,6 +42,8 @@ package perftools.profiles;
 
 option java_package = "com.google.perftools.profiles";
 option java_outer_classname = "ProfileProto";
+// NOTE: the go_package option was added to this file
+option go_package = "github.com/google/pprof/proto";
 
 message Profile {
   // A description of the samples associated with each Sample.value.
