@@ -14,6 +14,7 @@ proto/lint:
 proto/generate:
 	#docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf generate --path=./proto/api
 	buf generate --path=./proto/api
+	buf generate --path=./proto/google/pprof
 
 .PHONY: proto/vendor
 proto/vendor:

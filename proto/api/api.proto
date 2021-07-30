@@ -134,7 +134,8 @@ message ValuesRequest{
 message ValuesResponse{}
 
 message WriteRequest{
-    perftools.profiles.Profile profile = 1;
+    string                     tenant  = 1;
+    perftools.profiles.Profile profile = 2;
 }
 message WriteResponse{}
 

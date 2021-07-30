@@ -17,7 +17,7 @@ func ListenAndServe(ctx context.Context, port string, s api.APIServer) error {
 	serverStr := figure.NewColorFigure("Parca API", "roman", "cyan", true)
 	serverStr.Print()
 
-	logger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	logger := log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 	level.Info(logger).Log("msg", "Serving API", "port", port)
 
 	mux := runtime.NewServeMux()

@@ -41,6 +41,12 @@
             "schema": {
               "$ref": "#/definitions/profilesProfile"
             }
+          },
+          {
+            "name": "tenant",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
