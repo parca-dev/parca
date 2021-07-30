@@ -3,9 +3,9 @@ package storage
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/storage/chunk"
 	"github.com/parca-dev/storage/chunkenc"
 	"github.com/stretchr/testify/require"
 )
@@ -192,9 +192,9 @@ func TestMemSeriesIterator(t *testing.T) {
 	pt2.Insert(makeSample(2, []uint64{4, 1}))
 
 	st := &MemSeries{
-		timestamps: &chunk.FakeChunk{Values: []int64{1, 2}},
-		durations:  &chunk.FakeChunk{Values: []int64{1e9, 1e9}},
-		periods:    &chunk.FakeChunk{Values: []int64{100, 100}},
+		timestamps: chunkenc.FromValuesDelta(1, 2),
+		durations:  chunkenc.FromValuesDelta(time.Second.Nanoseconds(), time.Second.Nanoseconds()),
+		periods:    chunkenc.FromValuesDelta(100, 100),
 	}
 	st.append(pt1)
 	st.append(pt2)
@@ -206,7 +206,7 @@ func TestMemSeriesIterator(t *testing.T) {
 	instantProfile := it.At()
 	require.Equal(t, InstantProfileMeta{
 		Timestamp: 1,
-		Duration:  1e9,
+		Duration:  time.Second.Nanoseconds(),
 		Period:    100,
 	}, instantProfile.ProfileMeta())
 
@@ -244,7 +244,8 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(t, err)
 	require.NoError(t, s.Append(p1))
 
 	profileTree, err := s.prepareSamplesForInsert(p1)
@@ -275,7 +276,8 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(t, err)
 	require.NoError(t, s.Append(p))
 	require.Equal(t, len(p.Location), len(l.locations))
 }
@@ -296,7 +298,8 @@ func TestRealInserts(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(t, err)
 	require.NoError(t, s.Append(p1))
 	require.NoError(t, s.Append(p2))
 }

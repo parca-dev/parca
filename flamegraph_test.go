@@ -133,7 +133,8 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *TreeNode {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(t, err)
 	require.NoError(t, s.Append(p1))
 
 	profileTree, err := s.prepareSamplesForInsert(p1)
@@ -157,7 +158,8 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *TreeNode {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(t, err)
 	require.NoError(t, s.Append(p1))
 
 	it := s.Iterator()
@@ -186,7 +188,8 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(b, err)
 	require.NoError(b, s.Append(p1))
 
 	profileTree, err := s.prepareSamplesForInsert(p1)

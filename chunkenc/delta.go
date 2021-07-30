@@ -325,3 +325,14 @@ func (it *deltaIterator) Next() bool {
 
 	return true
 }
+
+// FromValuesDelta takes a sequence of values and returns a new populated Chunk.
+// This is mostly helpful in tests.
+func FromValuesDelta(values ...int64) Chunk {
+	c := NewDeltaChunk()
+	app, _ := c.Appender()
+	for _, v := range values {
+		app.Append(v)
+	}
+	return c
+}

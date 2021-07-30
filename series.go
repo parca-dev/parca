@@ -271,22 +271,45 @@ type MemSeries struct {
 	metaStore ProfileMetaStore
 
 	minTime, maxTime int64
-	timestamps       chunk.Chunk
-	durations        chunk.Chunk
-	periods          chunk.Chunk
+	timestamps       chunkenc.Chunk
+	timestampsApp    chunkenc.Appender
+	durations        chunkenc.Chunk
+	durationsApp     chunkenc.Appender
+	periods          chunkenc.Chunk
+	periodsApp       chunkenc.Appender
 
 	seriesTree *MemSeriesTree
 	i          uint16
 }
 
-func NewMemSeries(metaStore ProfileMetaStore) *MemSeries {
-	return &MemSeries{
-		timestamps: chunk.NewFakeChunk(),
-		durations:  chunk.NewFakeChunk(),
-		periods:    chunk.NewFakeChunk(),
-		seriesTree: &MemSeriesTree{},
-		metaStore:  metaStore,
+func NewMemSeries(metaStore ProfileMetaStore) (*MemSeries, error) {
+	timestamps := chunkenc.NewDeltaChunk()
+	durations := chunkenc.NewDeltaChunk()
+	periods := chunkenc.NewDeltaChunk()
+
+	timestampsApp, err := timestamps.Appender()
+	if err != nil {
+		return nil, err
 	}
+	durationsApp, err := durations.Appender()
+	if err != nil {
+		return nil, err
+	}
+	periodsApp, err := periods.Appender()
+	if err != nil {
+		return nil, err
+	}
+
+	return &MemSeries{
+		metaStore:     metaStore,
+		timestamps:    timestamps,
+		timestampsApp: timestampsApp,
+		durations:     durations,
+		durationsApp:  durationsApp,
+		periods:       periods,
+		periodsApp:    periodsApp,
+		seriesTree:    &MemSeriesTree{},
+	}, nil
 }
 
 type Stacktrace struct {
@@ -318,7 +341,8 @@ func (s *MemSeries) Append(value *profile.Profile) error {
 	s.append(profileTree)
 
 	if s.timestamps == nil {
-		s.timestamps = chunk.NewFakeChunk()
+		s.timestamps = chunkenc.NewDeltaChunk()
+		s.timestampsApp, _ = s.timestamps.Appender()
 	}
 
 	// We store millisecond timestamp resolution not nanos.
@@ -328,25 +352,19 @@ func (s *MemSeries) Append(value *profile.Profile) error {
 		return ErrOutOfOrderSample
 	}
 
-	if err := s.timestamps.AppendAt(s.i, timestamp); err != nil {
-		return err
-	}
+	s.timestampsApp.AppendAt(s.i, timestamp)
 
 	if s.durations == nil {
-		s.durations = chunk.NewFakeChunk()
+		s.durations = chunkenc.NewDeltaChunk()
+		s.durationsApp, _ = s.durations.Appender() // TODO: Handle err
 	}
-
-	if err := s.durations.AppendAt(s.i, value.DurationNanos); err != nil {
-		return err
-	}
+	s.durationsApp.AppendAt(s.i, value.DurationNanos)
 
 	if s.periods == nil {
-		s.periods = chunk.NewFakeChunk()
+		s.periods = chunkenc.NewDeltaChunk()
+		s.periodsApp, _ = s.periods.Appender() // TODO: Handle err
 	}
-
-	if err := s.periods.AppendAt(s.i, value.Period); err != nil {
-		return err
-	}
+	s.periodsApp.AppendAt(s.i, value.Period)
 
 	s.maxTime = timestamp
 
@@ -494,9 +512,9 @@ func (s *MemSeries) Iterator() *MemSeriesIterator {
 		tree: &MemSeriesIteratorTree{
 			Roots: root,
 		},
-		timestampsIterator: s.timestamps.Iterator(),
-		durationsIterator:  s.durations.Iterator(),
-		periodsIterator:    s.periods.Iterator(),
+		timestampsIterator: s.timestamps.Iterator(nil),
+		durationsIterator:  s.durations.Iterator(nil),
+		periodsIterator:    s.periods.Iterator(nil),
 		series:             s,
 		i:                  s.i,
 	}
