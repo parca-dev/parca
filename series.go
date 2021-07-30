@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/storage/chunk"
 	"github.com/parca-dev/storage/chunkenc"
 )
 
@@ -488,9 +487,9 @@ func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
 
 type MemSeriesIterator struct {
 	tree               *MemSeriesIteratorTree
-	timestampsIterator chunk.ChunkIterator
-	durationsIterator  chunk.ChunkIterator
-	periodsIterator    chunk.ChunkIterator
+	timestampsIterator chunkenc.Iterator
+	durationsIterator  chunkenc.Iterator
+	periodsIterator    chunkenc.Iterator
 
 	series *MemSeries
 	i      uint16
@@ -665,7 +664,7 @@ type profileNormalizer struct {
 	metaStore ProfileMetaStore
 
 	// A slice of samples for each unique stack trace.
-	c *chunk.Chunk
+	c chunkenc.Chunk
 }
 
 // Returns the mapped sample and whether it is new or a known sample.
