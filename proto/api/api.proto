@@ -5,7 +5,7 @@ option go_package = "github.com/parca-dev/proto/api";
 
 import "google/api/annotations.proto";
 import "google/api/timestamp.proto";
-import "pprof/profile.proto";
+import "google/pprof/profile.proto";
 
 service API {
     rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
@@ -41,6 +41,7 @@ service API {
     rpc Write(WriteRequest) returns (WriteResponse) {
         option (google.api.http) = {
             post: "/profiles"
+            body: "profile"
         };
     }
 
