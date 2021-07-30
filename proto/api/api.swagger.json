@@ -16,7 +16,29 @@
     "application/json"
   ],
   "paths": {
-    "/labels": {
+    "/profiles": {
+      "post": {
+        "operationId": "API_Write",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWriteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "API"
+        ]
+      }
+    },
+    "/profiles/labels": {
       "get": {
         "operationId": "API_Labels",
         "responses": {
@@ -64,7 +86,7 @@
         ]
       }
     },
-    "/labels/{name}/values": {
+    "/profiles/labels/{name}/values": {
       "get": {
         "operationId": "API_Values",
         "responses": {
@@ -118,29 +140,7 @@
         ]
       }
     },
-    "/profiles": {
-      "post": {
-        "operationId": "API_Write",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiWriteResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "API"
-        ]
-      }
-    },
-    "/query": {
+    "/profiles/query": {
       "get": {
         "operationId": "API_Query",
         "responses": {
@@ -275,7 +275,7 @@
         ]
       }
     },
-    "/query_range": {
+    "/profiles/query_range": {
       "get": {
         "operationId": "API_QueryRange",
         "responses": {
@@ -325,7 +325,7 @@
         ]
       }
     },
-    "/series": {
+    "/profiles/series": {
       "get": {
         "operationId": "API_Series",
         "responses": {

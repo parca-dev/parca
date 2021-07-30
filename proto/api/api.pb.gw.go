@@ -347,7 +347,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/QueryRange", runtime.WithHTTPPathPattern("/query_range"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/QueryRange", runtime.WithHTTPPathPattern("/profiles/query_range"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -370,7 +370,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/Query", runtime.WithHTTPPathPattern("/query"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/Query", runtime.WithHTTPPathPattern("/profiles/query"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -393,7 +393,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/Series", runtime.WithHTTPPathPattern("/series"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/Series", runtime.WithHTTPPathPattern("/profiles/series"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -416,7 +416,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/Labels", runtime.WithHTTPPathPattern("/labels"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/Labels", runtime.WithHTTPPathPattern("/profiles/labels"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -439,7 +439,7 @@ func RegisterAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/Values", runtime.WithHTTPPathPattern("/labels/{name}/values"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.api.API/Values", runtime.WithHTTPPathPattern("/profiles/labels/{name}/values"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -570,7 +570,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/QueryRange", runtime.WithHTTPPathPattern("/query_range"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/QueryRange", runtime.WithHTTPPathPattern("/profiles/query_range"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -590,7 +590,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/Query", runtime.WithHTTPPathPattern("/query"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/Query", runtime.WithHTTPPathPattern("/profiles/query"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -610,7 +610,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/Series", runtime.WithHTTPPathPattern("/series"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/Series", runtime.WithHTTPPathPattern("/profiles/series"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -630,7 +630,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/Labels", runtime.WithHTTPPathPattern("/labels"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/Labels", runtime.WithHTTPPathPattern("/profiles/labels"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -650,7 +650,7 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/Values", runtime.WithHTTPPathPattern("/labels/{name}/values"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.api.API/Values", runtime.WithHTTPPathPattern("/profiles/labels/{name}/values"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -730,15 +730,15 @@ func RegisterAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 }
 
 var (
-	pattern_API_QueryRange_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"query_range"}, ""))
+	pattern_API_QueryRange_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "query_range"}, ""))
 
-	pattern_API_Query_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"query"}, ""))
+	pattern_API_Query_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "query"}, ""))
 
-	pattern_API_Series_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"series"}, ""))
+	pattern_API_Series_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "series"}, ""))
 
-	pattern_API_Labels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"labels"}, ""))
+	pattern_API_Labels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "labels"}, ""))
 
-	pattern_API_Values_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"labels", "name", "values"}, ""))
+	pattern_API_Values_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"profiles", "labels", "name", "values"}, ""))
 
 	pattern_API_Write_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"profiles"}, ""))
 

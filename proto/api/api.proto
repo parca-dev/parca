@@ -10,31 +10,31 @@ import "pprof/profile.proto";
 service API {
     rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
         option (google.api.http) = {
-            get: "/query_range"
+            get: "/profiles/query_range"
         };
     }
 
     rpc Query(QueryRequest) returns (QueryResponse) {
         option (google.api.http) = {
-            get: "/query"
+            get: "/profiles/query"
         };
     }
 
     rpc Series(SeriesRequest) returns (SeriesResponse) {
         option (google.api.http) = {
-            get: "/series"
+            get: "/profiles/series"
         };
     }
 
     rpc Labels(LabelsRequest) returns (LabelsResponse) {
         option (google.api.http) = {
-            get: "/labels"
+            get: "/profiles/labels"
         };
     }
 
     rpc Values(ValuesRequest) returns (ValuesResponse) {
         option (google.api.http) = {
-            get: "/labels/{name}/values"
+            get: "/profiles/labels/{name}/values"
         };
     }
 
