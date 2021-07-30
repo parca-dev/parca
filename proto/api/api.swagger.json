@@ -33,6 +33,32 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "match",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
         "tags": [
           "API"
         ]
@@ -61,6 +87,30 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "match",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
           }
         ],
         "tags": [
@@ -107,6 +157,119 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "SINGLE",
+              "DIFF",
+              "MERGE"
+            ],
+            "default": "SINGLE"
+          },
+          {
+            "name": "diff.a.mode",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.a.time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.a.start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.mode",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.b.time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.b.start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "merge.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "merge.start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "merge.end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "single.time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "single.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
         "tags": [
           "API"
         ]
@@ -129,6 +292,34 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
         "tags": [
           "API"
         ]
@@ -221,6 +412,20 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "ANY",
+              "ACTIVE",
+              "DROPPED"
+            ],
+            "default": "ANY"
+          }
+        ],
         "tags": [
           "API"
         ]
@@ -228,6 +433,86 @@
     }
   },
   "definitions": {
+    "QueryRequestDiff": {
+      "type": "object",
+      "properties": {
+        "a": {
+          "$ref": "#/definitions/QueryRequestProfileSelect"
+        },
+        "b": {
+          "$ref": "#/definitions/QueryRequestProfileSelect"
+        }
+      }
+    },
+    "QueryRequestMerge": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "QueryRequestMode": {
+      "type": "string",
+      "enum": [
+        "SINGLE",
+        "DIFF",
+        "MERGE"
+      ],
+      "default": "SINGLE"
+    },
+    "QueryRequestProfileSelect": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "query": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "QueryRequestSingle": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "query": {
+          "type": "string"
+        }
+      }
+    },
+    "TargetsRequestState": {
+      "type": "string",
+      "enum": [
+        "ANY",
+        "ACTIVE",
+        "DROPPED"
+      ],
+      "default": "ANY"
+    },
     "apiConfigResponse": {
       "type": "object"
     },
