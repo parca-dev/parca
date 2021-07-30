@@ -155,9 +155,56 @@
           "API"
         ]
       }
+    },
+    "/status/config": {
+      "get": {
+        "operationId": "API_Config",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "API"
+        ]
+      }
+    },
+    "/targets": {
+      "get": {
+        "operationId": "API_Targets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiTargetsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "API"
+        ]
+      }
     }
   },
   "definitions": {
+    "apiConfigResponse": {
+      "type": "object"
+    },
     "apiLabelsResponse": {
       "type": "object"
     },
@@ -168,6 +215,9 @@
       "type": "object"
     },
     "apiSeriesResponse": {
+      "type": "object"
+    },
+    "apiTargetsResponse": {
       "type": "object"
     },
     "apiValuesResponse": {

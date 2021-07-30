@@ -24,6 +24,8 @@ type APIClient interface {
 	Labels(ctx context.Context, in *LabelsRequest, opts ...grpc.CallOption) (*LabelsResponse, error)
 	Values(ctx context.Context, in *ValuesRequest, opts ...grpc.CallOption) (*ValuesResponse, error)
 	Write(ctx context.Context, in *WriteRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error)
+	Targets(ctx context.Context, in *TargetsRequest, opts ...grpc.CallOption) (*TargetsResponse, error)
 }
 
 type aPIClient struct {
@@ -88,6 +90,24 @@ func (c *aPIClient) Write(ctx context.Context, in *WriteRequest, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *aPIClient) Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error) {
+	out := new(ConfigResponse)
+	err := c.cc.Invoke(ctx, "/parca.api.API/Config", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIClient) Targets(ctx context.Context, in *TargetsRequest, opts ...grpc.CallOption) (*TargetsResponse, error) {
+	out := new(TargetsResponse)
+	err := c.cc.Invoke(ctx, "/parca.api.API/Targets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServer is the server API for API service.
 // All implementations should embed UnimplementedAPIServer
 // for forward compatibility
@@ -98,6 +118,8 @@ type APIServer interface {
 	Labels(context.Context, *LabelsRequest) (*LabelsResponse, error)
 	Values(context.Context, *ValuesRequest) (*ValuesResponse, error)
 	Write(context.Context, *WriteRequest) (*WriteResponse, error)
+	Config(context.Context, *ConfigRequest) (*ConfigResponse, error)
+	Targets(context.Context, *TargetsRequest) (*TargetsResponse, error)
 }
 
 // UnimplementedAPIServer should be embedded to have forward compatible implementations.
@@ -121,6 +143,12 @@ func (UnimplementedAPIServer) Values(context.Context, *ValuesRequest) (*ValuesRe
 }
 func (UnimplementedAPIServer) Write(context.Context, *WriteRequest) (*WriteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Write not implemented")
+}
+func (UnimplementedAPIServer) Config(context.Context, *ConfigRequest) (*ConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Config not implemented")
+}
+func (UnimplementedAPIServer) Targets(context.Context, *TargetsRequest) (*TargetsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Targets not implemented")
 }
 
 // UnsafeAPIServer may be embedded to opt out of forward compatibility for this service.
@@ -242,6 +270,42 @@ func _API_Write_Handler(srv interface{}, ctx context.Context, dec func(interface
 	return interceptor(ctx, in, info, handler)
 }
 
+func _API_Config_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).Config(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/parca.api.API/Config",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).Config(ctx, req.(*ConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _API_Targets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TargetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServer).Targets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/parca.api.API/Targets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServer).Targets(ctx, req.(*TargetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // API_ServiceDesc is the grpc.ServiceDesc for API service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -272,6 +336,14 @@ var API_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Write",
 			Handler:    _API_Write_Handler,
+		},
+		{
+			MethodName: "Config",
+			Handler:    _API_Config_Handler,
+		},
+		{
+			MethodName: "Targets",
+			Handler:    _API_Targets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

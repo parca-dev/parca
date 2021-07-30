@@ -41,6 +41,18 @@ service API {
             post: "/profile"
         };
     }
+
+    rpc Config(ConfigRequest) returns (ConfigResponse) {
+        option (google.api.http) = {
+            get: "/status/config"
+        };
+    }
+
+    rpc Targets(TargetsRequest) returns (TargetsResponse) {
+        option (google.api.http) = {
+            get: "/targets"
+        };
+    }
 }
 
 message QueryRangeRequest{}
@@ -62,3 +74,9 @@ message ValuesResponse{}
 
 message WriteRequest{}
 message WriteResponse{}
+
+message ConfigRequest{}
+message ConfigResponse{}
+
+message TargetsRequest{}
+message TargetsResponse{}
