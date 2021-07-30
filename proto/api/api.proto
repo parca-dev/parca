@@ -4,6 +4,7 @@ package parca.api;
 option go_package = "github.com/parca-dev/proto/api";
 
 import "google/api/annotations.proto";
+import "google/api/timestamp.proto";
 
 service API {
     rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
@@ -61,7 +62,11 @@ message QueryRangeResponse{}
 message QueryRequest{}
 message QueryResponse{}
 
-message SeriesRequest{}
+message SeriesRequest{
+    repeated string match           = 1;
+    google.protobuf.Timestamp start = 2;
+    google.protobuf.Timestamp end   = 3;
+}
 message SeriesResponse{}
 
 message LabelsRequest{}
