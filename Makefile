@@ -1,6 +1,16 @@
+.PHONY: clean
+clean:
+	rm parca
+
+.PHONY: go/bin
+go/bin:
+	go build ./cmd/parca
+
+.PHONY: proto/lint
 proto/lint:
 	docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf lint
 
+.PHONY: proto/generate
 proto/generate:
 	#docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf generate --path=./proto/api
 	buf generate --path=./proto/api
