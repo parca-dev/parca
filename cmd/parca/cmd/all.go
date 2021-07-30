@@ -13,7 +13,8 @@ func init() {
 var allCmd = &cobra.Command{
 	Use:   "all",
 	Short: "Run all parca services from a single binary",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("hello world")
+		return nil
 	},
 }
