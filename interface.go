@@ -52,6 +52,52 @@ func WalkProfileTree(pt InstantProfileTree, f func(n InstantProfileTreeNode)) {
 	}
 }
 
+func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
+	it := pt.Iterator()
+	if !it.HasMore() || !it.NextChild() {
+		return nil
+	}
+
+	node := it.At()
+	cur := &ProfileTreeNode{
+		locationID:       node.LocationID(),
+		flatValues:       node.FlatValues(),
+		cumulativeValues: node.CumulativeValues(),
+	}
+	tree := &ProfileTree{Roots: cur}
+	stack := ProfileTreeStack{{node: cur}}
+
+	steppedInto := it.StepInto()
+	if !steppedInto {
+		return tree
+	}
+
+	for it.HasMore() {
+		if it.NextChild() {
+			node := it.At()
+			cur := &ProfileTreeNode{
+				locationID:       node.LocationID(),
+				flatValues:       node.FlatValues(),
+				cumulativeValues: node.CumulativeValues(),
+			}
+
+			stack.Peek().node.Children = append(stack.Peek().node.Children, cur)
+
+			steppedInto := it.StepInto()
+			if steppedInto {
+				stack.Push(&ProfileTreeStackEntry{
+					node: cur,
+				})
+			}
+			continue
+		}
+		it.StepUp()
+		stack.Pop()
+	}
+
+	return tree
+}
+
 type InstantProfile interface {
 	ProfileTree() InstantProfileTree
 	ProfileMeta() InstantProfileMeta

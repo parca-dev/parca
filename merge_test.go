@@ -1,9 +1,11 @@
 package storage
 
 import (
+	"os"
 	"testing"
 	"time"
 
+	"github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
 )
 
@@ -351,4 +353,72 @@ type sample struct {
 	id         uint64
 	flat       []*ProfileTreeValueNode
 	cumulative int64
+}
+
+func BenchmarkTreeMerge(b *testing.B) {
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(b, err)
+	p1, err := profile.Parse(f)
+	require.NoError(b, err)
+	require.NoError(b, f.Close())
+	f, err = os.Open("testdata/profile2.pb.gz")
+	require.NoError(b, err)
+	p2, err := profile.Parse(f)
+	require.NoError(b, err)
+	require.NoError(b, f.Close())
+
+	l := NewInMemoryProfileMetaStore()
+	s := NewMemSeries(l)
+	require.NoError(b, s.Append(p1))
+	require.NoError(b, s.Append(p2))
+
+	profileTree1, err := s.prepareSamplesForInsert(p1)
+	require.NoError(b, err)
+
+	profileTree2, err := s.prepareSamplesForInsert(p2)
+	require.NoError(b, err)
+
+	prof1 := &Profile{
+		tree: profileTree1,
+		meta: InstantProfileMeta{
+			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
+			SampleType: ValueType{Type: "samples", Unit: "count"},
+			Timestamp:  1,
+			Duration:   int64(time.Second * 10),
+			Period:     100,
+		},
+	}
+
+	prof2 := &Profile{
+		tree: profileTree2,
+		meta: InstantProfileMeta{
+			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
+			SampleType: ValueType{Type: "samples", Unit: "count"},
+			Timestamp:  1,
+			Duration:   int64(time.Second * 10),
+			Period:     100,
+		},
+	}
+
+	b.ResetTimer()
+	m, err := NewMergeProfile(prof1, prof2)
+	require.NoError(b, err)
+	CopyInstantProfileTree(m.ProfileTree())
+}
+
+func BenchmarkMerge(b *testing.B) {
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(b, err)
+	p1, err := profile.Parse(f)
+	require.NoError(b, err)
+	require.NoError(b, f.Close())
+	f, err = os.Open("testdata/profile2.pb.gz")
+	require.NoError(b, err)
+	p2, err := profile.Parse(f)
+	require.NoError(b, err)
+	require.NoError(b, f.Close())
+
+	b.ResetTimer()
+	_, err = profile.Merge([]*profile.Profile{p1, p2})
+	require.NoError(b, err)
 }
