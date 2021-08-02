@@ -289,15 +289,6 @@ func NewMemSeries(metaStore ProfileMetaStore) *MemSeries {
 	}
 }
 
-type Stacktrace struct {
-	ID [16]byte
-
-	Location []*profile.Location
-	Label    map[string][]string
-	NumLabel map[string][]int64
-	NumUnit  map[string][]string
-}
-
 type stacktraceKey struct {
 	locations string
 	labels    string
@@ -821,11 +812,11 @@ func makeStacktraceKey(sample *profile.Sample) stacktraceKey {
 // returns nil if the profiles are compatible; otherwise an error with
 // details on the incompatibility.
 func compatibleProfiles(s *MemSeries, pb *profile.Profile) error {
-	if !equalValueType(s.periodType, pb.PeriodType) {
+	if !equalProfileValueType(s.periodType, pb.PeriodType) {
 		return fmt.Errorf("incompatible period types %v and %v", s.periodType, pb.PeriodType)
 	}
 
-	if !equalValueType(s.sampleType, pb.SampleType[0]) {
+	if !equalProfileValueType(s.sampleType, pb.SampleType[0]) {
 		return fmt.Errorf("incompatible sample types %v and %v", s.sampleType, pb.SampleType)
 	}
 	return nil
@@ -833,7 +824,7 @@ func compatibleProfiles(s *MemSeries, pb *profile.Profile) error {
 
 // equalValueType returns true if the two value types are semantically
 // equal. It ignores the internal fields used during encode/decode.
-func equalValueType(st1 ValueType, st2 *profile.ValueType) bool {
+func equalProfileValueType(st1 ValueType, st2 *profile.ValueType) bool {
 	return st1.Type == st2.Type && st1.Unit == st2.Unit
 }
 
