@@ -42,7 +42,8 @@ type pair struct {
 
 func TestChunk(t *testing.T) {
 	for enc, nc := range map[Encoding]func() Chunk{
-		EncXOR: func() Chunk { return NewXORChunk() },
+		EncXOR:   func() Chunk { return NewXORChunk() },
+		EncDelta: func() Chunk { return NewDeltaChunk() },
 	} {
 		t.Run(fmt.Sprintf("%v", enc), func(t *testing.T) {
 			for range make([]struct{}, 1) {
