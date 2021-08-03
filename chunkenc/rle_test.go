@@ -55,4 +55,12 @@ func TestRLEChunk(t *testing.T) {
 	require.Equal(t, int64(2), it.At())
 	it.Next()
 	require.Equal(t, int64(2), it.At())
+
+	for it.Next() {
+		require.NoError(t, it.Err())
+		require.Equal(t, int64(3), it.At())
+	}
+
+	require.NoError(t, it.Err())
+	require.False(t, it.Next())
 }

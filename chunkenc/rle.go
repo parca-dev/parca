@@ -102,8 +102,8 @@ type rleIterator struct {
 	read  uint16
 	total uint16
 
-	length     uint16
-	lengthRead uint16
+	// stores how often we need to still iterate over the same value
+	lengthLeft uint16
 
 	v   int64
 	err error
@@ -121,7 +121,7 @@ func (it *rleIterator) Next() bool {
 		return false
 	}
 
-	if it.lengthRead >= it.length {
+	if it.lengthLeft == 0 {
 		v, err := binary.ReadVarint(&it.br)
 		if err != nil {
 			it.err = err
@@ -138,10 +138,9 @@ func (it *rleIterator) Next() bool {
 			}
 			lengthBytes[i] = b
 		}
-		it.length = binary.BigEndian.Uint16(lengthBytes)
-		it.lengthRead = it.length - 1 // we've already read the first one
+		it.lengthLeft = binary.BigEndian.Uint16(lengthBytes) - 1 // we've already read the first one
 	} else {
-		it.lengthRead--
+		it.lengthLeft--
 	}
 
 	it.read++
