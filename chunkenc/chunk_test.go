@@ -121,27 +121,63 @@ func testChunk(t *testing.T, c Chunk) {
 	require.Equal(t, []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 42}, res4)
 }
 
-func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=10000000x ./chunkenc >> iterator-same.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=10000000x ./chunkenc >> iterator-increasing.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=10000000x ./chunkenc >> iterator-random.txt; done
+// benchstat iterator-same.txt iterator-increasing.txt iterator-random.txt
+
+func BenchmarkIterators(b *testing.B) {
 	var (
-		v   = int64(1243535)
-		exp = make([]int64, 0, b.N)
+		v    = int64(123456)
+		data = make([]int64, 0, b.N)
 	)
 	for i := 0; i < b.N; i++ {
-		// v = rand.Float64()
-		v += 100
-		exp = append(exp, v)
+		//v = rand.Int63n(1_000_000) // random
+		v += int64(100) // increasing
+		//v = 100 // same
+		data = append(data, v)
 	}
 
-	var chunks []Chunk
-	for i := 0; i < b.N; {
-		c := newChunk()
+	for _, c := range []struct {
+		name     string
+		newChunk func() Chunk
+	}{{
+		name:     "delta",
+		newChunk: func() Chunk { return NewDeltaChunk() },
+	}, {
+		name:     "rle",
+		newChunk: func() Chunk { return NewRLEChunk() },
+	}, {
+		name:     "xor",
+		newChunk: func() Chunk { return NewXORChunk() },
+	}} {
+		b.Run(c.name, func(b *testing.B) {
+			benchmarkIterator(b, data, c.newChunk)
+		})
+	}
+}
 
-		a, err := c.Appender()
-		if err != nil {
-			b.Fatalf("get appender: %s", err)
+func benchmarkIterator(b *testing.B, data []int64, newChunk func() Chunk) {
+	var (
+		chunks []Chunk
+		c      Chunk
+		a      Appender
+		err    error
+	)
+	for i := 0; i < b.N; {
+		if i%250 == 0 {
+			if i != 0 {
+				chunks = append(chunks, c)
+			}
+			c = newChunk()
+			a, err = c.Appender()
+			if err != nil {
+				b.Fatalf("get appender: %s", err)
+			}
 		}
+
 		j := 0
-		for _, v := range exp {
+		for _, v := range data {
 			if j > 250 {
 				break
 			}
@@ -149,13 +185,10 @@ func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 			i++
 			j++
 		}
-		chunks = append(chunks, c)
 	}
 
 	b.ReportAllocs()
 	b.ResetTimer()
-
-	b.Log("num", b.N, "created chunks", len(chunks))
 
 	res := make([]int64, 0, 1024)
 
@@ -174,12 +207,6 @@ func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 	}
 }
 
-func BenchmarkXORIterator(b *testing.B) {
-	benchmarkIterator(b, func() Chunk {
-		return NewXORChunk()
-	})
-}
-
 // for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=10000000x ./chunkenc >> appender-same.txt; done
 // for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=10000000x ./chunkenc >> appender-increasing.txt; done
 // for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=10000000x ./chunkenc >> appender-random.txt; done
@@ -187,14 +214,14 @@ func BenchmarkXORIterator(b *testing.B) {
 
 func BenchmarkAppenders(b *testing.B) {
 	var (
-		v   = int64(123456)
-		exp = make([]int64, 0, b.N)
+		v    = int64(123456)
+		data = make([]int64, 0, b.N)
 	)
 	for i := 0; i < b.N; i++ {
 		//v = rand.Int63n(1_000_000) // random
-		//v += int64(100)            // increasing
-		v = 100 // same
-		exp = append(exp, v)
+		v += int64(100) // increasing
+		//v = 100 // same
+		data = append(data, v)
 	}
 
 	for _, c := range []struct {
@@ -211,27 +238,32 @@ func BenchmarkAppenders(b *testing.B) {
 		newChunk: func() Chunk { return NewXORChunk() },
 	}} {
 		b.Run(c.name, func(b *testing.B) {
-			benchmarkAppender(b, exp, c.newChunk)
+			benchmarkAppender(b, data, c.newChunk)
 		})
 	}
 }
 
-func benchmarkAppender(b *testing.B, exp []int64, newChunk func() Chunk) {
+func benchmarkAppender(b *testing.B, data []int64, newChunk func() Chunk) {
 	b.ReportAllocs()
 
-	var chunks []Chunk
-	var c = newChunk()
+	var (
+		chunks []Chunk
+		c      = newChunk()
+		a      Appender
+		err    error
+	)
 	for i := 0; i < b.N; {
-		if i%120 == 0 {
+		if i%250 == 0 {
+			chunks = append(chunks, c)
 			c = newChunk()
+			a, err = c.Appender()
+			if err != nil {
+				b.Fatalf("get appender: %s", err)
+			}
 		}
 
-		a, err := c.Appender()
-		if err != nil {
-			b.Fatalf("get appender: %s", err)
-		}
 		j := 0
-		for _, v := range exp {
+		for _, v := range data {
 			if j > 250 {
 				break
 			}
@@ -239,7 +271,6 @@ func benchmarkAppender(b *testing.B, exp []int64, newChunk func() Chunk) {
 			i++
 			j++
 		}
-		chunks = append(chunks, c)
 	}
 
 	b.StopTimer()
