@@ -44,6 +44,7 @@ func TestChunk(t *testing.T) {
 	for enc, nc := range map[Encoding]func() Chunk{
 		EncXOR:   func() Chunk { return NewXORChunk() },
 		EncDelta: func() Chunk { return NewDeltaChunk() },
+		EncRLE:   func() Chunk { return NewRLEChunk() },
 	} {
 		t.Run(fmt.Sprintf("%v", enc), func(t *testing.T) {
 			for range make([]struct{}, 1) {

@@ -89,7 +89,12 @@ func (a *rleAppender) Append(v int64) {
 }
 
 func (a *rleAppender) AppendAt(index uint16, v int64) {
-	panic("implement me")
+	num := binary.BigEndian.Uint16(a.b.bytes())
+	// TODO(metalmatze): We should be able to write sequence of zeros to the stream directly (no loops)
+	for i := num; i < index; i++ {
+		a.Append(0)
+	}
+	a.Append(v)
 }
 
 func (c *RLEChunk) Iterator(it Iterator) Iterator {
@@ -110,6 +115,11 @@ type rleIterator struct {
 }
 
 func (c *RLEChunk) iterator(it Iterator) *rleIterator {
+	if rleIt, ok := it.(*rleIterator); ok {
+		rleIt.Reset(c.b.bytes())
+		return rleIt
+	}
+
 	return &rleIterator{
 		br:    newBReader(c.b.bytes()[2:]),
 		total: binary.BigEndian.Uint16(c.b.bytes()),
@@ -149,7 +159,16 @@ func (it *rleIterator) Next() bool {
 }
 
 func (it *rleIterator) Seek(index uint16) bool {
-	panic("implement me")
+	if it.err != nil {
+		return false
+	}
+
+	for it.read <= index || it.read == 0 {
+		if !it.Next() {
+			return false
+		}
+	}
+	return true
 }
 
 func (it *rleIterator) At() int64 {
@@ -158,4 +177,16 @@ func (it *rleIterator) At() int64 {
 
 func (it *rleIterator) Err() error {
 	return it.err
+}
+
+func (it *rleIterator) Reset(b []byte) {
+	// The first 2 bytes contain chunk headers.
+	// We skip that for actual samples.
+	it.br = newBReader(b[2:])
+	it.total = binary.BigEndian.Uint16(b)
+	it.read = 0
+
+	it.lengthLeft = 0
+	it.v = 0
+	it.err = nil
 }
