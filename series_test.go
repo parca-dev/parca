@@ -211,9 +211,11 @@ func TestMemSeriesIterator(t *testing.T) {
 	}, instantProfile.ProfileMeta())
 
 	res := []uint64{}
-	WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) {
+	err := WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
 		res = append(res, n.LocationID())
+		return nil
 	})
+	require.NoError(t, err)
 
 	require.Equal(t, []uint64{0, 1, 2, 3, 4}, res)
 
@@ -228,9 +230,11 @@ func TestMemSeriesIterator(t *testing.T) {
 	}, instantProfile.ProfileMeta())
 
 	res = []uint64{}
-	WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) {
+	err = WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
 		res = append(res, n.LocationID())
+		return nil
 	})
+	require.NoError(t, err)
 
 	require.Equal(t, []uint64{0, 1, 2, 3, 4}, res)
 	require.False(t, it.Next())
@@ -252,18 +256,22 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	res1 := []uint64{}
-	WalkProfileTree(profileTree, func(n InstantProfileTreeNode) {
+	err = WalkProfileTree(profileTree, func(n InstantProfileTreeNode) error {
 		res1 = append(res1, n.LocationID())
+		return nil
 	})
+	require.NoError(t, err)
 
 	sit := s.Iterator()
 	require.True(t, sit.Next())
 	require.NoError(t, sit.Err())
 
 	res2 := []uint64{}
-	WalkProfileTree(sit.At().ProfileTree(), func(n InstantProfileTreeNode) {
+	err = WalkProfileTree(sit.At().ProfileTree(), func(n InstantProfileTreeNode) error {
 		res2 = append(res2, n.LocationID())
+		return nil
 	})
+	require.NoError(t, err)
 
 	require.Equal(t, res1, res2)
 }

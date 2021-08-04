@@ -198,7 +198,8 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *TreeNode {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(t, err)
 	require.NoError(t, s.Append(p1))
 	require.NoError(t, s.Append(p2))
 
@@ -247,7 +248,8 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(t, err)
 	require.NoError(t, s.Append(p1))
 
 	profileTree, err := s.prepareSamplesForInsert(p1)

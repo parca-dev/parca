@@ -382,36 +382,7 @@ func (s *MemSeries) prepareSamplesForInsert(value *profile.Profile) (*ProfileTre
 		return nil, err
 	}
 
-	pn := &profileNormalizer{
-		p: s.p,
-
-		metaStore: s.metaStore,
-
-		samples: make(map[stacktraceKey]*profile.Sample, len(value.Sample)),
-
-		// Profile-specific hash tables for each profile inserted.
-		locationsByID: make(map[uint64]*profile.Location, len(value.Location)),
-		functionsByID: make(map[uint64]*profile.Function, len(value.Function)),
-		mappingsByID:  make(map[uint64]mapInfo, len(value.Mapping)),
-	}
-
-	samples := make([]*profile.Sample, 0, len(value.Sample))
-	for _, s := range value.Sample {
-		if !isZeroSample(s) {
-			sa, isNew := pn.mapSample(s)
-			if isNew {
-				samples = append(samples, sa)
-			}
-		}
-	}
-	sortSamples(samples)
-
-	profileTree := &ProfileTree{}
-	for _, s := range samples {
-		profileTree.Insert(s)
-	}
-
-	return profileTree, nil
+	return ProfileTreeFromPprof(s.metaStore, value), nil
 }
 
 type MemSeriesIteratorTree struct {
@@ -643,8 +614,6 @@ func (it *MemSeriesIterator) Err() error {
 }
 
 type profileNormalizer struct {
-	p *profile.Profile
-
 	// Memoization tables within a profile.
 	locationsByID map[uint64]*profile.Location
 	functionsByID map[uint64]*profile.Function
@@ -653,9 +622,6 @@ type profileNormalizer struct {
 	// Memoization tables for profile entities.
 	samples   map[stacktraceKey]*profile.Sample
 	metaStore ProfileMetaStore
-
-	// A slice of samples for each unique stack trace.
-	c chunkenc.Chunk
 }
 
 // Returns the mapped sample and whether it is new or a known sample.
@@ -758,7 +724,6 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 		HasLineNumbers:  src.HasLineNumbers,
 		HasInlineFrames: src.HasInlineFrames,
 	}
-	pn.p.Mapping = append(pn.p.Mapping, m)
 
 	// Update memoization tables.
 	pn.metaStore.CreateMapping(m)

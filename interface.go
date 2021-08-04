@@ -1,5 +1,7 @@
 package storage
 
+import "github.com/google/pprof/profile"
+
 type InstantProfileTreeNode interface {
 	LocationID() uint64
 	CumulativeValue() int64
@@ -39,17 +41,21 @@ type InstantProfileMeta struct {
 	Period     int64
 }
 
-func WalkProfileTree(pt InstantProfileTree, f func(n InstantProfileTreeNode)) {
+func WalkProfileTree(pt InstantProfileTree, f func(n InstantProfileTreeNode) error) error {
 	it := pt.Iterator()
 
 	for it.HasMore() {
 		if it.NextChild() {
-			f(it.At())
+			if err := f(it.At()); err != nil {
+				return err
+			}
 			it.StepInto()
 			continue
 		}
 		it.StepUp()
 	}
+
+	return nil
 }
 
 func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
@@ -124,4 +130,52 @@ func (p *Profile) ProfileTree() InstantProfileTree {
 
 func (p *Profile) ProfileMeta() InstantProfileMeta {
 	return p.meta
+}
+
+func ProfileFromPprof(s ProfileMetaStore, p *profile.Profile) *Profile {
+	return &Profile{
+		tree: ProfileTreeFromPprof(s, p),
+		meta: ProfileMetaFromPprof(p),
+	}
+}
+
+func ProfileMetaFromPprof(p *profile.Profile) InstantProfileMeta {
+	return InstantProfileMeta{
+		Timestamp:  p.TimeNanos / 1000000,
+		Duration:   p.DurationNanos,
+		Period:     p.Period,
+		PeriodType: ValueType{Type: p.PeriodType.Type, Unit: p.PeriodType.Unit},
+		SampleType: ValueType{Type: p.SampleType[0].Type, Unit: p.SampleType[0].Unit},
+	}
+}
+
+func ProfileTreeFromPprof(s ProfileMetaStore, p *profile.Profile) *ProfileTree {
+	pn := &profileNormalizer{
+		metaStore: s,
+
+		samples: make(map[stacktraceKey]*profile.Sample, len(p.Sample)),
+
+		// Profile-specific hash tables for each profile inserted.
+		locationsByID: make(map[uint64]*profile.Location, len(p.Location)),
+		functionsByID: make(map[uint64]*profile.Function, len(p.Function)),
+		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
+	}
+
+	samples := make([]*profile.Sample, 0, len(p.Sample))
+	for _, s := range p.Sample {
+		if !isZeroSample(s) {
+			sa, isNew := pn.mapSample(s)
+			if isNew {
+				samples = append(samples, sa)
+			}
+		}
+	}
+	sortSamples(samples)
+
+	profileTree := &ProfileTree{}
+	for _, s := range samples {
+		profileTree.Insert(s)
+	}
+
+	return profileTree
 }
