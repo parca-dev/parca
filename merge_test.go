@@ -49,13 +49,15 @@ func TestMergeProfileSimple(t *testing.T) {
 	}, mp.ProfileMeta())
 
 	res := []sample{}
-	WalkProfileTree(mp.ProfileTree(), func(n InstantProfileTreeNode) {
+	err = WalkProfileTree(mp.ProfileTree(), func(n InstantProfileTreeNode) error {
 		res = append(res, sample{
 			id:         n.LocationID(),
 			flat:       n.FlatValues(),
 			cumulative: n.CumulativeValue(),
 		})
+		return nil
 	})
+	require.NoError(t, err)
 
 	require.Equal(t, []sample{
 		{
@@ -132,13 +134,15 @@ func TestMergeProfileDeep(t *testing.T) {
 	}, mp.ProfileMeta())
 
 	res := []sample{}
-	WalkProfileTree(mp.ProfileTree(), func(n InstantProfileTreeNode) {
+	err = WalkProfileTree(mp.ProfileTree(), func(n InstantProfileTreeNode) error {
 		res = append(res, sample{
 			id:         n.LocationID(),
 			flat:       n.FlatValues(),
 			cumulative: n.CumulativeValue(),
 		})
+		return nil
 	})
+	require.NoError(t, err)
 
 	require.Equal(t, []sample{
 		{
@@ -252,13 +256,15 @@ func TestMergeProfile(t *testing.T) {
 	}, mp.ProfileMeta())
 
 	res := []sample{}
-	WalkProfileTree(mp.ProfileTree(), func(n InstantProfileTreeNode) {
+	err = WalkProfileTree(mp.ProfileTree(), func(n InstantProfileTreeNode) error {
 		res = append(res, sample{
 			id:         n.LocationID(),
 			flat:       n.FlatValues(),
 			cumulative: n.CumulativeValue(),
 		})
+		return nil
 	})
+	require.NoError(t, err)
 
 	require.Equal(t, []sample{
 		{
@@ -368,7 +374,8 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s := NewMemSeries(l)
+	s, err := NewMemSeries(l)
+	require.NoError(b, err)
 	require.NoError(b, s.Append(p1))
 	require.NoError(b, s.Append(p2))
 
