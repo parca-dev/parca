@@ -14,8 +14,8 @@ func TestMergeProfileSimple(t *testing.T) {
 	pt1.Insert(makeSample(2, []uint64{2, 1}))
 
 	p1 := &Profile{
-		tree: pt1,
-		meta: InstantProfileMeta{
+		Tree: pt1,
+		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: ValueType{Type: "samples", Unit: "count"},
 			Timestamp:  1,
@@ -28,8 +28,8 @@ func TestMergeProfileSimple(t *testing.T) {
 	pt2.Insert(makeSample(1, []uint64{3, 1}))
 
 	p2 := &Profile{
-		tree: pt2,
-		meta: InstantProfileMeta{
+		Tree: pt2,
+		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: ValueType{Type: "samples", Unit: "count"},
 			Timestamp:  1,
@@ -99,8 +99,8 @@ func TestMergeProfileDeep(t *testing.T) {
 	pt1.Insert(makeSample(3, []uint64{1, 3}))
 
 	p1 := &Profile{
-		tree: pt1,
-		meta: InstantProfileMeta{
+		Tree: pt1,
+		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: ValueType{Type: "samples", Unit: "count"},
 			Timestamp:  1,
@@ -113,8 +113,8 @@ func TestMergeProfileDeep(t *testing.T) {
 	pt2.Insert(makeSample(3, []uint64{3, 2, 2}))
 
 	p2 := &Profile{
-		tree: pt2,
-		meta: InstantProfileMeta{
+		Tree: pt2,
+		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: ValueType{Type: "samples", Unit: "count"},
 			Timestamp:  1,
@@ -218,8 +218,8 @@ func TestMergeProfile(t *testing.T) {
 	pt1.Insert(makeSample(3, []uint64{6, 2}))
 
 	p1 := &Profile{
-		tree: pt1,
-		meta: InstantProfileMeta{
+		Tree: pt1,
+		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: ValueType{Type: "samples", Unit: "count"},
 			Timestamp:  1,
@@ -235,8 +235,8 @@ func TestMergeProfile(t *testing.T) {
 	pt2.Insert(makeSample(3, []uint64{3, 2, 2}))
 
 	p2 := &Profile{
-		tree: pt2,
-		meta: InstantProfileMeta{
+		Tree: pt2,
+		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: ValueType{Type: "samples", Unit: "count"},
 			Timestamp:  1,
@@ -374,20 +374,12 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
-	require.NoError(b, err)
-	require.NoError(b, s.Append(p1))
-	require.NoError(b, s.Append(p2))
-
-	profileTree1, err := s.prepareSamplesForInsert(p1)
-	require.NoError(b, err)
-
-	profileTree2, err := s.prepareSamplesForInsert(p2)
-	require.NoError(b, err)
+	profileTree1 := ProfileTreeFromPprof(l, p1)
+	profileTree2 := ProfileTreeFromPprof(l, p2)
 
 	prof1 := &Profile{
-		tree: profileTree1,
-		meta: InstantProfileMeta{
+		Tree: profileTree1,
+		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: ValueType{Type: "samples", Unit: "count"},
 			Timestamp:  1,
@@ -397,8 +389,8 @@ func BenchmarkTreeMerge(b *testing.B) {
 	}
 
 	prof2 := &Profile{
-		tree: profileTree2,
-		meta: InstantProfileMeta{
+		Tree: profileTree2,
+		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: ValueType{Type: "samples", Unit: "count"},
 			Timestamp:  1,

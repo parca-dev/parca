@@ -120,22 +120,22 @@ type ProfileSeries interface {
 }
 
 type Profile struct {
-	tree *ProfileTree
-	meta InstantProfileMeta
+	Tree *ProfileTree
+	Meta InstantProfileMeta
 }
 
 func (p *Profile) ProfileTree() InstantProfileTree {
-	return p.tree
+	return p.Tree
 }
 
 func (p *Profile) ProfileMeta() InstantProfileMeta {
-	return p.meta
+	return p.Meta
 }
 
 func ProfileFromPprof(s ProfileMetaStore, p *profile.Profile) *Profile {
 	return &Profile{
-		tree: ProfileTreeFromPprof(s, p),
-		meta: ProfileMetaFromPprof(p),
+		Tree: ProfileTreeFromPprof(s, p),
+		Meta: ProfileMetaFromPprof(p),
 	}
 }
 
