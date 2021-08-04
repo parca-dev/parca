@@ -248,12 +248,12 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
+	s, err := NewMemSeries()
 	require.NoError(t, err)
-	require.NoError(t, s.Append(p1))
+	profile := ProfileFromPprof(l, p1)
+	require.NoError(t, s.Append(profile))
 
-	profileTree, err := s.prepareSamplesForInsert(p1)
-	require.NoError(t, err)
+	profileTree := profile.Tree
 
 	res1 := []uint64{}
 	err = WalkProfileTree(profileTree, func(n InstantProfileTreeNode) error {
@@ -284,9 +284,10 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
+	s, err := NewMemSeries()
 	require.NoError(t, err)
-	require.NoError(t, s.Append(p))
+	profile := ProfileFromPprof(l, p)
+	require.NoError(t, s.Append(profile))
 	require.Equal(t, len(p.Location), len(l.locations))
 }
 
@@ -306,8 +307,8 @@ func TestRealInserts(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
+	s, err := NewMemSeries()
 	require.NoError(t, err)
-	require.NoError(t, s.Append(p1))
-	require.NoError(t, s.Append(p2))
+	require.NoError(t, s.Append(ProfileFromPprof(l, p1)))
+	require.NoError(t, s.Append(ProfileFromPprof(l, p2)))
 }

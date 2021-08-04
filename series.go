@@ -262,12 +262,8 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 }
 
 type MemSeries struct {
-	p *profile.Profile
-
 	periodType ValueType
 	sampleType ValueType
-
-	metaStore ProfileMetaStore
 
 	minTime, maxTime int64
 	timestamps       chunkenc.Chunk
@@ -281,7 +277,7 @@ type MemSeries struct {
 	i          uint16
 }
 
-func NewMemSeries(metaStore ProfileMetaStore) (*MemSeries, error) {
+func NewMemSeries() (*MemSeries, error) {
 	timestamps := chunkenc.NewDeltaChunk()
 	durations := chunkenc.NewDeltaChunk()
 	periods := chunkenc.NewDeltaChunk()
@@ -300,7 +296,6 @@ func NewMemSeries(metaStore ProfileMetaStore) (*MemSeries, error) {
 	}
 
 	return &MemSeries{
-		metaStore:     metaStore,
 		timestamps:    timestamps,
 		timestampsApp: timestampsApp,
 		durations:     durations,
@@ -322,13 +317,21 @@ type mapInfo struct {
 	offset int64
 }
 
-func (s *MemSeries) Append(value *profile.Profile) error {
-	profileTree, err := s.prepareSamplesForInsert(value)
-	if err != nil {
-		return err
+func (s *MemSeries) Append(p *Profile) error {
+	if s.i == 0 {
+		s.periodType = p.Meta.PeriodType
+		s.sampleType = p.Meta.SampleType
 	}
 
-	s.append(profileTree)
+	if !equalValueType(s.periodType, p.Meta.PeriodType) {
+		return ErrPeriodTypeMismatch
+	}
+
+	if !equalValueType(s.sampleType, p.Meta.SampleType) {
+		return ErrSampleTypeMismatch
+	}
+
+	s.append(p.Tree)
 
 	if s.timestamps == nil {
 		s.timestamps = chunkenc.NewDeltaChunk()
@@ -336,7 +339,7 @@ func (s *MemSeries) Append(value *profile.Profile) error {
 	}
 
 	// We store millisecond timestamp resolution not nanos.
-	timestamp := value.TimeNanos / 1000000
+	timestamp := p.Meta.Timestamp
 
 	if timestamp <= s.maxTime {
 		return ErrOutOfOrderSample
@@ -348,13 +351,13 @@ func (s *MemSeries) Append(value *profile.Profile) error {
 		s.durations = chunkenc.NewDeltaChunk()
 		s.durationsApp, _ = s.durations.Appender() // TODO: Handle err
 	}
-	s.durationsApp.AppendAt(s.i, value.DurationNanos)
+	s.durationsApp.AppendAt(s.i, p.Meta.Duration)
 
 	if s.periods == nil {
 		s.periods = chunkenc.NewDeltaChunk()
 		s.periodsApp, _ = s.periods.Appender() // TODO: Handle err
 	}
-	s.periodsApp.AppendAt(s.i, value.Period)
+	s.periodsApp.AppendAt(s.i, p.Meta.Period)
 
 	s.maxTime = timestamp
 
@@ -368,21 +371,6 @@ func (s *MemSeries) append(profileTree *ProfileTree) {
 
 	s.seriesTree.Insert(s.i, profileTree)
 	s.i++
-}
-
-func (s *MemSeries) prepareSamplesForInsert(value *profile.Profile) (*ProfileTree, error) {
-	if s.p == nil {
-		s.p = &profile.Profile{}
-
-		s.periodType = ValueType{Type: value.PeriodType.Type, Unit: value.PeriodType.Unit}
-		s.sampleType = ValueType{Type: value.SampleType[0].Type, Unit: value.SampleType[0].Unit}
-	}
-
-	if err := compatibleProfiles(s, value); err != nil {
-		return nil, err
-	}
-
-	return ProfileTreeFromPprof(s.metaStore, value), nil
 }
 
 type MemSeriesIteratorTree struct {
@@ -788,26 +776,6 @@ func makeStacktraceKey(sample *profile.Sample) stacktraceKey {
 		strings.Join(labels, ""),
 		strings.Join(numlabels, ""),
 	}
-}
-
-// compatible determines if two profiles can be compared/merged.
-// returns nil if the profiles are compatible; otherwise an error with
-// details on the incompatibility.
-func compatibleProfiles(s *MemSeries, pb *profile.Profile) error {
-	if !equalProfileValueType(s.periodType, pb.PeriodType) {
-		return fmt.Errorf("incompatible period types %v and %v", s.periodType, pb.PeriodType)
-	}
-
-	if !equalProfileValueType(s.sampleType, pb.SampleType[0]) {
-		return fmt.Errorf("incompatible sample types %v and %v", s.sampleType, pb.SampleType)
-	}
-	return nil
-}
-
-// equalValueType returns true if the two value types are semantically
-// equal. It ignores the internal fields used during encode/decode.
-func equalProfileValueType(st1 ValueType, st2 *profile.ValueType) bool {
-	return st1.Type == st2.Type && st1.Unit == st2.Unit
 }
 
 func isZeroSample(s *profile.Sample) bool {

@@ -3,7 +3,6 @@ package storage
 import (
 	"os"
 	"testing"
-	"time"
 
 	"github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
@@ -134,12 +133,7 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *TreeNode {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
-	require.NoError(t, err)
-	require.NoError(t, s.Append(p1))
-
-	profileTree, err := s.prepareSamplesForInsert(p1)
-	require.NoError(t, err)
+	profileTree := ProfileTreeFromPprof(l, p1)
 
 	fg, err := generateFlamegraph(l, profileTree.Iterator())
 	require.NoError(t, err)
@@ -159,9 +153,9 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *TreeNode {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
+	s, err := NewMemSeries()
 	require.NoError(t, err)
-	require.NoError(t, s.Append(p1))
+	require.NoError(t, s.Append(ProfileFromPprof(l, p1)))
 
 	it := s.Iterator()
 	require.True(t, it.Next())
@@ -198,38 +192,8 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *TreeNode {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
-	require.NoError(t, err)
-	require.NoError(t, s.Append(p1))
-	require.NoError(t, s.Append(p2))
-
-	profileTree1, err := s.prepareSamplesForInsert(p1)
-	require.NoError(t, err)
-
-	profileTree2, err := s.prepareSamplesForInsert(p2)
-	require.NoError(t, err)
-
-	prof1 := &Profile{
-		tree: profileTree1,
-		meta: InstantProfileMeta{
-			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
-			Timestamp:  1,
-			Duration:   int64(time.Second * 10),
-			Period:     100,
-		},
-	}
-
-	prof2 := &Profile{
-		tree: profileTree2,
-		meta: InstantProfileMeta{
-			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
-			Timestamp:  1,
-			Duration:   int64(time.Second * 10),
-			Period:     100,
-		},
-	}
+	prof1 := ProfileFromPprof(l, p1)
+	prof2 := ProfileFromPprof(l, p2)
 
 	m, err := NewMergeProfile(prof1, prof2)
 	require.NoError(t, err)
@@ -248,12 +212,7 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
-	require.NoError(t, err)
-	require.NoError(t, s.Append(p1))
-
-	profileTree, err := s.prepareSamplesForInsert(p1)
-	require.NoError(t, err)
+	profileTree := ProfileTreeFromPprof(l, p1)
 
 	fg, err := generateFlamegraph(l, profileTree.Iterator())
 	require.NoError(t, err)
@@ -270,12 +229,7 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries(l)
-	require.NoError(b, err)
-	require.NoError(b, s.Append(p1))
-
-	profileTree, err := s.prepareSamplesForInsert(p1)
-	require.NoError(b, err)
+	profileTree := ProfileTreeFromPprof(l, p1)
 
 	b.ResetTimer()
 	_, err = generateFlamegraph(l, profileTree.Iterator())
