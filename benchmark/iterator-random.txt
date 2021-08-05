@@ -1,0 +1,90 @@
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        22.42 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        37.97 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        14.77 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	113.973s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        22.49 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        37.79 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        14.79 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	114.669s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        22.85 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        38.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        15.35 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	115.803s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        23.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        37.68 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        15.57 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	115.602s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        22.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        37.76 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        15.61 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	114.979s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        23.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        37.55 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        15.55 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	115.344s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        22.54 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        37.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        15.03 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	115.307s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        23.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        38.04 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        15.11 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	116.599s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        22.73 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        37.58 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        15.41 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	116.199s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/storage/chunkenc
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkIterators/delta-24         	500000000	        22.80 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/rle-24           	500000000	        37.94 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIterators/xor-24           	500000000	        15.23 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/parca-dev/storage/chunkenc	116.137s
