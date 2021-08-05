@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/pprof/profile"
+	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
 
@@ -79,7 +80,7 @@ func (l *fakeLocations) GetLocationByID(id uint64) (*profile.Location, error) {
 }
 
 func TestGenerateFlamegraph(t *testing.T) {
-	pt := &ProfileTree{}
+	pt := NewProfileTree()
 	pt.Insert(makeSample(2, []uint64{2, 1}))
 	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
 	pt.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
@@ -153,7 +154,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *TreeNode {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries()
+	s, err := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	require.NoError(t, s.Append(ProfileFromPprof(l, p1)))
 

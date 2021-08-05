@@ -7,7 +7,7 @@ import (
 )
 
 func TestProfileTreeIterator(t *testing.T) {
-	pt := &ProfileTree{}
+	pt := NewProfileTree()
 	pt.Insert(makeSample(2, []uint64{2, 1}))
 	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
 	pt.Insert(makeSample(3, []uint64{4, 3, 2, 1}))

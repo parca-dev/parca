@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/storage/chunkenc"
+	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,7 +58,7 @@ import (
 //}
 
 func TestProfileTreeInsert(t *testing.T) {
-	pt := &ProfileTree{}
+	pt := NewProfileTree()
 	pt.Insert(makeSample(2, []uint64{2, 1}))
 	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
 	pt.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
@@ -93,7 +94,7 @@ func TestProfileTreeInsert(t *testing.T) {
 }
 
 func TestMemSeriesTree(t *testing.T) {
-	pt1 := &ProfileTree{}
+	pt1 := NewProfileTree()
 	pt1.Insert(makeSample(2, []uint64{2, 1}))
 	pt1.Insert(makeSample(2, []uint64{4, 1}))
 
@@ -120,7 +121,7 @@ func TestMemSeriesTree(t *testing.T) {
 	}, st)
 
 	// Merging another profileTree onto the existing one
-	pt2 := &ProfileTree{}
+	pt2 := NewProfileTree()
 	pt2.Insert(makeSample(3, []uint64{2, 1}))
 	err = st.Insert(1, pt2)
 	require.NoError(t, err)
@@ -144,7 +145,7 @@ func TestMemSeriesTree(t *testing.T) {
 	}, st)
 
 	// Merging another profileTree onto the existing one with one new Location
-	pt3 := &ProfileTree{}
+	pt3 := NewProfileTree()
 	pt3.Insert(makeSample(2, []uint64{3, 1}))
 	err = st.Insert(2, pt3)
 	require.NoError(t, err)
@@ -183,11 +184,11 @@ func TestMemSeriesTree(t *testing.T) {
 }
 
 func TestMemSeriesIterator(t *testing.T) {
-	pt1 := &ProfileTree{}
+	pt1 := NewProfileTree()
 	pt1.Insert(makeSample(2, []uint64{2, 1}))
 	pt1.Insert(makeSample(2, []uint64{4, 1}))
 
-	pt2 := &ProfileTree{}
+	pt2 := NewProfileTree()
 	pt2.Insert(makeSample(2, []uint64{3, 1}))
 	pt2.Insert(makeSample(2, []uint64{4, 1}))
 
@@ -248,7 +249,7 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries()
+	s, err := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	profile := ProfileFromPprof(l, p1)
 	require.NoError(t, s.Append(profile))
@@ -284,7 +285,7 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries()
+	s, err := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	profile := ProfileFromPprof(l, p)
 	require.NoError(t, s.Append(profile))
@@ -307,7 +308,7 @@ func TestRealInserts(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	s, err := NewMemSeries()
+	s, err := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	require.NoError(t, s.Append(ProfileFromPprof(l, p1)))
 	require.NoError(t, s.Append(ProfileFromPprof(l, p2)))

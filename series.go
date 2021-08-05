@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/storage/chunkenc"
+	"github.com/prometheus/prometheus/pkg/labels"
 )
 
 var (
@@ -208,14 +209,21 @@ type ProfileTree struct {
 	Roots *ProfileTreeNode
 }
 
+func NewProfileTree() *ProfileTree {
+	return &ProfileTree{
+		Roots: &ProfileTreeNode{
+			cumulativeValues: []*ProfileTreeValueNode{{
+				Value: 0,
+			}},
+		},
+	}
+}
+
 func (t *ProfileTree) Iterator() InstantProfileTreeIterator {
 	return NewProfileTreeIterator(t)
 }
 
 func (t *ProfileTree) Insert(sample *profile.Sample) {
-	if t.Roots == nil {
-		t.Roots = &ProfileTreeNode{}
-	}
 
 	cur := t.Roots
 	locations := sample.Location
@@ -262,6 +270,9 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 }
 
 type MemSeries struct {
+	lset labels.Labels
+	id   uint64
+
 	periodType ValueType
 	sampleType ValueType
 
@@ -274,10 +285,10 @@ type MemSeries struct {
 	periodsApp       chunkenc.Appender
 
 	seriesTree *MemSeriesTree
-	i          uint16
+	numSamples uint16
 }
 
-func NewMemSeries() (*MemSeries, error) {
+func NewMemSeries(lset labels.Labels, id uint64) (*MemSeries, error) {
 	timestamps := chunkenc.NewDeltaChunk()
 	durations := chunkenc.NewDeltaChunk()
 	periods := chunkenc.NewDeltaChunk()
@@ -296,6 +307,8 @@ func NewMemSeries() (*MemSeries, error) {
 	}
 
 	return &MemSeries{
+		lset:          lset,
+		id:            id,
 		timestamps:    timestamps,
 		timestampsApp: timestampsApp,
 		durations:     durations,
@@ -318,7 +331,7 @@ type mapInfo struct {
 }
 
 func (s *MemSeries) Append(p *Profile) error {
-	if s.i == 0 {
+	if s.numSamples == 0 {
 		s.periodType = p.Meta.PeriodType
 		s.sampleType = p.Meta.SampleType
 	}
@@ -338,26 +351,25 @@ func (s *MemSeries) Append(p *Profile) error {
 		s.timestampsApp, _ = s.timestamps.Appender()
 	}
 
-	// We store millisecond timestamp resolution not nanos.
 	timestamp := p.Meta.Timestamp
 
 	if timestamp <= s.maxTime {
 		return ErrOutOfOrderSample
 	}
 
-	s.timestampsApp.AppendAt(s.i, timestamp)
+	s.timestampsApp.AppendAt(s.numSamples, timestamp)
 
 	if s.durations == nil {
 		s.durations = chunkenc.NewDeltaChunk()
 		s.durationsApp, _ = s.durations.Appender() // TODO: Handle err
 	}
-	s.durationsApp.AppendAt(s.i, p.Meta.Duration)
+	s.durationsApp.AppendAt(s.numSamples, p.Meta.Duration)
 
 	if s.periods == nil {
 		s.periods = chunkenc.NewDeltaChunk()
 		s.periodsApp, _ = s.periods.Appender() // TODO: Handle err
 	}
-	s.periodsApp.AppendAt(s.i, p.Meta.Period)
+	s.periodsApp.AppendAt(s.numSamples, p.Meta.Period)
 
 	s.maxTime = timestamp
 
@@ -369,8 +381,12 @@ func (s *MemSeries) append(profileTree *ProfileTree) {
 		s.seriesTree = &MemSeriesTree{}
 	}
 
-	s.seriesTree.Insert(s.i, profileTree)
-	s.i++
+	s.seriesTree.Insert(s.numSamples, profileTree)
+	s.numSamples++
+}
+
+func (s *MemSeries) Labels() labels.Labels {
+	return s.lset
 }
 
 type MemSeriesIteratorTree struct {
@@ -441,11 +457,11 @@ type MemSeriesIterator struct {
 	durationsIterator  chunkenc.Iterator
 	periodsIterator    chunkenc.Iterator
 
-	series *MemSeries
-	i      uint16
+	series     *MemSeries
+	numSamples uint16
 }
 
-func (s *MemSeries) Iterator() *MemSeriesIterator {
+func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	root := &MemSeriesIteratorTreeNode{}
 
 	for _, v := range s.seriesTree.Roots.CumulativeValues {
@@ -465,7 +481,7 @@ func (s *MemSeries) Iterator() *MemSeriesIterator {
 		durationsIterator:  s.durations.Iterator(nil),
 		periodsIterator:    s.periods.Iterator(nil),
 		series:             s,
-		i:                  s.i,
+		numSamples:         s.numSamples,
 	}
 
 	memItStack := MemSeriesIteratorTreeStack{{
@@ -522,7 +538,7 @@ func (s *MemSeries) Iterator() *MemSeriesIterator {
 }
 
 func (it *MemSeriesIterator) Next() bool {
-	if it.i == 0 {
+	if it.numSamples == 0 {
 		return false
 	}
 
@@ -557,7 +573,7 @@ func (it *MemSeriesIterator) Next() bool {
 		iit.StepUp()
 	}
 
-	it.i--
+	it.numSamples--
 	return true
 }
 

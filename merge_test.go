@@ -10,7 +10,7 @@ import (
 )
 
 func TestMergeProfileSimple(t *testing.T) {
-	pt1 := &ProfileTree{}
+	pt1 := NewProfileTree()
 	pt1.Insert(makeSample(2, []uint64{2, 1}))
 
 	p1 := &Profile{
@@ -24,7 +24,7 @@ func TestMergeProfileSimple(t *testing.T) {
 		},
 	}
 
-	pt2 := &ProfileTree{}
+	pt2 := NewProfileTree()
 	pt2.Insert(makeSample(1, []uint64{3, 1}))
 
 	p2 := &Profile{
@@ -92,7 +92,7 @@ func TestMergeProfileSimple(t *testing.T) {
 }
 
 func TestMergeProfileDeep(t *testing.T) {
-	pt1 := &ProfileTree{}
+	pt1 := NewProfileTree()
 	pt1.Insert(makeSample(3, []uint64{3, 3, 2}))
 	pt1.Insert(makeSample(3, []uint64{6, 2}))
 	pt1.Insert(makeSample(3, []uint64{2, 3}))
@@ -109,7 +109,7 @@ func TestMergeProfileDeep(t *testing.T) {
 		},
 	}
 
-	pt2 := &ProfileTree{}
+	pt2 := NewProfileTree()
 	pt2.Insert(makeSample(3, []uint64{3, 2, 2}))
 
 	p2 := &Profile{
@@ -210,7 +210,7 @@ func TestMergeProfileDeep(t *testing.T) {
 }
 
 func TestMergeProfile(t *testing.T) {
-	pt1 := &ProfileTree{}
+	pt1 := NewProfileTree()
 	pt1.Insert(makeSample(2, []uint64{2, 1}))
 	pt1.Insert(makeSample(1, []uint64{6, 3, 2, 1}))
 	pt1.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
@@ -228,7 +228,7 @@ func TestMergeProfile(t *testing.T) {
 		},
 	}
 
-	pt2 := &ProfileTree{}
+	pt2 := NewProfileTree()
 	pt2.Insert(makeSample(2, []uint64{2, 1}))
 	pt2.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
 	pt2.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
