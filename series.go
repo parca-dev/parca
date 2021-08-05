@@ -279,8 +279,8 @@ type MemSeries struct {
 
 func NewMemSeries() (*MemSeries, error) {
 	timestamps := chunkenc.NewDeltaChunk()
-	durations := chunkenc.NewDeltaChunk()
-	periods := chunkenc.NewDeltaChunk()
+	durations := chunkenc.NewRLEChunk()
+	periods := chunkenc.NewRLEChunk()
 
 	timestampsApp, err := timestamps.Appender()
 	if err != nil {
@@ -348,13 +348,13 @@ func (s *MemSeries) Append(p *Profile) error {
 	s.timestampsApp.AppendAt(s.i, timestamp)
 
 	if s.durations == nil {
-		s.durations = chunkenc.NewDeltaChunk()
+		s.durations = chunkenc.NewRLEChunk()
 		s.durationsApp, _ = s.durations.Appender() // TODO: Handle err
 	}
 	s.durationsApp.AppendAt(s.i, p.Meta.Duration)
 
 	if s.periods == nil {
-		s.periods = chunkenc.NewDeltaChunk()
+		s.periods = chunkenc.NewRLEChunk()
 		s.periodsApp, _ = s.periods.Appender() // TODO: Handle err
 	}
 	s.periodsApp.AppendAt(s.i, p.Meta.Period)
