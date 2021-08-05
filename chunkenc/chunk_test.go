@@ -121,23 +121,12 @@ func testChunk(t *testing.T, c Chunk) {
 	require.Equal(t, []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 42}, res4)
 }
 
-// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=10000000x ./chunkenc >> iterator-same.txt; done
-// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=10000000x ./chunkenc >> iterator-increasing.txt; done
-// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=10000000x ./chunkenc >> iterator-random.txt; done
-// benchstat iterator-same.txt iterator-increasing.txt iterator-random.txt
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./chunkenc >> benchmark/iterator-same.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./chunkenc >> benchmark/iterator-increasing.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./chunkenc >> benchmark/iterator-random.txt; done
+// benchstat benchmark/iterator-same.txt benchmark/iterator-increasing.txt benchmark/iterator-random.txt >> benchmark/iterator-benchstat.txt
 
 func BenchmarkIterators(b *testing.B) {
-	var (
-		v    = int64(123456)
-		data = make([]int64, 0, b.N)
-	)
-	for i := 0; i < b.N; i++ {
-		//v = rand.Int63n(1_000_000) // random
-		v += int64(100) // increasing
-		//v = 100 // same
-		data = append(data, v)
-	}
-
 	for _, c := range []struct {
 		name     string
 		newChunk func() Chunk
@@ -152,18 +141,28 @@ func BenchmarkIterators(b *testing.B) {
 		newChunk: func() Chunk { return NewXORChunk() },
 	}} {
 		b.Run(c.name, func(b *testing.B) {
-			benchmarkIterator(b, data, c.newChunk)
+			benchmarkIterator(b, c.newChunk)
 		})
 	}
 }
 
-func benchmarkIterator(b *testing.B, data []int64, newChunk func() Chunk) {
+func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 	var (
 		chunks []Chunk
 		c      Chunk
 		a      Appender
 		err    error
+
+		v    = int64(123456)
+		data = make([]int64, 0, b.N)
 	)
+	for i := 0; i < b.N; i++ {
+		//v = rand.Int63n(1_000_000) // random
+		v += int64(100) // increasing
+		//v = 100 // same
+		data = append(data, v)
+	}
+
 	for i := 0; i < b.N; {
 		if i%250 == 0 {
 			if i != 0 {
@@ -207,22 +206,12 @@ func benchmarkIterator(b *testing.B, data []int64, newChunk func() Chunk) {
 	}
 }
 
-// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=10000000x ./chunkenc >> appender-same.txt; done
-// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=10000000x ./chunkenc >> appender-increasing.txt; done
-// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=10000000x ./chunkenc >> appender-random.txt; done
-// benchstat appender-same.txt appender-increasing.txt appender-random.txt
+// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./chunkenc >> benchmarks/appender-same.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./chunkenc >> benchmarks/appender-increasing.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./chunkenc >> benchmarks/appender-random.txt; done
+// benchstat benchmark/appender-same.txt benchmark/appender-increasing.txt benchmark/appender-random.txt
 
 func BenchmarkAppenders(b *testing.B) {
-	var (
-		v    = int64(123456)
-		data = make([]int64, 0, b.N)
-	)
-	for i := 0; i < b.N; i++ {
-		//v = rand.Int63n(1_000_000) // random
-		v += int64(100) // increasing
-		//v = 100 // same
-		data = append(data, v)
-	}
 
 	for _, c := range []struct {
 		name     string
@@ -238,12 +227,12 @@ func BenchmarkAppenders(b *testing.B) {
 		newChunk: func() Chunk { return NewXORChunk() },
 	}} {
 		b.Run(c.name, func(b *testing.B) {
-			benchmarkAppender(b, data, c.newChunk)
+			benchmarkAppender(b, c.newChunk)
 		})
 	}
 }
 
-func benchmarkAppender(b *testing.B, data []int64, newChunk func() Chunk) {
+func benchmarkAppender(b *testing.B, newChunk func() Chunk) {
 	b.ReportAllocs()
 
 	var (
@@ -251,7 +240,19 @@ func benchmarkAppender(b *testing.B, data []int64, newChunk func() Chunk) {
 		c      = newChunk()
 		a      Appender
 		err    error
+
+		v    = int64(123)
+		data = make([]int64, 0, b.N)
 	)
+	for i := 0; i < b.N; i++ {
+		//v = rand.Int63n(1_000_000) // random
+		v += int64(100) // increasing
+		//v = 100 // same
+		data = append(data, v)
+	}
+
+	b.ResetTimer()
+
 	for i := 0; i < b.N; {
 		if i%250 == 0 {
 			chunks = append(chunks, c)
