@@ -14,33 +14,50 @@ func TestRLEChunk(t *testing.T) {
 	app, err := c.Appender()
 	require.NoError(t, err)
 
+	app.Append(0)
+	require.Equal(t, []byte{0, 1, 0, 0, 1, 0}, c.Bytes())
+	require.Equal(t, 1, c.NumSamples())
+	app.Append(0)
+	require.Equal(t, []byte{0, 2, 0, 0, 2, 0}, c.Bytes())
+	require.Equal(t, 2, c.NumSamples())
+
 	// Append 1 twice and then 5 more times
 	app.Append(1)
-	require.Equal(t, []byte{0, 1, 2, 0, 1, 0}, c.Bytes())
-	require.Equal(t, 1, c.NumSamples())
+	require.Equal(t, []byte{0, 3, 0, 0, 2, 2, 0, 1, 0}, c.Bytes())
+	require.Equal(t, 3, c.NumSamples())
 
 	app.Append(1)
-	require.Equal(t, []byte{0, 2, 2, 0, 2, 0}, c.Bytes())
+	require.Equal(t, []byte{0, 4, 0, 0, 2, 2, 0, 2, 0}, c.Bytes())
+	require.Equal(t, 4, c.NumSamples())
 
 	for i := 0; i < 5; i++ {
 		app.Append(1)
 	}
-	require.Equal(t, []byte{0, 7, 2, 0, 7, 0}, c.Bytes())
+	require.Equal(t, []byte{0, 9, 0, 0, 2, 2, 0, 7, 0}, c.Bytes())
+	require.Equal(t, 9, c.NumSamples())
 
 	// Append 2 twice to test another value
 	app.Append(2)
-	require.Equal(t, []byte{0, 8, 2, 0, 7, 4, 0, 1, 0}, c.Bytes())
+	require.Equal(t, []byte{0, 10, 0, 0, 2, 2, 0, 7, 4, 0, 1, 0}, c.Bytes())
+	require.Equal(t, 10, c.NumSamples())
 	app.Append(2)
-	require.Equal(t, []byte{0, 9, 2, 0, 7, 4, 0, 2, 0}, c.Bytes())
+	require.Equal(t, []byte{0, 11, 0, 0, 2, 2, 0, 7, 4, 0, 2, 0}, c.Bytes())
+	require.Equal(t, 11, c.NumSamples())
 
 	// Append 3 100x to get a lot of the same values.
 	for i := 0; i < 100; i++ {
 		app.Append(3)
 	}
-	require.Equal(t, []byte{0, 109, 2, 0, 7, 4, 0, 2, 6, 0, 100, 0}, c.Bytes())
+	require.Equal(t, []byte{0, 111, 0, 0, 2, 2, 0, 7, 4, 0, 2, 6, 0, 100, 0}, c.Bytes())
+	require.Equal(t, 111, c.NumSamples())
 
 	// Iterate over the first values manually
 	it := c.Iterator(nil)
+	it.Next()
+	require.Equal(t, int64(0), it.At())
+	it.Next()
+	require.Equal(t, int64(0), it.At())
+
 	it.Next()
 	require.Equal(t, int64(1), it.At())
 	it.Next()

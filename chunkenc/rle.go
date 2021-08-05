@@ -64,9 +64,10 @@ type rleAppender struct {
 func (a *rleAppender) Append(v int64) {
 	num := binary.BigEndian.Uint16(a.b.bytes())
 
-	// Only if values differ we need to write the next new value.
+	// Always append the first value regardless of its value.
+	// Then always write the next new value when the values differ.
 	// Otherwise, simply increase the count of the current value.
-	if a.v != v {
+	if num == 0 || a.v != v {
 		buf := make([]byte, binary.MaxVarintLen64)
 		for _, b := range buf[:binary.PutVarint(buf, v)] {
 			a.b.writeByte(b)
@@ -77,14 +78,15 @@ func (a *rleAppender) Append(v int64) {
 		for _, b := range buf {
 			a.b.writeByte(b)
 		}
+		a.v = v
 	} else {
 		b := a.b.bytes()
-		// Read the last 3 bytes as that's the current count as uint16
+		// Read the last 3 bytes as the bstream always appends a trailing 0,
+		// and we need to two bytes before for the length uint16.
 		count := binary.BigEndian.Uint16(b[len(b)-3:])
 		binary.BigEndian.PutUint16(a.b.bytes()[len(b)-3:], count+1)
 	}
 
-	a.v = v
 	binary.BigEndian.PutUint16(a.b.bytes(), num+1)
 }
 
