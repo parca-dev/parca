@@ -1,4 +1,4 @@
-module github.com/parca-dev/storage
+module github.com/parca-dev/parca
 
 go 1.16
 
