@@ -172,7 +172,7 @@ func ProfileTreeFromPprof(s ProfileMetaStore, p *profile.Profile) *ProfileTree {
 	}
 	sortSamples(samples)
 
-	profileTree := &ProfileTree{}
+	profileTree := NewProfileTree()
 	for _, s := range samples {
 		profileTree.Insert(s)
 	}
