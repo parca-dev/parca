@@ -1,0 +1,10 @@
+version: v1beta1
+build:
+  roots:
+    - proto
+lint:
+  use:
+    - STYLE_BASIC
+  except:
+    - ONEOF_LOWER_SNAKE_CASE
+    - PACKAGE_LOWER_SNAKE_CASE

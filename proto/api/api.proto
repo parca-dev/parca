@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package parca.api;
+option go_package = "github.com/parca-dev/parca/proto/api";
+
+import "google/api/annotations.proto";
+import "google/api/timestamp.proto";
+import "google/pprof/profile.proto";
+
+service API {
+    rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
+        option (google.api.http) = {
+            get: "/profiles/query_range"
+        };
+    }
+
+    rpc Query(QueryRequest) returns (QueryResponse) {
+        option (google.api.http) = {
+            get: "/profiles/query"
+        };
+    }
+
+    rpc Series(SeriesRequest) returns (SeriesResponse) {
+        option (google.api.http) = {
+            get: "/profiles/series"
+        };
+    }
+
+    rpc Labels(LabelsRequest) returns (LabelsResponse) {
+        option (google.api.http) = {
+            get: "/profiles/labels"
+        };
+    }
+
+    rpc Values(ValuesRequest) returns (ValuesResponse) {
+        option (google.api.http) = {
+            get: "/profiles/labels/{name}/values"
+        };
+    }
+
+    rpc Write(WriteRequest) returns (WriteResponse) {
+        option (google.api.http) = {
+            post: "/profiles"
+            body: "profile"
+        };
+    }
+
+    rpc Config(ConfigRequest) returns (ConfigResponse) {
+        option (google.api.http) = {
+            get: "/status/config"
+        };
+    }
+
+    rpc Targets(TargetsRequest) returns (TargetsResponse) {
+        option (google.api.http) = {
+            get: "/targets"
+        };
+    }
+}
+
+message QueryRangeRequest{
+    string query = 1;
+
+    google.protobuf.Timestamp start = 2;
+    google.protobuf.Timestamp end   = 3;
+    string limit                    = 4;
+}
+message QueryRangeResponse{}
+
+message QueryRequest{
+    enum Mode {
+        SINGLE = 0;
+        DIFF   = 1;
+        MERGE  = 2;
+    }
+
+    optional Mode mode = 1;
+
+    message Diff {
+        ProfileSelect a = 1;
+        ProfileSelect b = 2;
+    }
+
+    message ProfileSelect {
+        string mode  = 1;
+        google.protobuf.Timestamp time = 2;
+        string query = 3;
+
+        google.protobuf.Timestamp start = 4;
+        google.protobuf.Timestamp end   = 5;
+    }
+
+    message Merge {
+        string query = 1;
+
+        google.protobuf.Timestamp start = 2;
+        google.protobuf.Timestamp end   = 3;
+    }
+
+    message Single {
+        google.protobuf.Timestamp time  = 1;
+
+        string query = 2;
+    }
+
+    oneof Options {
+        Diff   diff   = 2;
+        Merge  merge  = 3;
+        Single single = 4;
+    }
+}
+message QueryResponse{}
+
+message SeriesRequest{
+    repeated string match           = 1;
+    google.protobuf.Timestamp start = 2;
+    google.protobuf.Timestamp end   = 3;
+}
+message SeriesResponse{}
+
+message LabelsRequest{
+    repeated string match           = 1;
+    google.protobuf.Timestamp start = 2;
+    google.protobuf.Timestamp end   = 3;
+}
+message LabelsResponse{}
+
+message ValuesRequest{
+    string                    name  = 1;
+    repeated string           match = 2;
+    google.protobuf.Timestamp start = 3;
+    google.protobuf.Timestamp end   = 4;
+}
+message ValuesResponse{}
+
+message WriteRequest{
+    string                     tenant  = 1;
+    perftools.profiles.Profile profile = 2;
+}
+message WriteResponse{}
+
+message ConfigRequest{}
+message ConfigResponse{}
+
+message TargetsRequest{
+    enum State {
+        ANY     = 0;
+        ACTIVE  = 1;
+        DROPPED = 2;
+    }
+
+    State state = 1;
+}
+message TargetsResponse{}
