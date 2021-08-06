@@ -38,13 +38,6 @@ service API {
         };
     }
 
-    rpc Write(WriteRequest) returns (WriteResponse) {
-        option (google.api.http) = {
-            post: "/profiles"
-            body: "profile"
-        };
-    }
-
     rpc Config(ConfigRequest) returns (ConfigResponse) {
         option (google.api.http) = {
             get: "/status/config"
@@ -132,12 +125,6 @@ message ValuesRequest{
     google.protobuf.Timestamp end   = 4;
 }
 message ValuesResponse{}
-
-message WriteRequest{
-    string                     tenant  = 1;
-    perftools.profiles.Profile profile = 2;
-}
-message WriteResponse{}
 
 message ConfigRequest{}
 message ConfigResponse{}

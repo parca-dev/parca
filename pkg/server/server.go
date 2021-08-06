@@ -2,7 +2,6 @@ package server
 
 import (
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/common-nighthawk/go-figure"
@@ -19,12 +18,21 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+type Registerable interface {
+	Register(srv *grpc.Server)
+}
+
+type RegisterableFunc func(srv *grpc.Server)
+
+func (f RegisterableFunc) Register(srv *grpc.Server) {
+	f(srv)
+}
+
 // ListenAndServe starts the http grpc gateway server
-func ListenAndServe(ctx context.Context, port string, s api.APIServer) error {
+func ListenAndServe(ctx context.Context, logger log.Logger, port string, registerables ...Registerable) error {
 	serverStr := figure.NewColorFigure("Parca API", "roman", "cyan", true)
 	serverStr.Print()
 
-	logger := log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 	level.Info(logger).Log("msg", "Serving API", "port", port)
 
 	// Start grpc server with API server registered
@@ -39,7 +47,9 @@ func ListenAndServe(ctx context.Context, port string, s api.APIServer) error {
 			),
 		),
 	)
-	api.RegisterAPIServer(srv, s)
+	for _, r := range registerables {
+		r.Register(srv)
+	}
 	reflection.Register(srv)
 
 	mux := runtime.NewServeMux()

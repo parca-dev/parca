@@ -37,11 +37,6 @@ func (a *API) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResp
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
-// Write issues a write request against the storage
-func (a *API) Write(ctx context.Context, req *pb.WriteRequest) (*pb.WriteResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
-}
-
 // Config issues a config request against the storage
 func (a *API) Config(ctx context.Context, req *pb.ConfigRequest) (*pb.ConfigResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
