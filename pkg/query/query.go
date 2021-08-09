@@ -22,10 +22,7 @@ type Query struct {
 	metaStore storage.ProfileMetaStore
 }
 
-func New(
-	queryable storage.Queryable,
-	metaStore storage.ProfileMetaStore,
-) *Query {
+func New(queryable storage.Queryable, metaStore storage.ProfileMetaStore) *Query {
 	return &Query{
 		queryable: queryable,
 		metaStore: metaStore,
@@ -81,6 +78,10 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		}
 
 		res.Series = append(res.Series, metricsSeries)
+
+		if req.Limit != 0 && len(res.Series) == int(req.Limit) {
+			break
+		}
 	}
 
 	return res, nil
