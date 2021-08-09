@@ -14,6 +14,8 @@ import (
 	"github.com/parca-dev/parca/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -123,5 +125,55 @@ func Test_QueryRange_Limited(t *testing.T) {
 	require.Equal(t, limit, len(resp.Series))
 	for i := 0; i < limit; i++ {
 		require.Equal(t, 1, len(resp.Series[i].Samples))
+	}
+}
+
+func Test_QueryRange_InputValidation(t *testing.T) {
+	ctx := context.Background()
+	end := time.Now()
+	start := end.Add(5 * time.Minute)
+
+	tests := map[string]struct {
+		req *pb.QueryRangeRequest
+	}{
+		"Empty query": {
+			req: &pb.QueryRangeRequest{
+				Query: "",
+				Start: timestamppb.New(start),
+				End:   timestamppb.New(end),
+			},
+		},
+		"Empty start": {
+			req: &pb.QueryRangeRequest{
+				Query: "allocs",
+				Start: nil,
+				End:   timestamppb.New(end),
+			},
+		},
+		"Empty End": {
+			req: &pb.QueryRangeRequest{
+				Query: "allocs",
+				Start: timestamppb.New(start),
+				End:   nil,
+			},
+		},
+		"End before start": {
+			req: &pb.QueryRangeRequest{
+				Query: "allocs",
+				Start: timestamppb.New(end),
+				End:   timestamppb.New(start),
+			},
+		},
+	}
+
+	q := New(nil, nil)
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			resp, err := q.QueryRange(ctx, test.req)
+			require.Error(t, err)
+			require.Empty(t, resp)
+			require.Equal(t, codes.InvalidArgument, status.Code(err))
+		})
 	}
 }

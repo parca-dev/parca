@@ -31,6 +31,10 @@ func New(queryable storage.Queryable, metaStore storage.ProfileMetaStore) *Query
 
 // QueryRange issues a range query against the storage
 func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.QueryRangeResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	sel, err := parser.ParseMetricSelector(req.Query)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
@@ -38,10 +42,6 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 
 	start := req.Start.AsTime()
 	end := req.Start.AsTime()
-
-	if end.Before(start) {
-		return nil, status.Error(codes.InvalidArgument, "start timestamp must be before end")
-	}
 
 	// Timestamps don't have to match exactly and staleness kicks in within 5
 	// minutes of no samples, so we need to search the range of -5min to +5min
