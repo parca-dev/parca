@@ -547,7 +547,7 @@ proto.parca.query.QueryRangeRequest.toObject = function(includeInstance, msg) {
     query: jspb.Message.getFieldWithDefault(msg, 1, ""),
     start: (f = msg.getStart()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
     end: (f = msg.getEnd()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    limit: jspb.Message.getFieldWithDefault(msg, 4, "")
+    limit: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -599,7 +599,7 @@ proto.parca.query.QueryRangeRequest.deserializeBinaryFromReader = function(msg, 
       msg.setEnd(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {number} */ (reader.readUint32());
       msg.setLimit(value);
       break;
     default:
@@ -655,8 +655,8 @@ proto.parca.query.QueryRangeRequest.serializeBinaryToWriter = function(message, 
     );
   }
   f = message.getLimit();
-  if (f.length > 0) {
-    writer.writeString(
+  if (f !== 0) {
+    writer.writeUint32(
       4,
       f
     );
@@ -757,20 +757,20 @@ proto.parca.query.QueryRangeRequest.prototype.hasEnd = function() {
 
 
 /**
- * optional string limit = 4;
- * @return {string}
+ * optional uint32 limit = 4;
+ * @return {number}
  */
 proto.parca.query.QueryRangeRequest.prototype.getLimit = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
 };
 
 
 /**
- * @param {string} value
+ * @param {number} value
  * @return {!proto.parca.query.QueryRangeRequest} returns this
  */
 proto.parca.query.QueryRangeRequest.prototype.setLimit = function(value) {
-  return jspb.Message.setProto3StringField(this, 4, value);
+  return jspb.Message.setProto3IntField(this, 4, value);
 };
 
 
