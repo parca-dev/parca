@@ -21,8 +21,8 @@ export class QueryRangeRequest extends jspb.Message {
   getEnd(): google_api_timestamp_pb.Timestamp | undefined;
   setEnd(value?: google_api_timestamp_pb.Timestamp): void;
 
-  getLimit(): string;
-  setLimit(value: string): void;
+  getLimit(): number;
+  setLimit(value: number): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QueryRangeRequest.AsObject;
@@ -39,7 +39,7 @@ export namespace QueryRangeRequest {
     query: string,
     start?: google_api_timestamp_pb.Timestamp.AsObject,
     end?: google_api_timestamp_pb.Timestamp.AsObject,
-    limit: string,
+    limit: number,
   }
 }
 
