@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package parca.api;
+option go_package = "github.com/parca-dev/parca/proto/debuginfo";
+
+service DebugInfo {
+  rpc Exists(DebugInfoExistsRequest) returns (DebugInfoExistsResponse) {}
+  rpc Upload(stream DebugInfoUploadRequest) returns (DebugInfoUploadResponse) {}
+}
+
+message DebugInfoExistsRequest {
+  string build_id = 1;
+}
+
+message DebugInfoExistsResponse {
+  bool exists = 1;
+}
+
+message DebugInfoUploadRequest {
+  oneof data {
+      DebugInfoUploadInfo info = 1;
+      bytes chunk_data = 2;
+    }
+}
+
+message DebugInfoUploadInfo {
+  string build_id = 1;
+}
+
+message DebugInfoUploadResponse {
+  string build_id = 1;
+  uint64 size = 2;
+}

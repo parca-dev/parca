@@ -18,6 +18,10 @@ type SelectHints struct {
 	Metadata bool // Is the database just being queried for metadata like label-names/label-values.
 }
 
+type Queryable interface {
+	Querier(ctx context.Context, mint, maxt int64) Querier
+}
+
 type Querier interface {
 	Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSet
 }

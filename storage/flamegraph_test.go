@@ -5,14 +5,15 @@ import (
 	"testing"
 
 	"github.com/google/pprof/profile"
+	pb "github.com/parca-dev/parca/proto/query"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTreeStack(t *testing.T) {
 	s := TreeStack{}
-	s.Push(&TreeStackEntry{node: &TreeNode{Name: "a"}})
-	s.Push(&TreeStackEntry{node: &TreeNode{Name: "b"}})
+	s.Push(&TreeStackEntry{node: &pb.FlamegraphNode{Name: "a"}})
+	s.Push(&TreeStackEntry{node: &pb.FlamegraphNode{Name: "b"}})
 
 	require.Equal(t, 2, s.Size())
 
@@ -49,25 +50,25 @@ func TestLinesToTreeNodes(t *testing.T) {
 		},
 	}, 2)
 
-	require.Equal(t, &TreeNode{
-		Name:     "log :0",
-		FullName: "log :0",
-		Cum:      2,
-		Children: []*TreeNode{{
-			Name:     "printf :0",
-			FullName: "printf :0",
-			Cum:      2,
-			Children: []*TreeNode{{
-				Name:     "memcpy :0",
-				FullName: "memcpy :0",
-				Cum:      2,
+	require.Equal(t, &pb.FlamegraphNode{
+		Name:       "log :0",
+		FullName:   "log :0",
+		Cumulative: 2,
+		Children: []*pb.FlamegraphNode{{
+			Name:       "printf :0",
+			FullName:   "printf :0",
+			Cumulative: 2,
+			Children: []*pb.FlamegraphNode{{
+				Name:       "memcpy :0",
+				FullName:   "memcpy :0",
+				Cumulative: 2,
 			}},
 		}},
 	}, outerMost)
-	require.Equal(t, &TreeNode{
-		Name:     "memcpy :0",
-		FullName: "memcpy :0",
-		Cum:      2,
+	require.Equal(t, &pb.FlamegraphNode{
+		Name:       "memcpy :0",
+		FullName:   "memcpy :0",
+		Cumulative: 2,
 	}, innerMost)
 }
 
@@ -93,40 +94,40 @@ func TestGenerateFlamegraph(t *testing.T) {
 		5: {Line: []profile.Line{{Function: &profile.Function{Name: "5"}}}},
 	}}
 
-	fg, err := generateFlamegraph(l, pt.Iterator())
+	fg, err := GenerateFlamegraph(l, &Profile{Tree: pt})
 	require.NoError(t, err)
-	require.Equal(t, &TreeNode{
-		Name: "root",
-		Cum:  6,
-		Children: []*TreeNode{{
-			Name:     "1 :0",
-			FullName: "1 :0",
-			Cum:      6,
-			Children: []*TreeNode{{
-				Name:     "2 :0",
-				FullName: "2 :0",
-				Cum:      6,
-				Children: []*TreeNode{{
-					Name:     "3 :0",
-					FullName: "3 :0",
-					Cum:      4,
-					Children: []*TreeNode{{
-						Name:     "4 :0",
-						FullName: "4 :0",
-						Cum:      3,
+	require.Equal(t, &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphNode{
+		Name:       "root",
+		Cumulative: 6,
+		Children: []*pb.FlamegraphNode{{
+			Name:       "1 :0",
+			FullName:   "1 :0",
+			Cumulative: 6,
+			Children: []*pb.FlamegraphNode{{
+				Name:       "2 :0",
+				FullName:   "2 :0",
+				Cumulative: 6,
+				Children: []*pb.FlamegraphNode{{
+					Name:       "3 :0",
+					FullName:   "3 :0",
+					Cumulative: 4,
+					Children: []*pb.FlamegraphNode{{
+						Name:       "4 :0",
+						FullName:   "4 :0",
+						Cumulative: 3,
 					}, {
-						Name:     "5 :0",
-						FullName: "5 :0",
-						Cum:      1,
+						Name:       "5 :0",
+						FullName:   "5 :0",
+						Cumulative: 1,
 					}},
 				}},
 			}},
 		}},
-	},
+	}},
 		fg)
 }
 
-func testGenerateFlamegraphFromProfileTree(t *testing.T) *TreeNode {
+func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -136,7 +137,7 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *TreeNode {
 	l := NewInMemoryProfileMetaStore()
 	profileTree := ProfileTreeFromPprof(l, p1)
 
-	fg, err := generateFlamegraph(l, profileTree.Iterator())
+	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree})
 	require.NoError(t, err)
 
 	return fg
@@ -146,7 +147,7 @@ func TestGenerateFlamegraphFromProfileTree(t *testing.T) {
 	testGenerateFlamegraphFromProfileTree(t)
 }
 
-func testGenerateFlamegraphFromInstantProfile(t *testing.T) *TreeNode {
+func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -163,7 +164,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *TreeNode {
 	require.NoError(t, it.Err())
 	instantProfile := it.At()
 
-	fg, err := generateFlamegraph(l, instantProfile.ProfileTree().Iterator())
+	fg, err := GenerateFlamegraph(l, instantProfile)
 	require.NoError(t, err)
 	return fg
 }
@@ -180,7 +181,7 @@ func TestGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	testGenerateFlamegraphFromMergeProfile(t)
 }
 
-func testGenerateFlamegraphFromMergeProfile(t *testing.T) *TreeNode {
+func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -199,7 +200,7 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *TreeNode {
 	m, err := NewMergeProfile(prof1, prof2)
 	require.NoError(t, err)
 
-	fg, err := generateFlamegraph(l, m.ProfileTree().Iterator())
+	fg, err := GenerateFlamegraph(l, m)
 	require.NoError(t, err)
 
 	return fg
@@ -215,7 +216,7 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	l := NewInMemoryProfileMetaStore()
 	profileTree := ProfileTreeFromPprof(l, p1)
 
-	fg, err := generateFlamegraph(l, profileTree.Iterator())
+	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree})
 	require.NoError(t, err)
 
 	mfg := testGenerateFlamegraphFromMergeProfile(t)
@@ -233,91 +234,91 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	profileTree := ProfileTreeFromPprof(l, p1)
 
 	b.ResetTimer()
-	_, err = generateFlamegraph(l, profileTree.Iterator())
+	_, err = GenerateFlamegraph(l, &Profile{Tree: profileTree})
 	require.NoError(b, err)
 }
 
 func TestAggregateByFunctionName(t *testing.T) {
-	fg := &TreeNode{
-		Name: "root",
-		Cum:  6,
-		Children: []*TreeNode{{
-			Name:     "1 :0",
-			FullName: "1 :0",
-			Cum:      6,
-			Children: []*TreeNode{{
-				Name:     "2 :0",
-				FullName: "2 :0",
-				Cum:      6,
-				Children: []*TreeNode{{
-					Name:     "3 :0",
-					FullName: "3 :0",
-					Cum:      4,
-					Children: []*TreeNode{{
-						Name:     "4 :0",
-						FullName: "4 :0",
-						Cum:      3,
+	fg := &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphNode{
+		Name:       "root",
+		Cumulative: 6,
+		Children: []*pb.FlamegraphNode{{
+			Name:       "1 :0",
+			FullName:   "1 :0",
+			Cumulative: 6,
+			Children: []*pb.FlamegraphNode{{
+				Name:       "2 :0",
+				FullName:   "2 :0",
+				Cumulative: 6,
+				Children: []*pb.FlamegraphNode{{
+					Name:       "3 :0",
+					FullName:   "3 :0",
+					Cumulative: 4,
+					Children: []*pb.FlamegraphNode{{
+						Name:       "4 :0",
+						FullName:   "4 :0",
+						Cumulative: 3,
 					}, {
-						Name:     "5 :0",
-						FullName: "5 :0",
-						Cum:      1,
+						Name:       "5 :0",
+						FullName:   "5 :0",
+						Cumulative: 1,
 					}},
 				}},
 			},
 				{
-					Name:     "2 :0",
-					FullName: "2 :0",
-					Cum:      6,
-					Children: []*TreeNode{{
-						Name:     "3 :0",
-						FullName: "3 :0",
-						Cum:      4,
-						Children: []*TreeNode{{
-							Name:     "4 :0",
-							FullName: "4 :0",
-							Cum:      3,
+					Name:       "2 :0",
+					FullName:   "2 :0",
+					Cumulative: 6,
+					Children: []*pb.FlamegraphNode{{
+						Name:       "3 :0",
+						FullName:   "3 :0",
+						Cumulative: 4,
+						Children: []*pb.FlamegraphNode{{
+							Name:       "4 :0",
+							FullName:   "4 :0",
+							Cumulative: 3,
 						}, {
-							Name:     "5 :0",
-							FullName: "5 :0",
-							Cum:      1,
+							Name:       "5 :0",
+							FullName:   "5 :0",
+							Cumulative: 1,
 						}},
 					}},
 				}},
 		}},
-	}
+	}}
 
-	afg := &TreeNode{
-		Name: "root",
-		Cum:  6,
-		Children: []*TreeNode{{
-			Name:     "1 :0",
-			FullName: "1 :0",
-			Cum:      6,
-			Children: []*TreeNode{{
-				Name:     "2 :0",
-				FullName: "2 :0",
-				Cum:      12,
-				Children: []*TreeNode{
+	afg := &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphNode{
+		Name:       "root",
+		Cumulative: 6,
+		Children: []*pb.FlamegraphNode{{
+			Name:       "1 :0",
+			FullName:   "1 :0",
+			Cumulative: 6,
+			Children: []*pb.FlamegraphNode{{
+				Name:       "2 :0",
+				FullName:   "2 :0",
+				Cumulative: 12,
+				Children: []*pb.FlamegraphNode{
 					{
-						Name:     "3 :0",
-						FullName: "3 :0",
-						Cum:      8,
-						Children: []*TreeNode{
+						Name:       "3 :0",
+						FullName:   "3 :0",
+						Cumulative: 8,
+						Children: []*pb.FlamegraphNode{
 							{
-								Name:     "4 :0",
-								FullName: "4 :0",
-								Cum:      6,
+								Name:       "4 :0",
+								FullName:   "4 :0",
+								Cumulative: 6,
 							}, {
-								Name:     "5 :0",
-								FullName: "5 :0",
-								Cum:      2,
+								Name:       "5 :0",
+								FullName:   "5 :0",
+								Cumulative: 2,
 							}},
 					},
 				},
 			},
 			},
 		}},
-	}
+	}}
 
 	require.Equal(t, aggregateByFunctionName(fg), afg)
 }

@@ -8,24 +8,12 @@ import (
 	"strings"
 
 	"github.com/google/pprof/profile"
+
+	pb "github.com/parca-dev/parca/proto/query"
 )
 
-type TreeNode struct {
-	Name      string      `json:"n"`
-	FullName  string      `json:"f"`
-	Cum       int64       `json:"v"`
-	CumFormat string      `json:"l"`
-	Percent   string      `json:"p"`
-	Children  []*TreeNode `json:"c"`
-	// TODO: add mapping for coloration
-}
-
-func (n *TreeNode) AddChild(c *TreeNode) {
-	n.Children = append(n.Children, c)
-}
-
 type TreeStackEntry struct {
-	node         *TreeNode
+	node         *pb.FlamegraphNode
 	currentChild int
 }
 
@@ -59,17 +47,17 @@ func (s *TreeStack) Size() int {
 }
 
 type FlamegraphIterator struct {
-	tree  *TreeNode
+	tree  *pb.Flamegraph
 	stack TreeStack
 }
 
-func NewFlamegraphIterator(fg *TreeNode) *FlamegraphIterator {
+func NewFlamegraphIterator(fg *pb.Flamegraph) *FlamegraphIterator {
 	root := &TreeStackEntry{
-		node: &TreeNode{
-			Name:     fg.Name,
-			FullName: fg.FullName,
-			Cum:      fg.Cum,
-			Children: fg.Children,
+		node: &pb.FlamegraphNode{
+			Name:       fg.Root.Name,
+			FullName:   fg.Root.FullName,
+			Cumulative: fg.Root.Cumulative,
+			Children:   fg.Root.Children,
 		},
 		currentChild: -1,
 	}
@@ -93,7 +81,7 @@ func (fgi *FlamegraphIterator) NextChild() bool {
 	return true
 }
 
-func (fgi *FlamegraphIterator) At() *TreeNode {
+func (fgi *FlamegraphIterator) At() *pb.FlamegraphNode {
 	return fgi.stack.Peek().node.Children[fgi.stack.Peek().currentChild]
 }
 
@@ -118,7 +106,9 @@ type Locations interface {
 	GetLocationByID(id uint64) (*profile.Location, error)
 }
 
-func generateFlamegraph(locations Locations, it InstantProfileTreeIterator) (*TreeNode, error) {
+func GenerateFlamegraph(locations Locations, p InstantProfile) (*pb.Flamegraph, error) {
+	it := p.ProfileTree().Iterator()
+
 	if !it.HasMore() || !it.NextChild() {
 		return nil, nil
 	}
@@ -129,12 +119,17 @@ func generateFlamegraph(locations Locations, it InstantProfileTreeIterator) (*Tr
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 
-	flamegraph := &TreeNode{
-		Name: "root",
-		Cum:  n.CumulativeValue(),
+	flamegraphRoot := &pb.FlamegraphNode{
+		Name:       "root",
+		Cumulative: n.CumulativeValue(),
 	}
 
-	flamegraphStack := TreeStack{{node: flamegraph}}
+	flamegraph := &pb.Flamegraph{
+		Root:  flamegraphRoot,
+		Total: flamegraphRoot.Cumulative,
+	}
+
+	flamegraphStack := TreeStack{{node: flamegraphRoot}}
 	steppedInto := it.StepInto()
 	if !steppedInto {
 		return flamegraph, nil
@@ -151,7 +146,7 @@ func generateFlamegraph(locations Locations, it InstantProfileTreeIterator) (*Tr
 				}
 				outerMost, innerMost := locationToTreeNodes(l, cumulative)
 
-				flamegraphStack.Peek().node.AddChild(outerMost)
+				flamegraphStack.Peek().node.Children = append(flamegraphStack.Peek().node.Children, outerMost)
 				flamegraphStack.Push(&TreeStackEntry{
 					node: innerMost,
 				})
@@ -166,28 +161,31 @@ func generateFlamegraph(locations Locations, it InstantProfileTreeIterator) (*Tr
 	return aggregateByFunctionName(flamegraph), nil
 }
 
-func aggregateByFunctionName(fg *TreeNode) *TreeNode {
+func aggregateByFunctionName(fg *pb.Flamegraph) *pb.Flamegraph {
 	it := NewFlamegraphIterator(fg)
-	tree := &TreeNode{
-		Name:     fg.Name,
-		FullName: fg.FullName,
-		Cum:      fg.Cum,
+	tree := &pb.Flamegraph{
+		Total: fg.Total,
+		Root: &pb.FlamegraphNode{
+			Name:       fg.Root.Name,
+			FullName:   fg.Root.FullName,
+			Cumulative: fg.Root.Cumulative,
+		},
 	}
 	if !it.HasMore() {
 		return tree
 	}
-	stack := TreeStack{{node: tree}}
+	stack := TreeStack{{node: tree.Root}}
 
 	for it.HasMore() {
 		if it.NextChild() {
 			node := it.At()
-			cur := &TreeNode{
-				Name:     node.Name,
-				FullName: node.FullName,
-				Cum:      node.Cum,
+			cur := &pb.FlamegraphNode{
+				Name:       node.Name,
+				FullName:   node.FullName,
+				Cumulative: node.Cumulative,
 			}
 			mergeChildren(node, compareByName, equalsByName)
-			stack.Peek().node.AddChild(cur)
+			stack.Peek().node.Children = append(stack.Peek().node.Children, cur)
 
 			steppedInto := it.StepInto()
 			if steppedInto {
@@ -206,7 +204,7 @@ func aggregateByFunctionName(fg *TreeNode) *TreeNode {
 
 // mergeChildren sorts and merges the children of the given node if they are equals (in-place).
 // compare function used for sorting and equals function used for comparing two nodes before merging.
-func mergeChildren(node *TreeNode, compare, equals func(a, b *TreeNode) bool) {
+func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.FlamegraphNode) bool) {
 	if len(node.Children) < 2 {
 		return
 	}
@@ -223,7 +221,7 @@ func mergeChildren(node *TreeNode, compare, equals func(a, b *TreeNode) bool) {
 			// Merge children into the first one
 			aggregatedName := strings.Split(current.Name, " ")[0]
 			current.Name = fmt.Sprintf("%s :0", aggregatedName)
-			current.Cum += next.Cum
+			current.Cumulative += next.Cumulative
 			current.Children = append(current.Children, next.Children...)
 			// Delete merged child
 			node.Children = append(node.Children[:j], node.Children[j+1:]...)
@@ -233,27 +231,27 @@ func mergeChildren(node *TreeNode, compare, equals func(a, b *TreeNode) bool) {
 	}
 }
 
-func compareByName(a, b *TreeNode) bool {
+func compareByName(a, b *pb.FlamegraphNode) bool {
 	// e.g Name: alertmanager.(*Operator).sync .../pkg/alertmanager/operator.go:663
 	return strings.Split(a.Name, " ")[0] <= strings.Split(b.Name, " ")[0]
 }
 
-func equalsByName(a, b *TreeNode) bool {
+func equalsByName(a, b *pb.FlamegraphNode) bool {
 	// e.g Name: alertmanager.(*Operator).sync .../pkg/alertmanager/operator.go:663
 	return strings.Split(a.Name, " ")[0] == strings.Split(b.Name, " ")[0]
 }
 
-func locationToTreeNodes(location *profile.Location, value int64) (outerMost *TreeNode, innerMost *TreeNode) {
+func locationToTreeNodes(location *profile.Location, value int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
 	if len(location.Line) > 0 {
 		outerMost, innerMost = linesToTreeNodes(location.Line, value)
 		return outerMost, innerMost
 	}
 
 	short, full := locationToFuncName(location)
-	n := &TreeNode{
-		Name:     short,
-		FullName: full,
-		Cum:      value,
+	n := &pb.FlamegraphNode{
+		Name:       short,
+		FullName:   full,
+		Cumulative: value,
 	}
 	return n, n
 }
@@ -274,22 +272,22 @@ func locationToFuncName(location *profile.Location) (string, string) {
 
 // linesToTreeNodes turns inlined `lines` into a stack of TreeNode items and
 // returns the outerMost and innerMost items.
-func linesToTreeNodes(lines []profile.Line, value int64) (outerMost *TreeNode, innerMost *TreeNode) {
+func linesToTreeNodes(lines []profile.Line, value int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
 	nameParts := []string{}
 	for i := 0; i < len(lines); i++ {
 		functionNameParts := append(nameParts, lines[i].Function.Name)
 		functionNameParts = append(functionNameParts, fmt.Sprintf("%s:%d", lines[i].Function.Filename, lines[i].Line))
 
-		var children []*TreeNode = nil
+		var children []*pb.FlamegraphNode = nil
 		if i > 0 {
-			children = []*TreeNode{outerMost}
+			children = []*pb.FlamegraphNode{outerMost}
 		}
 		fullName := strings.Join(functionNameParts, " ")
-		outerMost = &TreeNode{
-			Name:     ShortenFunctionName(fullName),
-			FullName: fullName,
-			Children: children,
-			Cum:      value,
+		outerMost = &pb.FlamegraphNode{
+			Name:       ShortenFunctionName(fullName),
+			FullName:   fullName,
+			Children:   children,
+			Cumulative: value,
 		}
 		if i == 0 {
 			innerMost = outerMost
