@@ -508,6 +508,28 @@
       ],
       "default": "ANY"
     },
+    "parcaprofilestoreLabel": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "profilestoreLabelSet": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/parcaprofilestoreLabel"
+          }
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -566,8 +588,43 @@
     "queryLabelsResponse": {
       "type": "object"
     },
+    "queryMetricsSample": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "value": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "queryMetricsSeries": {
+      "type": "object",
+      "properties": {
+        "labelset": {
+          "$ref": "#/definitions/profilestoreLabelSet"
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/queryMetricsSample"
+          }
+        }
+      }
+    },
     "queryQueryRangeResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/queryMetricsSeries"
+          }
+        }
+      }
     },
     "queryQueryResponse": {
       "type": "object",

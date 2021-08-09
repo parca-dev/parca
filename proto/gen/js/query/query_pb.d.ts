@@ -5,6 +5,7 @@ import * as jspb from "google-protobuf";
 import * as google_api_annotations_pb from "../google/api/annotations_pb";
 import * as google_api_timestamp_pb from "../google/api/timestamp_pb";
 import * as google_pprof_profile_pb from "../google/pprof/profile_pb";
+import * as profilestore_profilestore_pb from "../profilestore/profilestore_pb";
 
 export class QueryRangeRequest extends jspb.Message {
   getQuery(): string;
@@ -43,6 +44,11 @@ export namespace QueryRangeRequest {
 }
 
 export class QueryRangeResponse extends jspb.Message {
+  clearSeriesList(): void;
+  getSeriesList(): Array<MetricsSeries>;
+  setSeriesList(value: Array<MetricsSeries>): void;
+  addSeries(value?: MetricsSeries, index?: number): MetricsSeries;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QueryRangeResponse.AsObject;
   static toObject(includeInstance: boolean, msg: QueryRangeResponse): QueryRangeResponse.AsObject;
@@ -55,6 +61,61 @@ export class QueryRangeResponse extends jspb.Message {
 
 export namespace QueryRangeResponse {
   export type AsObject = {
+    seriesList: Array<MetricsSeries.AsObject>,
+  }
+}
+
+export class MetricsSeries extends jspb.Message {
+  hasLabelset(): boolean;
+  clearLabelset(): void;
+  getLabelset(): profilestore_profilestore_pb.LabelSet | undefined;
+  setLabelset(value?: profilestore_profilestore_pb.LabelSet): void;
+
+  clearSamplesList(): void;
+  getSamplesList(): Array<MetricsSample>;
+  setSamplesList(value: Array<MetricsSample>): void;
+  addSamples(value?: MetricsSample, index?: number): MetricsSample;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MetricsSeries.AsObject;
+  static toObject(includeInstance: boolean, msg: MetricsSeries): MetricsSeries.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MetricsSeries, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MetricsSeries;
+  static deserializeBinaryFromReader(message: MetricsSeries, reader: jspb.BinaryReader): MetricsSeries;
+}
+
+export namespace MetricsSeries {
+  export type AsObject = {
+    labelset?: profilestore_profilestore_pb.LabelSet.AsObject,
+    samplesList: Array<MetricsSample.AsObject>,
+  }
+}
+
+export class MetricsSample extends jspb.Message {
+  hasTimestamp(): boolean;
+  clearTimestamp(): void;
+  getTimestamp(): google_api_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_api_timestamp_pb.Timestamp): void;
+
+  getValue(): number;
+  setValue(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MetricsSample.AsObject;
+  static toObject(includeInstance: boolean, msg: MetricsSample): MetricsSample.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MetricsSample, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MetricsSample;
+  static deserializeBinaryFromReader(message: MetricsSample, reader: jspb.BinaryReader): MetricsSample;
+}
+
+export namespace MetricsSample {
+  export type AsObject = {
+    timestamp?: google_api_timestamp_pb.Timestamp.AsObject,
+    value: number,
   }
 }
 
