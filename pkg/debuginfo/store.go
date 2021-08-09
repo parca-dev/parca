@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	debuginfopb "github.com/parca-dev/parca/proto/debuginfo"
+	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"google.golang.org/grpc/codes"

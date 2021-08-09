@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package examplecom;
+
+message ExtensionMessage {
+  optional string my_extension_string = 1;
+}
+
+message MyBase {
+  required string my_base_string = 1;
+  extensions 1000 to 2000;
+}
+
+extend MyBase {
+  optional int32 my_extension_int32 = 1000;
+  optional ExtensionMessage my_extension_message = 1001;
+}

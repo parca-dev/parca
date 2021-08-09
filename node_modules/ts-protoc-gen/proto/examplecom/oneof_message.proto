@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package examplecom;
+
+import "proto/othercom/external_child_message.proto";
+
+message OneOfMessage {
+    message InternalChildMessage {
+        string my_string = 1;
+    }
+
+    oneof group {
+        InternalChildMessage internal_child_message = 1;
+        othercom.ExternalChildMessage external_child_message = 2;
+        string my_string = 3;
+        int64 my_int64 = 4;
+    }
+}
+
+message CamelCasedOneOfMessage {
+    oneof camelCasedMessage {
+        int32 anInt = 1;
+        string theString = 2;
+    }
+}
+
+message SnakeCasedOneOfMessage {
+    oneof snake_cased_message {
+        int32 anint = 1;
+        string theString = 2;
+    }
+}

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package examplecom;
+
+import "proto/othercom/external_enum.proto";
+
+message EnumMessage {
+    enum InternalEnum {
+        DEFAULT = 0;
+        FIRST = 1;
+        SECOND = 2;
+        Third = 3;  // protoc will convert to ALL_CAPS.
+    }
+
+    InternalEnum internal_enum = 1;
+    repeated InternalEnum internal_enums = 2;
+
+    othercom.ExternalEnum external_enum = 3;
+    repeated othercom.ExternalEnum external_enums = 4;
+}

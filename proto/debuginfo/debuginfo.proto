@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package parca.api;
-option go_package = "github.com/parca-dev/parca/proto/debuginfo";
+package parca.debuginfo;
+option go_package = "github.com/parca-dev/parca/proto/gen/go/debuginfo";
 
 service DebugInfo {
   rpc Exists(DebugInfoExistsRequest) returns (DebugInfoExistsResponse) {}

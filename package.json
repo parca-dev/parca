@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "ts-protoc-gen": "^0.15.0"
+  }
+}
