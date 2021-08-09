@@ -1,10 +1,12 @@
 .PHONY: clean
 clean:
-	rm parca
+	rm -r bin 
 
 .PHONY: go/bin
 go/bin:
-	go build ./cmd/parca
+	mkdir -p ./bin
+	go build -o bin/ ./cmd/parca 
+	cp parca.yaml bin/
 
 .PHONY: proto/lint
 proto/lint:
