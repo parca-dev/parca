@@ -5,6 +5,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/dgraph-io/sroar"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.uber.org/atomic"
 )
@@ -13,6 +14,7 @@ type Head struct {
 	minTime, maxTime atomic.Int64 // Current min and max of the samples included in the head.
 	lastSeriesID     atomic.Uint64
 	numSeries        atomic.Uint64
+	postings         map[string]map[string]*sroar.Bitmap
 
 	seriesMtx *sync.RWMutex
 	series    map[string]*MemSeries
@@ -55,7 +57,19 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 	h.series[labelString] = s
 	h.numSeries.Inc()
 
-	// TODO add postings here
+	if h.postings == nil {
+		h.postings = map[string]map[string]*sroar.Bitmap{}
+	}
+	for _, l := range lset {
+		if h.postings[l.Name] == nil {
+			h.postings[l.Name] = map[string]*sroar.Bitmap{}
+		}
+		if h.postings[l.Name][l.Value] == nil {
+			h.postings[l.Name][l.Value] = sroar.NewBitmap()
+		}
+		h.postings[l.Name][l.Value].Set(s.id)
+	}
+
 	return s
 }
 
@@ -134,10 +148,26 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 	q.head.seriesMtx.RLock()
 	defer q.head.seriesMtx.RUnlock()
 
-	// TODO: filter series via postings instead of reading directly and unfiltered.
-	ss := make([]Series, 0, len(q.head.series))
-	for _, series := range q.head.series {
-		ss = append(ss, series)
+	ids := map[uint64]struct{}{}
+	for _, m := range ms {
+		if q.head.postings == nil || q.head.postings[m.Name] == nil || q.head.postings[m.Name][m.Value] == nil {
+			continue
+		}
+
+		it := q.head.postings[m.Name][m.Value].NewIterator()
+		for it.HasNext() {
+			ids[it.Next()] = struct{}{}
+		}
+	}
+
+	// TODO: Improve not looping over all ids and within over all series...
+	ss := make([]Series, 0, len(ids))
+	for id := range ids {
+		for _, series := range q.head.series {
+			if series.id == id {
+				ss = append(ss, series)
+			}
+		}
 	}
 
 	return &SliceSeriesSet{
