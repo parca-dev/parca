@@ -1,8 +1,0 @@
-syntax = "proto2";
-
-package examplecom;
-
-message GetterNameConflictMessage {
-    optional string extension = 1;
-    optional bytes js_pb_message_id = 2;
-}
