@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+enum OrphanEnum {
+    UNKNOWN = 0;
+    ONE = 1;
+    TWO = 2;
+}
+
+message OrphanMapMessage {
+  map<string, int64> primitive_ints = 1;
+}
+
+message OrphanMessage {
+    string my_string = 1;
+    bool my_bool = 2;
+    OrphanEnum my_enum = 3;
+}
+
+message OrphanUnaryRequest {
+    int64 some_int64 = 1;
+}
+
+message OrphanStreamRequest {
+    string some_string = 1;
+}
+
+service OrphanService {
+    rpc DoUnary(OrphanUnaryRequest) returns (OrphanMessage) {}
+    rpc DoStream(OrphanStreamRequest) returns (stream OrphanMessage) {}
+}

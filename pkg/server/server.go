@@ -11,6 +11,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -83,10 +84,17 @@ func ListenAndServe(ctx context.Context, logger log.Logger, port string, registe
 }
 
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+	wrappedGrpc := grpcweb.WrapServer(grpcServer)
+
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
 		} else {
+			if wrappedGrpc.IsGrpcWebRequest(r) {
+				wrappedGrpc.ServeHTTP(w, r)
+				return
+			}
+
 			otherHandler.ServeHTTP(w, r)
 		}
 	}), &http2.Server{})

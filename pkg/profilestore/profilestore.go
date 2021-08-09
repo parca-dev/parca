@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	profilestorepb "github.com/parca-dev/parca/proto/profilestore"
+	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	"github.com/parca-dev/parca/storage"
 )
 

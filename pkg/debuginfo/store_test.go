@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/go-kit/kit/log"
-	debuginfopb "github.com/parca-dev/parca/proto/debuginfo"
+	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/objstore/filesystem"

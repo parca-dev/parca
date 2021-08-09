@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/pprof/profile"
 
-	pb "github.com/parca-dev/parca/proto/query"
+	pb "github.com/parca-dev/parca/proto/gen/go/query"
 )
 
 type TreeStackEntry struct {

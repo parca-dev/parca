@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package othercom;
+
+enum ExternalEnum {
+    DEFAULT = 0;
+    FIRST = 1;
+    SECOND = 2;
+}

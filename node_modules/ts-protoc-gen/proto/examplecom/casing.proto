@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package examplecom;
+
+message CasingMessage {
+    string TitleCase = 1;
+    string camelCase = 2;
+    string snake_case = 3;
+    string _leadingUnderscoreCamelCase = 4;
+    string _LeadingUnderscoreTitleCase = 5;
+}

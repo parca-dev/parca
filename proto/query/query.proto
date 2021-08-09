@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package parca.api;
-option go_package = "github.com/parca-dev/parca/proto/api";
+package parca.query;
+option go_package = "github.com/parca-dev/parca/proto/gen/go/query";
 
 import "google/api/annotations.proto";
 import "google/api/timestamp.proto";

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	pb "github.com/parca-dev/parca/proto/query"
+	pb "github.com/parca-dev/parca/proto/gen/go/query"
 	"github.com/parca-dev/parca/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"

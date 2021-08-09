@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"io"
 
-	debuginfopb "github.com/parca-dev/parca/proto/debuginfo"
+	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
 	"google.golang.org/grpc"
 )
 
