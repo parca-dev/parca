@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func Test_QueryRange(t *testing.T) {
+func Test_QueryRange_EmptyStore(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB()
 	q := New(db, nil)
