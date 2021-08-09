@@ -96,6 +96,10 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 
 // Query issues a instant query against the storage
 func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	switch *req.Mode {
 	case pb.QueryRequest_SINGLE:
 		s := req.GetSingle()

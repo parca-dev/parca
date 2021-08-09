@@ -16,6 +16,80 @@ func (r *QueryRangeRequest) Validate() error {
 	)
 }
 
+// Validate the QueryRequest
+func (r *QueryRequest) Validate() error {
+	return validation.ValidateStruct(r,
+		validation.Field(&r.Mode, validation.Required, isEnum(QueryRequest_Mode_name)),
+		validation.Field(&r.Options, validation.Required, optionMatchesMode(r.Mode)),
+		validation.Field(&r.ReportType, validation.Required, isEnum(QueryRequest_ReportType_name)),
+	)
+}
+
+func optionMatchesMode(mode *QueryRequest_Mode) OptionMatchesRule {
+	return OptionMatchesRule{
+		mode: mode,
+	}
+}
+
+// OptionMatchesRule ensure the options match the requested mode
+type OptionMatchesRule struct {
+	mode *QueryRequest_Mode
+}
+
+// Validate the option matches mode
+func (o OptionMatchesRule) Validate(v interface{}) error {
+	option, ok := v.(isQueryRequest_Options)
+	if !ok {
+		return fmt.Errorf("invalid value")
+	}
+
+	switch *o.mode {
+	case QueryRequest_SINGLE:
+		if _, ok := option.(*QueryRequest_Single_); !ok {
+			return fmt.Errorf("invalid option for mode")
+		}
+		return nil
+	case QueryRequest_DIFF:
+		if _, ok := option.(*QueryRequest_Diff_); !ok {
+			return fmt.Errorf("invalid option for mode")
+		}
+		return nil
+	case QueryRequest_MERGE:
+		if _, ok := option.(*QueryRequest_Merge_); !ok {
+			return fmt.Errorf("invalid option for mode")
+		}
+		return nil
+	default:
+		return fmt.Errorf("invalid value")
+	}
+}
+
+func isEnum(enum map[int32]string) EnumRule {
+	return EnumRule{
+		enum: enum,
+	}
+}
+
+// EnumRule checks that the provided value is in the enum map
+type EnumRule struct {
+	enum map[int32]string
+}
+
+// Validate the enum
+func (e EnumRule) Validate(v interface{}) error {
+	i, ok := v.(*int32)
+	if !ok {
+		return fmt.Errorf("invalid value")
+	}
+
+	_, ok = e.enum[*i]
+	if !ok {
+		return fmt.Errorf("invalid value")
+	}
+
+	return nil
+}
+
 func isAfter(t *timestamppb.Timestamp) AfterRule {
 	return AfterRule{
 		After: t,

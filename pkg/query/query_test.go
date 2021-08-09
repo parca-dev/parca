@@ -168,9 +168,62 @@ func Test_QueryRange_InputValidation(t *testing.T) {
 
 	q := New(nil, nil)
 
+	t.Parallel()
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			resp, err := q.QueryRange(ctx, test.req)
+			require.Error(t, err)
+			require.Empty(t, resp)
+			require.Equal(t, codes.InvalidArgument, status.Code(err))
+		})
+	}
+}
+
+func Test_Query_InputValidation(t *testing.T) {
+	ctx := context.Background()
+
+	invalidMode := pb.QueryRequest_Mode(1000)
+	invalidReportType := pb.QueryRequest_ReportType(1000)
+
+	tests := map[string]struct {
+		req *pb.QueryRequest
+	}{
+		"Invalid mode": {
+			req: &pb.QueryRequest{
+				Mode:       &invalidMode,
+				Options:    &pb.QueryRequest_Single_{},
+				ReportType: pb.QueryRequest_Flamegraph.Enum(),
+			},
+		},
+		"Invalid report type": {
+			req: &pb.QueryRequest{
+				Mode:       pb.QueryRequest_SINGLE.Enum(),
+				Options:    &pb.QueryRequest_Single_{},
+				ReportType: &invalidReportType,
+			},
+		},
+		"option doesn't match mode": {
+			req: &pb.QueryRequest{
+				Mode:       pb.QueryRequest_SINGLE.Enum(),
+				Options:    &pb.QueryRequest_Merge_{},
+				ReportType: pb.QueryRequest_Flamegraph.Enum(),
+			},
+		},
+		"option not provided": {
+			req: &pb.QueryRequest{
+				Mode:       pb.QueryRequest_SINGLE.Enum(),
+				Options:    nil,
+				ReportType: pb.QueryRequest_Flamegraph.Enum(),
+			},
+		},
+	}
+
+	q := New(nil, nil)
+
+	t.Parallel()
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			resp, err := q.Query(ctx, test.req)
 			require.Error(t, err)
 			require.Empty(t, resp)
 			require.Equal(t, codes.InvalidArgument, status.Code(err))
