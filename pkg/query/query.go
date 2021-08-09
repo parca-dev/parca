@@ -39,6 +39,10 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 	start := req.Start.AsTime()
 	end := req.Start.AsTime()
 
+	if end.Before(start) {
+		return nil, status.Error(codes.InvalidArgument, "start timestamp must be before end")
+	}
+
 	// Timestamps don't have to match exactly and staleness kicks in within 5
 	// minutes of no samples, so we need to search the range of -5min to +5min
 	// for possible samples.
@@ -74,7 +78,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		}
 		err := i.Err()
 		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, "failed to iterate")
+			return nil, status.Error(codes.Internal, "failed to iterate")
 		}
 
 		res.Series = append(res.Series, metricsSeries)
@@ -82,6 +86,9 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		if req.Limit != 0 && len(res.Series) == int(req.Limit) {
 			break
 		}
+	}
+	if err := set.Err(); err != nil {
+		return nil, status.Error(codes.Internal, "failed to iterate")
 	}
 
 	return res, nil
