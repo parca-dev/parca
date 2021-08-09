@@ -13,7 +13,7 @@ proto/lint:
 .PHONY: proto/generate
 proto/generate:
 	#docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf generate --path=./proto/api
-	buf generate --path=./proto/api
+	buf generate --path=./proto/query
 	buf generate --path=./proto/profilestore
 	buf generate --path=./proto/debuginfo
 	buf generate --path=./proto/google/pprof

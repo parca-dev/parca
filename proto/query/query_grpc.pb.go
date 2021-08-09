@@ -14,10 +14,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// APIClient is the client API for API service.
+// QueryClient is the client API for Query service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type APIClient interface {
+type QueryClient interface {
 	QueryRange(ctx context.Context, in *QueryRangeRequest, opts ...grpc.CallOption) (*QueryRangeResponse, error)
 	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error)
 	Series(ctx context.Context, in *SeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
@@ -27,81 +27,81 @@ type APIClient interface {
 	Targets(ctx context.Context, in *TargetsRequest, opts ...grpc.CallOption) (*TargetsResponse, error)
 }
 
-type aPIClient struct {
+type queryClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewAPIClient(cc grpc.ClientConnInterface) APIClient {
-	return &aPIClient{cc}
+func NewQueryClient(cc grpc.ClientConnInterface) QueryClient {
+	return &queryClient{cc}
 }
 
-func (c *aPIClient) QueryRange(ctx context.Context, in *QueryRangeRequest, opts ...grpc.CallOption) (*QueryRangeResponse, error) {
+func (c *queryClient) QueryRange(ctx context.Context, in *QueryRangeRequest, opts ...grpc.CallOption) (*QueryRangeResponse, error) {
 	out := new(QueryRangeResponse)
-	err := c.cc.Invoke(ctx, "/parca.api.API/QueryRange", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/parca.api.Query/QueryRange", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *aPIClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error) {
+func (c *queryClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error) {
 	out := new(QueryResponse)
-	err := c.cc.Invoke(ctx, "/parca.api.API/Query", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/parca.api.Query/Query", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *aPIClient) Series(ctx context.Context, in *SeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error) {
+func (c *queryClient) Series(ctx context.Context, in *SeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error) {
 	out := new(SeriesResponse)
-	err := c.cc.Invoke(ctx, "/parca.api.API/Series", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/parca.api.Query/Series", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *aPIClient) Labels(ctx context.Context, in *LabelsRequest, opts ...grpc.CallOption) (*LabelsResponse, error) {
+func (c *queryClient) Labels(ctx context.Context, in *LabelsRequest, opts ...grpc.CallOption) (*LabelsResponse, error) {
 	out := new(LabelsResponse)
-	err := c.cc.Invoke(ctx, "/parca.api.API/Labels", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/parca.api.Query/Labels", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *aPIClient) Values(ctx context.Context, in *ValuesRequest, opts ...grpc.CallOption) (*ValuesResponse, error) {
+func (c *queryClient) Values(ctx context.Context, in *ValuesRequest, opts ...grpc.CallOption) (*ValuesResponse, error) {
 	out := new(ValuesResponse)
-	err := c.cc.Invoke(ctx, "/parca.api.API/Values", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/parca.api.Query/Values", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *aPIClient) Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error) {
+func (c *queryClient) Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error) {
 	out := new(ConfigResponse)
-	err := c.cc.Invoke(ctx, "/parca.api.API/Config", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/parca.api.Query/Config", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *aPIClient) Targets(ctx context.Context, in *TargetsRequest, opts ...grpc.CallOption) (*TargetsResponse, error) {
+func (c *queryClient) Targets(ctx context.Context, in *TargetsRequest, opts ...grpc.CallOption) (*TargetsResponse, error) {
 	out := new(TargetsResponse)
-	err := c.cc.Invoke(ctx, "/parca.api.API/Targets", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/parca.api.Query/Targets", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// APIServer is the server API for API service.
-// All implementations should embed UnimplementedAPIServer
+// QueryServer is the server API for Query service.
+// All implementations should embed UnimplementedQueryServer
 // for forward compatibility
-type APIServer interface {
+type QueryServer interface {
 	QueryRange(context.Context, *QueryRangeRequest) (*QueryRangeResponse, error)
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
 	Series(context.Context, *SeriesRequest) (*SeriesResponse, error)
@@ -111,205 +111,205 @@ type APIServer interface {
 	Targets(context.Context, *TargetsRequest) (*TargetsResponse, error)
 }
 
-// UnimplementedAPIServer should be embedded to have forward compatible implementations.
-type UnimplementedAPIServer struct {
+// UnimplementedQueryServer should be embedded to have forward compatible implementations.
+type UnimplementedQueryServer struct {
 }
 
-func (UnimplementedAPIServer) QueryRange(context.Context, *QueryRangeRequest) (*QueryRangeResponse, error) {
+func (UnimplementedQueryServer) QueryRange(context.Context, *QueryRangeRequest) (*QueryRangeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryRange not implemented")
 }
-func (UnimplementedAPIServer) Query(context.Context, *QueryRequest) (*QueryResponse, error) {
+func (UnimplementedQueryServer) Query(context.Context, *QueryRequest) (*QueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Query not implemented")
 }
-func (UnimplementedAPIServer) Series(context.Context, *SeriesRequest) (*SeriesResponse, error) {
+func (UnimplementedQueryServer) Series(context.Context, *SeriesRequest) (*SeriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Series not implemented")
 }
-func (UnimplementedAPIServer) Labels(context.Context, *LabelsRequest) (*LabelsResponse, error) {
+func (UnimplementedQueryServer) Labels(context.Context, *LabelsRequest) (*LabelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Labels not implemented")
 }
-func (UnimplementedAPIServer) Values(context.Context, *ValuesRequest) (*ValuesResponse, error) {
+func (UnimplementedQueryServer) Values(context.Context, *ValuesRequest) (*ValuesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Values not implemented")
 }
-func (UnimplementedAPIServer) Config(context.Context, *ConfigRequest) (*ConfigResponse, error) {
+func (UnimplementedQueryServer) Config(context.Context, *ConfigRequest) (*ConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Config not implemented")
 }
-func (UnimplementedAPIServer) Targets(context.Context, *TargetsRequest) (*TargetsResponse, error) {
+func (UnimplementedQueryServer) Targets(context.Context, *TargetsRequest) (*TargetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Targets not implemented")
 }
 
-// UnsafeAPIServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to APIServer will
+// UnsafeQueryServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to QueryServer will
 // result in compilation errors.
-type UnsafeAPIServer interface {
-	mustEmbedUnimplementedAPIServer()
+type UnsafeQueryServer interface {
+	mustEmbedUnimplementedQueryServer()
 }
 
-func RegisterAPIServer(s grpc.ServiceRegistrar, srv APIServer) {
-	s.RegisterService(&API_ServiceDesc, srv)
+func RegisterQueryServer(s grpc.ServiceRegistrar, srv QueryServer) {
+	s.RegisterService(&Query_ServiceDesc, srv)
 }
 
-func _API_QueryRange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Query_QueryRange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryRangeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(APIServer).QueryRange(ctx, in)
+		return srv.(QueryServer).QueryRange(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/parca.api.API/QueryRange",
+		FullMethod: "/parca.api.Query/QueryRange",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).QueryRange(ctx, req.(*QueryRangeRequest))
+		return srv.(QueryServer).QueryRange(ctx, req.(*QueryRangeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_Query_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Query_Query_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(APIServer).Query(ctx, in)
+		return srv.(QueryServer).Query(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/parca.api.API/Query",
+		FullMethod: "/parca.api.Query/Query",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).Query(ctx, req.(*QueryRequest))
+		return srv.(QueryServer).Query(ctx, req.(*QueryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_Series_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Query_Series_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SeriesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(APIServer).Series(ctx, in)
+		return srv.(QueryServer).Series(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/parca.api.API/Series",
+		FullMethod: "/parca.api.Query/Series",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).Series(ctx, req.(*SeriesRequest))
+		return srv.(QueryServer).Series(ctx, req.(*SeriesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_Labels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Query_Labels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LabelsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(APIServer).Labels(ctx, in)
+		return srv.(QueryServer).Labels(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/parca.api.API/Labels",
+		FullMethod: "/parca.api.Query/Labels",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).Labels(ctx, req.(*LabelsRequest))
+		return srv.(QueryServer).Labels(ctx, req.(*LabelsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_Values_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Query_Values_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ValuesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(APIServer).Values(ctx, in)
+		return srv.(QueryServer).Values(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/parca.api.API/Values",
+		FullMethod: "/parca.api.Query/Values",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).Values(ctx, req.(*ValuesRequest))
+		return srv.(QueryServer).Values(ctx, req.(*ValuesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_Config_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Query_Config_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(APIServer).Config(ctx, in)
+		return srv.(QueryServer).Config(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/parca.api.API/Config",
+		FullMethod: "/parca.api.Query/Config",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).Config(ctx, req.(*ConfigRequest))
+		return srv.(QueryServer).Config(ctx, req.(*ConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _API_Targets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Query_Targets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TargetsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(APIServer).Targets(ctx, in)
+		return srv.(QueryServer).Targets(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/parca.api.API/Targets",
+		FullMethod: "/parca.api.Query/Targets",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(APIServer).Targets(ctx, req.(*TargetsRequest))
+		return srv.(QueryServer).Targets(ctx, req.(*TargetsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// API_ServiceDesc is the grpc.ServiceDesc for API service.
+// Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var API_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "parca.api.API",
-	HandlerType: (*APIServer)(nil),
+var Query_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "parca.api.Query",
+	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "QueryRange",
-			Handler:    _API_QueryRange_Handler,
+			Handler:    _Query_QueryRange_Handler,
 		},
 		{
 			MethodName: "Query",
-			Handler:    _API_Query_Handler,
+			Handler:    _Query_Query_Handler,
 		},
 		{
 			MethodName: "Series",
-			Handler:    _API_Series_Handler,
+			Handler:    _Query_Series_Handler,
 		},
 		{
 			MethodName: "Labels",
-			Handler:    _API_Labels_Handler,
+			Handler:    _Query_Labels_Handler,
 		},
 		{
 			MethodName: "Values",
-			Handler:    _API_Values_Handler,
+			Handler:    _Query_Values_Handler,
 		},
 		{
 			MethodName: "Config",
-			Handler:    _API_Config_Handler,
+			Handler:    _Query_Config_Handler,
 		},
 		{
 			MethodName: "Targets",
-			Handler:    _API_Targets_Handler,
+			Handler:    _Query_Targets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/api.proto",
+	Metadata: "query/query.proto",
 }

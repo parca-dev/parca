@@ -12,20 +12,36 @@ import (
 	"github.com/go-kit/log/level"
 	debuginfopb "github.com/parca-dev/parca/proto/debuginfo"
 	"github.com/thanos-io/thanos/pkg/objstore"
+	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gopkg.in/yaml.v2"
 )
+
+type Config struct {
+	Bucket *client.BucketConfig `yaml:"bucket"`
+}
 
 type Store struct {
 	bucket objstore.Bucket
 	logger log.Logger
 }
 
-func NewStore(logger log.Logger, bucket objstore.Bucket) *Store {
+func NewStore(logger log.Logger, config *Config) (*Store, error) {
+	cfg, err := yaml.Marshal(config.Bucket)
+	if err != nil {
+		return nil, fmt.Errorf("marshal content of object storage configuration: %w", err)
+	}
+
+	bucket, err := client.NewBucket(logger, cfg, nil, "parca")
+	if err != nil {
+		return nil, fmt.Errorf("instantiate object storage: %w", err)
+	}
+
 	return &Store{
 		logger: logger,
 		bucket: bucket,
-	}
+	}, nil
 }
 
 func validateId(id string) error {

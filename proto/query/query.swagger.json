@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/api.proto",
+    "title": "query/query.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "API"
+      "name": "Query"
     }
   ],
   "consumes": [
@@ -18,7 +18,7 @@
   "paths": {
     "/profiles/labels": {
       "get": {
-        "operationId": "API_Labels",
+        "operationId": "Query_Labels",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -60,13 +60,13 @@
           }
         ],
         "tags": [
-          "API"
+          "Query"
         ]
       }
     },
     "/profiles/labels/{name}/values": {
       "get": {
-        "operationId": "API_Values",
+        "operationId": "Query_Values",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -114,13 +114,13 @@
           }
         ],
         "tags": [
-          "API"
+          "Query"
         ]
       }
     },
     "/profiles/query": {
       "get": {
-        "operationId": "API_Query",
+        "operationId": "Query_Query",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -246,16 +246,26 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "reportType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "Flamegraph"
+            ],
+            "default": "Flamegraph"
           }
         ],
         "tags": [
-          "API"
+          "Query"
         ]
       }
     },
     "/profiles/query_range": {
       "get": {
-        "operationId": "API_QueryRange",
+        "operationId": "Query_QueryRange",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -299,13 +309,13 @@
           }
         ],
         "tags": [
-          "API"
+          "Query"
         ]
       }
     },
     "/profiles/series": {
       "get": {
-        "operationId": "API_Series",
+        "operationId": "Query_Series",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -347,13 +357,13 @@
           }
         ],
         "tags": [
-          "API"
+          "Query"
         ]
       }
     },
     "/status/config": {
       "get": {
-        "operationId": "API_Config",
+        "operationId": "Query_Config",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -369,13 +379,13 @@
           }
         },
         "tags": [
-          "API"
+          "Query"
         ]
       }
     },
     "/targets": {
       "get": {
-        "operationId": "API_Targets",
+        "operationId": "Query_Targets",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -405,7 +415,7 @@
           }
         ],
         "tags": [
-          "API"
+          "Query"
         ]
       }
     }
@@ -470,6 +480,13 @@
         }
       }
     },
+    "QueryRequestReportType": {
+      "type": "string",
+      "enum": [
+        "Flamegraph"
+      ],
+      "default": "Flamegraph"
+    },
     "QueryRequestSingle": {
       "type": "object",
       "properties": {
@@ -494,6 +511,46 @@
     "apiConfigResponse": {
       "type": "object"
     },
+    "apiFlamegraph": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "$ref": "#/definitions/apiFlamegraphNode"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "unit": {
+          "type": "string"
+        }
+      }
+    },
+    "apiFlamegraphNode": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64"
+        },
+        "diff": {
+          "type": "string",
+          "format": "int64"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiFlamegraphNode"
+          }
+        }
+      }
+    },
     "apiLabelsResponse": {
       "type": "object"
     },
@@ -501,7 +558,12 @@
       "type": "object"
     },
     "apiQueryResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "flamegraph": {
+          "$ref": "#/definitions/apiFlamegraph"
+        }
+      }
     },
     "apiSeriesResponse": {
       "type": "object"

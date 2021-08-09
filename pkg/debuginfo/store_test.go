@@ -16,19 +16,35 @@ package debuginfo
 import (
 	"bytes"
 	"context"
+	"io"
+	"io/ioutil"
 	"net"
+	"os"
 	"testing"
 
 	"github.com/go-kit/kit/log"
 	debuginfopb "github.com/parca-dev/parca/proto/debuginfo"
 	"github.com/stretchr/testify/require"
-	"github.com/thanos-io/thanos/pkg/objstore"
+	"github.com/thanos-io/thanos/pkg/objstore/client"
+	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
 	"google.golang.org/grpc"
 )
 
 func TestStore(t *testing.T) {
-	bucket := objstore.NewInMemBucket()
-	s := NewStore(log.NewNopLogger(), bucket)
+	dir, err := ioutil.TempDir("", "parca-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	s, err := NewStore(log.NewNopLogger(), &Config{
+		Bucket: &client.BucketConfig{
+			Type: client.FILESYSTEM,
+			Config: filesystem.Config{
+				Directory: dir,
+			},
+		},
+	})
+	require.NoError(t, err)
+
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
@@ -56,18 +72,21 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(3072), size)
 
-	obj, ok := bucket.Objects()["abcd/debuginfo"]
-	require.True(t, ok)
-	require.Equal(t, 3072, len(obj))
+	obj, err := s.bucket.Get(context.Background(), "abcd/debuginfo")
+	require.NoError(t, err)
+
+	content, err := io.ReadAll(obj)
+	require.NoError(t, err)
+	require.Equal(t, 3072, len(content))
 
 	for i := 0; i < 1024; i++ {
-		require.Equal(t, []byte("a")[0], obj[i])
+		require.Equal(t, []byte("a")[0], content[i])
 	}
 	for i := 0; i < 1024; i++ {
-		require.Equal(t, []byte("b")[0], obj[i+1024])
+		require.Equal(t, []byte("b")[0], content[i+1024])
 	}
 	for i := 0; i < 1024; i++ {
-		require.Equal(t, []byte("c")[0], obj[i+2048])
+		require.Equal(t, []byte("c")[0], content[i+2048])
 	}
 
 	exists, err := c.Exists(context.Background(), "abcd")

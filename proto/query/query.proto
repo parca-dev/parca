@@ -7,7 +7,7 @@ import "google/api/annotations.proto";
 import "google/api/timestamp.proto";
 import "google/pprof/profile.proto";
 
-service API {
+service Query {
     rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
         option (google.api.http) = {
             get: "/profiles/query_range"
@@ -101,8 +101,33 @@ message QueryRequest{
         Merge  merge  = 3;
         Single single = 4;
     }
+
+    enum ReportType {
+        Flamegraph = 0;
+    }
+
+    optional ReportType report_type = 5;
 }
-message QueryResponse{}
+
+message Flamegraph {
+    FlamegraphNode root = 1;
+    int64 total = 2;
+    string unit = 3;
+}
+
+message FlamegraphNode {
+    string name = 1;
+    string fullName = 2;
+    int64 cumulative = 3;
+    int64 diff = 4;
+    repeated FlamegraphNode children = 5;
+}
+
+message QueryResponse{
+    oneof Report {
+        Flamegraph flamegraph = 5;
+    }
+}
 
 message SeriesRequest{
     repeated string match           = 1;
