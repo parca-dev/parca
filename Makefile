@@ -1,12 +1,21 @@
 .PHONY: clean
 clean:
-	rm -r bin 
+	rm -r bin
+	rm -r ui/dist
+	rm -r ui/.next
+
+.PHONY: build
+build: ui go/bin
 
 .PHONY: go/bin
 go/bin:
 	mkdir -p ./bin
 	go build -o bin/ ./cmd/parca 
 	cp parca.yaml bin/
+
+.PHONY: ui
+ui:
+	cd ui && yarn install && yarn export
 
 .PHONY: proto/lint
 proto/lint:

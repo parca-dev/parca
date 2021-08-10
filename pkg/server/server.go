@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"io/fs"
 	"net/http"
 	"strings"
 
@@ -12,6 +14,7 @@ import (
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/parca-dev/parca/ui"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -80,7 +83,16 @@ func ListenAndServe(ctx context.Context, logger log.Logger, port string, registe
 	}
 	reflection.Register(srv)
 
-	return http.ListenAndServe(port, grpcHandlerFunc(srv, mux))
+	uiFS, err := fs.Sub(ui.FS, "dist")
+	if err != nil {
+		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
+	}
+
+	return http.ListenAndServe(
+		port,
+		grpcHandlerFunc(srv,
+			fallbackNotFound(mux,
+				http.FileServer(http.FS(uiFS)))))
 }
 
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
