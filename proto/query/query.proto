@@ -6,6 +6,7 @@ option go_package = "github.com/parca-dev/parca/proto/gen/go/query";
 import "google/api/annotations.proto";
 import "google/api/timestamp.proto";
 import "google/pprof/profile.proto";
+import "profilestore/profilestore.proto";
 
 service Query {
     rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
@@ -56,9 +57,22 @@ message QueryRangeRequest{
 
     google.protobuf.Timestamp start = 2;
     google.protobuf.Timestamp end   = 3;
-    string limit                    = 4;
+    uint32 limit                    = 4;
 }
-message QueryRangeResponse{}
+
+message QueryRangeResponse{
+    repeated MetricsSeries series = 1;
+}
+
+message MetricsSeries {
+    parca.profilestore.LabelSet labelset = 1;
+    repeated MetricsSample samples = 2;
+}
+
+message MetricsSample {
+    google.protobuf.Timestamp timestamp = 1;
+    int64 value = 2;
+}
 
 message QueryRequest{
     enum Mode {

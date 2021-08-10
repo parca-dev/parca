@@ -4,12 +4,15 @@ import (
 	"context"
 	"time"
 
+	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	pb "github.com/parca-dev/parca/proto/gen/go/query"
 	"github.com/parca-dev/parca/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
+	"github.com/prometheus/prometheus/promql/parser"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Query is the read api interface for parca
@@ -19,10 +22,7 @@ type Query struct {
 	metaStore storage.ProfileMetaStore
 }
 
-func New(
-	queryable storage.Queryable,
-	metaStore storage.ProfileMetaStore,
-) *Query {
+func New(queryable storage.Queryable, metaStore storage.ProfileMetaStore) *Query {
 	return &Query{
 		queryable: queryable,
 		metaStore: metaStore,
@@ -31,11 +31,75 @@ func New(
 
 // QueryRange issues a range query against the storage
 func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.QueryRangeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
+	if err := req.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	sel, err := parser.ParseMetricSelector(req.Query)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+	}
+
+	start := req.Start.AsTime()
+	end := req.Start.AsTime()
+
+	// Timestamps don't have to match exactly and staleness kicks in within 5
+	// minutes of no samples, so we need to search the range of -5min to +5min
+	// for possible samples.
+	query := q.queryable.Querier(
+		ctx,
+		timestamp.FromTime(start),
+		timestamp.FromTime(end),
+	)
+	set := query.Select(nil, sel...)
+	res := &pb.QueryRangeResponse{}
+	for set.Next() {
+		series := set.At()
+
+		labels := series.Labels()
+		metricsSeries := &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: make([]*profilestorepb.Label, 0, len(labels))}}
+		for _, l := range labels {
+			metricsSeries.Labelset.Labels = append(metricsSeries.Labelset.Labels, &profilestorepb.Label{
+				Name:  l.Name,
+				Value: l.Value,
+			})
+		}
+
+		i := series.Iterator()
+		for i.Next() {
+			p := i.At()
+			pit := p.ProfileTree().Iterator()
+			if pit.NextChild() {
+				metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
+					Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
+					Value:     pit.At().CumulativeValue(),
+				})
+			}
+		}
+		err := i.Err()
+		if err != nil {
+			return nil, status.Error(codes.Internal, "failed to iterate")
+		}
+
+		res.Series = append(res.Series, metricsSeries)
+
+		if req.Limit != 0 && len(res.Series) == int(req.Limit) {
+			break
+		}
+	}
+	if err := set.Err(); err != nil {
+		return nil, status.Error(codes.Internal, "failed to iterate")
+	}
+
+	return res, nil
 }
 
 // Query issues a instant query against the storage
 func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	switch *req.Mode {
 	case pb.QueryRequest_SINGLE:
 		s := req.GetSingle()
@@ -43,7 +107,12 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 			return nil, status.Error(codes.InvalidArgument, "requested single mode, but did not provide parameters for single")
 		}
 
-		p, err := q.findSingle(ctx, s)
+		sel, err := parser.ParseMetricSelector(s.Query)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+		}
+
+		p, err := q.findSingle(ctx, sel, s)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to search profile")
 		}
@@ -53,8 +122,9 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 		}
 
 		return q.renderReport(p, pb.QueryRequest_Flamegraph)
+	default:
+		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
 func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -75,11 +145,9 @@ func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_Repor
 	}
 }
 
-func (q *Query) findSingle(ctx context.Context, s *pb.QueryRequest_Single) (storage.InstantProfile, error) {
+func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, s *pb.QueryRequest_Single) (storage.InstantProfile, error) {
 	t := s.Time.AsTime()
 	requestedTime := timestamp.FromTime(t)
-
-	ms := []*labels.Matcher{}
 
 	// Timestamps don't have to match exactly and staleness kicks in within 5
 	// minutes of no samples, so we need to search the range of -5min to +5min
@@ -89,7 +157,7 @@ func (q *Query) findSingle(ctx context.Context, s *pb.QueryRequest_Single) (stor
 		timestamp.FromTime(t.Add(-5*time.Minute)),
 		timestamp.FromTime(t.Add(5*time.Minute)),
 	)
-	set := query.Select(nil, ms...)
+	set := query.Select(nil, sel...)
 	for set.Next() {
 		series := set.At()
 		i := series.Iterator()
