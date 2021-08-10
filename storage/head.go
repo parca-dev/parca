@@ -5,7 +5,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/dgraph-io/sroar"
+	"github.com/parca-dev/parca/storage/index"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.uber.org/atomic"
 )
@@ -14,7 +14,7 @@ type Head struct {
 	minTime, maxTime atomic.Int64 // Current min and max of the samples included in the head.
 	lastSeriesID     atomic.Uint64
 	numSeries        atomic.Uint64
-	postings         map[string]map[string]*sroar.Bitmap
+	postings         *index.MemPostings
 
 	seriesMtx *sync.RWMutex
 	series    map[string]*MemSeries
@@ -24,6 +24,7 @@ func NewHead() *Head {
 	h := &Head{
 		seriesMtx: &sync.RWMutex{},
 		series:    map[string]*MemSeries{},
+		postings:  index.NewMemPostings(),
 	}
 	h.minTime.Store(math.MaxInt64)
 	h.maxTime.Store(math.MinInt64)
@@ -57,18 +58,7 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 	h.series[labelString] = s
 	h.numSeries.Inc()
 
-	if h.postings == nil {
-		h.postings = map[string]map[string]*sroar.Bitmap{}
-	}
-	for _, l := range lset {
-		if h.postings[l.Name] == nil {
-			h.postings[l.Name] = map[string]*sroar.Bitmap{}
-		}
-		if h.postings[l.Name][l.Value] == nil {
-			h.postings[l.Name][l.Value] = sroar.NewBitmap()
-		}
-		h.postings[l.Name][l.Value].Set(s.id)
-	}
+	h.postings.Add(s.id, lset)
 
 	return s
 }
@@ -149,26 +139,26 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 	defer q.head.seriesMtx.RUnlock()
 
 	ids := map[uint64]struct{}{}
-	for _, m := range ms {
-		if q.head.postings == nil || q.head.postings[m.Name] == nil || q.head.postings[m.Name][m.Value] == nil {
-			continue
-		}
-
-		it := q.head.postings[m.Name][m.Value].NewIterator()
-		for it.HasNext() {
-			ids[it.Next()] = struct{}{}
-		}
-	}
-
-	// TODO: Improve not looping over all ids and within over all series...
+	//for _, m := range ms {
+	//	if q.head.postings == nil || q.head.postings[m.Name] == nil || q.head.postings[m.Name][m.Value] == nil {
+	//		continue
+	//	}
+	//
+	//	it := q.head.postings[m.Name][m.Value].NewIterator()
+	//	for it.HasNext() {
+	//		ids[it.Next()] = struct{}{}
+	//	}
+	//}
+	//
+	//// TODO: Improve not looping over all ids and within over all series...
 	ss := make([]Series, 0, len(ids))
-	for id := range ids {
-		for _, series := range q.head.series {
-			if series.id == id {
-				ss = append(ss, series)
-			}
-		}
-	}
+	//for id := range ids {
+	//	for _, series := range q.head.series {
+	//		if series.id == id {
+	//			ss = append(ss, series)
+	//		}
+	//	}
+	//}
 
 	return &SliceSeriesSet{
 		series: ss,

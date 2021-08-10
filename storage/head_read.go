@@ -6,15 +6,6 @@ import (
 	"github.com/prometheus/tsdb/index"
 )
 
-// Postings provides iterative access over a postings list.
-// TODO: We should probably create an index package and move it there too.
-type Postings interface {
-	Next() bool
-	Seek(v uint64) bool
-	At() uint64
-	Err() error
-}
-
 // IndexReader provides reading access of serialized index data.
 type IndexReader interface {
 	// Postings returns the postings list iterator for the label pairs.
@@ -48,10 +39,11 @@ func (h *headIndexReader) Close() error {
 	return nil
 }
 
-func (h *headIndexReader) Postings(name string, values ...string) (index.Postings, error) {
-	res := make([]Postings, 0, len(values))
-	for _, value := range values {
-		//res = append(res, h.head.postings[name][value].ToArray())
-		panic("continue here")
-	}
-}
+//
+//func (h *headIndexReader) Postings(name string, values ...string) (index.Postings, error) {
+//	res := make([]Postings, 0, len(values))
+//	for _, value := range values {
+//		//res = append(res, h.head.postings[name][value].ToArray())
+//		panic("continue here")
+//	}
+//}
