@@ -41,7 +41,6 @@ func TestPostingsForMatchers(t *testing.T) {
 		},
 		exp: []uint64{1},
 	}, {
-		//TODO: Still returns all
 		name: `n="1",i="missing"`,
 		matchers: []*labels.Matcher{
 			{Type: labels.MatchEqual, Name: "n", Value: "1"},
@@ -67,13 +66,12 @@ func TestPostingsForMatchers(t *testing.T) {
 			{Type: labels.MatchNotEqual, Name: "i", Value: ""},
 		},
 		exp: []uint64{1, 2},
-		//}, {
-		//	//TODO: Still returns all
-		//	name: `missing!=""`,
-		//	matchers: []*labels.Matcher{
-		//		{Type: labels.MatchNotEqual, Name: "missing", Value: ""},
-		//	},
-		//	exp: empty,
+	}, {
+		name: `missing!=""`,
+		matchers: []*labels.Matcher{
+			{Type: labels.MatchNotEqual, Name: "missing", Value: ""},
+		},
+		exp: empty,
 	}, {
 		name: `n="1",i!="a"`,
 		matchers: []*labels.Matcher{
@@ -81,13 +79,13 @@ func TestPostingsForMatchers(t *testing.T) {
 			labels.MustNewMatcher(labels.MatchNotEqual, "i", "a"),
 		},
 		exp: []uint64{0, 2},
-		//}, {
-		//	name: `n="1",i!=""`,
-		//	matchers: []*labels.Matcher{
-		//		labels.MustNewMatcher(labels.MatchEqual, "n", "1"),
-		//		labels.MustNewMatcher(labels.MatchNotEqual, "i", ""),
-		//	},
-		//	exp: []uint64{1, 2},
+	}, {
+		name: `n="1",i!=""`,
+		matchers: []*labels.Matcher{
+			labels.MustNewMatcher(labels.MatchEqual, "n", "1"),
+			labels.MustNewMatcher(labels.MatchNotEqual, "i", ""),
+		},
+		exp: []uint64{1, 2},
 	}, {
 		// Regex
 		name: `n=~"^1$"`,
