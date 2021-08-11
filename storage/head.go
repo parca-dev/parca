@@ -5,6 +5,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/parca-dev/parca/storage/index"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.uber.org/atomic"
 )
@@ -13,6 +14,7 @@ type Head struct {
 	minTime, maxTime atomic.Int64 // Current min and max of the samples included in the head.
 	lastSeriesID     atomic.Uint64
 	numSeries        atomic.Uint64
+	postings         *index.MemPostings
 
 	seriesMtx *sync.RWMutex
 	series    map[string]*MemSeries
@@ -22,6 +24,7 @@ func NewHead() *Head {
 	h := &Head{
 		seriesMtx: &sync.RWMutex{},
 		series:    map[string]*MemSeries{},
+		postings:  index.NewMemPostings(),
 	}
 	h.minTime.Store(math.MaxInt64)
 	h.maxTime.Store(math.MinInt64)
@@ -55,7 +58,8 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 	h.series[labelString] = s
 	h.numSeries.Inc()
 
-	// TODO add postings here
+	h.postings.Add(s.id, lset)
+
 	return s
 }
 
@@ -134,10 +138,23 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 	q.head.seriesMtx.RLock()
 	defer q.head.seriesMtx.RUnlock()
 
-	// TODO: filter series via postings instead of reading directly and unfiltered.
-	ss := make([]Series, 0, len(q.head.series))
+	ir, err := q.head.Index()
+	if err != nil {
+		return nil
+	}
+
+	postings, err := PostingsForMatchers(ir, ms...)
+	if err != nil {
+		return nil
+	}
+
+	ss := make([]Series, 0, postings.GetCardinality())
+	// TODO: Maybe we can even be smarter here, but iterating over all series once isn't too bad for now.
+	// We probably want to add a getByID func.
 	for _, series := range q.head.series {
-		ss = append(ss, series)
+		if postings.Contains(series.id) {
+			ss = append(ss, series)
+		}
 	}
 
 	return &SliceSeriesSet{
