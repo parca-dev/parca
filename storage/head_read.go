@@ -60,6 +60,11 @@ func (h *headIndexReader) Postings(name string, values ...string) (*sroar.Bitmap
 		// Or/merge/union the postings for all values
 		b.Or(h.head.postings.Get(name, value))
 	}
+
+	if b.GetCardinality() == 0 {
+		b.Set(math.MaxUint64) // This is an errPostings bitmap
+	}
+
 	return b, nil
 }
 

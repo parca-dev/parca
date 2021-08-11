@@ -1,6 +1,7 @@
 package index
 
 import (
+	"math"
 	"testing"
 
 	"github.com/dgraph-io/sroar"
@@ -13,7 +14,7 @@ func TestMemPostings(t *testing.T) {
 	p.Add(42, labels.Labels{{Name: "foo", Value: "bar"}, {Name: "container", Value: "test1"}})
 	p.Add(123, labels.Labels{{Name: "foo", Value: "bar"}, {Name: "container", Value: "test2"}})
 
-	var empty []uint64
+	empty := []uint64{math.MaxUint64}
 	require.Equal(t, []uint64{42, 123}, p.Get("foo", "bar").ToArray())
 	require.Equal(t, []uint64{42}, p.Get("container", "test1").ToArray())
 	require.Equal(t, []uint64{123}, p.Get("container", "test2").ToArray())
@@ -23,6 +24,8 @@ func TestMemPostings(t *testing.T) {
 	require.ElementsMatch(t, []string{"test1", "test2"}, p.LabelValues("container"))
 }
 
+// TestBitmap was a good learning experience for the sroar.Bitmap.
+// I'll leave it for future developers and to some degree as integration test with the library.
 func TestBitmap(t *testing.T) {
 	b1 := sroar.NewBitmap()
 	b1.Set(123)

@@ -150,6 +150,7 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 
 	ss := make([]Series, 0, postings.GetCardinality())
 	// TODO: Maybe we can even be smarter here, but iterating over all series once isn't too bad for now.
+	// We probably want to add a getByID func.
 	for _, series := range q.head.series {
 		if postings.Contains(series.id) {
 			ss = append(ss, series)

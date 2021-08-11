@@ -27,7 +27,7 @@
 package storage
 
 import (
-	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -54,8 +54,8 @@ func init() {
 // PostingsForMatchers assembles a single postings iterator against the index reader
 // based on the given matchers. The resulting postings are not ordered by series.
 func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, error) {
-	bms := sroar.NewBitmap()
-	noBms := sroar.NewBitmap()
+	bitmap := sroar.NewBitmap()
+	noBitmap := sroar.NewBitmap()
 
 	// See which label must be non-empty.
 	// Optimization for case like {l=~".", l!="1"}.
@@ -73,33 +73,30 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 			isNot := m.Type == labels.MatchNotEqual || m.Type == labels.MatchNotRegexp
 
 			if isNot && matchesEmpty { // l!="foo"
-				fmt.Println(`l!="foo"`)
-				//// If the label can't be empty and is a Not and the inner matcher
-				//// doesn't match empty, then subtract it out at the end.
-				//inverse, err := m.Inverse()
-				//if err != nil {
-				//	return nil, err
-				//}
-				//
-				//it, err := postingsForMatcher(ix, inverse)
-				//if err != nil {
-				//	return nil, err
-				//}
-				//notIts = append(notIts, it)
+				inverse, err := m.Inverse()
+				if err != nil {
+					return nil, err
+				}
+				bm, err := postingsForMatcher(ix, inverse)
+				if err != nil {
+					return nil, err
+				}
+				noBitmap.Or(bm)
 			} else if isNot && !matchesEmpty { // l!=""
-				fmt.Println(`l!=""`)
-				//// If the label can't be empty and is a Not, but the inner matcher can
-				//// be empty we need to use inversePostingsForMatcher.
-				//inverse, err := m.Inverse()
-				//if err != nil {
-				//	return nil, err
-				//}
-				//
-				//it, err := inversePostingsForMatcher(ix, inverse)
-				//if err != nil {
-				//	return nil, err
-				//}
-				//its = append(its, it)
+				inverse, err := m.Inverse()
+				if err != nil {
+					return nil, err
+				}
+				bm, err := inversePostingsForMatcher(ix, inverse)
+				if err != nil {
+					return nil, err
+				}
+
+				if bitmap.IsEmpty() {
+					bitmap = bm
+				} else {
+					bitmap.And(bm)
+				}
 			} else { // l="a"
 				// Non-Not matcher, use normal postingsForMatcher.
 				bm, err := postingsForMatcher(ix, m)
@@ -107,10 +104,10 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 					return nil, err
 				}
 
-				if bms.IsEmpty() {
-					bms = bm
+				if bitmap.IsEmpty() {
+					bitmap = bm
 				} else {
-					bms.And(bm)
+					bitmap.And(bm)
 				}
 			}
 		} else { // l=""
@@ -122,27 +119,33 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 			if err != nil {
 				return nil, err
 			}
-			if noBms.IsEmpty() {
-				noBms = bm
+			if noBitmap.IsEmpty() {
+				noBitmap = bm
 			} else {
-				noBms.Or(bm)
+				noBitmap.Or(bm)
 			}
 		}
 	}
 
-	// If there's nothing to subtract from, add in everything and remove the noBms later.
-	if bms.IsEmpty() {
+	// If there's nothing to subtract from, add in everything and remove the noBitmap later.
+	//if bitmap.IsEmpty() && !noBitmap.IsEmpty() {
+	if bitmap.GetCardinality() == 0 && noBitmap.GetCardinality() != 0 {
 		allPostings, err := ix.Postings(index.AllPostingsKey())
 		if err != nil {
 			return nil, err
 		}
-		bms.Or(allPostings)
+		bitmap.Or(allPostings)
 	}
 
-	// Intersect to remove the unwanted postings
-	bms.AndNot(noBms)
+	// If either of bitmaps contain the special MaxUint64
+	// we need to make sure to have it in the other to delete it for good.
+	noBitmap.Set(math.MaxUint64)
+	bitmap.Set(math.MaxUint64)
 
-	return bms, nil
+	// Intersect to remove the unwanted postings
+	bitmap.AndNot(noBitmap)
+
+	return bitmap, nil
 }
 
 func postingsForMatcher(ix IndexReader, m *labels.Matcher) (*sroar.Bitmap, error) {

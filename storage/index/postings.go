@@ -1,6 +1,7 @@
 package index
 
 import (
+	"math"
 	"sync"
 
 	"github.com/dgraph-io/sroar"
@@ -51,14 +52,22 @@ func (p *MemPostings) Add(id uint64, lset labels.Labels) {
 }
 
 func (p *MemPostings) Get(name, value string) *sroar.Bitmap {
-	p.mtx.RLock()
-	defer p.mtx.RUnlock()
+	bm := sroar.NewBitmap()
 
-	if p.m[name] == nil || p.m[name][value] == nil {
-		return sroar.NewBitmap()
+	p.mtx.RLock()
+	l := p.m[name]
+	if l != nil {
+		if l[value] != nil {
+			bm = l[value].Clone()
+		}
+	}
+	p.mtx.RUnlock()
+
+	if bm.IsEmpty() {
+		bm.Set(math.MaxUint64) // This is an errPostings bitmap
 	}
 
-	return p.m[name][value].Clone()
+	return bm
 }
 
 // LabelNames returns all the unique label names.
