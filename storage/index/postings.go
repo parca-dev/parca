@@ -7,16 +7,26 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 )
 
+var allPostingsKey = labels.Label{}
+
+// AllPostingsKey returns the label key that is used to store the postings list of all existing IDs.
+func AllPostingsKey() (name, value string) {
+	return allPostingsKey.Name, allPostingsKey.Value
+}
+
 type MemPostings struct {
 	mtx sync.RWMutex
 	m   map[string]map[string]*sroar.Bitmap
 }
 
 func NewMemPostings() *MemPostings {
-	return &MemPostings{
+	p := &MemPostings{
 		mtx: sync.RWMutex{},
 		m:   map[string]map[string]*sroar.Bitmap{},
 	}
+	p.m[allPostingsKey.Name] = map[string]*sroar.Bitmap{}
+	p.m[allPostingsKey.Name][allPostingsKey.Value] = sroar.NewBitmap()
+	return p
 }
 
 func (p *MemPostings) Add(id uint64, lset labels.Labels) {
@@ -35,46 +45,48 @@ func (p *MemPostings) Add(id uint64, lset labels.Labels) {
 		p.m[l.Name][l.Value].Set(id)
 	}
 
+	p.m[allPostingsKey.Name][allPostingsKey.Value].Set(id)
+
 	p.mtx.Unlock()
 }
 
-// Postings provides iterative access over a postings list.
-type Postings interface {
-	Next() bool
-	Seek(v uint64) bool
-	At() uint64
-	Err() error
-}
-
-func (p *MemPostings) Get(name, value string) Postings {
+func (p *MemPostings) Get(name, value string) *sroar.Bitmap {
 	p.mtx.RLock()
 	defer p.mtx.RUnlock()
 
 	if p.m[name] == nil || p.m[name][value] == nil {
-		return nil // TODO: Return nopPostingIterator
+		return sroar.NewBitmap()
 	}
 
-	return &bitmapIterator{
-		it: p.m[name][value].NewIterator(),
+	return p.m[name][value].Clone()
+}
+
+// LabelNames returns all the unique label names.
+func (p *MemPostings) LabelNames() []string {
+	p.mtx.RLock()
+	defer p.mtx.RUnlock()
+	n := len(p.m)
+	if n == 0 {
+		return nil
 	}
+
+	names := make([]string, 0, n-1)
+	for name := range p.m {
+		if name != allPostingsKey.Name {
+			names = append(names, name)
+		}
+	}
+	return names
 }
 
-type bitmapIterator struct {
-	it *sroar.Iterator
-}
+// LabelValues returns label values for the given name.
+func (p *MemPostings) LabelValues(name string) []string {
+	p.mtx.RLock()
+	defer p.mtx.RUnlock()
 
-func (it *bitmapIterator) Next() bool {
-	return it.it.HasNext()
-}
-
-func (it *bitmapIterator) Seek(v uint64) bool {
-	panic("implement me")
-}
-
-func (it *bitmapIterator) At() uint64 {
-	return it.it.Next()
-}
-
-func (it *bitmapIterator) Err() error {
-	return nil
+	values := make([]string, 0, len(p.m[name]))
+	for v := range p.m[name] {
+		values = append(values, v)
+	}
+	return values
 }

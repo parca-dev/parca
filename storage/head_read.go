@@ -1,18 +1,32 @@
+// Copyright 2021 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package storage
 
 import (
 	"math"
 
-	"github.com/prometheus/tsdb/index"
+	"github.com/dgraph-io/sroar"
+	"github.com/prometheus/prometheus/pkg/labels"
 )
 
 // IndexReader provides reading access of serialized index data.
 type IndexReader interface {
-	// Postings returns the postings list iterator for the label pairs.
-	// The Postings here contain the offsets to the series inside the index.
-	// Found IDs are not strictly required to point to a valid Series, e.g.
-	// during background garbage collections. Input values must be sorted.
-	Postings(name string, values ...string) (index.Postings, error)
+	// Postings returns the postings sroar.Bitmap.
+	Postings(name string, values ...string) (*sroar.Bitmap, error)
+
+	// LabelValues returns possible label values which may not be sorted.
+	LabelValues(name string, matchers ...*labels.Matcher) ([]string, error)
 
 	// Close releases the underlying resource of the reader.
 	Close() error
@@ -39,11 +53,28 @@ func (h *headIndexReader) Close() error {
 	return nil
 }
 
-//
-//func (h *headIndexReader) Postings(name string, values ...string) (index.Postings, error) {
-//	res := make([]Postings, 0, len(values))
-//	for _, value := range values {
-//		//res = append(res, h.head.postings[name][value].ToArray())
-//		panic("continue here")
-//	}
-//}
+// Postings returns the postings list iterator for the label pairs.
+func (h *headIndexReader) Postings(name string, values ...string) (*sroar.Bitmap, error) {
+	b := sroar.NewBitmap()
+	for _, value := range values {
+		// Or/merge/union the postings for all values
+		b.Or(h.head.postings.Get(name, value))
+	}
+	return b, nil
+}
+
+// LabelValues returns label values present in the head for the
+// specific label name that are within the time range mint to maxt.
+// If matchers are specified the returned result set is reduced
+// to label values of metrics matching the matchers.
+func (h *headIndexReader) LabelValues(name string, matchers ...*labels.Matcher) ([]string, error) {
+	if h.maxt < h.head.MinTime() || h.mint > h.head.MaxTime() {
+		return []string{}, nil
+	}
+
+	if len(matchers) == 0 {
+		return h.head.postings.LabelValues(name), nil
+	}
+
+	return labelValuesWithMatchers(h, name, matchers...)
+}

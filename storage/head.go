@@ -138,27 +138,23 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 	q.head.seriesMtx.RLock()
 	defer q.head.seriesMtx.RUnlock()
 
-	ids := map[uint64]struct{}{}
-	//for _, m := range ms {
-	//	if q.head.postings == nil || q.head.postings[m.Name] == nil || q.head.postings[m.Name][m.Value] == nil {
-	//		continue
-	//	}
-	//
-	//	it := q.head.postings[m.Name][m.Value].NewIterator()
-	//	for it.HasNext() {
-	//		ids[it.Next()] = struct{}{}
-	//	}
-	//}
-	//
-	//// TODO: Improve not looping over all ids and within over all series...
-	ss := make([]Series, 0, len(ids))
-	//for id := range ids {
-	//	for _, series := range q.head.series {
-	//		if series.id == id {
-	//			ss = append(ss, series)
-	//		}
-	//	}
-	//}
+	ir, err := q.head.Index()
+	if err != nil {
+		return nil
+	}
+
+	postings, err := PostingsForMatchers(ir, ms...)
+	if err != nil {
+		return nil
+	}
+
+	ss := make([]Series, 0, postings.GetCardinality())
+	// TODO: Maybe we can even be smarter here, but iterating over all series once isn't too bad for now.
+	for _, series := range q.head.series {
+		if postings.Contains(series.id) {
+			ss = append(ss, series)
+		}
+	}
 
 	return &SliceSeriesSet{
 		series: ss,
