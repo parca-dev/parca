@@ -1,3 +1,18 @@
+CMD_DOCKER ?= docker
+CMD_GIT ?= git
+ifeq ($(GITHUB_BRANCH_NAME),)
+	BRANCH := $(shell git rev-parse --abbrev-ref HEAD)-
+else
+	BRANCH := $(GITHUB_BRANCH_NAME)-
+endif
+ifeq ($(GITHUB_SHA),)
+	COMMIT := $(shell git describe --no-match --dirty --always --abbrev=8)
+else
+	COMMIT := $(shell echo $(GITHUB_SHA) | cut -c1-8)
+endif
+VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags 2>/dev/null || echo '$(BRANCH)$(COMMIT)'))
+OUT_DOCKER ?= ghcr.io/parca-dev/parca
+
 .PHONY: clean
 clean:
 	rm -r bin
@@ -10,7 +25,7 @@ build: ui go/bin
 .PHONY: go/bin
 go/bin:
 	mkdir -p ./bin
-	go build -o bin/ ./cmd/parca 
+	go build -o bin/ ./cmd/parca
 	cp parca.yaml bin/
 
 .PHONY: ui
@@ -40,3 +55,15 @@ proto/vendor:
 	curl https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/master/protoc-gen-openapiv2/options/annotations.proto       > proto/protoc-gen-openapiv2/options/annotations.proto
 	curl https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/master/protoc-gen-openapiv2/options/openapiv2.proto         > proto/protoc-gen-openapiv2/options/openapiv2.proto
 	curl https://raw.githubusercontent.com/google/pprof/master/proto/profile.proto                                                 > proto/pprof/profile.proto
+
+.PHONY: container
+container:
+	buildah build-using-dockerfile --build-arg TOKEN --timestamp 0 --layers -t $(OUT_DOCKER):$(VERSION)
+
+.PHONY: push-container
+push-container:
+	buildah push $(OUT_DOCKER):$(VERSION)
+
+.PHONY: push-quay-container
+push-quay-container:
+	buildah push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
