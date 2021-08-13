@@ -1,0 +1,30 @@
+name: Jsonnet
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - name: Set up Jsonnet
+        run: ./env.sh
+
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: git config --global url."https://parca:${TOKEN}@github.com".insteadOf "https://github.com"
+
+      - name: Generate
+        run: cd deploy && make --always-make vendor manifests && git diff --exit-code
