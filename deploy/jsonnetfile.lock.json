@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "dependencies": [
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/parca-dev/parca-agent.git",
+          "subdir": "deploy/lib/parca-agent"
+        }
+      },
+      "version": "1ee5731702d7f7b3ae40e0926728af1bd8791673",
+      "sum": "xXr0HnjY5/PvpUOAajhig/rZSEC2AJ4cSYjT3gB2uD8="
+    },
+    {
+      "source": {
+        "local": {
+          "directory": "lib/parca"
+        }
+      },
+      "version": ""
+    }
+  ],
+  "legacyImports": false
+}
