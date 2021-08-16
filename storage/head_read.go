@@ -14,10 +14,15 @@
 package storage
 
 import (
+	"errors"
 	"math"
 
 	"github.com/dgraph-io/sroar"
 	"github.com/prometheus/prometheus/pkg/labels"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
 )
 
 // IndexReader provides reading access of serialized index data.
@@ -27,6 +32,11 @@ type IndexReader interface {
 
 	// LabelValues returns possible label values which may not be sorted.
 	LabelValues(name string, matchers ...*labels.Matcher) ([]string, error)
+
+	// LabelValueFor returns label value for the given label name in the series referred to by ID.
+	// If the series couldn't be found or the series doesn't have the requested label a
+	// storage.ErrNotFound is returned as error.
+	LabelValueFor(id uint64, label string) (string, error)
 
 	// Close releases the underlying resource of the reader.
 	Close() error
@@ -82,4 +92,16 @@ func (h *headIndexReader) LabelValues(name string, matchers ...*labels.Matcher) 
 	}
 
 	return labelValuesWithMatchers(h, name, matchers...)
+}
+
+func (h *headIndexReader) LabelValueFor(id uint64, label string) (string, error) {
+	series := h.head.getByID(id)
+	if series == nil {
+		return "", ErrNotFound
+	}
+	value := series.lset.Get(label)
+	if value == "" {
+		return "", ErrNotFound
+	}
+	return value, nil
 }

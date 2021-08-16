@@ -63,6 +63,19 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 	return s
 }
 
+func (h Head) getByID(id uint64) *MemSeries {
+	// TODO: Improve with stripeSeries []map[uint64]*MemSeries like Prometheus?
+	var s *MemSeries
+	h.seriesMtx.RLock()
+	for _, series := range h.series {
+		if series.id == id {
+			s = series
+		}
+	}
+	h.seriesMtx.RUnlock()
+	return s
+}
+
 // Appender returns a new Appender on the database.
 func (h *Head) Appender(_ context.Context, lset labels.Labels) Appender {
 	// The head cache might not have a starting point yet. The init appender
@@ -149,12 +162,9 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 	}
 
 	ss := make([]Series, 0, postings.GetCardinality())
-	// TODO: Maybe we can even be smarter here, but iterating over all series once isn't too bad for now.
-	// We probably want to add a getByID func.
-	for _, series := range q.head.series {
-		if postings.Contains(series.id) {
-			ss = append(ss, series)
-		}
+	it := postings.NewIterator()
+	for it.HasNext() {
+		ss = append(ss, q.head.getByID(it.Next()))
 	}
 
 	return &SliceSeriesSet{
