@@ -3,6 +3,7 @@ package parca
 import (
 	"context"
 	"errors"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -47,10 +48,31 @@ func Benchmark_Parca_WriteRaw(b *testing.B) {
 
 	client, done := benchmarkSetup(ctx, b)
 
+	f, err := ioutil.ReadFile("testdata/alloc_objects.pb.gz")
+	require.NoError(b, err)
+
 	// Benchamrk section
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := client.WriteRaw(ctx, &pb.WriteRawRequest{})
+		_, err := client.WriteRaw(ctx, &pb.WriteRawRequest{
+			Series: []*pb.RawProfileSeries{
+				{
+					Labels: &pb.LabelSet{
+						Labels: []*pb.Label{
+							{
+								Name:  "test",
+								Value: b.Name(),
+							},
+						},
+					},
+					Samples: []*pb.RawSample{
+						{
+							RawProfile: f,
+						},
+					},
+				},
+			},
+		})
 		require.NoError(b, err)
 	}
 	b.StopTimer()
