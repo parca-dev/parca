@@ -3,7 +3,6 @@ package parca
 import (
 	"context"
 	"io/ioutil"
-	"os"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -30,19 +29,19 @@ func Run(ctx context.Context, logger log.Logger, configPath, port string) error 
 	cfgContent, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to read config", "path", configPath)
-		os.Exit(1)
+		return err
 	}
 
 	cfg := Config{}
 	if err := yaml.Unmarshal(cfgContent, &cfg); err != nil {
 		level.Error(logger).Log("msg", "failed to parse config", "err", err, "path", configPath)
-		os.Exit(1)
+		return err
 	}
 
 	d, err := debuginfo.NewStore(logger, cfg.DebugInfo)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
-		os.Exit(1)
+		return err
 	}
 
 	db := storage.OpenDB()
