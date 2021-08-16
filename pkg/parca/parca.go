@@ -12,10 +12,10 @@ import (
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/server"
+	"github.com/parca-dev/parca/pkg/storage"
 	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
 	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	querypb "github.com/parca-dev/parca/proto/gen/go/query"
-	"github.com/parca-dev/parca/storage"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
 )

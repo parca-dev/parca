@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/parca-dev/parca/pkg/storage"
 	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	pb "github.com/parca-dev/parca/proto/gen/go/query"
-	"github.com/parca-dev/parca/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"

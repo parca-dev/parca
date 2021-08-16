@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/proto/gen/go/profilestore"
 	pb "github.com/parca-dev/parca/proto/gen/go/query"
-	"github.com/parca-dev/parca/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
