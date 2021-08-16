@@ -5,7 +5,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/parca-dev/parca/storage/index"
+	"github.com/parca-dev/parca/pkg/storage/index"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.uber.org/atomic"
 )
