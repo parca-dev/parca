@@ -74,9 +74,5 @@ func Run(ctx context.Context, logger log.Logger, configPath, port string) error 
 		}),
 	)
 
-	if err != nil {
-		level.Error(logger).Log("msg", "Program exited with error", "err", err)
-		os.Exit(1)
-	}
-	return nil
+	return err
 }
