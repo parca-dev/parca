@@ -35,7 +35,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/dgraph-io/sroar"
-	"github.com/parca-dev/parca/storage/index"
+	"github.com/parca-dev/parca/pkg/storage/index"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
 

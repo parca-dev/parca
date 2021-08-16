@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/storage/chunkenc"
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
