@@ -27,6 +27,8 @@
 package storage
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -46,6 +48,8 @@ func isRegexMetaCharacter(b byte) bool {
 }
 
 func init() {
+	// The following characters need to be escaped.
+	// These characters are used in queries like {foo="(bar|baz*)"}
 	for _, b := range []byte(`.+*?()|[]{}^$`) {
 		regexMetaCharacterBytes[b%16] |= 1 << (b / 16)
 	}
@@ -236,35 +240,29 @@ func findSetMatches(pattern string) []string {
 
 func labelValuesWithMatchers(r IndexReader, name string, matchers ...*labels.Matcher) ([]string, error) {
 	// We're only interested in metrics which have the label <name>.
+	requireLabel, err := labels.NewMatcher(labels.MatchNotEqual, name, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate label matcher: %w", err)
+	}
 
-	//requireLabel, err := labels.NewMatcher(labels.MatchNotEqual, name, "")
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "Failed to instantiate label matcher")
-	//}
-
-	// TODO
-	//var p index.Postings
-	//p, err = PostingsForMatchers(r, append(matchers, requireLabel)...)
-	//if err != nil {
-	//	return nil, err
-	//}
+	bm, err := PostingsForMatchers(r, append(matchers, requireLabel)...)
+	if err != nil {
+		return nil, err
+	}
 
 	dedupe := map[string]interface{}{}
-	//for p.Next() {
-	//	v, err := r.LabelValueFor(p.At(), name)
-	//	if err != nil {
-	//		if err == storage.ErrNotFound {
-	//			continue
-	//		}
-	//
-	//		return nil, err
-	//	}
-	//	dedupe[v] = nil
-	//}
-	//
-	//if err = p.Err(); err != nil {
-	//	return nil, err
-	//}
+
+	it := bm.NewIterator()
+	for it.HasNext() {
+		v, err := r.LabelValueFor(it.Next(), name)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				continue
+			}
+			return nil, err
+		}
+		dedupe[v] = nil
+	}
 
 	values := make([]string, 0, len(dedupe))
 	for value := range dedupe {
