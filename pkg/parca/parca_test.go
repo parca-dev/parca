@@ -3,7 +3,6 @@ package parca
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 	"time"
 
@@ -14,12 +13,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Benchmark_Parca_WriteRaw(b *testing.B) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	//logger := log.NewNopLogger()
-	logger := log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
+func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreClient, <-chan struct{}) {
+	logger := log.NewNopLogger()
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -43,6 +38,14 @@ func Benchmark_Parca_WriteRaw(b *testing.B) {
 	}, backoff.NewConstantBackOff(time.Second))
 
 	client := pb.NewProfileStoreClient(conn)
+	return client, done
+}
+
+func Benchmark_Parca_WriteRaw(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client, done := benchmarkSetup(ctx, b)
 
 	// Benchamrk section
 	b.ResetTimer()
