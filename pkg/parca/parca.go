@@ -96,5 +96,13 @@ func Run(ctx context.Context, logger log.Logger, configPath, port string) error 
 		},
 	)
 
-	return runggroup.Run()
+	err = runggroup.Run()
+	if err != nil {
+		if _, ok := err.(run.SignalError); ok {
+			return nil
+		}
+		return err
+	}
+
+	return nil
 }
