@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/log/level"
@@ -42,8 +43,13 @@ var MapAllowedLevels = map[string][]string{
 	"WARN":  {"WARN", "ERROR"},
 }
 
+// Server is a wrapper around the http.Server
+type Server struct {
+	http.Server
+}
+
 // ListenAndServe starts the http grpc gateway server
-func ListenAndServe(ctx context.Context, logger log.Logger, port string, registerables ...Registerable) error {
+func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port string, registerables ...Registerable) error {
 	level.Info(logger).Log("msg", "starting server", "addr", port)
 	logLevel := "ERROR"
 
@@ -88,11 +94,18 @@ func ListenAndServe(ctx context.Context, logger log.Logger, port string, registe
 		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
 	}
 
-	return http.ListenAndServe(
-		port,
-		grpcHandlerFunc(srv,
-			fallbackNotFound(mux,
-				http.FileServer(http.FS(uiFS)))))
+	s.Server = http.Server{
+		Addr:         port,
+		Handler:      grpcHandlerFunc(srv, fallbackNotFound(mux, http.FileServer(http.FS(uiFS)))),
+		ReadTimeout:  5 * time.Second, // TODO make config option
+		WriteTimeout: time.Minute,     // TODO make config option
+	}
+	return s.Server.ListenAndServe()
+}
+
+// Shutdown the server
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.Server.Shutdown(ctx)
 }
 
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
