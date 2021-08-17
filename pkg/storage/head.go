@@ -130,9 +130,6 @@ type HeadQuerier struct {
 }
 
 func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSet {
-	//q.head.seriesMtx.RLock()
-	//defer q.head.seriesMtx.RUnlock()
-
 	ir, err := q.head.Index()
 	if err != nil {
 		return nil
@@ -153,10 +150,6 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 	ss := make([]Series, 0, postings.GetCardinality())
 	it := postings.NewIterator()
 	for it.HasNext() {
-		//// TODO: This is probably wrong...
-		//if s.maxTime > maxt || s.minTime < mint {
-		//	continue
-		//}
 		ss = append(ss, q.head.series.getByID(it.Next()))
 	}
 

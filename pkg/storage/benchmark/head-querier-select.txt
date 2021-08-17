@@ -1,0 +1,110 @@
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    496778 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    570392 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    521861 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    534890 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    523607 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	4.984s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    558975 ns/op	  735865 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    522982 ns/op	  735865 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    539603 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    544069 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    550076 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	4.899s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    556974 ns/op	  735865 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    548413 ns/op	  735866 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    539660 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    580830 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    538400 ns/op	  735865 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	5.038s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    532731 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    532547 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    564821 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    512824 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    534452 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	4.914s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    550168 ns/op	  735865 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    542393 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    543427 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    521497 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    531987 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	4.863s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    546096 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    548194 ns/op	  735866 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    558656 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    531764 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    560593 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	4.954s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    553251 ns/op	  735866 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    573469 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    581271 ns/op	  735865 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    563484 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    561537 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	5.045s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    509026 ns/op	  735867 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    554504 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    505763 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    551950 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    530240 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	4.885s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    563861 ns/op	  735865 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    542677 ns/op	  735865 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    532151 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    539614 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    553059 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	4.937s
+goos: linux
+goarch: amd64
+pkg: github.com/parca-dev/parca/pkg/storage
+cpu: AMD Ryzen 9 3900X 12-Core Processor            
+BenchmarkHeadQuerier_Select/1of10000-24         	    1000	    542084 ns/op	  735867 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10of10000-24        	    1000	    522585 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/100of10000-24       	    1000	    539649 ns/op	  735864 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/1000of10000-24      	    1000	    536487 ns/op	  735865 B/op	      63 allocs/op
+BenchmarkHeadQuerier_Select/10000of10000-24     	    1000	    560709 ns/op	  735864 B/op	      63 allocs/op
+PASS
+ok  	github.com/parca-dev/parca/pkg/storage	4.954s

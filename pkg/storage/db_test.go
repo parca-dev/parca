@@ -63,3 +63,26 @@ func TestDB(t *testing.T) {
 		}
 	}
 }
+
+func TestSliceSeriesSet(t *testing.T) {
+	ss := SliceSeriesSet{
+		series: []Series{},
+		i:      -1,
+	}
+
+	for i := 0; i < 100; i++ {
+		ss.series = append(ss.series, &MemSeries{
+			id:      uint64(i),
+			minTime: 0,
+			maxTime: int64(i),
+		})
+	}
+
+	// Iterate over all series
+	for i := 0; i < 100; i++ {
+		require.True(t, ss.Next())
+		require.Equal(t, &MemSeries{id: uint64(i), maxTime: int64(i)}, ss.At())
+	}
+	require.NoError(t, ss.Err())
+	require.False(t, ss.Next())
+}
