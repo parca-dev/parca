@@ -3,10 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
     "lint": "eslint --ext .ts,.tsx,.js packages/app/* packages/shared/* pages/*",
-    "export": "rm -rf .next && next build && next export -o dist",
+    "test": "jest --coverage",
     "generate": "plop --plopfile .plop/plopfile.ts",
     "storybook": "start-storybook -p 6006"
   },

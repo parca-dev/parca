@@ -1,7 +1,7 @@
 {
-    "name": "@parca/template",
+    "name": "@parca/web",
     "version": "0.0.0",
-    "description": "Frontend App Template",
+    "description": "Parca Web Interface",
     "scripts": {
       "dev": "../../../node_modules/.bin/next dev",
       "build": "yarn clean && ../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",

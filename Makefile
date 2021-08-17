@@ -30,7 +30,7 @@ go/bin:
 
 .PHONY: ui
 ui:
-	cd ui && yarn install && yarn export
+	cd ui && yarn install && yarn workspace @parca/web build
 
 .PHONY: proto/lint
 proto/lint:
