@@ -1,0 +1,23 @@
+import { action } from '@storybook/addon-actions'
+import { Meta, Story, Canvas } from '@storybook/addon-docs/blocks'
+import { Button } from './Button'
+
+<Meta title='template/Button' component={Button} />
+
+# Button
+
+With `MDX` we can define a story for `Button` right in the middle of our
+Markdown documentation.
+
+<Canvas>
+  <Story
+    name='Regular'
+    args={{
+      label: 'This is a Button',
+      onClick: action('clicked')
+    }}
+  >
+    {args => <Button {...args} />}
+  </Story>
+</Canvas>
+

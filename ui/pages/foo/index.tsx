@@ -1,7 +1,7 @@
-import Link from "next/link";
-import styles from "../../styles/Home.module.css";
+import Link from 'next/link'
+import styles from '../../styles/Home.module.css'
 
-function Foo(): JSX.Element {
+function Foo (): JSX.Element {
   return (
       <div className={styles.container}>
         <main className={styles.main}>
@@ -19,7 +19,7 @@ function Foo(): JSX.Element {
           </p>
         </main>
       </div>
-  );
+  )
 }
 
-export default Foo;
+export default Foo
