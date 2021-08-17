@@ -17,6 +17,6 @@ module.exports = {
   coveragePathIgnorePatterns: ['node_modules', 'out', '.next', '.storybook', '.stories.mdx'],
   moduleNameMapper: {
     '\\.(css|scss)$': 'identity-obj-proxy'
-  }
+  },
+  testEnvironment: 'jsdom'
 }
-

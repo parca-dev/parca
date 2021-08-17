@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js packages/app/* packages/shared/* pages/*",
-    "test": "jest --coverage",
+    "test": "jest --coverage --config jest.config.js",
     "generate": "plop --plopfile .plop/plopfile.ts",
     "storybook": "start-storybook -p 6006"
   },
