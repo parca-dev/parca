@@ -95,7 +95,7 @@ func (h *headIndexReader) LabelValues(name string, matchers ...*labels.Matcher) 
 }
 
 func (h *headIndexReader) LabelValueFor(id uint64, label string) (string, error) {
-	series := h.head.getByID(id)
+	series := h.head.series.getByID(id)
 	if series == nil {
 		return "", ErrNotFound
 	}
