@@ -6,12 +6,12 @@
 .pnp.js
 
 # testing
-/coverage
+coverage
 
 # next.js
-/.next/
-/out/
-/dist/
+.next/
+out/
+dist/
 
 # production
 /build
@@ -19,6 +19,7 @@
 # misc
 .DS_Store
 *.pem
+*.log
 
 # debug
 npm-debug.log*
@@ -33,3 +34,6 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# yarn
+.yarn

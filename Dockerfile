@@ -18,7 +18,7 @@ WORKDIR /app
 COPY ./ui .
 COPY --from=ui-deps /app/node_modules ./node_modules
 
-RUN yarn export
+RUN yarn workspace @parca/web build
 
 # this image is what docker.io/golang:1.16.7-alpine3.14 on August 12 2021
 FROM docker.io/golang@sha256:7e31a85c5b182e446c9e0e6fba57c522902f281a6a5a6cbd25afa17ac48a6b85 as builder
@@ -38,7 +38,7 @@ COPY --chown=nobody:nogroup ./cmd/parca ./cmd/parca
 COPY --chown=nobody:nogroup ./pkg ./pkg
 COPY --chown=nobody:nogroup ./proto ./proto
 COPY --chown=nobody:nogroup ./ui/ui.go ./ui/ui.go
-COPY --chown=nobody:nogroup --from=ui-builder /app/dist ./ui/dist
+COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
 
 RUN go build -trimpath -o parca ./cmd/parca
 

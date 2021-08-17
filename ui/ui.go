@@ -2,10 +2,10 @@ package ui
 
 import "embed"
 
-//go:embed dist
-//go:embed dist/_next
-//go:embed dist/_next/static/chunks/pages/*.js
-//go:embed dist/_next/static/*/*.js
+//go:embed packages/app/web/dist
+//go:embed packages/app/web/dist/_next
+//go:embed packages/app/web/dist/_next/static/chunks/pages/*.js
+//go:embed packages/app/web/dist/_next/static/*/*.js
 var FS embed.FS
 
 // NOTICE: Static HTML export of a Next.js app contains several files prefixed with _,
