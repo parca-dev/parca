@@ -21,8 +21,7 @@ func BenchmarkHeadQuerier_Select(b *testing.B) {
 	ctx := context.Background()
 	h := NewHead()
 
-	numSeries := 10_000
-	//numSeries := 1_000_000 // TODO: It's too much yet
+	numSeries := 1_000_000
 	for i := 1; i <= numSeries; i++ {
 		app, err := h.Appender(ctx, labels.FromStrings("foo", "bar", "s", fmt.Sprintf("%d%s", i, postingsBenchSuffix)))
 		require.NoError(b, err)
