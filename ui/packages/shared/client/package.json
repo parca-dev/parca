@@ -1,0 +1,12 @@
+{
+  "name": "@parca/client",
+  "version": "0.0.0",
+  "description": "Parca API Client",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "jest --coverage --config ../../../jest.config.js ./src/*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -24,3 +24,12 @@ plugins:
       - generate_unbound_methods=true
   - name: openapiv2
     out: proto/gen/swagger
+  - name: js
+    out: ui/packages/shared/client/src
+    opt:
+      - import_style=commonjs,binary
+  - name: ts
+    path: ./node_modules/.bin/protoc-gen-ts
+    out: ui/packages/shared/client/src
+    opt:
+      - service=grpc-web
