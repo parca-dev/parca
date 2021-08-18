@@ -14,7 +14,7 @@ import (
 type flags struct {
 	ConfigPath string `kong:"help='Path to config file.',default='parca.yaml'"`
 	LogLevel   string `kong:"enum='error,warn,info,debug',help='Log level.',default='info'"`
-	Port       string `kong:"help='Port string for server',default=':9090'"`
+	Port       string `kong:"help='Port string for server',default=':7070'"`
 }
 
 func main() {
