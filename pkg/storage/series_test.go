@@ -197,8 +197,12 @@ func TestMemSeriesIterator(t *testing.T) {
 		durations:  chunkenc.FromValuesDelta(time.Second.Nanoseconds(), time.Second.Nanoseconds()),
 		periods:    chunkenc.FromValuesDelta(100, 100),
 	}
-	st.append(pt1)
-	st.append(pt2)
+
+	err := st.appendTree(pt1)
+	require.NoError(t, err)
+
+	err = st.appendTree(pt2)
+	require.NoError(t, err)
 
 	it := st.Iterator()
 	require.True(t, it.Next())
@@ -212,7 +216,7 @@ func TestMemSeriesIterator(t *testing.T) {
 	}, instantProfile.ProfileMeta())
 
 	res := []uint64{}
-	err := WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
+	err = WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
 		res = append(res, n.LocationID())
 		return nil
 	})
@@ -251,8 +255,10 @@ func TestIteratorConsistency(t *testing.T) {
 	l := NewInMemoryProfileMetaStore()
 	s, err := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
+	app, err := s.Appender()
+	require.NoError(t, err)
 	profile := ProfileFromPprof(l, p1)
-	require.NoError(t, s.Append(profile))
+	require.NoError(t, app.Append(profile))
 
 	profileTree := profile.Tree
 
@@ -287,8 +293,10 @@ func TestRealInsert(t *testing.T) {
 	l := NewInMemoryProfileMetaStore()
 	s, err := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
+	app, err := s.Appender()
+	require.NoError(t, err)
 	profile := ProfileFromPprof(l, p)
-	require.NoError(t, s.Append(profile))
+	require.NoError(t, app.Append(profile))
 	require.Equal(t, len(p.Location), len(l.locations))
 }
 
@@ -310,6 +318,8 @@ func TestRealInserts(t *testing.T) {
 	l := NewInMemoryProfileMetaStore()
 	s, err := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
-	require.NoError(t, s.Append(ProfileFromPprof(l, p1)))
-	require.NoError(t, s.Append(ProfileFromPprof(l, p2)))
+	app, err := s.Appender()
+	require.NoError(t, err)
+	require.NoError(t, app.Append(ProfileFromPprof(l, p1)))
+	require.NoError(t, app.Append(ProfileFromPprof(l, p2)))
 }

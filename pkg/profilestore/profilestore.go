@@ -43,7 +43,11 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 		}
 		sort.Sort(ls)
 
-		app := s.app.Appender(ctx, ls)
+		app, err := s.app.Appender(ctx, ls)
+		if err != nil {
+			return nil, err
+		}
+
 		for _, sample := range series.Samples {
 			p, err := profile.Parse(bytes.NewBuffer(sample.RawProfile))
 			if err != nil {

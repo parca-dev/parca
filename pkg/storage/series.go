@@ -278,11 +278,8 @@ type MemSeries struct {
 
 	minTime, maxTime int64
 	timestamps       chunkenc.Chunk
-	timestampsApp    chunkenc.Appender
 	durations        chunkenc.Chunk
-	durationsApp     chunkenc.Appender
 	periods          chunkenc.Chunk
-	periodsApp       chunkenc.Appender
 
 	seriesTree *MemSeriesTree
 	numSamples uint16
@@ -293,29 +290,13 @@ func NewMemSeries(lset labels.Labels, id uint64) (*MemSeries, error) {
 	durations := chunkenc.NewRLEChunk()
 	periods := chunkenc.NewRLEChunk()
 
-	timestampsApp, err := timestamps.Appender()
-	if err != nil {
-		return nil, err
-	}
-	durationsApp, err := durations.Appender()
-	if err != nil {
-		return nil, err
-	}
-	periodsApp, err := periods.Appender()
-	if err != nil {
-		return nil, err
-	}
-
 	return &MemSeries{
-		lset:          lset,
-		id:            id,
-		timestamps:    timestamps,
-		timestampsApp: timestampsApp,
-		durations:     durations,
-		durationsApp:  durationsApp,
-		periods:       periods,
-		periodsApp:    periodsApp,
-		seriesTree:    &MemSeriesTree{},
+		lset:       lset,
+		id:         id,
+		timestamps: timestamps,
+		durations:  durations,
+		periods:    periods,
+		seriesTree: &MemSeriesTree{},
 	}, nil
 }
 
@@ -330,59 +311,79 @@ type mapInfo struct {
 	offset int64
 }
 
-func (s *MemSeries) Append(p *Profile) error {
-	if s.numSamples == 0 {
-		s.periodType = p.Meta.PeriodType
-		s.sampleType = p.Meta.SampleType
+func (s *MemSeries) Appender() (*MemSeriesAppender, error) {
+	timestamps, err := s.timestamps.Appender()
+	if err != nil {
+		return nil, err
+	}
+	durations, err := s.durations.Appender()
+	if err != nil {
+		return nil, err
+	}
+	periods, err := s.periods.Appender()
+	if err != nil {
+		return nil, err
 	}
 
-	if !equalValueType(s.periodType, p.Meta.PeriodType) {
+	return &MemSeriesAppender{
+		s:          s,
+		timestamps: timestamps,
+		duration:   durations,
+		periods:    periods,
+	}, nil
+}
+
+type MemSeriesAppender struct {
+	s          *MemSeries
+	timestamps chunkenc.Appender
+	duration   chunkenc.Appender
+	periods    chunkenc.Appender
+}
+
+func (a *MemSeriesAppender) Append(p *Profile) error {
+	if a.s.numSamples == 0 {
+		a.s.periodType = p.Meta.PeriodType
+		a.s.sampleType = p.Meta.SampleType
+	}
+
+	if !equalValueType(a.s.periodType, p.Meta.PeriodType) {
 		return ErrPeriodTypeMismatch
 	}
 
-	if !equalValueType(s.sampleType, p.Meta.SampleType) {
+	if !equalValueType(a.s.sampleType, p.Meta.SampleType) {
 		return ErrSampleTypeMismatch
 	}
 
-	s.append(p.Tree)
-
-	if s.timestamps == nil {
-		s.timestamps = chunkenc.NewDeltaChunk()
-		s.timestampsApp, _ = s.timestamps.Appender()
+	if err := a.s.appendTree(p.Tree); err != nil {
+		return err
 	}
 
 	timestamp := p.Meta.Timestamp
 
-	if timestamp <= s.maxTime {
+	if timestamp <= a.s.maxTime {
 		return ErrOutOfOrderSample
 	}
 
-	s.timestampsApp.AppendAt(s.numSamples, timestamp)
+	a.timestamps.AppendAt(a.s.numSamples, timestamp)
+	a.duration.AppendAt(a.s.numSamples, p.Meta.Duration)
+	a.periods.AppendAt(a.s.numSamples, p.Meta.Period)
 
-	if s.durations == nil {
-		s.durations = chunkenc.NewRLEChunk()
-		s.durationsApp, _ = s.durations.Appender() // TODO: Handle err
-	}
-	s.durationsApp.AppendAt(s.numSamples, p.Meta.Duration)
-
-	if s.periods == nil {
-		s.periods = chunkenc.NewRLEChunk()
-		s.periodsApp, _ = s.periods.Appender() // TODO: Handle err
-	}
-	s.periodsApp.AppendAt(s.numSamples, p.Meta.Period)
-
-	s.maxTime = timestamp
+	a.s.maxTime = timestamp
 
 	return nil
 }
 
-func (s *MemSeries) append(profileTree *ProfileTree) {
+func (s *MemSeries) appendTree(profileTree *ProfileTree) error {
 	if s.seriesTree == nil {
 		s.seriesTree = &MemSeriesTree{}
 	}
 
-	s.seriesTree.Insert(s.numSamples, profileTree)
+	err := s.seriesTree.Insert(s.numSamples, profileTree)
+	if err != nil {
+		return err
+	}
 	s.numSamples++
+	return nil
 }
 
 func (s *MemSeries) Labels() labels.Labels {
