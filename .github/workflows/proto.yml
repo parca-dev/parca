@@ -1,4 +1,4 @@
-name: Jsonnet
+name: Protobuf
 
 on:
   push:
@@ -17,13 +17,16 @@ jobs:
         with:
           go-version: 1.16
 
-      - name: Set up Jsonnet
-        run: ./env-jsonnet.sh
-
       - name: Configure git for private modules
         env:
           TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: git config --global url."https://parca:${TOKEN}@github.com".insteadOf "https://github.com"
 
+      - name: Set up environment
+        run: ./env-proto.sh
+
+      - name: Lint
+        run: make proto/lint
+
       - name: Generate
-        run: cd deploy && make --always-make vendor manifests && git diff --exit-code
+        run: make proto/generate && git diff --exit-code

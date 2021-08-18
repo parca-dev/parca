@@ -192,7 +192,7 @@ func Test_Query_InputValidation(t *testing.T) {
 			req: &pb.QueryRequest{
 				Mode:       &invalidMode,
 				Options:    &pb.QueryRequest_Single_{},
-				ReportType: pb.QueryRequest_Flamegraph.Enum(),
+				ReportType: pb.QueryRequest_FLAMEGRAPH.Enum(),
 			},
 		},
 		"Invalid report type": {
@@ -206,14 +206,14 @@ func Test_Query_InputValidation(t *testing.T) {
 			req: &pb.QueryRequest{
 				Mode:       pb.QueryRequest_SINGLE.Enum(),
 				Options:    &pb.QueryRequest_Merge_{},
-				ReportType: pb.QueryRequest_Flamegraph.Enum(),
+				ReportType: pb.QueryRequest_FLAMEGRAPH.Enum(),
 			},
 		},
 		"option not provided": {
 			req: &pb.QueryRequest{
 				Mode:       pb.QueryRequest_SINGLE.Enum(),
 				Options:    nil,
-				ReportType: pb.QueryRequest_Flamegraph.Enum(),
+				ReportType: pb.QueryRequest_FLAMEGRAPH.Enum(),
 			},
 		},
 	}

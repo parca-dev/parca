@@ -117,7 +117,7 @@ message QueryRequest{
     }
 
     enum ReportType {
-        Flamegraph = 0;
+        FLAMEGRAPH = 0;
     }
 
     optional ReportType report_type = 5;
@@ -131,7 +131,7 @@ message Flamegraph {
 
 message FlamegraphNode {
     string name = 1;
-    string fullName = 2;
+    string full_name = 2;
     int64 cumulative = 3;
     int64 diff = 4;
     repeated FlamegraphNode children = 5;

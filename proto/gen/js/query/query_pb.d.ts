@@ -349,8 +349,8 @@ export class FlamegraphNode extends jspb.Message {
   getName(): string;
   setName(value: string): void;
 
-  getFullname(): string;
-  setFullname(value: string): void;
+  getFullName(): string;
+  setFullName(value: string): void;
 
   getCumulative(): number;
   setCumulative(value: number): void;
@@ -376,7 +376,7 @@ export class FlamegraphNode extends jspb.Message {
 export namespace FlamegraphNode {
   export type AsObject = {
     name: string,
-    fullname: string,
+    fullName: string,
     cumulative: number,
     diff: number,
     childrenList: Array<FlamegraphNode.AsObject>,

@@ -121,7 +121,7 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 			return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
 		}
 
-		return q.renderReport(p, pb.QueryRequest_Flamegraph)
+		return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
@@ -129,7 +129,7 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 
 func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	switch typ {
-	case pb.QueryRequest_Flamegraph:
+	case pb.QueryRequest_FLAMEGRAPH:
 		fg, err := storage.GenerateFlamegraph(q.metaStore, p)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to generate flamegraph")
