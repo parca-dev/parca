@@ -92,23 +92,23 @@ func (e EnumRule) Validate(v interface{}) error {
 
 func isAfter(t *timestamppb.Timestamp) AfterRule {
 	return AfterRule{
-		After: t,
+		Timestamp: t,
 	}
 }
 
 // AfterRule validates that the timestamp is after the given value
 type AfterRule struct {
-	After *timestamppb.Timestamp
+	Timestamp *timestamppb.Timestamp
 }
 
 // Validate runs the validation function for the AfterRule
 func (a AfterRule) Validate(t interface{}) error {
-	start, ok := t.(*timestamppb.Timestamp)
+	end, ok := t.(*timestamppb.Timestamp)
 	if !ok {
 		return fmt.Errorf("invalid value")
 	}
 
-	if a.After.AsTime().Before(start.AsTime()) {
+	if a.Timestamp.AsTime().After(end.AsTime()) {
 		return fmt.Errorf("start timestamp must be before end")
 	}
 
