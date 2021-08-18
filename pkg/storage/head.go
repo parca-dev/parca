@@ -14,17 +14,19 @@ type Head struct {
 	minTime, maxTime atomic.Int64 // Current min and max of the samples included in the head.
 	lastSeriesID     atomic.Uint64
 	numSeries        atomic.Uint64
-	postings         *index.MemPostings
 
-	seriesMtx *sync.RWMutex
-	series    map[string]*MemSeries
+	// stripeSeries store series by id and hash in maps that make them quickly accessible.
+	series *stripeSeries
+	// postings are mappings from label name and value to series IDs.
+	// Merging and intersecting the resulting IDs we can look up
+	// just the series we need from series by their IDs.
+	postings *index.MemPostings
 }
 
 func NewHead() *Head {
 	h := &Head{
-		seriesMtx: &sync.RWMutex{},
-		series:    map[string]*MemSeries{},
-		postings:  index.NewMemPostings(),
+		series:   newStripeSeries(DefaultStripeSize),
+		postings: index.NewMemPostings(),
 	}
 	h.minTime.Store(math.MaxInt64)
 	h.maxTime.Store(math.MinInt64)
@@ -32,44 +34,20 @@ func NewHead() *Head {
 }
 
 func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
-	labelString := lset.String()
-	h.seriesMtx.RLock()
-	s, found := h.series[labelString]
-	h.seriesMtx.RUnlock()
-	if found {
+	s := h.series.getByHash(lset.Hash(), lset)
+	if s != nil {
 		return s
 	}
 
 	// Optimistically assume that we are the first one to create the series.
 	id := h.lastSeriesID.Inc()
 
-	h.seriesMtx.Lock()
-	defer h.seriesMtx.Unlock()
-
-	s, found = h.series[labelString]
-	if found {
-		return s
-	}
-
-	s = NewMemSeries(lset, id)
-	h.series[labelString] = s
 	h.numSeries.Inc()
+
+	s, _ = h.series.getOrCreateWithID(id, lset.Hash(), lset)
 
 	h.postings.Add(s.id, lset)
 
-	return s
-}
-
-func (h Head) getByID(id uint64) *MemSeries {
-	// TODO: Improve with stripeSeries []map[uint64]*MemSeries like Prometheus?
-	var s *MemSeries
-	h.seriesMtx.RLock()
-	for _, series := range h.series {
-		if series.id == id {
-			s = series
-		}
-	}
-	h.seriesMtx.RUnlock()
 	return s
 }
 
@@ -152,9 +130,6 @@ type HeadQuerier struct {
 }
 
 func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSet {
-	q.head.seriesMtx.RLock()
-	defer q.head.seriesMtx.RUnlock()
-
 	ir, err := q.head.Index()
 	if err != nil {
 		return nil
@@ -165,14 +140,156 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 		return nil
 	}
 
+	mint := q.mint
+	maxt := q.maxt
+	if hints != nil {
+		mint = hints.Start
+		maxt = hints.End
+	}
+
 	ss := make([]Series, 0, postings.GetCardinality())
 	it := postings.NewIterator()
 	for it.HasNext() {
-		ss = append(ss, q.head.getByID(it.Next()))
+		s := q.head.series.getByID(it.Next())
+		if s.maxTime < mint {
+			continue
+		}
+		if s.minTime > maxt {
+			continue
+		}
+		ss = append(ss, s)
 	}
 
 	return &SliceSeriesSet{
 		series: ss,
 		i:      -1,
+	}
+}
+
+const (
+	// DefaultStripeSize is the default number of entries to allocate in the stripeSeries hash map.
+	DefaultStripeSize = 1 << 14
+)
+
+// stripeSeries locks modulo ranges of IDs and hashes to reduce lock contention.
+// The locks are padded to not be on the same cache line. Filling the padded space
+// with the maps was profiled to be slower – likely due to the additional pointer
+// dereferences.
+type stripeSeries struct {
+	size   int
+	series []map[uint64]*MemSeries
+	hashes []seriesHashmap
+	locks  []stripeLock
+}
+
+func newStripeSeries(size int) *stripeSeries {
+	s := &stripeSeries{
+		size:   size,
+		series: make([]map[uint64]*MemSeries, size),
+		hashes: make([]seriesHashmap, size),
+		locks:  make([]stripeLock, size),
+	}
+	for i := range s.series {
+		s.series[i] = map[uint64]*MemSeries{}
+	}
+	for i := range s.hashes {
+		s.hashes[i] = seriesHashmap{}
+	}
+	return s
+}
+
+type stripeLock struct {
+	sync.RWMutex
+	// Padding to avoid multiple locks being on the same cache line.
+	_ [40]byte
+}
+
+func (s stripeSeries) getOrCreateWithID(id, hash uint64, lset labels.Labels) (*MemSeries, bool) {
+	i := hash & uint64(s.size-1)
+
+	s.locks[i].RLock()
+	series := s.getByHash(hash, lset)
+	s.locks[i].RUnlock()
+
+	if series != nil {
+		return series, false
+	}
+
+	series = NewMemSeries(lset, id)
+
+	s.locks[i].Lock()
+	s.hashes[i].set(hash, series)
+	s.locks[i].Unlock()
+
+	// overwrite i for the id based index
+	i = id & uint64(s.size-1)
+
+	s.locks[i].Lock()
+	s.series[i][id] = series
+	s.locks[i].Unlock()
+
+	return series, true
+}
+
+func (s *stripeSeries) getByID(id uint64) *MemSeries {
+	i := id & uint64(s.size-1)
+	s.locks[i].RLock()
+	series := s.series[i][id]
+	s.locks[i].RUnlock()
+
+	return series
+}
+
+func (s stripeSeries) getByHash(hash uint64, lset labels.Labels) *MemSeries {
+	i := hash & uint64(s.size-1)
+
+	s.locks[i].RLock()
+	series := s.hashes[i].get(hash, lset)
+	s.locks[i].RUnlock()
+
+	return series
+}
+
+// seriesHashmap is a simple hashmap for memSeries by their label set. It is built
+// on top of a regular hashmap and holds a slice of series to resolve hash collisions.
+// Its methods require the hash to be submitted with it to avoid re-computations throughout
+// the code.
+type seriesHashmap map[uint64][]*MemSeries
+
+func (m seriesHashmap) set(hash uint64, s *MemSeries) {
+	l := m[hash]
+	// Try to find existing series with the same labels.Labels and overwrite it.
+	for i, prev := range l {
+		if labels.Equal(prev.lset, s.lset) {
+			l[i] = s
+			return
+		}
+	}
+	// If nothing was found then append the series.
+	m[hash] = append(l, s)
+}
+
+func (m seriesHashmap) get(hash uint64, lset labels.Labels) *MemSeries {
+	for _, s := range m[hash] {
+		if labels.Equal(s.lset, lset) {
+			return s
+		}
+	}
+	return nil
+}
+
+func (m seriesHashmap) del(hash uint64, lset labels.Labels) {
+	var rem []*MemSeries
+	for _, s := range m[hash] {
+		// Append the series that don't match the label set
+		// to exclude the one that matches.
+		if !labels.Equal(s.lset, lset) {
+			rem = append(rem, s)
+		}
+	}
+	if len(rem) == 0 {
+		delete(m, hash)
+	} else {
+		m[hash] = rem
 	}
 }

@@ -41,7 +41,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 	}
 
 	start := req.Start.AsTime()
-	end := req.Start.AsTime()
+	end := req.End.AsTime()
 
 	// Timestamps don't have to match exactly and staleness kicks in within 5
 	// minutes of no samples, so we need to search the range of -5min to +5min

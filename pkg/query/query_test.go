@@ -26,7 +26,7 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 
 	// Query last 5 minutes
 	end := time.Now()
-	start := end.Add(5 * time.Minute)
+	start := end.Add(-5 * time.Minute)
 
 	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: "allocs",
@@ -57,11 +57,15 @@ func Test_QueryRange_Valid(t *testing.T) {
 	p, err := profile.Parse(f)
 	require.NoError(t, err)
 
-	app.Append(storage.ProfileFromPprof(s, p))
+	// Overwrite the profile's timestamp to be within the last 5min.
+	p.TimeNanos = time.Now().UnixNano()
+
+	err = app.Append(storage.ProfileFromPprof(s, p))
+	require.NoError(t, err)
 
 	// Query last 5 minutes
 	end := time.Now()
-	start := end.Add(5 * time.Minute)
+	start := end.Add(-5 * time.Minute)
 
 	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: "allocs",
@@ -108,12 +112,17 @@ func Test_QueryRange_Limited(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		app.Append(storage.ProfileFromPprof(s, p))
+
+		// Overwrite the profile's timestamp to be within the last 5min.
+		p.TimeNanos = time.Now().UnixNano()
+
+		err = app.Append(storage.ProfileFromPprof(s, p))
+		require.NoError(t, err)
 	}
 
 	// Query last 5 minutes
 	end := time.Now()
-	start := end.Add(5 * time.Minute)
+	start := end.Add(-5 * time.Minute)
 
 	limit := rand.Intn(numSeries)
 	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{
@@ -133,7 +142,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 func Test_QueryRange_InputValidation(t *testing.T) {
 	ctx := context.Background()
 	end := time.Now()
-	start := end.Add(5 * time.Minute)
+	start := end.Add(-5 * time.Minute)
 
 	tests := map[string]struct {
 		req *pb.QueryRangeRequest

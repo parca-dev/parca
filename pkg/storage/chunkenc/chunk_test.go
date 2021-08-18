@@ -121,10 +121,10 @@ func testChunk(t *testing.T, c Chunk) {
 	require.Equal(t, []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 42}, res4)
 }
 
-// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./chunkenc >> benchmark/iterator-same.txt; done
-// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./chunkenc >> benchmark/iterator-increasing.txt; done
-// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./chunkenc >> benchmark/iterator-random.txt; done
-// benchstat benchmark/iterator-same.txt benchmark/iterator-increasing.txt benchmark/iterator-random.txt >> benchmark/iterator-benchstat.txt
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./pkg/storage/chunkenc >> pkg/storage/benchmark/iterator-same.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./pkg/storage/chunkenc >> pkg/storage/benchmark/iterator-increasing.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./pkg/storage/chunkenc >> pkg/storage/benchmark/iterator-random.txt; done
+// benchstat pkg/storage/benchmark/iterator-same.txt pkg/storage/benchmark/iterator-increasing.txt pkg/storage/benchmark/iterator-random.txt >> pkg/storage/benchmark/iterator-benchstat.txt
 
 func BenchmarkIterators(b *testing.B) {
 	for _, c := range []struct {
