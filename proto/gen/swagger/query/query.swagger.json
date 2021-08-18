@@ -253,9 +253,9 @@
             "required": false,
             "type": "string",
             "enum": [
-              "Flamegraph"
+              "FLAMEGRAPH"
             ],
-            "default": "Flamegraph"
+            "default": "FLAMEGRAPH"
           }
         ],
         "tags": [
@@ -484,9 +484,9 @@
     "QueryRequestReportType": {
       "type": "string",
       "enum": [
-        "Flamegraph"
+        "FLAMEGRAPH"
       ],
-      "default": "Flamegraph"
+      "default": "FLAMEGRAPH"
     },
     "QueryRequestSingle": {
       "type": "object",

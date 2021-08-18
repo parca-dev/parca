@@ -2897,7 +2897,7 @@ proto.parca.query.FlamegraphNode.prototype.toObject = function(opt_includeInstan
 proto.parca.query.FlamegraphNode.toObject = function(includeInstance, msg) {
   var f, obj = {
     name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    fullname: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    fullName: jspb.Message.getFieldWithDefault(msg, 2, ""),
     cumulative: jspb.Message.getFieldWithDefault(msg, 3, 0),
     diff: jspb.Message.getFieldWithDefault(msg, 4, 0),
     childrenList: jspb.Message.toObjectList(msg.getChildrenList(),
@@ -2944,7 +2944,7 @@ proto.parca.query.FlamegraphNode.deserializeBinaryFromReader = function(msg, rea
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
-      msg.setFullname(value);
+      msg.setFullName(value);
       break;
     case 3:
       var value = /** @type {number} */ (reader.readInt64());
@@ -2995,7 +2995,7 @@ proto.parca.query.FlamegraphNode.serializeBinaryToWriter = function(message, wri
       f
     );
   }
-  f = message.getFullname();
+  f = message.getFullName();
   if (f.length > 0) {
     writer.writeString(
       2,
@@ -3046,10 +3046,10 @@ proto.parca.query.FlamegraphNode.prototype.setName = function(value) {
 
 
 /**
- * optional string fullName = 2;
+ * optional string full_name = 2;
  * @return {string}
  */
-proto.parca.query.FlamegraphNode.prototype.getFullname = function() {
+proto.parca.query.FlamegraphNode.prototype.getFullName = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
@@ -3058,7 +3058,7 @@ proto.parca.query.FlamegraphNode.prototype.getFullname = function() {
  * @param {string} value
  * @return {!proto.parca.query.FlamegraphNode} returns this
  */
-proto.parca.query.FlamegraphNode.prototype.setFullname = function(value) {
+proto.parca.query.FlamegraphNode.prototype.setFullName = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
 };
 
