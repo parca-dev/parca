@@ -285,7 +285,7 @@ type MemSeries struct {
 	numSamples uint16
 }
 
-func NewMemSeries(lset labels.Labels, id uint64) (*MemSeries, error) {
+func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
 	timestamps := chunkenc.NewDeltaChunk()
 	durations := chunkenc.NewRLEChunk()
 	periods := chunkenc.NewRLEChunk()
@@ -297,7 +297,7 @@ func NewMemSeries(lset labels.Labels, id uint64) (*MemSeries, error) {
 		durations:  durations,
 		periods:    periods,
 		seriesTree: &MemSeriesTree{},
-	}, nil
+	}
 }
 
 type stacktraceKey struct {

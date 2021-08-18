@@ -51,10 +51,7 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 		return s
 	}
 
-	s, err := NewMemSeries(lset, id)
-	if err != nil {
-		panic(err) // TODO: NewMemSeries should not error
-	}
+	s = NewMemSeries(lset, id)
 	h.series[labelString] = s
 	h.numSeries.Inc()
 
