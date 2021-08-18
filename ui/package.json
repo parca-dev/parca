@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "lint": "eslint --ext .ts,.tsx,.js packages/app/* packages/shared/* pages/*",
+    "lint": "eslint --ext .ts,.tsx,.js packages/app/* packages/shared/*",
     "test": "jest --coverage --config jest.config.js",
     "generate": "plop --plopfile .plop/plopfile.ts",
     "storybook": "start-storybook -p 6006"
@@ -13,6 +13,10 @@
     "packages/shared/*"
   ],
   "dependencies": {
+    "@improbable-eng/grpc-web": "^0.14.0",
+    "@improbable-eng/grpc-web-node-http-transport": "^0.14.0",
+    "@types/google-protobuf": "^3.15.5",
+    "google-protobuf": "^3.17.3",
     "next": "^11.1.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"

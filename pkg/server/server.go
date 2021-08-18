@@ -83,7 +83,7 @@ func ListenAndServe(ctx context.Context, logger log.Logger, port string, registe
 	}
 	reflection.Register(srv)
 
-	uiFS, err := fs.Sub(ui.FS, "dist")
+	uiFS, err := fs.Sub(ui.FS, "packages/app/web/dist")
 	if err != nil {
 		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
 	}

@@ -9,12 +9,12 @@ plugins:
       - paths=source_relative
       - require_unimplemented_servers=false
   - name: js
-    out: proto/gen/js
+    out: ui/packages/shared/client/src
     opt:
       - import_style=commonjs,binary
   - name: ts
     path: ./node_modules/.bin/protoc-gen-ts
-    out: proto/gen/js
+    out: ui/packages/shared/client/src
     opt:
       - service=grpc-web
   - name: grpc-gateway
