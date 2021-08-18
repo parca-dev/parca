@@ -44,19 +44,20 @@ func Test_QueryRange_Valid(t *testing.T) {
 	s := storage.NewInMemoryProfileMetaStore()
 	q := New(db, s)
 
-	appender := db.Appender(ctx, labels.Labels{
+	app, err := db.Appender(ctx, labels.Labels{
 		labels.Label{
 			Name:  "__name__",
 			Value: "allocs",
 		},
 	})
+	require.NoError(t, err)
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 	p, err := profile.Parse(f)
 	require.NoError(t, err)
 
-	appender.Append(storage.ProfileFromPprof(s, p))
+	app.Append(storage.ProfileFromPprof(s, p))
 
 	// Query last 5 minutes
 	end := time.Now()
@@ -96,7 +97,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 
 	numSeries := 10
 	for i := 0; i < numSeries; i++ {
-		appender := db.Appender(ctx, labels.Labels{
+		app, err := db.Appender(ctx, labels.Labels{
 			labels.Label{
 				Name:  "__name__",
 				Value: "allocs",
@@ -106,7 +107,8 @@ func Test_QueryRange_Limited(t *testing.T) {
 				Value: fmt.Sprintf("series_%v", i),
 			},
 		})
-		appender.Append(storage.ProfileFromPprof(s, p))
+		require.NoError(t, err)
+		app.Append(storage.ProfileFromPprof(s, p))
 	}
 
 	// Query last 5 minutes

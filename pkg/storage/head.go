@@ -51,10 +51,7 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 		return s
 	}
 
-	s, err := NewMemSeries(lset, id)
-	if err != nil {
-		panic(err) // TODO: NewMemSeries should not error
-	}
+	s = NewMemSeries(lset, id)
 	h.series[labelString] = s
 	h.numSeries.Inc()
 
@@ -77,14 +74,14 @@ func (h Head) getByID(id uint64) *MemSeries {
 }
 
 // Appender returns a new Appender on the database.
-func (h *Head) Appender(_ context.Context, lset labels.Labels) Appender {
+func (h *Head) Appender(_ context.Context, lset labels.Labels) (Appender, error) {
 	// The head cache might not have a starting point yet. The init appender
 	// picks up the first appended timestamp as the base.
 	if h.MinTime() == math.MaxInt64 {
 		return &initAppender{
 			lset: lset,
 			head: h,
-		}
+		}, nil
 	}
 	return h.appender(lset)
 }
@@ -103,7 +100,13 @@ func (a *initAppender) Append(p *Profile) error {
 	}
 
 	a.head.initTime(p.Meta.Timestamp)
-	a.app = a.head.appender(a.lset)
+
+	var err error
+	a.app, err = a.head.appender(a.lset)
+	if err != nil {
+		return err
+	}
+
 	return a.app.Append(p)
 }
 
@@ -128,8 +131,9 @@ func (h *Head) initTime(t int64) {
 	h.maxTime.CAS(math.MinInt64, t)
 }
 
-func (h *Head) appender(lset labels.Labels) Appender {
-	return h.getOrCreate(lset)
+func (h *Head) appender(lset labels.Labels) (Appender, error) {
+	s := h.getOrCreate(lset)
+	return s.Appender()
 }
 
 func (h *Head) Querier(ctx context.Context, mint, maxt int64) Querier {

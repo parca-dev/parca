@@ -28,11 +28,12 @@ func TestHeadIndexReader_LabelValues(t *testing.T) {
 	h := NewHead()
 
 	for i := 0; i < 100; i++ {
-		app := h.Appender(context.Background(), labels.Labels{
+		app, err := h.Appender(context.Background(), labels.Labels{
 			{Name: "unique", Value: fmt.Sprintf("value%d", i)},
 			{Name: "tens", Value: fmt.Sprintf("value%d", i/10)},
 		})
-		err := app.Append(&Profile{
+		require.NoError(t, err)
+		err = app.Append(&Profile{
 			Tree: NewProfileTree(),
 			Meta: InstantProfileMeta{
 				Timestamp: int64(100 + i),

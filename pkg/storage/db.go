@@ -7,7 +7,7 @@ import (
 )
 
 type Appendable interface {
-	Appender(ctx context.Context, lset labels.Labels) Appender
+	Appender(ctx context.Context, lset labels.Labels) (Appender, error)
 }
 
 type SelectHints struct {
@@ -80,7 +80,7 @@ func OpenDB() *DB {
 	}
 }
 
-func (db *DB) Appender(ctx context.Context, lset labels.Labels) Appender {
+func (db *DB) Appender(ctx context.Context, lset labels.Labels) (Appender, error) {
 	return db.head.Appender(ctx, lset)
 }
 

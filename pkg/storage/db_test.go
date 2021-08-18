@@ -17,17 +17,19 @@ func TestDB(t *testing.T) {
 	l := NewInMemoryProfileMetaStore()
 	db := OpenDB()
 	ctx := context.Background()
-	app1 := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test1"}})
+	app1, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test1"}})
+	require.NoError(t, err)
 
 	b := bytes.NewBuffer(nil)
-	err := pprof.WriteHeapProfile(b)
+	err = pprof.WriteHeapProfile(b)
 	require.NoError(t, err)
 	p, err := profile.Parse(b)
 	require.NoError(t, err)
 
 	require.NoError(t, app1.Append(ProfileFromPprof(l, p)))
 
-	app2 := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test2"}})
+	app2, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test2"}})
+	require.NoError(t, err)
 
 	b = bytes.NewBuffer(nil)
 	err = pprof.WriteHeapProfile(b)
