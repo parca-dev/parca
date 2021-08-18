@@ -140,17 +140,24 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 		return nil
 	}
 
-	//mint := q.mint
-	//maxt := q.maxt
-	//if hints != nil {
-	//	mint = hints.Start
-	//	maxt = hints.End
-	//}
+	mint := q.mint
+	maxt := q.maxt
+	if hints != nil {
+		mint = hints.Start
+		maxt = hints.End
+	}
 
 	ss := make([]Series, 0, postings.GetCardinality())
 	it := postings.NewIterator()
 	for it.HasNext() {
-		ss = append(ss, q.head.series.getByID(it.Next()))
+		s := q.head.series.getByID(it.Next())
+		if s.maxTime < mint {
+			continue
+		}
+		if s.minTime > maxt {
+			continue
+		}
+		ss = append(ss, s)
 	}
 
 	return &SliceSeriesSet{

@@ -368,6 +368,11 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	a.duration.AppendAt(a.s.numSamples, p.Meta.Duration)
 	a.periods.AppendAt(a.s.numSamples, p.Meta.Period)
 
+	// Set the timestamp as minTime if timestamp != 0
+	if a.s.minTime == 0 && timestamp != 0 {
+		a.s.minTime = timestamp
+	}
+
 	a.s.maxTime = timestamp
 
 	return nil
