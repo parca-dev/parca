@@ -32,4 +32,6 @@ func main() {
 		level.Error(logger).Log("msg", "Program exited with error", "err", err)
 		os.Exit(1)
 	}
+
+	level.Info(logger).Log("msg", "exited")
 }

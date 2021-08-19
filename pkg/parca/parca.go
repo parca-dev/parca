@@ -2,11 +2,16 @@ package parca
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
+	"os"
+	"syscall"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/oklog/run"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/query"
@@ -48,30 +53,55 @@ func Run(ctx context.Context, logger log.Logger, configPath, port string) error 
 	metaStore := storage.NewInMemoryProfileMetaStore()
 	s := profilestore.NewProfileStore(logger, db, metaStore)
 	q := query.New(db, metaStore)
-	err = server.ListenAndServe(
-		context.Background(),
-		logger,
-		port,
-		server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-			debuginfopb.RegisterDebugInfoServer(srv, d)
-			profilestorepb.RegisterProfileStoreServer(srv, s)
-			querypb.RegisterQueryServer(srv, q)
 
-			if err := debuginfopb.RegisterDebugInfoHandlerFromEndpoint(ctx, mux, port, opts); err != nil {
-				return err
+	parcaserver := &server.Server{}
+
+	var gr run.Group
+	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
+	gr.Add(
+		func() error {
+			return parcaserver.ListenAndServe(
+				ctx,
+				logger,
+				port,
+				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
+					debuginfopb.RegisterDebugInfoServer(srv, d)
+					profilestorepb.RegisterProfileStoreServer(srv, s)
+					querypb.RegisterQueryServer(srv, q)
+
+					if err := debuginfopb.RegisterDebugInfoHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+						return err
+					}
+
+					if err := profilestorepb.RegisterProfileStoreHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+						return err
+					}
+
+					if err := querypb.RegisterQueryHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+						return err
+					}
+
+					return nil
+				}),
+			)
+		},
+		func(_ error) {
+			ctx, cancel := context.WithTimeout(ctx, 30*time.Second) // TODO make this a graceful shutdown config setting
+			defer cancel()
+
+			err := parcaserver.Shutdown(ctx)
+			if err != nil && !errors.Is(err, context.Canceled) {
+				level.Error(logger).Log("msg", "error shuttiing down server", "err", err)
 			}
-
-			if err := profilestorepb.RegisterProfileStoreHandlerFromEndpoint(ctx, mux, port, opts); err != nil {
-				return err
-			}
-
-			if err := querypb.RegisterQueryHandlerFromEndpoint(ctx, mux, port, opts); err != nil {
-				return err
-			}
-
-			return nil
-		}),
+		},
 	)
 
-	return err
+	if err := gr.Run(); err != nil {
+		if _, ok := err.(run.SignalError); ok {
+			return nil
+		}
+		return err
+	}
+
+	return nil
 }
