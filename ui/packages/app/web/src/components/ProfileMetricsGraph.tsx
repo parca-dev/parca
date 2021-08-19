@@ -61,6 +61,9 @@ export const useQueryRange = (
   return result
 }
 
+// TODO(kakkoyun): !!
+// const minStep = 15
+
 const ProfileMetricsGraph = ({
   queryClient,
   queryExpression,
@@ -77,6 +80,7 @@ const ProfileMetricsGraph = ({
   // const calculatedStep = timeRangeSeconds / 120
   // const step = calculatedStep < minStep ? minStep : calculatedStep
 
+  // TODO(kakkoyun): !!
   // `${queryRangeEndpoint}?query=${encodeURIComponent(queryExpression)}&start=${from / 1000}&end=${to / 1000}&step=${step}&dedup=true`, fetchJSON
   const { response, error } = useQueryRange(
     queryClient,
