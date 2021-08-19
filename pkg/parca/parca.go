@@ -56,9 +56,9 @@ func Run(ctx context.Context, logger log.Logger, configPath, port string) error 
 
 	parcaserver := &server.Server{}
 
-	runggroup := run.Group{}
-	runggroup.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
-	runggroup.Add(
+	var gr run.Group
+	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
+	gr.Add(
 		func() error {
 			return parcaserver.ListenAndServe(
 				ctx,
@@ -96,8 +96,7 @@ func Run(ctx context.Context, logger log.Logger, configPath, port string) error 
 		},
 	)
 
-	err = runggroup.Run()
-	if err != nil {
+	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
 			return nil
 		}
