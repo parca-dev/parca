@@ -3,7 +3,7 @@
 
 import * as jspb from "google-protobuf";
 import * as google_api_annotations_pb from "../google/api/annotations_pb";
-import * as google_api_timestamp_pb from "../google/api/timestamp_pb";
+import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
 import * as google_pprof_profile_pb from "../google/pprof/profile_pb";
 import * as profilestore_profilestore_pb from "../profilestore/profilestore_pb";
 
@@ -13,13 +13,13 @@ export class QueryRangeRequest extends jspb.Message {
 
   hasStart(): boolean;
   clearStart(): void;
-  getStart(): google_api_timestamp_pb.Timestamp | undefined;
-  setStart(value?: google_api_timestamp_pb.Timestamp): void;
+  getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   hasEnd(): boolean;
   clearEnd(): void;
-  getEnd(): google_api_timestamp_pb.Timestamp | undefined;
-  setEnd(value?: google_api_timestamp_pb.Timestamp): void;
+  getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   getLimit(): number;
   setLimit(value: number): void;
@@ -37,8 +37,8 @@ export class QueryRangeRequest extends jspb.Message {
 export namespace QueryRangeRequest {
   export type AsObject = {
     query: string,
-    start?: google_api_timestamp_pb.Timestamp.AsObject,
-    end?: google_api_timestamp_pb.Timestamp.AsObject,
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
     limit: number,
   }
 }
@@ -96,8 +96,8 @@ export namespace MetricsSeries {
 export class MetricsSample extends jspb.Message {
   hasTimestamp(): boolean;
   clearTimestamp(): void;
-  getTimestamp(): google_api_timestamp_pb.Timestamp | undefined;
-  setTimestamp(value?: google_api_timestamp_pb.Timestamp): void;
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   getValue(): number;
   setValue(value: number): void;
@@ -114,7 +114,7 @@ export class MetricsSample extends jspb.Message {
 
 export namespace MetricsSample {
   export type AsObject = {
-    timestamp?: google_api_timestamp_pb.Timestamp.AsObject,
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
     value: number,
   }
 }
@@ -199,21 +199,21 @@ export namespace QueryRequest {
 
     hasTime(): boolean;
     clearTime(): void;
-    getTime(): google_api_timestamp_pb.Timestamp | undefined;
-    setTime(value?: google_api_timestamp_pb.Timestamp): void;
+    getTime(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setTime(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
     getQuery(): string;
     setQuery(value: string): void;
 
     hasStart(): boolean;
     clearStart(): void;
-    getStart(): google_api_timestamp_pb.Timestamp | undefined;
-    setStart(value?: google_api_timestamp_pb.Timestamp): void;
+    getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
     hasEnd(): boolean;
     clearEnd(): void;
-    getEnd(): google_api_timestamp_pb.Timestamp | undefined;
-    setEnd(value?: google_api_timestamp_pb.Timestamp): void;
+    getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ProfileSelect.AsObject;
@@ -228,10 +228,10 @@ export namespace QueryRequest {
   export namespace ProfileSelect {
     export type AsObject = {
       mode: string,
-      time?: google_api_timestamp_pb.Timestamp.AsObject,
+      time?: google_protobuf_timestamp_pb.Timestamp.AsObject,
       query: string,
-      start?: google_api_timestamp_pb.Timestamp.AsObject,
-      end?: google_api_timestamp_pb.Timestamp.AsObject,
+      start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+      end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
     }
   }
 
@@ -241,13 +241,13 @@ export namespace QueryRequest {
 
     hasStart(): boolean;
     clearStart(): void;
-    getStart(): google_api_timestamp_pb.Timestamp | undefined;
-    setStart(value?: google_api_timestamp_pb.Timestamp): void;
+    getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
     hasEnd(): boolean;
     clearEnd(): void;
-    getEnd(): google_api_timestamp_pb.Timestamp | undefined;
-    setEnd(value?: google_api_timestamp_pb.Timestamp): void;
+    getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Merge.AsObject;
@@ -262,16 +262,16 @@ export namespace QueryRequest {
   export namespace Merge {
     export type AsObject = {
       query: string,
-      start?: google_api_timestamp_pb.Timestamp.AsObject,
-      end?: google_api_timestamp_pb.Timestamp.AsObject,
+      start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+      end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
     }
   }
 
   export class Single extends jspb.Message {
     hasTime(): boolean;
     clearTime(): void;
-    getTime(): google_api_timestamp_pb.Timestamp | undefined;
-    setTime(value?: google_api_timestamp_pb.Timestamp): void;
+    getTime(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setTime(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
     getQuery(): string;
     setQuery(value: string): void;
@@ -288,7 +288,7 @@ export namespace QueryRequest {
 
   export namespace Single {
     export type AsObject = {
-      time?: google_api_timestamp_pb.Timestamp.AsObject,
+      time?: google_protobuf_timestamp_pb.Timestamp.AsObject,
       query: string,
     }
   }
@@ -419,13 +419,13 @@ export class SeriesRequest extends jspb.Message {
 
   hasStart(): boolean;
   clearStart(): void;
-  getStart(): google_api_timestamp_pb.Timestamp | undefined;
-  setStart(value?: google_api_timestamp_pb.Timestamp): void;
+  getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   hasEnd(): boolean;
   clearEnd(): void;
-  getEnd(): google_api_timestamp_pb.Timestamp | undefined;
-  setEnd(value?: google_api_timestamp_pb.Timestamp): void;
+  getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SeriesRequest.AsObject;
@@ -440,8 +440,8 @@ export class SeriesRequest extends jspb.Message {
 export namespace SeriesRequest {
   export type AsObject = {
     matchList: Array<string>,
-    start?: google_api_timestamp_pb.Timestamp.AsObject,
-    end?: google_api_timestamp_pb.Timestamp.AsObject,
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 }
 
@@ -469,13 +469,13 @@ export class LabelsRequest extends jspb.Message {
 
   hasStart(): boolean;
   clearStart(): void;
-  getStart(): google_api_timestamp_pb.Timestamp | undefined;
-  setStart(value?: google_api_timestamp_pb.Timestamp): void;
+  getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   hasEnd(): boolean;
   clearEnd(): void;
-  getEnd(): google_api_timestamp_pb.Timestamp | undefined;
-  setEnd(value?: google_api_timestamp_pb.Timestamp): void;
+  getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LabelsRequest.AsObject;
@@ -490,8 +490,8 @@ export class LabelsRequest extends jspb.Message {
 export namespace LabelsRequest {
   export type AsObject = {
     matchList: Array<string>,
-    start?: google_api_timestamp_pb.Timestamp.AsObject,
-    end?: google_api_timestamp_pb.Timestamp.AsObject,
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 }
 
@@ -522,13 +522,13 @@ export class ValuesRequest extends jspb.Message {
 
   hasStart(): boolean;
   clearStart(): void;
-  getStart(): google_api_timestamp_pb.Timestamp | undefined;
-  setStart(value?: google_api_timestamp_pb.Timestamp): void;
+  getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   hasEnd(): boolean;
   clearEnd(): void;
-  getEnd(): google_api_timestamp_pb.Timestamp | undefined;
-  setEnd(value?: google_api_timestamp_pb.Timestamp): void;
+  getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ValuesRequest.AsObject;
@@ -544,8 +544,8 @@ export namespace ValuesRequest {
   export type AsObject = {
     name: string,
     matchList: Array<string>,
-    start?: google_api_timestamp_pb.Timestamp.AsObject,
-    end?: google_api_timestamp_pb.Timestamp.AsObject,
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 }
 
