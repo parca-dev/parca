@@ -43,14 +43,12 @@ proto/generate:
 	buf generate --path=./proto/query
 	buf generate --path=./proto/profilestore
 	buf generate --path=./proto/debuginfo
-	buf generate --path=./proto/google/api
 	buf generate --path=./proto/google/pprof
 
 .PHONY: proto/vendor
 proto/vendor:
-	mkdir -p proto/google/api
+	buf mod update
 	mkdir -p proto/google/pprof
-	curl https://raw.githubusercontent.com/protocolbuffers/protobuf/master/src/google/protobuf/timestamp.proto                     > proto/google/api/timestamp.proto
 	curl https://raw.githubusercontent.com/google/pprof/master/proto/profile.proto                                                 > proto/google/pprof/profile.proto
 
 .PHONY: container

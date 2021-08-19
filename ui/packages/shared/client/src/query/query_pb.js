@@ -17,8 +17,8 @@ var global = Function('return this')();
 
 var google_api_annotations_pb = require('../google/api/annotations_pb.js');
 goog.object.extend(proto, google_api_annotations_pb);
-var google_api_timestamp_pb = require('../google/api/timestamp_pb.js');
-goog.object.extend(proto, google_api_timestamp_pb);
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
+goog.object.extend(proto, google_protobuf_timestamp_pb);
 var google_pprof_profile_pb = require('../google/pprof/profile_pb.js');
 goog.object.extend(proto, google_pprof_profile_pb);
 var profilestore_profilestore_pb = require('../profilestore/profilestore_pb.js');
@@ -545,8 +545,8 @@ proto.parca.query.QueryRangeRequest.prototype.toObject = function(opt_includeIns
 proto.parca.query.QueryRangeRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     query: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    start: (f = msg.getStart()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    end: (f = msg.getEnd()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    start: (f = msg.getStart()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    end: (f = msg.getEnd()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
     limit: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
@@ -589,13 +589,13 @@ proto.parca.query.QueryRangeRequest.deserializeBinaryFromReader = function(msg, 
       msg.setQuery(value);
       break;
     case 2:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setStart(value);
       break;
     case 3:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setEnd(value);
       break;
     case 4:
@@ -643,7 +643,7 @@ proto.parca.query.QueryRangeRequest.serializeBinaryToWriter = function(message, 
     writer.writeMessage(
       2,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getEnd();
@@ -651,7 +651,7 @@ proto.parca.query.QueryRangeRequest.serializeBinaryToWriter = function(message, 
     writer.writeMessage(
       3,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getLimit();
@@ -688,7 +688,7 @@ proto.parca.query.QueryRangeRequest.prototype.setQuery = function(value) {
  */
 proto.parca.query.QueryRangeRequest.prototype.getStart = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 2));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 2));
 };
 
 
@@ -725,7 +725,7 @@ proto.parca.query.QueryRangeRequest.prototype.hasStart = function() {
  */
 proto.parca.query.QueryRangeRequest.prototype.getEnd = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 3));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 3));
 };
 
 
@@ -1177,7 +1177,7 @@ proto.parca.query.MetricsSample.prototype.toObject = function(opt_includeInstanc
  */
 proto.parca.query.MetricsSample.toObject = function(includeInstance, msg) {
   var f, obj = {
-    timestamp: (f = msg.getTimestamp()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
     value: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
@@ -1216,8 +1216,8 @@ proto.parca.query.MetricsSample.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setTimestamp(value);
       break;
     case 2:
@@ -1258,7 +1258,7 @@ proto.parca.query.MetricsSample.serializeBinaryToWriter = function(message, writ
     writer.writeMessage(
       1,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getValue();
@@ -1277,7 +1277,7 @@ proto.parca.query.MetricsSample.serializeBinaryToWriter = function(message, writ
  */
 proto.parca.query.MetricsSample.prototype.getTimestamp = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 1));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 1));
 };
 
 
@@ -1770,10 +1770,10 @@ proto.parca.query.QueryRequest.ProfileSelect.prototype.toObject = function(opt_i
 proto.parca.query.QueryRequest.ProfileSelect.toObject = function(includeInstance, msg) {
   var f, obj = {
     mode: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    time: (f = msg.getTime()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    time: (f = msg.getTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
     query: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    start: (f = msg.getStart()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    end: (f = msg.getEnd()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    start: (f = msg.getStart()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    end: (f = msg.getEnd()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1815,8 +1815,8 @@ proto.parca.query.QueryRequest.ProfileSelect.deserializeBinaryFromReader = funct
       msg.setMode(value);
       break;
     case 2:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setTime(value);
       break;
     case 3:
@@ -1824,13 +1824,13 @@ proto.parca.query.QueryRequest.ProfileSelect.deserializeBinaryFromReader = funct
       msg.setQuery(value);
       break;
     case 4:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setStart(value);
       break;
     case 5:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setEnd(value);
       break;
     default:
@@ -1874,7 +1874,7 @@ proto.parca.query.QueryRequest.ProfileSelect.serializeBinaryToWriter = function(
     writer.writeMessage(
       2,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getQuery();
@@ -1889,7 +1889,7 @@ proto.parca.query.QueryRequest.ProfileSelect.serializeBinaryToWriter = function(
     writer.writeMessage(
       4,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getEnd();
@@ -1897,7 +1897,7 @@ proto.parca.query.QueryRequest.ProfileSelect.serializeBinaryToWriter = function(
     writer.writeMessage(
       5,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -1927,7 +1927,7 @@ proto.parca.query.QueryRequest.ProfileSelect.prototype.setMode = function(value)
  */
 proto.parca.query.QueryRequest.ProfileSelect.prototype.getTime = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 2));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 2));
 };
 
 
@@ -1982,7 +1982,7 @@ proto.parca.query.QueryRequest.ProfileSelect.prototype.setQuery = function(value
  */
 proto.parca.query.QueryRequest.ProfileSelect.prototype.getStart = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 4));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 4));
 };
 
 
@@ -2019,7 +2019,7 @@ proto.parca.query.QueryRequest.ProfileSelect.prototype.hasStart = function() {
  */
 proto.parca.query.QueryRequest.ProfileSelect.prototype.getEnd = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 5));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 5));
 };
 
 
@@ -2083,8 +2083,8 @@ proto.parca.query.QueryRequest.Merge.prototype.toObject = function(opt_includeIn
 proto.parca.query.QueryRequest.Merge.toObject = function(includeInstance, msg) {
   var f, obj = {
     query: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    start: (f = msg.getStart()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    end: (f = msg.getEnd()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    start: (f = msg.getStart()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    end: (f = msg.getEnd()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2126,13 +2126,13 @@ proto.parca.query.QueryRequest.Merge.deserializeBinaryFromReader = function(msg,
       msg.setQuery(value);
       break;
     case 2:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setStart(value);
       break;
     case 3:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setEnd(value);
       break;
     default:
@@ -2176,7 +2176,7 @@ proto.parca.query.QueryRequest.Merge.serializeBinaryToWriter = function(message,
     writer.writeMessage(
       2,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getEnd();
@@ -2184,7 +2184,7 @@ proto.parca.query.QueryRequest.Merge.serializeBinaryToWriter = function(message,
     writer.writeMessage(
       3,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -2214,7 +2214,7 @@ proto.parca.query.QueryRequest.Merge.prototype.setQuery = function(value) {
  */
 proto.parca.query.QueryRequest.Merge.prototype.getStart = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 2));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 2));
 };
 
 
@@ -2251,7 +2251,7 @@ proto.parca.query.QueryRequest.Merge.prototype.hasStart = function() {
  */
 proto.parca.query.QueryRequest.Merge.prototype.getEnd = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 3));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 3));
 };
 
 
@@ -2314,7 +2314,7 @@ proto.parca.query.QueryRequest.Single.prototype.toObject = function(opt_includeI
  */
 proto.parca.query.QueryRequest.Single.toObject = function(includeInstance, msg) {
   var f, obj = {
-    time: (f = msg.getTime()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    time: (f = msg.getTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
     query: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
@@ -2353,8 +2353,8 @@ proto.parca.query.QueryRequest.Single.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setTime(value);
       break;
     case 2:
@@ -2395,7 +2395,7 @@ proto.parca.query.QueryRequest.Single.serializeBinaryToWriter = function(message
     writer.writeMessage(
       1,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getQuery();
@@ -2414,7 +2414,7 @@ proto.parca.query.QueryRequest.Single.serializeBinaryToWriter = function(message
  */
 proto.parca.query.QueryRequest.Single.prototype.getTime = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 1));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 1));
 };
 
 
@@ -3353,8 +3353,8 @@ proto.parca.query.SeriesRequest.prototype.toObject = function(opt_includeInstanc
 proto.parca.query.SeriesRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     matchList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
-    start: (f = msg.getStart()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    end: (f = msg.getEnd()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    start: (f = msg.getStart()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    end: (f = msg.getEnd()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3396,13 +3396,13 @@ proto.parca.query.SeriesRequest.deserializeBinaryFromReader = function(msg, read
       msg.addMatch(value);
       break;
     case 2:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setStart(value);
       break;
     case 3:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setEnd(value);
       break;
     default:
@@ -3446,7 +3446,7 @@ proto.parca.query.SeriesRequest.serializeBinaryToWriter = function(message, writ
     writer.writeMessage(
       2,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getEnd();
@@ -3454,7 +3454,7 @@ proto.parca.query.SeriesRequest.serializeBinaryToWriter = function(message, writ
     writer.writeMessage(
       3,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -3503,7 +3503,7 @@ proto.parca.query.SeriesRequest.prototype.clearMatchList = function() {
  */
 proto.parca.query.SeriesRequest.prototype.getStart = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 2));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 2));
 };
 
 
@@ -3540,7 +3540,7 @@ proto.parca.query.SeriesRequest.prototype.hasStart = function() {
  */
 proto.parca.query.SeriesRequest.prototype.getEnd = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 3));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 3));
 };
 
 
@@ -3712,8 +3712,8 @@ proto.parca.query.LabelsRequest.prototype.toObject = function(opt_includeInstanc
 proto.parca.query.LabelsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     matchList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
-    start: (f = msg.getStart()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    end: (f = msg.getEnd()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    start: (f = msg.getStart()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    end: (f = msg.getEnd()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3755,13 +3755,13 @@ proto.parca.query.LabelsRequest.deserializeBinaryFromReader = function(msg, read
       msg.addMatch(value);
       break;
     case 2:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setStart(value);
       break;
     case 3:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setEnd(value);
       break;
     default:
@@ -3805,7 +3805,7 @@ proto.parca.query.LabelsRequest.serializeBinaryToWriter = function(message, writ
     writer.writeMessage(
       2,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getEnd();
@@ -3813,7 +3813,7 @@ proto.parca.query.LabelsRequest.serializeBinaryToWriter = function(message, writ
     writer.writeMessage(
       3,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -3862,7 +3862,7 @@ proto.parca.query.LabelsRequest.prototype.clearMatchList = function() {
  */
 proto.parca.query.LabelsRequest.prototype.getStart = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 2));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 2));
 };
 
 
@@ -3899,7 +3899,7 @@ proto.parca.query.LabelsRequest.prototype.hasStart = function() {
  */
 proto.parca.query.LabelsRequest.prototype.getEnd = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 3));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 3));
 };
 
 
@@ -4072,8 +4072,8 @@ proto.parca.query.ValuesRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     name: jspb.Message.getFieldWithDefault(msg, 1, ""),
     matchList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
-    start: (f = msg.getStart()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    end: (f = msg.getEnd()) && google_api_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    start: (f = msg.getStart()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    end: (f = msg.getEnd()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -4119,13 +4119,13 @@ proto.parca.query.ValuesRequest.deserializeBinaryFromReader = function(msg, read
       msg.addMatch(value);
       break;
     case 3:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setStart(value);
       break;
     case 4:
-      var value = new google_api_timestamp_pb.Timestamp;
-      reader.readMessage(value,google_api_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setEnd(value);
       break;
     default:
@@ -4176,7 +4176,7 @@ proto.parca.query.ValuesRequest.serializeBinaryToWriter = function(message, writ
     writer.writeMessage(
       3,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
   f = message.getEnd();
@@ -4184,7 +4184,7 @@ proto.parca.query.ValuesRequest.serializeBinaryToWriter = function(message, writ
     writer.writeMessage(
       4,
       f,
-      google_api_timestamp_pb.Timestamp.serializeBinaryToWriter
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -4251,7 +4251,7 @@ proto.parca.query.ValuesRequest.prototype.clearMatchList = function() {
  */
 proto.parca.query.ValuesRequest.prototype.getStart = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 3));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 3));
 };
 
 
@@ -4288,7 +4288,7 @@ proto.parca.query.ValuesRequest.prototype.hasStart = function() {
  */
 proto.parca.query.ValuesRequest.prototype.getEnd = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
-    jspb.Message.getWrapperField(this, google_api_timestamp_pb.Timestamp, 4));
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 4));
 };
 
 

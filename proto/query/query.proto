@@ -4,7 +4,7 @@ package parca.query;
 option go_package = "github.com/parca-dev/parca/proto/gen/go/query";
 
 import "google/api/annotations.proto";
-import "google/api/timestamp.proto";
+import "google/protobuf/timestamp.proto";
 import "google/pprof/profile.proto";
 import "profilestore/profilestore.proto";
 
