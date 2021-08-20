@@ -259,7 +259,7 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	profile := ProfileFromPprof(l, p1)
+	profile := ProfileFromPprof(l, p1, 0)
 	require.NoError(t, app.Append(profile))
 
 	profileTree := profile.Tree
@@ -297,7 +297,7 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	profile := ProfileFromPprof(l, p)
+	profile := ProfileFromPprof(l, p, 0)
 	require.NoError(t, app.Append(profile))
 	require.Equal(t, len(p.Location), len(l.locations))
 }
@@ -322,8 +322,8 @@ func TestRealInserts(t *testing.T) {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	prof1 := ProfileFromPprof(l, p1)
-	prof2 := ProfileFromPprof(l, p2)
+	prof1 := ProfileFromPprof(l, p1, 0)
+	prof2 := ProfileFromPprof(l, p2, 0)
 	require.NoError(t, app.Append(prof1))
 	require.NoError(t, app.Append(prof2))
 

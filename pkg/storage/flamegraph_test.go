@@ -135,7 +135,7 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	profileTree := ProfileTreeFromPprof(l, p1)
+	profileTree := ProfileTreeFromPprof(l, p1, 0)
 
 	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree})
 	require.NoError(t, err)
@@ -159,7 +159,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	require.NoError(t, app.Append(ProfileFromPprof(l, p1)))
+	require.NoError(t, app.Append(ProfileFromPprof(l, p1, 0)))
 
 	it := s.Iterator()
 	require.True(t, it.Next())
@@ -196,8 +196,8 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	prof1 := ProfileFromPprof(l, p1)
-	prof2 := ProfileFromPprof(l, p2)
+	prof1 := ProfileFromPprof(l, p1, 0)
+	prof2 := ProfileFromPprof(l, p2, 0)
 
 	m, err := NewMergeProfile(prof1, prof2)
 	require.NoError(t, err)
@@ -216,7 +216,7 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	profileTree := ProfileTreeFromPprof(l, p1)
+	profileTree := ProfileTreeFromPprof(l, p1, 0)
 
 	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree})
 	require.NoError(t, err)
@@ -233,7 +233,7 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	profileTree := ProfileTreeFromPprof(l, p1)
+	profileTree := ProfileTreeFromPprof(l, p1, 0)
 
 	b.ResetTimer()
 	_, err = GenerateFlamegraph(l, &Profile{Tree: profileTree})

@@ -374,8 +374,8 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	profileTree1 := ProfileTreeFromPprof(l, p1)
-	profileTree2 := ProfileTreeFromPprof(l, p2)
+	profileTree1 := ProfileTreeFromPprof(l, p1, 0)
+	profileTree2 := ProfileTreeFromPprof(l, p2, 0)
 
 	prof1 := &Profile{
 		Tree: profileTree1,

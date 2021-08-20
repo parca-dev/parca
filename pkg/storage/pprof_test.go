@@ -17,7 +17,7 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	p := ProfileFromPprof(l, p1)
+	p := ProfileFromPprof(l, p1, 0)
 	res, err := generatePprof(l, p)
 	require.NoError(t, err)
 

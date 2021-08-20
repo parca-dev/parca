@@ -132,24 +132,39 @@ func (p *Profile) ProfileMeta() InstantProfileMeta {
 	return p.Meta
 }
 
-func ProfileFromPprof(s ProfileMetaStore, p *profile.Profile) *Profile {
+// ProfilesFromPprof extracts a Profile from each sample index included in the
+// pprof profile.
+func ProfilesFromPprof(s ProfileMetaStore, p *profile.Profile) []*Profile {
+	ps := make([]*Profile, 0, len(p.SampleType))
+
+	for i := range p.SampleType {
+		ps = append(ps, &Profile{
+			Tree: ProfileTreeFromPprof(s, p, i),
+			Meta: ProfileMetaFromPprof(p, i),
+		})
+	}
+
+	return ps
+}
+
+func ProfileFromPprof(s ProfileMetaStore, p *profile.Profile, sampleIndex int) *Profile {
 	return &Profile{
-		Tree: ProfileTreeFromPprof(s, p),
-		Meta: ProfileMetaFromPprof(p),
+		Tree: ProfileTreeFromPprof(s, p, sampleIndex),
+		Meta: ProfileMetaFromPprof(p, sampleIndex),
 	}
 }
 
-func ProfileMetaFromPprof(p *profile.Profile) InstantProfileMeta {
+func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {
 	return InstantProfileMeta{
 		Timestamp:  p.TimeNanos / 1000000,
 		Duration:   p.DurationNanos,
 		Period:     p.Period,
 		PeriodType: ValueType{Type: p.PeriodType.Type, Unit: p.PeriodType.Unit},
-		SampleType: ValueType{Type: p.SampleType[0].Type, Unit: p.SampleType[0].Unit},
+		SampleType: ValueType{Type: p.SampleType[sampleIndex].Type, Unit: p.SampleType[sampleIndex].Unit},
 	}
 }
 
-func ProfileTreeFromPprof(s ProfileMetaStore, p *profile.Profile) *ProfileTree {
+func ProfileTreeFromPprof(s ProfileMetaStore, p *profile.Profile, sampleIndex int) *ProfileTree {
 	pn := &profileNormalizer{
 		metaStore: s,
 
@@ -164,7 +179,7 @@ func ProfileTreeFromPprof(s ProfileMetaStore, p *profile.Profile) *ProfileTree {
 	samples := make([]*profile.Sample, 0, len(p.Sample))
 	for _, s := range p.Sample {
 		if !isZeroSample(s) {
-			sa, isNew := pn.mapSample(s)
+			sa, isNew := pn.mapSample(s, sampleIndex)
 			if isNew {
 				samples = append(samples, sa)
 			}
