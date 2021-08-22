@@ -27,7 +27,7 @@ func (wrw *wrapResponseWriter) Write(b []byte) (int, error) {
 	if wrw.notFound() {
 		return len(b), nil
 	}
-	return wrw.Write(b)
+	return wrw.ResponseWriter.Write(b)
 }
 
 func (wrw *wrapResponseWriter) notFound() bool {
