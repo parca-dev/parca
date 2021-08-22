@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"net/http/pprof"
 	"strings"
 	"time"
 
@@ -88,6 +89,11 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		}
 	}
 	reflection.Register(srv)
+
+	// Add the pprof handler to profile Parca
+	mux.HandlePath("GET", "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		pprof.Index(w, r)
+	})
 
 	uiFS, err := fs.Sub(ui.FS, "packages/app/web/dist")
 	if err != nil {
