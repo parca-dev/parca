@@ -54,6 +54,15 @@
     }
   },
   "definitions": {
+    "TargetHealth": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "GOOD",
+        "BAD"
+      ],
+      "default": "UNKNOWN"
+    },
     "TargetsRequestState": {
       "type": "string",
       "enum": [
@@ -62,6 +71,28 @@
         "DROPPED"
       ],
       "default": "ANY"
+    },
+    "parcaprofilestoreLabel": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "profilestoreLabelSet": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/parcaprofilestoreLabel"
+          }
+        }
+      }
     },
     "protobufAny": {
       "type": "object",
@@ -93,8 +124,54 @@
         }
       }
     },
+    "scrapeTarget": {
+      "type": "object",
+      "properties": {
+        "DiscoveredLabels": {
+          "$ref": "#/definitions/profilestoreLabelSet"
+        },
+        "Labels": {
+          "$ref": "#/definitions/profilestoreLabelSet"
+        },
+        "LastError": {
+          "type": "string"
+        },
+        "LastScrape": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "LastScrapeDuration": {
+          "type": "string"
+        },
+        "URL": {
+          "type": "string"
+        },
+        "health": {
+          "$ref": "#/definitions/TargetHealth"
+        }
+      }
+    },
+    "scrapeTargets": {
+      "type": "object",
+      "properties": {
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scrapeTarget"
+          }
+        }
+      }
+    },
     "scrapeTargetsResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/scrapeTargets"
+          }
+        }
+      }
     }
   }
 }

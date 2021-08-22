@@ -27,6 +27,10 @@ message TargetsRequest{
 }
 
 message TargetsResponse{
+    map<string,Targets> targets = 1;
+}
+
+message Targets{
     repeated Target targets = 1;
 }
 
