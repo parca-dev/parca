@@ -40,10 +40,7 @@ proto/lint:
 .PHONY: proto/generate
 proto/generate:
 	yarn install
-	buf generate --path=./proto/query
-	buf generate --path=./proto/profilestore
-	buf generate --path=./proto/debuginfo
-	buf generate --path=./proto/google/pprof
+	buf generate
 
 .PHONY: proto/vendor
 proto/vendor:
