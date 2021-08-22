@@ -4,6 +4,9 @@ package parca.scrape;
 option go_package = "github.com/parca-dev/parca/proto/gen/go/scrape";
 
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "profilestore/profilestore.proto";
 
 service Scrape {
     rpc Targets(TargetsRequest) returns (TargetsResponse) {
@@ -22,4 +25,23 @@ message TargetsRequest{
 
     State state = 1;
 }
-message TargetsResponse{}
+
+message TargetsResponse{
+    repeated Target targets = 1;
+}
+
+message Target{
+    parca.profilestore.LabelSet DiscoveredLabels   = 1;
+    parca.profilestore.LabelSet Labels             = 2;
+    string                      LastError          = 3;
+    google.protobuf.Timestamp   LastScrape         = 4;
+    google.protobuf.Duration    LastScrapeDuration = 5;
+    string                      URL                = 6;
+
+    enum Health {
+        UNKNOWN = 0;
+        GOOD    = 1;
+        BAD     = 2;
+    }
+    Health health = 7;
+}
