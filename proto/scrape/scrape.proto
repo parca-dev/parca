@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package parca.scrape;
+option go_package = "github.com/parca-dev/parca/proto/gen/go/scrape";
+
+import "google/api/annotations.proto";
+
+service Scrape {
+    rpc Targets(TargetsRequest) returns (TargetsResponse) {
+        option (google.api.http) = {
+            get: "/targets"
+        };
+    }
+}
+
+message TargetsRequest{
+    enum State {
+        ANY     = 0;
+        ACTIVE  = 1;
+        DROPPED = 2;
+    }
+
+    State state = 1;
+}
+message TargetsResponse{}

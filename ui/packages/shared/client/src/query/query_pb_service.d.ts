@@ -49,24 +49,6 @@ type QueryValues = {
   readonly responseType: typeof query_query_pb.ValuesResponse;
 };
 
-type QueryConfig = {
-  readonly methodName: string;
-  readonly service: typeof Query;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof query_query_pb.ConfigRequest;
-  readonly responseType: typeof query_query_pb.ConfigResponse;
-};
-
-type QueryTargets = {
-  readonly methodName: string;
-  readonly service: typeof Query;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof query_query_pb.TargetsRequest;
-  readonly responseType: typeof query_query_pb.TargetsResponse;
-};
-
 export class Query {
   static readonly serviceName: string;
   static readonly QueryRange: QueryQueryRange;
@@ -74,8 +56,6 @@ export class Query {
   static readonly Series: QuerySeries;
   static readonly Labels: QueryLabels;
   static readonly Values: QueryValues;
-  static readonly Config: QueryConfig;
-  static readonly Targets: QueryTargets;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -154,24 +134,6 @@ export class QueryClient {
   values(
     requestMessage: query_query_pb.ValuesRequest,
     callback: (error: ServiceError|null, responseMessage: query_query_pb.ValuesResponse|null) => void
-  ): UnaryResponse;
-  config(
-    requestMessage: query_query_pb.ConfigRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: query_query_pb.ConfigResponse|null) => void
-  ): UnaryResponse;
-  config(
-    requestMessage: query_query_pb.ConfigRequest,
-    callback: (error: ServiceError|null, responseMessage: query_query_pb.ConfigResponse|null) => void
-  ): UnaryResponse;
-  targets(
-    requestMessage: query_query_pb.TargetsRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: query_query_pb.TargetsResponse|null) => void
-  ): UnaryResponse;
-  targets(
-    requestMessage: query_query_pb.TargetsRequest,
-    callback: (error: ServiceError|null, responseMessage: query_query_pb.TargetsResponse|null) => void
   ): UnaryResponse;
 }
 

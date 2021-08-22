@@ -361,64 +361,6 @@
           "Query"
         ]
       }
-    },
-    "/status/config": {
-      "get": {
-        "operationId": "Query_Config",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/queryConfigResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "Query"
-        ]
-      }
-    },
-    "/targets": {
-      "get": {
-        "operationId": "Query_Targets",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/queryTargetsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "state",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "ANY",
-              "ACTIVE",
-              "DROPPED"
-            ],
-            "default": "ANY"
-          }
-        ],
-        "tags": [
-          "Query"
-        ]
-      }
     }
   },
   "definitions": {
@@ -500,15 +442,6 @@
         }
       }
     },
-    "TargetsRequestState": {
-      "type": "string",
-      "enum": [
-        "ANY",
-        "ACTIVE",
-        "DROPPED"
-      ],
-      "default": "ANY"
-    },
     "parcaprofilestoreLabel": {
       "type": "object",
       "properties": {
@@ -542,9 +475,6 @@
           "format": "byte"
         }
       }
-    },
-    "queryConfigResponse": {
-      "type": "object"
     },
     "queryFlamegraph": {
       "type": "object",
@@ -644,9 +574,6 @@
       }
     },
     "querySeriesResponse": {
-      "type": "object"
-    },
-    "queryTargetsResponse": {
       "type": "object"
     },
     "queryValuesResponse": {
