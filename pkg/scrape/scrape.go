@@ -27,6 +27,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/config"
+	profilepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
@@ -34,11 +36,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/pool"
-	"github.com/prometheus/prometheus/pkg/timestamp"
 	"golang.org/x/net/context/ctxhttp"
-
-	"github.com/conprof/conprof/config"
-	"github.com/conprof/conprof/internal/trace"
 )
 
 var (
@@ -112,8 +110,8 @@ func init() {
 
 // scrapePool manages scrapes for sets of targets.
 type scrapePool struct {
-	appendable Appendable
-	logger     log.Logger
+	store  profilepb.ProfileStoreServer
+	logger log.Logger
 
 	mtx    sync.RWMutex
 	config *config.ScrapeConfig
@@ -129,7 +127,7 @@ type scrapePool struct {
 	newLoop func(*Target, scraper) loop
 }
 
-func newScrapePool(cfg *config.ScrapeConfig, app Appendable, logger log.Logger) *scrapePool {
+func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreServer, logger log.Logger) *scrapePool {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -145,7 +143,7 @@ func newScrapePool(cfg *config.ScrapeConfig, app Appendable, logger log.Logger) 
 	ctx, cancel := context.WithCancel(context.Background())
 	sp := &scrapePool{
 		cancel:        cancel,
-		appendable:    app,
+		store:         store,
 		config:        cfg,
 		client:        client,
 		activeTargets: map[uint64]*Target{},
@@ -159,7 +157,7 @@ func newScrapePool(cfg *config.ScrapeConfig, app Appendable, logger log.Logger) 
 			s,
 			log.With(logger, "target", t),
 			buffers,
-			app,
+			store,
 		)
 	}
 
@@ -383,17 +381,7 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 
 	switch profileType {
 	case ProfileTraceType:
-		// This is needed as trace.Parse fails with obscure error
-		// when you pass resp.Body
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errors.Wrap(err, "failed to read body")
-		}
-		_, err = trace.Parse(io.TeeReader(bytes.NewBuffer(b), w), "")
-		if err != nil {
-			return errors.Wrap(err, "failed to parse target's trace profile")
-		}
-
+		return fmt.Errorf("unimplemented")
 	default:
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -430,7 +418,7 @@ type scrapeLoop struct {
 	lastScrapeSize int
 	buffers        *pool.Pool
 
-	appendable Appendable
+	store profilepb.ProfileStoreServer
 
 	ctx       context.Context
 	scrapeCtx context.Context
@@ -443,7 +431,7 @@ func newScrapeLoop(ctx context.Context,
 	sc scraper,
 	l log.Logger,
 	buffers *pool.Pool,
-	appendable Appendable,
+	store profilepb.ProfileStoreServer,
 ) *scrapeLoop {
 	if l == nil {
 		l = log.NewNopLogger()
@@ -452,13 +440,13 @@ func newScrapeLoop(ctx context.Context,
 		buffers = pool.New(1e3, 1e6, 3, func(sz int) interface{} { return make([]byte, 0, sz) })
 	}
 	sl := &scrapeLoop{
-		target:     t,
-		scraper:    sc,
-		buffers:    buffers,
-		appendable: appendable,
-		stopped:    make(chan struct{}),
-		l:          l,
-		ctx:        ctx,
+		target:  t,
+		scraper: sc,
+		buffers: buffers,
+		store:   store,
+		stopped: make(chan struct{}),
+		l:       l,
+		ctx:     ctx,
 	}
 	sl.scrapeCtx, sl.cancel = context.WithCancel(ctx)
 
@@ -529,14 +517,29 @@ mainLoop:
 			sort.Sort(tl)
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
-			app := sl.appendable.Appender(sl.ctx)
-			_, err := app.Add(tl, timestamp.FromTime(start), buf.Bytes())
-			if err != nil && errc != nil {
-				level.Debug(sl.l).Log("err", err)
-				errc <- err
+			protolbls := &profilepb.LabelSet{
+				Labels: []*profilepb.Label{},
+			}
+			for _, l := range tl {
+				protolbls.Labels = append(protolbls.Labels, &profilepb.Label{
+					Name:  l.Name,
+					Value: l.Value,
+				})
 			}
 
-			err = app.Commit()
+			_, err := sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
+				Tenant: "",
+				Series: []*profilepb.RawProfileSeries{
+					{
+						Labels: protolbls,
+						Samples: []*profilepb.RawSample{
+							{
+								RawProfile: buf.Bytes(),
+							},
+						},
+					},
+				},
+			})
 			if err != nil && errc != nil {
 				level.Debug(sl.l).Log("err", err)
 				errc <- err

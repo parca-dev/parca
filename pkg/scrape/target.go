@@ -24,12 +24,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/parca-dev/parca/pkg/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/relabel"
-
-	"github.com/conprof/conprof/config"
 )
 
 // TargetHealth describes the health state of a target.

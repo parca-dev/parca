@@ -12,14 +12,17 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
+	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/query"
+	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/storage"
 	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
 	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	querypb "github.com/parca-dev/parca/proto/gen/go/query"
+	"github.com/prometheus/prometheus/discovery"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
 )
@@ -31,11 +34,6 @@ type Flags struct {
 	CORSAllowedOrigins []string `kong:"help='Allowed CORS origins.'"`
 }
 
-// Config is the configuration for debug info storage
-type Config struct {
-	DebugInfo *debuginfo.Config `yaml:"debug_info"`
-}
-
 // Run the parca server
 func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
 	cfgContent, err := ioutil.ReadFile(flags.ConfigPath)
@@ -44,7 +42,7 @@ func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
 		return err
 	}
 
-	cfg := Config{}
+	cfg := config.Config{}
 	if err := yaml.Unmarshal(cfgContent, &cfg); err != nil {
 		level.Error(logger).Log("msg", "failed to parse config", "err", err, "path", flags.ConfigPath)
 		return err
@@ -104,6 +102,37 @@ func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
 		},
 	)
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	discoveryManager := discovery.NewManager(ctx, logger)
+	if err := discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs)); err != nil {
+		level.Error(logger).Log("msg", "failed to apply discovery configs", "err", err)
+		return err
+	}
+
+	m := scrape.NewManager(logger, s, cfg.ScrapeConfigs)
+	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {
+		level.Error(logger).Log("msg", "failed to apply scrape configs", "err", err)
+		return err
+	}
+
+	gr.Add(
+		func() error {
+			return discoveryManager.Run()
+		},
+		func(_ error) {
+			cancel()
+		},
+	)
+	gr.Add(
+		func() error {
+			return m.Run(discoveryManager.SyncCh())
+		},
+		func(_ error) {
+			m.Stop()
+		},
+	)
+
 	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
 			return nil
@@ -112,4 +141,12 @@ func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
 	}
 
 	return nil
+}
+
+func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Configs {
+	c := make(map[string]discovery.Configs)
+	for _, v := range cfgs {
+		c[v.JobName] = v.ServiceDiscoveryConfigs
+	}
+	return c
 }

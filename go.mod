@@ -5,7 +5,9 @@ go 1.16
 require (
 	github.com/alecthomas/kong v0.2.17
 	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/cespare/xxhash/v2 v2.1.1
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
+	github.com/cortexproject/cortex v1.9.1-0.20210601081042-d7d87369965a // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/sroar v0.0.0-20210806151611-9ba13da43734
 	github.com/go-chi/cors v1.2.0 // indirect
@@ -19,6 +21,9 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/improbable-eng/grpc-web v0.14.0
 	github.com/oklog/run v1.1.0
+	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/common v0.26.0
 	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/stretchr/testify v1.7.0
 	github.com/thanos-io/thanos v0.22.0

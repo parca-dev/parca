@@ -1,16 +1,3 @@
-// Copyright 2021 The Parca Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 // Copyright 2018 The conprof Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,34 +18,53 @@ import (
 	"sync"
 	"time"
 
-	"github.com/conprof/conprof/config"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	profilepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 
-	pb "github.com/parca-dev/parca/proto/gen/go/profilestore"
+	"github.com/parca-dev/parca/pkg/config"
 )
 
 // NewManager is the Manager constructor
-func NewManager(logger log.Logger, app pb.ProfileStoreServer) *Manager {
+func NewManager(logger log.Logger, store profilepb.ProfileStoreServer, scrapeConfigs []*config.ScrapeConfig) *Manager {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
-	return &Manager{
-		append:        app,
+
+	m := &Manager{
+		store:         store,
 		logger:        logger,
 		scrapeConfigs: make(map[string]*config.ScrapeConfig),
 		scrapePools:   make(map[string]*scrapePool),
 		graceShut:     make(chan struct{}),
 		triggerReload: make(chan struct{}, 1),
 	}
+
+	c := make(map[string]*config.ScrapeConfig)
+	for _, scfg := range scrapeConfigs {
+		c[scfg.JobName] = scfg
+	}
+	m.scrapeConfigs = c
+
+	// Cleanup and reload pool if config has changed.
+	for name, sp := range m.scrapePools {
+		if cfg, ok := m.scrapeConfigs[name]; !ok {
+			sp.stop()
+			delete(m.scrapePools, name)
+		} else if !reflect.DeepEqual(sp.config, cfg) {
+			sp.reload(cfg)
+		}
+	}
+
+	return m
 }
 
 // Manager maintains a set of scrape pools and manages start/stop cycles
 // when receiving new target groups form the discovery manager.
 type Manager struct {
 	logger    log.Logger
-	append    Appendable
+	store     profilepb.ProfileStoreServer
 	graceShut chan struct{}
 
 	mtxScrape     sync.Mutex // Guards the fields below.
@@ -69,8 +75,7 @@ type Manager struct {
 	triggerReload chan struct{}
 }
 
-// Run receives and saves target set updates and triggers the scraping loops reloading.
-// Reloading happens in the background so that it doesn't block receiving targets updates.
+// Run stars the manager with a set of scrape configs
 func (m *Manager) Run(tsets <-chan map[string][]*targetgroup.Group) error {
 	go m.reloader()
 	for {
@@ -121,7 +126,7 @@ func (m *Manager) reload() {
 				level.Error(m.logger).Log("msg", "error reloading target set", "err", "invalid config id:"+setName)
 				return
 			}
-			sp = newScrapePool(scrapeConfig, m.append, log.With(m.logger, "scrape_pool", setName))
+			sp = newScrapePool(scrapeConfig, m.store, log.With(m.logger, "scrape_pool", setName))
 			m.scrapePools[setName] = sp
 		} else {
 			sp = existing
@@ -154,30 +159,6 @@ func (m *Manager) updateTsets(tsets map[string][]*targetgroup.Group) {
 	m.mtxScrape.Lock()
 	m.targetSets = tsets
 	m.mtxScrape.Unlock()
-}
-
-// ApplyConfig resets the manager's target providers and job configurations as defined by the new cfg.
-func (m *Manager) ApplyConfig(cfg *config.Config) error {
-	m.mtxScrape.Lock()
-	defer m.mtxScrape.Unlock()
-
-	c := make(map[string]*config.ScrapeConfig)
-	for _, scfg := range cfg.ScrapeConfigs {
-		c[scfg.JobName] = scfg
-	}
-	m.scrapeConfigs = c
-
-	// Cleanup and reload pool if config has changed.
-	for name, sp := range m.scrapePools {
-		if cfg, ok := m.scrapeConfigs[name]; !ok {
-			sp.stop()
-			delete(m.scrapePools, name)
-		} else if !reflect.DeepEqual(sp.config, cfg) {
-			sp.reload(cfg)
-		}
-	}
-
-	return nil
 }
 
 // TargetsAll returns active and dropped targets grouped by job_name.
@@ -215,4 +196,28 @@ func (m *Manager) TargetsDropped() map[string][]*Target {
 		targets[tset] = sp.DroppedTargets()
 	}
 	return targets
+}
+
+// ApplyConfig resets the manager's target providers and job configurations as defined by the new cfg.
+func (m *Manager) ApplyConfig(cfgs []*config.ScrapeConfig) error {
+	m.mtxScrape.Lock()
+	defer m.mtxScrape.Unlock()
+
+	c := make(map[string]*config.ScrapeConfig)
+	for _, scfg := range cfgs {
+		c[scfg.JobName] = scfg
+	}
+	m.scrapeConfigs = c
+
+	// Cleanup and reload pool if config has changed.
+	for name, sp := range m.scrapePools {
+		if cfg, ok := m.scrapeConfigs[name]; !ok {
+			sp.stop()
+			delete(m.scrapePools, name)
+		} else if !reflect.DeepEqual(sp.config, cfg) {
+			sp.reload(cfg)
+		}
+	}
+
+	return nil
 }
