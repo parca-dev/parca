@@ -65,6 +65,10 @@ func (h *headIndexReader) Close() error {
 
 // Postings returns the postings list iterator for the label pairs.
 func (h *headIndexReader) Postings(name string, values ...string) (*sroar.Bitmap, error) {
+	if len(values) == 1 {
+		return h.head.postings.Get(name, values[0]), nil
+	}
+
 	b := sroar.NewBitmap()
 	for _, value := range values {
 		// Or/merge/union the postings for all values
