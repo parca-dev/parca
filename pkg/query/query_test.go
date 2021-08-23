@@ -61,7 +61,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	// Overwrite the profile's timestamp to be within the last 5min.
 	p.TimeNanos = time.Now().UnixNano()
 
-	err = app.Append(storage.ProfileFromPprof(s, p))
+	err = app.Append(storage.ProfileFromPprof(s, p, 0))
 	require.NoError(t, err)
 
 	// Query last 5 minutes
@@ -117,7 +117,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 		// Overwrite the profile's timestamp to be within the last 5min.
 		p.TimeNanos = time.Now().UnixNano()
 
-		err = app.Append(storage.ProfileFromPprof(s, p))
+		err = app.Append(storage.ProfileFromPprof(s, p, 0))
 		require.NoError(t, err)
 	}
 

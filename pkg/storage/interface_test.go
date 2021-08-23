@@ -16,7 +16,7 @@ func TestCopyInstantProfileTree(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l := NewInMemoryProfileMetaStore()
-	profileTree := ProfileTreeFromPprof(l, p1)
+	profileTree := ProfileTreeFromPprof(l, p1, 0)
 
 	profileTreeCopy := CopyInstantProfileTree(profileTree)
 

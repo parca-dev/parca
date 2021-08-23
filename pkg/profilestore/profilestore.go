@@ -41,12 +41,6 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				Value: l.Value,
 			})
 		}
-		sort.Sort(ls)
-
-		app, err := s.app.Appender(ctx, ls)
-		if err != nil {
-			return nil, err
-		}
 
 		for _, sample := range series.Samples {
 			p, err := profile.Parse(bytes.NewBuffer(sample.RawProfile))
@@ -58,12 +52,37 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			prof := storage.ProfileFromPprof(s.metaStore, p)
+			profiles := storage.ProfilesFromPprof(s.metaStore, p)
+			for _, prof := range profiles {
+				profLabelset := ls.Copy()
+				found := false
+				for i, label := range profLabelset {
+					if label.Name == "__name__" {
+						found = true
+						profLabelset[i] = labels.Label{
+							Name:  "__name__",
+							Value: label.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+						}
+					}
+				}
+				if !found {
+					profLabelset = append(profLabelset, labels.Label{
+						Name:  "__name__",
+						Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+					})
+				}
+				sort.Sort(profLabelset)
 
-			level.Debug(s.logger).Log("msg", "writing sample", "label_set", ls.String(), "timestamp", prof.Meta.Timestamp)
+				level.Debug(s.logger).Log("msg", "writing sample", "label_set", profLabelset.String(), "timestamp", prof.Meta.Timestamp)
 
-			if err := app.Append(prof); err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
+				app, err := s.app.Appender(ctx, profLabelset)
+				if err != nil {
+					return nil, err
+				}
+
+				if err := app.Append(prof); err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
+				}
 			}
 		}
 	}

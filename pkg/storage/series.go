@@ -635,7 +635,7 @@ type profileNormalizer struct {
 }
 
 // Returns the mapped sample and whether it is new or a known sample.
-func (pn *profileNormalizer) mapSample(src *profile.Sample) (*profile.Sample, bool) {
+func (pn *profileNormalizer) mapSample(src *profile.Sample, sampleIndex int) (*profile.Sample, bool) {
 	s := &profile.Sample{
 		Location: make([]*profile.Location, len(src.Location)),
 		Label:    make(map[string][]string, len(src.Label)),
@@ -665,11 +665,11 @@ func (pn *profileNormalizer) mapSample(src *profile.Sample) (*profile.Sample, bo
 	k := makeStacktraceKey(s)
 	sa, found := pn.samples[k]
 	if found {
-		sa.Value[0] += src.Value[0]
+		sa.Value[0] += src.Value[sampleIndex]
 		return sa, false
 	}
 
-	s.Value = []int64{src.Value[0]}
+	s.Value = []int64{src.Value[sampleIndex]}
 	pn.samples[k] = s
 	return s, true
 }
