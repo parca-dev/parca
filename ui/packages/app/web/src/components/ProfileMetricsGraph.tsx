@@ -3,7 +3,13 @@ import moment from 'moment'
 import MetricsGraph from './MetricsGraph'
 import { ProfileSelection, SingleProfileSelection } from '@parca/profile'
 import { Alert, Card, Col, Row, Spinner } from 'react-bootstrap'
-import { QueryRangeRequest, QueryRangeResponse, Label, QueryClient, ServiceError } from '@parca/client'
+import {
+  QueryRangeRequest,
+  QueryRangeResponse,
+  Label,
+  QueryClient,
+  ServiceError
+} from '@parca/client'
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb'
 
 interface ProfileMetricsGraphProps {
@@ -61,9 +67,6 @@ export const useQueryRange = (
   return result
 }
 
-// TODO(kakkoyun): !!
-// const minStep = 15
-
 const ProfileMetricsGraph = ({
   queryClient,
   queryExpression,
@@ -74,20 +77,7 @@ const ProfileMetricsGraph = ({
   setTimeRange,
   addLabelMatcher
 }: ProfileMetricsGraphProps): JSX.Element => {
-  // const timeRangeSeconds = (to - from) / 1000
-
-  // The SVG has 1200px width and we want 1 datapoint every 10px.
-  // const calculatedStep = timeRangeSeconds / 120
-  // const step = calculatedStep < minStep ? minStep : calculatedStep
-
-  // TODO(kakkoyun): !!
-  // `${queryRangeEndpoint}?query=${encodeURIComponent(queryExpression)}&start=${from / 1000}&end=${to / 1000}&step=${step}&dedup=true`, fetchJSON
-  const { response, error } = useQueryRange(
-    queryClient,
-    queryExpression,
-    from,
-    to
-  )
+  const { response, error } = useQueryRange(queryClient, queryExpression, from, to)
 
   if (error != null) {
     return (
@@ -139,11 +129,7 @@ const ProfileMetricsGraph = ({
     )
   }
 
-  const handleSampleClick = (
-    timestamp: number,
-    value: number,
-    labels: Label.AsObject[]
-  ): void => {
+  const handleSampleClick = (timestamp: number, value: number, labels: Label.AsObject[]): void => {
     select(new SingleProfileSelection(labels, timestamp))
   }
 
