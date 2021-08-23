@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 //import ProfileSVG from './ProfileSVG'
 //import ProfileTop from './ProfileTop'
 import ProfileIcicleGraph from './ProfileIcicleGraph'
-import { ParamsString, ProfileSource } from './ProfileSource'
+import { ProfileSource } from './ProfileSource'
 import { QueryClient, QueryResponse, QueryRequest, ServiceError } from '@parca/client'
 import {
   Button,
@@ -10,9 +10,6 @@ import {
   Col,
   Dropdown,
   DropdownButton,
-  FormControl,
-  InputGroup,
-  Modal,
   Row,
   Spinner
 } from 'react-bootstrap'

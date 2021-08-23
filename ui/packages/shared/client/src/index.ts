@@ -11,7 +11,7 @@ import {
   QueryRequest,
   ValuesRequest
 } from '@parca/client/src/query/query_pb'
-import { Timestamp } from './google/api/timestamp_pb'
+import { Timestamp } from "google-protobuf/google/protobuf/timestamp_pb";
 
 // TODO(kakkoyun): !!
 // const host = 'http://localhost:9090' // process.env.HOST
