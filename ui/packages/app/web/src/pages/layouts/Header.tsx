@@ -2,6 +2,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { Navbar } from 'react-bootstrap'
 import { NextRouter, withRouter } from 'next/router'
+import { Parca } from '@parca/icons'
 
 interface HeaderProps {
   router: NextRouter
@@ -12,7 +13,7 @@ const Header = (_: HeaderProps): JSX.Element => {
     <>
       <Head>
         <title>Parca</title>
-        <link rel='icon' href='/favicon.png' />
+        <link rel='icon' href='/favicon.svg' />
       </Head>
       <Navbar
         collapseOnSelect
@@ -22,7 +23,9 @@ const Header = (_: HeaderProps): JSX.Element => {
         style={{ borderBottom: '1px solid #E4E8F0' }}
       >
         <Link href='/' passHref>
-          <Navbar.Brand style={{ marginLeft: 56 }}>{/* TODO(kakkoyun): Parca Logo */}</Navbar.Brand>
+          <Navbar.Brand style={{ marginLeft: 56 }}>
+            <Parca width={200} height={34} />
+          </Navbar.Brand>
         </Link>
         <Navbar.Toggle aria-controls='responsive-navbar-nav' />
       </Navbar>
