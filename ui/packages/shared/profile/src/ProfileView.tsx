@@ -13,7 +13,6 @@ import {
   Row,
   Spinner
 } from 'react-bootstrap'
-import useSWR from 'swr'
 
 interface ProfileViewProps {
   title?: string

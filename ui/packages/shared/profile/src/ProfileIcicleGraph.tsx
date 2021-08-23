@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { throttle } from 'lodash'
 import IcicleGraph from './IcicleGraph'
-import { ParamsString, ProfileSource } from './ProfileSource'
+import { ProfileSource } from './ProfileSource'
 import { Spinner } from 'react-bootstrap'
 import { CalcWidth } from '@parca/dynamicsize'
 import { QueryResponse, FlamegraphNode } from '@parca/client'
-import useSWR from 'swr'
 
 interface ProfileIcicleGraphProps {
   queryResponse: QueryResponse
