@@ -1,0 +1,18 @@
+{
+  "name": "@parca/profile",
+  "version": "0.0.0",
+  "description": "Profile viewing libraries",
+  "dependencies": {
+    "@parca/client": "0.0.0",
+    "@parca/parser": "0.0.0",
+    "@parca/dynamicsize": "0.0.0",
+    "d3-scale": "^3.2.3"
+  },
+  "main": "src/index.tsx",
+  "scripts": {
+    "test": "jest --coverage --config ../../../jest.config.js ./src/*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

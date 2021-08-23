@@ -58,9 +58,11 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			level.Debug(s.logger).Log("msg", "writing sample", "label_set", ls.String())
+			prof := storage.ProfileFromPprof(s.metaStore, p)
 
-			if err := app.Append(storage.ProfileFromPprof(s.metaStore, p)); err != nil {
+			level.Debug(s.logger).Log("msg", "writing sample", "label_set", ls.String(), "timestamp", prof.Meta.Timestamp)
+
+			if err := app.Append(prof); err != nil {
 				return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
 			}
 		}

@@ -293,3 +293,23 @@ func (m seriesHashmap) del(hash uint64, lset labels.Labels) {
 		m[hash] = rem
 	}
 }
+
+func (q *HeadQuerier) LabelValues(name string, ms ...*labels.Matcher) ([]string, Warnings, error) {
+	ir, err := q.head.Index()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	values, err := ir.LabelValues(name, ms...)
+	return values, nil, err
+}
+
+func (q *HeadQuerier) LabelNames(ms ...*labels.Matcher) ([]string, Warnings, error) {
+	ir, err := q.head.Index()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	names, err := ir.LabelNames(ms...)
+	return names, nil, err
+}

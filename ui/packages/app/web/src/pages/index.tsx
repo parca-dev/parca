@@ -1,43 +1,20 @@
-import * as React from 'react'
-import { NextPage } from 'next'
-import { Button } from 'components/Button'
-import { capitalize } from '@parca/functions'
-import { grpc } from '@improbable-eng/grpc-web'
-import { NodeHttpTransport } from '@improbable-eng/grpc-web-node-http-transport'
-import { Query } from '@parca/client/src/query/query_pb_service'
-import { QueryRequest } from '@parca/client/src/query/query_pb'
+import ProfileExplorer from 'components/ProfileExplorer'
+import { NextRouter, withRouter } from 'next/router'
+import { QueryClient } from '@parca/client'
 
-const host = 'http://localhost:9090'
+const apiEndpoint = process.env.NEXT_PUBLIC_API_ENDPOINT
 
-function query (): void {
-  const instantQuery = new QueryRequest()
-
-  grpc.unary(Query.Query, {
-    request: instantQuery,
-    host: host, // process.env.HOST,
-    transport: NodeHttpTransport(),
-    onEnd: res => {
-      const { status, statusMessage, headers, message, trailers } = res
-      console.log('query.onEnd.status', status, statusMessage)
-      console.log('query.onEnd.headers', headers)
-      if (status === grpc.Code.OK && message != null) {
-        console.log('query.onEnd.message', message.toObject())
-      }
-      console.log('query.onEnd.trailers', trailers)
-    }
-  })
+interface ProfilesProps {
+  router: NextRouter
 }
 
-const Index: NextPage = () => {
-  const handleClick = (): void => {
-    query()
-  }
-
+const Profiles = (_: ProfilesProps): JSX.Element => {
+  const queryClient = new QueryClient(apiEndpoint === undefined ? '' : apiEndpoint)
   return (
-    <div>
-      <Button label={capitalize('hello web')} onClick={handleClick} />
-    </div>
+    <ProfileExplorer
+      queryClient={queryClient}
+    />
   )
 }
 
-export default Index
+export default withRouter(Profiles)

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/proto/gen/go/profilestore"
@@ -22,7 +23,7 @@ import (
 func Test_QueryRange_EmptyStore(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB()
-	q := New(db, nil)
+	q := New(log.NewNopLogger(), db, nil)
 
 	// Query last 5 minutes
 	end := time.Now()
@@ -42,7 +43,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB()
 	s := storage.NewInMemoryProfileMetaStore()
-	q := New(db, s)
+	q := New(log.NewNopLogger(), db, s)
 
 	app, err := db.Appender(ctx, labels.Labels{
 		labels.Label{
@@ -92,7 +93,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB()
 	s := storage.NewInMemoryProfileMetaStore()
-	q := New(db, s)
+	q := New(log.NewNopLogger(), db, s)
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
@@ -177,7 +178,7 @@ func Test_QueryRange_InputValidation(t *testing.T) {
 		},
 	}
 
-	q := New(nil, nil)
+	q := New(log.NewNopLogger(), nil, nil)
 
 	t.Parallel()
 	for name, test := range tests {
@@ -201,35 +202,35 @@ func Test_Query_InputValidation(t *testing.T) {
 	}{
 		"Invalid mode": {
 			req: &pb.QueryRequest{
-				Mode:       &invalidMode,
+				Mode:       invalidMode,
 				Options:    &pb.QueryRequest_Single_{},
-				ReportType: pb.QueryRequest_FLAMEGRAPH.Enum(),
+				ReportType: *pb.QueryRequest_FLAMEGRAPH.Enum(),
 			},
 		},
 		"Invalid report type": {
 			req: &pb.QueryRequest{
-				Mode:       pb.QueryRequest_SINGLE.Enum(),
+				Mode:       *pb.QueryRequest_SINGLE.Enum(),
 				Options:    &pb.QueryRequest_Single_{},
-				ReportType: &invalidReportType,
+				ReportType: invalidReportType,
 			},
 		},
 		"option doesn't match mode": {
 			req: &pb.QueryRequest{
-				Mode:       pb.QueryRequest_SINGLE.Enum(),
+				Mode:       *pb.QueryRequest_SINGLE.Enum(),
 				Options:    &pb.QueryRequest_Merge_{},
-				ReportType: pb.QueryRequest_FLAMEGRAPH.Enum(),
+				ReportType: *pb.QueryRequest_FLAMEGRAPH.Enum(),
 			},
 		},
 		"option not provided": {
 			req: &pb.QueryRequest{
-				Mode:       pb.QueryRequest_SINGLE.Enum(),
+				Mode:       *pb.QueryRequest_SINGLE.Enum(),
 				Options:    nil,
-				ReportType: pb.QueryRequest_FLAMEGRAPH.Enum(),
+				ReportType: *pb.QueryRequest_FLAMEGRAPH.Enum(),
 			},
 		},
 	}
 
-	q := New(nil, nil)
+	q := New(log.NewNopLogger(), nil, nil)
 
 	t.Parallel()
 	for name, test := range tests {

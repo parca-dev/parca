@@ -23,7 +23,22 @@ type Queryable interface {
 }
 
 type Querier interface {
+	LabelQuerier
 	Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSet
+}
+
+// LabelQuerier provides querying access over labels.
+type LabelQuerier interface {
+	// LabelValues returns all potential values for a label name.
+	// It is not safe to use the strings beyond the lifetime of the querier.
+	// If matchers are specified the returned result set is reduced
+	// to label values of metrics matching the matchers.
+	LabelValues(name string, matchers ...*labels.Matcher) ([]string, Warnings, error)
+
+	// LabelNames returns all the unique label names present in the block in sorted order.
+	// If matchers are specified the returned result set is reduced
+	// to label names of metrics matching the matchers.
+	LabelNames(matchers ...*labels.Matcher) ([]string, Warnings, error)
 }
 
 // SeriesSet contains a set of series.

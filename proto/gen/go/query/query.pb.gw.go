@@ -176,7 +176,7 @@ func local_request_Query_Labels_0(ctx context.Context, marshaler runtime.Marshal
 }
 
 var (
-	filter_Query_Values_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_Query_Values_0 = &utilities.DoubleArray{Encoding: map[string]int{"label_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_Query_Values_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -190,14 +190,14 @@ func request_Query_Values_0(ctx context.Context, marshaler runtime.Marshaler, cl
 		_   = err
 	)
 
-	val, ok = pathParams["name"]
+	val, ok = pathParams["label_name"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "label_name")
 	}
 
-	protoReq.Name, err = runtime.String(val)
+	protoReq.LabelName, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "label_name", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -223,14 +223,14 @@ func local_request_Query_Values_0(ctx context.Context, marshaler runtime.Marshal
 		_   = err
 	)
 
-	val, ok = pathParams["name"]
+	val, ok = pathParams["label_name"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "label_name")
 	}
 
-	protoReq.Name, err = runtime.String(val)
+	protoReq.LabelName, err = runtime.String(val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "label_name", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -403,7 +403,7 @@ func RegisterQueryHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.Query/Values", runtime.WithHTTPPathPattern("/profiles/labels/{name}/values"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.Query/Values", runtime.WithHTTPPathPattern("/profiles/labels/{label_name}/values"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -591,7 +591,7 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.Query/Values", runtime.WithHTTPPathPattern("/profiles/labels/{name}/values"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.Query/Values", runtime.WithHTTPPathPattern("/profiles/labels/{label_name}/values"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -659,7 +659,7 @@ var (
 
 	pattern_Query_Labels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "labels"}, ""))
 
-	pattern_Query_Values_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"profiles", "labels", "name", "values"}, ""))
+	pattern_Query_Values_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"profiles", "labels", "label_name", "values"}, ""))
 
 	pattern_Query_Config_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"status", "config"}, ""))
 

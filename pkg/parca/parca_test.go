@@ -19,7 +19,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreClient, <
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		err := Run(ctx, logger, "testdata/parca.yaml", ":9090")
+		err := Run(ctx, logger, &Flags{ConfigPath: "testdata/parca.yaml", Port: ":9090"})
 		if !errors.Is(err, context.Canceled) {
 			require.NoError(b, err)
 		}

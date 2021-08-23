@@ -11,15 +11,9 @@ import (
 	"github.com/parca-dev/parca/pkg/parca"
 )
 
-type flags struct {
-	ConfigPath string `kong:"help='Path to config file.',default='parca.yaml'"`
-	LogLevel   string `kong:"enum='error,warn,info,debug',help='Log level.',default='info'"`
-	Port       string `kong:"help='Port string for server',default=':7070'"`
-}
-
 func main() {
 	ctx := context.Background()
-	flags := &flags{}
+	flags := &parca.Flags{}
 	kong.Parse(flags)
 
 	serverStr := figure.NewColorFigure("Parca", "roman", "cyan", true)
@@ -27,7 +21,7 @@ func main() {
 
 	logger := log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 
-	err := parca.Run(ctx, logger, flags.ConfigPath, flags.Port)
+	err := parca.Run(ctx, logger, flags)
 	if err != nil {
 		level.Error(logger).Log("msg", "Program exited with error", "err", err)
 		os.Exit(1)

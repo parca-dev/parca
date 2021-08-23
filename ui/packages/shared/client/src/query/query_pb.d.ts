@@ -120,8 +120,6 @@ export namespace MetricsSample {
 }
 
 export class QueryRequest extends jspb.Message {
-  hasMode(): boolean;
-  clearMode(): void;
   getMode(): QueryRequest.ModeMap[keyof QueryRequest.ModeMap];
   setMode(value: QueryRequest.ModeMap[keyof QueryRequest.ModeMap]): void;
 
@@ -140,8 +138,6 @@ export class QueryRequest extends jspb.Message {
   getSingle(): QueryRequest.Single | undefined;
   setSingle(value?: QueryRequest.Single): void;
 
-  hasReportType(): boolean;
-  clearReportType(): void;
   getReportType(): QueryRequest.ReportTypeMap[keyof QueryRequest.ReportTypeMap];
   setReportType(value: QueryRequest.ReportTypeMap[keyof QueryRequest.ReportTypeMap]): void;
 
@@ -496,6 +492,11 @@ export namespace LabelsRequest {
 }
 
 export class LabelsResponse extends jspb.Message {
+  clearLabelNamesList(): void;
+  getLabelNamesList(): Array<string>;
+  setLabelNamesList(value: Array<string>): void;
+  addLabelNames(value: string, index?: number): string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LabelsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: LabelsResponse): LabelsResponse.AsObject;
@@ -508,12 +509,13 @@ export class LabelsResponse extends jspb.Message {
 
 export namespace LabelsResponse {
   export type AsObject = {
+    labelNamesList: Array<string>,
   }
 }
 
 export class ValuesRequest extends jspb.Message {
-  getName(): string;
-  setName(value: string): void;
+  getLabelName(): string;
+  setLabelName(value: string): void;
 
   clearMatchList(): void;
   getMatchList(): Array<string>;
@@ -542,7 +544,7 @@ export class ValuesRequest extends jspb.Message {
 
 export namespace ValuesRequest {
   export type AsObject = {
-    name: string,
+    labelName: string,
     matchList: Array<string>,
     start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
     end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
@@ -550,6 +552,11 @@ export namespace ValuesRequest {
 }
 
 export class ValuesResponse extends jspb.Message {
+  clearLabelValuesList(): void;
+  getLabelValuesList(): Array<string>;
+  setLabelValuesList(value: Array<string>): void;
+  addLabelValues(value: string, index?: number): string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ValuesResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ValuesResponse): ValuesResponse.AsObject;
@@ -562,6 +569,7 @@ export class ValuesResponse extends jspb.Message {
 
 export namespace ValuesResponse {
   export type AsObject = {
+    labelValuesList: Array<string>,
   }
 }
 

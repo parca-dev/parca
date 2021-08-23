@@ -272,6 +272,15 @@ func labelValuesWithMatchers(r IndexReader, name string, matchers ...*labels.Mat
 	return values, nil
 }
 
+func labelNamesWithMatchers(r IndexReader, matchers ...*labels.Matcher) ([]string, error) {
+	p, err := PostingsForMatchers(r, matchers...)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.LabelNamesFor(p.ToArray()...)
+}
+
 // inversePostingsForMatcher returns the postings for the series with the label name set but not matching the matcher.
 func inversePostingsForMatcher(ix IndexReader, m *labels.Matcher) (*sroar.Bitmap, error) {
 	vals, err := ix.LabelValues(m.Name)

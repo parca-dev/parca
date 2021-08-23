@@ -35,7 +35,7 @@ service Query {
 
     rpc Values(ValuesRequest) returns (ValuesResponse) {
         option (google.api.http) = {
-            get: "/profiles/labels/{name}/values"
+            get: "/profiles/labels/{label_name}/values"
         };
     }
 
@@ -81,7 +81,7 @@ message QueryRequest{
         MERGE  = 2;
     }
 
-    optional Mode mode = 1;
+    Mode mode = 1;
 
     message Diff {
         ProfileSelect a = 1;
@@ -120,7 +120,7 @@ message QueryRequest{
         FLAMEGRAPH = 0;
     }
 
-    optional ReportType report_type = 5;
+    ReportType report_type = 5;
 }
 
 message Flamegraph {
@@ -155,15 +155,19 @@ message LabelsRequest{
     google.protobuf.Timestamp start = 2;
     google.protobuf.Timestamp end   = 3;
 }
-message LabelsResponse{}
+message LabelsResponse{
+    repeated string label_names = 1;
+}
 
 message ValuesRequest{
-    string                    name  = 1;
-    repeated string           match = 2;
-    google.protobuf.Timestamp start = 3;
-    google.protobuf.Timestamp end   = 4;
+    string                    label_name = 1;
+    repeated string           match      = 2;
+    google.protobuf.Timestamp start      = 3;
+    google.protobuf.Timestamp end        = 4;
 }
-message ValuesResponse{}
+message ValuesResponse{
+    repeated string label_values = 1;
+}
 
 message ConfigRequest{}
 message ConfigResponse{}

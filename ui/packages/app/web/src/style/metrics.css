@@ -1,0 +1,24 @@
+.line {
+  stroke-width: 2;
+  fill: none;
+}
+
+.axis path {
+  stroke: black;
+}
+
+.text {
+  font-size: 12px;
+}
+
+.title-text {
+  font-size: 12px;
+}
+
+#metrics-popover > .popover-body {
+  padding: 0;
+}
+
+svg text {
+  fill:  #495057;
+}

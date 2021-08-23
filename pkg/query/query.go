@@ -2,8 +2,12 @@ package query
 
 import (
 	"context"
+	"errors"
+	"math"
+	"sort"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/parca-dev/parca/pkg/storage"
 	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	pb "github.com/parca-dev/parca/proto/gen/go/query"
@@ -15,17 +19,28 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+var (
+	minTime = time.Unix(math.MinInt64/1000+62135596801, 0).UTC()
+	maxTime = time.Unix(math.MaxInt64/1000-62135596801, 999999999).UTC()
+)
+
 // Query is the read api interface for parca
 // It implements the proto/query/query.proto APIServer interface
 type Query struct {
+	logger    log.Logger
 	queryable storage.Queryable
 	metaStore storage.ProfileMetaStore
 }
 
-func New(queryable storage.Queryable, metaStore storage.ProfileMetaStore) *Query {
+func New(
+	logger log.Logger,
+	queryable storage.Queryable,
+	metaStore storage.ProfileMetaStore,
+) *Query {
 	return &Query{
 		queryable: queryable,
 		metaStore: metaStore,
+		logger:    logger,
 	}
 }
 
@@ -70,10 +85,11 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 			p := i.At()
 			pit := p.ProfileTree().Iterator()
 			if pit.NextChild() {
-				metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
+				s := &pb.MetricsSample{
 					Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
 					Value:     pit.At().CumulativeValue(),
-				})
+				}
+				metricsSeries.Samples = append(metricsSeries.Samples, s)
 			}
 		}
 		err := i.Err()
@@ -100,7 +116,7 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	switch *req.Mode {
+	switch req.Mode {
 	case pb.QueryRequest_SINGLE:
 		s := req.GetSingle()
 		if s == nil {
@@ -183,12 +199,131 @@ func (q *Query) Series(ctx context.Context, req *pb.SeriesRequest) (*pb.SeriesRe
 
 // Labels issues a labels request against the storage
 func (q *Query) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
+	matcherSets, err := parseMatchers(req.Match)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	var (
+		start time.Time = minTime
+		end   time.Time = maxTime
+	)
+
+	if req.Start != nil {
+		start = req.Start.AsTime()
+	}
+	if req.End != nil {
+		end = req.End.AsTime()
+	}
+
+	query := q.queryable.Querier(
+		ctx,
+		timestamp.FromTime(start),
+		timestamp.FromTime(end),
+	)
+
+	var (
+		names    []string
+		warnings storage.Warnings
+	)
+	if len(matcherSets) > 0 {
+		labelNamesSet := make(map[string]struct{})
+
+		for _, matchers := range matcherSets {
+			vals, callWarnings, err := query.LabelNames(matchers...)
+			if err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+
+			warnings = append(warnings, callWarnings...)
+			for _, val := range vals {
+				labelNamesSet[val] = struct{}{}
+			}
+		}
+
+		// Convert the map to an array.
+		names = make([]string, 0, len(labelNamesSet))
+		for key := range labelNamesSet {
+			names = append(names, key)
+		}
+		sort.Strings(names)
+	} else {
+		names, warnings, err = query.LabelNames()
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return &pb.LabelsResponse{
+		LabelNames: names,
+	}, nil
 }
 
 // Values issues a values request against the storage
 func (q *Query) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
+	name := req.LabelName
+
+	matcherSets, err := parseMatchers(req.Match)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	var (
+		start time.Time = minTime
+		end   time.Time = maxTime
+	)
+
+	if req.Start != nil {
+		start = req.Start.AsTime()
+	}
+	if req.End != nil {
+		end = req.End.AsTime()
+	}
+
+	query := q.queryable.Querier(
+		ctx,
+		timestamp.FromTime(start),
+		timestamp.FromTime(end),
+	)
+
+	var (
+		vals     []string
+		warnings storage.Warnings
+	)
+	if len(matcherSets) > 0 {
+		var callWarnings storage.Warnings
+		labelValuesSet := make(map[string]struct{})
+		for _, matchers := range matcherSets {
+			vals, callWarnings, err = query.LabelValues(name, matchers...)
+			if err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+			warnings = append(warnings, callWarnings...)
+			for _, val := range vals {
+				labelValuesSet[val] = struct{}{}
+			}
+		}
+
+		vals = make([]string, 0, len(labelValuesSet))
+		for val := range labelValuesSet {
+			vals = append(vals, val)
+		}
+	} else {
+		vals, warnings, err = query.LabelValues(name)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		if vals == nil {
+			vals = []string{}
+		}
+	}
+
+	sort.Strings(vals)
+
+	return &pb.ValuesResponse{
+		LabelValues: vals,
+	}, nil
 }
 
 // Config issues a config request against the storage
@@ -199,4 +334,26 @@ func (q *Query) Config(ctx context.Context, req *pb.ConfigRequest) (*pb.ConfigRe
 // Targets issues a targets request against the storage
 func (q *Query) Targets(ctx context.Context, req *pb.TargetsRequest) (*pb.TargetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}
+
+func parseMatchers(matchers []string) ([][]*labels.Matcher, error) {
+	var matcherSets [][]*labels.Matcher
+	for _, s := range matchers {
+		matchers, err := parser.ParseMetricSelector(s)
+		if err != nil {
+			return nil, err
+		}
+		matcherSets = append(matcherSets, matchers)
+	}
+
+OUTER:
+	for _, ms := range matcherSets {
+		for _, lm := range ms {
+			if lm != nil && !lm.Matches("") {
+				continue OUTER
+			}
+		}
+		return nil, errors.New("match[] must contain at least one non-empty matcher")
+	}
+	return matcherSets, nil
 }

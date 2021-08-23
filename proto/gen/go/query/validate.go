@@ -19,13 +19,11 @@ func (r *QueryRangeRequest) Validate() error {
 // Validate the QueryRequest
 func (r *QueryRequest) Validate() error {
 	return validation.ValidateStruct(r,
-		validation.Field(&r.Mode, validation.Required, isEnum(QueryRequest_Mode_name)),
 		validation.Field(&r.Options, validation.Required, optionMatchesMode(r.Mode)),
-		validation.Field(&r.ReportType, validation.Required, isEnum(QueryRequest_ReportType_name)),
 	)
 }
 
-func optionMatchesMode(mode *QueryRequest_Mode) OptionMatchesRule {
+func optionMatchesMode(mode QueryRequest_Mode) OptionMatchesRule {
 	return OptionMatchesRule{
 		mode: mode,
 	}
@@ -33,7 +31,7 @@ func optionMatchesMode(mode *QueryRequest_Mode) OptionMatchesRule {
 
 // OptionMatchesRule ensure the options match the requested mode
 type OptionMatchesRule struct {
-	mode *QueryRequest_Mode
+	mode QueryRequest_Mode
 }
 
 // Validate the option matches mode
@@ -43,7 +41,7 @@ func (o OptionMatchesRule) Validate(v interface{}) error {
 		return fmt.Errorf("invalid value")
 	}
 
-	switch *o.mode {
+	switch o.mode {
 	case QueryRequest_SINGLE:
 		if _, ok := option.(*QueryRequest_Single_); !ok {
 			return fmt.Errorf("invalid option for mode")

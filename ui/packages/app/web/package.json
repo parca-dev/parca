@@ -1,27 +1,41 @@
 {
-    "name": "@parca/web",
-    "version": "0.0.0",
-    "description": "Parca Web Interface",
-    "scripts": {
-      "lint": "eslint --ext .ts,.tsx,.js src/*",
-      "dev": "../../../node_modules/.bin/next dev",
-      "build": "yarn clean && ../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
-      "clean": "rimraf .next && rimraf out",
-      "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
-      "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
-      "storybook": "start-storybook -p 6006"
-    },
-    "config": {
-      "port": 3000,
-      "path": "/"
-    },
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-      "@parca/functions": "0.0.0",
-      "@parca/client": "0.0.0"
-    },
-    "devDependencies": {
-      "@storybook/react": "^6.1.2"
-    }
+  "name": "@parca/web",
+  "version": "0.0.0",
+  "description": "Parca Web Interface",
+  "scripts": {
+    "lint": "eslint --ext .ts,.tsx,.js src/*",
+    "dev": "../../../node_modules/.bin/next dev",
+    "build": "yarn clean && ../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
+    "clean": "rimraf .next && rimraf out",
+    "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
+    "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
+    "storybook": "start-storybook -p 6006"
+  },
+  "config": {
+    "port": 3000,
+    "path": "/"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@parca/client": "0.0.0",
+    "@parca/dynamicsize": "0.0.0",
+    "@parca/functions": "0.0.0",
+    "@parca/parser": "0.0.0",
+    "@parca/profile": "0.0.0",
+    "d3-axis": "^2.1.0",
+    "d3-scale-chromatic": "^2.0.0",
+    "d3-selection": "^2.0.0",
+    "d3-shape": "^2.1.0",
+    "d3": "^6.6.0",
+    "isomorphic-unfetch": "^3.1.0",
+    "lodash.debounce": "^4.0.8",
+    "lodash.throttle": "^4.1.1",
+    "react-data-table-component": "^7.0.0-alpha-5",
+    "react-dates": "^21.8.0",
+    "styled-components": "^5.2.1"
+  },
+  "devDependencies": {
+    "@storybook/react": "^6.1.2"
   }
+}

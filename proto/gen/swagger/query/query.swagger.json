@@ -64,7 +64,7 @@
         ]
       }
     },
-    "/profiles/labels/{name}/values": {
+    "/profiles/labels/{labelName}/values": {
       "get": {
         "operationId": "Query_Values",
         "responses": {
@@ -83,7 +83,7 @@
         },
         "parameters": [
           {
-            "name": "name",
+            "name": "labelName",
             "in": "path",
             "required": true,
             "type": "string"
@@ -587,7 +587,15 @@
       }
     },
     "queryLabelsResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "labelNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "queryMetricsSample": {
       "type": "object",
@@ -642,7 +650,15 @@
       "type": "object"
     },
     "queryValuesResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "labelValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "rpcStatus": {
       "type": "object",

@@ -8,6 +8,7 @@ require (
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/sroar v0.0.0-20210806151611-9ba13da43734
+	github.com/go-chi/cors v1.2.0 // indirect
 	github.com/go-kit/kit v0.11.0
 	github.com/go-kit/log v0.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0

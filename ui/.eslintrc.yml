@@ -28,3 +28,6 @@ rules:
     - error
     - varsIgnorePattern: _
       argsIgnorePattern: _
+
+  no-labels: [error, {allowLoop: true}]
+  no-void: 0

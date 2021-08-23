@@ -24,22 +24,29 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type Flags struct {
+	ConfigPath         string   `kong:"help='Path to config file.',default='parca.yaml'"`
+	LogLevel           string   `kong:"enum='error,warn,info,debug',help='Log level.',default='info'"`
+	Port               string   `kong:"help='Port string for server',default=':7070'"`
+	CORSAllowedOrigins []string `kong:"help='Allowed CORS origins.'"`
+}
+
 // Config is the configuration for debug info storage
 type Config struct {
 	DebugInfo *debuginfo.Config `yaml:"debug_info"`
 }
 
 // Run the parca server
-func Run(ctx context.Context, logger log.Logger, configPath, port string) error {
-	cfgContent, err := ioutil.ReadFile(configPath)
+func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
+	cfgContent, err := ioutil.ReadFile(flags.ConfigPath)
 	if err != nil {
-		level.Error(logger).Log("msg", "failed to read config", "path", configPath)
+		level.Error(logger).Log("msg", "failed to read config", "path", flags.ConfigPath)
 		return err
 	}
 
 	cfg := Config{}
 	if err := yaml.Unmarshal(cfgContent, &cfg); err != nil {
-		level.Error(logger).Log("msg", "failed to parse config", "err", err, "path", configPath)
+		level.Error(logger).Log("msg", "failed to parse config", "err", err, "path", flags.ConfigPath)
 		return err
 	}
 
@@ -52,7 +59,7 @@ func Run(ctx context.Context, logger log.Logger, configPath, port string) error 
 	db := storage.OpenDB()
 	metaStore := storage.NewInMemoryProfileMetaStore()
 	s := profilestore.NewProfileStore(logger, db, metaStore)
-	q := query.New(db, metaStore)
+	q := query.New(logger, db, metaStore)
 
 	parcaserver := &server.Server{}
 
@@ -63,7 +70,8 @@ func Run(ctx context.Context, logger log.Logger, configPath, port string) error 
 			return parcaserver.ListenAndServe(
 				ctx,
 				logger,
-				port,
+				flags.Port,
+				flags.CORSAllowedOrigins,
 				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 					debuginfopb.RegisterDebugInfoServer(srv, d)
 					profilestorepb.RegisterProfileStoreServer(srv, s)

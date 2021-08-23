@@ -1,0 +1,26 @@
+# Use the "ignore everything but" approach when https://github.com/containers/buildah/issues/699#issuecomment-823257475 is resolved.
+#
+## Ignore everything
+#**
+#
+## Allow only build artifacts
+#!./package.json
+#!./packages/shared
+#!./packages/app/web/.env.production
+#!./packages/app/web/next.config.js
+#!./packages/app/web/next-env.d.ts
+#!./packages/app/web/package.json
+#!./packages/app/web/public
+#!./packages/app/web/src
+#!./packages/app/web/tsconfig.json
+
+Dockerfile
+Dockerfile.dev
+Makefile
+README.md
+node_modules
+.next
+out
+*.log
+coverage
+./packages/app/template/

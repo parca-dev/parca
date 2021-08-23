@@ -1,0 +1,18 @@
+/* The following block can be included in a custom.scss */
+
+/* make the customizations */
+$body-bg: #F4F6FC;
+$jumbotron-bg: #E4E8F0;
+$primary: #339999;
+$secondary: #0071bc;
+
+$theme-colors: (
+    "light": white,
+);
+
+/* import bootstrap to set changes */
+@import "~bootstrap/scss/bootstrap";
+
+.btn-group .btn-light {
+    border: 1px solid #ced4da;
+}

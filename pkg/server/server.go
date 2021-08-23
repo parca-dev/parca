@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/cors"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/log/level"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -50,7 +51,7 @@ type Server struct {
 }
 
 // ListenAndServe starts the http grpc gateway server
-func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port string, registerables ...Registerable) error {
+func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port string, allowedCORSOrigins []string, registerables ...Registerable) error {
 	level.Info(logger).Log("msg", "starting server", "addr", port)
 	logLevel := "ERROR"
 
@@ -101,8 +102,12 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	}
 
 	s.Server = http.Server{
-		Addr:         port,
-		Handler:      grpcHandlerFunc(srv, fallbackNotFound(mux, http.FileServer(http.FS(uiFS)))),
+		Addr: port,
+		Handler: grpcHandlerFunc(
+			srv,
+			fallbackNotFound(mux, http.FileServer(http.FS(uiFS))),
+			allowedCORSOrigins,
+		),
 		ReadTimeout:  5 * time.Second, // TODO make config option
 		WriteTimeout: time.Minute,     // TODO make config option
 	}
@@ -114,10 +119,39 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.Server.Shutdown(ctx)
 }
 
-func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
-	wrappedGrpc := grpcweb.WrapServer(grpcServer)
+func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowedCORSOrigins []string) http.Handler {
+	allowAll := false
+	if len(allowedCORSOrigins) == 1 && allowedCORSOrigins[0] == "*" {
+		allowAll = true
+	}
+	origins := map[string]struct{}{}
+	for _, o := range allowedCORSOrigins {
+		origins[o] = struct{}{}
+	}
+	wrappedGrpc := grpcweb.WrapServer(grpcServer, grpcweb.WithOriginFunc(func(origin string) bool {
+		_, found := origins[origin]
+		return found || allowAll
+	}))
 
-	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	//corsMiddleware := cors.New(cors.Options{
+	//	AllowOriginFunc: func(r *http.Request, origin string) bool {
+	//		_, found := origins[origin]
+	//		return found || allowAll
+	//	},
+	//	AllowedMethods: []string{
+	//		http.MethodHead,
+	//		http.MethodGet,
+	//		http.MethodPost,
+	//		http.MethodPut,
+	//		http.MethodPatch,
+	//		http.MethodDelete,
+	//	},
+	//	AllowCredentials: true,
+	//})
+	//TODO
+	corsMiddleware := cors.AllowAll()
+
+	return corsMiddleware.Handler(h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
 		} else {
@@ -128,7 +162,7 @@ func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Ha
 
 			otherHandler.ServeHTTP(w, r)
 		}
-	}), &http2.Server{})
+	}), &http2.Server{}))
 }
 
 // DefaultCodeToLevelGRPC is the helper mapper that maps gRPC Response codes to log levels.

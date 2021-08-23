@@ -199,9 +199,11 @@ func TestMemSeriesIterator(t *testing.T) {
 	}
 
 	err := st.appendTree(pt1)
+	st.numSamples++
 	require.NoError(t, err)
 
 	err = st.appendTree(pt2)
+	st.numSamples++
 	require.NoError(t, err)
 
 	it := st.Iterator()
@@ -320,6 +322,15 @@ func TestRealInserts(t *testing.T) {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	require.NoError(t, app.Append(ProfileFromPprof(l, p1)))
-	require.NoError(t, app.Append(ProfileFromPprof(l, p2)))
+	prof1 := ProfileFromPprof(l, p1)
+	prof2 := ProfileFromPprof(l, p2)
+	require.NoError(t, app.Append(prof1))
+	require.NoError(t, app.Append(prof2))
+
+	it := s.Iterator()
+	require.True(t, it.Next())
+	require.Equal(t, int64(1626013307085), it.At().ProfileMeta().Timestamp)
+	require.True(t, it.Next())
+	require.Equal(t, int64(1626014267084), it.At().ProfileMeta().Timestamp)
+	require.False(t, it.Next())
 }

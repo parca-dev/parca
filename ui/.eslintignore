@@ -1,4 +1,5 @@
 out/
 .next/
+dist/
 node_modules/
 next-env.d.ts

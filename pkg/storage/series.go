@@ -375,6 +375,7 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 
 	a.s.maxTime = timestamp
 
+	a.s.numSamples++
 	return nil
 }
 
@@ -387,7 +388,6 @@ func (s *MemSeries) appendTree(profileTree *ProfileTree) error {
 	if err != nil {
 		return err
 	}
-	s.numSamples++
 	return nil
 }
 

@@ -16,6 +16,7 @@ package storage
 import (
 	"errors"
 	"math"
+	"sort"
 
 	"github.com/dgraph-io/sroar"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -35,8 +36,14 @@ type IndexReader interface {
 
 	// LabelValueFor returns label value for the given label name in the series referred to by ID.
 	// If the series couldn't be found or the series doesn't have the requested label a
-	// storage.ErrNotFound is returned as error.
+	// ErrNotFound is returned as error.
 	LabelValueFor(id uint64, label string) (string, error)
+
+	// LabelNames returns possible label names which may not be sorted.
+	LabelNames(matchers ...*labels.Matcher) ([]string, error)
+
+	// LabelNamesFor returns label names for the given series referred to by IDs.
+	LabelNamesFor(ids ...uint64) ([]string, error)
 
 	// Close releases the underlying resource of the reader.
 	Close() error
@@ -108,4 +115,42 @@ func (h *headIndexReader) LabelValueFor(id uint64, label string) (string, error)
 		return "", ErrNotFound
 	}
 	return value, nil
+}
+
+// LabelNamesFor returns all the label names for the series referred to by IDs.
+// The names returned are sorted.
+func (h *headIndexReader) LabelNamesFor(ids ...uint64) ([]string, error) {
+	namesMap := make(map[string]struct{})
+	for _, id := range ids {
+		memSeries := h.head.series.getByID(id)
+		if memSeries == nil {
+			return nil, ErrNotFound
+		}
+		for _, lbl := range memSeries.lset {
+			namesMap[lbl.Name] = struct{}{}
+		}
+	}
+	names := make([]string, 0, len(namesMap))
+	for name := range namesMap {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+// LabelNames returns all the unique label names present in the head
+// that are within the time range mint to maxt.
+func (h *headIndexReader) LabelNames(matchers ...*labels.Matcher) ([]string, error) {
+	if h.maxt < h.head.MinTime() || h.mint > h.head.MaxTime() {
+		return []string{}, nil
+	}
+
+	if len(matchers) == 0 {
+		labelNames := h.head.postings.LabelNames()
+
+		sort.Strings(labelNames)
+		return labelNames, nil
+	}
+
+	return labelNamesWithMatchers(h, matchers...)
 }
