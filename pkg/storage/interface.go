@@ -58,6 +58,13 @@ func WalkProfileTree(pt InstantProfileTree, f func(n InstantProfileTreeNode) err
 	return nil
 }
 
+func CopyInstantProfile(p InstantProfile) *Profile {
+	return &Profile{
+		Meta: p.ProfileMeta(),
+		Tree: CopyInstantProfileTree(p.ProfileTree()),
+	}
+}
+
 func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
 	it := pt.Iterator()
 	if !it.HasMore() || !it.NextChild() {

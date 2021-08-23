@@ -18,9 +18,33 @@ func (r *QueryRangeRequest) Validate() error {
 
 // Validate the QueryRequest
 func (r *QueryRequest) Validate() error {
-	return validation.ValidateStruct(r,
+	err := validation.ValidateStruct(r,
 		validation.Field(&r.Options, validation.Required, optionMatchesMode(r.Mode)),
 	)
+	if err != nil {
+		return err
+	}
+
+	switch r.Mode {
+	case QueryRequest_SINGLE:
+		//TODO
+	case QueryRequest_DIFF:
+		//TODO
+	case QueryRequest_MERGE:
+		merge := r.GetMerge()
+		err = validation.ValidateStruct(merge,
+			validation.Field(&merge.Start, validation.Required),
+			validation.Field(&merge.End, validation.Required, isAfter(merge.Start)),
+			validation.Field(&merge.Query, validation.Required),
+		)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid mode")
+	}
+
+	return nil
 }
 
 func optionMatchesMode(mode QueryRequest_Mode) OptionMatchesRule {

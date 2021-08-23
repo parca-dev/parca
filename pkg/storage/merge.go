@@ -16,6 +16,54 @@ type MergeProfile struct {
 	meta InstantProfileMeta
 }
 
+func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
+	h := len(profiles) / 2
+
+	var (
+		firstHalfMerge  InstantProfile
+		secondHalfMerge InstantProfile
+		err             error
+	)
+
+	firstHalf := profiles[:h]
+	secondHalf := profiles[h:]
+
+	if len(firstHalf) == 1 {
+		firstHalfMerge = firstHalf[0]
+	} else if len(firstHalf) == 0 {
+		// intentionally do nothing
+	} else {
+		firstHalfMerge, err = MergeProfiles(firstHalf...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(secondHalf) == 1 {
+		secondHalfMerge = secondHalf[0]
+	} else if len(secondHalf) == 0 {
+		// intentionally do nothing
+	} else {
+		secondHalfMerge, err = MergeProfiles(secondHalf...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if firstHalfMerge == nil {
+		return secondHalfMerge, nil
+	}
+
+	if secondHalfMerge == nil {
+		return firstHalfMerge, nil
+	}
+
+	return NewMergeProfile(
+		firstHalfMerge,
+		secondHalfMerge,
+	)
+}
+
 func NewMergeProfile(a, b InstantProfile) (*MergeProfile, error) {
 	metaA := a.ProfileMeta()
 	metaB := b.ProfileMeta()
@@ -384,11 +432,20 @@ func MergeInstantProfileTreeNodes(a, b InstantProfileTreeNode) InstantProfileTre
 		flatValues[0].Value += flatB[0].Value
 	}
 
+	cumulativeValues := []*ProfileTreeValueNode{{}}
+	cumulativeA := a.CumulativeValues()
+	if len(cumulativeA) > 0 {
+		cumulativeValues[0].Value += cumulativeA[0].Value
+	}
+
+	cumulativeB := b.CumulativeValues()
+	if len(cumulativeB) > 0 {
+		cumulativeValues[0].Value += cumulativeB[0].Value
+	}
+
 	return &ProfileTreeNode{
-		locationID: a.LocationID(),
-		flatValues: flatValues,
-		cumulativeValues: []*ProfileTreeValueNode{{
-			Value: a.CumulativeValues()[0].Value + b.CumulativeValues()[0].Value,
-		}},
+		locationID:       a.LocationID(),
+		flatValues:       flatValues,
+		cumulativeValues: cumulativeValues,
 	}
 }

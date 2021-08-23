@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/parca-dev/parca/pkg/storage"
 	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	pb "github.com/parca-dev/parca/proto/gen/go/query"
@@ -116,6 +117,7 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	var p storage.InstantProfile
 	switch req.Mode {
 	case pb.QueryRequest_SINGLE:
 		s := req.GetSingle()
@@ -128,7 +130,7 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 			return nil, status.Error(codes.InvalidArgument, "failed to parse query")
 		}
 
-		p, err := q.findSingle(ctx, sel, s)
+		p, err = q.findSingle(ctx, sel, s)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to search profile")
 		}
@@ -136,11 +138,28 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 		if p == nil {
 			return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
 		}
+	case pb.QueryRequest_MERGE:
+		m := req.GetMerge()
+		if m == nil {
+			return nil, status.Error(codes.InvalidArgument, "requested merge mode, but did not provide parameters for merge")
+		}
 
-		return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
+		sel, err := parser.ParseMetricSelector(m.Query)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+		}
+
+		start := m.Start.AsTime()
+		end := m.End.AsTime()
+
+		level.Debug(q.logger).Log("msg", "merge request", "query", m.Query, "start", start, "end", end)
+
+		p, err = q.merge(ctx, sel, start, end)
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
+
+	return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
 }
 
 func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -190,6 +209,38 @@ func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, s *pb.Que
 	}
 
 	return nil, nil
+}
+
+func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end time.Time) (storage.InstantProfile, error) {
+	startTs := timestamp.FromTime(start)
+	endTs := timestamp.FromTime(end)
+	query := q.queryable.Querier(
+		ctx,
+		startTs,
+		endTs,
+	)
+
+	set := query.Select(&storage.SelectHints{
+		Start: startTs,
+		End:   endTs,
+		Merge: true,
+	}, sel...)
+
+	// Naively copy all instant profiles and then merge them. This can probably
+	// done streaming, but doing it naively for a first pass.
+	profiles := []storage.InstantProfile{}
+
+	for set.Next() {
+		series := set.At()
+		i := series.Iterator()
+		for i.Next() {
+			// Have to copy as profile pointer is not stable for more than the
+			// current iteration.
+			profiles = append(profiles, storage.CopyInstantProfile(i.At()))
+		}
+	}
+
+	return storage.MergeProfiles(profiles...)
 }
 
 // Series issues a series request against the storage

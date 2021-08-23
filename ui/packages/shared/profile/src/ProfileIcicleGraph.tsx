@@ -52,7 +52,7 @@ export default function ProfileIcicleGraph ({
 
   function nodeAsText (node: FlamegraphNode.AsObject | undefined): string {
     if (node === undefined) return ''
-    return `${node.name.split(' ')[0]} (${((node.cumulative * 100) / total).toFixed(2)}%)`
+    return `${node.name.split(' ')[0]} (${((node.cumulative * 100) / total).toFixed(2)}%) ${node.cumulative}`
   }
 
   const nodeLabel = hoveringNode == null ? nodeAsText(graph.getRoot()?.toObject()) : nodeAsText(hoveringNode)
