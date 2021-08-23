@@ -227,8 +227,23 @@ export class MergedProfileSource implements ProfileSource {
   }
 
   QueryRequest (): QueryRequest {
-    // TODO
     const req = new QueryRequest()
+    req.setMode(QueryRequest.Mode.MERGE)
+
+    const mergeQueryRequest = new QueryRequest.Merge()
+
+    const startTs = new Timestamp()
+    startTs.fromDate(moment(this.from).toDate())
+    mergeQueryRequest.setStart(startTs)
+
+    const endTs = new Timestamp()
+    endTs.fromDate(moment(this.to).toDate())
+    mergeQueryRequest.setEnd(endTs)
+
+    mergeQueryRequest.setQuery(this.query)
+
+    req.setMerge(mergeQueryRequest)
+
     return req
   }
 

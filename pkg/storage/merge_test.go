@@ -38,7 +38,7 @@ func TestMergeProfileSimple(t *testing.T) {
 		},
 	}
 
-	mp, err := NewMergeProfile(p1, p2)
+	mp, err := MergeProfiles(p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -123,7 +123,7 @@ func TestMergeProfileDeep(t *testing.T) {
 		},
 	}
 
-	mp, err := NewMergeProfile(p1, p2)
+	mp, err := MergeProfiles(p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -245,7 +245,7 @@ func TestMergeProfile(t *testing.T) {
 		},
 	}
 
-	mp, err := NewMergeProfile(p1, p2)
+	mp, err := MergeProfiles(p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -355,6 +355,42 @@ func TestMergeProfile(t *testing.T) {
 	}, res)
 }
 
+func TestMergeSingle(t *testing.T) {
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	l := NewInMemoryProfileMetaStore()
+	prof := ProfileFromPprof(l, p, 0)
+
+	m, err := MergeProfiles(prof)
+	require.NoError(t, err)
+	CopyInstantProfileTree(m.ProfileTree())
+}
+
+func TestMergeMany(t *testing.T) {
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	l := NewInMemoryProfileMetaStore()
+	prof := ProfileFromPprof(l, p, 0)
+
+	num := 1000
+	profiles := make([]InstantProfile, 0, 1000)
+	for i := 0; i < num; i++ {
+		profiles = append(profiles, prof)
+	}
+
+	m, err := MergeProfiles(profiles...)
+	require.NoError(t, err)
+	CopyInstantProfileTree(m.ProfileTree())
+}
+
 type sample struct {
 	id         uint64
 	flat       []*ProfileTreeValueNode
@@ -400,7 +436,7 @@ func BenchmarkTreeMerge(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	m, err := NewMergeProfile(prof1, prof2)
+	m, err := MergeProfiles(prof1, prof2)
 	require.NoError(b, err)
 	CopyInstantProfileTree(m.ProfileTree())
 }
