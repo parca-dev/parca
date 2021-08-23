@@ -16,21 +16,13 @@ var (
 	ErrOutOfOrderSample = errors.New("out of order sample")
 )
 
-type MemSeriesTreeValueNode struct {
-	Values   chunkenc.Chunk
-	Label    map[string][]string
-	NumLabel map[string][]int64
-	NumUnit  map[string][]string
-}
-
 type MemSeriesTreeNode struct {
-	LocationID       uint64
-	FlatValues       []*MemSeriesTreeValueNode
-	CumulativeValues []*MemSeriesTreeValueNode
-	Children         []*MemSeriesTreeNode
+	LocationID uint64
+	Children   []*MemSeriesTreeNode
 }
 
 type MemSeriesTree struct {
+	s     *MemSeries
 	Roots *MemSeriesTreeNode
 }
 
@@ -58,28 +50,48 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					seriesTreeChild := &MemSeriesTreeNode{
 						LocationID: pId,
 					}
-					if len(profileTreeChild.FlatValues()) > 0 {
-						if seriesTreeChild.FlatValues == nil {
-							seriesTreeChild.FlatValues = []*MemSeriesTreeValueNode{{
-								Values: chunkenc.NewXORChunk(),
-							}}
+					{
+						if len(profileTreeChild.FlatValues()) > 0 {
+							if t.s.flatValues[pId] == nil {
+								t.s.flatValues[pId] = chunkenc.NewXORChunk()
+							}
+							app, err := t.s.flatValues[pId].Appender()
+							if err != nil {
+								return err
+							}
+							app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
+
+							if len(profileTreeChild.FlatValues()[0].Label) > 0 {
+								if t.s.labels[pId] == nil {
+									t.s.labels[pId] = profileTreeChild.FlatValues()[0].Label
+								} else {
+									// TODO: Merge labels?
+								}
+
+								if t.s.numLabels[pId] == nil {
+									t.s.numLabels[pId] = profileTreeChild.FlatValues()[0].NumLabel
+								} else {
+									// TODO: Merge numLabels?
+								}
+
+								if t.s.numUnits[pId] == nil {
+									t.s.numUnits[pId] = profileTreeChild.FlatValues()[0].NumUnit
+								} else {
+									// TODO: Merge numUnits?
+								}
+							}
 						}
-						app, err := seriesTreeChild.FlatValues[0].Values.Appender()
+					}
+					{
+						if t.s.cumulativeValues[pId] == nil {
+							t.s.cumulativeValues[pId] = chunkenc.NewXORChunk()
+						}
+						app, err := t.s.cumulativeValues[pId].Appender()
 						if err != nil {
 							return err
 						}
-						app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
+						app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
 					}
-					if seriesTreeChild.CumulativeValues == nil {
-						seriesTreeChild.CumulativeValues = []*MemSeriesTreeValueNode{{
-							Values: chunkenc.NewXORChunk(),
-						}}
-					}
-					app, err := seriesTreeChild.CumulativeValues[0].Values.Appender()
-					if err != nil {
-						return err
-					}
-					app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
 
 					node.Children = append(node.Children, seriesTreeChild)
 
@@ -100,28 +112,21 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 			seriesTreeChild := sit.At()
 			sId := seriesTreeChild.LocationID
 
-			// The node with the location id in the profile-tree is the same,
+			// The node with the location id in the profile-tree is the same (except Location ID 0 - the root),
 			// this means this node present in the series-tree, so we need add the new values to the existing node.
 			if pId == sId {
 				if len(profileTreeChild.FlatValues()) > 0 {
-					// REVIEW: I don't think this can ever be nil, can it? It'll have existing values if pId == sId?!
-					if seriesTreeChild.FlatValues == nil {
-						seriesTreeChild.FlatValues = []*MemSeriesTreeValueNode{{
-							Values: chunkenc.NewXORChunk(),
-						}}
-					}
-					app, err := seriesTreeChild.FlatValues[0].Values.Appender()
+					app, err := t.s.flatValues[pId].Appender()
 					if err != nil {
 						return err
 					}
 					app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
 				}
-				if seriesTreeChild.CumulativeValues == nil {
-					seriesTreeChild.CumulativeValues = []*MemSeriesTreeValueNode{{
-						Values: chunkenc.NewXORChunk(),
-					}}
+
+				if t.s.cumulativeValues[pId] == nil {
+					t.s.cumulativeValues[pId] = chunkenc.NewXORChunk()
 				}
-				app, err := seriesTreeChild.CumulativeValues[0].Values.Appender()
+				app, err := t.s.cumulativeValues[pId].Appender()
 				if err != nil {
 					return err
 				}
@@ -142,20 +147,22 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 				newChild := &MemSeriesTreeNode{
 					LocationID: pId,
 				}
+
 				if len(profileTreeChild.FlatValues()) > 0 {
-					newChild.FlatValues = []*MemSeriesTreeValueNode{{
-						Values: chunkenc.NewXORChunk(),
-					}}
-					app, err := newChild.FlatValues[0].Values.Appender()
+					if t.s.flatValues[pId] == nil {
+						t.s.flatValues[pId] = chunkenc.NewXORChunk()
+					}
+					app, err := t.s.flatValues[pId].Appender()
 					if err != nil {
 						return err
 					}
 					app.AppendAt(index, profileTreeChild.FlatValues()[0].Value)
 				}
-				newChild.CumulativeValues = []*MemSeriesTreeValueNode{{
-					Values: chunkenc.NewXORChunk(),
-				}}
-				app, err := newChild.CumulativeValues[0].Values.Appender()
+
+				if t.s.cumulativeValues[pId] == nil {
+					t.s.cumulativeValues[pId] = chunkenc.NewXORChunk()
+				}
+				app, err := t.s.cumulativeValues[pId].Appender()
 				if err != nil {
 					return err
 				}
@@ -224,7 +231,6 @@ func (t *ProfileTree) Iterator() InstantProfileTreeIterator {
 }
 
 func (t *ProfileTree) Insert(sample *profile.Sample) {
-
 	cur := t.Roots
 	locations := sample.Location
 
@@ -262,11 +268,19 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 		cur.cumulativeValues = []*ProfileTreeValueNode{{}}
 	}
 	cur.cumulativeValues[0].Value += sample.Value[0]
+	// TODO: We probably need to merge labels, numLabels and numUnits
+	cur.cumulativeValues[0].Label = sample.Label
+	cur.cumulativeValues[0].NumLabel = sample.NumLabel
+	cur.cumulativeValues[0].NumUnit = sample.NumUnit
 
 	if cur.flatValues == nil {
 		cur.flatValues = []*ProfileTreeValueNode{{}}
 	}
 	cur.flatValues[0].Value += sample.Value[0]
+	// TODO: We probably need to merge labels, numLabels and numUnits
+	cur.flatValues[0].Label = sample.Label
+	cur.flatValues[0].NumLabel = sample.NumLabel
+	cur.flatValues[0].NumUnit = sample.NumUnit
 }
 
 type MemSeries struct {
@@ -281,23 +295,36 @@ type MemSeries struct {
 	durations        chunkenc.Chunk
 	periods          chunkenc.Chunk
 
+	// TODO: Might be worth combining behind some struct?
+	// Or maybe not because it's easier to serialize?
+
+	// Flat and cumulative values as well as labels by the node's LocationID.
+	flatValues       map[uint64]chunkenc.Chunk
+	cumulativeValues map[uint64]chunkenc.Chunk
+	labels           map[uint64]map[string][]string
+	numLabels        map[uint64]map[string][]int64
+	numUnits         map[uint64]map[string][]string
+
 	seriesTree *MemSeriesTree
 	numSamples uint16
 }
 
 func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
-	timestamps := chunkenc.NewDeltaChunk()
-	durations := chunkenc.NewRLEChunk()
-	periods := chunkenc.NewRLEChunk()
-
-	return &MemSeries{
-		lset:       lset,
-		id:         id,
-		timestamps: timestamps,
-		durations:  durations,
-		periods:    periods,
-		seriesTree: &MemSeriesTree{},
+	s := &MemSeries{
+		lset:             lset,
+		id:               id,
+		timestamps:       chunkenc.NewDeltaChunk(),
+		durations:        chunkenc.NewRLEChunk(),
+		periods:          chunkenc.NewRLEChunk(),
+		flatValues:       make(map[uint64]chunkenc.Chunk),
+		cumulativeValues: make(map[uint64]chunkenc.Chunk),
+		labels:           map[uint64]map[string][]string{},
+		numLabels:        map[uint64]map[string][]int64{},
+		numUnits:         map[uint64]map[string][]string{},
 	}
+	s.seriesTree = &MemSeriesTree{s: s}
+
+	return s
 }
 
 type stacktraceKey struct {
@@ -381,14 +408,10 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 
 func (s *MemSeries) appendTree(profileTree *ProfileTree) error {
 	if s.seriesTree == nil {
-		s.seriesTree = &MemSeriesTree{}
+		s.seriesTree = &MemSeriesTree{s: s}
 	}
 
-	err := s.seriesTree.Insert(s.numSamples, profileTree)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.seriesTree.Insert(s.numSamples, profileTree)
 }
 
 func (s *MemSeries) Labels() labels.Labels {
@@ -470,14 +493,12 @@ type MemSeriesIterator struct {
 func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	root := &MemSeriesIteratorTreeNode{}
 
-	for _, v := range s.seriesTree.Roots.CumulativeValues {
-		root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-			Values:   v.Values.Iterator(nil),
-			Label:    v.Label,
-			NumLabel: v.NumLabel,
-			NumUnit:  v.NumUnit,
-		})
-	}
+	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
+		Values:   s.cumulativeValues[0].Iterator(nil),
+		Label:    s.labels[0],
+		NumLabel: s.numLabels[0],
+		NumUnit:  s.numUnits[0],
+	})
 
 	res := &MemSeriesIterator{
 		tree: &MemSeriesIteratorTree{
@@ -502,29 +523,25 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 			child := it.At()
 
 			n := &MemSeriesIteratorTreeNode{
-				locationID:       child.LocationID,
-				flatValues:       make([]*MemSeriesIteratorTreeValueNode, 0, len(child.FlatValues)),
-				cumulativeValues: make([]*MemSeriesIteratorTreeValueNode, 0, len(child.CumulativeValues)),
-				Children:         make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
+				locationID: child.LocationID,
+				Children:   make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
 			}
 
-			for _, v := range child.FlatValues {
-				n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
-					Values:   v.Values.Iterator(nil),
-					Label:    v.Label,
-					NumLabel: v.NumLabel,
-					NumUnit:  v.NumUnit,
-				})
+			if s.flatValues[n.locationID] != nil {
+				n.flatValues = []*MemSeriesIteratorTreeValueNode{{
+					Values:   s.flatValues[n.locationID].Iterator(nil),
+					Label:    s.labels[n.locationID],
+					NumLabel: s.numLabels[n.locationID],
+					NumUnit:  s.numUnits[n.locationID],
+				}}
 			}
 
-			for _, v := range child.CumulativeValues {
-				n.cumulativeValues = append(n.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-					Values:   v.Values.Iterator(nil),
-					Label:    v.Label,
-					NumLabel: v.NumLabel,
-					NumUnit:  v.NumUnit,
-				})
-			}
+			n.cumulativeValues = []*MemSeriesIteratorTreeValueNode{{
+				Values:   s.cumulativeValues[n.locationID].Iterator(nil),
+				Label:    s.labels[n.locationID],
+				NumLabel: s.numLabels[n.locationID],
+				NumUnit:  s.numUnits[n.locationID],
+			}}
 
 			cur := memItStack.Peek()
 			cur.node.Children = append(cur.node.Children, n)

@@ -1,6 +1,10 @@
 package storage
 
-import "github.com/google/pprof/profile"
+import (
+	"time"
+
+	"github.com/google/pprof/profile"
+)
 
 type InstantProfileTreeNode interface {
 	LocationID() uint64
@@ -156,7 +160,7 @@ func ProfileFromPprof(s ProfileMetaStore, p *profile.Profile, sampleIndex int) *
 
 func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {
 	return InstantProfileMeta{
-		Timestamp:  p.TimeNanos / 1000000,
+		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
 		Duration:   p.DurationNanos,
 		Period:     p.Period,
 		PeriodType: ValueType{Type: p.PeriodType.Type, Unit: p.PeriodType.Unit},

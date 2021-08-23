@@ -192,3 +192,14 @@ func (it *rleIterator) Reset(b []byte) {
 	it.v = 0
 	it.err = nil
 }
+
+// FromValuesRLE takes a value and adds it length amounts of times to the Chunk.
+// This is mostly helpful in tests.
+func FromValuesRLE(value int64, length uint16) Chunk {
+	c := NewRLEChunk()
+	app, _ := c.Appender()
+	for i := 0; i < int(length); i++ {
+		app.Append(value)
+	}
+	return c
+}

@@ -58,10 +58,28 @@ import (
 //}
 
 func TestProfileTreeInsert(t *testing.T) {
+	var (
+		label    = map[string][]string{"foo": {"bar", "baz"}}
+		numLabel = map[string][]int64{"foo": {1, 2}}
+		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
+	)
+
 	pt := NewProfileTree()
-	pt.Insert(makeSample(2, []uint64{2, 1}))
-	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
-	pt.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
+	{
+		s := makeSample(2, []uint64{2, 1})
+		pt.Insert(s)
+	}
+	{
+		s := makeSample(1, []uint64{5, 3, 2, 1})
+		pt.Insert(s)
+	}
+	{
+		s := makeSample(3, []uint64{4, 3, 2, 1})
+		s.Label = label
+		s.NumLabel = numLabel
+		s.NumUnit = numUnit
+		pt.Insert(s)
+	}
 
 	require.Equal(t, &ProfileTree{
 		Roots: &ProfileTreeNode{
@@ -79,9 +97,19 @@ func TestProfileTreeInsert(t *testing.T) {
 						locationID:       3,
 						cumulativeValues: []*ProfileTreeValueNode{{Value: 4}},
 						Children: []*ProfileTreeNode{{
-							locationID:       4,
-							cumulativeValues: []*ProfileTreeValueNode{{Value: 3}},
-							flatValues:       []*ProfileTreeValueNode{{Value: 3}},
+							locationID: 4,
+							cumulativeValues: []*ProfileTreeValueNode{{
+								Value:    3,
+								Label:    label,
+								NumLabel: numLabel,
+								NumUnit:  numUnit,
+							}},
+							flatValues: []*ProfileTreeValueNode{{
+								Value:    3,
+								Label:    label,
+								NumLabel: numLabel,
+								NumUnit:  numUnit,
+							}},
 						}, {
 							locationID:       5,
 							cumulativeValues: []*ProfileTreeValueNode{{Value: 1}},
@@ -94,156 +122,257 @@ func TestProfileTreeInsert(t *testing.T) {
 }
 
 func TestMemSeriesTree(t *testing.T) {
-	pt1 := NewProfileTree()
-	pt1.Insert(makeSample(2, []uint64{2, 1}))
-	pt1.Insert(makeSample(2, []uint64{4, 1}))
+	var (
+		label    = map[string][]string{"foo": {"bar", "baz"}}
+		numLabel = map[string][]int64{"foo": {1, 2}}
+		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
+	)
 
-	st := &MemSeriesTree{}
-	err := st.Insert(0, pt1)
-	require.NoError(t, err)
+	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
+
+	{
+		pt := NewProfileTree()
+		{
+			s := makeSample(2, []uint64{2, 1})
+			pt.Insert(s)
+		}
+		{
+			s := makeSample(2, []uint64{4, 1})
+			s.Label = label
+			s.NumLabel = numLabel
+			s.NumUnit = numUnit
+			pt.Insert(s)
+		}
+
+		err := s.seriesTree.Insert(0, pt)
+		require.NoError(t, err)
+	}
+
+	require.Len(t, s.flatValues, 2)
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[2])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[4])
+
+	require.Len(t, s.cumulativeValues, 4)
+	require.Equal(t, chunkenc.FromValuesXOR(4), s.cumulativeValues[0])
+	require.Equal(t, chunkenc.FromValuesXOR(4), s.cumulativeValues[1])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[2])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[4])
+
+	require.Len(t, s.labels, 1)
+	require.Equal(t, map[uint64]map[string][]string{4: label}, s.labels)
+	require.Equal(t, map[uint64]map[string][]int64{4: numLabel}, s.numLabels)
+	require.Equal(t, map[uint64]map[string][]string{4: numUnit}, s.numUnits)
 
 	require.Equal(t, &MemSeriesTree{
+		s: s,
 		Roots: &MemSeriesTreeNode{
-			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4)}},
 			Children: []*MemSeriesTreeNode{{
-				LocationID:       1,
-				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4)}},
-				Children: []*MemSeriesTreeNode{{
-					LocationID:       2,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
-				}, {
-					LocationID:       4,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
-				}},
+				LocationID: 1,
+				Children: []*MemSeriesTreeNode{
+					{LocationID: 2},
+					{LocationID: 4},
+				},
 			}}},
-	}, st)
+	}, s.seriesTree)
 
 	// Merging another profileTree onto the existing one
 	pt2 := NewProfileTree()
 	pt2.Insert(makeSample(3, []uint64{2, 1}))
-	err = st.Insert(1, pt2)
+	err := s.seriesTree.Insert(1, pt2)
 	require.NoError(t, err)
 
+	require.Len(t, s.flatValues, 2)
+	require.Equal(t, chunkenc.FromValuesXOR(2, 3), s.flatValues[2])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[4]) // sparse - nothing added
+
+	require.Len(t, s.cumulativeValues, 4)
+	require.Equal(t, chunkenc.FromValuesXOR(4, 3), s.cumulativeValues[0])
+	require.Equal(t, chunkenc.FromValuesXOR(4, 3), s.cumulativeValues[1])
+	require.Equal(t, chunkenc.FromValuesXOR(2, 3), s.cumulativeValues[2])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[4]) // sparse - nothing added
+
 	require.Equal(t, &MemSeriesTree{
+		s: s,
 		Roots: &MemSeriesTreeNode{
-			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 3)}},
 			Children: []*MemSeriesTreeNode{{
-				LocationID:       1,
-				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 3)}},
-				Children: []*MemSeriesTreeNode{{
-					LocationID:       2,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2, 3)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2, 3)}},
-				}, {
-					LocationID:       4,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
-				}},
+				LocationID: 1,
+				Children: []*MemSeriesTreeNode{
+					{LocationID: 2},
+					{LocationID: 4},
+				},
 			}}},
-	}, st)
+	}, s.seriesTree)
 
 	// Merging another profileTree onto the existing one with one new Location
 	pt3 := NewProfileTree()
 	pt3.Insert(makeSample(2, []uint64{3, 1}))
-	err = st.Insert(2, pt3)
+	err = s.seriesTree.Insert(2, pt3)
 	require.NoError(t, err)
 
-	// These require.Equal assertions are exactly the same as below, although you know exactly what line breaks.
-	require.Equal(t, chunkenc.FromValuesXOR(4, 3, 2), st.Roots.CumulativeValues[0].Values)
-	require.Equal(t, chunkenc.FromValuesXOR(4, 3, 2), st.Roots.Children[0].CumulativeValues[0].Values)            // Location: 1
-	require.Equal(t, chunkenc.FromValuesXOR(2, 3), st.Roots.Children[0].Children[0].CumulativeValues[0].Values)   // Location: 2
-	require.Equal(t, chunkenc.FromValuesXOR(2, 3), st.Roots.Children[0].Children[0].FlatValues[0].Values)         // Location: 2
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 2), st.Roots.Children[0].Children[1].CumulativeValues[0].Values) // Location: 3
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 2), st.Roots.Children[0].Children[1].FlatValues[0].Values)       // Location: 3
-	require.Equal(t, chunkenc.FromValuesXOR(2), st.Roots.Children[0].Children[2].CumulativeValues[0].Values)      // Location: 4
-	require.Equal(t, chunkenc.FromValuesXOR(2), st.Roots.Children[0].Children[2].FlatValues[0].Values)            // Location: 4
+	require.Len(t, s.flatValues, 3)
+	require.Equal(t, chunkenc.FromValuesXOR(2, 3), s.flatValues[2]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 2), s.flatValues[3])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[4]) // sparse - nothing added
+
+	require.Len(t, s.cumulativeValues, 5)
+	require.Equal(t, chunkenc.FromValuesXOR(4, 3, 2), s.cumulativeValues[0])
+	require.Equal(t, chunkenc.FromValuesXOR(4, 3, 2), s.cumulativeValues[1])
+	require.Equal(t, chunkenc.FromValuesXOR(2, 3), s.cumulativeValues[2]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 2), s.cumulativeValues[3])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[4]) // sparse - nothing added
 
 	require.Equal(t, &MemSeriesTree{
+		s: s,
 		Roots: &MemSeriesTreeNode{
-			CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 3, 2)}},
 			Children: []*MemSeriesTreeNode{{
-				LocationID:       1,
-				CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(4, 3, 2)}},
-				Children: []*MemSeriesTreeNode{{
-					LocationID:       2,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2, 3)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2, 3)}},
-				}, {
-					LocationID:       3,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXORAt(2, 2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXORAt(2, 2)}},
-				}, {
-					LocationID:       4,
-					CumulativeValues: []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
-					FlatValues:       []*MemSeriesTreeValueNode{{Values: chunkenc.FromValuesXOR(2)}},
-				}},
+				LocationID: 1,
+				Children: []*MemSeriesTreeNode{
+					{LocationID: 2},
+					{LocationID: 3},
+					{LocationID: 4},
+				},
 			}}},
-	}, st)
+	}, s.seriesTree)
 }
 
 func TestMemSeriesIterator(t *testing.T) {
-	pt1 := NewProfileTree()
-	pt1.Insert(makeSample(2, []uint64{2, 1}))
-	pt1.Insert(makeSample(2, []uint64{4, 1}))
+	var (
+		label    = map[string][]string{"foo": {"bar", "baz"}}
+		numLabel = map[string][]int64{"foo": {1, 2}}
+		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
+	)
 
-	pt2 := NewProfileTree()
-	pt2.Insert(makeSample(2, []uint64{3, 1}))
-	pt2.Insert(makeSample(2, []uint64{4, 1}))
+	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
 
-	st := &MemSeries{
-		timestamps: chunkenc.FromValuesDelta(1, 2),
-		durations:  chunkenc.FromValuesDelta(time.Second.Nanoseconds(), time.Second.Nanoseconds()),
-		periods:    chunkenc.FromValuesDelta(100, 100),
+	s.timestamps = chunkenc.FromValuesDelta(1, 2)
+	s.durations = chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 2)
+	s.periods = chunkenc.FromValuesRLE(100, 2)
+
+	{
+		pt := NewProfileTree()
+		{
+			s := makeSample(2, []uint64{2, 1})
+			pt.Insert(s)
+		}
+		{
+			s := makeSample(2, []uint64{4, 1})
+			s.Label = label
+			s.NumLabel = numLabel
+			s.NumUnit = numUnit
+			pt.Insert(s)
+		}
+
+		err := s.appendTree(pt)
+		s.numSamples++
+		require.NoError(t, err)
+	}
+	{
+		pt := NewProfileTree()
+		{
+			pt.Insert(makeSample(2, []uint64{3, 1}))
+		}
+		{
+			pt.Insert(makeSample(2, []uint64{4, 1}))
+		}
+
+		err := s.appendTree(pt)
+		s.numSamples++
+		require.NoError(t, err)
 	}
 
-	err := st.appendTree(pt1)
-	st.numSamples++
-	require.NoError(t, err)
+	it := s.Iterator()
 
-	err = st.appendTree(pt2)
-	st.numSamples++
-	require.NoError(t, err)
+	// First iteration
+	{
+		require.True(t, it.Next())
+		require.NoError(t, it.Err())
 
-	it := st.Iterator()
-	require.True(t, it.Next())
-	require.NoError(t, it.Err())
+		instantProfile := it.At()
+		require.Equal(t, InstantProfileMeta{
+			Timestamp: 1,
+			Duration:  time.Second.Nanoseconds(),
+			Period:    100,
+		}, instantProfile.ProfileMeta())
 
-	instantProfile := it.At()
-	require.Equal(t, InstantProfileMeta{
-		Timestamp: 1,
-		Duration:  time.Second.Nanoseconds(),
-		Period:    100,
-	}, instantProfile.ProfileMeta())
+		expected := []struct {
+			LocationID       uint64
+			CumulativeValues []*ProfileTreeValueNode
+			FlatValues       []*ProfileTreeValueNode
+		}{
+			{
+				LocationID:       0,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 4}},
+				FlatValues:       []*ProfileTreeValueNode{},
+			},
+			{
+				LocationID:       1,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 4}},
+				FlatValues:       []*ProfileTreeValueNode{},
+			},
+			{
+				LocationID:       2,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 2}},
+				FlatValues:       []*ProfileTreeValueNode{{Value: 2}},
+			},
+			{
+				LocationID:       3,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 0}},
+				FlatValues:       []*ProfileTreeValueNode{{Value: 0}},
+			},
+			{
+				LocationID:       4,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}},
+				FlatValues:       []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}},
+			},
+		}
 
-	res := []uint64{}
-	err = WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
-		res = append(res, n.LocationID())
-		return nil
-	})
-	require.NoError(t, err)
+		i := 0
+		err := WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
+			require.Equal(t, expected[i].LocationID, n.LocationID())
+			require.Equal(t, expected[i].CumulativeValues, n.CumulativeValues())
+			require.Equal(t, expected[i].FlatValues, n.FlatValues())
+			i++
+			return nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, 5, i) // seen 5 nodes
+	}
 
-	require.Equal(t, []uint64{0, 1, 2, 3, 4}, res)
+	// Second iteration
+	{
+		require.True(t, it.Next())
+		require.NoError(t, it.Err())
 
-	require.True(t, it.Next())
-	require.NoError(t, it.Err())
+		instantProfile := it.At()
+		require.Equal(t, InstantProfileMeta{
+			Timestamp: 2,
+			Duration:  time.Second.Nanoseconds(),
+			Period:    100,
+		}, instantProfile.ProfileMeta())
 
-	instantProfile = it.At()
-	require.Equal(t, InstantProfileMeta{
-		Timestamp: 2,
-		Duration:  1e9,
-		Period:    100,
-	}, instantProfile.ProfileMeta())
+		expected := []struct {
+			LocationID       uint64
+			CumulativeValues []*ProfileTreeValueNode
+		}{
+			{LocationID: 0, CumulativeValues: []*ProfileTreeValueNode{{Value: 4}}},
+			{LocationID: 1, CumulativeValues: []*ProfileTreeValueNode{{Value: 4}}},
+			{LocationID: 2, CumulativeValues: []*ProfileTreeValueNode{{Value: 2}}}, // TODO: Fix this iterator! It should be a sparse 0
+			{LocationID: 3, CumulativeValues: []*ProfileTreeValueNode{{Value: 2}}},
+			{LocationID: 4, CumulativeValues: []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}}},
+		}
 
-	res = []uint64{}
-	err = WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
-		res = append(res, n.LocationID())
-		return nil
-	})
-	require.NoError(t, err)
+		i := 0
+		err := WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
+			require.Equal(t, expected[i].LocationID, n.LocationID())
+			require.Equal(t, expected[i].CumulativeValues, n.CumulativeValues())
+			i++
+			return nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, 5, i)
+	}
 
-	require.Equal(t, []uint64{0, 1, 2, 3, 4}, res)
+	// No more iterations
 	require.False(t, it.Next())
 }
 
