@@ -119,6 +119,12 @@ func testChunk(t *testing.T, c Chunk) {
 	}
 	require.NoError(t, it4.Err())
 	require.Equal(t, []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 42}, res4)
+
+	// 5. Read back 10x zeros for sparseness.
+	for i := 0; i < 10; i++ {
+		require.False(t, it4.Next())
+		require.Equal(t, int64(0), it4.At())
+	}
 }
 
 // for i in {1..10}; do go test -bench=BenchmarkIterators --benchtime=500000000x ./pkg/storage/chunkenc >> pkg/storage/benchmark/iterator-same.txt; done
