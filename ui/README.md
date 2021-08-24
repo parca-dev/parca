@@ -20,9 +20,9 @@ You can start editing the page by modifying `pages/index.tsx`. The page auto-upd
 
 ## Build
 
-To build the UI, you can use `Makefile` at the root of the project to run following commands.
+To build the UI, you can use `Makefile` at the root of the project to run the following commands.
 
-Run following command to generate static files:
+Run the following command to generate static files:
 
 ```shell
 make ui # yarn install && yarn export
@@ -46,4 +46,18 @@ Run following to generate static assets separately:
 npm run export
 # or
 yarn export
+```
+
+### Development workflow
+
+> Before make sure all the tools you need are installed. The Linux users can simply run `//env.sh`.
+
+You can set up a cluster and all else you need by simply running:
+```shell
+make dev/up
+```
+
+For a simple local development setup we use [Tilt](https://tilt.dev).
+```shell
+tilt up
 ```

@@ -25,10 +25,10 @@ spec:
       containers:
       - args:
         - /bin/parca-agent
-        - --log-level=info
+        - --log-level=debug
         - --node=$(NODE_NAME)
         - --kubernetes
-        - --store-address=parca.parca.svc.cluster.local:9090
+        - --store-address=parca.parca.svc.cluster.local:7070
         - --insecure
         - --insecure-skip-verify
         env:

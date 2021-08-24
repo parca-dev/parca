@@ -59,3 +59,20 @@ push-container:
 .PHONY: push-quay-container
 push-quay-container:
 	buildah push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
+
+.PHONY: deploy/manifests
+deploy/manifests:
+	cd deploy && make manifests
+
+.PHONY: dev/setup
+dev/setup:
+	./env.sh
+	./env-jsonnet.sh
+
+.PHONY: dev/up
+dev/up: deploy/manifests
+	source ./scripts/local-dev.sh && up
+
+.PHONY: dev/down
+dev/down:
+	source ./scripts/local-dev.sh && down

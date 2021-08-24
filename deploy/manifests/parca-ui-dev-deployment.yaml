@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: ui
+    app.kubernetes.io/instance: parca-ui
+    app.kubernetes.io/name: parca-ui
+    app.kubernetes.io/version: dev
+  name: parca-ui
+  namespace: parca
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: ui
+      app.kubernetes.io/instance: parca-ui
+      app.kubernetes.io/name: parca-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/instance: parca-ui
+        app.kubernetes.io/name: parca-ui
+        app.kubernetes.io/version: dev
+    spec:
+      containers:
+      - env:
+        - name: NEXT_PUBLIC_API_ENDPOINT
+          value: http://localhost:7070
+        image: quay.io/parca-dev/parca-ui:dev
+        name: parca-ui
+        ports:
+        - containerPort: 3000
+          name: http
+      serviceAccountName: parca-ui

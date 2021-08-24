@@ -8,11 +8,15 @@ local defaults = {
   version: error 'must provide version',
   image: error 'must provide image',
   replicas: error 'must provide replicas',
+
   configPath: 'parca.yaml',
-  resources: {},
-  port: 9090,
-  serviceMonitor: false,
+  corsAllowedOrigins: '',
   logLevel: 'info',
+
+  resources: {},
+  port: 7070,
+
+  serviceMonitor: false,
 
   commonLabels:: {
     'app.kubernetes.io/name': 'parca',
@@ -84,7 +88,9 @@ function(params) {
           '/parca',
           '--config-path=' + prc.config.configPath,
           '--log-level=' + prc.config.logLevel,
-        ],
+        ] +
+        (if prc.config.corsAllowedOrigins != '' then []
+         else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]),
       ports: [
         { name: port.name, containerPort: port.port }
         for port in prc.service.spec.ports

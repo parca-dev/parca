@@ -1,0 +1,45 @@
+FROM node:16.6.1-alpine3.14 AS ui-deps
+
+WORKDIR /app
+
+COPY ui/package.json ui/yarn.lock ./
+
+RUN yarn install
+
+FROM node:16.6.1-alpine3.14 AS ui-builder
+
+WORKDIR /app
+
+COPY ui .
+COPY --from=ui-deps /app/node_modules ./node_modules
+
+RUN yarn workspace @parca/web build
+
+FROM golang:1.16-alpine AS builder
+
+WORKDIR /app
+
+RUN go get github.com/go-delve/delve/cmd/dlv@v1.6.0
+
+COPY ./cmd /app/cmd
+COPY ./pkg /app/pkg
+COPY ./proto /app/proto
+COPY ./go.mod /app
+COPY ./go.sum /app
+
+COPY ./ui/ui.go ./ui/ui.go
+COPY --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -gcflags="all=-N -l" -o parca ./cmd/parca
+
+FROM golang:1.16-alpine
+
+WORKDIR /app
+
+COPY --from=builder /go/bin/dlv /
+COPY --from=builder /app/parca /parca
+COPY parca.yaml /parca.yaml
+
+EXPOSE 7070
+
+ENTRYPOINT ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "--continue", "--"]

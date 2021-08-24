@@ -1,0 +1,12 @@
+FROM mhart/alpine-node
+WORKDIR /app
+
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+COPY . .
+RUN yarn workspace @parca/web install
+
+EXPOSE 3000
+
+CMD yarn workspace @parca/web dev

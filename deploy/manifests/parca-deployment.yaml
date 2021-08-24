@@ -26,12 +26,12 @@ spec:
       containers:
       - args:
         - /parca
-        - --config-path=parca.yaml
+        - --config-path=/parca.yaml
         - --log-level=debug
-        image: parca-dev/parca:dev
+        image: quay.io/parca/parca:dev
         name: parca
         ports:
-        - containerPort: 9090
+        - containerPort: 7070
           name: all
         resources: {}
         terminationMessagePolicy: FallbackToLogsOnError

@@ -11,8 +11,8 @@ metadata:
 spec:
   ports:
   - name: all
-    port: 9090
-    targetPort: 9090
+    port: 7070
+    targetPort: 7070
   selector:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca
