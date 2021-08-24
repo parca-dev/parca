@@ -19,7 +19,8 @@ FROM golang:1.16-alpine AS builder
 
 WORKDIR /app
 
-RUN go get github.com/go-delve/delve/cmd/dlv@v1.6.0
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.6.0
+RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 
 COPY ./cmd /app/cmd
 COPY ./pkg /app/pkg
@@ -34,9 +35,8 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -gcflags="all=-N -l" -o pa
 
 FROM golang:1.16-alpine
 
-WORKDIR /app
-
 COPY --from=builder /go/bin/dlv /
+COPY --from=builder /go/bin/grpc-health-probe /
 COPY --from=builder /app/parca /parca
 COPY parca.yaml /parca.yaml
 

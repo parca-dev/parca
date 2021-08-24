@@ -97,6 +97,18 @@ function(params) {
       ],
       resources: if prc.config.resources != {} then prc.config.resources else {},
       terminationMessagePolicy: 'FallbackToLogsOnError',
+      livenessProbe: {
+        initialDelaySeconds: 5,
+        exec: {
+          command: ['/grpc-health-probe', '-addr=:' + prc.config.port],
+        },
+      },
+      readinessProbe: {
+        initialDelaySeconds: 10,
+        exec: {
+          command: ['/grpc-health-probe', '-addr=:' + prc.config.port],
+        },
+      },
     };
 
     {

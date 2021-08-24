@@ -9,7 +9,7 @@ metadata:
   name: parca-ui
   namespace: parca
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/component: ui

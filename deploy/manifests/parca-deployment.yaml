@@ -9,7 +9,7 @@ metadata:
   name: parca
   namespace: parca
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/component: observability
@@ -29,10 +29,22 @@ spec:
         - --config-path=/parca.yaml
         - --log-level=debug
         image: quay.io/parca/parca:dev
+        livenessProbe:
+          exec:
+            command:
+            - /grpc-health-probe
+            - -addr=:7070
+          initialDelaySeconds: 5
         name: parca
         ports:
         - containerPort: 7070
           name: all
+        readinessProbe:
+          exec:
+            command:
+            - /grpc-health-probe
+            - -addr=:7070
+          initialDelaySeconds: 10
         resources: {}
         terminationMessagePolicy: FallbackToLogsOnError
       nodeSelector:

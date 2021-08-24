@@ -17,13 +17,16 @@ import (
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"github.com/parca-dev/parca/ui"
+	"github.com/thanos-io/thanos/pkg/prober"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	grpc_health "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+
+	"github.com/parca-dev/parca/ui"
 )
 
 type Registerable interface {
@@ -48,6 +51,13 @@ var MapAllowedLevels = map[string][]string{
 // Server is a wrapper around the http.Server
 type Server struct {
 	http.Server
+	grpcProbe *prober.GRPCProbe
+}
+
+func NewServer() *Server {
+	return &Server{
+		grpcProbe: prober.NewGRPC(),
+	}
 }
 
 // ListenAndServe starts the http grpc gateway server
@@ -90,6 +100,7 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		}
 	}
 	reflection.Register(srv)
+	grpc_health.RegisterHealthServer(srv, s.grpcProbe.HealthServer())
 
 	// Add the pprof handler to profile Parca
 	mux.HandlePath("GET", "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
@@ -111,11 +122,14 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		ReadTimeout:  5 * time.Second, // TODO make config option
 		WriteTimeout: time.Minute,     // TODO make config option
 	}
+	s.grpcProbe.Ready()
+	s.grpcProbe.Healthy()
 	return s.Server.ListenAndServe()
 }
 
 // Shutdown the server
 func (s *Server) Shutdown(ctx context.Context) error {
+	s.grpcProbe.NotReady(nil)
 	return s.Server.Shutdown(ctx)
 }
 

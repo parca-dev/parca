@@ -61,7 +61,7 @@ func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
 	s := profilestore.NewProfileStore(logger, db, metaStore)
 	q := query.New(logger, db, metaStore)
 
-	parcaserver := &server.Server{}
+	parcaserver := server.NewServer()
 
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))

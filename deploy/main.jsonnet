@@ -11,7 +11,7 @@ local parca = (import 'parca/parca.libsonnet')({
   namespace: ns.metadata.name,
   image: 'quay.io/parca/parca:dev',
   version: 'dev',
-  replicas: 3,
+  replicas: 1,
   logLevel: 'debug',
   configPath: '/parca.yaml',
   corsAllowedOrigins: '*',
@@ -34,8 +34,8 @@ local parcaUIDev = (import 'parca/parca-ui.libsonnet')({
   namespace: ns.metadata.name,
   image: 'quay.io/parca-dev/parca-ui:dev',
   version: 'dev',
-  replicas: 3,
-  apiEndpoint: 'http://localhost:7070'
+  replicas: 1,
+  apiEndpoint: 'http://localhost:7070',
   // apiEndpoint: 'http://%s.%s.svc.cluster.local:%d' % [parca.service.metadata.name, parca.service.metadata.namespace, parca.config.port],
 });
 
