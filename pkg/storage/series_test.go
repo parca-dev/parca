@@ -353,18 +353,40 @@ func TestMemSeriesIterator(t *testing.T) {
 		expected := []struct {
 			LocationID       uint64
 			CumulativeValues []*ProfileTreeValueNode
+			FlatValues       []*ProfileTreeValueNode
 		}{
-			{LocationID: 0, CumulativeValues: []*ProfileTreeValueNode{{Value: 4}}},
-			{LocationID: 1, CumulativeValues: []*ProfileTreeValueNode{{Value: 4}}},
-			{LocationID: 2, CumulativeValues: []*ProfileTreeValueNode{{Value: 2}}}, // TODO: Fix this iterator! It should be a sparse 0
-			{LocationID: 3, CumulativeValues: []*ProfileTreeValueNode{{Value: 2}}},
-			{LocationID: 4, CumulativeValues: []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}}},
+			{
+				LocationID:       0,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 4}},
+				FlatValues:       []*ProfileTreeValueNode{},
+			},
+			{
+				LocationID:       1,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 4}},
+				FlatValues:       []*ProfileTreeValueNode{},
+			},
+			{
+				LocationID:       2,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 0}},
+				FlatValues:       []*ProfileTreeValueNode{{Value: 0}},
+			},
+			{
+				LocationID:       3,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 2}},
+				FlatValues:       []*ProfileTreeValueNode{{Value: 2}},
+			},
+			{
+				LocationID:       4,
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}},
+				FlatValues:       []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}},
+			},
 		}
 
 		i := 0
 		err := WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
 			require.Equal(t, expected[i].LocationID, n.LocationID())
 			require.Equal(t, expected[i].CumulativeValues, n.CumulativeValues())
+			require.Equal(t, expected[i].FlatValues, n.FlatValues())
 			i++
 			return nil
 		})
