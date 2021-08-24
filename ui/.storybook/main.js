@@ -1,6 +1,9 @@
 const path = require('path')
 
 module.exports = {
+  reactOptions: {
+    strictMode: true
+  },
   core: {
     builder: 'webpack5',
   },
@@ -23,6 +26,11 @@ module.exports = {
         { loader: 'sass-loader' }
       ],
       include: path.resolve(__dirname, '../')
+    })
+
+    config.module.rules.push({
+      test: /\.pb/,
+      type: 'asset',
     })
 
     // Return the altered config

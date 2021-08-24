@@ -86,6 +86,8 @@ export function IcicleGraphNode ({
   setCurPath,
   curPath
 }: IcicleGraphNodeProps) {
+  if (data === undefined || data.length == 0) return <></>
+
   const nodes = curPath.length == 0 ? data : data.filter((d, i) => d != null && curPath[0] == d.fullName)
 
   const xScale = scaleLinear()
@@ -98,10 +100,6 @@ export function IcicleGraphNode ({
       style={{ transition: transformTransition }}
     >
       {nodes.map((d, i) => {
-        if (!d) {
-          return
-        }
-
         const start = nodes
           .slice(0, i)
           .reduce((sum, d) => sum + (d ? d.cumulative : 0), 0)
@@ -112,11 +110,14 @@ export function IcicleGraphNode ({
           return
         }
 
-        const key = `${level}-${d.fullName}`
+        const key = `${level}-${d.fullName}-${i}`
 
         const nextPath = () => {
           return path().concat([d.fullName])
         }
+
+        const diff = d.diff === undefined ? 0 : d.diff
+        const color = diff == 0 ? "#90c7e0" : (diff > 0 ? "red" : "green")
 
         return (
           <React.Fragment key={key}>
@@ -126,26 +127,24 @@ export function IcicleGraphNode ({
               width={width}
               height={RowHeight}
               name={d.name}
-              color="#90c7e0"
+              color={color}
               onClick={function (e) {
                 const p = nextPath()
                 setCurPath(p)
               }}
               onHover={(e) => setHoveringNode(d)}
             />
-            {d.childrenList && (
-              <IcicleGraphNode
-                data={d.childrenList}
-                x={xScale(start)}
-                y={RowHeight}
-                width={xScale(d.cumulative)}
-                level={level + 1}
-                setHoveringNode={setHoveringNode}
-                path={() => nextPath()}
-                curPath={curPath.length == 0 ? [] : curPath.slice(1)}
-                setCurPath={setCurPath}
-              />
-            )}
+            <IcicleGraphNode
+              data={d.childrenList}
+              x={xScale(start)}
+              y={RowHeight}
+              width={xScale(d.cumulative)}
+              level={level + 1}
+              setHoveringNode={setHoveringNode}
+              path={() => nextPath()}
+              curPath={curPath.length == 0 ? [] : curPath.slice(1)}
+              setCurPath={setCurPath}
+            />
           </React.Fragment>
         )
       })}
@@ -154,7 +153,7 @@ export function IcicleGraphNode ({
 }
 
 interface IcicleGraphProps {
-  graph: Flamegraph
+  graph: Flamegraph.AsObject
   width?: number
   curPath: string[]
   setCurPath: (path: string[]) => void
@@ -181,8 +180,7 @@ export default function IcicleGraph ({
   const [height, setHeight] = useState(0)
   const ref = useRef<SVGGElement>(null)
 
-  const root = graph.getRoot()
-  if (root === undefined) return <></>
+  if (graph.root === undefined) return <></>
 
   useEffect(() => {
     if (ref.current != null) {
@@ -194,7 +192,7 @@ export default function IcicleGraph ({
     <svg width={width} height={height}>
       <g ref={ref}>
         <IcicleGraphNode
-          data={[root.toObject()]}
+          data={[graph.root]}
           setHoveringNode={setHoveringNode}
           path={() => []}
           curPath={curPath}

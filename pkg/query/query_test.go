@@ -203,21 +203,21 @@ func Test_Query_InputValidation(t *testing.T) {
 		"Invalid mode": {
 			req: &pb.QueryRequest{
 				Mode:       invalidMode,
-				Options:    &pb.QueryRequest_Single_{},
+				Options:    &pb.QueryRequest_Single{Single: &pb.SingleProfile{}},
 				ReportType: *pb.QueryRequest_FLAMEGRAPH.Enum(),
 			},
 		},
 		"Invalid report type": {
 			req: &pb.QueryRequest{
 				Mode:       *pb.QueryRequest_SINGLE.Enum(),
-				Options:    &pb.QueryRequest_Single_{},
+				Options:    &pb.QueryRequest_Single{Single: &pb.SingleProfile{}},
 				ReportType: invalidReportType,
 			},
 		},
 		"option doesn't match mode": {
 			req: &pb.QueryRequest{
 				Mode:       *pb.QueryRequest_SINGLE.Enum(),
-				Options:    &pb.QueryRequest_Merge_{},
+				Options:    &pb.QueryRequest_Merge{Merge: &pb.MergeProfile{}},
 				ReportType: *pb.QueryRequest_FLAMEGRAPH.Enum(),
 			},
 		},
@@ -241,4 +241,120 @@ func Test_Query_InputValidation(t *testing.T) {
 			require.Equal(t, codes.InvalidArgument, status.Code(err))
 		})
 	}
+}
+
+func Test_Query_Simple(t *testing.T) {
+	ctx := context.Background()
+	db := storage.OpenDB()
+	s := storage.NewInMemoryProfileMetaStore()
+	q := New(log.NewNopLogger(), db, s)
+
+	app, err := db.Appender(ctx, labels.Labels{
+		labels.Label{
+			Name:  "__name__",
+			Value: "allocs",
+		},
+	})
+	require.NoError(t, err)
+
+	f, err := os.Open("../storage/testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	t1 := (time.Now().UnixNano() / 1000000) * 1000000
+	p1.TimeNanos = t1
+
+	err = app.Append(storage.ProfileFromPprof(s, p1, 0))
+	require.NoError(t, err)
+
+	_, err = q.Query(ctx, &pb.QueryRequest{
+		Mode: pb.QueryRequest_SINGLE,
+		Options: &pb.QueryRequest_Single{
+			Single: &pb.SingleProfile{
+				Query: "allocs",
+				Time:  timestamppb.New(time.Unix(0, t1)),
+			},
+		},
+		ReportType: pb.QueryRequest_FLAMEGRAPH,
+	})
+
+	//out, err := proto.Marshal(resp)
+	//require.NoError(t, err)
+	//err = ioutil.WriteFile("../../ui/packages/shared/profile/src/testdata/fg-simple.pb", out, 0644)
+	//require.NoError(t, err)
+}
+
+func Test_Query_Diff(t *testing.T) {
+	ctx := context.Background()
+	db := storage.OpenDB()
+	s := storage.NewInMemoryProfileMetaStore()
+	q := New(log.NewNopLogger(), db, s)
+
+	app, err := db.Appender(ctx, labels.Labels{
+		labels.Label{
+			Name:  "__name__",
+			Value: "allocs",
+		},
+	})
+	require.NoError(t, err)
+
+	f, err := os.Open("../storage/testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	f, err = os.Open("../storage/testdata/profile2.pb.gz")
+	require.NoError(t, err)
+	p2, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	t1 := (time.Now().UnixNano() / 1000000) * 1000000
+	p1.TimeNanos = t1
+
+	err = app.Append(storage.ProfileFromPprof(s, p1, 0))
+	require.NoError(t, err)
+
+	time.Sleep(time.Millisecond * 10)
+
+	t2 := (time.Now().UnixNano() / 1000000) * 1000000
+	p2.TimeNanos = t2
+
+	err = app.Append(storage.ProfileFromPprof(s, p2, 0))
+	require.NoError(t, err)
+
+	_, err = q.Query(ctx, &pb.QueryRequest{
+		Mode: pb.QueryRequest_DIFF,
+		Options: &pb.QueryRequest_Diff{
+			Diff: &pb.DiffProfile{
+				A: &pb.ProfileDiffSelection{
+					Mode: pb.ProfileDiffSelection_SINGLE,
+					Options: &pb.ProfileDiffSelection_Single{
+						Single: &pb.SingleProfile{
+							Query: "allocs",
+							Time:  timestamppb.New(time.Unix(0, t1)),
+						},
+					},
+				},
+				B: &pb.ProfileDiffSelection{
+					Mode: pb.ProfileDiffSelection_SINGLE,
+					Options: &pb.ProfileDiffSelection_Single{
+						Single: &pb.SingleProfile{
+							Query: "allocs",
+							Time:  timestamppb.New(time.Unix(0, t2)),
+						},
+					},
+				},
+			},
+		},
+		ReportType: pb.QueryRequest_FLAMEGRAPH,
+	})
+
+	//	out, err := proto.Marshal(resp)
+	//	require.NoError(t, err)
+	//	err = ioutil.WriteFile("../../ui/packages/shared/profile/src/testdata/fg-diff.pb", out, 0644)
+	//	require.NoError(t, err)
 }

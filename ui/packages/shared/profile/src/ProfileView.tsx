@@ -40,9 +40,6 @@ export const useQuery = (
     const req = profileSource.QueryRequest()
     req.setReportType(QueryRequest.ReportType.FLAMEGRAPH)
 
-    console.log(profileSource)
-    console.log(req.toObject())
-
     client.query(
       req,
       (error: ServiceError|null, responseMessage: QueryResponse|null) => {
@@ -94,6 +91,9 @@ export const ProfileView = ({
     )
   }
 
+  const queryResponse = response.toObject()
+  console.log("profileResponse", queryResponse)
+
   const reportTypes = {
     //svg: {
     //  name: 'Graph',
@@ -119,8 +119,7 @@ export const ProfileView = ({
       name: 'Icicle Graph',
       element: (
         <ProfileIcicleGraph
-          queryResponse={response}
-          profileSource={profileSource}
+          graph={response.getFlamegraph()?.toObject()}
         />
       )
     }

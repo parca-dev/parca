@@ -12,9 +12,15 @@ import (
 
 type InstantProfileTreeNode interface {
 	LocationID() uint64
+
 	CumulativeValue() int64
+
 	CumulativeValues() []*ProfileTreeValueNode
+	CumulativeDiffValue() int64
+	CumulativeDiffValues() []*ProfileTreeValueNode
+
 	FlatValues() []*ProfileTreeValueNode
+	FlatDiffValues() []*ProfileTreeValueNode
 }
 
 type ProfileTreeValueNode struct {
@@ -258,4 +264,80 @@ func ProfileTreeFromPprof(s ProfileMetaStore, p *profile.Profile, sampleIndex in
 	}
 
 	return profileTree
+}
+
+type ScaledInstantProfile struct {
+	p     InstantProfile
+	ratio float64
+}
+
+func NewScaledInstantProfile(p InstantProfile, ratio float64) InstantProfile {
+	return &ScaledInstantProfile{
+		p:     p,
+		ratio: ratio,
+	}
+}
+
+func (p *ScaledInstantProfile) ProfileMeta() InstantProfileMeta {
+	return p.p.ProfileMeta()
+}
+
+func (p *ScaledInstantProfile) ProfileTree() InstantProfileTree {
+	return &ScaledInstantProfileTree{
+		tree:  p.p.ProfileTree(),
+		ratio: p.ratio,
+	}
+}
+
+type ScaledInstantProfileTree struct {
+	tree  InstantProfileTree
+	ratio float64
+}
+
+func (t *ScaledInstantProfileTree) Iterator() InstantProfileTreeIterator {
+	return &ScaledInstantProfileTreeIterator{
+		it:    t.tree.Iterator(),
+		ratio: t.ratio,
+	}
+}
+
+type ScaledInstantProfileTreeIterator struct {
+	it    InstantProfileTreeIterator
+	ratio float64
+}
+
+func (i *ScaledInstantProfileTreeIterator) HasMore() bool {
+	return i.it.HasMore()
+}
+
+func (i *ScaledInstantProfileTreeIterator) NextChild() bool {
+	return i.it.NextChild()
+}
+
+func (i *ScaledInstantProfileTreeIterator) At() InstantProfileTreeNode {
+	n := i.it.At()
+
+	flatValues := n.FlatValues()
+	for _, v := range flatValues {
+		v.Value = int64(i.ratio * float64(v.Value))
+	}
+
+	cumulativeValues := n.CumulativeValues()
+	for _, v := range cumulativeValues {
+		v.Value = int64(i.ratio * float64(v.Value))
+	}
+
+	return &ProfileTreeNode{
+		locationID:       n.LocationID(),
+		flatValues:       flatValues,
+		cumulativeValues: cumulativeValues,
+	}
+}
+
+func (i *ScaledInstantProfileTreeIterator) StepInto() bool {
+	return i.it.StepInto()
+}
+
+func (i *ScaledInstantProfileTreeIterator) StepUp() {
+	i.it.StepUp()
 }

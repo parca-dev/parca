@@ -128,8 +128,6 @@ export const RawMetricsGraph = ({
     return agg
   }, [])
 
-  console.log(series)
-
   const extentsX = series.map(function (s) {
     return d3.extent(s.values, function (d) {
       return d[0]

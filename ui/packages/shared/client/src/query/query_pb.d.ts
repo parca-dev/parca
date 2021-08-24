@@ -119,24 +119,156 @@ export namespace MetricsSample {
   }
 }
 
+export class MergeProfile extends jspb.Message {
+  getQuery(): string;
+  setQuery(value: string): void;
+
+  hasStart(): boolean;
+  clearStart(): void;
+  getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
+
+  hasEnd(): boolean;
+  clearEnd(): void;
+  getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MergeProfile.AsObject;
+  static toObject(includeInstance: boolean, msg: MergeProfile): MergeProfile.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MergeProfile, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MergeProfile;
+  static deserializeBinaryFromReader(message: MergeProfile, reader: jspb.BinaryReader): MergeProfile;
+}
+
+export namespace MergeProfile {
+  export type AsObject = {
+    query: string,
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+  }
+}
+
+export class SingleProfile extends jspb.Message {
+  hasTime(): boolean;
+  clearTime(): void;
+  getTime(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTime(value?: google_protobuf_timestamp_pb.Timestamp): void;
+
+  getQuery(): string;
+  setQuery(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SingleProfile.AsObject;
+  static toObject(includeInstance: boolean, msg: SingleProfile): SingleProfile.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SingleProfile, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SingleProfile;
+  static deserializeBinaryFromReader(message: SingleProfile, reader: jspb.BinaryReader): SingleProfile;
+}
+
+export namespace SingleProfile {
+  export type AsObject = {
+    time?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    query: string,
+  }
+}
+
+export class DiffProfile extends jspb.Message {
+  hasA(): boolean;
+  clearA(): void;
+  getA(): ProfileDiffSelection | undefined;
+  setA(value?: ProfileDiffSelection): void;
+
+  hasB(): boolean;
+  clearB(): void;
+  getB(): ProfileDiffSelection | undefined;
+  setB(value?: ProfileDiffSelection): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DiffProfile.AsObject;
+  static toObject(includeInstance: boolean, msg: DiffProfile): DiffProfile.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: DiffProfile, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DiffProfile;
+  static deserializeBinaryFromReader(message: DiffProfile, reader: jspb.BinaryReader): DiffProfile;
+}
+
+export namespace DiffProfile {
+  export type AsObject = {
+    a?: ProfileDiffSelection.AsObject,
+    b?: ProfileDiffSelection.AsObject,
+  }
+}
+
+export class ProfileDiffSelection extends jspb.Message {
+  getMode(): ProfileDiffSelection.ModeMap[keyof ProfileDiffSelection.ModeMap];
+  setMode(value: ProfileDiffSelection.ModeMap[keyof ProfileDiffSelection.ModeMap]): void;
+
+  hasMerge(): boolean;
+  clearMerge(): void;
+  getMerge(): MergeProfile | undefined;
+  setMerge(value?: MergeProfile): void;
+
+  hasSingle(): boolean;
+  clearSingle(): void;
+  getSingle(): SingleProfile | undefined;
+  setSingle(value?: SingleProfile): void;
+
+  getOptionsCase(): ProfileDiffSelection.OptionsCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ProfileDiffSelection.AsObject;
+  static toObject(includeInstance: boolean, msg: ProfileDiffSelection): ProfileDiffSelection.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ProfileDiffSelection, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ProfileDiffSelection;
+  static deserializeBinaryFromReader(message: ProfileDiffSelection, reader: jspb.BinaryReader): ProfileDiffSelection;
+}
+
+export namespace ProfileDiffSelection {
+  export type AsObject = {
+    mode: ProfileDiffSelection.ModeMap[keyof ProfileDiffSelection.ModeMap],
+    merge?: MergeProfile.AsObject,
+    single?: SingleProfile.AsObject,
+  }
+
+  export interface ModeMap {
+    SINGLE: 0;
+    MERGE: 1;
+  }
+
+  export const Mode: ModeMap;
+
+  export enum OptionsCase {
+    OPTIONS_NOT_SET = 0,
+    MERGE = 2,
+    SINGLE = 3,
+  }
+}
+
 export class QueryRequest extends jspb.Message {
   getMode(): QueryRequest.ModeMap[keyof QueryRequest.ModeMap];
   setMode(value: QueryRequest.ModeMap[keyof QueryRequest.ModeMap]): void;
 
   hasDiff(): boolean;
   clearDiff(): void;
-  getDiff(): QueryRequest.Diff | undefined;
-  setDiff(value?: QueryRequest.Diff): void;
+  getDiff(): DiffProfile | undefined;
+  setDiff(value?: DiffProfile): void;
 
   hasMerge(): boolean;
   clearMerge(): void;
-  getMerge(): QueryRequest.Merge | undefined;
-  setMerge(value?: QueryRequest.Merge): void;
+  getMerge(): MergeProfile | undefined;
+  setMerge(value?: MergeProfile): void;
 
   hasSingle(): boolean;
   clearSingle(): void;
-  getSingle(): QueryRequest.Single | undefined;
-  setSingle(value?: QueryRequest.Single): void;
+  getSingle(): SingleProfile | undefined;
+  setSingle(value?: SingleProfile): void;
 
   getReportType(): QueryRequest.ReportTypeMap[keyof QueryRequest.ReportTypeMap];
   setReportType(value: QueryRequest.ReportTypeMap[keyof QueryRequest.ReportTypeMap]): void;
@@ -155,138 +287,10 @@ export class QueryRequest extends jspb.Message {
 export namespace QueryRequest {
   export type AsObject = {
     mode: QueryRequest.ModeMap[keyof QueryRequest.ModeMap],
-    diff?: QueryRequest.Diff.AsObject,
-    merge?: QueryRequest.Merge.AsObject,
-    single?: QueryRequest.Single.AsObject,
+    diff?: DiffProfile.AsObject,
+    merge?: MergeProfile.AsObject,
+    single?: SingleProfile.AsObject,
     reportType: QueryRequest.ReportTypeMap[keyof QueryRequest.ReportTypeMap],
-  }
-
-  export class Diff extends jspb.Message {
-    hasA(): boolean;
-    clearA(): void;
-    getA(): QueryRequest.ProfileSelect | undefined;
-    setA(value?: QueryRequest.ProfileSelect): void;
-
-    hasB(): boolean;
-    clearB(): void;
-    getB(): QueryRequest.ProfileSelect | undefined;
-    setB(value?: QueryRequest.ProfileSelect): void;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): Diff.AsObject;
-    static toObject(includeInstance: boolean, msg: Diff): Diff.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: Diff, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): Diff;
-    static deserializeBinaryFromReader(message: Diff, reader: jspb.BinaryReader): Diff;
-  }
-
-  export namespace Diff {
-    export type AsObject = {
-      a?: QueryRequest.ProfileSelect.AsObject,
-      b?: QueryRequest.ProfileSelect.AsObject,
-    }
-  }
-
-  export class ProfileSelect extends jspb.Message {
-    getMode(): string;
-    setMode(value: string): void;
-
-    hasTime(): boolean;
-    clearTime(): void;
-    getTime(): google_protobuf_timestamp_pb.Timestamp | undefined;
-    setTime(value?: google_protobuf_timestamp_pb.Timestamp): void;
-
-    getQuery(): string;
-    setQuery(value: string): void;
-
-    hasStart(): boolean;
-    clearStart(): void;
-    getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
-    setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
-
-    hasEnd(): boolean;
-    clearEnd(): void;
-    getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
-    setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): ProfileSelect.AsObject;
-    static toObject(includeInstance: boolean, msg: ProfileSelect): ProfileSelect.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: ProfileSelect, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): ProfileSelect;
-    static deserializeBinaryFromReader(message: ProfileSelect, reader: jspb.BinaryReader): ProfileSelect;
-  }
-
-  export namespace ProfileSelect {
-    export type AsObject = {
-      mode: string,
-      time?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-      query: string,
-      start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-      end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    }
-  }
-
-  export class Merge extends jspb.Message {
-    getQuery(): string;
-    setQuery(value: string): void;
-
-    hasStart(): boolean;
-    clearStart(): void;
-    getStart(): google_protobuf_timestamp_pb.Timestamp | undefined;
-    setStart(value?: google_protobuf_timestamp_pb.Timestamp): void;
-
-    hasEnd(): boolean;
-    clearEnd(): void;
-    getEnd(): google_protobuf_timestamp_pb.Timestamp | undefined;
-    setEnd(value?: google_protobuf_timestamp_pb.Timestamp): void;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): Merge.AsObject;
-    static toObject(includeInstance: boolean, msg: Merge): Merge.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: Merge, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): Merge;
-    static deserializeBinaryFromReader(message: Merge, reader: jspb.BinaryReader): Merge;
-  }
-
-  export namespace Merge {
-    export type AsObject = {
-      query: string,
-      start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-      end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    }
-  }
-
-  export class Single extends jspb.Message {
-    hasTime(): boolean;
-    clearTime(): void;
-    getTime(): google_protobuf_timestamp_pb.Timestamp | undefined;
-    setTime(value?: google_protobuf_timestamp_pb.Timestamp): void;
-
-    getQuery(): string;
-    setQuery(value: string): void;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): Single.AsObject;
-    static toObject(includeInstance: boolean, msg: Single): Single.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: Single, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): Single;
-    static deserializeBinaryFromReader(message: Single, reader: jspb.BinaryReader): Single;
-  }
-
-  export namespace Single {
-    export type AsObject = {
-      time?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-      query: string,
-    }
   }
 
   export interface ModeMap {
