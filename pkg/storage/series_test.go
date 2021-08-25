@@ -181,10 +181,10 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXOR(1), s.cumulativeValues[k2])
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4])
 
-	//require.Len(t, s.labels, 1)
-	//require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]string{k4: label}, s.labels)
-	//require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]int64{k4: numLabel}, s.numLabels)
-	//require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]string{k4: numUnit}, s.numUnits)
+	require.Len(t, s.labels, 1)
+	require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]string{k4: label}, s.labels)
+	require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]int64{k4: numLabel}, s.numLabels)
+	require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]string{k4: numUnit}, s.numUnits)
 
 	require.Equal(t, &MemSeriesTree{
 		s: s,
@@ -375,10 +375,8 @@ func TestMemSeriesIterator(t *testing.T) {
 			},
 			{
 				LocationID:       4,
-				CumulativeValues: []*ProfileTreeValueNode{{Value: 2}, {Value: 0}},
-				FlatValues:       []*ProfileTreeValueNode{{Value: 2}, {Value: 0}},
-				//CumulativeValues: []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}},
-				//FlatValues:       []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}},
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}, {Value: 0}},
+				FlatValues:       []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}, {Value: 0}},
 			},
 		}
 
@@ -433,8 +431,8 @@ func TestMemSeriesIterator(t *testing.T) {
 			},
 			{
 				LocationID:       4,
-				CumulativeValues: []*ProfileTreeValueNode{{Value: 0}, {Value: 4}},
-				FlatValues:       []*ProfileTreeValueNode{{Value: 0}, {Value: 4}},
+				CumulativeValues: []*ProfileTreeValueNode{{Value: 0, Label: label, NumLabel: numLabel, NumUnit: numUnit}, {Value: 4}},
+				FlatValues:       []*ProfileTreeValueNode{{Value: 0, Label: label, NumLabel: numLabel, NumUnit: numUnit}, {Value: 4}},
 			},
 		}
 

@@ -79,28 +79,19 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						// We need to keep track of the node keys.
 						seriesTreeChild.addKey(*n.key)
 
-						//if len(n.Label) > 0 {
-						//	if t.s.labels[n.id] == nil {
-						//		t.s.labels[n.id] = n.Label
-						//	} else {
-						//		for name, values := range n.Label {
-						//			// TODO: Might still be wrong and values need to be merged too?!
-						//			t.s.labels[n.id][name] = values
-						//		}
-						//	}
-						//
-						//	if t.s.numLabels[n.id] == nil {
-						//		t.s.numLabels[n.id] = n.NumLabel
-						//	} else {
-						//		// TODO: Merge numLabels?
-						//	}
-						//
-						//	if t.s.numUnits[n.id] == nil {
-						//		t.s.numUnits[n.id] = n.NumUnit
-						//	} else {
-						//		// TODO: Merge numUnits?
-						//	}
-						//}
+						if len(n.Label) > 0 {
+							if t.s.labels[*n.key] == nil {
+								t.s.labels[*n.key] = n.Label
+							}
+
+							if t.s.numLabels[*n.key] == nil {
+								t.s.numLabels[*n.key] = n.NumLabel
+							}
+
+							if t.s.numUnits[*n.key] == nil {
+								t.s.numUnits[*n.key] = n.NumUnit
+							}
+						}
 					}
 
 					for _, n := range profileTreeChild.CumulativeValues() {
@@ -379,9 +370,9 @@ type MemSeries struct {
 	// Flat and cumulative values as well as labels by the node's LocationID.
 	flatValues       map[ProfileTreeValueNodeKey]chunkenc.Chunk
 	cumulativeValues map[ProfileTreeValueNodeKey]chunkenc.Chunk
-	labels           map[uint64]map[string][]string
-	numLabels        map[uint64]map[string][]int64
-	numUnits         map[uint64]map[string][]string
+	labels           map[ProfileTreeValueNodeKey]map[string][]string
+	numLabels        map[ProfileTreeValueNodeKey]map[string][]int64
+	numUnits         map[ProfileTreeValueNodeKey]map[string][]string
 
 	seriesTree *MemSeriesTree
 	numSamples uint16
@@ -389,16 +380,17 @@ type MemSeries struct {
 
 func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
 	s := &MemSeries{
-		lset:             lset,
-		id:               id,
-		timestamps:       chunkenc.NewDeltaChunk(),
-		durations:        chunkenc.NewRLEChunk(),
-		periods:          chunkenc.NewRLEChunk(),
+		lset:       lset,
+		id:         id,
+		timestamps: chunkenc.NewDeltaChunk(),
+		durations:  chunkenc.NewRLEChunk(),
+		periods:    chunkenc.NewRLEChunk(),
+
 		flatValues:       make(map[ProfileTreeValueNodeKey]chunkenc.Chunk),
 		cumulativeValues: make(map[ProfileTreeValueNodeKey]chunkenc.Chunk),
-		labels:           map[uint64]map[string][]string{},
-		numLabels:        map[uint64]map[string][]int64{},
-		numUnits:         map[uint64]map[string][]string{},
+		labels:           make(map[ProfileTreeValueNodeKey]map[string][]string),
+		numLabels:        make(map[ProfileTreeValueNodeKey]map[string][]int64),
+		numUnits:         make(map[ProfileTreeValueNodeKey]map[string][]string),
 	}
 	s.seriesTree = &MemSeriesTree{s: s}
 
@@ -576,9 +568,9 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
 		Values:   s.cumulativeValues[rootKey].Iterator(nil),
-		Label:    s.labels[0],
-		NumLabel: s.numLabels[0],
-		NumUnit:  s.numUnits[0],
+		Label:    s.labels[rootKey],
+		NumLabel: s.numLabels[rootKey],
+		NumUnit:  s.numUnits[rootKey],
 	})
 
 	res := &MemSeriesIterator{
@@ -609,27 +601,22 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 			}
 
 			for _, key := range child.keys {
-				// TODO: First get Label, numLabel, numUnits
-
 				if chunk, ok := s.flatValues[key]; ok {
 					n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
-						Values: chunk.Iterator(nil),
-						// TODO
-						Label:    nil,
-						NumLabel: nil,
-						NumUnit:  nil,
+						Values:   chunk.Iterator(nil),
+						Label:    s.labels[key],
+						NumLabel: s.numLabels[key],
+						NumUnit:  s.numUnits[key],
 					})
 				}
 				if chunk, ok := s.cumulativeValues[key]; ok {
 					n.cumulativeValues = append(n.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-						Values: chunk.Iterator(nil),
-						// TODO
-						Label:    nil,
-						NumLabel: nil,
-						NumUnit:  nil,
+						Values:   chunk.Iterator(nil),
+						Label:    s.labels[key],
+						NumLabel: s.numLabels[key],
+						NumUnit:  s.numUnits[key],
 					})
 				}
-
 			}
 
 			cur := memItStack.Peek()
