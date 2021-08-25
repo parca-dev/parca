@@ -218,7 +218,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					if err != nil {
 						return fmt.Errorf("failed to open cumulative appender: %w", err)
 					}
-					app.AppendAt(index, profileTreeChild.CumulativeValues()[0].Value)
+					app.AppendAt(index, n.Value)
 
 					// We need to keep track of the node keys.
 					newChild.addKey(*n.key)
