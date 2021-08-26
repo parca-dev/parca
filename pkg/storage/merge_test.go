@@ -312,7 +312,7 @@ func TestMergeProfile(t *testing.T) {
 		{
 			id: uint64(5),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "5"},
+				key:   &ProfileTreeValueNodeKey{location: "5|3|2|1|0"},
 				Value: int64(1),
 			}},
 			cumulative: int64(1),
@@ -320,7 +320,7 @@ func TestMergeProfile(t *testing.T) {
 		{
 			id: uint64(6),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "6"},
+				key:   &ProfileTreeValueNodeKey{location: "6|3|2|1|0"},
 				Value: int64(1),
 			}},
 			cumulative: int64(1),
@@ -339,7 +339,7 @@ func TestMergeProfile(t *testing.T) {
 		{
 			id: uint64(3),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "3"},
+				key:   &ProfileTreeValueNodeKey{location: "3|2|2|0"},
 				Value: int64(3),
 			}},
 			cumulative: int64(3),
@@ -351,7 +351,7 @@ func TestMergeProfile(t *testing.T) {
 		{
 			id: uint64(3),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "3"},
+				key:   &ProfileTreeValueNodeKey{location: "3|3|2|0"},
 				Value: int64(3),
 			}},
 			cumulative: int64(3),
@@ -359,7 +359,7 @@ func TestMergeProfile(t *testing.T) {
 		{
 			id: uint64(6),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "6"},
+				key:   &ProfileTreeValueNodeKey{location: "6|2|0"},
 				Value: int64(3),
 			}},
 			cumulative: int64(3),
