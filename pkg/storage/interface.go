@@ -45,9 +45,14 @@ func (k *ProfileTreeValueNodeKey) Equals(o ProfileTreeValueNodeKey) bool {
 	return true
 }
 
-func (n *ProfileTreeValueNode) Key(locationID uint64) {
+func (n *ProfileTreeValueNode) Key(locationIDs ...uint64) {
 	if n.key != nil {
 		return
+	}
+
+	ids := make([]string, len(locationIDs))
+	for i, l := range locationIDs {
+		ids[i] = strconv.FormatUint(l, 10)
 	}
 
 	labels := make([]string, 0, len(n.Label))
@@ -63,7 +68,7 @@ func (n *ProfileTreeValueNode) Key(locationID uint64) {
 	sort.Strings(numlabels)
 
 	n.key = &ProfileTreeValueNodeKey{
-		location:  strconv.FormatUint(locationID, 10),
+		location:  strings.Join(ids, "|"),
 		labels:    strings.Join(labels, ""),
 		numlabels: strings.Join(numlabels, ""),
 	}

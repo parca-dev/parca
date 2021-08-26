@@ -89,36 +89,36 @@ func TestProfileTreeInsert(t *testing.T) {
 			Children: []*ProfileTreeNode{{
 				locationID: 1,
 				cumulativeValues: []*ProfileTreeValueNode{{
-					key:   &ProfileTreeValueNodeKey{location: "1"},
+					key:   &ProfileTreeValueNodeKey{location: "1|0"},
 					Value: 6,
 				}},
 				Children: []*ProfileTreeNode{{
 					locationID: 2,
 					cumulativeValues: []*ProfileTreeValueNode{{
-						key:   &ProfileTreeValueNodeKey{location: "2"},
+						key:   &ProfileTreeValueNodeKey{location: "2|1|0"},
 						Value: 6,
 					}},
 					flatValues: []*ProfileTreeValueNode{{
-						key:   &ProfileTreeValueNodeKey{location: "2"},
+						key:   &ProfileTreeValueNodeKey{location: "2|1|0"},
 						Value: 2,
 					}},
 					Children: []*ProfileTreeNode{{
 						locationID: 3,
 						cumulativeValues: []*ProfileTreeValueNode{{
-							key:   &ProfileTreeValueNodeKey{location: "3"},
+							key:   &ProfileTreeValueNodeKey{location: "3|2|1|0"},
 							Value: 4,
 						}},
 						Children: []*ProfileTreeNode{{
 							locationID: 4,
 							cumulativeValues: []*ProfileTreeValueNode{{
-								key:      &ProfileTreeValueNodeKey{location: "4", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
+								key:      &ProfileTreeValueNodeKey{location: "4|3|2|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
 								Value:    3,
 								Label:    label,
 								NumLabel: numLabel,
 								NumUnit:  numUnit,
 							}},
 							flatValues: []*ProfileTreeValueNode{{
-								key:      &ProfileTreeValueNodeKey{location: "4", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
+								key:      &ProfileTreeValueNodeKey{location: "4|3|2|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
 								Value:    3,
 								Label:    label,
 								NumLabel: numLabel,
@@ -127,11 +127,11 @@ func TestProfileTreeInsert(t *testing.T) {
 						}, {
 							locationID: 5,
 							cumulativeValues: []*ProfileTreeValueNode{{
-								key:   &ProfileTreeValueNodeKey{location: "5"},
+								key:   &ProfileTreeValueNodeKey{location: "5|3|2|1|0"},
 								Value: 1,
 							}},
 							flatValues: []*ProfileTreeValueNode{{
-								key:   &ProfileTreeValueNodeKey{location: "5"},
+								key:   &ProfileTreeValueNodeKey{location: "5|3|2|1|0"},
 								Value: 1,
 							}},
 						}},
@@ -151,10 +151,10 @@ func TestMemSeriesTree(t *testing.T) {
 	// Note: These keys are not unique per location.
 	// For this test they simply seem to be.
 	k0 := ProfileTreeValueNodeKey{location: "0"}
-	k1 := ProfileTreeValueNodeKey{location: "1"}
-	k2 := ProfileTreeValueNodeKey{location: "2"}
-	k3 := ProfileTreeValueNodeKey{location: "3"}
-	k4 := ProfileTreeValueNodeKey{location: "4", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`}
+	k1 := ProfileTreeValueNodeKey{location: "1|0"}
+	k2 := ProfileTreeValueNodeKey{location: "2|1|0"}
+	k3 := ProfileTreeValueNodeKey{location: "3|1|0"}
+	k4 := ProfileTreeValueNodeKey{location: "4|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`}
 
 	s11 := makeSample(1, []uint64{2, 1})
 
@@ -192,7 +192,7 @@ func TestMemSeriesTree(t *testing.T) {
 			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
 			LocationID: 0, // root
 			Children: []*MemSeriesTreeNode{{
-				keys:       []ProfileTreeValueNodeKey{{location: "1"}},
+				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
 				LocationID: 1,
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
@@ -231,7 +231,7 @@ func TestMemSeriesTree(t *testing.T) {
 			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
 			LocationID: 0, // root
 			Children: []*MemSeriesTreeNode{{
-				keys:       []ProfileTreeValueNodeKey{{location: "1"}},
+				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
 				LocationID: 1,
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
@@ -272,7 +272,7 @@ func TestMemSeriesTree(t *testing.T) {
 			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
 			LocationID: 0, // root
 			Children: []*MemSeriesTreeNode{{
-				keys:       []ProfileTreeValueNodeKey{{location: "1"}},
+				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
 				LocationID: 1,
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
@@ -333,14 +333,12 @@ func TestMemSeriesIterator(t *testing.T) {
 		s.numSamples++
 		require.NoError(t, err)
 	}
-
 	it := s.Iterator()
 
 	// First iteration
 	{
 		require.True(t, it.Next())
 		require.NoError(t, it.Err())
-
 		instantProfile := it.At()
 		require.Equal(t, InstantProfileMeta{
 			Timestamp: 1,
@@ -356,12 +354,10 @@ func TestMemSeriesIterator(t *testing.T) {
 			{
 				LocationID:       0,
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 3}},
-				FlatValues:       []*ProfileTreeValueNode{},
 			},
 			{
 				LocationID:       1,
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 3}},
-				FlatValues:       []*ProfileTreeValueNode{},
 			},
 			{
 				LocationID:       2,
@@ -396,7 +392,6 @@ func TestMemSeriesIterator(t *testing.T) {
 	{
 		require.True(t, it.Next())
 		require.NoError(t, it.Err())
-
 		instantProfile := it.At()
 		require.Equal(t, InstantProfileMeta{
 			Timestamp: 2,
@@ -412,12 +407,10 @@ func TestMemSeriesIterator(t *testing.T) {
 			{
 				LocationID:       0,
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 7}},
-				FlatValues:       []*ProfileTreeValueNode{},
 			},
 			{
 				LocationID:       1,
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 7}},
-				FlatValues:       []*ProfileTreeValueNode{},
 			},
 			{
 				LocationID:       2,

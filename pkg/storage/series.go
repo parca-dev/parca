@@ -290,25 +290,31 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 	cur := t.Roots
 	locations := sample.Location
 
+	locationIDs := make([]uint64, 0, len(sample.Location)+1)
+	for _, l := range sample.Location {
+		locationIDs = append(locationIDs, l.ID)
+	}
+	locationIDs = append(locationIDs, 0) // add the root
+
 	for i := len(locations) - 1; i >= 0; i-- {
 		nextId := locations[i].ID
 
 		var child *ProfileTreeNode
 
 		// Binary search for child in list. If it exists continue to use the existing one.
-		i := sort.Search(len(cur.Children), func(i int) bool { return cur.Children[i].LocationID() >= nextId })
-		if i < len(cur.Children) && cur.Children[i].LocationID() == nextId {
+		index := sort.Search(len(cur.Children), func(i int) bool { return cur.Children[i].LocationID() >= nextId })
+		if index < len(cur.Children) && cur.Children[index].LocationID() == nextId {
 			// Child with this ID already exists.
-			child = cur.Children[i]
+			child = cur.Children[index]
 		} else {
-			// No child with ID exists, but it should be inserted at `i`.
+			// No child with ID exists, but it should be inserted at `index`.
 			newChildren := make([]*ProfileTreeNode, len(cur.Children)+1)
-			copy(newChildren, cur.Children[:i])
+			copy(newChildren, cur.Children[:index])
 			child = &ProfileTreeNode{
 				locationID: nextId,
 			}
-			newChildren[i] = child
-			copy(newChildren[i+1:], cur.Children[i:])
+			newChildren[index] = child
+			copy(newChildren[index+1:], cur.Children[index:])
 			cur.Children = newChildren
 		}
 
@@ -319,7 +325,9 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 		cur.cumulativeValues[0].Value += sample.Value[0]
 
 		for _, cv := range cur.cumulativeValues {
-			cv.Key(cur.LocationID()) // populate the keys
+			// Populate the keys with the current subset of locations.
+			// i+1 because we additionally have the root in locationIDs.
+			cv.Key(locationIDs[i+1:]...)
 		}
 
 		cur = child
@@ -328,6 +336,7 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 	if cur.cumulativeValues == nil {
 		cur.cumulativeValues = []*ProfileTreeValueNode{{}}
 	}
+
 	cur.cumulativeValues[0].Value += sample.Value[0]
 	// TODO: We probably need to merge labels, numLabels and numUnits
 	cur.cumulativeValues[0].Label = sample.Label
@@ -335,7 +344,7 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 	cur.cumulativeValues[0].NumUnit = sample.NumUnit
 
 	for _, cv := range cur.cumulativeValues {
-		cv.Key(cur.LocationID()) // populate the keys
+		cv.Key(locationIDs...) // populate the keys
 	}
 
 	if cur.flatValues == nil {
@@ -348,7 +357,7 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 	cur.flatValues[0].NumUnit = sample.NumUnit
 
 	for _, fv := range cur.flatValues {
-		fv.Key(cur.LocationID()) //populate the keys
+		fv.Key(locationIDs...) //populate the keys
 	}
 }
 
@@ -521,8 +530,11 @@ func (n *MemSeriesIteratorTreeNode) CumulativeValue() int64 {
 }
 
 func (n *MemSeriesIteratorTreeNode) CumulativeValues() []*ProfileTreeValueNode {
-	res := make([]*ProfileTreeValueNode, 0, len(n.cumulativeValues))
+	if len(n.cumulativeValues) == 0 { // For consistency with other iterators
+		return nil
+	}
 
+	res := make([]*ProfileTreeValueNode, 0, len(n.cumulativeValues))
 	for _, v := range n.cumulativeValues {
 		res = append(res, &ProfileTreeValueNode{
 			Value:    v.Values.At(),
@@ -536,8 +548,11 @@ func (n *MemSeriesIteratorTreeNode) CumulativeValues() []*ProfileTreeValueNode {
 }
 
 func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
-	res := make([]*ProfileTreeValueNode, 0, len(n.flatValues))
+	if len(n.flatValues) == 0 { // For consistency with other iterators
+		return nil
+	}
 
+	res := make([]*ProfileTreeValueNode, 0, len(n.flatValues))
 	for _, v := range n.flatValues {
 		res = append(res, &ProfileTreeValueNode{
 			Value:    v.Values.At(),
