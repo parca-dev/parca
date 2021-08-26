@@ -212,10 +212,10 @@ func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 	}
 }
 
-// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./chunkenc >> benchmarks/appender-same.txt; done
-// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./chunkenc >> benchmarks/appender-increasing.txt; done
-// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./chunkenc >> benchmarks/appender-random.txt; done
-// benchstat benchmark/appender-same.txt benchmark/appender-increasing.txt benchmark/appender-random.txt
+// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./pkg/storage/chunkenc >> pkg/storage/benchmark/appender-same.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./pkg/storage/chunkenc >> pkg/storage/benchmark/appender-increasing.txt; done
+// for i in {1..10}; do go test -bench=BenchmarkAppenders --benchtime=500000000x ./pkg/storage/chunkenc >> pkg/storage/benchmark/appender-random.txt; done
+// benchstat ./pkg/storage/benchmark/appender-same.txt ./pkg/storage/benchmark/appender-increasing.txt ./pkg/storage/benchmark/appender-random.txt
 
 func BenchmarkAppenders(b *testing.B) {
 
