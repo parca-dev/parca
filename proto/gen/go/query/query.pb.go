@@ -116,55 +116,6 @@ func (QueryRequest_ReportType) EnumDescriptor() ([]byte, []int) {
 	return file_query_query_proto_rawDescGZIP(), []int{4, 1}
 }
 
-type TargetsRequest_State int32
-
-const (
-	TargetsRequest_ANY     TargetsRequest_State = 0
-	TargetsRequest_ACTIVE  TargetsRequest_State = 1
-	TargetsRequest_DROPPED TargetsRequest_State = 2
-)
-
-// Enum value maps for TargetsRequest_State.
-var (
-	TargetsRequest_State_name = map[int32]string{
-		0: "ANY",
-		1: "ACTIVE",
-		2: "DROPPED",
-	}
-	TargetsRequest_State_value = map[string]int32{
-		"ANY":     0,
-		"ACTIVE":  1,
-		"DROPPED": 2,
-	}
-)
-
-func (x TargetsRequest_State) Enum() *TargetsRequest_State {
-	p := new(TargetsRequest_State)
-	*p = x
-	return p
-}
-
-func (x TargetsRequest_State) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (TargetsRequest_State) Descriptor() protoreflect.EnumDescriptor {
-	return file_query_query_proto_enumTypes[2].Descriptor()
-}
-
-func (TargetsRequest_State) Type() protoreflect.EnumType {
-	return &file_query_query_proto_enumTypes[2]
-}
-
-func (x TargetsRequest_State) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use TargetsRequest_State.Descriptor instead.
-func (TargetsRequest_State) EnumDescriptor() ([]byte, []int) {
-	return file_query_query_proto_rawDescGZIP(), []int{16, 0}
-}
-
 type QueryRangeRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1040,167 +991,6 @@ func (x *ValuesResponse) GetLabelValues() []string {
 	return nil
 }
 
-type ConfigRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *ConfigRequest) Reset() {
-	*x = ConfigRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_query_query_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ConfigRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ConfigRequest) ProtoMessage() {}
-
-func (x *ConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_query_query_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ConfigRequest.ProtoReflect.Descriptor instead.
-func (*ConfigRequest) Descriptor() ([]byte, []int) {
-	return file_query_query_proto_rawDescGZIP(), []int{14}
-}
-
-type ConfigResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *ConfigResponse) Reset() {
-	*x = ConfigResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_query_query_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ConfigResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ConfigResponse) ProtoMessage() {}
-
-func (x *ConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_query_query_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ConfigResponse.ProtoReflect.Descriptor instead.
-func (*ConfigResponse) Descriptor() ([]byte, []int) {
-	return file_query_query_proto_rawDescGZIP(), []int{15}
-}
-
-type TargetsRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	State TargetsRequest_State `protobuf:"varint,1,opt,name=state,proto3,enum=parca.query.TargetsRequest_State" json:"state,omitempty"`
-}
-
-func (x *TargetsRequest) Reset() {
-	*x = TargetsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_query_query_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *TargetsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TargetsRequest) ProtoMessage() {}
-
-func (x *TargetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_query_query_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TargetsRequest.ProtoReflect.Descriptor instead.
-func (*TargetsRequest) Descriptor() ([]byte, []int) {
-	return file_query_query_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *TargetsRequest) GetState() TargetsRequest_State {
-	if x != nil {
-		return x.State
-	}
-	return TargetsRequest_ANY
-}
-
-type TargetsResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *TargetsResponse) Reset() {
-	*x = TargetsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_query_query_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *TargetsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TargetsResponse) ProtoMessage() {}
-
-func (x *TargetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_query_query_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TargetsResponse.ProtoReflect.Descriptor instead.
-func (*TargetsResponse) Descriptor() ([]byte, []int) {
-	return file_query_query_proto_rawDescGZIP(), []int{17}
-}
-
 type QueryRequest_Diff struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1213,7 +1003,7 @@ type QueryRequest_Diff struct {
 func (x *QueryRequest_Diff) Reset() {
 	*x = QueryRequest_Diff{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_query_query_proto_msgTypes[18]
+		mi := &file_query_query_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1226,7 +1016,7 @@ func (x *QueryRequest_Diff) String() string {
 func (*QueryRequest_Diff) ProtoMessage() {}
 
 func (x *QueryRequest_Diff) ProtoReflect() protoreflect.Message {
-	mi := &file_query_query_proto_msgTypes[18]
+	mi := &file_query_query_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1271,7 +1061,7 @@ type QueryRequest_ProfileSelect struct {
 func (x *QueryRequest_ProfileSelect) Reset() {
 	*x = QueryRequest_ProfileSelect{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_query_query_proto_msgTypes[19]
+		mi := &file_query_query_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1284,7 +1074,7 @@ func (x *QueryRequest_ProfileSelect) String() string {
 func (*QueryRequest_ProfileSelect) ProtoMessage() {}
 
 func (x *QueryRequest_ProfileSelect) ProtoReflect() protoreflect.Message {
-	mi := &file_query_query_proto_msgTypes[19]
+	mi := &file_query_query_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1348,7 +1138,7 @@ type QueryRequest_Merge struct {
 func (x *QueryRequest_Merge) Reset() {
 	*x = QueryRequest_Merge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_query_query_proto_msgTypes[20]
+		mi := &file_query_query_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1361,7 +1151,7 @@ func (x *QueryRequest_Merge) String() string {
 func (*QueryRequest_Merge) ProtoMessage() {}
 
 func (x *QueryRequest_Merge) ProtoReflect() protoreflect.Message {
-	mi := &file_query_query_proto_msgTypes[20]
+	mi := &file_query_query_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1410,7 +1200,7 @@ type QueryRequest_Single struct {
 func (x *QueryRequest_Single) Reset() {
 	*x = QueryRequest_Single{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_query_query_proto_msgTypes[21]
+		mi := &file_query_query_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1423,7 +1213,7 @@ func (x *QueryRequest_Single) String() string {
 func (*QueryRequest_Single) ProtoMessage() {}
 
 func (x *QueryRequest_Single) ProtoReflect() protoreflect.Message {
-	mi := &file_query_query_proto_msgTypes[21]
+	mi := &file_query_query_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1610,64 +1400,42 @@ var file_query_query_proto_rawDesc = []byte{
 	0x22, 0x33, 0x0a, 0x0e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
 	0x73, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x5f, 0x76, 0x61, 0x6c, 0x75,
 	0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0b, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x56,
-	0x61, 0x6c, 0x75, 0x65, 0x73, 0x22, 0x0f, 0x0a, 0x0d, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x10, 0x0a, 0x0e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x74, 0x0a, 0x0e, 0x54, 0x61, 0x72, 0x67,
-	0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x37, 0x0a, 0x05, 0x73, 0x74,
-	0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x21, 0x2e, 0x70, 0x61, 0x72, 0x63,
-	0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74,
-	0x61, 0x74, 0x65, 0x22, 0x29, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x07, 0x0a, 0x03,
-	0x41, 0x4e, 0x59, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x41, 0x43, 0x54, 0x49, 0x56, 0x45, 0x10,
-	0x01, 0x12, 0x0b, 0x0a, 0x07, 0x44, 0x52, 0x4f, 0x50, 0x50, 0x45, 0x44, 0x10, 0x02, 0x22, 0x11,
-	0x0a, 0x0f, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x32, 0xac, 0x05, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x6c, 0x0a, 0x0a, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x1e, 0x2e, 0x70, 0x61, 0x72, 0x63,
-	0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x61, 0x6e,
-	0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x70, 0x61, 0x72, 0x63,
-	0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x61, 0x6e,
-	0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x1d, 0x82, 0xd3, 0xe4, 0x93,
-	0x02, 0x17, 0x12, 0x15, 0x2f, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x2f, 0x71, 0x75,
-	0x65, 0x72, 0x79, 0x5f, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x57, 0x0a, 0x05, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x12, 0x19, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e,
+	0x61, 0x6c, 0x75, 0x65, 0x73, 0x32, 0xf9, 0x03, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12,
+	0x6c, 0x0a, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x1e, 0x2e,
 	0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x17, 0x82, 0xd3, 0xe4, 0x93, 0x02,
-	0x11, 0x12, 0x0f, 0x2f, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x2f, 0x71, 0x75, 0x65,
-	0x72, 0x79, 0x12, 0x5b, 0x0a, 0x06, 0x53, 0x65, 0x72, 0x69, 0x65, 0x73, 0x12, 0x1a, 0x2e, 0x70,
+	0x79, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e,
+	0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x1d,
+	0x82, 0xd3, 0xe4, 0x93, 0x02, 0x17, 0x12, 0x15, 0x2f, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65,
+	0x73, 0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x5f, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x57, 0x0a,
+	0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x19, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71,
+	0x75, 0x65, 0x72, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x1a, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x17, 0x82,
+	0xd3, 0xe4, 0x93, 0x02, 0x11, 0x12, 0x0f, 0x2f, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73,
+	0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x12, 0x5b, 0x0a, 0x06, 0x53, 0x65, 0x72, 0x69, 0x65, 0x73,
+	0x12, 0x1a, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x53,
+	0x65, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70,
 	0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x53, 0x65, 0x72, 0x69, 0x65,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61,
-	0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x53, 0x65, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x18, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x12, 0x12, 0x10, 0x2f,
-	0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x2f, 0x73, 0x65, 0x72, 0x69, 0x65, 0x73, 0x12,
-	0x5b, 0x0a, 0x06, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x12, 0x1a, 0x2e, 0x70, 0x61, 0x72, 0x63,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x18, 0x82, 0xd3, 0xe4, 0x93, 0x02,
+	0x12, 0x12, 0x10, 0x2f, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x2f, 0x73, 0x65, 0x72,
+	0x69, 0x65, 0x73, 0x12, 0x5b, 0x0a, 0x06, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x12, 0x1a, 0x2e,
+	0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x4c, 0x61, 0x62, 0x65,
+	0x6c, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x61, 0x72, 0x63,
 	0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75,
-	0x65, 0x72, 0x79, 0x2e, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x18, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x12, 0x12, 0x10, 0x2f, 0x70, 0x72, 0x6f,
-	0x66, 0x69, 0x6c, 0x65, 0x73, 0x2f, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x12, 0x6f, 0x0a, 0x06,
-	0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x12, 0x1a, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71,
-	0x75, 0x65, 0x72, 0x79, 0x2e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79,
-	0x2e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x2c, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x26, 0x12, 0x24, 0x2f, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c,
-	0x65, 0x73, 0x2f, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x2f, 0x7b, 0x6c, 0x61, 0x62, 0x65, 0x6c,
-	0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x7d, 0x2f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x12, 0x59, 0x0a,
-	0x06, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x1a, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e,
-	0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72,
-	0x79, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x16, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x10, 0x12, 0x0e, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x56, 0x0a, 0x07, 0x54, 0x61, 0x72, 0x67,
-	0x65, 0x74, 0x73, 0x12, 0x1b, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72,
-	0x79, 0x2e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x1c, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x54,
-	0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x10,
-	0x82, 0xd3, 0xe4, 0x93, 0x02, 0x0a, 0x12, 0x08, 0x2f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73,
-	0x42, 0x2f, 0x5a, 0x2d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70,
-	0x61, 0x72, 0x63, 0x61, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x67, 0x6f, 0x2f, 0x71, 0x75, 0x65, 0x72,
-	0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x18, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x12, 0x12, 0x10,
+	0x2f, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x2f, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73,
+	0x12, 0x6f, 0x0a, 0x06, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x12, 0x1a, 0x2e, 0x70, 0x61, 0x72,
+	0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71,
+	0x75, 0x65, 0x72, 0x79, 0x2e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x2c, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x26, 0x12, 0x24, 0x2f, 0x70, 0x72,
+	0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x2f, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x2f, 0x7b, 0x6c,
+	0x61, 0x62, 0x65, 0x6c, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x7d, 0x2f, 0x76, 0x61, 0x6c, 0x75, 0x65,
+	0x73, 0x42, 0x2f, 0x5a, 0x2d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x70, 0x61, 0x72, 0x63, 0x61, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2f,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x67, 0x6f, 0x2f, 0x71, 0x75, 0x65,
+	0x72, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1682,86 +1450,76 @@ func file_query_query_proto_rawDescGZIP() []byte {
 	return file_query_query_proto_rawDescData
 }
 
-var file_query_query_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_query_query_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_query_query_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_query_query_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_query_query_proto_goTypes = []interface{}{
 	(QueryRequest_Mode)(0),             // 0: parca.query.QueryRequest.Mode
 	(QueryRequest_ReportType)(0),       // 1: parca.query.QueryRequest.ReportType
-	(TargetsRequest_State)(0),          // 2: parca.query.TargetsRequest.State
-	(*QueryRangeRequest)(nil),          // 3: parca.query.QueryRangeRequest
-	(*QueryRangeResponse)(nil),         // 4: parca.query.QueryRangeResponse
-	(*MetricsSeries)(nil),              // 5: parca.query.MetricsSeries
-	(*MetricsSample)(nil),              // 6: parca.query.MetricsSample
-	(*QueryRequest)(nil),               // 7: parca.query.QueryRequest
-	(*Flamegraph)(nil),                 // 8: parca.query.Flamegraph
-	(*FlamegraphNode)(nil),             // 9: parca.query.FlamegraphNode
-	(*QueryResponse)(nil),              // 10: parca.query.QueryResponse
-	(*SeriesRequest)(nil),              // 11: parca.query.SeriesRequest
-	(*SeriesResponse)(nil),             // 12: parca.query.SeriesResponse
-	(*LabelsRequest)(nil),              // 13: parca.query.LabelsRequest
-	(*LabelsResponse)(nil),             // 14: parca.query.LabelsResponse
-	(*ValuesRequest)(nil),              // 15: parca.query.ValuesRequest
-	(*ValuesResponse)(nil),             // 16: parca.query.ValuesResponse
-	(*ConfigRequest)(nil),              // 17: parca.query.ConfigRequest
-	(*ConfigResponse)(nil),             // 18: parca.query.ConfigResponse
-	(*TargetsRequest)(nil),             // 19: parca.query.TargetsRequest
-	(*TargetsResponse)(nil),            // 20: parca.query.TargetsResponse
-	(*QueryRequest_Diff)(nil),          // 21: parca.query.QueryRequest.Diff
-	(*QueryRequest_ProfileSelect)(nil), // 22: parca.query.QueryRequest.ProfileSelect
-	(*QueryRequest_Merge)(nil),         // 23: parca.query.QueryRequest.Merge
-	(*QueryRequest_Single)(nil),        // 24: parca.query.QueryRequest.Single
-	(*timestamppb.Timestamp)(nil),      // 25: google.protobuf.Timestamp
-	(*profilestore.LabelSet)(nil),      // 26: parca.profilestore.LabelSet
+	(*QueryRangeRequest)(nil),          // 2: parca.query.QueryRangeRequest
+	(*QueryRangeResponse)(nil),         // 3: parca.query.QueryRangeResponse
+	(*MetricsSeries)(nil),              // 4: parca.query.MetricsSeries
+	(*MetricsSample)(nil),              // 5: parca.query.MetricsSample
+	(*QueryRequest)(nil),               // 6: parca.query.QueryRequest
+	(*Flamegraph)(nil),                 // 7: parca.query.Flamegraph
+	(*FlamegraphNode)(nil),             // 8: parca.query.FlamegraphNode
+	(*QueryResponse)(nil),              // 9: parca.query.QueryResponse
+	(*SeriesRequest)(nil),              // 10: parca.query.SeriesRequest
+	(*SeriesResponse)(nil),             // 11: parca.query.SeriesResponse
+	(*LabelsRequest)(nil),              // 12: parca.query.LabelsRequest
+	(*LabelsResponse)(nil),             // 13: parca.query.LabelsResponse
+	(*ValuesRequest)(nil),              // 14: parca.query.ValuesRequest
+	(*ValuesResponse)(nil),             // 15: parca.query.ValuesResponse
+	(*QueryRequest_Diff)(nil),          // 16: parca.query.QueryRequest.Diff
+	(*QueryRequest_ProfileSelect)(nil), // 17: parca.query.QueryRequest.ProfileSelect
+	(*QueryRequest_Merge)(nil),         // 18: parca.query.QueryRequest.Merge
+	(*QueryRequest_Single)(nil),        // 19: parca.query.QueryRequest.Single
+	(*timestamppb.Timestamp)(nil),      // 20: google.protobuf.Timestamp
+	(*profilestore.LabelSet)(nil),      // 21: parca.profilestore.LabelSet
 }
 var file_query_query_proto_depIdxs = []int32{
-	25, // 0: parca.query.QueryRangeRequest.start:type_name -> google.protobuf.Timestamp
-	25, // 1: parca.query.QueryRangeRequest.end:type_name -> google.protobuf.Timestamp
-	5,  // 2: parca.query.QueryRangeResponse.series:type_name -> parca.query.MetricsSeries
-	26, // 3: parca.query.MetricsSeries.labelset:type_name -> parca.profilestore.LabelSet
-	6,  // 4: parca.query.MetricsSeries.samples:type_name -> parca.query.MetricsSample
-	25, // 5: parca.query.MetricsSample.timestamp:type_name -> google.protobuf.Timestamp
+	20, // 0: parca.query.QueryRangeRequest.start:type_name -> google.protobuf.Timestamp
+	20, // 1: parca.query.QueryRangeRequest.end:type_name -> google.protobuf.Timestamp
+	4,  // 2: parca.query.QueryRangeResponse.series:type_name -> parca.query.MetricsSeries
+	21, // 3: parca.query.MetricsSeries.labelset:type_name -> parca.profilestore.LabelSet
+	5,  // 4: parca.query.MetricsSeries.samples:type_name -> parca.query.MetricsSample
+	20, // 5: parca.query.MetricsSample.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 6: parca.query.QueryRequest.mode:type_name -> parca.query.QueryRequest.Mode
-	21, // 7: parca.query.QueryRequest.diff:type_name -> parca.query.QueryRequest.Diff
-	23, // 8: parca.query.QueryRequest.merge:type_name -> parca.query.QueryRequest.Merge
-	24, // 9: parca.query.QueryRequest.single:type_name -> parca.query.QueryRequest.Single
+	16, // 7: parca.query.QueryRequest.diff:type_name -> parca.query.QueryRequest.Diff
+	18, // 8: parca.query.QueryRequest.merge:type_name -> parca.query.QueryRequest.Merge
+	19, // 9: parca.query.QueryRequest.single:type_name -> parca.query.QueryRequest.Single
 	1,  // 10: parca.query.QueryRequest.report_type:type_name -> parca.query.QueryRequest.ReportType
-	9,  // 11: parca.query.Flamegraph.root:type_name -> parca.query.FlamegraphNode
-	9,  // 12: parca.query.FlamegraphNode.children:type_name -> parca.query.FlamegraphNode
-	8,  // 13: parca.query.QueryResponse.flamegraph:type_name -> parca.query.Flamegraph
-	25, // 14: parca.query.SeriesRequest.start:type_name -> google.protobuf.Timestamp
-	25, // 15: parca.query.SeriesRequest.end:type_name -> google.protobuf.Timestamp
-	25, // 16: parca.query.LabelsRequest.start:type_name -> google.protobuf.Timestamp
-	25, // 17: parca.query.LabelsRequest.end:type_name -> google.protobuf.Timestamp
-	25, // 18: parca.query.ValuesRequest.start:type_name -> google.protobuf.Timestamp
-	25, // 19: parca.query.ValuesRequest.end:type_name -> google.protobuf.Timestamp
-	2,  // 20: parca.query.TargetsRequest.state:type_name -> parca.query.TargetsRequest.State
-	22, // 21: parca.query.QueryRequest.Diff.a:type_name -> parca.query.QueryRequest.ProfileSelect
-	22, // 22: parca.query.QueryRequest.Diff.b:type_name -> parca.query.QueryRequest.ProfileSelect
-	25, // 23: parca.query.QueryRequest.ProfileSelect.time:type_name -> google.protobuf.Timestamp
-	25, // 24: parca.query.QueryRequest.ProfileSelect.start:type_name -> google.protobuf.Timestamp
-	25, // 25: parca.query.QueryRequest.ProfileSelect.end:type_name -> google.protobuf.Timestamp
-	25, // 26: parca.query.QueryRequest.Merge.start:type_name -> google.protobuf.Timestamp
-	25, // 27: parca.query.QueryRequest.Merge.end:type_name -> google.protobuf.Timestamp
-	25, // 28: parca.query.QueryRequest.Single.time:type_name -> google.protobuf.Timestamp
-	3,  // 29: parca.query.Query.QueryRange:input_type -> parca.query.QueryRangeRequest
-	7,  // 30: parca.query.Query.Query:input_type -> parca.query.QueryRequest
-	11, // 31: parca.query.Query.Series:input_type -> parca.query.SeriesRequest
-	13, // 32: parca.query.Query.Labels:input_type -> parca.query.LabelsRequest
-	15, // 33: parca.query.Query.Values:input_type -> parca.query.ValuesRequest
-	17, // 34: parca.query.Query.Config:input_type -> parca.query.ConfigRequest
-	19, // 35: parca.query.Query.Targets:input_type -> parca.query.TargetsRequest
-	4,  // 36: parca.query.Query.QueryRange:output_type -> parca.query.QueryRangeResponse
-	10, // 37: parca.query.Query.Query:output_type -> parca.query.QueryResponse
-	12, // 38: parca.query.Query.Series:output_type -> parca.query.SeriesResponse
-	14, // 39: parca.query.Query.Labels:output_type -> parca.query.LabelsResponse
-	16, // 40: parca.query.Query.Values:output_type -> parca.query.ValuesResponse
-	18, // 41: parca.query.Query.Config:output_type -> parca.query.ConfigResponse
-	20, // 42: parca.query.Query.Targets:output_type -> parca.query.TargetsResponse
-	36, // [36:43] is the sub-list for method output_type
-	29, // [29:36] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	8,  // 11: parca.query.Flamegraph.root:type_name -> parca.query.FlamegraphNode
+	8,  // 12: parca.query.FlamegraphNode.children:type_name -> parca.query.FlamegraphNode
+	7,  // 13: parca.query.QueryResponse.flamegraph:type_name -> parca.query.Flamegraph
+	20, // 14: parca.query.SeriesRequest.start:type_name -> google.protobuf.Timestamp
+	20, // 15: parca.query.SeriesRequest.end:type_name -> google.protobuf.Timestamp
+	20, // 16: parca.query.LabelsRequest.start:type_name -> google.protobuf.Timestamp
+	20, // 17: parca.query.LabelsRequest.end:type_name -> google.protobuf.Timestamp
+	20, // 18: parca.query.ValuesRequest.start:type_name -> google.protobuf.Timestamp
+	20, // 19: parca.query.ValuesRequest.end:type_name -> google.protobuf.Timestamp
+	17, // 20: parca.query.QueryRequest.Diff.a:type_name -> parca.query.QueryRequest.ProfileSelect
+	17, // 21: parca.query.QueryRequest.Diff.b:type_name -> parca.query.QueryRequest.ProfileSelect
+	20, // 22: parca.query.QueryRequest.ProfileSelect.time:type_name -> google.protobuf.Timestamp
+	20, // 23: parca.query.QueryRequest.ProfileSelect.start:type_name -> google.protobuf.Timestamp
+	20, // 24: parca.query.QueryRequest.ProfileSelect.end:type_name -> google.protobuf.Timestamp
+	20, // 25: parca.query.QueryRequest.Merge.start:type_name -> google.protobuf.Timestamp
+	20, // 26: parca.query.QueryRequest.Merge.end:type_name -> google.protobuf.Timestamp
+	20, // 27: parca.query.QueryRequest.Single.time:type_name -> google.protobuf.Timestamp
+	2,  // 28: parca.query.Query.QueryRange:input_type -> parca.query.QueryRangeRequest
+	6,  // 29: parca.query.Query.Query:input_type -> parca.query.QueryRequest
+	10, // 30: parca.query.Query.Series:input_type -> parca.query.SeriesRequest
+	12, // 31: parca.query.Query.Labels:input_type -> parca.query.LabelsRequest
+	14, // 32: parca.query.Query.Values:input_type -> parca.query.ValuesRequest
+	3,  // 33: parca.query.Query.QueryRange:output_type -> parca.query.QueryRangeResponse
+	9,  // 34: parca.query.Query.Query:output_type -> parca.query.QueryResponse
+	11, // 35: parca.query.Query.Series:output_type -> parca.query.SeriesResponse
+	13, // 36: parca.query.Query.Labels:output_type -> parca.query.LabelsResponse
+	15, // 37: parca.query.Query.Values:output_type -> parca.query.ValuesResponse
+	33, // [33:38] is the sub-list for method output_type
+	28, // [28:33] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_query_query_proto_init() }
@@ -1939,54 +1697,6 @@ func file_query_query_proto_init() {
 			}
 		}
 		file_query_query_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ConfigRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_query_query_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ConfigResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_query_query_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TargetsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_query_query_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TargetsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_query_query_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryRequest_Diff); i {
 			case 0:
 				return &v.state
@@ -1998,7 +1708,7 @@ func file_query_query_proto_init() {
 				return nil
 			}
 		}
-		file_query_query_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+		file_query_query_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryRequest_ProfileSelect); i {
 			case 0:
 				return &v.state
@@ -2010,7 +1720,7 @@ func file_query_query_proto_init() {
 				return nil
 			}
 		}
-		file_query_query_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_query_query_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryRequest_Merge); i {
 			case 0:
 				return &v.state
@@ -2022,7 +1732,7 @@ func file_query_query_proto_init() {
 				return nil
 			}
 		}
-		file_query_query_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+		file_query_query_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryRequest_Single); i {
 			case 0:
 				return &v.state
@@ -2048,8 +1758,8 @@ func file_query_query_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_query_query_proto_rawDesc,
-			NumEnums:      3,
-			NumMessages:   22,
+			NumEnums:      2,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

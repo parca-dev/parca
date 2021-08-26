@@ -377,16 +377,6 @@ func (q *Query) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesRe
 	}, nil
 }
 
-// Config issues a config request against the storage
-func (q *Query) Config(ctx context.Context, req *pb.ConfigRequest) (*pb.ConfigResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
-}
-
-// Targets issues a targets request against the storage
-func (q *Query) Targets(ctx context.Context, req *pb.TargetsRequest) (*pb.TargetsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
-}
-
 func parseMatchers(matchers []string) ([][]*labels.Matcher, error) {
 	var matcherSets [][]*labels.Matcher
 	for _, s := range matchers {

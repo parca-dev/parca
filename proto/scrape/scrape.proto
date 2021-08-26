@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package parca.scrape;
+option go_package = "github.com/parca-dev/parca/proto/gen/go/scrape";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "profilestore/profilestore.proto";
+
+service Scrape {
+    rpc Targets(TargetsRequest) returns (TargetsResponse) {
+        option (google.api.http) = {
+            get: "/targets"
+        };
+    }
+}
+
+message TargetsRequest{
+    enum State {
+        ANY     = 0;
+        ACTIVE  = 1;
+        DROPPED = 2;
+    }
+
+    State state = 1;
+}
+
+message TargetsResponse{
+    map<string,Targets> targets = 1;
+}
+
+message Targets{
+    repeated Target targets = 1;
+}
+
+message Target{
+    parca.profilestore.LabelSet discovered_labels    = 1;
+    parca.profilestore.LabelSet labels               = 2;
+    string                      last_error           = 3;
+    google.protobuf.Timestamp   last_scrape          = 4;
+    google.protobuf.Duration    last_scrape_duration = 5;
+    string                      url                  = 6;
+
+    enum Health {
+        UNKNOWN = 0;
+        GOOD    = 1;
+        BAD     = 2;
+    }
+    Health health = 7;
+}

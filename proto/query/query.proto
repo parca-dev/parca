@@ -38,18 +38,6 @@ service Query {
             get: "/profiles/labels/{label_name}/values"
         };
     }
-
-    rpc Config(ConfigRequest) returns (ConfigResponse) {
-        option (google.api.http) = {
-            get: "/status/config"
-        };
-    }
-
-    rpc Targets(TargetsRequest) returns (TargetsResponse) {
-        option (google.api.http) = {
-            get: "/targets"
-        };
-    }
 }
 
 message QueryRangeRequest{
@@ -168,17 +156,3 @@ message ValuesRequest{
 message ValuesResponse{
     repeated string label_values = 1;
 }
-
-message ConfigRequest{}
-message ConfigResponse{}
-
-message TargetsRequest{
-    enum State {
-        ANY     = 0;
-        ACTIVE  = 1;
-        DROPPED = 2;
-    }
-
-    State state = 1;
-}
-message TargetsResponse{}

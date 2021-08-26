@@ -23,8 +23,6 @@ type QueryClient interface {
 	Series(ctx context.Context, in *SeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
 	Labels(ctx context.Context, in *LabelsRequest, opts ...grpc.CallOption) (*LabelsResponse, error)
 	Values(ctx context.Context, in *ValuesRequest, opts ...grpc.CallOption) (*ValuesResponse, error)
-	Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error)
-	Targets(ctx context.Context, in *TargetsRequest, opts ...grpc.CallOption) (*TargetsResponse, error)
 }
 
 type queryClient struct {
@@ -80,24 +78,6 @@ func (c *queryClient) Values(ctx context.Context, in *ValuesRequest, opts ...grp
 	return out, nil
 }
 
-func (c *queryClient) Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error) {
-	out := new(ConfigResponse)
-	err := c.cc.Invoke(ctx, "/parca.query.Query/Config", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Targets(ctx context.Context, in *TargetsRequest, opts ...grpc.CallOption) (*TargetsResponse, error) {
-	out := new(TargetsResponse)
-	err := c.cc.Invoke(ctx, "/parca.query.Query/Targets", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // QueryServer is the server API for Query service.
 // All implementations should embed UnimplementedQueryServer
 // for forward compatibility
@@ -107,8 +87,6 @@ type QueryServer interface {
 	Series(context.Context, *SeriesRequest) (*SeriesResponse, error)
 	Labels(context.Context, *LabelsRequest) (*LabelsResponse, error)
 	Values(context.Context, *ValuesRequest) (*ValuesResponse, error)
-	Config(context.Context, *ConfigRequest) (*ConfigResponse, error)
-	Targets(context.Context, *TargetsRequest) (*TargetsResponse, error)
 }
 
 // UnimplementedQueryServer should be embedded to have forward compatible implementations.
@@ -129,12 +107,6 @@ func (UnimplementedQueryServer) Labels(context.Context, *LabelsRequest) (*Labels
 }
 func (UnimplementedQueryServer) Values(context.Context, *ValuesRequest) (*ValuesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Values not implemented")
-}
-func (UnimplementedQueryServer) Config(context.Context, *ConfigRequest) (*ConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Config not implemented")
-}
-func (UnimplementedQueryServer) Targets(context.Context, *TargetsRequest) (*TargetsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Targets not implemented")
 }
 
 // UnsafeQueryServer may be embedded to opt out of forward compatibility for this service.
@@ -238,42 +210,6 @@ func _Query_Values_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_Config_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfigRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Config(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/parca.query.Query/Config",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Config(ctx, req.(*ConfigRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Targets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TargetsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Targets(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/parca.query.Query/Targets",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Targets(ctx, req.(*TargetsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -300,14 +236,6 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Values",
 			Handler:    _Query_Values_Handler,
-		},
-		{
-			MethodName: "Config",
-			Handler:    _Query_Config_Handler,
-		},
-		{
-			MethodName: "Targets",
-			Handler:    _Query_Targets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
