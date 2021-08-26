@@ -235,9 +235,13 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	l := NewInMemoryProfileMetaStore()
 	profileTree := ProfileTreeFromPprof(l, p1, 0)
 
+	b.ReportAllocs()
 	b.ResetTimer()
-	_, err = GenerateFlamegraph(l, &Profile{Tree: profileTree})
-	require.NoError(b, err)
+
+	for i := 0; i < b.N; i++ {
+		_, err = GenerateFlamegraph(l, &Profile{Tree: profileTree})
+		require.NoError(b, err)
+	}
 }
 
 func TestAggregateByFunctionName(t *testing.T) {

@@ -1,6 +1,14 @@
 package storage
 
-import "github.com/google/pprof/profile"
+import (
+	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/google/pprof/profile"
+)
 
 type InstantProfileTreeNode interface {
 	LocationID() uint64
@@ -10,10 +18,60 @@ type InstantProfileTreeNode interface {
 }
 
 type ProfileTreeValueNode struct {
+	key *ProfileTreeValueNodeKey
+
 	Value    int64
 	Label    map[string][]string
 	NumLabel map[string][]int64
 	NumUnit  map[string][]string
+}
+
+type ProfileTreeValueNodeKey struct {
+	location  string
+	labels    string
+	numlabels string
+}
+
+func (k *ProfileTreeValueNodeKey) Equals(o ProfileTreeValueNodeKey) bool {
+	if k.location != o.location {
+		return false
+	}
+	if k.labels != o.labels {
+		return false
+	}
+	if k.numlabels != o.numlabels {
+		return false
+	}
+	return true
+}
+
+func (n *ProfileTreeValueNode) Key(locationIDs ...uint64) {
+	if n.key != nil {
+		return
+	}
+
+	ids := make([]string, len(locationIDs))
+	for i, l := range locationIDs {
+		ids[i] = strconv.FormatUint(l, 10)
+	}
+
+	labels := make([]string, 0, len(n.Label))
+	for k, v := range n.Label {
+		labels = append(labels, fmt.Sprintf("%q%q", k, v))
+	}
+	sort.Strings(labels)
+
+	numlabels := make([]string, 0, len(n.NumLabel))
+	for k, v := range n.NumLabel {
+		numlabels = append(numlabels, fmt.Sprintf("%q%x%x", k, v, n.NumUnit[k]))
+	}
+	sort.Strings(numlabels)
+
+	n.key = &ProfileTreeValueNodeKey{
+		location:  strings.Join(ids, "|"),
+		labels:    strings.Join(labels, ""),
+		numlabels: strings.Join(numlabels, ""),
+	}
 }
 
 type InstantProfileTreeIterator interface {
@@ -163,7 +221,7 @@ func ProfileFromPprof(s ProfileMetaStore, p *profile.Profile, sampleIndex int) *
 
 func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {
 	return InstantProfileMeta{
-		Timestamp:  p.TimeNanos / 1000000,
+		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
 		Duration:   p.DurationNanos,
 		Period:     p.Period,
 		PeriodType: ValueType{Type: p.PeriodType.Type, Unit: p.PeriodType.Unit},
