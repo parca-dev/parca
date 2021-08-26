@@ -77,28 +77,28 @@ export namespace Targets {
 }
 
 export class Target extends jspb.Message {
-  hasDiscoveredlabels(): boolean;
-  clearDiscoveredlabels(): void;
-  getDiscoveredlabels(): profilestore_profilestore_pb.LabelSet | undefined;
-  setDiscoveredlabels(value?: profilestore_profilestore_pb.LabelSet): void;
+  hasDiscoveredLabels(): boolean;
+  clearDiscoveredLabels(): void;
+  getDiscoveredLabels(): profilestore_profilestore_pb.LabelSet | undefined;
+  setDiscoveredLabels(value?: profilestore_profilestore_pb.LabelSet): void;
 
   hasLabels(): boolean;
   clearLabels(): void;
   getLabels(): profilestore_profilestore_pb.LabelSet | undefined;
   setLabels(value?: profilestore_profilestore_pb.LabelSet): void;
 
-  getLasterror(): string;
-  setLasterror(value: string): void;
+  getLastError(): string;
+  setLastError(value: string): void;
 
-  hasLastscrape(): boolean;
-  clearLastscrape(): void;
-  getLastscrape(): google_protobuf_timestamp_pb.Timestamp | undefined;
-  setLastscrape(value?: google_protobuf_timestamp_pb.Timestamp): void;
+  hasLastScrape(): boolean;
+  clearLastScrape(): void;
+  getLastScrape(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setLastScrape(value?: google_protobuf_timestamp_pb.Timestamp): void;
 
-  hasLastscrapeduration(): boolean;
-  clearLastscrapeduration(): void;
-  getLastscrapeduration(): google_protobuf_duration_pb.Duration | undefined;
-  setLastscrapeduration(value?: google_protobuf_duration_pb.Duration): void;
+  hasLastScrapeDuration(): boolean;
+  clearLastScrapeDuration(): void;
+  getLastScrapeDuration(): google_protobuf_duration_pb.Duration | undefined;
+  setLastScrapeDuration(value?: google_protobuf_duration_pb.Duration): void;
 
   getUrl(): string;
   setUrl(value: string): void;
@@ -118,11 +118,11 @@ export class Target extends jspb.Message {
 
 export namespace Target {
   export type AsObject = {
-    discoveredlabels?: profilestore_profilestore_pb.LabelSet.AsObject,
+    discoveredLabels?: profilestore_profilestore_pb.LabelSet.AsObject,
     labels?: profilestore_profilestore_pb.LabelSet.AsObject,
-    lasterror: string,
-    lastscrape?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    lastscrapeduration?: google_protobuf_duration_pb.Duration.AsObject,
+    lastError: string,
+    lastScrape?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    lastScrapeDuration?: google_protobuf_duration_pb.Duration.AsObject,
     url: string,
     health: Target.HealthMap[keyof Target.HealthMap],
   }

@@ -127,23 +127,23 @@
     "scrapeTarget": {
       "type": "object",
       "properties": {
-        "DiscoveredLabels": {
+        "discoveredLabels": {
           "$ref": "#/definitions/profilestoreLabelSet"
         },
-        "Labels": {
+        "labels": {
           "$ref": "#/definitions/profilestoreLabelSet"
         },
-        "LastError": {
+        "lastError": {
           "type": "string"
         },
-        "LastScrape": {
+        "lastScrape": {
           "type": "string",
           "format": "date-time"
         },
-        "LastScrapeDuration": {
+        "lastScrapeDuration": {
           "type": "string"
         },
-        "URL": {
+        "url": {
           "type": "string"
         },
         "health": {

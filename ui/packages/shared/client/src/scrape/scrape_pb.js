@@ -577,11 +577,11 @@ proto.parca.scrape.Target.prototype.toObject = function(opt_includeInstance) {
  */
 proto.parca.scrape.Target.toObject = function(includeInstance, msg) {
   var f, obj = {
-    discoveredlabels: (f = msg.getDiscoveredlabels()) && profilestore_profilestore_pb.LabelSet.toObject(includeInstance, f),
+    discoveredLabels: (f = msg.getDiscoveredLabels()) && profilestore_profilestore_pb.LabelSet.toObject(includeInstance, f),
     labels: (f = msg.getLabels()) && profilestore_profilestore_pb.LabelSet.toObject(includeInstance, f),
-    lasterror: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    lastscrape: (f = msg.getLastscrape()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    lastscrapeduration: (f = msg.getLastscrapeduration()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f),
+    lastError: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    lastScrape: (f = msg.getLastScrape()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    lastScrapeDuration: (f = msg.getLastScrapeDuration()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f),
     url: jspb.Message.getFieldWithDefault(msg, 6, ""),
     health: jspb.Message.getFieldWithDefault(msg, 7, 0)
   };
@@ -623,7 +623,7 @@ proto.parca.scrape.Target.deserializeBinaryFromReader = function(msg, reader) {
     case 1:
       var value = new profilestore_profilestore_pb.LabelSet;
       reader.readMessage(value,profilestore_profilestore_pb.LabelSet.deserializeBinaryFromReader);
-      msg.setDiscoveredlabels(value);
+      msg.setDiscoveredLabels(value);
       break;
     case 2:
       var value = new profilestore_profilestore_pb.LabelSet;
@@ -632,17 +632,17 @@ proto.parca.scrape.Target.deserializeBinaryFromReader = function(msg, reader) {
       break;
     case 3:
       var value = /** @type {string} */ (reader.readString());
-      msg.setLasterror(value);
+      msg.setLastError(value);
       break;
     case 4:
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
-      msg.setLastscrape(value);
+      msg.setLastScrape(value);
       break;
     case 5:
       var value = new google_protobuf_duration_pb.Duration;
       reader.readMessage(value,google_protobuf_duration_pb.Duration.deserializeBinaryFromReader);
-      msg.setLastscrapeduration(value);
+      msg.setLastScrapeDuration(value);
       break;
     case 6:
       var value = /** @type {string} */ (reader.readString());
@@ -681,7 +681,7 @@ proto.parca.scrape.Target.prototype.serializeBinary = function() {
  */
 proto.parca.scrape.Target.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getDiscoveredlabels();
+  f = message.getDiscoveredLabels();
   if (f != null) {
     writer.writeMessage(
       1,
@@ -697,14 +697,14 @@ proto.parca.scrape.Target.serializeBinaryToWriter = function(message, writer) {
       profilestore_profilestore_pb.LabelSet.serializeBinaryToWriter
     );
   }
-  f = message.getLasterror();
+  f = message.getLastError();
   if (f.length > 0) {
     writer.writeString(
       3,
       f
     );
   }
-  f = message.getLastscrape();
+  f = message.getLastScrape();
   if (f != null) {
     writer.writeMessage(
       4,
@@ -712,7 +712,7 @@ proto.parca.scrape.Target.serializeBinaryToWriter = function(message, writer) {
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
-  f = message.getLastscrapeduration();
+  f = message.getLastScrapeDuration();
   if (f != null) {
     writer.writeMessage(
       5,
@@ -747,10 +747,10 @@ proto.parca.scrape.Target.Health = {
 };
 
 /**
- * optional parca.profilestore.LabelSet DiscoveredLabels = 1;
+ * optional parca.profilestore.LabelSet discovered_labels = 1;
  * @return {?proto.parca.profilestore.LabelSet}
  */
-proto.parca.scrape.Target.prototype.getDiscoveredlabels = function() {
+proto.parca.scrape.Target.prototype.getDiscoveredLabels = function() {
   return /** @type{?proto.parca.profilestore.LabelSet} */ (
     jspb.Message.getWrapperField(this, profilestore_profilestore_pb.LabelSet, 1));
 };
@@ -760,7 +760,7 @@ proto.parca.scrape.Target.prototype.getDiscoveredlabels = function() {
  * @param {?proto.parca.profilestore.LabelSet|undefined} value
  * @return {!proto.parca.scrape.Target} returns this
 */
-proto.parca.scrape.Target.prototype.setDiscoveredlabels = function(value) {
+proto.parca.scrape.Target.prototype.setDiscoveredLabels = function(value) {
   return jspb.Message.setWrapperField(this, 1, value);
 };
 
@@ -769,8 +769,8 @@ proto.parca.scrape.Target.prototype.setDiscoveredlabels = function(value) {
  * Clears the message field making it undefined.
  * @return {!proto.parca.scrape.Target} returns this
  */
-proto.parca.scrape.Target.prototype.clearDiscoveredlabels = function() {
-  return this.setDiscoveredlabels(undefined);
+proto.parca.scrape.Target.prototype.clearDiscoveredLabels = function() {
+  return this.setDiscoveredLabels(undefined);
 };
 
 
@@ -778,13 +778,13 @@ proto.parca.scrape.Target.prototype.clearDiscoveredlabels = function() {
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.parca.scrape.Target.prototype.hasDiscoveredlabels = function() {
+proto.parca.scrape.Target.prototype.hasDiscoveredLabels = function() {
   return jspb.Message.getField(this, 1) != null;
 };
 
 
 /**
- * optional parca.profilestore.LabelSet Labels = 2;
+ * optional parca.profilestore.LabelSet labels = 2;
  * @return {?proto.parca.profilestore.LabelSet}
  */
 proto.parca.scrape.Target.prototype.getLabels = function() {
@@ -821,10 +821,10 @@ proto.parca.scrape.Target.prototype.hasLabels = function() {
 
 
 /**
- * optional string LastError = 3;
+ * optional string last_error = 3;
  * @return {string}
  */
-proto.parca.scrape.Target.prototype.getLasterror = function() {
+proto.parca.scrape.Target.prototype.getLastError = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
@@ -833,16 +833,16 @@ proto.parca.scrape.Target.prototype.getLasterror = function() {
  * @param {string} value
  * @return {!proto.parca.scrape.Target} returns this
  */
-proto.parca.scrape.Target.prototype.setLasterror = function(value) {
+proto.parca.scrape.Target.prototype.setLastError = function(value) {
   return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
 /**
- * optional google.protobuf.Timestamp LastScrape = 4;
+ * optional google.protobuf.Timestamp last_scrape = 4;
  * @return {?proto.google.protobuf.Timestamp}
  */
-proto.parca.scrape.Target.prototype.getLastscrape = function() {
+proto.parca.scrape.Target.prototype.getLastScrape = function() {
   return /** @type{?proto.google.protobuf.Timestamp} */ (
     jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 4));
 };
@@ -852,7 +852,7 @@ proto.parca.scrape.Target.prototype.getLastscrape = function() {
  * @param {?proto.google.protobuf.Timestamp|undefined} value
  * @return {!proto.parca.scrape.Target} returns this
 */
-proto.parca.scrape.Target.prototype.setLastscrape = function(value) {
+proto.parca.scrape.Target.prototype.setLastScrape = function(value) {
   return jspb.Message.setWrapperField(this, 4, value);
 };
 
@@ -861,8 +861,8 @@ proto.parca.scrape.Target.prototype.setLastscrape = function(value) {
  * Clears the message field making it undefined.
  * @return {!proto.parca.scrape.Target} returns this
  */
-proto.parca.scrape.Target.prototype.clearLastscrape = function() {
-  return this.setLastscrape(undefined);
+proto.parca.scrape.Target.prototype.clearLastScrape = function() {
+  return this.setLastScrape(undefined);
 };
 
 
@@ -870,16 +870,16 @@ proto.parca.scrape.Target.prototype.clearLastscrape = function() {
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.parca.scrape.Target.prototype.hasLastscrape = function() {
+proto.parca.scrape.Target.prototype.hasLastScrape = function() {
   return jspb.Message.getField(this, 4) != null;
 };
 
 
 /**
- * optional google.protobuf.Duration LastScrapeDuration = 5;
+ * optional google.protobuf.Duration last_scrape_duration = 5;
  * @return {?proto.google.protobuf.Duration}
  */
-proto.parca.scrape.Target.prototype.getLastscrapeduration = function() {
+proto.parca.scrape.Target.prototype.getLastScrapeDuration = function() {
   return /** @type{?proto.google.protobuf.Duration} */ (
     jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 5));
 };
@@ -889,7 +889,7 @@ proto.parca.scrape.Target.prototype.getLastscrapeduration = function() {
  * @param {?proto.google.protobuf.Duration|undefined} value
  * @return {!proto.parca.scrape.Target} returns this
 */
-proto.parca.scrape.Target.prototype.setLastscrapeduration = function(value) {
+proto.parca.scrape.Target.prototype.setLastScrapeDuration = function(value) {
   return jspb.Message.setWrapperField(this, 5, value);
 };
 
@@ -898,8 +898,8 @@ proto.parca.scrape.Target.prototype.setLastscrapeduration = function(value) {
  * Clears the message field making it undefined.
  * @return {!proto.parca.scrape.Target} returns this
  */
-proto.parca.scrape.Target.prototype.clearLastscrapeduration = function() {
-  return this.setLastscrapeduration(undefined);
+proto.parca.scrape.Target.prototype.clearLastScrapeDuration = function() {
+  return this.setLastScrapeDuration(undefined);
 };
 
 
@@ -907,13 +907,13 @@ proto.parca.scrape.Target.prototype.clearLastscrapeduration = function() {
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.parca.scrape.Target.prototype.hasLastscrapeduration = function() {
+proto.parca.scrape.Target.prototype.hasLastScrapeDuration = function() {
   return jspb.Message.getField(this, 5) != null;
 };
 
 
 /**
- * optional string URL = 6;
+ * optional string url = 6;
  * @return {string}
  */
 proto.parca.scrape.Target.prototype.getUrl = function() {
