@@ -17,23 +17,21 @@ func sortSamples(samples []*profile.Sample) {
 
 		k := 1
 		for {
-			if k == stacktrace1Len && k <= stacktrace2Len {
+			switch {
+			case k >= stacktrace1Len && k <= stacktrace2Len:
 				// This means the stacktraces are identical up until this point, but stacktrace1 is ending, and shorter stactraces are "lower" than longer ones.
 				return true
-			}
-			if k <= stacktrace1Len && k == stacktrace2Len {
+			case k <= stacktrace1Len && k >= stacktrace2Len:
 				// This means the stacktraces are identical up until this point, but stacktrace2 is ending, and shorter stactraces are "lower" than longer ones.
 				return false
-			}
-			if stacktrace1[stacktrace1Len-k].ID < stacktrace2[stacktrace2Len-k].ID {
+			case stacktrace1[stacktrace1Len-k].ID < stacktrace2[stacktrace2Len-k].ID:
 				return true
-			}
-			if stacktrace1[stacktrace1Len-k].ID > stacktrace2[stacktrace2Len-k].ID {
+			case stacktrace1[stacktrace1Len-k].ID > stacktrace2[stacktrace2Len-k].ID:
 				return false
+			default:
+				// This means the stack traces are identical up until this point. So advance to the next.
+				k++
 			}
-
-			// This means the stack traces are identical up until this point. So advance to the next.
-			k++
 		}
 	})
 }

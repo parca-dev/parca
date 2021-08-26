@@ -19,6 +19,41 @@ func makeSample(value int64, locationIds []uint64) *profile.Sample {
 	return s
 }
 
+func Test_SortSamples_EdgeCases(t *testing.T) {
+
+	tests := map[string]struct {
+		samples []*profile.Sample
+	}{
+		"empty first": {
+			samples: []*profile.Sample{
+				makeSample(1, []uint64{}),
+				makeSample(1, []uint64{6, 3, 1, 2}),
+			},
+		},
+		"empty second": {
+			samples: []*profile.Sample{
+				makeSample(1, []uint64{6, 3, 1, 2}),
+				makeSample(1, []uint64{}),
+			},
+		},
+	}
+
+	t.Parallel()
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			sortSamples(test.samples)
+
+			require.Equal(t,
+				[]*profile.Sample{
+					makeSample(1, []uint64{}),
+					makeSample(1, []uint64{6, 3, 1, 2}),
+				},
+				test.samples,
+			)
+		})
+	}
+}
+
 func TestSortSamples(t *testing.T) {
 	samples := []*profile.Sample{
 		makeSample(1, []uint64{6, 3, 1}),
