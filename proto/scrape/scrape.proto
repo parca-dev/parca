@@ -35,12 +35,12 @@ message Targets{
 }
 
 message Target{
-    parca.profilestore.LabelSet DiscoveredLabels   = 1;
-    parca.profilestore.LabelSet Labels             = 2;
-    string                      LastError          = 3;
-    google.protobuf.Timestamp   LastScrape         = 4;
-    google.protobuf.Duration    LastScrapeDuration = 5;
-    string                      URL                = 6;
+    parca.profilestore.LabelSet discovered_labels    = 1;
+    parca.profilestore.LabelSet labels               = 2;
+    string                      last_error           = 3;
+    google.protobuf.Timestamp   last_scrape          = 4;
+    google.protobuf.Duration    last_scrape_duration = 5;
+    string                      url                  = 6;
 
     enum Health {
         UNKNOWN = 0;
