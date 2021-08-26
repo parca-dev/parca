@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
@@ -67,19 +68,23 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 							n.Key(profileTreeChild.LocationID())
 						}
 
+						t.s.mu.Lock()
 						if t.s.flatValues[*n.key] == nil {
 							t.s.flatValues[*n.key] = chunkenc.NewXORChunk()
 						}
+
 						app, err := t.s.flatValues[*n.key].Appender()
 						if err != nil {
 							return err
 						}
 						app.AppendAt(index, n.Value)
+						t.s.mu.Unlock()
 
 						// We need to keep track of the node keys.
 						seriesTreeChild.addKey(*n.key)
 
 						if len(n.Label) > 0 {
+							t.s.mu.Lock()
 							if t.s.labels[*n.key] == nil {
 								t.s.labels[*n.key] = n.Label
 							}
@@ -91,6 +96,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 							if t.s.numUnits[*n.key] == nil {
 								t.s.numUnits[*n.key] = n.NumUnit
 							}
+							t.s.mu.Unlock()
 						}
 					}
 
@@ -99,6 +105,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 							n.Key(profileTreeChild.LocationID())
 						}
 
+						t.s.mu.Lock()
 						if t.s.cumulativeValues[*n.key] == nil {
 							t.s.cumulativeValues[*n.key] = chunkenc.NewXORChunk()
 						}
@@ -107,6 +114,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 							return err
 						}
 						app.AppendAt(index, n.Value)
+						t.s.mu.Unlock()
 
 						// We need to keep track of the node keys.
 						seriesTreeChild.addKey(*n.key)
@@ -141,6 +149,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 
 					// Even if the location exists.
 					// labels can be different and then the key is different, so we need check.
+					t.s.mu.Lock()
 					if t.s.flatValues[*n.key] == nil {
 						t.s.flatValues[*n.key] = chunkenc.NewXORChunk()
 					}
@@ -149,6 +158,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						return fmt.Errorf("failed to open flat appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
+					t.s.mu.Unlock()
 
 					// We need to keep track of the node IDs.
 					seriesTreeChild.addKey(*n.key)
@@ -159,6 +169,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						n.Key(profileTreeChild.LocationID())
 					}
 
+					t.s.mu.Lock()
 					if t.s.cumulativeValues[*n.key] == nil {
 						t.s.cumulativeValues[*n.key] = chunkenc.NewXORChunk()
 					}
@@ -167,6 +178,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						return fmt.Errorf("failed to open cumulative appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
+					t.s.mu.Unlock()
 
 					// We need to keep track of the node keys.
 					seriesTreeChild.addKey(*n.key)
@@ -193,6 +205,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						n.Key(profileTreeChild.LocationID())
 					}
 
+					t.s.mu.Lock()
 					if t.s.flatValues[*n.key] == nil {
 						t.s.flatValues[*n.key] = chunkenc.NewXORChunk()
 					}
@@ -201,6 +214,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						return fmt.Errorf("failed to open flat appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
+					t.s.mu.Unlock()
 
 					// We need to keep track of the node keys.
 					newChild.addKey(*n.key)
@@ -211,6 +225,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						n.Key(profileTreeChild.LocationID())
 					}
 
+					t.s.mu.Lock()
 					if t.s.cumulativeValues[*n.key] == nil {
 						t.s.cumulativeValues[*n.key] = chunkenc.NewXORChunk()
 					}
@@ -219,6 +234,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						return fmt.Errorf("failed to open cumulative appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
+					t.s.mu.Unlock()
 
 					// We need to keep track of the node keys.
 					newChild.addKey(*n.key)
@@ -376,7 +392,9 @@ type MemSeries struct {
 	// TODO: Might be worth combining behind some struct?
 	// Or maybe not because it's easier to serialize?
 
-	// Flat and cumulative values as well as labels by the node's LocationID.
+	// mu locks the following maps for concurrent access.
+	mu sync.RWMutex
+	// Flat and cumulative values as well as labels by the node's ProfileTreeValueNodeKey.
 	flatValues       map[ProfileTreeValueNodeKey]chunkenc.Chunk
 	cumulativeValues map[ProfileTreeValueNodeKey]chunkenc.Chunk
 	labels           map[ProfileTreeValueNodeKey]map[string][]string
@@ -581,12 +599,14 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	// TODO: this might be still wrong in case there are multiple roots with different labels?
 	// We might be never reading roots with labels...
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
+	s.mu.RLock()
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
 		Values:   s.cumulativeValues[rootKey].Iterator(nil),
 		Label:    s.labels[rootKey],
 		NumLabel: s.numLabels[rootKey],
 		NumUnit:  s.numUnits[rootKey],
 	})
+	s.mu.RUnlock()
 
 	res := &MemSeriesIterator{
 		tree: &MemSeriesIteratorTree{
@@ -615,6 +635,7 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 				Children:   make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
 			}
 
+			s.mu.RLock()
 			for _, key := range child.keys {
 				if chunk, ok := s.flatValues[key]; ok {
 					n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
@@ -633,6 +654,7 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 					})
 				}
 			}
+			s.mu.RUnlock()
 
 			cur := memItStack.Peek()
 			cur.node.Children = append(cur.node.Children, n)
