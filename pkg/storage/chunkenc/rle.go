@@ -25,7 +25,7 @@ type RLEChunk struct {
 func NewRLEChunk() *RLEChunk {
 	return &RLEChunk{
 		b: bstream{
-			stream: make([]byte, 2, 128),
+			stream: make([]byte, 4, 128),
 			count:  0,
 		},
 	}
@@ -46,6 +46,10 @@ func (c *RLEChunk) NumSamples() int {
 	return int(binary.BigEndian.Uint16(c.Bytes()))
 }
 
+func (c *RLEChunk) NumValues() int {
+	return int(binary.BigEndian.Uint16(c.Bytes()[2:]))
+}
+
 func (c *RLEChunk) Compact() {
 	return
 }
@@ -63,6 +67,7 @@ type rleAppender struct {
 
 func (a *rleAppender) Append(v int64) {
 	num := binary.BigEndian.Uint16(a.b.bytes())
+	vals := binary.BigEndian.Uint16(a.b.bytes()[2:])
 
 	// Always append the first value regardless of its value.
 	// Then always write the next new value when the values differ.
@@ -79,6 +84,7 @@ func (a *rleAppender) Append(v int64) {
 			a.b.writeByte(b)
 		}
 		a.v = v
+		binary.BigEndian.PutUint16(a.b.bytes()[2:], vals+1)
 	} else {
 		b := a.b.bytes()
 		// Read the last 3 bytes as the bstream always appends a trailing 0,
@@ -112,6 +118,9 @@ type rleIterator struct {
 	// stores how often we need to still iterate over the same value
 	lengthLeft uint16
 
+	// stores how many different values we have yet to see
+	vals uint16
+
 	v      int64
 	sparse bool
 	err    error
@@ -124,8 +133,9 @@ func (c *RLEChunk) iterator(it Iterator) *rleIterator {
 	}
 
 	return &rleIterator{
-		br:    newBReader(c.b.bytes()[2:]),
+		br:    newBReader(c.b.bytes()[4:]),
 		total: binary.BigEndian.Uint16(c.b.bytes()),
+		vals:  binary.BigEndian.Uint16(c.b.bytes()[2:]),
 	}
 }
 
@@ -152,7 +162,17 @@ func (it *rleIterator) Next() bool {
 			}
 			lengthBytes[i] = b
 		}
-		it.lengthLeft = binary.BigEndian.Uint16(lengthBytes) - 1 // we've already read the first one
+		it.vals--
+		if it.vals > 0 {
+			it.lengthLeft = binary.BigEndian.Uint16(lengthBytes) - 1 // we've already read the first one
+		}
+		if it.vals == 0 {
+			// We can't read the length bytes of the last value, because it may
+			// be actively written to, so we infer it from how many samples we
+			// know must be left. This is safe because we know this is the last
+			// value.
+			it.lengthLeft = it.total - it.read
+		}
 	} else {
 		it.lengthLeft--
 	}
@@ -189,8 +209,9 @@ func (it *rleIterator) Err() error {
 func (it *rleIterator) Reset(b []byte) {
 	// The first 2 bytes contain chunk headers.
 	// We skip that for actual samples.
-	it.br = newBReader(b[2:])
+	it.br = newBReader(b[4:])
 	it.total = binary.BigEndian.Uint16(b)
+	it.vals = binary.BigEndian.Uint16(b[2:])
 	it.read = 0
 
 	it.lengthLeft = 0
