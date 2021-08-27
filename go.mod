@@ -30,6 +30,7 @@ require (
 	github.com/thanos-io/thanos v0.22.0
 	go.uber.org/atomic v1.9.0
 	golang.org/x/net v0.0.0-20210505214959-0714010a04ed
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced
 	google.golang.org/grpc v1.38.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0

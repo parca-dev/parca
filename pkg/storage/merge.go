@@ -1,7 +1,12 @@
 package storage
 
 import (
+	"context"
 	"errors"
+	"runtime"
+
+	"go.uber.org/atomic"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -17,51 +22,132 @@ type MergeProfile struct {
 }
 
 func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
-	h := len(profiles) / 2
-
-	var (
-		firstHalfMerge  InstantProfile
-		secondHalfMerge InstantProfile
-		err             error
-	)
-
-	firstHalf := profiles[:h]
-	secondHalf := profiles[h:]
-
-	if len(firstHalf) == 1 {
-		firstHalfMerge = firstHalf[0]
-	} else if len(firstHalf) == 0 {
-		// intentionally do nothing
-	} else {
-		firstHalfMerge, err = MergeProfiles(firstHalf...)
-		if err != nil {
-			return nil, err
+	profileCh := make(chan InstantProfile)
+	go func() {
+		for _, p := range profiles {
+			profileCh <- p
 		}
-	}
+		close(profileCh)
+	}()
 
-	if len(secondHalf) == 1 {
-		secondHalfMerge = secondHalf[0]
-	} else if len(secondHalf) == 0 {
-		// intentionally do nothing
-	} else {
-		secondHalfMerge, err = MergeProfiles(secondHalf...)
-		if err != nil {
-			return nil, err
+	return MergeProfilesConcurrent(context.Background(), profileCh, runtime.NumCPU())
+}
+
+func MergeProfilesConcurrent(ctx context.Context, profileCh chan InstantProfile, concurrency int) (InstantProfile, error) {
+	var res InstantProfile
+
+	resCh := make(chan InstantProfile, concurrency)
+	pairCh := make(chan [2]InstantProfile)
+
+	var mergesPerformed atomic.Uint32
+	var profilesRead atomic.Uint32
+
+	g := &errgroup.Group{}
+
+	g.Go(func() error {
+		var first InstantProfile
+		select {
+		case first = <-profileCh:
+			if first == nil {
+				close(pairCh)
+				return nil
+			}
+			profilesRead.Inc()
+		case <-ctx.Done():
+			return ctx.Err()
 		}
+
+		var second InstantProfile
+		select {
+		case second = <-profileCh:
+			if second == nil {
+				res = first
+				close(pairCh)
+				return nil
+			}
+			profilesRead.Inc()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
+		pairCh <- [2]InstantProfile{first, second}
+
+		for {
+			first = nil
+			second = nil
+			//fmt.Println("receiving first")
+			select {
+			case first = <-resCh:
+				mergesPerformed.Inc()
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			//fmt.Println("received first")
+			//fmt.Println("receiving second")
+
+			select {
+			case second = <-profileCh:
+				if second != nil {
+					profilesRead.Inc()
+				}
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+
+			//fmt.Println("received second", "is nil", second == nil)
+
+			if second == nil {
+				read := profilesRead.Load()
+				merged := mergesPerformed.Load()
+				//fmt.Println("read", read, "merged", merged)
+				if read == merged+1 {
+					res = first
+					close(pairCh)
+					return nil
+				}
+				select {
+				case second = <-resCh:
+					mergesPerformed.Inc()
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+
+			pairCh <- [2]InstantProfile{first, second}
+		}
+	})
+
+	for i := 0; i < concurrency; i++ {
+		g.Go(func() error {
+			for {
+				select {
+				case <-ctx.Done():
+					return nil
+				case pair := <-pairCh:
+					if pair == [2]InstantProfile{nil, nil} {
+						return nil
+					}
+
+					m, err := NewMergeProfile(pair[0], pair[1])
+					if err != nil {
+						return err
+					}
+
+					//fmt.Println("merging")
+					p := CopyInstantProfile(m)
+					//fmt.Println("merged")
+
+					resCh <- p
+				}
+			}
+		})
 	}
 
-	if firstHalfMerge == nil {
-		return secondHalfMerge, nil
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
-	if secondHalfMerge == nil {
-		return firstHalfMerge, nil
-	}
-
-	return NewMergeProfile(
-		firstHalfMerge,
-		secondHalfMerge,
-	)
+	return res, nil
 }
 
 func NewMergeProfile(a, b InstantProfile) (*MergeProfile, error) {

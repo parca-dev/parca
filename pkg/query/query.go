@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"runtime"
 	"sort"
 	"time"
 
@@ -285,21 +286,30 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 		Merge: true,
 	}, sel...)
 
-	// Naively copy all instant profiles and then merge them. This can probably
-	// done streaming, but doing it naively for a first pass.
-	profiles := []storage.InstantProfile{}
+	profileCh := make(chan storage.InstantProfile)
 
-	for set.Next() {
-		series := set.At()
-		i := series.Iterator()
-		for i.Next() {
-			// Have to copy as profile pointer is not stable for more than the
-			// current iteration.
-			profiles = append(profiles, storage.CopyInstantProfile(i.At()))
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				break
+			default:
+			}
+			if !set.Next() {
+				break
+			}
+			series := set.At()
+			i := series.Iterator()
+			for i.Next() {
+				// Have to copy as profile pointer is not stable for more than the
+				// current iteration.
+				profileCh <- storage.CopyInstantProfile(i.At())
+			}
 		}
-	}
+		close(profileCh)
+	}()
 
-	return storage.MergeProfiles(profiles...)
+	return storage.MergeProfilesConcurrent(context.Background(), profileCh, runtime.NumCPU())
 }
 
 // Series issues a series request against the storage
