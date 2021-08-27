@@ -147,23 +147,22 @@ func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowed
 		return found || allowAll
 	}))
 
-	//corsMiddleware := cors.New(cors.Options{
-	//	AllowOriginFunc: func(r *http.Request, origin string) bool {
-	//		_, found := origins[origin]
-	//		return found || allowAll
-	//	},
-	//	AllowedMethods: []string{
-	//		http.MethodHead,
-	//		http.MethodGet,
-	//		http.MethodPost,
-	//		http.MethodPut,
-	//		http.MethodPatch,
-	//		http.MethodDelete,
-	//	},
-	//	AllowCredentials: true,
-	//})
-	//TODO
-	corsMiddleware := cors.AllowAll()
+	corsMiddleware := cors.New(cors.Options{
+		AllowOriginFunc: func(r *http.Request, origin string) bool {
+			_, found := origins[origin]
+			return found || allowAll
+		},
+		AllowedHeaders: []string{"*"},
+		AllowedMethods: []string{
+			http.MethodHead,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+		},
+		AllowCredentials: true,
+	})
 
 	return corsMiddleware.Handler(h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
