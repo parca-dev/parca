@@ -424,9 +424,9 @@ type MemSeries struct {
 	sampleType ValueType
 
 	minTime, maxTime int64
-	timestamps       chunkenc.Chunk
-	durations        chunkenc.Chunk
-	periods          chunkenc.Chunk
+	timestamps       []chunkenc.Chunk
+	durations        []chunkenc.Chunk
+	periods          []chunkenc.Chunk
 
 	// TODO: Might be worth combining behind some struct?
 	// Or maybe not because it's easier to serialize?
@@ -450,9 +450,9 @@ func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
 	s := &MemSeries{
 		lset:       lset,
 		id:         id,
-		timestamps: chunkenc.NewDeltaChunk(),
-		durations:  chunkenc.NewRLEChunk(),
-		periods:    chunkenc.NewRLEChunk(),
+		timestamps: []chunkenc.Chunk{chunkenc.NewDeltaChunk()},
+		durations:  []chunkenc.Chunk{chunkenc.NewRLEChunk()},
+		periods:    []chunkenc.Chunk{chunkenc.NewRLEChunk()},
 
 		flatValues:       make(map[ProfileTreeValueNodeKey]chunkenc.Chunk),
 		cumulativeValues: make(map[ProfileTreeValueNodeKey]chunkenc.Chunk),
@@ -477,15 +477,15 @@ type mapInfo struct {
 }
 
 func (s *MemSeries) Appender() (*MemSeriesAppender, error) {
-	timestamps, err := s.timestamps.Appender()
+	timestamps, err := s.timestamps[len(s.timestamps)-1].Appender()
 	if err != nil {
 		return nil, err
 	}
-	durations, err := s.durations.Appender()
+	durations, err := s.durations[len(s.timestamps)-1].Appender()
 	if err != nil {
 		return nil, err
 	}
-	periods, err := s.periods.Appender()
+	periods, err := s.periods[len(s.timestamps)-1].Appender()
 	if err != nil {
 		return nil, err
 	}
@@ -505,6 +505,8 @@ type MemSeriesAppender struct {
 	periods    chunkenc.Appender
 }
 
+const samplesPerChunk = 120
+
 func (a *MemSeriesAppender) Append(p *Profile) error {
 	if a.s.numSamples == 0 {
 		a.s.periodType = p.Meta.PeriodType
@@ -519,10 +521,6 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		return ErrSampleTypeMismatch
 	}
 
-	if err := a.s.appendTree(p.Tree); err != nil {
-		return err
-	}
-
 	timestamp := p.Meta.Timestamp
 
 	if timestamp <= a.s.maxTime {
@@ -530,9 +528,45 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	}
 
 	a.s.mu.Lock()
+	newChunks := false
+	if a.s.timestamps[len(a.s.timestamps)-1].NumSamples() >= samplesPerChunk {
+		newChunks = true
+	}
+
 	a.timestamps.AppendAt(a.s.numSamples, timestamp)
 	a.duration.AppendAt(a.s.numSamples, p.Meta.Duration)
 	a.periods.AppendAt(a.s.numSamples, p.Meta.Period)
+
+	if err := a.s.appendTree(p.Tree); err != nil {
+		return err
+	}
+
+	if newChunks {
+		a.s.timestamps = append(a.s.timestamps, chunkenc.NewDeltaChunk())
+		app, err := a.s.timestamps[len(a.s.timestamps)-1].Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next timestamp chunk: %w", err)
+		}
+		a.timestamps = app
+
+		a.s.durations = append(a.s.durations, chunkenc.NewRLEChunk())
+		app, err = a.s.durations[len(a.s.durations)-1].Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next durations chunk: %w", err)
+		}
+		a.duration = app
+
+		a.s.periods = append(a.s.periods, chunkenc.NewRLEChunk())
+		app, err = a.s.periods[len(a.s.periods)-1].Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next periods chunk: %w", err)
+		}
+		a.periods = app
+	}
+
+	a.timestamps.AppendAt(a.s.numSamples%samplesPerChunk, timestamp)
+	a.duration.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Duration)
+	a.periods.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Period)
 
 	// Set the timestamp as minTime if timestamp != 0
 	if a.s.minTime == 0 && timestamp != 0 {
@@ -675,9 +709,9 @@ func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
 
 type MemSeriesIterator struct {
 	tree               *MemSeriesIteratorTree
-	timestampsIterator chunkenc.Iterator
-	durationsIterator  chunkenc.Iterator
-	periodsIterator    chunkenc.Iterator
+	timestampsIterator MultiChunkIterator
+	durationsIterator  MultiChunkIterator
+	periodsIterator    MultiChunkIterator
 
 	series     *MemSeries
 	numSamples uint16
@@ -903,9 +937,9 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 		tree: &MemSeriesIteratorTree{
 			Roots: root,
 		},
-		timestampsIterator: s.timestamps.Iterator(nil),
-		durationsIterator:  s.durations.Iterator(nil),
-		periodsIterator:    s.periods.Iterator(nil),
+		timestampsIterator: &multiChunksIterator{chunks: s.timestamps},
+		durationsIterator:  &multiChunksIterator{chunks: s.durations},
+		periodsIterator:    &multiChunksIterator{chunks: s.periods},
 		series:             s,
 		numSamples:         s.numSamples,
 	}
