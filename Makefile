@@ -22,8 +22,12 @@ clean:
 .PHONY: build
 build: ui go/bin
 
+.PHONY: go/deps
+go/deps: internal/pprof
+	go mod tidy
+
 .PHONY: go/bin
-go/bin:
+go/bin: go/deps
 	mkdir -p ./bin
 	go build -o bin/ ./cmd/parca
 	cp parca.yaml bin/
@@ -38,6 +42,10 @@ go-fmt:
 .PHONY: check-license
 check-license:
 	./scripts/check-license.sh
+	
+.PHONY: go/test
+go/test:
+	 go test -v `go list ./... | grep -v ./internal`
 
 .PHONY: ui
 ui:
@@ -89,3 +97,11 @@ dev/up: deploy/manifests
 .PHONY: dev/down
 dev/down:
 	source ./scripts/local-dev.sh && down
+
+internal/pprof:
+	rm -rf internal/pprof
+	rm -rf tmp/pprof
+	git clone https://github.com/google/pprof tmp/pprof
+	cp -r tmp/pprof/internal internal/pprof
+	find internal/pprof -type f -exec sed -i 's/github.com\/google\/pprof\/internal/github.com\/parca-dev\/parca\/internal\/pprof/g' {} +
+	rm -rf tmp/pprof

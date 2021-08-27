@@ -24,4 +24,4 @@ jobs:
         run: make build
 
       - name: Test
-        run: go test -v ./...
+        run: make go/test
