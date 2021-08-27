@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/google/pprof/profile"
 )
@@ -109,6 +110,7 @@ func MakeMappingKey(m *profile.Mapping) MappingKey {
 }
 
 type InMemoryProfileMetaStore struct {
+	mu             sync.RWMutex
 	locationsByKey map[LocationKey]uint64
 	locations      []*profile.Location
 	mappingsByKey  map[MappingKey]uint64
@@ -134,7 +136,9 @@ func (s *InMemoryProfileMetaStore) GetLocationByID(id uint64) (*profile.Location
 }
 
 func (s *InMemoryProfileMetaStore) GetLocationByKey(key LocationKey) (*profile.Location, error) {
+	s.mu.RLock()
 	i, found := s.locationsByKey[key]
+	s.mu.RUnlock()
 	if !found {
 		return nil, ErrLocationNotFound
 	}
@@ -145,13 +149,17 @@ func (s *InMemoryProfileMetaStore) GetLocationByKey(key LocationKey) (*profile.L
 func (s *InMemoryProfileMetaStore) CreateLocation(l *profile.Location) {
 	key := MakeLocationKey(l)
 	id := uint64(len(s.locations)) + 1
-	l.ID = uint64(id)
+	l.ID = id
 	s.locations = append(s.locations, l)
+	s.mu.Lock()
 	s.locationsByKey[key] = id
+	s.mu.Unlock()
 }
 
 func (s *InMemoryProfileMetaStore) GetMappingByKey(key MappingKey) (*profile.Mapping, error) {
+	s.mu.RLock()
 	i, found := s.mappingsByKey[key]
+	s.mu.RUnlock()
 	if !found {
 		return nil, ErrMappingNotFound
 	}
@@ -162,13 +170,17 @@ func (s *InMemoryProfileMetaStore) GetMappingByKey(key MappingKey) (*profile.Map
 func (s *InMemoryProfileMetaStore) CreateMapping(m *profile.Mapping) {
 	key := MakeMappingKey(m)
 	id := uint64(len(s.mappings)) + 1
-	m.ID = uint64(id)
+	m.ID = id
 	s.mappings = append(s.mappings, m)
+	s.mu.Lock()
 	s.mappingsByKey[key] = id
+	s.mu.Unlock()
 }
 
 func (s *InMemoryProfileMetaStore) GetFunctionByKey(key FunctionKey) (*profile.Function, error) {
+	s.mu.RLock()
 	i, found := s.functionsByKey[key]
+	s.mu.RUnlock()
 	if !found {
 		return nil, ErrFunctionNotFound
 	}
@@ -179,7 +191,9 @@ func (s *InMemoryProfileMetaStore) GetFunctionByKey(key FunctionKey) (*profile.F
 func (s *InMemoryProfileMetaStore) CreateFunction(f *profile.Function) {
 	key := MakeFunctionKey(f)
 	id := uint64(len(s.functions)) + 1
-	f.ID = uint64(id)
+	f.ID = id
 	s.functions = append(s.functions, f)
+	s.mu.Lock()
 	s.functionsByKey[key] = id
+	s.mu.Unlock()
 }
