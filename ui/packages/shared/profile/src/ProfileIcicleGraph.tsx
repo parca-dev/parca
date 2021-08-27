@@ -4,11 +4,10 @@ import IcicleGraph from './IcicleGraph'
 import { ProfileSource } from './ProfileSource'
 import { Spinner } from 'react-bootstrap'
 import { CalcWidth } from '@parca/dynamicsize'
-import { QueryResponse, FlamegraphNode } from '@parca/client'
+import { Flamegraph, FlamegraphNode } from '@parca/client'
 
 interface ProfileIcicleGraphProps {
-  queryResponse: QueryResponse
-  profileSource: ProfileSource
+  graph: Flamegraph.AsObject | undefined
 }
 
 function arrayEquals (a, b): boolean {
@@ -20,41 +19,49 @@ function arrayEquals (a, b): boolean {
   )
 }
 
+function formatBytes(bytes: number): string {
+    const decimals = 2;
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1000;
+    const dm = decimals < 0 ? 0 : decimals;
+
+    // https://physics.nist.gov/cuu/Units/binary.html
+
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
+
+    const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function formatDefault(value: number): string {
+    return value.toString()
+}
+
 export default function ProfileIcicleGraph ({
-  queryResponse,
-  profileSource,
+  graph,
 }: ProfileIcicleGraphProps) {
   const [hoveringNode, setHoveringNode] = useState<FlamegraphNode.AsObject | undefined>()
   const [curPath, setCurPath] = useState<string[]>([])
 
-  if (!queryResponse) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: 'inherit'
-        }}
-      >
-        <Spinner animation='border' role='status'>
-          <span className='sr-only'>Loading...</span>
-        </Spinner>
-      </div>
-    )
-  }
-
-  const graph = queryResponse.getFlamegraph()
   if (graph === undefined) return <div>no data...</div>
-  const total = graph.getTotal()
+  const total = graph.total
   if (total == 0) return <>Profile has no samples</>
+
+  const knownValueFormatter = {
+    'bytes': formatBytes,
+  }[graph.unit]
+
+  const valueFormatter = knownValueFormatter !== undefined ? knownValueFormatter : formatDefault
 
   function nodeAsText (node: FlamegraphNode.AsObject | undefined): string {
     if (node === undefined) return ''
-    return `${node.name.split(' ')[0]} (${((node.cumulative * 100) / total).toFixed(2)}%) ${node.cumulative}`
+    const diffText = (node.diff !== undefined && node.diff != 0) ? ` (Diff: ${valueFormatter(node.diff)})` : ''
+    return `${node.name.split(' ')[0]} (${((node.cumulative * 100) / total).toFixed(2)}%) ${valueFormatter(node.cumulative)}${diffText}`
   }
 
-  const nodeLabel = hoveringNode == null ? nodeAsText(graph.getRoot()?.toObject()) : nodeAsText(hoveringNode)
+  const nodeLabel = hoveringNode == null ? nodeAsText(graph.root) : nodeAsText(hoveringNode)
 
   const setNewCurPath = (path: string[]) => {
     if (!arrayEquals(curPath, path)) {

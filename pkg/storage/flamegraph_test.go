@@ -48,7 +48,7 @@ func TestLinesToTreeNodes(t *testing.T) {
 				Name: "log",
 			},
 		},
-	}, 2)
+	}, 2, 0)
 
 	require.Equal(t, &pb.FlamegraphNode{
 		Name:       "log :0",
@@ -137,7 +137,9 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	l := NewInMemoryProfileMetaStore()
 	profileTree := ProfileTreeFromPprof(l, p1, 0)
 
-	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree})
+	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
+		SampleType: ValueType{Unit: "count"},
+	}})
 	require.NoError(t, err)
 
 	return fg
@@ -218,7 +220,9 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	l := NewInMemoryProfileMetaStore()
 	profileTree := ProfileTreeFromPprof(l, p1, 0)
 
-	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree})
+	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
+		SampleType: ValueType{Unit: "count"},
+	}})
 	require.NoError(t, err)
 
 	mfg := testGenerateFlamegraphFromMergeProfile(t)

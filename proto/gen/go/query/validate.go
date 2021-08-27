@@ -19,7 +19,7 @@ func (r *QueryRangeRequest) Validate() error {
 // Validate the QueryRequest
 func (r *QueryRequest) Validate() error {
 	err := validation.ValidateStruct(r,
-		validation.Field(&r.Options, validation.Required, optionMatchesMode(r.Mode)),
+		validation.Field(&r.Options, validation.Required, optionMatchesProfileMode(r.Mode)),
 	)
 	if err != nil {
 		return err
@@ -27,16 +27,17 @@ func (r *QueryRequest) Validate() error {
 
 	switch r.Mode {
 	case QueryRequest_SINGLE:
-		//TODO
+		err := validateSingle(r.GetSingle())
+		if err != nil {
+			return err
+		}
 	case QueryRequest_DIFF:
-		//TODO
+		err := validateDiff(r.GetDiff())
+		if err != nil {
+			return err
+		}
 	case QueryRequest_MERGE:
-		merge := r.GetMerge()
-		err = validation.ValidateStruct(merge,
-			validation.Field(&merge.Start, validation.Required),
-			validation.Field(&merge.End, validation.Required, isAfter(merge.Start)),
-			validation.Field(&merge.Query, validation.Required),
-		)
+		err := validateMerge(r.GetMerge())
 		if err != nil {
 			return err
 		}
@@ -47,19 +48,128 @@ func (r *QueryRequest) Validate() error {
 	return nil
 }
 
-func optionMatchesMode(mode QueryRequest_Mode) OptionMatchesRule {
-	return OptionMatchesRule{
+func validateSingle(single *SingleProfile) error {
+	if single == nil {
+		return fmt.Errorf("single must not be unset")
+	}
+
+	return validation.ValidateStruct(single,
+		validation.Field(&single.Time, validation.Required),
+		validation.Field(&single.Query, validation.Required),
+	)
+}
+
+func validateMerge(merge *MergeProfile) error {
+	if merge == nil {
+		return fmt.Errorf("merge must not be unset")
+	}
+
+	return validation.ValidateStruct(merge,
+		validation.Field(&merge.Start, validation.Required),
+		validation.Field(&merge.End, validation.Required, isAfter(merge.Start)),
+		validation.Field(&merge.Query, validation.Required),
+	)
+}
+
+func validateDiff(diff *DiffProfile) error {
+	if diff == nil {
+		return fmt.Errorf("diff must not be unset")
+	}
+
+	err := validation.ValidateStruct(diff,
+		validation.Field(&diff.A, validation.Required),
+		validation.Field(&diff.B, validation.Required),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = validateProfileSelection(diff.A)
+	if err != nil {
+		return err
+	}
+
+	err = validateProfileSelection(diff.B)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateProfileSelection(sel *ProfileDiffSelection) error {
+	err := validation.ValidateStruct(sel,
+		validation.Field(&sel.Options, validation.Required, optionMatchesDiffProfileSelectionMode(sel.Mode)),
+	)
+	if err != nil {
+		return err
+	}
+
+	switch sel.Mode {
+	case ProfileDiffSelection_SINGLE:
+		err := validateSingle(sel.GetSingle())
+		if err != nil {
+			return err
+		}
+	case ProfileDiffSelection_MERGE:
+		err := validateMerge(sel.GetMerge())
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid mode")
+	}
+
+	return nil
+}
+
+func optionMatchesDiffProfileSelectionMode(mode ProfileDiffSelection_Mode) DiffProfileSelectionOptionMatchesRule {
+	return DiffProfileSelectionOptionMatchesRule{
 		mode: mode,
 	}
 }
 
-// OptionMatchesRule ensure the options match the requested mode
-type OptionMatchesRule struct {
+// DiffProfileSelectionOptionMatchesRule ensure the options match the requested mode
+type DiffProfileSelectionOptionMatchesRule struct {
+	mode ProfileDiffSelection_Mode
+}
+
+// Validate the option matches mode
+func (o DiffProfileSelectionOptionMatchesRule) Validate(v interface{}) error {
+	option, ok := v.(isProfileDiffSelection_Options)
+	if !ok {
+		return fmt.Errorf("invalid value")
+	}
+
+	switch o.mode {
+	case ProfileDiffSelection_SINGLE:
+		if _, ok := option.(*ProfileDiffSelection_Single); !ok {
+			return fmt.Errorf("invalid option for mode")
+		}
+		return nil
+	case ProfileDiffSelection_MERGE:
+		if _, ok := option.(*ProfileDiffSelection_Merge); !ok {
+			return fmt.Errorf("invalid option for mode")
+		}
+		return nil
+	default:
+		return fmt.Errorf("invalid value")
+	}
+}
+
+func optionMatchesProfileMode(mode QueryRequest_Mode) ProfileOptionMatchesRule {
+	return ProfileOptionMatchesRule{
+		mode: mode,
+	}
+}
+
+// ProfileOptionMatchesRule ensure the options match the requested mode
+type ProfileOptionMatchesRule struct {
 	mode QueryRequest_Mode
 }
 
 // Validate the option matches mode
-func (o OptionMatchesRule) Validate(v interface{}) error {
+func (o ProfileOptionMatchesRule) Validate(v interface{}) error {
 	option, ok := v.(isQueryRequest_Options)
 	if !ok {
 		return fmt.Errorf("invalid value")
@@ -67,17 +177,17 @@ func (o OptionMatchesRule) Validate(v interface{}) error {
 
 	switch o.mode {
 	case QueryRequest_SINGLE:
-		if _, ok := option.(*QueryRequest_Single_); !ok {
+		if _, ok := option.(*QueryRequest_Single); !ok {
 			return fmt.Errorf("invalid option for mode")
 		}
 		return nil
 	case QueryRequest_DIFF:
-		if _, ok := option.(*QueryRequest_Diff_); !ok {
+		if _, ok := option.(*QueryRequest_Diff); !ok {
 			return fmt.Errorf("invalid option for mode")
 		}
 		return nil
 	case QueryRequest_MERGE:
-		if _, ok := option.(*QueryRequest_Merge_); !ok {
+		if _, ok := option.(*QueryRequest_Merge); !ok {
 			return fmt.Errorf("invalid option for mode")
 		}
 		return nil

@@ -2,11 +2,12 @@ import React from 'react'
 import moment from 'moment'
 import { Badge } from 'react-bootstrap'
 import { Query } from '@parca/parser'
-import { Label, QueryRequest } from '@parca/client'
+import { Label, QueryRequest, ProfileDiffSelection, SingleProfile, MergeProfile, DiffProfile } from '@parca/client'
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb'
 
 export interface ProfileSource {
   QueryRequest: () => QueryRequest
+  DiffSelection: () => ProfileDiffSelection
   Describe: () => JSX.Element
   toString: () => string
 }
@@ -136,16 +137,29 @@ export class SingleProfileSource implements ProfileSource {
 
   query (): string {
     const seriesQuery = this.labels.reduce(function(agg: string, label: Label.AsObject) {
-      console.log(label)
       return agg + `${label.name}="${label.value}",`
     }, '{')
     return seriesQuery + '}'
   }
 
+  DiffSelection (): ProfileDiffSelection {
+    const sel = new ProfileDiffSelection()
+    sel.setMode(ProfileDiffSelection.Mode.SINGLE)
+
+    const singleProfile = new SingleProfile()
+    const ts = new Timestamp()
+    ts.fromDate(moment(this.time).toDate())
+    singleProfile.setTime(ts)
+    singleProfile.setQuery(this.query())
+    sel.setSingle(singleProfile)
+
+    return sel
+  }
+
   QueryRequest (): QueryRequest {
     const req = new QueryRequest()
     req.setMode(QueryRequest.Mode.SINGLE)
-    const singleQueryRequest = new QueryRequest.Single()
+    const singleQueryRequest = new SingleProfile()
     const ts = new Timestamp()
     ts.fromDate(moment(this.time).toDate())
     singleQueryRequest.setTime(ts)
@@ -196,9 +210,19 @@ export class ProfileDiffSource implements ProfileSource {
     this.b = b
   }
 
+  DiffSelection (): ProfileDiffSelection {
+    return new ProfileDiffSelection()
+  }
+
   QueryRequest (): QueryRequest {
-    // TODO
     const req = new QueryRequest()
+    req.setMode(QueryRequest.Mode.DIFF)
+    const diffQueryRequest = new DiffProfile()
+
+    diffQueryRequest.setA(this.a.DiffSelection())
+    diffQueryRequest.setB(this.b.DiffSelection())
+
+    req.setDiff(diffQueryRequest)
     return req
   }
 
@@ -226,11 +250,32 @@ export class MergedProfileSource implements ProfileSource {
     this.query = query
   }
 
+  DiffSelection (): ProfileDiffSelection {
+    const sel = new ProfileDiffSelection()
+    sel.setMode(ProfileDiffSelection.Mode.MERGE)
+
+    const mergeProfile = new MergeProfile()
+
+    const startTs = new Timestamp()
+    startTs.fromDate(moment(this.from).toDate())
+    mergeProfile.setStart(startTs)
+
+    const endTs = new Timestamp()
+    endTs.fromDate(moment(this.to).toDate())
+    mergeProfile.setEnd(endTs)
+
+    mergeProfile.setQuery(this.query)
+
+    sel.setMerge(mergeProfile)
+
+    return sel
+  }
+
   QueryRequest (): QueryRequest {
     const req = new QueryRequest()
     req.setMode(QueryRequest.Mode.MERGE)
 
-    const mergeQueryRequest = new QueryRequest.Merge()
+    const mergeQueryRequest = new MergeProfile()
 
     const startTs = new Timestamp()
     startTs.fromDate(moment(this.from).toDate())

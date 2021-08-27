@@ -62,6 +62,38 @@ message MetricsSample {
     int64 value = 2;
 }
 
+message MergeProfile {
+    string query = 1;
+
+    google.protobuf.Timestamp start = 2;
+    google.protobuf.Timestamp end   = 3;
+}
+
+message SingleProfile {
+    google.protobuf.Timestamp time  = 1;
+
+    string query = 2;
+}
+
+message DiffProfile {
+    ProfileDiffSelection a = 1;
+    ProfileDiffSelection b = 2;
+}
+
+message ProfileDiffSelection {
+    enum Mode {
+        SINGLE = 0;
+        MERGE  = 1;
+    }
+
+    Mode mode = 1;
+
+    oneof Options {
+        MergeProfile  merge  = 2;
+        SingleProfile single = 3;
+    }
+}
+
 message QueryRequest{
     enum Mode {
         SINGLE = 0;
@@ -71,37 +103,10 @@ message QueryRequest{
 
     Mode mode = 1;
 
-    message Diff {
-        ProfileSelect a = 1;
-        ProfileSelect b = 2;
-    }
-
-    message ProfileSelect {
-        string mode  = 1;
-        google.protobuf.Timestamp time = 2;
-        string query = 3;
-
-        google.protobuf.Timestamp start = 4;
-        google.protobuf.Timestamp end   = 5;
-    }
-
-    message Merge {
-        string query = 1;
-
-        google.protobuf.Timestamp start = 2;
-        google.protobuf.Timestamp end   = 3;
-    }
-
-    message Single {
-        google.protobuf.Timestamp time  = 1;
-
-        string query = 2;
-    }
-
     oneof Options {
-        Diff   diff   = 2;
-        Merge  merge  = 3;
-        Single single = 4;
+        DiffProfile   diff   = 2;
+        MergeProfile  merge  = 3;
+        SingleProfile single = 4;
     }
 
     enum ReportType {

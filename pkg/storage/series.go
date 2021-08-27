@@ -257,10 +257,12 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 }
 
 type ProfileTreeNode struct {
-	locationID       uint64
-	flatValues       []*ProfileTreeValueNode
-	cumulativeValues []*ProfileTreeValueNode
-	Children         []*ProfileTreeNode
+	locationID           uint64
+	flatValues           []*ProfileTreeValueNode
+	flatDiffValues       []*ProfileTreeValueNode
+	cumulativeValues     []*ProfileTreeValueNode
+	cumulativeDiffValues []*ProfileTreeValueNode
+	Children             []*ProfileTreeNode
 }
 
 func (n *ProfileTreeNode) LocationID() uint64 {
@@ -274,6 +276,23 @@ func (n *ProfileTreeNode) CumulativeValue() int64 {
 	}
 
 	return res
+}
+
+func (n *ProfileTreeNode) CumulativeDiffValue() int64 {
+	res := int64(0)
+	for _, cv := range n.cumulativeDiffValues {
+		res += cv.Value
+	}
+
+	return res
+}
+
+func (n *ProfileTreeNode) CumulativeDiffValues() []*ProfileTreeValueNode {
+	return n.cumulativeDiffValues
+}
+
+func (n *ProfileTreeNode) FlatDiffValues() []*ProfileTreeValueNode {
+	return n.flatDiffValues
 }
 
 func (n *ProfileTreeNode) CumulativeValues() []*ProfileTreeValueNode {
@@ -547,6 +566,9 @@ func (n *MemSeriesIteratorTreeNode) CumulativeValue() int64 {
 	return res
 }
 
+func (n *MemSeriesIteratorTreeNode) CumulativeDiffValue() int64                    { return 0 }
+func (n *MemSeriesIteratorTreeNode) CumulativeDiffValues() []*ProfileTreeValueNode { return nil }
+
 func (n *MemSeriesIteratorTreeNode) CumulativeValues() []*ProfileTreeValueNode {
 	if len(n.cumulativeValues) == 0 { // For consistency with other iterators
 		return nil
@@ -564,6 +586,8 @@ func (n *MemSeriesIteratorTreeNode) CumulativeValues() []*ProfileTreeValueNode {
 
 	return res
 }
+
+func (n *MemSeriesIteratorTreeNode) FlatDiffValues() []*ProfileTreeValueNode { return nil }
 
 func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
 	if len(n.flatValues) == 0 { // For consistency with other iterators

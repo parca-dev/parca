@@ -74,3 +74,90 @@ func TestProfileTreeValueNode_Key(t *testing.T) {
 		require.Equal(t, tc.key, tc.node.key)
 	}
 }
+
+func TestScaledInstantProfile(t *testing.T) {
+	pt := NewProfileTree()
+	pt.Insert(makeSample(2, []uint64{2, 1}))
+	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
+	pt.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
+
+	p := &Profile{
+		Tree: pt,
+	}
+
+	sp := NewScaledInstantProfile(p, -1)
+	scaledTree := CopyInstantProfileTree(sp.ProfileTree())
+	require.Equal(t, &ProfileTree{
+		Roots: &ProfileTreeNode{
+			cumulativeValues: []*ProfileTreeValueNode{{
+				key: &ProfileTreeValueNodeKey{
+					location: "0",
+				},
+				Value: -6,
+			}},
+			// Roots always have the LocationID 0.
+			locationID: 0,
+			Children: []*ProfileTreeNode{{
+				locationID: 1,
+				cumulativeValues: []*ProfileTreeValueNode{{
+					key: &ProfileTreeValueNodeKey{
+						location: "1|0",
+					},
+					Value: -6,
+				}},
+				Children: []*ProfileTreeNode{{
+					locationID: 2,
+					cumulativeValues: []*ProfileTreeValueNode{{
+						Value: -6,
+						key: &ProfileTreeValueNodeKey{
+							location: "2|1|0",
+						},
+					}},
+					flatValues: []*ProfileTreeValueNode{{
+						Value: -2,
+						key: &ProfileTreeValueNodeKey{
+							location: "2|1|0",
+						},
+					}},
+					Children: []*ProfileTreeNode{{
+						locationID: 3,
+						cumulativeValues: []*ProfileTreeValueNode{{
+							key: &ProfileTreeValueNodeKey{
+								location: "3|2|1|0",
+							},
+							Value: -4,
+						}},
+						Children: []*ProfileTreeNode{{
+							locationID: 4,
+							cumulativeValues: []*ProfileTreeValueNode{{
+								key: &ProfileTreeValueNodeKey{
+									location: "4|3|2|1|0",
+								},
+								Value: -3,
+							}},
+							flatValues: []*ProfileTreeValueNode{{
+								key: &ProfileTreeValueNodeKey{
+									location: "4|3|2|1|0",
+								},
+								Value: -3,
+							}},
+						}, {
+							locationID: 5,
+							cumulativeValues: []*ProfileTreeValueNode{{
+								key: &ProfileTreeValueNodeKey{
+									location: "5|3|2|1|0",
+								},
+								Value: -1,
+							}},
+							flatValues: []*ProfileTreeValueNode{{
+								key: &ProfileTreeValueNodeKey{
+									location: "5|3|2|1|0",
+								},
+								Value: -1,
+							}},
+						}},
+					}},
+				}},
+			}}},
+	}, scaledTree)
+}

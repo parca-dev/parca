@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/parca-dev/parca/pkg/storage"
 	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	pb "github.com/parca-dev/parca/proto/gen/go/query"
@@ -117,49 +116,110 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	var p storage.InstantProfile
 	switch req.Mode {
 	case pb.QueryRequest_SINGLE:
-		s := req.GetSingle()
-		if s == nil {
-			return nil, status.Error(codes.InvalidArgument, "requested single mode, but did not provide parameters for single")
-		}
-
-		sel, err := parser.ParseMetricSelector(s.Query)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, "failed to parse query")
-		}
-
-		p, err = q.findSingle(ctx, sel, s)
-		if err != nil {
-			return nil, status.Error(codes.Internal, "failed to search profile")
-		}
-
-		if p == nil {
-			return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
-		}
+		return q.singleRequest(ctx, req.GetSingle())
 	case pb.QueryRequest_MERGE:
-		m := req.GetMerge()
-		if m == nil {
-			return nil, status.Error(codes.InvalidArgument, "requested merge mode, but did not provide parameters for merge")
-		}
-
-		sel, err := parser.ParseMetricSelector(m.Query)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, "failed to parse query")
-		}
-
-		start := m.Start.AsTime()
-		end := m.End.AsTime()
-
-		level.Debug(q.logger).Log("msg", "merge request", "query", m.Query, "start", start, "end", end)
-
-		p, err = q.merge(ctx, sel, start, end)
+		return q.mergeRequest(ctx, req.GetMerge())
+	case pb.QueryRequest_DIFF:
+		return q.diffRequest(ctx, req.GetDiff())
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
+}
+
+func (q *Query) selectSingle(ctx context.Context, s *pb.SingleProfile) (storage.InstantProfile, error) {
+	sel, err := parser.ParseMetricSelector(s.Query)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+	}
+
+	t := s.Time.AsTime()
+	p, err := q.findSingle(ctx, sel, t)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to search profile")
+	}
+
+	if p == nil {
+		return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
+	}
+
+	return p, nil
+}
+
+func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile) (*pb.QueryResponse, error) {
+	p, err := q.selectSingle(ctx, s)
+	if err != nil {
+		return nil, err
+	}
 
 	return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
+}
+
+func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.InstantProfile, error) {
+	sel, err := parser.ParseMetricSelector(m.Query)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+	}
+
+	start := m.Start.AsTime()
+	end := m.End.AsTime()
+
+	p, err := q.merge(ctx, sel, start, end)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to search profile")
+	}
+
+	return p, nil
+}
+
+func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.QueryResponse, error) {
+	p, err := q.selectMerge(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+
+	return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
+}
+
+func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryResponse, error) {
+	if d == nil {
+		return nil, status.Error(codes.InvalidArgument, "requested diff mode, but did not provide parameters for diff")
+	}
+
+	profileA, err := q.selectProfileForDiff(ctx, d.A)
+	if err != nil {
+		return nil, err
+	}
+
+	profileB, err := q.selectProfileForDiff(ctx, d.B)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := storage.NewDiffProfile(profileA, profileB)
+	if d == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to diff: %v", err.Error())
+	}
+
+	return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
+}
+
+func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (storage.InstantProfile, error) {
+	var (
+		p   storage.InstantProfile
+		err error
+	)
+	switch s.Mode {
+	case pb.ProfileDiffSelection_SINGLE:
+		p, err = q.selectSingle(ctx, s.GetSingle())
+	case pb.ProfileDiffSelection_MERGE:
+		p, err = q.selectMerge(ctx, s.GetMerge())
+	default:
+		return nil, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
+	}
+
+	return p, err
 }
 
 func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -180,8 +240,7 @@ func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_Repor
 	}
 }
 
-func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, s *pb.QueryRequest_Single) (storage.InstantProfile, error) {
-	t := s.Time.AsTime()
+func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Time) (storage.InstantProfile, error) {
 	requestedTime := timestamp.FromTime(t)
 
 	// Timestamps don't have to match exactly and staleness kicks in within 5

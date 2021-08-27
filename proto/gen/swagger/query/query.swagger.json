@@ -152,67 +152,89 @@
             "name": "diff.a.mode",
             "in": "query",
             "required": false,
+            "type": "string",
+            "enum": [
+              "SINGLE",
+              "MERGE"
+            ],
+            "default": "SINGLE"
+          },
+          {
+            "name": "diff.a.merge.query",
+            "in": "query",
+            "required": false,
             "type": "string"
           },
           {
-            "name": "diff.a.time",
+            "name": "diff.a.merge.start",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "date-time"
           },
           {
-            "name": "diff.a.query",
+            "name": "diff.a.merge.end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.single.time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.single.query",
             "in": "query",
             "required": false,
             "type": "string"
-          },
-          {
-            "name": "diff.a.start",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
-          },
-          {
-            "name": "diff.a.end",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
           },
           {
             "name": "diff.b.mode",
             "in": "query",
             "required": false,
+            "type": "string",
+            "enum": [
+              "SINGLE",
+              "MERGE"
+            ],
+            "default": "SINGLE"
+          },
+          {
+            "name": "diff.b.merge.query",
+            "in": "query",
+            "required": false,
             "type": "string"
           },
           {
-            "name": "diff.b.time",
+            "name": "diff.b.merge.start",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "date-time"
           },
           {
-            "name": "diff.b.query",
+            "name": "diff.b.merge.end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.single.time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.single.query",
             "in": "query",
             "required": false,
             "type": "string"
-          },
-          {
-            "name": "diff.b.start",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
-          },
-          {
-            "name": "diff.b.end",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
           },
           {
             "name": "merge.query",
@@ -364,83 +386,12 @@
     }
   },
   "definitions": {
-    "QueryRequestDiff": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "$ref": "#/definitions/QueryRequestProfileSelect"
-        },
-        "b": {
-          "$ref": "#/definitions/QueryRequestProfileSelect"
-        }
-      }
-    },
-    "QueryRequestMerge": {
-      "type": "object",
-      "properties": {
-        "query": {
-          "type": "string"
-        },
-        "start": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "end": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "QueryRequestMode": {
-      "type": "string",
-      "enum": [
-        "SINGLE",
-        "DIFF",
-        "MERGE"
-      ],
-      "default": "SINGLE"
-    },
-    "QueryRequestProfileSelect": {
-      "type": "object",
-      "properties": {
-        "mode": {
-          "type": "string"
-        },
-        "time": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "query": {
-          "type": "string"
-        },
-        "start": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "end": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
     "QueryRequestReportType": {
       "type": "string",
       "enum": [
         "FLAMEGRAPH"
       ],
       "default": "FLAMEGRAPH"
-    },
-    "QueryRequestSingle": {
-      "type": "object",
-      "properties": {
-        "time": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "query": {
-          "type": "string"
-        }
-      }
     },
     "parcaprofilestoreLabel": {
       "type": "object",
@@ -473,6 +424,17 @@
         "value": {
           "type": "string",
           "format": "byte"
+        }
+      }
+    },
+    "queryDiffProfile": {
+      "type": "object",
+      "properties": {
+        "a": {
+          "$ref": "#/definitions/queryProfileDiffSelection"
+        },
+        "b": {
+          "$ref": "#/definitions/queryProfileDiffSelection"
         }
       }
     },
@@ -527,6 +489,22 @@
         }
       }
     },
+    "queryMergeProfile": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "queryMetricsSample": {
       "type": "object",
       "properties": {
@@ -554,6 +532,28 @@
         }
       }
     },
+    "queryProfileDiffSelection": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/queryProfileDiffSelectionMode"
+        },
+        "merge": {
+          "$ref": "#/definitions/queryMergeProfile"
+        },
+        "single": {
+          "$ref": "#/definitions/querySingleProfile"
+        }
+      }
+    },
+    "queryProfileDiffSelectionMode": {
+      "type": "string",
+      "enum": [
+        "SINGLE",
+        "MERGE"
+      ],
+      "default": "SINGLE"
+    },
     "queryQueryRangeResponse": {
       "type": "object",
       "properties": {
@@ -565,6 +565,15 @@
         }
       }
     },
+    "queryQueryRequestMode": {
+      "type": "string",
+      "enum": [
+        "SINGLE",
+        "DIFF",
+        "MERGE"
+      ],
+      "default": "SINGLE"
+    },
     "queryQueryResponse": {
       "type": "object",
       "properties": {
@@ -575,6 +584,18 @@
     },
     "querySeriesResponse": {
       "type": "object"
+    },
+    "querySingleProfile": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "query": {
+          "type": "string"
+        }
+      }
     },
     "queryValuesResponse": {
       "type": "object",
