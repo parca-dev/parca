@@ -151,10 +151,14 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 	it := postings.NewIterator()
 	for it.HasNext() {
 		s := q.head.series.getByID(it.Next())
-		if s.maxTime < mint {
+		s.mu.RLock()
+		seriesMaxTime := s.maxTime
+		seriesMinTime := s.minTime
+		s.mu.RUnlock()
+		if seriesMaxTime < mint {
 			continue
 		}
-		if s.minTime > maxt {
+		if seriesMinTime > maxt {
 			continue
 		}
 		ss = append(ss, s)

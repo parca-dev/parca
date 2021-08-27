@@ -75,6 +75,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 
 						app, err := t.s.flatValues[*n.key].Appender()
 						if err != nil {
+							t.s.mu.Unlock()
 							return err
 						}
 						app.AppendAt(index, n.Value)
@@ -111,6 +112,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						}
 						app, err := t.s.cumulativeValues[*n.key].Appender()
 						if err != nil {
+							t.s.mu.Unlock()
 							return err
 						}
 						app.AppendAt(index, n.Value)
@@ -155,6 +157,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					}
 					app, err := t.s.flatValues[*n.key].Appender()
 					if err != nil {
+						t.s.mu.Unlock()
 						return fmt.Errorf("failed to open flat appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
@@ -175,6 +178,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					}
 					app, err := t.s.cumulativeValues[*n.key].Appender()
 					if err != nil {
+						t.s.mu.Unlock()
 						return fmt.Errorf("failed to open cumulative appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
@@ -211,6 +215,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					}
 					app, err := t.s.flatValues[*n.key].Appender()
 					if err != nil {
+						t.s.mu.Unlock()
 						return fmt.Errorf("failed to open flat appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
@@ -231,6 +236,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					}
 					app, err := t.s.cumulativeValues[*n.key].Appender()
 					if err != nil {
+						t.s.mu.Unlock()
 						return fmt.Errorf("failed to open cumulative appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
@@ -507,6 +513,7 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		return ErrOutOfOrderSample
 	}
 
+	a.s.mu.Lock()
 	a.timestamps.AppendAt(a.s.numSamples, timestamp)
 	a.duration.AppendAt(a.s.numSamples, p.Meta.Duration)
 	a.periods.AppendAt(a.s.numSamples, p.Meta.Period)
@@ -519,6 +526,7 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	a.s.maxTime = timestamp
 
 	a.s.numSamples++
+	a.s.mu.Unlock()
 	return nil
 }
 
@@ -618,19 +626,20 @@ type MemSeriesIterator struct {
 }
 
 func (s *MemSeries) Iterator() ProfileSeriesIterator {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	root := &MemSeriesIteratorTreeNode{}
 
 	// TODO: this might be still wrong in case there are multiple roots with different labels?
 	// We might be never reading roots with labels...
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
-	s.mu.RLock()
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
 		Values:   s.cumulativeValues[rootKey].Iterator(nil),
 		Label:    s.labels[rootKey],
 		NumLabel: s.numLabels[rootKey],
 		NumUnit:  s.numUnits[rootKey],
 	})
-	s.mu.RUnlock()
 
 	res := &MemSeriesIterator{
 		tree: &MemSeriesIteratorTree{
@@ -659,7 +668,6 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 				Children:   make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
 			}
 
-			s.mu.RLock()
 			for _, key := range child.keys {
 				if chunk, ok := s.flatValues[key]; ok {
 					n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
@@ -678,7 +686,6 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 					})
 				}
 			}
-			s.mu.RUnlock()
 
 			cur := memItStack.Peek()
 			cur.node.Children = append(cur.node.Children, n)
@@ -701,6 +708,9 @@ func (it *MemSeriesIterator) Next() bool {
 	if it.numSamples == 0 {
 		return false
 	}
+
+	it.series.mu.RLock()
+	defer it.series.mu.RUnlock()
 
 	if !it.timestampsIterator.Next() {
 		return false
