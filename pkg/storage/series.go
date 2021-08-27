@@ -22,9 +22,11 @@ import (
 	"sync"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
+
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 var (
@@ -1053,7 +1055,7 @@ type profileNormalizer struct {
 
 	// Memoization tables for profile entities.
 	samples   map[stacktraceKey]*profile.Sample
-	metaStore ProfileMetaStore
+	metaStore metastore.ProfileMetaStore
 }
 
 // Returns the mapped sample and whether it is new or a known sample.
@@ -1117,14 +1119,16 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 	}
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
-	k := MakeLocationKey(l)
+	k := metastore.MakeLocationKey(l)
 	ll, err := pn.metaStore.GetLocationByKey(k)
-	if err != ErrLocationNotFound {
+	if err != metastore.ErrLocationNotFound {
+		// TODO(kakkoyun): Do we need better error handling?
 		pn.locationsByID[src.ID] = ll
 		return ll
 	}
 	pn.locationsByID[src.ID] = l
-	pn.metaStore.CreateLocation(l)
+	// TODO(kakkoyun): Handle me!
+	_ = pn.metaStore.CreateLocation(l)
 	return l
 }
 
@@ -1138,9 +1142,10 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	}
 
 	// Check memoization tables.
-	mk := MakeMappingKey(src)
+	mk := metastore.MakeMappingKey(src)
 	m, err := pn.metaStore.GetMappingByKey(mk)
-	if err != ErrMappingNotFound {
+	if err != metastore.ErrMappingNotFound {
+		// TODO(kakkoyun): Do we need better error handling?
 		mi := mapInfo{m, int64(m.Start) - int64(src.Start)}
 		pn.mappingsByID[src.ID] = mi
 		return mi
@@ -1158,13 +1163,16 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	}
 
 	// Update memoization tables.
-	pn.metaStore.CreateMapping(m)
+	if err := pn.metaStore.CreateMapping(m); err != nil {
+		// TODO(kakkoyun): Implement me!
+	}
 	mi := mapInfo{m, 0}
 	pn.mappingsByID[src.ID] = mi
 	return mi
 }
 
 func (pn *profileNormalizer) mapLine(src profile.Line) profile.Line {
+	// TODO(kakkoyun): CreateLine?
 	ln := profile.Line{
 		Function: pn.mapFunction(src.Function),
 		Line:     src.Line,
@@ -1179,9 +1187,10 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 	if f, ok := pn.functionsByID[src.ID]; ok {
 		return f
 	}
-	k := MakeFunctionKey(src)
+	k := metastore.MakeFunctionKey(src)
 	f, err := pn.metaStore.GetFunctionByKey(k)
-	if err != ErrFunctionNotFound {
+	if err != metastore.ErrFunctionNotFound {
+		// TODO(kakkoyun): Do we need better error handling?
 		pn.functionsByID[src.ID] = f
 		return f
 	}
@@ -1191,7 +1200,9 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 		Filename:   src.Filename,
 		StartLine:  src.StartLine,
 	}
-	pn.metaStore.CreateFunction(f)
+
+	_ = pn.metaStore.CreateFunction(f)
+	// TODO(kakkoyun): Handle me!
 	pn.functionsByID[src.ID] = f
 	return f
 }

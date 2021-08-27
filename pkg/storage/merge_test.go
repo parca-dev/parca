@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
 )
 
@@ -442,7 +443,11 @@ func TestMergeSingle(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("mergesingle")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	prof := ProfileFromPprof(l, p, 0)
 
 	m, err := MergeProfiles(prof)
@@ -457,7 +462,11 @@ func TestMergeMany(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("mergemany")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	prof := ProfileFromPprof(l, p, 0)
 
 	num := 1000
@@ -491,7 +500,11 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("treemerge")
+	b.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(b, err)
 	profileTree1 := ProfileTreeFromPprof(l, p1, 0)
 	profileTree2 := ProfileTreeFromPprof(l, p2, 0)
 

@@ -20,10 +20,12 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 func TestProfileTreeInsert(t *testing.T) {
@@ -421,7 +423,11 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("iteratorconsistency")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	s := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	app, err := s.Appender()
@@ -459,14 +465,20 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("realinsert")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	s := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
 	profile := ProfileFromPprof(l, p, 0)
 	require.NoError(t, app.Append(profile))
-	require.Equal(t, len(p.Location), len(l.locations))
+	locs, err := l.GetLocations()
+	require.NoError(t, err)
+	require.Equal(t, len(p.Location), len(locs))
 }
 
 func TestRealInserts(t *testing.T) {
@@ -484,7 +496,11 @@ func TestRealInserts(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("realinserts")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	s := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	app, err := s.Appender()

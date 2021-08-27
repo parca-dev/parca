@@ -25,10 +25,16 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 func TestDB(t *testing.T) {
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("testdb")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	db := OpenDB(prometheus.NewRegistry())
 	ctx := context.Background()
 	app1, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test1"}})

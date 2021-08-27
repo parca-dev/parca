@@ -25,6 +25,11 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/prometheus/discovery"
+	"google.golang.org/grpc"
+	"gopkg.in/yaml.v2"
+
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -35,10 +40,8 @@ import (
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/storage"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/discovery"
-	"google.golang.org/grpc"
-	"gopkg.in/yaml.v2"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 type Flags struct {
@@ -62,16 +65,22 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	d, err := debuginfo.NewStore(logger, cfg.DebugInfo)
+	dbgInfo, err := debuginfo.NewStore(logger, cfg.DebugInfo)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err
 	}
 
+	mStr, err := metastore.NewInMemoryProfileMetaStore()
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
+		return err
+	}
+	defer mStr.Close()
+
 	db := storage.OpenDB(reg)
-	metaStore := storage.NewInMemoryProfileMetaStore()
-	s := profilestore.NewProfileStore(logger, db, metaStore)
-	q := query.New(logger, db, metaStore)
+	s := profilestore.NewProfileStore(logger, db, mStr)
+	q := query.New(logger, db, mStr)
 
 	parcaserver := server.NewServer(reg)
 
@@ -85,7 +94,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				flags.Port,
 				flags.CORSAllowedOrigins,
 				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-					debuginfopb.RegisterDebugInfoServiceServer(srv, d)
+					debuginfopb.RegisterDebugInfoServiceServer(srv, dbgInfo)
 					profilestorepb.RegisterProfileStoreServiceServer(srv, s)
 					querypb.RegisterQueryServiceServer(srv, q)
 
@@ -115,6 +124,17 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			}
 		},
 	)
+	{
+		sym := symbol.NewSymbolizer(logger, mStr, dbgInfo)
+		ctx, cancel := context.WithCancel(ctx)
+		gr.Add(
+			func() error {
+				return sym.Run(ctx, 10*time.Second)
+			},
+			func(_ error) {
+				cancel()
+			})
+	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

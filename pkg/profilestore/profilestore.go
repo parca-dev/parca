@@ -21,6 +21,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,12 +33,12 @@ import (
 type ProfileStore struct {
 	logger    log.Logger
 	app       storage.Appendable
-	metaStore storage.ProfileMetaStore
+	metaStore metastore.ProfileMetaStore
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileStore{}
 
-func NewProfileStore(logger log.Logger, app storage.Appendable, metaStore storage.ProfileMetaStore) *ProfileStore {
+func NewProfileStore(logger log.Logger, app storage.Appendable, metaStore metastore.ProfileMetaStore) *ProfileStore {
 	return &ProfileStore{
 		logger:    logger,
 		app:       app,

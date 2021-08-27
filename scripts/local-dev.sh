@@ -17,7 +17,7 @@ function up() {
         echo "----------------------------------------------------------"
     else
         ctlptl create registry ctlptl-registry || echo 'Registry already exists'
-        minikube start -p parca-agent --driver=virtualbox --kubernetes-version=v1.22.0 --cpus=4 --disk-size=40000mb
+        minikube start -p parca-agent --driver=virtualbox --kubernetes-version=v1.22.0 --cpus=4 --disk-size=80000mb
     fi
 
     # Pull parca-agent repo to build live image

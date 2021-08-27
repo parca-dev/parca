@@ -21,15 +21,17 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/storage"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 var (
@@ -42,13 +44,13 @@ var (
 type Query struct {
 	logger    log.Logger
 	queryable storage.Queryable
-	metaStore storage.ProfileMetaStore
+	metaStore metastore.ProfileMetaStore
 }
 
 func New(
 	logger log.Logger,
 	queryable storage.Queryable,
-	metaStore storage.ProfileMetaStore,
+	metaStore metastore.ProfileMetaStore,
 ) *Query {
 	return &Query{
 		queryable: queryable,
@@ -314,8 +316,8 @@ func (q *Query) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsRe
 	}
 
 	var (
-		start time.Time = minTime
-		end   time.Time = maxTime
+		start = minTime
+		end   = maxTime
 	)
 
 	if req.Start != nil {
@@ -379,8 +381,8 @@ func (q *Query) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesRe
 	}
 
 	var (
-		start time.Time = minTime
-		end   time.Time = maxTime
+		start = minTime
+		end   = maxTime
 	)
 
 	if req.Start != nil {

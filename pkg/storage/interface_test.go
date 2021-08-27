@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,7 +29,11 @@ func TestCopyInstantProfileTree(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("compyinstantprofiletree")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	profileTree := ProfileTreeFromPprof(l, p1, 0)
 
 	profileTreeCopy := CopyInstantProfileTree(profileTree)

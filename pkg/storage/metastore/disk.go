@@ -11,14 +11,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build tools
-// +build tools
-
-package tools
+package metastore
 
 import (
-	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway"
-	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2"
-	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
-	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+	"database/sql"
+	"fmt"
+
+	_ "modernc.org/sqlite"
 )
+
+var _ ProfileMetaStore = &DiskMetaStore{}
+
+type DiskMetaStore struct {
+	*sqlMetaStore
+}
+
+func NewDiskProfileMetaStore(path ...string) (*DiskMetaStore, error) {
+	var dsn string
+	if len(path) > 0 {
+		dsn = path[0]
+	}
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	sqlite := &sqlMetaStore{db}
+	if err := sqlite.migrate(); err != nil {
+		return nil, fmt.Errorf("migrations failed: %w", err)
+	}
+
+	return &DiskMetaStore{sqlMetaStore: sqlite}, err
+}

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +30,11 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastore.NewInMemoryProfileMetaStore("generatepprof")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	p := ProfileFromPprof(l, p1, 0)
 	res, err := generatePprof(l, p)
 	require.NoError(t, err)

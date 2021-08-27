@@ -75,7 +75,7 @@ const MatchersInput = ({
   const { response: labelNamesResponse, error: labelNamesError } = useLabelNames(queryClient)
   const labelNames =
     (labelNamesError === undefined || labelNamesError == null) && labelNamesResponse !== undefined && labelNamesResponse != null
-      ? labelNamesResponse.labelNamesList.filter(e => e !== '__name__') // TODO(kakkoyun): ??
+      ? labelNamesResponse.labelNamesList.filter(e => e !== '__name__')
       : []
 
   const value = currentQuery.matchersString()

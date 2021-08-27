@@ -24,15 +24,17 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/storage"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 func Test_QueryRange_EmptyStore(t *testing.T) {
@@ -57,7 +59,11 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastore.NewInMemoryProfileMetaStore("queryrangevalid")
+	t.Cleanup(func() {
+		s.Close()
+	})
+	require.NoError(t, err)
 	q := New(log.NewNopLogger(), db, s)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -107,7 +113,11 @@ func Test_QueryRange_Valid(t *testing.T) {
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastore.NewInMemoryProfileMetaStore("queryrangelimited")
+	t.Cleanup(func() {
+		s.Close()
+	})
+	require.NoError(t, err)
 	q := New(log.NewNopLogger(), db, s)
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
@@ -261,7 +271,10 @@ func Test_Query_InputValidation(t *testing.T) {
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastore.NewInMemoryProfileMetaStore("querysimple")
+	t.Cleanup(func() {
+		s.Close()
+	})
 	q := New(log.NewNopLogger(), db, s)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -305,7 +318,10 @@ func Test_Query_Simple(t *testing.T) {
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastore.NewInMemoryProfileMetaStore("querydiff")
+	t.Cleanup(func() {
+		s.Close()
+	})
 	q := New(log.NewNopLogger(), db, s)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -377,7 +393,10 @@ func Test_Query_Diff(t *testing.T) {
 }
 
 func Benchmark_Query_Merge(b *testing.B) {
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastore.NewInMemoryProfileMetaStore("benchquerymerge")
+	b.Cleanup(func() {
+		s.Close()
+	})
 	f, err := os.Open("../storage/testdata/profile1.pb.gz")
 	require.NoError(b, err)
 	p1, err := profile.Parse(f)
@@ -428,7 +447,10 @@ func Benchmark_Query_Merge(b *testing.B) {
 }
 
 func Test_Query_Merge(t *testing.T) {
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastore.NewInMemoryProfileMetaStore("querymerge")
+	t.Cleanup(func() {
+		s.Close()
+	})
 	f, err := os.Open("../storage/testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
