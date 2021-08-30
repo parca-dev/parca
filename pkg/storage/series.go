@@ -16,6 +16,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -424,7 +425,7 @@ type MemSeries struct {
 	sampleType ValueType
 
 	minTime, maxTime int64
-	timestamps       []chunkenc.Chunk
+	timestamps       timestampChunks
 	durations        []chunkenc.Chunk
 	periods          []chunkenc.Chunk
 
@@ -448,11 +449,15 @@ type MemSeries struct {
 
 func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
 	s := &MemSeries{
-		lset:       lset,
-		id:         id,
-		timestamps: []chunkenc.Chunk{chunkenc.NewDeltaChunk()},
-		durations:  []chunkenc.Chunk{chunkenc.NewRLEChunk()},
-		periods:    []chunkenc.Chunk{chunkenc.NewRLEChunk()},
+		lset: lset,
+		id:   id,
+		timestamps: timestampChunks{{
+			minTime: math.MaxInt64,
+			maxTime: math.MinInt64,
+			chunk:   chunkenc.NewDeltaChunk(),
+		}},
+		durations: []chunkenc.Chunk{chunkenc.NewRLEChunk()},
+		periods:   []chunkenc.Chunk{chunkenc.NewRLEChunk()},
 
 		flatValues:       make(map[ProfileTreeValueNodeKey]chunkenc.Chunk),
 		cumulativeValues: make(map[ProfileTreeValueNodeKey]chunkenc.Chunk),
@@ -477,7 +482,7 @@ type mapInfo struct {
 }
 
 func (s *MemSeries) Appender() (*MemSeriesAppender, error) {
-	timestamps, err := s.timestamps[len(s.timestamps)-1].Appender()
+	timestamps, err := s.timestamps[len(s.timestamps)-1].chunk.Appender()
 	if err != nil {
 		return nil, err
 	}
@@ -527,24 +532,28 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		return ErrOutOfOrderSample
 	}
 
-	a.s.mu.Lock()
 	newChunks := false
-	if a.s.timestamps[len(a.s.timestamps)-1].NumSamples() >= samplesPerChunk {
+	a.s.mu.Lock()
+	if a.s.timestamps[len(a.s.timestamps)-1].chunk.NumSamples() >= samplesPerChunk {
 		newChunks = true
 	}
-
-	a.timestamps.AppendAt(a.s.numSamples, timestamp)
-	a.duration.AppendAt(a.s.numSamples, p.Meta.Duration)
-	a.periods.AppendAt(a.s.numSamples, p.Meta.Period)
+	a.s.mu.Unlock()
 
 	if err := a.s.appendTree(p.Tree); err != nil {
 		return err
 	}
 
 	if newChunks {
-		a.s.timestamps = append(a.s.timestamps, chunkenc.NewDeltaChunk())
-		app, err := a.s.timestamps[len(a.s.timestamps)-1].Appender()
+		a.s.mu.Lock()
+
+		a.s.timestamps = append(a.s.timestamps, timestampChunk{
+			maxTime: timestamp,
+			minTime: timestamp,
+			chunk:   chunkenc.NewDeltaChunk(),
+		})
+		app, err := a.s.timestamps[len(a.s.timestamps)-1].chunk.Appender()
 		if err != nil {
+			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next timestamp chunk: %w", err)
 		}
 		a.timestamps = app
@@ -552,6 +561,7 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		a.s.durations = append(a.s.durations, chunkenc.NewRLEChunk())
 		app, err = a.s.durations[len(a.s.durations)-1].Appender()
 		if err != nil {
+			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next durations chunk: %w", err)
 		}
 		a.duration = app
@@ -559,14 +569,25 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		a.s.periods = append(a.s.periods, chunkenc.NewRLEChunk())
 		app, err = a.s.periods[len(a.s.periods)-1].Appender()
 		if err != nil {
+			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next periods chunk: %w", err)
 		}
 		a.periods = app
+		a.s.mu.Unlock()
 	}
 
 	a.timestamps.AppendAt(a.s.numSamples%samplesPerChunk, timestamp)
 	a.duration.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Duration)
 	a.periods.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Period)
+
+	a.s.mu.Lock()
+	if a.s.timestamps[len(a.s.timestamps)-1].minTime > timestamp {
+		a.s.timestamps[len(a.s.timestamps)-1].minTime = timestamp
+	}
+	if a.s.timestamps[len(a.s.timestamps)-1].maxTime < timestamp {
+		a.s.timestamps[len(a.s.timestamps)-1].maxTime = timestamp
+	}
+	a.s.mu.Unlock()
 
 	// Set the timestamp as minTime if timestamp != 0
 	if a.s.minTime == 0 && timestamp != 0 {
@@ -575,7 +596,6 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 
 	a.s.maxTime = timestamp
 	a.s.numSamples++
-	a.s.mu.Unlock()
 
 	if a.s.samplesAppended != nil {
 		a.s.samplesAppended.Inc()
@@ -728,20 +748,27 @@ func (s *MemMergeSeries) Iterator() ProfileSeriesIterator {
 	s.MemSeries.mu.RLock()
 	defer s.MemSeries.mu.RUnlock()
 
+	start, end := s.timestamps.indexRange(s.minTime, s.maxTime)
+
+	timestamps := make([]chunkenc.Chunk, 0, end-start)
+	for _, tc := range s.timestamps[start:end] {
+		timestamps = append(timestamps, tc.chunk)
+	}
+
 	sl := &SliceProfileSeriesIterator{i: -1}
-	minTimestamp, startIndex, endIndex, err := getIndexRange(s.timestamps.Iterator(nil), s.mint, s.maxt)
+	minTimestamp, startIndex, endIndex, err := getIndexRange(&multiChunksIterator{chunks: timestamps}, s.mint, s.maxt)
 	if err != nil {
 		sl.err = err
 		return sl
 	}
 
-	duration, err := iteratorRangeSum(s.durations.Iterator(nil), startIndex, endIndex)
+	duration, err := iteratorRangeSum(&multiChunksIterator{chunks: s.durations[start:end]}, startIndex, endIndex)
 	if err != nil {
 		sl.err = err
 		return sl
 	}
 
-	period, err := iteratorRangeMax(s.periods.Iterator(nil), startIndex, endIndex)
+	period, err := iteratorRangeMax(&multiChunksIterator{chunks: s.periods[start:end]}, startIndex, endIndex)
 	if err != nil {
 		sl.err = err
 		return sl
@@ -918,14 +945,12 @@ func iteratorRangeSum(it chunkenc.Iterator, startIndex, endIndex int) (int64, er
 }
 
 func (s *MemSeries) Iterator() ProfileSeriesIterator {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	root := &MemSeriesIteratorTreeNode{}
 
 	// TODO: this might be still wrong in case there are multiple roots with different labels?
 	// We might be never reading roots with labels...
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
+	s.mu.RLock()
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
 		Values:   s.cumulativeValues[rootKey].Iterator(nil),
 		Label:    s.labels[rootKey],
@@ -933,13 +958,21 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 		NumUnit:  s.numUnits[rootKey],
 	})
 
+	start, end := s.timestamps.indexRange(s.minTime, s.maxTime)
+
+	timestamps := make([]chunkenc.Chunk, 0, end-start)
+	for _, t := range s.timestamps[start:end] {
+		timestamps = append(timestamps, t.chunk)
+	}
+	s.mu.RUnlock()
+
 	res := &MemSeriesIterator{
 		tree: &MemSeriesIteratorTree{
 			Roots: root,
 		},
-		timestampsIterator: &multiChunksIterator{chunks: s.timestamps},
-		durationsIterator:  &multiChunksIterator{chunks: s.durations},
-		periodsIterator:    &multiChunksIterator{chunks: s.periods},
+		timestampsIterator: &multiChunksIterator{chunks: timestamps},
+		durationsIterator:  &multiChunksIterator{chunks: s.durations[start:end]},
+		periodsIterator:    &multiChunksIterator{chunks: s.periods[start:end]},
 		series:             s,
 		numSamples:         s.numSamples,
 	}
@@ -960,6 +993,7 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 				Children:   make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
 			}
 
+			s.mu.RLock()
 			for _, key := range child.keys {
 				if chunk, ok := s.flatValues[key]; ok {
 					n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
@@ -978,6 +1012,7 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 					})
 				}
 			}
+			s.mu.RUnlock()
 
 			cur := memItStack.Peek()
 			cur.node.Children = append(cur.node.Children, n)

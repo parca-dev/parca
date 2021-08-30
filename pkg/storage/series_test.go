@@ -267,7 +267,7 @@ func TestMemSeriesIterator(t *testing.T) {
 
 	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
 
-	s.timestamps = []chunkenc.Chunk{chunkenc.FromValuesDelta(1, 2)}
+	s.timestamps = []timestampChunk{{chunk: chunkenc.FromValuesDelta(1, 2)}}
 	s.durations = []chunkenc.Chunk{chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 2)}
 	s.periods = []chunkenc.Chunk{chunkenc.FromValuesRLE(100, 2)}
 
