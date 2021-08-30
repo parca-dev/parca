@@ -9,13 +9,13 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/go-kit/log"
-	pb "github.com/parca-dev/parca/proto/gen/go/profilestore"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
-func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreClient, <-chan struct{}) {
+func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	done := make(chan struct{})
@@ -35,12 +35,12 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreClient, <
 			return err
 		}
 
-		client := pb.NewProfileStoreClient(conn)
+		client := pb.NewProfileStoreServiceClient(conn)
 		_, err = client.WriteRaw(ctx, &pb.WriteRawRequest{})
 		return err
 	}, backoff.NewConstantBackOff(time.Second))
 
-	client := pb.NewProfileStoreClient(conn)
+	client := pb.NewProfileStoreServiceClient(conn)
 	return client, done
 }
 

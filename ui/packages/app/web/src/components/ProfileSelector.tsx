@@ -18,7 +18,7 @@ import 'react-dates/initialize'
 import { DayPickerRangeController } from 'react-dates'
 import MatchersInput from './MatchersInput'
 import ProfileDropdown from './ProfileDropdown'
-import { ValuesResponse, ValuesRequest, QueryClient, ServiceError } from '@parca/client'
+import { ValuesResponse, ValuesRequest, QueryServiceClient, ServiceError } from '@parca/client'
 
 interface TimeSelection {
   from: number | null
@@ -34,7 +34,7 @@ export interface QuerySelection {
 }
 
 interface ProfileSelectorProps {
-  queryClient: QueryClient
+  queryClient: QueryServiceClient
   querySelection: QuerySelection
   selectProfile: (source: ProfileSelection) => void
   selectQuery: (query: QuerySelection) => void
@@ -49,7 +49,7 @@ export interface ILabelValuesResult {
   error: ServiceError|null
 }
 
-export const useLabelValues = (client: QueryClient, labelName: string): ILabelValuesResult => {
+export const useLabelValues = (client: QueryServiceClient, labelName: string): ILabelValuesResult => {
   const [result, setResult] = useState<ILabelValuesResult>({
     response: null,
     error: null

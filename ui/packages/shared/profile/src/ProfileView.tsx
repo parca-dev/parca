@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 //import ProfileTop from './ProfileTop'
 import ProfileIcicleGraph from './ProfileIcicleGraph'
 import { ProfileSource } from './ProfileSource'
-import { QueryClient, QueryResponse, QueryRequest, ServiceError } from '@parca/client'
+import { QueryServiceClient, QueryResponse, QueryRequest, ServiceError } from '@parca/client'
 import {
   Button,
   Card,
@@ -16,7 +16,7 @@ import {
 
 interface ProfileViewProps {
   title?: string
-  queryClient: QueryClient
+  queryClient: QueryServiceClient
   profileSource: ProfileSource
   startComparing: () => void
   allowComparing: boolean
@@ -28,7 +28,7 @@ export interface IQueryResult {
 }
 
 export const useQuery = (
-  client: QueryClient,
+  client: QueryServiceClient,
   profileSource: ProfileSource,
 ): IQueryResult => {
   const [result, setResult] = useState<IQueryResult>({
@@ -38,7 +38,7 @@ export const useQuery = (
 
   useEffect(() => {
     const req = profileSource.QueryRequest()
-    req.setReportType(QueryRequest.ReportType.FLAMEGRAPH)
+    req.setReportType(QueryRequest.ReportType.REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 
     client.query(
       req,

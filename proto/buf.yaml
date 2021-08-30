@@ -1,0 +1,8 @@
+version: v1
+name: buf.build/parca-dev/parca
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/grpc-ecosystem/grpc-gateway
+lint:
+  use:
+    - DEFAULT

@@ -7,13 +7,13 @@ import {
   QueryRangeRequest,
   QueryRangeResponse,
   Label,
-  QueryClient,
+  QueryServiceClient,
   ServiceError
 } from '@parca/client'
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb'
 
 interface ProfileMetricsGraphProps {
-  queryClient: QueryClient
+  queryClient: QueryServiceClient
   queryExpression: string
   profile: ProfileSelection | null
   from: number
@@ -29,7 +29,7 @@ export interface IQueryRangeResult {
 }
 
 export const useQueryRange = (
-  client: QueryClient,
+  client: QueryServiceClient,
   queryExpression: string,
   start: number,
   end: number

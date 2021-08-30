@@ -144,7 +144,7 @@ export class SingleProfileSource implements ProfileSource {
 
   DiffSelection (): ProfileDiffSelection {
     const sel = new ProfileDiffSelection()
-    sel.setMode(ProfileDiffSelection.Mode.SINGLE)
+    sel.setMode(ProfileDiffSelection.Mode.MODE_SINGLE_UNSPECIFIED)
 
     const singleProfile = new SingleProfile()
     const ts = new Timestamp()
@@ -158,7 +158,7 @@ export class SingleProfileSource implements ProfileSource {
 
   QueryRequest (): QueryRequest {
     const req = new QueryRequest()
-    req.setMode(QueryRequest.Mode.SINGLE)
+    req.setMode(QueryRequest.Mode.MODE_SINGLE_UNSPECIFIED)
     const singleQueryRequest = new SingleProfile()
     const ts = new Timestamp()
     ts.fromDate(moment(this.time).toDate())
@@ -216,7 +216,7 @@ export class ProfileDiffSource implements ProfileSource {
 
   QueryRequest (): QueryRequest {
     const req = new QueryRequest()
-    req.setMode(QueryRequest.Mode.DIFF)
+    req.setMode(QueryRequest.Mode.MODE_DIFF)
     const diffQueryRequest = new DiffProfile()
 
     diffQueryRequest.setA(this.a.DiffSelection())
@@ -252,7 +252,7 @@ export class MergedProfileSource implements ProfileSource {
 
   DiffSelection (): ProfileDiffSelection {
     const sel = new ProfileDiffSelection()
-    sel.setMode(ProfileDiffSelection.Mode.MERGE)
+    sel.setMode(ProfileDiffSelection.Mode.MODE_MERGE)
 
     const mergeProfile = new MergeProfile()
 
@@ -273,7 +273,7 @@ export class MergedProfileSource implements ProfileSource {
 
   QueryRequest (): QueryRequest {
     const req = new QueryRequest()
-    req.setMode(QueryRequest.Mode.MERGE)
+    req.setMode(QueryRequest.Mode.MODE_MERGE)
 
     const mergeQueryRequest = new MergeProfile()
 

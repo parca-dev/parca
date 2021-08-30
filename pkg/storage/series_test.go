@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
@@ -579,7 +580,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 	p := ProfileFromPprof(s, pprof1, 0)
 
 	ctx := context.Background()
-	db := OpenDB()
+	db := OpenDB(prometheus.NewRegistry())
 
 	app, err := db.Appender(ctx, labels.Labels{
 		labels.Label{

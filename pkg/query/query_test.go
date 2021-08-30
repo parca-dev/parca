@@ -11,9 +11,9 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
-	"github.com/parca-dev/parca/proto/gen/go/profilestore"
-	pb "github.com/parca-dev/parca/proto/gen/go/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
@@ -206,28 +206,28 @@ func Test_Query_InputValidation(t *testing.T) {
 			req: &pb.QueryRequest{
 				Mode:       invalidMode,
 				Options:    &pb.QueryRequest_Single{Single: &pb.SingleProfile{}},
-				ReportType: *pb.QueryRequest_FLAMEGRAPH.Enum(),
+				ReportType: *pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED.Enum(),
 			},
 		},
 		"Invalid report type": {
 			req: &pb.QueryRequest{
-				Mode:       *pb.QueryRequest_SINGLE.Enum(),
+				Mode:       *pb.QueryRequest_MODE_SINGLE_UNSPECIFIED.Enum(),
 				Options:    &pb.QueryRequest_Single{Single: &pb.SingleProfile{}},
 				ReportType: invalidReportType,
 			},
 		},
 		"option doesn't match mode": {
 			req: &pb.QueryRequest{
-				Mode:       *pb.QueryRequest_SINGLE.Enum(),
+				Mode:       *pb.QueryRequest_MODE_SINGLE_UNSPECIFIED.Enum(),
 				Options:    &pb.QueryRequest_Merge{Merge: &pb.MergeProfile{}},
-				ReportType: *pb.QueryRequest_FLAMEGRAPH.Enum(),
+				ReportType: *pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED.Enum(),
 			},
 		},
 		"option not provided": {
 			req: &pb.QueryRequest{
-				Mode:       *pb.QueryRequest_SINGLE.Enum(),
+				Mode:       *pb.QueryRequest_MODE_SINGLE_UNSPECIFIED.Enum(),
 				Options:    nil,
-				ReportType: *pb.QueryRequest_FLAMEGRAPH.Enum(),
+				ReportType: *pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED.Enum(),
 			},
 		},
 	}
@@ -272,14 +272,14 @@ func Test_Query_Simple(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
-		Mode: pb.QueryRequest_SINGLE,
+		Mode: pb.QueryRequest_MODE_SINGLE_UNSPECIFIED,
 		Options: &pb.QueryRequest_Single{
 			Single: &pb.SingleProfile{
 				Query: "allocs",
 				Time:  timestamppb.New(time.Unix(0, t1)),
 			},
 		},
-		ReportType: pb.QueryRequest_FLAMEGRAPH,
+		ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
 	})
 
 	//out, err := proto.Marshal(resp)
@@ -329,11 +329,11 @@ func Test_Query_Diff(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
-		Mode: pb.QueryRequest_DIFF,
+		Mode: pb.QueryRequest_MODE_DIFF,
 		Options: &pb.QueryRequest_Diff{
 			Diff: &pb.DiffProfile{
 				A: &pb.ProfileDiffSelection{
-					Mode: pb.ProfileDiffSelection_SINGLE,
+					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
 					Options: &pb.ProfileDiffSelection_Single{
 						Single: &pb.SingleProfile{
 							Query: "allocs",
@@ -342,7 +342,7 @@ func Test_Query_Diff(t *testing.T) {
 					},
 				},
 				B: &pb.ProfileDiffSelection{
-					Mode: pb.ProfileDiffSelection_SINGLE,
+					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
 					Options: &pb.ProfileDiffSelection_Single{
 						Single: &pb.SingleProfile{
 							Query: "allocs",
@@ -352,7 +352,7 @@ func Test_Query_Diff(t *testing.T) {
 				},
 			},
 		},
-		ReportType: pb.QueryRequest_FLAMEGRAPH,
+		ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
 	})
 
 	//	out, err := proto.Marshal(resp)
@@ -377,7 +377,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.StopTimer()
 				ctx := context.Background()
-				db := storage.OpenDB()
+				db := storage.OpenDB(prometheus.NewRegistry())
 				q := New(log.NewNopLogger(), db, s)
 
 				app, err := db.Appender(ctx, labels.Labels{
@@ -396,7 +396,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				b.StartTimer()
 
 				_, err = q.Query(ctx, &pb.QueryRequest{
-					Mode: pb.QueryRequest_MERGE,
+					Mode: pb.QueryRequest_MODE_MERGE,
 					Options: &pb.QueryRequest_Merge{
 						Merge: &pb.MergeProfile{
 							Query: "allocs",
@@ -404,7 +404,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 							End:   timestamppb.New(time.Unix(0, int64(time.Millisecond)*int64(n+1))),
 						},
 					},
-					ReportType: pb.QueryRequest_FLAMEGRAPH,
+					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
 				})
 				require.NoError(b, err)
 			}
@@ -424,7 +424,7 @@ func Test_Query_Merge(t *testing.T) {
 
 	for k := 0.; k <= 10; k++ {
 		ctx := context.Background()
-		db := storage.OpenDB()
+		db := storage.OpenDB(prometheus.NewRegistry())
 		q := New(log.NewNopLogger(), db, s)
 
 		app, err := db.Appender(ctx, labels.Labels{
@@ -444,7 +444,7 @@ func Test_Query_Merge(t *testing.T) {
 			}
 
 			_, err = q.Query(ctx, &pb.QueryRequest{
-				Mode: pb.QueryRequest_MERGE,
+				Mode: pb.QueryRequest_MODE_MERGE,
 				Options: &pb.QueryRequest_Merge{
 					Merge: &pb.MergeProfile{
 						Query: "allocs",
@@ -452,7 +452,7 @@ func Test_Query_Merge(t *testing.T) {
 						End:   timestamppb.New(time.Unix(0, int64(time.Millisecond)*int64(n+1))),
 					},
 				},
-				ReportType: pb.QueryRequest_FLAMEGRAPH,
+				ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
 			})
 			require.NoError(t, err)
 		})

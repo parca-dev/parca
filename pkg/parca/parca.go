@@ -12,6 +12,9 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/profilestore"
@@ -19,9 +22,6 @@ import (
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/storage"
-	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
-	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
-	querypb "github.com/parca-dev/parca/proto/gen/go/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"google.golang.org/grpc"
@@ -72,19 +72,19 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				flags.Port,
 				flags.CORSAllowedOrigins,
 				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-					debuginfopb.RegisterDebugInfoServer(srv, d)
-					profilestorepb.RegisterProfileStoreServer(srv, s)
-					querypb.RegisterQueryServer(srv, q)
+					debuginfopb.RegisterDebugInfoServiceServer(srv, d)
+					profilestorepb.RegisterProfileStoreServiceServer(srv, s)
+					querypb.RegisterQueryServiceServer(srv, q)
 
-					if err := debuginfopb.RegisterDebugInfoHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+					if err := debuginfopb.RegisterDebugInfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 						return err
 					}
 
-					if err := profilestorepb.RegisterProfileStoreHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+					if err := profilestorepb.RegisterProfileStoreServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 						return err
 					}
 
-					if err := querypb.RegisterQueryHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+					if err := querypb.RegisterQueryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 						return err
 					}
 

@@ -1,0 +1,146 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "parca/profilestore/v1alpha1/profilestore.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "ProfileStoreService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/profiles/writeraw": {
+      "post": {
+        "operationId": "ProfileStoreService_WriteRaw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1WriteRawResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1WriteRawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProfileStoreService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "profilestorev1alpha1Label": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1alpha1LabelSet": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profilestorev1alpha1Label"
+          }
+        }
+      }
+    },
+    "v1alpha1RawProfileSeries": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "$ref": "#/definitions/v1alpha1LabelSet"
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1RawSample"
+          }
+        }
+      }
+    },
+    "v1alpha1RawSample": {
+      "type": "object",
+      "properties": {
+        "rawProfile": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "v1alpha1WriteRawRequest": {
+      "type": "object",
+      "properties": {
+        "tenant": {
+          "type": "string"
+        },
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1RawProfileSeries"
+          }
+        }
+      }
+    },
+    "v1alpha1WriteRawResponse": {
+      "type": "object"
+    }
+  }
+}

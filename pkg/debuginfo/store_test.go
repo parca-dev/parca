@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/go-kit/kit/log"
-	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
@@ -51,7 +51,7 @@ func TestStore(t *testing.T) {
 	}
 	defer lis.Close()
 	grpcServer := grpc.NewServer()
-	debuginfopb.RegisterDebugInfoServer(grpcServer, s)
+	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, s)
 	go grpcServer.Serve(lis)
 
 	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())

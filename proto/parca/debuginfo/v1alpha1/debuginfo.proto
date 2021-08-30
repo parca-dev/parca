@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package parca.debuginfo.v1alpha1;
+
+service DebugInfoService {
+  rpc Exists(ExistsRequest) returns (ExistsResponse) {}
+  rpc Upload(stream UploadRequest) returns (UploadResponse) {}
+}
+
+message ExistsRequest {
+  string build_id = 1;
+}
+
+message ExistsResponse {
+  bool exists = 1;
+}
+
+message UploadRequest {
+  oneof data {
+      UploadInfo info = 1;
+      bytes chunk_data = 2;
+    }
+}
+
+message UploadInfo {
+  string build_id = 1;
+}
+
+message UploadResponse {
+  string build_id = 1;
+  uint64 size = 2;
+}

@@ -1,0 +1,630 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "parca/query/v1alpha1/query.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "QueryService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/profiles/labels": {
+      "get": {
+        "operationId": "QueryService_Labels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1LabelsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "match",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/profiles/labels/{labelName}/values": {
+      "get": {
+        "operationId": "QueryService_Values",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ValuesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "labelName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "match",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/profiles/query": {
+      "get": {
+        "operationId": "QueryService_Query",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1QueryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "MODE_SINGLE_UNSPECIFIED",
+              "MODE_DIFF",
+              "MODE_MERGE"
+            ],
+            "default": "MODE_SINGLE_UNSPECIFIED"
+          },
+          {
+            "name": "diff.a.mode",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "MODE_SINGLE_UNSPECIFIED",
+              "MODE_MERGE"
+            ],
+            "default": "MODE_SINGLE_UNSPECIFIED"
+          },
+          {
+            "name": "diff.a.merge.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.a.merge.start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.merge.end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.single.time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.single.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.b.mode",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "MODE_SINGLE_UNSPECIFIED",
+              "MODE_MERGE"
+            ],
+            "default": "MODE_SINGLE_UNSPECIFIED"
+          },
+          {
+            "name": "diff.b.merge.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.b.merge.start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.merge.end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.single.time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.single.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "merge.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "merge.start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "merge.end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "single.time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "single.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
+            ],
+            "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/profiles/query_range": {
+      "get": {
+        "operationId": "QueryService_QueryRange",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1QueryRangeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
+    "/profiles/series": {
+      "get": {
+        "operationId": "QueryService_Series",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1SeriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "match",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "QueryRequestReportType": {
+      "type": "string",
+      "enum": [
+        "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
+      ],
+      "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
+    },
+    "profilestorev1alpha1Label": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1alpha1DiffProfile": {
+      "type": "object",
+      "properties": {
+        "a": {
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelection"
+        },
+        "b": {
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelection"
+        }
+      }
+    },
+    "v1alpha1Flamegraph": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "$ref": "#/definitions/v1alpha1FlamegraphNode"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "unit": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1FlamegraphNode": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64"
+        },
+        "diff": {
+          "type": "string",
+          "format": "int64"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1FlamegraphNode"
+          }
+        }
+      }
+    },
+    "v1alpha1LabelSet": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profilestorev1alpha1Label"
+          }
+        }
+      }
+    },
+    "v1alpha1LabelsResponse": {
+      "type": "object",
+      "properties": {
+        "labelNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1alpha1MergeProfile": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1alpha1MetricsSample": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "value": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1alpha1MetricsSeries": {
+      "type": "object",
+      "properties": {
+        "labelset": {
+          "$ref": "#/definitions/v1alpha1LabelSet"
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MetricsSample"
+          }
+        }
+      }
+    },
+    "v1alpha1ProfileDiffSelection": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelectionMode"
+        },
+        "merge": {
+          "$ref": "#/definitions/v1alpha1MergeProfile"
+        },
+        "single": {
+          "$ref": "#/definitions/v1alpha1SingleProfile"
+        }
+      }
+    },
+    "v1alpha1ProfileDiffSelectionMode": {
+      "type": "string",
+      "enum": [
+        "MODE_SINGLE_UNSPECIFIED",
+        "MODE_MERGE"
+      ],
+      "default": "MODE_SINGLE_UNSPECIFIED"
+    },
+    "v1alpha1QueryRangeResponse": {
+      "type": "object",
+      "properties": {
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MetricsSeries"
+          }
+        }
+      }
+    },
+    "v1alpha1QueryRequestMode": {
+      "type": "string",
+      "enum": [
+        "MODE_SINGLE_UNSPECIFIED",
+        "MODE_DIFF",
+        "MODE_MERGE"
+      ],
+      "default": "MODE_SINGLE_UNSPECIFIED"
+    },
+    "v1alpha1QueryResponse": {
+      "type": "object",
+      "properties": {
+        "flamegraph": {
+          "$ref": "#/definitions/v1alpha1Flamegraph"
+        }
+      }
+    },
+    "v1alpha1SeriesResponse": {
+      "type": "object"
+    },
+    "v1alpha1SingleProfile": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "query": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1ValuesResponse": {
+      "type": "object",
+      "properties": {
+        "labelValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

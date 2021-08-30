@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
-	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 )
 
 type ProfileStore struct {
@@ -22,7 +22,7 @@ type ProfileStore struct {
 	metaStore storage.ProfileMetaStore
 }
 
-var _ profilestorepb.ProfileStoreServer = &ProfileStore{}
+var _ profilestorepb.ProfileStoreServiceServer = &ProfileStore{}
 
 func NewProfileStore(logger log.Logger, app storage.Appendable, metaStore storage.ProfileMetaStore) *ProfileStore {
 	return &ProfileStore{

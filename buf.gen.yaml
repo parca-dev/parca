@@ -1,10 +1,16 @@
-version: v1beta1
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/parca-dev/parca/gen/proto/go
+    except:
+      - buf.build/googleapis/googleapis
 plugins:
   - name: go
-    out: proto/gen/go
+    out: gen/proto/go
     opt: paths=source_relative
   - name: go-grpc
-    out: proto/gen/go
+    out: gen/proto/go
     opt:
       - paths=source_relative
       - require_unimplemented_servers=false
@@ -18,9 +24,9 @@ plugins:
     opt:
       - service=grpc-web
   - name: grpc-gateway
-    out: proto/gen/go
+    out: gen/proto/go
     opt:
       - paths=source_relative
       - generate_unbound_methods=true
   - name: openapiv2
-    out: proto/gen/swagger
+    out: gen/proto/swagger

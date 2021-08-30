@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
-	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
-	pb "github.com/parca-dev/parca/proto/gen/go/query"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -117,11 +117,11 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 	}
 
 	switch req.Mode {
-	case pb.QueryRequest_SINGLE:
+	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
 		return q.singleRequest(ctx, req.GetSingle())
-	case pb.QueryRequest_MERGE:
+	case pb.QueryRequest_MODE_MERGE:
 		return q.mergeRequest(ctx, req.GetMerge())
-	case pb.QueryRequest_DIFF:
+	case pb.QueryRequest_MODE_DIFF:
 		return q.diffRequest(ctx, req.GetDiff())
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
@@ -153,7 +153,7 @@ func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile) (*pb.Que
 		return nil, err
 	}
 
-	return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
+	return q.renderReport(p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 }
 
 func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.InstantProfile, error) {
@@ -179,7 +179,7 @@ func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.Query
 		return nil, err
 	}
 
-	return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
+	return q.renderReport(p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 }
 
 func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryResponse, error) {
@@ -202,7 +202,7 @@ func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryRe
 		return nil, status.Errorf(codes.InvalidArgument, "failed to diff: %v", err.Error())
 	}
 
-	return q.renderReport(p, pb.QueryRequest_FLAMEGRAPH)
+	return q.renderReport(p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 }
 
 func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (storage.InstantProfile, error) {
@@ -211,9 +211,9 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 		err error
 	)
 	switch s.Mode {
-	case pb.ProfileDiffSelection_SINGLE:
+	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		p, err = q.selectSingle(ctx, s.GetSingle())
-	case pb.ProfileDiffSelection_MERGE:
+	case pb.ProfileDiffSelection_MODE_MERGE:
 		p, err = q.selectMerge(ctx, s.GetMerge())
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
@@ -224,7 +224,7 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 
 func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	switch typ {
-	case pb.QueryRequest_FLAMEGRAPH:
+	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
 		fg, err := storage.GenerateFlamegraph(q.metaStore, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())

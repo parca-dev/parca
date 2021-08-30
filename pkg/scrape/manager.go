@@ -20,7 +20,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	profilepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
+	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 
@@ -28,7 +28,7 @@ import (
 )
 
 // NewManager is the Manager constructor
-func NewManager(logger log.Logger, reg prometheus.Registerer, store profilepb.ProfileStoreServer, scrapeConfigs []*config.ScrapeConfig) *Manager {
+func NewManager(logger log.Logger, reg prometheus.Registerer, store profilepb.ProfileStoreServiceServer, scrapeConfigs []*config.ScrapeConfig) *Manager {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -120,7 +120,7 @@ func NewManager(logger log.Logger, reg prometheus.Registerer, store profilepb.Pr
 // when receiving new target groups form the discovery manager.
 type Manager struct {
 	logger    log.Logger
-	store     profilepb.ProfileStoreServer
+	store     profilepb.ProfileStoreServiceServer
 	graceShut chan struct{}
 
 	mtxScrape     sync.Mutex // Guards the fields below.
