@@ -66,18 +66,12 @@ func TestMergeProfileSimple(t *testing.T) {
 	require.Equal(t, []sample{
 		{
 			id: uint64(0),
-			flat: []*ProfileTreeValueNode{{
-				Value: int64(0),
-			}},
 			cumulative: []*ProfileTreeValueNode{{
 				Value: int64(3),
 			}},
 		},
 		{
 			id: uint64(1),
-			flat: []*ProfileTreeValueNode{{
-				Value: int64(0),
-			}},
 			cumulative: []*ProfileTreeValueNode{{
 				Value: int64(3),
 			}},
@@ -165,18 +159,12 @@ func TestMergeProfileDeep(t *testing.T) {
 	require.Equal(t, []sample{
 		{
 			id: uint64(0),
-			flat: []*ProfileTreeValueNode{{
-				Value: int64(0),
-			}},
 			cumulative: []*ProfileTreeValueNode{{
 				Value: int64(15),
 			}},
 		},
 		{
 			id: uint64(2),
-			flat: []*ProfileTreeValueNode{{
-				Value: int64(0),
-			}},
 			cumulative: []*ProfileTreeValueNode{{
 				Value: int64(9),
 			}},
@@ -322,18 +310,12 @@ func TestMergeProfile(t *testing.T) {
 	require.Equal(t, []sample{
 		{
 			id: uint64(0),
-			flat: []*ProfileTreeValueNode{{
-				Value: int64(0),
-			}},
 			cumulative: []*ProfileTreeValueNode{{
 				Value: int64(21),
 			}},
 		},
 		{
 			id: uint64(1),
-			flat: []*ProfileTreeValueNode{{
-				Value: int64(0),
-			}},
 			cumulative: []*ProfileTreeValueNode{{
 				Value: int64(12),
 			}},
@@ -349,9 +331,6 @@ func TestMergeProfile(t *testing.T) {
 		},
 		{
 			id: uint64(3),
-			flat: []*ProfileTreeValueNode{{
-				Value: int64(0),
-			}},
 			cumulative: []*ProfileTreeValueNode{{
 				Value: int64(8),
 			}},
@@ -389,9 +368,6 @@ func TestMergeProfile(t *testing.T) {
 		},
 		{
 			id: uint64(2),
-			flat: []*ProfileTreeValueNode{{
-				Value: int64(0),
-			}},
 			cumulative: []*ProfileTreeValueNode{{
 				Value: int64(9),
 			}},

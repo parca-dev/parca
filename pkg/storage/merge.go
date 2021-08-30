@@ -1,7 +1,12 @@
 package storage
 
 import (
+	"context"
 	"errors"
+	"runtime"
+
+	"go.uber.org/atomic"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -17,54 +22,186 @@ type MergeProfile struct {
 }
 
 func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
-	h := len(profiles) / 2
+	profileCh := make(chan InstantProfile)
 
-	var (
-		firstHalfMerge  InstantProfile
-		secondHalfMerge InstantProfile
-		err             error
-	)
-
-	firstHalf := profiles[:h]
-	secondHalf := profiles[h:]
-
-	if len(firstHalf) == 1 {
-		firstHalfMerge = firstHalf[0]
-	} else if len(firstHalf) == 0 {
-		// intentionally do nothing
-	} else {
-		firstHalfMerge, err = MergeProfiles(firstHalf...)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if len(secondHalf) == 1 {
-		secondHalfMerge = secondHalf[0]
-	} else if len(secondHalf) == 0 {
-		// intentionally do nothing
-	} else {
-		secondHalfMerge, err = MergeProfiles(secondHalf...)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if firstHalfMerge == nil {
-		return secondHalfMerge, nil
-	}
-
-	if secondHalfMerge == nil {
-		return firstHalfMerge, nil
-	}
-
-	return NewMergeProfile(
-		firstHalfMerge,
-		secondHalfMerge,
+	return MergeProfilesConcurrent(
+		context.Background(),
+		profileCh,
+		runtime.NumCPU(),
+		func() error {
+			for _, p := range profiles {
+				profileCh <- p
+			}
+			close(profileCh)
+			return nil
+		},
 	)
 }
 
-func NewMergeProfile(a, b InstantProfile) (*MergeProfile, error) {
+func MergeSeriesSetProfiles(ctx context.Context, set SeriesSet) (InstantProfile, error) {
+	profileCh := make(chan InstantProfile)
+
+	return MergeProfilesConcurrent(
+		ctx,
+		profileCh,
+		runtime.NumCPU(),
+		func() error {
+			for {
+				select {
+				case <-ctx.Done():
+					break
+				default:
+				}
+				if !set.Next() {
+					break
+				}
+				series := set.At()
+				i := series.Iterator()
+				for i.Next() {
+					// Have to copy as profile pointer is not stable for more than the
+					// current iteration.
+					profileCh <- CopyInstantProfile(i.At())
+				}
+				if i.Err() != nil {
+					return i.Err()
+				}
+			}
+			close(profileCh)
+			return nil
+		},
+	)
+}
+
+func MergeProfilesConcurrent(
+	ctx context.Context,
+	profileCh chan InstantProfile,
+	concurrency int,
+	producerFunc func() error,
+) (InstantProfile, error) {
+	var res InstantProfile
+
+	resCh := make(chan InstantProfile, concurrency)
+	pairCh := make(chan [2]InstantProfile)
+
+	var mergesPerformed atomic.Uint32
+	var profilesRead atomic.Uint32
+
+	g := &errgroup.Group{}
+
+	g.Go(producerFunc)
+
+	g.Go(func() error {
+		var first InstantProfile
+		select {
+		case first = <-profileCh:
+			if first == nil {
+				close(pairCh)
+				return nil
+			}
+			profilesRead.Inc()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
+		var second InstantProfile
+		select {
+		case second = <-profileCh:
+			if second == nil {
+				res = first
+				close(pairCh)
+				return nil
+			}
+			profilesRead.Inc()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
+		pairCh <- [2]InstantProfile{first, second}
+
+		for {
+			first = nil
+			second = nil
+			select {
+			case first = <-resCh:
+				mergesPerformed.Inc()
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+
+			select {
+			case second = <-profileCh:
+				if second != nil {
+					profilesRead.Inc()
+				}
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+
+			if second == nil {
+				read := profilesRead.Load()
+				merged := mergesPerformed.Load()
+				// For any N inputs we need exactly N-1 merge operations. So we
+				// know we are done when we have done that many operations.
+				if read == merged+1 {
+					res = first
+					close(pairCh)
+					return nil
+				}
+				select {
+				case second = <-resCh:
+					if second != nil {
+						mergesPerformed.Inc()
+					}
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+
+			pairCh <- [2]InstantProfile{first, second}
+		}
+	})
+
+	for i := 0; i < concurrency; i++ {
+		g.Go(func() error {
+			for {
+				select {
+				case <-ctx.Done():
+					return nil
+				case pair := <-pairCh:
+					if pair == [2]InstantProfile{nil, nil} {
+						return nil
+					}
+
+					m, err := NewMergeProfile(pair[0], pair[1])
+					if err != nil {
+						return err
+					}
+
+					//fmt.Println("merging")
+					p := CopyInstantProfile(m)
+					//fmt.Println("merged")
+
+					resCh <- p
+				}
+			}
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func NewMergeProfile(a, b InstantProfile) (InstantProfile, error) {
+	if a != nil && b == nil {
+		return a, nil
+	}
+	if a == nil && b != nil {
+		return b, nil
+	}
+
 	metaA := a.ProfileMeta()
 	metaB := b.ProfileMeta()
 
@@ -421,15 +558,19 @@ func (i *MergeProfileTreeIterator) StepUp() {
 }
 
 func MergeInstantProfileTreeNodes(a, b InstantProfileTreeNode) InstantProfileTreeNode {
-	flatValues := []*ProfileTreeValueNode{{}}
+	var flatValues []*ProfileTreeValueNode
 	flatA := a.FlatValues()
 	if len(flatA) > 0 {
-		flatValues[0].Value += flatA[0].Value
+		flatValues = append(flatValues, &ProfileTreeValueNode{Value: flatA[0].Value})
 	}
 
 	flatB := b.FlatValues()
 	if len(flatB) > 0 {
-		flatValues[0].Value += flatB[0].Value
+		if len(flatValues) > 0 {
+			flatValues[0].Value += flatB[0].Value
+		} else {
+			flatValues = append(flatValues, &ProfileTreeValueNode{Value: flatB[0].Value})
+		}
 	}
 
 	cumulativeValues := []*ProfileTreeValueNode{{}}

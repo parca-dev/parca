@@ -161,6 +161,10 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 		if seriesMinTime > maxt {
 			continue
 		}
+		if hints != nil && hints.Merge {
+			ss = append(ss, &MemMergeSeries{MemSeries: s, mint: mint, maxt: maxt})
+			continue
+		}
 		ss = append(ss, s)
 	}
 

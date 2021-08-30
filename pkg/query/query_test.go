@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"testing"
@@ -357,4 +358,102 @@ func Test_Query_Diff(t *testing.T) {
 	//	require.NoError(t, err)
 	//	err = ioutil.WriteFile("../../ui/packages/shared/profile/src/testdata/fg-diff.pb", out, 0644)
 	//	require.NoError(t, err)
+}
+
+func Benchmark_Query_Merge(b *testing.B) {
+	s := storage.NewInMemoryProfileMetaStore()
+	f, err := os.Open("../storage/testdata/profile1.pb.gz")
+	require.NoError(b, err)
+	p1, err := profile.Parse(f)
+	require.NoError(b, err)
+	require.NoError(b, f.Close())
+
+	p := storage.ProfileFromPprof(s, p1, 0)
+
+	for k := 0.; k <= 10; k++ {
+		n := int(math.Pow(2, k))
+		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				ctx := context.Background()
+				db := storage.OpenDB()
+				q := New(log.NewNopLogger(), db, s)
+
+				app, err := db.Appender(ctx, labels.Labels{
+					labels.Label{
+						Name:  "__name__",
+						Value: "allocs",
+					},
+				})
+
+				require.NoError(b, err)
+				for j := 0; j < n; j++ {
+					p.Meta.Timestamp = int64(j + 1)
+					err = app.Append(p)
+					require.NoError(b, err)
+				}
+				b.StartTimer()
+
+				_, err = q.Query(ctx, &pb.QueryRequest{
+					Mode: pb.QueryRequest_MERGE,
+					Options: &pb.QueryRequest_Merge{
+						Merge: &pb.MergeProfile{
+							Query: "allocs",
+							Start: timestamppb.New(time.Unix(0, 0)),
+							End:   timestamppb.New(time.Unix(0, int64(time.Millisecond)*int64(n+1))),
+						},
+					},
+					ReportType: pb.QueryRequest_FLAMEGRAPH,
+				})
+				require.NoError(b, err)
+			}
+		})
+	}
+}
+
+func Test_Query_Merge(t *testing.T) {
+	s := storage.NewInMemoryProfileMetaStore()
+	f, err := os.Open("../storage/testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	p := storage.ProfileFromPprof(s, p1, 0)
+
+	for k := 0.; k <= 10; k++ {
+		ctx := context.Background()
+		db := storage.OpenDB()
+		q := New(log.NewNopLogger(), db, s)
+
+		app, err := db.Appender(ctx, labels.Labels{
+			labels.Label{
+				Name:  "__name__",
+				Value: "allocs",
+			},
+		})
+
+		require.NoError(t, err)
+		n := int(math.Pow(2, k))
+		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
+			for j := 0; j < n; j++ {
+				p.Meta.Timestamp = int64(j + 1)
+				err = app.Append(p)
+				require.NoError(t, err)
+			}
+
+			_, err = q.Query(ctx, &pb.QueryRequest{
+				Mode: pb.QueryRequest_MERGE,
+				Options: &pb.QueryRequest_Merge{
+					Merge: &pb.MergeProfile{
+						Query: "allocs",
+						Start: timestamppb.New(time.Unix(0, 0)),
+						End:   timestamppb.New(time.Unix(0, int64(time.Millisecond)*int64(n+1))),
+					},
+				},
+				ReportType: pb.QueryRequest_FLAMEGRAPH,
+			})
+			require.NoError(t, err)
+		})
+	}
 }

@@ -161,3 +161,13 @@ func TestScaledInstantProfile(t *testing.T) {
 			}}},
 	}, scaledTree)
 }
+
+func TestSliceProfileSeriesIterator(t *testing.T) {
+	it := &SliceProfileSeriesIterator{
+		i:       -1,
+		samples: []InstantProfile{&Profile{}},
+	}
+
+	require.True(t, it.Next())
+	require.False(t, it.Next())
+}

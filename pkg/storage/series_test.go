@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -508,4 +509,211 @@ func TestKeysMap(t *testing.T) {
 	if _, ok := m[ProfileTreeValueNodeKey{location: "0", labels: `"foo"["baz"]`}]; ok {
 		t.Fail()
 	}
+}
+
+func TestGetIndexRange(t *testing.T) {
+	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
+
+	ts, startIndex, endIndex, err := getIndexRange(c.Iterator(nil), 1, 9)
+	require.NoError(t, err)
+	require.Equal(t, int64(2), ts)
+	require.Equal(t, 0, startIndex)
+	require.Equal(t, 5, endIndex)
+
+	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 2, 9)
+	require.NoError(t, err)
+	require.Equal(t, int64(2), ts)
+	require.Equal(t, 0, startIndex)
+	require.Equal(t, 5, endIndex)
+
+	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 6)
+	require.NoError(t, err)
+	require.Equal(t, int64(4), ts)
+	require.Equal(t, 1, startIndex)
+	require.Equal(t, 3, endIndex)
+
+	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 7)
+	require.NoError(t, err)
+	require.Equal(t, int64(4), ts)
+	require.Equal(t, 1, startIndex)
+	require.Equal(t, 4, endIndex)
+
+	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 8)
+	require.NoError(t, err)
+	require.Equal(t, int64(4), ts)
+	require.Equal(t, 1, startIndex)
+	require.Equal(t, 5, endIndex)
+
+	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 9)
+	require.NoError(t, err)
+	require.Equal(t, int64(4), ts)
+	require.Equal(t, 1, startIndex)
+	require.Equal(t, 5, endIndex)
+}
+
+func TestIteratorRangeSum(t *testing.T) {
+	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
+	_, startIndex, endIndex, err := getIndexRange(c.Iterator(nil), 3, 6)
+	require.NoError(t, err)
+
+	sum, err := iteratorRangeSum(c.Iterator(nil), startIndex, endIndex)
+	require.NoError(t, err)
+	require.Equal(t, int64(10), sum)
+}
+
+func TestIteratorRangeMax(t *testing.T) {
+	c := chunkenc.FromValuesDelta(10, 4, 12, 7, 8)
+	max, err := iteratorRangeMax(c.Iterator(nil), 1, 5)
+	require.NoError(t, err)
+	require.Equal(t, int64(12), max)
+}
+
+func TestMergeMemSeriesConsistency(t *testing.T) {
+	s := NewInMemoryProfileMetaStore()
+	f, err := os.Open("./testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	pprof1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	p := ProfileFromPprof(s, pprof1, 0)
+
+	ctx := context.Background()
+	db := OpenDB()
+
+	app, err := db.Appender(ctx, labels.Labels{
+		labels.Label{
+			Name:  "__name__",
+			Value: "allocs",
+		},
+	})
+	require.NoError(t, err)
+
+	n := 1024
+	for j := 0; j < n; j++ {
+		p.Meta.Timestamp = int64(j + 1)
+		err = app.Append(p)
+		require.NoError(t, err)
+	}
+
+	set := db.Querier(
+		ctx,
+		int64(0),
+		int64(n),
+	).Select(nil, &labels.Matcher{
+		Type:  labels.MatchEqual,
+		Name:  "__name__",
+		Value: "allocs",
+	})
+
+	p1, err := MergeSeriesSetProfiles(ctx, set)
+	require.NoError(t, err)
+
+	set = db.Querier(
+		ctx,
+		int64(0),
+		int64(n),
+	).Select(&SelectHints{
+		Start: int64(0),
+		End:   int64(n),
+		Merge: true,
+	}, &labels.Matcher{
+		Type:  labels.MatchEqual,
+		Name:  "__name__",
+		Value: "allocs",
+	})
+	p2, err := MergeSeriesSetProfiles(ctx, set)
+	require.NoError(t, err)
+
+	require.Equal(t, p1, p2)
+}
+
+func TestMemMergeSeriesTree(t *testing.T) {
+	var (
+		label    = map[string][]string{"foo": {"bar", "baz"}}
+		numLabel = map[string][]int64{"foo": {1, 2}}
+		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
+	)
+
+	s11 := makeSample(1, []uint64{2, 1})
+
+	s12 := makeSample(2, []uint64{4, 1})
+	s12.Label = label
+	s12.NumLabel = numLabel
+	s12.NumUnit = numUnit
+
+	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
+
+	pt1 := NewProfileTree()
+	pt1.Insert(s11)
+	pt1.Insert(s12)
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	err = app.Append(&Profile{
+		Tree: pt1,
+		Meta: InstantProfileMeta{
+			Timestamp: 1,
+		},
+	})
+	require.NoError(t, err)
+	err = app.Append(&Profile{
+		Tree: pt1,
+		Meta: InstantProfileMeta{
+			Timestamp: 2,
+		},
+	})
+	require.NoError(t, err)
+
+	ms := &MemMergeSeries{
+		MemSeries: s,
+		mint:      0,
+		maxt:      2,
+	}
+	it := ms.Iterator()
+	require.True(t, it.Next())
+	p := CopyInstantProfile(it.At())
+
+	require.Equal(t, &Profile{
+		Meta: InstantProfileMeta{
+			Timestamp: 1,
+		},
+		Tree: &ProfileTree{
+			Roots: &ProfileTreeNode{
+				cumulativeValues: []*ProfileTreeValueNode{{
+					Value: 6,
+				}},
+				Children: []*ProfileTreeNode{{
+					locationID: 1,
+					cumulativeValues: []*ProfileTreeValueNode{{
+						Value: 6,
+					}},
+					Children: []*ProfileTreeNode{{
+						locationID: 2,
+						flatValues: []*ProfileTreeValueNode{{
+							Value: 2,
+						}},
+						cumulativeValues: []*ProfileTreeValueNode{{
+							Value: 2,
+						}},
+					}, {
+						locationID: 4,
+						flatValues: []*ProfileTreeValueNode{{
+							Value:    4,
+							Label:    label,
+							NumLabel: numLabel,
+							NumUnit:  numUnit,
+						}},
+						cumulativeValues: []*ProfileTreeValueNode{{
+							Value:    4,
+							Label:    label,
+							NumLabel: numLabel,
+							NumUnit:  numUnit,
+						}},
+					}},
+				}},
+			},
+		},
+	}, p)
 }
