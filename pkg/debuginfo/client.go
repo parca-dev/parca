@@ -19,22 +19,22 @@ import (
 	"fmt"
 	"io"
 
-	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"google.golang.org/grpc"
 )
 
 type DebugInfoClient struct {
-	c debuginfopb.DebugInfoClient
+	c debuginfopb.DebugInfoServiceClient
 }
 
 func NewDebugInfoClient(conn *grpc.ClientConn) *DebugInfoClient {
 	return &DebugInfoClient{
-		c: debuginfopb.NewDebugInfoClient(conn),
+		c: debuginfopb.NewDebugInfoServiceClient(conn),
 	}
 }
 
 func (c *DebugInfoClient) Exists(ctx context.Context, buildId string) (bool, error) {
-	res, err := c.c.Exists(ctx, &debuginfopb.DebugInfoExistsRequest{
+	res, err := c.c.Exists(ctx, &debuginfopb.ExistsRequest{
 		BuildId: buildId,
 	})
 	if err != nil {
@@ -50,9 +50,9 @@ func (c *DebugInfoClient) Upload(ctx context.Context, buildId string, r io.Reade
 		return 0, fmt.Errorf("initiate upload: %w", err)
 	}
 
-	err = stream.Send(&debuginfopb.DebugInfoUploadRequest{
-		Data: &debuginfopb.DebugInfoUploadRequest_Info{
-			Info: &debuginfopb.DebugInfoUploadInfo{
+	err = stream.Send(&debuginfopb.UploadRequest{
+		Data: &debuginfopb.UploadRequest_Info{
+			Info: &debuginfopb.UploadInfo{
 				BuildId: buildId,
 			},
 		},
@@ -74,8 +74,8 @@ func (c *DebugInfoClient) Upload(ctx context.Context, buildId string, r io.Reade
 			return 0, fmt.Errorf("read next chunk (%d bytes sent so far): %w", bytesSent, err)
 		}
 
-		err = stream.Send(&debuginfopb.DebugInfoUploadRequest{
-			Data: &debuginfopb.DebugInfoUploadRequest_ChunkData{
+		err = stream.Send(&debuginfopb.UploadRequest{
+			Data: &debuginfopb.UploadRequest_ChunkData{
 				ChunkData: buffer[:n],
 			},
 		})

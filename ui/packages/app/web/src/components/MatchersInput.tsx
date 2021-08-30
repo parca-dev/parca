@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { FormControl, ListGroup, Overlay } from 'react-bootstrap'
 import { Query } from '@parca/parser'
-import { LabelsResponse, LabelsRequest, QueryClient, ServiceError } from '@parca/client'
+import { LabelsResponse, LabelsRequest, QueryServiceClient, ServiceError } from '@parca/client'
 
 interface MatchersInputProps {
-  queryClient: QueryClient
+  queryClient: QueryServiceClient
   setMatchersString: (string) => void
   runQuery: () => void
   currentQuery: Query
@@ -15,7 +15,7 @@ export interface ILabelNamesResult {
   error: ServiceError|null
 }
 
-export const useLabelNames = (client: QueryClient): ILabelNamesResult => {
+export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => {
   const [result, setResult] = useState<ILabelNamesResult>({
     response: null,
     error: null

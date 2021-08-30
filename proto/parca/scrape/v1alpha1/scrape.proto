@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package parca.scrape.v1alpha1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "parca/profilestore/v1alpha1/profilestore.proto";
+
+service ScrapeService {
+    rpc Targets(TargetsRequest) returns (TargetsResponse) {
+        option (google.api.http) = {
+            get: "/targets"
+        };
+    }
+}
+
+message TargetsRequest{
+    enum State {
+        STATE_ANY_UNSPECIFIED = 0;
+        STATE_ACTIVE  = 1;
+        STATE_DROPPED = 2;
+    }
+
+    State state = 1;
+}
+
+message TargetsResponse{
+    map<string,Targets> targets = 1;
+}
+
+message Targets{
+    repeated Target targets = 1;
+}
+
+message Target{
+    parca.profilestore.v1alpha1.LabelSet discovered_labels    = 1;
+    parca.profilestore.v1alpha1.LabelSet labels               = 2;
+    string                      last_error           = 3;
+    google.protobuf.Timestamp   last_scrape          = 4;
+    google.protobuf.Duration    last_scrape_duration = 5;
+    string                      url                  = 6;
+
+    enum Health {
+        HEALTH_UNKNOWN_UNSPECIFIED = 0;
+        HEALTH_GOOD    = 1;
+        HEALTH_BAD     = 2;
+    }
+    Health health = 7;
+}

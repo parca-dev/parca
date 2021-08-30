@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"google.golang.org/grpc/codes"
@@ -56,7 +56,7 @@ func validateId(id string) error {
 	return nil
 }
 
-func (s *Store) Exists(ctx context.Context, req *debuginfopb.DebugInfoExistsRequest) (*debuginfopb.DebugInfoExistsResponse, error) {
+func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
 	err := validateId(req.BuildId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -74,12 +74,12 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.DebugInfoExistsRequ
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &debuginfopb.DebugInfoExistsResponse{
+	return &debuginfopb.ExistsResponse{
 		Exists: found,
 	}, nil
 }
 
-func (s *Store) Upload(stream debuginfopb.DebugInfo_UploadServer) error {
+func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	req, err := stream.Recv()
 	if err != nil {
 		msg := "failed to receive upload info"
@@ -102,14 +102,14 @@ func (s *Store) Upload(stream debuginfopb.DebugInfo_UploadServer) error {
 		return status.Errorf(codes.Unknown, msg)
 	}
 
-	return stream.SendAndClose(&debuginfopb.DebugInfoUploadResponse{
+	return stream.SendAndClose(&debuginfopb.UploadResponse{
 		BuildId: buildId,
 		Size:    r.size,
 	})
 }
 
 type UploadReader struct {
-	stream debuginfopb.DebugInfo_UploadServer
+	stream debuginfopb.DebugInfoService_UploadServer
 	cur    io.Reader
 	size   uint64
 }

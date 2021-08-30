@@ -1,0 +1,177 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "parca/scrape/v1alpha1/scrape.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "ScrapeService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/targets": {
+      "get": {
+        "operationId": "ScrapeService_Targets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1TargetsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STATE_ANY_UNSPECIFIED",
+              "STATE_ACTIVE",
+              "STATE_DROPPED"
+            ],
+            "default": "STATE_ANY_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "ScrapeService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "TargetHealth": {
+      "type": "string",
+      "enum": [
+        "HEALTH_UNKNOWN_UNSPECIFIED",
+        "HEALTH_GOOD",
+        "HEALTH_BAD"
+      ],
+      "default": "HEALTH_UNKNOWN_UNSPECIFIED"
+    },
+    "TargetsRequestState": {
+      "type": "string",
+      "enum": [
+        "STATE_ANY_UNSPECIFIED",
+        "STATE_ACTIVE",
+        "STATE_DROPPED"
+      ],
+      "default": "STATE_ANY_UNSPECIFIED"
+    },
+    "profilestorev1alpha1Label": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1alpha1LabelSet": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profilestorev1alpha1Label"
+          }
+        }
+      }
+    },
+    "v1alpha1Target": {
+      "type": "object",
+      "properties": {
+        "discoveredLabels": {
+          "$ref": "#/definitions/v1alpha1LabelSet"
+        },
+        "labels": {
+          "$ref": "#/definitions/v1alpha1LabelSet"
+        },
+        "lastError": {
+          "type": "string"
+        },
+        "lastScrape": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastScrapeDuration": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "health": {
+          "$ref": "#/definitions/TargetHealth"
+        }
+      }
+    },
+    "v1alpha1Targets": {
+      "type": "object",
+      "properties": {
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1Target"
+          }
+        }
+      }
+    },
+    "v1alpha1TargetsResponse": {
+      "type": "object",
+      "properties": {
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1alpha1Targets"
+          }
+        }
+      }
+    }
+  }
+}

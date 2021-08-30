@@ -2,10 +2,10 @@ import { Alert, Col, Row } from 'react-bootstrap'
 import ProfileSelector, { QuerySelection } from './ProfileSelector'
 import { ProfileDiffSource, ProfileSelection, ProfileView } from '@parca/profile'
 import { Query } from '@parca/parser'
-import { QueryClient } from '@parca/client'
+import { QueryServiceClient } from '@parca/client'
 
 interface ProfileExplorerCompareProps {
-  queryClient: QueryClient
+  queryClient: QueryServiceClient
 
   queryA: QuerySelection
   queryB: QuerySelection

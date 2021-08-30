@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/pprof/profile"
-	pb "github.com/parca-dev/parca/proto/gen/go/query"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )

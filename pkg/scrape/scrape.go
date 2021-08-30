@@ -27,8 +27,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/pprof/profile"
+	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
-	profilepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
@@ -41,7 +41,7 @@ import (
 
 // scrapePool manages scrapes for sets of targets.
 type scrapePool struct {
-	store   profilepb.ProfileStoreServer
+	store   profilepb.ProfileStoreServiceServer
 	logger  log.Logger
 	metrics *scrapePoolMetrics
 
@@ -70,7 +70,7 @@ type scrapePoolMetrics struct {
 	targetScrapeSampleOutOfBounds prometheus.Counter
 }
 
-func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreServer, logger log.Logger, metrics *scrapePoolMetrics) *scrapePool {
+func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreServiceServer, logger log.Logger, metrics *scrapePoolMetrics) *scrapePool {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -365,7 +365,7 @@ type scrapeLoop struct {
 
 	buffers *pool.Pool
 
-	store     profilepb.ProfileStoreServer
+	store     profilepb.ProfileStoreServiceServer
 	ctx       context.Context
 	scrapeCtx context.Context
 	cancel    func()
@@ -378,7 +378,7 @@ func newScrapeLoop(ctx context.Context,
 	l log.Logger,
 	targetIntervalLength *prometheus.SummaryVec,
 	buffers *pool.Pool,
-	store profilepb.ProfileStoreServer,
+	store profilepb.ProfileStoreServiceServer,
 ) *scrapeLoop {
 	if l == nil {
 		l = log.NewNopLogger()

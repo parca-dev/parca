@@ -3,11 +3,11 @@ import { ProfileSelection, ProfileSelectionFromParams, SuffixParams } from '@par
 import { NextRouter, withRouter } from 'next/router'
 import ProfileExplorerSingle from './ProfileExplorerSingle'
 import ProfileExplorerCompare from './ProfileExplorerCompare'
-import { QueryClient } from '@parca/client'
+import { QueryServiceClient } from '@parca/client'
 
 interface ProfileExplorerProps {
   router: NextRouter
-  queryClient: QueryClient
+  queryClient: QueryServiceClient
 }
 
 const ProfileExplorer = ({

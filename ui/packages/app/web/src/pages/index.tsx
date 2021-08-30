@@ -1,6 +1,6 @@
 import ProfileExplorer from 'components/ProfileExplorer'
 import { NextRouter, withRouter } from 'next/router'
-import { QueryClient } from '@parca/client'
+import { QueryServiceClient } from '@parca/client'
 
 const apiEndpoint = process.env.NEXT_PUBLIC_API_ENDPOINT
 
@@ -9,7 +9,7 @@ interface ProfilesProps {
 }
 
 const Profiles = (_: ProfilesProps): JSX.Element => {
-  const queryClient = new QueryClient(apiEndpoint === undefined ? '' : apiEndpoint)
+  const queryClient = new QueryServiceClient(apiEndpoint === undefined ? '' : apiEndpoint)
   return (
     <ProfileExplorer
       queryClient={queryClient}

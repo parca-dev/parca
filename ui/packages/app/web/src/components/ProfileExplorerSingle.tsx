@@ -1,10 +1,10 @@
 import ProfileSelector, { QuerySelection } from './ProfileSelector'
 import { Col, Row } from 'react-bootstrap'
 import { ProfileSelection, ProfileView } from '@parca/profile'
-import { QueryClient } from '@parca/client'
+import { QueryServiceClient } from '@parca/client'
 
 interface ProfileExplorerSingleProps {
-  queryClient: QueryClient
+  queryClient: QueryServiceClient
   query: QuerySelection
   selectQuery: (query: QuerySelection) => void
   selectProfile: (source: ProfileSelection) => void
