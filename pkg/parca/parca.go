@@ -22,6 +22,7 @@ import (
 	debuginfopb "github.com/parca-dev/parca/proto/gen/go/debuginfo"
 	profilestorepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
 	querypb "github.com/parca-dev/parca/proto/gen/go/query"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
@@ -35,7 +36,7 @@ type Flags struct {
 }
 
 // Run the parca server
-func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
+func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags *Flags) error {
 	cfgContent, err := ioutil.ReadFile(flags.ConfigPath)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to read config", "path", flags.ConfigPath)
@@ -54,12 +55,12 @@ func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
 		return err
 	}
 
-	db := storage.OpenDB()
+	db := storage.OpenDB(reg)
 	metaStore := storage.NewInMemoryProfileMetaStore()
 	s := profilestore.NewProfileStore(logger, db, metaStore)
 	q := query.New(logger, db, metaStore)
 
-	parcaserver := server.NewServer()
+	parcaserver := server.NewServer(reg)
 
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
@@ -110,7 +111,7 @@ func Run(ctx context.Context, logger log.Logger, flags *Flags) error {
 		return err
 	}
 
-	m := scrape.NewManager(logger, s, cfg.ScrapeConfigs)
+	m := scrape.NewManager(logger, reg, s, cfg.ScrapeConfigs)
 	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {
 		level.Error(logger).Log("msg", "failed to apply scrape configs", "err", err)
 		return err

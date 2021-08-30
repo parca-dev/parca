@@ -17,6 +17,8 @@ import (
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -52,11 +54,13 @@ var MapAllowedLevels = map[string][]string{
 type Server struct {
 	http.Server
 	grpcProbe *prober.GRPCProbe
+	reg       *prometheus.Registry
 }
 
-func NewServer() *Server {
+func NewServer(reg *prometheus.Registry) *Server {
 	return &Server{
 		grpcProbe: prober.NewGRPC(),
+		reg:       reg,
 	}
 }
 
@@ -102,8 +106,12 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	reflection.Register(srv)
 	grpc_health.RegisterHealthServer(srv, s.grpcProbe.HealthServer())
 
+	_ = mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		promhttp.HandlerFor(s.reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
+	})
+
 	// Add the pprof handler to profile Parca
-	mux.HandlePath("GET", "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	_ = mux.HandlePath(http.MethodGet, "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		pprof.Index(w, r)
 	})
 

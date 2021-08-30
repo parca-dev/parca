@@ -39,79 +39,11 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-var (
-	targetIntervalLength = prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Name:       "prometheus_target_interval_length_seconds",
-			Help:       "Actual intervals between scrapes.",
-			Objectives: map[float64]float64{0.01: 0.001, 0.05: 0.005, 0.5: 0.05, 0.90: 0.01, 0.99: 0.001},
-		},
-		[]string{"interval"},
-	)
-	targetReloadIntervalLength = prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Name:       "prometheus_target_reload_length_seconds",
-			Help:       "Actual interval to reload the scrape pool with a given configuration.",
-			Objectives: map[float64]float64{0.01: 0.001, 0.05: 0.005, 0.5: 0.05, 0.90: 0.01, 0.99: 0.001},
-		},
-		[]string{"interval"},
-	)
-	targetSyncIntervalLength = prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Name:       "prometheus_target_sync_length_seconds",
-			Help:       "Actual interval to sync the scrape pool.",
-			Objectives: map[float64]float64{0.01: 0.001, 0.05: 0.005, 0.5: 0.05, 0.90: 0.01, 0.99: 0.001},
-		},
-		[]string{"scrape_job"},
-	)
-	targetScrapePoolSyncsCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "prometheus_target_scrape_pool_sync_total",
-			Help: "Total number of syncs that were executed on a scrape pool.",
-		},
-		[]string{"scrape_job"},
-	)
-	targetScrapeSampleLimit = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "prometheus_target_scrapes_exceeded_sample_limit_total",
-			Help: "Total number of scrapes that hit the sample limit and were rejected.",
-		},
-	)
-	targetScrapeSampleDuplicate = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "prometheus_target_scrapes_sample_duplicate_timestamp_total",
-			Help: "Total number of samples rejected due to duplicate timestamps but different values",
-		},
-	)
-	targetScrapeSampleOutOfOrder = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "prometheus_target_scrapes_sample_out_of_order_total",
-			Help: "Total number of samples rejected due to not being out of the expected order",
-		},
-	)
-	targetScrapeSampleOutOfBounds = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "prometheus_target_scrapes_sample_out_of_bounds_total",
-			Help: "Total number of samples rejected due to timestamp falling outside of the time bounds",
-		},
-	)
-)
-
-func init() {
-	prometheus.MustRegister(targetIntervalLength)
-	prometheus.MustRegister(targetReloadIntervalLength)
-	prometheus.MustRegister(targetSyncIntervalLength)
-	prometheus.MustRegister(targetScrapePoolSyncsCounter)
-	prometheus.MustRegister(targetScrapeSampleLimit)
-	prometheus.MustRegister(targetScrapeSampleDuplicate)
-	prometheus.MustRegister(targetScrapeSampleOutOfOrder)
-	prometheus.MustRegister(targetScrapeSampleOutOfBounds)
-}
-
 // scrapePool manages scrapes for sets of targets.
 type scrapePool struct {
-	store  profilepb.ProfileStoreServer
-	logger log.Logger
+	store   profilepb.ProfileStoreServer
+	logger  log.Logger
+	metrics *scrapePoolMetrics
 
 	mtx    sync.RWMutex
 	config *config.ScrapeConfig
@@ -127,7 +59,18 @@ type scrapePool struct {
 	newLoop func(*Target, scraper) loop
 }
 
-func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreServer, logger log.Logger) *scrapePool {
+type scrapePoolMetrics struct {
+	targetIntervalLength          *prometheus.SummaryVec
+	targetReloadIntervalLength    *prometheus.SummaryVec
+	targetSyncIntervalLength      *prometheus.SummaryVec
+	targetScrapePoolSyncsCounter  *prometheus.CounterVec
+	targetScrapeSampleLimit       prometheus.Counter
+	targetScrapeSampleDuplicate   prometheus.Counter
+	targetScrapeSampleOutOfOrder  prometheus.Counter
+	targetScrapeSampleOutOfBounds prometheus.Counter
+}
+
+func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreServer, logger log.Logger, metrics *scrapePoolMetrics) *scrapePool {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -149,6 +92,7 @@ func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreServer,
 		activeTargets: map[uint64]*Target{},
 		loops:         map[uint64]loop{},
 		logger:        logger,
+		metrics:       metrics,
 	}
 	sp.newLoop = func(t *Target, s scraper) loop {
 		return newScrapeLoop(
@@ -156,6 +100,7 @@ func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreServer,
 			t,
 			s,
 			log.With(logger, "target", t),
+			sp.metrics.targetIntervalLength,
 			buffers,
 			store,
 		)
@@ -245,7 +190,7 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) {
 	}
 
 	wg.Wait()
-	targetReloadIntervalLength.WithLabelValues(interval.String()).Observe(
+	sp.metrics.targetReloadIntervalLength.WithLabelValues(interval.String()).Observe(
 		time.Since(start).Seconds(),
 	)
 }
@@ -276,10 +221,10 @@ func (sp *scrapePool) Sync(tgs []*targetgroup.Group) {
 	sp.mtx.Unlock()
 	sp.sync(all)
 
-	targetSyncIntervalLength.WithLabelValues(sp.config.JobName).Observe(
+	sp.metrics.targetSyncIntervalLength.WithLabelValues(sp.config.JobName).Observe(
 		time.Since(start).Seconds(),
 	)
-	targetScrapePoolSyncsCounter.WithLabelValues(sp.config.JobName).Inc()
+	sp.metrics.targetScrapePoolSyncsCounter.WithLabelValues(sp.config.JobName).Inc()
 }
 
 // sync takes a list of potentially duplicated targets, deduplicates them, starts
@@ -415,11 +360,12 @@ type scrapeLoop struct {
 	target         *Target
 	scraper        scraper
 	l              log.Logger
+	intervalLength *prometheus.SummaryVec
 	lastScrapeSize int
-	buffers        *pool.Pool
 
-	store profilepb.ProfileStoreServer
+	buffers *pool.Pool
 
+	store     profilepb.ProfileStoreServer
 	ctx       context.Context
 	scrapeCtx context.Context
 	cancel    func()
@@ -430,6 +376,7 @@ func newScrapeLoop(ctx context.Context,
 	t *Target,
 	sc scraper,
 	l log.Logger,
+	targetIntervalLength *prometheus.SummaryVec,
 	buffers *pool.Pool,
 	store profilepb.ProfileStoreServer,
 ) *scrapeLoop {
@@ -440,13 +387,14 @@ func newScrapeLoop(ctx context.Context,
 		buffers = pool.New(1e3, 1e6, 3, func(sz int) interface{} { return make([]byte, 0, sz) })
 	}
 	sl := &scrapeLoop{
-		target:  t,
-		scraper: sc,
-		buffers: buffers,
-		store:   store,
-		stopped: make(chan struct{}),
-		l:       l,
-		ctx:     ctx,
+		target:         t,
+		scraper:        sc,
+		buffers:        buffers,
+		store:          store,
+		stopped:        make(chan struct{}),
+		l:              l,
+		intervalLength: targetIntervalLength,
+		ctx:            ctx,
 	}
 	sl.scrapeCtx, sl.cancel = context.WithCancel(ctx)
 
@@ -482,7 +430,7 @@ mainLoop:
 
 		// Only record after the first scrape.
 		if !last.IsZero() {
-			targetIntervalLength.WithLabelValues(interval.String()).Observe(
+			sl.intervalLength.WithLabelValues(interval.String()).Observe(
 				time.Since(last).Seconds(),
 			)
 		}

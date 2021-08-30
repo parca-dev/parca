@@ -21,13 +21,14 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	profilepb "github.com/parca-dev/parca/proto/gen/go/profilestore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 
 	"github.com/parca-dev/parca/pkg/config"
 )
 
 // NewManager is the Manager constructor
-func NewManager(logger log.Logger, store profilepb.ProfileStoreServer, scrapeConfigs []*config.ScrapeConfig) *Manager {
+func NewManager(logger log.Logger, reg prometheus.Registerer, store profilepb.ProfileStoreServer, scrapeConfigs []*config.ScrapeConfig) *Manager {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -39,7 +40,62 @@ func NewManager(logger log.Logger, store profilepb.ProfileStoreServer, scrapeCon
 		scrapePools:   make(map[string]*scrapePool),
 		graceShut:     make(chan struct{}),
 		triggerReload: make(chan struct{}, 1),
+
+		targetIntervalLength: prometheus.NewSummaryVec(
+			prometheus.SummaryOpts{
+				Name:       "parca_target_interval_length_seconds",
+				Help:       "Actual intervals between scrapes.",
+				Objectives: map[float64]float64{0.01: 0.001, 0.05: 0.005, 0.5: 0.05, 0.90: 0.01, 0.99: 0.001},
+			}, []string{"interval"}),
+		targetReloadIntervalLength: prometheus.NewSummaryVec(
+			prometheus.SummaryOpts{
+				Name:       "parca_target_reload_length_seconds",
+				Help:       "Actual interval to reload the scrape pool with a given configuration.",
+				Objectives: map[float64]float64{0.01: 0.001, 0.05: 0.005, 0.5: 0.05, 0.90: 0.01, 0.99: 0.001},
+			}, []string{"interval"}),
+		targetSyncIntervalLength: prometheus.NewSummaryVec(
+			prometheus.SummaryOpts{
+				Name:       "parca_target_sync_length_seconds",
+				Help:       "Actual interval to sync the scrape pool.",
+				Objectives: map[float64]float64{0.01: 0.001, 0.05: 0.005, 0.5: 0.05, 0.90: 0.01, 0.99: 0.001},
+			}, []string{"scrape_job"}),
+		targetScrapePoolSyncsCounter: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "parca_target_scrape_pool_sync_total",
+				Help: "Total number of syncs that were executed on a scrape pool.",
+			}, []string{"scrape_job"}),
+		targetScrapeSampleLimit: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: "parca_target_scrapes_exceeded_sample_limit_total",
+				Help: "Total number of scrapes that hit the sample limit and were rejected.",
+			}),
+		targetScrapeSampleDuplicate: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: "parca_target_scrapes_sample_duplicate_timestamp_total",
+				Help: "Total number of samples rejected due to duplicate timestamps but different values",
+			}),
+		targetScrapeSampleOutOfOrder: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: "parca_target_scrapes_sample_out_of_order_total",
+				Help: "Total number of samples rejected due to not being out of the expected order",
+			}),
+		targetScrapeSampleOutOfBounds: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: "parca_target_scrapes_sample_out_of_bounds_total",
+				Help: "Total number of samples rejected due to timestamp falling outside of the time bounds",
+			}),
 	}
+
+	reg.MustRegister(
+		m.targetIntervalLength,
+		m.targetReloadIntervalLength,
+		m.targetSyncIntervalLength,
+		m.targetScrapePoolSyncsCounter,
+		m.targetScrapeSampleLimit,
+		m.targetScrapeSampleDuplicate,
+		m.targetScrapeSampleOutOfOrder,
+		m.targetScrapeSampleOutOfBounds,
+	)
 
 	c := make(map[string]*config.ScrapeConfig)
 	for _, scfg := range scrapeConfigs {
@@ -73,6 +129,15 @@ type Manager struct {
 	targetSets    map[string][]*targetgroup.Group
 
 	triggerReload chan struct{}
+
+	targetIntervalLength          *prometheus.SummaryVec
+	targetReloadIntervalLength    *prometheus.SummaryVec
+	targetSyncIntervalLength      *prometheus.SummaryVec
+	targetScrapePoolSyncsCounter  *prometheus.CounterVec
+	targetScrapeSampleLimit       prometheus.Counter
+	targetScrapeSampleDuplicate   prometheus.Counter
+	targetScrapeSampleOutOfOrder  prometheus.Counter
+	targetScrapeSampleOutOfBounds prometheus.Counter
 }
 
 // Run stars the manager with a set of scrape configs
@@ -126,7 +191,16 @@ func (m *Manager) reload() {
 				level.Error(m.logger).Log("msg", "error reloading target set", "err", "invalid config id:"+setName)
 				return
 			}
-			sp = newScrapePool(scrapeConfig, m.store, log.With(m.logger, "scrape_pool", setName))
+			sp = newScrapePool(scrapeConfig, m.store, log.With(m.logger, "scrape_pool", setName), &scrapePoolMetrics{
+				targetIntervalLength:          m.targetIntervalLength,
+				targetReloadIntervalLength:    m.targetReloadIntervalLength,
+				targetSyncIntervalLength:      m.targetSyncIntervalLength,
+				targetScrapePoolSyncsCounter:  m.targetScrapePoolSyncsCounter,
+				targetScrapeSampleLimit:       m.targetScrapeSampleLimit,
+				targetScrapeSampleDuplicate:   m.targetScrapeSampleDuplicate,
+				targetScrapeSampleOutOfOrder:  m.targetScrapeSampleOutOfOrder,
+				targetScrapeSampleOutOfBounds: m.targetScrapeSampleOutOfBounds,
+			})
 			m.scrapePools[setName] = sp
 		} else {
 			sp = existing

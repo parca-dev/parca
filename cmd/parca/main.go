@@ -9,6 +9,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/parca-dev/parca/pkg/parca"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func main() {
@@ -21,7 +22,9 @@ func main() {
 
 	logger := log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 
-	err := parca.Run(ctx, logger, flags)
+	registry := prometheus.NewRegistry()
+
+	err := parca.Run(ctx, logger, registry, flags)
 	if err != nil {
 		level.Error(logger).Log("msg", "Program exited with error", "err", err)
 		os.Exit(1)

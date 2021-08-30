@@ -9,7 +9,7 @@ import (
 )
 
 func TestPostingsForMatchers(t *testing.T) {
-	h := NewHead()
+	h := NewHead(nil)
 	h.minTime = *atomic.NewInt64(-1)
 	h.maxTime = *atomic.NewInt64(1)
 	h.postings.Add(0, labels.Labels{{"n", "1"}})

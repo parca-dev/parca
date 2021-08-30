@@ -4,13 +4,17 @@ import (
 	"context"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/parca-dev/parca/pkg/storage/index"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.uber.org/atomic"
 )
 
 type Head struct {
+	reg prometheus.Registerer
+
 	minTime, maxTime atomic.Int64 // Current min and max of the samples included in the head.
 	lastSeriesID     atomic.Uint64
 	numSeries        atomic.Uint64
@@ -21,16 +25,49 @@ type Head struct {
 	// Merging and intersecting the resulting IDs we can look up
 	// just the series we need from series by their IDs.
 	postings *index.MemPostings
+
+	minTimeGauge               *prometheus.Desc
+	maxTimeGauge               *prometheus.Desc
+	seriesCounter              *prometheus.Desc
 }
 
-func NewHead() *Head {
+func NewHead(r prometheus.Registerer) *Head {
 	h := &Head{
 		series:   newStripeSeries(DefaultStripeSize),
 		postings: index.NewMemPostings(),
+		reg:      r,
+
+		minTimeGauge: prometheus.NewDesc(
+			"parca_tsdb_head_min_time",
+			"Minimum time bound of the head block. The unit is decided by the library consumer.",
+			nil, nil,
+		),
+		maxTimeGauge: prometheus.NewDesc(
+			"parca_tsdb_head_max_time",
+			"Maximum timestamp of the head block. The unit is decided by the library consumer.",
+			nil, nil,
+		),
+		seriesCounter: prometheus.NewDesc(
+			"parca_tsdb_head_series_created_total",
+			"Total number of series created in the head.",
+			nil, nil,
+		),
 	}
 	h.minTime.Store(math.MaxInt64)
 	h.maxTime.Store(math.MinInt64)
 	return h
+}
+
+func (h *Head) Describe(descs chan<- *prometheus.Desc) {
+	descs <- h.seriesCounter
+	descs <- h.minTimeGauge
+	descs <- h.maxTimeGauge
+}
+
+func (h *Head) Collect(metrics chan<- prometheus.Metric) {
+	metrics <- prometheus.MustNewConstMetric(h.seriesCounter, prometheus.CounterValue, float64(h.numSeries.Load()))
+	metrics <- prometheus.MustNewConstMetric(h.minTimeGauge, prometheus.GaugeValue, float64(h.MinTime()/1000))
+	metrics <- prometheus.MustNewConstMetric(h.maxTimeGauge, prometheus.GaugeValue, float64(h.MaxTime()/1000))
 }
 
 func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {

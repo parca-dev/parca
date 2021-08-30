@@ -10,7 +10,7 @@ import (
 )
 
 func TestHeadIndexReader_Postings(t *testing.T) {
-	ir := headIndexReader{head: NewHead()}
+	ir := headIndexReader{head: NewHead(nil)}
 	ir.head.postings.Add(1, labels.Labels{{"foo", "bar"}, {"container", "test1"}})
 	ir.head.postings.Add(2, labels.Labels{{"foo", "bar"}, {"container", "test2"}})
 	ir.head.postings.Add(3, labels.Labels{{"foo", "baz"}, {"container", "test3"}})
@@ -25,7 +25,7 @@ func TestHeadIndexReader_Postings(t *testing.T) {
 }
 
 func TestHeadIndexReader_LabelValues(t *testing.T) {
-	h := NewHead()
+	h := NewHead(nil)
 
 	for i := 0; i < 100; i++ {
 		app, err := h.Appender(context.Background(), labels.Labels{
