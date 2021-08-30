@@ -15,7 +15,6 @@ package symbol
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -56,11 +55,7 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, locations)
 		if err != nil {
-			level.Error(s.logger).Log("msg", "symbolization attempt failed", "error", err)
-			if errors.Is(err, debuginfo.ErrEmptyBuildID) {
-				return nil
-			}
-			return err
+			level.Error(s.logger).Log("msg", "symbolization attempt failed", "err", err)
 		}
 		return nil
 	})
