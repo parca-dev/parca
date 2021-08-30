@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
 
@@ -89,9 +90,9 @@ type DB struct {
 	head *Head
 }
 
-func OpenDB() *DB {
+func OpenDB(r prometheus.Registerer) *DB {
 	return &DB{
-		head: NewHead(),
+		head: NewHead(r),
 	}
 }
 

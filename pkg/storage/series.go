@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
 
@@ -428,6 +429,8 @@ type MemSeries struct {
 
 	seriesTree *MemSeriesTree
 	numSamples uint16
+
+	samplesAppended prometheus.Counter
 }
 
 func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
@@ -524,9 +527,12 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	}
 
 	a.s.maxTime = timestamp
-
 	a.s.numSamples++
 	a.s.mu.Unlock()
+
+	if a.s.samplesAppended != nil {
+		a.s.samplesAppended.Inc()
+	}
 	return nil
 }
 
@@ -540,6 +546,45 @@ func (s *MemSeries) appendTree(profileTree *ProfileTree) error {
 
 func (s *MemSeries) Labels() labels.Labels {
 	return s.lset
+}
+
+type MemSeriesStats struct {
+	samples     uint16
+	Cumulatives []MemSeriesValueStats
+	Flat        []MemSeriesValueStats
+}
+
+type MemSeriesValueStats struct {
+	samples int
+	bytes   int
+}
+
+func (s *MemSeries) stats() MemSeriesStats {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	flat := make([]MemSeriesValueStats, 0, len(s.flatValues))
+	cumulative := make([]MemSeriesValueStats, 0, len(s.cumulativeValues))
+
+	for _, c := range s.flatValues {
+		flat = append(flat, MemSeriesValueStats{
+			samples: c.NumSamples(),
+			bytes:   len(c.Bytes()),
+		})
+	}
+
+	for _, c := range s.cumulativeValues {
+		cumulative = append(cumulative, MemSeriesValueStats{
+			samples: c.NumSamples(),
+			bytes:   len(c.Bytes()),
+		})
+	}
+
+	return MemSeriesStats{
+		samples:     s.numSamples,
+		Cumulatives: cumulative,
+		Flat:        flat,
+	}
 }
 
 type MemSeriesIteratorTree struct {

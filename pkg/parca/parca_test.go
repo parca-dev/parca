@@ -10,16 +10,18 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/go-kit/log"
 	pb "github.com/parca-dev/parca/proto/gen/go/profilestore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
 func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreClient, <-chan struct{}) {
 	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		err := Run(ctx, logger, &Flags{ConfigPath: "testdata/parca.yaml", Port: ":9090"})
+		err := Run(ctx, logger, reg, &Flags{ConfigPath: "testdata/parca.yaml", Port: ":9090"})
 		if !errors.Is(err, context.Canceled) {
 			require.NoError(b, err)
 		}

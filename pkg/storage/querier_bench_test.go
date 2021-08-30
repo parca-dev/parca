@@ -19,7 +19,7 @@ const (
 
 func BenchmarkHeadQuerier_Select(b *testing.B) {
 	ctx := context.Background()
-	h := NewHead()
+	h := NewHead(nil)
 
 	numSeries := 1_000_000
 	for i := 1; i <= numSeries; i++ {

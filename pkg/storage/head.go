@@ -6,11 +6,14 @@ import (
 	"sync"
 
 	"github.com/parca-dev/parca/pkg/storage/index"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.uber.org/atomic"
 )
 
 type Head struct {
+	reg prometheus.Registerer
+
 	minTime, maxTime atomic.Int64 // Current min and max of the samples included in the head.
 	lastSeriesID     atomic.Uint64
 	numSeries        atomic.Uint64
@@ -21,16 +24,83 @@ type Head struct {
 	// Merging and intersecting the resulting IDs we can look up
 	// just the series we need from series by their IDs.
 	postings *index.MemPostings
+
+	minTimeGauge        *prometheus.Desc
+	maxTimeGauge        *prometheus.Desc
+	seriesCounter       *prometheus.Desc
+	seriesValues        *prometheus.SummaryVec
+	seriesChunksSize    *prometheus.SummaryVec
+	seriesChunksSamples *prometheus.SummaryVec
+	profilesAppended    prometheus.Counter
 }
 
-func NewHead() *Head {
+func NewHead(r prometheus.Registerer) *Head {
 	h := &Head{
 		series:   newStripeSeries(DefaultStripeSize),
 		postings: index.NewMemPostings(),
+		reg:      r,
+
+		minTimeGauge: prometheus.NewDesc(
+			"parca_tsdb_head_min_time",
+			"Minimum time bound of the head block. The unit is decided by the library consumer.",
+			nil, nil,
+		),
+		maxTimeGauge: prometheus.NewDesc(
+			"parca_tsdb_head_max_time",
+			"Maximum timestamp of the head block. The unit is decided by the library consumer.",
+			nil, nil,
+		),
+		seriesCounter: prometheus.NewDesc(
+			"parca_tsdb_head_series_created_total",
+			"Total number of series created in the head.",
+			nil, nil,
+		),
+		seriesValues: prometheus.NewSummaryVec(prometheus.SummaryOpts{
+			Name:       "parca_tsdb_head_series_values",
+			Help:       "Total number of series created in the head.",
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+		}, []string{"values"}),
+		seriesChunksSize: prometheus.NewSummaryVec(prometheus.SummaryOpts{
+			Name:       "parca_tsdb_head_series_chunk_bytes",
+			Help:       "The chunks size of the series.",
+			Objectives: map[float64]float64{0.1: 0.05, 0.2: 0.05, 0.3: 0.05, 0.4: 0.05, 0.5: 0.05, 0.6: 0.05, 0.7: 0.05, 0.8: 0.05, 0.9: 0.01, 0.99: 0.001},
+		}, []string{"values"}),
+		seriesChunksSamples: prometheus.NewSummaryVec(prometheus.SummaryOpts{
+			Name:       "parca_tsdb_head_series_chunk_samples",
+			Help:       "The amount of samples in the cumulative and flat chunks.",
+			Objectives: map[float64]float64{0.1: 0.05, 0.2: 0.05, 0.3: 0.05, 0.4: 0.05, 0.5: 0.05, 0.6: 0.05, 0.7: 0.05, 0.8: 0.05, 0.9: 0.01, 0.99: 0.001},
+		}, []string{"values"}),
+		profilesAppended: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "parca_tsdb_head_profiles_appended_total",
+			Help: "Total number of appended profiles.",
+		}),
 	}
+
+	r.MustRegister(h,
+		h.seriesValues,
+		h.seriesChunksSize,
+		h.seriesChunksSamples,
+		h.profilesAppended,
+	)
+
 	h.minTime.Store(math.MaxInt64)
 	h.maxTime.Store(math.MinInt64)
 	return h
+}
+
+func (h *Head) Describe(descs chan<- *prometheus.Desc) {
+	descs <- h.seriesCounter
+	descs <- h.minTimeGauge
+	descs <- h.maxTimeGauge
+}
+
+func (h *Head) Collect(metrics chan<- prometheus.Metric) {
+	metrics <- prometheus.MustNewConstMetric(h.seriesCounter, prometheus.CounterValue, float64(h.numSeries.Load()))
+	metrics <- prometheus.MustNewConstMetric(h.minTimeGauge, prometheus.GaugeValue, float64(h.MinTime()/1000))
+	metrics <- prometheus.MustNewConstMetric(h.maxTimeGauge, prometheus.GaugeValue, float64(h.MaxTime()/1000))
+
+	// Uncomment to enable pretty heavy metrics.
+	//h.stats()
 }
 
 func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
@@ -98,6 +168,27 @@ func (h *Head) MaxTime() int64 {
 	return h.maxTime.Load()
 }
 
+func (h *Head) stats() {
+	for i, series := range h.series.series {
+		h.series.locks[i].RLock()
+		for _, memSeries := range series {
+			stats := memSeries.stats()
+			h.seriesValues.WithLabelValues("flat").Observe(float64(len(stats.Flat)))
+			h.seriesValues.WithLabelValues("cumulative").Observe(float64(len(stats.Cumulatives)))
+
+			for _, s := range stats.Flat {
+				h.seriesChunksSize.WithLabelValues("flat").Observe(float64(s.bytes))
+				h.seriesChunksSamples.WithLabelValues("flat").Observe(float64(s.samples))
+			}
+			for _, s := range stats.Cumulatives {
+				h.seriesChunksSize.WithLabelValues("cumulative").Observe(float64(s.bytes))
+				h.seriesChunksSamples.WithLabelValues("cumulative").Observe(float64(s.samples))
+			}
+		}
+		h.series.locks[i].RUnlock()
+	}
+}
+
 // initTime initializes a head with the first timestamp. This only needs to be called
 // for a completely fresh head with an empty WAL.
 func (h *Head) initTime(t int64) {
@@ -111,6 +202,7 @@ func (h *Head) initTime(t int64) {
 
 func (h *Head) appender(lset labels.Labels) (Appender, error) {
 	s := h.getOrCreate(lset)
+	s.samplesAppended = h.profilesAppended
 	return s.Appender()
 }
 

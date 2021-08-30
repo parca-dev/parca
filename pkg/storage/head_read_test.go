@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
 
 func TestHeadIndexReader_Postings(t *testing.T) {
-	ir := headIndexReader{head: NewHead()}
+	ir := headIndexReader{head: NewHead(prometheus.NewRegistry())}
 	ir.head.postings.Add(1, labels.Labels{{"foo", "bar"}, {"container", "test1"}})
 	ir.head.postings.Add(2, labels.Labels{{"foo", "bar"}, {"container", "test2"}})
 	ir.head.postings.Add(3, labels.Labels{{"foo", "baz"}, {"container", "test3"}})
@@ -25,7 +26,7 @@ func TestHeadIndexReader_Postings(t *testing.T) {
 }
 
 func TestHeadIndexReader_LabelValues(t *testing.T) {
-	h := NewHead()
+	h := NewHead(prometheus.NewRegistry())
 
 	for i := 0; i < 100; i++ {
 		app, err := h.Appender(context.Background(), labels.Labels{

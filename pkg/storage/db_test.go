@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ import (
 
 func TestDB(t *testing.T) {
 	l := NewInMemoryProfileMetaStore()
-	db := OpenDB()
+	db := OpenDB(prometheus.NewRegistry())
 	ctx := context.Background()
 	app1, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test1"}})
 	require.NoError(t, err)
