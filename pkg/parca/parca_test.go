@@ -28,7 +28,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 	}()
 
 	var conn grpc.ClientConnInterface
-	backoff.Retry(func() error {
+	err := backoff.Retry(func() error {
 		var err error
 		conn, err = grpc.Dial(":9090", grpc.WithInsecure())
 		if err != nil {
@@ -39,6 +39,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 		_, err = client.WriteRaw(ctx, &pb.WriteRawRequest{})
 		return err
 	}, backoff.NewConstantBackOff(time.Second))
+	require.NoError(b, err)
 
 	client := pb.NewProfileStoreServiceClient(conn)
 	return client, done

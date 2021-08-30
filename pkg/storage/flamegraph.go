@@ -75,11 +75,7 @@ func (fgi *FlamegraphIterator) HasMore() bool {
 func (fgi *FlamegraphIterator) NextChild() bool {
 	fgi.stack.Peek().currentChild++
 
-	if len(fgi.stack.Peek().node.Children) <= fgi.stack.Peek().currentChild {
-		return false
-	}
-
-	return true
+	return len(fgi.stack.Peek().node.Children) > fgi.stack.Peek().currentChild
 }
 
 func (fgi *FlamegraphIterator) At() *pb.FlamegraphNode {

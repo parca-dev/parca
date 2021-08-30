@@ -281,6 +281,7 @@ func Test_Query_Simple(t *testing.T) {
 		},
 		ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
 	})
+	require.NoError(t, err)
 
 	//out, err := proto.Marshal(resp)
 	//require.NoError(t, err)
@@ -354,6 +355,7 @@ func Test_Query_Diff(t *testing.T) {
 		},
 		ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
 	})
+	require.NoError(t, err)
 
 	//	out, err := proto.Marshal(resp)
 	//	require.NoError(t, err)

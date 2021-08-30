@@ -12,9 +12,9 @@ import (
 
 func TestHeadIndexReader_Postings(t *testing.T) {
 	ir := headIndexReader{head: NewHead(prometheus.NewRegistry())}
-	ir.head.postings.Add(1, labels.Labels{{"foo", "bar"}, {"container", "test1"}})
-	ir.head.postings.Add(2, labels.Labels{{"foo", "bar"}, {"container", "test2"}})
-	ir.head.postings.Add(3, labels.Labels{{"foo", "baz"}, {"container", "test3"}})
+	ir.head.postings.Add(1, labels.Labels{{Name: "foo", Value: "bar"}, {Name: "container", Value: "test1"}})
+	ir.head.postings.Add(2, labels.Labels{{Name: "foo", Value: "bar"}, {Name: "container", Value: "test2"}})
+	ir.head.postings.Add(3, labels.Labels{{Name: "foo", Value: "baz"}, {Name: "container", Value: "test3"}})
 
 	bm, err := ir.Postings("foo", "bar")
 	require.NoError(t, err)

@@ -1,0 +1,7 @@
+run:
+  deadline: 5m
+linters-settings:
+  errcheck:
+    exclude: ./.errcheck_excludes.txt
+  misspell:
+    locale: US

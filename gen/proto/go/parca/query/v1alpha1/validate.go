@@ -19,7 +19,19 @@ func (r *QueryRangeRequest) Validate() error {
 // Validate the QueryRequest
 func (r *QueryRequest) Validate() error {
 	err := validation.ValidateStruct(r,
-		validation.Field(&r.Options, validation.Required, optionMatchesProfileMode(r.Mode)),
+		validation.Field(
+			&r.Mode,
+			isQueryMode(),
+		),
+		validation.Field(
+			&r.Options,
+			validation.Required,
+			optionMatchesProfileMode(r.Mode),
+		),
+		validation.Field(
+			&r.ReportType,
+			isReportType(),
+		),
 	)
 	if err != nil {
 		return err
@@ -99,7 +111,15 @@ func validateDiff(diff *DiffProfile) error {
 
 func validateProfileSelection(sel *ProfileDiffSelection) error {
 	err := validation.ValidateStruct(sel,
-		validation.Field(&sel.Options, validation.Required, optionMatchesDiffProfileSelectionMode(sel.Mode)),
+		validation.Field(
+			&sel.Mode,
+			isDiffSelectionMode(),
+		),
+		validation.Field(
+			&sel.Options,
+			validation.Required,
+			optionMatchesDiffProfileSelectionMode(sel.Mode),
+		),
 	)
 	if err != nil {
 		return err
@@ -138,7 +158,7 @@ type DiffProfileSelectionOptionMatchesRule struct {
 func (o DiffProfileSelectionOptionMatchesRule) Validate(v interface{}) error {
 	option, ok := v.(isProfileDiffSelection_Options)
 	if !ok {
-		return fmt.Errorf("invalid value")
+		return fmt.Errorf("profile diff selection option is not a profile diff selection option")
 	}
 
 	switch o.mode {
@@ -153,7 +173,7 @@ func (o DiffProfileSelectionOptionMatchesRule) Validate(v interface{}) error {
 		}
 		return nil
 	default:
-		return fmt.Errorf("invalid value")
+		return fmt.Errorf("invalid profile diff selection mode")
 	}
 }
 
@@ -172,7 +192,7 @@ type ProfileOptionMatchesRule struct {
 func (o ProfileOptionMatchesRule) Validate(v interface{}) error {
 	option, ok := v.(isQueryRequest_Options)
 	if !ok {
-		return fmt.Errorf("invalid value")
+		return fmt.Errorf("query request option is not a query request option")
 	}
 
 	switch o.mode {
@@ -192,31 +212,23 @@ func (o ProfileOptionMatchesRule) Validate(v interface{}) error {
 		}
 		return nil
 	default:
-		return fmt.Errorf("invalid value")
+		return fmt.Errorf("invalid query request mode")
 	}
 }
 
-func isEnum(enum map[int32]string) EnumRule {
-	return EnumRule{
-		enum: enum,
-	}
-}
+type QueryModeRule struct{}
 
-// EnumRule checks that the provided value is in the enum map
-type EnumRule struct {
-	enum map[int32]string
-}
+func isQueryMode() QueryModeRule { return QueryModeRule{} }
 
-// Validate the enum
-func (e EnumRule) Validate(v interface{}) error {
-	i, ok := v.(*int32)
+func (r QueryModeRule) Validate(v interface{}) error {
+	i, ok := v.(QueryRequest_Mode)
 	if !ok {
-		return fmt.Errorf("invalid value")
+		return fmt.Errorf("mode is not a query request mode")
 	}
 
-	_, ok = e.enum[*i]
+	_, ok = QueryRequest_Mode_name[int32(i)]
 	if !ok {
-		return fmt.Errorf("invalid value")
+		return fmt.Errorf("invalid query request mode")
 	}
 
 	return nil
@@ -228,6 +240,42 @@ func isAfter(t *timestamppb.Timestamp) AfterRule {
 	}
 }
 
+type DiffSelectionModeRule struct{}
+
+func isDiffSelectionMode() DiffSelectionModeRule { return DiffSelectionModeRule{} }
+
+func (r DiffSelectionModeRule) Validate(v interface{}) error {
+	i, ok := v.(ProfileDiffSelection_Mode)
+	if !ok {
+		return fmt.Errorf("mode is not a profile diff selection mode")
+	}
+
+	_, ok = ProfileDiffSelection_Mode_name[int32(i)]
+	if !ok {
+		return fmt.Errorf("invalid diff selection mode")
+	}
+
+	return nil
+}
+
+type ReportTypeRule struct{}
+
+func isReportType() ReportTypeRule { return ReportTypeRule{} }
+
+func (r ReportTypeRule) Validate(v interface{}) error {
+	i, ok := v.(QueryRequest_ReportType)
+	if !ok {
+		return fmt.Errorf("report type is not a report type")
+	}
+
+	_, ok = QueryRequest_ReportType_name[int32(i)]
+	if !ok {
+		return fmt.Errorf("invalid report type")
+	}
+
+	return nil
+}
+
 // AfterRule validates that the timestamp is after the given value
 type AfterRule struct {
 	Timestamp *timestamppb.Timestamp
@@ -237,7 +285,7 @@ type AfterRule struct {
 func (a AfterRule) Validate(t interface{}) error {
 	end, ok := t.(*timestamppb.Timestamp)
 	if !ok {
-		return fmt.Errorf("invalid value")
+		return fmt.Errorf("end is not a timestamp")
 	}
 
 	if a.Timestamp.AsTime().After(end.AsTime()) {

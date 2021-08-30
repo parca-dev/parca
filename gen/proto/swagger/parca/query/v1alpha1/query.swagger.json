@@ -504,6 +504,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -619,6 +625,12 @@
       "type": "object",
       "properties": {
         "labelValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
           "type": "array",
           "items": {
             "type": "string"

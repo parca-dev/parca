@@ -3762,7 +3762,7 @@ proto.parca.query.v1alpha1.LabelsRequest.prototype.hasEnd = function() {
  * @private {!Array<number>}
  * @const
  */
-proto.parca.query.v1alpha1.LabelsResponse.repeatedFields_ = [1];
+proto.parca.query.v1alpha1.LabelsResponse.repeatedFields_ = [1,2];
 
 
 
@@ -3795,7 +3795,8 @@ proto.parca.query.v1alpha1.LabelsResponse.prototype.toObject = function(opt_incl
  */
 proto.parca.query.v1alpha1.LabelsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    labelNamesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    labelNamesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
+    warningsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -3836,6 +3837,10 @@ proto.parca.query.v1alpha1.LabelsResponse.deserializeBinaryFromReader = function
       var value = /** @type {string} */ (reader.readString());
       msg.addLabelNames(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.addWarnings(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3869,6 +3874,13 @@ proto.parca.query.v1alpha1.LabelsResponse.serializeBinaryToWriter = function(mes
   if (f.length > 0) {
     writer.writeRepeatedString(
       1,
+      f
+    );
+  }
+  f = message.getWarningsList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      2,
       f
     );
   }
@@ -3909,6 +3921,43 @@ proto.parca.query.v1alpha1.LabelsResponse.prototype.addLabelNames = function(val
  */
 proto.parca.query.v1alpha1.LabelsResponse.prototype.clearLabelNamesList = function() {
   return this.setLabelNamesList([]);
+};
+
+
+/**
+ * repeated string warnings = 2;
+ * @return {!Array<string>}
+ */
+proto.parca.query.v1alpha1.LabelsResponse.prototype.getWarningsList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 2));
+};
+
+
+/**
+ * @param {!Array<string>} value
+ * @return {!proto.parca.query.v1alpha1.LabelsResponse} returns this
+ */
+proto.parca.query.v1alpha1.LabelsResponse.prototype.setWarningsList = function(value) {
+  return jspb.Message.setField(this, 2, value || []);
+};
+
+
+/**
+ * @param {string} value
+ * @param {number=} opt_index
+ * @return {!proto.parca.query.v1alpha1.LabelsResponse} returns this
+ */
+proto.parca.query.v1alpha1.LabelsResponse.prototype.addWarnings = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 2, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.parca.query.v1alpha1.LabelsResponse} returns this
+ */
+proto.parca.query.v1alpha1.LabelsResponse.prototype.clearWarningsList = function() {
+  return this.setWarningsList([]);
 };
 
 
@@ -4206,7 +4255,7 @@ proto.parca.query.v1alpha1.ValuesRequest.prototype.hasEnd = function() {
  * @private {!Array<number>}
  * @const
  */
-proto.parca.query.v1alpha1.ValuesResponse.repeatedFields_ = [1];
+proto.parca.query.v1alpha1.ValuesResponse.repeatedFields_ = [1,2];
 
 
 
@@ -4239,7 +4288,8 @@ proto.parca.query.v1alpha1.ValuesResponse.prototype.toObject = function(opt_incl
  */
 proto.parca.query.v1alpha1.ValuesResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    labelValuesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    labelValuesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
+    warningsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -4280,6 +4330,10 @@ proto.parca.query.v1alpha1.ValuesResponse.deserializeBinaryFromReader = function
       var value = /** @type {string} */ (reader.readString());
       msg.addLabelValues(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.addWarnings(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -4313,6 +4367,13 @@ proto.parca.query.v1alpha1.ValuesResponse.serializeBinaryToWriter = function(mes
   if (f.length > 0) {
     writer.writeRepeatedString(
       1,
+      f
+    );
+  }
+  f = message.getWarningsList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      2,
       f
     );
   }
@@ -4353,6 +4414,43 @@ proto.parca.query.v1alpha1.ValuesResponse.prototype.addLabelValues = function(va
  */
 proto.parca.query.v1alpha1.ValuesResponse.prototype.clearLabelValuesList = function() {
   return this.setLabelValuesList([]);
+};
+
+
+/**
+ * repeated string warnings = 2;
+ * @return {!Array<string>}
+ */
+proto.parca.query.v1alpha1.ValuesResponse.prototype.getWarningsList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 2));
+};
+
+
+/**
+ * @param {!Array<string>} value
+ * @return {!proto.parca.query.v1alpha1.ValuesResponse} returns this
+ */
+proto.parca.query.v1alpha1.ValuesResponse.prototype.setWarningsList = function(value) {
+  return jspb.Message.setField(this, 2, value || []);
+};
+
+
+/**
+ * @param {string} value
+ * @param {number=} opt_index
+ * @return {!proto.parca.query.v1alpha1.ValuesResponse} returns this
+ */
+proto.parca.query.v1alpha1.ValuesResponse.prototype.addWarnings = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 2, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.parca.query.v1alpha1.ValuesResponse} returns this
+ */
+proto.parca.query.v1alpha1.ValuesResponse.prototype.clearWarningsList = function() {
+  return this.setWarningsList([]);
 };
 
 

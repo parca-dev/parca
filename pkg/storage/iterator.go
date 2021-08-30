@@ -57,11 +57,7 @@ func (i *ProfileTreeIterator) HasMore() bool {
 func (i *ProfileTreeIterator) NextChild() bool {
 	i.stack.Peek().child++
 
-	if len(i.stack.Peek().node.Children) <= i.stack.Peek().child {
-		return false
-	}
-
-	return true
+	return len(i.stack.Peek().node.Children) > i.stack.Peek().child
 }
 
 func (i *ProfileTreeIterator) At() InstantProfileTreeNode {
@@ -140,11 +136,7 @@ func (i *MemSeriesTreeIterator) HasMore() bool {
 func (i *MemSeriesTreeIterator) NextChild() bool {
 	i.stack.Peek().child++
 
-	if len(i.stack.Peek().node.Children) <= i.stack.Peek().child {
-		return false
-	}
-
-	return true
+	return len(i.stack.Peek().node.Children) > i.stack.Peek().child
 }
 
 func (i *MemSeriesTreeIterator) At() *MemSeriesTreeNode {
@@ -235,11 +227,7 @@ func (i *MemSeriesIteratorTreeIterator) HasMore() bool {
 func (i *MemSeriesIteratorTreeIterator) NextChild() bool {
 	i.stack.Peek().child++
 
-	if len(i.stack.Peek().node.Children) <= i.stack.Peek().child {
-		return false
-	}
-
-	return true
+	return len(i.stack.Peek().node.Children) > i.stack.Peek().child
 }
 
 func (i *MemSeriesIteratorTreeIterator) At() InstantProfileTreeNode {

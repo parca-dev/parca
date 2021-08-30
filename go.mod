@@ -5,16 +5,14 @@ go 1.16
 require (
 	github.com/alecthomas/kong v0.2.17
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cespare/xxhash/v2 v2.1.1
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/cortexproject/cortex v1.9.1-0.20210601081042-d7d87369965a // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/sroar v0.0.0-20210806151611-9ba13da43734
 	github.com/go-chi/cors v1.2.0
-	github.com/go-kit/kit v0.11.0
+	github.com/go-kit/kit v0.11.0 // indirect
 	github.com/go-kit/log v0.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/pprof v0.0.0-20210609004039-a478d1d731e9
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-20201002093600-73cf2ae9d891
@@ -30,7 +28,7 @@ require (
 	github.com/thanos-io/thanos v0.22.0
 	go.uber.org/atomic v1.9.0
 	golang.org/x/net v0.0.0-20210505214959-0714010a04ed
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced
 	google.golang.org/grpc v1.38.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
