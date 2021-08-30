@@ -167,14 +167,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		},
 	)
 
-	level.Info(logger).Log("msg", "staring Parca...")
-	defer level.Info(logger).Log("msg", "Parca stopped!")
-
 	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
 			return nil
 		}
-		level.Error(logger).Log("msg", "run group failed", "error", err)
 		return err
 	}
 

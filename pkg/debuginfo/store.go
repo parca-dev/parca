@@ -140,11 +140,9 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	})
 }
 
-var ErrEmptyBuildID = errors.New("empty buildID")
-
 func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...*profile.Location) (map[*profile.Location][]profile.Line, error) {
 	if m.BuildID == "" {
-		return nil, ErrEmptyBuildID
+		return nil, errors.New("empty buildID")
 	}
 
 	mappingPath, err := s.fetchObjectFile(ctx, m.BuildID)

@@ -19,7 +19,6 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/common-nighthawk/go-figure"
-	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/parca-dev/parca/pkg/parca"
 	"github.com/prometheus/client_golang/prometheus"
@@ -33,7 +32,7 @@ func main() {
 	serverStr := figure.NewColorFigure("Parca", "roman", "cyan", true)
 	serverStr.Print()
 
-	logger := log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
+	logger := parca.NewLogger(flags.LogLevel, parca.LogFormatJSON, "parca")
 
 	registry := prometheus.NewRegistry()
 
