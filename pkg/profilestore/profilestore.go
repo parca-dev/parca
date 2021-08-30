@@ -66,7 +66,7 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			profiles := storage.ProfilesFromPprof(s.metaStore, p)
+			profiles := storage.ProfilesFromPprof(s.logger, s.metaStore, p)
 			for _, prof := range profiles {
 				profLabelset := ls.Copy()
 				found := false

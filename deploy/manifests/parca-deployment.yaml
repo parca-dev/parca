@@ -33,6 +33,7 @@ spec:
           exec:
             command:
             - /grpc-health-probe
+            - -v
             - -addr=:7070
           initialDelaySeconds: 5
         name: parca
@@ -43,6 +44,7 @@ spec:
           exec:
             command:
             - /grpc-health-probe
+            - -v
             - -addr=:7070
           initialDelaySeconds: 10
         resources: {}

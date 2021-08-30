@@ -61,10 +61,17 @@ func NewStore(logger log.Logger, config *Config) (*Store, error) {
 		return nil, fmt.Errorf("instantiate object storage: %w", err)
 	}
 
+	cacheDir := "/tmp" // TODO(kakkoyun): Parametrize through configuration.
+	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+		err := os.MkdirAll(cacheDir, 0700)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &Store{
 		logger:   logger,
 		bucket:   bucket,
-		cacheDir: "/tmp",
+		cacheDir: cacheDir,
 		bu:       &binutils.Binutils{},
 	}, nil
 }
@@ -133,7 +140,13 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	})
 }
 
+var ErrEmptyBuildID = errors.New("empty buildID")
+
 func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...*profile.Location) (map[*profile.Location][]profile.Line, error) {
+	if m.BuildID == "" {
+		return nil, ErrEmptyBuildID
+	}
+
 	mappingPath, err := s.fetchObjectFile(ctx, m.BuildID)
 	if err != nil {
 		level.Debug(s.logger).Log("msg", "failed to fetch object", "object", m.BuildID, "err", err)

@@ -21,6 +21,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -1048,6 +1050,8 @@ func (it *MemSeriesIterator) Err() error {
 }
 
 type profileNormalizer struct {
+	logger log.Logger
+
 	// Memoization tables within a profile.
 	locationsByID map[uint64]*profile.Location
 	functionsByID map[uint64]*profile.Function
@@ -1120,15 +1124,18 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
 	k := metastore.MakeLocationKey(l)
-	ll, err := pn.metaStore.GetLocationByKey(k)
-	if err != metastore.ErrLocationNotFound {
-		// TODO(kakkoyun): Do we need better error handling?
-		pn.locationsByID[src.ID] = ll
-		return ll
+	loc, err := pn.metaStore.GetLocationByKey(k)
+	if err != nil {
+		level.Debug(pn.logger).Log("msg", "location not found", "key", k, "err", err)
+	}
+	if loc != nil {
+		pn.locationsByID[src.ID] = loc
+		return loc
 	}
 	pn.locationsByID[src.ID] = l
-	// TODO(kakkoyun): Handle me!
-	_ = pn.metaStore.CreateLocation(l)
+	if err := pn.metaStore.CreateLocation(l); err != nil {
+		level.Warn(pn.logger).Log("msg", "failed to create location", "err", err)
+	}
 	return l
 }
 
@@ -1144,8 +1151,10 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	// Check memoization tables.
 	mk := metastore.MakeMappingKey(src)
 	m, err := pn.metaStore.GetMappingByKey(mk)
-	if err != metastore.ErrMappingNotFound {
-		// TODO(kakkoyun): Do we need better error handling?
+	if err != nil {
+		level.Debug(pn.logger).Log("msg", "mapping not found", "key", mk, "err", err)
+	}
+	if m != nil {
 		mi := mapInfo{m, int64(m.Start) - int64(src.Start)}
 		pn.mappingsByID[src.ID] = mi
 		return mi
@@ -1164,7 +1173,7 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 
 	// Update memoization tables.
 	if err := pn.metaStore.CreateMapping(m); err != nil {
-		// TODO(kakkoyun): Implement me!
+		level.Warn(pn.logger).Log("msg", "failed to create mapping", "err", err)
 	}
 	mi := mapInfo{m, 0}
 	pn.mappingsByID[src.ID] = mi
@@ -1172,7 +1181,7 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 }
 
 func (pn *profileNormalizer) mapLine(src profile.Line) profile.Line {
-	// TODO(kakkoyun): CreateLine?
+	// TODO(kakkoyun): CreateLine? Redesign Line table.
 	ln := profile.Line{
 		Function: pn.mapFunction(src.Function),
 		Line:     src.Line,
@@ -1189,8 +1198,10 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 	}
 	k := metastore.MakeFunctionKey(src)
 	f, err := pn.metaStore.GetFunctionByKey(k)
-	if err != metastore.ErrFunctionNotFound {
-		// TODO(kakkoyun): Do we need better error handling?
+	if err != nil {
+		level.Debug(pn.logger).Log("msg", "function not found", "key", k, "err", err)
+	}
+	if f != nil {
 		pn.functionsByID[src.ID] = f
 		return f
 	}
@@ -1201,8 +1212,10 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 		StartLine:  src.StartLine,
 	}
 
-	_ = pn.metaStore.CreateFunction(f)
-	// TODO(kakkoyun): Handle me!
+	if err := pn.metaStore.CreateFunction(f); err != nil {
+		level.Warn(pn.logger).Log("msg", "failed to create function", "err", err)
+	}
+
 	pn.functionsByID[src.ID] = f
 	return f
 }

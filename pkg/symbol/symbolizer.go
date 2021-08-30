@@ -15,6 +15,7 @@ package symbol
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -53,7 +54,15 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 			return nil
 		}
 
-		return s.symbolize(ctx, locations)
+		err = s.symbolize(ctx, locations)
+		if err != nil {
+			level.Error(s.logger).Log("msg", "symbolization attempt failed", "error", err)
+			if errors.Is(err, debuginfo.ErrEmptyBuildID) {
+				return nil
+			}
+			return err
+		}
+		return nil
 	})
 }
 
@@ -61,6 +70,10 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 	// Aggregate locations per mapping to get prepared for batch request.
 	mappings := map[*profile.Mapping][]*profile.Location{}
 	for _, loc := range locations {
+		if loc.Mapping == nil {
+			level.Debug(s.logger).Log("msg", "mapping of location is empty skipping")
+			continue
+		}
 		mappings[loc.Mapping] = append(mappings[loc.Mapping], loc)
 	}
 

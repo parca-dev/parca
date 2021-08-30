@@ -36,6 +36,7 @@ RUN go mod download -modcacherw
 COPY --chown=nobody:nogroup go.mod go.sum ./
 COPY --chown=nobody:nogroup ./cmd/parca ./cmd/parca
 COPY --chown=nobody:nogroup ./pkg ./pkg
+COPY --chown=nobody:nogroup ./internal ./internal
 COPY --chown=nobody:nogroup ./proto ./proto
 COPY --chown=nobody:nogroup ./ui/ui.go ./ui/ui.go
 COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
@@ -45,6 +46,9 @@ RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 
 # this image is what docker.io/alpine:3.14.1 on August 13 2021
 FROM docker.io/alpine@sha256:be9bdc0ef8e96dbc428dc189b31e2e3b05523d96d12ed627c37aa2936653258c
+
+RUN apk add --no-cache binutils
+
 USER nobody
 
 COPY --chown=0:0 --from=builder /app/parca /parca

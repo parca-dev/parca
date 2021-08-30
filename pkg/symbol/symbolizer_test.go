@@ -49,7 +49,7 @@ func TestSymbolizer(t *testing.T) {
 	defer lis.Close()
 
 	grpcServer := grpc.NewServer()
-	debuginfopb.RegisterDebugInfoServer(grpcServer, dbgStr)
+	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, dbgStr)
 	go grpcServer.Serve(lis)
 
 	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())
@@ -120,7 +120,7 @@ func TestRealSymbolizer(t *testing.T) {
 	defer lis.Close()
 
 	grpcServer := grpc.NewServer()
-	debuginfopb.RegisterDebugInfoServer(grpcServer, dbgStr)
+	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, dbgStr)
 	go grpcServer.Serve(lis)
 
 	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())

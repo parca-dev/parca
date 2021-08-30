@@ -11,13 +11,13 @@ set -euo pipefail
 # Creates a local minikube cluster, and deploys the dev env into the cluster
 function up() {
     # Spin up local cluster if one isn't running
-    if minikube status -p parca-agent; then
+    if minikube status -p parca; then
         echo "----------------------------------------------------------"
         echo "Dev cluster already running. Skipping minikube cluster creation"
         echo "----------------------------------------------------------"
     else
         ctlptl create registry ctlptl-registry || echo 'Registry already exists'
-        minikube start -p parca-agent --driver=virtualbox --kubernetes-version=v1.22.0 --cpus=4 --disk-size=80000mb
+        minikube start -p parca --driver=virtualbox --kubernetes-version=v1.22.0 --cpus=4 --disk-size=80000mb --docker-opt dns=8.8.8.8
     fi
 
     # Pull parca-agent repo to build live image
@@ -42,7 +42,7 @@ function up() {
 
 # Tears down a local minikube cluster
 function down() {
-    minikube delete -p parca-agent
+    minikube delete -p parca
     rm -rf tmp/parca-agent
 }
 

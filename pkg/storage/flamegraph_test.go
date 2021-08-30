@@ -17,6 +17,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
@@ -155,7 +156,7 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	})
 	require.NoError(t, err)
 
-	profileTree := ProfileTreeFromPprof(l, p1, 0)
+	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
 
 	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
 		SampleType: ValueType{Unit: "count"},
@@ -185,7 +186,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	require.NoError(t, app.Append(ProfileFromPprof(l, p1, 0)))
+	require.NoError(t, app.Append(ProfileFromPprof(log.NewNopLogger(), l, p1, 0)))
 
 	it := s.Iterator()
 	require.True(t, it.Next())
@@ -226,8 +227,8 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof1 := ProfileFromPprof(l, p1, 0)
-	prof2 := ProfileFromPprof(l, p2, 0)
+	prof1 := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
+	prof2 := ProfileFromPprof(log.NewNopLogger(), l, p2, 0)
 
 	m, err := NewMergeProfile(prof1, prof2)
 	require.NoError(t, err)
@@ -250,7 +251,7 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	profileTree := ProfileTreeFromPprof(l, p1, 0)
+	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
 
 	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
 		SampleType: ValueType{Unit: "count"},
@@ -273,7 +274,7 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 		l.Close()
 	})
 	require.NoError(b, err)
-	profileTree := ProfileTreeFromPprof(l, p1, 0)
+	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
 
 	b.ReportAllocs()
 	b.ResetTimer()

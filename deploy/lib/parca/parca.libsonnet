@@ -100,13 +100,13 @@ function(params) {
       livenessProbe: {
         initialDelaySeconds: 5,
         exec: {
-          command: ['/grpc-health-probe', '-addr=:' + prc.config.port],
+          command: ['/grpc-health-probe', '-v', '-addr=:' + prc.config.port],
         },
       },
       readinessProbe: {
         initialDelaySeconds: 10,
         exec: {
-          command: ['/grpc-health-probe', '-addr=:' + prc.config.port],
+          command: ['/grpc-health-probe', '-v', '-addr=:' + prc.config.port],
         },
       },
     };

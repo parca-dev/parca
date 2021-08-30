@@ -17,6 +17,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-kit/kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,7 @@ func TestCopyInstantProfileTree(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	profileTree := ProfileTreeFromPprof(l, p1, 0)
+	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
 
 	profileTreeCopy := CopyInstantProfileTree(profileTree)
 
