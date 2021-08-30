@@ -23,17 +23,61 @@ type MergeProfile struct {
 
 func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
 	profileCh := make(chan InstantProfile)
-	go func() {
-		for _, p := range profiles {
-			profileCh <- p
-		}
-		close(profileCh)
-	}()
 
-	return MergeProfilesConcurrent(context.Background(), profileCh, runtime.NumCPU())
+	return MergeProfilesConcurrent(
+		context.Background(),
+		profileCh,
+		runtime.NumCPU(),
+		func() error {
+			for _, p := range profiles {
+				profileCh <- p
+			}
+			close(profileCh)
+			return nil
+		},
+	)
 }
 
-func MergeProfilesConcurrent(ctx context.Context, profileCh chan InstantProfile, concurrency int) (InstantProfile, error) {
+func MergeSeriesSetProfiles(ctx context.Context, set SeriesSet) (InstantProfile, error) {
+	profileCh := make(chan InstantProfile)
+
+	return MergeProfilesConcurrent(
+		ctx,
+		profileCh,
+		runtime.NumCPU(),
+		func() error {
+			for {
+				select {
+				case <-ctx.Done():
+					break
+				default:
+				}
+				if !set.Next() {
+					break
+				}
+				series := set.At()
+				i := series.Iterator()
+				for i.Next() {
+					// Have to copy as profile pointer is not stable for more than the
+					// current iteration.
+					profileCh <- CopyInstantProfile(i.At())
+				}
+				if i.Err() != nil {
+					return i.Err()
+				}
+			}
+			close(profileCh)
+			return nil
+		},
+	)
+}
+
+func MergeProfilesConcurrent(
+	ctx context.Context,
+	profileCh chan InstantProfile,
+	concurrency int,
+	producerFunc func() error,
+) (InstantProfile, error) {
 	var res InstantProfile
 
 	resCh := make(chan InstantProfile, concurrency)
@@ -43,6 +87,8 @@ func MergeProfilesConcurrent(ctx context.Context, profileCh chan InstantProfile,
 	var profilesRead atomic.Uint32
 
 	g := &errgroup.Group{}
+
+	g.Go(producerFunc)
 
 	g.Go(func() error {
 		var first InstantProfile
@@ -75,15 +121,12 @@ func MergeProfilesConcurrent(ctx context.Context, profileCh chan InstantProfile,
 		for {
 			first = nil
 			second = nil
-			//fmt.Println("receiving first")
 			select {
 			case first = <-resCh:
 				mergesPerformed.Inc()
 			case <-ctx.Done():
 				return ctx.Err()
 			}
-			//fmt.Println("received first")
-			//fmt.Println("receiving second")
 
 			select {
 			case second = <-profileCh:
@@ -94,12 +137,11 @@ func MergeProfilesConcurrent(ctx context.Context, profileCh chan InstantProfile,
 				return ctx.Err()
 			}
 
-			//fmt.Println("received second", "is nil", second == nil)
-
 			if second == nil {
 				read := profilesRead.Load()
 				merged := mergesPerformed.Load()
-				//fmt.Println("read", read, "merged", merged)
+				// For any N inputs we need exactly N-1 merge operations. So we
+				// know we are done when we have done that many operations.
 				if read == merged+1 {
 					res = first
 					close(pairCh)
@@ -107,7 +149,9 @@ func MergeProfilesConcurrent(ctx context.Context, profileCh chan InstantProfile,
 				}
 				select {
 				case second = <-resCh:
-					mergesPerformed.Inc()
+					if second != nil {
+						mergesPerformed.Inc()
+					}
 				case <-ctx.Done():
 					return ctx.Err()
 				}
@@ -150,7 +194,14 @@ func MergeProfilesConcurrent(ctx context.Context, profileCh chan InstantProfile,
 	return res, nil
 }
 
-func NewMergeProfile(a, b InstantProfile) (*MergeProfile, error) {
+func NewMergeProfile(a, b InstantProfile) (InstantProfile, error) {
+	if a != nil && b == nil {
+		return a, nil
+	}
+	if a == nil && b != nil {
+		return b, nil
+	}
+
 	metaA := a.ProfileMeta()
 	metaB := b.ProfileMeta()
 
@@ -507,15 +558,19 @@ func (i *MergeProfileTreeIterator) StepUp() {
 }
 
 func MergeInstantProfileTreeNodes(a, b InstantProfileTreeNode) InstantProfileTreeNode {
-	flatValues := []*ProfileTreeValueNode{{}}
+	var flatValues []*ProfileTreeValueNode
 	flatA := a.FlatValues()
 	if len(flatA) > 0 {
-		flatValues[0].Value += flatA[0].Value
+		flatValues = append(flatValues, &ProfileTreeValueNode{Value: flatA[0].Value})
 	}
 
 	flatB := b.FlatValues()
 	if len(flatB) > 0 {
-		flatValues[0].Value += flatB[0].Value
+		if len(flatValues) > 0 {
+			flatValues[0].Value += flatB[0].Value
+		} else {
+			flatValues = append(flatValues, &ProfileTreeValueNode{Value: flatB[0].Value})
+		}
 	}
 
 	cumulativeValues := []*ProfileTreeValueNode{{}}

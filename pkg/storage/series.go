@@ -625,6 +625,206 @@ type MemSeriesIterator struct {
 	numSamples uint16
 }
 
+type MemMergeSeries struct {
+	*MemSeries
+
+	mint int64
+	maxt int64
+}
+
+func (s *MemMergeSeries) Iterator() ProfileSeriesIterator {
+	s.MemSeries.mu.RLock()
+	defer s.MemSeries.mu.RUnlock()
+
+	sl := &SliceProfileSeriesIterator{i: -1}
+	minTimestamp, startIndex, endIndex, err := getIndexRange(s.timestamps.Iterator(nil), s.mint, s.maxt)
+	if err != nil {
+		sl.err = err
+		return sl
+	}
+
+	duration, err := iteratorRangeSum(s.durations.Iterator(nil), startIndex, endIndex)
+	if err != nil {
+		sl.err = err
+		return sl
+	}
+
+	period, err := iteratorRangeMax(s.periods.Iterator(nil), startIndex, endIndex)
+	if err != nil {
+		sl.err = err
+		return sl
+	}
+
+	p := &Profile{
+		Meta: InstantProfileMeta{
+			Duration:   duration,
+			Period:     period,
+			Timestamp:  minTimestamp,
+			PeriodType: s.MemSeries.periodType,
+			SampleType: s.MemSeries.sampleType,
+		},
+	}
+
+	rootKey := ProfileTreeValueNodeKey{location: "0"}
+	sum, err := iteratorRangeSum(s.cumulativeValues[rootKey].Iterator(nil), startIndex, endIndex)
+	if err != nil {
+		sl.err = err
+		return sl
+	}
+
+	cur := &ProfileTreeNode{
+		cumulativeValues: []*ProfileTreeValueNode{{
+			Value: sum,
+		}},
+	}
+	tree := &ProfileTree{Roots: cur}
+	p.Tree = tree
+	sl.samples = append(sl.samples, p)
+
+	stack := ProfileTreeStack{{node: cur}}
+	it := s.MemSeries.seriesTree.Iterator()
+
+	if !it.HasMore() {
+		return sl
+	}
+	if !it.NextChild() {
+		return sl
+	}
+	it.StepInto()
+
+	for {
+		hasMore := it.HasMore()
+		if !hasMore {
+			break
+		}
+		nextChild := it.NextChild()
+		if nextChild {
+			child := it.At()
+
+			n := &ProfileTreeNode{
+				locationID: child.LocationID,
+				Children:   make([]*ProfileTreeNode, 0, len(child.Children)),
+			}
+
+			for _, key := range child.keys {
+				if chunk, ok := s.flatValues[key]; ok {
+					sum, err := iteratorRangeSum(chunk.Iterator(nil), startIndex, endIndex)
+					if err != nil {
+						sl.err = err
+						return sl
+					}
+
+					if sum > 0 {
+						n.flatValues = append(n.flatValues, &ProfileTreeValueNode{
+							Value:    sum,
+							Label:    s.labels[key],
+							NumLabel: s.numLabels[key],
+							NumUnit:  s.numUnits[key],
+						})
+					}
+				}
+				if chunk, ok := s.cumulativeValues[key]; ok {
+					sum, err := iteratorRangeSum(chunk.Iterator(nil), startIndex, endIndex)
+					if err != nil {
+						sl.err = err
+						return sl
+					}
+
+					n.cumulativeValues = append(n.cumulativeValues, &ProfileTreeValueNode{
+						Value:    sum,
+						Label:    s.labels[key],
+						NumLabel: s.numLabels[key],
+						NumUnit:  s.numUnits[key],
+					})
+				}
+			}
+
+			cur := stack.Peek()
+			cur.node.Children = append(cur.node.Children, n)
+
+			stack.Push(&ProfileTreeStackEntry{
+				node: n,
+			})
+			it.StepInto()
+			continue
+		}
+		it.StepUp()
+		stack.Pop()
+	}
+
+	return sl
+}
+
+func getIndexRange(it chunkenc.Iterator, mint, maxt int64) (int64, int, int, error) {
+	startTs := int64(-1)
+	startIndex := 0
+	startSet := false
+	endIndex := 0
+	endSet := false
+	i := 0
+	for it.Next() {
+		t := it.At()
+		if !startSet && t >= mint {
+			startSet = true
+			startIndex = i
+			startTs = t
+		}
+		if t > maxt {
+			endSet = true
+			endIndex = i
+			break
+		}
+		i++
+	}
+	if it.Err() != nil {
+		return 0, 0, 0, it.Err()
+	}
+	if !endSet {
+		endIndex = i
+	}
+
+	return startTs, startIndex, endIndex, nil
+}
+
+func iteratorRangeMax(it chunkenc.Iterator, startIndex, endIndex int) (int64, error) {
+	max := int64(0)
+	i := 0
+	for it.Next() {
+		if i >= endIndex {
+			break
+		}
+		cur := it.At()
+		if i >= startIndex && cur > max {
+			max = cur
+		}
+		i++
+	}
+	if it.Err() != nil {
+		return max, it.Err()
+	}
+
+	return max, nil
+}
+
+func iteratorRangeSum(it chunkenc.Iterator, startIndex, endIndex int) (int64, error) {
+	sum := int64(0)
+	i := 0
+	for it.Next() {
+		if i >= endIndex {
+			break
+		}
+		if i >= startIndex {
+			sum += it.At()
+		}
+		i++
+	}
+	if it.Err() != nil {
+		return sum, it.Err()
+	}
+
+	return sum, nil
+}
+
 func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -705,12 +905,12 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 }
 
 func (it *MemSeriesIterator) Next() bool {
+	it.series.mu.RLock()
+	defer it.series.mu.RUnlock()
+
 	if it.numSamples == 0 {
 		return false
 	}
-
-	it.series.mu.RLock()
-	defer it.series.mu.RUnlock()
 
 	if !it.timestampsIterator.Next() {
 		return false

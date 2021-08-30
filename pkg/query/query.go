@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"math"
-	"runtime"
 	"sort"
 	"time"
 
@@ -228,7 +227,7 @@ func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_Repor
 	case pb.QueryRequest_FLAMEGRAPH:
 		fg, err := storage.GenerateFlamegraph(q.metaStore, p)
 		if err != nil {
-			return nil, status.Error(codes.Internal, "failed to generate flamegraph")
+			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
 
 		return &pb.QueryResponse{
@@ -286,30 +285,7 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 		Merge: true,
 	}, sel...)
 
-	profileCh := make(chan storage.InstantProfile)
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				break
-			default:
-			}
-			if !set.Next() {
-				break
-			}
-			series := set.At()
-			i := series.Iterator()
-			for i.Next() {
-				// Have to copy as profile pointer is not stable for more than the
-				// current iteration.
-				profileCh <- storage.CopyInstantProfile(i.At())
-			}
-		}
-		close(profileCh)
-	}()
-
-	return storage.MergeProfilesConcurrent(context.Background(), profileCh, runtime.NumCPU())
+	return storage.MergeSeriesSetProfiles(ctx, set)
 }
 
 // Series issues a series request against the storage

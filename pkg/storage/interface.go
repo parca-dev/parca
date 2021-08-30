@@ -203,6 +203,25 @@ func (p *Profile) ProfileMeta() InstantProfileMeta {
 	return p.Meta
 }
 
+type SliceProfileSeriesIterator struct {
+	samples []InstantProfile
+	i       int
+	err     error
+}
+
+func (i *SliceProfileSeriesIterator) Next() bool {
+	i.i++
+	return i.i < len(i.samples)
+}
+
+func (i *SliceProfileSeriesIterator) At() InstantProfile {
+	return i.samples[i.i]
+}
+
+func (i *SliceProfileSeriesIterator) Err() error {
+	return i.err
+}
+
 // ProfilesFromPprof extracts a Profile from each sample index included in the
 // pprof profile.
 func ProfilesFromPprof(s ProfileMetaStore, p *profile.Profile) []*Profile {

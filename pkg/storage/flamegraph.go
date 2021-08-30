@@ -144,9 +144,10 @@ func GenerateFlamegraph(locations Locations, p InstantProfile) (*pb.Flamegraph, 
 			child := it.At()
 			cumulative := child.CumulativeValue()
 			if cumulative > 0 {
-				l, err := locations.GetLocationByID(child.LocationID())
+				id := child.LocationID()
+				l, err := locations.GetLocationByID(id)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("get location with ID %d: %w", id, err)
 				}
 				outerMost, innerMost := locationToTreeNodes(l, cumulative, child.CumulativeDiffValue())
 
