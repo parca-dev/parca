@@ -13,6 +13,7 @@ import (
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/proto/gen/go/profilestore"
 	pb "github.com/parca-dev/parca/proto/gen/go/query"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -22,7 +23,7 @@ import (
 
 func Test_QueryRange_EmptyStore(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB()
+	db := storage.OpenDB(prometheus.NewRegistry())
 	q := New(log.NewNopLogger(), db, nil)
 
 	// Query last 5 minutes
@@ -41,7 +42,7 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB()
+	db := storage.OpenDB(prometheus.NewRegistry())
 	s := storage.NewInMemoryProfileMetaStore()
 	q := New(log.NewNopLogger(), db, s)
 
@@ -91,7 +92,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB()
+	db := storage.OpenDB(prometheus.NewRegistry())
 	s := storage.NewInMemoryProfileMetaStore()
 	q := New(log.NewNopLogger(), db, s)
 
@@ -245,7 +246,7 @@ func Test_Query_InputValidation(t *testing.T) {
 
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB()
+	db := storage.OpenDB(prometheus.NewRegistry())
 	s := storage.NewInMemoryProfileMetaStore()
 	q := New(log.NewNopLogger(), db, s)
 
@@ -288,7 +289,7 @@ func Test_Query_Simple(t *testing.T) {
 
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB()
+	db := storage.OpenDB(prometheus.NewRegistry())
 	s := storage.NewInMemoryProfileMetaStore()
 	q := New(log.NewNopLogger(), db, s)
 

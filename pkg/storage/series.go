@@ -530,7 +530,9 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	a.s.numSamples++
 	a.s.mu.Unlock()
 
-	a.s.samplesAppended.Inc()
+	if a.s.samplesAppended != nil {
+		a.s.samplesAppended.Inc()
+	}
 	return nil
 }
 

@@ -3,13 +3,14 @@ package storage
 import (
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 )
 
 func TestPostingsForMatchers(t *testing.T) {
-	h := NewHead(nil)
+	h := NewHead(prometheus.NewRegistry())
 	h.minTime = *atomic.NewInt64(-1)
 	h.maxTime = *atomic.NewInt64(1)
 	h.postings.Add(0, labels.Labels{{"n", "1"}})
