@@ -5,9 +5,10 @@ import (
 )
 
 type multiChunksIterator struct {
-	chunks []chunkenc.Chunk
-	cit    chunkenc.Iterator
-	read   uint16
+	chunks     []chunkenc.Chunk
+	cit        chunkenc.Iterator
+	readChunks uint16
+	read       uint16 // read samples, need to track for seeking.
 
 	val    int64
 	sparse bool
@@ -20,11 +21,12 @@ func NewMultiChunkIterator(chunks []chunkenc.Chunk) chunkenc.Iterator {
 
 func (it *multiChunksIterator) Next() bool {
 	if it.cit == nil {
-		it.cit = it.chunks[it.read].Iterator(it.cit)
-		it.read++
+		it.cit = it.chunks[it.readChunks].Iterator(it.cit)
+		it.readChunks++
 	}
 	for it.cit.Next() {
 		it.val = it.cit.At()
+		it.read++
 		return true
 	}
 	if it.cit.Err() != nil {
@@ -32,13 +34,14 @@ func (it *multiChunksIterator) Next() bool {
 		return false
 	}
 
-	if it.read < uint16(len(it.chunks)) {
-		it.cit = it.chunks[it.read].Iterator(it.cit)
-		it.read++
+	if it.readChunks < uint16(len(it.chunks)) {
+		it.cit = it.chunks[it.readChunks].Iterator(it.cit)
+		it.readChunks++
 
 		// We need to immediately need the next value.
 		for it.cit.Next() {
 			it.val = it.cit.At()
+			it.read++
 			return true
 		}
 		// Rare case were we have an empty next chunk.
@@ -47,7 +50,7 @@ func (it *multiChunksIterator) Next() bool {
 
 	it.sparse = true
 
-	// We've read everything from all chunks.
+	// We've readChunks everything from all chunks.
 	return false
 }
 
@@ -64,7 +67,16 @@ func (it *multiChunksIterator) Err() error {
 }
 
 func (it *multiChunksIterator) Seek(index uint16) bool {
-	panic("implement me")
+	if it.err != nil {
+		return false
+	}
+
+	for it.read <= index || it.read == 0 {
+		if !it.Next() {
+			return false
+		}
+	}
+	return true
 }
 
 // timestampChunk wraps a chunkenc.Chunk to additionally track minTime and maxTime.

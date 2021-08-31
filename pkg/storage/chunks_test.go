@@ -22,10 +22,12 @@ func TestMultiChunks(t *testing.T) {
 
 	require.Len(t, chks, 9) // ceil(1_000/120)
 
-	var it MultiChunkIterator
-	it = &multiChunksIterator{chunks: chks}
+	it := NewMultiChunkIterator(chks)
 
-	seen := int64(0)
+	// Seek to index 9 (value 10) and then start.
+	it.Seek(9)
+
+	seen := int64(10)
 	for it.Next() {
 		require.Equal(t, seen, it.At())
 		seen++
@@ -33,6 +35,11 @@ func TestMultiChunks(t *testing.T) {
 
 	require.NoError(t, it.Err())
 	require.Equal(t, int64(1_000), seen)
+
+	// check for sparseness. it should return 0
+	require.False(t, it.Next())
+	require.NoError(t, it.Err())
+	require.Equal(t, int64(0), it.At())
 }
 
 func TestTimestampChunks_indexRange(t *testing.T) {
