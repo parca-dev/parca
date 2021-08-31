@@ -159,7 +159,7 @@ func (s *sqlMetaStore) GetLocationByID(id uint64) (*profile.Location, error) {
 	err := s.db.QueryRow(
 		`SELECT "location_id", "address", "is_folded", "mapping_id"
 				FROM "locations"
-				WHERE location_id=?`, id,
+				WHERE location_id=?`, int64(id),
 	).Scan(&locID, &address, &l.IsFolded, &mappingPKey)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -482,7 +482,7 @@ func (s *sqlMetaStore) GetMappingByKey(k MappingKey) (*profile.Mapping, error) {
 				"has_functions", "has_filenames", "has_line_numbers", "has_inline_frames"
 				FROM "mappings"
 				WHERE size=? AND offset=? AND build_id_or_file=?`,
-		k.Size, k.Offset, k.BuildIDOrFile,
+		int64(k.Size), int64(k.Offset), k.BuildIDOrFile,
 	).Scan(
 		&id, &start, &limit, &offset, &m.File, &m.BuildID,
 		&m.HasFunctions, &m.HasFilenames, &m.HasLineNumbers, &m.HasInlineFrames,

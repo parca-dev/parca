@@ -59,8 +59,9 @@ func TestDiskLocationStore(t *testing.T) {
 }
 
 func locationStoreTest(t *testing.T, s LocationStore) {
+	largeLoc := -1
 	l := &profile.Location{
-		ID:      uint64(8),
+		ID:      uint64(largeLoc),
 		Address: uint64(42),
 	}
 	err := s.CreateLocation(l)
@@ -80,11 +81,11 @@ func locationStoreTest(t *testing.T, s LocationStore) {
 
 	locByID, err := s.GetLocationByID(l.ID)
 	require.NoError(t, err)
-	require.Equal(t, uint64(8), locByID.ID)
+	require.Equal(t, uint64(largeLoc), locByID.ID)
 
 	locByKey, err := s.GetLocationByKey(MakeLocationKey(l))
 	require.NoError(t, err)
-	require.Equal(t, uint64(8), locByKey.ID)
+	require.Equal(t, uint64(largeLoc), locByKey.ID)
 
 	f := &profile.Function{
 		ID:         8,
@@ -129,8 +130,9 @@ func TestDiskFunctionStore(t *testing.T) {
 }
 
 func functionStoreTest(t *testing.T, s FunctionStore) {
+	largeLoc := -1
 	f := &profile.Function{
-		ID:         8,
+		ID:         uint64(largeLoc),
 		Name:       "name",
 		SystemName: "systemName",
 		Filename:   "filename",
@@ -149,13 +151,13 @@ func functionStoreTest(t *testing.T, s FunctionStore) {
 	err = s.CreateFunction(f1)
 	require.NoError(t, err)
 
-	funcByID, err := s.GetFunctionByKey(MakeFunctionKey(f1))
+	funcByID, err := s.GetFunctionByKey(MakeFunctionKey(f))
 	require.NoError(t, err)
-	require.Equal(t, uint64(18), funcByID.ID)
-	require.Equal(t, f1.Name, funcByID.Name)
-	require.Equal(t, f1.SystemName, funcByID.SystemName)
-	require.Equal(t, f1.Filename, funcByID.Filename)
-	require.Equal(t, f1.StartLine, funcByID.StartLine)
+	require.Equal(t, uint64(largeLoc), funcByID.ID)
+	require.Equal(t, f.Name, funcByID.Name)
+	require.Equal(t, f.SystemName, funcByID.SystemName)
+	require.Equal(t, f.Filename, funcByID.Filename)
+	require.Equal(t, f.StartLine, funcByID.StartLine)
 }
 
 func TestInMemoryMappingStore(t *testing.T) {
@@ -181,8 +183,9 @@ func TestDiskMappingStore(t *testing.T) {
 }
 
 func mappingStoreTest(t *testing.T, s MappingStore) {
+	largeLoc := -1
 	m := &profile.Mapping{
-		ID:              8,
+		ID:              uint64((largeLoc)),
 		Start:           1,
 		Limit:           10,
 		Offset:          5,
@@ -211,18 +214,18 @@ func mappingStoreTest(t *testing.T, s MappingStore) {
 	err = s.CreateMapping(m1)
 	require.NoError(t, err)
 
-	mapByKey, err := s.GetMappingByKey(MakeMappingKey(m1))
+	mapByKey, err := s.GetMappingByKey(MakeMappingKey(m))
 	require.NoError(t, err)
-	require.Equal(t, uint64(18), mapByKey.ID)
-	require.Equal(t, m1.Start, mapByKey.Start)
-	require.Equal(t, m1.Limit, mapByKey.Limit)
-	require.Equal(t, m1.Offset, mapByKey.Offset)
-	require.Equal(t, m1.File, mapByKey.File)
-	require.Equal(t, m1.BuildID, mapByKey.BuildID)
-	require.Equal(t, m1.HasFunctions, mapByKey.HasFunctions)
-	require.Equal(t, m1.HasFilenames, mapByKey.HasFilenames)
-	require.Equal(t, m1.HasLineNumbers, mapByKey.HasLineNumbers)
-	require.Equal(t, m1.HasInlineFrames, mapByKey.HasInlineFrames)
+	require.Equal(t, uint64(largeLoc), mapByKey.ID)
+	require.Equal(t, m.Start, mapByKey.Start)
+	require.Equal(t, m.Limit, mapByKey.Limit)
+	require.Equal(t, m.Offset, mapByKey.Offset)
+	require.Equal(t, m.File, mapByKey.File)
+	require.Equal(t, m.BuildID, mapByKey.BuildID)
+	require.Equal(t, m.HasFunctions, mapByKey.HasFunctions)
+	require.Equal(t, m.HasFilenames, mapByKey.HasFilenames)
+	require.Equal(t, m.HasLineNumbers, mapByKey.HasLineNumbers)
+	require.Equal(t, m.HasInlineFrames, mapByKey.HasInlineFrames)
 }
 
 func TestInMemoryMetaStore(t *testing.T) {
@@ -248,8 +251,9 @@ func TestDiskMetaStore(t *testing.T) {
 }
 
 func metaStoreTest(t *testing.T, s ProfileMetaStore) {
+	largeLoc := -1
 	m := &profile.Mapping{
-		ID:              8,
+		ID:              uint64(largeLoc),
 		Start:           1,
 		Limit:           10,
 		Offset:          5,
