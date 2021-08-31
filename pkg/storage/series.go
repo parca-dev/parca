@@ -992,13 +992,6 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 
 	rs.s.mu.RLock()
 	chunkStart, chunkEnd := rs.s.timestamps.indexRange(rs.mint, rs.maxt)
-	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-		Values:   NewMultiChunkIterator(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd]),
-		Label:    rs.s.labels[rootKey],
-		NumLabel: rs.s.numLabels[rootKey],
-		NumUnit:  rs.s.numUnits[rootKey],
-	})
-
 	timestamps := make([]chunkenc.Chunk, 0, chunkEnd-chunkStart)
 	for _, t := range rs.s.timestamps[chunkStart:chunkEnd] {
 		timestamps = append(timestamps, t.chunk)
@@ -1020,6 +1013,17 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 			break
 		}
 	}
+
+	rs.s.mu.Lock()
+	rootIt := NewMultiChunkIterator(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
+	rootIt.Seek(uint16(start))
+	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
+		Values:   rootIt,
+		Label:    rs.s.labels[rootKey],
+		NumLabel: rs.s.numLabels[rootKey],
+		NumUnit:  rs.s.numUnits[rootKey],
+	})
+	rs.s.mu.Unlock()
 
 	memItStack := MemSeriesIteratorTreeStack{{
 		node:  root,
