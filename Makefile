@@ -45,7 +45,7 @@ check-license:
 	
 .PHONY: go/test
 go/test:
-	 go test -v `go list ./... | grep -v ./internal`
+	 go test -v `go list ./... | grep -v ./internal/pprof`
 
 .PHONY: ui
 ui:

@@ -15,11 +15,12 @@ package symbol
 
 import (
 	"context"
+	stdlog "log"
 	"net"
 	"os"
 	"testing"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,7 @@ import (
 func TestSymbolizer(t *testing.T) {
 	w := log.NewSyncWriter(os.Stderr)
 	logger := log.NewLogfmtLogger(w)
-	dbgStr, err := debuginfo.NewStore(logger, &debuginfo.Config{
+	s, err := debuginfo.NewStore(logger, &debuginfo.Config{
 		Bucket: &client.BucketConfig{
 			Type: client.FILESYSTEM,
 			Config: filesystem.Config{
@@ -45,16 +46,18 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 
 	lis, err := net.Listen("tcp", ":0")
-	require.NoError(t, err)
-	defer lis.Close()
-
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
 	grpcServer := grpc.NewServer()
-	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, dbgStr)
-	go grpcServer.Serve(lis)
-
-	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())
-	require.NoError(t, err)
-	defer conn.Close()
+	defer grpcServer.GracefulStop()
+	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, s)
+	go func() {
+		err := grpcServer.Serve(lis)
+		if err != nil {
+			stdlog.Fatalf("failed to serve: %v", err)
+		}
+	}()
 
 	mStr, err := metastore.NewInMemoryProfileMetaStore("symbolizer")
 	t.Cleanup(func() {
@@ -62,19 +65,22 @@ func TestSymbolizer(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
+	sym := NewSymbolizer(log.NewNopLogger(), mStr, s)
 	m := &profile.Mapping{
 		ID:      uint64(1),
 		Start:   4194304,
 		Limit:   4603904,
 		BuildID: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
 	}
-	mStr.CreateMapping(m)
+	err = mStr.CreateMapping(m)
+	require.NoError(t, err)
+
 	locs := []*profile.Location{{
 		Mapping: m,
 		Address: 0x463781,
 	}}
-	mStr.CreateLocation(locs[0])
+	err = mStr.CreateLocation(locs[0])
+	require.NoError(t, err)
 
 	err = sym.symbolize(context.Background(), locs)
 	require.NoError(t, err)
@@ -105,7 +111,7 @@ func TestSymbolizer(t *testing.T) {
 }
 
 func TestRealSymbolizer(t *testing.T) {
-	dbgStr, err := debuginfo.NewStore(log.NewNopLogger(), &debuginfo.Config{
+	s, err := debuginfo.NewStore(log.NewNopLogger(), &debuginfo.Config{
 		Bucket: &client.BucketConfig{
 			Type: client.FILESYSTEM,
 			Config: filesystem.Config{
@@ -116,16 +122,18 @@ func TestRealSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 
 	lis, err := net.Listen("tcp", ":0")
-	require.NoError(t, err)
-	defer lis.Close()
-
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
 	grpcServer := grpc.NewServer()
-	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, dbgStr)
-	go grpcServer.Serve(lis)
-
-	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())
-	require.NoError(t, err)
-	defer conn.Close()
+	defer grpcServer.GracefulStop()
+	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, s)
+	go func() {
+		err := grpcServer.Serve(lis)
+		if err != nil {
+			stdlog.Fatalf("failed to serve: %v", err)
+		}
+	}()
 
 	//mStr, err := metastore.NewInMemoryProfileMetaStore("realsymbolizer")
 	//t.Cleanup(func() {

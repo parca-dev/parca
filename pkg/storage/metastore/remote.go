@@ -21,5 +21,4 @@ type RemoteMetaStore struct {
 
 func NewRemoteProfileMetaStore(addr string) (*RemoteMetaStore, error) {
 	panic("implement me")
-	return &RemoteMetaStore{}, nil
 }

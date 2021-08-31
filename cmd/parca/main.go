@@ -33,6 +33,7 @@ func main() {
 	serverStr.Print()
 
 	logger := parca.NewLogger(flags.LogLevel, parca.LogFormatJSON, "parca")
+	level.Debug(logger).Log("msg", "parca initialized", "config", flags)
 
 	registry := prometheus.NewRegistry()
 

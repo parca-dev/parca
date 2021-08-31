@@ -687,7 +687,7 @@ func (s *sqlMetaStore) createLines(lines []profile.Line, locID int64) error {
 		}
 		defer stmt.Close()
 
-		res, err = stmt.Exec()
+		_, err = stmt.Exec()
 		if err != nil {
 			return err
 		}

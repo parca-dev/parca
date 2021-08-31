@@ -396,6 +396,7 @@ func Test_Query_Diff(t *testing.T) {
 
 func Benchmark_Query_Merge(b *testing.B) {
 	s, err := metastore.NewInMemoryProfileMetaStore("benchquerymerge")
+	require.NoError(b, err)
 	b.Cleanup(func() {
 		s.Close()
 	})
@@ -450,9 +451,11 @@ func Benchmark_Query_Merge(b *testing.B) {
 
 func Test_Query_Merge(t *testing.T) {
 	s, err := metastore.NewInMemoryProfileMetaStore("querymerge")
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
+
 	f, err := os.Open("../storage/testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)

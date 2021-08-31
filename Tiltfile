@@ -2,7 +2,7 @@
 
 docker_build('quay.io/parca/parca:dev', '.',
     dockerfile='Dockerfile.dev',
-    only=['./cmd', './pkg', './internal', './proto', './ui', './go.mod', './go.sum', 'parca.yaml'],
+    only=['./cmd', './pkg', './internal', './proto', './gen', './ui', './go.mod', './go.sum', 'parca.yaml'],
 )
 k8s_yaml('deploy/manifests/parca-deployment.yaml')
 k8s_resource('parca', port_forwards=7070)

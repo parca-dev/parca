@@ -25,6 +25,7 @@ RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 COPY ./cmd /app/cmd
 COPY ./pkg /app/pkg
 COPY ./proto /app/proto
+COPY ./gen /app/gen
 COPY ./internal /app/internal
 COPY ./go.mod /app
 COPY ./go.sum /app

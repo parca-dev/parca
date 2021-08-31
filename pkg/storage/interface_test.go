@@ -17,7 +17,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"

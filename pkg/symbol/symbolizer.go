@@ -21,6 +21,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/runutil"
@@ -72,12 +73,20 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 		mappings[loc.Mapping] = append(mappings[loc.Mapping], loc)
 	}
 
+	var result *multierror.Error
 	for mapping, locations := range mappings {
+		// If BuildID is empty we cannot associate an object file wih this mapping.
+		if mapping.BuildID == "" {
+			level.Debug(s.logger).Log("msg", "Build ID is empty for the mapping, skipping...")
+			continue
+		}
+
 		// Symbolize Locations using DebugInfo store.
 		level.Debug(s.logger).Log("msg", "storage symbolization request started")
 		symbolizedLines, err := s.debugInfo.Symbolize(ctx, mapping, locations...)
 		if err != nil {
-			return fmt.Errorf("storage symbolization request failed: %w", err)
+			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
+			continue
 		}
 
 		// Update LocationStore with found symbols.
@@ -85,10 +94,11 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 			loc.Line = lines
 			err := s.locations.UpdateLocation(loc)
 			if err != nil {
-				return err
+				result = multierror.Append(result, fmt.Errorf("failed to update location: %w", err))
+				continue
 			}
 		}
 	}
 
-	return nil
+	return result.ErrorOrNil()
 }

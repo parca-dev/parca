@@ -34,8 +34,8 @@ import (
 	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
 
-	"github.com/parca-dev/parca/internal/pprof/binutils"
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	"github.com/parca-dev/parca/internal/pprof/binutils"
 )
 
 type Config struct {
@@ -141,10 +141,6 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 }
 
 func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...*profile.Location) (map[*profile.Location][]profile.Line, error) {
-	if m.BuildID == "" {
-		return nil, errors.New("empty buildID")
-	}
-
 	mappingPath, err := s.fetchObjectFile(ctx, m.BuildID)
 	if err != nil {
 		level.Debug(s.logger).Log("msg", "failed to fetch object", "object", m.BuildID, "err", err)
