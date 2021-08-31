@@ -71,6 +71,10 @@ func (it *multiChunksIterator) Seek(index uint16) bool {
 		return false
 	}
 
+	if it.read == index {
+		return true
+	}
+
 	for it.read <= index || it.read == 0 {
 		if !it.Next() {
 			return false
