@@ -4,23 +4,18 @@ import (
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
-type MultiChunkIterator interface {
-	// Next advances the iterator by one possibly across multiple chunks with this iterator.
-	Next() bool
-	// At returns the current value.
-	At() int64
-	// Err returns the current error.
-	// It should be used only after iterator is exhausted, that is `Next` returns false.
-	Err() error
-}
-
 type multiChunksIterator struct {
 	chunks []chunkenc.Chunk
 	cit    chunkenc.Iterator
 	read   uint16
 
-	val int64
-	err error
+	val    int64
+	sparse bool
+	err    error
+}
+
+func NewMultiChunkIterator(chunks []chunkenc.Chunk) chunkenc.Iterator {
+	return &multiChunksIterator{chunks: chunks}
 }
 
 func (it *multiChunksIterator) Next() bool {
@@ -50,11 +45,17 @@ func (it *multiChunksIterator) Next() bool {
 		return false
 	}
 
+	it.sparse = true
+
 	// We've read everything from all chunks.
 	return false
 }
 
 func (it *multiChunksIterator) At() int64 {
+	if it.sparse {
+		return 0
+	}
+
 	return it.val
 }
 
