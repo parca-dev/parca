@@ -499,6 +499,11 @@ export class LabelsResponse extends jspb.Message {
   setLabelNamesList(value: Array<string>): void;
   addLabelNames(value: string, index?: number): string;
 
+  clearWarningsList(): void;
+  getWarningsList(): Array<string>;
+  setWarningsList(value: Array<string>): void;
+  addWarnings(value: string, index?: number): string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LabelsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: LabelsResponse): LabelsResponse.AsObject;
@@ -512,6 +517,7 @@ export class LabelsResponse extends jspb.Message {
 export namespace LabelsResponse {
   export type AsObject = {
     labelNamesList: Array<string>,
+    warningsList: Array<string>,
   }
 }
 
@@ -559,6 +565,11 @@ export class ValuesResponse extends jspb.Message {
   setLabelValuesList(value: Array<string>): void;
   addLabelValues(value: string, index?: number): string;
 
+  clearWarningsList(): void;
+  getWarningsList(): Array<string>;
+  setWarningsList(value: Array<string>): void;
+  addWarnings(value: string, index?: number): string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ValuesResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ValuesResponse): ValuesResponse.AsObject;
@@ -572,6 +583,7 @@ export class ValuesResponse extends jspb.Message {
 export namespace ValuesResponse {
   export type AsObject = {
     labelValuesList: Array<string>,
+    warningsList: Array<string>,
   }
 }
 

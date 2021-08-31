@@ -352,6 +352,7 @@ func (q *Query) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsRe
 
 	return &pb.LabelsResponse{
 		LabelNames: names,
+		Warnings:   warnings.ToStrings(),
 	}, nil
 }
 
@@ -419,6 +420,7 @@ func (q *Query) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesRe
 
 	return &pb.ValuesResponse{
 		LabelValues: vals,
+		Warnings:    warnings.ToStrings(),
 	}, nil
 }
 

@@ -13,11 +13,11 @@ func TestPostingsForMatchers(t *testing.T) {
 	h := NewHead(prometheus.NewRegistry())
 	h.minTime = *atomic.NewInt64(-1)
 	h.maxTime = *atomic.NewInt64(1)
-	h.postings.Add(0, labels.Labels{{"n", "1"}})
-	h.postings.Add(1, labels.Labels{{"n", "1"}, {"i", "a"}})
-	h.postings.Add(2, labels.Labels{{"n", "1"}, {"i", "b"}})
-	h.postings.Add(3, labels.Labels{{"n", "2"}})
-	h.postings.Add(4, labels.Labels{{"n", "2.5"}})
+	h.postings.Add(0, labels.Labels{{Name: "n", Value: "1"}})
+	h.postings.Add(1, labels.Labels{{Name: "n", Value: "1"}, {Name: "i", Value: "a"}})
+	h.postings.Add(2, labels.Labels{{Name: "n", Value: "1"}, {Name: "i", Value: "b"}})
+	h.postings.Add(3, labels.Labels{{Name: "n", Value: "2"}})
+	h.postings.Add(4, labels.Labels{{Name: "n", Value: "2.5"}})
 
 	ir := &headIndexReader{head: h}
 

@@ -57,6 +57,14 @@ type SeriesSet interface {
 
 type Warnings []error
 
+func (w Warnings) ToStrings() []string {
+	res := make([]string, 0, len(w))
+	for _, warn := range w {
+		res = append(res, warn.Error())
+	}
+	return res
+}
+
 type Series interface {
 	Labels
 	ProfileSeries

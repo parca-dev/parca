@@ -18,11 +18,12 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	stdlog "log"
 	"net"
 	"os"
 	"testing"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
@@ -49,10 +50,15 @@ func TestStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
 	}
-	defer lis.Close()
 	grpcServer := grpc.NewServer()
+	defer grpcServer.GracefulStop()
 	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, s)
-	go grpcServer.Serve(lis)
+	go func() {
+		err := grpcServer.Serve(lis)
+		if err != nil {
+			stdlog.Fatalf("failed to serve: %v", err)
+		}
+	}()
 
 	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())
 	require.NoError(t, err)

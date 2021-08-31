@@ -29,7 +29,7 @@ func TestTreeStack(t *testing.T) {
 
 	require.Equal(t, 0, s.Size())
 
-	e, hasMore = s.Pop()
+	_, hasMore = s.Pop()
 	require.False(t, hasMore)
 }
 

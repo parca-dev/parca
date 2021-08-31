@@ -50,9 +50,7 @@ func (c *RLEChunk) NumValues() int {
 	return int(binary.BigEndian.Uint16(c.Bytes()[2:]))
 }
 
-func (c *RLEChunk) Compact() {
-	return
-}
+func (c *RLEChunk) Compact() {}
 
 func (c *RLEChunk) Appender() (Appender, error) {
 	return &rleAppender{

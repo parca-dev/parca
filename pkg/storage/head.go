@@ -100,7 +100,7 @@ func (h *Head) Collect(metrics chan<- prometheus.Metric) {
 	metrics <- prometheus.MustNewConstMetric(h.maxTimeGauge, prometheus.GaugeValue, float64(h.MaxTime()/1000))
 
 	// Uncomment to enable pretty heavy metrics.
-	//h.stats()
+	h.stats()
 }
 
 func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
