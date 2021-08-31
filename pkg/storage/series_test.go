@@ -731,3 +731,48 @@ func TestMemMergeSeriesTree(t *testing.T) {
 		},
 	}, p)
 }
+
+func TestMemRangeSeries_Iterator(t *testing.T) {
+	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	for i := 1; i <= 500; i++ {
+		p := Profile{
+			Tree: &ProfileTree{
+				Roots: &ProfileTreeNode{
+					locationID:       0,
+					cumulativeValues: []*ProfileTreeValueNode{{Value: int64(i)}},
+				},
+			},
+			Meta: InstantProfileMeta{
+				Timestamp: int64(i),
+				Duration:  time.Second.Nanoseconds(),
+				Period:    time.Second.Nanoseconds(),
+			},
+		}
+		require.NoError(t, app.Append(&p))
+	}
+
+	it := (&MemRangeSeries{s: s, mint: 75, maxt: 420}).Iterator()
+
+	seen := int64(76)
+	for it.Next() {
+		p := it.At()
+		require.Equal(t, seen, p.ProfileMeta().Timestamp)
+
+		itt := p.ProfileTree().Iterator()
+		for itt.HasMore() {
+			if itt.NextChild() {
+				require.Equal(t, seen, itt.At().CumulativeValues()[0].Value)
+				itt.StepInto()
+			}
+			itt.StepUp()
+		}
+		seen++
+	}
+
+	require.NoError(t, it.Err())
+	require.Equal(t, int64(421), seen) // 421 would be seen next but 420 was the last value.
+}

@@ -975,6 +975,210 @@ func iteratorRangeSum(it chunkenc.Iterator, startIndex, endIndex int) (int64, er
 	return sum, nil
 }
 
+type MemRangeSeries struct {
+	s    *MemSeries
+	mint int64
+	maxt int64
+}
+
+func (rs *MemRangeSeries) Labels() labels.Labels {
+	return rs.s.Labels()
+}
+
+func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
+	root := &MemSeriesIteratorTreeNode{}
+
+	rootKey := ProfileTreeValueNodeKey{location: "0"}
+
+	rs.s.mu.RLock()
+	chunkStart, chunkEnd := rs.s.timestamps.indexRange(rs.mint, rs.maxt)
+	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
+		Values:   NewMultiChunkIterator(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd]),
+		Label:    rs.s.labels[rootKey],
+		NumLabel: rs.s.numLabels[rootKey],
+		NumUnit:  rs.s.numUnits[rootKey],
+	})
+
+	timestamps := make([]chunkenc.Chunk, 0, chunkEnd-chunkStart)
+	for _, t := range rs.s.timestamps[chunkStart:chunkEnd] {
+		timestamps = append(timestamps, t.chunk)
+	}
+	rs.s.mu.RUnlock()
+
+	// figure out the index of the first sample > mint and the last sample < maxt
+	start := uint64(0)
+	end := uint64(0)
+	timeIt := NewMultiChunkIterator(timestamps)
+	for timeIt.Next() {
+		t := timeIt.At()
+		if t < rs.mint {
+			start++
+		}
+		if t < rs.maxt {
+			end++
+		} else {
+			break
+		}
+	}
+
+	memItStack := MemSeriesIteratorTreeStack{{
+		node:  root,
+		child: 0,
+	}}
+
+	it := rs.s.seriesTree.Iterator()
+
+	for it.HasMore() {
+		if it.NextChild() {
+			child := it.At()
+
+			n := &MemSeriesIteratorTreeNode{
+				locationID: child.LocationID,
+				Children:   make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
+			}
+
+			rs.s.mu.RLock()
+			for _, key := range child.keys {
+				if chunks, ok := rs.s.flatValues[key]; ok {
+					it := NewMultiChunkIterator(chunks[chunkStart:chunkEnd])
+					it.Seek(uint16(start)) // We might need another interface with Seek(index uint64) for multi chunks.
+					n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
+						Values:   it,
+						Label:    rs.s.labels[key],
+						NumLabel: rs.s.numLabels[key],
+						NumUnit:  rs.s.numUnits[key],
+					})
+				}
+				if chunks, ok := rs.s.cumulativeValues[key]; ok {
+					it := NewMultiChunkIterator(chunks[chunkStart:chunkEnd])
+					it.Seek(uint16(start)) // We might need another interface with Seek(index uint64) for multi chunks.
+					n.cumulativeValues = append(n.cumulativeValues, &MemSeriesIteratorTreeValueNode{
+						Values:   it,
+						Label:    rs.s.labels[key],
+						NumLabel: rs.s.numLabels[key],
+						NumUnit:  rs.s.numUnits[key],
+					})
+				}
+			}
+			rs.s.mu.RUnlock()
+
+			cur := memItStack.Peek()
+			cur.node.Children = append(cur.node.Children, n)
+
+			memItStack.Push(&MemSeriesIteratorTreeStackEntry{
+				node:  n,
+				child: 0,
+			})
+			it.StepInto()
+			continue
+		}
+		it.StepUp()
+		memItStack.Pop()
+	}
+
+	timestampIterator := NewMultiChunkIterator(timestamps)
+	timestampIterator.Seek(uint16(start))
+
+	durationsIterator := NewMultiChunkIterator(rs.s.durations[chunkStart:chunkEnd])
+	durationsIterator.Seek(uint16(start))
+
+	periodsIterator := NewMultiChunkIterator(rs.s.periods[chunkStart:chunkEnd])
+	periodsIterator.Seek(uint16(start))
+
+	numSamples := uint64(rs.s.numSamples)
+	if end-start < numSamples {
+		numSamples = end - start
+	}
+
+	return &MemRangeSeriesIterator{
+		s:    rs.s,
+		mint: rs.mint,
+		maxt: rs.maxt,
+
+		numSamples:         numSamples,
+		timestampsIterator: timestampIterator,
+		durationsIterator:  durationsIterator,
+		periodsIterator:    periodsIterator,
+		tree: &MemSeriesIteratorTree{
+			Roots: root,
+		},
+	}
+}
+
+type MemRangeSeriesIterator struct {
+	s    *MemSeries
+	mint int64
+	maxt int64
+
+	tree               *MemSeriesIteratorTree
+	timestampsIterator chunkenc.Iterator
+	durationsIterator  chunkenc.Iterator
+	periodsIterator    chunkenc.Iterator
+
+	numSamples uint64 // uint16 might not be enough for many chunks (~500+)
+	err        error
+}
+
+func (it *MemRangeSeriesIterator) Next() bool {
+	it.s.mu.RLock()
+	defer it.s.mu.RUnlock()
+
+	if it.numSamples == 0 {
+		return false
+	}
+
+	if !it.timestampsIterator.Next() {
+		return false
+	}
+
+	if !it.durationsIterator.Next() {
+		return false
+	}
+
+	if !it.periodsIterator.Next() {
+		return false
+	}
+
+	iit := NewMemSeriesIteratorTreeIterator(it.tree)
+	for iit.HasMore() {
+		if iit.NextChild() {
+			child := iit.at()
+
+			for _, v := range child.flatValues {
+				v.Values.Next()
+			}
+
+			for _, v := range child.cumulativeValues {
+				v.Values.Next()
+			}
+
+			iit.StepInto()
+			continue
+		}
+		iit.StepUp()
+	}
+
+	it.numSamples--
+	return true
+}
+
+func (it *MemRangeSeriesIterator) At() InstantProfile {
+	return &MemSeriesInstantProfile{
+		itt: it.tree,
+		it: &MemSeriesIterator{
+			tree:               it.tree,
+			timestampsIterator: it.timestampsIterator,
+			durationsIterator:  it.durationsIterator,
+			periodsIterator:    it.periodsIterator,
+			series:             it.s,
+			numSamples:         uint16(it.numSamples), // should be an uint64 eventually.
+		},
+	}
+}
+
+func (it *MemRangeSeriesIterator) Err() error {
+	return it.err
+}
 
 type MemSeriesIterator struct {
 	tree               *MemSeriesIteratorTree
