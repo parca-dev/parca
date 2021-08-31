@@ -141,14 +141,14 @@ func TestMemSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.flatValues, 2)
-	require.Equal(t, chunkenc.FromValuesXOR(1), s.flatValues[k2])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4])
+	require.Equal(t, chunkenc.FromValuesXOR(1), s.flatValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0])
 
 	require.Len(t, s.cumulativeValues, 4)
-	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k0])
-	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k1])
-	require.Equal(t, chunkenc.FromValuesXOR(1), s.cumulativeValues[k2])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4])
+	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k0][0])
+	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k1][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1), s.cumulativeValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0])
 
 	require.Len(t, s.labels, 1)
 	require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]string{k4: label}, s.labels)
@@ -184,14 +184,14 @@ func TestMemSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.flatValues, 2)
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0]) // sparse - nothing added
 
 	require.Len(t, s.cumulativeValues, 4)
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k0])
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k1])
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k0][0])
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k1][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0]) // sparse - nothing added
 
 	// The tree itself didn't change by adding more values but no new locations.
 	require.Equal(t, &MemSeriesTree{
@@ -222,17 +222,17 @@ func TestMemSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.flatValues, 3)
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2])   // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4])      // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.flatValues[k3]) // new
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2][0])   // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0])      // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.flatValues[k3][0]) // new
 
 	require.Len(t, s.cumulativeValues, 5)
 
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k0])
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k1])
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2])   // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4])      // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.cumulativeValues[k3]) // new
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k0][0])
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k1][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2][0])   // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0])      // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.cumulativeValues[k3][0]) // new
 
 	// The tree itself didn't change by adding more values but no new locations.
 	require.Equal(t, &MemSeriesTree{

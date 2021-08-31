@@ -85,13 +85,16 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 
 						t.s.mu.Lock()
 						if t.s.flatValues[*n.key] == nil {
-							t.s.flatValues[*n.key] = chunkenc.NewXORChunk()
+							// Create the needed amount of chunks based on how many timestamp chunks there are.
+							t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
+							for i := 0; i < len(t.s.timestamps); i++ {
+								t.s.flatValues[*n.key][i] = chunkenc.NewXORChunk()
+							}
 						}
-
-						app, err := t.s.flatValues[*n.key].Appender()
+						app, err := t.s.flatValues[*n.key][len(t.s.flatValues[*n.key])-1].Appender()
 						if err != nil {
 							t.s.mu.Unlock()
-							return err
+							return fmt.Errorf("failed to open flat appender: %w", err)
 						}
 						app.AppendAt(index, n.Value)
 						t.s.mu.Unlock()
@@ -123,12 +126,16 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 
 						t.s.mu.Lock()
 						if t.s.cumulativeValues[*n.key] == nil {
-							t.s.cumulativeValues[*n.key] = chunkenc.NewXORChunk()
+							// Create the needed amount of chunks based on how many timestamp chunks there are.
+							t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
+							for i := 0; i < len(t.s.timestamps); i++ {
+								t.s.cumulativeValues[*n.key][i] = chunkenc.NewXORChunk()
+							}
 						}
-						app, err := t.s.cumulativeValues[*n.key].Appender()
+						app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()
 						if err != nil {
 							t.s.mu.Unlock()
-							return err
+							return fmt.Errorf("failed to open cumulative appender: %w", err)
 						}
 						app.AppendAt(index, n.Value)
 						t.s.mu.Unlock()
@@ -168,9 +175,13 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					// labels can be different and then the key is different, so we need check.
 					t.s.mu.Lock()
 					if t.s.flatValues[*n.key] == nil {
-						t.s.flatValues[*n.key] = chunkenc.NewXORChunk()
+						// Create the needed amount of chunks based on how many timestamp chunks there are.
+						t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
+						for i := 0; i < len(t.s.timestamps); i++ {
+							t.s.flatValues[*n.key][i] = chunkenc.NewXORChunk()
+						}
 					}
-					app, err := t.s.flatValues[*n.key].Appender()
+					app, err := t.s.flatValues[*n.key][len(t.s.flatValues[*n.key])-1].Appender()
 					if err != nil {
 						t.s.mu.Unlock()
 						return fmt.Errorf("failed to open flat appender: %w", err)
@@ -188,10 +199,14 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					}
 
 					t.s.mu.Lock()
-					if t.s.cumulativeValues[*n.key] == nil {
-						t.s.cumulativeValues[*n.key] = chunkenc.NewXORChunk()
+					if len(t.s.cumulativeValues[*n.key]) == 0 {
+						// Create the needed amount of chunks based on how many timestamp chunks there are.
+						t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
+						for i := 0; i < len(t.s.timestamps); i++ {
+							t.s.cumulativeValues[*n.key][i] = chunkenc.NewXORChunk()
+						}
 					}
-					app, err := t.s.cumulativeValues[*n.key].Appender()
+					app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()
 					if err != nil {
 						t.s.mu.Unlock()
 						return fmt.Errorf("failed to open cumulative appender: %w", err)
@@ -226,9 +241,13 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 
 					t.s.mu.Lock()
 					if t.s.flatValues[*n.key] == nil {
-						t.s.flatValues[*n.key] = chunkenc.NewXORChunk()
+						// Create the needed amount of chunks based on how many timestamp chunks there are.
+						t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
+						for i := 0; i < len(t.s.timestamps); i++ {
+							t.s.flatValues[*n.key][i] = chunkenc.NewXORChunk()
+						}
 					}
-					app, err := t.s.flatValues[*n.key].Appender()
+					app, err := t.s.flatValues[*n.key][len(t.s.flatValues[*n.key])-1].Appender()
 					if err != nil {
 						t.s.mu.Unlock()
 						return fmt.Errorf("failed to open flat appender: %w", err)
@@ -247,9 +266,13 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 
 					t.s.mu.Lock()
 					if t.s.cumulativeValues[*n.key] == nil {
-						t.s.cumulativeValues[*n.key] = chunkenc.NewXORChunk()
+						// Create the needed amount of chunks based on how many timestamp chunks there are.
+						t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
+						for i := 0; i < len(t.s.timestamps); i++ {
+							t.s.cumulativeValues[*n.key][i] = chunkenc.NewXORChunk()
+						}
 					}
-					app, err := t.s.cumulativeValues[*n.key].Appender()
+					app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()
 					if err != nil {
 						t.s.mu.Unlock()
 						return fmt.Errorf("failed to open cumulative appender: %w", err)
@@ -435,8 +458,8 @@ type MemSeries struct {
 	// mu locks the following maps for concurrent access.
 	mu sync.RWMutex
 	// Flat and cumulative values as well as labels by the node's ProfileTreeValueNodeKey.
-	flatValues       map[ProfileTreeValueNodeKey]chunkenc.Chunk
-	cumulativeValues map[ProfileTreeValueNodeKey]chunkenc.Chunk
+	flatValues       map[ProfileTreeValueNodeKey][]chunkenc.Chunk
+	cumulativeValues map[ProfileTreeValueNodeKey][]chunkenc.Chunk
 	labels           map[ProfileTreeValueNodeKey]map[string][]string
 	numLabels        map[ProfileTreeValueNodeKey]map[string][]int64
 	numUnits         map[ProfileTreeValueNodeKey]map[string][]string
@@ -459,8 +482,8 @@ func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
 		durations: []chunkenc.Chunk{chunkenc.NewRLEChunk()},
 		periods:   []chunkenc.Chunk{chunkenc.NewRLEChunk()},
 
-		flatValues:       make(map[ProfileTreeValueNodeKey]chunkenc.Chunk),
-		cumulativeValues: make(map[ProfileTreeValueNodeKey]chunkenc.Chunk),
+		flatValues:       make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
+		cumulativeValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
 		labels:           make(map[ProfileTreeValueNodeKey]map[string][]string),
 		numLabels:        make(map[ProfileTreeValueNodeKey]map[string][]int64),
 		numUnits:         make(map[ProfileTreeValueNodeKey]map[string][]string),
@@ -539,12 +562,20 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	}
 	a.s.mu.Unlock()
 
-	if err := a.s.appendTree(p.Tree); err != nil {
-		return err
-	}
-
 	if newChunks {
 		a.s.mu.Lock()
+
+		// If we need new chunks then range over all existing cumulativeValues and flatValues
+		// appending new chunks.
+
+		// TODO: We need to somehow add non-existing chunks to the proper index...
+
+		for k := range a.s.cumulativeValues {
+			a.s.cumulativeValues[k] = append(a.s.cumulativeValues[k], chunkenc.NewXORChunk())
+		}
+		for k := range a.s.flatValues {
+			a.s.flatValues[k] = append(a.s.flatValues[k], chunkenc.NewXORChunk())
+		}
 
 		a.s.timestamps = append(a.s.timestamps, timestampChunk{
 			maxTime: timestamp,
@@ -574,6 +605,11 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		}
 		a.periods = app
 		a.s.mu.Unlock()
+	}
+
+	// appendTree locks the maps itself.
+	if err := a.s.appendTree(p.Tree); err != nil {
+		return err
 	}
 
 	a.timestamps.AppendAt(a.s.numSamples%samplesPerChunk, timestamp)
@@ -608,7 +644,7 @@ func (s *MemSeries) appendTree(profileTree *ProfileTree) error {
 		s.seriesTree = &MemSeriesTree{s: s}
 	}
 
-	return s.seriesTree.Insert(s.numSamples, profileTree)
+	return s.seriesTree.Insert(s.numSamples%samplesPerChunk, profileTree)
 }
 
 func (s *MemSeries) Labels() labels.Labels {
