@@ -669,18 +669,22 @@ func (s *MemSeries) stats() MemSeriesStats {
 	flat := make([]MemSeriesValueStats, 0, len(s.flatValues))
 	cumulative := make([]MemSeriesValueStats, 0, len(s.cumulativeValues))
 
-	for _, c := range s.flatValues {
-		flat = append(flat, MemSeriesValueStats{
-			samples: c.NumSamples(),
-			bytes:   len(c.Bytes()),
-		})
+	for _, chunks := range s.flatValues {
+		for _, c := range chunks {
+			flat = append(flat, MemSeriesValueStats{
+				samples: c.NumSamples(),
+				bytes:   len(c.Bytes()),
+			})
+		}
 	}
 
-	for _, c := range s.cumulativeValues {
-		cumulative = append(cumulative, MemSeriesValueStats{
-			samples: c.NumSamples(),
-			bytes:   len(c.Bytes()),
-		})
+	for _, chunks := range s.cumulativeValues {
+		for _, c := range chunks {
+			cumulative = append(cumulative, MemSeriesValueStats{
+				samples: c.NumSamples(),
+				bytes:   len(c.Bytes()),
+			})
+		}
 	}
 
 	return MemSeriesStats{
@@ -763,21 +767,10 @@ func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
 	return res
 }
 
-type MemSeriesIterator struct {
-	tree               *MemSeriesIteratorTree
-	timestampsIterator MultiChunkIterator
-	durationsIterator  MultiChunkIterator
-	periodsIterator    MultiChunkIterator
-
-	series     *MemSeries
-	numSamples uint16
-}
-
 type MemMergeSeries struct {
 	*MemSeries
 
-	mint int64
-	maxt int64
+	mint, maxt int64
 }
 
 func (s *MemMergeSeries) Iterator() ProfileSeriesIterator {
@@ -792,19 +785,19 @@ func (s *MemMergeSeries) Iterator() ProfileSeriesIterator {
 	}
 
 	sl := &SliceProfileSeriesIterator{i: -1}
-	minTimestamp, startIndex, endIndex, err := getIndexRange(&multiChunksIterator{chunks: timestamps}, s.mint, s.maxt)
+	minTimestamp, startIndex, endIndex, err := getIndexRange(NewMultiChunkIterator(timestamps), s.mint, s.maxt)
 	if err != nil {
 		sl.err = err
 		return sl
 	}
 
-	duration, err := iteratorRangeSum(&multiChunksIterator{chunks: s.durations[start:end]}, startIndex, endIndex)
+	duration, err := iteratorRangeSum(NewMultiChunkIterator(s.durations[start:end]), startIndex, endIndex)
 	if err != nil {
 		sl.err = err
 		return sl
 	}
 
-	period, err := iteratorRangeMax(&multiChunksIterator{chunks: s.periods[start:end]}, startIndex, endIndex)
+	period, err := iteratorRangeMax(NewMultiChunkIterator(s.periods[start:end]), startIndex, endIndex)
 	if err != nil {
 		sl.err = err
 		return sl
@@ -821,7 +814,7 @@ func (s *MemMergeSeries) Iterator() ProfileSeriesIterator {
 	}
 
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
-	sum, err := iteratorRangeSum(s.cumulativeValues[rootKey].Iterator(nil), startIndex, endIndex)
+	sum, err := iteratorRangeSum(NewMultiChunkIterator(s.cumulativeValues[rootKey]), startIndex, endIndex)
 	if err != nil {
 		sl.err = err
 		return sl
@@ -862,8 +855,10 @@ func (s *MemMergeSeries) Iterator() ProfileSeriesIterator {
 			}
 
 			for _, key := range child.keys {
-				if chunk, ok := s.flatValues[key]; ok {
-					sum, err := iteratorRangeSum(chunk.Iterator(nil), startIndex, endIndex)
+				if chunks, ok := s.flatValues[key]; ok {
+					// TODO: Use multiple chunks correctly.
+
+					sum, err := iteratorRangeSum(NewMultiChunkIterator(chunks), startIndex, endIndex)
 					if err != nil {
 						sl.err = err
 						return sl
@@ -878,8 +873,8 @@ func (s *MemMergeSeries) Iterator() ProfileSeriesIterator {
 						})
 					}
 				}
-				if chunk, ok := s.cumulativeValues[key]; ok {
-					sum, err := iteratorRangeSum(chunk.Iterator(nil), startIndex, endIndex)
+				if chunks, ok := s.cumulativeValues[key]; ok {
+					sum, err := iteratorRangeSum(NewMultiChunkIterator(chunks), startIndex, endIndex)
 					if err != nil {
 						sl.err = err
 						return sl
@@ -980,6 +975,17 @@ func iteratorRangeSum(it chunkenc.Iterator, startIndex, endIndex int) (int64, er
 	return sum, nil
 }
 
+
+type MemSeriesIterator struct {
+	tree               *MemSeriesIteratorTree
+	timestampsIterator chunkenc.Iterator
+	durationsIterator  chunkenc.Iterator
+	periodsIterator    chunkenc.Iterator
+
+	series     *MemSeries
+	numSamples uint16
+}
+
 func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	root := &MemSeriesIteratorTreeNode{}
 
@@ -988,16 +994,14 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
 	s.mu.RLock()
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-		Values:   s.cumulativeValues[rootKey].Iterator(nil),
+		Values:   NewMultiChunkIterator(s.cumulativeValues[rootKey]),
 		Label:    s.labels[rootKey],
 		NumLabel: s.numLabels[rootKey],
 		NumUnit:  s.numUnits[rootKey],
 	})
 
-	start, end := s.timestamps.indexRange(s.minTime, s.maxTime)
-
-	timestamps := make([]chunkenc.Chunk, 0, end-start)
-	for _, t := range s.timestamps[start:end] {
+	timestamps := make([]chunkenc.Chunk, 0, len(s.timestamps))
+	for _, t := range s.timestamps {
 		timestamps = append(timestamps, t.chunk)
 	}
 	s.mu.RUnlock()
@@ -1006,9 +1010,9 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 		tree: &MemSeriesIteratorTree{
 			Roots: root,
 		},
-		timestampsIterator: &multiChunksIterator{chunks: timestamps},
-		durationsIterator:  &multiChunksIterator{chunks: s.durations[start:end]},
-		periodsIterator:    &multiChunksIterator{chunks: s.periods[start:end]},
+		timestampsIterator: NewMultiChunkIterator(timestamps),
+		durationsIterator:  NewMultiChunkIterator(s.durations),
+		periodsIterator:    NewMultiChunkIterator(s.periods),
 		series:             s,
 		numSamples:         s.numSamples,
 	}
@@ -1031,17 +1035,17 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 
 			s.mu.RLock()
 			for _, key := range child.keys {
-				if chunk, ok := s.flatValues[key]; ok {
+				if chunks, ok := s.flatValues[key]; ok {
 					n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
-						Values:   chunk.Iterator(nil),
+						Values:   NewMultiChunkIterator(chunks),
 						Label:    s.labels[key],
 						NumLabel: s.numLabels[key],
 						NumUnit:  s.numUnits[key],
 					})
 				}
-				if chunk, ok := s.cumulativeValues[key]; ok {
+				if chunks, ok := s.cumulativeValues[key]; ok {
 					n.cumulativeValues = append(n.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-						Values:   chunk.Iterator(nil),
+						Values:   NewMultiChunkIterator(chunks),
 						Label:    s.labels[key],
 						NumLabel: s.numLabels[key],
 						NumUnit:  s.numUnits[key],
