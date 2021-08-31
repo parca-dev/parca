@@ -89,7 +89,7 @@ function(params) {
           '--config-path=' + prc.config.configPath,
           '--log-level=' + prc.config.logLevel,
         ] +
-        (if prc.config.corsAllowedOrigins != '' then []
+        (if prc.config.corsAllowedOrigins == '' then []
          else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]),
       ports: [
         { name: port.name, containerPort: port.port }

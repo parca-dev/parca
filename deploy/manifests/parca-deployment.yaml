@@ -27,7 +27,8 @@ spec:
       - args:
         - /parca
         - --config-path=/parca.yaml
-        - --log-level=debug
+        - --log-level=error
+        - --cors-allowed-origins=*
         image: quay.io/parca/parca:dev
         livenessProbe:
           exec:
