@@ -14,6 +14,7 @@
 package symbol
 
 import (
+	"bytes"
 	"context"
 	stdlog "log"
 	"net"
@@ -22,7 +23,11 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	"github.com/parca-dev/parca/pkg/profilestore"
+	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
@@ -31,6 +36,31 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 )
+
+type TestProfileMetaStore interface {
+	TestLocationStore
+	TestFunctionStore
+	metastore.MappingStore
+	Close() error
+	Ping() error
+}
+
+type TestLocationStore interface {
+	GetLocationByKey(k metastore.LocationKey) (*profile.Location, error)
+	GetLocationByID(id uint64) (*profile.Location, error)
+	CreateLocation(l *profile.Location) error
+	UpdateLocation(location *profile.Location) error
+	GetUnsymbolizedLocations() ([]*profile.Location, error)
+
+	GetLocations() ([]*profile.Location, error)
+}
+
+type TestFunctionStore interface {
+	GetFunctionByKey(key metastore.FunctionKey) (*profile.Function, error)
+	CreateFunction(f *profile.Function) error
+
+	GetFunctions() ([]*profile.Function, error)
+}
 
 func TestSymbolizer(t *testing.T) {
 	w := log.NewSyncWriter(os.Stderr)
@@ -59,7 +89,10 @@ func TestSymbolizer(t *testing.T) {
 		}
 	}()
 
-	mStr, err := metastore.NewInMemoryProfileMetaStore("symbolizer")
+	var mStr TestProfileMetaStore
+	mStr, err = metastore.NewInMemoryProfileMetaStore()
+	// TODO(kakkoyun): !!!
+	//mStr, err = metastoresql.NewInMemoryProfileMetaStore("symbolizer")
 	t.Cleanup(func() {
 		mStr.Close()
 	})
@@ -82,36 +115,44 @@ func TestSymbolizer(t *testing.T) {
 	err = mStr.CreateLocation(locs[0])
 	require.NoError(t, err)
 
-	err = sym.symbolize(context.Background(), locs)
-	require.NoError(t, err)
-
-	symLocs, err := mStr.GetUnsymbolizedLocations()
-	require.NoError(t, err)
-	require.Equal(t, 0, len(symLocs))
-
 	allLocs, err := mStr.GetLocations()
 	require.NoError(t, err)
 	require.Equal(t, 1, len(allLocs))
 
-	// TODO(kakkoyun): Ingest profile. Symbolize.
-	// Generate new Pprof check if it is valid. Make them work.
+	symLocs, err := mStr.GetUnsymbolizedLocations()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(symLocs))
 
-	//functions, err := mStr.GetFunctions()
-	//require.NoError(t, err)
-	//require.Equal(t, 3, len(functions))
-	//require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", functions[0].Filename)
-	//require.Equal(t, int64(27), lines[0].Line)
-	//require.Equal(t, "main.iterate", functions[0].Name)
-	//require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", functions[1].Filename)
-	//require.Equal(t, int64(23), lines[1].Line)
-	//require.Equal(t, "main.iteratePerTenant", functions[1].Name)
-	//require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", functions[2].Filename)
-	//require.Equal(t, int64(10), lines[2].Line)
-	//require.Equal(t, "main.main", functions[2].Name)
+	err = sym.symbolize(context.Background(), locs)
+	require.NoError(t, err)
+
+	allLocs, err = mStr.GetLocations()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(allLocs))
+
+	symLocs, err = mStr.GetUnsymbolizedLocations()
+	require.NoError(t, err)
+	require.Equal(t, 0, len(symLocs))
+
+	functions, err := mStr.GetFunctions()
+	require.NoError(t, err)
+	require.Equal(t, 3, len(functions))
+
+	lines := allLocs[0].Line
+	require.Equal(t, 3, len(lines))
+	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[0].Function.Filename)
+	require.Equal(t, int64(27), lines[0].Line)
+	require.Equal(t, "main.iterate", lines[0].Function.Name)
+	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[1].Function.Filename)
+	require.Equal(t, int64(23), lines[1].Line)
+	require.Equal(t, "main.iteratePerTenant", lines[1].Function.Name)
+	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[2].Function.Filename)
+	require.Equal(t, int64(10), lines[2].Line)
+	require.Equal(t, "main.main", lines[2].Function.Name)
 }
 
 func TestRealSymbolizer(t *testing.T) {
-	s, err := debuginfo.NewStore(log.NewNopLogger(), &debuginfo.Config{
+	dbgStr, err := debuginfo.NewStore(log.NewNopLogger(), &debuginfo.Config{
 		Bucket: &client.BucketConfig{
 			Type: client.FILESYSTEM,
 			Config: filesystem.Config{
@@ -121,13 +162,28 @@ func TestRealSymbolizer(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	var mStr TestProfileMetaStore
+	mStr, err = metastore.NewInMemoryProfileMetaStore()
+	// TODO(kakkoyun): !!!
+	//mStr, err = metastoresql.NewInMemoryProfileMetaStore("realsymbolizer")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		mStr.Close()
+	})
+
+	db := storage.OpenDB(prometheus.NewRegistry())
+	pStr := profilestore.NewProfileStore(log.NewNopLogger(), db, mStr)
+
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
-	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, s)
+
+	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, dbgStr)
+	profilestorepb.RegisterProfileStoreServiceServer(grpcServer, pStr)
+
 	go func() {
 		err := grpcServer.Serve(lis)
 		if err != nil {
@@ -135,36 +191,64 @@ func TestRealSymbolizer(t *testing.T) {
 		}
 	}()
 
-	//mStr, err := metastore.NewInMemoryProfileMetaStore("realsymbolizer")
-	//t.Cleanup(func() {
-	//	mStr.Close()
-	//})
-	require.NoError(t, err)
-	//sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
 	f, err := os.Open("testdata/profile.pb.gz")
 	require.NoError(t, err)
 	p, err := profile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, p.CheckValid())
 
-	//// TODO(kakkoyun):  Generate new Pprof check if it is valid.
-	//
-	////storage.ProfilesFromPprof(mStr, p)
-	//
-	//err = sym.symbolize(context.Background(), p.Location)
-	//require.NoError(t, err)
-	//require.NoError(t, p.CheckValid())
-	//
-	//functions, err := mStr.GetFunctions()
-	//require.NoError(t, err)
-	//require.Equal(t, 3, len(functions))
-	//require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", functions[0].Filename)
-	////require.Equal(t, int64(27), lines[0].Line)
-	//require.Equal(t, "main.iterate", functions[0].Name)
-	//require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", functions[1].Filename)
-	////require.Equal(t, int64(23), lines[1].Line)
-	//require.Equal(t, "main.iteratePerTenant", functions[1].Name)
-	//require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", functions[2].Filename)
-	////require.Equal(t, int64(10), lines[2].Line)
-	//require.Equal(t, "main.main", functions[2].Name)
+	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		conn.Close()
+	})
+
+	buf := bytes.NewBuffer(nil)
+	require.NoError(t, p.Write(buf))
+
+	wc := profilestorepb.NewProfileStoreServiceClient(conn)
+	_, err = wc.WriteRaw(context.Background(), &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{Labels: []*profilestorepb.Label{}},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: buf.Bytes(),
+			}},
+		}},
+	})
+	require.NoError(t, err)
+
+	allLocs, err := mStr.GetLocations()
+	require.NoError(t, err)
+	require.Equal(t, 32, len(allLocs))
+
+	symLocs, err := mStr.GetUnsymbolizedLocations()
+	require.NoError(t, err)
+	require.Equal(t, 12, len(symLocs))
+
+	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
+	require.NoError(t, sym.symbolize(context.Background(), p.Location))
+
+	allLocs, err = mStr.GetLocations()
+	require.NoError(t, err)
+	require.Equal(t, 32, len(allLocs))
+
+	symLocs, err = mStr.GetUnsymbolizedLocations()
+	require.NoError(t, err)
+	require.Equal(t, 3, len(symLocs))
+
+	functions, err := mStr.GetFunctions()
+	require.NoError(t, err)
+	require.Equal(t, 34, len(functions))
+
+	lines := allLocs[6].Line
+	require.Equal(t, 3, len(lines))
+	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[0].Function.Filename)
+	require.Equal(t, int64(27), lines[0].Line)
+	require.Equal(t, "main.iterate", lines[0].Function.Name)
+	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[1].Function.Filename)
+	require.Equal(t, int64(23), lines[1].Line)
+	require.Equal(t, "main.iteratePerTenant", lines[1].Function.Name)
+	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[2].Function.Filename)
+	require.Equal(t, int64(10), lines[2].Line)
+	require.Equal(t, "main.main", lines[2].Function.Name)
 }

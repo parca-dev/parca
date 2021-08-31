@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,6 @@ import (
 	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 func Test_QueryRange_EmptyStore(t *testing.T) {
@@ -59,7 +59,7 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemoryProfileMetaStore("queryrangevalid")
+	s, err := metastoresql.NewInMemoryProfileMetaStore("queryrangevalid")
 	t.Cleanup(func() {
 		s.Close()
 	})
@@ -113,7 +113,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemoryProfileMetaStore("queryrangelimited")
+	s, err := metastoresql.NewInMemoryProfileMetaStore("queryrangelimited")
 	t.Cleanup(func() {
 		s.Close()
 	})
@@ -271,7 +271,7 @@ func Test_Query_InputValidation(t *testing.T) {
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemoryProfileMetaStore("querysimple")
+	s, err := metastoresql.NewInMemoryProfileMetaStore("querysimple")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -319,7 +319,7 @@ func Test_Query_Simple(t *testing.T) {
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemoryProfileMetaStore("querydiff")
+	s, err := metastoresql.NewInMemoryProfileMetaStore("querydiff")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -395,7 +395,7 @@ func Test_Query_Diff(t *testing.T) {
 }
 
 func Benchmark_Query_Merge(b *testing.B) {
-	s, err := metastore.NewInMemoryProfileMetaStore("benchquerymerge")
+	s, err := metastoresql.NewInMemoryProfileMetaStore("benchquerymerge")
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		s.Close()
@@ -450,7 +450,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 }
 
 func Test_Query_Merge(t *testing.T) {
-	s, err := metastore.NewInMemoryProfileMetaStore("querymerge")
+	s, err := metastoresql.NewInMemoryProfileMetaStore("querymerge")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()

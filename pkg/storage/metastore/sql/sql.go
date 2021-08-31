@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metastore
+package sql
 
 import (
 	"context"
@@ -22,9 +22,10 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
-var _ ProfileMetaStore = &sqlMetaStore{}
+var _ metastore.ProfileMetaStore = &sqlMetaStore{}
 
 type sqlMetaStore struct {
 	db *sql.DB
@@ -101,7 +102,7 @@ func (s *sqlMetaStore) migrate() error {
 	return nil
 }
 
-func (s *sqlMetaStore) GetLocationByKey(k LocationKey) (*profile.Location, error) {
+func (s *sqlMetaStore) GetLocationByKey(k metastore.LocationKey) (*profile.Location, error) {
 	var (
 		l           profile.Location
 		mappingPKey *int
@@ -126,7 +127,7 @@ func (s *sqlMetaStore) GetLocationByKey(k LocationKey) (*profile.Location, error
 	}
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrLocationNotFound
+			return nil, metastore.ErrLocationNotFound
 		}
 		return nil, err
 	}
@@ -163,7 +164,7 @@ func (s *sqlMetaStore) GetLocationByID(id uint64) (*profile.Location, error) {
 	).Scan(&locID, &address, &l.IsFolded, &mappingPKey)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrLocationNotFound
+			return nil, metastore.ErrLocationNotFound
 		}
 		return nil, err
 	}
@@ -188,7 +189,7 @@ func (s *sqlMetaStore) GetLocationByID(id uint64) (*profile.Location, error) {
 }
 
 func (s *sqlMetaStore) CreateLocation(l *profile.Location) error {
-	k := MakeLocationKey(l)
+	k := metastore.MakeLocationKey(l)
 	var res sql.Result
 	if l.Mapping != nil {
 		stmt, err := s.db.Prepare(
@@ -204,7 +205,7 @@ func (s *sqlMetaStore) CreateLocation(l *profile.Location) error {
 		err = s.db.QueryRow(`SELECT "id" FROM "mappings" WHERE mapping_id=?`, int64(l.Mapping.ID)).Scan(&mappingID)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				return ErrMappingNotFound
+				return metastore.ErrMappingNotFound
 			}
 			return err
 		}
@@ -243,7 +244,7 @@ func (s *sqlMetaStore) CreateLocation(l *profile.Location) error {
 }
 
 func (s *sqlMetaStore) UpdateLocation(l *profile.Location) error {
-	k := MakeLocationKey(l)
+	k := metastore.MakeLocationKey(l)
 	var res sql.Result
 	if l.Mapping != nil {
 		stmt, err := s.db.Prepare(
@@ -259,7 +260,7 @@ func (s *sqlMetaStore) UpdateLocation(l *profile.Location) error {
 		err = s.db.QueryRow(`SELECT "id" FROM "mappings" WHERE mapping_id=?`, int64(l.Mapping.ID)).Scan(&mappingID)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				return ErrMappingNotFound
+				return metastore.ErrMappingNotFound
 			}
 			return err
 		}
@@ -284,6 +285,7 @@ func (s *sqlMetaStore) UpdateLocation(l *profile.Location) error {
 		}
 	}
 
+	// TODO(kakkoyun): Last inserted id 0.
 	locID, err := res.LastInsertId()
 	if err != nil {
 		return err
@@ -424,7 +426,7 @@ func (s *sqlMetaStore) GetUnsymbolizedLocations() ([]*profile.Location, error) {
 	return locs, nil
 }
 
-func (s *sqlMetaStore) GetFunctionByKey(k FunctionKey) (*profile.Function, error) {
+func (s *sqlMetaStore) GetFunctionByKey(k metastore.FunctionKey) (*profile.Function, error) {
 	var (
 		fn profile.Function
 		id int64
@@ -437,7 +439,7 @@ func (s *sqlMetaStore) GetFunctionByKey(k FunctionKey) (*profile.Function, error
 	).Scan(&id, &fn.Name, &fn.SystemName, &fn.Filename, &fn.StartLine)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrFunctionNotFound
+			return nil, metastore.ErrFunctionNotFound
 		}
 		return nil, err
 	}
@@ -472,7 +474,7 @@ func (s *sqlMetaStore) GetFunctions() ([]*profile.Function, error) {
 	return funcs, nil
 }
 
-func (s *sqlMetaStore) GetMappingByKey(k MappingKey) (*profile.Mapping, error) {
+func (s *sqlMetaStore) GetMappingByKey(k metastore.MappingKey) (*profile.Mapping, error) {
 	var (
 		m                        profile.Mapping
 		id, start, limit, offset int64
@@ -489,7 +491,7 @@ func (s *sqlMetaStore) GetMappingByKey(k MappingKey) (*profile.Mapping, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrMappingNotFound
+			return nil, metastore.ErrMappingNotFound
 		}
 		return nil, err
 	}
@@ -513,7 +515,7 @@ func (s *sqlMetaStore) CreateMapping(m *profile.Mapping) error {
 	}
 	defer stmt.Close()
 
-	k := MakeMappingKey(m)
+	k := metastore.MakeMappingKey(m)
 	_, err = stmt.Exec(
 		int64(m.ID), int64(m.Start), int64(m.Limit), int64(m.Offset), m.File, m.BuildID,
 		m.HasFunctions, m.HasFilenames, m.HasLineNumbers, m.HasInlineFrames,
@@ -554,7 +556,7 @@ func (s *sqlMetaStore) getMappingByPrimaryKey(pkey int) (*profile.Mapping, error
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrMappingNotFound
+			return nil, metastore.ErrMappingNotFound
 		}
 		return nil, err
 	}

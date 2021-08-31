@@ -25,6 +25,7 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"google.golang.org/grpc"
@@ -40,7 +41,6 @@ import (
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/storage"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/parca-dev/parca/pkg/symbol"
 )
 
@@ -71,6 +71,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
+	//mStr, err := metastoresql.NewInMemoryProfileMetaStore()
 	mStr, err := metastore.NewInMemoryProfileMetaStore()
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)

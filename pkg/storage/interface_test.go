@@ -19,7 +19,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,7 +30,7 @@ func TestCopyInstantProfileTree(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("compyinstantprofiletree")
+	l, err := metastoresql.NewInMemoryProfileMetaStore("compyinstantprofiletree")
 	t.Cleanup(func() {
 		l.Close()
 	})

@@ -14,33 +14,153 @@
 package metastore
 
 import (
-	"database/sql"
-	"fmt"
+	"sync"
 
-	_ "modernc.org/sqlite"
+	"github.com/google/pprof/profile"
 )
 
-var _ ProfileMetaStore = &InMemoryMetaStore{}
+var _ ProfileMetaStore = &InMemoryProfileMetaStore{}
 
-type InMemoryMetaStore struct {
-	*sqlMetaStore
+type InMemoryProfileMetaStore struct {
+	mu             sync.RWMutex
+	locationsByKey map[LocationKey]uint64
+	locations      []*profile.Location
+	mappingsByKey  map[MappingKey]uint64
+	mappings       []*profile.Mapping
+	functionsByKey map[FunctionKey]uint64
+	functions      []*profile.Function
 }
 
-func NewInMemoryProfileMetaStore(name ...string) (*InMemoryMetaStore, error) {
-	dsn := "file::memory:?cache=shared"
-	if len(name) > 0 {
-		dsn = fmt.Sprintf("file:%s?mode=memory&cache=shared", name[0])
+func NewInMemoryProfileMetaStore() (*InMemoryProfileMetaStore, error) {
+	return &InMemoryProfileMetaStore{
+		locationsByKey: map[LocationKey]uint64{},
+		functionsByKey: map[FunctionKey]uint64{},
+		mappingsByKey:  map[MappingKey]uint64{},
+	}, nil
+}
+
+func (s *InMemoryProfileMetaStore) GetLocationByID(id uint64) (*profile.Location, error) {
+	if uint64(len(s.locations)) <= id-1 {
+		return nil, ErrLocationNotFound
 	}
-	db, err := sql.Open("sqlite", dsn)
+
+	return s.locations[id-1], nil
+}
+
+func (s *InMemoryProfileMetaStore) GetLocationByKey(key LocationKey) (*profile.Location, error) {
+	s.mu.RLock()
+	i, found := s.locationsByKey[key]
+	s.mu.RUnlock()
+	if !found {
+		return nil, ErrLocationNotFound
+	}
+
+	return s.locations[i-1], nil
+}
+
+func (s *InMemoryProfileMetaStore) GetLocations() ([]*profile.Location, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.locations, nil
+}
+
+func (s *InMemoryProfileMetaStore) GetUnsymbolizedLocations() ([]*profile.Location, error) {
+	locs := []*profile.Location{}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, loc := range s.locations {
+		if len(loc.Line) == 0 {
+			locs = append(locs, loc)
+		}
+	}
+	return locs, nil
+}
+
+func (s *InMemoryProfileMetaStore) CreateLocation(l *profile.Location) error {
+	key := MakeLocationKey(l)
+	id := uint64(len(s.locations)) + 1
+	l.ID = id
+	s.locations = append(s.locations, l)
+	s.mu.Lock()
+	s.locationsByKey[key] = id
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *InMemoryProfileMetaStore) UpdateLocation(l *profile.Location) error {
+	loc, err := s.GetLocationByID(l.ID)
 	if err != nil {
-		db.Close()
-		return nil, err
+		return err
 	}
 
-	sqlite := &sqlMetaStore{db}
-	if err := sqlite.migrate(); err != nil {
-		return nil, fmt.Errorf("migrations failed: %w", err)
+	s.mu.Lock()
+	loc.Line = l.Line
+	loc.Address = l.Address
+	loc.Mapping = l.Mapping
+	s.mu.Unlock()
+
+	for _, ln := range l.Line {
+		err := s.CreateFunction(ln.Function)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *InMemoryProfileMetaStore) GetMappingByKey(key MappingKey) (*profile.Mapping, error) {
+	s.mu.RLock()
+	i, found := s.mappingsByKey[key]
+	s.mu.RUnlock()
+	if !found {
+		return nil, ErrMappingNotFound
 	}
 
-	return &InMemoryMetaStore{sqlMetaStore: sqlite}, nil
+	return s.mappings[i-1], nil
+}
+
+func (s *InMemoryProfileMetaStore) CreateMapping(m *profile.Mapping) error {
+	key := MakeMappingKey(m)
+	id := uint64(len(s.mappings)) + 1
+	m.ID = id
+	s.mappings = append(s.mappings, m)
+	s.mu.Lock()
+	s.mappingsByKey[key] = id
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *InMemoryProfileMetaStore) GetFunctionByKey(key FunctionKey) (*profile.Function, error) {
+	s.mu.RLock()
+	i, found := s.functionsByKey[key]
+	s.mu.RUnlock()
+	if !found {
+		return nil, ErrFunctionNotFound
+	}
+
+	return s.functions[i-1], nil
+}
+
+func (s *InMemoryProfileMetaStore) GetFunctions() ([]*profile.Function, error) {
+	return s.functions, nil
+}
+
+func (s *InMemoryProfileMetaStore) CreateFunction(f *profile.Function) error {
+	key := MakeFunctionKey(f)
+	id := uint64(len(s.functions)) + 1
+	f.ID = id
+	s.functions = append(s.functions, f)
+	s.mu.Lock()
+	s.functionsByKey[key] = id
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *InMemoryProfileMetaStore) Close() error {
+	return nil
+}
+
+func (s *InMemoryProfileMetaStore) Ping() error {
+	return nil
 }

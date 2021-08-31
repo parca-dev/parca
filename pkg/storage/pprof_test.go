@@ -20,7 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,7 +31,7 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("generatepprof")
+	l, err := metastoresql.NewInMemoryProfileMetaStore("generatepprof")
 	t.Cleanup(func() {
 		l.Close()
 	})

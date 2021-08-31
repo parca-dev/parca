@@ -40,7 +40,6 @@ type LocationStore interface {
 	GetLocationByID(id uint64) (*profile.Location, error)
 	CreateLocation(l *profile.Location) error
 	UpdateLocation(location *profile.Location) error
-	GetLocations() ([]*profile.Location, error)
 	GetUnsymbolizedLocations() ([]*profile.Location, error)
 }
 

@@ -21,12 +21,12 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 func TestProfileTreeInsert(t *testing.T) {
@@ -424,7 +424,7 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("iteratorconsistency")
+	l, err := metastoresql.NewInMemoryProfileMetaStore("iteratorconsistency")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -466,7 +466,7 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("realinsert")
+	l, err := metastoresql.NewInMemoryProfileMetaStore("realinsert")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -497,7 +497,7 @@ func TestRealInserts(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("realinserts")
+	l, err := metastoresql.NewInMemoryProfileMetaStore("realinserts")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -600,7 +600,7 @@ func TestIteratorRangeMax(t *testing.T) {
 }
 
 func TestMergeMemSeriesConsistency(t *testing.T) {
-	s, err := metastore.NewInMemoryProfileMetaStore("memseriesconsistency")
+	s, err := metastoresql.NewInMemoryProfileMetaStore("memseriesconsistency")
 	t.Cleanup(func() {
 		s.Close()
 	})

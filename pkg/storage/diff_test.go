@@ -20,7 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -247,7 +247,7 @@ func BenchmarkDiff(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("benchdiff")
+	l, err := metastoresql.NewInMemoryProfileMetaStore("benchdiff")
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		l.Close()

@@ -22,16 +22,15 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/stretchr/testify/require"
-
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 func TestDB(t *testing.T) {
-	l, err := metastore.NewInMemoryProfileMetaStore("testdb")
+	l, err := metastoresql.NewInMemoryProfileMetaStore("testdb")
 	t.Cleanup(func() {
 		l.Close()
 	})

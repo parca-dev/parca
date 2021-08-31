@@ -66,8 +66,14 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 	// Aggregate locations per mapping to get prepared for batch request.
 	mappings := map[*profile.Mapping][]*profile.Location{}
 	for _, loc := range locations {
-		if loc.Mapping == nil {
-			level.Debug(s.logger).Log("msg", "mapping of location is empty skipping")
+		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
+		if loc.Mapping == nil || len(loc.Mapping.BuildID) == 0 {
+			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
+			continue
+		}
+		// Already symbolized!
+		if len(loc.Line) > 0 {
+			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
 			continue
 		}
 		mappings[loc.Mapping] = append(mappings[loc.Mapping], loc)
@@ -75,13 +81,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 
 	var result *multierror.Error
 	for mapping, locations := range mappings {
-		// If BuildID is empty we cannot associate an object file wih this mapping.
-		if mapping.BuildID == "" {
-			level.Debug(s.logger).Log("msg", "Build ID is empty for the mapping, skipping...")
-			continue
-		}
-
-		// Symbolize Locations using DebugInfo store.
+		// Symbolize Locations using DebugInfoStore.
 		level.Debug(s.logger).Log("msg", "storage symbolization request started")
 		symbolizedLines, err := s.debugInfo.Symbolize(ctx, mapping, locations...)
 		if err != nil {
