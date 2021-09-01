@@ -12,7 +12,7 @@ local parca = (import 'parca/parca.libsonnet')({
   image: 'quay.io/parca/parca:dev',
   version: 'dev',
   replicas: 1,
-  logLevel: 'error',
+  logLevel: 'debug',
   configPath: '/parca.yaml',
   corsAllowedOrigins: '*',
 });

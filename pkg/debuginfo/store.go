@@ -175,14 +175,16 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 	return lines, nil
 }
 
+var ErrSymbolNotFound = errors.New("symbol not found")
+
 func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {
 	mappingPath := path.Join(s.cacheDir, buildID, "debuginfo")
 	// Check if it's already cached locally; if not download.
 	if _, err := os.Stat(mappingPath); os.IsNotExist(err) {
 		r, err := s.bucket.Get(ctx, path.Join(buildID, "debuginfo"))
 		if s.bucket.IsObjNotFoundErr(err) {
-			level.Debug(s.logger).Log("msg", "object not found", "object", buildID)
-			return "", fmt.Errorf("object not found: %w", err)
+			level.Debug(s.logger).Log("msg", "object not found", "object", buildID, "err", err)
+			return "", ErrSymbolNotFound
 		}
 		if err != nil {
 			return "", fmt.Errorf("get object from object storage: %w", err)

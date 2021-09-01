@@ -27,8 +27,9 @@ COPY ./pkg /app/pkg
 COPY ./proto /app/proto
 COPY ./gen /app/gen
 COPY ./internal /app/internal
-COPY ./go.mod /app
-COPY ./go.sum /app
+
+COPY go.mod go.sum /app/
+RUN go mod download -modcacherw
 
 COPY ./ui/ui.go ./ui/ui.go
 COPY --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist

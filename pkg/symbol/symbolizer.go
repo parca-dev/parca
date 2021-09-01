@@ -15,6 +15,7 @@ package symbol
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -56,12 +57,6 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, locations)
 		if err != nil {
-			if merr, ok := err.(*multierror.Error); ok {
-				merr.ErrorFormat = func(errors []error) string {
-					return fmt.Sprintf("%d errors occurred!", len(errors))
-				}
-			}
-
 			level.Error(s.logger).Log("msg", "symbolization attempt failed", "err", err)
 		}
 		return nil
@@ -91,6 +86,10 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 		level.Debug(s.logger).Log("msg", "storage symbolization request started")
 		symbolizedLines, err := s.debugInfo.Symbolize(ctx, mapping, locations...)
 		if err != nil {
+			// It's ok if we don't have the symbols for given BuildID, it happens too often.
+			if errors.Is(err, debuginfo.ErrSymbolNotFound) {
+				continue
+			}
 			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
 			continue
 		}
