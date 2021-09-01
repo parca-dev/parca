@@ -28,3 +28,10 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+dockers:
+  - id: parca
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile.release
+    image_templates:
+    - docker.pkg.github.com/parca-dev/parca/parca:{{ .Tag }}
