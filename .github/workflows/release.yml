@@ -25,6 +25,13 @@ jobs:
       - name: Build UI
         run: make ui
 
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v1
+        with: 
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
