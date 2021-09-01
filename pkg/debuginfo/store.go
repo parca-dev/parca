@@ -147,7 +147,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
-	// TODO(kakkoyun): mapInfo utilize
+	// TODO(kakkoyun): Crate mapInfo and utilize it here.
 	objFile, err := s.bu.Open(mappingPath, m.Start, m.Limit, m.Offset)
 	if err != nil {
 		level.Error(s.logger).Log("msg", "failed to open object file", "mappingpath", mappingPath, "start", m.Start, "limit", m.Limit, "offset", m.Offset, "err", err)

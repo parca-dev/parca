@@ -19,6 +19,7 @@ import (
 	stdlog "log"
 	"net"
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/go-kit/log"
@@ -27,6 +28,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
@@ -46,19 +48,12 @@ type TestProfileMetaStore interface {
 }
 
 type TestLocationStore interface {
-	GetLocationByKey(k metastore.LocationKey) (*profile.Location, error)
-	GetLocationByID(id uint64) (*profile.Location, error)
-	CreateLocation(l *profile.Location) error
-	UpdateLocation(location *profile.Location) error
-	GetUnsymbolizedLocations() ([]*profile.Location, error)
-
+	metastore.LocationStore
 	GetLocations() ([]*profile.Location, error)
 }
 
 type TestFunctionStore interface {
-	GetFunctionByKey(key metastore.FunctionKey) (*profile.Function, error)
-	CreateFunction(f *profile.Function) error
-
+	metastore.FunctionStore
 	GetFunctions() ([]*profile.Function, error)
 }
 
@@ -90,9 +85,7 @@ func TestSymbolizer(t *testing.T) {
 	}()
 
 	var mStr TestProfileMetaStore
-	mStr, err = metastore.NewInMemoryProfileMetaStore()
-	// TODO(kakkoyun): !!!
-	//mStr, err = metastoresql.NewInMemoryProfileMetaStore("symbolizer")
+	mStr, err = metastoresql.NewInMemoryProfileMetaStore("symbolizer")
 	t.Cleanup(func() {
 		mStr.Close()
 	})
@@ -105,14 +98,14 @@ func TestSymbolizer(t *testing.T) {
 		Limit:   4603904,
 		BuildID: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
 	}
-	err = mStr.CreateMapping(m)
+	_, err = mStr.CreateMapping(m)
 	require.NoError(t, err)
 
 	locs := []*profile.Location{{
 		Mapping: m,
 		Address: 0x463781,
 	}}
-	err = mStr.CreateLocation(locs[0])
+	_, err = mStr.CreateLocation(locs[0])
 	require.NoError(t, err)
 
 	allLocs, err := mStr.GetLocations()
@@ -123,7 +116,7 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(symLocs))
 
-	err = sym.symbolize(context.Background(), locs)
+	err = sym.symbolize(context.Background(), allLocs)
 	require.NoError(t, err)
 
 	allLocs, err = mStr.GetLocations()
@@ -139,16 +132,19 @@ func TestSymbolizer(t *testing.T) {
 	require.Equal(t, 3, len(functions))
 
 	lines := allLocs[0].Line
+	sort.SliceStable(lines, func(i, j int) bool {
+		return lines[i].Line < lines[j].Line
+	})
 	require.Equal(t, 3, len(lines))
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[0].Function.Filename)
-	require.Equal(t, int64(27), lines[0].Line)
-	require.Equal(t, "main.iterate", lines[0].Function.Name)
+	require.Equal(t, int64(10), lines[0].Line)
+	require.Equal(t, "main.main", lines[0].Function.Name)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[1].Function.Filename)
 	require.Equal(t, int64(23), lines[1].Line)
 	require.Equal(t, "main.iteratePerTenant", lines[1].Function.Name)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[2].Function.Filename)
-	require.Equal(t, int64(10), lines[2].Line)
-	require.Equal(t, "main.main", lines[2].Function.Name)
+	require.Equal(t, int64(27), lines[2].Line)
+	require.Equal(t, "main.iterate", lines[2].Function.Name)
 }
 
 func TestRealSymbolizer(t *testing.T) {
@@ -164,8 +160,6 @@ func TestRealSymbolizer(t *testing.T) {
 
 	var mStr TestProfileMetaStore
 	mStr, err = metastore.NewInMemoryProfileMetaStore()
-	// TODO(kakkoyun): !!!
-	//mStr, err = metastoresql.NewInMemoryProfileMetaStore("realsymbolizer")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		mStr.Close()
@@ -241,14 +235,17 @@ func TestRealSymbolizer(t *testing.T) {
 	require.Equal(t, 34, len(functions))
 
 	lines := allLocs[6].Line
+	sort.SliceStable(lines, func(i, j int) bool {
+		return lines[i].Line < lines[j].Line
+	})
 	require.Equal(t, 3, len(lines))
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[0].Function.Filename)
-	require.Equal(t, int64(27), lines[0].Line)
-	require.Equal(t, "main.iterate", lines[0].Function.Name)
+	require.Equal(t, int64(10), lines[0].Line)
+	require.Equal(t, "main.main", lines[0].Function.Name)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[1].Function.Filename)
 	require.Equal(t, int64(23), lines[1].Line)
 	require.Equal(t, "main.iteratePerTenant", lines[1].Function.Name)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[2].Function.Filename)
-	require.Equal(t, int64(10), lines[2].Line)
-	require.Equal(t, "main.main", lines[2].Function.Name)
+	require.Equal(t, int64(27), lines[2].Line)
+	require.Equal(t, "main.iterate", lines[2].Function.Name)
 }

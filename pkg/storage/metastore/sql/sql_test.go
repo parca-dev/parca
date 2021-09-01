@@ -18,19 +18,12 @@ type TestProfileMetaStore interface {
 }
 
 type TestLocationStore interface {
-	GetLocationByKey(k metastore.LocationKey) (*profile.Location, error)
-	GetLocationByID(id uint64) (*profile.Location, error)
-	CreateLocation(l *profile.Location) error
-	UpdateLocation(location *profile.Location) error
-	GetUnsymbolizedLocations() ([]*profile.Location, error)
-
+	metastore.LocationStore
 	GetLocations() ([]*profile.Location, error)
 }
 
 type TestFunctionStore interface {
-	GetFunctionByKey(key metastore.FunctionKey) (*profile.Function, error)
-	CreateFunction(f *profile.Function) error
-
+	metastore.FunctionStore
 	GetFunctions() ([]*profile.Function, error)
 }
 
@@ -77,14 +70,14 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 		ID:      uint64(largeLoc),
 		Address: uint64(42),
 	}
-	err := s.CreateLocation(l)
+	_, err := s.CreateLocation(l)
 	require.NoError(t, err)
 
 	l1 := &profile.Location{
 		ID:      uint64(18),
 		Address: uint64(421),
 	}
-	err = s.CreateLocation(l1)
+	_, err = s.CreateLocation(l1)
 	require.NoError(t, err)
 
 	locs, err := s.GetLocations()
@@ -151,7 +144,7 @@ func functionStoreTest(t *testing.T, s TestFunctionStore) {
 		Filename:   "filename",
 		StartLine:  22,
 	}
-	err := s.CreateFunction(f)
+	_, err := s.CreateFunction(f)
 	require.NoError(t, err)
 
 	f1 := &profile.Function{
@@ -161,7 +154,7 @@ func functionStoreTest(t *testing.T, s TestFunctionStore) {
 		Filename:   "filename",
 		StartLine:  42,
 	}
-	err = s.CreateFunction(f1)
+	_, err = s.CreateFunction(f1)
 	require.NoError(t, err)
 
 	funcByID, err := s.GetFunctionByKey(metastore.MakeFunctionKey(f))
@@ -214,7 +207,7 @@ func mappingStoreTest(t *testing.T, s metastore.MappingStore) {
 		HasLineNumbers:  false,
 		HasInlineFrames: false,
 	}
-	err := s.CreateMapping(m)
+	_, err := s.CreateMapping(m)
 	require.NoError(t, err)
 
 	m1 := &profile.Mapping{
@@ -229,7 +222,7 @@ func mappingStoreTest(t *testing.T, s metastore.MappingStore) {
 		HasLineNumbers:  false,
 		HasInlineFrames: true,
 	}
-	err = s.CreateMapping(m1)
+	_, err = s.CreateMapping(m1)
 	require.NoError(t, err)
 
 	mapByKey, err := s.GetMappingByKey(metastore.MakeMappingKey(m))
@@ -282,7 +275,7 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 		HasLineNumbers:  false,
 		HasInlineFrames: false,
 	}
-	err := s.CreateMapping(m)
+	_, err := s.CreateMapping(m)
 	require.NoError(t, err)
 
 	l := &profile.Location{
@@ -290,7 +283,7 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 		Address: uint64(42),
 		Mapping: m,
 	}
-	err = s.CreateLocation(l)
+	_, err = s.CreateLocation(l)
 	require.NoError(t, err)
 
 	m1 := &profile.Mapping{
@@ -305,7 +298,7 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 		HasLineNumbers:  false,
 		HasInlineFrames: true,
 	}
-	err = s.CreateMapping(m1)
+	_, err = s.CreateMapping(m1)
 	require.NoError(t, err)
 
 	f := &profile.Function{
@@ -315,7 +308,7 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 		Filename:   "filename",
 		StartLine:  22,
 	}
-	err = s.CreateFunction(f)
+	_, err = s.CreateFunction(f)
 	require.NoError(t, err)
 
 	l1 := &profile.Location{
@@ -327,7 +320,7 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 			{Line: 5, Function: f},
 		},
 	}
-	err = s.CreateLocation(l1)
+	_, err = s.CreateLocation(l1)
 	require.NoError(t, err)
 
 	locs, err := s.GetLocations()

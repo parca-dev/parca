@@ -77,7 +77,7 @@ func (s *InMemoryProfileMetaStore) GetUnsymbolizedLocations() ([]*profile.Locati
 	return locs, nil
 }
 
-func (s *InMemoryProfileMetaStore) CreateLocation(l *profile.Location) error {
+func (s *InMemoryProfileMetaStore) CreateLocation(l *profile.Location) (uint64, error) {
 	key := MakeLocationKey(l)
 	id := uint64(len(s.locations)) + 1
 	l.ID = id
@@ -85,7 +85,7 @@ func (s *InMemoryProfileMetaStore) CreateLocation(l *profile.Location) error {
 	s.mu.Lock()
 	s.locationsByKey[key] = id
 	s.mu.Unlock()
-	return nil
+	return id, nil
 }
 
 func (s *InMemoryProfileMetaStore) UpdateLocation(l *profile.Location) error {
@@ -101,7 +101,7 @@ func (s *InMemoryProfileMetaStore) UpdateLocation(l *profile.Location) error {
 	s.mu.Unlock()
 
 	for _, ln := range l.Line {
-		err := s.CreateFunction(ln.Function)
+		_, err := s.CreateFunction(ln.Function)
 		if err != nil {
 			return err
 		}
@@ -120,7 +120,7 @@ func (s *InMemoryProfileMetaStore) GetMappingByKey(key MappingKey) (*profile.Map
 	return s.mappings[i-1], nil
 }
 
-func (s *InMemoryProfileMetaStore) CreateMapping(m *profile.Mapping) error {
+func (s *InMemoryProfileMetaStore) CreateMapping(m *profile.Mapping) (uint64, error) {
 	key := MakeMappingKey(m)
 	id := uint64(len(s.mappings)) + 1
 	m.ID = id
@@ -128,7 +128,7 @@ func (s *InMemoryProfileMetaStore) CreateMapping(m *profile.Mapping) error {
 	s.mu.Lock()
 	s.mappingsByKey[key] = id
 	s.mu.Unlock()
-	return nil
+	return id, nil
 }
 
 func (s *InMemoryProfileMetaStore) GetFunctionByKey(key FunctionKey) (*profile.Function, error) {
@@ -146,7 +146,7 @@ func (s *InMemoryProfileMetaStore) GetFunctions() ([]*profile.Function, error) {
 	return s.functions, nil
 }
 
-func (s *InMemoryProfileMetaStore) CreateFunction(f *profile.Function) error {
+func (s *InMemoryProfileMetaStore) CreateFunction(f *profile.Function) (uint64, error) {
 	key := MakeFunctionKey(f)
 	id := uint64(len(s.functions)) + 1
 	f.ID = id
@@ -154,7 +154,7 @@ func (s *InMemoryProfileMetaStore) CreateFunction(f *profile.Function) error {
 	s.mu.Lock()
 	s.functionsByKey[key] = id
 	s.mu.Unlock()
-	return nil
+	return id, nil
 }
 
 func (s *InMemoryProfileMetaStore) Close() error {

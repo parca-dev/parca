@@ -38,7 +38,7 @@ type ProfileMetaStore interface {
 type LocationStore interface {
 	GetLocationByKey(k LocationKey) (*profile.Location, error)
 	GetLocationByID(id uint64) (*profile.Location, error)
-	CreateLocation(l *profile.Location) error
+	CreateLocation(l *profile.Location) (uint64, error)
 	UpdateLocation(location *profile.Location) error
 	GetUnsymbolizedLocations() ([]*profile.Location, error)
 }
@@ -72,7 +72,7 @@ func MakeLocationKey(l *profile.Location) LocationKey {
 
 type FunctionStore interface {
 	GetFunctionByKey(key FunctionKey) (*profile.Function, error)
-	CreateFunction(f *profile.Function) error
+	CreateFunction(f *profile.Function) (uint64, error)
 }
 
 type FunctionKey struct {
@@ -91,7 +91,7 @@ func MakeFunctionKey(f *profile.Function) FunctionKey {
 
 type MappingStore interface {
 	GetMappingByKey(key MappingKey) (*profile.Mapping, error)
-	CreateMapping(m *profile.Mapping) error
+	CreateMapping(m *profile.Mapping) (uint64, error)
 }
 
 type MappingKey struct {

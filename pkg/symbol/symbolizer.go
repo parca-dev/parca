@@ -56,6 +56,12 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, locations)
 		if err != nil {
+			if merr, ok := err.(*multierror.Error); ok {
+				merr.ErrorFormat = func(errors []error) string {
+					return fmt.Sprintf("%d errors occurred!", len(errors))
+				}
+			}
+
 			level.Error(s.logger).Log("msg", "symbolization attempt failed", "err", err)
 		}
 		return nil
@@ -92,9 +98,8 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 		// Update LocationStore with found symbols.
 		for loc, lines := range symbolizedLines {
 			loc.Line = lines
-			err := s.locations.UpdateLocation(loc)
-			if err != nil {
-				result = multierror.Append(result, fmt.Errorf("failed to update location: %w", err))
+			if err := s.locations.UpdateLocation(loc); err != nil {
+				result = multierror.Append(result, fmt.Errorf("failed to update location %d: %w", loc.ID, err))
 				continue
 			}
 		}

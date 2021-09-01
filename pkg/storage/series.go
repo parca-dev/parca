@@ -1133,8 +1133,12 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 		return loc
 	}
 	pn.locationsByID[src.ID] = l
-	if err := pn.metaStore.CreateLocation(l); err != nil {
+
+	id, err := pn.metaStore.CreateLocation(l)
+	if err != nil {
 		level.Warn(pn.logger).Log("msg", "failed to create location", "err", err)
+	} else {
+		l.ID = id
 	}
 	return l
 }
@@ -1172,8 +1176,11 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	}
 
 	// Update memoization tables.
-	if err := pn.metaStore.CreateMapping(m); err != nil {
+	id, err := pn.metaStore.CreateMapping(m)
+	if err != nil {
 		level.Warn(pn.logger).Log("msg", "failed to create mapping", "err", err)
+	} else {
+		m.ID = id
 	}
 	mi := mapInfo{m, 0}
 	pn.mappingsByID[src.ID] = mi
@@ -1181,7 +1188,6 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 }
 
 func (pn *profileNormalizer) mapLine(src profile.Line) profile.Line {
-	// TODO(kakkoyun): CreateLine? Redesign Line table.
 	ln := profile.Line{
 		Function: pn.mapFunction(src.Function),
 		Line:     src.Line,
@@ -1212,8 +1218,11 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 		StartLine:  src.StartLine,
 	}
 
-	if err := pn.metaStore.CreateFunction(f); err != nil {
+	id, err := pn.metaStore.CreateFunction(f)
+	if err != nil {
 		level.Warn(pn.logger).Log("msg", "failed to create function", "err", err)
+	} else {
+		f.ID = id
 	}
 
 	pn.functionsByID[src.ID] = f
