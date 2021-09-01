@@ -33,7 +33,7 @@ go/bin: go/deps
 	cp parca.yaml bin/
 
 .PHONY: format
-format: go-fmt check-license
+format: go/fmt check-license
 
 .PHONY: go/fmt
 go/fmt:
