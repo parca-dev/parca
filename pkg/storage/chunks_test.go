@@ -11,7 +11,7 @@ import (
 func TestMultiChunks(t *testing.T) {
 	var chks []chunkenc.Chunk
 	var app chunkenc.Appender
-	for i := int64(0); i < 1_000; i++ {
+	for i := int64(120); i <= 1_000; i++ {
 		if i%120 == 0 {
 			c := chunkenc.NewDeltaChunk()
 			chks = append(chks, c)
@@ -20,21 +20,29 @@ func TestMultiChunks(t *testing.T) {
 		app.Append(i)
 	}
 
-	require.Len(t, chks, 9) // ceil(1_000/120)
+	require.Len(t, chks, 8) // ceil(900/120)
 
 	it := NewMultiChunkIterator(chks)
 
-	// Seek to index 9 (value 10) and then start.
-	it.Seek(9)
+	// Seek to index 0 should be a nop, cause the first Next() will read the actual value.
+	it.Seek(0)
+	require.Equal(t, int64(0), it.At())
 
-	seen := int64(10)
+	it.Next()
+	require.Equal(t, int64(120), it.At())
+
+	// Seek to index 9 (value 129) and then start.
+	it.Seek(9)
+	require.Equal(t, int64(129), it.At())
+
+	seen := int64(130)
 	for it.Next() {
 		require.Equal(t, seen, it.At())
 		seen++
 	}
 
 	require.NoError(t, it.Err())
-	require.Equal(t, int64(1_000), seen)
+	require.Equal(t, int64(1_001), seen)
 
 	// check for sparseness. it should return 0
 	require.False(t, it.Next())

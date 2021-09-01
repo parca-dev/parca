@@ -4,7 +4,7 @@ import (
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
-type multiChunksIterator struct {
+type MultiChunksIterator struct {
 	chunks     []chunkenc.Chunk
 	cit        chunkenc.Iterator
 	readChunks uint16
@@ -15,11 +15,11 @@ type multiChunksIterator struct {
 	err    error
 }
 
-func NewMultiChunkIterator(chunks []chunkenc.Chunk) chunkenc.Iterator {
-	return &multiChunksIterator{chunks: chunks}
+func NewMultiChunkIterator(chunks []chunkenc.Chunk) *MultiChunksIterator {
+	return &MultiChunksIterator{chunks: chunks}
 }
 
-func (it *multiChunksIterator) Next() bool {
+func (it *MultiChunksIterator) Next() bool {
 	if it.cit == nil {
 		it.cit = it.chunks[it.readChunks].Iterator(it.cit)
 		it.readChunks++
@@ -54,7 +54,7 @@ func (it *multiChunksIterator) Next() bool {
 	return false
 }
 
-func (it *multiChunksIterator) At() int64 {
+func (it *MultiChunksIterator) At() int64 {
 	if it.sparse {
 		return 0
 	}
@@ -62,16 +62,18 @@ func (it *multiChunksIterator) At() int64 {
 	return it.val
 }
 
-func (it *multiChunksIterator) Err() error {
+func (it *MultiChunksIterator) Err() error {
 	return it.err
 }
 
-func (it *multiChunksIterator) Seek(index uint16) bool {
+func (it *MultiChunksIterator) Seek(index uint16) bool {
 	if it.err != nil {
 		return false
 	}
 
-	if it.read == index {
+	// If the index is zero we don't do anything,
+	// cause Next() will be called before retrieving the first value.
+	if index == 0 {
 		return true
 	}
 
@@ -81,6 +83,17 @@ func (it *multiChunksIterator) Seek(index uint16) bool {
 		}
 	}
 	return true
+}
+
+func (it *MultiChunksIterator) Reset(chunks []chunkenc.Chunk) {
+	it.readChunks = 0
+	it.read = 0
+	it.val = 0
+	it.sparse = false
+	it.err = nil
+
+	it.chunks = chunks
+	it.cit = it.chunks[it.readChunks].Iterator(it.cit)
 }
 
 // timestampChunk wraps a chunkenc.Chunk to additionally track minTime and maxTime.
