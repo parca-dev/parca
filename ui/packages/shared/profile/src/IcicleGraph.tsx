@@ -117,7 +117,11 @@ export function IcicleGraphNode ({
         }
 
         const diff = d.diff === undefined ? 0 : d.diff
-        const color = diff == 0 ? "#90c7e0" : (diff > 0 ? "red" : "green")
+        const prevValue = d.cumulative - diff
+        const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? (diff / prevValue) : 0) : (1.0)
+
+        const diffTransparency = Math.abs(diff) > 0 ? Math.min(((Math.abs(diffRatio) / 2) + 0.5)*0.8, 0.8) : 0
+        const color = diff == 0 ? "#90c7e0" : (diff > 0 ? `rgba(221, 46, 69, ${diffTransparency})` : `rgba(59, 165, 93, ${diffTransparency})`)
 
         return (
           <React.Fragment key={key}>
