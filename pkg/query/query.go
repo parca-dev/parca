@@ -79,7 +79,11 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		timestamp.FromTime(start),
 		timestamp.FromTime(end),
 	)
-	set := query.Select(nil, sel...)
+	set := query.Select(&storage.SelectHints{
+		Start: timestamp.FromTime(start),
+		End:   timestamp.FromTime(end),
+		Root:  true,
+	}, sel...)
 	res := &pb.QueryRangeResponse{}
 	for set.Next() {
 		series := set.At()
@@ -314,8 +318,8 @@ func (q *Query) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsRe
 	}
 
 	var (
-		start time.Time = minTime
-		end   time.Time = maxTime
+		start = minTime
+		end   = maxTime
 	)
 
 	if req.Start != nil {
@@ -379,8 +383,8 @@ func (q *Query) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesRe
 	}
 
 	var (
-		start time.Time = minTime
-		end   time.Time = maxTime
+		start = minTime
+		end   = maxTime
 	)
 
 	if req.Start != nil {

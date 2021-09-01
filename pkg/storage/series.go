@@ -985,20 +985,20 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		timestamps = append(timestamps, t.chunk)
 	}
 
-	start, end, err := getIndexRange(NewMultiChunkIterator(timestamps), rs.mint, rs.maxt)
+	it := NewMultiChunkIterator(timestamps)
+	start, end, err := getIndexRange(it, rs.mint, rs.maxt)
 	if err != nil {
-		return &MemRangeSeriesIterator{
-			err: err,
-		}
+		return &MemRangeSeriesIterator{err: err}
 	}
 
-	root := &MemSeriesIteratorTreeNode{}
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
 
 	rootIt := NewMultiChunkIterator(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
 	if start != 0 {
 		rootIt.Seek(uint16(start))
 	}
+
+	root := &MemSeriesIteratorTreeNode{}
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
 		Values:   rootIt,
 		Label:    rs.s.labels[rootKey],
@@ -1011,11 +1011,11 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		child: 0,
 	}}
 
-	it := rs.s.seriesTree.Iterator()
+	treeIt := rs.s.seriesTree.Iterator()
 
-	for it.HasMore() {
-		if it.NextChild() {
-			child := it.At()
+	for treeIt.HasMore() {
+		if treeIt.NextChild() {
+			child := treeIt.At()
 
 			n := &MemSeriesIteratorTreeNode{
 				locationID: child.LocationID,
@@ -1056,10 +1056,10 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 				node:  n,
 				child: 0,
 			})
-			it.StepInto()
+			treeIt.StepInto()
 			continue
 		}
-		it.StepUp()
+		treeIt.StepUp()
 		memItStack.Pop()
 	}
 
