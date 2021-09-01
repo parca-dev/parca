@@ -28,6 +28,17 @@ go/bin:
 	go build -o bin/ ./cmd/parca
 	cp parca.yaml bin/
 
+.PHONY: format
+format: go-fmt check-license
+
+.PHONY: go-fmt
+go-fmt:
+	go fmt ./...
+
+.PHONY: check-license
+check-license:
+	./scripts/check-license.sh
+
 .PHONY: ui
 ui:
 	cd ui && yarn install && yarn workspace @parca/web build
