@@ -267,10 +267,10 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 			continue
 		}
 		if hints != nil && hints.Merge {
-			ss = append(ss, &MemMergeSeries{MemSeries: s, mint: mint, maxt: maxt})
+			ss = append(ss, &MemMergeSeries{s: s, mint: mint, maxt: maxt})
 			continue
 		}
-		ss = append(ss, s)
+		ss = append(ss, &MemRangeSeries{s: s, mint: mint, maxt: maxt})
 	}
 
 	return &SliceSeriesSet{

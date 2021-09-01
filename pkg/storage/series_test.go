@@ -141,14 +141,14 @@ func TestMemSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.flatValues, 2)
-	require.Equal(t, chunkenc.FromValuesXOR(1), s.flatValues[k2])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4])
+	require.Equal(t, chunkenc.FromValuesXOR(1), s.flatValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0])
 
 	require.Len(t, s.cumulativeValues, 4)
-	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k0])
-	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k1])
-	require.Equal(t, chunkenc.FromValuesXOR(1), s.cumulativeValues[k2])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4])
+	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k0][0])
+	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k1][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1), s.cumulativeValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0])
 
 	require.Len(t, s.labels, 1)
 	require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]string{k4: label}, s.labels)
@@ -184,14 +184,14 @@ func TestMemSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.flatValues, 2)
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0]) // sparse - nothing added
 
 	require.Len(t, s.cumulativeValues, 4)
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k0])
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k1])
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k0][0])
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k1][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0]) // sparse - nothing added
 
 	// The tree itself didn't change by adding more values but no new locations.
 	require.Equal(t, &MemSeriesTree{
@@ -222,17 +222,17 @@ func TestMemSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.flatValues, 3)
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2])   // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4])      // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.flatValues[k3]) // new
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2][0])   // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0])      // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.flatValues[k3][0]) // new
 
 	require.Len(t, s.cumulativeValues, 5)
 
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k0])
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k1])
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2])   // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4])      // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.cumulativeValues[k3]) // new
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k0][0])
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k1][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2][0])   // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0])      // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.cumulativeValues[k3][0]) // new
 
 	// The tree itself didn't change by adding more values but no new locations.
 	require.Equal(t, &MemSeriesTree{
@@ -267,9 +267,9 @@ func TestMemSeriesIterator(t *testing.T) {
 
 	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
 
-	s.timestamps = chunkenc.FromValuesDelta(1, 2)
-	s.durations = chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 2)
-	s.periods = chunkenc.FromValuesRLE(100, 2)
+	s.timestamps = []timestampChunk{{chunk: chunkenc.FromValuesDelta(1, 2)}}
+	s.durations = []chunkenc.Chunk{chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 2)}
+	s.periods = []chunkenc.Chunk{chunkenc.FromValuesRLE(100, 2)}
 
 	{
 		pt := NewProfileTree()
@@ -528,49 +528,48 @@ func TestKeysMap(t *testing.T) {
 func TestGetIndexRange(t *testing.T) {
 	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
 
-	ts, startIndex, endIndex, err := getIndexRange(c.Iterator(nil), 1, 9)
+	start, end, err := getIndexRange(c.Iterator(nil), 1, 9)
 	require.NoError(t, err)
-	require.Equal(t, int64(2), ts)
-	require.Equal(t, 0, startIndex)
-	require.Equal(t, 5, endIndex)
+	require.Equal(t, uint64(0), start)
+	require.Equal(t, uint64(5), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 2, 9)
+	start, end, err = getIndexRange(c.Iterator(nil), 2, 9)
 	require.NoError(t, err)
-	require.Equal(t, int64(2), ts)
-	require.Equal(t, 0, startIndex)
-	require.Equal(t, 5, endIndex)
+	require.Equal(t, uint64(0), start)
+	require.Equal(t, uint64(5), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 6)
+	start, end, err = getIndexRange(c.Iterator(nil), 3, 6)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), ts)
-	require.Equal(t, 1, startIndex)
-	require.Equal(t, 3, endIndex)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(3), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 7)
+	start, end, err = getIndexRange(c.Iterator(nil), 3, 7)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), ts)
-	require.Equal(t, 1, startIndex)
-	require.Equal(t, 4, endIndex)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(4), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 8)
+	start, end, err = getIndexRange(c.Iterator(nil), 3, 8)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), ts)
-	require.Equal(t, 1, startIndex)
-	require.Equal(t, 5, endIndex)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(5), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 9)
+	start, end, err = getIndexRange(c.Iterator(nil), 3, 9)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), ts)
-	require.Equal(t, 1, startIndex)
-	require.Equal(t, 5, endIndex)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(5), end)
+
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 7)
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), start)
+	require.Equal(t, uint64(4), end)
 }
 
 func TestIteratorRangeSum(t *testing.T) {
 	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
-	_, startIndex, endIndex, err := getIndexRange(c.Iterator(nil), 3, 6)
+	start, end, err := getIndexRange(c.Iterator(nil), 3, 6)
 	require.NoError(t, err)
 
-	sum, err := iteratorRangeSum(c.Iterator(nil), startIndex, endIndex)
+	sum, err := iteratorRangeSum(c.Iterator(nil), start, end)
 	require.NoError(t, err)
 	require.Equal(t, int64(10), sum)
 }
@@ -681,9 +680,9 @@ func TestMemMergeSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	ms := &MemMergeSeries{
-		MemSeries: s,
-		mint:      0,
-		maxt:      2,
+		s:    s,
+		mint: 0,
+		maxt: 2,
 	}
 	it := ms.Iterator()
 	require.True(t, it.Next())
@@ -730,4 +729,49 @@ func TestMemMergeSeriesTree(t *testing.T) {
 			},
 		},
 	}, p)
+}
+
+func TestMemRangeSeries_Iterator(t *testing.T) {
+	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	for i := 1; i <= 500; i++ {
+		p := Profile{
+			Tree: &ProfileTree{
+				Roots: &ProfileTreeNode{
+					locationID:       0,
+					cumulativeValues: []*ProfileTreeValueNode{{Value: int64(i)}},
+				},
+			},
+			Meta: InstantProfileMeta{
+				Timestamp: int64(i),
+				Duration:  time.Second.Nanoseconds(),
+				Period:    time.Second.Nanoseconds(),
+			},
+		}
+		require.NoError(t, app.Append(&p))
+	}
+
+	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420}).Iterator()
+
+	seen := int64(75)
+	for it.Next() {
+		p := it.At()
+		require.Equal(t, seen, p.ProfileMeta().Timestamp)
+
+		itt := p.ProfileTree().Iterator()
+		for itt.HasMore() {
+			if itt.NextChild() {
+				require.Equal(t, seen, itt.At().CumulativeValues()[0].Value)
+				itt.StepInto()
+			}
+			itt.StepUp()
+		}
+		seen++
+	}
+
+	require.NoError(t, it.Err())
+	require.Equal(t, int64(421), seen) // 421 would be seen next but 420 was the last value.
 }
