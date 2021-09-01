@@ -65,7 +65,8 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Location) error {
 	// Aggregate locations per mapping to get prepared for batch request.
-	mappings := map[*profile.Mapping][]*profile.Location{}
+	mappings := map[uint64]*profile.Mapping{}
+	mappingLocations := map[uint64][]*profile.Location{}
 	for _, loc := range locations {
 		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
 		if loc.Mapping == nil || len(loc.Mapping.BuildID) == 0 {
@@ -77,14 +78,15 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
 			continue
 		}
-		mappings[loc.Mapping] = append(mappings[loc.Mapping], loc)
+		mappings[loc.Mapping.ID] = loc.Mapping
+		mappingLocations[loc.Mapping.ID] = append(mappingLocations[loc.Mapping.ID], loc)
 	}
 
 	var result *multierror.Error
-	for mapping, locations := range mappings {
+	for id, mapping := range mappings {
 		// Symbolize Locations using DebugInfoStore.
 		level.Debug(s.logger).Log("msg", "storage symbolization request started")
-		symbolizedLines, err := s.debugInfo.Symbolize(ctx, mapping, locations...)
+		symbolizedLines, err := s.debugInfo.Symbolize(ctx, mapping, mappingLocations[id]...)
 		if err != nil {
 			// It's ok if we don't have the symbols for given BuildID, it happens too often.
 			if errors.Is(err, debuginfo.ErrSymbolNotFound) {
