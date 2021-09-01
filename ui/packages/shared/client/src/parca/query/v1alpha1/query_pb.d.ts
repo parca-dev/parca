@@ -2,6 +2,7 @@
 // file: parca/query/v1alpha1/query.proto
 
 import * as jspb from "google-protobuf";
+import * as google_api_annotations_pb from "../../../google/api/annotations_pb";
 import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
 import * as parca_profilestore_v1alpha1_profilestore_pb from "../../../parca/profilestore/v1alpha1/profilestore_pb";
 

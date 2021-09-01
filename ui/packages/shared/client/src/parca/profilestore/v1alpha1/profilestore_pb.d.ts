@@ -2,6 +2,7 @@
 // file: parca/profilestore/v1alpha1/profilestore.proto
 
 import * as jspb from "google-protobuf";
+import * as google_api_annotations_pb from "../../../google/api/annotations_pb";
 
 export class WriteRawRequest extends jspb.Message {
   getTenant(): string;

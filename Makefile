@@ -40,10 +40,9 @@ proto/lint:
 .PHONY: proto/generate
 proto/generate:
 	yarn install
+	# Generate just the annotations and http protos.
+	buf generate buf.build/googleapis/googleapis --path google/api/annotations.proto --path google/api/http.proto
 	buf generate
-	# This is needed because protobuf js wants to eagerly import Google's http
-	# annotations, but they are nowhere to be found and unused. Need to report this bug upstream.
-	find ui/packages/shared/client/src/parca -name "*" -type f | xargs sed -i -e '/google_api_annotations_pb/d'
 
 .PHONY: proto/vendor
 proto/vendor:
