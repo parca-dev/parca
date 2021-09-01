@@ -708,7 +708,7 @@ func (s *sqlMetaStore) getOrCreateFunction(f *profile.Function) (uint64, error) 
 
 		return 0, err
 	}
-	
+
 	return fnID, nil
 }
 
