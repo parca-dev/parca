@@ -23,10 +23,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-
 	"github.com/google/pprof/profile"
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
@@ -38,8 +38,24 @@ import (
 	"github.com/parca-dev/parca/internal/pprof/binutils"
 )
 
+type CacheProvider string
+
+const (
+	FILESYSTEM CacheProvider = "FILESYSTEM"
+)
+
 type Config struct {
 	Bucket *client.BucketConfig `yaml:"bucket"`
+	Cache  *CacheConfig         `yaml:"cache"`
+}
+
+type FilesystemCacheConfig struct {
+	Directory string `yaml:"directory"`
+}
+
+type CacheConfig struct {
+	Type   CacheProvider `yaml:"type"`
+	Config interface{}   `yaml:"config"`
 }
 
 type Store struct {
@@ -61,17 +77,20 @@ func NewStore(logger log.Logger, config *Config) (*Store, error) {
 		return nil, fmt.Errorf("instantiate object storage: %w", err)
 	}
 
-	cacheDir := "/tmp" // TODO(kakkoyun): Parametrize through configuration.
-	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
-		err := os.MkdirAll(cacheDir, 0700)
-		if err != nil {
-			return nil, err
-		}
+	cacheCfg, err := yaml.Marshal(config.Cache)
+	if err != nil {
+		return nil, fmt.Errorf("marshal content of cache configuration: %w", err)
 	}
+
+	cache, err := newCache(cacheCfg)
+	if err != nil {
+		return nil, fmt.Errorf("instantiate cache: %w", err)
+	}
+
 	return &Store{
 		logger:   logger,
 		bucket:   bucket,
-		cacheDir: cacheDir,
+		cacheDir: cache.Directory,
 		bu:       &binutils.Binutils{},
 	}, nil
 }
@@ -281,4 +300,37 @@ func contextError(ctx context.Context) error {
 	default:
 		return nil
 	}
+}
+
+func newCache(cacheCfg []byte) (*FilesystemCacheConfig, error) {
+	cacheConf := &CacheConfig{}
+	if err := yaml.UnmarshalStrict(cacheCfg, cacheConf); err != nil {
+		return nil, fmt.Errorf("parsing config YAML file: %w", err)
+	}
+
+	config, err := yaml.Marshal(cacheConf.Config)
+	if err != nil {
+		return nil, fmt.Errorf("marshal content of cache configuration: %w", err)
+	}
+
+	var c FilesystemCacheConfig
+	switch strings.ToUpper(string(cacheConf.Type)) {
+	case string(FILESYSTEM):
+		if err := yaml.Unmarshal(config, &c); err != nil {
+			return nil, err
+		}
+		if c.Directory == "" {
+			return nil, errors.New("missing directory for filesystem bucket")
+		}
+	default:
+		return nil, fmt.Errorf("cache with type %s is not supported", cacheConf.Type)
+	}
+
+	if _, err := os.Stat(c.Directory); os.IsNotExist(err) {
+		err := os.MkdirAll(c.Directory, 0700)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &c, nil
 }

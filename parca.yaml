@@ -3,6 +3,11 @@ debug_info:
     type: "FILESYSTEM"
     config:
       directory: "./tmp"
+  cache:
+    type: "FILESYSTEM"
+    config:
+      directory: "./tmp"
+
 scrape_configs:
   - job_name: "default"
     scrape_interval: "1s"
