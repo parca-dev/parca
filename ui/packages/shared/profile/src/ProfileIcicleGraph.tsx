@@ -57,7 +57,14 @@ export default function ProfileIcicleGraph ({
 
   function nodeAsText (node: FlamegraphNode.AsObject | undefined): string {
     if (node === undefined) return ''
-    const diffText = (node.diff !== undefined && node.diff != 0) ? ` (Diff: ${valueFormatter(node.diff)})` : ''
+
+    const diff = node.diff === undefined ? 0 : node.diff
+    const prevValue = node.cumulative - diff
+    const diffRatio = Math.abs(diff) > 0 ? (diff / prevValue) : 0
+    const diffRatioText = prevValue > 0 ? ` (${node.diff > 0 ? '+' : ''}${(diffRatio*100).toFixed(2)}%)` : ''
+
+    const diffText = (node.diff !== undefined && node.diff != 0) ? ` Diff: ${node.diff > 0 ? '+' : ''}${valueFormatter(node.diff)}${diffRatioText}` : ''
+
     return `${node.name.split(' ')[0]} (${((node.cumulative * 100) / total).toFixed(2)}%) ${valueFormatter(node.cumulative)}${diffText}`
   }
 
