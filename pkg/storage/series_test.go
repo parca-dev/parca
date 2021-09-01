@@ -528,49 +528,48 @@ func TestKeysMap(t *testing.T) {
 func TestGetIndexRange(t *testing.T) {
 	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
 
-	ts, startIndex, endIndex, err := getIndexRange(c.Iterator(nil), 1, 9)
+	start, end, err := getIndexRange(c.Iterator(nil), 1, 9)
 	require.NoError(t, err)
-	require.Equal(t, int64(2), ts)
-	require.Equal(t, 0, startIndex)
-	require.Equal(t, 5, endIndex)
+	require.Equal(t, uint64(0), start)
+	require.Equal(t, uint64(5), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 2, 9)
+	start, end, err = getIndexRange(c.Iterator(nil), 2, 9)
 	require.NoError(t, err)
-	require.Equal(t, int64(2), ts)
-	require.Equal(t, 0, startIndex)
-	require.Equal(t, 5, endIndex)
+	require.Equal(t, uint64(0), start)
+	require.Equal(t, uint64(5), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 6)
+	start, end, err = getIndexRange(c.Iterator(nil), 3, 6)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), ts)
-	require.Equal(t, 1, startIndex)
-	require.Equal(t, 3, endIndex)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(3), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 7)
+	start, end, err = getIndexRange(c.Iterator(nil), 3, 7)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), ts)
-	require.Equal(t, 1, startIndex)
-	require.Equal(t, 4, endIndex)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(4), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 8)
+	start, end, err = getIndexRange(c.Iterator(nil), 3, 8)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), ts)
-	require.Equal(t, 1, startIndex)
-	require.Equal(t, 5, endIndex)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(5), end)
 
-	ts, startIndex, endIndex, err = getIndexRange(c.Iterator(nil), 3, 9)
+	start, end, err = getIndexRange(c.Iterator(nil), 3, 9)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), ts)
-	require.Equal(t, 1, startIndex)
-	require.Equal(t, 5, endIndex)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(5), end)
+
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 7)
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), start)
+	require.Equal(t, uint64(4), end)
 }
 
 func TestIteratorRangeSum(t *testing.T) {
 	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
-	_, startIndex, endIndex, err := getIndexRange(c.Iterator(nil), 3, 6)
+	start, end, err := getIndexRange(c.Iterator(nil), 3, 6)
 	require.NoError(t, err)
 
-	sum, err := iteratorRangeSum(c.Iterator(nil), startIndex, endIndex)
+	sum, err := iteratorRangeSum(c.Iterator(nil), start, end)
 	require.NoError(t, err)
 	require.Equal(t, int64(10), sum)
 }
@@ -681,9 +680,9 @@ func TestMemMergeSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	ms := &MemMergeSeries{
-		MemSeries: s,
-		mint:      0,
-		maxt:      2,
+		s:    s,
+		mint: 0,
+		maxt: 2,
 	}
 	it := ms.Iterator()
 	require.True(t, it.Next())
@@ -755,9 +754,9 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 		require.NoError(t, app.Append(&p))
 	}
 
-	it := (&MemRangeSeries{s: s, mint: 75, maxt: 420}).Iterator()
+	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420}).Iterator()
 
-	seen := int64(76)
+	seen := int64(75)
 	for it.Next() {
 		p := it.At()
 		require.Equal(t, seen, p.ProfileMeta().Timestamp)
