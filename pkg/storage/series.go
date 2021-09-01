@@ -565,11 +565,6 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	if newChunks {
 		a.s.mu.Lock()
 
-		// If we need new chunks then range over all existing cumulativeValues and flatValues
-		// appending new chunks.
-
-		// TODO: We need to somehow add non-existing chunks to the proper index...
-
 		for k := range a.s.cumulativeValues {
 			a.s.cumulativeValues[k] = append(a.s.cumulativeValues[k], chunkenc.NewXORChunk())
 		}
@@ -779,12 +774,13 @@ func (ms *MemMergeSeries) Labels() labels.Labels {
 
 func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 	ms.s.mu.RLock()
+	defer ms.s.mu.RUnlock()
+
 	chunkStart, chunkEnd := ms.s.timestamps.indexRange(ms.mint, ms.maxt)
 	timestamps := make([]chunkenc.Chunk, 0, chunkEnd-chunkStart)
 	for _, t := range ms.s.timestamps[chunkStart:chunkEnd] {
 		timestamps = append(timestamps, t.chunk)
 	}
-	ms.s.mu.RUnlock()
 
 	sl := &SliceProfileSeriesIterator{i: -1}
 
@@ -799,22 +795,16 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 	it.Next()
 	minTimestamp := it.At()
 
-	ms.s.mu.RLock()
 	// reuse NewMultiChunkIterator with new chunks.
 	it.Reset(ms.s.durations[chunkStart:chunkEnd])
-	ms.s.mu.RUnlock()
-
 	duration, err := iteratorRangeSum(it, start, end)
 	if err != nil {
 		sl.err = err
 		return sl
 	}
 
-	ms.s.mu.RLock()
 	// reuse NewMultiChunkIterator with new chunks.
 	it.Reset(ms.s.periods[chunkStart:chunkEnd])
-	ms.s.mu.RUnlock()
-
 	period, err := iteratorRangeMax(it, start, end)
 	if err != nil {
 		sl.err = err
@@ -833,11 +823,8 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
 
-	ms.s.mu.RLock()
 	// reuse NewMultiChunkIterator with new chunks.
 	it.Reset(ms.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
-	ms.s.mu.RUnlock()
-
 	sum, err := iteratorRangeSum(it, start, end)
 	if err != nil {
 		sl.err = err
@@ -880,7 +867,6 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 				Children:   make([]*ProfileTreeNode, 0, len(child.Children)),
 			}
 
-			ms.s.mu.Lock()
 			for _, key := range child.keys {
 				if chunks, ok := ms.s.flatValues[key]; ok {
 					it.Reset(chunks[chunkStart:chunkEnd])
@@ -913,7 +899,6 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 					})
 				}
 			}
-			ms.s.mu.Unlock()
 
 			cur := stack.Peek()
 			cur.node.Children = append(cur.node.Children, n)
@@ -992,22 +977,24 @@ func (rs *MemRangeSeries) Labels() labels.Labels {
 
 func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 	rs.s.mu.RLock()
+	defer rs.s.mu.RUnlock()
+
 	chunkStart, chunkEnd := rs.s.timestamps.indexRange(rs.mint, rs.maxt)
 	timestamps := make([]chunkenc.Chunk, 0, chunkEnd-chunkStart)
 	for _, t := range rs.s.timestamps[chunkStart:chunkEnd] {
 		timestamps = append(timestamps, t.chunk)
 	}
-	rs.s.mu.RUnlock()
 
 	start, end, err := getIndexRange(NewMultiChunkIterator(timestamps), rs.mint, rs.maxt)
 	if err != nil {
-		// TODO
+		return &MemRangeSeriesIterator{
+			err: err,
+		}
 	}
 
 	root := &MemSeriesIteratorTreeNode{}
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
 
-	rs.s.mu.Lock()
 	rootIt := NewMultiChunkIterator(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
 	if start != 0 {
 		rootIt.Seek(uint16(start))
@@ -1018,7 +1005,6 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		NumLabel: rs.s.numLabels[rootKey],
 		NumUnit:  rs.s.numUnits[rootKey],
 	})
-	rs.s.mu.Unlock()
 
 	memItStack := MemSeriesIteratorTreeStack{{
 		node:  root,
@@ -1036,7 +1022,6 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 				Children:   make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
 			}
 
-			rs.s.mu.RLock()
 			for _, key := range child.keys {
 				if chunks, ok := rs.s.flatValues[key]; ok {
 					it := NewMultiChunkIterator(chunks[chunkStart:chunkEnd])
@@ -1063,7 +1048,6 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 					})
 				}
 			}
-			rs.s.mu.RUnlock()
 
 			cur := memItStack.Peek()
 			cur.node.Children = append(cur.node.Children, n)

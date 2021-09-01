@@ -14,7 +14,6 @@
 package storage
 
 import (
-	"math"
 	"testing"
 
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
@@ -94,7 +93,7 @@ func TestTimestampChunks_indexRange(t *testing.T) {
 				chunk:   chunkenc.NewDeltaChunk(),
 			})
 		}
-		tcs[int(math.Floor(float64(i/20)))].maxTime = int64(i)
+		tcs[int(float64(i/20))].maxTime = int64(i)
 	}
 
 	start, end = tcs.indexRange(123, 256)
