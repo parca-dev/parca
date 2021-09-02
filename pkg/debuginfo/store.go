@@ -20,24 +20,50 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"path"
+	"strings"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	"github.com/google/pprof/profile"
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
+
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	"github.com/parca-dev/parca/internal/pprof/binutils"
+)
+
+type CacheProvider string
+
+const (
+	FILESYSTEM CacheProvider = "FILESYSTEM"
 )
 
 type Config struct {
 	Bucket *client.BucketConfig `yaml:"bucket"`
+	Cache  *CacheConfig         `yaml:"cache"`
+}
+
+type FilesystemCacheConfig struct {
+	Directory string `yaml:"directory"`
+}
+
+type CacheConfig struct {
+	Type   CacheProvider `yaml:"type"`
+	Config interface{}   `yaml:"config"`
 }
 
 type Store struct {
 	bucket objstore.Bucket
 	logger log.Logger
+
+	cacheDir string
+	bu       *binutils.Binutils
 }
 
 func NewStore(logger log.Logger, config *Config) (*Store, error) {
@@ -51,9 +77,21 @@ func NewStore(logger log.Logger, config *Config) (*Store, error) {
 		return nil, fmt.Errorf("instantiate object storage: %w", err)
 	}
 
+	cacheCfg, err := yaml.Marshal(config.Cache)
+	if err != nil {
+		return nil, fmt.Errorf("marshal content of cache configuration: %w", err)
+	}
+
+	cache, err := newCache(cacheCfg)
+	if err != nil {
+		return nil, fmt.Errorf("instantiate cache: %w", err)
+	}
+
 	return &Store{
-		logger: logger,
-		bucket: bucket,
+		logger:   logger,
+		bucket:   bucket,
+		cacheDir: cache.Directory,
+		bu:       &binutils.Binutils{},
 	}, nil
 }
 
@@ -121,6 +159,82 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	})
 }
 
+func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...*profile.Location) (map[*profile.Location][]profile.Line, error) {
+	mappingPath, err := s.fetchObjectFile(ctx, m.BuildID)
+	if err != nil {
+		level.Debug(s.logger).Log("msg", "failed to fetch object", "object", m.BuildID, "err", err)
+		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
+	}
+
+	// TODO(kakkoyun): Crate mapInfo and utilize it here.
+	objFile, err := s.bu.Open(mappingPath, m.Start, m.Limit, m.Offset)
+	if err != nil {
+		level.Error(s.logger).Log("msg", "failed to open object file", "mappingpath", mappingPath, "start", m.Start, "limit", m.Limit, "offset", m.Offset, "err", err)
+		return nil, fmt.Errorf("open object file: %w", err)
+	}
+
+	lines := map[*profile.Location][]profile.Line{}
+	for _, loc := range locations {
+		frames, err := objFile.SourceLine(loc.Address)
+		if err != nil {
+			level.Debug(s.logger).Log("msg", "failed to open object file", "mappingpath", mappingPath, "start", m.Start, "limit", m.Limit, "offset", m.Offset, "address", loc.Address, "err", err)
+			continue
+		}
+
+		for _, frame := range frames {
+			lines[loc] = append(lines[loc], profile.Line{
+				Line: int64(frame.Line),
+				Function: &profile.Function{
+					Name:     frame.Func,
+					Filename: frame.File,
+				},
+			})
+		}
+	}
+	return lines, nil
+}
+
+var ErrSymbolNotFound = errors.New("symbol not found")
+
+func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {
+	mappingPath := path.Join(s.cacheDir, buildID, "debuginfo")
+	// Check if it's already cached locally; if not download.
+	if _, err := os.Stat(mappingPath); os.IsNotExist(err) {
+		r, err := s.bucket.Get(ctx, path.Join(buildID, "debuginfo"))
+		if s.bucket.IsObjNotFoundErr(err) {
+			level.Debug(s.logger).Log("msg", "object not found", "object", buildID, "err", err)
+			return "", ErrSymbolNotFound
+		}
+		if err != nil {
+			return "", fmt.Errorf("get object from object storage: %w", err)
+		}
+		tmpfile, err := ioutil.TempFile("", "symbol-download")
+		if err != nil {
+			return "", fmt.Errorf("create temp file: %w", err)
+		}
+		defer os.Remove(tmpfile.Name())
+
+		_, err = io.Copy(tmpfile, r)
+		if err != nil {
+
+			return "", fmt.Errorf("copy object storage file to local temp file: %w", err)
+		}
+		if err := tmpfile.Close(); err != nil {
+			return "", fmt.Errorf("close tempfile to write object file: %w", err)
+		}
+
+		err = os.MkdirAll(path.Join(s.cacheDir, buildID), 0700)
+		if err != nil {
+			return "", fmt.Errorf("create object file directory: %w", err)
+		}
+		// Need to use rename to make the "creation" atomic.
+		if err := os.Rename(tmpfile.Name(), mappingPath); err != nil {
+			return "", fmt.Errorf("atomically move downloaded object file: %w", err)
+		}
+	}
+	return mappingPath, nil
+}
+
 type UploadReader struct {
 	stream debuginfopb.DebugInfoService_UploadServer
 	cur    io.Reader
@@ -186,4 +300,37 @@ func contextError(ctx context.Context) error {
 	default:
 		return nil
 	}
+}
+
+func newCache(cacheCfg []byte) (*FilesystemCacheConfig, error) {
+	cacheConf := &CacheConfig{}
+	if err := yaml.UnmarshalStrict(cacheCfg, cacheConf); err != nil {
+		return nil, fmt.Errorf("parsing config YAML file: %w", err)
+	}
+
+	config, err := yaml.Marshal(cacheConf.Config)
+	if err != nil {
+		return nil, fmt.Errorf("marshal content of cache configuration: %w", err)
+	}
+
+	var c FilesystemCacheConfig
+	switch strings.ToUpper(string(cacheConf.Type)) {
+	case string(FILESYSTEM):
+		if err := yaml.Unmarshal(config, &c); err != nil {
+			return nil, err
+		}
+		if c.Directory == "" {
+			return nil, errors.New("missing directory for filesystem bucket")
+		}
+	default:
+		return nil, fmt.Errorf("cache with type %s is not supported", cacheConf.Type)
+	}
+
+	if _, err := os.Stat(c.Directory); os.IsNotExist(err) {
+		err := os.MkdirAll(c.Directory, 0700)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &c, nil
 }

@@ -20,7 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
@@ -28,7 +30,11 @@ import (
 )
 
 func TestDB(t *testing.T) {
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastoresql.NewInMemoryProfileMetaStore("testdb")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	db := OpenDB(prometheus.NewRegistry())
 	ctx := context.Background()
 	app1, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test1"}})
@@ -40,7 +46,7 @@ func TestDB(t *testing.T) {
 	p, err := profile.Parse(b)
 	require.NoError(t, err)
 
-	require.NoError(t, app1.Append(ProfileFromPprof(l, p, 0)))
+	require.NoError(t, app1.Append(ProfileFromPprof(log.NewNopLogger(), l, p, 0)))
 
 	app2, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test2"}})
 	require.NoError(t, err)
@@ -51,7 +57,7 @@ func TestDB(t *testing.T) {
 	p, err = profile.Parse(b)
 	require.NoError(t, err)
 
-	require.NoError(t, app2.Append(ProfileFromPprof(l, p, 0)))
+	require.NoError(t, app2.Append(ProfileFromPprof(log.NewNopLogger(), l, p, 0)))
 
 	q := db.Querier(
 		ctx,

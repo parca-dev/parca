@@ -19,11 +19,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
 func TestProfileTreeInsert(t *testing.T) {
@@ -421,12 +424,16 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastoresql.NewInMemoryProfileMetaStore("iteratorconsistency")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	s := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	profile := ProfileFromPprof(l, p1, 0)
+	profile := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, app.Append(profile))
 
 	profileTree := profile.Tree
@@ -459,14 +466,20 @@ func TestRealInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastoresql.NewInMemoryProfileMetaStore("realinsert")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	s := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	profile := ProfileFromPprof(l, p, 0)
+	profile := ProfileFromPprof(log.NewNopLogger(), l, p, 0)
 	require.NoError(t, app.Append(profile))
-	require.Equal(t, len(p.Location), len(l.locations))
+	locs, err := l.GetLocations()
+	require.NoError(t, err)
+	require.Equal(t, len(p.Location), len(locs))
 }
 
 func TestRealInserts(t *testing.T) {
@@ -484,13 +497,17 @@ func TestRealInserts(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastoresql.NewInMemoryProfileMetaStore("realinserts")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	s := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	prof1 := ProfileFromPprof(l, p1, 0)
-	prof2 := ProfileFromPprof(l, p2, 0)
+	prof1 := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
+	prof2 := ProfileFromPprof(log.NewNopLogger(), l, p2, 0)
 	require.NoError(t, app.Append(prof1))
 	require.NoError(t, app.Append(prof2))
 
@@ -582,14 +599,18 @@ func TestIteratorRangeMax(t *testing.T) {
 }
 
 func TestMergeMemSeriesConsistency(t *testing.T) {
-	s := NewInMemoryProfileMetaStore()
+	s, err := metastoresql.NewInMemoryProfileMetaStore("memseriesconsistency")
+	t.Cleanup(func() {
+		s.Close()
+	})
+	require.NoError(t, err)
 	f, err := os.Open("./testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	pprof1, err := profile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p := ProfileFromPprof(s, pprof1, 0)
+	p := ProfileFromPprof(log.NewNopLogger(), s, pprof1, 0)
 
 	ctx := context.Background()
 	db := OpenDB(prometheus.NewRegistry())

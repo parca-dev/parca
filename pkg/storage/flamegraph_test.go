@@ -17,10 +17,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 )
 
 func TestTreeStack(t *testing.T) {
@@ -147,8 +150,13 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	profileTree := ProfileTreeFromPprof(l, p1, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("generateflamegraphfromprofiletree")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+
+	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
 
 	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
 		SampleType: ValueType{Unit: "count"},
@@ -169,12 +177,16 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
+	l, err := metastoresql.NewInMemoryProfileMetaStore("generateflamegraphfrominstantprofile")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
 	s := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	require.NoError(t, app.Append(ProfileFromPprof(l, p1, 0)))
+	require.NoError(t, app.Append(ProfileFromPprof(log.NewNopLogger(), l, p1, 0)))
 
 	it := s.Iterator()
 	require.True(t, it.Next())
@@ -210,9 +222,13 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	prof1 := ProfileFromPprof(l, p1, 0)
-	prof2 := ProfileFromPprof(l, p2, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("generateflamegraphfrommergeprofile")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+	prof1 := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
+	prof2 := ProfileFromPprof(log.NewNopLogger(), l, p2, 0)
 
 	m, err := NewMergeProfile(prof1, prof2)
 	require.NoError(t, err)
@@ -230,8 +246,12 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	profileTree := ProfileTreeFromPprof(l, p1, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("controlgenerateflamegraphfrommergeprofile")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
 
 	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
 		SampleType: ValueType{Unit: "count"},
@@ -249,8 +269,12 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	profileTree := ProfileTreeFromPprof(l, p1, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("flamegraph")
+	b.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(b, err)
+	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
 
 	b.ReportAllocs()
 	b.ResetTimer()

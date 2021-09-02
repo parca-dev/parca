@@ -1,5 +1,7 @@
 run:
   deadline: 5m
+  skip-dirs:
+    - internal/pprof
 linters-settings:
   errcheck:
     exclude: ./.errcheck_excludes.txt

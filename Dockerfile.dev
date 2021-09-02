@@ -25,8 +25,11 @@ RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 COPY ./cmd /app/cmd
 COPY ./pkg /app/pkg
 COPY ./proto /app/proto
-COPY ./go.mod /app
-COPY ./go.sum /app
+COPY ./gen /app/gen
+COPY ./internal /app/internal
+
+COPY go.mod go.sum /app/
+RUN go mod download -modcacherw
 
 COPY ./ui/ui.go ./ui/ui.go
 COPY --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
@@ -34,6 +37,8 @@ COPY --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -gcflags="all=-N -l" -o parca ./cmd/parca
 
 FROM golang:1.16-alpine
+
+RUN apk add --no-cache binutils
 
 COPY --from=builder /go/bin/dlv /
 COPY --from=builder /go/bin/grpc-health-probe /

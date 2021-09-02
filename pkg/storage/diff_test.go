@@ -18,7 +18,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -245,9 +247,13 @@ func BenchmarkDiff(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	profileTree1 := ProfileTreeFromPprof(l, p1, 0)
-	profileTree2 := ProfileTreeFromPprof(l, p2, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("benchdiff")
+	require.NoError(b, err)
+	b.Cleanup(func() {
+		l.Close()
+	})
+	profileTree1 := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
+	profileTree2 := ProfileTreeFromPprof(log.NewNopLogger(), l, p2, 0)
 
 	prof1 := &Profile{
 		Tree: profileTree1,

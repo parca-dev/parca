@@ -20,7 +20,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 type InstantProfileTreeNode interface {
@@ -237,12 +239,12 @@ func (i *SliceProfileSeriesIterator) Err() error {
 
 // ProfilesFromPprof extracts a Profile from each sample index included in the
 // pprof profile.
-func ProfilesFromPprof(s ProfileMetaStore, p *profile.Profile) []*Profile {
+func ProfilesFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) []*Profile {
 	ps := make([]*Profile, 0, len(p.SampleType))
 
 	for i := range p.SampleType {
 		ps = append(ps, &Profile{
-			Tree: ProfileTreeFromPprof(s, p, i),
+			Tree: ProfileTreeFromPprof(l, s, p, i),
 			Meta: ProfileMetaFromPprof(p, i),
 		})
 	}
@@ -250,9 +252,9 @@ func ProfilesFromPprof(s ProfileMetaStore, p *profile.Profile) []*Profile {
 	return ps
 }
 
-func ProfileFromPprof(s ProfileMetaStore, p *profile.Profile, sampleIndex int) *Profile {
+func ProfileFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *Profile {
 	return &Profile{
-		Tree: ProfileTreeFromPprof(s, p, sampleIndex),
+		Tree: ProfileTreeFromPprof(l, s, p, sampleIndex),
 		Meta: ProfileMetaFromPprof(p, sampleIndex),
 	}
 }
@@ -267,8 +269,9 @@ func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMet
 	}
 }
 
-func ProfileTreeFromPprof(s ProfileMetaStore, p *profile.Profile, sampleIndex int) *ProfileTree {
+func ProfileTreeFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *ProfileTree {
 	pn := &profileNormalizer{
+		logger:    l,
 		metaStore: s,
 
 		samples: make(map[stacktraceKey]*profile.Sample, len(p.Sample)),
@@ -279,6 +282,7 @@ func ProfileTreeFromPprof(s ProfileMetaStore, p *profile.Profile, sampleIndex in
 		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
 	}
 
+	// TODO(kakkoyun): Create mapInfo.
 	samples := make([]*profile.Sample, 0, len(p.Sample))
 	for _, s := range p.Sample {
 		if !isZeroSample(s) {

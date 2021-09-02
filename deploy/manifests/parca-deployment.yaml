@@ -28,11 +28,13 @@ spec:
         - /parca
         - --config-path=/parca.yaml
         - --log-level=debug
+        - --cors-allowed-origins=*
         image: quay.io/parca/parca:dev
         livenessProbe:
           exec:
             command:
             - /grpc-health-probe
+            - -v
             - -addr=:7070
           initialDelaySeconds: 5
         name: parca
@@ -43,6 +45,7 @@ spec:
           exec:
             command:
             - /grpc-health-probe
+            - -v
             - -addr=:7070
           initialDelaySeconds: 10
         resources: {}

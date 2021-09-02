@@ -22,10 +22,14 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
+
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 var (
@@ -1347,6 +1351,8 @@ func (it *MemSeriesIterator) Err() error {
 }
 
 type profileNormalizer struct {
+	logger log.Logger
+
 	// Memoization tables within a profile.
 	locationsByID map[uint64]*profile.Location
 	functionsByID map[uint64]*profile.Function
@@ -1354,7 +1360,7 @@ type profileNormalizer struct {
 
 	// Memoization tables for profile entities.
 	samples   map[stacktraceKey]*profile.Sample
-	metaStore ProfileMetaStore
+	metaStore metastore.ProfileMetaStore
 }
 
 // Returns the mapped sample and whether it is new or a known sample.
@@ -1418,14 +1424,23 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 	}
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
-	k := MakeLocationKey(l)
-	ll, err := pn.metaStore.GetLocationByKey(k)
-	if err != ErrLocationNotFound {
-		pn.locationsByID[src.ID] = ll
-		return ll
+	k := metastore.MakeLocationKey(l)
+	loc, err := pn.metaStore.GetLocationByKey(k)
+	if err != nil {
+		level.Debug(pn.logger).Log("msg", "location not found", "key", k, "err", err)
+	}
+	if loc != nil {
+		pn.locationsByID[src.ID] = loc
+		return loc
 	}
 	pn.locationsByID[src.ID] = l
-	pn.metaStore.CreateLocation(l)
+
+	id, err := pn.metaStore.CreateLocation(l)
+	if err != nil {
+		level.Warn(pn.logger).Log("msg", "failed to create location", "err", err)
+	} else {
+		l.ID = id
+	}
 	return l
 }
 
@@ -1439,9 +1454,12 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	}
 
 	// Check memoization tables.
-	mk := MakeMappingKey(src)
+	mk := metastore.MakeMappingKey(src)
 	m, err := pn.metaStore.GetMappingByKey(mk)
-	if err != ErrMappingNotFound {
+	if err != nil {
+		level.Debug(pn.logger).Log("msg", "mapping not found", "key", mk, "err", err)
+	}
+	if m != nil {
 		mi := mapInfo{m, int64(m.Start) - int64(src.Start)}
 		pn.mappingsByID[src.ID] = mi
 		return mi
@@ -1459,7 +1477,12 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	}
 
 	// Update memoization tables.
-	pn.metaStore.CreateMapping(m)
+	id, err := pn.metaStore.CreateMapping(m)
+	if err != nil {
+		level.Warn(pn.logger).Log("msg", "failed to create mapping", "err", err)
+	} else {
+		m.ID = id
+	}
 	mi := mapInfo{m, 0}
 	pn.mappingsByID[src.ID] = mi
 	return mi
@@ -1480,9 +1503,12 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 	if f, ok := pn.functionsByID[src.ID]; ok {
 		return f
 	}
-	k := MakeFunctionKey(src)
+	k := metastore.MakeFunctionKey(src)
 	f, err := pn.metaStore.GetFunctionByKey(k)
-	if err != ErrFunctionNotFound {
+	if err != nil {
+		level.Debug(pn.logger).Log("msg", "function not found", "key", k, "err", err)
+	}
+	if f != nil {
 		pn.functionsByID[src.ID] = f
 		return f
 	}
@@ -1492,7 +1518,14 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 		Filename:   src.Filename,
 		StartLine:  src.StartLine,
 	}
-	pn.metaStore.CreateFunction(f)
+
+	id, err := pn.metaStore.CreateFunction(f)
+	if err != nil {
+		level.Warn(pn.logger).Log("msg", "failed to create function", "err", err)
+	} else {
+		f.ID = id
+	}
+
 	pn.functionsByID[src.ID] = f
 	return f
 }

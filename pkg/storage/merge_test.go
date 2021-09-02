@@ -20,7 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -442,8 +444,12 @@ func TestMergeSingle(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	prof := ProfileFromPprof(l, p, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("mergesingle")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+	prof := ProfileFromPprof(log.NewNopLogger(), l, p, 0)
 
 	m, err := MergeProfiles(prof)
 	require.NoError(t, err)
@@ -457,8 +463,12 @@ func TestMergeMany(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	prof := ProfileFromPprof(l, p, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("mergemany")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+	prof := ProfileFromPprof(log.NewNopLogger(), l, p, 0)
 
 	num := 1000
 	profiles := make([]InstantProfile, 0, 1000)
@@ -491,9 +501,13 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	profileTree1 := ProfileTreeFromPprof(l, p1, 0)
-	profileTree2 := ProfileTreeFromPprof(l, p2, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("treemerge")
+	b.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(b, err)
+	profileTree1 := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
+	profileTree2 := ProfileTreeFromPprof(log.NewNopLogger(), l, p2, 0)
 
 	prof1 := &Profile{
 		Tree: profileTree1,
@@ -551,8 +565,12 @@ func BenchmarkMergeMany(b *testing.B) {
 				require.NoError(b, err)
 				require.NoError(b, f.Close())
 
-				l := NewInMemoryProfileMetaStore()
-				prof := ProfileFromPprof(l, p, 0)
+				l, err := metastoresql.NewInMemoryProfileMetaStore("bencmergequery")
+				require.NoError(b, err)
+				b.Cleanup(func() {
+					l.Close()
+				})
+				prof := ProfileFromPprof(log.NewNopLogger(), l, p, 0)
 
 				profiles := make([]InstantProfile, 0, n)
 				for i := 0; i < n; i++ {

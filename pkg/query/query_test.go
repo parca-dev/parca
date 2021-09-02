@@ -24,15 +24,17 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/storage"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/storage"
 )
 
 func Test_QueryRange_EmptyStore(t *testing.T) {
@@ -57,7 +59,11 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastoresql.NewInMemoryProfileMetaStore("queryrangevalid")
+	t.Cleanup(func() {
+		s.Close()
+	})
+	require.NoError(t, err)
 	q := New(log.NewNopLogger(), db, s)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -76,7 +82,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	// Overwrite the profile's timestamp to be within the last 5min.
 	p.TimeNanos = time.Now().UnixNano()
 
-	err = app.Append(storage.ProfileFromPprof(s, p, 0))
+	err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p, 0))
 	require.NoError(t, err)
 
 	// Query last 5 minutes
@@ -107,7 +113,11 @@ func Test_QueryRange_Valid(t *testing.T) {
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastoresql.NewInMemoryProfileMetaStore("queryrangelimited")
+	t.Cleanup(func() {
+		s.Close()
+	})
+	require.NoError(t, err)
 	q := New(log.NewNopLogger(), db, s)
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
@@ -132,7 +142,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 		// Overwrite the profile's timestamp to be within the last 5min.
 		p.TimeNanos = time.Now().UnixNano()
 
-		err = app.Append(storage.ProfileFromPprof(s, p, 0))
+		err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p, 0))
 		require.NoError(t, err)
 	}
 
@@ -261,7 +271,11 @@ func Test_Query_InputValidation(t *testing.T) {
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastoresql.NewInMemoryProfileMetaStore("querysimple")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		s.Close()
+	})
 	q := New(log.NewNopLogger(), db, s)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -281,7 +295,7 @@ func Test_Query_Simple(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	err = app.Append(storage.ProfileFromPprof(s, p1, 0))
+	err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p1, 0))
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -305,7 +319,11 @@ func Test_Query_Simple(t *testing.T) {
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastoresql.NewInMemoryProfileMetaStore("querydiff")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		s.Close()
+	})
 	q := New(log.NewNopLogger(), db, s)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -331,7 +349,7 @@ func Test_Query_Diff(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	err = app.Append(storage.ProfileFromPprof(s, p1, 0))
+	err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p1, 0))
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 10)
@@ -339,7 +357,7 @@ func Test_Query_Diff(t *testing.T) {
 	t2 := (time.Now().UnixNano() / 1000000) * 1000000
 	p2.TimeNanos = t2
 
-	err = app.Append(storage.ProfileFromPprof(s, p2, 0))
+	err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p2, 0))
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -377,14 +395,18 @@ func Test_Query_Diff(t *testing.T) {
 }
 
 func Benchmark_Query_Merge(b *testing.B) {
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastoresql.NewInMemoryProfileMetaStore("benchquerymerge")
+	require.NoError(b, err)
+	b.Cleanup(func() {
+		s.Close()
+	})
 	f, err := os.Open("../storage/testdata/profile1.pb.gz")
 	require.NoError(b, err)
 	p1, err := profile.Parse(f)
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	p := storage.ProfileFromPprof(s, p1, 0)
+	p := storage.ProfileFromPprof(log.NewNopLogger(), s, p1, 0)
 
 	for k := 0.; k <= 10; k++ {
 		n := int(math.Pow(2, k))
@@ -428,14 +450,19 @@ func Benchmark_Query_Merge(b *testing.B) {
 }
 
 func Test_Query_Merge(t *testing.T) {
-	s := storage.NewInMemoryProfileMetaStore()
+	s, err := metastoresql.NewInMemoryProfileMetaStore("querymerge")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		s.Close()
+	})
+
 	f, err := os.Open("../storage/testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p := storage.ProfileFromPprof(s, p1, 0)
+	p := storage.ProfileFromPprof(log.NewNopLogger(), s, p1, 0)
 
 	for k := 0.; k <= 10; k++ {
 		ctx := context.Background()

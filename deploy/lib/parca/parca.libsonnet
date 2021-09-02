@@ -89,7 +89,7 @@ function(params) {
           '--config-path=' + prc.config.configPath,
           '--log-level=' + prc.config.logLevel,
         ] +
-        (if prc.config.corsAllowedOrigins != '' then []
+        (if prc.config.corsAllowedOrigins == '' then []
          else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]),
       ports: [
         { name: port.name, containerPort: port.port }
@@ -100,13 +100,13 @@ function(params) {
       livenessProbe: {
         initialDelaySeconds: 5,
         exec: {
-          command: ['/grpc-health-probe', '-addr=:' + prc.config.port],
+          command: ['/grpc-health-probe', '-v', '-addr=:' + prc.config.port],
         },
       },
       readinessProbe: {
         initialDelaySeconds: 10,
         exec: {
-          command: ['/grpc-health-probe', '-addr=:' + prc.config.port],
+          command: ['/grpc-health-probe', '-v', '-addr=:' + prc.config.port],
         },
       },
     };

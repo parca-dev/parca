@@ -11,13 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package metastore
 
 import (
 	"errors"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/google/pprof/profile"
 )
@@ -32,12 +31,16 @@ type ProfileMetaStore interface {
 	LocationStore
 	FunctionStore
 	MappingStore
+	Close() error
+	Ping() error
 }
 
 type LocationStore interface {
 	GetLocationByKey(k LocationKey) (*profile.Location, error)
 	GetLocationByID(id uint64) (*profile.Location, error)
-	CreateLocation(l *profile.Location)
+	CreateLocation(l *profile.Location) (uint64, error)
+	UpdateLocation(location *profile.Location) error
+	GetUnsymbolizedLocations() ([]*profile.Location, error)
 }
 
 type LocationKey struct {
@@ -69,7 +72,7 @@ func MakeLocationKey(l *profile.Location) LocationKey {
 
 type FunctionStore interface {
 	GetFunctionByKey(key FunctionKey) (*profile.Function, error)
-	CreateFunction(f *profile.Function)
+	CreateFunction(f *profile.Function) (uint64, error)
 }
 
 type FunctionKey struct {
@@ -88,7 +91,7 @@ func MakeFunctionKey(f *profile.Function) FunctionKey {
 
 type MappingStore interface {
 	GetMappingByKey(key MappingKey) (*profile.Mapping, error)
-	CreateMapping(m *profile.Mapping)
+	CreateMapping(m *profile.Mapping) (uint64, error)
 }
 
 type MappingKey struct {
@@ -120,93 +123,4 @@ func MakeMappingKey(m *profile.Mapping) MappingKey {
 		// treated as the same mapping during merging.
 	}
 	return key
-}
-
-type InMemoryProfileMetaStore struct {
-	mu             sync.RWMutex
-	locationsByKey map[LocationKey]uint64
-	locations      []*profile.Location
-	mappingsByKey  map[MappingKey]uint64
-	mappings       []*profile.Mapping
-	functionsByKey map[FunctionKey]uint64
-	functions      []*profile.Function
-}
-
-func NewInMemoryProfileMetaStore() *InMemoryProfileMetaStore {
-	return &InMemoryProfileMetaStore{
-		locationsByKey: map[LocationKey]uint64{},
-		functionsByKey: map[FunctionKey]uint64{},
-		mappingsByKey:  map[MappingKey]uint64{},
-	}
-}
-
-func (s *InMemoryProfileMetaStore) GetLocationByID(id uint64) (*profile.Location, error) {
-	if uint64(len(s.locations)) <= id-1 {
-		return nil, ErrLocationNotFound
-	}
-
-	return s.locations[id-1], nil
-}
-
-func (s *InMemoryProfileMetaStore) GetLocationByKey(key LocationKey) (*profile.Location, error) {
-	s.mu.RLock()
-	i, found := s.locationsByKey[key]
-	s.mu.RUnlock()
-	if !found {
-		return nil, ErrLocationNotFound
-	}
-
-	return s.locations[i-1], nil
-}
-
-func (s *InMemoryProfileMetaStore) CreateLocation(l *profile.Location) {
-	key := MakeLocationKey(l)
-	id := uint64(len(s.locations)) + 1
-	l.ID = id
-	s.locations = append(s.locations, l)
-	s.mu.Lock()
-	s.locationsByKey[key] = id
-	s.mu.Unlock()
-}
-
-func (s *InMemoryProfileMetaStore) GetMappingByKey(key MappingKey) (*profile.Mapping, error) {
-	s.mu.RLock()
-	i, found := s.mappingsByKey[key]
-	s.mu.RUnlock()
-	if !found {
-		return nil, ErrMappingNotFound
-	}
-
-	return s.mappings[i-1], nil
-}
-
-func (s *InMemoryProfileMetaStore) CreateMapping(m *profile.Mapping) {
-	key := MakeMappingKey(m)
-	id := uint64(len(s.mappings)) + 1
-	m.ID = id
-	s.mappings = append(s.mappings, m)
-	s.mu.Lock()
-	s.mappingsByKey[key] = id
-	s.mu.Unlock()
-}
-
-func (s *InMemoryProfileMetaStore) GetFunctionByKey(key FunctionKey) (*profile.Function, error) {
-	s.mu.RLock()
-	i, found := s.functionsByKey[key]
-	s.mu.RUnlock()
-	if !found {
-		return nil, ErrFunctionNotFound
-	}
-
-	return s.functions[i-1], nil
-}
-
-func (s *InMemoryProfileMetaStore) CreateFunction(f *profile.Function) {
-	key := MakeFunctionKey(f)
-	id := uint64(len(s.functions)) + 1
-	f.ID = id
-	s.functions = append(s.functions, f)
-	s.mu.Lock()
-	s.functionsByKey[key] = id
-	s.mu.Unlock()
 }

@@ -18,7 +18,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,8 +31,12 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l := NewInMemoryProfileMetaStore()
-	p := ProfileFromPprof(l, p1, 0)
+	l, err := metastoresql.NewInMemoryProfileMetaStore("generatepprof")
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+	p := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
 	res, err := generatePprof(l, p)
 	require.NoError(t, err)
 

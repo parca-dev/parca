@@ -36,11 +36,21 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
+	cacheDir, err := ioutil.TempDir("", "parca-test-cache")
+	require.NoError(t, err)
+	defer os.RemoveAll(cacheDir)
+
 	s, err := NewStore(log.NewNopLogger(), &Config{
 		Bucket: &client.BucketConfig{
 			Type: client.FILESYSTEM,
 			Config: filesystem.Config{
 				Directory: dir,
+			},
+		},
+		Cache: &CacheConfig{
+			Type: FILESYSTEM,
+			Config: &FilesystemCacheConfig{
+				Directory: cacheDir,
 			},
 		},
 	})
