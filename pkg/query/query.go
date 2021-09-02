@@ -81,7 +81,11 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		timestamp.FromTime(start),
 		timestamp.FromTime(end),
 	)
-	set := query.Select(nil, sel...)
+	set := query.Select(&storage.SelectHints{
+		Start: timestamp.FromTime(start),
+		End:   timestamp.FromTime(end),
+		Root:  true,
+	}, sel...)
 	res := &pb.QueryRangeResponse{}
 	for set.Next() {
 		series := set.At()
@@ -107,8 +111,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 				metricsSeries.Samples = append(metricsSeries.Samples, s)
 			}
 		}
-		err := i.Err()
-		if err != nil {
+		if err := i.Err(); err != nil {
 			return nil, status.Error(codes.Internal, "failed to iterate")
 		}
 

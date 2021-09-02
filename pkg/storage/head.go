@@ -270,6 +270,10 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 			ss = append(ss, &MemMergeSeries{s: s, mint: mint, maxt: maxt})
 			continue
 		}
+		if hints != nil && hints.Root {
+			ss = append(ss, &MemRootSeries{s: s, mint: mint, maxt: maxt})
+			continue
+		}
 		ss = append(ss, &MemRangeSeries{s: s, mint: mint, maxt: maxt})
 	}
 

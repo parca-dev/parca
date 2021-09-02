@@ -29,6 +29,7 @@ type SelectHints struct {
 	End   int64 // End time in milliseconds for this select.
 
 	Merge    bool // Is the query result a merge of all samples?
+	Root     bool // Is the query result supposed to only contain the root's cumulative values?
 	Metadata bool // Is the database just being queried for metadata like label-names/label-values.
 }
 
