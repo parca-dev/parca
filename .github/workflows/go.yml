@@ -17,6 +17,9 @@ jobs:
         with:
           go-version: 1.16
 
+      - name: Install llvm
+        run: sudo apt-get install llvm
+
       - name: Build
         run: make build
 
