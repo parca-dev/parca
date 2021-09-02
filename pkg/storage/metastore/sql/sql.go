@@ -83,6 +83,7 @@ func (s *sqlMetaStore) migrate() error {
 		);`,
 	}
 	// TODO(kakkoyun): Additional table between location and mapping? - mapInfo from pprof
+	// TODO(kakkoyun): Remove additional location_id from locations table?
 
 	for _, t := range tables {
 		statement, err := s.db.Prepare(t)
@@ -109,14 +110,20 @@ func (s *sqlMetaStore) GetLocationByKey(k metastore.LocationKey) (*profile.Locat
 			`SELECT "location_id", "address", "is_folded", "mapping_id"
 					FROM "locations" l
 					JOIN "mappings" m ON l.mapping_id = m.id
-					WHERE l.normalized_address=? AND l.is_folded=? AND l.lines=? AND m.id=? `,
+					WHERE l.normalized_address=? 
+					  AND l.is_folded=? 
+					  AND l.lines=? 
+					  AND m.id=? `,
 			int64(k.Addr), k.IsFolded, k.Lines, int64(k.MappingID),
 		).Scan(&id, &address, &l.IsFolded, &mappingID)
 	} else {
 		err = s.db.QueryRow(
 			`SELECT "location_id", "address", "is_folded"
 					FROM "locations"
-					WHERE normalized_address=? AND mapping_id IS NULL AND is_folded=? AND lines=?`,
+					WHERE normalized_address=? 
+					  AND mapping_id IS NULL 
+					  AND is_folded=? 
+					  AND lines=?`,
 			int64(k.Addr), k.IsFolded, k.Lines,
 		).Scan(&id, &address, &l.IsFolded)
 	}
@@ -385,11 +392,13 @@ func (s *sqlMetaStore) GetUnsymbolizedLocations() ([]*profile.Location, error) {
 	rows, err := s.db.Query(
 		`SELECT l."location_id", l."address", l."is_folded", m."id",
        					m."start", m."limit", m."offset", m."file", m."build_id",
-       					m."has_functions", m."has_filenames", m."has_line_numbers", m."has_inline_frames"
+       					m."has_functions", m."has_filenames", 
+       					m."has_line_numbers", m."has_inline_frames"
 				FROM "locations" l
-				LEFT JOIN "mappings" m ON l.mapping_id = m.id
+				JOIN "mappings" m ON l.mapping_id = m.id
 				LEFT JOIN "location_lines" ll ON l."id" = ll."location_id"
-				WHERE ll."location_id" IS NULL`,
+                WHERE ll."line_id" IS NULL 
+                  AND l."location_id" IS NOT NULL`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("GetUnsymbolizedLocations failed: %w", err)
@@ -661,9 +670,9 @@ func (s *sqlMetaStore) getLocationLines(locationID uint64) ([]profile.Line, erro
 	rows, err := s.db.Query(
 		`SELECT ln."line", fn."id", fn."name", fn."system_name", fn."filename", fn."start_line"
 				FROM "location_lines" ll
-				LEFT JOIN "locations" loc ON ll."location_id" = loc."id"
-				LEFT JOIN "lines" ln ON ll."line_id" = ln."id"
-				LEFT JOIN "functions" fn ON ln."function_id" = fn."id"
+				JOIN "locations" loc ON ll."location_id" = loc."id"
+				JOIN "lines" ln ON ll."line_id" = ln."id"
+				JOIN "functions" fn ON ln."function_id" = fn."id"
 				WHERE loc."location_id"=? ORDER BY ln."line" ASC`, int64(locationID),
 	)
 	if err != nil {

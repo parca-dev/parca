@@ -90,11 +90,13 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 		if err != nil {
 			// It's ok if we don't have the symbols for given BuildID, it happens too often.
 			if errors.Is(err, debuginfo.ErrSymbolNotFound) {
+				level.Debug(s.logger).Log("msg", "failed to find the symbols in storage")
 				continue
 			}
 			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
 			continue
 		}
+		level.Debug(s.logger).Log("msg", "storage symbolization request done")
 
 		// Update LocationStore with found symbols.
 		for loc, lines := range symbolizedLines {
