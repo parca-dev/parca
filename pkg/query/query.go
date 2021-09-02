@@ -109,8 +109,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 				metricsSeries.Samples = append(metricsSeries.Samples, s)
 			}
 		}
-		err := i.Err()
-		if err != nil {
+		if err := i.Err(); err != nil {
 			return nil, status.Error(codes.Internal, "failed to iterate")
 		}
 

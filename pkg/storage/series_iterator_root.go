@@ -59,6 +59,18 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 		NumUnit:  rs.s.numUnits[rootKey],
 	})
 
+	// As an implementation detail of the tree stack iterator,
+	// we need to have the root as child of the root once more.
+	// We need to recreate the root and not simply append it itself, as that creates an endless recursion.
+	root.Children = append(root.Children, &MemSeriesIteratorTreeNode{
+		cumulativeValues: []*MemSeriesIteratorTreeValueNode{{
+			Values:   it,
+			Label:    rs.s.labels[rootKey],
+			NumLabel: rs.s.numLabels[rootKey],
+			NumUnit:  rs.s.numUnits[rootKey],
+		}},
+	})
+
 	timestampIterator := NewMultiChunkIterator(timestamps)
 	durationsIterator := NewMultiChunkIterator(rs.s.durations[chunkStart:chunkEnd])
 	periodsIterator := NewMultiChunkIterator(rs.s.periods[chunkStart:chunkEnd])
