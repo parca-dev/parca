@@ -16,6 +16,7 @@ package symbol
 import (
 	"bytes"
 	"context"
+	"io/ioutil"
 	stdlog "log"
 	"net"
 	"os"
@@ -58,6 +59,10 @@ type TestFunctionStore interface {
 }
 
 func TestSymbolizer(t *testing.T) {
+	cacheDir, err := ioutil.TempDir("", "parca-test-cache")
+	require.NoError(t, err)
+	defer os.RemoveAll(cacheDir)
+
 	w := log.NewSyncWriter(os.Stderr)
 	logger := log.NewLogfmtLogger(w)
 	s, err := debuginfo.NewStore(logger, &debuginfo.Config{
@@ -65,6 +70,12 @@ func TestSymbolizer(t *testing.T) {
 			Type: client.FILESYSTEM,
 			Config: filesystem.Config{
 				Directory: "testdata/",
+			},
+		},
+		Cache: &debuginfo.CacheConfig{
+			Type: debuginfo.FILESYSTEM,
+			Config: &debuginfo.FilesystemCacheConfig{
+				Directory: cacheDir,
 			},
 		},
 	})
@@ -148,11 +159,21 @@ func TestSymbolizer(t *testing.T) {
 }
 
 func TestRealSymbolizer(t *testing.T) {
+	cacheDir, err := ioutil.TempDir("", "parca-test-cache")
+	require.NoError(t, err)
+	defer os.RemoveAll(cacheDir)
+
 	dbgStr, err := debuginfo.NewStore(log.NewNopLogger(), &debuginfo.Config{
 		Bucket: &client.BucketConfig{
 			Type: client.FILESYSTEM,
 			Config: filesystem.Config{
 				Directory: "testdata/",
+			},
+		},
+		Cache: &debuginfo.CacheConfig{
+			Type: debuginfo.FILESYSTEM,
+			Config: &debuginfo.FilesystemCacheConfig{
+				Directory: cacheDir,
 			},
 		},
 	})
