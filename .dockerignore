@@ -1,0 +1,7 @@
+/tmp
+/node_modules
+/ui/node_modules
+Dockerfile*
+/bin
+/.idea
+/.github

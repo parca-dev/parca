@@ -1,14 +1,24 @@
-## Parca
+# Parca
 
+## API Only
 docker_build('quay.io/parca/parca:dev', '.',
-    dockerfile='Dockerfile.dev',
-    only=['./cmd', './pkg', './internal', './proto', './gen', './ui', './go.mod', './go.sum', 'parca.yaml'],
+    dockerfile='Dockerfile.go.dev',
+    only=['./cmd', './pkg', './internal', './proto', './gen', './go.mod', './go.sum', 'parca.yaml'],
 )
+
+## All-in-one
+# docker_build('quay.io/parca/parca:dev', '.',
+#     dockerfile='Dockerfile.dev',
+#     only=['./cmd', './pkg', './internal', './proto', './gen', './ui', './go.mod', './go.sum', 'parca.yaml'],
+# )
+
 k8s_yaml('deploy/manifests/parca-deployment.yaml')
 k8s_resource('parca', port_forwards=7070)
 
-## Parca UI
-## It's redundant. Parca already serves the UI, just in case if someone wants to iterate soley on UI.
+### Delve Debugger Port
+k8s_resource('parca', port_forwards=40000)
+
+## UI
 docker_build('quay.io/parca-dev/parca-ui:dev', './ui',
     entrypoint='yarn workspace @parca/web dev',
     dockerfile='./ui/Dockerfile.dev',
@@ -22,6 +32,8 @@ k8s_resource('parca-ui', port_forwards=3000)
 
 ## Parca Agent
 
-# Until Parca will be public we need to supply a personal access token for the builds.
-docker_build('quay.io/parca/parca-agent', './tmp/parca-agent', build_args={'TOKEN': read_file('./tmp/personal_access_token')})
+docker_build('quay.io/parca/parca-agent:dev', './tmp/parca-agent',
+    # Until Parca will be public we need to supply a personal access token for the builds.
+    build_args={'TOKEN': read_file('./tmp/personal_access_token')},
+)
 k8s_yaml('deploy/manifests/parca-agent-daemonSet.yaml')
