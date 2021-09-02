@@ -14,10 +14,6 @@
 package storage
 
 import (
-	"fmt"
-	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-kit/log"
@@ -36,63 +32,6 @@ type InstantProfileTreeNode interface {
 
 	FlatValues() []*ProfileTreeValueNode
 	FlatDiffValues() []*ProfileTreeValueNode
-}
-
-type ProfileTreeValueNode struct {
-	key *ProfileTreeValueNodeKey
-
-	Value    int64
-	Label    map[string][]string
-	NumLabel map[string][]int64
-	NumUnit  map[string][]string
-}
-
-type ProfileTreeValueNodeKey struct {
-	location  string
-	labels    string
-	numlabels string
-}
-
-func (k *ProfileTreeValueNodeKey) Equals(o ProfileTreeValueNodeKey) bool {
-	if k.location != o.location {
-		return false
-	}
-	if k.labels != o.labels {
-		return false
-	}
-	if k.numlabels != o.numlabels {
-		return false
-	}
-	return true
-}
-
-func (n *ProfileTreeValueNode) Key(locationIDs ...uint64) {
-	if n.key != nil {
-		return
-	}
-
-	ids := make([]string, len(locationIDs))
-	for i, l := range locationIDs {
-		ids[i] = strconv.FormatUint(l, 10)
-	}
-
-	labels := make([]string, 0, len(n.Label))
-	for k, v := range n.Label {
-		labels = append(labels, fmt.Sprintf("%q%q", k, v))
-	}
-	sort.Strings(labels)
-
-	numlabels := make([]string, 0, len(n.NumLabel))
-	for k, v := range n.NumLabel {
-		numlabels = append(numlabels, fmt.Sprintf("%q%x%x", k, v, n.NumUnit[k]))
-	}
-	sort.Strings(numlabels)
-
-	n.key = &ProfileTreeValueNodeKey{
-		location:  strings.Join(ids, "|"),
-		labels:    strings.Join(labels, ""),
-		numlabels: strings.Join(numlabels, ""),
-	}
 }
 
 type InstantProfileTreeIterator interface {
@@ -267,39 +206,6 @@ func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMet
 		PeriodType: ValueType{Type: p.PeriodType.Type, Unit: p.PeriodType.Unit},
 		SampleType: ValueType{Type: p.SampleType[sampleIndex].Type, Unit: p.SampleType[sampleIndex].Unit},
 	}
-}
-
-func ProfileTreeFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *ProfileTree {
-	pn := &profileNormalizer{
-		logger:    l,
-		metaStore: s,
-
-		samples: make(map[stacktraceKey]*profile.Sample, len(p.Sample)),
-
-		// Profile-specific hash tables for each profile inserted.
-		locationsByID: make(map[uint64]*profile.Location, len(p.Location)),
-		functionsByID: make(map[uint64]*profile.Function, len(p.Function)),
-		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
-	}
-
-	// TODO(kakkoyun): Create mapInfo.
-	samples := make([]*profile.Sample, 0, len(p.Sample))
-	for _, s := range p.Sample {
-		if !isZeroSample(s) {
-			sa, isNew := pn.mapSample(s, sampleIndex)
-			if isNew {
-				samples = append(samples, sa)
-			}
-		}
-	}
-	sortSamples(samples)
-
-	profileTree := NewProfileTree()
-	for _, s := range samples {
-		profileTree.Insert(s)
-	}
-
-	return profileTree
 }
 
 type ScaledInstantProfile struct {

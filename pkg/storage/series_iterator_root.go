@@ -18,7 +18,7 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 )
 
-// MemRootSeries returns an iterator that only queries the cumulative values for the root of each series.
+// MemRootSeries is an iterator that only queries the cumulative values for the root of each series.
 type MemRootSeries struct {
 	s    *MemSeries
 	mint int64
@@ -30,8 +30,8 @@ func (rs *MemRootSeries) Labels() labels.Labels {
 }
 
 func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
-	rs.s.mu.Lock()
-	defer rs.s.mu.Unlock()
+	rs.s.mu.RLock()
+	defer rs.s.mu.RUnlock()
 
 	chunkStart, chunkEnd := rs.s.timestamps.indexRange(rs.mint, rs.maxt)
 	timestamps := make([]chunkenc.Chunk, 0, chunkEnd-chunkStart)
@@ -48,7 +48,7 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
 	it.Reset(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
 	if start != 0 {
-		it.Seek(uint16(start))
+		it.Seek(start)
 	}
 
 	root := &MemSeriesIteratorTreeNode{}
@@ -76,9 +76,9 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 	periodsIterator := NewMultiChunkIterator(rs.s.periods[chunkStart:chunkEnd])
 
 	if start != 0 {
-		timestampIterator.Seek(uint16(start))
-		durationsIterator.Seek(uint16(start))
-		periodsIterator.Seek(uint16(start))
+		timestampIterator.Seek(start)
+		durationsIterator.Seek(start)
+		periodsIterator.Seek(start)
 	}
 
 	numSamples := uint64(rs.s.numSamples)
