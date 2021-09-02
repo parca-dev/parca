@@ -17,11 +17,14 @@ import (
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
+// MultiChunksIterator iterates over multiple chunkenc.Chunk until the last value was read,
+// then it'll return 0 for sparseness.
+// MultiChunksIterator implements the MemSeriesValuesIterator.
 type MultiChunksIterator struct {
 	chunks     []chunkenc.Chunk
 	cit        chunkenc.Iterator
 	readChunks uint16
-	read       uint16 // read samples, need to track for seeking.
+	read       uint64 // read samples, need to track for seeking.
 
 	val    int64
 	sparse bool
@@ -79,7 +82,11 @@ func (it *MultiChunksIterator) Err() error {
 	return it.err
 }
 
-func (it *MultiChunksIterator) Seek(index uint16) bool {
+// Seek implements seeking to the given index.
+// This is an important divergence from the underlying chunkenc.Iterator interface,
+// as we take am uint64 as index instead of an uint16,
+// in case we ever happen to iterate over more than ~500 chunks.
+func (it *MultiChunksIterator) Seek(index uint64) bool {
 	if it.err != nil {
 		return false
 	}
