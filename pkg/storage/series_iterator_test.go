@@ -33,7 +33,7 @@ func TestMemSeriesIterator(t *testing.T) {
 		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
 	)
 
-	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {})
 
 	s.timestamps = []timestampChunk{{chunk: chunkenc.FromValuesDelta(1, 2)}}
 	s.durations = []chunkenc.Chunk{chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 2)}
@@ -194,7 +194,7 @@ func TestIteratorConsistency(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	s := NewMemSeries(labels.Labels{{Name: "test_name", Value: "test_value"}}, 1)
+	s := NewMemSeries(1, labels.Labels{{Name: "test_name", Value: "test_value"}}, func(int64) {})
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)

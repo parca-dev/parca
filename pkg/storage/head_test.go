@@ -14,15 +14,36 @@
 package storage
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
 
+func TestHead_MaxTime(t *testing.T) {
+	h := NewHead(prometheus.NewRegistry())
+
+	app, err := h.Appender(context.Background(), labels.FromStrings("foo", "bar"))
+	require.NoError(t, err)
+
+	pt := NewProfileTree()
+	pt.Insert(makeSample(1, []uint64{2, 1}))
+
+	for i := int64(1); i < 500; i++ {
+		require.NoError(t, app.Append(&Profile{
+			Tree: pt,
+			Meta: InstantProfileMeta{Timestamp: i},
+		}))
+		require.Equal(t, i, h.MaxTime())
+	}
+
+}
+
 func TestStripeSeries(t *testing.T) {
-	ss := newStripeSeries(DefaultStripeSize)
+	ss := newStripeSeries(DefaultStripeSize, func(int64) {})
 
 	numSeries := uint64(1_000_000)
 	for ref := uint64(0); ref < numSeries; ref++ {
@@ -43,7 +64,7 @@ func TestStripeSeries(t *testing.T) {
 func TestSeriesHashmap(t *testing.T) {
 	sh := seriesHashmap{}
 	for i := 0; i < 1000; i++ {
-		s := NewMemSeries(labels.FromStrings("foo", "bar", "i", strconv.Itoa(i)), uint64(i))
+		s := NewMemSeries(uint64(i), labels.FromStrings("foo", "bar", "i", strconv.Itoa(i)), func(int64) {})
 		sh.set(s.lset.Hash(), s)
 	}
 
@@ -67,7 +88,7 @@ func TestSeriesHashmap(t *testing.T) {
 }
 
 func BenchmarkStripeSeries(b *testing.B) {
-	ss := newStripeSeries(DefaultStripeSize)
+	ss := newStripeSeries(DefaultStripeSize, func(int64) {})
 
 	for i := 0; i < b.N; i++ {
 		lset := labels.FromStrings("foo", "bar", "id", strconv.Itoa(i))

@@ -29,8 +29,8 @@ var (
 )
 
 type MemSeries struct {
-	lset labels.Labels
 	id   uint64
+	lset labels.Labels
 
 	periodType ValueType
 	sampleType ValueType
@@ -55,13 +55,16 @@ type MemSeries struct {
 	seriesTree *MemSeriesTree
 	numSamples uint16
 
+	updateMaxTime func(int64)
+
 	samplesAppended prometheus.Counter
 }
 
-func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
+func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64)) *MemSeries {
 	s := &MemSeries{
-		lset: lset,
 		id:   id,
+		lset: lset,
+
 		timestamps: timestampChunks{{
 			minTime: math.MaxInt64,
 			maxTime: math.MinInt64,
@@ -75,6 +78,8 @@ func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
 		labels:           make(map[ProfileTreeValueNodeKey]map[string][]string),
 		numLabels:        make(map[ProfileTreeValueNodeKey]map[string][]int64),
 		numUnits:         make(map[ProfileTreeValueNodeKey]map[string][]string),
+
+		updateMaxTime: updateMaxTime,
 	}
 	s.seriesTree = &MemSeriesTree{s: s}
 
@@ -83,6 +88,11 @@ func NewMemSeries(lset labels.Labels, id uint64) *MemSeries {
 
 func (s *MemSeries) Labels() labels.Labels {
 	return s.lset
+}
+
+func (s *MemSeries) storeMaxTime(t int64) {
+	s.maxTime = t
+	s.updateMaxTime(t)
 }
 
 func (s *MemSeries) Appender() (*MemSeriesAppender, error) {
@@ -257,7 +267,8 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		a.s.minTime = timestamp
 	}
 
-	a.s.maxTime = timestamp
+	a.s.storeMaxTime(timestamp)
+
 	a.s.numSamples++
 
 	if a.s.samplesAppended != nil {
