@@ -1,14 +1,15 @@
-import './App.scss'
 import type { AppProps } from 'next/app'
-import Header from './layouts/Header'
 import { Container } from 'react-bootstrap'
-import '../style/sidenav.css'
-import '../style/profile.css'
-import '../style/metrics.css'
 import 'react-dates/lib/css/_datepicker.css'
 import '../style/file-input.css'
+import '../style/globals.scss'
+import '../style/metrics.css'
+import '../style/profile.css'
+import '../style/sidenav.css'
+import './App.scss'
+import Header from './layouts/Header'
 
-const MyApp = ({ Component, pageProps }: AppProps): JSX.Element => {
+const MyApp = ({ Component, pageProps }: AppProps) => {
   return (
     <>
       <Header />

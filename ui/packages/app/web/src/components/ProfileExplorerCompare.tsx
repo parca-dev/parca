@@ -1,4 +1,4 @@
-import { Alert, Col, Row } from 'react-bootstrap'
+import { Col, Row } from 'react-bootstrap'
 import ProfileSelector, { QuerySelection } from './ProfileSelector'
 import { ProfileDiffSource, ProfileSelection, ProfileView } from '@parca/profile'
 import { Query } from '@parca/parser'
@@ -58,25 +58,22 @@ const ProfileExplorerCompare = ({
       </Row>
       <Row>
         <Col xs={12}>
-          {profileA != null && profileB != null
-            ? (
+          {profileA != null && profileB != null ? (
             <ProfileView
               queryClient={queryClient}
-              profileSource={new ProfileDiffSource(
-                profileA.ProfileSource(),
-                profileB.ProfileSource()
-              )}
+              profileSource={
+                new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
+              }
               allowComparing={false}
               startComparing={() => {}}
             />
-              )
-            : (
+          ) : (
             <div>
-              <Alert variant="info">
-                Select a profile on both sides.
-              </Alert>
+              <div className='my-20 text-center'>
+                <p>Select a profile on both sides.</p>
+              </div>
             </div>
-              )}
+          )}
         </Col>
       </Row>
     </>
