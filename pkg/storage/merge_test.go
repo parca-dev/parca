@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
 )
 
@@ -444,7 +444,7 @@ func TestMergeSingle(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("mergesingle")
+	l, err := metastore.NewInMemoryProfileMetaStore("mergesingle")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -463,7 +463,7 @@ func TestMergeMany(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("mergemany")
+	l, err := metastore.NewInMemoryProfileMetaStore("mergemany")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -501,7 +501,7 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("treemerge")
+	l, err := metastore.NewInMemoryProfileMetaStore("treemerge")
 	b.Cleanup(func() {
 		l.Close()
 	})
@@ -565,7 +565,7 @@ func BenchmarkMergeMany(b *testing.B) {
 				require.NoError(b, err)
 				require.NoError(b, f.Close())
 
-				l, err := metastoresql.NewInMemoryProfileMetaStore("bencmergequery")
+				l, err := metastore.NewInMemoryProfileMetaStore("bencmergequery")
 				require.NoError(b, err)
 				b.Cleanup(func() {
 					l.Close()

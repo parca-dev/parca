@@ -171,7 +171,7 @@ func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile) (*pb.Que
 		return nil, err
 	}
 
-	return q.renderReport(p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 }
 
 func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.InstantProfile, error) {
@@ -197,7 +197,7 @@ func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.Query
 		return nil, err
 	}
 
-	return q.renderReport(p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 }
 
 func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryResponse, error) {
@@ -220,7 +220,7 @@ func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryRe
 		return nil, status.Errorf(codes.InvalidArgument, "failed to diff: %v", err.Error())
 	}
 
-	return q.renderReport(p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 }
 
 func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (storage.InstantProfile, error) {
@@ -240,10 +240,10 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 	return p, err
 }
 
-func (q *Query) renderReport(p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := storage.GenerateFlamegraph(q.metaStore, p)
+		fg, err := storage.GenerateFlamegraph(ctx, q.metaStore, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}

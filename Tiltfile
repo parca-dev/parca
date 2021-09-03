@@ -13,10 +13,7 @@ docker_build('quay.io/parca/parca:dev', '.',
 # )
 
 k8s_yaml('deploy/manifests/parca-deployment.yaml')
-k8s_resource('parca', port_forwards=7070)
-
-### Delve Debugger Port
-k8s_resource('parca', port_forwards=40000)
+k8s_resource('parca', port_forwards=[7070, 40000])
 
 ## UI
 docker_build('quay.io/parca-dev/parca-ui:dev', './ui',

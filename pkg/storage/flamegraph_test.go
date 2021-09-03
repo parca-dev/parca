@@ -19,11 +19,11 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 func TestTreeStack(t *testing.T) {
@@ -96,6 +96,10 @@ func (l *fakeLocations) GetLocationByID(id uint64) (*profile.Location, error) {
 	return l.m[id], nil
 }
 
+func (l *fakeLocations) GetLocationsByIDs(ids ...uint64) (map[uint64]*profile.Location, error) {
+	return l.m, nil
+}
+
 func TestGenerateFlamegraph(t *testing.T) {
 	pt := NewProfileTree()
 	pt.Insert(makeSample(2, []uint64{2, 1}))
@@ -150,7 +154,7 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("generateflamegraphfromprofiletree")
+	l, err := metastore.NewInMemoryProfileMetaStore("generateflamegraphfromprofiletree")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -177,7 +181,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("generateflamegraphfrominstantprofile")
+	l, err := metastore.NewInMemoryProfileMetaStore("generateflamegraphfrominstantprofile")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -222,7 +226,7 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("generateflamegraphfrommergeprofile")
+	l, err := metastore.NewInMemoryProfileMetaStore("generateflamegraphfrommergeprofile")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -246,7 +250,7 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("controlgenerateflamegraphfrommergeprofile")
+	l, err := metastore.NewInMemoryProfileMetaStore("controlgenerateflamegraphfrommergeprofile")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -269,7 +273,7 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("flamegraph")
+	l, err := metastore.NewInMemoryProfileMetaStore("flamegraph")
 	b.Cleanup(func() {
 		l.Close()
 	})

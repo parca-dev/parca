@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -61,7 +62,7 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 	return a
 }
 
-func generatePprof(locationStore Locations, ip InstantProfile) (*profile.Profile, error) {
+func generatePprof(ctx context.Context, locationStore Locations, ip InstantProfile) (*profile.Profile, error) {
 	meta := ip.ProfileMeta()
 
 	mappingByID := map[uint64]*profile.Mapping{}
@@ -87,7 +88,7 @@ func generatePprof(locationStore Locations, ip InstantProfile) (*profile.Profile
 		id := n.LocationID()
 		_, seenLocation := locationByID[id]
 		if !seenLocation {
-			loc, err := locationStore.GetLocationByID(id)
+			loc, err := locationStore.GetLocationByID(ctx, id)
 			if err != nil {
 				return err
 			}

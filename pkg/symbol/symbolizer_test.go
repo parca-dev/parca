@@ -29,7 +29,6 @@ import (
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
@@ -96,7 +95,7 @@ func TestSymbolizer(t *testing.T) {
 	}()
 
 	var mStr TestProfileMetaStore
-	mStr, err = metastoresql.NewInMemoryProfileMetaStore("symbolizer")
+	mStr, err = metastore.NewInMemoryProfileMetaStore("symbolizer")
 	t.Cleanup(func() {
 		mStr.Close()
 	})

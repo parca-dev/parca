@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -21,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/google/pprof/profile"
+	"go.opentelemetry.io/otel"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 )
@@ -113,12 +115,29 @@ func (fgi *FlamegraphIterator) StepUp() {
 }
 
 type Locations interface {
-	GetLocationByID(id uint64) (*profile.Location, error)
+	GetLocationByID(ctx context.Context, id uint64) (*profile.Location, error)
+	GetLocationsByIDs(ctx context.Context, id ...uint64) (map[uint64]*profile.Location, error)
 }
 
-func GenerateFlamegraph(locations Locations, p InstantProfile) (*pb.Flamegraph, error) {
+var tracer = otel.Tracer("flamegraph")
+
+func GenerateFlamegraph(ctx context.Context, locations Locations, p InstantProfile) (*pb.Flamegraph, error) {
+	fgCtx, fgSpan := tracer.Start(ctx, "generate-flamegraph")
+	defer fgSpan.End()
+
+	_, copySpan := tracer.Start(fgCtx, "copy-profile-tree")
 	meta := p.ProfileMeta()
-	it := p.ProfileTree().Iterator()
+	pt := CopyInstantProfileTree(p.ProfileTree())
+	copySpan.End()
+
+	locs, err := getLocations(fgCtx, locations, pt)
+	if err != nil {
+		return nil, err
+	}
+
+	_, buildSpan := tracer.Start(fgCtx, "build-flamegraph")
+	defer buildSpan.End()
+	it := pt.Iterator()
 
 	if !it.HasMore() || !it.NextChild() {
 		return nil, nil
@@ -154,9 +173,9 @@ func GenerateFlamegraph(locations Locations, p InstantProfile) (*pb.Flamegraph, 
 			cumulative := child.CumulativeValue()
 			if cumulative > 0 {
 				id := child.LocationID()
-				l, err := locations.GetLocationByID(id)
-				if err != nil {
-					return nil, fmt.Errorf("get location with ID %d: %w", id, err)
+				l, found := locs[id]
+				if !found {
+					return nil, fmt.Errorf("could not find location with ID %d", id)
 				}
 				outerMost, innerMost := locationToTreeNodes(l, cumulative, child.CumulativeDiffValue())
 
@@ -174,6 +193,32 @@ func GenerateFlamegraph(locations Locations, p InstantProfile) (*pb.Flamegraph, 
 	}
 	return flamegraph, nil
 	//return aggregateByFunctionName(flamegraph), nil
+}
+
+func getLocations(ctx context.Context, locations Locations, pt InstantProfileTree) (map[uint64]*profile.Location, error) {
+	ctx, locationsSpan := tracer.Start(ctx, "get-locations")
+	defer locationsSpan.End()
+
+	locationIDs := []uint64{}
+	locationIDsSeen := map[uint64]struct{}{}
+	err := WalkProfileTree(pt, func(n InstantProfileTreeNode) error {
+		id := n.LocationID()
+		if _, seen := locationIDsSeen[id]; !seen {
+			locationIDs = append(locationIDs, id)
+			locationIDsSeen[id] = struct{}{}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	locs, err := locations.GetLocationsByIDs(ctx, locationIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return locs, nil
 }
 
 func aggregateByFunctionName(fg *pb.Flamegraph) *pb.Flamegraph {

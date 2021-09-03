@@ -11,16 +11,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sql
+package metastore
 
-import "github.com/parca-dev/parca/pkg/storage/metastore"
+import (
+	"database/sql"
+	"fmt"
 
-var _ metastore.ProfileMetaStore = &RemoteMetaStore{}
+	_ "modernc.org/sqlite"
+)
 
-type RemoteMetaStore struct {
+var _ ProfileMetaStore = &DiskMetaStore{}
+
+type DiskMetaStore struct {
 	*sqlMetaStore
 }
 
-func NewRemoteProfileMetaStore(addr string) (*RemoteMetaStore, error) {
-	panic("implement me")
+func NewDiskProfileMetaStore(path ...string) (*DiskMetaStore, error) {
+	var dsn string
+	if len(path) > 0 {
+		dsn = path[0]
+	}
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	sqlite := &sqlMetaStore{db}
+	if err := sqlite.migrate(); err != nil {
+		return nil, fmt.Errorf("migrations failed: %w", err)
+	}
+
+	return &DiskMetaStore{sqlMetaStore: sqlite}, err
 }

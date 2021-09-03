@@ -28,11 +28,13 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thanos-io/thanos/pkg/prober"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -96,14 +98,23 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		grpc_logging.WithLevels(DefaultCodeToLevelGRPC),
 	}
 
+	met := grpc_prometheus.NewServerMetrics()
+	met.EnableHandlingTimeHistogram(
+		grpc_prometheus.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
+	)
+
 	// Start grpc server with API server registered
 	srv := grpc.NewServer(
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
+				otelgrpc.StreamServerInterceptor(),
+				met.StreamServerInterceptor(),
 				grpc_logging.StreamServerInterceptor(kit.InterceptorLogger(logger), logOpts...),
 			)),
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
+				otelgrpc.UnaryServerInterceptor(),
+				met.UnaryServerInterceptor(),
 				grpc_logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), logOpts...),
 			),
 		),
@@ -119,14 +130,24 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	reflection.Register(srv)
 	grpc_health.RegisterHealthServer(srv, s.grpcProbe.HealthServer())
 
-	_ = mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	err := mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		promhttp.HandlerFor(s.reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})
+	if err != nil {
+		return fmt.Errorf("failed to register metrics handler: %w", err)
+	}
 
 	// Add the pprof handler to profile Parca
-	_ = mux.HandlePath(http.MethodGet, "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	err = mux.HandlePath(http.MethodGet, "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		if r.URL.Path == "/debug/pprof/profile" {
+			pprof.Profile(w, r)
+			return
+		}
 		pprof.Index(w, r)
 	})
+	if err != nil {
+		return fmt.Errorf("failed to register pprof handlers: %w", err)
+	}
 
 	uiFS, err := fs.Sub(ui.FS, "packages/app/web/dist")
 	if err != nil {
@@ -143,6 +164,10 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		ReadTimeout:  5 * time.Second, // TODO make config option
 		WriteTimeout: time.Minute,     // TODO make config option
 	}
+
+	met.InitializeMetrics(srv)
+	s.reg.MustRegister(met)
+
 	s.grpcProbe.Ready()
 	s.grpcProbe.Healthy()
 	return s.Server.ListenAndServe()

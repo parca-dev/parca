@@ -14,6 +14,7 @@
 package metastore
 
 import (
+	"os"
 	"testing"
 
 	"github.com/google/pprof/profile"
@@ -38,19 +39,50 @@ type TestFunctionStore interface {
 	GetFunctions() ([]*profile.Function, error)
 }
 
+func TestNewInMemoryMetaStore(t *testing.T) {
+	str, err := NewInMemoryProfileMetaStore("metastoreconnection")
+	t.Cleanup(func() {
+		str.Close()
+	})
+	require.NoError(t, err)
+	require.NoError(t, str.Ping())
+}
+
+func TestDiskMetaStoreConnection(t *testing.T) {
+	str, err := NewDiskProfileMetaStore()
+	require.NoError(t, err)
+	require.NoError(t, str.Ping())
+}
+
 func TestInMemoryLocationStore(t *testing.T) {
-	s, err := NewInMemoryProfileMetaStore()
+	s, err := NewInMemoryProfileMetaStore("location")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
 
+	LocationStoreTest(t, s)
+}
+
+func TestDiskLocationStore(t *testing.T) {
+	dbPath := "./parca_location_store_test.sqlite"
+	s, err := NewDiskProfileMetaStore(dbPath)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		s.Close()
+		os.Remove(dbPath)
+	})
+
+	LocationStoreTest(t, s)
+}
+
+func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 	largeLoc := -1
 	l := &profile.Location{
 		ID:      uint64(largeLoc),
 		Address: uint64(42),
 	}
-	_, err = s.CreateLocation(l)
+	_, err := s.CreateLocation(l)
 	require.NoError(t, err)
 
 	l1 := &profile.Location{
@@ -62,16 +94,16 @@ func TestInMemoryLocationStore(t *testing.T) {
 
 	locs, err := s.GetLocations()
 	require.NoError(t, err)
-	require.Equal(t, locs[0], l)
-	require.Equal(t, locs[1], l1)
+	require.Equal(t, locs[0].Address, l.Address)
+	require.Equal(t, locs[1].Address, l1.Address)
 
-	locByID, err := s.GetLocationByID(l.ID)
+	l1, err = s.GetLocationByKey(MakeLocationKey(l1))
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), locByID.ID)
 
-	locByKey, err := s.GetLocationByKey(MakeLocationKey(l))
+	locByID, err := s.GetLocationByID(l1.ID)
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), locByKey.ID)
+
+	require.Equal(t, l1, locByID)
 
 	f := &profile.Function{
 		ID:         8,
@@ -94,12 +126,28 @@ func TestInMemoryLocationStore(t *testing.T) {
 }
 
 func TestInMemoryFunctionStore(t *testing.T) {
-	s, err := NewInMemoryProfileMetaStore()
+	s, err := NewInMemoryProfileMetaStore("function")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
 
+	functionStoreTest(t, s)
+}
+
+func TestDiskFunctionStore(t *testing.T) {
+	dbPath := "./parca_function_store_test.sqlite"
+	s, err := NewDiskProfileMetaStore(dbPath)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		s.Close()
+		os.Remove(dbPath)
+	})
+
+	functionStoreTest(t, s)
+}
+
+func functionStoreTest(t *testing.T, s TestFunctionStore) {
 	largeLoc := -1
 	f := &profile.Function{
 		ID:         uint64(largeLoc),
@@ -108,7 +156,7 @@ func TestInMemoryFunctionStore(t *testing.T) {
 		Filename:   "filename",
 		StartLine:  22,
 	}
-	_, err = s.CreateFunction(f)
+	_, err := s.CreateFunction(f)
 	require.NoError(t, err)
 
 	f1 := &profile.Function{
@@ -123,7 +171,7 @@ func TestInMemoryFunctionStore(t *testing.T) {
 
 	funcByID, err := s.GetFunctionByKey(MakeFunctionKey(f))
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), funcByID.ID)
+	require.Equal(t, uint64(largeLoc), funcByID.ID)
 	require.Equal(t, f.Name, funcByID.Name)
 	require.Equal(t, f.SystemName, funcByID.SystemName)
 	require.Equal(t, f.Filename, funcByID.Filename)
@@ -136,12 +184,28 @@ func TestInMemoryFunctionStore(t *testing.T) {
 }
 
 func TestInMemoryMappingStore(t *testing.T) {
-	s, err := NewInMemoryProfileMetaStore()
+	s, err := NewInMemoryProfileMetaStore("mapping")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
 
+	mappingStoreTest(t, s)
+}
+
+func TestDiskMappingStore(t *testing.T) {
+	dbPath := "./parca_mapping_store_test.sqlite"
+	s, err := NewDiskProfileMetaStore(dbPath)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		s.Close()
+		os.Remove(dbPath)
+	})
+
+	mappingStoreTest(t, s)
+}
+
+func mappingStoreTest(t *testing.T, s MappingStore) {
 	largeLoc := -1
 	m := &profile.Mapping{
 		ID:              uint64((largeLoc)),
@@ -155,7 +219,7 @@ func TestInMemoryMappingStore(t *testing.T) {
 		HasLineNumbers:  false,
 		HasInlineFrames: false,
 	}
-	_, err = s.CreateMapping(m)
+	_, err := s.CreateMapping(m)
 	require.NoError(t, err)
 
 	m1 := &profile.Mapping{
@@ -175,7 +239,7 @@ func TestInMemoryMappingStore(t *testing.T) {
 
 	mapByKey, err := s.GetMappingByKey(MakeMappingKey(m))
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), mapByKey.ID)
+	require.Equal(t, uint64(largeLoc), mapByKey.ID)
 	require.Equal(t, m.Start, mapByKey.Start)
 	require.Equal(t, m.Limit, mapByKey.Limit)
 	require.Equal(t, m.Offset, mapByKey.Offset)
@@ -188,12 +252,28 @@ func TestInMemoryMappingStore(t *testing.T) {
 }
 
 func TestInMemoryMetaStore(t *testing.T) {
-	s, err := NewInMemoryProfileMetaStore()
+	s, err := NewInMemoryProfileMetaStore("metastore")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
 
+	metaStoreTest(t, s)
+}
+
+func TestDiskMetaStore(t *testing.T) {
+	dbPath := "./parca_meta_store_test.sqlite"
+	s, err := NewDiskProfileMetaStore(dbPath)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		s.Close()
+		os.Remove(dbPath)
+	})
+
+	metaStoreTest(t, s)
+}
+
+func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 	largeLoc := -1
 	m := &profile.Mapping{
 		ID:              uint64(largeLoc),
@@ -207,7 +287,7 @@ func TestInMemoryMetaStore(t *testing.T) {
 		HasLineNumbers:  false,
 		HasInlineFrames: false,
 	}
-	_, err = s.CreateMapping(m)
+	_, err := s.CreateMapping(m)
 	require.NoError(t, err)
 
 	l := &profile.Location{
@@ -258,7 +338,9 @@ func TestInMemoryMetaStore(t *testing.T) {
 	locs, err := s.GetLocations()
 	require.NoError(t, err)
 	require.Equal(t, 2, len(locs))
+	l.ID = locs[0].ID
 	require.Equal(t, l, locs[0])
+	l1.ID = locs[1].ID
 	require.Equal(t, l1, locs[1])
 
 	unsymlocs, err := s.GetUnsymbolizedLocations()

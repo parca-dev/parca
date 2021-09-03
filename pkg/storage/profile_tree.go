@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strconv"
@@ -38,7 +39,7 @@ func NewProfileTree() *ProfileTree {
 	}
 }
 
-func ProfileTreeFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *ProfileTree {
+func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *ProfileTree {
 	pn := &profileNormalizer{
 		logger:    l,
 		metaStore: s,
@@ -55,7 +56,7 @@ func ProfileTreeFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile
 	samples := make([]*profile.Sample, 0, len(p.Sample))
 	for _, s := range p.Sample {
 		if !isZeroSample(s) {
-			sa, isNew := pn.mapSample(s, sampleIndex)
+			sa, isNew := pn.mapSample(ctx, s, sampleIndex)
 			if isNew {
 				samples = append(samples, sa)
 			}
