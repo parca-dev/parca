@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -25,6 +26,8 @@ import (
 )
 
 func TestGeneratePprof(t *testing.T) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -36,8 +39,8 @@ func TestGeneratePprof(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	p := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
-	res, err := generatePprof(l, p)
+	p := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	res, err := generatePprof(ctx, l, p)
 	require.NoError(t, err)
 
 	tmpfile, err := ioutil.TempFile("", "pprof")

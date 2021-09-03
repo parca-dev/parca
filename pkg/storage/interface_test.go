@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -24,6 +25,8 @@ import (
 )
 
 func TestCopyInstantProfileTree(t *testing.T) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -35,7 +38,7 @@ func TestCopyInstantProfileTree(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
+	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 
 	profileTreeCopy := CopyInstantProfileTree(profileTree)
 

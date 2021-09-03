@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -92,15 +93,13 @@ type fakeLocations struct {
 	m map[uint64]*profile.Location
 }
 
-func (l *fakeLocations) GetLocationByID(id uint64) (*profile.Location, error) {
-	return l.m[id], nil
-}
-
-func (l *fakeLocations) GetLocationsByIDs(ids ...uint64) (map[uint64]*profile.Location, error) {
+func (l *fakeLocations) GetLocationsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Location, error) {
 	return l.m, nil
 }
 
 func TestGenerateFlamegraph(t *testing.T) {
+	ctx := context.Background()
+
 	pt := NewProfileTree()
 	pt.Insert(makeSample(2, []uint64{2, 1}))
 	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
@@ -114,7 +113,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 		5: {Line: []profile.Line{{Function: &profile.Function{Name: "5"}}}},
 	}}
 
-	fg, err := GenerateFlamegraph(l, &Profile{Tree: pt})
+	fg, err := GenerateFlamegraph(ctx, l, &Profile{Tree: pt})
 	require.NoError(t, err)
 	require.Equal(t, &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphNode{
 		Name:       "root",
@@ -148,6 +147,8 @@ func TestGenerateFlamegraph(t *testing.T) {
 }
 
 func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -160,9 +161,9 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	})
 	require.NoError(t, err)
 
-	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
+	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 
-	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
+	fg, err := GenerateFlamegraph(ctx, l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
 		SampleType: ValueType{Unit: "count"},
 	}})
 	require.NoError(t, err)
@@ -175,6 +176,8 @@ func TestGenerateFlamegraphFromProfileTree(t *testing.T) {
 }
 
 func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -190,14 +193,14 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	require.NoError(t, app.Append(ProfileFromPprof(log.NewNopLogger(), l, p1, 0)))
+	require.NoError(t, app.Append(ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)))
 
 	it := s.Iterator()
 	require.True(t, it.Next())
 	require.NoError(t, it.Err())
 	instantProfile := it.At()
 
-	fg, err := GenerateFlamegraph(l, instantProfile)
+	fg, err := GenerateFlamegraph(ctx, l, instantProfile)
 	require.NoError(t, err)
 	return fg
 }
@@ -215,6 +218,8 @@ func TestGenerateFlamegraphFromMergeProfile(t *testing.T) {
 }
 
 func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -231,19 +236,21 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof1 := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
-	prof2 := ProfileFromPprof(log.NewNopLogger(), l, p2, 0)
+	prof1 := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	prof2 := ProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 
 	m, err := NewMergeProfile(prof1, prof2)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraph(l, m)
+	fg, err := GenerateFlamegraph(ctx, l, m)
 	require.NoError(t, err)
 
 	return fg
 }
 
 func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/merge.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
@@ -255,9 +262,9 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
+	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 
-	fg, err := GenerateFlamegraph(l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
+	fg, err := GenerateFlamegraph(ctx, l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
 		SampleType: ValueType{Unit: "count"},
 	}})
 	require.NoError(t, err)
@@ -267,6 +274,8 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 }
 
 func BenchmarkGenerateFlamegraph(b *testing.B) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 	p1, err := profile.Parse(f)
@@ -278,13 +287,13 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 		l.Close()
 	})
 	require.NoError(b, err)
-	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
+	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err = GenerateFlamegraph(l, &Profile{Tree: profileTree})
+		_, err = GenerateFlamegraph(ctx, l, &Profile{Tree: profileTree})
 		require.NoError(b, err)
 	}
 }

@@ -46,7 +46,7 @@ func TestDB(t *testing.T) {
 	p, err := profile.Parse(b)
 	require.NoError(t, err)
 
-	require.NoError(t, app1.Append(ProfileFromPprof(log.NewNopLogger(), l, p, 0)))
+	require.NoError(t, app1.Append(ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)))
 
 	app2, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test2"}})
 	require.NoError(t, err)
@@ -57,7 +57,7 @@ func TestDB(t *testing.T) {
 	p, err = profile.Parse(b)
 	require.NoError(t, err)
 
-	require.NoError(t, app2.Append(ProfileFromPprof(log.NewNopLogger(), l, p, 0)))
+	require.NoError(t, app2.Append(ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)))
 
 	q := db.Querier(
 		ctx,

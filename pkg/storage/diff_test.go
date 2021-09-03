@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -236,6 +237,8 @@ func TestDiffProfileDeep(t *testing.T) {
 }
 
 func BenchmarkDiff(b *testing.B) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(b, err)
 	p1, err := profile.Parse(f)
@@ -252,8 +255,8 @@ func BenchmarkDiff(b *testing.B) {
 	b.Cleanup(func() {
 		l.Close()
 	})
-	profileTree1 := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
-	profileTree2 := ProfileTreeFromPprof(log.NewNopLogger(), l, p2, 0)
+	profileTree1 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profileTree2 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 
 	prof1 := &Profile{
 		Tree: profileTree1,

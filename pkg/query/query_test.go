@@ -82,7 +82,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	// Overwrite the profile's timestamp to be within the last 5min.
 	p.TimeNanos = time.Now().UnixNano()
 
-	err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p, 0))
+	err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0))
 	require.NoError(t, err)
 
 	// Query last 5 minutes
@@ -142,7 +142,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 		// Overwrite the profile's timestamp to be within the last 5min.
 		p.TimeNanos = time.Now().UnixNano()
 
-		err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p, 0))
+		err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0))
 		require.NoError(t, err)
 	}
 
@@ -295,7 +295,7 @@ func Test_Query_Simple(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p1, 0))
+	err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0))
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -349,7 +349,7 @@ func Test_Query_Diff(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p1, 0))
+	err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0))
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 10)
@@ -357,7 +357,7 @@ func Test_Query_Diff(t *testing.T) {
 	t2 := (time.Now().UnixNano() / 1000000) * 1000000
 	p2.TimeNanos = t2
 
-	err = app.Append(storage.ProfileFromPprof(log.NewNopLogger(), s, p2, 0))
+	err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p2, 0))
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -395,6 +395,7 @@ func Test_Query_Diff(t *testing.T) {
 }
 
 func Benchmark_Query_Merge(b *testing.B) {
+	ctx := context.Background()
 	s, err := metastore.NewInMemoryProfileMetaStore("benchquerymerge")
 	require.NoError(b, err)
 	b.Cleanup(func() {
@@ -406,7 +407,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	p := storage.ProfileFromPprof(log.NewNopLogger(), s, p1, 0)
+	p := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 
 	for k := 0.; k <= 10; k++ {
 		n := int(math.Pow(2, k))
@@ -450,6 +451,8 @@ func Benchmark_Query_Merge(b *testing.B) {
 }
 
 func Test_Query_Merge(t *testing.T) {
+	ctx := context.Background()
+
 	s, err := metastore.NewInMemoryProfileMetaStore("querymerge")
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -462,7 +465,7 @@ func Test_Query_Merge(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p := storage.ProfileFromPprof(log.NewNopLogger(), s, p1, 0)
+	p := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 
 	for k := 0.; k <= 10; k++ {
 		ctx := context.Background()

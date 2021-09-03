@@ -115,7 +115,6 @@ func (fgi *FlamegraphIterator) StepUp() {
 }
 
 type Locations interface {
-	GetLocationByID(ctx context.Context, id uint64) (*profile.Location, error)
 	GetLocationsByIDs(ctx context.Context, id ...uint64) (map[uint64]*profile.Location, error)
 }
 

@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -21,7 +22,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
@@ -183,13 +184,15 @@ func TestMemSeriesIterator(t *testing.T) {
 }
 
 func TestIteratorConsistency(t *testing.T) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("iteratorconsistency")
+	l, err := metastore.NewInMemoryProfileMetaStore("iteratorconsistency")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -198,7 +201,7 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	profile := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
+	profile := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, app.Append(profile))
 
 	profileTree := profile.Tree

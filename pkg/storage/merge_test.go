@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"os"
@@ -438,6 +439,8 @@ func TestMergeProfile(t *testing.T) {
 }
 
 func TestMergeSingle(t *testing.T) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p, err := profile.Parse(f)
@@ -449,7 +452,7 @@ func TestMergeSingle(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof := ProfileFromPprof(log.NewNopLogger(), l, p, 0)
+	prof := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 
 	m, err := MergeProfiles(prof)
 	require.NoError(t, err)
@@ -457,6 +460,8 @@ func TestMergeSingle(t *testing.T) {
 }
 
 func TestMergeMany(t *testing.T) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p, err := profile.Parse(f)
@@ -468,7 +473,7 @@ func TestMergeMany(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof := ProfileFromPprof(log.NewNopLogger(), l, p, 0)
+	prof := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 
 	num := 1000
 	profiles := make([]InstantProfile, 0, 1000)
@@ -490,6 +495,8 @@ type sample struct {
 }
 
 func BenchmarkTreeMerge(b *testing.B) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(b, err)
 	p1, err := profile.Parse(f)
@@ -506,8 +513,8 @@ func BenchmarkTreeMerge(b *testing.B) {
 		l.Close()
 	})
 	require.NoError(b, err)
-	profileTree1 := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
-	profileTree2 := ProfileTreeFromPprof(log.NewNopLogger(), l, p2, 0)
+	profileTree1 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profileTree2 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 
 	prof1 := &Profile{
 		Tree: profileTree1,
@@ -559,6 +566,7 @@ func BenchmarkMergeMany(b *testing.B) {
 		n := int(math.Pow(2, k))
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
+				ctx := context.Background()
 				f, err := os.Open("testdata/profile1.pb.gz")
 				require.NoError(b, err)
 				p, err := profile.Parse(f)
@@ -570,7 +578,7 @@ func BenchmarkMergeMany(b *testing.B) {
 				b.Cleanup(func() {
 					l.Close()
 				})
-				prof := ProfileFromPprof(log.NewNopLogger(), l, p, 0)
+				prof := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 
 				profiles := make([]InstantProfile, 0, n)
 				for i := 0; i < n; i++ {

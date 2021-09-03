@@ -38,7 +38,6 @@ type ProfileMetaStore interface {
 
 type LocationStore interface {
 	GetLocationByKey(ctx context.Context, k LocationKey) (*profile.Location, error)
-	GetLocationByID(ctx context.Context, id uint64) (*profile.Location, error)
 	GetLocationsByIDs(ctx context.Context, id ...uint64) (map[uint64]*profile.Location, error)
 	CreateLocation(ctx context.Context, l *profile.Location) (uint64, error)
 	UpdateLocation(ctx context.Context, location *profile.Location) error

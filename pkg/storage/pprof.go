@@ -88,10 +88,11 @@ func generatePprof(ctx context.Context, locationStore Locations, ip InstantProfi
 		id := n.LocationID()
 		_, seenLocation := locationByID[id]
 		if !seenLocation {
-			loc, err := locationStore.GetLocationByID(ctx, id)
+			locs, err := locationStore.GetLocationsByIDs(ctx, id)
 			if err != nil {
 				return err
 			}
+			loc := locs[id]
 
 			var mapping *profile.Mapping
 			if loc.Mapping != nil {

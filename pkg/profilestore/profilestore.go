@@ -50,7 +50,7 @@ func NewProfileStore(logger log.Logger, app storage.Appendable, metaStore metast
 var tracer = otel.Tracer("profilestore")
 
 func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
-	ctx, span := tracer.Start(ctx, "WriteRaw")
+	ctx, span := tracer.Start(ctx, "write-raw")
 	defer span.End()
 
 	for _, series := range r.Series {
@@ -72,10 +72,10 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			convertCtx, convertSpan := tracer.Start(ctx, "ProfileFromPprof")
+			convertCtx, convertSpan := tracer.Start(ctx, "profile-from-pprof")
 			profiles := storage.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
 			convertSpan.End()
-			appendCtx, appendSpan := tracer.Start(ctx, "AppendProfiles")
+			appendCtx, appendSpan := tracer.Start(ctx, "append-profiles")
 			for _, prof := range profiles {
 				profLabelset := ls.Copy()
 				found := false

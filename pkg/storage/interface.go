@@ -92,9 +92,11 @@ func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
 
 	node := it.At()
 	cur := &ProfileTreeNode{
-		locationID:       node.LocationID(),
-		flatValues:       node.FlatValues(),
-		cumulativeValues: node.CumulativeValues(),
+		locationID:           node.LocationID(),
+		flatDiffValues:       node.FlatDiffValues(),
+		flatValues:           node.FlatValues(),
+		cumulativeDiffValues: node.CumulativeDiffValues(),
+		cumulativeValues:     node.CumulativeValues(),
 	}
 	tree := &ProfileTree{Roots: cur}
 	stack := ProfileTreeStack{{node: cur}}
@@ -108,9 +110,11 @@ func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
 		if it.NextChild() {
 			node := it.At()
 			cur := &ProfileTreeNode{
-				locationID:       node.LocationID(),
-				flatValues:       node.FlatValues(),
-				cumulativeValues: node.CumulativeValues(),
+				locationID:           node.LocationID(),
+				flatDiffValues:       node.FlatDiffValues(),
+				flatValues:           node.FlatValues(),
+				cumulativeDiffValues: node.CumulativeDiffValues(),
+				cumulativeValues:     node.CumulativeValues(),
 			}
 
 			stack.Peek().node.Children = append(stack.Peek().node.Children, cur)

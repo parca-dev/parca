@@ -37,7 +37,7 @@ func NewInMemoryProfileMetaStore(name ...string) (*InMemoryMetaStore, error) {
 		return nil, err
 	}
 
-	sqlite := &sqlMetaStore{db}
+	sqlite := &sqlMetaStore{db: db, cache: newMetaStoreCache()}
 	if err := sqlite.migrate(); err != nil {
 		return nil, fmt.Errorf("migrations failed: %w", err)
 	}
