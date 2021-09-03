@@ -26,7 +26,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/pprof/profile"
 	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/pkg/errors"
@@ -328,22 +327,13 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 	case ProfileTraceType:
 		return fmt.Errorf("unimplemented")
 	default:
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := ioutil.ReadAll(io.TeeReader(resp.Body, w))
 		if err != nil {
 			return errors.Wrap(err, "failed to read body")
 		}
 
-		p, err := profile.ParseData(b)
-		if err != nil {
-			return errors.Wrap(err, "failed to parse target's pprof profile")
-		}
-
-		if len(p.Sample) == 0 {
+		if len(b) == 0 {
 			return fmt.Errorf("empty %s profile from %s", profileType, s.req.URL.String())
-		}
-
-		if err := p.WriteUncompressed(w); err != nil {
-			return fmt.Errorf("write profile: %w", err)
 		}
 	}
 
