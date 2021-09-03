@@ -43,7 +43,7 @@ func TestMemSeriesTree(t *testing.T) {
 	s12.NumLabel = numLabel
 	s12.NumUnit = numUnit
 
-	s := NewMemSeries(labels.FromStrings("a", "b"), 0)
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {})
 
 	pt1 := NewProfileTree()
 	pt1.Insert(s11)

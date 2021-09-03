@@ -49,7 +49,6 @@ type Head struct {
 
 func NewHead(r prometheus.Registerer) *Head {
 	h := &Head{
-		series:   newStripeSeries(DefaultStripeSize),
 		postings: index.NewMemPostings(),
 		reg:      r,
 
@@ -89,6 +88,8 @@ func NewHead(r prometheus.Registerer) *Head {
 		}),
 	}
 
+	h.series = newStripeSeries(DefaultStripeSize, h.updateMaxTime)
+
 	r.MustRegister(h,
 		h.seriesValues,
 		h.seriesChunksSize,
@@ -114,6 +115,29 @@ func (h *Head) Collect(metrics chan<- prometheus.Metric) {
 
 	// Uncomment to enable pretty heavy metrics.
 	h.stats()
+}
+
+// initTime initializes a head with the first timestamp. This only needs to be called
+// for a completely fresh head with an empty WAL.
+func (h *Head) initTime(t int64) {
+	if !h.minTime.CAS(math.MaxInt64, t) {
+		return
+	}
+	// Ensure that max time is initialized to at least the min time we just set.
+	// Concurrent appenders may already have set it to a higher value.
+	h.maxTime.CAS(math.MinInt64, t)
+}
+
+func (h *Head) updateMaxTime(t int64) {
+	for {
+		ht := h.MaxTime()
+		if t <= ht {
+			break
+		}
+		if h.maxTime.CAS(ht, t) {
+			break
+		}
+	}
 }
 
 func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
@@ -202,17 +226,6 @@ func (h *Head) stats() {
 	}
 }
 
-// initTime initializes a head with the first timestamp. This only needs to be called
-// for a completely fresh head with an empty WAL.
-func (h *Head) initTime(t int64) {
-	if !h.minTime.CAS(math.MaxInt64, t) {
-		return
-	}
-	// Ensure that max time is initialized to at least the min time we just set.
-	// Concurrent appenders may already have set it to a higher value.
-	h.maxTime.CAS(math.MinInt64, t)
-}
-
 func (h *Head) appender(lset labels.Labels) (Appender, error) {
 	s := h.getOrCreate(lset)
 	s.samplesAppended = h.profilesAppended
@@ -232,6 +245,26 @@ type HeadQuerier struct {
 	head       *Head
 	ctx        context.Context
 	mint, maxt int64
+}
+
+func (q *HeadQuerier) LabelNames(ms ...*labels.Matcher) ([]string, Warnings, error) {
+	ir, err := q.head.Index()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	names, err := ir.LabelNames(ms...)
+	return names, nil, err
+}
+
+func (q *HeadQuerier) LabelValues(name string, ms ...*labels.Matcher) ([]string, Warnings, error) {
+	ir, err := q.head.Index()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	values, err := ir.LabelValues(name, ms...)
+	return values, nil, err
 }
 
 func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSet {
@@ -285,7 +318,7 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 
 const (
 	// DefaultStripeSize is the default number of entries to allocate in the stripeSeries hash map.
-	DefaultStripeSize = 1 << 14
+	DefaultStripeSize = 1 << 10
 )
 
 // stripeSeries locks modulo ranges of IDs and hashes to reduce lock contention.
@@ -293,18 +326,20 @@ const (
 // with the maps was profiled to be slower – likely due to the additional pointer
 // dereferences.
 type stripeSeries struct {
-	size   int
-	series []map[uint64]*MemSeries
-	hashes []seriesHashmap
-	locks  []stripeLock
+	size          int
+	series        []map[uint64]*MemSeries
+	hashes        []seriesHashmap
+	locks         []stripeLock
+	updateMaxTime func(int64)
 }
 
-func newStripeSeries(size int) *stripeSeries {
+func newStripeSeries(size int, updateMaxTime func(int64)) *stripeSeries {
 	s := &stripeSeries{
-		size:   size,
-		series: make([]map[uint64]*MemSeries, size),
-		hashes: make([]seriesHashmap, size),
-		locks:  make([]stripeLock, size),
+		size:          size,
+		series:        make([]map[uint64]*MemSeries, size),
+		hashes:        make([]seriesHashmap, size),
+		locks:         make([]stripeLock, size),
+		updateMaxTime: updateMaxTime,
 	}
 	for i := range s.series {
 		s.series[i] = map[uint64]*MemSeries{}
@@ -332,7 +367,7 @@ func (s stripeSeries) getOrCreateWithID(id, hash uint64, lset labels.Labels) (*M
 		return series, false
 	}
 
-	series = NewMemSeries(lset, id)
+	series = NewMemSeries(id, lset, s.updateMaxTime)
 
 	s.locks[i].Lock()
 	s.hashes[i].set(hash, series)
@@ -409,24 +444,4 @@ func (m seriesHashmap) del(hash uint64, lset labels.Labels) {
 	} else {
 		m[hash] = rem
 	}
-}
-
-func (q *HeadQuerier) LabelValues(name string, ms ...*labels.Matcher) ([]string, Warnings, error) {
-	ir, err := q.head.Index()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	values, err := ir.LabelValues(name, ms...)
-	return values, nil, err
-}
-
-func (q *HeadQuerier) LabelNames(ms ...*labels.Matcher) ([]string, Warnings, error) {
-	ir, err := q.head.Index()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	names, err := ir.LabelNames(ms...)
-	return names, nil, err
 }
