@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
-import { FormControl, ListGroup, Overlay } from 'react-bootstrap'
+import { ListGroup, Overlay } from 'react-bootstrap'
 import { Query } from '@parca/parser'
 import { LabelsResponse, LabelsRequest, QueryServiceClient, ServiceError } from '@parca/client'
 
@@ -11,8 +11,8 @@ interface MatchersInputProps {
 }
 
 export interface ILabelNamesResult {
-  response: LabelsResponse.AsObject|null
-  error: ServiceError|null
+  response: LabelsResponse.AsObject | null
+  error: ServiceError | null
 }
 
 export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => {
@@ -24,7 +24,7 @@ export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => 
   useEffect(() => {
     client.labels(
       new LabelsRequest(),
-      (error: ServiceError|null, responseMessage: LabelsResponse|null) => {
+      (error: ServiceError | null, responseMessage: LabelsResponse | null) => {
         const res = responseMessage == null ? null : responseMessage.toObject()
 
         setResult({
@@ -43,7 +43,7 @@ class Suggestion {
   typeahead: string
   value: string
 
-  constructor (type: string, typeahead: string, value: string) {
+  constructor(type: string, typeahead: string, value: string) {
     this.type = type
     this.typeahead = typeahead
     this.value = value
@@ -54,7 +54,7 @@ class Suggestions {
   literals: Suggestion[]
   labelNames: Suggestion[]
 
-  constructor () {
+  constructor() {
     this.literals = []
     this.labelNames = []
   }
@@ -74,7 +74,9 @@ const MatchersInput = ({
 
   const { response: labelNamesResponse, error: labelNamesError } = useLabelNames(queryClient)
   const labelNames =
-    (labelNamesError === undefined || labelNamesError == null) && labelNamesResponse !== undefined && labelNamesResponse != null
+    (labelNamesError === undefined || labelNamesError == null) &&
+    labelNamesResponse !== undefined &&
+    labelNamesResponse != null
       ? labelNamesResponse.labelNamesList.filter(e => e !== '__name__')
       : []
 
@@ -231,16 +233,19 @@ const MatchersInput = ({
 
   return (
     <>
-      <FormControl
+      <input
+        type='text'
+        name='company-website'
+        id='company-website'
+        className='bg-transparent focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full px-2 py-2 text-sm border-gray-300 border-b'
+        placeholder='filter profiles...'
         ref={inputRef}
         onChange={onChange}
+        value={value}
         onBlur={unfocus}
         onFocus={focus}
         onKeyPress={handleKeyPress}
         onKeyDown={handleKeyDown}
-        placeholder='Filter profiles by labels...'
-        className='queryExpressionInput'
-        value={value}
       />
       <Overlay target={inputRef.current} show={focusedInput && showSuggest} placement='bottom'>
         {({ show: _show, ...props }) => (

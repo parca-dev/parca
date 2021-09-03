@@ -4,15 +4,10 @@ import { useState, useEffect } from 'react'
 import ProfileIcicleGraph from './ProfileIcicleGraph'
 import { ProfileSource } from './ProfileSource'
 import { QueryServiceClient, QueryResponse, QueryRequest, ServiceError } from '@parca/client'
-import {
-  Button,
-  Card,
-  Col,
-  Dropdown,
-  DropdownButton,
-  Row,
-  Spinner
-} from 'react-bootstrap'
+import { Spinner } from 'react-bootstrap'
+import Button from '../../../app/web/src/components/ui/Button'
+import Card from '../../../app/web/src/components/ui/Card'
+import Dropdown from '../../../app/web/src/components/ui/Dropdown'
 
 interface ProfileViewProps {
   title?: string
@@ -23,13 +18,13 @@ interface ProfileViewProps {
 }
 
 export interface IQueryResult {
-  response: QueryResponse|null
-  error: ServiceError|null
+  response: QueryResponse | null
+  error: ServiceError | null
 }
 
 export const useQuery = (
   client: QueryServiceClient,
-  profileSource: ProfileSource,
+  profileSource: ProfileSource
 ): IQueryResult => {
   const [result, setResult] = useState<IQueryResult>({
     response: null,
@@ -40,15 +35,12 @@ export const useQuery = (
     const req = profileSource.QueryRequest()
     req.setReportType(QueryRequest.ReportType.REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 
-    client.query(
-      req,
-      (error: ServiceError|null, responseMessage: QueryResponse|null) => {
-        setResult({
-          response: responseMessage,
-          error: error
-        })
-      }
-    )
+    client.query(req, (error: ServiceError | null, responseMessage: QueryResponse | null) => {
+      setResult({
+        response: responseMessage,
+        error: error
+      })
+    })
   }, [client, profileSource])
 
   return result
@@ -59,12 +51,9 @@ export const ProfileView = ({
   queryClient,
   profileSource,
   startComparing,
-  allowComparing,
+  allowComparing
 }: ProfileViewProps): JSX.Element => {
-  const { response, error } = useQuery(
-    queryClient,
-    profileSource
-  )
+  const { response, error } = useQuery(queryClient, profileSource)
 
   const [showModal, setShowModal] = useState(false)
   const [reportType, setReportType] = useState('iciclegraph')
@@ -92,7 +81,6 @@ export const ProfileView = ({
   }
 
   const queryResponse = response.toObject()
-  console.log("profileResponse", queryResponse)
 
   const reportTypes = {
     //svg: {
@@ -117,11 +105,7 @@ export const ProfileView = ({
     //},
     iciclegraph: {
       name: 'Icicle Graph',
-      element: (
-        <ProfileIcicleGraph
-          graph={response.getFlamegraph()?.toObject()}
-        />
-      )
+      element: <ProfileIcicleGraph graph={response.getFlamegraph()?.toObject()} />
     }
   }
 
@@ -130,44 +114,37 @@ export const ProfileView = ({
 
   return (
     <>
-      <Row style={{ marginBottom: 20 }} className='profile-view'>
-        <Col xs='12'>
-          <Card style={{ width: '100%', marginTop: 10 }}>
-            <Card.Body style={{ width: '100%' }}>
-              <Row>
-                <Col>{title !== undefined && title.length > 0 && <p>{title}</p>}</Col>
-                <Col md='6' style={{ textAlign: 'right' }}>
-                  {allowComparing && (
-                    <Button
-                      style={{ display: 'inline-block' }}
-                      variant='light'
-                      onClick={() => startComparing()}
-                    >
-                      Compare
-                    </Button>
-                  )}
-                  <DropdownButton
-                    style={{ display: 'inline-block' }}
-                    title='View'
-                    variant='light'
-                    alignRight
-                  >
-                    {Object.keys(reportTypes).map((k: string) => (
-                      <Dropdown.Item key={k} onSelect={() => setReportType(k)}>
-                        {reportTypes[k].name}
-                      </Dropdown.Item>
-                    ))}
-                  </DropdownButton>
-                  <Button style={{ display: 'inline-block' }} variant='light' href={downloadURL}>
-                    Download
+      <div className='my-4'>
+        <Card>
+          <Card.Body>
+            <div className='flex justify-between'>
+              <div className='flex'>{title}</div>
+              <div className='flex space-x-4'>
+                {allowComparing && (
+                  <Button color='neutral' onClick={() => startComparing()}>
+                    Compare
                   </Button>
-                </Col>
-              </Row>
-              {reportTypes[reportType].element}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                )}
+                <Dropdown text='View'>
+                  {Object.keys(reportTypes).map((k: string) => (
+                    <Dropdown.Item key={k} onSelect={() => setReportType(k)}>
+                      {reportTypes[k].name}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown>
+                <Button
+                  color='neutral'
+                  // href={downloadURL}
+                >
+                  Download
+                </Button>
+              </div>
+            </div>
+
+            {reportTypes[reportType].element}
+          </Card.Body>
+        </Card>
+      </div>
     </>
   )
 }
