@@ -447,7 +447,7 @@ func TestMergeSingle(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("mergesingle")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("mergesingle")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -468,7 +468,7 @@ func TestMergeMany(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("mergemany")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("mergemany")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -508,7 +508,7 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("treemerge")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("treemerge")
 	b.Cleanup(func() {
 		l.Close()
 	})
@@ -573,7 +573,7 @@ func BenchmarkMergeMany(b *testing.B) {
 				require.NoError(b, err)
 				require.NoError(b, f.Close())
 
-				l, err := metastore.NewInMemoryProfileMetaStore("bencmergequery")
+				l, err := metastore.NewInMemorySQLiteProfileMetaStore("bencmergequery")
 				require.NoError(b, err)
 				b.Cleanup(func() {
 					l.Close()

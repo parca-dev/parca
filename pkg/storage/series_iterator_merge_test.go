@@ -28,7 +28,7 @@ import (
 
 func TestMergeMemSeriesConsistency(t *testing.T) {
 	ctx := context.Background()
-	s, err := metastore.NewInMemoryProfileMetaStore("memseriesconsistency")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore("memseriesconsistency")
 	t.Cleanup(func() {
 		s.Close()
 	})

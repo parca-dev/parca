@@ -20,16 +20,16 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-var _ ProfileMetaStore = &InMemoryMetaStore{}
+var _ ProfileMetaStore = &OnDiskSQLiteMetaStore{}
 
-type InMemoryMetaStore struct {
+type OnDiskSQLiteMetaStore struct {
 	*sqlMetaStore
 }
 
-func NewInMemoryProfileMetaStore(name ...string) (*InMemoryMetaStore, error) {
-	dsn := "file::memory:?cache=shared"
-	if len(name) > 0 {
-		dsn = fmt.Sprintf("file:%s?mode=memory&cache=shared", name[0])
+func NewDiskProfileMetaStore(path ...string) (*OnDiskSQLiteMetaStore, error) {
+	var dsn string
+	if len(path) > 0 {
+		dsn = path[0]
 	}
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
@@ -42,5 +42,5 @@ func NewInMemoryProfileMetaStore(name ...string) (*InMemoryMetaStore, error) {
 		return nil, fmt.Errorf("migrations failed: %w", err)
 	}
 
-	return &InMemoryMetaStore{sqlMetaStore: sqlite}, nil
+	return &OnDiskSQLiteMetaStore{sqlMetaStore: sqlite}, err
 }

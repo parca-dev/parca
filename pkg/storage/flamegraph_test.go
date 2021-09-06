@@ -155,7 +155,7 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("generateflamegraphfromprofiletree")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("generateflamegraphfromprofiletree")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -184,7 +184,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("generateflamegraphfrominstantprofile")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("generateflamegraphfrominstantprofile")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -231,7 +231,7 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("generateflamegraphfrommergeprofile")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("generateflamegraphfrommergeprofile")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -257,7 +257,7 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("controlgenerateflamegraphfrommergeprofile")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("controlgenerateflamegraphfrommergeprofile")
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -282,7 +282,7 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("flamegraph")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("flamegraph")
 	b.Cleanup(func() {
 		l.Close()
 	})

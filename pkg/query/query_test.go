@@ -59,7 +59,7 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemoryProfileMetaStore("queryrangevalid")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore("queryrangevalid")
 	t.Cleanup(func() {
 		s.Close()
 	})
@@ -113,7 +113,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemoryProfileMetaStore("queryrangelimited")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore("queryrangelimited")
 	t.Cleanup(func() {
 		s.Close()
 	})
@@ -271,7 +271,7 @@ func Test_Query_InputValidation(t *testing.T) {
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemoryProfileMetaStore("querysimple")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore("querysimple")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -319,7 +319,7 @@ func Test_Query_Simple(t *testing.T) {
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemoryProfileMetaStore("querydiff")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore("querydiff")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -396,7 +396,7 @@ func Test_Query_Diff(t *testing.T) {
 
 func Benchmark_Query_Merge(b *testing.B) {
 	ctx := context.Background()
-	s, err := metastore.NewInMemoryProfileMetaStore("benchquerymerge")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore("benchquerymerge")
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		s.Close()
@@ -453,7 +453,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 func Test_Query_Merge(t *testing.T) {
 	ctx := context.Background()
 
-	s, err := metastore.NewInMemoryProfileMetaStore("querymerge")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore("querymerge")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()

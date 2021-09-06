@@ -34,7 +34,7 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("generatepprof")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("generatepprof")
 	t.Cleanup(func() {
 		l.Close()
 	})

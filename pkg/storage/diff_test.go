@@ -250,7 +250,7 @@ func BenchmarkDiff(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("benchdiff")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("benchdiff")
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		l.Close()

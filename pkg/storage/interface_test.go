@@ -33,7 +33,7 @@ func TestCopyInstantProfileTree(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("compyinstantprofiletree")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("compyinstantprofiletree")
 	t.Cleanup(func() {
 		l.Close()
 	})

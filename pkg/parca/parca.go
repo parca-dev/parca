@@ -83,7 +83,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	mStr, err := metastore.NewInMemoryProfileMetaStore()
+	mStr, err := metastore.NewInMemorySQLiteProfileMetaStore()
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
 		return err

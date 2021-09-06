@@ -30,7 +30,7 @@ import (
 )
 
 func TestDB(t *testing.T) {
-	l, err := metastore.NewInMemoryProfileMetaStore("testdb")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("testdb")
 	t.Cleanup(func() {
 		l.Close()
 	})

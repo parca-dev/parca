@@ -97,7 +97,7 @@ func TestSymbolizer(t *testing.T) {
 	}()
 
 	var mStr TestProfileMetaStore
-	mStr, err = metastore.NewInMemoryProfileMetaStore("symbolizer")
+	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore("symbolizer")
 	t.Cleanup(func() {
 		mStr.Close()
 	})
@@ -183,7 +183,7 @@ func TestRealSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 
 	var mStr TestProfileMetaStore
-	mStr, err = metastore.NewInMemoryProfileMetaStore()
+	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore()
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		mStr.Close()

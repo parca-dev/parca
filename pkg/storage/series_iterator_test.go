@@ -192,7 +192,7 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemoryProfileMetaStore("iteratorconsistency")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore("iteratorconsistency")
 	t.Cleanup(func() {
 		l.Close()
 	})

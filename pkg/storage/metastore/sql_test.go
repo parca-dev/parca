@@ -40,8 +40,8 @@ type TestFunctionStore interface {
 	GetFunctions(ctx context.Context) ([]*profile.Function, error)
 }
 
-func TestNewInMemoryMetaStore(t *testing.T) {
-	str, err := NewInMemoryProfileMetaStore("metastoreconnection")
+func TestNewInMemorySQLiteMetaStore(t *testing.T) {
+	str, err := NewInMemorySQLiteProfileMetaStore("metastoreconnection")
 	t.Cleanup(func() {
 		str.Close()
 	})
@@ -55,8 +55,8 @@ func TestDiskMetaStoreConnection(t *testing.T) {
 	require.NoError(t, str.Ping())
 }
 
-func TestInMemoryLocationStore(t *testing.T) {
-	s, err := NewInMemoryProfileMetaStore("location")
+func TestInMemorySQLiteLocationStore(t *testing.T) {
+	s, err := NewInMemorySQLiteProfileMetaStore("location")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -128,8 +128,8 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 	require.Equal(t, l1, locByID[l1.ID])
 }
 
-func TestInMemoryFunctionStore(t *testing.T) {
-	s, err := NewInMemoryProfileMetaStore("function")
+func TestInMemorySQLiteFunctionStore(t *testing.T) {
+	s, err := NewInMemorySQLiteProfileMetaStore("function")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -188,8 +188,8 @@ func functionStoreTest(t *testing.T, s TestFunctionStore) {
 	require.Equal(t, funcs[1], f1)
 }
 
-func TestInMemoryMappingStore(t *testing.T) {
-	s, err := NewInMemoryProfileMetaStore("mapping")
+func TestInMemorySQLiteMappingStore(t *testing.T) {
+	s, err := NewInMemorySQLiteProfileMetaStore("mapping")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -258,8 +258,8 @@ func mappingStoreTest(t *testing.T, s MappingStore) {
 	require.Equal(t, m.HasInlineFrames, mapByKey.HasInlineFrames)
 }
 
-func TestInMemoryMetaStore(t *testing.T) {
-	s, err := NewInMemoryProfileMetaStore("metastore")
+func TestInMemorySQLiteMetaStore(t *testing.T) {
+	s, err := NewInMemorySQLiteProfileMetaStore("metastore")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
