@@ -1,6 +1,7 @@
 package metastore
 
 import (
+	"context"
 	"sync"
 
 	"github.com/google/pprof/profile"
@@ -34,64 +35,112 @@ func newMetaStoreCache() *metaStoreCache {
 	}
 }
 
-func (c *metaStoreCache) getMappingByKey(k MappingKey) (profile.Mapping, bool) {
+func (c *metaStoreCache) getMappingByKey(ctx context.Context, k MappingKey) (profile.Mapping, bool, error) {
+	select {
+	case <-ctx.Done():
+		return profile.Mapping{}, false, ctx.Err()
+	default:
+	}
+
 	c.mappingsMtx.RLock()
 	defer c.mappingsMtx.RUnlock()
 
 	id, found := c.mappingsByKey[k]
 	if !found {
-		return profile.Mapping{}, false
+		return profile.Mapping{}, false, nil
 	}
 
 	m, found := c.mappingsByID[id]
-	return m, found
+	return m, found, nil
 }
 
-func (c *metaStoreCache) getMappingByID(id uint64) (profile.Mapping, bool) {
+func (c *metaStoreCache) getMappingByID(ctx context.Context, id uint64) (profile.Mapping, bool, error) {
+	select {
+	case <-ctx.Done():
+		return profile.Mapping{}, false, ctx.Err()
+	default:
+	}
+
 	c.mappingsMtx.RLock()
 	defer c.mappingsMtx.RUnlock()
 
 	m, found := c.mappingsByID[id]
-	return m, found
+	return m, found, nil
 }
 
-func (c *metaStoreCache) setMappingByKey(k MappingKey, m profile.Mapping) {
+func (c *metaStoreCache) setMappingByKey(ctx context.Context, k MappingKey, m profile.Mapping) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	c.mappingsMtx.Lock()
 	defer c.mappingsMtx.Unlock()
 
 	c.mappingsByID[m.ID] = m
 	c.mappingsByKey[k] = m.ID
+
+	return nil
 }
 
-func (c *metaStoreCache) setMappingByID(m profile.Mapping) {
+func (c *metaStoreCache) setMappingByID(ctx context.Context, m profile.Mapping) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	c.mappingsMtx.Lock()
 	defer c.mappingsMtx.Unlock()
 
 	c.mappingsByID[m.ID] = m
+
+	return nil
 }
 
-func (c *metaStoreCache) getFunctionByKey(k FunctionKey) (profile.Function, bool) {
+func (c *metaStoreCache) getFunctionByKey(ctx context.Context, k FunctionKey) (profile.Function, bool, error) {
+	select {
+	case <-ctx.Done():
+		return profile.Function{}, false, ctx.Err()
+	default:
+	}
+
 	c.functionsMtx.RLock()
 	defer c.functionsMtx.RUnlock()
 
 	id, found := c.functionsByKey[k]
 	if !found {
-		return profile.Function{}, false
+		return profile.Function{}, false, nil
 	}
 
 	fn, found := c.functionsByID[id]
-	return fn, found
+	return fn, found, nil
 }
 
-func (c *metaStoreCache) setFunctionByKey(k FunctionKey, f profile.Function) {
+func (c *metaStoreCache) setFunctionByKey(ctx context.Context, k FunctionKey, f profile.Function) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	c.functionsMtx.Lock()
 	defer c.functionsMtx.Unlock()
 
 	c.functionsByID[f.ID] = f
 	c.functionsByKey[k] = f.ID
+
+	return nil
 }
 
-func (c *metaStoreCache) setLocationLinesByID(locationID uint64, ll []locationLine) {
+func (c *metaStoreCache) setLocationLinesByID(ctx context.Context, locationID uint64, ll []locationLine) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	v := make([]locationLine, len(ll))
 	copy(v, ll)
 
@@ -99,19 +148,27 @@ func (c *metaStoreCache) setLocationLinesByID(locationID uint64, ll []locationLi
 	defer c.locationLinesMtx.Unlock()
 
 	c.locationLinesByID[locationID] = v
+
+	return nil
 }
 
-func (c *metaStoreCache) getLocationLinesByID(locationID uint64) ([]locationLine, bool) {
+func (c *metaStoreCache) getLocationLinesByID(ctx context.Context, locationID uint64) ([]locationLine, bool, error) {
+	select {
+	case <-ctx.Done():
+		return nil, false, ctx.Err()
+	default:
+	}
+
 	c.locationLinesMtx.RLock()
 	defer c.locationLinesMtx.RUnlock()
 
 	ll, found := c.locationLinesByID[locationID]
 	if !found {
-		return nil, false
+		return nil, false, nil
 	}
 
 	v := make([]locationLine, len(ll))
 	copy(v, ll)
 
-	return v, true
+	return v, true, nil
 }
