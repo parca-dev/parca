@@ -92,15 +92,13 @@ func (c *metaStoreCache) setFunctionByKey(k FunctionKey, f profile.Function) {
 }
 
 func (c *metaStoreCache) setLocationLinesByID(locationID uint64, ll []locationLine) {
-	v := make([]locationLine, 0, len(ll))
-	for _, l := range ll {
-		v = append(v, l)
-	}
+	v := make([]locationLine, len(ll))
+	copy(v, ll)
 
 	c.locationLinesMtx.Lock()
 	defer c.locationLinesMtx.Unlock()
 
-	c.locationLinesByID[locationID] = ll
+	c.locationLinesByID[locationID] = v
 }
 
 func (c *metaStoreCache) getLocationLinesByID(locationID uint64) ([]locationLine, bool) {
@@ -112,10 +110,8 @@ func (c *metaStoreCache) getLocationLinesByID(locationID uint64) ([]locationLine
 		return nil, false
 	}
 
-	v := make([]locationLine, 0, len(ll))
-	for _, l := range ll {
-		v = append(v, l)
-	}
+	v := make([]locationLine, len(ll))
+	copy(v, ll)
 
 	return v, true
 }
