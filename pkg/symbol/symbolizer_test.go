@@ -33,6 +33,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
@@ -97,7 +98,10 @@ func TestSymbolizer(t *testing.T) {
 	}()
 
 	var mStr TestProfileMetaStore
-	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore("symbolizer")
+	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"symbolizer",
+	)
 	t.Cleanup(func() {
 		mStr.Close()
 	})
@@ -183,14 +187,21 @@ func TestRealSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 
 	var mStr TestProfileMetaStore
-	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore()
+	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		mStr.Close()
 	})
 
 	db := storage.OpenDB(prometheus.NewRegistry())
-	pStr := profilestore.NewProfileStore(log.NewNopLogger(), db, mStr)
+	pStr := profilestore.NewProfileStore(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		db,
+		mStr,
+	)
 
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {

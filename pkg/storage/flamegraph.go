@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/google/pprof/profile"
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 )
@@ -118,9 +118,12 @@ type Locations interface {
 	GetLocationsByIDs(ctx context.Context, id ...uint64) (map[uint64]*profile.Location, error)
 }
 
-var tracer = otel.Tracer("flamegraph")
-
-func GenerateFlamegraph(ctx context.Context, locations Locations, p InstantProfile) (*pb.Flamegraph, error) {
+func GenerateFlamegraph(
+	ctx context.Context,
+	tracer trace.Tracer,
+	locations Locations,
+	p InstantProfile,
+) (*pb.Flamegraph, error) {
 	fgCtx, fgSpan := tracer.Start(ctx, "generate-flamegraph")
 	defer fgSpan.End()
 
@@ -129,7 +132,7 @@ func GenerateFlamegraph(ctx context.Context, locations Locations, p InstantProfi
 	pt := CopyInstantProfileTree(p.ProfileTree())
 	copySpan.End()
 
-	locs, err := getLocations(fgCtx, locations, pt)
+	locs, err := getLocations(fgCtx, tracer, locations, pt)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +197,7 @@ func GenerateFlamegraph(ctx context.Context, locations Locations, p InstantProfi
 	//return aggregateByFunctionName(flamegraph), nil
 }
 
-func getLocations(ctx context.Context, locations Locations, pt InstantProfileTree) (map[uint64]*profile.Location, error) {
+func getLocations(ctx context.Context, tracer trace.Tracer, locations Locations, pt InstantProfileTree) (map[uint64]*profile.Location, error) {
 	ctx, locationsSpan := tracer.Start(ctx, "get-locations")
 	defer locationsSpan.End()
 

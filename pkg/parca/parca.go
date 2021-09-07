@@ -36,6 +36,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
 
@@ -62,8 +63,11 @@ type Flags struct {
 
 // Run the parca server
 func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags *Flags) error {
+	tracerProvider := trace.NewNoopTracerProvider()
 	if flags.OTLPAddress != "" {
-		closer, err := initTracer(logger, flags.OTLPAddress)
+		var closer func()
+		var err error
+		tracerProvider, closer, err = initTracer(logger, flags.OTLPAddress)
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize tracing", "err", err)
 			return err
@@ -89,7 +93,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	mStr, err := metastore.NewInMemorySQLiteProfileMetaStore()
+	mStr, err := metastore.NewInMemorySQLiteProfileMetaStore(tracerProvider.Tracer("inmemory-sqlite"))
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
 		return err
@@ -97,8 +101,18 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	defer mStr.Close()
 
 	db := storage.OpenDB(reg)
-	s := profilestore.NewProfileStore(logger, db, mStr)
-	q := query.New(logger, db, mStr)
+	s := profilestore.NewProfileStore(
+		logger,
+		tracerProvider.Tracer("profilestore"),
+		db,
+		mStr,
+	)
+	q := query.New(
+		logger,
+		tracerProvider.Tracer("query-service"),
+		db,
+		mStr,
+	)
 
 	parcaserver := server.NewServer(reg)
 
@@ -203,7 +217,7 @@ func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Confi
 	return c
 }
 
-func initTracer(logger log.Logger, otlpAddress string) (func(), error) {
+func initTracer(logger log.Logger, otlpAddress string) (trace.TracerProvider, func(), error) {
 	ctx := context.Background()
 	driver := otlpgrpc.NewDriver(
 		otlpgrpc.WithInsecure(),
@@ -211,7 +225,7 @@ func initTracer(logger log.Logger, otlpAddress string) (func(), error) {
 	)
 	exporter, err := otlp.NewExporter(ctx, driver)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create exporter: %w", err)
+		return nil, nil, fmt.Errorf("failed to create exporter: %w", err)
 	}
 
 	res, err := resource.New(ctx,
@@ -220,7 +234,7 @@ func initTracer(logger log.Logger, otlpAddress string) (func(), error) {
 		),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create resource: %w", err)
+		return nil, nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
@@ -234,7 +248,7 @@ func initTracer(logger log.Logger, otlpAddress string) (func(), error) {
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 	otel.SetTracerProvider(tracerProvider)
 
-	return func() {
+	return tracerProvider, func() {
 		err := exporter.Shutdown(context.Background())
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to stop exporter", "err", err)

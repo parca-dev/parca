@@ -27,10 +27,14 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestDB(t *testing.T) {
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("testdb")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"testdb",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})

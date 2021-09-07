@@ -24,11 +24,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestMergeMemSeriesConsistency(t *testing.T) {
 	ctx := context.Background()
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore("memseriesconsistency")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"memseriesconsistency",
+	)
 	t.Cleanup(func() {
 		s.Close()
 	})

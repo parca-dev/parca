@@ -21,17 +21,16 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var _ ProfileMetaStore = &sqlMetaStore{}
 
-var tracer = otel.Tracer("metastore")
-
 type sqlMetaStore struct {
-	db    *sql.DB
-	cache *metaStoreCache
+	db     *sql.DB
+	cache  *metaStoreCache
+	tracer trace.Tracer
 }
 
 func (s *sqlMetaStore) migrate() error {
@@ -165,7 +164,7 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 	map[uint64]*profile.Location,
 	error,
 ) {
-	ctx, span := tracer.Start(ctx, "GetLocationsByIDs")
+	ctx, span := s.tracer.Start(ctx, "GetLocationsByIDs")
 	defer span.End()
 	span.SetAttributes(attribute.Int("location-ids-number", len(ids)))
 
@@ -182,7 +181,7 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 		sIds += strconv.FormatInt(int64(id), 10)
 	}
 
-	dbctx, dbspan := tracer.Start(ctx, "GetLocationsByIDs-SQL-query")
+	dbctx, dbspan := s.tracer.Start(ctx, "GetLocationsByIDs-SQL-query")
 	rows, err := s.db.QueryContext(dbctx,
 		fmt.Sprintf(`SELECT "id", "address", "is_folded", "mapping_id"
 				FROM "locations"
@@ -263,7 +262,7 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 }
 
 func (s *sqlMetaStore) GetMappingsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Mapping, error) {
-	ctx, span := tracer.Start(ctx, "GetMappingsByIDs")
+	ctx, span := s.tracer.Start(ctx, "GetMappingsByIDs")
 	defer span.End()
 	span.SetAttributes(attribute.Int("mapping-ids-length", len(ids)))
 
@@ -327,7 +326,7 @@ type locationLine struct {
 }
 
 func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64) (map[uint64][]locationLine, []uint64, error) {
-	ctx, span := tracer.Start(ctx, "getLinesByLocationIDs")
+	ctx, span := s.tracer.Start(ctx, "getLinesByLocationIDs")
 	defer span.End()
 
 	functionIDs := []uint64{}
@@ -420,7 +419,7 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 }
 
 func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Function, error) {
-	ctx, span := tracer.Start(ctx, "getFunctionsByIDs")
+	ctx, span := s.tracer.Start(ctx, "getFunctionsByIDs")
 	defer span.End()
 	span.SetAttributes(attribute.Int("functions-ids-length", len(ids)))
 

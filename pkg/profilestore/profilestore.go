@@ -23,7 +23,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/prometheus/pkg/labels"
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -33,24 +33,29 @@ import (
 
 type ProfileStore struct {
 	logger    log.Logger
+	tracer    trace.Tracer
 	app       storage.Appendable
 	metaStore metastore.ProfileMetaStore
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileStore{}
 
-func NewProfileStore(logger log.Logger, app storage.Appendable, metaStore metastore.ProfileMetaStore) *ProfileStore {
+func NewProfileStore(
+	logger log.Logger,
+	tracer trace.Tracer,
+	app storage.Appendable,
+	metaStore metastore.ProfileMetaStore,
+) *ProfileStore {
 	return &ProfileStore{
 		logger:    logger,
+		tracer:    tracer,
 		app:       app,
 		metaStore: metaStore,
 	}
 }
 
-var tracer = otel.Tracer("profilestore")
-
 func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
-	ctx, span := tracer.Start(ctx, "write-raw")
+	ctx, span := s.tracer.Start(ctx, "write-raw")
 	defer span.End()
 
 	for _, series := range r.Series {
@@ -72,10 +77,10 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			convertCtx, convertSpan := tracer.Start(ctx, "profile-from-pprof")
+			convertCtx, convertSpan := s.tracer.Start(ctx, "profile-from-pprof")
 			profiles := storage.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
 			convertSpan.End()
-			appendCtx, appendSpan := tracer.Start(ctx, "append-profiles")
+			appendCtx, appendSpan := s.tracer.Start(ctx, "append-profiles")
 			for _, prof := range profiles {
 				profLabelset := ls.Copy()
 				found := false

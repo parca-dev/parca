@@ -22,6 +22,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
@@ -113,7 +114,12 @@ func TestGenerateFlamegraph(t *testing.T) {
 		5: {Line: []profile.Line{{Function: &profile.Function{Name: "5"}}}},
 	}}
 
-	fg, err := GenerateFlamegraph(ctx, l, &Profile{Tree: pt})
+	fg, err := GenerateFlamegraph(
+		ctx,
+		trace.NewNoopTracerProvider().Tracer(""),
+		l,
+		&Profile{Tree: pt},
+	)
 	require.NoError(t, err)
 	require.Equal(t, &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphNode{
 		Name:       "root",
@@ -155,7 +161,10 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("generateflamegraphfromprofiletree")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"generateflamegraphfromprofiletree",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -163,9 +172,14 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 
 	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 
-	fg, err := GenerateFlamegraph(ctx, l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
-		SampleType: ValueType{Unit: "count"},
-	}})
+	fg, err := GenerateFlamegraph(
+		ctx,
+		trace.NewNoopTracerProvider().Tracer(""),
+		l,
+		&Profile{Tree: profileTree, Meta: InstantProfileMeta{
+			SampleType: ValueType{Unit: "count"},
+		}},
+	)
 	require.NoError(t, err)
 
 	return fg
@@ -184,7 +198,10 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("generateflamegraphfrominstantprofile")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"generateflamegraphfrominstantprofile",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -200,7 +217,12 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, it.Err())
 	instantProfile := it.At()
 
-	fg, err := GenerateFlamegraph(ctx, l, instantProfile)
+	fg, err := GenerateFlamegraph(
+		ctx,
+		trace.NewNoopTracerProvider().Tracer(""),
+		l,
+		instantProfile,
+	)
 	require.NoError(t, err)
 	return fg
 }
@@ -231,7 +253,10 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("generateflamegraphfrommergeprofile")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"generateflamegraphfrommergeprofile",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -242,7 +267,12 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 	m, err := NewMergeProfile(prof1, prof2)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraph(ctx, l, m)
+	fg, err := GenerateFlamegraph(
+		ctx,
+		trace.NewNoopTracerProvider().Tracer(""),
+		l,
+		m,
+	)
 	require.NoError(t, err)
 
 	return fg
@@ -257,16 +287,24 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("controlgenerateflamegraphfrommergeprofile")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"controlgenerateflamegraphfrommergeprofile",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})
 	require.NoError(t, err)
 	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 
-	fg, err := GenerateFlamegraph(ctx, l, &Profile{Tree: profileTree, Meta: InstantProfileMeta{
-		SampleType: ValueType{Unit: "count"},
-	}})
+	fg, err := GenerateFlamegraph(
+		ctx,
+		trace.NewNoopTracerProvider().Tracer(""),
+		l,
+		&Profile{Tree: profileTree, Meta: InstantProfileMeta{
+			SampleType: ValueType{Unit: "count"},
+		}},
+	)
 	require.NoError(t, err)
 
 	mfg := testGenerateFlamegraphFromMergeProfile(t)
@@ -282,7 +320,10 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("flamegraph")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"flamegraph",
+	)
 	b.Cleanup(func() {
 		l.Close()
 	})
@@ -293,7 +334,12 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err = GenerateFlamegraph(ctx, l, &Profile{Tree: profileTree})
+		_, err = GenerateFlamegraph(
+			ctx,
+			trace.NewNoopTracerProvider().Tracer(""),
+			l,
+			&Profile{Tree: profileTree},
+		)
 		require.NoError(b, err)
 	}
 }

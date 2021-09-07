@@ -25,6 +25,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestMergeProfileSimple(t *testing.T) {
@@ -447,7 +448,10 @@ func TestMergeSingle(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("mergesingle")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"mergesingle",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -468,7 +472,10 @@ func TestMergeMany(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("mergemany")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"mergemany",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -508,7 +515,10 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("treemerge")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"treemerge",
+	)
 	b.Cleanup(func() {
 		l.Close()
 	})
@@ -573,7 +583,10 @@ func BenchmarkMergeMany(b *testing.B) {
 				require.NoError(b, err)
 				require.NoError(b, f.Close())
 
-				l, err := metastore.NewInMemorySQLiteProfileMetaStore("bencmergequery")
+				l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+					trace.NewNoopTracerProvider().Tracer(""),
+					"bencmergequery",
+				)
 				require.NoError(b, err)
 				b.Cleanup(func() {
 					l.Close()

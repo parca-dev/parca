@@ -17,6 +17,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"go.opentelemetry.io/otel/trace"
 	_ "modernc.org/sqlite"
 )
 
@@ -26,7 +27,10 @@ type InMemorySQLiteMetaStore struct {
 	*sqlMetaStore
 }
 
-func NewInMemorySQLiteProfileMetaStore(name ...string) (*InMemorySQLiteMetaStore, error) {
+func NewInMemorySQLiteProfileMetaStore(
+	tracer trace.Tracer,
+	name ...string,
+) (*InMemorySQLiteMetaStore, error) {
 	dsn := "file::memory:?cache=shared"
 	if len(name) > 0 {
 		dsn = fmt.Sprintf("file:%s?mode=memory&cache=shared", name[0])
@@ -37,7 +41,11 @@ func NewInMemorySQLiteProfileMetaStore(name ...string) (*InMemorySQLiteMetaStore
 		return nil, err
 	}
 
-	sqlite := &sqlMetaStore{db: db, cache: newMetaStoreCache()}
+	sqlite := &sqlMetaStore{
+		db:     db,
+		tracer: tracer,
+		cache:  newMetaStoreCache(),
+	}
 	if err := sqlite.migrate(); err != nil {
 		return nil, fmt.Errorf("migrations failed: %w", err)
 	}

@@ -25,6 +25,7 @@ import (
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestMemSeriesIterator(t *testing.T) {
@@ -192,7 +193,10 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("iteratorconsistency")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"iteratorconsistency",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})

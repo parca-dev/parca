@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -40,7 +41,12 @@ import (
 func Test_QueryRange_EmptyStore(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	q := New(log.NewNopLogger(), db, nil)
+	q := New(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		db,
+		nil,
+	)
 
 	// Query last 5 minutes
 	end := time.Now()
@@ -59,12 +65,20 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore("queryrangevalid")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"queryrangevalid",
+	)
 	t.Cleanup(func() {
 		s.Close()
 	})
 	require.NoError(t, err)
-	q := New(log.NewNopLogger(), db, s)
+	q := New(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		db,
+		s,
+	)
 
 	app, err := db.Appender(ctx, labels.Labels{
 		labels.Label{
@@ -113,12 +127,20 @@ func Test_QueryRange_Valid(t *testing.T) {
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore("queryrangelimited")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"queryrangelimited",
+	)
 	t.Cleanup(func() {
 		s.Close()
 	})
 	require.NoError(t, err)
-	q := New(log.NewNopLogger(), db, s)
+	q := New(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		db,
+		s,
+	)
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
@@ -203,7 +225,12 @@ func Test_QueryRange_InputValidation(t *testing.T) {
 		},
 	}
 
-	q := New(log.NewNopLogger(), nil, nil)
+	q := New(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		nil,
+		nil,
+	)
 
 	t.Parallel()
 	for name, test := range tests {
@@ -255,7 +282,12 @@ func Test_Query_InputValidation(t *testing.T) {
 		},
 	}
 
-	q := New(log.NewNopLogger(), nil, nil)
+	q := New(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		nil,
+		nil,
+	)
 
 	t.Parallel()
 	for name, test := range tests {
@@ -271,12 +303,20 @@ func Test_Query_InputValidation(t *testing.T) {
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore("querysimple")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"querysimple",
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
-	q := New(log.NewNopLogger(), db, s)
+	q := New(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		db,
+		s,
+	)
 
 	app, err := db.Appender(ctx, labels.Labels{
 		labels.Label{
@@ -319,12 +359,20 @@ func Test_Query_Simple(t *testing.T) {
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry())
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore("querydiff")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"querydiff",
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
-	q := New(log.NewNopLogger(), db, s)
+	q := New(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		db,
+		s,
+	)
 
 	app, err := db.Appender(ctx, labels.Labels{
 		labels.Label{
@@ -396,7 +444,10 @@ func Test_Query_Diff(t *testing.T) {
 
 func Benchmark_Query_Merge(b *testing.B) {
 	ctx := context.Background()
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore("benchquerymerge")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"benchquerymerge",
+	)
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		s.Close()
@@ -416,7 +467,12 @@ func Benchmark_Query_Merge(b *testing.B) {
 				b.StopTimer()
 				ctx := context.Background()
 				db := storage.OpenDB(prometheus.NewRegistry())
-				q := New(log.NewNopLogger(), db, s)
+				q := New(
+					log.NewNopLogger(),
+					trace.NewNoopTracerProvider().Tracer(""),
+					db,
+					s,
+				)
 
 				app, err := db.Appender(ctx, labels.Labels{
 					labels.Label{
@@ -453,7 +509,10 @@ func Benchmark_Query_Merge(b *testing.B) {
 func Test_Query_Merge(t *testing.T) {
 	ctx := context.Background()
 
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore("querymerge")
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"querymerge",
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -470,7 +529,12 @@ func Test_Query_Merge(t *testing.T) {
 	for k := 0.; k <= 10; k++ {
 		ctx := context.Background()
 		db := storage.OpenDB(prometheus.NewRegistry())
-		q := New(log.NewNopLogger(), db, s)
+		q := New(
+			log.NewNopLogger(),
+			trace.NewNoopTracerProvider().Tracer(""),
+			db,
+			s,
+		)
 
 		app, err := db.Appender(ctx, labels.Labels{
 			labels.Label{

@@ -23,6 +23,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestGeneratePprof(t *testing.T) {
@@ -34,7 +35,10 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("generatepprof")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"generatepprof",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})

@@ -22,6 +22,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestCopyInstantProfileTree(t *testing.T) {
@@ -33,7 +34,10 @@ func TestCopyInstantProfileTree(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("compyinstantprofiletree")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"compyinstantprofiletree",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})

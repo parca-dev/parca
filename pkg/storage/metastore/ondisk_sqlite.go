@@ -17,6 +17,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"go.opentelemetry.io/otel/trace"
 	_ "modernc.org/sqlite"
 )
 
@@ -26,7 +27,10 @@ type OnDiskSQLiteMetaStore struct {
 	*sqlMetaStore
 }
 
-func NewDiskProfileMetaStore(path ...string) (*OnDiskSQLiteMetaStore, error) {
+func NewDiskProfileMetaStore(
+	tracer trace.Tracer,
+	path ...string,
+) (*OnDiskSQLiteMetaStore, error) {
 	var dsn string
 	if len(path) > 0 {
 		dsn = path[0]
@@ -37,7 +41,11 @@ func NewDiskProfileMetaStore(path ...string) (*OnDiskSQLiteMetaStore, error) {
 		return nil, err
 	}
 
-	sqlite := &sqlMetaStore{db: db, cache: newMetaStoreCache()}
+	sqlite := &sqlMetaStore{
+		db:     db,
+		tracer: tracer,
+		cache:  newMetaStoreCache(),
+	}
 	if err := sqlite.migrate(); err != nil {
 		return nil, fmt.Errorf("migrations failed: %w", err)
 	}

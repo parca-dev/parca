@@ -23,6 +23,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestDiffProfileSimple(t *testing.T) {
@@ -250,7 +251,10 @@ func BenchmarkDiff(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore("benchdiff")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"benchdiff",
+	)
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		l.Close()

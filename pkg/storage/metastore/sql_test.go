@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type TestProfileMetaStore interface {
@@ -41,7 +42,10 @@ type TestFunctionStore interface {
 }
 
 func TestNewInMemorySQLiteMetaStore(t *testing.T) {
-	str, err := NewInMemorySQLiteProfileMetaStore("metastoreconnection")
+	str, err := NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"metastoreconnection",
+	)
 	t.Cleanup(func() {
 		str.Close()
 	})
@@ -50,13 +54,18 @@ func TestNewInMemorySQLiteMetaStore(t *testing.T) {
 }
 
 func TestDiskMetaStoreConnection(t *testing.T) {
-	str, err := NewDiskProfileMetaStore()
+	str, err := NewDiskProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+	)
 	require.NoError(t, err)
 	require.NoError(t, str.Ping())
 }
 
 func TestInMemorySQLiteLocationStore(t *testing.T) {
-	s, err := NewInMemorySQLiteProfileMetaStore("location")
+	s, err := NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"location",
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -67,7 +76,10 @@ func TestInMemorySQLiteLocationStore(t *testing.T) {
 
 func TestDiskLocationStore(t *testing.T) {
 	dbPath := "./parca_location_store_test.sqlite"
-	s, err := NewDiskProfileMetaStore(dbPath)
+	s, err := NewDiskProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		dbPath,
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -129,7 +141,10 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 }
 
 func TestInMemorySQLiteFunctionStore(t *testing.T) {
-	s, err := NewInMemorySQLiteProfileMetaStore("function")
+	s, err := NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"function",
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -140,7 +155,10 @@ func TestInMemorySQLiteFunctionStore(t *testing.T) {
 
 func TestDiskFunctionStore(t *testing.T) {
 	dbPath := "./parca_function_store_test.sqlite"
-	s, err := NewDiskProfileMetaStore(dbPath)
+	s, err := NewDiskProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		dbPath,
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -189,7 +207,10 @@ func functionStoreTest(t *testing.T, s TestFunctionStore) {
 }
 
 func TestInMemorySQLiteMappingStore(t *testing.T) {
-	s, err := NewInMemorySQLiteProfileMetaStore("mapping")
+	s, err := NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"mapping",
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -200,7 +221,10 @@ func TestInMemorySQLiteMappingStore(t *testing.T) {
 
 func TestDiskMappingStore(t *testing.T) {
 	dbPath := "./parca_mapping_store_test.sqlite"
-	s, err := NewDiskProfileMetaStore(dbPath)
+	s, err := NewDiskProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		dbPath,
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -259,7 +283,10 @@ func mappingStoreTest(t *testing.T, s MappingStore) {
 }
 
 func TestInMemorySQLiteMetaStore(t *testing.T) {
-	s, err := NewInMemorySQLiteProfileMetaStore("metastore")
+	s, err := NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"metastore",
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
@@ -270,7 +297,10 @@ func TestInMemorySQLiteMetaStore(t *testing.T) {
 
 func TestDiskMetaStore(t *testing.T) {
 	dbPath := "./parca_meta_store_test.sqlite"
-	s, err := NewDiskProfileMetaStore(dbPath)
+	s, err := NewDiskProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		dbPath,
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
