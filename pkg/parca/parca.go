@@ -16,6 +16,7 @@ package parca
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"syscall"
@@ -62,7 +63,12 @@ type Flags struct {
 // Run the parca server
 func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags *Flags) error {
 	if flags.OTLPAddress != "" {
-		initTracer(logger, flags.OTLPAddress)
+		closer, err := initTracer(logger, flags.OTLPAddress)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to initialize tracing", "err", err)
+			return err
+		}
+		defer closer()
 	}
 
 	cfgContent, err := ioutil.ReadFile(flags.ConfigPath)
@@ -197,21 +203,25 @@ func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Confi
 	return c
 }
 
-func initTracer(logger log.Logger, otlpAddress string) func() {
+func initTracer(logger log.Logger, otlpAddress string) (func(), error) {
 	ctx := context.Background()
 	driver := otlpgrpc.NewDriver(
 		otlpgrpc.WithInsecure(),
 		otlpgrpc.WithEndpoint(otlpAddress),
 	)
 	exporter, err := otlp.NewExporter(ctx, driver)
-	handleErr(logger, err, "failed to create exporter")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create exporter: %w", err)
+	}
 
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceNameKey.String("parca"),
 		),
 	)
-	handleErr(logger, err, "failed to create resource")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create resource: %w", err)
+	}
 
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
 	tracerProvider := sdktrace.NewTracerProvider(
@@ -225,13 +235,9 @@ func initTracer(logger log.Logger, otlpAddress string) func() {
 	otel.SetTracerProvider(tracerProvider)
 
 	return func() {
-		handleErr(logger, exporter.Shutdown(context.Background()), "failed to stop exporter")
-	}
-}
-
-func handleErr(logger log.Logger, err error, message string) {
-	if err != nil {
-		level.Error(logger).Log("msg", message, "err", err)
-		os.Exit(1)
-	}
+		err := exporter.Shutdown(context.Background())
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to stop exporter", "err", err)
+		}
+	}, nil
 }
