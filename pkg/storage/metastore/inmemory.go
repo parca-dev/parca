@@ -14,6 +14,7 @@
 package metastore
 
 import (
+	"context"
 	"sync"
 
 	"github.com/google/pprof/profile"
@@ -39,7 +40,15 @@ func NewInMemoryProfileMetaStore() (*InMemoryProfileMetaStore, error) {
 	}, nil
 }
 
-func (s *InMemoryProfileMetaStore) GetLocationByID(id uint64) (*profile.Location, error) {
+func (s *InMemoryProfileMetaStore) GetLocationByID(ctx context.Context, id uint64) (*profile.Location, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	if uint64(len(s.locations)) <= id-1 {
 		return nil, ErrLocationNotFound
 	}
@@ -47,10 +56,39 @@ func (s *InMemoryProfileMetaStore) GetLocationByID(id uint64) (*profile.Location
 	return s.locations[id-1], nil
 }
 
-func (s *InMemoryProfileMetaStore) GetLocationByKey(key LocationKey) (*profile.Location, error) {
+func (s *InMemoryProfileMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Location, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	res := map[uint64]*profile.Location{}
+
+	for _, id := range ids {
+		if uint64(len(s.locations)) <= id-1 {
+			return nil, ErrLocationNotFound
+		}
+		res[id] = s.locations[id-1]
+	}
+
+	return res, nil
+}
+
+func (s *InMemoryProfileMetaStore) GetLocationByKey(ctx context.Context, key LocationKey) (*profile.Location, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	i, found := s.locationsByKey[key]
-	s.mu.RUnlock()
 	if !found {
 		return nil, ErrLocationNotFound
 	}
@@ -58,14 +96,29 @@ func (s *InMemoryProfileMetaStore) GetLocationByKey(key LocationKey) (*profile.L
 	return s.locations[i-1], nil
 }
 
-func (s *InMemoryProfileMetaStore) GetLocations() ([]*profile.Location, error) {
+func (s *InMemoryProfileMetaStore) GetLocations(ctx context.Context) ([]*profile.Location, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return s.locations, nil
+	res := make([]*profile.Location, len(s.locations))
+	copy(res, s.locations)
+
+	return res, nil
 }
 
-func (s *InMemoryProfileMetaStore) GetUnsymbolizedLocations() ([]*profile.Location, error) {
+func (s *InMemoryProfileMetaStore) GetUnsymbolizedLocations(ctx context.Context) ([]*profile.Location, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	locs := []*profile.Location{}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -77,19 +130,31 @@ func (s *InMemoryProfileMetaStore) GetUnsymbolizedLocations() ([]*profile.Locati
 	return locs, nil
 }
 
-func (s *InMemoryProfileMetaStore) CreateLocation(l *profile.Location) (uint64, error) {
+func (s *InMemoryProfileMetaStore) CreateLocation(ctx context.Context, l *profile.Location) (uint64, error) {
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	default:
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	key := MakeLocationKey(l)
 	id := uint64(len(s.locations)) + 1
 	l.ID = id
 	s.locations = append(s.locations, l)
-	s.mu.Lock()
 	s.locationsByKey[key] = id
-	s.mu.Unlock()
 	return id, nil
 }
 
-func (s *InMemoryProfileMetaStore) UpdateLocation(l *profile.Location) error {
-	loc, err := s.GetLocationByID(l.ID)
+func (s *InMemoryProfileMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	loc, err := s.GetLocationByID(ctx, l.ID)
 	if err != nil {
 		return err
 	}
@@ -101,7 +166,7 @@ func (s *InMemoryProfileMetaStore) UpdateLocation(l *profile.Location) error {
 	s.mu.Unlock()
 
 	for _, ln := range l.Line {
-		_, err := s.CreateFunction(ln.Function)
+		_, err := s.CreateFunction(ctx, ln.Function)
 		if err != nil {
 			return err
 		}
@@ -109,10 +174,16 @@ func (s *InMemoryProfileMetaStore) UpdateLocation(l *profile.Location) error {
 	return nil
 }
 
-func (s *InMemoryProfileMetaStore) GetMappingByKey(key MappingKey) (*profile.Mapping, error) {
+func (s *InMemoryProfileMetaStore) GetMappingByKey(ctx context.Context, key MappingKey) (*profile.Mapping, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	s.mu.RLock()
+	defer s.mu.RUnlock()
 	i, found := s.mappingsByKey[key]
-	s.mu.RUnlock()
 	if !found {
 		return nil, ErrMappingNotFound
 	}
@@ -120,21 +191,35 @@ func (s *InMemoryProfileMetaStore) GetMappingByKey(key MappingKey) (*profile.Map
 	return s.mappings[i-1], nil
 }
 
-func (s *InMemoryProfileMetaStore) CreateMapping(m *profile.Mapping) (uint64, error) {
+func (s *InMemoryProfileMetaStore) CreateMapping(ctx context.Context, m *profile.Mapping) (uint64, error) {
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	default:
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	key := MakeMappingKey(m)
 	id := uint64(len(s.mappings)) + 1
 	m.ID = id
 	s.mappings = append(s.mappings, m)
-	s.mu.Lock()
 	s.mappingsByKey[key] = id
-	s.mu.Unlock()
 	return id, nil
 }
 
-func (s *InMemoryProfileMetaStore) GetFunctionByKey(key FunctionKey) (*profile.Function, error) {
+func (s *InMemoryProfileMetaStore) GetFunctionByKey(ctx context.Context, key FunctionKey) (*profile.Function, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	i, found := s.functionsByKey[key]
-	s.mu.RUnlock()
 	if !found {
 		return nil, ErrFunctionNotFound
 	}
@@ -142,18 +227,37 @@ func (s *InMemoryProfileMetaStore) GetFunctionByKey(key FunctionKey) (*profile.F
 	return s.functions[i-1], nil
 }
 
-func (s *InMemoryProfileMetaStore) GetFunctions() ([]*profile.Function, error) {
-	return s.functions, nil
+func (s *InMemoryProfileMetaStore) GetFunctions(ctx context.Context) ([]*profile.Function, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	res := make([]*profile.Function, len(s.functions))
+	copy(res, s.functions)
+
+	return res, nil
 }
 
-func (s *InMemoryProfileMetaStore) CreateFunction(f *profile.Function) (uint64, error) {
+func (s *InMemoryProfileMetaStore) CreateFunction(ctx context.Context, f *profile.Function) (uint64, error) {
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	default:
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	key := MakeFunctionKey(f)
 	id := uint64(len(s.functions)) + 1
 	f.ID = id
 	s.functions = append(s.functions, f)
-	s.mu.Lock()
 	s.functionsByKey[key] = id
-	s.mu.Unlock()
 	return id, nil
 }
 

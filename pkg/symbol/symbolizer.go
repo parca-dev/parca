@@ -46,7 +46,7 @@ func NewSymbolizer(logger log.Logger, loc metastore.LocationStore, info *debugin
 func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	return runutil.Repeat(interval, ctx.Done(), func() error {
 		// Get all unsymbolized locations.
-		locations, err := s.locations.GetUnsymbolizedLocations()
+		locations, err := s.locations.GetUnsymbolizedLocations(ctx)
 		if err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 		// Update LocationStore with found symbols.
 		for loc, lines := range symbolizedLines {
 			loc.Line = lines
-			if err := s.locations.UpdateLocation(loc); err != nil {
+			if err := s.locations.UpdateLocation(ctx, loc); err != nil {
 				result = multierror.Append(result, fmt.Errorf("failed to update location %d: %w", loc.ID, err))
 				continue
 			}

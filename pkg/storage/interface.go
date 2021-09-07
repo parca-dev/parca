@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-kit/log"
@@ -91,9 +92,11 @@ func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
 
 	node := it.At()
 	cur := &ProfileTreeNode{
-		locationID:       node.LocationID(),
-		flatValues:       node.FlatValues(),
-		cumulativeValues: node.CumulativeValues(),
+		locationID:           node.LocationID(),
+		flatDiffValues:       node.FlatDiffValues(),
+		flatValues:           node.FlatValues(),
+		cumulativeDiffValues: node.CumulativeDiffValues(),
+		cumulativeValues:     node.CumulativeValues(),
 	}
 	tree := &ProfileTree{Roots: cur}
 	stack := ProfileTreeStack{{node: cur}}
@@ -107,9 +110,11 @@ func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
 		if it.NextChild() {
 			node := it.At()
 			cur := &ProfileTreeNode{
-				locationID:       node.LocationID(),
-				flatValues:       node.FlatValues(),
-				cumulativeValues: node.CumulativeValues(),
+				locationID:           node.LocationID(),
+				flatDiffValues:       node.FlatDiffValues(),
+				flatValues:           node.FlatValues(),
+				cumulativeDiffValues: node.CumulativeDiffValues(),
+				cumulativeValues:     node.CumulativeValues(),
 			}
 
 			stack.Peek().node.Children = append(stack.Peek().node.Children, cur)
@@ -178,12 +183,12 @@ func (i *SliceProfileSeriesIterator) Err() error {
 
 // ProfilesFromPprof extracts a Profile from each sample index included in the
 // pprof profile.
-func ProfilesFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) []*Profile {
+func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) []*Profile {
 	ps := make([]*Profile, 0, len(p.SampleType))
 
 	for i := range p.SampleType {
 		ps = append(ps, &Profile{
-			Tree: ProfileTreeFromPprof(l, s, p, i),
+			Tree: ProfileTreeFromPprof(ctx, l, s, p, i),
 			Meta: ProfileMetaFromPprof(p, i),
 		})
 	}
@@ -191,9 +196,9 @@ func ProfilesFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile.Pr
 	return ps
 }
 
-func ProfileFromPprof(l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *Profile {
+func ProfileFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *Profile {
 	return &Profile{
-		Tree: ProfileTreeFromPprof(l, s, p, sampleIndex),
+		Tree: ProfileTreeFromPprof(ctx, l, s, p, sampleIndex),
 		Meta: ProfileMetaFromPprof(p, sampleIndex),
 	}
 }

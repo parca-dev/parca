@@ -29,11 +29,11 @@ import (
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
@@ -50,15 +50,17 @@ type TestProfileMetaStore interface {
 
 type TestLocationStore interface {
 	metastore.LocationStore
-	GetLocations() ([]*profile.Location, error)
+	GetLocations(ctx context.Context) ([]*profile.Location, error)
 }
 
 type TestFunctionStore interface {
 	metastore.FunctionStore
-	GetFunctions() ([]*profile.Function, error)
+	GetFunctions(ctx context.Context) ([]*profile.Function, error)
 }
 
 func TestSymbolizer(t *testing.T) {
+	ctx := context.Background()
+
 	cacheDir, err := ioutil.TempDir("", "parca-test-cache")
 	require.NoError(t, err)
 	defer os.RemoveAll(cacheDir)
@@ -96,7 +98,10 @@ func TestSymbolizer(t *testing.T) {
 	}()
 
 	var mStr TestProfileMetaStore
-	mStr, err = metastoresql.NewInMemoryProfileMetaStore("symbolizer")
+	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"symbolizer",
+	)
 	t.Cleanup(func() {
 		mStr.Close()
 	})
@@ -109,36 +114,36 @@ func TestSymbolizer(t *testing.T) {
 		Limit:   4603904,
 		BuildID: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
 	}
-	_, err = mStr.CreateMapping(m)
+	_, err = mStr.CreateMapping(ctx, m)
 	require.NoError(t, err)
 
 	locs := []*profile.Location{{
 		Mapping: m,
 		Address: 0x463781,
 	}}
-	_, err = mStr.CreateLocation(locs[0])
+	_, err = mStr.CreateLocation(ctx, locs[0])
 	require.NoError(t, err)
 
-	allLocs, err := mStr.GetLocations()
+	allLocs, err := mStr.GetLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(allLocs))
 
-	symLocs, err := mStr.GetUnsymbolizedLocations()
+	symLocs, err := mStr.GetUnsymbolizedLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(symLocs))
 
 	err = sym.symbolize(context.Background(), allLocs)
 	require.NoError(t, err)
 
-	allLocs, err = mStr.GetLocations()
+	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(allLocs))
 
-	symLocs, err = mStr.GetUnsymbolizedLocations()
+	symLocs, err = mStr.GetUnsymbolizedLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(symLocs))
 
-	functions, err := mStr.GetFunctions()
+	functions, err := mStr.GetFunctions(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(functions))
 
@@ -159,6 +164,8 @@ func TestSymbolizer(t *testing.T) {
 }
 
 func TestRealSymbolizer(t *testing.T) {
+	ctx := context.Background()
+
 	cacheDir, err := ioutil.TempDir("", "parca-test-cache")
 	require.NoError(t, err)
 	defer os.RemoveAll(cacheDir)
@@ -180,14 +187,21 @@ func TestRealSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 
 	var mStr TestProfileMetaStore
-	mStr, err = metastore.NewInMemoryProfileMetaStore()
+	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		mStr.Close()
 	})
 
 	db := storage.OpenDB(prometheus.NewRegistry())
-	pStr := profilestore.NewProfileStore(log.NewNopLogger(), db, mStr)
+	pStr := profilestore.NewProfileStore(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		db,
+		mStr,
+	)
 
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
@@ -232,26 +246,26 @@ func TestRealSymbolizer(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	allLocs, err := mStr.GetLocations()
+	allLocs, err := mStr.GetLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 32, len(allLocs))
 
-	symLocs, err := mStr.GetUnsymbolizedLocations()
+	symLocs, err := mStr.GetUnsymbolizedLocations(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 12, len(symLocs))
+	require.Equal(t, 11, len(symLocs))
 
 	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
-	require.NoError(t, sym.symbolize(context.Background(), p.Location))
+	require.NoError(t, sym.symbolize(ctx, p.Location))
 
-	allLocs, err = mStr.GetLocations()
+	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 32, len(allLocs))
 
-	symLocs, err = mStr.GetUnsymbolizedLocations()
+	symLocs, err = mStr.GetUnsymbolizedLocations(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 3, len(symLocs))
+	require.Equal(t, 2, len(symLocs))
 
-	functions, err := mStr.GetFunctions()
+	functions, err := mStr.GetFunctions(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 34, len(functions))
 

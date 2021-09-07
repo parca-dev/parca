@@ -16,6 +16,7 @@ package parca
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"syscall"
@@ -25,9 +26,17 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/semconv"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
 
@@ -49,10 +58,23 @@ type Flags struct {
 	LogLevel           string   `kong:"enum='error,warn,info,debug',help='Log level.',default='info'"`
 	Port               string   `kong:"help='Port string for server',default=':7070'"`
 	CORSAllowedOrigins []string `kong:"help='Allowed CORS origins.'"`
+	OTLPAddress        string   `kong:"help='OpenTelemetry collector address to send traces to.'"`
 }
 
 // Run the parca server
 func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags *Flags) error {
+	tracerProvider := trace.NewNoopTracerProvider()
+	if flags.OTLPAddress != "" {
+		var closer func()
+		var err error
+		tracerProvider, closer, err = initTracer(logger, flags.OTLPAddress)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to initialize tracing", "err", err)
+			return err
+		}
+		defer closer()
+	}
+
 	cfgContent, err := ioutil.ReadFile(flags.ConfigPath)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to read config", "path", flags.ConfigPath)
@@ -71,7 +93,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	mStr, err := metastoresql.NewInMemoryProfileMetaStore()
+	mStr, err := metastore.NewInMemorySQLiteProfileMetaStore(tracerProvider.Tracer("inmemory-sqlite"))
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
 		return err
@@ -79,8 +101,18 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	defer mStr.Close()
 
 	db := storage.OpenDB(reg)
-	s := profilestore.NewProfileStore(logger, db, mStr)
-	q := query.New(logger, db, mStr)
+	s := profilestore.NewProfileStore(
+		logger,
+		tracerProvider.Tracer("profilestore"),
+		db,
+		mStr,
+	)
+	q := query.New(
+		logger,
+		tracerProvider.Tracer("query-service"),
+		db,
+		mStr,
+	)
 
 	parcaserver := server.NewServer(reg)
 
@@ -183,4 +215,43 @@ func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Confi
 		c[v.JobName] = v.ServiceDiscoveryConfigs
 	}
 	return c
+}
+
+func initTracer(logger log.Logger, otlpAddress string) (trace.TracerProvider, func(), error) {
+	ctx := context.Background()
+	driver := otlpgrpc.NewDriver(
+		otlpgrpc.WithInsecure(),
+		otlpgrpc.WithEndpoint(otlpAddress),
+	)
+	exporter, err := otlp.NewExporter(ctx, driver)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create exporter: %w", err)
+	}
+
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String("parca"),
+		),
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create resource: %w", err)
+	}
+
+	bsp := sdktrace.NewBatchSpanProcessor(exporter)
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithResource(res),
+		sdktrace.WithSpanProcessor(bsp),
+	)
+
+	// set global propagator to tracecontext (the default is no-op).
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTracerProvider(tracerProvider)
+
+	return tracerProvider, func() {
+		err := exporter.Shutdown(context.Background())
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to stop exporter", "err", err)
+		}
+	}, nil
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -32,21 +33,31 @@ import (
 
 type ProfileStore struct {
 	logger    log.Logger
+	tracer    trace.Tracer
 	app       storage.Appendable
 	metaStore metastore.ProfileMetaStore
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileStore{}
 
-func NewProfileStore(logger log.Logger, app storage.Appendable, metaStore metastore.ProfileMetaStore) *ProfileStore {
+func NewProfileStore(
+	logger log.Logger,
+	tracer trace.Tracer,
+	app storage.Appendable,
+	metaStore metastore.ProfileMetaStore,
+) *ProfileStore {
 	return &ProfileStore{
 		logger:    logger,
+		tracer:    tracer,
 		app:       app,
 		metaStore: metaStore,
 	}
 }
 
 func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
+	ctx, span := s.tracer.Start(ctx, "write-raw")
+	defer span.End()
+
 	for _, series := range r.Series {
 		ls := make(labels.Labels, 0, len(series.Labels.Labels))
 		for _, l := range series.Labels.Labels {
@@ -66,7 +77,10 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			profiles := storage.ProfilesFromPprof(s.logger, s.metaStore, p)
+			convertCtx, convertSpan := s.tracer.Start(ctx, "profile-from-pprof")
+			profiles := storage.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
+			convertSpan.End()
+			appendCtx, appendSpan := s.tracer.Start(ctx, "append-profiles")
 			for _, prof := range profiles {
 				profLabelset := ls.Copy()
 				found := false
@@ -89,7 +103,7 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 
 				level.Debug(s.logger).Log("msg", "writing sample", "label_set", profLabelset.String(), "timestamp", prof.Meta.Timestamp)
 
-				app, err := s.app.Appender(ctx, profLabelset)
+				app, err := s.app.Appender(appendCtx, profLabelset)
 				if err != nil {
 					return nil, err
 				}
@@ -98,6 +112,7 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 					return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
 				}
 			}
+			appendSpan.End()
 		}
 	}
 

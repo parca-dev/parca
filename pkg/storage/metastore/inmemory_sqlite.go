@@ -11,23 +11,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sql
+package metastore
 
 import (
 	"database/sql"
 	"fmt"
 
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"go.opentelemetry.io/otel/trace"
 	_ "modernc.org/sqlite"
 )
 
-var _ metastore.ProfileMetaStore = &InMemoryMetaStore{}
+var _ ProfileMetaStore = &InMemorySQLiteMetaStore{}
 
-type InMemoryMetaStore struct {
+type InMemorySQLiteMetaStore struct {
 	*sqlMetaStore
 }
 
-func NewInMemoryProfileMetaStore(name ...string) (*InMemoryMetaStore, error) {
+func NewInMemorySQLiteProfileMetaStore(
+	tracer trace.Tracer,
+	name ...string,
+) (*InMemorySQLiteMetaStore, error) {
 	dsn := "file::memory:?cache=shared"
 	if len(name) > 0 {
 		dsn = fmt.Sprintf("file:%s?mode=memory&cache=shared", name[0])
@@ -38,10 +41,14 @@ func NewInMemoryProfileMetaStore(name ...string) (*InMemoryMetaStore, error) {
 		return nil, err
 	}
 
-	sqlite := &sqlMetaStore{db}
+	sqlite := &sqlMetaStore{
+		db:     db,
+		tracer: tracer,
+		cache:  newMetaStoreCache(),
+	}
 	if err := sqlite.migrate(); err != nil {
 		return nil, fmt.Errorf("migrations failed: %w", err)
 	}
 
-	return &InMemoryMetaStore{sqlMetaStore: sqlite}, nil
+	return &InMemorySQLiteMetaStore{sqlMetaStore: sqlite}, nil
 }

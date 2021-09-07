@@ -11,23 +11,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sql
+package metastore
 
 import (
 	"database/sql"
 	"fmt"
 
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"go.opentelemetry.io/otel/trace"
 	_ "modernc.org/sqlite"
 )
 
-var _ metastore.ProfileMetaStore = &DiskMetaStore{}
+var _ ProfileMetaStore = &OnDiskSQLiteMetaStore{}
 
-type DiskMetaStore struct {
+type OnDiskSQLiteMetaStore struct {
 	*sqlMetaStore
 }
 
-func NewDiskProfileMetaStore(path ...string) (*DiskMetaStore, error) {
+func NewDiskProfileMetaStore(
+	tracer trace.Tracer,
+	path ...string,
+) (*OnDiskSQLiteMetaStore, error) {
 	var dsn string
 	if len(path) > 0 {
 		dsn = path[0]
@@ -38,10 +41,14 @@ func NewDiskProfileMetaStore(path ...string) (*DiskMetaStore, error) {
 		return nil, err
 	}
 
-	sqlite := &sqlMetaStore{db}
+	sqlite := &sqlMetaStore{
+		db:     db,
+		tracer: tracer,
+		cache:  newMetaStoreCache(),
+	}
 	if err := sqlite.migrate(); err != nil {
 		return nil, fmt.Errorf("migrations failed: %w", err)
 	}
 
-	return &DiskMetaStore{sqlMetaStore: sqlite}, err
+	return &OnDiskSQLiteMetaStore{sqlMetaStore: sqlite}, err
 }

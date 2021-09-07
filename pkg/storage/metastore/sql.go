@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sql
+package metastore
 
 import (
 	"context"
@@ -21,13 +21,16 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
-var _ metastore.ProfileMetaStore = &sqlMetaStore{}
+var _ ProfileMetaStore = &sqlMetaStore{}
 
 type sqlMetaStore struct {
-	db *sql.DB
+	db     *sql.DB
+	cache  *metaStoreCache
+	tracer trace.Tracer
 }
 
 func (s *sqlMetaStore) migrate() error {
@@ -57,14 +60,15 @@ func (s *sqlMetaStore) migrate() error {
 		);`,
 		`CREATE INDEX idx_function_key ON functions (start_line, name, system_name, filename);`,
 		`CREATE TABLE "lines" (
-			"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-			"function_id"	INTEGER NOT NULL,
-			"line" 		  	INT64,
+			"location_id" INTEGER NOT NULL,
+			"function_id" INTEGER NOT NULL,
+			"line" 		  INT64,
 			FOREIGN KEY (function_id) REFERENCES functions (id)
+			FOREIGN KEY (location_id) REFERENCES locations (id)
 		);`,
+		`CREATE INDEX idx_line_location ON lines (location_id);`,
 		`CREATE TABLE "locations" (
 			"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-			"location_id"			INT64,
 			"mapping_id"  			INTEGER,
 			"address"  				INT64,
 			"is_folded" 			BOOLEAN,
@@ -72,15 +76,7 @@ func (s *sqlMetaStore) migrate() error {
 			"lines"					TEXT,
 			FOREIGN KEY (mapping_id) REFERENCES mappings (id)
 		);`,
-		`CREATE INDEX idx_location_id ON locations (location_id);`,
 		`CREATE INDEX idx_location_key ON locations (normalized_address, mapping_id, is_folded, lines);`,
-		`CREATE TABLE "location_lines" (
-			"id" INTEGER PRIMARY KEY AUTOINCREMENT,
-			"location_id" 	INTEGER NOT NULL,
-			"line_id" 		INTEGER NOT NULL,
-			FOREIGN KEY(location_id) REFERENCES locations (id),
-			FOREIGN KEY(line_id) REFERENCES lines (id)
-		);`,
 	}
 	// TODO(kakkoyun): Additional table between location and mapping? - mapInfo from pprof
 	// TODO(kakkoyun): Remove additional location_id from locations table?
@@ -98,28 +94,28 @@ func (s *sqlMetaStore) migrate() error {
 	return nil
 }
 
-func (s *sqlMetaStore) GetLocationByKey(k metastore.LocationKey) (*profile.Location, error) {
+func (s *sqlMetaStore) GetLocationByKey(ctx context.Context, k LocationKey) (*profile.Location, error) {
 	var (
-		l           profile.Location
-		mappingID   *int
-		id, address int64
-		err         error
+		l         profile.Location
+		mappingID *int
+		id        int
+		address   int64
+		err       error
 	)
 	if k.MappingID > 0 {
-		err = s.db.QueryRow(
-			`SELECT "location_id", "address", "is_folded", "mapping_id"
+		err = s.db.QueryRowContext(ctx,
+			`SELECT "id", "address", "is_folded", "mapping_id"
 					FROM "locations" l
-					JOIN "mappings" m ON l.mapping_id = m.id
-					WHERE l.normalized_address=? 
-					  AND l.is_folded=? 
-					  AND l.lines=? 
-					  AND m.id=? `,
+					WHERE normalized_address=? 
+					  AND is_folded=? 
+					  AND lines=? 
+					  AND mapping_id=? `,
 			int64(k.Addr), k.IsFolded, k.Lines, int64(k.MappingID),
 		).Scan(&id, &address, &l.IsFolded, &mappingID)
 	} else {
-		err = s.db.QueryRow(
-			`SELECT "location_id", "address", "is_folded"
-					FROM "locations"
+		err = s.db.QueryRowContext(ctx,
+			`SELECT "id", "address", "is_folded"
+					FROM "locations" l
 					WHERE normalized_address=? 
 					  AND mapping_id IS NULL 
 					  AND is_folded=? 
@@ -129,7 +125,7 @@ func (s *sqlMetaStore) GetLocationByKey(k metastore.LocationKey) (*profile.Locat
 	}
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, metastore.ErrLocationNotFound
+			return nil, ErrLocationNotFound
 		}
 		return nil, err
 	}
@@ -137,78 +133,354 @@ func (s *sqlMetaStore) GetLocationByKey(k metastore.LocationKey) (*profile.Locat
 	l.Address = uint64(address)
 
 	if mappingID != nil {
-		mapping, err := s.getMappingByID(*mappingID)
+		mapping, err := s.getMappingByID(ctx, int64(*mappingID))
 		if err != nil {
 			return nil, err
 		}
 		l.Mapping = mapping
 	}
 
-	lines, err := s.getLocationLines(l.ID)
+	linesByLocation, functionIDs, err := s.getLinesByLocationIDs(ctx, l.ID)
 	if err != nil {
 		return nil, err
 	}
-	l.Line = lines
 
-	return &l, nil
-}
-
-func (s *sqlMetaStore) GetLocationByID(id uint64) (*profile.Location, error) {
-	var (
-		l              profile.Location
-		mappingID      *int
-		locID, address int64
-	)
-	if err := s.db.QueryRow(
-		`SELECT "location_id", "address", "is_folded", "mapping_id"
-				FROM "locations"
-				WHERE location_id=?`, int64(id),
-	).Scan(&locID, &address, &l.IsFolded, &mappingID); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, metastore.ErrLocationNotFound
-		}
-		return nil, fmt.Errorf("GetLocationByID failed: %w", err)
-	}
-	l.ID = uint64(locID)
-	l.Address = uint64(address)
-
-	if mappingID != nil {
-		mapping, err := s.getMappingByID(*mappingID)
-		if err != nil {
-			return nil, fmt.Errorf("GetLocationByID failed: %w", err)
-		}
-		l.Mapping = mapping
-	}
-
-	lines, err := s.getLocationLines(l.ID)
+	functions, err := s.getFunctionsByIDs(ctx, functionIDs...)
 	if err != nil {
-		return nil, fmt.Errorf("GetLocationByID failed: %w", err)
+		return nil, err
 	}
-	l.Line = lines
+
+	for _, line := range linesByLocation[l.ID] {
+		l.Line = append(l.Line, profile.Line{
+			Line:     line.Line,
+			Function: functions[line.FunctionID],
+		})
+	}
 
 	return &l, nil
 }
 
-func (s *sqlMetaStore) CreateLocation(l *profile.Location) (uint64, error) {
-	k := metastore.MakeLocationKey(l)
+func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
+	map[uint64]*profile.Location,
+	error,
+) {
+	ctx, span := s.tracer.Start(ctx, "GetLocationsByIDs")
+	defer span.End()
+	span.SetAttributes(attribute.Int("location-ids-number", len(ids)))
+
+	res := make(map[uint64]*profile.Location, len(ids))
+
+	mappingIDs := []uint64{}
+	mappingIDsSeen := map[uint64]struct{}{}
+
+	sIds := ""
+	for i, id := range ids {
+		if i > 0 {
+			sIds += ","
+		}
+		sIds += strconv.FormatInt(int64(id), 10)
+	}
+
+	dbctx, dbspan := s.tracer.Start(ctx, "GetLocationsByIDs-SQL-query")
+	rows, err := s.db.QueryContext(dbctx,
+		fmt.Sprintf(`SELECT "id", "address", "is_folded", "mapping_id"
+				FROM "locations"
+				WHERE id IN (%s)`, sIds),
+	)
+	dbspan.End()
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	locationMappingID := map[uint64]uint64{}
+	for rows.Next() {
+		var (
+			l              *profile.Location = &profile.Location{}
+			mappingID      *int
+			locID, address int64
+		)
+
+		err := rows.Scan(&locID, &address, &l.IsFolded, &mappingID)
+		if err != nil {
+			return nil, err
+		}
+		l.ID = uint64(locID)
+		l.Address = uint64(address)
+		if _, found := res[l.ID]; !found {
+			res[l.ID] = l
+			if mappingID != nil {
+				mId := uint64(*mappingID)
+				locationMappingID[l.ID] = mId
+				if _, seen := mappingIDsSeen[mId]; !seen {
+					mappingIDs = append(mappingIDs, mId)
+					mappingIDsSeen[mId] = struct{}{}
+				}
+			}
+		}
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	mappings, err := s.GetMappingsByIDs(ctx, mappingIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	linesByLocation, functionIDs, err := s.getLinesByLocationIDs(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
+
+	functions, err := s.getFunctionsByIDs(ctx, functionIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	for locationID, location := range res {
+		location.Mapping = mappings[locationMappingID[locationID]]
+		locationLines := linesByLocation[locationID]
+		if len(locationLines) > 0 {
+			lines := make([]profile.Line, 0, len(locationLines))
+			for _, line := range locationLines {
+				function, found := functions[line.FunctionID]
+				if found {
+					lines = append(lines, profile.Line{
+						Line:     line.Line,
+						Function: function,
+					})
+				}
+			}
+			location.Line = lines
+		}
+	}
+
+	return res, nil
+}
+
+func (s *sqlMetaStore) GetMappingsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Mapping, error) {
+	ctx, span := s.tracer.Start(ctx, "GetMappingsByIDs")
+	defer span.End()
+	span.SetAttributes(attribute.Int("mapping-ids-length", len(ids)))
+
+	res := make(map[uint64]*profile.Mapping, len(ids))
+
+	sIds := ""
+	for i, id := range ids {
+		if i > 0 {
+			sIds += ","
+		}
+		sIds += strconv.FormatInt(int64(id), 10)
+	}
+
+	rows, err := s.db.QueryContext(ctx,
+		fmt.Sprintf(
+			`SELECT "id", "start", "limit", "offset", "file", "build_id",
+				"has_functions", "has_filenames", "has_line_numbers", "has_inline_frames"
+				FROM "mappings" WHERE id IN (%s)`, sIds),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			m                        *profile.Mapping = &profile.Mapping{}
+			id, start, limit, offset int64
+		)
+		err := rows.Scan(
+			&id, &start, &limit, &offset, &m.File, &m.BuildID,
+			&m.HasFunctions, &m.HasFilenames, &m.HasLineNumbers, &m.HasInlineFrames,
+		)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return nil, ErrMappingNotFound
+			}
+			return nil, fmt.Errorf("getMappingByID failed: %w", err)
+		}
+		m.ID = uint64(id)
+		m.Start = uint64(start)
+		m.Limit = uint64(limit)
+		m.Offset = uint64(offset)
+
+		if _, found := res[m.ID]; !found {
+			res[m.ID] = m
+		}
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+type locationLine struct {
+	Line       int64
+	FunctionID uint64
+}
+
+func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64) (map[uint64][]locationLine, []uint64, error) {
+	ctx, span := s.tracer.Start(ctx, "getLinesByLocationIDs")
+	defer span.End()
+
+	functionIDs := []uint64{}
+	functionIDsSeen := map[uint64]struct{}{}
+
+	res := make(map[uint64][]locationLine, len(ids))
+	remainingIds := []uint64{}
+	for _, id := range ids {
+		ll, found, err := s.cache.getLocationLinesByID(ctx, id)
+		if err != nil {
+			return res, functionIDs, err
+		}
+		if found {
+			for _, l := range ll {
+				if _, seen := functionIDsSeen[l.FunctionID]; !seen {
+					functionIDs = append(functionIDs, l.FunctionID)
+					functionIDsSeen[l.FunctionID] = struct{}{}
+				}
+			}
+			res[id] = ll
+			continue
+		}
+		remainingIds = append(remainingIds, id)
+	}
+	ids = remainingIds
+
+	if len(ids) == 0 {
+		return res, functionIDs, nil
+	}
+
+	sIds := ""
+	for i, id := range ids {
+		if i > 0 {
+			sIds += ","
+		}
+		sIds += strconv.FormatInt(int64(id), 10)
+	}
+
+	rows, err := s.db.QueryContext(ctx,
+		fmt.Sprintf(
+			`SELECT "location_id", "line", "function_id"
+				FROM "lines" WHERE location_id IN (%s)`, sIds),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	defer rows.Close()
+
+	retrievedLocationLines := make(map[uint64][]locationLine, len(ids))
+	for rows.Next() {
+		var (
+			lId int64
+			fId int64
+		)
+		l := locationLine{}
+		err := rows.Scan(
+			&lId, &l.Line, &fId,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		locationId := uint64(lId)
+		l.FunctionID = uint64(fId)
+
+		if _, found := retrievedLocationLines[locationId]; !found {
+			retrievedLocationLines[locationId] = []locationLine{}
+		}
+		retrievedLocationLines[locationId] = append(retrievedLocationLines[locationId], l)
+
+		if _, seen := functionIDsSeen[l.FunctionID]; !seen {
+			functionIDs = append(functionIDs, l.FunctionID)
+			functionIDsSeen[l.FunctionID] = struct{}{}
+		}
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for id, ll := range retrievedLocationLines {
+		res[id] = ll
+		err = s.cache.setLocationLinesByID(ctx, id, ll)
+		if err != nil {
+			return res, functionIDs, err
+		}
+	}
+
+	return res, functionIDs, nil
+}
+
+func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Function, error) {
+	ctx, span := s.tracer.Start(ctx, "getFunctionsByIDs")
+	defer span.End()
+	span.SetAttributes(attribute.Int("functions-ids-length", len(ids)))
+
+	res := make(map[uint64]*profile.Function, len(ids))
+
+	sIds := ""
+	for i, id := range ids {
+		if i > 0 {
+			sIds += ","
+		}
+		sIds += strconv.FormatInt(int64(id), 10)
+	}
+
+	rows, err := s.db.QueryContext(ctx,
+		fmt.Sprintf(
+			`SELECT "id", "name", "system_name", "filename", "start_line"
+				FROM "functions" WHERE id IN (%s)`, sIds),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		f := &profile.Function{}
+		err := rows.Scan(
+			&f.ID, &f.Name, &f.SystemName, &f.Filename, &f.StartLine,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, found := res[f.ID]; !found {
+			res[f.ID] = f
+		}
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) (uint64, error) {
+	k := MakeLocationKey(l)
 	var (
 		stmt *sql.Stmt
 		res  sql.Result
 		err  error
+		m    *profile.Mapping
 	)
 	if l.Mapping != nil {
 		// Make sure mapping already exists in the database.
-		var mappingID int
-		if err := s.db.QueryRow(
-			`SELECT "id" FROM "mappings" WHERE id=?`, int64(l.Mapping.ID),
-		).Scan(&mappingID); err != nil {
-			if err == sql.ErrNoRows {
-				return 0, metastore.ErrMappingNotFound
-			}
-			return 0, fmt.Errorf("CreateLocation failed: %w", err)
+		m, err = s.getMappingByID(ctx, int64(l.Mapping.ID))
+		if err != nil {
+			return 0, err
 		}
 
-		stmt, err = s.db.Prepare(`INSERT INTO "locations" (
+		stmt, err = s.db.PrepareContext(ctx, `INSERT INTO "locations" (
                          address, is_folded, mapping_id, normalized_address, lines
                          )
 					values(?,?,?,?,?)`)
@@ -217,10 +489,10 @@ func (s *sqlMetaStore) CreateLocation(l *profile.Location) (uint64, error) {
 		}
 		defer stmt.Close()
 
-		res, err = stmt.Exec(int64(l.Address), l.IsFolded, mappingID, int64(k.Addr), k.Lines)
+		res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(m.ID), int64(k.Addr), k.Lines)
 	} else {
 
-		stmt, err = s.db.Prepare(`INSERT INTO "locations" (
+		stmt, err = s.db.PrepareContext(ctx, `INSERT INTO "locations" (
                           address, is_folded, normalized_address, lines
                          ) values(?,?,?,?)`)
 		if err != nil {
@@ -228,7 +500,7 @@ func (s *sqlMetaStore) CreateLocation(l *profile.Location) (uint64, error) {
 		}
 		defer stmt.Close()
 
-		res, err = stmt.Exec(int64(l.Address), l.IsFolded, int64(k.Addr), k.Lines)
+		res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(k.Addr), k.Lines)
 	}
 
 	if err != nil {
@@ -240,46 +512,29 @@ func (s *sqlMetaStore) CreateLocation(l *profile.Location) (uint64, error) {
 		return 0, fmt.Errorf("CreateLocation failed: %w", err)
 	}
 
-	stmt, err = s.db.Prepare(
-		`UPDATE "locations" SET location_id=? WHERE id=?`,
-	)
-	if err != nil {
-		return 0, fmt.Errorf("CreateLocation failed: %w", err)
-	}
-	defer stmt.Close()
-
-	if l.ID == 0 {
-		_, err = stmt.Exec(locID, locID)
-	} else {
-		_, err = stmt.Exec(int64(l.ID), locID)
-	}
-	if err != nil {
-		return 0, fmt.Errorf("CreateLocation failed: %w", err)
-	}
-
-	if err := s.createLines(l.Line, locID); err != nil {
+	if err := s.createLines(ctx, l.Line, locID); err != nil {
 		return 0, err
 	}
 
 	return uint64(locID), nil
 }
 
-func (s *sqlMetaStore) UpdateLocation(l *profile.Location) error {
-	k := metastore.MakeLocationKey(l)
+func (s *sqlMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) error {
+	k := MakeLocationKey(l)
 	if l.Mapping != nil {
 		// Make sure mapping already exists in the database.
 		var mappingID int
-		if err := s.db.QueryRow(
+		if err := s.db.QueryRowContext(ctx,
 			`SELECT "id" FROM "mappings" WHERE id=?`, int64(l.Mapping.ID),
 		).Scan(&mappingID); err != nil {
 			if err == sql.ErrNoRows {
-				return metastore.ErrMappingNotFound
+				return ErrMappingNotFound
 			}
 			return fmt.Errorf("UpdateLocation failed: %w", err)
 		}
 
-		stmt, err := s.db.Prepare(
-			`UPDATE "locations" SET address=?, is_folded=?, mapping_id=?, normalized_address=?, lines=? WHERE location_id=?`,
+		stmt, err := s.db.PrepareContext(ctx,
+			`UPDATE "locations" SET address=?, is_folded=?, mapping_id=?, normalized_address=?, lines=? WHERE id=?`,
 		)
 
 		if err != nil {
@@ -287,12 +542,12 @@ func (s *sqlMetaStore) UpdateLocation(l *profile.Location) error {
 		}
 		defer stmt.Close()
 
-		if _, err := stmt.Exec(int64(l.Address), l.IsFolded, mappingID, int64(k.Addr), k.Lines, int64(l.ID)); err != nil {
+		if _, err := stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, mappingID, int64(k.Addr), k.Lines, int64(l.ID)); err != nil {
 			return fmt.Errorf("UpdateLocation failed: %w", err)
 		}
 	} else {
-		stmt, err := s.db.Prepare(
-			`UPDATE "locations" SET address=?, is_folded=? WHERE location_id=?`,
+		stmt, err := s.db.PrepareContext(ctx,
+			`UPDATE "locations" SET address=?, is_folded=? WHERE id=?`,
 		)
 
 		if err != nil {
@@ -300,31 +555,31 @@ func (s *sqlMetaStore) UpdateLocation(l *profile.Location) error {
 		}
 		defer stmt.Close()
 
-		if _, err = stmt.Exec(int64(l.Address), l.IsFolded, int64(l.ID)); err != nil {
+		if _, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(l.ID)); err != nil {
 			return fmt.Errorf("UpdateLocation failed: %w", err)
 		}
 	}
 
 	var locID int64
-	if err := s.db.QueryRow(
-		`SELECT "id" FROM "locations" WHERE location_id=?`, int64(l.ID),
+	if err := s.db.QueryRowContext(ctx,
+		`SELECT "id" FROM "locations" WHERE id=?`, int64(l.ID),
 	).Scan(&locID); err != nil {
 		if err == sql.ErrNoRows {
-			return metastore.ErrLocationNotFound
+			return ErrLocationNotFound
 		}
 		return fmt.Errorf("UpdateLocation failed: %w", err)
 	}
 
-	if err := s.createLines(l.Line, locID); err != nil {
+	if err := s.createLines(ctx, l.Line, locID); err != nil {
 		return fmt.Errorf("UpdateLocation failed: %w", err)
 	}
 
 	return nil
 }
 
-func (s *sqlMetaStore) GetLocations() ([]*profile.Location, error) {
-	rows, err := s.db.Query(
-		`SELECT l."location_id", l."address", l."is_folded", m."id",
+func (s *sqlMetaStore) GetLocations(ctx context.Context) ([]*profile.Location, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT l."id", l."address", l."is_folded", m."id",
        					m."start", m."limit", m."offset", m."file", m."build_id",
        					m."has_functions", m."has_filenames", m."has_line_numbers", m."has_inline_frames"
 				FROM "locations" l
@@ -377,7 +632,7 @@ func (s *sqlMetaStore) GetLocations() ([]*profile.Location, error) {
 			}
 		}
 
-		lines, err := s.getLocationLines(l.ID)
+		lines, err := s.getLocationLines(ctx, l.ID)
 		if err != nil {
 			return nil, fmt.Errorf("GetLocations failed: %w", err)
 		}
@@ -388,17 +643,17 @@ func (s *sqlMetaStore) GetLocations() ([]*profile.Location, error) {
 	return locs, nil
 }
 
-func (s *sqlMetaStore) GetUnsymbolizedLocations() ([]*profile.Location, error) {
-	rows, err := s.db.Query(
-		`SELECT l."location_id", l."address", l."is_folded", m."id",
+func (s *sqlMetaStore) GetUnsymbolizedLocations(ctx context.Context) ([]*profile.Location, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT l."id", l."address", l."is_folded", m."id",
        					m."start", m."limit", m."offset", m."file", m."build_id",
        					m."has_functions", m."has_filenames", 
        					m."has_line_numbers", m."has_inline_frames"
 				FROM "locations" l
 				JOIN "mappings" m ON l.mapping_id = m.id
-				LEFT JOIN "location_lines" ll ON l."id" = ll."location_id"
-                WHERE ll."line_id" IS NULL 
-                  AND l."location_id" IS NOT NULL`,
+				LEFT JOIN "lines" ll ON l."id" = ll."location_id"
+                WHERE ll."line" IS NULL 
+                  AND l."id" IS NOT NULL`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("GetUnsymbolizedLocations failed: %w", err)
@@ -452,28 +707,42 @@ func (s *sqlMetaStore) GetUnsymbolizedLocations() ([]*profile.Location, error) {
 	return locs, nil
 }
 
-func (s *sqlMetaStore) GetFunctionByKey(k metastore.FunctionKey) (*profile.Function, error) {
+func (s *sqlMetaStore) GetFunctionByKey(ctx context.Context, k FunctionKey) (*profile.Function, error) {
 	var (
 		fn profile.Function
 		id int64
 	)
 
-	if err := s.db.QueryRow(
+	fn, found, err := s.cache.getFunctionByKey(ctx, k)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &fn, nil
+	}
+
+	if err := s.db.QueryRowContext(ctx,
 		`SELECT "id", "name", "system_name", "filename", "start_line"
 				FROM "functions"
 				WHERE start_line=? AND name=? AND system_name=? AND filename=?`,
 		k.StartLine, k.Name, k.SystemName, k.FileName,
 	).Scan(&id, &fn.Name, &fn.SystemName, &fn.Filename, &fn.StartLine); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, metastore.ErrFunctionNotFound
+			return nil, ErrFunctionNotFound
 		}
 		return nil, fmt.Errorf("GetFunctionByKey failed: %w", err)
 	}
 	fn.ID = uint64(id)
+
+	err = s.cache.setFunctionByKey(ctx, k, fn)
+	if err != nil {
+		return nil, err
+	}
+
 	return &fn, nil
 }
 
-func (s *sqlMetaStore) CreateFunction(fn *profile.Function) (uint64, error) {
+func (s *sqlMetaStore) CreateFunction(ctx context.Context, fn *profile.Function) (uint64, error) {
 	var (
 		stmt *sql.Stmt
 		res  sql.Result
@@ -481,7 +750,7 @@ func (s *sqlMetaStore) CreateFunction(fn *profile.Function) (uint64, error) {
 	)
 	// TODO(kakkoyun): Is this even possible to have an ID not 0?
 	if fn.ID != 0 {
-		stmt, err = s.db.Prepare(
+		stmt, err = s.db.PrepareContext(ctx,
 			`INSERT INTO "functions" (
                          id, name, system_name, filename, start_line
                          ) values(?,?,?,?,?)`,
@@ -491,9 +760,9 @@ func (s *sqlMetaStore) CreateFunction(fn *profile.Function) (uint64, error) {
 		}
 		defer stmt.Close()
 
-		res, err = stmt.Exec(int64(fn.ID), fn.Name, fn.SystemName, fn.Filename, fn.StartLine)
+		res, err = stmt.ExecContext(ctx, int64(fn.ID), fn.Name, fn.SystemName, fn.Filename, fn.StartLine)
 	} else {
-		stmt, err = s.db.Prepare(
+		stmt, err = s.db.PrepareContext(ctx,
 			`INSERT INTO "functions" (
                          name, system_name, filename, start_line
                          ) values(?,?,?,?)`,
@@ -503,7 +772,7 @@ func (s *sqlMetaStore) CreateFunction(fn *profile.Function) (uint64, error) {
 		}
 		defer stmt.Close()
 
-		res, err = stmt.Exec(fn.Name, fn.SystemName, fn.Filename, fn.StartLine)
+		res, err = stmt.ExecContext(ctx, fn.Name, fn.SystemName, fn.Filename, fn.StartLine)
 	}
 
 	if err != nil {
@@ -518,8 +787,8 @@ func (s *sqlMetaStore) CreateFunction(fn *profile.Function) (uint64, error) {
 	return uint64(fnID), nil
 }
 
-func (s *sqlMetaStore) GetFunctions() ([]*profile.Function, error) {
-	rows, err := s.db.Query(`SELECT "id", "name", "system_name", "filename", "start_line" FROM "functions"`)
+func (s *sqlMetaStore) GetFunctions(ctx context.Context) ([]*profile.Function, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT "id", "name", "system_name", "filename", "start_line" FROM "functions"`)
 	if err != nil {
 		return nil, err
 	}
@@ -540,13 +809,21 @@ func (s *sqlMetaStore) GetFunctions() ([]*profile.Function, error) {
 	return funcs, nil
 }
 
-func (s *sqlMetaStore) GetMappingByKey(k metastore.MappingKey) (*profile.Mapping, error) {
+func (s *sqlMetaStore) GetMappingByKey(ctx context.Context, k MappingKey) (*profile.Mapping, error) {
 	var (
 		m                        profile.Mapping
 		id, start, limit, offset int64
 	)
 
-	if err := s.db.QueryRow(
+	m, found, err := s.cache.getMappingByKey(ctx, k)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &m, nil
+	}
+
+	if err := s.db.QueryRowContext(ctx,
 		`SELECT "id", "start", "limit", "offset", "file", "build_id",
 				"has_functions", "has_filenames", "has_line_numbers", "has_inline_frames"
 				FROM "mappings"
@@ -557,7 +834,7 @@ func (s *sqlMetaStore) GetMappingByKey(k metastore.MappingKey) (*profile.Mapping
 		&m.HasFunctions, &m.HasFilenames, &m.HasLineNumbers, &m.HasInlineFrames,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, metastore.ErrMappingNotFound
+			return nil, ErrMappingNotFound
 		}
 		return nil, fmt.Errorf("GetMappingByKey failed: %w", err)
 	}
@@ -565,17 +842,23 @@ func (s *sqlMetaStore) GetMappingByKey(k metastore.MappingKey) (*profile.Mapping
 	m.Start = uint64(start)
 	m.Limit = uint64(limit)
 	m.Offset = uint64(offset)
+
+	err = s.cache.setMappingByKey(ctx, k, m)
+	if err != nil {
+		return nil, err
+	}
+
 	return &m, nil
 }
 
-func (s *sqlMetaStore) CreateMapping(m *profile.Mapping) (uint64, error) {
+func (s *sqlMetaStore) CreateMapping(ctx context.Context, m *profile.Mapping) (uint64, error) {
 	var (
 		stmt *sql.Stmt
 		res  sql.Result
 		err  error
 	)
 	if m.ID == 0 {
-		stmt, err = s.db.Prepare(
+		stmt, err = s.db.PrepareContext(ctx,
 			`INSERT INTO "mappings" (
                         "start", "limit", "offset", "file", "build_id",
                         "has_functions", "has_filenames", "has_line_numbers", "has_inline_frames",
@@ -587,14 +870,14 @@ func (s *sqlMetaStore) CreateMapping(m *profile.Mapping) (uint64, error) {
 		}
 		defer stmt.Close()
 
-		k := metastore.MakeMappingKey(m)
-		res, err = stmt.Exec(
+		k := MakeMappingKey(m)
+		res, err = stmt.ExecContext(ctx,
 			int64(m.Start), int64(m.Limit), int64(m.Offset), m.File, m.BuildID,
 			m.HasFunctions, m.HasFilenames, m.HasLineNumbers, m.HasInlineFrames,
 			int64(k.Size), k.BuildIDOrFile,
 		)
 	} else {
-		stmt, err = s.db.Prepare(
+		stmt, err = s.db.PrepareContext(ctx,
 			`INSERT INTO "mappings" (
                         "id", "start", "limit", "offset", "file", "build_id",
                         "has_functions", "has_filenames", "has_line_numbers", "has_inline_frames",
@@ -606,8 +889,8 @@ func (s *sqlMetaStore) CreateMapping(m *profile.Mapping) (uint64, error) {
 		}
 		defer stmt.Close()
 
-		k := metastore.MakeMappingKey(m)
-		res, err = stmt.Exec(
+		k := MakeMappingKey(m)
+		res, err = stmt.ExecContext(ctx,
 			int64(m.ID), int64(m.Start), int64(m.Limit), int64(m.Offset), m.File, m.BuildID,
 			m.HasFunctions, m.HasFilenames, m.HasLineNumbers, m.HasInlineFrames,
 			int64(k.Size), k.BuildIDOrFile,
@@ -639,12 +922,21 @@ func (s *sqlMetaStore) Ping() error {
 	return nil
 }
 
-func (s *sqlMetaStore) getMappingByID(mid int) (*profile.Mapping, error) {
+func (s *sqlMetaStore) getMappingByID(ctx context.Context, mid int64) (*profile.Mapping, error) {
 	var (
 		m                        profile.Mapping
 		id, start, limit, offset int64
 	)
-	err := s.db.QueryRow(
+
+	m, found, err := s.cache.getMappingByID(ctx, uint64(mid))
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &m, nil
+	}
+
+	err = s.db.QueryRowContext(ctx,
 		`SELECT "id", "start", "limit", "offset", "file", "build_id",
 				"has_functions", "has_filenames", "has_line_numbers", "has_inline_frames"
 				FROM "mappings" WHERE id=?`, mid,
@@ -654,7 +946,7 @@ func (s *sqlMetaStore) getMappingByID(mid int) (*profile.Mapping, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, metastore.ErrMappingNotFound
+			return nil, ErrMappingNotFound
 		}
 		return nil, fmt.Errorf("getMappingByID failed: %w", err)
 	}
@@ -662,18 +954,23 @@ func (s *sqlMetaStore) getMappingByID(mid int) (*profile.Mapping, error) {
 	m.Start = uint64(start)
 	m.Limit = uint64(limit)
 	m.Offset = uint64(offset)
+
+	err = s.cache.setMappingByID(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+
 	return &m, nil
 }
 
-func (s *sqlMetaStore) getLocationLines(locationID uint64) ([]profile.Line, error) {
+func (s *sqlMetaStore) getLocationLines(ctx context.Context, locationID uint64) ([]profile.Line, error) {
 	var lines []profile.Line
-	rows, err := s.db.Query(
+	rows, err := s.db.QueryContext(ctx,
 		`SELECT ln."line", fn."id", fn."name", fn."system_name", fn."filename", fn."start_line"
-				FROM "location_lines" ll
-				JOIN "locations" loc ON ll."location_id" = loc."id"
-				JOIN "lines" ln ON ll."line_id" = ln."id"
+				FROM "lines" ln
+				JOIN "locations" loc ON ln."location_id" = loc."id"
 				JOIN "functions" fn ON ln."function_id" = fn."id"
-				WHERE loc."location_id"=? ORDER BY ln."line" ASC`, int64(locationID),
+				WHERE loc."id"=? ORDER BY ln."line" ASC`, int64(locationID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("getLocationLines failed: %w", err)
@@ -696,9 +993,9 @@ func (s *sqlMetaStore) getLocationLines(locationID uint64) ([]profile.Line, erro
 	return lines, nil
 }
 
-func (s *sqlMetaStore) getOrCreateFunction(f *profile.Function) (uint64, error) {
+func (s *sqlMetaStore) getOrCreateFunction(ctx context.Context, f *profile.Function) (uint64, error) {
 	if f.ID == 0 {
-		fnID, err := s.CreateFunction(f)
+		fnID, err := s.CreateFunction(ctx, f)
 		if err != nil {
 			return 0, err
 		}
@@ -706,9 +1003,9 @@ func (s *sqlMetaStore) getOrCreateFunction(f *profile.Function) (uint64, error) 
 	}
 
 	var fnID uint64
-	if err := s.db.QueryRow(`SELECT "id" FROM "functions" WHERE id=?`, int64(f.ID)).Scan(&fnID); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT "id" FROM "functions" WHERE id=?`, int64(f.ID)).Scan(&fnID); err != nil {
 		if err == sql.ErrNoRows {
-			fnID, err = s.CreateFunction(f)
+			fnID, err = s.CreateFunction(ctx, f)
 			if err != nil {
 				return 0, err
 			}
@@ -721,15 +1018,16 @@ func (s *sqlMetaStore) getOrCreateFunction(f *profile.Function) (uint64, error) 
 	return fnID, nil
 }
 
-func (s *sqlMetaStore) createLines(lines []profile.Line, locID int64) error {
+func (s *sqlMetaStore) createLines(ctx context.Context, lines []profile.Line, locID int64) error {
 	if len(lines) > 0 {
-		q := `INSERT INTO "lines" (line, function_id) VALUES `
+		q := `INSERT INTO "lines" (location_id, line, function_id) VALUES `
 		for i, ln := range lines {
-			fnID, err := s.getOrCreateFunction(ln.Function)
+			fnID, err := s.getOrCreateFunction(ctx, ln.Function)
 			if err != nil {
 				return err
 			}
-			q += fmt.Sprintf(`(%s, %s)`,
+			q += fmt.Sprintf(`(%s, %s, %s)`,
+				strconv.FormatInt(locID, 10),
 				strconv.FormatInt(ln.Line, 10),
 				strconv.FormatInt(int64(fnID), 10))
 			if i != len(lines)-1 {
@@ -737,43 +1035,13 @@ func (s *sqlMetaStore) createLines(lines []profile.Line, locID int64) error {
 			}
 		}
 		q += ";"
-		stmt, err := s.db.Prepare(q)
+		stmt, err := s.db.PrepareContext(ctx, q)
 		if err != nil {
 			return err
 		}
 		defer stmt.Close()
 
-		res, err := stmt.Exec()
-		if err != nil {
-			return err
-		}
-
-		// Assuming ids are auto-incremented, we populate locations_lines going backwards.
-		rf, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		lastLineID, err := res.LastInsertId()
-		if err != nil {
-			return err
-		}
-		q = `INSERT INTO "location_lines" (line_id, location_id) VALUES `
-		for i := int64(0); i < rf; i++ {
-			q += fmt.Sprintf(`(%s, %s)`,
-				strconv.FormatInt(lastLineID-i, 10),
-				strconv.FormatInt(locID, 10))
-			if i != rf-1 {
-				q += ", "
-			}
-		}
-		q += ";"
-		stmt, err = s.db.Prepare(q)
-		if err != nil {
-			return err
-		}
-		defer stmt.Close()
-
-		_, err = stmt.Exec()
+		_, err = stmt.ExecContext(ctx)
 		if err != nil {
 			return err
 		}

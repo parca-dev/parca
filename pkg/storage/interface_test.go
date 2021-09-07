@@ -14,28 +14,35 @@
 package storage
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestCopyInstantProfileTree(t *testing.T) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("compyinstantprofiletree")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"compyinstantprofiletree",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})
 	require.NoError(t, err)
-	profileTree := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
+	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 
 	profileTreeCopy := CopyInstantProfileTree(profileTree)
 

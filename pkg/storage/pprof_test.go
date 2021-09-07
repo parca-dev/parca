@@ -14,30 +14,37 @@
 package storage
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestGeneratePprof(t *testing.T) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("generatepprof")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"generatepprof",
+	)
 	t.Cleanup(func() {
 		l.Close()
 	})
 	require.NoError(t, err)
-	p := ProfileFromPprof(log.NewNopLogger(), l, p1, 0)
-	res, err := generatePprof(l, p)
+	p := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	res, err := generatePprof(ctx, l, p)
 	require.NoError(t, err)
 
 	tmpfile, err := ioutil.TempFile("", "pprof")

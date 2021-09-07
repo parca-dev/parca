@@ -11,11 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sql
+package metastore
 
-import "github.com/parca-dev/parca/pkg/storage/metastore"
-
-var _ metastore.ProfileMetaStore = &RemoteMetaStore{}
+var _ ProfileMetaStore = &RemoteMetaStore{}
 
 type RemoteMetaStore struct {
 	*sqlMetaStore

@@ -14,14 +14,16 @@
 package storage
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestDiffProfileSimple(t *testing.T) {
@@ -236,6 +238,8 @@ func TestDiffProfileDeep(t *testing.T) {
 }
 
 func BenchmarkDiff(b *testing.B) {
+	ctx := context.Background()
+
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(b, err)
 	p1, err := profile.Parse(f)
@@ -247,13 +251,16 @@ func BenchmarkDiff(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastoresql.NewInMemoryProfileMetaStore("benchdiff")
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"benchdiff",
+	)
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		l.Close()
 	})
-	profileTree1 := ProfileTreeFromPprof(log.NewNopLogger(), l, p1, 0)
-	profileTree2 := ProfileTreeFromPprof(log.NewNopLogger(), l, p2, 0)
+	profileTree1 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profileTree2 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 
 	prof1 := &Profile{
 		Tree: profileTree1,

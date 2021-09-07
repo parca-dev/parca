@@ -20,14 +20,19 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	metastoresql "github.com/parca-dev/parca/pkg/storage/metastore/sql"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestMergeMemSeriesConsistency(t *testing.T) {
-	s, err := metastoresql.NewInMemoryProfileMetaStore("memseriesconsistency")
+	ctx := context.Background()
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		trace.NewNoopTracerProvider().Tracer(""),
+		"memseriesconsistency",
+	)
 	t.Cleanup(func() {
 		s.Close()
 	})
@@ -38,9 +43,8 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p := ProfileFromPprof(log.NewNopLogger(), s, pprof1, 0)
+	p := ProfileFromPprof(ctx, log.NewNopLogger(), s, pprof1, 0)
 
-	ctx := context.Background()
 	db := OpenDB(prometheus.NewRegistry())
 
 	app, err := db.Appender(ctx, labels.Labels{

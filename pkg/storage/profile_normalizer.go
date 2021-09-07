@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strconv"
@@ -39,7 +40,7 @@ type profileNormalizer struct {
 }
 
 // Returns the mapped sample and whether it is new or a known sample.
-func (pn *profileNormalizer) mapSample(src *profile.Sample, sampleIndex int) (*profile.Sample, bool) {
+func (pn *profileNormalizer) mapSample(ctx context.Context, src *profile.Sample, sampleIndex int) (*profile.Sample, bool) {
 	s := &profile.Sample{
 		Location: make([]*profile.Location, len(src.Location)),
 		Label:    make(map[string][]string, len(src.Label)),
@@ -47,7 +48,7 @@ func (pn *profileNormalizer) mapSample(src *profile.Sample, sampleIndex int) (*p
 		NumUnit:  make(map[string][]string, len(src.NumLabel)),
 	}
 	for i, l := range src.Location {
-		s.Location[i] = pn.mapLocation(l)
+		s.Location[i] = pn.mapLocation(ctx, l)
 	}
 	for k, v := range src.Label {
 		vv := make([]string, len(v))
@@ -78,7 +79,7 @@ func (pn *profileNormalizer) mapSample(src *profile.Sample, sampleIndex int) (*p
 	return s, true
 }
 
-func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Location {
+func (pn *profileNormalizer) mapLocation(ctx context.Context, src *profile.Location) *profile.Location {
 	if src == nil {
 		return nil
 	}
@@ -87,7 +88,7 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 		return l
 	}
 
-	mi := pn.mapMapping(src.Mapping)
+	mi := pn.mapMapping(ctx, src.Mapping)
 	l := &profile.Location{
 		Mapping:  mi.m,
 		Address:  uint64(int64(src.Address) + mi.offset),
@@ -95,12 +96,12 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 		IsFolded: src.IsFolded,
 	}
 	for i, ln := range src.Line {
-		l.Line[i] = pn.mapLine(ln)
+		l.Line[i] = pn.mapLine(ctx, ln)
 	}
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
 	k := metastore.MakeLocationKey(l)
-	loc, err := pn.metaStore.GetLocationByKey(k)
+	loc, err := pn.metaStore.GetLocationByKey(ctx, k)
 	if err != nil {
 		level.Debug(pn.logger).Log("msg", "location not found", "key", k, "err", err)
 	}
@@ -110,7 +111,7 @@ func (pn *profileNormalizer) mapLocation(src *profile.Location) *profile.Locatio
 	}
 	pn.locationsByID[src.ID] = l
 
-	id, err := pn.metaStore.CreateLocation(l)
+	id, err := pn.metaStore.CreateLocation(ctx, l)
 	if err != nil {
 		level.Warn(pn.logger).Log("msg", "failed to create location", "err", err)
 	} else {
@@ -124,7 +125,7 @@ type mapInfo struct {
 	offset int64
 }
 
-func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
+func (pn *profileNormalizer) mapMapping(ctx context.Context, src *profile.Mapping) mapInfo {
 	if src == nil {
 		return mapInfo{}
 	}
@@ -135,7 +136,7 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 
 	// Check memoization tables.
 	mk := metastore.MakeMappingKey(src)
-	m, err := pn.metaStore.GetMappingByKey(mk)
+	m, err := pn.metaStore.GetMappingByKey(ctx, mk)
 	if err != nil {
 		level.Debug(pn.logger).Log("msg", "mapping not found", "key", mk, "err", err)
 	}
@@ -157,7 +158,7 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	}
 
 	// Update memoization tables.
-	id, err := pn.metaStore.CreateMapping(m)
+	id, err := pn.metaStore.CreateMapping(ctx, m)
 	if err != nil {
 		level.Warn(pn.logger).Log("msg", "failed to create mapping", "err", err)
 	} else {
@@ -168,15 +169,15 @@ func (pn *profileNormalizer) mapMapping(src *profile.Mapping) mapInfo {
 	return mi
 }
 
-func (pn *profileNormalizer) mapLine(src profile.Line) profile.Line {
+func (pn *profileNormalizer) mapLine(ctx context.Context, src profile.Line) profile.Line {
 	ln := profile.Line{
-		Function: pn.mapFunction(src.Function),
+		Function: pn.mapFunction(ctx, src.Function),
 		Line:     src.Line,
 	}
 	return ln
 }
 
-func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Function {
+func (pn *profileNormalizer) mapFunction(ctx context.Context, src *profile.Function) *profile.Function {
 	if src == nil {
 		return nil
 	}
@@ -184,7 +185,7 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 		return f
 	}
 	k := metastore.MakeFunctionKey(src)
-	f, err := pn.metaStore.GetFunctionByKey(k)
+	f, err := pn.metaStore.GetFunctionByKey(ctx, k)
 	if err != nil {
 		level.Debug(pn.logger).Log("msg", "function not found", "key", k, "err", err)
 	}
@@ -199,7 +200,7 @@ func (pn *profileNormalizer) mapFunction(src *profile.Function) *profile.Functio
 		StartLine:  src.StartLine,
 	}
 
-	id, err := pn.metaStore.CreateFunction(f)
+	id, err := pn.metaStore.CreateFunction(ctx, f)
 	if err != nil {
 		level.Warn(pn.logger).Log("msg", "failed to create function", "err", err)
 	} else {
