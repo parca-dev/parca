@@ -54,11 +54,14 @@ import (
 )
 
 type Flags struct {
-	ConfigPath         string   `kong:"help='Path to config file.',default='parca.yaml'"`
-	LogLevel           string   `kong:"enum='error,warn,info,debug',help='Log level.',default='info'"`
-	Port               string   `kong:"help='Port string for server',default=':7070'"`
-	CORSAllowedOrigins []string `kong:"help='Allowed CORS origins.'"`
-	OTLPAddress        string   `kong:"help='OpenTelemetry collector address to send traces to.'"`
+	ConfigPath         string   `default:"parca.yaml" help:"Path to config file."`
+	LogLevel           string   `default:"info" enum:"error,warn,info,debug" help:"log level."`
+	Port               string   `default:":7070" help:"Port string for server"`
+	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
+	OTLPAddress        string   `help:"OpenTelemetry collector address to send traces to."`
+
+	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
+	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
 }
 
 // Run the parca server
@@ -100,7 +103,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 	defer mStr.Close()
 
-	db := storage.OpenDB(reg)
+	dbOptions := &storage.DBOptions{
+		Retention:            flags.StorageTSDBRetentionTime,
+		HeadExpensiveMetrics: flags.StorageTSDBExpensiveMetrics,
+	}
+	db := storage.OpenDB(reg, dbOptions)
+
 	s := profilestore.NewProfileStore(
 		logger,
 		tracerProvider.Tracer("profilestore"),
@@ -118,6 +126,14 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
+	{
+		ctx, cancel := context.WithCancel(ctx)
+		gr.Add(func() error {
+			return db.Run(ctx)
+		}, func(err error) {
+			cancel()
+		})
+	}
 	gr.Add(
 		func() error {
 			return parcaserver.ListenAndServe(

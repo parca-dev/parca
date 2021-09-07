@@ -23,7 +23,7 @@ import (
 )
 
 func TestPostingsForMatchers(t *testing.T) {
-	h := NewHead(prometheus.NewRegistry())
+	h := NewHead(prometheus.NewRegistry(), nil)
 	h.minTime = *atomic.NewInt64(-1)
 	h.maxTime = *atomic.NewInt64(1)
 	h.postings.Add(0, labels.Labels{{Name: "n", Value: "1"}})

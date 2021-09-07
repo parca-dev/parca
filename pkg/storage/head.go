@@ -17,6 +17,7 @@ import (
 	"context"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/parca-dev/parca/pkg/storage/index"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,8 +26,6 @@ import (
 )
 
 type Head struct {
-	reg prometheus.Registerer
-
 	minTime, maxTime atomic.Int64 // Current min and max of the samples included in the head.
 	lastSeriesID     atomic.Uint64
 	numSeries        atomic.Uint64
@@ -45,12 +44,23 @@ type Head struct {
 	seriesChunksSize    *prometheus.SummaryVec
 	seriesChunksSamples *prometheus.SummaryVec
 	profilesAppended    prometheus.Counter
+	truncateDuration    prometheus.Summary
+	truncatedChunks     prometheus.Counter
 }
 
-func NewHead(r prometheus.Registerer) *Head {
+type HeadOptions struct {
+	ExpensiveMetrics bool
+}
+
+func NewHead(r prometheus.Registerer, opts *HeadOptions) *Head {
+	if opts == nil {
+		opts = &HeadOptions{
+			ExpensiveMetrics: false,
+		}
+	}
+
 	h := &Head{
 		postings: index.NewMemPostings(),
-		reg:      r,
 
 		minTimeGauge: prometheus.NewDesc(
 			"parca_tsdb_head_min_time",
@@ -86,6 +96,14 @@ func NewHead(r prometheus.Registerer) *Head {
 			Name: "parca_tsdb_head_profiles_appended_total",
 			Help: "Total number of appended profiles.",
 		}),
+		truncateDuration: prometheus.NewSummary(prometheus.SummaryOpts{
+			Name: "parca_tsdb_head_truncate_duration_seconds",
+			Help: "Runtime of truncating old chunks in the head block.",
+		}),
+		truncatedChunks: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "parca_tsdb_head_truncated_chunks_total",
+			Help: "The total amount of truncated chunks over time.",
+		}),
 	}
 
 	h.series = newStripeSeries(DefaultStripeSize, h.updateMaxTime)
@@ -95,10 +113,29 @@ func NewHead(r prometheus.Registerer) *Head {
 		h.seriesChunksSize,
 		h.seriesChunksSamples,
 		h.profilesAppended,
+		h.truncateDuration,
+		h.truncatedChunks,
 	)
 
 	h.minTime.Store(math.MaxInt64)
 	h.maxTime.Store(math.MinInt64)
+
+	if opts.ExpensiveMetrics {
+		// TODO: Actually do use the cancel function.
+		ctx := context.Background()
+		go func() {
+			t := time.NewTicker(time.Minute)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+					h.stats()
+				}
+			}
+		}()
+	}
+
 	return h
 }
 
@@ -112,9 +149,6 @@ func (h *Head) Collect(metrics chan<- prometheus.Metric) {
 	metrics <- prometheus.MustNewConstMetric(h.seriesCounter, prometheus.CounterValue, float64(h.numSeries.Load()))
 	metrics <- prometheus.MustNewConstMetric(h.minTimeGauge, prometheus.GaugeValue, float64(h.MinTime()/1000))
 	metrics <- prometheus.MustNewConstMetric(h.maxTimeGauge, prometheus.GaugeValue, float64(h.MaxTime()/1000))
-
-	// Uncomment to enable pretty heavy metrics.
-	h.stats()
 }
 
 // initTime initializes a head with the first timestamp. This only needs to be called
@@ -224,6 +258,33 @@ func (h *Head) stats() {
 		}
 		h.series.locks[i].RUnlock()
 	}
+}
+
+// Truncate removes old data before mint from the head and WAL.
+func (h *Head) Truncate(mint int64) error {
+	return h.truncateMemory(mint)
+}
+
+func (h *Head) truncateMemory(mint int64) error {
+	if h.MinTime() > mint {
+		return nil
+	}
+
+	// Ensure that max time is at least as high as min time.
+	for h.MaxTime() < mint {
+		h.maxTime.CAS(h.MaxTime(), mint)
+	}
+
+	start := time.Now()
+
+	_, truncatedChunks, actualMint := h.series.truncate(mint)
+
+	h.truncateDuration.Observe(time.Since(start).Seconds())
+	h.truncatedChunks.Add(float64(truncatedChunks))
+
+	h.minTime.Store(actualMint)
+
+	return nil
 }
 
 func (h *Head) appender(lset labels.Labels) (Appender, error) {
@@ -400,6 +461,38 @@ func (s stripeSeries) getByHash(hash uint64, lset labels.Labels) *MemSeries {
 	s.locks[i].RUnlock()
 
 	return series
+}
+
+func (s stripeSeries) truncate(mint int64) (map[uint64]struct{}, int, int64) {
+	var (
+		deleted               = map[uint64]struct{}{}
+		truncatedChunks       = 0
+		actualMint      int64 = math.MaxInt64
+	)
+
+	for i := 0; i < s.size; i++ {
+		if len(s.hashes[i]) == 0 {
+			continue
+		}
+		s.locks[i].Lock()
+		for _, all := range s.hashes[i] {
+			for _, series := range all {
+				truncatedChunks += series.truncateChunksBefore(mint)
+
+				// TODO: Delete series that have no chunks left entirely.
+				if series.minTime < actualMint {
+					actualMint = series.minTime
+				}
+			}
+		}
+		s.locks[i].Unlock()
+	}
+
+	if actualMint == math.MaxInt64 {
+		actualMint = mint
+	}
+
+	return deleted, truncatedChunks, actualMint
 }
 
 // seriesHashmap is a simple hashmap for memSeries by their label set. It is built

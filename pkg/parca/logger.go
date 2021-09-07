@@ -62,5 +62,5 @@ func NewLogger(logLevel, logFormat, debugName string) log.Logger {
 		logger = log.With(logger, "name", debugName)
 	}
 
-	return log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.Caller(4))
+	return log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.Caller(3))
 }

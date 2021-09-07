@@ -40,7 +40,7 @@ import (
 
 func Test_QueryRange_EmptyStore(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry())
+	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	q := New(
 		log.NewNopLogger(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -64,7 +64,7 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry())
+	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		trace.NewNoopTracerProvider().Tracer(""),
 		"queryrangevalid",
@@ -126,7 +126,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry())
+	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		trace.NewNoopTracerProvider().Tracer(""),
 		"queryrangelimited",
@@ -302,7 +302,7 @@ func Test_Query_InputValidation(t *testing.T) {
 
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry())
+	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		trace.NewNoopTracerProvider().Tracer(""),
 		"querysimple",
@@ -358,7 +358,7 @@ func Test_Query_Simple(t *testing.T) {
 
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry())
+	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		trace.NewNoopTracerProvider().Tracer(""),
 		"querydiff",
@@ -466,7 +466,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.StopTimer()
 				ctx := context.Background()
-				db := storage.OpenDB(prometheus.NewRegistry())
+				db := storage.OpenDB(prometheus.NewRegistry(), nil)
 				q := New(
 					log.NewNopLogger(),
 					trace.NewNoopTracerProvider().Tracer(""),
@@ -528,7 +528,7 @@ func Test_Query_Merge(t *testing.T) {
 
 	for k := 0.; k <= 10; k++ {
 		ctx := context.Background()
-		db := storage.OpenDB(prometheus.NewRegistry())
+		db := storage.OpenDB(prometheus.NewRegistry(), nil)
 		q := New(
 			log.NewNopLogger(),
 			trace.NewNoopTracerProvider().Tracer(""),

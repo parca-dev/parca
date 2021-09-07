@@ -45,7 +45,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 
 	p := ProfileFromPprof(ctx, log.NewNopLogger(), s, pprof1, 0)
 
-	db := OpenDB(prometheus.NewRegistry())
+	db := OpenDB(prometheus.NewRegistry(), nil)
 
 	app, err := db.Appender(ctx, labels.Labels{
 		labels.Label{

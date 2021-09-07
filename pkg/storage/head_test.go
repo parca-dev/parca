@@ -24,7 +24,7 @@ import (
 )
 
 func TestHead_MaxTime(t *testing.T) {
-	h := NewHead(prometheus.NewRegistry())
+	h := NewHead(prometheus.NewRegistry(), nil)
 
 	app, err := h.Appender(context.Background(), labels.FromStrings("foo", "bar"))
 	require.NoError(t, err)
@@ -40,6 +40,8 @@ func TestHead_MaxTime(t *testing.T) {
 		require.Equal(t, i, h.MaxTime())
 	}
 
+	require.Equal(t, int64(499), h.MaxTime())
+	require.Equal(t, int64(1), h.MinTime())
 }
 
 func TestStripeSeries(t *testing.T) {
@@ -111,4 +113,40 @@ func BenchmarkStripeSeries(b *testing.B) {
 			ss.getByHash(lset.Hash(), lset)
 		}
 	})
+}
+
+func TestHead_Truncate(t *testing.T) {
+	h := NewHead(prometheus.NewRegistry(), nil)
+
+	pt := NewProfileTree()
+	pt.Insert(makeSample(1, []uint64{2, 1}))
+
+	ctx := context.Background()
+	{
+		app, err := h.Appender(ctx, labels.FromStrings("a", "b"))
+		require.NoError(t, err)
+
+		for i := int64(1); i <= 500; i++ {
+			require.NoError(t, app.Append(&Profile{
+				Tree: pt,
+				Meta: InstantProfileMeta{Timestamp: i},
+			}))
+		}
+	}
+	{
+		app, err := h.Appender(ctx, labels.FromStrings("a", "c"))
+		require.NoError(t, err)
+
+		for i := int64(100); i < 768; i++ {
+			require.NoError(t, app.Append(&Profile{
+				Tree: pt,
+				Meta: InstantProfileMeta{Timestamp: i},
+			}))
+		}
+	}
+
+	require.NoError(t, h.Truncate(420))
+
+	require.Equal(t, int64(340), h.MinTime())
+	require.Equal(t, int64(767), h.MaxTime())
 }

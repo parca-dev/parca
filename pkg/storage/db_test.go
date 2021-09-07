@@ -39,7 +39,7 @@ func TestDB(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	db := OpenDB(prometheus.NewRegistry())
+	db := OpenDB(prometheus.NewRegistry(), nil)
 	ctx := context.Background()
 	app1, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test1"}})
 	require.NoError(t, err)

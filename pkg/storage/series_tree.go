@@ -71,7 +71,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						}
 
 						t.s.mu.Lock()
-						if t.s.flatValues[*n.key] == nil {
+						if len(t.s.flatValues[*n.key]) == 0 {
 							// Create the needed amount of chunks based on how many timestamp chunks there are.
 							t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 							for i := 0; i < len(t.s.timestamps); i++ {
@@ -112,7 +112,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						}
 
 						t.s.mu.Lock()
-						if t.s.cumulativeValues[*n.key] == nil {
+						if len(t.s.cumulativeValues[*n.key]) == 0 {
 							// Create the needed amount of chunks based on how many timestamp chunks there are.
 							t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 							for i := 0; i < len(t.s.timestamps); i++ {
@@ -161,7 +161,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					// Even if the location exists.
 					// labels can be different and then the key is different, so we need check.
 					t.s.mu.Lock()
-					if t.s.flatValues[*n.key] == nil {
+					if len(t.s.flatValues[*n.key]) == 0 {
 						// Create the needed amount of chunks based on how many timestamp chunks there are.
 						t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 						for i := 0; i < len(t.s.timestamps); i++ {
@@ -227,7 +227,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					}
 
 					t.s.mu.Lock()
-					if t.s.flatValues[*n.key] == nil {
+					if len(t.s.flatValues[*n.key]) == 0 {
 						// Create the needed amount of chunks based on how many timestamp chunks there are.
 						t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 						for i := 0; i < len(t.s.timestamps); i++ {
@@ -252,7 +252,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					}
 
 					t.s.mu.Lock()
-					if t.s.cumulativeValues[*n.key] == nil {
+					if len(t.s.cumulativeValues[*n.key]) == 0 {
 						// Create the needed amount of chunks based on how many timestamp chunks there are.
 						t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 						for i := 0; i < len(t.s.timestamps); i++ {

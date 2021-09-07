@@ -14,6 +14,8 @@
 package storage
 
 import (
+	"fmt"
+	"math"
 	"testing"
 
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
@@ -167,4 +169,140 @@ func TestMemSeriesTree(t *testing.T) {
 			}},
 		},
 	}, s.seriesTree)
+}
+
+func TestMemSeries_truncateChunksBefore(t *testing.T) {
+	testcases := []struct {
+		before int64
+
+		truncated  int
+		left       int
+		leftValues int
+		minTime    int64
+		maxTime    int64
+	}{
+		{before: 10, truncated: 0, left: 5, leftValues: 5, minTime: 1, maxTime: 500},
+		{before: 50, truncated: 0, left: 5, leftValues: 5, minTime: 1, maxTime: 500},
+		{before: 123, truncated: 1, left: 4, leftValues: 4, minTime: 121, maxTime: 500},
+		{before: 256, truncated: 2, left: 3, leftValues: 3, minTime: 241, maxTime: 500},
+		{before: 490, truncated: 4, left: 1, leftValues: 1, minTime: 481, maxTime: 500},
+		{before: 1_000, truncated: 5, left: 1, leftValues: 0, minTime: math.MinInt64, maxTime: 500},
+	}
+
+	for _, tc := range testcases {
+		t.Run(fmt.Sprintf("truncate-%d", tc.before), func(t *testing.T) {
+
+			s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {})
+
+			app, err := s.Appender()
+			require.NoError(t, err)
+
+			pt := NewProfileTree()
+			pt.Insert(makeSample(1, []uint64{2, 1}))
+
+			for i := int64(1); i <= 500; i++ {
+				require.NoError(t, app.Append(&Profile{
+					Tree: pt,
+					Meta: InstantProfileMeta{Timestamp: i},
+				}))
+			}
+
+			require.Equal(t, tc.truncated, s.truncateChunksBefore(tc.before))
+
+			require.Equal(t, tc.minTime, s.minTime)
+			require.Equal(t, tc.maxTime, s.maxTime)
+
+			require.Equal(t, tc.left, len(s.timestamps))
+			require.Equal(t, tc.left, len(s.durations))
+			require.Equal(t, tc.left, len(s.periods))
+
+			for _, c := range s.cumulativeValues {
+				require.Equal(t, tc.leftValues, len(c))
+			}
+			for _, c := range s.flatValues {
+				require.Equal(t, tc.leftValues, len(c))
+			}
+		})
+	}
+}
+
+func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(i int64) {})
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	pt := NewProfileTree()
+	pt.Insert(makeSample(1, []uint64{2, 1}))
+
+	for i := int64(1); i < 500; i++ {
+		require.NoError(t, app.Append(&Profile{
+			Tree: pt,
+			Meta: InstantProfileMeta{Timestamp: i},
+		}))
+	}
+
+	// Truncating won't do anything here.
+	require.Equal(t, 0, s.truncateChunksBefore(75))
+	require.Equal(t, int64(1), s.minTime)
+	require.Equal(t, int64(499), s.maxTime)
+
+	// Truncate the first two chunks.
+	require.Equal(t, 2, s.truncateChunksBefore(256))
+
+	require.Equal(t, int64(241), s.minTime)
+	require.Equal(t, int64(499), s.maxTime)
+
+	// Test for appending working correctly after truncating.
+	for i := int64(500); i < 1_000; i++ {
+		require.NoError(t, app.Append(&Profile{
+			Tree: pt,
+			Meta: InstantProfileMeta{Timestamp: i},
+		}))
+	}
+
+	require.Equal(t, int64(241), s.minTime)
+	require.Equal(t, int64(999), s.maxTime)
+
+	// Truncate all chunks.
+	require.Equal(t, 7, s.truncateChunksBefore(1_234))
+	require.Equal(t, int64(math.MinInt64), s.minTime)
+	require.Equal(t, int64(999), s.maxTime)
+
+	// Append more profiles after truncating all chunks.
+	for i := int64(1_100); i < 1_234; i++ {
+		require.NoError(t, app.Append(&Profile{
+			Tree: pt,
+			Meta: InstantProfileMeta{Timestamp: i},
+		}))
+	}
+
+	require.Equal(t, int64(math.MinInt64), s.minTime)
+	require.Equal(t, int64(1_233), s.maxTime)
+}
+
+// for i in {1..10}; do go test -bench=BenchmarkMemSeries_truncateChunksBefore --benchtime=100000x ./pkg/storage >> ./pkg/storage/benchmark/series-truncate.txt; done
+
+func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {})
+	app, err := s.Appender()
+	require.NoError(b, err)
+
+	pt := NewProfileTree()
+	pt.Insert(makeSample(1, []uint64{2, 1}))
+	p := &Profile{Tree: pt}
+
+	for i := 1; i <= b.N; i++ {
+		p.Meta.Timestamp = int64(i)
+		_ = app.Append(p)
+	}
+
+	// Truncate the first roughly 2/3 of all chunks.
+
+	mint := int64(float64(b.N) / 3 * 2)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	s.truncateChunksBefore(mint)
 }

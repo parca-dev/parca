@@ -15,9 +15,11 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/pkg/timestamp"
 )
 
 type Appendable interface {
@@ -109,12 +111,29 @@ func (s *SliceSeriesSet) Err() error         { return nil }
 func (s *SliceSeriesSet) Warnings() Warnings { return nil }
 
 type DB struct {
+	options *DBOptions
+
 	head *Head
 }
 
-func OpenDB(r prometheus.Registerer) *DB {
+type DBOptions struct {
+	Retention time.Duration
+
+	HeadExpensiveMetrics bool
+}
+
+func OpenDB(r prometheus.Registerer, opts *DBOptions) *DB {
+	if opts == nil {
+		opts = &DBOptions{
+			HeadExpensiveMetrics: false,
+		}
+	}
+
 	return &DB{
-		head: NewHead(r),
+		options: opts,
+		head: NewHead(r, &HeadOptions{
+			ExpensiveMetrics: opts.HeadExpensiveMetrics,
+		}),
 	}
 }
 
@@ -124,4 +143,24 @@ func (db *DB) Appender(ctx context.Context, lset labels.Labels) (Appender, error
 
 func (db *DB) Querier(ctx context.Context, mint, maxt int64) Querier {
 	return db.head.Querier(ctx, mint, maxt)
+}
+
+func (db *DB) Run(ctx context.Context) error {
+	ticker := time.NewTicker(time.Minute)
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			retention := 6 * time.Hour // default is 6h if nothing is passed.
+			if db.options != nil && db.options.Retention != 0 {
+				retention = db.options.Retention
+			}
+
+			mint := timestamp.FromTime(time.Now().Add(-1 * retention))
+			if err := db.head.Truncate(mint); err != nil {
+				return err
+			}
+		}
+	}
 }

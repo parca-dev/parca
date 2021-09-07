@@ -276,3 +276,68 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	}
 	return nil
 }
+
+func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.timestamps[0].maxTime > mint {
+		// We don't have anything to do and can exist early.
+		return 0
+	}
+
+	// Quickly check if we can get rid of all chunks.
+	if s.timestamps[len(s.timestamps)-1].maxTime < mint {
+		length := len(s.timestamps)
+		// delete all chunks but keep the slices allocated.
+		// TODO: We might want to delete the entire series here.
+		s.timestamps = s.timestamps[:0]
+		s.durations = s.durations[:0]
+		s.periods = s.periods[:0]
+
+		for key, chunks := range s.cumulativeValues {
+			s.cumulativeValues[key] = chunks[:0]
+		}
+		for key, chunks := range s.flatValues {
+			s.flatValues[key] = chunks[:0]
+		}
+
+		s.minTime = math.MinInt64
+
+		// initialize with first empty chunk so we don't panic in appenders.
+		s.timestamps = append(s.timestamps, timestampChunk{minTime: math.MaxInt64, maxTime: math.MinInt64, chunk: chunkenc.NewDeltaChunk()})
+		s.durations = append(s.durations, chunkenc.NewRLEChunk())
+		s.periods = append(s.periods, chunkenc.NewRLEChunk())
+
+		return length
+	}
+
+	start := 0
+	for i, t := range s.timestamps {
+		if t.minTime > mint {
+			break
+		}
+		start = i
+	}
+
+	// Truncate the beginning of the slices.
+	s.timestamps = s.timestamps[start:]
+	s.durations = s.durations[start:]
+	s.periods = s.periods[start:]
+
+	for key, chunks := range s.cumulativeValues {
+		s.cumulativeValues[key] = chunks[start:]
+	}
+	for key, chunks := range s.flatValues {
+		s.flatValues[key] = chunks[start:]
+	}
+
+	s.minTime = s.timestamps[0].minTime
+
+	// TODO: Truncate seriesTree and labels...
+	// We could somehow a list of the keys for empty chunks while iterating through them above.
+	// With that list we could at least somewhat more quickly figure out which nodes in the tree
+	// and also which labels to get rid of.
+
+	return start
+}

@@ -24,7 +24,7 @@ import (
 )
 
 func TestHeadIndexReader_Postings(t *testing.T) {
-	ir := headIndexReader{head: NewHead(prometheus.NewRegistry())}
+	ir := headIndexReader{head: NewHead(prometheus.NewRegistry(), nil)}
 	ir.head.postings.Add(1, labels.Labels{{Name: "foo", Value: "bar"}, {Name: "container", Value: "test1"}})
 	ir.head.postings.Add(2, labels.Labels{{Name: "foo", Value: "bar"}, {Name: "container", Value: "test2"}})
 	ir.head.postings.Add(3, labels.Labels{{Name: "foo", Value: "baz"}, {Name: "container", Value: "test3"}})
@@ -39,7 +39,7 @@ func TestHeadIndexReader_Postings(t *testing.T) {
 }
 
 func TestHeadIndexReader_LabelValues(t *testing.T) {
-	h := NewHead(prometheus.NewRegistry())
+	h := NewHead(prometheus.NewRegistry(), nil)
 
 	for i := 0; i < 100; i++ {
 		app, err := h.Appender(context.Background(), labels.Labels{
