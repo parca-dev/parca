@@ -24,6 +24,10 @@ import (
 type metaStoreCache struct {
 	metrics *metrics
 
+	locationsMtx   *sync.RWMutex
+	locationsByID  map[uint64]Location
+	locationsByKey map[LocationKey]uint64
+
 	mappingsMtx   *sync.RWMutex
 	mappingsByID  map[uint64]profile.Mapping
 	mappingsByKey map[MappingKey]uint64
@@ -89,6 +93,10 @@ func newMetaStoreCache(reg prometheus.Registerer) *metaStoreCache {
 	return &metaStoreCache{
 		metrics: newMetaStoreCacheMetrics(reg),
 
+		locationsMtx:   &sync.RWMutex{},
+		locationsByID:  map[uint64]Location{},
+		locationsByKey: map[LocationKey]uint64{},
+
 		mappingsMtx:   &sync.RWMutex{},
 		mappingsByID:  map[uint64]profile.Mapping{},
 		mappingsByKey: map[MappingKey]uint64{},
@@ -100,6 +108,83 @@ func newMetaStoreCache(reg prometheus.Registerer) *metaStoreCache {
 		locationLinesMtx:  &sync.RWMutex{},
 		locationLinesByID: map[uint64][]locationLine{},
 	}
+}
+
+func (c *metaStoreCache) getLocationByKey(ctx context.Context, k LocationKey) (Location, bool, error) {
+	select {
+	case <-ctx.Done():
+		return Location{}, false, ctx.Err()
+	default:
+	}
+
+	c.locationsMtx.RLock()
+	defer c.locationsMtx.RUnlock()
+
+	id, found := c.locationsByKey[k]
+	if !found {
+		c.metrics.keyMisses.WithLabelValues("location").Inc()
+		return Location{}, false, nil
+	}
+
+	l, found := c.locationsByID[id]
+	if !found {
+		c.metrics.keyMisses.WithLabelValues("location").Inc()
+		return Location{}, false, nil
+	}
+
+	c.metrics.keyHits.WithLabelValues("location").Inc()
+	return l, found, nil
+}
+
+func (c *metaStoreCache) getLocationByID(ctx context.Context, id uint64) (Location, bool, error) {
+	select {
+	case <-ctx.Done():
+		return Location{}, false, ctx.Err()
+	default:
+	}
+
+	c.locationsMtx.RLock()
+	defer c.locationsMtx.RUnlock()
+
+	l, found := c.locationsByID[id]
+	if !found {
+		c.metrics.idHits.WithLabelValues("location").Inc()
+		return Location{}, false, nil
+	}
+
+	c.metrics.idHits.WithLabelValues("location").Inc()
+	return l, found, nil
+}
+
+func (c *metaStoreCache) setLocationByKey(ctx context.Context, k LocationKey, l Location) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	c.locationsMtx.Lock()
+	defer c.locationsMtx.Unlock()
+
+	c.locationsByID[l.ID] = l
+	c.locationsByKey[k] = l.ID
+
+	return nil
+}
+
+func (c *metaStoreCache) setLocationByID(ctx context.Context, l Location) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	c.locationsMtx.Lock()
+	defer c.locationsMtx.Unlock()
+
+	c.locationsByID[l.ID] = l
+
+	return nil
 }
 
 func (c *metaStoreCache) getMappingByKey(ctx context.Context, k MappingKey) (profile.Mapping, bool, error) {

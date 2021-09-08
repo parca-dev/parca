@@ -97,49 +97,64 @@ func (s *sqlMetaStore) migrate() error {
 }
 
 func (s *sqlMetaStore) GetLocationByKey(ctx context.Context, k LocationKey) (*profile.Location, error) {
-	var (
-		l         profile.Location
-		mappingID *int
-		id        int
-		address   int64
-		err       error
-	)
-	if k.MappingID > 0 {
-		err = s.db.QueryRowContext(ctx,
-			`SELECT "id", "address", "is_folded", "mapping_id"
+	res := profile.Location{}
+
+	l, found, err := s.cache.getLocationByKey(ctx, k)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		var (
+			id      int64
+			address int64
+			err     error
+		)
+		if k.MappingID > 0 {
+			err = s.db.QueryRowContext(ctx,
+				`SELECT "id", "address"
 					FROM "locations" l
 					WHERE normalized_address=? 
 					  AND is_folded=? 
 					  AND lines=? 
 					  AND mapping_id=? `,
-			int64(k.Addr), k.IsFolded, k.Lines, int64(k.MappingID),
-		).Scan(&id, &address, &l.IsFolded, &mappingID)
-	} else {
-		err = s.db.QueryRowContext(ctx,
-			`SELECT "id", "address", "is_folded"
+				int64(k.NormalizedAddress), k.IsFolded, k.Lines, int64(k.MappingID),
+			).Scan(&id, &address)
+		} else {
+			err = s.db.QueryRowContext(ctx,
+				`SELECT "id", "address"
 					FROM "locations" l
 					WHERE normalized_address=? 
 					  AND mapping_id IS NULL 
 					  AND is_folded=? 
 					  AND lines=?`,
-			int64(k.Addr), k.IsFolded, k.Lines,
-		).Scan(&id, &address, &l.IsFolded)
-	}
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrLocationNotFound
+				int64(k.NormalizedAddress), k.IsFolded, k.Lines,
+			).Scan(&id, &address)
 		}
-		return nil, err
-	}
-	l.ID = uint64(id)
-	l.Address = uint64(address)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return nil, ErrLocationNotFound
+			}
+			return nil, err
+		}
+		l.ID = uint64(id)
+		l.Address = uint64(address)
+		l.LocationKey = k
 
-	if mappingID != nil {
-		mapping, err := s.getMappingByID(ctx, int64(*mappingID))
+		err = s.cache.setLocationByKey(ctx, k, l)
 		if err != nil {
 			return nil, err
 		}
-		l.Mapping = mapping
+	}
+	res.ID = l.ID
+	res.Address = l.Address
+	res.IsFolded = l.IsFolded
+
+	if k.MappingID > 0 {
+		mapping, err := s.getMappingByID(ctx, int64(k.MappingID))
+		if err != nil {
+			return nil, err
+		}
+		res.Mapping = mapping
 	}
 
 	linesByLocation, functionIDs, err := s.getLinesByLocationIDs(ctx, l.ID)
@@ -153,13 +168,13 @@ func (s *sqlMetaStore) GetLocationByKey(ctx context.Context, k LocationKey) (*pr
 	}
 
 	for _, line := range linesByLocation[l.ID] {
-		l.Line = append(l.Line, profile.Line{
+		res.Line = append(res.Line, profile.Line{
 			Line:     line.Line,
 			Function: functions[line.FunctionID],
 		})
 	}
 
-	return &l, nil
+	return &res, nil
 }
 
 func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
@@ -170,61 +185,84 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 	defer span.End()
 	span.SetAttributes(attribute.Int("location-ids-number", len(ids)))
 
-	res := make(map[uint64]*profile.Location, len(ids))
+	locs := map[uint64]Location{}
 
 	mappingIDs := []uint64{}
 	mappingIDsSeen := map[uint64]struct{}{}
 
-	sIds := ""
-	for i, id := range ids {
-		if i > 0 {
-			sIds += ","
-		}
-		sIds += strconv.FormatInt(int64(id), 10)
-	}
-
-	dbctx, dbspan := s.tracer.Start(ctx, "GetLocationsByIDs-SQL-query")
-	rows, err := s.db.QueryContext(dbctx,
-		fmt.Sprintf(`SELECT "id", "address", "is_folded", "mapping_id"
-				FROM "locations"
-				WHERE id IN (%s)`, sIds),
-	)
-	dbspan.End()
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	locationMappingID := map[uint64]uint64{}
-	for rows.Next() {
-		var (
-			l              *profile.Location = &profile.Location{}
-			mappingID      *int
-			locID, address int64
-		)
-
-		err := rows.Scan(&locID, &address, &l.IsFolded, &mappingID)
+	remainingIds := []uint64{}
+	for _, id := range ids {
+		l, found, err := s.cache.getLocationByID(ctx, id)
 		if err != nil {
 			return nil, err
 		}
-		l.ID = uint64(locID)
-		l.Address = uint64(address)
-		if _, found := res[l.ID]; !found {
-			res[l.ID] = l
-			if mappingID != nil {
-				mId := uint64(*mappingID)
-				locationMappingID[l.ID] = mId
-				if _, seen := mappingIDsSeen[mId]; !seen {
-					mappingIDs = append(mappingIDs, mId)
-					mappingIDsSeen[mId] = struct{}{}
+		if found {
+			locs[l.ID] = l
+			if l.MappingID > 0 {
+				if _, seen := mappingIDsSeen[l.MappingID]; !seen {
+					mappingIDs = append(mappingIDs, l.MappingID)
+					mappingIDsSeen[l.MappingID] = struct{}{}
+				}
+			}
+			continue
+		}
+		remainingIds = append(remainingIds, id)
+	}
+
+	if len(remainingIds) > 0 {
+		sIds := ""
+		for i, id := range remainingIds {
+			if i > 0 {
+				sIds += ","
+			}
+			sIds += strconv.FormatInt(int64(id), 10)
+		}
+
+		dbctx, dbspan := s.tracer.Start(ctx, "GetLocationsByIDs-SQL-query")
+		rows, err := s.db.QueryContext(dbctx,
+			fmt.Sprintf(`SELECT "id", "mapping_id", "address", "is_folded", "normalized_address", "lines"
+				FROM "locations"
+				WHERE id IN (%s)`, sIds),
+		)
+		dbspan.End()
+		if err != nil {
+			return nil, err
+		}
+
+		defer rows.Close()
+
+		for rows.Next() {
+			var (
+				l                                            Location = Location{}
+				locID, address, normalizedAddress, mappingID int64
+			)
+
+			err := rows.Scan(&locID, &mappingID, &address, &l.IsFolded, &normalizedAddress, &l.Lines)
+			if err != nil {
+				return nil, err
+			}
+			l.ID = uint64(locID)
+			l.MappingID = uint64(mappingID)
+			l.Address = uint64(address)
+			l.NormalizedAddress = uint64(normalizedAddress)
+			if _, found := locs[l.ID]; !found {
+				err := s.cache.setLocationByID(ctx, l)
+				if err != nil {
+					return nil, err
+				}
+				locs[l.ID] = l
+				if l.MappingID > 0 {
+					if _, seen := mappingIDsSeen[l.MappingID]; !seen {
+						mappingIDs = append(mappingIDs, l.MappingID)
+						mappingIDsSeen[l.MappingID] = struct{}{}
+					}
 				}
 			}
 		}
-	}
-	err = rows.Err()
-	if err != nil {
-		return nil, err
+		err = rows.Err()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	mappings, err := s.GetMappingsByIDs(ctx, mappingIDs...)
@@ -242,8 +280,14 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 		return nil, err
 	}
 
-	for locationID, location := range res {
-		location.Mapping = mappings[locationMappingID[locationID]]
+	res := make(map[uint64]*profile.Location, len(locs))
+	for locationID, loc := range locs {
+		location := &profile.Location{
+			ID:       loc.ID,
+			Address:  loc.Address,
+			IsFolded: loc.IsFolded,
+		}
+		location.Mapping = mappings[loc.MappingID]
 		locationLines := linesByLocation[locationID]
 		if len(locationLines) > 0 {
 			lines := make([]profile.Line, 0, len(locationLines))
@@ -258,6 +302,7 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 			}
 			location.Line = lines
 		}
+		res[locationID] = location
 	}
 
 	return res, nil
@@ -518,7 +563,7 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 		}
 		defer stmt.Close()
 
-		res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(m.ID), int64(k.Addr), k.Lines)
+		res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(m.ID), int64(k.NormalizedAddress), k.Lines)
 	} else {
 
 		stmt, err = s.db.PrepareContext(ctx, `INSERT INTO "locations" (
@@ -529,7 +574,7 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 		}
 		defer stmt.Close()
 
-		res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(k.Addr), k.Lines)
+		res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(k.NormalizedAddress), k.Lines)
 	}
 
 	if err != nil {
@@ -571,7 +616,7 @@ func (s *sqlMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) 
 		}
 		defer stmt.Close()
 
-		if _, err := stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, mappingID, int64(k.Addr), k.Lines, int64(l.ID)); err != nil {
+		if _, err := stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, mappingID, int64(k.NormalizedAddress), k.Lines, int64(l.ID)); err != nil {
 			return fmt.Errorf("UpdateLocation failed: %w", err)
 		}
 	} else {

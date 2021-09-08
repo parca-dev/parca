@@ -44,23 +44,29 @@ type LocationStore interface {
 	GetUnsymbolizedLocations(ctx context.Context) ([]*profile.Location, error)
 }
 
+type Location struct {
+	ID      uint64
+	Address uint64
+	LocationKey
+}
+
 type LocationKey struct {
-	Addr, MappingID uint64
-	Lines           string
-	IsFolded        bool
+	NormalizedAddress, MappingID uint64
+	Lines                        string
+	IsFolded                     bool
 }
 
 func MakeLocationKey(l *profile.Location) LocationKey {
 	key := LocationKey{
-		Addr:     l.Address,
-		IsFolded: l.IsFolded,
+		NormalizedAddress: l.Address,
+		IsFolded:          l.IsFolded,
 	}
 	if l.Mapping != nil {
 		// Normalizes address to handle address space randomization.
-		key.Addr -= l.Mapping.Start
+		key.NormalizedAddress -= l.Mapping.Start
 		key.MappingID = l.Mapping.ID
 	}
-	if key.Addr != 0 {
+	if key.NormalizedAddress != 0 {
 		lines := make([]string, len(l.Line)*2)
 		for i, line := range l.Line {
 			if line.Function != nil {
