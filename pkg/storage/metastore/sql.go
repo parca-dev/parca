@@ -48,7 +48,8 @@ func (s *sqlMetaStore) migrate() error {
 			"has_line_numbers"  BOOLEAN,
 			"has_inline_frames" BOOLEAN,
 			"size"				INT64,
-			"build_id_or_file"	TEXT
+			"build_id_or_file"	TEXT,
+			UNIQUE (size, offset, build_id_or_file)
 		);`,
 		`CREATE INDEX idx_mapping_key ON mappings (size, offset, build_id_or_file);`,
 		`CREATE TABLE "functions" (
@@ -56,15 +57,17 @@ func (s *sqlMetaStore) migrate() error {
 			"name"       	TEXT,
 			"system_name" 	TEXT,
 			"filename"   	TEXT,
-			"start_line"  	INT64
+			"start_line"  	INT64,
+			UNIQUE (name, system_name, filename, start_line)
 		);`,
 		`CREATE INDEX idx_function_key ON functions (start_line, name, system_name, filename);`,
 		`CREATE TABLE "lines" (
 			"location_id" INTEGER NOT NULL,
 			"function_id" INTEGER NOT NULL,
 			"line" 		  INT64,
-			FOREIGN KEY (function_id) REFERENCES functions (id)
-			FOREIGN KEY (location_id) REFERENCES locations (id)
+			FOREIGN KEY (function_id) REFERENCES functions (id),
+			FOREIGN KEY (location_id) REFERENCES locations (id),
+			UNIQUE (location_id, function_id, line)
 		);`,
 		`CREATE INDEX idx_line_location ON lines (location_id);`,
 		`CREATE TABLE "locations" (
@@ -74,12 +77,11 @@ func (s *sqlMetaStore) migrate() error {
 			"is_folded" 			BOOLEAN,
 			"normalized_address"	INT64,
 			"lines"					TEXT,
-			FOREIGN KEY (mapping_id) REFERENCES mappings (id)
+			FOREIGN KEY (mapping_id) REFERENCES mappings (id),
+			UNIQUE (mapping_id, is_folded, normalized_address, lines)
 		);`,
 		`CREATE INDEX idx_location_key ON locations (normalized_address, mapping_id, is_folded, lines);`,
 	}
-	// TODO(kakkoyun): Additional table between location and mapping? - mapInfo from pprof
-	// TODO(kakkoyun): Remove additional location_id from locations table?
 
 	for _, t := range tables {
 		statement, err := s.db.Prepare(t)
@@ -424,6 +426,23 @@ func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (ma
 	span.SetAttributes(attribute.Int("functions-ids-length", len(ids)))
 
 	res := make(map[uint64]*profile.Function, len(ids))
+	remainingIds := []uint64{}
+	for _, id := range ids {
+		f, found, err := s.cache.getFunctionByID(ctx, id)
+		if err != nil {
+			return res, err
+		}
+		if found {
+			res[id] = &f
+			continue
+		}
+		remainingIds = append(remainingIds, id)
+	}
+	ids = remainingIds
+
+	if len(ids) == 0 {
+		return res, nil
+	}
 
 	sIds := ""
 	for i, id := range ids {
@@ -444,22 +463,32 @@ func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (ma
 
 	defer rows.Close()
 
+	retrievedFunctions := make(map[uint64]profile.Function, len(ids))
 	for rows.Next() {
-		f := &profile.Function{}
+		var (
+			fId int64
+			f   profile.Function
+		)
 		err := rows.Scan(
-			&f.ID, &f.Name, &f.SystemName, &f.Filename, &f.StartLine,
+			&fId, &f.Name, &f.SystemName, &f.Filename, &f.StartLine,
 		)
 		if err != nil {
 			return nil, err
 		}
-
-		if _, found := res[f.ID]; !found {
-			res[f.ID] = f
-		}
+		f.ID = uint64(fId)
+		retrievedFunctions[f.ID] = f
 	}
 	err = rows.Err()
 	if err != nil {
 		return nil, err
+	}
+
+	for id, f := range retrievedFunctions {
+		res[id] = &f
+		err = s.cache.setFunctionByID(ctx, f)
+		if err != nil {
+			return res, err
+		}
 	}
 
 	return res, nil
@@ -748,32 +777,17 @@ func (s *sqlMetaStore) CreateFunction(ctx context.Context, fn *profile.Function)
 		res  sql.Result
 		err  error
 	)
-	// TODO(kakkoyun): Is this even possible to have an ID not 0?
-	if fn.ID != 0 {
-		stmt, err = s.db.PrepareContext(ctx,
-			`INSERT INTO "functions" (
-                         id, name, system_name, filename, start_line
-                         ) values(?,?,?,?,?)`,
-		)
-		if err != nil {
-			return 0, fmt.Errorf("CreateFunction failed: %w", err)
-		}
-		defer stmt.Close()
-
-		res, err = stmt.ExecContext(ctx, int64(fn.ID), fn.Name, fn.SystemName, fn.Filename, fn.StartLine)
-	} else {
-		stmt, err = s.db.PrepareContext(ctx,
-			`INSERT INTO "functions" (
+	stmt, err = s.db.PrepareContext(ctx,
+		`INSERT INTO "functions" (
                          name, system_name, filename, start_line
                          ) values(?,?,?,?)`,
-		)
-		if err != nil {
-			return 0, fmt.Errorf("CreateFunction failed: %w", err)
-		}
-		defer stmt.Close()
-
-		res, err = stmt.ExecContext(ctx, fn.Name, fn.SystemName, fn.Filename, fn.StartLine)
+	)
+	if err != nil {
+		return 0, fmt.Errorf("CreateFunction failed: %w", err)
 	}
+	defer stmt.Close()
+
+	res, err = stmt.ExecContext(ctx, fn.Name, fn.SystemName, fn.Filename, fn.StartLine)
 
 	if err != nil {
 		return 0, fmt.Errorf("CreateFunction failed: %w", err)
@@ -994,27 +1008,18 @@ func (s *sqlMetaStore) getLocationLines(ctx context.Context, locationID uint64) 
 }
 
 func (s *sqlMetaStore) getOrCreateFunction(ctx context.Context, f *profile.Function) (uint64, error) {
-	if f.ID == 0 {
-		fnID, err := s.CreateFunction(ctx, f)
-		if err != nil {
-			return 0, err
-		}
-		return fnID, nil
+	fn, err := s.GetFunctionByKey(ctx, MakeFunctionKey(f))
+	if err == nil {
+		return fn.ID, nil
 	}
-
-	var fnID uint64
-	if err := s.db.QueryRowContext(ctx, `SELECT "id" FROM "functions" WHERE id=?`, int64(f.ID)).Scan(&fnID); err != nil {
-		if err == sql.ErrNoRows {
-			fnID, err = s.CreateFunction(ctx, f)
-			if err != nil {
-				return 0, err
-			}
-			return fnID, nil
-		}
-
+	if err != nil && err != ErrFunctionNotFound {
 		return 0, err
 	}
 
+	fnID, err := s.CreateFunction(ctx, f)
+	if err != nil {
+		return 0, err
+	}
 	return fnID, nil
 }
 

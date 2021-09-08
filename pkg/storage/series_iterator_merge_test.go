@@ -30,6 +30,7 @@ import (
 func TestMergeMemSeriesConsistency(t *testing.T) {
 	ctx := context.Background()
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"memseriesconsistency",
 	)

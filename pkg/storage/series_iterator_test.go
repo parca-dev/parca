@@ -23,6 +23,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -194,6 +195,7 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"iteratorconsistency",
 	)

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/google/pprof/profile"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -43,6 +44,7 @@ type TestFunctionStore interface {
 
 func TestNewInMemorySQLiteMetaStore(t *testing.T) {
 	str, err := NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"metastoreconnection",
 	)
@@ -55,6 +57,7 @@ func TestNewInMemorySQLiteMetaStore(t *testing.T) {
 
 func TestDiskMetaStoreConnection(t *testing.T) {
 	str, err := NewDiskProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 	require.NoError(t, err)
@@ -63,6 +66,7 @@ func TestDiskMetaStoreConnection(t *testing.T) {
 
 func TestInMemorySQLiteLocationStore(t *testing.T) {
 	s, err := NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"location",
 	)
@@ -77,6 +81,7 @@ func TestInMemorySQLiteLocationStore(t *testing.T) {
 func TestDiskLocationStore(t *testing.T) {
 	dbPath := "./parca_location_store_test.sqlite"
 	s, err := NewDiskProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		dbPath,
 	)
@@ -121,7 +126,7 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 	require.Equal(t, l1, locByID[l1.ID])
 
 	f := &profile.Function{
-		ID:         8,
+		ID:         1,
 		Name:       "name",
 		SystemName: "systemName",
 		Filename:   "filename",
@@ -142,6 +147,7 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 
 func TestInMemorySQLiteFunctionStore(t *testing.T) {
 	s, err := NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"function",
 	)
@@ -156,6 +162,7 @@ func TestInMemorySQLiteFunctionStore(t *testing.T) {
 func TestDiskFunctionStore(t *testing.T) {
 	dbPath := "./parca_function_store_test.sqlite"
 	s, err := NewDiskProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		dbPath,
 	)
@@ -171,9 +178,8 @@ func TestDiskFunctionStore(t *testing.T) {
 func functionStoreTest(t *testing.T, s TestFunctionStore) {
 	ctx := context.Background()
 
-	largeLoc := -1
 	f := &profile.Function{
-		ID:         uint64(largeLoc),
+		ID:         1,
 		Name:       "name",
 		SystemName: "systemName",
 		Filename:   "filename",
@@ -183,7 +189,7 @@ func functionStoreTest(t *testing.T, s TestFunctionStore) {
 	require.NoError(t, err)
 
 	f1 := &profile.Function{
-		ID:         18,
+		ID:         2,
 		Name:       "name",
 		SystemName: "systemName",
 		Filename:   "filename",
@@ -194,7 +200,7 @@ func functionStoreTest(t *testing.T, s TestFunctionStore) {
 
 	funcByID, err := s.GetFunctionByKey(ctx, MakeFunctionKey(f))
 	require.NoError(t, err)
-	require.Equal(t, uint64(largeLoc), funcByID.ID)
+	require.Equal(t, uint64(1), funcByID.ID)
 	require.Equal(t, f.Name, funcByID.Name)
 	require.Equal(t, f.SystemName, funcByID.SystemName)
 	require.Equal(t, f.Filename, funcByID.Filename)
@@ -208,6 +214,7 @@ func functionStoreTest(t *testing.T, s TestFunctionStore) {
 
 func TestInMemorySQLiteMappingStore(t *testing.T) {
 	s, err := NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"mapping",
 	)
@@ -222,6 +229,7 @@ func TestInMemorySQLiteMappingStore(t *testing.T) {
 func TestDiskMappingStore(t *testing.T) {
 	dbPath := "./parca_mapping_store_test.sqlite"
 	s, err := NewDiskProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		dbPath,
 	)
@@ -284,6 +292,7 @@ func mappingStoreTest(t *testing.T, s MappingStore) {
 
 func TestInMemorySQLiteMetaStore(t *testing.T) {
 	s, err := NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"metastore",
 	)
@@ -298,6 +307,7 @@ func TestInMemorySQLiteMetaStore(t *testing.T) {
 func TestDiskMetaStore(t *testing.T) {
 	dbPath := "./parca_meta_store_test.sqlite"
 	s, err := NewDiskProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		dbPath,
 	)
@@ -353,7 +363,7 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 	require.NoError(t, err)
 
 	f := &profile.Function{
-		ID:         8,
+		ID:         1,
 		Name:       "name",
 		SystemName: "systemName",
 		Filename:   "filename",

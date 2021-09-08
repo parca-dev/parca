@@ -66,6 +66,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"queryrangevalid",
 	)
@@ -128,6 +129,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"queryrangelimited",
 	)
@@ -304,6 +306,7 @@ func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"querysimple",
 	)
@@ -360,6 +363,7 @@ func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"querydiff",
 	)
@@ -445,6 +449,7 @@ func Test_Query_Diff(t *testing.T) {
 func Benchmark_Query_Merge(b *testing.B) {
 	ctx := context.Background()
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"benchquerymerge",
 	)
@@ -510,6 +515,7 @@ func Test_Query_Merge(t *testing.T) {
 	ctx := context.Background()
 
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"querymerge",
 	)

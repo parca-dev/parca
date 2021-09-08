@@ -60,14 +60,16 @@ func MakeLocationKey(l *profile.Location) LocationKey {
 		key.Addr -= l.Mapping.Start
 		key.MappingID = l.Mapping.ID
 	}
-	lines := make([]string, len(l.Line)*2)
-	for i, line := range l.Line {
-		if line.Function != nil {
-			lines[i*2] = strconv.FormatUint(line.Function.ID, 16)
+	if key.Addr != 0 {
+		lines := make([]string, len(l.Line)*2)
+		for i, line := range l.Line {
+			if line.Function != nil {
+				lines[i*2] = strconv.FormatUint(line.Function.ID, 16)
+			}
+			lines[i*2+1] = strconv.FormatInt(line.Line, 16)
 		}
-		lines[i*2+1] = strconv.FormatInt(line.Line, 16)
+		key.Lines = strings.Join(lines, "|")
 	}
-	key.Lines = strings.Join(lines, "|")
 	return key
 }
 
@@ -115,6 +117,8 @@ func MakeMappingKey(m *profile.Mapping) MappingKey {
 
 	switch {
 	case m.BuildID != "":
+		// BuildID has precedence over file as we can rely on it being more
+		// unique.
 		key.BuildIDOrFile = m.BuildID
 	case m.File != "":
 		key.BuildIDOrFile = m.File

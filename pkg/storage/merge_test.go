@@ -24,6 +24,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -449,6 +450,7 @@ func TestMergeSingle(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"mergesingle",
 	)
@@ -473,6 +475,7 @@ func TestMergeMany(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"mergemany",
 	)
@@ -516,6 +519,7 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"treemerge",
 	)
@@ -584,6 +588,7 @@ func BenchmarkMergeMany(b *testing.B) {
 				require.NoError(b, f.Close())
 
 				l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+					prometheus.NewRegistry(),
 					trace.NewNoopTracerProvider().Tracer(""),
 					"bencmergequery",
 				)

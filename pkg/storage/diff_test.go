@@ -22,6 +22,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -252,6 +253,7 @@ func BenchmarkDiff(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"benchdiff",
 	)

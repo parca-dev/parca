@@ -32,6 +32,7 @@ import (
 
 func TestDB(t *testing.T) {
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"testdb",
 	)

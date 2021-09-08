@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -162,6 +163,7 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"generateflamegraphfromprofiletree",
 	)
@@ -199,6 +201,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"generateflamegraphfrominstantprofile",
 	)
@@ -254,6 +257,7 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"generateflamegraphfrommergeprofile",
 	)
@@ -288,6 +292,7 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"controlgenerateflamegraphfrommergeprofile",
 	)
@@ -321,6 +326,7 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"flamegraph",
 	)

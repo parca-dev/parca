@@ -96,7 +96,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	mStr, err := metastore.NewInMemorySQLiteProfileMetaStore(tracerProvider.Tracer("inmemory-sqlite"))
+	mStr, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		reg,
+		tracerProvider.Tracer("inmemory-sqlite"),
+	)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
 		return err
