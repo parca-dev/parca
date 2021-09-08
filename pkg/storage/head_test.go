@@ -45,12 +45,13 @@ func TestHead_MaxTime(t *testing.T) {
 }
 
 func TestStripeSeries(t *testing.T) {
+	chunkPool := newHeadChunkPool()
 	ss := newStripeSeries(DefaultStripeSize, func(int64) {})
 
 	numSeries := uint64(1_000_000)
 	for ref := uint64(0); ref < numSeries; ref++ {
 		lset := labels.FromStrings("ref", strconv.FormatUint(ref, 10))
-		_, _ = ss.getOrCreateWithID(ref, lset.Hash(), lset)
+		_, _ = ss.getOrCreateWithID(ref, lset.Hash(), lset, chunkPool)
 	}
 
 	for i := uint64(0); i < numSeries; i += 100 {
@@ -64,9 +65,10 @@ func TestStripeSeries(t *testing.T) {
 }
 
 func TestSeriesHashmap(t *testing.T) {
+	chunkPool := newHeadChunkPool()
 	sh := seriesHashmap{}
 	for i := 0; i < 1000; i++ {
-		s := NewMemSeries(uint64(i), labels.FromStrings("foo", "bar", "i", strconv.Itoa(i)), func(int64) {})
+		s := NewMemSeries(uint64(i), labels.FromStrings("foo", "bar", "i", strconv.Itoa(i)), func(int64) {}, chunkPool)
 		sh.set(s.lset.Hash(), s)
 	}
 
@@ -90,11 +92,12 @@ func TestSeriesHashmap(t *testing.T) {
 }
 
 func BenchmarkStripeSeries(b *testing.B) {
+	chunkPool := newHeadChunkPool()
 	ss := newStripeSeries(DefaultStripeSize, func(int64) {})
 
 	for i := 0; i < b.N; i++ {
 		lset := labels.FromStrings("foo", "bar", "id", strconv.Itoa(i))
-		_, _ = ss.getOrCreateWithID(uint64(i), lset.Hash(), lset)
+		_, _ = ss.getOrCreateWithID(uint64(i), lset.Hash(), lset, chunkPool)
 	}
 
 	b.ResetTimer()

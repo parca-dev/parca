@@ -64,7 +64,7 @@ func TestMultiChunks(t *testing.T) {
 
 func TestTimestampChunks_indexRange(t *testing.T) {
 	var tcs timestampChunks
-	tcs = append(tcs, timestampChunk{minTime: 0, maxTime: 20})
+	tcs = append(tcs, &timestampChunk{minTime: 0, maxTime: 20})
 
 	// within the chunk minTime+5 and maxTime-5
 	start, end := tcs.indexRange(5, 15)
@@ -88,7 +88,7 @@ func TestTimestampChunks_indexRange(t *testing.T) {
 
 	for i := 20; i < 1_000; i++ {
 		if i%20 == 0 {
-			tcs = append(tcs, timestampChunk{
+			tcs = append(tcs, &timestampChunk{
 				minTime: int64(i),
 				chunk:   chunkenc.NewDeltaChunk(),
 			})

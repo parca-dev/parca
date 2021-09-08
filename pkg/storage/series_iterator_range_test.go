@@ -22,7 +22,7 @@ import (
 )
 
 func TestMemRangeSeries_Iterator(t *testing.T) {
-	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {})
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
 
 	app, err := s.Appender()
 	require.NoError(t, err)

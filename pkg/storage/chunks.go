@@ -123,7 +123,31 @@ type timestampChunk struct {
 	chunk   chunkenc.Chunk
 }
 
-type timestampChunks []timestampChunk
+func (t *timestampChunk) Bytes() []byte {
+	return t.chunk.Bytes()
+}
+
+func (t *timestampChunk) Encoding() chunkenc.Encoding {
+	return t.chunk.Encoding()
+}
+
+func (t *timestampChunk) Appender() (chunkenc.Appender, error) {
+	return t.chunk.Appender()
+}
+
+func (t *timestampChunk) Iterator(it chunkenc.Iterator) chunkenc.Iterator {
+	return t.chunk.Iterator(it)
+}
+
+func (t *timestampChunk) NumSamples() int {
+	return t.chunk.NumSamples()
+}
+
+func (t *timestampChunk) Compact() {
+	t.chunk.Compact()
+}
+
+type timestampChunks []*timestampChunk
 
 func (tcs timestampChunks) indexRange(mint, maxt int64) (int, int) {
 	start := 0

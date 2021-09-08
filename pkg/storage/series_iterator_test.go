@@ -35,9 +35,9 @@ func TestMemSeriesIterator(t *testing.T) {
 		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
 	)
 
-	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {})
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
 
-	s.timestamps = []timestampChunk{{chunk: chunkenc.FromValuesDelta(1, 2)}}
+	s.timestamps = []*timestampChunk{{chunk: chunkenc.FromValuesDelta(1, 2)}}
 	s.durations = []chunkenc.Chunk{chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 2)}
 	s.periods = []chunkenc.Chunk{chunkenc.FromValuesRLE(100, 2)}
 
@@ -201,7 +201,7 @@ func TestIteratorConsistency(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	s := NewMemSeries(1, labels.Labels{{Name: "test_name", Value: "test_value"}}, func(int64) {})
+	s := NewMemSeries(1, labels.Labels{{Name: "test_name", Value: "test_value"}}, func(int64) {}, newHeadChunkPool())
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)

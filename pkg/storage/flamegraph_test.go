@@ -206,7 +206,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 		l.Close()
 	})
 	require.NoError(t, err)
-	s := NewMemSeries(1, labels.Labels{{Name: "test_name", Value: "test_value"}}, func(int64) {})
+	s := NewMemSeries(1, labels.Labels{{Name: "test_name", Value: "test_value"}}, func(int64) {}, newHeadChunkPool())
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)

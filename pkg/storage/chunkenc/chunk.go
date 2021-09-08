@@ -128,7 +128,9 @@ type Pool interface {
 
 // pool is a memory pool of chunk objects.
 type pool struct {
-	xor sync.Pool
+	xor   sync.Pool
+	delta sync.Pool
+	rle   sync.Pool
 }
 
 // NewPool returns a new pool.
@@ -139,6 +141,16 @@ func NewPool() Pool {
 				return &XORChunk{b: bstream{}}
 			},
 		},
+		delta: sync.Pool{
+			New: func() interface{} {
+				return &DeltaChunk{b: bstream{}}
+			},
+		},
+		rle: sync.Pool{
+			New: func() interface{} {
+				return &RLEChunk{b: bstream{}}
+			},
+		},
 	}
 }
 
@@ -146,6 +158,25 @@ func (p *pool) Get(e Encoding, b []byte) (Chunk, error) {
 	switch e {
 	case EncXOR:
 		c := p.xor.Get().(*XORChunk)
+		if b == nil {
+			b = make([]byte, 2, 128)
+		}
+		c.b.stream = b
+		c.b.count = 0
+		return c, nil
+	case EncDelta:
+		c := p.delta.Get().(*DeltaChunk)
+		if b == nil {
+			b = make([]byte, 2, 128)
+		}
+		c.b.stream = b
+		c.b.count = 0
+		return c, nil
+	case EncRLE:
+		c := p.rle.Get().(*RLEChunk)
+		if b == nil {
+			b = make([]byte, 4, 128)
+		}
 		c.b.stream = b
 		c.b.count = 0
 		return c, nil
@@ -166,6 +197,22 @@ func (p *pool) Put(c Chunk) error {
 		xc.b.stream = nil
 		xc.b.count = 0
 		p.xor.Put(c)
+	case EncDelta:
+		dc, ok := c.(*DeltaChunk)
+		if !ok {
+			return nil
+		}
+		dc.b.stream = nil
+		dc.b.count = 0
+		p.delta.Put(c)
+	case EncRLE:
+		rc, ok := c.(*RLEChunk)
+		if !ok {
+			return nil
+		}
+		rc.b.stream = nil
+		rc.b.count = 0
+		p.rle.Put(c)
 	default:
 		return fmt.Errorf("invalid chunk encoding %q", c.Encoding())
 	}

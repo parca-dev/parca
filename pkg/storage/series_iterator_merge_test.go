@@ -108,7 +108,7 @@ func TestMemMergeSeriesTree(t *testing.T) {
 	s12.NumLabel = numLabel
 	s12.NumUnit = numUnit
 
-	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {})
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
 
 	pt1 := NewProfileTree()
 	pt1.Insert(s11)

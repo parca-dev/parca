@@ -56,23 +56,22 @@ type MemSeries struct {
 	numSamples uint16
 
 	updateMaxTime func(int64)
+	chunkPool     ChunkPool
 
 	samplesAppended prometheus.Counter
 }
 
-func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64)) *MemSeries {
+func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64), chunkPool ChunkPool) *MemSeries {
 	s := &MemSeries{
 		id:   id,
 		lset: lset,
 
-		timestamps: timestampChunks{{
-			minTime: math.MaxInt64,
-			maxTime: math.MinInt64,
-			chunk:   chunkenc.NewDeltaChunk(),
-		}},
-		durations: []chunkenc.Chunk{chunkenc.NewRLEChunk()},
-		periods:   []chunkenc.Chunk{chunkenc.NewRLEChunk()},
+		minTime: math.MaxInt64,
+		maxTime: math.MinInt64,
 
+		timestamps:       timestampChunks{},
+		durations:        make([]chunkenc.Chunk, 0, 1),
+		periods:          make([]chunkenc.Chunk, 0, 1),
 		flatValues:       make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
 		cumulativeValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
 		labels:           make(map[ProfileTreeValueNodeKey]map[string][]string),
@@ -80,6 +79,7 @@ func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64)) *Mem
 		numUnits:         make(map[ProfileTreeValueNodeKey]map[string][]string),
 
 		updateMaxTime: updateMaxTime,
+		chunkPool:     chunkPool,
 	}
 	s.seriesTree = &MemSeriesTree{s: s}
 
@@ -96,25 +96,7 @@ func (s *MemSeries) storeMaxTime(t int64) {
 }
 
 func (s *MemSeries) Appender() (*MemSeriesAppender, error) {
-	timestamps, err := s.timestamps[len(s.timestamps)-1].chunk.Appender()
-	if err != nil {
-		return nil, err
-	}
-	durations, err := s.durations[len(s.timestamps)-1].Appender()
-	if err != nil {
-		return nil, err
-	}
-	periods, err := s.periods[len(s.timestamps)-1].Appender()
-	if err != nil {
-		return nil, err
-	}
-
-	return &MemSeriesAppender{
-		s:          s,
-		timestamps: timestamps,
-		duration:   durations,
-		periods:    periods,
-	}, nil
+	return &MemSeriesAppender{s: s}, nil
 }
 
 func (s *MemSeries) appendTree(profileTree *ProfileTree) error {
@@ -199,7 +181,11 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 
 	newChunks := false
 	a.s.mu.Lock()
-	if a.s.timestamps[len(a.s.timestamps)-1].chunk.NumSamples() >= samplesPerChunk {
+	if len(a.s.timestamps) == 0 {
+		newChunks = true
+	} else if a.s.timestamps[len(a.s.timestamps)-1].chunk.NumSamples() == 0 {
+		newChunks = true
+	} else if a.s.timestamps[len(a.s.timestamps)-1].chunk.NumSamples() >= samplesPerChunk {
 		newChunks = true
 	}
 	a.s.mu.Unlock()
@@ -208,45 +194,61 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		a.s.mu.Lock()
 
 		for k := range a.s.cumulativeValues {
-			a.s.cumulativeValues[k] = append(a.s.cumulativeValues[k], chunkenc.NewXORChunk())
+			a.s.cumulativeValues[k] = append(a.s.cumulativeValues[k], a.s.chunkPool.GetXOR())
 		}
 		for k := range a.s.flatValues {
-			a.s.flatValues[k] = append(a.s.flatValues[k], chunkenc.NewXORChunk())
+			a.s.flatValues[k] = append(a.s.flatValues[k], a.s.chunkPool.GetXOR())
 		}
 
-		a.s.timestamps = append(a.s.timestamps, timestampChunk{
-			maxTime: timestamp,
-			minTime: timestamp,
-			chunk:   chunkenc.NewDeltaChunk(),
-		})
-		app, err := a.s.timestamps[len(a.s.timestamps)-1].chunk.Appender()
+		tc := a.s.chunkPool.GetTimestamp()
+		tc.minTime = timestamp
+		tc.maxTime = timestamp
+		a.s.timestamps = append(a.s.timestamps, tc)
+		timeApp, err := a.s.timestamps[len(a.s.timestamps)-1].chunk.Appender()
 		if err != nil {
 			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next timestamp chunk: %w", err)
 		}
-		a.timestamps = app
+		a.timestamps = timeApp
 
-		a.s.durations = append(a.s.durations, chunkenc.NewRLEChunk())
-		app, err = a.s.durations[len(a.s.durations)-1].Appender()
+		a.s.durations = append(a.s.durations, a.s.chunkPool.GetRLE())
+		durationApp, err := a.s.durations[len(a.s.durations)-1].Appender()
 		if err != nil {
 			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next durations chunk: %w", err)
 		}
-		a.duration = app
+		a.duration = durationApp
 
-		a.s.periods = append(a.s.periods, chunkenc.NewRLEChunk())
-		app, err = a.s.periods[len(a.s.periods)-1].Appender()
+		a.s.periods = append(a.s.periods, a.s.chunkPool.GetRLE())
+		periodsApp, err := a.s.periods[len(a.s.periods)-1].Appender()
 		if err != nil {
 			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next periods chunk: %w", err)
 		}
-		a.periods = app
+		a.periods = periodsApp
 		a.s.mu.Unlock()
 	}
 
-	// appendTree locks the maps itself.
-	if err := a.s.appendTree(p.Tree); err != nil {
-		return err
+	if a.timestamps == nil {
+		app, err := a.s.timestamps[len(a.s.timestamps)-1].chunk.Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next timestamp chunk: %w", err)
+		}
+		a.timestamps = app
+	}
+	if a.duration == nil {
+		app, err := a.s.durations[len(a.s.durations)-1].Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next duration chunk: %w", err)
+		}
+		a.duration = app
+	}
+	if a.periods == nil {
+		app, err := a.s.periods[len(a.s.periods)-1].Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next periods chunk: %w", err)
+		}
+		a.periods = app
 	}
 
 	a.timestamps.AppendAt(a.s.numSamples%samplesPerChunk, timestamp)
@@ -263,8 +265,13 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	a.s.mu.Unlock()
 
 	// Set the timestamp as minTime if timestamp != 0
-	if a.s.minTime == 0 && timestamp != 0 {
+	if a.s.minTime == math.MaxInt64 && timestamp != 0 {
 		a.s.minTime = timestamp
+	}
+
+	// appendTree locks the maps itself.
+	if err := a.s.appendTree(p.Tree); err != nil {
+		return err
 	}
 
 	a.s.storeMaxTime(timestamp)
@@ -291,23 +298,36 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 		length := len(s.timestamps)
 		// delete all chunks but keep the slices allocated.
 		// TODO: We might want to delete the entire series here.
+
+		for _, c := range s.timestamps {
+			_ = s.chunkPool.Put(c)
+		}
+		for _, c := range s.durations {
+			_ = s.chunkPool.Put(c)
+		}
+		for _, c := range s.periods {
+			_ = s.chunkPool.Put(c)
+		}
+
 		s.timestamps = s.timestamps[:0]
 		s.durations = s.durations[:0]
 		s.periods = s.periods[:0]
 
 		for key, chunks := range s.cumulativeValues {
+			for _, c := range chunks {
+				_ = s.chunkPool.Put(c)
+			}
 			s.cumulativeValues[key] = chunks[:0]
 		}
 		for key, chunks := range s.flatValues {
+			for _, c := range chunks {
+				_ = s.chunkPool.Put(c)
+			}
 			s.flatValues[key] = chunks[:0]
 		}
 
-		s.minTime = math.MinInt64
-
-		// initialize with first empty chunk so we don't panic in appenders.
-		s.timestamps = append(s.timestamps, timestampChunk{minTime: math.MaxInt64, maxTime: math.MinInt64, chunk: chunkenc.NewDeltaChunk()})
-		s.durations = append(s.durations, chunkenc.NewRLEChunk())
-		s.periods = append(s.periods, chunkenc.NewRLEChunk())
+		s.minTime = math.MaxInt64
+		s.maxTime = math.MinInt64
 
 		return length
 	}
@@ -318,6 +338,12 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 			break
 		}
 		start = i
+	}
+
+	for i := 0; i < start; i++ {
+		_ = s.chunkPool.Put(s.timestamps[i])
+		_ = s.chunkPool.Put(s.durations[i])
+		_ = s.chunkPool.Put(s.periods[i])
 	}
 
 	// Truncate the beginning of the slices.

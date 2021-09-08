@@ -75,7 +75,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 							// Create the needed amount of chunks based on how many timestamp chunks there are.
 							t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 							for i := 0; i < len(t.s.timestamps); i++ {
-								t.s.flatValues[*n.key][i] = chunkenc.NewXORChunk()
+								t.s.flatValues[*n.key][i] = t.s.chunkPool.GetXOR()
 							}
 						}
 						app, err := t.s.flatValues[*n.key][len(t.s.flatValues[*n.key])-1].Appender()
@@ -116,7 +116,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 							// Create the needed amount of chunks based on how many timestamp chunks there are.
 							t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 							for i := 0; i < len(t.s.timestamps); i++ {
-								t.s.cumulativeValues[*n.key][i] = chunkenc.NewXORChunk()
+								t.s.cumulativeValues[*n.key][i] = t.s.chunkPool.GetXOR()
 							}
 						}
 						app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()
@@ -165,7 +165,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						// Create the needed amount of chunks based on how many timestamp chunks there are.
 						t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 						for i := 0; i < len(t.s.timestamps); i++ {
-							t.s.flatValues[*n.key][i] = chunkenc.NewXORChunk()
+							t.s.flatValues[*n.key][i] = t.s.chunkPool.GetXOR()
 						}
 					}
 					app, err := t.s.flatValues[*n.key][len(t.s.flatValues[*n.key])-1].Appender()
@@ -190,7 +190,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						// Create the needed amount of chunks based on how many timestamp chunks there are.
 						t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 						for i := 0; i < len(t.s.timestamps); i++ {
-							t.s.cumulativeValues[*n.key][i] = chunkenc.NewXORChunk()
+							t.s.cumulativeValues[*n.key][i] = t.s.chunkPool.GetXOR()
 						}
 					}
 					app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()
@@ -231,7 +231,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						// Create the needed amount of chunks based on how many timestamp chunks there are.
 						t.s.flatValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 						for i := 0; i < len(t.s.timestamps); i++ {
-							t.s.flatValues[*n.key][i] = chunkenc.NewXORChunk()
+							t.s.flatValues[*n.key][i] = t.s.chunkPool.GetXOR()
 						}
 					}
 					app, err := t.s.flatValues[*n.key][len(t.s.flatValues[*n.key])-1].Appender()
@@ -256,7 +256,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 						// Create the needed amount of chunks based on how many timestamp chunks there are.
 						t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
 						for i := 0; i < len(t.s.timestamps); i++ {
-							t.s.cumulativeValues[*n.key][i] = chunkenc.NewXORChunk()
+							t.s.cumulativeValues[*n.key][i] = t.s.chunkPool.GetXOR()
 						}
 					}
 					app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()

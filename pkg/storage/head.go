@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/parca-dev/parca/pkg/storage/index"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -46,21 +47,34 @@ type Head struct {
 	profilesAppended    prometheus.Counter
 	truncateDuration    prometheus.Summary
 	truncatedChunks     prometheus.Counter
+	chunkPool           ChunkPool
+}
+
+// ChunkPool stores a set of temporary chunks that may be individually saved and retrieved.
+type ChunkPool interface {
+	Put(chunkenc.Chunk) error
+	GetXOR() chunkenc.Chunk
+	GetDelta() chunkenc.Chunk
+	GetRLE() chunkenc.Chunk
+	GetTimestamp() *timestampChunk
 }
 
 type HeadOptions struct {
+	ChunkPool        ChunkPool
 	ExpensiveMetrics bool
 }
 
 func NewHead(r prometheus.Registerer, opts *HeadOptions) *Head {
 	if opts == nil {
-		opts = &HeadOptions{
-			ExpensiveMetrics: false,
-		}
+		opts = &HeadOptions{}
+	}
+	if opts.ChunkPool == nil {
+		opts.ChunkPool = newHeadChunkPool()
 	}
 
 	h := &Head{
-		postings: index.NewMemPostings(),
+		postings:  index.NewMemPostings(),
+		chunkPool: opts.ChunkPool,
 
 		minTimeGauge: prometheus.NewDesc(
 			"parca_tsdb_head_min_time",
@@ -185,7 +199,7 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 
 	h.numSeries.Inc()
 
-	s, _ = h.series.getOrCreateWithID(id, lset.Hash(), lset)
+	s, _ = h.series.getOrCreateWithID(id, lset.Hash(), lset, h.chunkPool)
 
 	h.postings.Add(s.id, lset)
 
@@ -417,7 +431,7 @@ type stripeLock struct {
 	_ [40]byte
 }
 
-func (s stripeSeries) getOrCreateWithID(id, hash uint64, lset labels.Labels) (*MemSeries, bool) {
+func (s stripeSeries) getOrCreateWithID(id, hash uint64, lset labels.Labels, chunkPool ChunkPool) (*MemSeries, bool) {
 	i := hash & uint64(s.size-1)
 
 	s.locks[i].RLock()
@@ -428,7 +442,7 @@ func (s stripeSeries) getOrCreateWithID(id, hash uint64, lset labels.Labels) (*M
 		return series, false
 	}
 
-	series = NewMemSeries(id, lset, s.updateMaxTime)
+	series = NewMemSeries(id, lset, s.updateMaxTime, chunkPool)
 
 	s.locks[i].Lock()
 	s.hashes[i].set(hash, series)
@@ -537,4 +551,58 @@ func (m seriesHashmap) del(hash uint64, lset labels.Labels) {
 	} else {
 		m[hash] = rem
 	}
+}
+
+// HeadChunkPool wraps chunkenc.Pool and adds support for timestampChunk.
+type HeadChunkPool struct {
+	chunks     chunkenc.Pool
+	timestamps *sync.Pool
+}
+
+func newHeadChunkPool() *HeadChunkPool {
+	return &HeadChunkPool{
+		chunks: chunkenc.NewPool(),
+		timestamps: &sync.Pool{
+			New: func() interface{} {
+				// Make sure to GetDelta from the chunks pool and populate it later!
+				return &timestampChunk{
+					minTime: math.MaxInt64,
+					maxTime: math.MinInt64,
+				}
+			},
+		},
+	}
+}
+
+func (p *HeadChunkPool) Put(c chunkenc.Chunk) error {
+	if tc, ok := c.(*timestampChunk); ok {
+		tc.maxTime = 0
+		tc.minTime = 0
+		p.timestamps.Put(tc)
+		return p.chunks.Put(tc.chunk)
+	}
+	return p.chunks.Put(c)
+}
+
+func (p *HeadChunkPool) GetXOR() chunkenc.Chunk {
+	c, _ := p.chunks.Get(chunkenc.EncXOR, nil)
+	return c
+}
+
+func (p *HeadChunkPool) GetDelta() chunkenc.Chunk {
+	c, _ := p.chunks.Get(chunkenc.EncDelta, nil)
+	return c
+}
+
+func (p *HeadChunkPool) GetRLE() chunkenc.Chunk {
+	c, _ := p.chunks.Get(chunkenc.EncRLE, nil)
+	return c
+}
+
+func (p *HeadChunkPool) GetTimestamp() *timestampChunk {
+	tc := p.timestamps.Get().(*timestampChunk)
+	tc.chunk = p.GetDelta()
+	tc.minTime = math.MaxInt64
+	tc.maxTime = math.MinInt64
+	return tc
 }
