@@ -66,6 +66,12 @@ func MakeLocationKey(l *profile.Location) LocationKey {
 		key.NormalizedAddress -= l.Mapping.Start
 		key.MappingID = l.Mapping.ID
 	}
+
+	// If the normalized address is 0, then the functions attached to the
+	// location are not from a native binary, but instead from a dynamic
+	// runtime/language eg. ruby or python. In those cases we have no better
+	// uniqueness factor than the actual functions, and since there is no
+	// address there is no potential for asynchronously symbolizing.
 	if key.NormalizedAddress != 0 {
 		lines := make([]string, len(l.Line)*2)
 		for i, line := range l.Line {

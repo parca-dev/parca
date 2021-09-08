@@ -1071,6 +1071,7 @@ func (s *sqlMetaStore) getOrCreateFunction(ctx context.Context, f *profile.Funct
 func (s *sqlMetaStore) createLines(ctx context.Context, lines []profile.Line, locID int64) error {
 	if len(lines) > 0 {
 		q := `INSERT INTO "lines" (location_id, line, function_id) VALUES `
+		ll := make([]locationLine, 0, len(lines))
 		for i, ln := range lines {
 			fnID, err := s.getOrCreateFunction(ctx, ln.Function)
 			if err != nil {
@@ -1083,6 +1084,10 @@ func (s *sqlMetaStore) createLines(ctx context.Context, lines []profile.Line, lo
 			if i != len(lines)-1 {
 				q += ", "
 			}
+			ll = append(ll, locationLine{
+				Line:       ln.Line,
+				FunctionID: fnID,
+			})
 		}
 		q += ";"
 		stmt, err := s.db.PrepareContext(ctx, q)
@@ -1092,6 +1097,11 @@ func (s *sqlMetaStore) createLines(ctx context.Context, lines []profile.Line, lo
 		defer stmt.Close()
 
 		_, err = stmt.ExecContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		err = s.cache.setLocationLinesByID(ctx, uint64(locID), ll)
 		if err != nil {
 			return err
 		}
