@@ -59,7 +59,7 @@ export const ProfileView = ({
   const [reportType, setReportType] = useState('iciclegraph')
 
   if (error != null) {
-    return <div>An error occurred: {error.message}</div>
+    return <div className='p-10 flex justify-center'>An error occurred: {error.message}</div>
   }
 
   if (response == null) {
