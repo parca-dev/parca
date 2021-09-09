@@ -22,6 +22,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -252,6 +253,7 @@ func BenchmarkDiff(b *testing.B) {
 	require.NoError(b, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"benchdiff",
 	)
@@ -259,8 +261,10 @@ func BenchmarkDiff(b *testing.B) {
 	b.Cleanup(func() {
 		l.Close()
 	})
-	profileTree1 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
-	profileTree2 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profileTree1, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(b, err)
+	profileTree2, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	require.NoError(b, err)
 
 	prof1 := &Profile{
 		Tree: profileTree1,

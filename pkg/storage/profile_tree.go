@@ -39,7 +39,7 @@ func NewProfileTree() *ProfileTree {
 	}
 }
 
-func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *ProfileTree {
+func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*ProfileTree, error) {
 	pn := &profileNormalizer{
 		logger:    l,
 		metaStore: s,
@@ -56,7 +56,10 @@ func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.Profile
 	samples := make([]*profile.Sample, 0, len(p.Sample))
 	for _, s := range p.Sample {
 		if !isZeroSample(s) {
-			sa, isNew := pn.mapSample(ctx, s, sampleIndex)
+			sa, isNew, err := pn.mapSample(ctx, s, sampleIndex)
+			if err != nil {
+				return nil, err
+			}
 			if isNew {
 				samples = append(samples, sa)
 			}
@@ -69,7 +72,7 @@ func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.Profile
 		profileTree.Insert(s)
 	}
 
-	return profileTree
+	return profileTree, nil
 }
 
 func (t *ProfileTree) Iterator() InstantProfileTreeIterator {

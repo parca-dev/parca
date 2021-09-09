@@ -22,6 +22,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -36,6 +37,7 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"generatepprof",
 	)
@@ -43,7 +45,8 @@ func TestGeneratePprof(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	p := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	p, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
 	res, err := generatePprof(ctx, l, p)
 	require.NoError(t, err)
 

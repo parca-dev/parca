@@ -99,6 +99,7 @@ func TestSymbolizer(t *testing.T) {
 
 	var mStr TestProfileMetaStore
 	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"symbolizer",
 	)
@@ -188,6 +189,7 @@ func TestRealSymbolizer(t *testing.T) {
 
 	var mStr TestProfileMetaStore
 	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 	require.NoError(t, err)
@@ -267,7 +269,7 @@ func TestRealSymbolizer(t *testing.T) {
 
 	functions, err := mStr.GetFunctions(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 34, len(functions))
+	require.Equal(t, 31, len(functions))
 
 	lines := allLocs[6].Line
 	sort.SliceStable(lines, func(i, j int) bool {

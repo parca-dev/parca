@@ -78,7 +78,11 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 			}
 
 			convertCtx, convertSpan := s.tracer.Start(ctx, "profile-from-pprof")
-			profiles := storage.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
+			profiles, err := storage.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to normalize pprof: %v", err)
+			}
+
 			convertSpan.End()
 			appendCtx, appendSpan := s.tracer.Start(ctx, "append-profiles")
 			for _, prof := range profiles {

@@ -32,6 +32,7 @@ import (
 
 func TestDB(t *testing.T) {
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"testdb",
 	)
@@ -50,7 +51,9 @@ func TestDB(t *testing.T) {
 	p, err := profile.Parse(b)
 	require.NoError(t, err)
 
-	require.NoError(t, app1.Append(ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)))
+	prof1, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	require.NoError(t, err)
+	require.NoError(t, app1.Append(prof1))
 
 	app2, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test2"}})
 	require.NoError(t, err)
@@ -61,7 +64,9 @@ func TestDB(t *testing.T) {
 	p, err = profile.Parse(b)
 	require.NoError(t, err)
 
-	require.NoError(t, app2.Append(ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)))
+	prof2, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	require.NoError(t, err)
+	require.NoError(t, app2.Append(prof2))
 
 	q := db.Querier(
 		ctx,

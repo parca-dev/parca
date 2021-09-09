@@ -17,6 +17,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/trace"
 	_ "modernc.org/sqlite"
 )
@@ -28,6 +29,7 @@ type InMemorySQLiteMetaStore struct {
 }
 
 func NewInMemorySQLiteProfileMetaStore(
+	reg prometheus.Registerer,
 	tracer trace.Tracer,
 	name ...string,
 ) (*InMemorySQLiteMetaStore, error) {
@@ -44,7 +46,7 @@ func NewInMemorySQLiteProfileMetaStore(
 	sqlite := &sqlMetaStore{
 		db:     db,
 		tracer: tracer,
-		cache:  newMetaStoreCache(),
+		cache:  newMetaStoreCache(reg),
 	}
 	if err := sqlite.migrate(); err != nil {
 		return nil, fmt.Errorf("migrations failed: %w", err)

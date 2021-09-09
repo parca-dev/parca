@@ -66,6 +66,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"queryrangevalid",
 	)
@@ -96,7 +97,9 @@ func Test_QueryRange_Valid(t *testing.T) {
 	// Overwrite the profile's timestamp to be within the last 5min.
 	p.TimeNanos = time.Now().UnixNano()
 
-	err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0))
+	prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
+	require.NoError(t, err)
+	err = app.Append(prof)
 	require.NoError(t, err)
 
 	// Query last 5 minutes
@@ -128,6 +131,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"queryrangelimited",
 	)
@@ -164,7 +168,9 @@ func Test_QueryRange_Limited(t *testing.T) {
 		// Overwrite the profile's timestamp to be within the last 5min.
 		p.TimeNanos = time.Now().UnixNano()
 
-		err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0))
+		prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
+		require.NoError(t, err)
+		err = app.Append(prof)
 		require.NoError(t, err)
 	}
 
@@ -304,6 +310,7 @@ func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"querysimple",
 	)
@@ -335,7 +342,9 @@ func Test_Query_Simple(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0))
+	prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	require.NoError(t, err)
+	err = app.Append(prof)
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -360,6 +369,7 @@ func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"querydiff",
 	)
@@ -397,7 +407,9 @@ func Test_Query_Diff(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0))
+	prof1, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	require.NoError(t, err)
+	err = app.Append(prof1)
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 10)
@@ -405,7 +417,9 @@ func Test_Query_Diff(t *testing.T) {
 	t2 := (time.Now().UnixNano() / 1000000) * 1000000
 	p2.TimeNanos = t2
 
-	err = app.Append(storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p2, 0))
+	prof2, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p2, 0)
+	require.NoError(t, err)
+	err = app.Append(prof2)
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -445,6 +459,7 @@ func Test_Query_Diff(t *testing.T) {
 func Benchmark_Query_Merge(b *testing.B) {
 	ctx := context.Background()
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"benchquerymerge",
 	)
@@ -458,7 +473,8 @@ func Benchmark_Query_Merge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	p := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	p, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	require.NoError(b, err)
 
 	for k := 0.; k <= 10; k++ {
 		n := int(math.Pow(2, k))
@@ -510,6 +526,7 @@ func Test_Query_Merge(t *testing.T) {
 	ctx := context.Background()
 
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"querymerge",
 	)
@@ -524,7 +541,8 @@ func Test_Query_Merge(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	p, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	require.NoError(t, err)
 
 	for k := 0.; k <= 10; k++ {
 		ctx := context.Background()

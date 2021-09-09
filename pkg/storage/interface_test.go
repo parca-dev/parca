@@ -21,6 +21,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -35,6 +36,7 @@ func TestCopyInstantProfileTree(t *testing.T) {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		"compyinstantprofiletree",
 	)
@@ -42,7 +44,8 @@ func TestCopyInstantProfileTree(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profileTree, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
 
 	profileTreeCopy := CopyInstantProfileTree(profileTree)
 

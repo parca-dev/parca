@@ -44,30 +44,44 @@ type LocationStore interface {
 	GetUnsymbolizedLocations(ctx context.Context) ([]*profile.Location, error)
 }
 
+type Location struct {
+	ID      uint64
+	Address uint64
+	LocationKey
+}
+
 type LocationKey struct {
-	Addr, MappingID uint64
-	Lines           string
-	IsFolded        bool
+	NormalizedAddress, MappingID uint64
+	Lines                        string
+	IsFolded                     bool
 }
 
 func MakeLocationKey(l *profile.Location) LocationKey {
 	key := LocationKey{
-		Addr:     l.Address,
-		IsFolded: l.IsFolded,
+		NormalizedAddress: l.Address,
+		IsFolded:          l.IsFolded,
 	}
 	if l.Mapping != nil {
 		// Normalizes address to handle address space randomization.
-		key.Addr -= l.Mapping.Start
+		key.NormalizedAddress -= l.Mapping.Start
 		key.MappingID = l.Mapping.ID
 	}
-	lines := make([]string, len(l.Line)*2)
-	for i, line := range l.Line {
-		if line.Function != nil {
-			lines[i*2] = strconv.FormatUint(line.Function.ID, 16)
+
+	// If the normalized address is 0, then the functions attached to the
+	// location are not from a native binary, but instead from a dynamic
+	// runtime/language eg. ruby or python. In those cases we have no better
+	// uniqueness factor than the actual functions, and since there is no
+	// address there is no potential for asynchronously symbolizing.
+	if key.NormalizedAddress != 0 {
+		lines := make([]string, len(l.Line)*2)
+		for i, line := range l.Line {
+			if line.Function != nil {
+				lines[i*2] = strconv.FormatUint(line.Function.ID, 16)
+			}
+			lines[i*2+1] = strconv.FormatInt(line.Line, 16)
 		}
-		lines[i*2+1] = strconv.FormatInt(line.Line, 16)
+		key.Lines = strings.Join(lines, "|")
 	}
-	key.Lines = strings.Join(lines, "|")
 	return key
 }
 
@@ -115,6 +129,8 @@ func MakeMappingKey(m *profile.Mapping) MappingKey {
 
 	switch {
 	case m.BuildID != "":
+		// BuildID has precedence over file as we can rely on it being more
+		// unique.
 		key.BuildIDOrFile = m.BuildID
 	case m.File != "":
 		key.BuildIDOrFile = m.File
