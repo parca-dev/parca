@@ -32,6 +32,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thanos-io/thanos/pkg/prober"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -167,6 +168,12 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 
 	met.InitializeMetrics(srv)
 	s.reg.MustRegister(met)
+
+	s.reg.MustRegister(
+		collectors.NewBuildInfoCollector(),
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
 
 	s.grpcProbe.Ready()
 	s.grpcProbe.Healthy()
