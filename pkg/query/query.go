@@ -220,8 +220,8 @@ func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryRe
 	}
 
 	p, err := storage.NewDiffProfile(profileA, profileB)
-	if d == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "failed to diff: %v", err.Error())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
