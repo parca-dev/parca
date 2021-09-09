@@ -24,8 +24,8 @@ interface ProfileMetricsGraphProps {
 }
 
 export interface IQueryRangeResult {
-  response: QueryRangeResponse.AsObject|null
-  error: ServiceError|null
+  response: QueryRangeResponse.AsObject | null
+  error: ServiceError | null
 }
 
 export const useQueryRange = (
@@ -53,7 +53,7 @@ export const useQueryRange = (
 
     client.queryRange(
       req,
-      (error: ServiceError|null, responseMessage: QueryRangeResponse|null) => {
+      (error: ServiceError | null, responseMessage: QueryRangeResponse | null) => {
         const res = responseMessage == null ? null : responseMessage.toObject()
 
         setResult({
@@ -118,11 +118,8 @@ const ProfileMetricsGraph = ({
       <Row>
         <Col xs='2'></Col>
         <Col xs='8'>
-          <div style={{ textAlign: 'center', paddingTop: 100 }}>
-            <p>
-              {/* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */}
-              No data found. Try a different query.
-            </p>
+          <div className='py-20 flex justify-center'>
+            <p className='m-0'>No data found. Try a different query.</p>
           </div>
         </Col>
       </Row>
