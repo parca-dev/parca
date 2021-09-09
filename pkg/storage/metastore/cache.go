@@ -41,49 +41,80 @@ type metaStoreCache struct {
 }
 
 type metrics struct {
-	idHits    *prometheus.CounterVec
-	idMisses  *prometheus.CounterVec
-	keyHits   *prometheus.CounterVec
-	keyMisses *prometheus.CounterVec
+	locationIdHits    prometheus.Counter
+	locationIdMisses  prometheus.Counter
+	locationKeyHits   prometheus.Counter
+	locationKeyMisses prometheus.Counter
+
+	mappingIdHits    prometheus.Counter
+	mappingIdMisses  prometheus.Counter
+	mappingKeyHits   prometheus.Counter
+	mappingKeyMisses prometheus.Counter
+
+	functionIdHits    prometheus.Counter
+	functionIdMisses  prometheus.Counter
+	functionKeyHits   prometheus.Counter
+	functionKeyMisses prometheus.Counter
+
+	locationLinesIdHits   prometheus.Counter
+	locationLinesIdMisses prometheus.Counter
 }
 
 func newMetaStoreCacheMetrics(reg prometheus.Registerer) *metrics {
+	idHits := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "parca_metastore_cache_id_hits_total",
+			Help: "Number of cache hits for id lookups.",
+		},
+		[]string{"item_type"},
+	)
+	idMisses := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "parca_metastore_cache_id_misses_total",
+			Help: "Number of cache misses for id lookups.",
+		},
+		[]string{"item_type"},
+	)
+	keyHits := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "parca_metastore_cache_key_hits_total",
+			Help: "Number of cache hits for key lookups.",
+		},
+		[]string{"item_type"},
+	)
+	keyMisses := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "parca_metastore_cache_key_misses_total",
+			Help: "Number of cache misses for key lookups.",
+		},
+		[]string{"item_type"},
+	)
+
 	m := &metrics{
-		idHits: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "parca_metastore_cache_id_hits_total",
-				Help: "Number of cache hits for id lookups.",
-			},
-			[]string{"item_type"},
-		),
-		idMisses: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "parca_metastore_cache_id_misses_total",
-				Help: "Number of cache misses for id lookups.",
-			},
-			[]string{"item_type"},
-		),
-		keyHits: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "parca_metastore_cache_key_hits_total",
-				Help: "Number of cache hits for key lookups.",
-			},
-			[]string{"item_type"},
-		),
-		keyMisses: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "parca_metastore_cache_key_misses_total",
-				Help: "Number of cache misses for key lookups.",
-			},
-			[]string{"item_type"},
-		),
+		locationIdHits:    idHits.WithLabelValues("location"),
+		locationIdMisses:  idMisses.WithLabelValues("location"),
+		locationKeyHits:   keyHits.WithLabelValues("location"),
+		locationKeyMisses: keyMisses.WithLabelValues("location"),
+
+		mappingIdHits:    idHits.WithLabelValues("mapping"),
+		mappingIdMisses:  idMisses.WithLabelValues("mapping"),
+		mappingKeyHits:   keyHits.WithLabelValues("mapping"),
+		mappingKeyMisses: keyMisses.WithLabelValues("mapping"),
+
+		functionIdHits:    idHits.WithLabelValues("function"),
+		functionIdMisses:  idMisses.WithLabelValues("function"),
+		functionKeyHits:   keyHits.WithLabelValues("function"),
+		functionKeyMisses: keyMisses.WithLabelValues("function"),
+
+		locationLinesIdHits:   idHits.WithLabelValues("location_lines"),
+		locationLinesIdMisses: idMisses.WithLabelValues("location_lines"),
 	}
 
 	if reg != nil {
-		reg.MustRegister(m.idHits)
-		reg.MustRegister(m.idMisses)
-		reg.MustRegister(m.keyHits)
-		reg.MustRegister(m.keyMisses)
+		reg.MustRegister(idHits)
+		reg.MustRegister(idMisses)
+		reg.MustRegister(keyHits)
+		reg.MustRegister(keyMisses)
 	}
 
 	return m
@@ -122,17 +153,17 @@ func (c *metaStoreCache) getLocationByKey(ctx context.Context, k LocationKey) (L
 
 	id, found := c.locationsByKey[k]
 	if !found {
-		c.metrics.keyMisses.WithLabelValues("location").Inc()
+		c.metrics.locationKeyMisses.Inc()
 		return Location{}, false, nil
 	}
 
 	l, found := c.locationsByID[id]
 	if !found {
-		c.metrics.keyMisses.WithLabelValues("location").Inc()
+		c.metrics.locationKeyMisses.Inc()
 		return Location{}, false, nil
 	}
 
-	c.metrics.keyHits.WithLabelValues("location").Inc()
+	c.metrics.locationKeyHits.Inc()
 	return l, found, nil
 }
 
@@ -148,11 +179,11 @@ func (c *metaStoreCache) getLocationByID(ctx context.Context, id uint64) (Locati
 
 	l, found := c.locationsByID[id]
 	if !found {
-		c.metrics.idHits.WithLabelValues("location").Inc()
+		c.metrics.locationIdHits.Inc()
 		return Location{}, false, nil
 	}
 
-	c.metrics.idHits.WithLabelValues("location").Inc()
+	c.metrics.locationIdHits.Inc()
 	return l, found, nil
 }
 
@@ -199,17 +230,17 @@ func (c *metaStoreCache) getMappingByKey(ctx context.Context, k MappingKey) (pro
 
 	id, found := c.mappingsByKey[k]
 	if !found {
-		c.metrics.keyMisses.WithLabelValues("mapping").Inc()
+		c.metrics.mappingKeyMisses.Inc()
 		return profile.Mapping{}, false, nil
 	}
 
 	m, found := c.mappingsByID[id]
 	if !found {
-		c.metrics.keyMisses.WithLabelValues("mapping").Inc()
+		c.metrics.mappingKeyMisses.Inc()
 		return profile.Mapping{}, false, nil
 	}
 
-	c.metrics.keyHits.WithLabelValues("mapping").Inc()
+	c.metrics.mappingKeyHits.Inc()
 	return m, found, nil
 }
 
@@ -225,11 +256,11 @@ func (c *metaStoreCache) getMappingByID(ctx context.Context, id uint64) (profile
 
 	m, found := c.mappingsByID[id]
 	if !found {
-		c.metrics.idHits.WithLabelValues("mapping").Inc()
+		c.metrics.mappingIdHits.Inc()
 		return profile.Mapping{}, false, nil
 	}
 
-	c.metrics.idHits.WithLabelValues("mapping").Inc()
+	c.metrics.mappingIdHits.Inc()
 	return m, found, nil
 }
 
@@ -276,17 +307,17 @@ func (c *metaStoreCache) getFunctionByKey(ctx context.Context, k FunctionKey) (p
 
 	id, found := c.functionsByKey[k]
 	if !found {
-		c.metrics.keyMisses.WithLabelValues("function").Inc()
+		c.metrics.functionKeyMisses.Inc()
 		return profile.Function{}, false, nil
 	}
 
 	fn, found := c.functionsByID[id]
 	if !found {
-		c.metrics.keyMisses.WithLabelValues("function").Inc()
+		c.metrics.functionKeyMisses.Inc()
 		return profile.Function{}, false, nil
 	}
 
-	c.metrics.keyHits.WithLabelValues("function").Inc()
+	c.metrics.functionKeyHits.Inc()
 	return fn, found, nil
 }
 
@@ -318,11 +349,11 @@ func (c *metaStoreCache) getFunctionByID(ctx context.Context, functionID uint64)
 
 	f, found := c.functionsByID[functionID]
 	if !found {
-		c.metrics.idMisses.WithLabelValues("function").Inc()
+		c.metrics.functionIdMisses.Inc()
 		return profile.Function{}, false, nil
 	}
 
-	c.metrics.idHits.WithLabelValues("function").Inc()
+	c.metrics.functionIdHits.Inc()
 	return f, found, nil
 }
 
@@ -370,13 +401,13 @@ func (c *metaStoreCache) getLocationLinesByID(ctx context.Context, locationID ui
 
 	ll, found := c.locationLinesByID[locationID]
 	if !found {
-		c.metrics.idMisses.WithLabelValues("location_lines").Inc()
+		c.metrics.locationLinesIdMisses.Inc()
 		return nil, false, nil
 	}
 
 	v := make([]locationLine, len(ll))
 	copy(v, ll)
 
-	c.metrics.idHits.WithLabelValues("location_lines").Inc()
+	c.metrics.locationLinesIdHits.Inc()
 	return v, true, nil
 }
