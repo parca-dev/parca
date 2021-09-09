@@ -101,7 +101,7 @@ func (s *sqlMetaStore) GetLocationByKey(ctx context.Context, k LocationKey) (*pr
 
 	l, found, err := s.cache.getLocationByKey(ctx, k)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get location by key from cache: %w", err)
 	}
 	if !found {
 		var (
@@ -142,7 +142,7 @@ func (s *sqlMetaStore) GetLocationByKey(ctx context.Context, k LocationKey) (*pr
 
 		err = s.cache.setLocationByKey(ctx, k, l)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("set location by key in cache: %w", err)
 		}
 	}
 	res.ID = l.ID
@@ -152,19 +152,19 @@ func (s *sqlMetaStore) GetLocationByKey(ctx context.Context, k LocationKey) (*pr
 	if k.MappingID > 0 {
 		mapping, err := s.getMappingByID(ctx, int64(k.MappingID))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("get mapping by ID: %w", err)
 		}
 		res.Mapping = mapping
 	}
 
 	linesByLocation, functionIDs, err := s.getLinesByLocationIDs(ctx, l.ID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get lines by location ID: %w", err)
 	}
 
 	functions, err := s.getFunctionsByIDs(ctx, functionIDs...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get functions by IDs: %w", err)
 	}
 
 	for _, line := range linesByLocation[l.ID] {
@@ -194,7 +194,7 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 	for _, id := range ids {
 		l, found, err := s.cache.getLocationByID(ctx, id)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("get location by ID: %w", err)
 		}
 		if found {
 			locs[l.ID] = l
@@ -226,29 +226,32 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 		)
 		dbspan.End()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("execute SQL query: %w", err)
 		}
 
 		defer rows.Close()
 
 		for rows.Next() {
 			var (
-				l                                            Location = Location{}
-				locID, address, normalizedAddress, mappingID int64
+				l                                 Location = Location{}
+				locID, address, normalizedAddress int64
+				mappingID                         *int64
 			)
 
 			err := rows.Scan(&locID, &mappingID, &address, &l.IsFolded, &normalizedAddress, &l.Lines)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("scan row: %w", err)
 			}
 			l.ID = uint64(locID)
-			l.MappingID = uint64(mappingID)
+			if mappingID != nil {
+				l.MappingID = uint64(*mappingID)
+			}
 			l.Address = uint64(address)
 			l.NormalizedAddress = uint64(normalizedAddress)
 			if _, found := locs[l.ID]; !found {
 				err := s.cache.setLocationByID(ctx, l)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("set location cache by ID: %w", err)
 				}
 				locs[l.ID] = l
 				if l.MappingID > 0 {
@@ -261,23 +264,23 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 		}
 		err = rows.Err()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("iterate over SQL rows: %w", err)
 		}
 	}
 
 	mappings, err := s.GetMappingsByIDs(ctx, mappingIDs...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get mappings by IDs: %w", err)
 	}
 
 	linesByLocation, functionIDs, err := s.getLinesByLocationIDs(ctx, ids...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get lines by location IDs: %w", err)
 	}
 
 	functions, err := s.getFunctionsByIDs(ctx, functionIDs...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get functions by ids: %w", err)
 	}
 
 	res := make(map[uint64]*profile.Location, len(locs))
@@ -330,7 +333,7 @@ func (s *sqlMetaStore) GetMappingsByIDs(ctx context.Context, ids ...uint64) (map
 				FROM "mappings" WHERE id IN (%s)`, sIds),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("execute SQL query: %w", err)
 	}
 
 	defer rows.Close()
@@ -348,7 +351,7 @@ func (s *sqlMetaStore) GetMappingsByIDs(ctx context.Context, ids ...uint64) (map
 			if err == sql.ErrNoRows {
 				return nil, ErrMappingNotFound
 			}
-			return nil, fmt.Errorf("getMappingByID failed: %w", err)
+			return nil, fmt.Errorf("scan row: %w", err)
 		}
 		m.ID = uint64(id)
 		m.Start = uint64(start)
@@ -361,7 +364,7 @@ func (s *sqlMetaStore) GetMappingsByIDs(ctx context.Context, ids ...uint64) (map
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("iterate over SQL rows: %w", err)
 	}
 
 	return res, nil
@@ -384,7 +387,7 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 	for _, id := range ids {
 		ll, found, err := s.cache.getLocationLinesByID(ctx, id)
 		if err != nil {
-			return res, functionIDs, err
+			return res, functionIDs, fmt.Errorf("get location lines by ID from cache: %w", err)
 		}
 		if found {
 			for _, l := range ll {
@@ -418,7 +421,7 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 				FROM "lines" WHERE location_id IN (%s)`, sIds),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("execute SQL query: %w", err)
 	}
 
 	defer rows.Close()
@@ -434,7 +437,7 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 			&lId, &l.Line, &fId,
 		)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("scan row:%w", err)
 		}
 		locationId := uint64(lId)
 		l.FunctionID = uint64(fId)
@@ -451,14 +454,14 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("iterate over SQL rows: %w", err)
 	}
 
 	for id, ll := range retrievedLocationLines {
 		res[id] = ll
 		err = s.cache.setLocationLinesByID(ctx, id, ll)
 		if err != nil {
-			return res, functionIDs, err
+			return res, functionIDs, fmt.Errorf("set location lines by ID in cache: %w", err)
 		}
 	}
 
@@ -475,7 +478,7 @@ func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (ma
 	for _, id := range ids {
 		f, found, err := s.cache.getFunctionByID(ctx, id)
 		if err != nil {
-			return res, err
+			return res, fmt.Errorf("get function by ID from cache: %w", err)
 		}
 		if found {
 			res[id] = &f
@@ -503,7 +506,7 @@ func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (ma
 				FROM "functions" WHERE id IN (%s)`, sIds),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("execute SQL query: %w", err)
 	}
 
 	defer rows.Close()
@@ -518,7 +521,7 @@ func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (ma
 			&fId, &f.Name, &f.SystemName, &f.Filename, &f.StartLine,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan row: %w", err)
 		}
 		f.ID = uint64(fId)
 		retrievedFunctions[f.ID] = f
@@ -532,7 +535,7 @@ func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (ma
 		res[id] = &f
 		err = s.cache.setFunctionByID(ctx, f)
 		if err != nil {
-			return res, err
+			return res, fmt.Errorf("set function by ID in cache: %w", err)
 		}
 	}
 
@@ -551,7 +554,7 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 		// Make sure mapping already exists in the database.
 		m, err = s.getMappingByID(ctx, int64(l.Mapping.ID))
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("get mapping by id: %w", err)
 		}
 
 		stmt, err = s.db.PrepareContext(ctx, `INSERT INTO "locations" (
@@ -559,7 +562,7 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
                          )
 					values(?,?,?,?,?)`)
 		if err != nil {
-			return 0, fmt.Errorf("CreateLocation failed: %w", err)
+			return 0, fmt.Errorf("prepare SQL statement: %w", err)
 		}
 		defer stmt.Close()
 
@@ -578,16 +581,16 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 	}
 
 	if err != nil {
-		return 0, fmt.Errorf("CreateLocation failed: %w", err)
+		return 0, fmt.Errorf("execute SQL statement: %w", err)
 	}
 
 	locID, err := res.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("CreateLocation failed: %w", err)
+		return 0, fmt.Errorf("retrieve last inserted ID: %w", err)
 	}
 
 	if err := s.createLines(ctx, l.Line, locID); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("create lines: %w", err)
 	}
 
 	return uint64(locID), nil
@@ -604,7 +607,7 @@ func (s *sqlMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) 
 			if err == sql.ErrNoRows {
 				return ErrMappingNotFound
 			}
-			return fmt.Errorf("UpdateLocation failed: %w", err)
+			return fmt.Errorf("execute SQL query to find mapping: %w", err)
 		}
 
 		stmt, err := s.db.PrepareContext(ctx,
@@ -612,12 +615,12 @@ func (s *sqlMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) 
 		)
 
 		if err != nil {
-			return fmt.Errorf("UpdateLocation failed: %w", err)
+			return fmt.Errorf("prepare SQL update statement with mapping: %w", err)
 		}
 		defer stmt.Close()
 
 		if _, err := stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, mappingID, int64(k.NormalizedAddress), k.Lines, int64(l.ID)); err != nil {
-			return fmt.Errorf("UpdateLocation failed: %w", err)
+			return fmt.Errorf("execute SQL update statement with mapping: %w", err)
 		}
 	} else {
 		stmt, err := s.db.PrepareContext(ctx,
@@ -625,12 +628,12 @@ func (s *sqlMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) 
 		)
 
 		if err != nil {
-			return fmt.Errorf("UpdateLocation failed: %w", err)
+			return fmt.Errorf("prepare SQL update statement without mapping: %w", err)
 		}
 		defer stmt.Close()
 
 		if _, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(l.ID)); err != nil {
-			return fmt.Errorf("UpdateLocation failed: %w", err)
+			return fmt.Errorf("execute SQL update statement without mapping: %w", err)
 		}
 	}
 
@@ -641,11 +644,11 @@ func (s *sqlMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) 
 		if err == sql.ErrNoRows {
 			return ErrLocationNotFound
 		}
-		return fmt.Errorf("UpdateLocation failed: %w", err)
+		return fmt.Errorf("execute SQL statement to retrieve location ID: %w", err)
 	}
 
 	if err := s.createLines(ctx, l.Line, locID); err != nil {
-		return fmt.Errorf("UpdateLocation failed: %w", err)
+		return fmt.Errorf("create lines: %w", err)
 	}
 
 	return nil
@@ -789,7 +792,7 @@ func (s *sqlMetaStore) GetFunctionByKey(ctx context.Context, k FunctionKey) (*pr
 
 	fn, found, err := s.cache.getFunctionByKey(ctx, k)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get function by key from cache: %w", err)
 	}
 	if found {
 		return &fn, nil
@@ -804,13 +807,13 @@ func (s *sqlMetaStore) GetFunctionByKey(ctx context.Context, k FunctionKey) (*pr
 		if err == sql.ErrNoRows {
 			return nil, ErrFunctionNotFound
 		}
-		return nil, fmt.Errorf("GetFunctionByKey failed: %w", err)
+		return nil, fmt.Errorf("execute SQL statement: %w", err)
 	}
 	fn.ID = uint64(id)
 
 	err = s.cache.setFunctionByKey(ctx, k, fn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("set function by key in cache: %w", err)
 	}
 
 	return &fn, nil

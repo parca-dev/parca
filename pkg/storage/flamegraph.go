@@ -134,7 +134,7 @@ func GenerateFlamegraph(
 
 	locs, err := getLocations(fgCtx, tracer, locations, pt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get locations: %w", err)
 	}
 
 	_, buildSpan := tracer.Start(fgCtx, "build-flamegraph")
@@ -212,12 +212,12 @@ func getLocations(ctx context.Context, tracer trace.Tracer, locations Locations,
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("walk profile tree: %w", err)
 	}
 
 	locs, err := locations.GetLocationsByIDs(ctx, locationIDs...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get locations by ids: %w", err)
 	}
 
 	return locs, nil
