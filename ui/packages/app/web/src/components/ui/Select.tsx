@@ -21,7 +21,10 @@ const Select = ({
   placeholder?: string
   width?: number
 }) => {
-  const selection = items.find(v => v.key === selectedKey)
+  const selection = items.find(v => v.key === selectedKey) || {
+    key: selectedKey,
+    label: selectedKey
+  }
 
   return (
     <>
