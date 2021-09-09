@@ -2,7 +2,6 @@ import { Disclosure } from '@headlessui/react'
 import { MenuIcon, XIcon } from '@heroicons/react/outline'
 import { Parca, ParcaSmall } from '@parca/icons'
 import cx from 'classnames'
-import Dropdown from './Dropdown'
 
 const links = [{ name: 'Profiles', href: '/', current: true }]
 
@@ -11,7 +10,7 @@ const Navbar = () => {
     <Disclosure as='nav' className='bg-gray-800 relative z-10'>
       {({ open }) => (
         <>
-          <div className='max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 xl:px-0'>
+          <div className='mx-auto px-3 sm:px-6 lg:px-8 xl:px-0'>
             <div className='relative flex items-center justify-between h-16'>
               <div className='absolute inset-y-0 left-0 flex items-center sm:hidden'>
                 {/* mobile menu button */}
@@ -63,7 +62,8 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
-              <div className='absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0'>
+              {/* placeholder for right menu drop down */}
+              {/* <div className='absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0'>
                 <Dropdown
                   text=''
                   element={
@@ -76,7 +76,7 @@ const Navbar = () => {
                 >
                   <Dropdown.Item onSelect={() => {}}>Sign out</Dropdown.Item>
                 </Dropdown>
-              </div>
+              </div> */}
             </div>
           </div>
 
