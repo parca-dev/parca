@@ -458,7 +458,8 @@ func TestMergeSingle(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	require.NoError(t, err)
 
 	m, err := MergeProfiles(prof)
 	require.NoError(t, err)
@@ -483,7 +484,8 @@ func TestMergeMany(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	require.NoError(t, err)
 
 	num := 1000
 	profiles := make([]InstantProfile, 0, 1000)
@@ -527,8 +529,10 @@ func BenchmarkTreeMerge(b *testing.B) {
 		l.Close()
 	})
 	require.NoError(b, err)
-	profileTree1 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
-	profileTree2 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profileTree1, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(b, err)
+	profileTree2, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	require.NoError(b, err)
 
 	prof1 := &Profile{
 		Tree: profileTree1,
@@ -596,7 +600,8 @@ func BenchmarkMergeMany(b *testing.B) {
 				b.Cleanup(func() {
 					l.Close()
 				})
-				prof := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+				prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+				require.NoError(b, err)
 
 				profiles := make([]InstantProfile, 0, n)
 				for i := 0; i < n; i++ {

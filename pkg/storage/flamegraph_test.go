@@ -172,7 +172,8 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T) *pb.Flamegraph {
 	})
 	require.NoError(t, err)
 
-	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profileTree, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraph(
 		ctx,
@@ -213,7 +214,9 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	require.NoError(t, app.Append(ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)))
+	prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
+	require.NoError(t, app.Append(prof))
 
 	it := s.Iterator()
 	require.True(t, it.Next())
@@ -265,8 +268,10 @@ func testGenerateFlamegraphFromMergeProfile(t *testing.T) *pb.Flamegraph {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof1 := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
-	prof2 := ProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	prof1, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
+	prof2, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	require.NoError(t, err)
 
 	m, err := NewMergeProfile(prof1, prof2)
 	require.NoError(t, err)
@@ -300,7 +305,8 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profileTree, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraph(
 		ctx,
@@ -334,7 +340,8 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 		l.Close()
 	})
 	require.NoError(b, err)
-	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profileTree, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(b, err)
 
 	b.ReportAllocs()
 	b.ResetTimer()

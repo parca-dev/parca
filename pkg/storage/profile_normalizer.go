@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
@@ -40,7 +39,9 @@ type profileNormalizer struct {
 }
 
 // Returns the mapped sample and whether it is new or a known sample.
-func (pn *profileNormalizer) mapSample(ctx context.Context, src *profile.Sample, sampleIndex int) (*profile.Sample, bool) {
+func (pn *profileNormalizer) mapSample(ctx context.Context, src *profile.Sample, sampleIndex int) (*profile.Sample, bool, error) {
+	var err error
+
 	s := &profile.Sample{
 		Location: make([]*profile.Location, len(src.Location)),
 		Label:    make(map[string][]string, len(src.Label)),
@@ -48,7 +49,10 @@ func (pn *profileNormalizer) mapSample(ctx context.Context, src *profile.Sample,
 		NumUnit:  make(map[string][]string, len(src.NumLabel)),
 	}
 	for i, l := range src.Location {
-		s.Location[i] = pn.mapLocation(ctx, l)
+		s.Location[i], err = pn.mapLocation(ctx, l)
+		if err != nil {
+			return nil, false, err
+		}
 	}
 	for k, v := range src.Label {
 		vv := make([]string, len(v))
@@ -71,24 +75,29 @@ func (pn *profileNormalizer) mapSample(ctx context.Context, src *profile.Sample,
 	sa, found := pn.samples[k]
 	if found {
 		sa.Value[0] += src.Value[sampleIndex]
-		return sa, false
+		return sa, false, nil
 	}
 
 	s.Value = []int64{src.Value[sampleIndex]}
 	pn.samples[k] = s
-	return s, true
+	return s, true, nil
 }
 
-func (pn *profileNormalizer) mapLocation(ctx context.Context, src *profile.Location) *profile.Location {
+func (pn *profileNormalizer) mapLocation(ctx context.Context, src *profile.Location) (*profile.Location, error) {
+	var err error
+
 	if src == nil {
-		return nil
+		return nil, nil
 	}
 
 	if l, ok := pn.locationsByID[src.ID]; ok {
-		return l
+		return l, nil
 	}
 
-	mi := pn.mapMapping(ctx, src.Mapping)
+	mi, err := pn.mapMapping(ctx, src.Mapping)
+	if err != nil {
+		return nil, err
+	}
 	l := &profile.Location{
 		Mapping:  mi.m,
 		Address:  uint64(int64(src.Address) + mi.offset),
@@ -96,28 +105,31 @@ func (pn *profileNormalizer) mapLocation(ctx context.Context, src *profile.Locat
 		IsFolded: src.IsFolded,
 	}
 	for i, ln := range src.Line {
-		l.Line[i] = pn.mapLine(ctx, ln)
+		l.Line[i], err = pn.mapLine(ctx, ln)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
 	k := metastore.MakeLocationKey(l)
 	loc, err := pn.metaStore.GetLocationByKey(ctx, k)
-	if err != nil {
-		level.Debug(pn.logger).Log("msg", "location not found", "key", k, "err", err)
+	if err != nil && err != metastore.ErrLocationNotFound {
+		return nil, err
 	}
 	if loc != nil {
 		pn.locationsByID[src.ID] = loc
-		return loc
+		return loc, nil
 	}
 	pn.locationsByID[src.ID] = l
 
 	id, err := pn.metaStore.CreateLocation(ctx, l)
 	if err != nil {
-		level.Warn(pn.logger).Log("msg", "failed to create location", "err", err)
-	} else {
-		l.ID = id
+		return nil, err
 	}
-	return l
+
+	l.ID = id
+	return l, nil
 }
 
 type mapInfo struct {
@@ -125,25 +137,25 @@ type mapInfo struct {
 	offset int64
 }
 
-func (pn *profileNormalizer) mapMapping(ctx context.Context, src *profile.Mapping) mapInfo {
+func (pn *profileNormalizer) mapMapping(ctx context.Context, src *profile.Mapping) (mapInfo, error) {
 	if src == nil {
-		return mapInfo{}
+		return mapInfo{}, nil
 	}
 
 	if mi, ok := pn.mappingsByID[src.ID]; ok {
-		return mi
+		return mi, nil
 	}
 
 	// Check memoization tables.
 	mk := metastore.MakeMappingKey(src)
 	m, err := pn.metaStore.GetMappingByKey(ctx, mk)
-	if err != nil {
-		level.Debug(pn.logger).Log("msg", "mapping not found", "key", mk, "err", err)
+	if err != nil && err != metastore.ErrMappingNotFound {
+		return mapInfo{}, err
 	}
 	if m != nil {
 		mi := mapInfo{m, int64(m.Start) - int64(src.Start)}
 		pn.mappingsByID[src.ID] = mi
-		return mi
+		return mi, nil
 	}
 	m = &profile.Mapping{
 		Start:           src.Start,
@@ -160,38 +172,41 @@ func (pn *profileNormalizer) mapMapping(ctx context.Context, src *profile.Mappin
 	// Update memoization tables.
 	id, err := pn.metaStore.CreateMapping(ctx, m)
 	if err != nil {
-		level.Warn(pn.logger).Log("msg", "failed to create mapping", "err", err)
-	} else {
-		m.ID = id
+		return mapInfo{}, err
 	}
+	m.ID = id
 	mi := mapInfo{m, 0}
 	pn.mappingsByID[src.ID] = mi
-	return mi
+	return mi, nil
 }
 
-func (pn *profileNormalizer) mapLine(ctx context.Context, src profile.Line) profile.Line {
-	ln := profile.Line{
-		Function: pn.mapFunction(ctx, src.Function),
-		Line:     src.Line,
+func (pn *profileNormalizer) mapLine(ctx context.Context, src profile.Line) (profile.Line, error) {
+	f, err := pn.mapFunction(ctx, src.Function)
+	if err != nil {
+		return profile.Line{}, err
 	}
-	return ln
+
+	return profile.Line{
+		Function: f,
+		Line:     src.Line,
+	}, nil
 }
 
-func (pn *profileNormalizer) mapFunction(ctx context.Context, src *profile.Function) *profile.Function {
+func (pn *profileNormalizer) mapFunction(ctx context.Context, src *profile.Function) (*profile.Function, error) {
 	if src == nil {
-		return nil
+		return nil, nil
 	}
 	if f, ok := pn.functionsByID[src.ID]; ok {
-		return f
+		return f, nil
 	}
 	k := metastore.MakeFunctionKey(src)
 	f, err := pn.metaStore.GetFunctionByKey(ctx, k)
-	if err != nil {
-		level.Debug(pn.logger).Log("msg", "function not found", "key", k, "err", err)
+	if err != nil && err != metastore.ErrFunctionNotFound {
+		return nil, err
 	}
 	if f != nil {
 		pn.functionsByID[src.ID] = f
-		return f
+		return f, nil
 	}
 	f = &profile.Function{
 		Name:       src.Name,
@@ -202,13 +217,12 @@ func (pn *profileNormalizer) mapFunction(ctx context.Context, src *profile.Funct
 
 	id, err := pn.metaStore.CreateFunction(ctx, f)
 	if err != nil {
-		level.Warn(pn.logger).Log("msg", "failed to create function", "err", err)
-	} else {
-		f.ID = id
+		return nil, err
 	}
+	f.ID = id
 
 	pn.functionsByID[src.ID] = f
-	return f
+	return f, nil
 }
 
 type stacktraceKey struct {

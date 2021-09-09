@@ -261,8 +261,10 @@ func BenchmarkDiff(b *testing.B) {
 	b.Cleanup(func() {
 		l.Close()
 	})
-	profileTree1 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
-	profileTree2 := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profileTree1, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(b, err)
+	profileTree2, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	require.NoError(b, err)
 
 	prof1 := &Profile{
 		Tree: profileTree1,

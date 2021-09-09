@@ -44,7 +44,8 @@ func TestCopyInstantProfileTree(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	profileTree := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profileTree, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
 
 	profileTreeCopy := CopyInstantProfileTree(profileTree)
 

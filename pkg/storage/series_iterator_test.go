@@ -207,7 +207,8 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	app, err := s.Appender()
 	require.NoError(t, err)
-	profile := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
 	require.NoError(t, app.Append(profile))
 
 	profileTree := profile.Tree

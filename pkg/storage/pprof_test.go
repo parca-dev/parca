@@ -45,7 +45,8 @@ func TestGeneratePprof(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	p := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	p, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
 	res, err := generatePprof(ctx, l, p)
 	require.NoError(t, err)
 

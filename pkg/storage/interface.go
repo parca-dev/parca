@@ -183,24 +183,34 @@ func (i *SliceProfileSeriesIterator) Err() error {
 
 // ProfilesFromPprof extracts a Profile from each sample index included in the
 // pprof profile.
-func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) []*Profile {
+func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) ([]*Profile, error) {
 	ps := make([]*Profile, 0, len(p.SampleType))
 
 	for i := range p.SampleType {
+		tree, err := ProfileTreeFromPprof(ctx, l, s, p, i)
+		if err != nil {
+			return nil, err
+		}
+
 		ps = append(ps, &Profile{
-			Tree: ProfileTreeFromPprof(ctx, l, s, p, i),
+			Tree: tree,
 			Meta: ProfileMetaFromPprof(p, i),
 		})
 	}
 
-	return ps
+	return ps, nil
 }
 
-func ProfileFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) *Profile {
-	return &Profile{
-		Tree: ProfileTreeFromPprof(ctx, l, s, p, sampleIndex),
-		Meta: ProfileMetaFromPprof(p, sampleIndex),
+func ProfileFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*Profile, error) {
+	tree, err := ProfileTreeFromPprof(ctx, l, s, p, sampleIndex)
+	if err != nil {
+		return nil, err
 	}
+
+	return &Profile{
+		Tree: tree,
+		Meta: ProfileMetaFromPprof(p, sampleIndex),
+	}, nil
 }
 
 func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {

@@ -44,7 +44,8 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p := ProfileFromPprof(ctx, log.NewNopLogger(), s, pprof1, 0)
+	p, err := ProfileFromPprof(ctx, log.NewNopLogger(), s, pprof1, 0)
+	require.NoError(t, err)
 
 	db := OpenDB(prometheus.NewRegistry(), nil)
 
