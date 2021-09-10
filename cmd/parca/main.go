@@ -32,7 +32,7 @@ func main() {
 	serverStr := figure.NewColorFigure("Parca", "roman", "cyan", true)
 	serverStr.Print()
 
-	logger := parca.NewLogger(flags.LogLevel, parca.LogFormatJSON, "parca")
+	logger := parca.NewLogger(flags.LogLevel, parca.LogFormatLogfmt, "parca")
 	level.Debug(logger).Log("msg", "parca initialized", "config", flags)
 
 	registry := prometheus.NewRegistry()
