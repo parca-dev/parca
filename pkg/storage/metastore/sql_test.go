@@ -137,7 +137,7 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 		{Line: 5, Function: f},
 	}
 
-	err = s.UpdateLocation(ctx, l1)
+	err = s.Symbolize(ctx, l1)
 	require.NoError(t, err)
 
 	locByID, err = s.GetLocationsByIDs(ctx, l1.ID)
@@ -392,7 +392,7 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 	l1.ID = locs[1].ID
 	require.Equal(t, l1, locs[1])
 
-	unsymlocs, err := s.GetUnsymbolizedLocations(ctx)
+	unsymlocs, err := s.GetSymbolizableLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(unsymlocs))
 	require.Equal(t, l, unsymlocs[0])

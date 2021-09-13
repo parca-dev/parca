@@ -112,7 +112,7 @@ func (s *InMemoryProfileMetaStore) GetLocations(ctx context.Context) ([]*profile
 	return res, nil
 }
 
-func (s *InMemoryProfileMetaStore) GetUnsymbolizedLocations(ctx context.Context) ([]*profile.Location, error) {
+func (s *InMemoryProfileMetaStore) GetSymbolizableLocations(ctx context.Context) ([]*profile.Location, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -147,7 +147,7 @@ func (s *InMemoryProfileMetaStore) CreateLocation(ctx context.Context, l *profil
 	return id, nil
 }
 
-func (s *InMemoryProfileMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) error {
+func (s *InMemoryProfileMetaStore) Symbolize(ctx context.Context, l *profile.Location) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

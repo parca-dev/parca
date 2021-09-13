@@ -34,6 +34,8 @@ type sqlMetaStore struct {
 }
 
 func (s *sqlMetaStore) migrate() error {
+	// Most of the tables have started their lives as representation of pprof data types.
+	// Find detailed information in https://github.com/google/pprof/blob/master/proto/README.md
 	tables := []string{
 		"PRAGMA foreign_keys = ON",
 		`CREATE TABLE "mappings" (
@@ -596,58 +598,9 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 	return uint64(locID), nil
 }
 
-func (s *sqlMetaStore) UpdateLocation(ctx context.Context, l *profile.Location) error {
-	k := MakeLocationKey(l)
-	if l.Mapping != nil {
-		// Make sure mapping already exists in the database.
-		var mappingID int
-		if err := s.db.QueryRowContext(ctx,
-			`SELECT "id" FROM "mappings" WHERE id=?`, int64(l.Mapping.ID),
-		).Scan(&mappingID); err != nil {
-			if err == sql.ErrNoRows {
-				return ErrMappingNotFound
-			}
-			return fmt.Errorf("execute SQL query to find mapping: %w", err)
-		}
-
-		stmt, err := s.db.PrepareContext(ctx,
-			`UPDATE "locations" SET address=?, is_folded=?, mapping_id=?, normalized_address=?, lines=? WHERE id=?`,
-		)
-
-		if err != nil {
-			return fmt.Errorf("prepare SQL update statement with mapping: %w", err)
-		}
-		defer stmt.Close()
-
-		if _, err := stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, mappingID, int64(k.NormalizedAddress), k.Lines, int64(l.ID)); err != nil {
-			return fmt.Errorf("execute SQL update statement with mapping: %w", err)
-		}
-	} else {
-		stmt, err := s.db.PrepareContext(ctx,
-			`UPDATE "locations" SET address=?, is_folded=? WHERE id=?`,
-		)
-
-		if err != nil {
-			return fmt.Errorf("prepare SQL update statement without mapping: %w", err)
-		}
-		defer stmt.Close()
-
-		if _, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(l.ID)); err != nil {
-			return fmt.Errorf("execute SQL update statement without mapping: %w", err)
-		}
-	}
-
-	var locID int64
-	if err := s.db.QueryRowContext(ctx,
-		`SELECT "id" FROM "locations" WHERE id=?`, int64(l.ID),
-	).Scan(&locID); err != nil {
-		if err == sql.ErrNoRows {
-			return ErrLocationNotFound
-		}
-		return fmt.Errorf("execute SQL statement to retrieve location ID: %w", err)
-	}
-
-	if err := s.createLines(ctx, l.Line, locID); err != nil {
+func (s *sqlMetaStore) Symbolize(ctx context.Context, l *profile.Location) error {
+	// NOTICE: We assume the given location is already persisted in the database.
+	if err := s.createLines(ctx, l.Line, int64(l.ID)); err != nil {
 		return fmt.Errorf("create lines: %w", err)
 	}
 
@@ -720,7 +673,7 @@ func (s *sqlMetaStore) GetLocations(ctx context.Context) ([]*profile.Location, e
 	return locs, nil
 }
 
-func (s *sqlMetaStore) GetUnsymbolizedLocations(ctx context.Context) ([]*profile.Location, error) {
+func (s *sqlMetaStore) GetSymbolizableLocations(ctx context.Context) ([]*profile.Location, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT l."id", l."address", l."is_folded", m."id",
        					m."start", m."limit", m."offset", m."file", m."build_id",
@@ -728,12 +681,13 @@ func (s *sqlMetaStore) GetUnsymbolizedLocations(ctx context.Context) ([]*profile
        					m."has_line_numbers", m."has_inline_frames"
 				FROM "locations" l
 				JOIN "mappings" m ON l.mapping_id = m.id
-				LEFT JOIN "lines" ll ON l."id" = ll."location_id"
-                WHERE ll."line" IS NULL 
+				LEFT JOIN "lines" ln ON l."id" = ln."location_id"
+                WHERE l.normalized_address > 0
+                  AND ln."line" IS NULL 
                   AND l."id" IS NOT NULL`,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("GetUnsymbolizedLocations failed: %w", err)
+		return nil, fmt.Errorf("GetSymbolizableLocations failed: %w", err)
 	}
 	defer rows.Close()
 
@@ -760,7 +714,7 @@ func (s *sqlMetaStore) GetUnsymbolizedLocations(ctx context.Context) ([]*profile
 			&hasFunctions, &hasFilenames, &hasLineNumbers, &hasInlineFrames,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("GetUnsymbolizedLocations failed: %w", err)
+			return nil, fmt.Errorf("GetSymbolizableLocations failed: %w", err)
 		}
 		l.ID = uint64(locID)
 		l.Address = uint64(locAddress)
