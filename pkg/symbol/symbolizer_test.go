@@ -129,7 +129,7 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(allLocs))
 
-	symLocs, err := mStr.GetUnsymbolizedLocations(ctx)
+	symLocs, err := mStr.GetSymbolizableLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(symLocs))
 
@@ -140,7 +140,7 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(allLocs))
 
-	symLocs, err = mStr.GetUnsymbolizedLocations(ctx)
+	symLocs, err = mStr.GetSymbolizableLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(symLocs))
 
@@ -252,7 +252,7 @@ func TestRealSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 32, len(allLocs))
 
-	symLocs, err := mStr.GetUnsymbolizedLocations(ctx)
+	symLocs, err := mStr.GetSymbolizableLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 11, len(symLocs))
 
@@ -263,7 +263,7 @@ func TestRealSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 32, len(allLocs))
 
-	symLocs, err = mStr.GetUnsymbolizedLocations(ctx)
+	symLocs, err = mStr.GetSymbolizableLocations(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(symLocs))
 
