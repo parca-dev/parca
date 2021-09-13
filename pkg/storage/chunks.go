@@ -54,7 +54,7 @@ func (it *MultiChunksIterator) Next() bool {
 		it.cit = it.chunks[it.readChunks].Iterator(it.cit)
 		it.readChunks++
 
-		// We need to immediately need the next value.
+		// We need to immediately read the next value.
 		for it.cit.Next() {
 			it.val = it.cit.At()
 			it.read++

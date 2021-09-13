@@ -21,13 +21,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMemRangeSeries_Iterator(t *testing.T) {
+func TestMemRootSeries_Iterator(t *testing.T) {
 	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
 
 	app, err := s.Appender()
 	require.NoError(t, err)
 
-	for i := 1; i <= 500; i++ {
+	for i := 1; i < 500; i++ {
 		p := Profile{
 			Meta: InstantProfileMeta{
 				Timestamp: int64(i),
@@ -45,7 +45,7 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420}).Iterator()
+	it := (&MemRootSeries{s: s, mint: 74, maxt: 420}).Iterator()
 
 	seen := int64(75)
 	for it.Next() {
