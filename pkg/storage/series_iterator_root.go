@@ -46,14 +46,14 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 	}
 
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
-	it.Reset(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
+	rootIt := NewMultiChunkIterator(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
 	if start != 0 {
-		it.Seek(start)
+		rootIt.Seek(start)
 	}
 
 	root := &MemSeriesIteratorTreeNode{}
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-		Values:   it,
+		Values:   rootIt,
 		Label:    rs.s.labels[rootKey],
 		NumLabel: rs.s.numLabels[rootKey],
 		NumUnit:  rs.s.numUnits[rootKey],
@@ -64,7 +64,7 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 	// We need to recreate the root and not simply append it itself, as that creates an endless recursion.
 	root.Children = append(root.Children, &MemSeriesIteratorTreeNode{
 		cumulativeValues: []*MemSeriesIteratorTreeValueNode{{
-			Values:   it,
+			Values:   rootIt,
 			Label:    rs.s.labels[rootKey],
 			NumLabel: rs.s.numLabels[rootKey],
 			NumUnit:  rs.s.numUnits[rootKey],
