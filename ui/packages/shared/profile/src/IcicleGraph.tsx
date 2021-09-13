@@ -1,6 +1,6 @@
 import React, { MouseEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { scaleLinear } from 'd3-scale'
-import { Flamegraph, FlamegraphNode } from '@parca/client'
+import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client'
 
 const transitionTime = '250ms'
 const transitionCurve = 'cubic-bezier(0.85, 0.69, 0.71, 1.32)'
@@ -55,7 +55,7 @@ function IcicleRect ({
             y={13}
             style={{ fontSize: '12px' }}
           >
-            {name.split(' ')[0]}
+            {name}
           </text>
         </svg>
       )}
@@ -63,7 +63,7 @@ function IcicleRect ({
   )
 }
 
-interface IcicleGraphNodeProps {
+interface IcicleGraphNodesProps {
   data: FlamegraphNode.AsObject[]
   x: number
   y: number
@@ -75,7 +75,30 @@ interface IcicleGraphNodeProps {
   path: () => string[]
 }
 
-export function IcicleGraphNode ({
+function diffColor(diff: number, cumulative: number): string {
+    const prevValue = cumulative - diff
+    const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? (diff / prevValue) : 0) : (1.0)
+
+    const diffTransparency = Math.abs(diff) > 0 ? Math.min(((Math.abs(diffRatio) / 2) + 0.5)*0.8, 0.8) : 0
+    const color = diff == 0 ? "#90c7e0" : (diff > 0 ? `rgba(221, 46, 69, ${diffTransparency})` : `rgba(59, 165, 93, ${diffTransparency})`)
+
+    return color
+}
+
+const getLastItem = thePath => thePath.substring(thePath.lastIndexOf('/') + 1)
+
+export function nodeLabel(node: FlamegraphNode.AsObject): string {
+    if (node.meta === undefined) return '<unknown>'
+    const mapping = `${(node.meta.mapping !== undefined && node.meta.mapping.file != '') ? '['+getLastItem(node.meta.mapping.file)+']' : ''}`
+    if (node.meta.pb_function !== undefined && node.meta.pb_function.name != '') return mapping+' '+node.meta.pb_function.name
+
+    const address = `${(node.meta.location !== undefined && node.meta.location.address !== undefined && node.meta.location.address != 0) ? ' 0x'+node.meta.location.address.toString(16) : ''}`
+    const fallback = `${mapping}${address}`
+
+    return fallback == '' ? '<unknown>' : fallback
+}
+
+export function IcicleGraphNodes ({
   data,
   x,
   y,
@@ -85,10 +108,10 @@ export function IcicleGraphNode ({
   path,
   setCurPath,
   curPath
-}: IcicleGraphNodeProps) {
+}: IcicleGraphNodesProps) {
   if (data === undefined || data.length == 0) return <></>
 
-  const nodes = curPath.length == 0 ? data : data.filter((d, i) => d != null && curPath[0] == d.fullName)
+  const nodes = curPath.length == 0 ? data : data.filter((d, i) => d != null && curPath[0] == nodeLabel(d))
 
   const xScale = scaleLinear()
     .domain([0, nodes.reduce((sum, d) => sum + (d ? d.cumulative : 0), 0)])
@@ -110,18 +133,13 @@ export function IcicleGraphNode ({
           return
         }
 
-        const key = `${level}-${d.fullName}-${i}`
-
+        const key = `${level}-${i}`
+        const name = nodeLabel(d)
         const nextPath = () => {
-          return path().concat([d.fullName])
+          return path().concat([name])
         }
 
-        const diff = d.diff === undefined ? 0 : d.diff
-        const prevValue = d.cumulative - diff
-        const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? (diff / prevValue) : 0) : (1.0)
-
-        const diffTransparency = Math.abs(diff) > 0 ? Math.min(((Math.abs(diffRatio) / 2) + 0.5)*0.8, 0.8) : 0
-        const color = diff == 0 ? "#90c7e0" : (diff > 0 ? `rgba(221, 46, 69, ${diffTransparency})` : `rgba(59, 165, 93, ${diffTransparency})`)
+        const color = diffColor(d.diff === undefined ? 0 : d.diff, d.cumulative)
 
         return (
           <React.Fragment key={key}>
@@ -130,7 +148,7 @@ export function IcicleGraphNode ({
               y={0}
               width={width}
               height={RowHeight}
-              name={d.name}
+              name={name}
               color={color}
               onClick={function (e) {
                 const p = nextPath()
@@ -138,7 +156,7 @@ export function IcicleGraphNode ({
               }}
               onHover={(e) => setHoveringNode(d)}
             />
-            <IcicleGraphNode
+            <IcicleGraphNodes
               data={d.childrenList}
               x={xScale(start)}
               y={RowHeight}
@@ -154,6 +172,55 @@ export function IcicleGraphNode ({
       })}
     </g>
   )
+}
+
+interface IcicleGraphRootNodeProps {
+  node: FlamegraphRootNode.AsObject
+  width: number
+  curPath: string[]
+  setCurPath: (path: string[]) => void
+  setHoveringNode: (node: FlamegraphNode.AsObject) => void
+}
+
+export function IcicleGraphRootNode ({
+  node,
+  width,
+  setHoveringNode,
+  setCurPath,
+  curPath
+}: IcicleGraphRootNodeProps) {
+    const color = diffColor(node.diff === undefined ? 0 : node.diff, node.cumulative)
+
+    return (
+        <g
+            transform={`translate(0, 0)`}
+            style={{ transition: transformTransition }}
+        >
+            <IcicleRect
+                x={0}
+                y={0}
+                width={width}
+                height={RowHeight}
+                name={'root'}
+                color={color}
+                onClick={function (e) {
+                    setCurPath([])
+                }}
+                onHover={(e) => setHoveringNode(node)}
+            />
+            <IcicleGraphNodes
+                data={node.childrenList}
+                x={0}
+                y={RowHeight}
+                width={width}
+                level={1}
+                setHoveringNode={setHoveringNode}
+                path={() => []}
+                curPath={curPath}
+                setCurPath={setCurPath}
+            />
+        </g>
+    )
 }
 
 interface IcicleGraphProps {
@@ -195,16 +262,12 @@ export default function IcicleGraph ({
   return (
     <svg width={width} height={height}>
       <g ref={ref}>
-        <IcicleGraphNode
-          data={[graph.root]}
+        <IcicleGraphRootNode
+          node={graph.root}
           setHoveringNode={setHoveringNode}
-          path={() => []}
           curPath={curPath}
           setCurPath={setCurPath}
           width={width !== undefined ? width : 0}
-          x={0}
-          y={0}
-          level={0}
         />
       </g>
     </svg>

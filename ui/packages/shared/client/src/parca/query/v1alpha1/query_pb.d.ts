@@ -317,8 +317,8 @@ export namespace QueryRequest {
 export class Flamegraph extends jspb.Message {
   hasRoot(): boolean;
   clearRoot(): void;
-  getRoot(): FlamegraphNode | undefined;
-  setRoot(value?: FlamegraphNode): void;
+  getRoot(): FlamegraphRootNode | undefined;
+  setRoot(value?: FlamegraphRootNode): void;
 
   getTotal(): number;
   setTotal(value: number): void;
@@ -338,18 +338,47 @@ export class Flamegraph extends jspb.Message {
 
 export namespace Flamegraph {
   export type AsObject = {
-    root?: FlamegraphNode.AsObject,
+    root?: FlamegraphRootNode.AsObject,
     total: number,
     unit: string,
   }
 }
 
-export class FlamegraphNode extends jspb.Message {
-  getName(): string;
-  setName(value: string): void;
+export class FlamegraphRootNode extends jspb.Message {
+  getCumulative(): number;
+  setCumulative(value: number): void;
 
-  getFullName(): string;
-  setFullName(value: string): void;
+  getDiff(): number;
+  setDiff(value: number): void;
+
+  clearChildrenList(): void;
+  getChildrenList(): Array<FlamegraphNode>;
+  setChildrenList(value: Array<FlamegraphNode>): void;
+  addChildren(value?: FlamegraphNode, index?: number): FlamegraphNode;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FlamegraphRootNode.AsObject;
+  static toObject(includeInstance: boolean, msg: FlamegraphRootNode): FlamegraphRootNode.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FlamegraphRootNode, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FlamegraphRootNode;
+  static deserializeBinaryFromReader(message: FlamegraphRootNode, reader: jspb.BinaryReader): FlamegraphRootNode;
+}
+
+export namespace FlamegraphRootNode {
+  export type AsObject = {
+    cumulative: number,
+    diff: number,
+    childrenList: Array<FlamegraphNode.AsObject>,
+  }
+}
+
+export class FlamegraphNode extends jspb.Message {
+  hasMeta(): boolean;
+  clearMeta(): void;
+  getMeta(): FlamegraphNodeMeta | undefined;
+  setMeta(value?: FlamegraphNodeMeta): void;
 
   getCumulative(): number;
   setCumulative(value: number): void;
@@ -374,11 +403,186 @@ export class FlamegraphNode extends jspb.Message {
 
 export namespace FlamegraphNode {
   export type AsObject = {
-    name: string,
-    fullName: string,
+    meta?: FlamegraphNodeMeta.AsObject,
     cumulative: number,
     diff: number,
     childrenList: Array<FlamegraphNode.AsObject>,
+  }
+}
+
+export class FlamegraphNodeMeta extends jspb.Message {
+  hasLocation(): boolean;
+  clearLocation(): void;
+  getLocation(): Location | undefined;
+  setLocation(value?: Location): void;
+
+  hasMapping(): boolean;
+  clearMapping(): void;
+  getMapping(): Mapping | undefined;
+  setMapping(value?: Mapping): void;
+
+  hasFunction(): boolean;
+  clearFunction(): void;
+  getFunction(): Function | undefined;
+  setFunction(value?: Function): void;
+
+  hasLine(): boolean;
+  clearLine(): void;
+  getLine(): Line | undefined;
+  setLine(value?: Line): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FlamegraphNodeMeta.AsObject;
+  static toObject(includeInstance: boolean, msg: FlamegraphNodeMeta): FlamegraphNodeMeta.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FlamegraphNodeMeta, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FlamegraphNodeMeta;
+  static deserializeBinaryFromReader(message: FlamegraphNodeMeta, reader: jspb.BinaryReader): FlamegraphNodeMeta;
+}
+
+export namespace FlamegraphNodeMeta {
+  export type AsObject = {
+    location?: Location.AsObject,
+    mapping?: Mapping.AsObject,
+    pb_function?: Function.AsObject,
+    line?: Line.AsObject,
+  }
+}
+
+export class Location extends jspb.Message {
+  getId(): number;
+  setId(value: number): void;
+
+  getMappingId(): number;
+  setMappingId(value: number): void;
+
+  getAddress(): number;
+  setAddress(value: number): void;
+
+  getIsFolded(): boolean;
+  setIsFolded(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Location.AsObject;
+  static toObject(includeInstance: boolean, msg: Location): Location.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Location, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Location;
+  static deserializeBinaryFromReader(message: Location, reader: jspb.BinaryReader): Location;
+}
+
+export namespace Location {
+  export type AsObject = {
+    id: number,
+    mappingId: number,
+    address: number,
+    isFolded: boolean,
+  }
+}
+
+export class Line extends jspb.Message {
+  getLocationId(): number;
+  setLocationId(value: number): void;
+
+  getFunctionId(): number;
+  setFunctionId(value: number): void;
+
+  getLine(): number;
+  setLine(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Line.AsObject;
+  static toObject(includeInstance: boolean, msg: Line): Line.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Line, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Line;
+  static deserializeBinaryFromReader(message: Line, reader: jspb.BinaryReader): Line;
+}
+
+export namespace Line {
+  export type AsObject = {
+    locationId: number,
+    functionId: number,
+    line: number,
+  }
+}
+
+export class Mapping extends jspb.Message {
+  getId(): number;
+  setId(value: number): void;
+
+  getStart(): number;
+  setStart(value: number): void;
+
+  getLimit(): number;
+  setLimit(value: number): void;
+
+  getOffset(): number;
+  setOffset(value: number): void;
+
+  getFile(): string;
+  setFile(value: string): void;
+
+  getBuildId(): string;
+  setBuildId(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Mapping.AsObject;
+  static toObject(includeInstance: boolean, msg: Mapping): Mapping.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Mapping, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Mapping;
+  static deserializeBinaryFromReader(message: Mapping, reader: jspb.BinaryReader): Mapping;
+}
+
+export namespace Mapping {
+  export type AsObject = {
+    id: number,
+    start: number,
+    limit: number,
+    offset: number,
+    file: string,
+    buildId: string,
+  }
+}
+
+export class Function extends jspb.Message {
+  getId(): number;
+  setId(value: number): void;
+
+  getName(): string;
+  setName(value: string): void;
+
+  getSystemName(): string;
+  setSystemName(value: string): void;
+
+  getFilename(): string;
+  setFilename(value: string): void;
+
+  getStartLine(): number;
+  setStartLine(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Function.AsObject;
+  static toObject(includeInstance: boolean, msg: Function): Function.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Function, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Function;
+  static deserializeBinaryFromReader(message: Function, reader: jspb.BinaryReader): Function;
+}
+
+export namespace Function {
+  export type AsObject = {
+    id: number,
+    name: string,
+    systemName: string,
+    filename: string,
+    startLine: number,
   }
 }
 
