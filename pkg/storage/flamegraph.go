@@ -17,9 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/google/pprof/profile"
 	"go.opentelemetry.io/otel/trace"
@@ -62,23 +60,15 @@ func (s *TreeStack) Size() int {
 }
 
 type FlamegraphIterator struct {
-	tree  *pb.Flamegraph
 	stack TreeStack
 }
 
-func NewFlamegraphIterator(fg *pb.Flamegraph) *FlamegraphIterator {
+func NewFlamegraphIterator(fgRoot *pb.FlamegraphNode) *FlamegraphIterator {
 	root := &TreeStackEntry{
-		node: &pb.FlamegraphNode{
-			Name:       fg.Root.Name,
-			FullName:   fg.Root.FullName,
-			Cumulative: fg.Root.Cumulative,
-			Diff:       fg.Root.Diff,
-			Children:   fg.Root.Children,
-		},
+		node:         fgRoot,
 		currentChild: -1,
 	}
 	return &FlamegraphIterator{
-		tree:  fg,
 		stack: TreeStack{root},
 	}
 }
@@ -151,19 +141,18 @@ func GenerateFlamegraph(
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 
-	flamegraphRoot := &pb.FlamegraphNode{
-		Name:       "root",
-		Cumulative: n.CumulativeValue(),
-		Diff:       n.CumulativeDiffValue(),
-	}
-
+	cumulative := n.CumulativeValue()
 	flamegraph := &pb.Flamegraph{
-		Root:  flamegraphRoot,
-		Total: flamegraphRoot.Cumulative,
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: cumulative,
+			Diff:       n.CumulativeDiffValue(),
+		},
+		Total: cumulative,
 		Unit:  meta.SampleType.Unit,
 	}
 
-	flamegraphStack := TreeStack{{node: flamegraphRoot}}
+	rootNode := &pb.FlamegraphNode{}
+	flamegraphStack := TreeStack{{node: rootNode}}
 	steppedInto := it.StepInto()
 	if !steppedInto {
 		return flamegraph, nil
@@ -193,8 +182,9 @@ func GenerateFlamegraph(
 		it.StepUp()
 		flamegraphStack.Pop()
 	}
-	return flamegraph, nil
-	//return aggregateByFunctionName(flamegraph), nil
+	flamegraph.Root.Children = rootNode.Children
+
+	return aggregateByFunction(flamegraph), nil
 }
 
 func getLocations(ctx context.Context, tracer trace.Tracer, locations Locations, pt InstantProfileTree) (map[uint64]*profile.Location, error) {
@@ -223,28 +213,38 @@ func getLocations(ctx context.Context, tracer trace.Tracer, locations Locations,
 	return locs, nil
 }
 
-func aggregateByFunctionName(fg *pb.Flamegraph) *pb.Flamegraph {
-	it := NewFlamegraphIterator(fg)
+func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
+	oldRootNode := &pb.FlamegraphNode{
+		Cumulative: fg.Root.Cumulative,
+		Diff:       fg.Root.Diff,
+		Children:   fg.Root.Children,
+	}
+	mergeChildren(oldRootNode, compareByName, equalsByName)
+
+	it := NewFlamegraphIterator(oldRootNode)
 	tree := &pb.Flamegraph{
 		Total: fg.Total,
-		Root: &pb.FlamegraphNode{
-			Name:       fg.Root.Name,
-			FullName:   fg.Root.FullName,
+		Root: &pb.FlamegraphRootNode{
 			Cumulative: fg.Root.Cumulative,
 			Diff:       fg.Root.Diff,
 		},
+		Unit: fg.Unit,
 	}
 	if !it.HasMore() {
 		return tree
 	}
-	stack := TreeStack{{node: tree.Root}}
+
+	newRootNode := &pb.FlamegraphNode{
+		Cumulative: fg.Root.Cumulative,
+		Diff:       fg.Root.Diff,
+	}
+	stack := TreeStack{{node: newRootNode}}
 
 	for it.HasMore() {
 		if it.NextChild() {
 			node := it.At()
 			cur := &pb.FlamegraphNode{
-				Name:       node.Name,
-				FullName:   node.FullName,
+				Meta:       node.Meta,
 				Cumulative: node.Cumulative,
 				Diff:       node.Diff,
 			}
@@ -262,6 +262,8 @@ func aggregateByFunctionName(fg *pb.Flamegraph) *pb.Flamegraph {
 		it.StepUp()
 		stack.Pop()
 	}
+
+	tree.Root.Children = newRootNode.Children
 
 	return tree
 }
@@ -283,8 +285,7 @@ func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.Flameg
 		current, next := node.Children[i], node.Children[j]
 		if equals(current, next) {
 			// Merge children into the first one
-			aggregatedName := strings.Split(current.Name, " ")[0]
-			current.Name = fmt.Sprintf("%s :0", aggregatedName)
+			current.Meta.Line = nil
 			current.Cumulative += next.Cumulative
 			current.Diff += next.Diff
 			current.Children = append(current.Children, next.Children...)
@@ -297,61 +298,110 @@ func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.Flameg
 }
 
 func compareByName(a, b *pb.FlamegraphNode) bool {
-	// e.g Name: alertmanager.(*Operator).sync .../pkg/alertmanager/operator.go:663
-	return strings.Split(a.Name, " ")[0] <= strings.Split(b.Name, " ")[0]
+	if a.Meta.Function != nil && b.Meta.Function == nil {
+		return false
+	}
+
+	if a.Meta.Function == nil && b.Meta.Function != nil {
+		return true
+	}
+
+	if a.Meta.Function == nil && b.Meta.Function == nil {
+		return a.Meta.Location.Address <= b.Meta.Location.Address
+	}
+
+	return a.Meta.Function.Name <= b.Meta.Function.Name
 }
 
 func equalsByName(a, b *pb.FlamegraphNode) bool {
-	// e.g Name: alertmanager.(*Operator).sync .../pkg/alertmanager/operator.go:663
-	return strings.Split(a.Name, " ")[0] == strings.Split(b.Name, " ")[0]
+	if a.Meta.Function != nil && b.Meta.Function == nil {
+		return false
+	}
+
+	if a.Meta.Function == nil && b.Meta.Function != nil {
+		return true
+	}
+
+	if a.Meta.Function == nil && b.Meta.Function == nil {
+		return a.Meta.Location.Address == b.Meta.Location.Address
+	}
+
+	return a.Meta.Function.Name == b.Meta.Function.Name
 }
 
 func locationToTreeNodes(location *profile.Location, value, diff int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
+	mappingId := uint64(0)
+	var mapping *pb.Mapping
+	if location.Mapping != nil {
+		mappingId = location.Mapping.ID
+		mapping = &pb.Mapping{
+			Id:      location.Mapping.ID,
+			Start:   location.Mapping.Start,
+			Limit:   location.Mapping.Limit,
+			Offset:  location.Mapping.Offset,
+			File:    location.Mapping.File,
+			BuildId: location.Mapping.BuildID,
+		}
+	}
+
 	if len(location.Line) > 0 {
-		outerMost, innerMost = linesToTreeNodes(location.Line, value, diff)
+		outerMost, innerMost = linesToTreeNodes(
+			location,
+			mappingId,
+			mapping,
+			location.Line,
+			value,
+			diff,
+		)
 		return outerMost, innerMost
 	}
 
-	short, full := locationToFuncName(location)
 	n := &pb.FlamegraphNode{
-		Name:       short,
-		FullName:   full,
+		Meta: &pb.FlamegraphNodeMeta{
+			Location: &pb.Location{
+				Id:        location.ID,
+				MappingId: mappingId,
+				Address:   location.Address,
+				IsFolded:  location.IsFolded,
+			},
+			Mapping: mapping,
+		},
 		Cumulative: value,
 		Diff:       diff,
 	}
 	return n, n
 }
 
-func locationToFuncName(location *profile.Location) (string, string) {
-	nameParts := []string{}
-	if location.Address != 0 {
-		nameParts = append(nameParts, fmt.Sprintf("%016x", location.Address))
-	}
-
-	if location.Mapping != nil {
-		nameParts = append(nameParts, "["+filepath.Base(location.Mapping.File)+"]")
-	}
-
-	fullName := strings.Join(nameParts, " ")
-	return ShortenFunctionName(fullName), fullName
-}
-
 // linesToTreeNodes turns inlined `lines` into a stack of TreeNode items and
 // returns the outerMost and innerMost items.
-func linesToTreeNodes(lines []profile.Line, value, diff int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
-	nameParts := []string{}
-	for i := 0; i < len(lines); i++ {
-		functionNameParts := append(nameParts, lines[i].Function.Name)
-		functionNameParts = append(functionNameParts, fmt.Sprintf("%s:%d", lines[i].Function.Filename, lines[i].Line))
-
+func linesToTreeNodes(location *profile.Location, mappingId uint64, mapping *pb.Mapping, lines []profile.Line, value, diff int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
+	for i, line := range lines {
 		var children []*pb.FlamegraphNode = nil
 		if i > 0 {
 			children = []*pb.FlamegraphNode{outerMost}
 		}
-		fullName := strings.Join(functionNameParts, " ")
 		outerMost = &pb.FlamegraphNode{
-			Name:       ShortenFunctionName(fullName),
-			FullName:   fullName,
+			Meta: &pb.FlamegraphNodeMeta{
+				Location: &pb.Location{
+					Id:        location.ID,
+					MappingId: mappingId,
+					Address:   location.Address,
+					IsFolded:  location.IsFolded,
+				},
+				Function: &pb.Function{
+					Id:         line.Function.ID,
+					Name:       line.Function.Name,
+					SystemName: line.Function.SystemName,
+					Filename:   line.Function.Filename,
+					StartLine:  line.Function.StartLine,
+				},
+				Line: &pb.Line{
+					LocationId: location.ID,
+					FunctionId: line.Function.ID,
+					Line:       line.Line,
+				},
+				Mapping: mapping,
+			},
 			Children:   children,
 			Cumulative: value,
 			Diff:       diff,

@@ -115,17 +115,59 @@ message QueryRequest{
 }
 
 message Flamegraph {
-    FlamegraphNode root = 1;
+    FlamegraphRootNode root = 1;
     int64 total = 2;
     string unit = 3;
 }
 
+message FlamegraphRootNode {
+    int64 cumulative = 1;
+    int64 diff = 2;
+    repeated FlamegraphNode children = 3;
+}
+
 message FlamegraphNode {
-    string name = 1;
-    string full_name = 2;
-    int64 cumulative = 3;
-    int64 diff = 4;
-    repeated FlamegraphNode children = 5;
+    FlamegraphNodeMeta meta = 1;
+    int64 cumulative = 2;
+    int64 diff = 3;
+    repeated FlamegraphNode children = 4;
+}
+
+message FlamegraphNodeMeta {
+    Location location = 1;
+    Mapping mapping = 2;
+    Function function = 3;
+    Line line = 4;
+}
+
+message Location {
+    uint64 id = 1;
+    uint64 mapping_id = 2;
+    uint64 address = 3;
+    bool is_folded = 4;
+}
+
+message Line {
+    uint64 location_id = 1;
+    uint64 function_id = 2;
+    int64 line = 3;
+}
+
+message Mapping {
+    uint64 id = 1;
+    uint64 start = 2;
+    uint64 limit = 3;
+    uint64 offset = 4;
+    string file = 5;
+    string build_id = 6;
+}
+
+message Function {
+    uint64 id = 1;
+    string name = 2;
+    string system_name = 3;
+    string filename = 4;
+    int64 start_line = 5;
 }
 
 message QueryResponse{

@@ -31,20 +31,20 @@ import (
 
 func TestTreeStack(t *testing.T) {
 	s := TreeStack{}
-	s.Push(&TreeStackEntry{node: &pb.FlamegraphNode{Name: "a"}})
-	s.Push(&TreeStackEntry{node: &pb.FlamegraphNode{Name: "b"}})
+	s.Push(&TreeStackEntry{node: &pb.FlamegraphNode{Meta: &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "a"}}}})
+	s.Push(&TreeStackEntry{node: &pb.FlamegraphNode{Meta: &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "b"}}}})
 
 	require.Equal(t, 2, s.Size())
 
 	e, hasMore := s.Pop()
 	require.True(t, hasMore)
-	require.Equal(t, "b", e.node.Name)
+	require.Equal(t, "b", e.node.Meta.Function.Name)
 
 	require.Equal(t, 1, s.Size())
 
 	e, hasMore = s.Pop()
 	require.True(t, hasMore)
-	require.Equal(t, "a", e.node.Name)
+	require.Equal(t, "a", e.node.Meta.Function.Name)
 
 	require.Equal(t, 0, s.Size())
 
@@ -53,7 +53,7 @@ func TestTreeStack(t *testing.T) {
 }
 
 func TestLinesToTreeNodes(t *testing.T) {
-	outerMost, innerMost := linesToTreeNodes([]profile.Line{
+	outerMost, innerMost := linesToTreeNodes(&profile.Location{}, uint64(1), &pb.Mapping{}, []profile.Line{
 		{
 			Function: &profile.Function{
 				Name: "memcpy",
@@ -70,24 +70,48 @@ func TestLinesToTreeNodes(t *testing.T) {
 	}, 2, 0)
 
 	require.Equal(t, &pb.FlamegraphNode{
-		Name:       "log :0",
-		FullName:   "log :0",
 		Cumulative: 2,
+		Meta: &pb.FlamegraphNodeMeta{
+			Function: &pb.Function{
+				Name: "log",
+			},
+			Line:     &pb.Line{},
+			Location: &pb.Location{MappingId: 1},
+			Mapping:  &pb.Mapping{},
+		},
 		Children: []*pb.FlamegraphNode{{
-			Name:       "printf :0",
-			FullName:   "printf :0",
 			Cumulative: 2,
+			Meta: &pb.FlamegraphNodeMeta{
+				Function: &pb.Function{
+					Name: "printf",
+				},
+				Line:     &pb.Line{},
+				Location: &pb.Location{MappingId: 1},
+				Mapping:  &pb.Mapping{},
+			},
 			Children: []*pb.FlamegraphNode{{
-				Name:       "memcpy :0",
-				FullName:   "memcpy :0",
 				Cumulative: 2,
+				Meta: &pb.FlamegraphNodeMeta{
+					Function: &pb.Function{
+						Name: "memcpy",
+					},
+					Line:     &pb.Line{},
+					Location: &pb.Location{MappingId: 1},
+					Mapping:  &pb.Mapping{},
+				},
 			}},
 		}},
 	}, outerMost)
 	require.Equal(t, &pb.FlamegraphNode{
-		Name:       "memcpy :0",
-		FullName:   "memcpy :0",
 		Cumulative: 2,
+		Meta: &pb.FlamegraphNodeMeta{
+			Function: &pb.Function{
+				Name: "memcpy",
+			},
+			Line:     &pb.Line{},
+			Location: &pb.Location{MappingId: 1},
+			Mapping:  &pb.Mapping{},
+		},
 	}, innerMost)
 }
 
@@ -122,28 +146,52 @@ func TestGenerateFlamegraph(t *testing.T) {
 		&Profile{Tree: pt},
 	)
 	require.NoError(t, err)
-	require.Equal(t, &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphNode{
-		Name:       "root",
+	require.Equal(t, &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphRootNode{
 		Cumulative: 6,
 		Children: []*pb.FlamegraphNode{{
-			Name:       "1 :0",
-			FullName:   "1 :0",
+			Meta: &pb.FlamegraphNodeMeta{
+				Function: &pb.Function{
+					Name: "1",
+				},
+				Line:     &pb.Line{},
+				Location: &pb.Location{},
+			},
 			Cumulative: 6,
 			Children: []*pb.FlamegraphNode{{
-				Name:       "2 :0",
-				FullName:   "2 :0",
+				Meta: &pb.FlamegraphNodeMeta{
+					Function: &pb.Function{
+						Name: "2",
+					},
+					Line:     &pb.Line{},
+					Location: &pb.Location{},
+				},
 				Cumulative: 6,
 				Children: []*pb.FlamegraphNode{{
-					Name:       "3 :0",
-					FullName:   "3 :0",
+					Meta: &pb.FlamegraphNodeMeta{
+						Function: &pb.Function{
+							Name: "3",
+						},
+						Line:     &pb.Line{},
+						Location: &pb.Location{},
+					},
 					Cumulative: 4,
 					Children: []*pb.FlamegraphNode{{
-						Name:       "4 :0",
-						FullName:   "4 :0",
+						Meta: &pb.FlamegraphNodeMeta{
+							Function: &pb.Function{
+								Name: "4",
+							},
+							Line:     &pb.Line{},
+							Location: &pb.Location{},
+						},
 						Cumulative: 3,
 					}, {
-						Name:       "5 :0",
-						FullName:   "5 :0",
+						Meta: &pb.FlamegraphNodeMeta{
+							Function: &pb.Function{
+								Name: "5",
+							},
+							Line:     &pb.Line{},
+							Location: &pb.Location{},
+						},
 						Cumulative: 1,
 					}},
 				}},
@@ -357,81 +405,156 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	}
 }
 
-func TestAggregateByFunctionName(t *testing.T) {
-	fg := &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphNode{
-		Name:       "root",
-		Cumulative: 6,
+func TestAggregateByFunction(t *testing.T) {
+	fg := &pb.Flamegraph{Total: 12, Root: &pb.FlamegraphRootNode{
+		Cumulative: 12,
 		Children: []*pb.FlamegraphNode{{
-			Name:       "1 :0",
-			FullName:   "1 :0",
-			Cumulative: 6,
-			Children: []*pb.FlamegraphNode{{
-				Name:       "2 :0",
-				FullName:   "2 :0",
-				Cumulative: 6,
-				Children: []*pb.FlamegraphNode{{
-					Name:       "3 :0",
-					FullName:   "3 :0",
-					Cumulative: 4,
-					Children: []*pb.FlamegraphNode{{
-						Name:       "4 :0",
-						FullName:   "4 :0",
-						Cumulative: 3,
-					}, {
-						Name:       "5 :0",
-						FullName:   "5 :0",
-						Cumulative: 1,
-					}},
-				}},
+			Meta: &pb.FlamegraphNodeMeta{
+				Function: &pb.Function{
+					Name: "1",
+				},
+				Line:     &pb.Line{},
+				Location: &pb.Location{},
 			},
+			Cumulative: 12,
+			Children: []*pb.FlamegraphNode{
 				{
-					Name:       "2 :0",
-					FullName:   "2 :0",
+					Meta: &pb.FlamegraphNodeMeta{
+						Function: &pb.Function{
+							Name: "2",
+						},
+						Line:     &pb.Line{},
+						Location: &pb.Location{},
+					},
 					Cumulative: 6,
 					Children: []*pb.FlamegraphNode{{
-						Name:       "3 :0",
-						FullName:   "3 :0",
 						Cumulative: 4,
+						Meta: &pb.FlamegraphNodeMeta{
+							Function: &pb.Function{
+								Name: "3",
+							},
+							Line:     &pb.Line{},
+							Location: &pb.Location{},
+						},
 						Children: []*pb.FlamegraphNode{{
-							Name:       "4 :0",
-							FullName:   "4 :0",
+							Meta: &pb.FlamegraphNodeMeta{
+								Function: &pb.Function{
+									Name: "4",
+								},
+								Line:     &pb.Line{},
+								Location: &pb.Location{},
+							},
 							Cumulative: 3,
 						}, {
-							Name:       "5 :0",
-							FullName:   "5 :0",
+							Meta: &pb.FlamegraphNodeMeta{
+								Function: &pb.Function{
+									Name: "5",
+								},
+								Line:     &pb.Line{},
+								Location: &pb.Location{},
+							},
 							Cumulative: 1,
 						}},
 					}},
-				}},
+				},
+				{
+					Meta: &pb.FlamegraphNodeMeta{
+						Function: &pb.Function{
+							Name: "2",
+						},
+						Line:     &pb.Line{},
+						Location: &pb.Location{},
+					},
+					Cumulative: 6,
+					Children: []*pb.FlamegraphNode{{
+						Meta: &pb.FlamegraphNodeMeta{
+							Function: &pb.Function{
+								Name: "3",
+							},
+							Line:     &pb.Line{},
+							Location: &pb.Location{},
+						},
+						Cumulative: 4,
+						Children: []*pb.FlamegraphNode{{
+							Meta: &pb.FlamegraphNodeMeta{
+								Function: &pb.Function{
+									Name: "4",
+								},
+								Line:     &pb.Line{},
+								Location: &pb.Location{},
+							},
+							Cumulative: 3,
+						}, {
+							Meta: &pb.FlamegraphNodeMeta{
+								Function: &pb.Function{
+									Name: "5",
+								},
+								Line:     &pb.Line{},
+								Location: &pb.Location{},
+							},
+							Cumulative: 1,
+						}},
+					}},
+				},
+			},
+		}, {
+			Meta: &pb.FlamegraphNodeMeta{
+				Function: &pb.Function{
+					Name: "1",
+				},
+				Line:     &pb.Line{},
+				Location: &pb.Location{},
+			},
+			Cumulative: 2,
 		}},
 	}}
 
-	afg := &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphNode{
-		Name:       "root",
-		Cumulative: 6,
+	afg := &pb.Flamegraph{Total: 12, Root: &pb.FlamegraphRootNode{
+		Cumulative: 12,
 		Children: []*pb.FlamegraphNode{{
-			Name:       "1 :0",
-			FullName:   "1 :0",
-			Cumulative: 6,
+			Meta: &pb.FlamegraphNodeMeta{
+				Function: &pb.Function{
+					Name: "1",
+				},
+				Location: &pb.Location{},
+			},
+			Cumulative: 14,
 			Children: []*pb.FlamegraphNode{{
-				Name:       "2 :0",
-				FullName:   "2 :0",
 				Cumulative: 12,
+				Meta: &pb.FlamegraphNodeMeta{
+					Function: &pb.Function{
+						Name: "2",
+					},
+					Location: &pb.Location{},
+				},
 				Children: []*pb.FlamegraphNode{
 					{
-						Name:       "3 :0",
-						FullName:   "3 :0",
+						Meta: &pb.FlamegraphNodeMeta{
+							Function: &pb.Function{
+								Name: "3",
+							},
+							Location: &pb.Location{},
+						},
 						Cumulative: 8,
 						Children: []*pb.FlamegraphNode{
 							{
-								Name:       "4 :0",
-								FullName:   "4 :0",
+								Meta: &pb.FlamegraphNodeMeta{
+									Function: &pb.Function{
+										Name: "4",
+									},
+									Location: &pb.Location{},
+								},
 								Cumulative: 6,
 							}, {
-								Name:       "5 :0",
-								FullName:   "5 :0",
+								Meta: &pb.FlamegraphNodeMeta{
+									Function: &pb.Function{
+										Name: "5",
+									},
+									Location: &pb.Location{},
+								},
 								Cumulative: 2,
-							}},
+							},
+						},
 					},
 				},
 			},
@@ -439,5 +562,5 @@ func TestAggregateByFunctionName(t *testing.T) {
 		}},
 	}}
 
-	require.Equal(t, aggregateByFunctionName(fg), afg)
+	require.Equal(t, afg, aggregateByFunction(fg))
 }

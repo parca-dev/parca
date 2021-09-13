@@ -416,6 +416,26 @@
         }
       }
     },
+    "queryv1alpha1Location": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "mappingId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "address": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "isFolded": {
+          "type": "boolean"
+        }
+      }
+    },
     "rpcStatus": {
       "type": "object",
       "properties": {
@@ -449,7 +469,7 @@
       "type": "object",
       "properties": {
         "root": {
-          "$ref": "#/definitions/v1alpha1FlamegraphNode"
+          "$ref": "#/definitions/v1alpha1FlamegraphRootNode"
         },
         "total": {
           "type": "string",
@@ -463,11 +483,8 @@
     "v1alpha1FlamegraphNode": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string"
-        },
-        "fullName": {
-          "type": "string"
+        "meta": {
+          "$ref": "#/definitions/v1alpha1FlamegraphNodeMeta"
         },
         "cumulative": {
           "type": "string",
@@ -482,6 +499,64 @@
           "items": {
             "$ref": "#/definitions/v1alpha1FlamegraphNode"
           }
+        }
+      }
+    },
+    "v1alpha1FlamegraphNodeMeta": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/queryv1alpha1Location"
+        },
+        "mapping": {
+          "$ref": "#/definitions/v1alpha1Mapping"
+        },
+        "function": {
+          "$ref": "#/definitions/v1alpha1Function"
+        },
+        "line": {
+          "$ref": "#/definitions/v1alpha1Line"
+        }
+      }
+    },
+    "v1alpha1FlamegraphRootNode": {
+      "type": "object",
+      "properties": {
+        "cumulative": {
+          "type": "string",
+          "format": "int64"
+        },
+        "diff": {
+          "type": "string",
+          "format": "int64"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1FlamegraphNode"
+          }
+        }
+      }
+    },
+    "v1alpha1Function": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "systemName": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "startLine": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -510,6 +585,50 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "v1alpha1Line": {
+      "type": "object",
+      "properties": {
+        "locationId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "functionId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "line": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1alpha1Mapping": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "start": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "offset": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "file": {
+          "type": "string"
+        },
+        "buildId": {
+          "type": "string"
         }
       }
     },

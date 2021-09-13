@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { throttle } from 'lodash'
-import IcicleGraph from './IcicleGraph'
+import IcicleGraph, { nodeLabel } from './IcicleGraph'
 import { ProfileSource } from './ProfileSource'
 import { Spinner } from 'react-bootstrap'
 import { CalcWidth } from '@parca/dynamicsize'
-import { Flamegraph, FlamegraphNode } from '@parca/client'
+import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client'
 
 interface ProfileIcicleGraphProps {
   graph: Flamegraph.AsObject | undefined
@@ -42,8 +42,12 @@ function formatDefault(value: number): string {
 export default function ProfileIcicleGraph ({
   graph,
 }: ProfileIcicleGraphProps) {
-  const [hoveringNode, setHoveringNode] = useState<FlamegraphNode.AsObject | undefined>()
+  const [hoveringNode, setHoveringNode] = useState<FlamegraphNode.AsObject | undefined | null>(null)
   const [curPath, setCurPath] = useState<string[]>([])
+
+  useEffect(()=>{
+      setHoveringNode(null);
+  },[graph])
 
   if (graph === undefined) return <div>no data...</div>
   const total = graph.total
@@ -55,20 +59,29 @@ export default function ProfileIcicleGraph ({
 
   const valueFormatter = knownValueFormatter !== undefined ? knownValueFormatter : formatDefault
 
-  function nodeAsText (node: FlamegraphNode.AsObject | undefined): string {
-    if (node === undefined) return ''
+  function nodeNumbers(name: string, d: number | undefined, cumulative: number): string {
+      const diff = d === undefined ? 0 : d
+      const prevValue = cumulative - diff
+      const diffRatio = Math.abs(diff) > 0 ? (diff / prevValue) : 0
+      const diffRatioText = prevValue > 0 ? ` (${diff > 0 ? '+' : ''}${(diffRatio*100).toFixed(2)}%)` : ''
 
-    const diff = node.diff === undefined ? 0 : node.diff
-    const prevValue = node.cumulative - diff
-    const diffRatio = Math.abs(diff) > 0 ? (diff / prevValue) : 0
-    const diffRatioText = prevValue > 0 ? ` (${node.diff > 0 ? '+' : ''}${(diffRatio*100).toFixed(2)}%)` : ''
+      const diffText = (d !== undefined && diff != 0) ? ` Diff: ${diff > 0 ? '+' : ''}${valueFormatter(diff)}${diffRatioText}` : ''
 
-    const diffText = (node.diff !== undefined && node.diff != 0) ? ` Diff: ${node.diff > 0 ? '+' : ''}${valueFormatter(node.diff)}${diffRatioText}` : ''
-
-    return `${node.name.split(' ')[0]} (${((node.cumulative * 100) / total).toFixed(2)}%) ${valueFormatter(node.cumulative)}${diffText}`
+      return `${name} (${((cumulative * 100) / total).toFixed(2)}%) ${valueFormatter(cumulative)}${diffText}`
   }
 
-  const nodeLabel = hoveringNode == null ? nodeAsText(graph.root) : nodeAsText(hoveringNode)
+  function nodeAsText (node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined): string {
+    if (node === undefined) return ''
+
+    if ((node as FlamegraphNode.AsObject).meta !== undefined) {
+      const n = (node as FlamegraphNode.AsObject)
+      return nodeNumbers(nodeLabel(n), n.diff, n.cumulative)
+    }
+
+    return nodeNumbers('root', node.diff, node.cumulative)
+  }
+
+  const hoveringNodeText = (hoveringNode == null || hoveringNode === undefined) ? nodeAsText(graph.root) : nodeAsText(hoveringNode)
 
   const setNewCurPath = (path: string[]) => {
     if (!arrayEquals(curPath, path)) {
@@ -78,7 +91,7 @@ export default function ProfileIcicleGraph ({
 
   return (
     <div className='container-fluid' style={{ padding: 0 }}>
-      <p>Node: {nodeLabel}</p>
+      <p>Node: {hoveringNodeText}</p>
       <CalcWidth throttle={300} delay={2000}>
         <IcicleGraph
           graph={graph}
