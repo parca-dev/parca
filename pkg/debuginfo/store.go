@@ -14,7 +14,6 @@
 package debuginfo
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -37,6 +36,8 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/parca-dev/parca/internal/pprof/binutils"
 )
+
+var ErrDebugInfoNotFound = errors.New("debug info not found")
 
 type CacheProvider string
 
@@ -62,8 +63,8 @@ type Store struct {
 	bucket objstore.Bucket
 	logger log.Logger
 
-	cacheDir string
-	bu       *binutils.Binutils
+	cacheDir   string
+	symbolizer *symbolizer
 }
 
 func NewStore(logger log.Logger, config *Config) (*Store, error) {
@@ -88,23 +89,47 @@ func NewStore(logger log.Logger, config *Config) (*Store, error) {
 	}
 
 	return &Store{
-		logger:   logger,
+		logger:   log.With(logger, "component", "debuginfo"),
 		bucket:   bucket,
 		cacheDir: cache.Directory,
-		bu:       &binutils.Binutils{},
+		symbolizer: &symbolizer{
+			logger: log.With(logger, "component", "debuginfo/symbolizer"),
+			bu:     &binutils.Binutils{},
+		},
 	}, nil
 }
 
-func validateId(id string) error {
-	_, err := hex.DecodeString(id)
-	if err != nil {
-		return err
-	}
-	if len(id) <= 2 {
-		return errors.New("unexpectedly short ID")
+func newCache(cacheCfg []byte) (*FilesystemCacheConfig, error) {
+	cacheConf := &CacheConfig{}
+	if err := yaml.UnmarshalStrict(cacheCfg, cacheConf); err != nil {
+		return nil, fmt.Errorf("parsing config YAML file: %w", err)
 	}
 
-	return nil
+	config, err := yaml.Marshal(cacheConf.Config)
+	if err != nil {
+		return nil, fmt.Errorf("marshal content of cache configuration: %w", err)
+	}
+
+	var c FilesystemCacheConfig
+	switch strings.ToUpper(string(cacheConf.Type)) {
+	case string(FILESYSTEM):
+		if err := yaml.Unmarshal(config, &c); err != nil {
+			return nil, err
+		}
+		if c.Directory == "" {
+			return nil, errors.New("missing directory for filesystem bucket")
+		}
+	default:
+		return nil, fmt.Errorf("cache with type %s is not supported", cacheConf.Type)
+	}
+
+	if _, err := os.Stat(c.Directory); os.IsNotExist(err) {
+		err := os.MkdirAll(c.Directory, 0700)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &c, nil
 }
 
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
@@ -159,42 +184,44 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	})
 }
 
+func validateId(id string) error {
+	_, err := hex.DecodeString(id)
+	if err != nil {
+		return err
+	}
+	if len(id) <= 2 {
+		return errors.New("unexpectedly short ID")
+	}
+
+	return nil
+}
+
+type add2Line func(addr uint64) ([]profile.Line, error)
+
 func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...*profile.Location) (map[*profile.Location][]profile.Line, error) {
-	mappingPath, err := s.fetchObjectFile(ctx, m.BuildID)
+	localObjPath, err := s.fetchObjectFile(ctx, m.BuildID)
 	if err != nil {
 		level.Debug(s.logger).Log("msg", "failed to fetch object", "object", m.BuildID, "err", err)
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
-	// TODO(kakkoyun): Crate mapInfo and utilize it here.
-	objFile, err := s.bu.Open(mappingPath, m.Start, m.Limit, m.Offset)
+	sourceLine, err := s.symbolizer.createAdd2Line(m, localObjPath)
 	if err != nil {
-		level.Error(s.logger).Log("msg", "failed to open object file", "mappingpath", mappingPath, "start", m.Start, "limit", m.Limit, "offset", m.Offset, "err", err)
-		return nil, fmt.Errorf("open object file: %w", err)
+		const msg = "failed to create add2LineFunc"
+		level.Debug(s.logger).Log("msg", msg, "object", m.BuildID, "err", err)
+		return nil, fmt.Errorf(msg+": %w", err)
 	}
 
-	lines := map[*profile.Location][]profile.Line{}
+	locationLines := map[*profile.Location][]profile.Line{}
 	for _, loc := range locations {
-		frames, err := objFile.SourceLine(loc.Address)
+		lines, err := sourceLine(loc.Address)
 		if err != nil {
-			level.Debug(s.logger).Log("msg", "failed to open object file", "mappingpath", mappingPath, "start", m.Start, "limit", m.Limit, "offset", m.Offset, "address", loc.Address, "err", err)
-			continue
+			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildID, "err", err)
 		}
-
-		for _, frame := range frames {
-			lines[loc] = append(lines[loc], profile.Line{
-				Line: int64(frame.Line),
-				Function: &profile.Function{
-					Name:     frame.Func,
-					Filename: frame.File,
-				},
-			})
-		}
+		locationLines[loc] = append(locationLines[loc], lines...)
 	}
-	return lines, nil
+	return locationLines, nil
 }
-
-var ErrSymbolNotFound = errors.New("symbol not found")
 
 func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {
 	mappingPath := path.Join(s.cacheDir, buildID, "debuginfo")
@@ -203,7 +230,7 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 		r, err := s.bucket.Get(ctx, path.Join(buildID, "debuginfo"))
 		if s.bucket.IsObjNotFoundErr(err) {
 			level.Debug(s.logger).Log("msg", "object not found", "object", buildID, "err", err)
-			return "", ErrSymbolNotFound
+			return "", ErrDebugInfoNotFound
 		}
 		if err != nil {
 			return "", fmt.Errorf("get object from object storage: %w", err)
@@ -233,104 +260,4 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 		}
 	}
 	return mappingPath, nil
-}
-
-type UploadReader struct {
-	stream debuginfopb.DebugInfoService_UploadServer
-	cur    io.Reader
-	size   uint64
-}
-
-func (r *UploadReader) Read(p []byte) (int, error) {
-	if r.cur == nil {
-		var err error
-		r.cur, err = r.next()
-		if err == io.EOF {
-			return 0, io.EOF
-		}
-		if err != nil {
-			return 0, fmt.Errorf("get first upload chunk: %w", err)
-		}
-	}
-	i, err := r.cur.Read(p)
-	if err != nil && err != io.EOF {
-		return 0, fmt.Errorf("read upload chunk (%d bytes read so far): %w", r.size, err)
-	}
-	if err == io.EOF {
-		r.cur, err = r.next()
-		if err == io.EOF {
-			return 0, io.EOF
-		}
-		if err != nil {
-			return 0, fmt.Errorf("get next upload chunk (%d bytes read so far): %w", r.size, err)
-		}
-		i, err = r.cur.Read(p)
-		if err != nil {
-			return 0, fmt.Errorf("read next upload chunk (%d bytes read so far): %w", r.size, err)
-		}
-	}
-
-	r.size += uint64(i)
-	return i, nil
-}
-
-func (r *UploadReader) next() (io.Reader, error) {
-	err := contextError(r.stream.Context())
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := r.stream.Recv()
-	if err == io.EOF {
-		return nil, io.EOF
-	}
-	if err != nil {
-		return nil, fmt.Errorf("receive from stream: %w", err)
-	}
-
-	return bytes.NewBuffer(req.GetChunkData()), nil
-}
-
-func contextError(ctx context.Context) error {
-	switch ctx.Err() {
-	case context.Canceled:
-		return status.Error(codes.Canceled, "request is canceled")
-	case context.DeadlineExceeded:
-		return status.Error(codes.DeadlineExceeded, "deadline is exceeded")
-	default:
-		return nil
-	}
-}
-
-func newCache(cacheCfg []byte) (*FilesystemCacheConfig, error) {
-	cacheConf := &CacheConfig{}
-	if err := yaml.UnmarshalStrict(cacheCfg, cacheConf); err != nil {
-		return nil, fmt.Errorf("parsing config YAML file: %w", err)
-	}
-
-	config, err := yaml.Marshal(cacheConf.Config)
-	if err != nil {
-		return nil, fmt.Errorf("marshal content of cache configuration: %w", err)
-	}
-
-	var c FilesystemCacheConfig
-	switch strings.ToUpper(string(cacheConf.Type)) {
-	case string(FILESYSTEM):
-		if err := yaml.Unmarshal(config, &c); err != nil {
-			return nil, err
-		}
-		if c.Directory == "" {
-			return nil, errors.New("missing directory for filesystem bucket")
-		}
-	default:
-		return nil, fmt.Errorf("cache with type %s is not supported", cacheConf.Type)
-	}
-
-	if _, err := os.Stat(c.Directory); os.IsNotExist(err) {
-		err := os.MkdirAll(c.Directory, 0700)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &c, nil
 }
