@@ -362,8 +362,14 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 
 	ss := make([]Series, 0, postings.GetCardinality())
 	it := postings.NewIterator()
-	for it.HasNext() {
-		s := q.head.series.getByID(it.Next())
+
+	for {
+		id := it.Next()
+		if id == 0 {
+			break
+		}
+
+		s := q.head.series.getByID(id)
 		s.mu.RLock()
 		seriesMaxTime := s.maxTime
 		seriesMinTime := s.minTime

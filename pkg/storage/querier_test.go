@@ -87,6 +87,13 @@ func TestPostingsForMatchers(t *testing.T) {
 		},
 		exp: empty,
 	}, {
+		name: `n="1",n!="2"`,
+		matchers: []*labels.Matcher{
+			{Type: labels.MatchEqual, Name: "n", Value: "1"},
+			{Type: labels.MatchNotEqual, Name: "n", Value: "2"},
+		},
+		exp: []uint64{0, 1, 2},
+	}, {
 		name: `n="1",i!="a"`,
 		matchers: []*labels.Matcher{
 			labels.MustNewMatcher(labels.MatchEqual, "n", "1"),

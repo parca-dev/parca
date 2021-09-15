@@ -134,7 +134,12 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 	bitmap.Set(math.MaxUint64)
 
 	// Intersect to remove the unwanted postings
-	bitmap.AndNot(noBitmap)
+	// It seems that AndNot might be broken https://github.com/dgraph-io/sroar/pull/23
+	// For the time being, we'll use a simple for range.
+	// TODO: bitmap.AndNot(noBitmap)
+	for _, id := range noBitmap.ToArray() {
+		bitmap.Remove(id)
+	}
 
 	return bitmap, nil
 }
@@ -240,7 +245,12 @@ func labelValuesWithMatchers(r IndexReader, name string, matchers ...*labels.Mat
 	dedupe := map[string]interface{}{}
 
 	it := bm.NewIterator()
-	for it.HasNext() {
+	for {
+		id := it.Next()
+		if id == 0 {
+			break
+		}
+
 		v, err := r.LabelValueFor(it.Next(), name)
 		if err != nil {
 			if errors.Is(err, ErrNotFound) {
