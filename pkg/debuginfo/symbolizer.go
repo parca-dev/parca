@@ -137,6 +137,9 @@ func isGoBinary(path string) (bool, error) {
 	}
 
 	syms, err := exe.Symbols()
+	if err != nil {
+		return false, fmt.Errorf("failed to read symbols: %w", err)
+	}
 	for _, sym := range syms {
 		name := sym.Name
 		if name == "runtime.main" || name == "main.main" {
