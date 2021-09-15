@@ -31,7 +31,7 @@ type symbolizer struct {
 	bu     *binutils.Binutils
 }
 
-func (s *symbolizer) createAdd2Line(m *profile.Mapping, binPath string) (addr2Line, error) {
+func (s *symbolizer) createAddr2Line(m *profile.Mapping, binPath string) (addr2Line, error) {
 	hasDWARF, err := hasDWARF(binPath)
 	if err != nil {
 		level.Debug(s.logger).Log(

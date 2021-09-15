@@ -205,7 +205,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
-	sourceLine, err := s.symbolizer.createAdd2Line(m, localObjPath)
+	sourceLine, err := s.symbolizer.createAddr2Line(m, localObjPath)
 	if err != nil {
 		const msg = "failed to create add2LineFunc"
 		level.Debug(s.logger).Log("msg", msg, "object", m.BuildID, "err", err)
