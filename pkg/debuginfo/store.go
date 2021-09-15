@@ -196,7 +196,7 @@ func validateId(id string) error {
 	return nil
 }
 
-type add2Line func(addr uint64) ([]profile.Line, error)
+type addr2Line func(addr uint64) ([]profile.Line, error)
 
 func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...*profile.Location) (map[*profile.Location][]profile.Line, error) {
 	localObjPath, err := s.fetchObjectFile(ctx, m.BuildID)
@@ -217,6 +217,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 		lines, err := sourceLine(loc.Address)
 		if err != nil {
 			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildID, "err", err)
+			continue
 		}
 		locationLines[loc] = append(locationLines[loc], lines...)
 	}
