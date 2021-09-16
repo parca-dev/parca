@@ -240,8 +240,13 @@ func labelValuesWithMatchers(r IndexReader, name string, matchers ...*labels.Mat
 	dedupe := map[string]interface{}{}
 
 	it := bm.NewIterator()
-	for it.HasNext() {
-		v, err := r.LabelValueFor(it.Next(), name)
+	for {
+		id := it.Next()
+		if id == 0 {
+			break
+		}
+
+		v, err := r.LabelValueFor(id, name)
 		if err != nil {
 			if errors.Is(err, ErrNotFound) {
 				continue
