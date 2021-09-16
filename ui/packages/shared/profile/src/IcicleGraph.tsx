@@ -1,8 +1,6 @@
 import React, { MouseEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { scaleLinear } from 'd3-scale'
 import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client'
-import { useStore } from 'store'
-import { selectUi } from 'store/ui.state'
 
 const transitionTime = '250ms'
 const transitionCurve = 'cubic-bezier(0.85, 0.69, 0.71, 1.32)'
@@ -32,11 +30,9 @@ function IcicleRect ({
   onHover,
   onClick
 }: IcicleRectProps) {
-  const { darkMode } = useStore(selectUi)
-
   return (
     <g
-      transform={`translate(${x}, ${y})`}
+      transform={`translate(${x+1}, ${y+1})`}
       style={{ cursor: 'pointer', transition: transformTransition }}
       onMouseEnter={(e) => onHover(e)}
       onClick={(e) => onClick(e)}
@@ -44,12 +40,11 @@ function IcicleRect ({
       <rect
         x={0}
         y={0}
-        width={width}
-        height={height}
+        width={width-1}
+        height={height-1}
         style={{
           transition: widthTransition,
           fill: color,
-          stroke: darkMode ? 'rgb(55, 65, 81)' : 'white',
         }}
       />
       { width > 5 && (
