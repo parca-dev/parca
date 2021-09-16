@@ -26,6 +26,7 @@ local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({
   logLevel: 'debug',
   insecure: true,
   insecureSkipVerify: true,
+  tempDir: 'tmp',
 });
 
 // Only for development purposes. Parca actually serves its UI itself.

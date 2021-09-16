@@ -133,7 +133,7 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(symLocs))
 
-	err = sym.symbolize(context.Background(), allLocs)
+	err = sym.symbolize(context.Background(), symLocs)
 	require.NoError(t, err)
 
 	allLocs, err = mStr.GetLocations(ctx)
@@ -257,7 +257,7 @@ func TestRealSymbolizer(t *testing.T) {
 	require.Equal(t, 11, len(symLocs))
 
 	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
-	require.NoError(t, sym.symbolize(ctx, p.Location))
+	require.NoError(t, sym.symbolize(ctx, symLocs)) // p.Location to symbolize the profile.
 
 	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
@@ -265,13 +265,13 @@ func TestRealSymbolizer(t *testing.T) {
 
 	symLocs, err = mStr.GetSymbolizableLocations(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(symLocs))
+	require.Equal(t, 0, len(symLocs))
 
 	functions, err := mStr.GetFunctions(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 31, len(functions))
 
-	lines := allLocs[6].Line
+	lines := allLocs[4].Line
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})

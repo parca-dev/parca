@@ -52,7 +52,6 @@ func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.Profile
 		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
 	}
 
-	// TODO(kakkoyun): Create mapInfo.
 	samples := make([]*profile.Sample, 0, len(p.Sample))
 	for _, s := range p.Sample {
 		if !isZeroSample(s) {

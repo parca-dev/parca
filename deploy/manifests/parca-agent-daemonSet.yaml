@@ -31,6 +31,7 @@ spec:
         - --store-address=parca.parca.svc.cluster.local:7070
         - --insecure
         - --insecure-skip-verify
+        - --temp-dir=tmp
         env:
         - name: NODE_NAME
           valueFrom:

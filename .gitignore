@@ -5,3 +5,5 @@ node_modules
 dist/
 tmp/
 *.sqlite
+
+TODO.md

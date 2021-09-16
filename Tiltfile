@@ -1,3 +1,5 @@
+docker_prune_settings(num_builds=5)
+
 # Parca
 
 ## API Only
@@ -30,7 +32,9 @@ k8s_resource('parca-ui', port_forwards=3000)
 ## Parca Agent
 
 docker_build('quay.io/parca/parca-agent:dev', './tmp/parca-agent',
+    dockerfile='./tmp/parca-agent/Dockerfile.dev',
     # Until Parca will be public we need to supply a personal access token for the builds.
     build_args={'TOKEN': read_file('./tmp/personal_access_token')},
 )
 k8s_yaml('deploy/manifests/parca-agent-daemonSet.yaml')
+k8s_resource('parca-agent', port_forwards=[7071])

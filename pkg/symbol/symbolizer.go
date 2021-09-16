@@ -37,7 +37,7 @@ type Symbolizer struct {
 
 func NewSymbolizer(logger log.Logger, loc metastore.LocationStore, info *debuginfo.Store) *Symbolizer {
 	return &Symbolizer{
-		logger:    logger,
+		logger:    log.With(logger, "component", "symbolizer"),
 		locations: loc,
 		debugInfo: info,
 	}
@@ -45,7 +45,6 @@ func NewSymbolizer(logger log.Logger, loc metastore.LocationStore, info *debugin
 
 func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	return runutil.Repeat(interval, ctx.Done(), func() error {
-		// Get all unsymbolized locations.
 		locations, err := s.locations.GetSymbolizableLocations(ctx)
 		if err != nil {
 			return err
@@ -57,7 +56,6 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, locations)
 		if err != nil {
-			// TODO(kakkoyun): Mark unsymbolizable location, if this gets a bottleneck.
 			level.Error(s.logger).Log("msg", "symbolization attempt failed", "err", err)
 		}
 		return nil
@@ -70,7 +68,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 	mappingLocations := map[uint64][]*profile.Location{}
 	for _, loc := range locations {
 		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
-		if loc.Mapping == nil || len(loc.Mapping.BuildID) == 0 {
+		if loc.Mapping == nil || len(loc.Mapping.BuildID) == 0 || loc.Mapping.Unsymbolizable() {
 			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
 			continue
 		}
@@ -85,23 +83,22 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 
 	var result *multierror.Error
 	for id, mapping := range mappings {
-		// Symbolize Locations using DebugInfoStore.
-		level.Debug(s.logger).Log("msg", "storage symbolization request started")
+		level.Debug(s.logger).Log("msg", "storage symbolization request started", "buildid", mapping.BuildID)
 		symbolizedLines, err := s.debugInfo.Symbolize(ctx, mapping, mappingLocations[id]...)
 		if err != nil {
 			// It's ok if we don't have the symbols for given BuildID, it happens too often.
-			if errors.Is(err, debuginfo.ErrSymbolNotFound) {
-				level.Debug(s.logger).Log("msg", "failed to find the symbols in storage")
+			if errors.Is(err, debuginfo.ErrDebugInfoNotFound) {
+				level.Debug(s.logger).Log("msg", "failed to find the debug info in storage", "buildid", mapping.BuildID)
 				continue
 			}
 			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
 			continue
 		}
-		level.Debug(s.logger).Log("msg", "storage symbolization request done")
+		level.Debug(s.logger).Log("msg", "storage symbolization request done", "buildid", mapping.BuildID)
 
-		// Update LocationStore with found symbols.
 		for loc, lines := range symbolizedLines {
 			loc.Line = lines
+			// Only creates lines for given location.
 			if err := s.locations.Symbolize(ctx, loc); err != nil {
 				result = multierror.Append(result, fmt.Errorf("failed to update location %d: %w", loc.ID, err))
 				continue
