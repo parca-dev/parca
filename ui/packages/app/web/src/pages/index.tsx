@@ -1,6 +1,6 @@
+import { QueryServiceClient } from '@parca/client'
 import ProfileExplorer from 'components/ProfileExplorer'
 import { NextRouter, withRouter } from 'next/router'
-import { QueryServiceClient } from '@parca/client'
 
 const apiEndpoint = process.env.NEXT_PUBLIC_API_ENDPOINT
 

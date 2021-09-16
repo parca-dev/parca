@@ -1,3 +1,4 @@
+import dynamic from 'next/dynamic'
 import { Container } from 'react-bootstrap'
 import 'react-dates/lib/css/_datepicker.css'
 import { StoreProvider, useCreateStore } from 'store'
@@ -10,22 +11,22 @@ import './App.scss'
 import Header from './layouts/Header'
 import ThemeProvider from './layouts/ThemeProvider'
 
+const NoSSR = dynamic(() => import('../components/NoSSR'), { ssr: false })
+
 const App = ({ Component, pageProps }) => {
-  const { persistedState } = pageProps
-  // this is only point where persisted state can come in. it's either from:
-  // - cookies headers (server)
-  // - window.__NEXT_DATA__ (client)
-  const createStore = useCreateStore(persistedState?.state)
+  const createStore = useCreateStore()
 
   return (
-    <StoreProvider createStore={createStore}>
-      <ThemeProvider>
-        <Header />
-        <Container fluid>
-          <Component {...pageProps} />
-        </Container>
-      </ThemeProvider>
-    </StoreProvider>
+    <NoSSR>
+      <StoreProvider createStore={createStore}>
+        <ThemeProvider>
+          <Header />
+          <Container fluid>
+            <Component {...pageProps} />
+          </Container>
+        </ThemeProvider>
+      </StoreProvider>
+    </NoSSR>
   )
 }
 
