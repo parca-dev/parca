@@ -131,7 +131,7 @@ const ProfileMetricsGraph = ({
   }
 
   return (
-    <Card>
+      <Card className="dark:bg-gray-700">
       <MetricsGraph
         data={series}
         from={from}

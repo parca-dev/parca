@@ -83,64 +83,17 @@ export const ProfileView = ({
   const queryResponse = response.toObject()
 
   const reportTypes = {
-    //svg: {
-    //  name: 'Graph',
-    //  element: (
-    //    <ProfileSVG
-    //      queryEndpoint={apiEndpoint}
-    //      profileSource={profileSource}
-    //      sampleIndex={sampleIndex}
-    //    />
-    //  )
-    //},
-    //top: {
-    //  name: 'Top',
-    //  element: (
-    //    <ProfileTop
-    //      queryEndpoint={apiEndpoint}
-    //      profileSource={profileSource}
-    //      sampleIndex={sampleIndex}
-    //    />
-    //  )
-    //},
     iciclegraph: {
       name: 'Icicle Graph',
       element: <ProfileIcicleGraph graph={response.getFlamegraph()?.toObject()} />
     }
   }
 
-  //TODO
-  const downloadURL = ''
-
   return (
     <>
       <div className='my-4'>
         <Card>
           <Card.Body>
-            <div className='flex justify-between'>
-              <div className='flex'>{title}</div>
-              <div className='flex space-x-4'>
-                {allowComparing && (
-                  <Button color='neutral' onClick={() => startComparing()}>
-                    Compare
-                  </Button>
-                )}
-                <Dropdown text='View'>
-                  {Object.keys(reportTypes).map((k: string) => (
-                    <Dropdown.Item key={k} onSelect={() => setReportType(k)}>
-                      {reportTypes[k].name}
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown>
-                <Button
-                  color='neutral'
-                  // href={downloadURL}
-                >
-                  Download
-                </Button>
-              </div>
-            </div>
-
             {reportTypes[reportType].element}
           </Card.Body>
         </Card>
