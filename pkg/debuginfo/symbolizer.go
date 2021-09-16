@@ -31,53 +31,56 @@ type symbolizer struct {
 	bu     *binutils.Binutils
 }
 
-func (s *symbolizer) createAddr2Line(m *profile.Mapping, binPath string) (addr2Line, error) {
-	hasDWARF, err := hasDWARF(binPath)
+func (s *symbolizer) createAddr2Line(m *profile.Mapping, file string) (addr2Line, error) {
+	hasDWARF, err := hasDWARF(file)
 	if err != nil {
 		level.Debug(s.logger).Log(
 			"msg", "failed to determine if binary has DWARF info",
-			"path", binPath,
+			"file", file,
 			"err", err,
 		)
 	}
 	if hasDWARF {
-		return s.compiledBinary(m, binPath)
+		level.Debug(s.logger).Log("msg", "using DWARF to resolve symbols", "file", file)
+		return s.compiledBinary(m, file)
 	}
 
 	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
 	// Keep that section and other identifying sections in the debug information file.
-	isGo, err := isGoBinary(binPath)
+	isGo, err := isGoBinary(file)
 	if err != nil {
 		level.Debug(s.logger).Log(
 			"msg", "failed to determine if binary is a Go binary",
-			"path", binPath,
+			"file", file,
 			"err", err,
 		)
 	}
 	if isGo {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
-		sourceLine, err := s.goBinary(binPath)
-		if err != nil {
-			level.Error(s.logger).Log(
-				"msg", "failed to create go binary addr2Line, falling back to binary addr2Line",
-				"path", binPath,
-				"err", err,
-			)
-			// Just in case, underlying binutils can symbolize addresses.
-			sourceLine, err = s.compiledBinary(m, binPath)
+		sourceLine, err := s.goBinary(file)
+		if err == nil {
+			level.Debug(s.logger).Log("msg", "using go addr2Line to resolve symbols", "file", file)
+			return sourceLine, nil
 		}
-		return sourceLine, err
+
+		level.Error(s.logger).Log(
+			"msg", "failed to create go addr2Line, falling back to binary addr2Line",
+			"file", file,
+			"err", err,
+		)
 	}
 
-	return s.compiledBinary(m, binPath)
+	// Just in case, underlying binutils can symbolize addresses.
+	level.Debug(s.logger).Log("msg", "falling back to binutils addr2Line resolve symbols", "file", file)
+	return s.compiledBinary(m, file)
 }
 
-func (s *symbolizer) compiledBinary(m *profile.Mapping, binPath string) (addr2Line, error) {
-	objFile, err := s.bu.Open(binPath, m.Start, m.Limit, m.Offset)
+func (s *symbolizer) compiledBinary(m *profile.Mapping, file string) (addr2Line, error) {
+	objFile, err := s.bu.Open(file, m.Start, m.Limit, m.Offset)
 	if err != nil {
 		level.Error(s.logger).Log("msg", "failed to open object file",
-			"path", binPath,
+			"file", file,
 			"start", m.Start,
 			"limit", m.Limit,
 			"offset", m.Offset,
@@ -90,7 +93,7 @@ func (s *symbolizer) compiledBinary(m *profile.Mapping, binPath string) (addr2Li
 		frames, err := objFile.SourceLine(addr)
 		if err != nil {
 			level.Debug(s.logger).Log("msg", "failed to open object file",
-				"path", binPath,
+				"file", file,
 				"start", m.Start,
 				"limit", m.Limit,
 				"offset", m.Offset,
@@ -119,7 +122,7 @@ func (s *symbolizer) compiledBinary(m *profile.Mapping, binPath string) (addr2Li
 }
 
 func (s *symbolizer) goBinary(binPath string) (addr2Line, error) {
-	level.Debug(s.logger).Log("msg", "symbolizing a Go binary", "path", binPath)
+	level.Debug(s.logger).Log("msg", "symbolizing a Go binary", "file", binPath)
 	table, err := gosymtab(binPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
@@ -191,6 +194,7 @@ func hasDWARF(path string) (bool, error) {
 
 	return data != nil, nil
 }
+
 func gosymtab(path string) (*gosym.Table, error) {
 	exe, err := elf.Open(path)
 	if err != nil {

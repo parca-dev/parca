@@ -1,3 +1,5 @@
+docker_prune_settings(num_builds=5)
+
 # Parca
 
 ## API Only

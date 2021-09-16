@@ -6,12 +6,6 @@ WORKDIR /app
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.6.0
 RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 
-COPY ./cmd /app/cmd
-COPY ./pkg /app/pkg
-COPY ./proto /app/proto
-COPY ./gen /app/gen
-COPY ./internal /app/internal
-
 COPY go.mod go.sum /app/
 RUN go mod download -modcacherw
 
@@ -23,6 +17,12 @@ RUN mkdir -p /app/ui/packages/app/web/dist && \
     //go:embed packages/app/web/dist\n\
     var FS embed.FS\n'\
     > ./ui/ui.go
+
+COPY ./cmd /app/cmd
+COPY ./pkg /app/pkg
+COPY ./proto /app/proto
+COPY ./gen /app/gen
+COPY ./internal /app/internal
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -o parca ./cmd/parca
 
