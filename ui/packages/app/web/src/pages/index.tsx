@@ -1,7 +1,6 @@
 import ProfileExplorer from 'components/ProfileExplorer'
 import { NextRouter, withRouter } from 'next/router'
 import { QueryServiceClient } from '@parca/client'
-import Cookies from 'universal-cookie'
 
 const apiEndpoint = process.env.NEXT_PUBLIC_API_ENDPOINT
 
@@ -15,11 +14,3 @@ const Profiles = (_: ProfilesProps): JSX.Element => {
 }
 
 export default withRouter(Profiles)
-
-export function getServerSideProps({ req }) {
-  const cookies = new Cookies(req ? req.headers.cookie : undefined)
-  const persistedState = cookies.get('parca') || {}
-  return {
-    props: { persistedState }
-  }
-}
