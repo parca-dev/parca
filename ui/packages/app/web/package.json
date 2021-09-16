@@ -37,9 +37,7 @@
     "postcss": "^8.3.6",
     "react-data-table-component": "^7.0.0-alpha-5",
     "react-dates": "^21.8.0",
-    "styled-components": "^5.2.1",
     "tailwindcss": "^2.2.15",
-    "universal-cookie": "^4.0.4",
     "zustand": "^3.5.10"
   },
   "devDependencies": {
