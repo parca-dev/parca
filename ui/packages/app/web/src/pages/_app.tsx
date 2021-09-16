@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app'
 import { Container } from 'react-bootstrap'
 import 'react-dates/lib/css/_datepicker.css'
+import { StoreProvider, useCreateStore } from 'store'
 import 'tailwindcss/tailwind.css'
 import '../style/file-input.css'
 import '../style/globals.scss'
@@ -10,27 +11,21 @@ import '../style/sidenav.css'
 import './App.scss'
 import Header from './layouts/Header'
 
-const MyApp = ({ Component, pageProps }: AppProps) => {
+const App = ({ Component, pageProps }) => {
+  const { persistedState } = pageProps
+  // this is only point where persisted state can come in. it's either from:
+  // - cookies headers (server)
+  // - window.__NEXT_DATA__ (client)
+  const createStore = useCreateStore(persistedState?.state)
+
   return (
-    <>
-      <Header />
-      <Container fluid>
-        <Component {...pageProps} />
-      </Container>
-    </>
+    <StoreProvider createStore={createStore}>
+        <Header />
+        <Container fluid>
+          <Component {...pageProps} />
+        </Container>
+    </StoreProvider>
   )
 }
 
-// Only uncomment this method if you have blocking data requirements for
-// every single page in your application. This disables the ability to
-// perform automatic static optimization, causing every page in your app to
-// be server-side rendered.
-//
-// MyApp.getInitialProps = async (appContext: AppContext) => {
-//   // calls page's `getInitialProps` and fills `appProps.pageProps`
-//   const appProps = await App.getInitialProps(appContext);
-
-//   return { ...appProps }
-// }
-
-export default MyApp
+export default App
