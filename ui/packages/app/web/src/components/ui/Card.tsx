@@ -1,7 +1,7 @@
 const Card = ({ children }) => {
   return (
     <div className='mx-auto'>
-      <div className='bg-white shadow overflow-hidden sm:rounded-lg flex-1 flex-column'>
+      <div className='bg-gray dark:bg-gray-700 shadow overflow-hidden sm:rounded-lg flex-1 flex-column'>
         {children}
       </div>
     </div>
@@ -11,7 +11,7 @@ const Card = ({ children }) => {
 const Header = ({ children }) => {
   return (
     <div
-      className='bg-gray-100 px-4 py-4 sm:px-6'
+      className='bg-gray-200 dark:bg-gray-800 px-4 py-4 sm:px-6'
       style={{ justifyContent: 'space-between', alignItems: 'stretch' }}
     >
       {children}
@@ -20,7 +20,7 @@ const Header = ({ children }) => {
 }
 
 const Body = ({ children }) => {
-  return <div className='border-t border-gray-200 p-4'>{children}</div>
+  return <div className='p-4'>{children}</div>
 }
 
 export default Object.assign(Card, {

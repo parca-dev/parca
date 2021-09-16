@@ -35,7 +35,7 @@ const Select = ({
               <Listbox.Button
                 className={cx(
                   width !== undefined ? `w-${width}` : '',
-                  'relative bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
+                  'relative bg-gray-50 dark:bg-gray-900 border-t border-r border-b border-l dark:border-gray-600 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
                 )}
               >
                 <span className='flex items-center'>
@@ -57,7 +57,7 @@ const Select = ({
                 <Listbox.Options
                   className={cx(
                     width !== undefined ? `w-${width}` : '',
-                    'absolute z-10 mt-1 bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'
+                    'absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 dark:border-gray-600 shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'
                   )}
                 >
                   {items.map(option => (
@@ -65,7 +65,7 @@ const Select = ({
                       key={option.key}
                       className={({ active }) =>
                         cx(
-                          active ? 'text-white bg-indigo-600' : 'text-gray-900',
+                          active && 'text-white bg-indigo-600',
                           'cursor-default select-none relative py-2 pl-3 pr-9'
                         )
                       }
