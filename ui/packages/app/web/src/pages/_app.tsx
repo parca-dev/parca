@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app'
 import { Container } from 'react-bootstrap'
 import 'react-dates/lib/css/_datepicker.css'
+import 'tailwindcss/tailwind.css'
 import '../style/file-input.css'
 import '../style/globals.scss'
 import '../style/metrics.css'
