@@ -19,24 +19,29 @@
   "license": "ISC",
   "dependencies": {
     "@parca/client": "0.0.0",
-    "@parca/icons": "0.0.0",
     "@parca/dynamicsize": "0.0.0",
     "@parca/functions": "0.0.0",
+    "@parca/icons": "0.0.0",
     "@parca/parser": "0.0.0",
     "@parca/profile": "0.0.0",
+    "autoprefixer": "^10.3.4",
+    "d3": "^6.6.0",
     "d3-axis": "^2.1.0",
     "d3-scale-chromatic": "^2.0.0",
     "d3-selection": "^2.0.0",
     "d3-shape": "^2.1.0",
-    "d3": "^6.6.0",
+    "immer": "^9.0.6",
     "isomorphic-unfetch": "^3.1.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
+    "postcss": "^8.3.6",
     "react-data-table-component": "^7.0.0-alpha-5",
     "react-dates": "^21.8.0",
-    "styled-components": "^5.2.1"
+    "tailwindcss": "^2.2.15",
+    "zustand": "^3.5.10"
   },
   "devDependencies": {
-    "@storybook/react": "^6.1.2"
+    "@storybook/react": "^6.1.2",
+    "react-dom": "^17.0.2"
   }
 }

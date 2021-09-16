@@ -1,35 +1,33 @@
-import type { AppProps } from 'next/app'
+import dynamic from 'next/dynamic'
 import { Container } from 'react-bootstrap'
 import 'react-dates/lib/css/_datepicker.css'
+import { StoreProvider, useCreateStore } from 'store'
+import 'tailwindcss/tailwind.css'
 import '../style/file-input.css'
-import '../style/globals.scss'
 import '../style/metrics.css'
 import '../style/profile.css'
 import '../style/sidenav.css'
 import './App.scss'
 import Header from './layouts/Header'
+import ThemeProvider from './layouts/ThemeProvider'
 
-const MyApp = ({ Component, pageProps }: AppProps) => {
+const NoSSR = dynamic(() => import('../components/NoSSR'), { ssr: false })
+
+const App = ({ Component, pageProps }) => {
+  const createStore = useCreateStore()
+
   return (
-    <>
-      <Header />
-      <Container fluid>
-        <Component {...pageProps} />
-      </Container>
-    </>
+    <NoSSR>
+      <StoreProvider createStore={createStore}>
+        <ThemeProvider>
+          <Header />
+          <Container fluid>
+            <Component {...pageProps} />
+          </Container>
+        </ThemeProvider>
+      </StoreProvider>
+    </NoSSR>
   )
 }
 
-// Only uncomment this method if you have blocking data requirements for
-// every single page in your application. This disables the ability to
-// perform automatic static optimization, causing every page in your app to
-// be server-side rendered.
-//
-// MyApp.getInitialProps = async (appContext: AppContext) => {
-//   // calls page's `getInitialProps` and fills `appProps.pageProps`
-//   const appProps = await App.getInitialProps(appContext);
-
-//   return { ...appProps }
-// }
-
-export default MyApp
+export default App
