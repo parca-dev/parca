@@ -281,10 +281,6 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/denisenkom/go-mssqldb v0.0.0-20190515213511-eb9f6a1743f3/go.mod h1:zAg7JM8CkOJ43xKXIj7eRO9kmWm/TW578qo+oDO6tuM=
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f h1:U5y3Y5UE0w7amNe7Z5G/twsBW0KEalRQXZzf8ufSh9I=
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f/go.mod h1:xH/i4TFMt8koVQZ6WFms69WAsDWr2XsYL3Hkl7jkoLE=
-github.com/dgraph-io/sroar v0.0.0-20210806151611-9ba13da43734 h1:1YAVlumidLrmdT8hAMk0qQFuGrHrtnEz5WNkxY/7pw8=
-github.com/dgraph-io/sroar v0.0.0-20210806151611-9ba13da43734/go.mod h1:bdNPtQmcxoIQVkZEWZvX0n0/IDlHFab397xdBlP4OoE=
-github.com/dgraph-io/sroar v0.0.0-20210913200129-360377962aca h1:Q9OQgMN+ZEizgzHVQoGYvICVwlR45dYbfXFuDsgFpkg=
-github.com/dgraph-io/sroar v0.0.0-20210913200129-360377962aca/go.mod h1:bdNPtQmcxoIQVkZEWZvX0n0/IDlHFab397xdBlP4OoE=
 github.com/dgraph-io/sroar v0.0.0-20210915181338-8dc690a08d84 h1:vtPkk8vX4OzWs698+GIJ86c1MSCOPX08Uh3CpywWmt0=
 github.com/dgraph-io/sroar v0.0.0-20210915181338-8dc690a08d84/go.mod h1:bdNPtQmcxoIQVkZEWZvX0n0/IDlHFab397xdBlP4OoE=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
