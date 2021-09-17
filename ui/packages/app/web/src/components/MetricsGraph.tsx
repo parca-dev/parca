@@ -6,7 +6,6 @@ import MetricsCircle from './metrics/MetricsCircle'
 import { pointer } from 'd3-selection'
 import { formatForTimespan } from '../libs/time'
 import { nFormatter } from '../libs/unit'
-import { Badge, Overlay, Popover } from 'react-bootstrap'
 import { SingleProfileSelection, timeFormat } from '@parca/profile'
 import { cutToMaxStringLength } from '../libs/utils'
 import throttle from 'lodash.throttle'
@@ -71,19 +70,87 @@ export const parseValue = (value: string): number | null => {
 const lineStroke = '1px'
 const lineStrokeHover = '2px'
 
-const UpdatingPopover = React.forwardRef<any, any>(
-  ({ popper, children, show: _, ...props }, ref) => {
-    useEffect(() => {
-      popper.scheduleUpdate()
-    }, [children, popper])
+function generateBoundingClientRect(x = 0, y = 0) {
+  return () => ({
+      width: 0,
+      height: 0,
+      top: y,
+      right: x,
+      bottom: y,
+      left: x,
+    });
+}
 
+interface MetricsTooltipProps {
+    x: number
+    y: number
+    highlighted: HighlightedSeries
+    onLabelClick: (labelName: string, labelValue: string) => void
+}
+
+export const MetricsTooltip = ({
+    x,
+    y,
+    highlighted,
+    onLabelClick,
+}: MetricsTooltipProps): JSX.Element => {
+    const nameLabel: Label.AsObject | undefined = highlighted?.labels.find((e) => e.name === '__name__')
+    const highlightedNameLabel: Label.AsObject = nameLabel !== undefined ? (nameLabel) : ({ name: '', value: '' })
     return (
-      <Popover ref={ref} content {...props}>
-        {children}
-      </Popover>
+        <div style={{position: "absolute", left: x+30, top: y-20}}>
+            <div className="flex">
+                <div className="m-auto">
+                    <div className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90" style={{ borderWidth: 1 }}>
+                        <div className="flex flex-row">
+                            <div className="ml-2 mr-6">
+                                <span className="font-semibold">{highlightedNameLabel.value}</span>
+                                <span className="block text-gray-700 dark:text-gray-300 my-2">
+                                    <table className="table-auto">
+                                        <tbody>
+                                            <tr>
+                                                <td className="w-1/4">
+                                                    Value
+                                                </td>
+                                                <td className="w-3/4">
+                                                    {nFormatter(highlighted.value, 1)}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td className="w-1/4">
+                                                    At
+                                                </td>
+                                                <td className="w-3/4">
+                                                    {moment(highlighted.timestamp).utc().format(timeFormat)}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </span>
+                                <span className="block text-gray-500 my-2">
+                                    {highlighted.labels.filter((label: Label.AsObject) => (label.name !== '__name__')).map(function (label: Label.AsObject) {
+                                        return (
+                                            <button
+                                                key={label.name}
+                                                type="button"
+                                                className="inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3"
+                                                onClick={() => onLabelClick(label.name, label.value)}
+                                            >
+                                                {cutToMaxStringLength(`${label.name}="${label.value}"`, 37)}
+                                            </button>
+                                        )
+                                    })}
+                                </span>
+                                <span className="block text-gray-500 text-xs">
+                                    Hold ctrl and click label to add to query.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     )
-  }
-)
+}
 
 export const RawMetricsGraph = ({
   data,
@@ -100,7 +167,34 @@ export const RawMetricsGraph = ({
   const [selected, setSelected] = useState<HighlightedSeries | null>(null)
   const [relPos, setRelPos] = useState(-1)
   const [pos, setPos] = useState([0, 0])
+  const [holdingCtrl, setHoldingCtrl] = useState(false)
   const metricPointRef = useRef(null)
+
+  useEffect(() => {
+      const handleCtrlDown = (event) => {
+          if (event.keyCode === 17) {
+              setHoldingCtrl(true)
+          }
+      };
+      window.addEventListener('keydown', handleCtrlDown);
+
+      return () => {
+          window.removeEventListener('keydown', handleCtrlDown);
+      };
+  }, []);
+
+  useEffect(() => {
+      const handleCtrlDown = (event) => {
+          if (event.keyCode === 17) {
+              setHoldingCtrl(false)
+          }
+      };
+      window.addEventListener('keyup', handleCtrlDown);
+
+      return () => {
+          window.removeEventListener('keyup', handleCtrlDown);
+      };
+  }, []);
 
   const time: number = profile?.HistoryParams().time
 
@@ -194,9 +288,6 @@ export const RawMetricsGraph = ({
 
     const closestSeriesIndex = d3.minIndex(closestPointPerSeries, s => s.distance)
     const distance = closestPointPerSeries[closestSeriesIndex].distance
-    if (distance > 15) {
-      return null
-    }
 
     const pointIndex = closestPointPerSeries[closestSeriesIndex].pointIndex
     const point = series[closestSeriesIndex].values[pointIndex]
@@ -212,8 +303,6 @@ export const RawMetricsGraph = ({
   }
 
   const highlighted = getClosest()
-  const nameLabel: Label.AsObject | undefined = highlighted?.labels.find((e) => e.name === '__name__')
-  const highlightedNameLabel: Label.AsObject = nameLabel !== undefined ? (nameLabel) : ({ name: '', value: '' })
 
   const onMouseDown = (e): void => {
     // only left mouse button
@@ -283,9 +372,9 @@ export const RawMetricsGraph = ({
     e.preventDefault()
   }
 
-  const throttledSetPos = throttle(setPos, 100)
+  const throttledSetPos = throttle(setPos, 20)
 
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>): void => {
+  const onMouseMove = (e: React.MouseEvent<SVGSVGElement|HTMLDivElement, MouseEvent>): void => {
     // X/Y coordinate array relative to svg
     const rel = pointer(e)
 
@@ -294,21 +383,9 @@ export const RawMetricsGraph = ({
     const yCoordinate = rel[1]
     const yCoordinateWithoutMargin = yCoordinate - margin
 
-    throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin])
-  }
-
-  const showTooltip = (): boolean => {
-    if (highlighted == null) {
-      return false
+    if (!holdingCtrl) {
+        throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin])
     }
-    if (metricPointRef == null || metricPointRef.current == null) {
-      return false
-    }
-    if (!hovering) {
-      return false
-    }
-    // TODO Can probably be made even more understandable
-    return !dragging || (dragging && Math.abs(relPos - pos[0]) <= 1)
   }
 
   useEffect(() => {
@@ -359,6 +436,23 @@ export const RawMetricsGraph = ({
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
+        {(highlighted != null) &&
+            hovering &&
+            !dragging &&
+            pos[0] != 0 &&
+            pos[1] != 0
+        && (
+            <div
+                onMouseMove={onMouseMove}
+            >
+            <MetricsTooltip
+                x={pos[0]+margin}
+                y={pos[1]+margin}
+                highlighted={highlighted}
+                onLabelClick={onLabelClick}
+            />
+            </div>
+        )}
       <svg
         width={`${width}px`}
         height={`${height + margin}px`}
@@ -477,44 +571,6 @@ export const RawMetricsGraph = ({
           </g>
         </g>
       </svg>
-      <Overlay
-        show={showTooltip()}
-        target={metricPointRef.current}
-        placement="bottom"
-      >
-        <UpdatingPopover id="metrics-popover" style={{ opacity: '0.98' }}>
-          {(showTooltip() && highlighted != null) && (
-            <>
-              <Popover.Title as="h3">
-                <a>{highlightedNameLabel.value}</a>
-              </Popover.Title>
-              <Popover.Content>
-                <p>Value: {nFormatter(highlighted.value, 1)}</p>
-                <p>At: {moment(highlighted.timestamp).utc().format(timeFormat)}</p>
-                  {highlighted.labels.filter((label: Label.AsObject) => (label.name !== '__name__')).map(function (label: Label.AsObject) {
-                    return (
-                      <React.Fragment key={label.name}>
-                        <Badge
-                          variant="light"
-                          style={{
-                            border: '1px solid rgba(0, 0, 0, 0.125)',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => onLabelClick(label.name, label.value)}
-                          /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                          title={`${label.name}="${label.value}"`.length > 37 ? `${label.name}="${label.value}"` : ''}
-                        >
-                          {/* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */}
-                          {cutToMaxStringLength(`${label.name}="${label.value}"`, 37)}
-                        </Badge>{'  '}
-                      </React.Fragment>
-                    )
-                  })}
-              </Popover.Content>
-            </>
-          )}
-        </UpdatingPopover>
-      </Overlay>
     </div>
   )
 }
