@@ -149,6 +149,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		gr.Add(func() error {
 			return db.Run(ctx)
 		}, func(err error) {
+			level.Debug(logger).Log("msg", "db exiting")
 			cancel()
 		})
 	}
@@ -189,6 +190,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			ctx, cancel := context.WithTimeout(ctx, 30*time.Second) // TODO make this a graceful shutdown config setting
 			defer cancel()
 
+			level.Debug(logger).Log("msg", "server shutting down")
 			err := parcaserver.Shutdown(ctx)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				level.Error(logger).Log("msg", "error shuttiing down server", "err", err)
@@ -203,6 +205,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				return sym.Run(ctx, 10*time.Second)
 			},
 			func(_ error) {
+				level.Debug(logger).Log("msg", "symbol server shutting down")
 				cancel()
 			})
 	}
@@ -212,6 +215,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return discoveryManager.Run()
 		},
 		func(_ error) {
+			level.Debug(logger).Log("msg", "discovery manager exiting")
 			cancel()
 		},
 	)
@@ -220,6 +224,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return m.Run(discoveryManager.SyncCh())
 		},
 		func(_ error) {
+			level.Debug(logger).Log("msg", "scrape manager exiting")
 			m.Stop()
 		},
 	)
