@@ -13,14 +13,14 @@ endif
 VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags 2>/dev/null || echo '$(BRANCH)$(COMMIT)'))
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
+.PHONY: build
+build: ui go/bin
+
 .PHONY: clean
 clean:
 	rm -rf bin
 	rm -rf ui/dist
 	rm -rf ui/.next
-
-.PHONY: build
-build: ui go/bin
 
 .PHONY: go/deps
 go/deps: internal/pprof
