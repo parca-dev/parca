@@ -30,7 +30,6 @@ go/deps: internal/pprof
 go/bin: go/deps
 	mkdir -p ./bin
 	go build -o bin/ ./cmd/parca
-	cp parca.yaml bin/
 
 .PHONY: format
 format: go/fmt check-license
