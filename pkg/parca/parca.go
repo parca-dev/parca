@@ -43,6 +43,7 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/profilestore"
@@ -125,6 +126,20 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		mStr,
 	)
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	discoveryManager := discovery.NewManager(ctx, logger)
+	if err := discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs)); err != nil {
+		level.Error(logger).Log("msg", "failed to apply discovery configs", "err", err)
+		return err
+	}
+
+	m := scrape.NewManager(logger, reg, s, cfg.ScrapeConfigs)
+	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {
+		level.Error(logger).Log("msg", "failed to apply scrape configs", "err", err)
+		return err
+	}
+
 	parcaserver := server.NewServer(reg)
 
 	var gr run.Group
@@ -148,6 +163,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 					debuginfopb.RegisterDebugInfoServiceServer(srv, dbgInfo)
 					profilestorepb.RegisterProfileStoreServiceServer(srv, s)
 					querypb.RegisterQueryServiceServer(srv, q)
+					scrapepb.RegisterScrapeServiceServer(srv, m)
 
 					if err := debuginfopb.RegisterDebugInfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 						return err
@@ -158,6 +174,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 					}
 
 					if err := querypb.RegisterQueryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+						return err
+					}
+
+					if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 						return err
 					}
 
@@ -185,20 +205,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			func(_ error) {
 				cancel()
 			})
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	discoveryManager := discovery.NewManager(ctx, logger)
-	if err := discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs)); err != nil {
-		level.Error(logger).Log("msg", "failed to apply discovery configs", "err", err)
-		return err
-	}
-
-	m := scrape.NewManager(logger, reg, s, cfg.ScrapeConfigs)
-	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {
-		level.Error(logger).Log("msg", "failed to apply scrape configs", "err", err)
-		return err
 	}
 
 	gr.Add(
