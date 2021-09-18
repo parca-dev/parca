@@ -15,9 +15,9 @@ OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
 .PHONY: clean
 clean:
-	rm -r bin
-	rm -r ui/dist
-	rm -r ui/.next
+	rm -rf bin
+	rm -rf ui/dist
+	rm -rf ui/.next
 
 .PHONY: build
 build: ui go/bin
