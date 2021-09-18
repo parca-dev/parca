@@ -155,6 +155,24 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 	gr.Add(
 		func() error {
+			return discoveryManager.Run()
+		},
+		func(_ error) {
+			level.Debug(logger).Log("msg", "discovery manager exiting")
+			cancel()
+		},
+	)
+	gr.Add(
+		func() error {
+			return m.Run(discoveryManager.SyncCh())
+		},
+		func(_ error) {
+			level.Debug(logger).Log("msg", "scrape manager exiting")
+			m.Stop()
+		},
+	)
+	gr.Add(
+		func() error {
 			return parcaserver.ListenAndServe(
 				ctx,
 				logger,
@@ -209,26 +227,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				cancel()
 			})
 	}
-
-	gr.Add(
-		func() error {
-			return discoveryManager.Run()
-		},
-		func(_ error) {
-			level.Debug(logger).Log("msg", "discovery manager exiting")
-			cancel()
-		},
-	)
-	gr.Add(
-		func() error {
-			return m.Run(discoveryManager.SyncCh())
-		},
-		func(_ error) {
-			level.Debug(logger).Log("msg", "scrape manager exiting")
-			m.Stop()
-		},
-	)
-
 	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
 			return nil
