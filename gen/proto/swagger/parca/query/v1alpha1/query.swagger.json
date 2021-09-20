@@ -477,6 +477,10 @@
         },
         "unit": {
           "type": "string"
+        },
+        "height": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

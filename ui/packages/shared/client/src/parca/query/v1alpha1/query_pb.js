@@ -2640,7 +2640,8 @@ proto.parca.query.v1alpha1.Flamegraph.toObject = function(includeInstance, msg) 
   var f, obj = {
     root: (f = msg.getRoot()) && proto.parca.query.v1alpha1.FlamegraphRootNode.toObject(includeInstance, f),
     total: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    unit: jspb.Message.getFieldWithDefault(msg, 3, "")
+    unit: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    height: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -2690,6 +2691,10 @@ proto.parca.query.v1alpha1.Flamegraph.deserializeBinaryFromReader = function(msg
       var value = /** @type {string} */ (reader.readString());
       msg.setUnit(value);
       break;
+    case 4:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setHeight(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2738,6 +2743,13 @@ proto.parca.query.v1alpha1.Flamegraph.serializeBinaryToWriter = function(message
   if (f.length > 0) {
     writer.writeString(
       3,
+      f
+    );
+  }
+  f = message.getHeight();
+  if (f !== 0) {
+    writer.writeInt32(
+      4,
       f
     );
   }
@@ -2814,6 +2826,24 @@ proto.parca.query.v1alpha1.Flamegraph.prototype.getUnit = function() {
  */
 proto.parca.query.v1alpha1.Flamegraph.prototype.setUnit = function(value) {
   return jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional int32 height = 4;
+ * @return {number}
+ */
+proto.parca.query.v1alpha1.Flamegraph.prototype.getHeight = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.parca.query.v1alpha1.Flamegraph} returns this
+ */
+proto.parca.query.v1alpha1.Flamegraph.prototype.setHeight = function(value) {
+  return jspb.Message.setProto3IntField(this, 4, value);
 };
 
 

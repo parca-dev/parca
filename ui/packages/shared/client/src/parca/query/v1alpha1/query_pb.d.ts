@@ -326,6 +326,9 @@ export class Flamegraph extends jspb.Message {
   getUnit(): string;
   setUnit(value: string): void;
 
+  getHeight(): number;
+  setHeight(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Flamegraph.AsObject;
   static toObject(includeInstance: boolean, msg: Flamegraph): Flamegraph.AsObject;
@@ -341,6 +344,7 @@ export namespace Flamegraph {
     root?: FlamegraphRootNode.AsObject,
     total: number,
     unit: string,
+    height: number,
   }
 }
 

@@ -132,17 +132,17 @@ const ProfileMetricsGraph = ({
 
   return (
       <Card className="dark:bg-gray-700">
-      <MetricsGraph
-        data={series}
-        from={from}
-        to={to}
-        profile={profile as SingleProfileSelection}
-        setTimeRange={setTimeRange}
-        onSampleClick={handleSampleClick}
-        onLabelClick={addLabelMatcher}
-        width={0}
-      />
-    </Card>
+          <MetricsGraph
+              data={series}
+              from={from}
+              to={to}
+              profile={profile as SingleProfileSelection}
+              setTimeRange={setTimeRange}
+              onSampleClick={handleSampleClick}
+              onLabelClick={addLabelMatcher}
+              width={0}
+          />
+      </Card>
   )
 }
 

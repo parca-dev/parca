@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 //import ProfileSVG from './ProfileSVG'
 //import ProfileTop from './ProfileTop'
+import { CalcWidth } from '@parca/dynamicsize'
 import ProfileIcicleGraph from './ProfileIcicleGraph'
 import { ProfileSource } from './ProfileSource'
 import { QueryServiceClient, QueryResponse, QueryRequest, ServiceError } from '@parca/client'
@@ -82,20 +83,17 @@ export const ProfileView = ({
 
   const queryResponse = response.toObject()
 
-  const reportTypes = {
-    iciclegraph: {
-      name: 'Icicle Graph',
-      element: <ProfileIcicleGraph graph={response.getFlamegraph()?.toObject()} />
-    }
-  }
-
   return (
     <>
       <div className='my-4'>
         <Card>
-          <Card.Body>
-            {reportTypes[reportType].element}
-          </Card.Body>
+            <Card.Body>
+                <CalcWidth throttle={300} delay={2000}>
+                    <ProfileIcicleGraph
+                        graph={response.getFlamegraph()?.toObject()}
+                    />
+                </CalcWidth>
+            </Card.Body>
         </Card>
       </div>
     </>
