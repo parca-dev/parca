@@ -118,6 +118,7 @@ message Flamegraph {
     FlamegraphRootNode root = 1;
     int64 total = 2;
     string unit = 3;
+    int32 height = 4;
 }
 
 message FlamegraphRootNode {

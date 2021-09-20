@@ -146,7 +146,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 		&Profile{Tree: pt},
 	)
 	require.NoError(t, err)
-	require.Equal(t, &pb.Flamegraph{Total: 6, Root: &pb.FlamegraphRootNode{
+	require.Equal(t, &pb.Flamegraph{Height: 5, Total: 6, Root: &pb.FlamegraphRootNode{
 		Cumulative: 6,
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{

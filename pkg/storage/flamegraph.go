@@ -157,6 +157,7 @@ func GenerateFlamegraph(
 	if !steppedInto {
 		return flamegraph, nil
 	}
+	flamegraph.Height = int32(1)
 
 	for it.HasMore() {
 		if it.NextChild() {
@@ -174,6 +175,10 @@ func GenerateFlamegraph(
 				flamegraphStack.Push(&TreeStackEntry{
 					node: innerMost,
 				})
+				if int32(len(flamegraphStack)) > flamegraph.Height {
+					flamegraph.Height = int32(len(flamegraphStack))
+				}
+
 				it.StepInto()
 			}
 			continue
@@ -223,7 +228,8 @@ func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
 
 	it := NewFlamegraphIterator(oldRootNode)
 	tree := &pb.Flamegraph{
-		Total: fg.Total,
+		Total:  fg.Total,
+		Height: fg.Height,
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: fg.Root.Cumulative,
 			Diff:       fg.Root.Diff,
