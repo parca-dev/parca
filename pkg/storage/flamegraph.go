@@ -292,6 +292,10 @@ func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.Flameg
 		if equals(current, next) {
 			// Merge children into the first one
 			current.Meta.Line = nil
+			if current.Meta.Mapping != nil && next.Meta.Mapping != nil && current.Meta.Mapping.Id != next.Meta.Mapping.Id {
+				current.Meta.Mapping = &pb.Mapping{}
+			}
+
 			current.Cumulative += next.Cumulative
 			current.Diff += next.Diff
 			current.Children = append(current.Children, next.Children...)
@@ -325,7 +329,7 @@ func equalsByName(a, b *pb.FlamegraphNode) bool {
 	}
 
 	if a.Meta.Function == nil && b.Meta.Function != nil {
-		return true
+		return false
 	}
 
 	if a.Meta.Function == nil && b.Meta.Function == nil {
