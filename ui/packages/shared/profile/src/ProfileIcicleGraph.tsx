@@ -24,7 +24,7 @@ export default function ProfileIcicleGraph ({
   width,
   graph,
 }: ProfileIcicleGraphProps) {
-  const [curPath, setCurPath] = useState<number[]>([])
+  const [curPath, setCurPath] = useState<string[]>([])
 
   useEffect(() => {
       setCurPath([])
@@ -34,7 +34,7 @@ export default function ProfileIcicleGraph ({
   const total = graph.total
   if (total == 0) return <>Profile has no samples</>
 
-  const setNewCurPath = (path: number[]) => {
+  const setNewCurPath = (path: string[]) => {
     if (!arrayEquals(curPath, path)) {
       setCurPath(path)
     }

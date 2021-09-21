@@ -72,10 +72,10 @@ interface IcicleGraphNodesProps {
   y: number
   width: number
   level: number
-  curPath: number[]
-  setCurPath: (path: number[]) => void
+  curPath: string[]
+  setCurPath: (path: string[]) => void
   setHoveringNode: (node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined) => void
-  path: number[]
+  path: string[]
 }
 
 function diffColor(diff: number, cumulative: number): string {
@@ -92,10 +92,10 @@ const getLastItem = thePath => thePath.substring(thePath.lastIndexOf('/') + 1)
 
 export function nodeLabel(node: FlamegraphNode.AsObject): string {
     if (node.meta === undefined) return '<unknown>'
-    const mapping = `${(node.meta.mapping !== undefined && node.meta.mapping.file != '') ? '['+getLastItem(node.meta.mapping.file)+']' : ''}`
-    if (node.meta.pb_function !== undefined && node.meta.pb_function.name != '') return mapping+' '+node.meta.pb_function.name
+    const mapping = `${(node.meta.mapping !== undefined && node.meta.mapping.file != '') ? '['+getLastItem(node.meta.mapping.file)+'] ' : ''}`
+    if (node.meta.pb_function !== undefined && node.meta.pb_function.name != '') return mapping+node.meta.pb_function.name
 
-    const address = `${(node.meta.location !== undefined && node.meta.location.address !== undefined && node.meta.location.address != 0) ? ' 0x'+node.meta.location.address.toString(16) : ''}`
+    const address = `${(node.meta.location !== undefined && node.meta.location.address !== undefined && node.meta.location.address != 0) ? '0x'+node.meta.location.address.toString(16) : ''}`
     const fallback = `${mapping}${address}`
 
     return fallback == '' ? '<unknown>' : fallback
@@ -112,7 +112,7 @@ export function IcicleGraphNodes ({
   setCurPath,
   curPath
 }: IcicleGraphNodesProps) {
-  const nodes = curPath.length > level ? [data[curPath[level]]] : data
+  const nodes = curPath.length == 0 ? data : data.filter((d, i) => d != null && curPath[0] == nodeLabel(d))
 
   const xScale = scaleLinear()
     .domain([0, nodes.reduce((sum, d) => sum + (d ? d.cumulative : 0), 0)])
@@ -137,7 +137,7 @@ export function IcicleGraphNodes ({
 
         const key = `${level}-${i}`
         const name = nodeLabel(d)
-        const nextPath = path.concat([i])
+        const nextPath = path.concat([name])
 
         const color = diffColor(d.diff === undefined ? 0 : d.diff, d.cumulative)
 
@@ -151,6 +151,7 @@ export function IcicleGraphNodes ({
 
         const xStart = xScale(start)
         const nextWidth = xScale(d.cumulative)
+        const nextCurPath = curPath.length == 0 ? [] : curPath.slice(1)
 
         const onMouseEnter = (e) => setHoveringNode(d)
         const onMouseLeave = (e) => setHoveringNode(undefined)
@@ -177,7 +178,7 @@ export function IcicleGraphNodes ({
                         level={nextLevel}
                         setHoveringNode={setHoveringNode}
                         path={nextPath}
-                        curPath={curPath}
+                        curPath={nextCurPath}
                         setCurPath={setCurPath}
                     />
                 )}
@@ -259,10 +260,20 @@ export const FlamegraphTooltip = ({
                         <div className="flex flex-row">
                             <div className="ml-2 mr-6">
                                 <span className="text-gray-700 dark:text-gray-300 my-2">
-                                    {(hoveringFlamegraphNode.meta !== undefined && hoveringFlamegraphNode.meta.pb_function !== undefined && hoveringFlamegraphNode.meta.pb_function.name != '') ? (
-                                            <p>{hoveringFlamegraphNode.meta.pb_function.name}</p>
-                                    ) : (
+                                    {(hoveringFlamegraphNode.meta === undefined) ? (
                                             <p>root</p>
+                                    ) : (
+                                        <>
+                                            {(hoveringFlamegraphNode.meta.pb_function !== undefined && hoveringFlamegraphNode.meta.pb_function.name != '') ? (
+                                                <p>{hoveringFlamegraphNode.meta.pb_function.name}</p>
+                                            ) : (
+                                                <>
+                                                    {(hoveringFlamegraphNode.meta.location !== undefined && hoveringFlamegraphNode.meta.location.address != 0) ? (
+                                                        <p>{'0x'+hoveringFlamegraphNode.meta.location.address.toString(16)}</p>
+                                                    ) : (<p>unknown</p>)}
+                                                </>
+                                            )}
+                                        </>
                                     )}
                                     <table className="table-fixed">
                                         <tbody>
@@ -293,8 +304,8 @@ export const FlamegraphTooltip = ({
 interface IcicleGraphRootNodeProps {
   node: FlamegraphRootNode.AsObject
   width: number
-  curPath: number[]
-  setCurPath: (path: number[]) => void
+  curPath: string[]
+  setCurPath: (path: string[]) => void
   setHoveringNode: (node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined) => void
 }
 
@@ -347,8 +358,8 @@ const MemoizedIcicleGraphRootNode = React.memo(IcicleGraphRootNode)
 interface IcicleGraphProps {
   graph: Flamegraph.AsObject
   width?: number
-  curPath: number[]
-  setCurPath: (path: number[]) => void
+  curPath: string[]
+  setCurPath: (path: string[]) => void
 }
 
 function useClientRect () {
