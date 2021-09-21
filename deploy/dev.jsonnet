@@ -9,8 +9,8 @@ local ns = {
 local parca = (import 'parca/parca.libsonnet')({
   name: 'parca',
   namespace: ns.metadata.name,
-  image: 'quay.io/parca/parca:latest',
-  version: 'latest',
+  image: 'quay.io/parca/parca:dev',
+  version: 'dev',
   replicas: 1,
   logLevel: 'debug',
   configPath: '/parca.yaml',
@@ -20,8 +20,8 @@ local parca = (import 'parca/parca.libsonnet')({
 local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({
   name: 'parca-agent',
   namespace: ns.metadata.name,
-  version: 'latest',
-  image: 'quay.io/parca/parca-agent:latest',
+  version: 'dev',
+  image: 'quay.io/parca/parca-agent:dev',
   stores: ['%s.%s.svc.cluster.local:%d' % [parca.service.metadata.name, parca.service.metadata.namespace, parca.config.port]],
   logLevel: 'debug',
   insecure: true,
@@ -29,9 +29,19 @@ local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({
   tempDir: 'tmp',
 });
 
+// Only for development purposes. Parca actually serves its UI itself.
+local parcaUI = (import 'parca/parca-ui.libsonnet')({
+  name: 'parca-ui',
+  namespace: ns.metadata.name,
+  image: 'quay.io/parca-dev/parca-ui:dev',
+  version: 'dev',
+  replicas: 1,
+  apiEndpoint: 'http://localhost:7070',
+  // apiEndpoint: 'http://%s.%s.svc.cluster.local:%d' % [parca.service.metadata.name, parca.service.metadata.namespace, parca.config.port],
+});
+
 {
-  'parca-agent-namespace': ns,
-  'parca-server-namespace': ns,
+  '0namespace': ns,
 } + {
   ['parca-server-' + name]: parca[name]
   for name in std.objectFields(parca)
@@ -40,4 +50,8 @@ local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({
   ['parca-agent-' + name]: parcaAgent[name]
   for name in std.objectFields(parcaAgent)
   if parcaAgent[name] != null
+} + {
+  ['parca-ui-' + name]: parcaUI[name]
+  for name in std.objectFields(parcaUI)
+  if parcaUI[name] != null
 }

@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca-agent
     app.kubernetes.io/name: parca-agent
-    app.kubernetes.io/version: latest
+    app.kubernetes.io/version: dev
   name: parca-agent
   namespace: parca
 spec:
@@ -20,7 +20,7 @@ spec:
         app.kubernetes.io/component: observability
         app.kubernetes.io/instance: parca-agent
         app.kubernetes.io/name: parca-agent
-        app.kubernetes.io/version: latest
+        app.kubernetes.io/version: dev
     spec:
       containers:
       - args:
@@ -37,7 +37,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: quay.io/parca/parca-agent:latest
+        image: quay.io/parca/parca-agent:dev
         imagePullPolicy: Always
         name: parca-agent
         securityContext:

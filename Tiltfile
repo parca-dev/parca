@@ -38,3 +38,4 @@ docker_build('quay.io/parca/parca-agent:dev', './tmp/parca-agent',
 )
 k8s_yaml('deploy/manifests/parca-agent-daemonSet.yaml')
 k8s_resource('parca-agent', port_forwards=[7071])
+
