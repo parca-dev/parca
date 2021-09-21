@@ -9,7 +9,7 @@ local ns = {
 local parca = (import 'parca/parca.libsonnet')({
   name: 'parca',
   namespace: ns.metadata.name,
-  image: 'quay.io/parca/parca:latest',
+  image: 'ghcr.io/parca/parca:latest',
   version: 'latest',
   replicas: 1,
   logLevel: 'debug',
@@ -21,7 +21,7 @@ local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({
   name: 'parca-agent',
   namespace: ns.metadata.name,
   version: 'latest',
-  image: 'quay.io/parca/parca-agent:latest',
+  image: 'ghcr.io/parca/parca-agent:latest',
   stores: ['%s.%s.svc.cluster.local:%d' % [parca.service.metadata.name, parca.service.metadata.namespace, parca.config.port]],
   logLevel: 'debug',
   insecure: true,

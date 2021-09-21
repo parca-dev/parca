@@ -29,7 +29,7 @@ spec:
         - --config-path=/parca.yaml
         - --log-level=debug
         - --cors-allowed-origins=*
-        image: quay.io/parca/parca:dev
+        image: parca.io/parca/parca:dev
         livenessProbe:
           exec:
             command:

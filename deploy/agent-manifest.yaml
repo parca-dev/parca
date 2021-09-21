@@ -51,7 +51,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: quay.io/parca/parca-agent:latest
+        image: ghcr.io/parca/parca-agent:latest
         imagePullPolicy: Always
         name: parca-agent
         securityContext:
