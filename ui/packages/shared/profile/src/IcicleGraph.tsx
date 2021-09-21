@@ -92,10 +92,10 @@ const getLastItem = thePath => thePath.substring(thePath.lastIndexOf('/') + 1)
 
 export function nodeLabel(node: FlamegraphNode.AsObject): string {
     if (node.meta === undefined) return '<unknown>'
-    const mapping = `${(node.meta.mapping !== undefined && node.meta.mapping.file != '') ? '['+getLastItem(node.meta.mapping.file)+']' : ''}`
-    if (node.meta.pb_function !== undefined && node.meta.pb_function.name != '') return mapping+' '+node.meta.pb_function.name
+    const mapping = `${(node.meta.mapping !== undefined && node.meta.mapping.file != '') ? '['+getLastItem(node.meta.mapping.file)+'] ' : ''}`
+    if (node.meta.pb_function !== undefined && node.meta.pb_function.name != '') return mapping+node.meta.pb_function.name
 
-    const address = `${(node.meta.location !== undefined && node.meta.location.address !== undefined && node.meta.location.address != 0) ? ' 0x'+node.meta.location.address.toString(16) : ''}`
+    const address = `${(node.meta.location !== undefined && node.meta.location.address !== undefined && node.meta.location.address != 0) ? '0x'+node.meta.location.address.toString(16) : ''}`
     const fallback = `${mapping}${address}`
 
     return fallback == '' ? '<unknown>' : fallback
@@ -259,10 +259,20 @@ export const FlamegraphTooltip = ({
                         <div className="flex flex-row">
                             <div className="ml-2 mr-6">
                                 <span className="text-gray-700 dark:text-gray-300 my-2">
-                                    {(hoveringFlamegraphNode.meta !== undefined && hoveringFlamegraphNode.meta.pb_function !== undefined && hoveringFlamegraphNode.meta.pb_function.name != '') ? (
-                                            <p>{hoveringFlamegraphNode.meta.pb_function.name}</p>
-                                    ) : (
+                                    {(hoveringFlamegraphNode.meta === undefined) ? (
                                             <p>root</p>
+                                    ) : (
+                                        <>
+                                            {(hoveringFlamegraphNode.meta.pb_function !== undefined && hoveringFlamegraphNode.meta.pb_function.name != '') ? (
+                                                <p>{hoveringFlamegraphNode.meta.pb_function.name}</p>
+                                            ) : (
+                                                <>
+                                                    {(hoveringFlamegraphNode.meta.location !== undefined && hoveringFlamegraphNode.meta.location.address != 0) ? (
+                                                        <p>{'0x'+hoveringFlamegraphNode.meta.location.address.toString(16)}</p>
+                                                    ) : (<p>unknown</p>)}
+                                                </>
+                                            )}
+                                        </>
                                     )}
                                     <table className="table-fixed">
                                         <tbody>
