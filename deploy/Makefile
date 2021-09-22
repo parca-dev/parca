@@ -9,8 +9,9 @@ manifests: vendor $(shell find . -name 'vendor' -prune -o -name '*.libsonnet' -p
 	rm -rf manifests tilt
 	mkdir manifests tilt
 	jsonnet -J vendor main.jsonnet -m manifests | xargs -I{} sh -c 'cat {} | gojsontoyaml > {}.yaml; rm -f {}' -- {}
-	awk 'BEGINFILE {print "---"}{print}' manifests/parca-agent* > agent-manifest.yaml
-	awk 'BEGINFILE {print "---"}{print}' manifests/parca-server* > server-manifest.yaml
+	# Using ls to make sure order preserved. ls sorts alphabetically.
+	awk 'BEGINFILE {print "---"}{print}' `ls manifests/parca-agent*` > agent-manifest.yaml
+	awk 'BEGINFILE {print "---"}{print}' `ls manifests/parca-server*` > server-manifest.yaml
 	jsonnet -J vendor dev.jsonnet -m tilt | xargs -I{} sh -c 'cat {} | gojsontoyaml > {}.yaml; rm -f {}' -- {}
 
 fmt:
