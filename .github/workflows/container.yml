@@ -1,4 +1,4 @@
-name: Go
+name: Container
 
 on:
   push:
@@ -8,13 +8,11 @@ on:
 
 jobs:
   build:
-    name: Container build
+    name: Container build and push
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-      - name: Initialize and update libbpf submodule
-        run: git submodule init && git submodule update
       - name: Get branch name
         shell: bash
         run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV

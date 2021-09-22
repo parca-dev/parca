@@ -28,12 +28,14 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-dockers:
-  - id: parca
-    goos: linux
-    goarch: amd64
-    dockerfile: Dockerfile.release
-    extra_files:
-    - parca.yaml
-    image_templates:
-    - ghcr.io/parca-dev/parca:{{ .Tag }}
+
+# Disabled until fixing the authentication issue with ghcr.
+#dockers:
+#  - id: parca
+#    goos: linux
+#    goarch: amd64
+#    dockerfile: Dockerfile.release
+#    extra_files:
+#    - parca.yaml
+#    image_templates:
+#    - ghcr.io/parca-dev/parca:{{ .Tag }}
