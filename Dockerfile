@@ -1,10 +1,12 @@
 # this image is what node:16.6.1-alpine3.14 is on August 12 2021
 FROM docker.io/library/node@sha256:456ff86826c47703a7d9b1cbd04b80038e57b86efa4516931148151b379ba035 AS ui-deps
+
 WORKDIR /app
 
+COPY ui/packages/shared ./packages/shared
+COPY ui/packages/app/web/package.json ./packages/app/web/package.json
 COPY ui/package.json ui/yarn.lock ./
-
-RUN yarn install
+RUN yarn workspace @parca/web install --frozen-lockfile
 
 # Rebuild the source code only when needed
 # this image is what node:16.6.1-alpine3.14 is on August 12 2021
@@ -17,7 +19,6 @@ WORKDIR /app
 
 COPY ./ui .
 COPY --from=ui-deps /app/node_modules ./node_modules
-
 RUN yarn workspace @parca/web build
 
 # this image is what docker.io/golang:1.16.7-alpine3.14 on August 12 2021
@@ -41,7 +42,6 @@ COPY --chown=nobody:nogroup ./internal ./internal
 COPY --chown=nobody:nogroup ./proto ./proto
 COPY --chown=nobody:nogroup ./ui/ui.go ./ui/ui.go
 COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
-
 RUN go build -trimpath -o parca ./cmd/parca
 RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 

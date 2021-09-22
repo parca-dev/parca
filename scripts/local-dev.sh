@@ -49,5 +49,5 @@ function down() {
 # Deploys the dev env into the minikube cluster
 function deploy() {
     # Deploy all generated manifests
-    kubectl apply -R -f ./deploy/manifests
+    kubectl apply -R -f ./deploy/tilt
 }

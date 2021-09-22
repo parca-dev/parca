@@ -1,7 +1,8 @@
 const { dependencies } = require('./package.json')
 
 const withTM = require('next-transpile-modules')(
-  Object.keys(dependencies || []).filter(dependency => dependency.startsWith('@parca/'))
+  Object.keys(dependencies || []).filter(dependency => dependency.startsWith('@parca/')),
+  { debug: true }
 )
 
 const withBundleAnalyzer = require('@next/bundle-analyzer')({

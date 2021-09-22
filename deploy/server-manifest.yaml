@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,7 +6,7 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca
     app.kubernetes.io/name: parca
-    app.kubernetes.io/version: dev
+    app.kubernetes.io/version: latest
   name: parca
   namespace: parca
 spec:
@@ -21,7 +22,7 @@ spec:
         app.kubernetes.io/component: observability
         app.kubernetes.io/instance: parca
         app.kubernetes.io/name: parca
-        app.kubernetes.io/version: dev
+        app.kubernetes.io/version: latest
     spec:
       containers:
       - args:
@@ -29,7 +30,7 @@ spec:
         - --config-path=/parca.yaml
         - --log-level=debug
         - --cors-allowed-origins=*
-        image: quay.io/parca/parca:dev
+        image: ghcr.io/parca/parca:latest
         livenessProbe:
           exec:
             command:
@@ -57,3 +58,39 @@ spec:
         runAsUser: 65534
       serviceAccountName: parca
       terminationGracePeriodSeconds: 120
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: parca
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/instance: parca
+    app.kubernetes.io/name: parca
+    app.kubernetes.io/version: latest
+  name: parca
+  namespace: parca
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/instance: parca
+    app.kubernetes.io/name: parca
+    app.kubernetes.io/version: latest
+  name: parca
+  namespace: parca
+spec:
+  ports:
+  - name: all
+    port: 7070
+    targetPort: 7070
+  selector:
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/instance: parca
+    app.kubernetes.io/name: parca

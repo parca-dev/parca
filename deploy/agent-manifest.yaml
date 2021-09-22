@@ -1,3 +1,17 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: parca-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: parca-agent
+  namespace: parca
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -93,3 +107,19 @@ spec:
       - hostPath:
           path: /etc/localtime
         name: localtime
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: parca
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/instance: parca-agent
+    app.kubernetes.io/name: parca-agent
+    app.kubernetes.io/version: latest
+  name: parca-agent
+  namespace: parca

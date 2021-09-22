@@ -3,7 +3,6 @@ FROM node:16.6.1-alpine3.14 AS ui-deps
 WORKDIR /app
 
 COPY ui/package.json ui/yarn.lock ./
-
 RUN yarn install
 
 FROM node:16.6.1-alpine3.14 AS ui-builder
@@ -12,7 +11,6 @@ WORKDIR /app
 
 COPY ui .
 COPY --from=ui-deps /app/node_modules ./node_modules
-
 RUN yarn workspace @parca/web build
 
 FROM golang:1.16-alpine AS builder

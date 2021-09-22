@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/instance: parca
+    app.kubernetes.io/name: parca
+    app.kubernetes.io/version: dev
+  name: parca
+  namespace: parca
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: observability
+      app.kubernetes.io/instance: parca
+      app.kubernetes.io/name: parca
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: observability
+        app.kubernetes.io/instance: parca
+        app.kubernetes.io/name: parca
+        app.kubernetes.io/version: dev
+    spec:
+      containers:
+      - args:
+        - /parca
+        - --config-path=/parca.yaml
+        - --log-level=debug
+        - --cors-allowed-origins=*
+        image: parca.io/parca/parca:dev
+        livenessProbe:
+          exec:
+            command:
+            - /grpc-health-probe
+            - -v
+            - -addr=:7070
+          initialDelaySeconds: 5
+        name: parca
+        ports:
+        - containerPort: 7070
+          name: all
+        readinessProbe:
+          exec:
+            command:
+            - /grpc-health-probe
+            - -v
+            - -addr=:7070
+          initialDelaySeconds: 10
+        resources: {}
+        terminationMessagePolicy: FallbackToLogsOnError
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+      serviceAccountName: parca
+      terminationGracePeriodSeconds: 120

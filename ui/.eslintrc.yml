@@ -29,9 +29,12 @@ rules:
     - varsIgnorePattern: _
       argsIgnorePattern: _
 
-  no-labels: [error, {allowLoop: true}]
+  no-labels: [ error, { allowLoop: true } ]
   no-void: 0
-  @typescript-eslint/member-delimiter-style:
-    - singleline: 
-      - delimiter: 'semi'
-        requireLast: false
+  # TODO(kakkoyun): The following fixes the already broken linter,
+  #  but the changes are too many so deferring it.
+  #  '@typescript-eslint/member-delimiter-style': warn
+  '@typescript-eslint/member-delimiter-style':
+    - singleline:
+        - delimiter: 'semi'
+          requireLast: false

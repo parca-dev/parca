@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js packages/app/*",
+    "fix": "eslint --fix --ext .ts,.tsx,.js packages/app/*",
     "test": "jest --coverage --config jest.config.js",
     "dev": "next dev",
     "build": "next build",
@@ -31,7 +32,8 @@
     "google-protobuf": "^3.17.3",
     "next": "^11.1.0",
     "react": "^17.0.2",
-    "react-bootstrap": "1.6.1"
+    "react-bootstrap": "1.6.1",
+    "react-dom": "^17.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.15.0",
