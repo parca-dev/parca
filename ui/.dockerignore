@@ -18,9 +18,10 @@ Dockerfile
 Dockerfile.dev
 Makefile
 README.md
-node_modules
+/node_modules
 .next
 out
 *.log
 coverage
-./packages/app/template/
+/packages/app/template/
+/packages/app/web/node_modules
