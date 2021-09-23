@@ -197,7 +197,7 @@ func TestRealSymbolizer(t *testing.T) {
 		mStr.Close()
 	})
 
-	db := storage.OpenDB(prometheus.NewRegistry(), nil)
+	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	pStr := profilestore.NewProfileStore(
 		log.NewNopLogger(),
 		trace.NewNoopTracerProvider().Tracer(""),
