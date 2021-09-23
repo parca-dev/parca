@@ -16,6 +16,7 @@ package query
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"sort"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -91,6 +93,8 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		Root:  true,
 	}, sel...)
 	res := &pb.QueryRangeResponse{}
+
+	ctx, span := q.tracer.Start(ctx, "seriesIterate")
 	for set.Next() {
 		series := set.At()
 
@@ -103,9 +107,11 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 			})
 		}
 
-		i := series.Iterator()
-		for i.Next() {
-			p := i.At()
+		i := 0
+		_, profileSpan := q.tracer.Start(ctx, "profileIterate")
+		it := series.Iterator()
+		for it.Next() {
+			p := it.At()
 			pit := p.ProfileTree().Iterator()
 			if pit.NextChild() {
 				s := &pb.MetricsSample{
@@ -114,8 +120,11 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 				}
 				metricsSeries.Samples = append(metricsSeries.Samples, s)
 			}
+			i++
 		}
-		if err := i.Err(); err != nil {
+		profileSpan.SetAttributes(attribute.Int("i", i))
+		profileSpan.End()
+		if err := it.Err(); err != nil {
 			return nil, status.Error(codes.Internal, "failed to iterate")
 		}
 
@@ -125,6 +134,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 			break
 		}
 	}
+	span.End()
 	if err := set.Err(); err != nil {
 		return nil, status.Error(codes.Internal, "failed to iterate")
 	}
@@ -179,6 +189,9 @@ func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile) (*pb.Que
 }
 
 func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.InstantProfile, error) {
+	ctx, span := q.tracer.Start(ctx, "selectMerge")
+	defer span.End()
+
 	sel, err := parser.ParseMetricSelector(m.Query)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
@@ -196,6 +209,9 @@ func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.In
 }
 
 func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.QueryResponse, error) {
+	ctx, span := q.tracer.Start(ctx, "mergeRequest")
+	defer span.End()
+
 	p, err := q.selectMerge(ctx, m)
 	if err != nil {
 		return nil, err
@@ -205,6 +221,9 @@ func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.Query
 }
 
 func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryResponse, error) {
+	ctx, span := q.tracer.Start(ctx, "diffRequest")
+	defer span.End()
+
 	if d == nil {
 		return nil, status.Error(codes.InvalidArgument, "requested diff mode, but did not provide parameters for diff")
 	}
@@ -219,10 +238,14 @@ func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryRe
 		return nil, err
 	}
 
+	_, diffSpan := q.tracer.Start(ctx, "NewDiffProfile")
 	p, err := storage.NewDiffProfile(profileA, profileB)
 	if err != nil {
+		diffSpan.RecordError(err)
+		diffSpan.End()
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	diffSpan.End()
 
 	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
 }
@@ -265,6 +288,13 @@ func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ 
 func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Time) (storage.InstantProfile, error) {
 	requestedTime := timestamp.FromTime(t)
 
+	ctx, span := q.tracer.Start(ctx, "findSingle")
+	for i, m := range sel {
+		span.SetAttributes(attribute.String(fmt.Sprintf("matcher-%d", i), m.String()))
+	}
+	span.SetAttributes(attribute.Int64("time", t.Unix()))
+	defer span.End()
+
 	// Timestamps don't have to match exactly and staleness kicks in within 5
 	// minutes of no samples, so we need to search the range of -5min to +5min
 	// for possible samples.
@@ -274,17 +304,25 @@ func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Ti
 		timestamp.FromTime(t.Add(5*time.Minute)),
 	)
 	set := query.Select(nil, sel...)
+	ctx, seriesSpan := q.tracer.Start(ctx, "seriesIterate")
+	defer seriesSpan.End()
 	for set.Next() {
 		series := set.At()
-		i := series.Iterator()
-		for i.Next() {
-			p := i.At()
+		it := series.Iterator()
+		_, profileSpan := q.tracer.Start(ctx, "profileIterate")
+		i := 0
+		for it.Next() {
+			p := it.At()
 			if p.ProfileMeta().Timestamp >= requestedTime {
+				profileSpan.SetAttributes(attribute.Int("i", i))
+				profileSpan.End()
 				return p, nil
 			}
+			i++
 		}
-		err := i.Err()
-		if err != nil {
+		profileSpan.SetAttributes(attribute.Int("i", i))
+		profileSpan.End()
+		if err := it.Err(); err != nil {
 			return nil, err
 		}
 	}
@@ -293,6 +331,11 @@ func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Ti
 }
 
 func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end time.Time) (storage.InstantProfile, error) {
+	ctx, span := q.tracer.Start(ctx, "merge")
+	span.SetAttributes(attribute.Int64("start", start.Unix()))
+	span.SetAttributes(attribute.Int64("end", end.Unix()))
+	defer span.End()
+
 	startTs := timestamp.FromTime(start)
 	endTs := timestamp.FromTime(end)
 	query := q.queryable.Querier(
@@ -307,7 +350,7 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 		Merge: true,
 	}, sel...)
 
-	return storage.MergeSeriesSetProfiles(ctx, set)
+	return storage.MergeSeriesSetProfiles(q.tracer, ctx, set)
 }
 
 // Series issues a series request against the storage

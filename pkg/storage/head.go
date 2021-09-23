@@ -23,6 +23,8 @@ import (
 	"github.com/parca-dev/parca/pkg/storage/index"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 )
 
@@ -38,6 +40,9 @@ type Head struct {
 	// just the series we need from series by their IDs.
 	postings *index.MemPostings
 
+	chunkPool ChunkPool
+
+	tracer              trace.Tracer
 	minTimeGauge        *prometheus.Desc
 	maxTimeGauge        *prometheus.Desc
 	seriesCounter       *prometheus.Desc
@@ -47,7 +52,6 @@ type Head struct {
 	profilesAppended    prometheus.Counter
 	truncateDuration    prometheus.Summary
 	truncatedChunks     prometheus.Counter
-	chunkPool           ChunkPool
 }
 
 // ChunkPool stores a set of temporary chunks that may be individually saved and retrieved.
@@ -64,7 +68,7 @@ type HeadOptions struct {
 	ExpensiveMetrics bool
 }
 
-func NewHead(r prometheus.Registerer, opts *HeadOptions) *Head {
+func NewHead(r prometheus.Registerer, tracer trace.Tracer, opts *HeadOptions) *Head {
 	if opts == nil {
 		opts = &HeadOptions{}
 	}
@@ -76,6 +80,7 @@ func NewHead(r prometheus.Registerer, opts *HeadOptions) *Head {
 		postings:  index.NewMemPostings(),
 		chunkPool: opts.ChunkPool,
 
+		tracer: tracer,
 		minTimeGauge: prometheus.NewDesc(
 			"parca_tsdb_head_min_time",
 			"Minimum time bound of the head block. The unit is decided by the library consumer.",
@@ -188,7 +193,11 @@ func (h *Head) updateMaxTime(t int64) {
 	}
 }
 
-func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
+func (h *Head) getOrCreate(ctx context.Context, lset labels.Labels) *MemSeries {
+	ctx, span := h.tracer.Start(ctx, "getOrCreate")
+	span.SetAttributes(attribute.String("labels", lset.String()))
+	defer span.End()
+
 	s := h.series.getByHash(lset.Hash(), lset)
 	if s != nil {
 		return s
@@ -199,7 +208,10 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 
 	h.numSeries.Inc()
 
+	// Trace from the outside to not have to pass tracer into stripeSeries.
+	_, span = h.tracer.Start(ctx, "getOrCreateWithID")
 	s, _ = h.series.getOrCreateWithID(id, lset.Hash(), lset, h.chunkPool)
+	span.End()
 
 	h.postings.Add(s.id, lset)
 
@@ -207,7 +219,7 @@ func (h *Head) getOrCreate(lset labels.Labels) *MemSeries {
 }
 
 // Appender returns a new Appender on the database.
-func (h *Head) Appender(_ context.Context, lset labels.Labels) (Appender, error) {
+func (h *Head) Appender(ctx context.Context, lset labels.Labels) (Appender, error) {
 	// The head cache might not have a starting point yet. The init appender
 	// picks up the first appended timestamp as the base.
 	if h.MinTime() == math.MaxInt64 {
@@ -216,7 +228,7 @@ func (h *Head) Appender(_ context.Context, lset labels.Labels) (Appender, error)
 			head: h,
 		}, nil
 	}
-	return h.appender(lset)
+	return h.appender(ctx, lset)
 }
 
 // initAppender is a helper to initialize the time bounds of the head
@@ -227,20 +239,20 @@ type initAppender struct {
 	head *Head
 }
 
-func (a *initAppender) Append(p *Profile) error {
+func (a *initAppender) Append(ctx context.Context, p *Profile) error {
 	if a.app != nil {
-		return a.app.Append(p)
+		return a.app.Append(ctx, p)
 	}
 
 	a.head.initTime(p.Meta.Timestamp)
 
 	var err error
-	a.app, err = a.head.appender(a.lset)
+	a.app, err = a.head.appender(ctx, a.lset)
 	if err != nil {
 		return err
 	}
 
-	return a.app.Append(p)
+	return a.app.Append(ctx, p)
 }
 
 // MinTime returns the lowest time bound on visible data in the head.
@@ -301,8 +313,9 @@ func (h *Head) truncateMemory(mint int64) error {
 	return nil
 }
 
-func (h *Head) appender(lset labels.Labels) (Appender, error) {
-	s := h.getOrCreate(lset)
+func (h *Head) appender(ctx context.Context, lset labels.Labels) (Appender, error) {
+	s := h.getOrCreate(ctx, lset)
+	s.tracer = h.tracer
 	s.samplesAppended = h.profilesAppended
 	return s.Appender()
 }
@@ -323,6 +336,9 @@ type HeadQuerier struct {
 }
 
 func (q *HeadQuerier) LabelNames(ms ...*labels.Matcher) ([]string, Warnings, error) {
+	_, span := q.head.tracer.Start(q.ctx, "LabelNames")
+	defer span.End()
+
 	ir, err := q.head.Index()
 	if err != nil {
 		return nil, nil, err
@@ -333,6 +349,9 @@ func (q *HeadQuerier) LabelNames(ms ...*labels.Matcher) ([]string, Warnings, err
 }
 
 func (q *HeadQuerier) LabelValues(name string, ms ...*labels.Matcher) ([]string, Warnings, error) {
+	_, span := q.head.tracer.Start(q.ctx, "LabelValues")
+	defer span.End()
+
 	ir, err := q.head.Index()
 	if err != nil {
 		return nil, nil, err
@@ -343,15 +362,21 @@ func (q *HeadQuerier) LabelValues(name string, ms ...*labels.Matcher) ([]string,
 }
 
 func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSet {
+	ctx, span := q.head.tracer.Start(q.ctx, "Select")
+	defer span.End()
+
 	ir, err := q.head.Index()
 	if err != nil {
 		return nil
 	}
 
+	_, postingSpan := q.head.tracer.Start(ctx, "PostingsForMatchers")
 	postings, err := PostingsForMatchers(ir, ms...)
 	if err != nil {
+		postingSpan.End()
 		return nil
 	}
+	postingSpan.End()
 
 	mint := q.mint
 	maxt := q.maxt

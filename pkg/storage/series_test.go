@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"testing"
@@ -197,7 +198,7 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(fmt.Sprintf("truncate-%d", tc.before), func(t *testing.T) {
-
+			ctx := context.Background()
 			s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, chunkPool)
 
 			app, err := s.Appender()
@@ -207,7 +208,7 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 			pt.Insert(makeSample(1, []uint64{2, 1}))
 
 			for i := int64(1); i <= 500; i++ {
-				require.NoError(t, app.Append(&Profile{
+				require.NoError(t, app.Append(ctx, &Profile{
 					Tree: pt,
 					Meta: InstantProfileMeta{Timestamp: i},
 				}))
@@ -233,6 +234,7 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 }
 
 func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
+	ctx := context.Background()
 	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(i int64) {}, newHeadChunkPool())
 
 	app, err := s.Appender()
@@ -242,7 +244,7 @@ func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
 	pt.Insert(makeSample(1, []uint64{2, 1}))
 
 	for i := int64(1); i < 500; i++ {
-		require.NoError(t, app.Append(&Profile{
+		require.NoError(t, app.Append(ctx, &Profile{
 			Tree: pt,
 			Meta: InstantProfileMeta{Timestamp: i},
 		}))
@@ -261,7 +263,7 @@ func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
 
 	// Test for appending working correctly after truncating.
 	for i := int64(500); i < 1_000; i++ {
-		require.NoError(t, app.Append(&Profile{
+		require.NoError(t, app.Append(ctx, &Profile{
 			Tree: pt,
 			Meta: InstantProfileMeta{Timestamp: i},
 		}))
@@ -277,7 +279,7 @@ func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
 
 	// Append more profiles after truncating all chunks.
 	for i := int64(1_100); i < 1_234; i++ {
-		require.NoError(t, app.Append(&Profile{
+		require.NoError(t, app.Append(ctx, &Profile{
 			Tree: pt,
 			Meta: InstantProfileMeta{Timestamp: i},
 		}))
@@ -290,6 +292,7 @@ func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
 // for i in {1..10}; do go test -bench=BenchmarkMemSeries_truncateChunksBefore --benchtime=100000x ./pkg/storage >> ./pkg/storage/benchmark/series-truncate.txt; done
 
 func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {
+	ctx := context.Background()
 	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
 	app, err := s.Appender()
 	require.NoError(b, err)
@@ -300,7 +303,7 @@ func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {
 
 	for i := 1; i <= b.N; i++ {
 		p.Meta.Timestamp = int64(i)
-		_ = app.Append(p)
+		_ = app.Append(ctx, p)
 	}
 
 	// Truncate the first roughly 2/3 of all chunks.

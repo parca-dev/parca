@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -22,6 +23,7 @@ import (
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -58,6 +60,7 @@ type MemSeries struct {
 	updateMaxTime func(int64)
 	chunkPool     ChunkPool
 
+	tracer          trace.Tracer
 	samplesAppended prometheus.Counter
 }
 
@@ -79,7 +82,9 @@ func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64), chun
 		numUnits:         make(map[ProfileTreeValueNodeKey]map[string][]string),
 
 		updateMaxTime: updateMaxTime,
-		chunkPool:     chunkPool,
+		tracer:        trace.NewNoopTracerProvider().Tracer(""),
+
+		chunkPool: chunkPool,
 	}
 	s.seriesTree = &MemSeriesTree{s: s}
 
@@ -159,7 +164,10 @@ type MemSeriesAppender struct {
 
 const samplesPerChunk = 120
 
-func (a *MemSeriesAppender) Append(p *Profile) error {
+func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
+	ctx, span := a.s.tracer.Start(ctx, "Append")
+	defer span.End()
+
 	if a.s.numSamples == 0 {
 		a.s.periodType = p.Meta.PeriodType
 		a.s.sampleType = p.Meta.SampleType
@@ -191,6 +199,9 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 	a.s.mu.Unlock()
 
 	if newChunks {
+		_, newChunksSpan := a.s.tracer.Start(ctx, "newChunks")
+		defer newChunksSpan.End()
+
 		a.s.mu.Lock()
 
 		for k := range a.s.cumulativeValues {
@@ -227,6 +238,8 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		}
 		a.periods = periodsApp
 		a.s.mu.Unlock()
+
+		newChunksSpan.End()
 	}
 
 	if a.timestamps == nil {
@@ -269,10 +282,13 @@ func (a *MemSeriesAppender) Append(p *Profile) error {
 		a.s.minTime = timestamp
 	}
 
+	_, appendTreeSpan := a.s.tracer.Start(ctx, "appendTree")
 	// appendTree locks the maps itself.
 	if err := a.s.appendTree(p.Tree); err != nil {
+		appendTreeSpan.End()
 		return err
 	}
+	appendTreeSpan.End()
 
 	a.s.storeMaxTime(timestamp)
 

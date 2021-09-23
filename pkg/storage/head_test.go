@@ -21,19 +21,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestHead_MaxTime(t *testing.T) {
-	h := NewHead(prometheus.NewRegistry(), nil)
+	h := NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 
-	app, err := h.Appender(context.Background(), labels.FromStrings("foo", "bar"))
+	ctx := context.Background()
+	app, err := h.Appender(ctx, labels.FromStrings("foo", "bar"))
 	require.NoError(t, err)
 
 	pt := NewProfileTree()
 	pt.Insert(makeSample(1, []uint64{2, 1}))
 
 	for i := int64(1); i < 500; i++ {
-		require.NoError(t, app.Append(&Profile{
+		require.NoError(t, app.Append(ctx, &Profile{
 			Tree: pt,
 			Meta: InstantProfileMeta{Timestamp: i},
 		}))
@@ -119,7 +121,7 @@ func BenchmarkStripeSeries(b *testing.B) {
 }
 
 func TestHead_Truncate(t *testing.T) {
-	h := NewHead(prometheus.NewRegistry(), nil)
+	h := NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 
 	pt := NewProfileTree()
 	pt.Insert(makeSample(1, []uint64{2, 1}))
@@ -130,7 +132,7 @@ func TestHead_Truncate(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := int64(1); i <= 500; i++ {
-			require.NoError(t, app.Append(&Profile{
+			require.NoError(t, app.Append(ctx, &Profile{
 				Tree: pt,
 				Meta: InstantProfileMeta{Timestamp: i},
 			}))
@@ -141,7 +143,7 @@ func TestHead_Truncate(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := int64(100); i < 768; i++ {
-			require.NoError(t, app.Append(&Profile{
+			require.NoError(t, app.Append(ctx, &Profile{
 				Tree: pt,
 				Meta: InstantProfileMeta{Timestamp: i},
 			}))
