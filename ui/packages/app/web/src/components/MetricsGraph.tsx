@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import * as d3 from 'd3'
 import moment from 'moment'
 import MetricsSeries from './metrics/MetricsSeries'
@@ -11,6 +11,7 @@ import { cutToMaxStringLength } from '../libs/utils'
 import throttle from 'lodash.throttle'
 import { CalcWidth } from '@parca/dynamicsize'
 import { MetricsSeries as MetricsSeriesPb, MetricsSample, Label } from '@parca/client'
+import { usePopper } from 'react-popper';
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb.AsObject[]
@@ -70,34 +71,78 @@ export const parseValue = (value: string): number | null => {
 const lineStroke = '1px'
 const lineStrokeHover = '2px'
 
-function generateBoundingClientRect(x = 0, y = 0) {
-  return () => ({
-      width: 0,
-      height: 0,
-      top: y,
-      right: x,
-      bottom: y,
-      left: x,
-    });
-}
-
 interface MetricsTooltipProps {
     x: number
     y: number
     highlighted: HighlightedSeries
     onLabelClick: (labelName: string, labelValue: string) => void
+    contextElement: Element | null
 }
+
+function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
+  const domRect = contextElement.getBoundingClientRect()
+  return () => ({
+      width: 0,
+      height: 0,
+      top: domRect.y + y,
+      left: domRect.x + x,
+      right: domRect.x + x,
+      bottom: domRect.y + y,
+    });
+}
+
+const virtualElement = {
+    getBoundingClientRect: () => ({
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    }),
+};
 
 export const MetricsTooltip = ({
     x,
     y,
     highlighted,
     onLabelClick,
+    contextElement,
 }: MetricsTooltipProps): JSX.Element => {
+    const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
+
+    const { styles, attributes, ...popperProps } = usePopper(virtualElement, popperElement, {
+        placement: 'auto-start',
+        strategy: 'absolute',
+        modifiers: [
+            {
+                name: 'preventOverflow',
+                options: {
+                    tether: false,
+                    altAxis: true,
+                },
+            },
+            {
+                name: 'offset',
+                options: {
+                    offset: [30, 30],
+                },
+            }
+        ]
+    });
+
+    useEffect(() => {
+      if (contextElement != null) {
+        virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y)
+        popperProps.update?.()
+      }
+    }, [x, y])
+
     const nameLabel: Label.AsObject | undefined = highlighted?.labels.find((e) => e.name === '__name__')
     const highlightedNameLabel: Label.AsObject = nameLabel !== undefined ? (nameLabel) : ({ name: '', value: '' })
+
     return (
-        <div style={{position: "absolute", left: x+30, top: y-20}}>
+        <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
             <div className="flex">
                 <div className="m-auto">
                     <div className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90" style={{ borderWidth: 1 }}>
@@ -162,6 +207,7 @@ export const RawMetricsGraph = ({
   setTimeRange,
   width
 }: RawMetricsGraphProps): JSX.Element => {
+  const graph = useRef(null)
   const [dragging, setDragging] = useState(false)
   const [hovering, setHovering] = useState(false)
   const [selected, setSelected] = useState<HighlightedSeries | null>(null)
@@ -432,145 +478,151 @@ export const RawMetricsGraph = ({
   }, [time, width, profile, series, xScale, yScale])
 
   return (
-    <div
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
-    >
-        {(highlighted != null) &&
-            hovering &&
-            !dragging &&
-            pos[0] != 0 &&
-            pos[1] != 0
-        && (
-            <div
-                onMouseMove={onMouseMove}
-            >
-            <MetricsTooltip
-                x={pos[0]+margin}
-                y={pos[1]+margin}
-                highlighted={highlighted}
-                onLabelClick={onLabelClick}
-            />
-            </div>
-        )}
-      <svg
-        width={`${width}px`}
-        height={`${height + margin}px`}
-        onMouseDown={onMouseDown}
-        onMouseUp={onMouseUp}
-        onMouseMove={onMouseMove}
-      >
-        <g
-          transform={`translate(${margin}, 0)`}
-        >
-          {dragging && (
-            <g className="zoom-time-rect">
-              <rect
-                className="bar"
-                x={(pos[0] - relPos) < 0 ? pos[0] : relPos}
-                y={0}
-                height={height}
-                width={Math.abs(pos[0] - relPos)}
-                fill={'rgba(0, 0, 0, 0.125)'}
-              />
-            </g>
-          )}
-        </g>
-        <g
-          transform={`translate(${margin}, ${margin})`}
-        >
-          <g className="lines">
-            {series.map((s, i) => (
-              <g key={i} className="line">
-                <MetricsSeries
-                  data={s}
-                  line={l}
-                  color={color(i)}
-                  strokeWidth={(hovering && highlighted != null && i === highlighted.seriesIndex) ? lineStrokeHover : lineStroke}
-                  xScale={xScale}
-                  yScale={yScale}
-                />
-              </g>
-            ))}
-          </g>
-          {hovering && highlighted != null && (
-            <g className="circle-group" ref={metricPointRef} style={{ fill: color(highlighted.seriesIndex) }}>
-              <MetricsCircle
-                cx={highlighted.x}
-                cy={highlighted.y}
-              />
-            </g>
-          )}
-          {selected != null
-            ? (
-            <g className="circle-group" style={{ fill: '#399' }}>
-              <MetricsCircle
-                cx={selected.x}
-                cy={selected.y}
-                radius={5}
-              />
-            </g>
-              )
-            : (
-            <></>
-              )}
-          <g
-            className="x axis"
-            fill="none"
-            fontSize="10"
-            textAnchor="middle"
-            transform={`translate(0,${height - margin})`}
-          >
-            {xScale.ticks(5).map((d, i) => (
-              <g
-                key={i}
-                className="tick"
-                /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                transform={`translate(${xScale(d)}, 0)`}
+      <>
+          {(highlighted != null) &&
+              hovering &&
+              !dragging &&
+              pos[0] != 0 &&
+              pos[1] != 0
+          && (
+              <div
+                  onMouseMove={onMouseMove}
+                  onMouseEnter={() => setHovering(true)}
+                  onMouseLeave={() => setHovering(false)}
               >
-                <line
-                  y2={6}
-                  stroke="currentColor"
-                />
-                <text
-                  fill="currentColor"
-                  dy=".71em"
-                  y={9}
-                >
-                  {moment(d).utc().format(formatForTimespan(from, to))}
-                </text>
-              </g>
-            ))}
-          </g>
-          <g
-            className="y axis"
-            textAnchor="end"
-            fontSize="10"
-            fill="none"
+                  <MetricsTooltip
+                      x={pos[0]+margin}
+                      y={pos[1]+margin}
+                      highlighted={highlighted}
+                      onLabelClick={onLabelClick}
+                      contextElement={graph.current}
+                  />
+              </div>
+          )}
+          <div
+              ref={graph}
+              onMouseEnter={() => setHovering(true)}
+              onMouseLeave={() => setHovering(false)}
           >
-            {yScale.ticks(3).map((d, i) => (
-              <g
-                key={i}
-                className="tick"
-                /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                transform={`translate(0, ${yScale(d)})`}
+              <svg
+                  width={`${width}px`}
+                  height={`${height + margin}px`}
+                  onMouseDown={onMouseDown}
+                  onMouseUp={onMouseUp}
+                  onMouseMove={onMouseMove}
               >
-                <line
-                  stroke="currentColor"
-                  x2={-6}
-                />
-                <text
-                  fill="currentColor"
-                  x={-9}
-                  dy={'0.32em'}
-                >
-                  {nFormatter(d, 1)}
-                </text>
-              </g>
-            ))}
-          </g>
-        </g>
-      </svg>
-    </div>
+                  <g
+                      transform={`translate(${margin}, 0)`}
+                  >
+                      {dragging && (
+                          <g className="zoom-time-rect">
+                              <rect
+                                  className="bar"
+                                  x={(pos[0] - relPos) < 0 ? pos[0] : relPos}
+                                  y={0}
+                                  height={height}
+                                  width={Math.abs(pos[0] - relPos)}
+                                  fill={'rgba(0, 0, 0, 0.125)'}
+                              />
+                          </g>
+                      )}
+                  </g>
+                  <g
+                      transform={`translate(${margin}, ${margin})`}
+                  >
+                      <g className="lines">
+                          {series.map((s, i) => (
+                              <g key={i} className="line">
+                                  <MetricsSeries
+                                      data={s}
+                                      line={l}
+                                      color={color(i)}
+                                      strokeWidth={(hovering && highlighted != null && i === highlighted.seriesIndex) ? lineStrokeHover : lineStroke}
+                                      xScale={xScale}
+                                      yScale={yScale}
+                                  />
+                              </g>
+                          ))}
+                      </g>
+                      {hovering && highlighted != null && (
+                          <g className="circle-group" ref={metricPointRef} style={{ fill: color(highlighted.seriesIndex) }}>
+                              <MetricsCircle
+                                  cx={highlighted.x}
+                                  cy={highlighted.y}
+                              />
+                          </g>
+                      )}
+                      {selected != null
+                          ? (
+                              <g className="circle-group" style={{ fill: '#399' }}>
+                                  <MetricsCircle
+                                      cx={selected.x}
+                                      cy={selected.y}
+                                      radius={5}
+                                  />
+                              </g>
+                          )
+                          : (
+                              <></>
+                          )}
+                      <g
+                          className="x axis"
+                          fill="none"
+                          fontSize="10"
+                          textAnchor="middle"
+                          transform={`translate(0,${height - margin})`}
+                      >
+                          {xScale.ticks(5).map((d, i) => (
+                              <g
+                                  key={i}
+                                  className="tick"
+                                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                                  transform={`translate(${xScale(d)}, 0)`}
+                              >
+                                  <line
+                                      y2={6}
+                                      stroke="currentColor"
+                                  />
+                                  <text
+                                      fill="currentColor"
+                                      dy=".71em"
+                                      y={9}
+                                  >
+                                      {moment(d).utc().format(formatForTimespan(from, to))}
+                                  </text>
+                              </g>
+                          ))}
+                      </g>
+                      <g
+                          className="y axis"
+                          textAnchor="end"
+                          fontSize="10"
+                          fill="none"
+                      >
+                          {yScale.ticks(3).map((d, i) => (
+                              <g
+                                  key={i}
+                                  className="tick"
+                                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                                  transform={`translate(0, ${yScale(d)})`}
+                              >
+                                  <line
+                                      stroke="currentColor"
+                                      x2={-6}
+                                  />
+                                  <text
+                                      fill="currentColor"
+                                      x={-9}
+                                      dy={'0.32em'}
+                                  >
+                                      {nFormatter(d, 1)}
+                                  </text>
+                              </g>
+                          ))}
+                      </g>
+                  </g>
+              </svg>
+          </div>
+      </>
   )
 }

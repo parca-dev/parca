@@ -1,8 +1,9 @@
-import React, { MouseEvent, useCallback, useEffect, useRef, useState } from 'react'
+import React, { MouseEvent, useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import { throttle, debounce } from 'lodash'
 import { pointer } from 'd3-selection'
 import { scaleLinear } from 'd3-scale'
 import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client'
+import { usePopper } from 'react-popper';
 
 const transitionTime = '50ms'
 const transitionCurve = 'cubic-bezier(0.85, 0.69, 0.71, 1.32)'
@@ -197,6 +198,7 @@ interface FlamegraphTooltipProps {
     unit: string
     total: number
     hoveringNode: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined
+    contextElement: Element | null
 }
 
 const FlamegraphNodeTooltipTableRows = ({
@@ -232,13 +234,66 @@ const FlamegraphNodeTooltipTableRows = ({
     )
 }
 
+function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
+  const domRect = contextElement.getBoundingClientRect()
+  return () => ({
+      width: 0,
+      height: 0,
+      top: domRect.y + y,
+      left: domRect.x + x,
+      right: domRect.x + x,
+      bottom: domRect.y + y,
+    });
+}
+
+const virtualElement = {
+    getBoundingClientRect: () => ({
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    }),
+};
+
 export const FlamegraphTooltip = ({
     x,
     y,
     unit,
     total,
     hoveringNode,
+    contextElement,
 }: FlamegraphTooltipProps): JSX.Element => {
+    const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
+
+    const { styles, attributes, ...popperProps } = usePopper(virtualElement, popperElement, {
+        placement: 'auto-start',
+        strategy: 'absolute',
+        modifiers: [
+            {
+                name: 'preventOverflow',
+                options: {
+                    tether: false,
+                    altAxis: true,
+                },
+            },
+            {
+                name: 'offset',
+                options: {
+                    offset: [30, 30],
+                },
+            }
+        ]
+    });
+
+    useEffect(() => {
+      if (contextElement != null) {
+        virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y)
+        popperProps.update?.()
+      }
+    }, [x, y])
+
     const knownValueFormatter = knownValueFormatters[unit]
     const valueFormatter = knownValueFormatter !== undefined ? knownValueFormatter : formatDefault
 
@@ -253,15 +308,15 @@ export const FlamegraphTooltip = ({
         <></>) : (<FlamegraphNodeTooltipTableRows hoveringNode={hoveringNode as FlamegraphNode.AsObject} />)
 
     return (
-        <div style={{position: "absolute", left: x+30+24, top: y-20+24}}>
+        <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
             <div className="flex">
                 <div className="m-auto">
                     <div className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90" style={{ borderWidth: 1 }}>
                         <div className="flex flex-row">
                             <div className="ml-2 mr-6">
-                                <span className="text-gray-700 dark:text-gray-300 my-2">
+                                <span className="font-semibold">
                                     {(hoveringFlamegraphNode.meta === undefined) ? (
-                                            <p>root</p>
+                                        <p>root</p>
                                     ) : (
                                         <>
                                             {(hoveringFlamegraphNode.meta.pb_function !== undefined && hoveringFlamegraphNode.meta.pb_function.name != '') ? (
@@ -275,6 +330,8 @@ export const FlamegraphTooltip = ({
                                             )}
                                         </>
                                     )}
+                                </span>
+                                <span className="text-gray-700 dark:text-gray-300 my-2">
                                     <table className="table-fixed">
                                         <tbody>
                                             <tr>
@@ -405,6 +462,7 @@ export default function IcicleGraph ({
   const [hoveringNode, setHoveringNode] = useState<FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined>()
   const [pos, setPos] = useState([0, 0])
   const [height, setHeight] = useState(0)
+  const svg = useRef(null)
   const ref = useRef<SVGGElement>(null)
 
   if (graph.root === undefined) return <></>
@@ -427,21 +485,19 @@ export default function IcicleGraph ({
       <div
           onMouseLeave={() => setHoveringNode(undefined)}
       >
-          <div
-              onMouseMove={onMouseMove}
-          >
-                  <FlamegraphTooltip
-                      unit={graph.unit}
-                      total={graph.total}
-                      x={pos[0]}
-                      y={pos[1]}
-                      hoveringNode={hoveringNode}
-                  />
-          </div>
+          <FlamegraphTooltip
+              unit={graph.unit}
+              total={graph.total}
+              x={pos[0]}
+              y={pos[1]}
+              hoveringNode={hoveringNode}
+              contextElement={svg.current}
+          />
           <svg
               width={width}
               height={height}
               onMouseMove={onMouseMove}
+              ref={svg}
           >
               <g ref={ref}>
                   <MemoizedIcicleGraphRootNode
