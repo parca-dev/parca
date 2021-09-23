@@ -242,6 +242,8 @@ func TestGenerateFlamegraphFromProfileTree(t *testing.T) {
 
 func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	reg := prometheus.NewRegistry()
 
 	f, err := os.Open("testdata/profile1.pb.gz")
 	require.NoError(t, err)
@@ -250,8 +252,8 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, f.Close())
 
 	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
-		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		reg,
+		tracer,
 		"generateflamegraphfrominstantprofile",
 	)
 	t.Cleanup(func() {
@@ -264,7 +266,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 	require.NoError(t, err)
 	prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
-	require.NoError(t, app.Append(prof))
+	require.NoError(t, app.Append(ctx, prof))
 
 	it := s.Iterator()
 	require.True(t, it.Next())
@@ -273,7 +275,7 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T) *pb.Flamegraph {
 
 	fg, err := GenerateFlamegraph(
 		ctx,
-		trace.NewNoopTracerProvider().Tracer(""),
+		tracer,
 		l,
 		instantProfile,
 	)

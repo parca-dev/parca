@@ -20,6 +20,7 @@ import (
 
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Make entries ~50B in size, to emulate real-world high cardinality.
@@ -32,13 +33,13 @@ const (
 
 func BenchmarkHeadQuerier_Select(b *testing.B) {
 	ctx := context.Background()
-	h := NewHead(nil, nil)
+	h := NewHead(nil, trace.NewNoopTracerProvider().Tracer(""), nil)
 
 	numSeries := 1_000_000
 	for i := 1; i <= numSeries; i++ {
 		app, err := h.Appender(ctx, labels.FromStrings("foo", "bar", "s", fmt.Sprintf("%d%s", i, postingsBenchSuffix)))
 		require.NoError(b, err)
-		err = app.Append(&Profile{
+		err = app.Append(ctx, &Profile{
 			Tree: NewProfileTree(),
 			Meta: InstantProfileMeta{
 				Timestamp: int64(i),

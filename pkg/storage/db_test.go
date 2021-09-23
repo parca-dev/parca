@@ -40,7 +40,7 @@ func TestDB(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	db := OpenDB(prometheus.NewRegistry(), nil)
+	db := OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	ctx := context.Background()
 	app1, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test1"}})
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestDB(t *testing.T) {
 
 	prof1, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
-	require.NoError(t, app1.Append(prof1))
+	require.NoError(t, app1.Append(ctx, prof1))
 
 	app2, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test2"}})
 	require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestDB(t *testing.T) {
 
 	prof2, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
-	require.NoError(t, app2.Append(prof2))
+	require.NoError(t, app2.Append(ctx, prof2))
 
 	q := db.Querier(
 		ctx,

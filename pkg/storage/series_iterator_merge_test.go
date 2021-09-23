@@ -29,9 +29,11 @@ import (
 
 func TestMergeMemSeriesConsistency(t *testing.T) {
 	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		tracer,
 		"memseriesconsistency",
 	)
 	t.Cleanup(func() {
@@ -47,7 +49,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 	p, err := ProfileFromPprof(ctx, log.NewNopLogger(), s, pprof1, 0)
 	require.NoError(t, err)
 
-	db := OpenDB(prometheus.NewRegistry(), nil)
+	db := OpenDB(prometheus.NewRegistry(), tracer, nil)
 
 	app, err := db.Appender(ctx, labels.Labels{
 		labels.Label{
@@ -60,7 +62,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 	n := 1024
 	for j := 0; j < n; j++ {
 		p.Meta.Timestamp = int64(j + 1)
-		err = app.Append(p)
+		err = app.Append(ctx, p)
 		require.NoError(t, err)
 	}
 
@@ -74,7 +76,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 		Value: "allocs",
 	})
 
-	p1, err := MergeSeriesSetProfiles(ctx, set)
+	p1, err := MergeSeriesSetProfiles(tracer, ctx, set)
 	require.NoError(t, err)
 
 	set = db.Querier(
@@ -90,13 +92,14 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 		Name:  "__name__",
 		Value: "allocs",
 	})
-	p2, err := MergeSeriesSetProfiles(ctx, set)
+	p2, err := MergeSeriesSetProfiles(tracer, ctx, set)
 	require.NoError(t, err)
 
 	require.Equal(t, p1, p2)
 }
 
 func TestMemMergeSeriesTree(t *testing.T) {
+	ctx := context.Background()
 	var (
 		label    = map[string][]string{"foo": {"bar", "baz"}}
 		numLabel = map[string][]int64{"foo": {1, 2}}
@@ -119,14 +122,14 @@ func TestMemMergeSeriesTree(t *testing.T) {
 	app, err := s.Appender()
 	require.NoError(t, err)
 
-	err = app.Append(&Profile{
+	err = app.Append(ctx, &Profile{
 		Tree: pt1,
 		Meta: InstantProfileMeta{
 			Timestamp: 1,
 		},
 	})
 	require.NoError(t, err)
-	err = app.Append(&Profile{
+	err = app.Append(ctx, &Profile{
 		Tree: pt1,
 		Meta: InstantProfileMeta{
 			Timestamp: 2,

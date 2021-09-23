@@ -40,7 +40,7 @@ import (
 
 func Test_QueryRange_EmptyStore(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry(), nil)
+	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	q := New(
 		log.NewNopLogger(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -64,7 +64,7 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry(), nil)
+	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -99,7 +99,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 
 	prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
 	require.NoError(t, err)
-	err = app.Append(prof)
+	err = app.Append(ctx, prof)
 	require.NoError(t, err)
 
 	// Query last 5 minutes
@@ -129,7 +129,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry(), nil)
+	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -170,7 +170,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 
 		prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
 		require.NoError(t, err)
-		err = app.Append(prof)
+		err = app.Append(ctx, prof)
 		require.NoError(t, err)
 	}
 
@@ -308,7 +308,7 @@ func Test_Query_InputValidation(t *testing.T) {
 
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry(), nil)
+	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -344,7 +344,7 @@ func Test_Query_Simple(t *testing.T) {
 
 	prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(t, err)
-	err = app.Append(prof)
+	err = app.Append(ctx, prof)
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -367,7 +367,7 @@ func Test_Query_Simple(t *testing.T) {
 
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
-	db := storage.OpenDB(prometheus.NewRegistry(), nil)
+	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -409,7 +409,7 @@ func Test_Query_Diff(t *testing.T) {
 
 	prof1, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(t, err)
-	err = app.Append(prof1)
+	err = app.Append(ctx, prof1)
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 10)
@@ -419,7 +419,7 @@ func Test_Query_Diff(t *testing.T) {
 
 	prof2, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p2, 0)
 	require.NoError(t, err)
-	err = app.Append(prof2)
+	err = app.Append(ctx, prof2)
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -482,7 +482,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.StopTimer()
 				ctx := context.Background()
-				db := storage.OpenDB(prometheus.NewRegistry(), nil)
+				db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 				q := New(
 					log.NewNopLogger(),
 					trace.NewNoopTracerProvider().Tracer(""),
@@ -500,7 +500,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				require.NoError(b, err)
 				for j := 0; j < n; j++ {
 					p.Meta.Timestamp = int64(j + 1)
-					err = app.Append(p)
+					err = app.Append(ctx, p)
 					require.NoError(b, err)
 				}
 				b.StartTimer()
@@ -545,8 +545,7 @@ func Test_Query_Merge(t *testing.T) {
 	require.NoError(t, err)
 
 	for k := 0.; k <= 10; k++ {
-		ctx := context.Background()
-		db := storage.OpenDB(prometheus.NewRegistry(), nil)
+		db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 		q := New(
 			log.NewNopLogger(),
 			trace.NewNoopTracerProvider().Tracer(""),
@@ -566,7 +565,7 @@ func Test_Query_Merge(t *testing.T) {
 		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
 			for j := 0; j < n; j++ {
 				p.Meta.Timestamp = int64(j + 1)
-				err = app.Append(p)
+				err = app.Append(ctx, p)
 				require.NoError(t, err)
 			}
 

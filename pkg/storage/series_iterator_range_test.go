@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -22,8 +23,8 @@ import (
 )
 
 func TestMemRangeSeries_Iterator(t *testing.T) {
+	ctx := context.Background()
 	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
-
 	app, err := s.Appender()
 	require.NoError(t, err)
 
@@ -41,7 +42,7 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 				},
 			},
 		}
-		err = app.Append(&p)
+		err = app.Append(ctx, &p)
 		require.NoError(t, err)
 	}
 

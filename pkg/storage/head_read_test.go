@@ -21,10 +21,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestHeadIndexReader_Postings(t *testing.T) {
-	ir := headIndexReader{head: NewHead(prometheus.NewRegistry(), nil)}
+	ir := headIndexReader{head: NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)}
 	ir.head.postings.Add(1, labels.Labels{{Name: "foo", Value: "bar"}, {Name: "container", Value: "test1"}})
 	ir.head.postings.Add(2, labels.Labels{{Name: "foo", Value: "bar"}, {Name: "container", Value: "test2"}})
 	ir.head.postings.Add(3, labels.Labels{{Name: "foo", Value: "baz"}, {Name: "container", Value: "test3"}})
@@ -39,7 +40,8 @@ func TestHeadIndexReader_Postings(t *testing.T) {
 }
 
 func TestHeadIndexReader_LabelValues(t *testing.T) {
-	h := NewHead(prometheus.NewRegistry(), nil)
+	ctx := context.Background()
+	h := NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 
 	for i := 0; i < 100; i++ {
 		app, err := h.Appender(context.Background(), labels.Labels{
@@ -47,7 +49,7 @@ func TestHeadIndexReader_LabelValues(t *testing.T) {
 			{Name: "tens", Value: fmt.Sprintf("value%d", i/10)},
 		})
 		require.NoError(t, err)
-		err = app.Append(&Profile{
+		err = app.Append(ctx, &Profile{
 			Tree: NewProfileTree(),
 			Meta: InstantProfileMeta{
 				Timestamp: int64(100 + i),
