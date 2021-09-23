@@ -112,7 +112,7 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 					return nil, err
 				}
 
-				if err := app.Append(prof); err != nil {
+				if err := app.Append(appendCtx, prof); err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
 				}
 			}

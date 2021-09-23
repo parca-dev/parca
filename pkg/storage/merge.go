@@ -18,6 +18,8 @@ import (
 	"errors"
 	"runtime"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 )
@@ -38,6 +40,7 @@ func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
 	profileCh := make(chan InstantProfile)
 
 	return MergeProfilesConcurrent(
+		trace.NewNoopTracerProvider().Tracer(""),
 		context.Background(),
 		profileCh,
 		runtime.NumCPU(),
@@ -51,32 +54,42 @@ func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
 	)
 }
 
-func MergeSeriesSetProfiles(ctx context.Context, set SeriesSet) (InstantProfile, error) {
+func MergeSeriesSetProfiles(tracer trace.Tracer, ctx context.Context, set SeriesSet) (InstantProfile, error) {
 	profileCh := make(chan InstantProfile)
 
 	return MergeProfilesConcurrent(
+		tracer,
 		ctx,
 		profileCh,
 		runtime.NumCPU(),
 		func() error {
+			_, seriesSpan := tracer.Start(ctx, "seriesIterate")
+			defer seriesSpan.End()
 			for {
 				select {
 				case <-ctx.Done():
 					break
 				default:
 				}
+
 				if !set.Next() {
 					break
 				}
 				series := set.At()
-				i := series.Iterator()
-				for i.Next() {
+
+				i := 0
+				_, profileSpan := tracer.Start(ctx, "profileIterate")
+				it := series.Iterator()
+				for it.Next() {
 					// Have to copy as profile pointer is not stable for more than the
 					// current iteration.
-					profileCh <- CopyInstantProfile(i.At())
+					profileCh <- CopyInstantProfile(it.At())
+					i++
 				}
-				if i.Err() != nil {
-					return i.Err()
+				profileSpan.End()
+				if err := it.Err(); err != nil {
+					profileSpan.RecordError(err)
+					return err
 				}
 			}
 			close(profileCh)
@@ -86,11 +99,16 @@ func MergeSeriesSetProfiles(ctx context.Context, set SeriesSet) (InstantProfile,
 }
 
 func MergeProfilesConcurrent(
+	tracer trace.Tracer,
 	ctx context.Context,
 	profileCh chan InstantProfile,
 	concurrency int,
 	producerFunc func() error,
 ) (InstantProfile, error) {
+	ctx, span := tracer.Start(ctx, "MergeProfilesConcurrent")
+	span.SetAttributes(attribute.Int("concurrency", concurrency))
+	defer span.End()
+
 	var res InstantProfile
 
 	resCh := make(chan InstantProfile, concurrency)
@@ -190,9 +208,7 @@ func MergeProfilesConcurrent(
 						return err
 					}
 
-					//fmt.Println("merging")
 					p := CopyInstantProfile(m)
-					//fmt.Println("merged")
 
 					resCh <- p
 				}

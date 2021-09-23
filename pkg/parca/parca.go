@@ -99,7 +99,9 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	mStr, err := metastore.NewInMemorySQLiteProfileMetaStore(
 		reg,
-		tracerProvider.Tracer("inmemory-sqlite"),
+		// Produces high cardinality traces - uncomment locally if needed.
+		//tracerProvider.Tracer("inmemory-sqlite"),
+		trace.NewNoopTracerProvider().Tracer("inmemory-sqlite"),
 	)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
@@ -107,12 +109,14 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 	defer mStr.Close()
 
-	dbOptions := &storage.DBOptions{
-		Retention:            flags.StorageTSDBRetentionTime,
-		HeadExpensiveMetrics: flags.StorageTSDBExpensiveMetrics,
-	}
-	db := storage.OpenDB(reg, dbOptions)
-
+	db := storage.OpenDB(
+		reg,
+		tracerProvider.Tracer("db"),
+		&storage.DBOptions{
+			Retention:            flags.StorageTSDBRetentionTime,
+			HeadExpensiveMetrics: flags.StorageTSDBExpensiveMetrics,
+		},
+	)
 	s := profilestore.NewProfileStore(
 		logger,
 		tracerProvider.Tracer("profilestore"),

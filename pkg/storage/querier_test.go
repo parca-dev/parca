@@ -19,11 +19,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 )
 
 func TestPostingsForMatchers(t *testing.T) {
-	h := NewHead(prometheus.NewRegistry(), nil)
+	h := NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	h.minTime = *atomic.NewInt64(-1)
 	h.maxTime = *atomic.NewInt64(1)
 	h.postings.Add(0, labels.Labels{{Name: "n", Value: "1"}})

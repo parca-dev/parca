@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Appendable interface {
@@ -93,7 +94,7 @@ type Labels interface {
 }
 
 type Appender interface {
-	Append(p *Profile) error
+	Append(ctx context.Context, p *Profile) error
 }
 
 type SliceSeriesSet struct {
@@ -122,7 +123,7 @@ type DBOptions struct {
 	HeadExpensiveMetrics bool
 }
 
-func OpenDB(r prometheus.Registerer, opts *DBOptions) *DB {
+func OpenDB(r prometheus.Registerer, tracer trace.Tracer, opts *DBOptions) *DB {
 	if opts == nil {
 		opts = &DBOptions{
 			HeadExpensiveMetrics: false,
@@ -131,7 +132,7 @@ func OpenDB(r prometheus.Registerer, opts *DBOptions) *DB {
 
 	return &DB{
 		options: opts,
-		head: NewHead(r, &HeadOptions{
+		head: NewHead(r, tracer, &HeadOptions{
 			ExpensiveMetrics: opts.HeadExpensiveMetrics,
 		}),
 	}
