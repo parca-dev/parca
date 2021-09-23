@@ -131,7 +131,7 @@ const ProfileMetricsGraph = ({
   }
 
   return (
-      <Card className="dark:bg-gray-700">
+      <div className="dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500" style={{ borderWidth: 1 }}>
           <MetricsGraph
               data={series}
               from={from}
@@ -142,7 +142,7 @@ const ProfileMetricsGraph = ({
               onLabelClick={addLabelMatcher}
               width={0}
           />
-      </Card>
+      </div>
   )
 }
 
