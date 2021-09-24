@@ -3,7 +3,6 @@ import { Query } from '@parca/parser'
 import { ProfileSelection, timeFormatShort } from '@parca/profile'
 import moment from 'moment'
 import React, { useEffect, useState, useRef } from 'react'
-import { Dropdown, OverlayTrigger, Row, Tooltip } from 'react-bootstrap'
 import 'react-dates/initialize'
 import ProfileMetricsGraph from '../components/ProfileMetricsGraph'
 import MatchersInput from './MatchersInput'
@@ -255,22 +254,6 @@ const ProfileSelector = ({
 
   const handleCompareClick = (): void => onCompareProfile()
 
-  const toggleTimeDropdown = (
-    isOpen: boolean,
-    e: React.SyntheticEvent<Dropdown>,
-    metadata: { source: string }
-  ): void => {
-    // TODO: Close dropdown when clicking button again
-    if (e.target != null) {
-      const open = (e.target as Element).classList.contains('close-dropdown')
-      setTimeDropdownOpen(!open)
-      return
-    }
-    if (metadata.source !== '') {
-      setTimeDropdownOpen(false)
-    }
-  }
-
   const searchDisabled =
     queryExpressionString === undefined ||
     queryExpressionString === '' ||
@@ -301,41 +284,6 @@ const ProfileSelector = ({
               selectedKey={currentTimeSelection()}
               onSelection={key => setTimeSelection(key!)}
             />
-            {/* @todo datetime range selection */}
-            {/* <Dropdown show={timeDropdownOpen} onToggle={toggleTimeDropdown} alignRight>
-                    <Dropdown.Toggle variant='outline-secondary' style={{ border: 0 }}>
-                      {timeSelections[timeSelectionByKey(currentTimeSelection())].label}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu>
-                      {timeSelections
-                        .filter(e => e.relative)
-                        .map((k, i) => (
-                          <Dropdown.Item
-                            key={i}
-                            className={'close-dropdown'}
-                            onSelect={(): any => setTimeSelection(k.key)}
-                          >
-                            {k.label}
-                          </Dropdown.Item>
-                        ))}
-                      <Dropdown.Divider />
-                      <div style={{ marginLeft: 10, marginRight: 10 }}>
-                        <DayPickerRangeController
-                          startDate={moment(currentFromTimeSelection()).utc()}
-                          endDate={moment(currentToTimeSelection()).utc()}
-                          onDatesChange={({ startDate, endDate }) => {
-                            setTimeRange(startDate.utc().valueOf(), endDate.utc().valueOf())
-                          }}
-                          focusedInput={focusedDateInput != null ? focusedDateInput : 'startDate'}
-                          isOutsideRange={() => false}
-                          isDayBlocked={() => false}
-                          onFocusChange={function (focusedInput) {
-                            setFocusedDateInput(focusedInput)
-                          }}
-                        />
-                      </div>
-                    </Dropdown.Menu>
-                  </Dropdown> */}
             {searchDisabled ? (
               <div>
                 <Button disabled={true}>Search</Button>

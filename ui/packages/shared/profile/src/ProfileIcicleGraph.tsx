@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { throttle } from 'lodash'
 import IcicleGraph, { nodeLabel } from './IcicleGraph'
 import { ProfileSource } from './ProfileSource'
-import { Spinner } from 'react-bootstrap'
 import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client'
 import { pointer } from 'd3-selection'
 
