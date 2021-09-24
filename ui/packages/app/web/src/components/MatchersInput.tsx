@@ -1,4 +1,4 @@
-import React, { Fragment, useRef, useState, useEffect } from 'react'
+import React, { Fragment, useState, useEffect } from 'react'
 import { Transition } from '@headlessui/react'
 import { Query } from '@parca/parser'
 import { LabelsResponse, LabelsRequest, QueryServiceClient, ServiceError } from '@parca/client'
@@ -45,7 +45,7 @@ class Suggestion {
   typeahead: string
   value: string
 
-  constructor(type: string, typeahead: string, value: string) {
+  constructor (type: string, typeahead: string, value: string) {
     this.type = type
     this.typeahead = typeahead
     this.value = value
@@ -56,7 +56,7 @@ class Suggestions {
   literals: Suggestion[]
   labelNames: Suggestion[]
 
-  constructor() {
+  constructor () {
     this.literals = []
     this.labelNames = []
   }
@@ -73,10 +73,10 @@ const MatchersInput = ({
   const [showSuggest, setShowSuggest] = useState(true)
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1)
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''))
-  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
+  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null)
   const { styles, attributes } = usePopper(inputRef, popperElement, {
-      placement: 'bottom',
-  });
+    placement: 'bottom'
+  })
 
   const { response: labelNamesResponse, error: labelNamesError } = useLabelNames(queryClient)
   const labelNames =
@@ -140,8 +140,6 @@ const MatchersInput = ({
   }
 
   const getSuggestion = (index): Suggestion => {
-    console.log("suggestionSections.labelNames.length", suggestionSections.labelNames.length)
-    console.log("index", index)
     if (index < suggestionSections.labelNames.length) {
       return suggestionSections.labelNames[index]
     }
@@ -240,67 +238,67 @@ const MatchersInput = ({
   }
 
   return (
-      <>
-          <input
-              type='text'
-              className='bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm border-gray-300 dark:border-gray-600 border-b outline-none'
-              placeholder='filter profiles...'
-              ref={setInputRef}
-              onChange={onChange}
-              value={value}
-              onBlur={unfocus}
-              onFocus={focus}
-              onKeyPress={handleKeyPress}
-              onKeyDown={handleKeyDown}
-          />
-          {focusedInput && showSuggest && suggestionSections.labelNames.length + suggestionSections.literals.length > 0 && (
-              <div
-                  ref={setPopperElement}
-                  style={{...styles.popper, width: inputRef?.offsetWidth, marginLeft: 0}}
-                  {...attributes.popper}
-                  className='absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'
-              >
-                  <Transition
-                      show={focusedInput && showSuggest}
-                      as={Fragment}
-                      leave='transition ease-in duration-100'
-                      leaveFrom='opacity-100'
-                      leaveTo='opacity-0'
-                  >
-                      <div>
-                          {suggestionSections.labelNames.map((l, i) => (
-                              <div
-                                  key={i}
-                                  className={cx(highlightedSuggestionIndex === i && 'text-white bg-indigo-600',
-                                                'cursor-default select-none relative py-2 pl-3 pr-9'
-                                               )}
-                                  onMouseOver={() => setHighlightedSuggestionIndex(i)}
-                                  onClick={() => applySuggestion(i)}
-                                  onMouseOut={() => resetHighlight()}
-                              >
-                                  {l.value}
-                              </div>
-                          ))}
-                          {suggestionSections.literals.map((l, i) => (
-                              <div
-                                  key={i}
-                                  className={cx(highlightedSuggestionIndex === i + suggestionSections.labelNames.length && 'text-white bg-indigo-600',
-                                                'cursor-default select-none relative py-2 pl-3 pr-9'
-                                               )}
-                                  onMouseOver={() =>
-                                      setHighlightedSuggestionIndex(i + suggestionSections.labelNames.length)
-                                  }
-                                  onClick={() => applySuggestion(i + suggestionSections.labelNames.length)}
-                                  onMouseOut={() => resetHighlight()}
-                              >
-                                  {l.value}
-                              </div>
-                          ))}
-                      </div>
-                  </Transition>
-              </div>
-          )}
-      </>
+    <>
+      <input
+        type='text'
+        className='bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm border-gray-300 dark:border-gray-600 border-b outline-none'
+        placeholder='filter profiles...'
+        ref={setInputRef}
+        onChange={onChange}
+        value={value}
+        onBlur={unfocus}
+        onFocus={focus}
+        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyDown}
+      />
+      {focusedInput && showSuggest && suggestionSections.labelNames.length + suggestionSections.literals.length > 0 && (
+        <div
+          ref={setPopperElement}
+          style={{ ...styles.popper, width: inputRef?.offsetWidth, marginLeft: 0 }}
+          {...attributes.popper}
+          className='absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'
+        >
+          <Transition
+            show={focusedInput && showSuggest}
+            as={Fragment}
+            leave='transition ease-in duration-100'
+            leaveFrom='opacity-100'
+            leaveTo='opacity-0'
+          >
+            <div>
+              {suggestionSections.labelNames.map((l, i) => (
+                <div
+                  key={i}
+                  className={cx(highlightedSuggestionIndex === i && 'text-white bg-indigo-600',
+                    'cursor-default select-none relative py-2 pl-3 pr-9'
+                  )}
+                  onMouseOver={() => setHighlightedSuggestionIndex(i)}
+                  onClick={() => applySuggestion(i)}
+                  onMouseOut={() => resetHighlight()}
+                >
+                  {l.value}
+                </div>
+              ))}
+              {suggestionSections.literals.map((l, i) => (
+                <div
+                  key={i}
+                  className={cx(highlightedSuggestionIndex === i + suggestionSections.labelNames.length && 'text-white bg-indigo-600',
+                    'cursor-default select-none relative py-2 pl-3 pr-9'
+                  )}
+                  onMouseOver={() =>
+                    setHighlightedSuggestionIndex(i + suggestionSections.labelNames.length)
+                  }
+                  onClick={() => applySuggestion(i + suggestionSections.labelNames.length)}
+                  onMouseOut={() => resetHighlight()}
+                >
+                  {l.value}
+                </div>
+              ))}
+            </div>
+          </Transition>
+        </div>
+      )}
+    </>
   )
 }
 

@@ -52,7 +52,7 @@ export class Matcher {
 }
 
 function isProfileNameMatcher (m: Matcher): boolean {
-  return m.key == '__name__' && m.matcherType == MatcherType.MatchEqual
+  return m.key === '__name__' && m.matcherType === MatcherType.MatchEqual
 }
 
 export class Query {
@@ -65,11 +65,11 @@ export class Query {
   }
 
   static fromAst (ast: any): Query {
-    if (!ast) {
+    if (ast === undefined || ast == null) {
       return new Query([], '')
     }
 
-    const profileNameMatchers = (ast.profileName && ast.profileName.text) ? [new Matcher('__name__', MatcherType.MatchEqual, ast.profileName.value)] : []
+    const profileNameMatchers = (ast.profileName?.text !== undefined) ? [new Matcher('__name__', MatcherType.MatchEqual, ast.profileName.value)] : []
     const matchers = ast.matchers.map((e) => new Matcher(e.key.value, matcherTypeFromString(e.matcherType.value), e.value.value))
     return new Query(profileNameMatchers.concat(matchers), '')
   }
@@ -84,7 +84,7 @@ export class Query {
       // do nothing... this means we've got an incomplete or entirely incorrect query
     }
 
-    if (p.results && p.results.length > 0) {
+    if (p.results?.length > 0) {
       return Query.fromAst(p.results[0])
     }
 
@@ -92,38 +92,48 @@ export class Query {
 
     // Parser.table is not defined in the type definitions, so we need to do this unfortunately.
     const parserTable = p.table as any[]
-    const column = parserTable.filter(c => c.states.find(s => s.data && s.data.hasOwnProperty('profileName')) != null)[0]
-    if (column) {
-      const data = column.states.find(s => s.data.hasOwnProperty('profileName')).data
+    const column = parserTable.filter(c => c.states.find(s => s.data !== undefined && Object.prototype.hasOwnProperty.call(s.data, 'profileName')))[0]
+    if (column !== undefined) {
+      const data = column.states.find(s => s.data !== undefined && Object.prototype.hasOwnProperty.call(s.data, 'profileName')).data
       const rest = input.slice(column.lexerState.col - 2)
       return new Query(
         [new Matcher('__name__', MatcherType.MatchEqual, data.profileName.value)],
-        rest || input
+        rest.length > 0 ? rest : input
       )
     }
 
     return new Query([], input)
   }
 
-  static suggest (input: string): any[] {
-    const p = NewParser()
-    p.save()
-    let lastIndex
-    let successfulParse = false
+  static tryParse (p: Parser, input: string): {
+    lastIndex: number
+    successfulParse: boolean
+  } {
     try {
       p.feed(input)
       p.save()
-      lastIndex = p.table.length - 1
-      successfulParse = true
+      return {
+        successfulParse: true,
+        lastIndex: p.table.length - 1
+      }
     } catch (error) {
-      lastIndex = p.table.length - 2
+      return {
+        successfulParse: false,
+        lastIndex: p.table.length - 2
+      }
     }
+  }
+
+  static suggest (input: string): any[] {
+    const p = NewParser()
+    p.save()
+    const { lastIndex, successfulParse } = Query.tryParse(p, input)
 
     const parserTable = p.table
     const column = parserTable[lastIndex]
     const lastLexerStateIndex = parserTable.reverse().findIndex(e => e.lexerState !== undefined)
     const lastValidCursor = lastLexerStateIndex >= 0 ? parserTable[lastLexerStateIndex].lexerState.col - 1 : input.length
-    const rest = input.slice(lastValidCursor)
+    const rest: string = input.slice(lastValidCursor)
 
     const expectantStates = column.states.filter(function (state) {
       const nextSymbol = state.rule.symbols[state.dot]
@@ -131,13 +141,14 @@ export class Query {
     })
 
     const stateStacks = expectantStates.map(function (state) {
-      return this.buildFirstStateStack(state, []) || [state]
+      const firstStateStack = this.buildFirstStateStack(state, [])
+      return firstStateStack === undefined ? [state] : firstStateStack
     }, p)
 
     const suggestions: any[] = []
 
-    const prevLabelNameStates = column.states.filter(e => e.rule.name == 'labelName' && e.isComplete)
-    if (successfulParse && prevLabelNameStates && prevLabelNameStates.length > 0 && prevLabelNameStates[0].data) {
+    const prevLabelNameStates = column.states.filter(e => e.rule.name === 'labelName' && e.isComplete)
+    if (successfulParse && prevLabelNameStates.length > 0 && prevLabelNameStates[0].data !== undefined) {
       suggestions.push({
         type: 'labelName',
         typeahead: prevLabelNameStates[0].data.value
@@ -149,11 +160,12 @@ export class Query {
       const nextSymbol = state.rule.symbols[state.dot]
 
       // We're not going to skip suggesting to type a whitespace character.
-      if (!(nextSymbol.type && nextSymbol.type == 'space')) {
-        if (nextSymbol.literal) {
-          const suggestion = { type: 'literal', value: nextSymbol.literal }
-          if (suggestions.findIndex((s) => (s.type == 'literal' && s.value == suggestion.value)) == -1) {
-            if (successfulParse || suggestion.value.startsWith(rest)) {
+      if (!(nextSymbol.type !== undefined && nextSymbol.type === 'space')) {
+        if (nextSymbol.literal !== undefined) {
+          const suggestion = { type: 'literal', value: (nextSymbol.literal as string) }
+          if (suggestions.findIndex((s) => (s.type === 'literal' && s.value === suggestion.value)) === -1) {
+            if (successfulParse ||
+                suggestion.value.startsWith(rest)) {
               suggestions.push(suggestion)
             }
           }
@@ -163,8 +175,9 @@ export class Query {
         // For an ident type, those can be: profileName, labelName.
         const types = ['profileName', 'labelName']
 
-        if (nextSymbol.type && nextSymbol.type == 'ident') {
-          const s = state.wantedBy.filter((e) => types.includes(e.rule.name)) || []
+        if (nextSymbol.type !== undefined && nextSymbol.type === 'ident') {
+          const found = state.wantedBy.filter((e) => types.includes(e.rule.name))
+          const s = found === undefined ? [] : found
           s.map((e) => e.rule.name).forEach(function (e) {
             const suggestion = { type: e, typeahead: '' }
             suggestions.push(suggestion)
@@ -173,7 +186,7 @@ export class Query {
 
         // Matcher type is unambiguous, so we can go ahead and check if
         // the label name may be incomplete and suggest any matcher.
-        if (nextSymbol.type && nextSymbol.type == 'matcherType') {
+        if (nextSymbol.type !== undefined && nextSymbol.type === 'matcherType') {
           const suggestion = {
             type: 'matcherType',
             typeahead: rest
@@ -182,9 +195,9 @@ export class Query {
         }
 
         // A valid strstart always means a label value.
-        if (nextSymbol.type && nextSymbol.type == 'strstart') {
-          const prevMatcherTypeStates = column.states.filter(e => e.rule.name == 'matcherType' && e.isComplete)
-          if (prevMatcherTypeStates && prevMatcherTypeStates.length > 0 && prevMatcherTypeStates[0].data) {
+        if (nextSymbol.type !== undefined && nextSymbol.type === 'strstart') {
+          const prevMatcherTypeStates = column.states.filter(e => e.rule.name === 'matcherType' && e.isComplete)
+          if (prevMatcherTypeStates.length > 0 && prevMatcherTypeStates[0].data !== undefined) {
             suggestions.push({
               type: 'matcherType',
               typeahead: prevMatcherTypeStates[0].data.value
@@ -197,19 +210,19 @@ export class Query {
           })
         }
 
-        if (nextSymbol.type && nextSymbol.type == 'constant') {
+        if (nextSymbol.type !== undefined && nextSymbol.type === 'constant') {
           suggestions.push({
             type: 'labelValue',
             typeahead: '"'
           })
         }
 
-        if (nextSymbol.type && nextSymbol.type == 'strend') {
-          const prevConstStates = column.states.filter(e => e.rule.name == 'constant' && e.isComplete)
-          if (prevConstStates && prevConstStates.length > 0 && prevConstStates[0].data) {
+        if (nextSymbol.type !== undefined && nextSymbol.type === 'strend') {
+          const prevConstStates = column.states.filter(e => e.rule.name === 'constant' && e.isComplete)
+          if (prevConstStates.length > 0 && prevConstStates[0].data !== undefined) {
             suggestions.push({
               type: 'labelValue',
-              typeahead: '"' + prevConstStates[0].data.value
+              typeahead: `"${prevConstStates[0].data.value as string}`
             })
           }
         }
@@ -220,18 +233,18 @@ export class Query {
   }
 
   setMatcher (key: string, value: string): [Query, boolean] {
-    if (this.matchers.find(e => e.key == key && e.value == `"${value}"`) != null) {
+    if (this.matchers.find(e => e.key === key && e.value === `"${value}"`) != null) {
       return [this, false]
     }
     const matcher = new Matcher(key, MatcherType.MatchEqual, value)
-    if ((this.matchers.find(e => e.key == key) != null)) {
-      return [new Query(this.matchers.map(e => e.key == key ? matcher : e), ''), true]
+    if ((this.matchers.find(e => e.key === key) != null)) {
+      return [new Query(this.matchers.map(e => e.key === key ? matcher : e), ''), true]
     }
     return [new Query(this.matchers.concat([matcher]), ''), true]
   }
 
   setProfileName (name: string): [Query, boolean] {
-    if (this.inputMatcherString && this.inputMatcherString.length > 0) {
+    if (this.inputMatcherString !== undefined && this.inputMatcherString.length > 0) {
       return [new Query([new Matcher('__name__', MatcherType.MatchEqual, name)], this.inputMatcherString), true]
     }
     return this.setMatcher('__name__', name)
@@ -247,7 +260,7 @@ export class Query {
   }
 
   matchersString (): string {
-    if (this.inputMatcherString && this.inputMatcherString.length > 0) { return stripCurlyBrackets(this.inputMatcherString) }
+    if (this.inputMatcherString !== undefined && this.inputMatcherString.length > 0) { return stripCurlyBrackets(this.inputMatcherString) }
     const m = this.nonProfileNameMatchers()
     return m.length > 0 ? m.map(m => m.toString()).join(', ') : ''
   }

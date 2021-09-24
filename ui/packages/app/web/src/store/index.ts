@@ -29,7 +29,7 @@ export const initializeStore = () => {
   )
 }
 
-export function useCreateStore() {
+export function useCreateStore () {
   // For SSR & SSG, always use a new store.
   if (typeof window === 'undefined') {
     return () => initializeStore()

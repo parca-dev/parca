@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import moment from 'moment'
 import MetricsSeries from './metrics/MetricsSeries'
@@ -11,7 +11,7 @@ import { cutToMaxStringLength } from '../libs/utils'
 import throttle from 'lodash.throttle'
 import { CalcWidth } from '@parca/dynamicsize'
 import { MetricsSeries as MetricsSeriesPb, MetricsSample, Label } from '@parca/client'
-import { usePopper } from 'react-popper';
+import { usePopper } from 'react-popper'
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb.AsObject[]
@@ -72,129 +72,131 @@ const lineStroke = '1px'
 const lineStrokeHover = '2px'
 
 interface MetricsTooltipProps {
-    x: number
-    y: number
-    highlighted: HighlightedSeries
-    onLabelClick: (labelName: string, labelValue: string) => void
-    contextElement: Element | null
+  x: number
+  y: number
+  highlighted: HighlightedSeries
+  onLabelClick: (labelName: string, labelValue: string) => void
+  contextElement: Element | null
 }
 
-function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
+function generateGetBoundingClientRect (contextElement: Element, x = 0, y = 0) {
   const domRect = contextElement.getBoundingClientRect()
   return () => ({
-      width: 0,
-      height: 0,
-      top: domRect.y + y,
-      left: domRect.x + x,
-      right: domRect.x + x,
-      bottom: domRect.y + y,
-    });
+    width: 0,
+    height: 0,
+    top: domRect.y + y,
+    left: domRect.x + x,
+    right: domRect.x + x,
+    bottom: domRect.y + y
+  })
 }
 
 const virtualElement = {
-    getBoundingClientRect: () => ({
-      width: 0,
-      height: 0,
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-    }),
-};
+  getBoundingClientRect: () => ({
+    width: 0,
+    height: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
+  })
+}
 
 export const MetricsTooltip = ({
-    x,
-    y,
-    highlighted,
-    onLabelClick,
-    contextElement,
+  x,
+  y,
+  highlighted,
+  onLabelClick,
+  contextElement
 }: MetricsTooltipProps): JSX.Element => {
-    const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
+  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null)
 
-    const { styles, attributes, ...popperProps } = usePopper(virtualElement, popperElement, {
-        placement: 'auto-start',
-        strategy: 'absolute',
-        modifiers: [
-            {
-                name: 'preventOverflow',
-                options: {
-                    tether: false,
-                    altAxis: true,
-                },
-            },
-            {
-                name: 'offset',
-                options: {
-                    offset: [30, 30],
-                },
-            }
-        ]
-    });
-
-    useEffect(() => {
-      if (contextElement != null) {
-        virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y)
-        popperProps.update?.()
+  const { styles, attributes, ...popperProps } = usePopper(virtualElement, popperElement, {
+    placement: 'auto-start',
+    strategy: 'absolute',
+    modifiers: [
+      {
+        name: 'preventOverflow',
+        options: {
+          tether: false,
+          altAxis: true
+        }
+      },
+      {
+        name: 'offset',
+        options: {
+          offset: [30, 30]
+        }
       }
-    }, [x, y])
+    ]
+  })
 
-    const nameLabel: Label.AsObject | undefined = highlighted?.labels.find((e) => e.name === '__name__')
-    const highlightedNameLabel: Label.AsObject = nameLabel !== undefined ? (nameLabel) : ({ name: '', value: '' })
+  const update = popperProps.update
 
-    return (
-        <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
-            <div className="flex">
-                <div className="m-auto">
-                    <div className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90" style={{ borderWidth: 1 }}>
-                        <div className="flex flex-row">
-                            <div className="ml-2 mr-6">
-                                <span className="font-semibold">{highlightedNameLabel.value}</span>
-                                <span className="block text-gray-700 dark:text-gray-300 my-2">
-                                    <table className="table-auto">
-                                        <tbody>
-                                            <tr>
-                                                <td className="w-1/4">
-                                                    Value
-                                                </td>
-                                                <td className="w-3/4">
-                                                    {nFormatter(highlighted.value, 1)}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td className="w-1/4">
-                                                    At
-                                                </td>
-                                                <td className="w-3/4">
-                                                    {moment(highlighted.timestamp).utc().format(timeFormat)}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </span>
-                                <span className="block text-gray-500 my-2">
-                                    {highlighted.labels.filter((label: Label.AsObject) => (label.name !== '__name__')).map(function (label: Label.AsObject) {
-                                        return (
-                                            <button
-                                                key={label.name}
-                                                type="button"
-                                                className="inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3"
-                                                onClick={() => onLabelClick(label.name, label.value)}
-                                            >
-                                                {cutToMaxStringLength(`${label.name}="${label.value}"`, 37)}
-                                            </button>
-                                        )
-                                    })}
-                                </span>
-                                <span className="block text-gray-500 text-xs">
-                                    Hold ctrl and click label to add to query.
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  useEffect(() => {
+    if (contextElement != null) {
+      virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y)
+      update?.()
+    }
+  }, [x, y, contextElement, update])
+
+  const nameLabel: Label.AsObject | undefined = highlighted?.labels.find((e) => e.name === '__name__')
+  const highlightedNameLabel: Label.AsObject = nameLabel !== undefined ? (nameLabel) : ({ name: '', value: '' })
+
+  return (
+    <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
+      <div className="flex">
+        <div className="m-auto">
+          <div className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90" style={{ borderWidth: 1 }}>
+            <div className="flex flex-row">
+              <div className="ml-2 mr-6">
+                <span className="font-semibold">{highlightedNameLabel.value}</span>
+                <span className="block text-gray-700 dark:text-gray-300 my-2">
+                  <table className="table-auto">
+                    <tbody>
+                      <tr>
+                        <td className="w-1/4">
+                          Value
+                        </td>
+                        <td className="w-3/4">
+                          {nFormatter(highlighted.value, 1)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="w-1/4">
+                          At
+                        </td>
+                        <td className="w-3/4">
+                          {moment(highlighted.timestamp).utc().format(timeFormat)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </span>
+                <span className="block text-gray-500 my-2">
+                  {highlighted.labels.filter((label: Label.AsObject) => (label.name !== '__name__')).map(function (label: Label.AsObject) {
+                    return (
+                      <button
+                        key={label.name}
+                        type="button"
+                        className="inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3"
+                        onClick={() => onLabelClick(label.name, label.value)}
+                      >
+                        {cutToMaxStringLength(`${label.name}="${label.value}"`, 37)}
+                      </button>
+                    )
+                  })}
+                </span>
+                <span className="block text-gray-500 text-xs">
+                  Hold ctrl and click label to add to query.
+                </span>
+              </div>
             </div>
+          </div>
         </div>
-    )
+      </div>
+    </div>
+  )
 }
 
 export const RawMetricsGraph = ({
@@ -217,30 +219,30 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null)
 
   useEffect(() => {
-      const handleCtrlDown = (event) => {
-          if (event.keyCode === 17) {
-              setHoldingCtrl(true)
-          }
-      };
-      window.addEventListener('keydown', handleCtrlDown);
+    const handleCtrlDown = (event) => {
+      if (event.keyCode === 17) {
+        setHoldingCtrl(true)
+      }
+    }
+    window.addEventListener('keydown', handleCtrlDown)
 
-      return () => {
-          window.removeEventListener('keydown', handleCtrlDown);
-      };
-  }, []);
+    return () => {
+      window.removeEventListener('keydown', handleCtrlDown)
+    }
+  }, [])
 
   useEffect(() => {
-      const handleCtrlDown = (event) => {
-          if (event.keyCode === 17) {
-              setHoldingCtrl(false)
-          }
-      };
-      window.addEventListener('keyup', handleCtrlDown);
+    const handleCtrlDown = (event) => {
+      if (event.keyCode === 17) {
+        setHoldingCtrl(false)
+      }
+    }
+    window.addEventListener('keyup', handleCtrlDown)
 
-      return () => {
-          window.removeEventListener('keyup', handleCtrlDown);
-      };
-  }, []);
+    return () => {
+      window.removeEventListener('keyup', handleCtrlDown)
+    }
+  }, [])
 
   const time: number = profile?.HistoryParams().time
 
@@ -333,8 +335,6 @@ export const RawMetricsGraph = ({
     })
 
     const closestSeriesIndex = d3.minIndex(closestPointPerSeries, s => s.distance)
-    const distance = closestPointPerSeries[closestSeriesIndex].distance
-
     const pointIndex = closestPointPerSeries[closestSeriesIndex].pointIndex
     const point = series[closestSeriesIndex].values[pointIndex]
 
@@ -430,7 +430,7 @@ export const RawMetricsGraph = ({
     const yCoordinateWithoutMargin = yCoordinate - margin
 
     if (!holdingCtrl) {
-        throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin])
+      throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin])
     }
   }
 
@@ -482,23 +482,24 @@ export const RawMetricsGraph = ({
           {(highlighted != null) &&
               hovering &&
               !dragging &&
-              pos[0] != 0 &&
-              pos[1] != 0
-          && (
+              pos[0] !== 0 &&
+              pos[1] !== 0 &&
+              (
               <div
                   onMouseMove={onMouseMove}
                   onMouseEnter={() => setHovering(true)}
                   onMouseLeave={() => setHovering(false)}
               >
                   <MetricsTooltip
-                      x={pos[0]+margin}
-                      y={pos[1]+margin}
+                      x={pos[0] + margin}
+                      y={pos[1] + margin}
                       highlighted={highlighted}
                       onLabelClick={onLabelClick}
                       contextElement={graph.current}
                   />
               </div>
-          )}
+              )
+          }
           <div
               ref={graph}
               onMouseEnter={() => setHovering(true)}
@@ -553,18 +554,19 @@ export const RawMetricsGraph = ({
                           </g>
                       )}
                       {selected != null
-                          ? (
-                              <g className="circle-group" style={{ fill: '#399' }}>
-                                  <MetricsCircle
-                                      cx={selected.x}
-                                      cy={selected.y}
-                                      radius={5}
-                                  />
-                              </g>
+                        ? (
+                          <g className="circle-group" style={{ fill: '#399' }}>
+                            <MetricsCircle
+                              cx={selected.x}
+                              cy={selected.y}
+                              radius={5}
+                            />
+                          </g>
                           )
-                          : (
-                              <></>
-                          )}
+                        : (
+                          <></>
+                          )
+                      }
                       <g
                           className="x axis"
                           fill="none"

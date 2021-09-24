@@ -8,7 +8,7 @@ import '../style/sidenav.css'
 import Header from './layouts/Header'
 import ThemeProvider from './layouts/ThemeProvider'
 
-const NoSSR = dynamic(() => import('../components/NoSSR'), { ssr: false })
+const NoSSR = dynamic(async () => await import('../components/NoSSR'), { ssr: false })
 
 const App = ({ Component, pageProps }) => {
   const createStore = useCreateStore()

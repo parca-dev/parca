@@ -42,8 +42,6 @@ const ProfileExplorerSingle = ({
               <ProfileView
                 queryClient={queryClient}
                 profileSource={profile.ProfileSource()}
-                allowComparing={false}
-                startComparing={() => {}}
               />
               )
             : (

@@ -88,32 +88,32 @@ const ProfileMetricsGraph = ({
   }
   if (response == null) {
     return (
-        <div
-            style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: 'inherit',
-                marginTop: 100
-            }}
-        >
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className='text-white'>Loading...</span>
-        </div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 'inherit',
+          marginTop: 100
+        }}
+      >
+        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span className='text-white'>Loading...</span>
+      </div>
     )
   }
 
   const series = response.seriesList
   if (series == null || series.length === 0) {
     return (
-        <div className="grid grid-cols-1">
-            <div className='py-20 flex justify-center'>
-                <p className='m-0'>No data found. Try a different query.</p>
-            </div>
+      <div className="grid grid-cols-1">
+        <div className='py-20 flex justify-center'>
+          <p className='m-0'>No data found. Try a different query.</p>
         </div>
+      </div>
     )
   }
 
@@ -122,18 +122,18 @@ const ProfileMetricsGraph = ({
   }
 
   return (
-      <div className="dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500" style={{ borderWidth: 1 }}>
-          <MetricsGraph
-              data={series}
-              from={from}
-              to={to}
-              profile={profile as SingleProfileSelection}
-              setTimeRange={setTimeRange}
-              onSampleClick={handleSampleClick}
-              onLabelClick={addLabelMatcher}
-              width={0}
-          />
-      </div>
+    <div className="dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500" style={{ borderWidth: 1 }}>
+      <MetricsGraph
+        data={series}
+        from={from}
+        to={to}
+        profile={profile as SingleProfileSelection}
+        setTimeRange={setTimeRange}
+        onSampleClick={handleSampleClick}
+        onLabelClick={addLabelMatcher}
+        width={0}
+      />
+    </div>
   )
 }
 

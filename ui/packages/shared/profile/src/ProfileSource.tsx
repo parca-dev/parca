@@ -32,24 +32,24 @@ export function SuffixParams (params: { [key: string]: any }, suffix: string): {
 }
 
 export function ParseLabels (labels: string[]): Label.AsObject[] {
-  return labels.map(function(labelString): Label.AsObject {
+  return labels.map(function (labelString): Label.AsObject {
     const parts = labelString.split('=', 2)
-    return {name: parts[0], value: parts[1]}
+    return { name: parts[0], value: parts[1] }
   })
 }
 
 export function ProfileSelectionFromParams (
-  expression: string,
-  from: string,
-  to: string,
-  merge: string,
-  labels: string[],
-  time: string
+  expression: string | undefined,
+  from: string | undefined,
+  to: string | undefined,
+  merge: string | undefined,
+  labels: string[] | undefined,
+  time: string | undefined
 ): ProfileSelection | null {
-  if (merge && merge == 'true' && from && to && expression) {
+  if (merge !== undefined && merge === 'true' && from !== undefined && to !== undefined && expression !== undefined) {
     return new MergedProfileSelection(parseInt(from), parseInt(to), expression)
   }
-  if (labels && time) {
+  if (labels !== undefined && time !== undefined) {
     return new SingleProfileSelection(ParseLabels(labels), parseInt(time))
   }
   return null
@@ -65,7 +65,7 @@ export class SingleProfileSelection implements ProfileSelection {
   }
 
   ProfileName (): string {
-    const label = this.labels.find((e) => e.name == '__name__')
+    const label = this.labels.find((e) => e.name === '__name__')
     return label !== undefined ? label.value : ''
   }
 
@@ -135,7 +135,7 @@ export class SingleProfileSource implements ProfileSource {
   }
 
   query (): string {
-    const seriesQuery = this.labels.reduce(function(agg: string, label: Label.AsObject) {
+    const seriesQuery = this.labels.reduce(function (agg: string, label: Label.AsObject) {
       return agg + `${label.name}="${label.value}",`
     }, '{')
     return seriesQuery + '}'
@@ -168,7 +168,7 @@ export class SingleProfileSource implements ProfileSource {
   }
 
   profileName (): string {
-    const label = this.labels.find((e) => e.name == '__name__')
+    const label = this.labels.find((e) => e.name === '__name__')
     return label !== undefined ? label.value : ''
   }
 
@@ -177,8 +177,8 @@ export class SingleProfileSource implements ProfileSource {
     return (
       <>
         <p>
-          {profileName != '' ? <a>{profileName} profile of </a> : ''}{'  '}
-          {this.labels.filter(label => (label.name != '__name__')).map((label) => (
+          {profileName !== '' ? <a>{profileName} profile of </a> : ''}{'  '}
+          {this.labels.filter(label => (label.name !== '__name__')).map((label) => (
               <button
                   key={label.name}
                   type="button"
@@ -196,7 +196,7 @@ export class SingleProfileSource implements ProfileSource {
   }
 
   stringLabels (): string[] {
-    return Object.keys(this.labels).filter(key => (key != '__name__')).map((k) => `${k}=${this.labels[k]}`)
+    return this.labels.filter((label: Label.AsObject) => (label.name !== '__name__')).map((label: Label.AsObject) => `${label.name}=${label.value}`)
   }
 
   toString (): string {

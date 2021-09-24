@@ -1,20 +1,15 @@
 import { useState, useEffect } from 'react'
-//import ProfileSVG from './ProfileSVG'
-//import ProfileTop from './ProfileTop'
+// import ProfileSVG from './ProfileSVG'
+// import ProfileTop from './ProfileTop'
 import { CalcWidth } from '@parca/dynamicsize'
 import ProfileIcicleGraph from './ProfileIcicleGraph'
 import { ProfileSource } from './ProfileSource'
 import { QueryServiceClient, QueryResponse, QueryRequest, ServiceError } from '@parca/client'
-import Button from '../../../app/web/src/components/ui/Button'
 import Card from '../../../app/web/src/components/ui/Card'
-import Dropdown from '../../../app/web/src/components/ui/Dropdown'
 
 interface ProfileViewProps {
-  title?: string
   queryClient: QueryServiceClient
   profileSource: ProfileSource
-  startComparing: () => void
-  allowComparing: boolean
 }
 
 export interface IQueryResult {
@@ -47,16 +42,10 @@ export const useQuery = (
 }
 
 export const ProfileView = ({
-  title,
   queryClient,
-  profileSource,
-  startComparing,
-  allowComparing
+  profileSource
 }: ProfileViewProps): JSX.Element => {
   const { response, error } = useQuery(queryClient, profileSource)
-
-  const [showModal, setShowModal] = useState(false)
-  const [reportType, setReportType] = useState('iciclegraph')
 
   if (error != null) {
     return <div className='p-10 flex justify-center'>An error occurred: {error.message}</div>
@@ -81,8 +70,6 @@ export const ProfileView = ({
       </div>
     )
   }
-
-  const queryResponse = response.toObject()
 
   return (
     <>
