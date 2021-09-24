@@ -63,8 +63,6 @@ const ProfileExplorerCompare = ({
               profileSource={
                 new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
               }
-              allowComparing={false}
-              startComparing={() => {}}
             />
             )
           : (

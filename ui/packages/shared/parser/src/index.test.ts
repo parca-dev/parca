@@ -1,4 +1,4 @@
-import { NewParser, MatcherType, Matcher, Query } from './index'
+import { MatcherType, Matcher, Query } from './index'
 
 test('QueryParseEmpty', () => {
   expect(Query.parse('')).toMatchObject(new Query([], ''))

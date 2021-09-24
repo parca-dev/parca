@@ -3,3 +3,6 @@ out/
 dist/
 node_modules/
 next-env.d.ts
+packages/shared/client/src/google
+packages/shared/client/src/parca
+packages/shared/parser/src/selector.js

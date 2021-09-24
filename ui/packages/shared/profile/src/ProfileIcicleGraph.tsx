@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react'
-import { throttle } from 'lodash'
-import IcicleGraph, { nodeLabel } from './IcicleGraph'
-import { ProfileSource } from './ProfileSource'
-import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client'
-import { pointer } from 'd3-selection'
+import IcicleGraph from './IcicleGraph'
+import { Flamegraph } from '@parca/client'
 
 interface ProfileIcicleGraphProps {
   width?: number
@@ -21,17 +18,17 @@ function arrayEquals (a, b): boolean {
 
 export default function ProfileIcicleGraph ({
   width,
-  graph,
+  graph
 }: ProfileIcicleGraphProps) {
   const [curPath, setCurPath] = useState<string[]>([])
 
   useEffect(() => {
-      setCurPath([])
+    setCurPath([])
   }, [graph])
 
   if (graph === undefined) return <div>no data...</div>
   const total = graph.total
-  if (total == 0) return <>Profile has no samples</>
+  if (total === 0) return <>Profile has no samples</>
 
   const setNewCurPath = (path: string[]) => {
     if (!arrayEquals(curPath, path)) {
