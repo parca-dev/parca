@@ -52,7 +52,6 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         image: ghcr.io/parca/parca-agent:latest
-        imagePullPolicy: Always
         name: parca-agent
         securityContext:
           privileged: true

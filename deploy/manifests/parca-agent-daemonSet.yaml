@@ -37,8 +37,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: ghcr.io/parca-dev/parca-agent:v0.0.1-alpha
-        imagePullPolicy: Always
+        image: ghcr.io/parca-dev/parca-agent:v0.0.1-alpha.1
         name: parca-agent
         securityContext:
           privileged: true

@@ -38,7 +38,6 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         image: parca.io/parca/parca-agent:dev
-        imagePullPolicy: Always
         name: parca-agent
         securityContext:
           privileged: true

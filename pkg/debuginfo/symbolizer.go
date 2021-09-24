@@ -187,6 +187,8 @@ func hasDWARF(path string) (bool, error) {
 	}
 	defer exe.Close()
 
+	// TODO(kakkoyun): Returns "unexpected EOF" for even populated DWARF sections in certain cases.
+	// Find a more resilient way to check if DWARF exists!
 	data, err := exe.DWARF()
 	if err != nil {
 		return false, fmt.Errorf("failed to read DWARF sections: %w", err)
@@ -204,10 +206,18 @@ func gosymtab(path string) (*gosym.Table, error) {
 
 	var pclntab []byte
 	if sec := exe.Section(".gopclntab"); sec != nil {
+		if sec.Type == elf.SHT_NOBITS {
+			return nil, errors.New(".gopclntab section has no bits")
+		}
+
 		pclntab, err = sec.Data()
 		if err != nil {
 			return nil, fmt.Errorf("could not find .gopclntab section: %w", err)
 		}
+	}
+
+	if len(pclntab) <= 0 {
+		return nil, errors.New(".gopclntab section has no bits")
 	}
 
 	var symtab []byte
