@@ -1,5 +1,4 @@
 import dynamic from 'next/dynamic'
-import 'react-dates/lib/css/_datepicker.css'
 import { StoreProvider, useCreateStore } from 'store'
 import 'tailwindcss/tailwind.css'
 import '../style/file-input.css'

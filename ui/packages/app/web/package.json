@@ -35,8 +35,6 @@
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
     "postcss": "^8.3.6",
-    "react-data-table-component": "^7.0.0-alpha-5",
-    "react-dates": "^21.8.0",
     "tailwindcss": "^2.2.15",
     "zustand": "^3.5.10"
   },
