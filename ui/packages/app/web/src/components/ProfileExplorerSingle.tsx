@@ -1,5 +1,4 @@
 import ProfileSelector, { QuerySelection } from './ProfileSelector'
-import { Col, Row } from 'react-bootstrap'
 import { ProfileSelection, ProfileView } from '@parca/profile'
 import { QueryServiceClient } from '@parca/client'
 
@@ -22,8 +21,8 @@ const ProfileExplorerSingle = ({
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
     <>
-      <Row style={{ marginTop: 10 }}>
-        <Col xs={12}>
+      <div className="grid grid-cols-1">
+        <div>
           <ProfileSelector
             queryClient={queryClient}
             querySelection={query}
@@ -34,10 +33,10 @@ const ProfileExplorerSingle = ({
             onCompareProfile={compareProfile}
             enforcedProfileName={''} // TODO
           />
-        </Col>
-      </Row>
-      <Row>
-        <Col xs={12}>
+        </div>
+      </div>
+      <div className="grid grid-cols-1">
+        <div>
           {profile != null
             ? (
               <ProfileView
@@ -50,8 +49,8 @@ const ProfileExplorerSingle = ({
             : (
               <></>
               )}
-        </Col>
-      </Row>
+        </div>
+      </div>
     </>
   )
 }

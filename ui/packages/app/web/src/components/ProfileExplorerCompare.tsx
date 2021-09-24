@@ -1,4 +1,3 @@
-import { Col, Row } from 'react-bootstrap'
 import ProfileSelector, { QuerySelection } from './ProfileSelector'
 import { ProfileDiffSource, ProfileSelection, ProfileView } from '@parca/profile'
 import { Query } from '@parca/parser'
@@ -30,8 +29,8 @@ const ProfileExplorerCompare = ({
 }: ProfileExplorerCompareProps): JSX.Element => {
   return (
     <>
-      <Row style={{ marginTop: 10 }}>
-        <Col xs={6}>
+      <div className="grid grid-cols-2">
+        <div className="pr-2">
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryA}
@@ -42,8 +41,8 @@ const ProfileExplorerCompare = ({
             comparing={true}
             onCompareProfile={() => {}}
           />
-        </Col>
-        <Col xs={6}>
+        </div>
+        <div className="pl-2">
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryB}
@@ -54,28 +53,26 @@ const ProfileExplorerCompare = ({
             comparing={true}
             onCompareProfile={() => {}}
           />
-        </Col>
-      </Row>
-      <Row>
-        <Col xs={12}>
-          {profileA != null && profileB != null ? (
-            <ProfileView
-              queryClient={queryClient}
-              profileSource={
-                new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
-              }
-              allowComparing={false}
-              startComparing={() => {}}
-            />
-          ) : (
-            <div>
-              <div className='my-20 text-center'>
-                <p>Select a profile on both sides.</p>
-              </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1">
+        {profileA != null && profileB != null ? (
+          <ProfileView
+            queryClient={queryClient}
+            profileSource={
+              new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
+            }
+            allowComparing={false}
+            startComparing={() => {}}
+          />
+        ) : (
+          <div>
+            <div className='my-20 text-center'>
+              <p>Select a profile on both sides.</p>
             </div>
-          )}
-        </Col>
-      </Row>
+          </div>
+        )}
+      </div>
     </>
   )
 }

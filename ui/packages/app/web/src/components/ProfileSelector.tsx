@@ -2,11 +2,11 @@ import { QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse } from 
 import { Query } from '@parca/parser'
 import { ProfileSelection, timeFormatShort } from '@parca/profile'
 import moment from 'moment'
-import React, { useEffect, useState } from 'react'
-import { Dropdown, OverlayTrigger, Row, Tooltip } from 'react-bootstrap'
-import 'react-dates/initialize'
+import React, { useEffect, useState, useRef } from 'react'
 import ProfileMetricsGraph from '../components/ProfileMetricsGraph'
 import MatchersInput from './MatchersInput'
+import MergeButton from './MergeButton'
+import CompareButton from './CompareButton'
 import Button from './ui/Button'
 import ButtonGroup from './ui/ButtonGroup'
 import Card from './ui/Card'
@@ -253,40 +253,13 @@ const ProfileSelector = ({
 
   const handleCompareClick = (): void => onCompareProfile()
 
-  const toggleTimeDropdown = (
-    isOpen: boolean,
-    e: React.SyntheticEvent<Dropdown>,
-    metadata: { source: string }
-  ): void => {
-    // TODO: Close dropdown when clicking button again
-    if (e.target != null) {
-      const open = (e.target as Element).classList.contains('close-dropdown')
-      setTimeDropdownOpen(!open)
-      return
-    }
-    if (metadata.source !== '') {
-      setTimeDropdownOpen(false)
-    }
-  }
-
   const searchDisabled =
     queryExpressionString === undefined ||
     queryExpressionString === '' ||
     queryExpressionString === '{}'
 
   const mergeDisabled = selectedProfileName === '' || querySelection.expression === undefined
-  const mergeStyle: React.CSSProperties = mergeDisabled
-    ? { pointerEvents: 'none', fontWeight: 'bold' }
-    : {}
-  const mergeDisabledExplanation =
-    'Select a profile type in the dropdown and perform a search to allow merging.'
-  const mergeExplanation =
-    'Merging allows combining all profile samples of a query into a single report.'
-  const mergeButtonTooltipText = mergeDisabled ? mergeDisabledExplanation : mergeExplanation
-
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined
-  const compareButtonTooltipText =
-    'Compare two profiles and see the relative difference between them more clearly.'
 
   return (
     <>
@@ -310,41 +283,6 @@ const ProfileSelector = ({
               selectedKey={currentTimeSelection()}
               onSelection={key => setTimeSelection(key!)}
             />
-            {/* @todo datetime range selection */}
-            {/* <Dropdown show={timeDropdownOpen} onToggle={toggleTimeDropdown} alignRight>
-                    <Dropdown.Toggle variant='outline-secondary' style={{ border: 0 }}>
-                      {timeSelections[timeSelectionByKey(currentTimeSelection())].label}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu>
-                      {timeSelections
-                        .filter(e => e.relative)
-                        .map((k, i) => (
-                          <Dropdown.Item
-                            key={i}
-                            className={'close-dropdown'}
-                            onSelect={(): any => setTimeSelection(k.key)}
-                          >
-                            {k.label}
-                          </Dropdown.Item>
-                        ))}
-                      <Dropdown.Divider />
-                      <div style={{ marginLeft: 10, marginRight: 10 }}>
-                        <DayPickerRangeController
-                          startDate={moment(currentFromTimeSelection()).utc()}
-                          endDate={moment(currentToTimeSelection()).utc()}
-                          onDatesChange={({ startDate, endDate }) => {
-                            setTimeRange(startDate.utc().valueOf(), endDate.utc().valueOf())
-                          }}
-                          focusedInput={focusedDateInput != null ? focusedDateInput : 'startDate'}
-                          isOutsideRange={() => false}
-                          isDayBlocked={() => false}
-                          onFocusChange={function (focusedInput) {
-                            setFocusedDateInput(focusedInput)
-                          }}
-                        />
-                      </div>
-                    </Dropdown.Menu>
-                  </Dropdown> */}
             {searchDisabled ? (
               <div>
                 <Button disabled={true}>Search</Button>
@@ -352,38 +290,9 @@ const ProfileSelector = ({
             ) : (
               <>
                 <ButtonGroup style={{ marginRight: 5 }}>
-                  {!mergeDisabled ? (
-                    <OverlayTrigger
-                      placement='bottom'
-                      overlay={
-                        <Tooltip id='merge-button-tooltip'>{mergeButtonTooltipText}</Tooltip>
-                      }
-                    >
-                      <Button
-                        color='neutral'
-                        style={mergeStyle}
-                        disabled={mergeDisabled}
-                        onClick={setMergedSelection}
-                      >
-                        Merge
-                      </Button>
-                    </OverlayTrigger>
-                  ) : (
-                    <></>
-                  )}
-                  {!comparing && !compareDisabled ? (
-                    <OverlayTrigger
-                      placement='bottom'
-                      overlay={
-                        <Tooltip id='compare-button-tooltip'>{compareButtonTooltipText}</Tooltip>
-                      }
-                    >
-                      <Button color='neutral' disabled={mergeDisabled} onClick={handleCompareClick}>
-                        Compare
-                      </Button>
-                    </OverlayTrigger>
-                  ) : (
-                    <></>
+                  <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
+                  {!comparing && (
+                      <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
                   )}
                 </ButtonGroup>
                 <div>
@@ -407,7 +316,6 @@ const ProfileSelector = ({
             querySelection.from !== undefined &&
             querySelection.to !== undefined &&
             (profileSelection == null || profileSelection.Type() !== 'merge') ? (
-              <div>
                 <ProfileMetricsGraph
                   queryClient={queryClient}
                   queryExpression={querySelection.expression}
@@ -427,7 +335,6 @@ const ProfileSelector = ({
                   }}
                   addLabelMatcher={addLabelMatcher}
                 />
-              </div>
             ) : (
               <>
                 {(profileSelection == null || profileSelection.Type() !== 'merge') && (

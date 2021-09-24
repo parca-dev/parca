@@ -17,7 +17,7 @@ const Navbar = ({
     <Disclosure as='nav' className='dark:bg-gray-900 relative z-10'>
       {({ open }) => (
         <>
-          <div className='mx-auto px-3 sm:px-6 lg:px-8 xl:px-0'>
+          <div className='mx-auto px-3'>
             <div className='relative flex items-center justify-between h-16'>
               <div className='absolute inset-y-0 left-0 flex items-center sm:hidden'>
                 {/* mobile menu button */}

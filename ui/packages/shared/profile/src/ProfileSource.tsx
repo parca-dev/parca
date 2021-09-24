@@ -1,6 +1,5 @@
 import React from 'react'
 import moment from 'moment'
-import { Badge } from 'react-bootstrap'
 import { Query } from '@parca/parser'
 import { Label, QueryRequest, ProfileDiffSelection, SingleProfile, MergeProfile, DiffProfile } from '@parca/client'
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb'
@@ -180,9 +179,13 @@ export class SingleProfileSource implements ProfileSource {
         <p>
           {profileName != '' ? <a>{profileName} profile of </a> : ''}{'  '}
           {this.labels.filter(label => (label.name != '__name__')).map((label) => (
-            <React.Fragment key={label.name}>
-              <Badge variant="light" style={{ border: '1px solid rgba(0, 0, 0, 0.125)' }}>{label.name}="{label.value}"</Badge>{'  '}
-            </React.Fragment>
+              <button
+                  key={label.name}
+                  type="button"
+                  className="inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3"
+              >
+                  {`${label.name}="${label.value}"`}
+              </button>
           ))}
         </p>
         <p>

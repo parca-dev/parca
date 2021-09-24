@@ -1,13 +1,10 @@
 import dynamic from 'next/dynamic'
-import { Container } from 'react-bootstrap'
-import 'react-dates/lib/css/_datepicker.css'
 import { StoreProvider, useCreateStore } from 'store'
 import 'tailwindcss/tailwind.css'
 import '../style/file-input.css'
 import '../style/metrics.css'
 import '../style/profile.css'
 import '../style/sidenav.css'
-import './App.scss'
 import Header from './layouts/Header'
 import ThemeProvider from './layouts/ThemeProvider'
 
@@ -21,9 +18,9 @@ const App = ({ Component, pageProps }) => {
       <StoreProvider createStore={createStore}>
         <ThemeProvider>
           <Header />
-          <Container fluid>
+          <div className="px-3">
             <Component {...pageProps} />
-          </Container>
+          </div>
         </ThemeProvider>
       </StoreProvider>
     </NoSSR>
