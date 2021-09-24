@@ -31,10 +31,10 @@ rules:
 
   no-labels: [ error, { allowLoop: true } ]
   no-void: 0
-  # TODO(kakkoyun): The following fixes the already broken linter,
-  #  but the changes are too many so deferring it.
-  #  '@typescript-eslint/member-delimiter-style': warn
-  '@typescript-eslint/member-delimiter-style':
-    - singleline:
-        - delimiter: 'semi'
-          requireLast: false
+  # TODO fix these in follow ups
+  "@typescript-eslint/explicit-function-return-type": "off"
+  #'@typescript-eslint/member-delimiter-style':
+  #  - error
+  #  - singleline:
+  #      delimiter: 'semi'
+  #      requireLast: false

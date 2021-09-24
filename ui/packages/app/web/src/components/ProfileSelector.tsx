@@ -2,7 +2,7 @@ import { QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse } from 
 import { Query } from '@parca/parser'
 import { ProfileSelection, timeFormatShort } from '@parca/profile'
 import moment from 'moment'
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import ProfileMetricsGraph from '../components/ProfileMetricsGraph'
 import MatchersInput from './MatchersInput'
 import MergeButton from './MergeButton'
@@ -84,12 +84,10 @@ const ProfileSelector = ({
       : []
   const profileLabels = profileNames.map(name => ({ key: name, label: name }))
 
-  const [timeDropdownOpen, setTimeDropdownOpen] = useState<boolean>(false)
   const [exactTimeSelection, setExactTimeSelection] = useState<TimeSelection>({
     from: null,
     to: null
   })
-  const [focusedDateInput, setFocusedDateInput] = useState(null)
   const [timeSelection, setTimeSelection] = useState('')
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression)
 
@@ -281,32 +279,34 @@ const ProfileSelector = ({
             <Select
               items={timePresets}
               selectedKey={currentTimeSelection()}
-              onSelection={key => setTimeSelection(key!)}
+              onSelection={key => setTimeSelection(key ?? '')}
             />
-            {searchDisabled ? (
-              <div>
-                <Button disabled={true}>Search</Button>
-              </div>
-            ) : (
-              <>
-                <ButtonGroup style={{ marginRight: 5 }}>
-                  <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
-                  {!comparing && (
-                      <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
-                  )}
-                </ButtonGroup>
+            {searchDisabled
+              ? (
                 <div>
-                  <Button
-                    onClick={(e: React.MouseEvent<HTMLElement>) => {
-                      e.preventDefault()
-                      setQueryExpression()
-                    }}
-                  >
-                    Search
-                  </Button>
+                  <Button disabled={true}>Search</Button>
                 </div>
-              </>
-            )}
+                )
+              : (
+                  <>
+                    <ButtonGroup style={{ marginRight: 5 }}>
+                      <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
+                      {!comparing && (
+                          <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
+                      )}
+                    </ButtonGroup>
+                    <div>
+                      <Button
+                        onClick={(e: React.MouseEvent<HTMLElement>) => {
+                          e.preventDefault()
+                          setQueryExpression()
+                        }}
+                      >
+                        Search
+                      </Button>
+                    </div>
+                  </>
+                )}
           </div>
         </Card.Header>
         {!querySelection.merge && (
@@ -315,7 +315,8 @@ const ProfileSelector = ({
             querySelection.expression.length > 0 &&
             querySelection.from !== undefined &&
             querySelection.to !== undefined &&
-            (profileSelection == null || profileSelection.Type() !== 'merge') ? (
+            (profileSelection == null || profileSelection.Type() !== 'merge')
+              ? (
                 <ProfileMetricsGraph
                   queryClient={queryClient}
                   queryExpression={querySelection.expression}
@@ -335,15 +336,17 @@ const ProfileSelector = ({
                   }}
                   addLabelMatcher={addLabelMatcher}
                 />
-            ) : (
-              <>
-                {(profileSelection == null || profileSelection.Type() !== 'merge') && (
-                  <div className='my-20 text-center'>
-                    <p>Run a query, and the result will be displayed here.</p>
-                  </div>
-                )}
-              </>
-            )}
+                )
+              : (
+                <>
+                  {(profileSelection == null || profileSelection.Type() !== 'merge') && (
+                    <div className='my-20 text-center'>
+                      <p>Run a query, and the result will be displayed here.</p>
+                    </div>
+                  )}
+                </>
+                )
+            }
           </Card.Body>
         )}
       </Card>

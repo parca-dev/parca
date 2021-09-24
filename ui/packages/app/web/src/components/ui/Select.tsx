@@ -20,8 +20,8 @@ const Select = ({
   onSelection: (value: string | undefined) => void
   placeholder?: string
   width?: number
-}) => {
-  const selection = items.find(v => v.key === selectedKey) || {
+}): JSX.Element => {
+  const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
     label: selectedKey
   }
@@ -40,7 +40,7 @@ const Select = ({
               >
                 <span className='flex items-center'>
                   {/* SLOT */}
-                  <span className='ml-3 block truncate'>{selection?.label || placeholder}</span>
+                  <span className='ml-3 block truncate'>{selection?.label !== '' ? selection.label : placeholder}</span>
                 </span>
                 <span className='ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none'>
                   <SelectorIcon className='h-5 w-5 text-gray-400' aria-hidden='true' />
@@ -83,17 +83,19 @@ const Select = ({
                               {option.label}
                             </span>
                           </div>
-
-                          {selected ? (
-                            <span
-                              className={cx(
-                                active ? 'text-white' : 'text-indigo-600',
-                                'absolute inset-y-0 right-0 flex items-center pr-4'
-                              )}
-                            >
-                              <CheckIcon className='h-5 w-5' aria-hidden='true' />
-                            </span>
-                          ) : null}
+                            {selected
+                              ? (
+                                <span
+                                  className={cx(
+                                    active ? 'text-white' : 'text-indigo-600',
+                                    'absolute inset-y-0 right-0 flex items-center pr-4'
+                                  )}
+                                >
+                                  <CheckIcon className='h-5 w-5' aria-hidden='true' />
+                                </span>
+                                )
+                              : null
+                            }
                         </>
                       )}
                     </Listbox.Option>

@@ -2,7 +2,12 @@ import produce from 'immer'
 
 export type UiState = ReturnType<typeof createSlice>
 
-export default function createSlice(set, _get) {
+export default function createSlice (set, _get): {
+  ui: {
+    darkMode: boolean
+  }
+  setDarkMode: (mode: boolean) => void
+} {
   return {
     // state
     ui: {

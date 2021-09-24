@@ -4,7 +4,7 @@ import { withRouter } from 'next/router'
 import { useStore } from 'store'
 import { selectUi } from 'store/ui.state'
 
-const Header = ({}) => {
+const Header = () => {
   const { darkMode } = useStore(selectUi)
   const { setDarkMode } = useStore()
 

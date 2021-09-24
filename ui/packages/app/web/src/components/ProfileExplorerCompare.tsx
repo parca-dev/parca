@@ -56,22 +56,25 @@ const ProfileExplorerCompare = ({
         </div>
       </div>
       <div className="grid grid-cols-1">
-        {profileA != null && profileB != null ? (
-          <ProfileView
-            queryClient={queryClient}
-            profileSource={
-              new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
-            }
-            allowComparing={false}
-            startComparing={() => {}}
-          />
-        ) : (
-          <div>
-            <div className='my-20 text-center'>
-              <p>Select a profile on both sides.</p>
+        {profileA != null && profileB != null
+          ? (
+            <ProfileView
+              queryClient={queryClient}
+              profileSource={
+                new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
+              }
+              allowComparing={false}
+              startComparing={() => {}}
+            />
+            )
+          : (
+            <div>
+              <div className='my-20 text-center'>
+                <p>Select a profile on both sides.</p>
+              </div>
             </div>
-          </div>
-        )}
+            )
+        }
       </div>
     </>
   )
