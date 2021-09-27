@@ -3,9 +3,14 @@ import { CheckIcon, SelectorIcon } from '@heroicons/react/solid'
 import cx from 'classnames'
 import { Fragment } from 'react'
 
+export interface SelectElement {
+  active: JSX.Element
+  expanded: JSX.Element
+}
+
 export interface SelectItem {
   key: string
-  label: string
+  element: SelectElement
 }
 
 const Select = ({
@@ -23,7 +28,7 @@ const Select = ({
 }): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
-    label: selectedKey
+    element: { active: <>{selectedKey}</>, expanded: <>{selectedKey}</> }
   }
 
   return (
@@ -40,7 +45,7 @@ const Select = ({
               >
                 <span className='flex items-center'>
                   {/* SLOT */}
-                  <span className='ml-3 block truncate'>{selection?.label !== '' ? selection.label : placeholder}</span>
+                  <span className='ml-3 block'>{selection?.key !== '' ? selection.element.active : placeholder}</span>
                 </span>
                 <span className='ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none'>
                   <SelectorIcon className='h-5 w-5 text-gray-400' aria-hidden='true' />
@@ -77,10 +82,10 @@ const Select = ({
                             <span
                               className={cx(
                                 selected ? 'font-semibold' : 'font-normal',
-                                'ml-3 block truncate'
+                                'ml-3'
                               )}
                             >
-                              {option.label}
+                              {option.element.expanded}
                             </span>
                           </div>
                             {selected

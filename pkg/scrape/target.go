@@ -233,10 +233,9 @@ func (ts Targets) Less(i, j int) bool { return ts[i].URL().String() < ts[j].URL(
 func (ts Targets) Swap(i, j int)      { ts[i], ts[j] = ts[j], ts[i] }
 
 const (
-	ProfilePath        = "__profile_path__"
-	ProfileName        = "__name__"
-	ProfileProfileType = "profile"
-	ProfileTraceType   = "trace"
+	ProfilePath      = "__profile_path__"
+	ProfileName      = "__name__"
+	ProfileTraceType = "trace"
 )
 
 // populateLabels builds a label set from the given label set and scrape configuration.
@@ -366,12 +365,12 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 			}
 			if lbls != nil || origLabels != nil {
 				params := cfg.Params
-				switch profType {
-				case ProfileProfileType:
-					if params == nil {
-						params = url.Values{}
-					}
-					params.Add("seconds", strconv.Itoa(cfg.ProfilingConfig.PprofConfig[ProfileProfileType].Seconds))
+				if params == nil {
+					params = url.Values{}
+				}
+
+				if pcfg, found := cfg.ProfilingConfig.PprofConfig[profType]; found && pcfg.Delta {
+					params.Add("seconds", strconv.Itoa(int(time.Duration(cfg.ScrapeInterval)/time.Second)))
 				}
 
 				targets = append(targets, NewTarget(lbls, origLabels, params))

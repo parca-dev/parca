@@ -18,7 +18,7 @@ export interface ProfileSelection {
   Type: () => string
 }
 
-export const timeFormat = 'MMM D, [at] h:mma [(UTC)]'
+export const timeFormat = 'MMM D, [at] h:mm:s a [(UTC)]'
 export const timeFormatShort = 'MMM D, h:mma'
 
 export function ParamsString (params: { [key: string]: string }): string {

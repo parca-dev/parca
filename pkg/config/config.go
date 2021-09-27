@@ -44,37 +44,33 @@ func trueValue() *bool {
 
 func DefaultScrapeConfig() ScrapeConfig {
 	return ScrapeConfig{
-		ScrapeInterval: model.Duration(time.Minute),
-		ScrapeTimeout:  model.Duration(time.Minute),
+		ScrapeInterval: model.Duration(time.Second * 10),
+		ScrapeTimeout:  model.Duration(time.Second * 11),
 		Scheme:         "http",
 		ProfilingConfig: &ProfilingConfig{
 			PprofConfig: PprofConfig{
-				"allocs": &PprofProfilingConfig{
-					Enabled: trueValue(),
-					Path:    "/debug/pprof/allocs",
-				},
-				"block": &PprofProfilingConfig{
-					Enabled: trueValue(),
-					Path:    "/debug/pprof/block",
-				},
-				"goroutine": &PprofProfilingConfig{
-					Enabled: trueValue(),
-					Path:    "/debug/pprof/goroutine",
-				},
-				"heap": &PprofProfilingConfig{
+				"memory_total": &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/heap",
 				},
-				"mutex": &PprofProfilingConfig{
+				"block_total": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/block",
+				},
+				"goroutine_total": &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/goroutine",
+				},
+				"mutex_total": &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/mutex",
 				},
-				"profile": &PprofProfilingConfig{
+				"process_cpu": &PprofProfilingConfig{
 					Enabled: trueValue(),
+					Delta:   true,
 					Path:    "/debug/pprof/profile",
-					Seconds: 30, // By default Go collects 30s profile.
 				},
-				"threadcreate": &PprofProfilingConfig{
+				"threadcreate_total": &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/threadcreate",
 				},
@@ -192,9 +188,6 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			if unmarshalled.ProfilingConfig.PprofConfig[pt].Path == "" {
 				unmarshalled.ProfilingConfig.PprofConfig[pt].Path = pc.Path
 			}
-			if unmarshalled.ProfilingConfig.PprofConfig[pt].Seconds == 0 {
-				unmarshalled.ProfilingConfig.PprofConfig[pt].Seconds = pc.Seconds
-			}
 		}
 	}
 
@@ -247,7 +240,7 @@ func checkStaticTargets(configs discovery.Configs) error {
 type PprofProfilingConfig struct {
 	Enabled *bool  `yaml:"enabled,omitempty"`
 	Path    string `yaml:"path,omitempty"`
-	Seconds int    `yaml:"seconds"`
+	Delta   bool   `yaml:"delta,omitempty"`
 }
 
 // CheckTargetAddress checks if target address is valid.
