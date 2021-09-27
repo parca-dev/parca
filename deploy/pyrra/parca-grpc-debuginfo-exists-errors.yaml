@@ -1,0 +1,17 @@
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: parca-grpc-debuginfo-exists-errors
+  namespace: parca
+  labels:
+    prometheus: k8s
+    role: alert-rules
+spec:
+  target: '99'
+  window: 4w
+  indicator:
+    ratio:
+      errors:
+        metric: grpc_server_handled_total{grpc_service="parca.debuginfo.v1alpha1.DebugInfoService",grpc_method="Exists",grpc_code=~"Aborted|Unavailable|Internal|Unknown|Unimplemented|DataLoss"}
+      total:
+        metric: grpc_server_handled_total{grpc_service="parca.debuginfo.v1alpha1.DebugInfoService",grpc_method="Exists"}

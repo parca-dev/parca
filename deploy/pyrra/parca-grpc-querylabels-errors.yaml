@@ -1,0 +1,17 @@
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: parca-grpc-querylabels-errors
+  namespace: parca
+  labels:
+    prometheus: k8s
+    role: alert-rules
+spec:
+  target: '99'
+  window: 2w
+  indicator:
+    ratio:
+      errors:
+        metric: grpc_server_handled_total{grpc_service="parca.query.v1alpha1.QueryService",grpc_method=~"Labels|Values",grpc_code=~"Aborted|Unavailable|Internal|Unknown|Unimplemented|DataLoss"}
+      total:
+        metric: grpc_server_handled_total{grpc_service="parca.query.v1alpha1.QueryService",grpc_method=~"Labels|Values"}

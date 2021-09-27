@@ -1,0 +1,17 @@
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: parca-grpc-querylabels-latency
+  namespace: parca
+  labels:
+    prometheus: k8s
+    role: alert-rules
+spec:
+  target: '95'
+  window: 2w
+  indicator:
+    latency:
+      success:
+        metric: grpc_server_handling_seconds_bucket{grpc_service="parca.query.v1alpha1.QueryService",grpc_method=~"Labels|Values",le="0.1"}
+      total:
+        metric: grpc_server_handling_seconds_count{grpc_service="parca.query.v1alpha1.QueryService",grpc_method=~"Labels|Values"}

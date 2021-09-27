@@ -1,0 +1,17 @@
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: parca-grpc-debuginfo-upload-latency
+  namespace: parca
+  labels:
+    prometheus: k8s
+    role: alert-rules
+spec:
+  target: '95'
+  window: 4w
+  indicator:
+    latency:
+      success:
+        metric: grpc_server_handling_seconds_bucket{grpc_service="parca.debuginfo.v1alpha1.DebugInfoService",grpc_method="Upload",le="30"}
+      total:
+        metric: grpc_server_handling_seconds_count{grpc_service="parca.debuginfo.v1alpha1.DebugInfoService",grpc_method="Upload"}
