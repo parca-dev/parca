@@ -24,6 +24,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var (
+	version string
+	commit  string
+	date    string
+	builtBy string
+)
+
 func main() {
 	ctx := context.Background()
 	flags := &parca.Flags{}
@@ -33,7 +40,13 @@ func main() {
 	serverStr.Print()
 
 	logger := parca.NewLogger(flags.LogLevel, parca.LogFormatLogfmt, "parca")
-	level.Debug(logger).Log("msg", "parca initialized", "config", flags)
+	level.Debug(logger).Log("msg", "parca initialized",
+		"version", version,
+		"commit", commit,
+		"date", date,
+		"builtBy", builtBy,
+		"config", flags,
+	)
 
 	registry := prometheus.NewRegistry()
 

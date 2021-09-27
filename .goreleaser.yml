@@ -11,6 +11,11 @@ builds:
       - linux
       - windows
       - darwin
+    flags:
+      - -trimpath
+      - -v
+    ldflags:
+      - main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`
 archives:
   - replacements:
       darwin: Darwin
