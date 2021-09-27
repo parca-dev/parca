@@ -42,7 +42,7 @@ scrape_configs:
       - targets: [ 'localhost:10902' ]
     profiling_config:
       pprof_config:
-        allocs:
+        memory_total:
           enabled: true
           path: /conprof/debug/pprof/allocs
         fgprof:
@@ -54,36 +54,32 @@ scrape_configs:
 		ScrapeConfigs: []*ScrapeConfig{{
 			JobName:        "conprof",
 			ScrapeInterval: model.Duration(10 * time.Second),
-			ScrapeTimeout:  model.Duration(time.Minute),
+			ScrapeTimeout:  model.Duration(11 * time.Second),
 			Scheme:         "http",
 			ProfilingConfig: &ProfilingConfig{
 				PprofConfig: PprofConfig{
-					"allocs": &PprofProfilingConfig{
+					"memory_total": &PprofProfilingConfig{
 						Enabled: trueValue(),
 						Path:    "/conprof/debug/pprof/allocs",
 					},
-					"block": &PprofProfilingConfig{
+					"block_total": &PprofProfilingConfig{
 						Enabled: trueValue(),
 						Path:    "/debug/pprof/block",
 					},
-					"goroutine": &PprofProfilingConfig{
+					"goroutine_total": &PprofProfilingConfig{
 						Enabled: trueValue(),
 						Path:    "/debug/pprof/goroutine",
 					},
-					"heap": &PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/heap",
-					},
-					"mutex": &PprofProfilingConfig{
+					"mutex_total": &PprofProfilingConfig{
 						Enabled: trueValue(),
 						Path:    "/debug/pprof/mutex",
 					},
-					"profile": &PprofProfilingConfig{
+					"process_cpu": &PprofProfilingConfig{
 						Enabled: trueValue(),
+						Delta:   true,
 						Path:    "/debug/pprof/profile",
-						Seconds: 30, // By default Go collects 30s profile.
 					},
-					"threadcreate": &PprofProfilingConfig{
+					"threadcreate_total": &PprofProfilingConfig{
 						Enabled: trueValue(),
 						Path:    "/debug/pprof/threadcreate",
 					},

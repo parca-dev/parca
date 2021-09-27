@@ -10,7 +10,7 @@ import CompareButton from './CompareButton'
 import Button from './ui/Button'
 import ButtonGroup from './ui/ButtonGroup'
 import Card from './ui/Card'
-import Select from './ui/Select'
+import Select, { SelectElement } from './ui/Select'
 
 interface TimeSelection {
   from: number | null
@@ -67,6 +67,78 @@ export const useLabelValues = (
   return result
 }
 
+const wellKnownProfiles = {
+  block_total_contentions_count: {
+    name: 'Block Contentions Total',
+    help: 'Stack traces that led to blocking on synchronization primitives.'
+  },
+  block_total_delay_nanoseconds: {
+    name: 'Block Contention Time Total',
+    help: 'Time delayed stack traces caused by blocking on synchronization primitives.'
+  },
+  goroutine_total_goroutine_count: {
+    name: 'Goroutine Created Total',
+    help: 'Stack traces of all current goroutines.'
+  },
+  memory_total_alloc_objects_count: {
+    name: 'Memory Allocated Objects Total',
+    help: 'A sampling of all past memory allocations by objects.'
+  },
+  memory_total_alloc_space_bytes: {
+    name: 'Memory Allocated Bytes Total',
+    help: 'A sampling of all past memory allocations in bytes.'
+  },
+  memory_total_inuse_objects_count: {
+    name: 'Memory In-Use Objects',
+    help: 'A sampling of memory allocations of live objects by objects.'
+  },
+  memory_total_inuse_space_bytes: {
+    name: 'Memory In-Use Bytes',
+    help: 'A sampling of memory allocations of live objects by bytes.'
+  },
+  mutex_total_contentions_count: {
+    name: 'Mutex Contentions Total',
+    help: 'Stack traces of holders of contended mutexes.'
+  },
+  mutex_total_delay_nanoseconds: {
+    name: 'Mutex Contention Time Total',
+    help: 'Time delayed stack traces caused by contended mutexes.'
+  },
+  process_cpu_cpu_nanoseconds: {
+    name: 'Process CPU Nanoseconds',
+    help: 'CPU profile measured by the process itself in nanoseconds.'
+  },
+  process_cpu_samples_count: {
+    name: 'Process CPU Samples',
+    help: 'CPU profile samples observed by the process itself.'
+  },
+  parca_agent_cpu_samples_count: {
+    name: 'CPU Samples',
+    help: 'CPU profile samples observed by Parca Agent.'
+  },
+  threadcreate_total_threadcreate_count: {
+    name: 'Threads Created Total',
+    help: 'Stack traces that led to the creation of new OS threads.'
+  }
+}
+
+function profileSelectElement (name: string): SelectElement {
+  const wellKnown = wellKnownProfiles[name]
+  if (wellKnown === undefined) return { active: <>{name}</>, expanded: <>{name}</> }
+
+  const title = wellKnown.name.replace(/ /g, '\u00a0')
+  return ({
+    active: <>{title}</>,
+    expanded: (
+      <>
+        <span>{title}</span>
+        <br />
+        <span className='text-xs'>{wellKnown.help}</span>
+      </>
+    )
+  })
+}
+
 const ProfileSelector = ({
   queryClient,
   querySelection,
@@ -82,7 +154,7 @@ const ProfileSelector = ({
     (error === undefined || error == null) && response !== undefined && response != null
       ? response.labelValuesList
       : []
-  const profileLabels = profileNames.map(name => ({ key: name, label: name }))
+  const profileLabels = profileNames.map(name => ({ key: name, element: profileSelectElement(name) }))
 
   const [exactTimeSelection, setExactTimeSelection] = useState<TimeSelection>({
     from: null,
@@ -188,7 +260,7 @@ const ProfileSelector = ({
   ]
   const timePresets = timeSelections
     .filter(selection => selection.relative)
-    .map(selection => ({ key: selection.key, label: selection.label as string }))
+    .map(selection => ({ key: selection.key, element: { active: <>{selection.label}</>, expanded: <>{selection.label}</> } }))
 
   const timeSelectionByKey = (key: string): number => timeSelections.findIndex(e => e.key === key)
 
