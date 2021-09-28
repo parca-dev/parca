@@ -73,7 +73,7 @@ export const ProfileView = ({
 
   return (
     <>
-      <div className='my-4'>
+      <div className='py-3'>
         <Card>
             <Card.Body>
                 <CalcWidth throttle={300} delay={2000}>
