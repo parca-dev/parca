@@ -1,4 +1,21 @@
 ---
+apiVersion: v1
+data:
+  parca.yaml: |-
+    "debug_info":
+      "bucket":
+        "cache":
+          "config":
+            "directory": "./tmp"
+          "type": "FILESYSTEM"
+        "config":
+          "directory": "./tmp"
+        "type": "FILESYSTEM"
+kind: ConfigMap
+metadata:
+  name: parca-config
+  namespace: parca
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,7 +23,7 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca
     app.kubernetes.io/name: parca
-    app.kubernetes.io/version: v0.0.3-alpha
+    app.kubernetes.io/version: v0.0.1-alpha.2
   name: parca
   namespace: parca
 spec:
@@ -22,15 +39,15 @@ spec:
         app.kubernetes.io/component: observability
         app.kubernetes.io/instance: parca
         app.kubernetes.io/name: parca
-        app.kubernetes.io/version: v0.0.3-alpha
+        app.kubernetes.io/version: v0.0.1-alpha.2
     spec:
       containers:
       - args:
         - /parca
-        - --config-path=/parca.yaml
-        - --log-level=debug
+        - --config-path=/var/parca/parca.yaml
+        - --log-level=info
         - --cors-allowed-origins=*
-        image: ghcr.io/parca-dev/parca:v0.0.3-alpha-11-g1f5b17c
+        image: ghcr.io/parca-dev/parca:v0.0.1-alpha.2
         livenessProbe:
           exec:
             command:
@@ -51,6 +68,9 @@ spec:
           initialDelaySeconds: 10
         resources: {}
         terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/parca
+          name: parca-config
       nodeSelector:
         beta.kubernetes.io/os: linux
       securityContext:
@@ -58,6 +78,10 @@ spec:
         runAsUser: 65534
       serviceAccountName: parca
       terminationGracePeriodSeconds: 120
+      volumes:
+      - configMap:
+          name: parca-config
+        name: parca-config
 ---
 apiVersion: v1
 kind: Namespace
@@ -71,7 +95,7 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca
     app.kubernetes.io/name: parca
-    app.kubernetes.io/version: v0.0.3-alpha
+    app.kubernetes.io/version: v0.0.1-alpha.2
   name: parca
   namespace: parca
 ---
@@ -82,7 +106,7 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca
     app.kubernetes.io/name: parca
-    app.kubernetes.io/version: v0.0.3-alpha
+    app.kubernetes.io/version: v0.0.1-alpha.2
   name: parca
   namespace: parca
 spec:

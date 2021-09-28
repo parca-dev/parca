@@ -1,0 +1,16 @@
+apiVersion: v1
+data:
+  parca.yaml: |-
+    "debug_info":
+      "bucket":
+        "config":
+          "directory": "./tmp"
+        "type": "FILESYSTEM"
+      "cache":
+        "config":
+          "directory": "./tmp"
+        "type": "FILESYSTEM"
+kind: ConfigMap
+metadata:
+  name: parca-config
+  namespace: parca

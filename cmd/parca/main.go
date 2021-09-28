@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -45,7 +46,7 @@ func main() {
 		"commit", commit,
 		"date", date,
 		"builtBy", builtBy,
-		"config", flags,
+		"config", fmt.Sprint(flags),
 	)
 
 	registry := prometheus.NewRegistry()

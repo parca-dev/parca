@@ -50,6 +50,9 @@ spec:
           initialDelaySeconds: 10
         resources: {}
         terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/parca
+          name: parca-config
       nodeSelector:
         beta.kubernetes.io/os: linux
       securityContext:
@@ -57,3 +60,7 @@ spec:
         runAsUser: 65534
       serviceAccountName: parca
       terminationGracePeriodSeconds: 120
+      volumes:
+      - configMap:
+          name: parca-config
+        name: parca-config

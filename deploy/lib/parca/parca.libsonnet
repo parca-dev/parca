@@ -9,7 +9,8 @@ local defaults = {
   image: error 'must provide image',
   replicas: error 'must provide replicas',
 
-  configPath: 'parca.yaml',
+  configPath: '/var/parca/parca.yaml',
+  configmapName: 'parca-config',
   corsAllowedOrigins: '',
   logLevel: 'info',
 
@@ -79,6 +80,29 @@ function(params) {
     },
   },
 
+  configmap: {
+    apiVersion: 'v1',
+    kind: 'ConfigMap',
+    metadata: {
+      name: prc.config.configmapName,
+      namespace: prc.config.namespace,
+    },
+    data: {
+      'parca.yaml': std.manifestYamlDoc({
+        debug_info: {
+          bucket: {
+            type: 'FILESYSTEM',
+            config: { directory: './tmp' },
+          },
+          cache: {
+            type: 'FILESYSTEM',
+            config: { directory: './tmp' },
+          },
+        },
+      }),
+    },
+  },
+
   deployment:
     local c = {
       name: 'parca',
@@ -95,6 +119,7 @@ function(params) {
         { name: port.name, containerPort: port.port }
         for port in prc.service.spec.ports
       ],
+      volumeMounts: [{ name: 'parca-config', mountPath: '/var/parca' }],
       resources: if prc.config.resources != {} then prc.config.resources else {},
       terminationMessagePolicy: 'FallbackToLogsOnError',
       livenessProbe: {
@@ -131,6 +156,10 @@ function(params) {
             securityContext: prc.config.securityContext,
             serviceAccountName: prc.serviceAccount.metadata.name,
             terminationGracePeriodSeconds: 120,
+            volumes: [{
+              name: 'parca-config',
+              configMap: { name: prc.config.configmapName },
+            }],
             nodeSelector: {
               'beta.kubernetes.io/os': 'linux',
             },
