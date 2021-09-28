@@ -82,7 +82,7 @@ push-quay-container:
 
 .PHONY: deploy/manifests
 deploy/manifests:
-	cd deploy && make manifests
+	cd deploy && make merge-manifests
 
 .PHONY: dev/setup
 dev/setup:

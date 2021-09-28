@@ -20,8 +20,8 @@ local parca = (import 'parca/parca.libsonnet')({
 local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({
   name: 'parca-agent',
   namespace: ns.metadata.name,
-  version: 'v0.0.1-alpha',
-  image: 'ghcr.io/parca-dev/parca-agent:v0.0.1-alpha.1',
+  version: 'v0.0.3-alpha',
+  image: 'ghcr.io/parca-dev/parca-agent:v0.0.1-alpha.3',
   stores: ['%s.%s.svc.cluster.local:%d' % [parca.service.metadata.name, parca.service.metadata.namespace, parca.config.port]],
   logLevel: 'debug',
   insecure: true,

@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca-agent
     app.kubernetes.io/name: parca-agent
-    app.kubernetes.io/version: v0.0.1-alpha
+    app.kubernetes.io/version: v0.0.3-alpha
   name: parca-agent
   namespace: parca
 spec:
@@ -20,7 +20,7 @@ spec:
         app.kubernetes.io/component: observability
         app.kubernetes.io/instance: parca-agent
         app.kubernetes.io/name: parca-agent
-        app.kubernetes.io/version: v0.0.1-alpha
+        app.kubernetes.io/version: v0.0.3-alpha
     spec:
       containers:
       - args:
@@ -37,7 +37,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: ghcr.io/parca-dev/parca-agent:v0.0.1-alpha.1
+        image: ghcr.io/parca-dev/parca-agent:v0.0.1-alpha.3
         name: parca-agent
         securityContext:
           privileged: true

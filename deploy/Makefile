@@ -15,6 +15,5 @@ fmt:
 	find . -name 'vendor' -prune -o -name '*.libsonnet' -print -o -name '*.jsonnet' -print | \
 		xargs -n 1 -- $(JSONNET_FMT) -i
 
-merge-manifest: manifests
-	awk 'BEGINFILE {print "---"}{print}' manifests/parca-agent* > agent-manifest.yaml
-	awk 'BEGINFILE {print "---"}{print}' manifests/parca-server* > server-manifest.yaml
+merge-manifests: manifests
+	awk 'BEGINFILE {print "---"}{print}' manifests/parca-server* > manifest.yaml
