@@ -18,6 +18,7 @@ import (
 	"debug/gosym"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -187,14 +188,50 @@ func hasDWARF(path string) (bool, error) {
 	}
 	defer exe.Close()
 
-	// TODO(kakkoyun): Returns "unexpected EOF" for even populated DWARF sections in certain cases.
-	// Find a more resilient way to check if DWARF exists!
-	data, err := exe.DWARF()
+	data, err := getDWARF(exe)
 	if err != nil {
 		return false, fmt.Errorf("failed to read DWARF sections: %w", err)
 	}
 
-	return data != nil, nil
+	return len(data) > 0, nil
+}
+
+// A simplified and modified version of debug/elf.DWARF().
+func getDWARF(f *elf.File) (map[string][]byte, error) {
+	dwarfSuffix := func(s *elf.Section) string {
+		switch {
+		case strings.HasPrefix(s.Name, ".debug_"):
+			return s.Name[7:]
+		case strings.HasPrefix(s.Name, ".zdebug_"):
+			return s.Name[8:]
+		case strings.HasPrefix(s.Name, "__debug_"): // macos
+			return s.Name[8:]
+		default:
+			return ""
+		}
+	}
+
+	// There are many DWARf sections, but these are the ones
+	// the debug/dwarf package started with "abbrev", "info", "str", "line", "ranges".
+	// Possible canditates for future: "loc", "loclists", "rnglists"
+	sections := map[string]*string{"abbrev": nil, "info": nil, "str": nil, "line": nil, "ranges": nil}
+	data := map[string][]byte{}
+	for _, s := range f.Sections {
+		suffix := dwarfSuffix(s)
+		if suffix == "" {
+			continue
+		}
+		if _, ok := sections[suffix]; !ok {
+			continue
+		}
+		b, err := s.Data()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read debug section: %w", err)
+		}
+		data[suffix] = b
+	}
+
+	return data, nil
 }
 
 func gosymtab(path string) (*gosym.Table, error) {
