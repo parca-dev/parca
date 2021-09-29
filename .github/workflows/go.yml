@@ -45,11 +45,22 @@ jobs:
       - name: Install llvm
         run: sudo apt-get install llvm
 
-      - name: Build
-        run: make build
+      - name: Build UI
+        run: make ui
 
       - name: Format
         run: make format
 
       - name: Test
         run: make go/test
+
+      - name: Build
+        run: make build
+
+      - name: Archive generatated artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: parca-bin
+          if-no-files-found: error
+          path: |
+            bin

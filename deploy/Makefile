@@ -11,10 +11,8 @@ manifests: vendor $(shell find . -name 'vendor' -prune -o -name '*.libsonnet' -p
 	mkdir manifests tilt
 	jsonnet --tla-str version=$(VERSION) -J vendor main.jsonnet -m manifests | xargs -I{} sh -c 'cat {} | gojsontoyaml > {}.yaml; rm -f {}' -- {}
 	jsonnet -J vendor dev.jsonnet -m tilt | xargs -I{} sh -c 'cat {} | gojsontoyaml > {}.yaml; rm -f {}' -- {}
+	awk 'BEGINFILE {print "---"}{print}' manifests/parca-server* > manifests/manifest.yaml
 
 fmt:
 	find . -name 'vendor' -prune -o -name '*.libsonnet' -print -o -name '*.jsonnet' -print | \
 		xargs -n 1 -- $(JSONNET_FMT) -i
-
-merge-manifests: manifests
-	awk 'BEGINFILE {print "---"}{print}' manifests/parca-server* > manifest.yaml

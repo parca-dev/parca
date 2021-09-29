@@ -26,4 +26,11 @@ jobs:
         run: git config --global url."https://parca:${TOKEN}@github.com".insteadOf "https://github.com"
 
       - name: Generate
-        run: cd deploy && make --always-make vendor manifests && git diff --exit-code
+        run: cd deploy && make --always-make vendor manifests
+
+      - name: Archive generatated manifests
+        uses: actions/upload-artifact@v2
+        with:
+          name: manifests
+          path: |
+            deploy/manifests

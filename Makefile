@@ -19,8 +19,8 @@ build: ui go/bin
 .PHONY: clean
 clean:
 	rm -rf bin
-	rm -rf ui/dist
-	rm -rf ui/.next
+	rm -rf ui/packages/app/web/dist
+	rm -rf ui/packages/app/web/.next
 
 .PHONY: go/deps
 go/deps: internal/pprof
@@ -46,9 +46,11 @@ check-license:
 go/test:
 	 go test -v `go list ./... | grep -v ./internal/pprof`
 
-.PHONY: ui
-ui:
+UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/dist/*" -not -path "./ui/packages/app/web/.next/*")
+ui/packages/app/web/dist: $(UI_FILES)
 	cd ui && yarn install && yarn workspace @parca/web build
+
+ui: ui/packages/app/web/dist
 
 .PHONY: proto/lint
 proto/lint:
@@ -82,7 +84,7 @@ push-quay-container:
 
 .PHONY: deploy/manifests
 deploy/manifests:
-	cd deploy && make merge-manifests
+	cd deploy && make manifests
 
 .PHONY: dev/setup
 dev/setup:
