@@ -80,6 +80,99 @@ function(params) {
     },
   },
 
+  podSecurityPolicy: {
+    apiVersion: 'policy/v1beta1',
+    kind: 'PodSecurityPolicy',
+    metadata: {
+      name: prc.config.name,
+    },
+    spec: {
+      allowPrivilegeEscalation: false,
+      fsGroup: {
+        ranges: [
+          {
+            max: 65535,
+            min: 1,
+          },
+        ],
+        rule: 'MustRunAs',
+      },
+      requiredDropCapabilities: [
+        'ALL',
+      ],
+      runAsUser: {
+        rule: 'MustRunAsNonRoot',
+      },
+      seLinux: {
+        rule: 'RunAsAny',
+      },
+      supplementalGroups: {
+        ranges: [
+          {
+            max: 65535,
+            min: 1,
+          },
+        ],
+        rule: 'MustRunAs',
+      },
+      volumes: [
+        'configMap',
+        'emptyDir',
+        'projected',
+        'secret',
+        'downwardAPI',
+        'persistentVolumeClaim',
+      ],
+    },
+  },
+
+  role: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: prc.config.name,
+      namespace: prc.config.namespace,
+      labels: prc.config.commonLabels,
+    },
+    rules: [
+      {
+        apiGroups: [
+          'policy',
+        ],
+        resourceNames: [
+          prc.config.name,
+        ],
+        resources: [
+          'podsecuritypolicies',
+        ],
+        verbs: [
+          'use',
+        ],
+      },
+    ],
+  },
+
+  roleBinding: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'RoleBinding',
+    metadata: {
+      name: prc.config.name,
+      namespace: prc.config.namespace,
+      labels: prc.config.commonLabels,
+    },
+    roleRef: {
+      apiGroup: 'rbac.authorization.k8s.io',
+      kind: 'Role',
+      name: prc.role.metadata.name,
+    },
+    subjects: [
+      {
+        kind: 'ServiceAccount',
+        name: prc.serviceAccount.metadata.name,
+      },
+    ],
+  },
+
   configmap: {
     apiVersion: 'v1',
     kind: 'ConfigMap',
@@ -161,7 +254,7 @@ function(params) {
               configMap: { name: prc.config.configmapName },
             }],
             nodeSelector: {
-              'beta.kubernetes.io/os': 'linux',
+              'kubernetes.io/os': 'linux',
             },
           },
         },

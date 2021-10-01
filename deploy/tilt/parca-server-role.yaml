@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/instance: parca
+    app.kubernetes.io/name: parca
+    app.kubernetes.io/version: dev
+  name: parca
+  namespace: parca
+rules:
+- apiGroups:
+  - policy
+  resourceNames:
+  - parca
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
