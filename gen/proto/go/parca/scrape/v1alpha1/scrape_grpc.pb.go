@@ -18,6 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ScrapeServiceClient interface {
+	// Targets returns the set of scrape targets that are configured
 	Targets(ctx context.Context, in *TargetsRequest, opts ...grpc.CallOption) (*TargetsResponse, error)
 }
 
@@ -42,6 +43,7 @@ func (c *scrapeServiceClient) Targets(ctx context.Context, in *TargetsRequest, o
 // All implementations should embed UnimplementedScrapeServiceServer
 // for forward compatibility
 type ScrapeServiceServer interface {
+	// Targets returns the set of scrape targets that are configured
 	Targets(context.Context, *TargetsRequest) (*TargetsResponse, error)
 }
 

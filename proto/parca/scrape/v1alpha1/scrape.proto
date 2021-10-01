@@ -7,7 +7,10 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "parca/profilestore/v1alpha1/profilestore.proto";
 
+// ScrapeService maintains the set of scrape targets
 service ScrapeService {
+
+    // Targets returns the set of scrape targets that are configured
     rpc Targets(TargetsRequest) returns (TargetsResponse) {
         option (google.api.http) = {
             get: "/targets"
@@ -15,36 +18,74 @@ service ScrapeService {
     }
 }
 
+// TargetsRequest contains the parameters for the set of targets to return
 message TargetsRequest{
+    
+    // State represents the current state of a target
     enum State {
+
+        // STATE_ANY_UNSPECIFIED unspecified
         STATE_ANY_UNSPECIFIED = 0;
+
+        // STATE_ACTIVE target active state
         STATE_ACTIVE  = 1;
+
+        // STATE_DROPPED target dropped state
         STATE_DROPPED = 2;
     }
 
+    // state is the state of targets to returns
     State state = 1;
 }
 
+// TargetsResponse is the set of targets for the given requested state
 message TargetsResponse{
+
+    // targets is the mapping of targets
     map<string,Targets> targets = 1;
 }
 
+// Targets is a list of targets
 message Targets{
+    
+    // targets is a list of targets
     repeated Target targets = 1;
 }
 
+// Target is the scrape target representation
 message Target{
+
+    // discovered_labels are the set of labels for the target that have been discovered
     parca.profilestore.v1alpha1.LabelSet discovered_labels    = 1;
+
+    // labels are the set of labels given for the target
     parca.profilestore.v1alpha1.LabelSet labels               = 2;
+
+    // lase_error is the error message most recently received from a scrape attempt
     string                      last_error           = 3;
+
+    // last_scrape is the time stamp the last scrape request was performed
     google.protobuf.Timestamp   last_scrape          = 4;
+
+    // last_scrape_duration is the duration of the last scrape request
     google.protobuf.Duration    last_scrape_duration = 5;
+
+    // url is the url of the target
     string                      url                  = 6;
 
+    // Health are the possible health values of a target
     enum Health {
+
+        // HEALTH_UNKNOWN_UNSPECIFIED unspecified
         HEALTH_UNKNOWN_UNSPECIFIED = 0;
+
+        // HEALTH_GOOD healthy target
         HEALTH_GOOD    = 1;
+
+        // HEALTH_BAD unhealthy target
         HEALTH_BAD     = 2;
     }
+
+    // health indicates the current health of the target
     Health health = 7;
 }

@@ -18,6 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProfileStoreServiceClient interface {
+	// WriteRaw accepts a raw set of bytes of a pprof file
 	WriteRaw(ctx context.Context, in *WriteRawRequest, opts ...grpc.CallOption) (*WriteRawResponse, error)
 }
 
@@ -42,6 +43,7 @@ func (c *profileStoreServiceClient) WriteRaw(ctx context.Context, in *WriteRawRe
 // All implementations should embed UnimplementedProfileStoreServiceServer
 // for forward compatibility
 type ProfileStoreServiceServer interface {
+	// WriteRaw accepts a raw set of bytes of a pprof file
 	WriteRaw(context.Context, *WriteRawRequest) (*WriteRawResponse, error)
 }
 

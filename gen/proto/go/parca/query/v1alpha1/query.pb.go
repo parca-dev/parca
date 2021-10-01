@@ -23,11 +23,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Mode specifies the type of diff
 type ProfileDiffSelection_Mode int32
 
 const (
+	// MODE_SINGLE_UNSPECIFIED default unspecified
 	ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED ProfileDiffSelection_Mode = 0
-	ProfileDiffSelection_MODE_MERGE              ProfileDiffSelection_Mode = 1
+	// MODE_MERGE merge profile
+	ProfileDiffSelection_MODE_MERGE ProfileDiffSelection_Mode = 1
 )
 
 // Enum value maps for ProfileDiffSelection_Mode.
@@ -69,12 +72,16 @@ func (ProfileDiffSelection_Mode) EnumDescriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{7, 0}
 }
 
+// Mode is the type of query request
 type QueryRequest_Mode int32
 
 const (
+	// MODE_SINGLE_UNSPECIFIED query unspecified
 	QueryRequest_MODE_SINGLE_UNSPECIFIED QueryRequest_Mode = 0
-	QueryRequest_MODE_DIFF               QueryRequest_Mode = 1
-	QueryRequest_MODE_MERGE              QueryRequest_Mode = 2
+	// MODE_DIFF is a diff query
+	QueryRequest_MODE_DIFF QueryRequest_Mode = 1
+	// MODE_MERGE is a merge query
+	QueryRequest_MODE_MERGE QueryRequest_Mode = 2
 )
 
 // Enum value maps for QueryRequest_Mode.
@@ -118,9 +125,11 @@ func (QueryRequest_Mode) EnumDescriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{8, 0}
 }
 
+// ReportType is the type of report to return
 type QueryRequest_ReportType int32
 
 const (
+	// REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
 	QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED QueryRequest_ReportType = 0
 )
 
@@ -161,15 +170,20 @@ func (QueryRequest_ReportType) EnumDescriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{8, 1}
 }
 
+// QueryRangeRequest is the request for a set of profiles matching a query over a time window
 type QueryRangeRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// query is the query string to match profiles against
+	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// start is the start of the query time window
 	Start *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start,proto3" json:"start,omitempty"`
-	End   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
-	Limit uint32                 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	// end is the end of the query time window
+	End *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
+	// limit is the max number of profiles to include in the response
+	Limit uint32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
 }
 
 func (x *QueryRangeRequest) Reset() {
@@ -232,11 +246,13 @@ func (x *QueryRangeRequest) GetLimit() uint32 {
 	return 0
 }
 
+// QueryRangeResponse is the set of matching profile values
 type QueryRangeResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// series is the set of metrics series that satisfy the query range request
 	Series []*MetricsSeries `protobuf:"bytes,1,rep,name=series,proto3" json:"series,omitempty"`
 }
 
@@ -279,13 +295,16 @@ func (x *QueryRangeResponse) GetSeries() []*MetricsSeries {
 	return nil
 }
 
+// MetricsSeries is a set of labels and corresponding sample values
 type MetricsSeries struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// labelset is the set of key value pairs
 	Labelset *v1alpha1.LabelSet `protobuf:"bytes,1,opt,name=labelset,proto3" json:"labelset,omitempty"`
-	Samples  []*MetricsSample   `protobuf:"bytes,2,rep,name=samples,proto3" json:"samples,omitempty"`
+	// samples is the set of top-level cumulative values of the corresponding profiles
+	Samples []*MetricsSample `protobuf:"bytes,2,rep,name=samples,proto3" json:"samples,omitempty"`
 }
 
 func (x *MetricsSeries) Reset() {
@@ -334,13 +353,16 @@ func (x *MetricsSeries) GetSamples() []*MetricsSample {
 	return nil
 }
 
+// MetricsSample is a cumulative value and timestamp of a profile
 type MetricsSample struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// timestamp is the time the profile was ingested
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Value     int64                  `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
+	// value is the cumulative value for the profile
+	Value int64 `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 
 func (x *MetricsSample) Reset() {
@@ -389,14 +411,18 @@ func (x *MetricsSample) GetValue() int64 {
 	return 0
 }
 
+// MergeProfile contains parameters for a merge request
 type MergeProfile struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// query is the query string to match profiles for merge
+	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// start is the beginning of the evaluation time window
 	Start *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start,proto3" json:"start,omitempty"`
-	End   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
+	// end is the end of the evaluation time window
+	End *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
 }
 
 func (x *MergeProfile) Reset() {
@@ -452,13 +478,16 @@ func (x *MergeProfile) GetEnd() *timestamppb.Timestamp {
 	return nil
 }
 
+// SingleProfile contains parameters for a single profile query request
 type SingleProfile struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Time  *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
-	Query string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	// time is the point in time to perform the profile request
+	Time *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
+	// query is the query string to retrieve the profile
+	Query string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 }
 
 func (x *SingleProfile) Reset() {
@@ -507,12 +536,15 @@ func (x *SingleProfile) GetQuery() string {
 	return ""
 }
 
+// DiffProfile contains parameters for a profile diff request
 type DiffProfile struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// a is the first profile to diff
 	A *ProfileDiffSelection `protobuf:"bytes,1,opt,name=a,proto3" json:"a,omitempty"`
+	// b is the second profile to diff
 	B *ProfileDiffSelection `protobuf:"bytes,2,opt,name=b,proto3" json:"b,omitempty"`
 }
 
@@ -562,12 +594,16 @@ func (x *DiffProfile) GetB() *ProfileDiffSelection {
 	return nil
 }
 
+// ProfileDiffSelection contains the parameters of a diff selection
 type ProfileDiffSelection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// mode is the selection of the diff mode
 	Mode ProfileDiffSelection_Mode `protobuf:"varint,1,opt,name=mode,proto3,enum=parca.query.v1alpha1.ProfileDiffSelection_Mode" json:"mode,omitempty"`
+	// options are the available options for a diff selection
+	//
 	// Types that are assignable to Options:
 	//	*ProfileDiffSelection_Merge
 	//	*ProfileDiffSelection_Single
@@ -639,10 +675,12 @@ type isProfileDiffSelection_Options interface {
 }
 
 type ProfileDiffSelection_Merge struct {
+	// merge contains options for a merge request
 	Merge *MergeProfile `protobuf:"bytes,2,opt,name=merge,proto3,oneof"`
 }
 
 type ProfileDiffSelection_Single struct {
+	// single contains options for a single profile request
 	Single *SingleProfile `protobuf:"bytes,3,opt,name=single,proto3,oneof"`
 }
 
@@ -650,17 +688,22 @@ func (*ProfileDiffSelection_Merge) isProfileDiffSelection_Options() {}
 
 func (*ProfileDiffSelection_Single) isProfileDiffSelection_Options() {}
 
+// QueryRequest is a request for a profile query
 type QueryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// mode indicates the type of query performed
 	Mode QueryRequest_Mode `protobuf:"varint,1,opt,name=mode,proto3,enum=parca.query.v1alpha1.QueryRequest_Mode" json:"mode,omitempty"`
+	// options are the options corresponding to the mode
+	//
 	// Types that are assignable to Options:
 	//	*QueryRequest_Diff
 	//	*QueryRequest_Merge
 	//	*QueryRequest_Single
-	Options    isQueryRequest_Options  `protobuf_oneof:"options"`
+	Options isQueryRequest_Options `protobuf_oneof:"options"`
+	// report_type is the type of report to return
 	ReportType QueryRequest_ReportType `protobuf:"varint,5,opt,name=report_type,json=reportType,proto3,enum=parca.query.v1alpha1.QueryRequest_ReportType" json:"report_type,omitempty"`
 }
 
@@ -743,14 +786,17 @@ type isQueryRequest_Options interface {
 }
 
 type QueryRequest_Diff struct {
+	// diff contains the diff query options
 	Diff *DiffProfile `protobuf:"bytes,2,opt,name=diff,proto3,oneof"`
 }
 
 type QueryRequest_Merge struct {
+	// merge contains the merge query options
 	Merge *MergeProfile `protobuf:"bytes,3,opt,name=merge,proto3,oneof"`
 }
 
 type QueryRequest_Single struct {
+	// single contains the single query options
 	Single *SingleProfile `protobuf:"bytes,4,opt,name=single,proto3,oneof"`
 }
 
@@ -760,15 +806,20 @@ func (*QueryRequest_Merge) isQueryRequest_Options() {}
 
 func (*QueryRequest_Single) isQueryRequest_Options() {}
 
+// Flamegraph is the flame graph report type
 type Flamegraph struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Root   *FlamegraphRootNode `protobuf:"bytes,1,opt,name=root,proto3" json:"root,omitempty"`
-	Total  int64               `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
-	Unit   string              `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`
-	Height int32               `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`
+	// root is the root of the flame graph
+	Root *FlamegraphRootNode `protobuf:"bytes,1,opt,name=root,proto3" json:"root,omitempty"`
+	// total is the total weight of the flame graph
+	Total int64 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	// unit is the unit represented by the flame graph
+	Unit string `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`
+	// height is the max height of the graph
+	Height int32 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (x *Flamegraph) Reset() {
@@ -831,14 +882,18 @@ func (x *Flamegraph) GetHeight() int32 {
 	return 0
 }
 
+// FlamegraphRootNode is a root node of a flame graph
 type FlamegraphRootNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Cumulative int64             `protobuf:"varint,1,opt,name=cumulative,proto3" json:"cumulative,omitempty"`
-	Diff       int64             `protobuf:"varint,2,opt,name=diff,proto3" json:"diff,omitempty"`
-	Children   []*FlamegraphNode `protobuf:"bytes,3,rep,name=children,proto3" json:"children,omitempty"`
+	// cumulative is the cumulative value of the graph
+	Cumulative int64 `protobuf:"varint,1,opt,name=cumulative,proto3" json:"cumulative,omitempty"`
+	// diff is the diff
+	Diff int64 `protobuf:"varint,2,opt,name=diff,proto3" json:"diff,omitempty"`
+	// children are the list of the children of the root node
+	Children []*FlamegraphNode `protobuf:"bytes,3,rep,name=children,proto3" json:"children,omitempty"`
 }
 
 func (x *FlamegraphRootNode) Reset() {
@@ -894,15 +949,20 @@ func (x *FlamegraphRootNode) GetChildren() []*FlamegraphNode {
 	return nil
 }
 
+// FlamegraphNode represents a node in the graph
 type FlamegraphNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Meta       *FlamegraphNodeMeta `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
-	Cumulative int64               `protobuf:"varint,2,opt,name=cumulative,proto3" json:"cumulative,omitempty"`
-	Diff       int64               `protobuf:"varint,3,opt,name=diff,proto3" json:"diff,omitempty"`
-	Children   []*FlamegraphNode   `protobuf:"bytes,4,rep,name=children,proto3" json:"children,omitempty"`
+	// meta is the metadata about the node
+	Meta *FlamegraphNodeMeta `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
+	// cumulative is the cumulative value of the node
+	Cumulative int64 `protobuf:"varint,2,opt,name=cumulative,proto3" json:"cumulative,omitempty"`
+	// diff is the diff
+	Diff int64 `protobuf:"varint,3,opt,name=diff,proto3" json:"diff,omitempty"`
+	// children are the child nodes
+	Children []*FlamegraphNode `protobuf:"bytes,4,rep,name=children,proto3" json:"children,omitempty"`
 }
 
 func (x *FlamegraphNode) Reset() {
@@ -965,15 +1025,20 @@ func (x *FlamegraphNode) GetChildren() []*FlamegraphNode {
 	return nil
 }
 
+// FlamegraphNodeMeta is the metadata for a given node
 type FlamegraphNodeMeta struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// location is the location for the code
 	Location *Location `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
-	Mapping  *Mapping  `protobuf:"bytes,2,opt,name=mapping,proto3" json:"mapping,omitempty"`
+	// mapping is the mapping into code
+	Mapping *Mapping `protobuf:"bytes,2,opt,name=mapping,proto3" json:"mapping,omitempty"`
+	// function is the function information
 	Function *Function `protobuf:"bytes,3,opt,name=function,proto3" json:"function,omitempty"`
-	Line     *Line     `protobuf:"bytes,4,opt,name=line,proto3" json:"line,omitempty"`
+	// line is the line location
+	Line *Line `protobuf:"bytes,4,opt,name=line,proto3" json:"line,omitempty"`
 }
 
 func (x *FlamegraphNodeMeta) Reset() {
@@ -1036,15 +1101,20 @@ func (x *FlamegraphNodeMeta) GetLine() *Line {
 	return nil
 }
 
+// Location is the location metadata
 type Location struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id        uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// id ...
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// mapping_id ...
 	MappingId uint64 `protobuf:"varint,2,opt,name=mapping_id,json=mappingId,proto3" json:"mapping_id,omitempty"`
-	Address   uint64 `protobuf:"varint,3,opt,name=address,proto3" json:"address,omitempty"`
-	IsFolded  bool   `protobuf:"varint,4,opt,name=is_folded,json=isFolded,proto3" json:"is_folded,omitempty"`
+	// address ...
+	Address uint64 `protobuf:"varint,3,opt,name=address,proto3" json:"address,omitempty"`
+	// is_folded ...
+	IsFolded bool `protobuf:"varint,4,opt,name=is_folded,json=isFolded,proto3" json:"is_folded,omitempty"`
 }
 
 func (x *Location) Reset() {
@@ -1107,14 +1177,18 @@ func (x *Location) GetIsFolded() bool {
 	return false
 }
 
+// Line ...
 type Line struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// location_id ...
 	LocationId uint64 `protobuf:"varint,1,opt,name=location_id,json=locationId,proto3" json:"location_id,omitempty"`
+	// function_id ...
 	FunctionId uint64 `protobuf:"varint,2,opt,name=function_id,json=functionId,proto3" json:"function_id,omitempty"`
-	Line       int64  `protobuf:"varint,3,opt,name=line,proto3" json:"line,omitempty"`
+	// line ...
+	Line int64 `protobuf:"varint,3,opt,name=line,proto3" json:"line,omitempty"`
 }
 
 func (x *Line) Reset() {
@@ -1170,16 +1244,23 @@ func (x *Line) GetLine() int64 {
 	return 0
 }
 
+// Mapping ...
 type Mapping struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id      uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Start   uint64 `protobuf:"varint,2,opt,name=start,proto3" json:"start,omitempty"`
-	Limit   uint64 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset  uint64 `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
-	File    string `protobuf:"bytes,5,opt,name=file,proto3" json:"file,omitempty"`
+	// id ...
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// start ...
+	Start uint64 `protobuf:"varint,2,opt,name=start,proto3" json:"start,omitempty"`
+	// limit ...
+	Limit uint64 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	// offset ...
+	Offset uint64 `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
+	// file ...
+	File string `protobuf:"bytes,5,opt,name=file,proto3" json:"file,omitempty"`
+	// build_id ...
 	BuildId string `protobuf:"bytes,6,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 }
 
@@ -1257,16 +1338,22 @@ func (x *Mapping) GetBuildId() string {
 	return ""
 }
 
+// Function ...
 type Function struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id         uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name       string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// id ...
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// name ...
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// system_name ...
 	SystemName string `protobuf:"bytes,3,opt,name=system_name,json=systemName,proto3" json:"system_name,omitempty"`
-	Filename   string `protobuf:"bytes,4,opt,name=filename,proto3" json:"filename,omitempty"`
-	StartLine  int64  `protobuf:"varint,5,opt,name=start_line,json=startLine,proto3" json:"start_line,omitempty"`
+	// filename ...
+	Filename string `protobuf:"bytes,4,opt,name=filename,proto3" json:"filename,omitempty"`
+	// start_line ...
+	StartLine int64 `protobuf:"varint,5,opt,name=start_line,json=startLine,proto3" json:"start_line,omitempty"`
 }
 
 func (x *Function) Reset() {
@@ -1336,11 +1423,14 @@ func (x *Function) GetStartLine() int64 {
 	return 0
 }
 
+// QueryResponse is the returned report for the given query
 type QueryResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// report is the generated report
+	//
 	// Types that are assignable to Report:
 	//	*QueryResponse_Flamegraph
 	Report isQueryResponse_Report `protobuf_oneof:"report"`
@@ -1397,19 +1487,24 @@ type isQueryResponse_Report interface {
 }
 
 type QueryResponse_Flamegraph struct {
+	// flamegraph is a flamegraph representation of the report
 	Flamegraph *Flamegraph `protobuf:"bytes,5,opt,name=flamegraph,proto3,oneof"`
 }
 
 func (*QueryResponse_Flamegraph) isQueryResponse_Report() {}
 
+// SeriesRequest is unimplemented
 type SeriesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Match []string               `protobuf:"bytes,1,rep,name=match,proto3" json:"match,omitempty"`
+	// match ...
+	Match []string `protobuf:"bytes,1,rep,name=match,proto3" json:"match,omitempty"`
+	// start ...
 	Start *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start,proto3" json:"start,omitempty"`
-	End   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
+	// end ...
+	End *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
 }
 
 func (x *SeriesRequest) Reset() {
@@ -1465,6 +1560,7 @@ func (x *SeriesRequest) GetEnd() *timestamppb.Timestamp {
 	return nil
 }
 
+// SeriesResponse is unimplemented
 type SeriesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1503,14 +1599,18 @@ func (*SeriesResponse) Descriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{19}
 }
 
+// LabelsRequest are the request values for labels
 type LabelsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Match []string               `protobuf:"bytes,1,rep,name=match,proto3" json:"match,omitempty"`
+	// match are the set of matching strings
+	Match []string `protobuf:"bytes,1,rep,name=match,proto3" json:"match,omitempty"`
+	// start is the start of the time window to perform the query
 	Start *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start,proto3" json:"start,omitempty"`
-	End   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
+	// end is the end of the time window to perform the query
+	End *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
 }
 
 func (x *LabelsRequest) Reset() {
@@ -1566,13 +1666,16 @@ func (x *LabelsRequest) GetEnd() *timestamppb.Timestamp {
 	return nil
 }
 
+// LabelsResponse is the set of matching label names
 type LabelsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	/// label_names are the set of matching label names
 	LabelNames []string `protobuf:"bytes,1,rep,name=label_names,json=labelNames,proto3" json:"label_names,omitempty"`
-	Warnings   []string `protobuf:"bytes,2,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	// warnings is unimplemented
+	Warnings []string `protobuf:"bytes,2,rep,name=warnings,proto3" json:"warnings,omitempty"`
 }
 
 func (x *LabelsResponse) Reset() {
@@ -1621,15 +1724,20 @@ func (x *LabelsResponse) GetWarnings() []string {
 	return nil
 }
 
+// ValuesRequest are the request values for a values request
 type ValuesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	LabelName string                 `protobuf:"bytes,1,opt,name=label_name,json=labelName,proto3" json:"label_name,omitempty"`
-	Match     []string               `protobuf:"bytes,2,rep,name=match,proto3" json:"match,omitempty"`
-	Start     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start,proto3" json:"start,omitempty"`
-	End       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end,proto3" json:"end,omitempty"`
+	// label_name is the label name to match values against
+	LabelName string `protobuf:"bytes,1,opt,name=label_name,json=labelName,proto3" json:"label_name,omitempty"`
+	// match are the set of matching strings to match values against
+	Match []string `protobuf:"bytes,2,rep,name=match,proto3" json:"match,omitempty"`
+	// start is the start of the time window to perform the query
+	Start *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start,proto3" json:"start,omitempty"`
+	// end is the end of the time window to perform the query
+	End *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end,proto3" json:"end,omitempty"`
 }
 
 func (x *ValuesRequest) Reset() {
@@ -1692,13 +1800,16 @@ func (x *ValuesRequest) GetEnd() *timestamppb.Timestamp {
 	return nil
 }
 
+// ValuesResponse are the set of matching values
 type ValuesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// label_values are the set of matching label values
 	LabelValues []string `protobuf:"bytes,1,rep,name=label_values,json=labelValues,proto3" json:"label_values,omitempty"`
-	Warnings    []string `protobuf:"bytes,2,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	// warnings is unimplemented
+	Warnings []string `protobuf:"bytes,2,rep,name=warnings,proto3" json:"warnings,omitempty"`
 }
 
 func (x *ValuesResponse) Reset() {

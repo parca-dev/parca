@@ -51,29 +51,36 @@
       "type": "object",
       "properties": {
         "exists": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "exists indicates if there is debug data present for the given build_id"
         }
-      }
+      },
+      "title": "ExistsResponse returns whether the given build_id has debug info"
     },
     "v1alpha1UploadInfo": {
       "type": "object",
       "properties": {
         "buildId": {
-          "type": "string"
+          "type": "string",
+          "title": "build_id is a unique identifier for the debug data"
         }
-      }
+      },
+      "title": "UploadInfo contains the build_id and other metadata for the debug data"
     },
     "v1alpha1UploadResponse": {
       "type": "object",
       "properties": {
         "buildId": {
-          "type": "string"
+          "type": "string",
+          "title": "build_id is a unique identifier for the debug data"
         },
         "size": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "size is the number of bytes of the debug info"
         }
-      }
+      },
+      "title": "UploadResponse returns the build_id and the size of the uploaded debug info"
     }
   }
 }

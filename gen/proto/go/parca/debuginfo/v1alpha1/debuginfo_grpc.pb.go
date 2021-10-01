@@ -18,7 +18,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DebugInfoServiceClient interface {
+	// Exists returns true if the given build_id has debug info uploaded for it.
 	Exists(ctx context.Context, in *ExistsRequest, opts ...grpc.CallOption) (*ExistsResponse, error)
+	// Upload ingests debug info for a given build_id
 	Upload(ctx context.Context, opts ...grpc.CallOption) (DebugInfoService_UploadClient, error)
 }
 
@@ -77,7 +79,9 @@ func (x *debugInfoServiceUploadClient) CloseAndRecv() (*UploadResponse, error) {
 // All implementations should embed UnimplementedDebugInfoServiceServer
 // for forward compatibility
 type DebugInfoServiceServer interface {
+	// Exists returns true if the given build_id has debug info uploaded for it.
 	Exists(context.Context, *ExistsRequest) (*ExistsResponse, error)
+	// Upload ingests debug info for a given build_id
 	Upload(DebugInfoService_UploadServer) error
 }
 

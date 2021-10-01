@@ -6,3 +6,4 @@ deps:
 lint:
   use:
     - DEFAULT
+    - COMMENTS

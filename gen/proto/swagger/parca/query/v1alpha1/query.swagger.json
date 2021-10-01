@@ -18,6 +18,7 @@
   "paths": {
     "/profiles/labels": {
       "get": {
+        "summary": "Labels returns the set of label names against a given matching string and time frame",
         "operationId": "QueryService_Labels",
         "responses": {
           "200": {
@@ -36,6 +37,7 @@
         "parameters": [
           {
             "name": "match",
+            "description": "match are the set of matching strings.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -46,6 +48,7 @@
           },
           {
             "name": "start",
+            "description": "start is the start of the time window to perform the query.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -53,6 +56,7 @@
           },
           {
             "name": "end",
+            "description": "end is the end of the time window to perform the query.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -66,6 +70,7 @@
     },
     "/profiles/labels/{labelName}/values": {
       "get": {
+        "summary": "Values returns the set of values that match a given label and time frame",
         "operationId": "QueryService_Values",
         "responses": {
           "200": {
@@ -84,12 +89,14 @@
         "parameters": [
           {
             "name": "labelName",
+            "description": "label_name is the label name to match values against",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "match",
+            "description": "match are the set of matching strings to match values against.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -100,6 +107,7 @@
           },
           {
             "name": "start",
+            "description": "start is the start of the time window to perform the query.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -107,6 +115,7 @@
           },
           {
             "name": "end",
+            "description": "end is the end of the time window to perform the query.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -120,6 +129,7 @@
     },
     "/profiles/query": {
       "get": {
+        "summary": "Query performs a profile query",
         "operationId": "QueryService_Query",
         "responses": {
           "200": {
@@ -138,6 +148,7 @@
         "parameters": [
           {
             "name": "mode",
+            "description": "mode indicates the type of query performed.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED query unspecified\n - MODE_DIFF: MODE_DIFF is a diff query\n - MODE_MERGE: MODE_MERGE is a merge query",
             "in": "query",
             "required": false,
             "type": "string",
@@ -150,6 +161,7 @@
           },
           {
             "name": "diff.a.mode",
+            "description": "mode is the selection of the diff mode.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
             "in": "query",
             "required": false,
             "type": "string",
@@ -161,12 +173,14 @@
           },
           {
             "name": "diff.a.merge.query",
+            "description": "query is the query string to match profiles for merge.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "diff.a.merge.start",
+            "description": "start is the beginning of the evaluation time window.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -174,6 +188,7 @@
           },
           {
             "name": "diff.a.merge.end",
+            "description": "end is the end of the evaluation time window.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -181,6 +196,7 @@
           },
           {
             "name": "diff.a.single.time",
+            "description": "time is the point in time to perform the profile request.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -188,12 +204,14 @@
           },
           {
             "name": "diff.a.single.query",
+            "description": "query is the query string to retrieve the profile.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "diff.b.mode",
+            "description": "mode is the selection of the diff mode.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
             "in": "query",
             "required": false,
             "type": "string",
@@ -205,12 +223,14 @@
           },
           {
             "name": "diff.b.merge.query",
+            "description": "query is the query string to match profiles for merge.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "diff.b.merge.start",
+            "description": "start is the beginning of the evaluation time window.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -218,6 +238,7 @@
           },
           {
             "name": "diff.b.merge.end",
+            "description": "end is the end of the evaluation time window.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -225,6 +246,7 @@
           },
           {
             "name": "diff.b.single.time",
+            "description": "time is the point in time to perform the profile request.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -232,18 +254,21 @@
           },
           {
             "name": "diff.b.single.query",
+            "description": "query is the query string to retrieve the profile.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "merge.query",
+            "description": "query is the query string to match profiles for merge.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "merge.start",
+            "description": "start is the beginning of the evaluation time window.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -251,6 +276,7 @@
           },
           {
             "name": "merge.end",
+            "description": "end is the end of the evaluation time window.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -258,6 +284,7 @@
           },
           {
             "name": "single.time",
+            "description": "time is the point in time to perform the profile request.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -265,12 +292,14 @@
           },
           {
             "name": "single.query",
+            "description": "query is the query string to retrieve the profile.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "reportType",
+            "description": "report_type is the type of report to return.\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified",
             "in": "query",
             "required": false,
             "type": "string",
@@ -287,6 +316,7 @@
     },
     "/profiles/query_range": {
       "get": {
+        "summary": "QueryRange performs a profile query over a time range",
         "operationId": "QueryService_QueryRange",
         "responses": {
           "200": {
@@ -305,12 +335,14 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is the query string to match profiles against.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "start",
+            "description": "start is the start of the query time window.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -318,6 +350,7 @@
           },
           {
             "name": "end",
+            "description": "end is the end of the query time window.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -325,6 +358,7 @@
           },
           {
             "name": "limit",
+            "description": "limit is the max number of profiles to include in the response.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -338,6 +372,7 @@
     },
     "/profiles/series": {
       "get": {
+        "summary": "Series is unimplemented",
         "operationId": "QueryService_Series",
         "responses": {
           "200": {
@@ -356,6 +391,7 @@
         "parameters": [
           {
             "name": "match",
+            "description": "match ...",
             "in": "query",
             "required": false,
             "type": "array",
@@ -366,6 +402,7 @@
           },
           {
             "name": "start",
+            "description": "start ...",
             "in": "query",
             "required": false,
             "type": "string",
@@ -373,6 +410,7 @@
           },
           {
             "name": "end",
+            "description": "end ...",
             "in": "query",
             "required": false,
             "type": "string",
@@ -391,18 +429,23 @@
       "enum": [
         "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
       ],
-      "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
+      "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified",
+      "title": "ReportType is the type of report to return"
     },
     "profilestorev1alpha1Label": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "name is the label name"
         },
         "value": {
-          "type": "string"
+          "type": "string",
+          "title": "value is the value for the label name"
         }
-      }
+      },
+      "title": "Label is a key value pair of identifiers"
     },
     "protobufAny": {
       "type": "object",
@@ -421,20 +464,25 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "id ..."
         },
         "mappingId": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "mapping_id ..."
         },
         "address": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "address ..."
         },
         "isFolded": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "is_folded ..."
         }
-      }
+      },
+      "title": "Location is the location metadata"
     },
     "rpcStatus": {
       "type": "object",
@@ -458,111 +506,139 @@
       "type": "object",
       "properties": {
         "a": {
-          "$ref": "#/definitions/v1alpha1ProfileDiffSelection"
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelection",
+          "title": "a is the first profile to diff"
         },
         "b": {
-          "$ref": "#/definitions/v1alpha1ProfileDiffSelection"
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelection",
+          "title": "b is the second profile to diff"
         }
-      }
+      },
+      "title": "DiffProfile contains parameters for a profile diff request"
     },
     "v1alpha1Flamegraph": {
       "type": "object",
       "properties": {
         "root": {
-          "$ref": "#/definitions/v1alpha1FlamegraphRootNode"
+          "$ref": "#/definitions/v1alpha1FlamegraphRootNode",
+          "title": "root is the root of the flame graph"
         },
         "total": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "total is the total weight of the flame graph"
         },
         "unit": {
-          "type": "string"
+          "type": "string",
+          "title": "unit is the unit represented by the flame graph"
         },
         "height": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "height is the max height of the graph"
         }
-      }
+      },
+      "title": "Flamegraph is the flame graph report type"
     },
     "v1alpha1FlamegraphNode": {
       "type": "object",
       "properties": {
         "meta": {
-          "$ref": "#/definitions/v1alpha1FlamegraphNodeMeta"
+          "$ref": "#/definitions/v1alpha1FlamegraphNodeMeta",
+          "title": "meta is the metadata about the node"
         },
         "cumulative": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the node"
         },
         "diff": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "diff is the diff"
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1alpha1FlamegraphNode"
-          }
+          },
+          "title": "children are the child nodes"
         }
-      }
+      },
+      "title": "FlamegraphNode represents a node in the graph"
     },
     "v1alpha1FlamegraphNodeMeta": {
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/queryv1alpha1Location"
+          "$ref": "#/definitions/queryv1alpha1Location",
+          "title": "location is the location for the code"
         },
         "mapping": {
-          "$ref": "#/definitions/v1alpha1Mapping"
+          "$ref": "#/definitions/v1alpha1Mapping",
+          "title": "mapping is the mapping into code"
         },
         "function": {
-          "$ref": "#/definitions/v1alpha1Function"
+          "$ref": "#/definitions/v1alpha1Function",
+          "title": "function is the function information"
         },
         "line": {
-          "$ref": "#/definitions/v1alpha1Line"
+          "$ref": "#/definitions/v1alpha1Line",
+          "title": "line is the line location"
         }
-      }
+      },
+      "title": "FlamegraphNodeMeta is the metadata for a given node"
     },
     "v1alpha1FlamegraphRootNode": {
       "type": "object",
       "properties": {
         "cumulative": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the graph"
         },
         "diff": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "diff is the diff"
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1alpha1FlamegraphNode"
-          }
+          },
+          "title": "children are the list of the children of the root node"
         }
-      }
+      },
+      "title": "FlamegraphRootNode is a root node of a flame graph"
     },
     "v1alpha1Function": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "id ..."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name ..."
         },
         "systemName": {
-          "type": "string"
+          "type": "string",
+          "description": "system_name ..."
         },
         "filename": {
-          "type": "string"
+          "type": "string",
+          "description": "filename ..."
         },
         "startLine": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "start_line ..."
         }
-      }
+      },
+      "description": "Function ..."
     },
     "v1alpha1LabelSet": {
       "type": "object",
@@ -571,9 +647,11 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/profilestorev1alpha1Label"
-          }
+          },
+          "title": "labels are the grouping of labels"
         }
-      }
+      },
+      "title": "LabelSet is a group of labels"
     },
     "v1alpha1LabelsResponse": {
       "type": "object",
@@ -582,116 +660,144 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "/ label_names are the set of matching label names"
         },
         "warnings": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "warnings is unimplemented"
         }
-      }
+      },
+      "title": "LabelsResponse is the set of matching label names"
     },
     "v1alpha1Line": {
       "type": "object",
       "properties": {
         "locationId": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "location_id ..."
         },
         "functionId": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "function_id ..."
         },
         "line": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "line ..."
         }
-      }
+      },
+      "description": "Line ..."
     },
     "v1alpha1Mapping": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "id ..."
         },
         "start": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "start ..."
         },
         "limit": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "limit ..."
         },
         "offset": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "offset ..."
         },
         "file": {
-          "type": "string"
+          "type": "string",
+          "description": "file ..."
         },
         "buildId": {
-          "type": "string"
+          "type": "string",
+          "description": "build_id ..."
         }
-      }
+      },
+      "description": "Mapping ..."
     },
     "v1alpha1MergeProfile": {
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "title": "query is the query string to match profiles for merge"
         },
         "start": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "start is the beginning of the evaluation time window"
         },
         "end": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "end is the end of the evaluation time window"
         }
-      }
+      },
+      "title": "MergeProfile contains parameters for a merge request"
     },
     "v1alpha1MetricsSample": {
       "type": "object",
       "properties": {
         "timestamp": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "timestamp is the time the profile was ingested"
         },
         "value": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "value is the cumulative value for the profile"
         }
-      }
+      },
+      "title": "MetricsSample is a cumulative value and timestamp of a profile"
     },
     "v1alpha1MetricsSeries": {
       "type": "object",
       "properties": {
         "labelset": {
-          "$ref": "#/definitions/v1alpha1LabelSet"
+          "$ref": "#/definitions/v1alpha1LabelSet",
+          "title": "labelset is the set of key value pairs"
         },
         "samples": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1alpha1MetricsSample"
-          }
+          },
+          "title": "samples is the set of top-level cumulative values of the corresponding profiles"
         }
-      }
+      },
+      "title": "MetricsSeries is a set of labels and corresponding sample values"
     },
     "v1alpha1ProfileDiffSelection": {
       "type": "object",
       "properties": {
         "mode": {
-          "$ref": "#/definitions/v1alpha1ProfileDiffSelectionMode"
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelectionMode",
+          "title": "mode is the selection of the diff mode"
         },
         "merge": {
-          "$ref": "#/definitions/v1alpha1MergeProfile"
+          "$ref": "#/definitions/v1alpha1MergeProfile",
+          "title": "merge contains options for a merge request"
         },
         "single": {
-          "$ref": "#/definitions/v1alpha1SingleProfile"
+          "$ref": "#/definitions/v1alpha1SingleProfile",
+          "title": "single contains options for a single profile request"
         }
-      }
+      },
+      "title": "ProfileDiffSelection contains the parameters of a diff selection"
     },
     "v1alpha1ProfileDiffSelectionMode": {
       "type": "string",
@@ -699,7 +805,9 @@
         "MODE_SINGLE_UNSPECIFIED",
         "MODE_MERGE"
       ],
-      "default": "MODE_SINGLE_UNSPECIFIED"
+      "default": "MODE_SINGLE_UNSPECIFIED",
+      "description": "- MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
+      "title": "Mode specifies the type of diff"
     },
     "v1alpha1QueryRangeResponse": {
       "type": "object",
@@ -708,9 +816,11 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1alpha1MetricsSeries"
-          }
+          },
+          "title": "series is the set of metrics series that satisfy the query range request"
         }
-      }
+      },
+      "title": "QueryRangeResponse is the set of matching profile values"
     },
     "v1alpha1QueryRequestMode": {
       "type": "string",
@@ -719,30 +829,38 @@
         "MODE_DIFF",
         "MODE_MERGE"
       ],
-      "default": "MODE_SINGLE_UNSPECIFIED"
+      "default": "MODE_SINGLE_UNSPECIFIED",
+      "description": "- MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED query unspecified\n - MODE_DIFF: MODE_DIFF is a diff query\n - MODE_MERGE: MODE_MERGE is a merge query",
+      "title": "Mode is the type of query request"
     },
     "v1alpha1QueryResponse": {
       "type": "object",
       "properties": {
         "flamegraph": {
-          "$ref": "#/definitions/v1alpha1Flamegraph"
+          "$ref": "#/definitions/v1alpha1Flamegraph",
+          "title": "flamegraph is a flamegraph representation of the report"
         }
-      }
+      },
+      "title": "QueryResponse is the returned report for the given query"
     },
     "v1alpha1SeriesResponse": {
-      "type": "object"
+      "type": "object",
+      "title": "SeriesResponse is unimplemented"
     },
     "v1alpha1SingleProfile": {
       "type": "object",
       "properties": {
         "time": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "time is the point in time to perform the profile request"
         },
         "query": {
-          "type": "string"
+          "type": "string",
+          "title": "query is the query string to retrieve the profile"
         }
-      }
+      },
+      "title": "SingleProfile contains parameters for a single profile query request"
     },
     "v1alpha1ValuesResponse": {
       "type": "object",
@@ -751,15 +869,18 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "label_values are the set of matching label values"
         },
         "warnings": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "warnings is unimplemented"
         }
-      }
+      },
+      "title": "ValuesResponse are the set of matching values"
     }
   }
 }

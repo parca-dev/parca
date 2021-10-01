@@ -18,10 +18,15 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type QueryServiceClient interface {
+	// QueryRange performs a profile query over a time range
 	QueryRange(ctx context.Context, in *QueryRangeRequest, opts ...grpc.CallOption) (*QueryRangeResponse, error)
+	// Query performs a profile query
 	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error)
+	// Series is unimplemented
 	Series(ctx context.Context, in *SeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
+	// Labels returns the set of label names against a given matching string and time frame
 	Labels(ctx context.Context, in *LabelsRequest, opts ...grpc.CallOption) (*LabelsResponse, error)
+	// Values returns the set of values that match a given label and time frame
 	Values(ctx context.Context, in *ValuesRequest, opts ...grpc.CallOption) (*ValuesResponse, error)
 }
 
@@ -82,10 +87,15 @@ func (c *queryServiceClient) Values(ctx context.Context, in *ValuesRequest, opts
 // All implementations should embed UnimplementedQueryServiceServer
 // for forward compatibility
 type QueryServiceServer interface {
+	// QueryRange performs a profile query over a time range
 	QueryRange(context.Context, *QueryRangeRequest) (*QueryRangeResponse, error)
+	// Query performs a profile query
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
+	// Series is unimplemented
 	Series(context.Context, *SeriesRequest) (*SeriesResponse, error)
+	// Labels returns the set of label names against a given matching string and time frame
 	Labels(context.Context, *LabelsRequest) (*LabelsResponse, error)
+	// Values returns the set of values that match a given label and time frame
 	Values(context.Context, *ValuesRequest) (*ValuesResponse, error)
 }
 

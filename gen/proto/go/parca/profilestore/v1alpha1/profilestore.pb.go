@@ -21,12 +21,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// WriteRawRequest writes a pprof profile for a given tenant
 type WriteRawRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Tenant string              `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	// tenant is the given tenant to store the pprof profile under
+	Tenant string `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	// series is a set raw pprof profiles and accompanying labels
 	Series []*RawProfileSeries `protobuf:"bytes,2,rep,name=series,proto3" json:"series,omitempty"`
 }
 
@@ -76,6 +79,7 @@ func (x *WriteRawRequest) GetSeries() []*RawProfileSeries {
 	return nil
 }
 
+// WriteRawResponse is the empty response
 type WriteRawResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -114,12 +118,15 @@ func (*WriteRawResponse) Descriptor() ([]byte, []int) {
 	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{1}
 }
 
+// RawProfileSeries represents the pprof profile and its associated labels
 type RawProfileSeries struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Labels  *LabelSet    `protobuf:"bytes,1,opt,name=labels,proto3" json:"labels,omitempty"`
+	// LabelSet is the key value pairs to identify the corresponding profile
+	Labels *LabelSet `protobuf:"bytes,1,opt,name=labels,proto3" json:"labels,omitempty"`
+	// samples are the set of profile bytes
 	Samples []*RawSample `protobuf:"bytes,2,rep,name=samples,proto3" json:"samples,omitempty"`
 }
 
@@ -169,12 +176,15 @@ func (x *RawProfileSeries) GetSamples() []*RawSample {
 	return nil
 }
 
+// Label is a key value pair of identifiers
 type Label struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name  string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// name is the label name
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// value is the value for the label name
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 
@@ -224,11 +234,13 @@ func (x *Label) GetValue() string {
 	return ""
 }
 
+// LabelSet is a group of labels
 type LabelSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// labels are the grouping of labels
 	Labels []*Label `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty"`
 }
 
@@ -271,11 +283,13 @@ func (x *LabelSet) GetLabels() []*Label {
 	return nil
 }
 
+// RawSample is the set of bytes that correspond to a pprof profile
 type RawSample struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// raw_profile is the set of bytes of the pprof profile
 	RawProfile []byte `protobuf:"bytes,1,opt,name=raw_profile,json=rawProfile,proto3" json:"raw_profile,omitempty"`
 }
 

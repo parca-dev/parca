@@ -20,11 +20,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ExistsRequest request to determine if debug info exists for a given build_id
 type ExistsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// build_id is a unique identifier for the debug data
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 }
 
@@ -67,11 +69,13 @@ func (x *ExistsRequest) GetBuildId() string {
 	return ""
 }
 
+// ExistsResponse returns whether the given build_id has debug info
 type ExistsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// exists indicates if there is debug data present for the given build_id
 	Exists bool `protobuf:"varint,1,opt,name=exists,proto3" json:"exists,omitempty"`
 }
 
@@ -114,11 +118,14 @@ func (x *ExistsResponse) GetExists() bool {
 	return false
 }
 
+// UploadRequest upload debug info
 type UploadRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// data contains either the upload info metadata or the debug info
+	//
 	// Types that are assignable to Data:
 	//	*UploadRequest_Info
 	//	*UploadRequest_ChunkData
@@ -183,10 +190,12 @@ type isUploadRequest_Data interface {
 }
 
 type UploadRequest_Info struct {
+	// info is the metadata for the debug info
 	Info *UploadInfo `protobuf:"bytes,1,opt,name=info,proto3,oneof"`
 }
 
 type UploadRequest_ChunkData struct {
+	// chunk_data is the raw bytes of the debug info
 	ChunkData []byte `protobuf:"bytes,2,opt,name=chunk_data,json=chunkData,proto3,oneof"`
 }
 
@@ -194,11 +203,13 @@ func (*UploadRequest_Info) isUploadRequest_Data() {}
 
 func (*UploadRequest_ChunkData) isUploadRequest_Data() {}
 
+// UploadInfo contains the build_id and other metadata for the debug data
 type UploadInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// build_id is a unique identifier for the debug data
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 }
 
@@ -241,13 +252,16 @@ func (x *UploadInfo) GetBuildId() string {
 	return ""
 }
 
+// UploadResponse returns the build_id and the size of the uploaded debug info
 type UploadResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// build_id is a unique identifier for the debug data
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
-	Size    uint64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	// size is the number of bytes of the debug info
+	Size uint64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
 }
 
 func (x *UploadResponse) Reset() {

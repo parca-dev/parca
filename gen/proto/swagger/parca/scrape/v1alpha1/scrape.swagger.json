@@ -18,6 +18,7 @@
   "paths": {
     "/targets": {
       "get": {
+        "summary": "Targets returns the set of scrape targets that are configured",
         "operationId": "ScrapeService_Targets",
         "responses": {
           "200": {
@@ -36,6 +37,7 @@
         "parameters": [
           {
             "name": "state",
+            "description": "state is the state of targets to returns.\n\n - STATE_ANY_UNSPECIFIED: STATE_ANY_UNSPECIFIED unspecified\n - STATE_ACTIVE: STATE_ACTIVE target active state\n - STATE_DROPPED: STATE_DROPPED target dropped state",
             "in": "query",
             "required": false,
             "type": "string",
@@ -61,7 +63,9 @@
         "HEALTH_GOOD",
         "HEALTH_BAD"
       ],
-      "default": "HEALTH_UNKNOWN_UNSPECIFIED"
+      "default": "HEALTH_UNKNOWN_UNSPECIFIED",
+      "description": "- HEALTH_UNKNOWN_UNSPECIFIED: HEALTH_UNKNOWN_UNSPECIFIED unspecified\n - HEALTH_GOOD: HEALTH_GOOD healthy target\n - HEALTH_BAD: HEALTH_BAD unhealthy target",
+      "title": "Health are the possible health values of a target"
     },
     "TargetsRequestState": {
       "type": "string",
@@ -70,18 +74,23 @@
         "STATE_ACTIVE",
         "STATE_DROPPED"
       ],
-      "default": "STATE_ANY_UNSPECIFIED"
+      "default": "STATE_ANY_UNSPECIFIED",
+      "description": "- STATE_ANY_UNSPECIFIED: STATE_ANY_UNSPECIFIED unspecified\n - STATE_ACTIVE: STATE_ACTIVE target active state\n - STATE_DROPPED: STATE_DROPPED target dropped state",
+      "title": "State represents the current state of a target"
     },
     "profilestorev1alpha1Label": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "name is the label name"
         },
         "value": {
-          "type": "string"
+          "type": "string",
+          "title": "value is the value for the label name"
         }
-      }
+      },
+      "title": "Label is a key value pair of identifiers"
     },
     "protobufAny": {
       "type": "object",
@@ -120,36 +129,46 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/profilestorev1alpha1Label"
-          }
+          },
+          "title": "labels are the grouping of labels"
         }
-      }
+      },
+      "title": "LabelSet is a group of labels"
     },
     "v1alpha1Target": {
       "type": "object",
       "properties": {
         "discoveredLabels": {
-          "$ref": "#/definitions/v1alpha1LabelSet"
+          "$ref": "#/definitions/v1alpha1LabelSet",
+          "title": "discovered_labels are the set of labels for the target that have been discovered"
         },
         "labels": {
-          "$ref": "#/definitions/v1alpha1LabelSet"
+          "$ref": "#/definitions/v1alpha1LabelSet",
+          "title": "labels are the set of labels given for the target"
         },
         "lastError": {
-          "type": "string"
+          "type": "string",
+          "title": "lase_error is the error message most recently received from a scrape attempt"
         },
         "lastScrape": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "last_scrape is the time stamp the last scrape request was performed"
         },
         "lastScrapeDuration": {
-          "type": "string"
+          "type": "string",
+          "title": "last_scrape_duration is the duration of the last scrape request"
         },
         "url": {
-          "type": "string"
+          "type": "string",
+          "title": "url is the url of the target"
         },
         "health": {
-          "$ref": "#/definitions/TargetHealth"
+          "$ref": "#/definitions/TargetHealth",
+          "title": "health indicates the current health of the target"
         }
-      }
+      },
+      "title": "Target is the scrape target representation"
     },
     "v1alpha1Targets": {
       "type": "object",
@@ -158,9 +177,11 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1alpha1Target"
-          }
+          },
+          "title": "targets is a list of targets"
         }
-      }
+      },
+      "title": "Targets is a list of targets"
     },
     "v1alpha1TargetsResponse": {
       "type": "object",
@@ -169,9 +190,11 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1alpha1Targets"
-          }
+          },
+          "title": "targets is the mapping of targets"
         }
-      }
+      },
+      "title": "TargetsResponse is the set of targets for the given requested state"
     }
   }
 }

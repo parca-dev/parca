@@ -24,12 +24,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// State represents the current state of a target
 type TargetsRequest_State int32
 
 const (
+	// STATE_ANY_UNSPECIFIED unspecified
 	TargetsRequest_STATE_ANY_UNSPECIFIED TargetsRequest_State = 0
-	TargetsRequest_STATE_ACTIVE          TargetsRequest_State = 1
-	TargetsRequest_STATE_DROPPED         TargetsRequest_State = 2
+	// STATE_ACTIVE target active state
+	TargetsRequest_STATE_ACTIVE TargetsRequest_State = 1
+	// STATE_DROPPED target dropped state
+	TargetsRequest_STATE_DROPPED TargetsRequest_State = 2
 )
 
 // Enum value maps for TargetsRequest_State.
@@ -73,12 +77,16 @@ func (TargetsRequest_State) EnumDescriptor() ([]byte, []int) {
 	return file_parca_scrape_v1alpha1_scrape_proto_rawDescGZIP(), []int{0, 0}
 }
 
+// Health are the possible health values of a target
 type Target_Health int32
 
 const (
+	// HEALTH_UNKNOWN_UNSPECIFIED unspecified
 	Target_HEALTH_UNKNOWN_UNSPECIFIED Target_Health = 0
-	Target_HEALTH_GOOD                Target_Health = 1
-	Target_HEALTH_BAD                 Target_Health = 2
+	// HEALTH_GOOD healthy target
+	Target_HEALTH_GOOD Target_Health = 1
+	// HEALTH_BAD unhealthy target
+	Target_HEALTH_BAD Target_Health = 2
 )
 
 // Enum value maps for Target_Health.
@@ -122,11 +130,13 @@ func (Target_Health) EnumDescriptor() ([]byte, []int) {
 	return file_parca_scrape_v1alpha1_scrape_proto_rawDescGZIP(), []int{3, 0}
 }
 
+// TargetsRequest contains the parameters for the set of targets to return
 type TargetsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// state is the state of targets to returns
 	State TargetsRequest_State `protobuf:"varint,1,opt,name=state,proto3,enum=parca.scrape.v1alpha1.TargetsRequest_State" json:"state,omitempty"`
 }
 
@@ -169,11 +179,13 @@ func (x *TargetsRequest) GetState() TargetsRequest_State {
 	return TargetsRequest_STATE_ANY_UNSPECIFIED
 }
 
+// TargetsResponse is the set of targets for the given requested state
 type TargetsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// targets is the mapping of targets
 	Targets map[string]*Targets `protobuf:"bytes,1,rep,name=targets,proto3" json:"targets,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -216,11 +228,13 @@ func (x *TargetsResponse) GetTargets() map[string]*Targets {
 	return nil
 }
 
+// Targets is a list of targets
 type Targets struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// targets is a list of targets
 	Targets []*Target `protobuf:"bytes,1,rep,name=targets,proto3" json:"targets,omitempty"`
 }
 
@@ -263,18 +277,26 @@ func (x *Targets) GetTargets() []*Target {
 	return nil
 }
 
+// Target is the scrape target representation
 type Target struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	DiscoveredLabels   *v1alpha1.LabelSet     `protobuf:"bytes,1,opt,name=discovered_labels,json=discoveredLabels,proto3" json:"discovered_labels,omitempty"`
-	Labels             *v1alpha1.LabelSet     `protobuf:"bytes,2,opt,name=labels,proto3" json:"labels,omitempty"`
-	LastError          string                 `protobuf:"bytes,3,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
-	LastScrape         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_scrape,json=lastScrape,proto3" json:"last_scrape,omitempty"`
-	LastScrapeDuration *durationpb.Duration   `protobuf:"bytes,5,opt,name=last_scrape_duration,json=lastScrapeDuration,proto3" json:"last_scrape_duration,omitempty"`
-	Url                string                 `protobuf:"bytes,6,opt,name=url,proto3" json:"url,omitempty"`
-	Health             Target_Health          `protobuf:"varint,7,opt,name=health,proto3,enum=parca.scrape.v1alpha1.Target_Health" json:"health,omitempty"`
+	// discovered_labels are the set of labels for the target that have been discovered
+	DiscoveredLabels *v1alpha1.LabelSet `protobuf:"bytes,1,opt,name=discovered_labels,json=discoveredLabels,proto3" json:"discovered_labels,omitempty"`
+	// labels are the set of labels given for the target
+	Labels *v1alpha1.LabelSet `protobuf:"bytes,2,opt,name=labels,proto3" json:"labels,omitempty"`
+	// lase_error is the error message most recently received from a scrape attempt
+	LastError string `protobuf:"bytes,3,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
+	// last_scrape is the time stamp the last scrape request was performed
+	LastScrape *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_scrape,json=lastScrape,proto3" json:"last_scrape,omitempty"`
+	// last_scrape_duration is the duration of the last scrape request
+	LastScrapeDuration *durationpb.Duration `protobuf:"bytes,5,opt,name=last_scrape_duration,json=lastScrapeDuration,proto3" json:"last_scrape_duration,omitempty"`
+	// url is the url of the target
+	Url string `protobuf:"bytes,6,opt,name=url,proto3" json:"url,omitempty"`
+	// health indicates the current health of the target
+	Health Target_Health `protobuf:"varint,7,opt,name=health,proto3,enum=parca.scrape.v1alpha1.Target_Health" json:"health,omitempty"`
 }
 
 func (x *Target) Reset() {
