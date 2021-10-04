@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -38,6 +39,7 @@ func TestMemSeriesTree(t *testing.T) {
 	k2 := ProfileTreeValueNodeKey{location: "2|1|0"}
 	k3 := ProfileTreeValueNodeKey{location: "3|1|0"}
 	k4 := ProfileTreeValueNodeKey{location: "4|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`}
+	k5 := ProfileTreeValueNodeKey{location: "5|2|1|0"}
 
 	s11 := makeSample(1, []uint64{2, 1})
 
@@ -170,6 +172,132 @@ func TestMemSeriesTree(t *testing.T) {
 					LocationID: 3,
 				}, {
 					keys:       []ProfileTreeValueNodeKey{k4},
+					LocationID: 4,
+				}},
+			}},
+		},
+	}, s.seriesTree)
+
+	// Merging another profileTree onto the existing one with one new Location
+	s5 := makeSample(6, []uint64{5, 2, 1})
+	pt4 := NewProfileTree()
+	pt4.Insert(s5)
+
+	s.timestamps[0] = &timestampChunk{chunk: chunkenc.FromValuesDelta(1, 2, 3, 4)}
+	err = s.seriesTree.Insert(3, pt4)
+	require.NoError(t, err)
+
+	// Merging another profileTree onto the existing one with one new Location
+	s6 := makeSample(7, []uint64{2, 1})
+	pt5 := NewProfileTree()
+	pt5.Insert(s6)
+
+	s.timestamps[0] = &timestampChunk{chunk: chunkenc.FromValuesDelta(1, 2, 3, 4, 5)}
+	err = s.seriesTree.Insert(4, pt5)
+	require.NoError(t, err)
+
+	require.Len(t, s.flatValues, 4)
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3, 0, 0, 7), s.flatValues[k2][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0])
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.flatValues[k3][0])
+	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.flatValues[k5][0])
+
+	require.Len(t, s.cumulativeValues, 6)
+
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4, 6, 7), s.cumulativeValues[k0][0])
+	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4, 6, 7), s.cumulativeValues[k1][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3, 0, 6, 7), s.cumulativeValues[k2][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0])             // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.cumulativeValues[k3][0])        // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.cumulativeValues[k5][0])        // sparse - nothing added
+
+	// The tree itself didn't change by adding more values but no new locations.
+	require.Equal(t, &MemSeriesTree{
+		s: s,
+		Roots: &MemSeriesTreeNode{
+			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
+			LocationID: 0, // root
+			Children: []*MemSeriesTreeNode{{
+				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
+				LocationID: 1,
+				Children: []*MemSeriesTreeNode{{
+					keys:       []ProfileTreeValueNodeKey{k2},
+					LocationID: 2,
+					Children: []*MemSeriesTreeNode{{
+						keys:       []ProfileTreeValueNodeKey{k5},
+						LocationID: 5,
+					}},
+				}, {
+					keys:       []ProfileTreeValueNodeKey{k3},
+					LocationID: 3,
+				}, {
+					keys:       []ProfileTreeValueNodeKey{k4},
+					LocationID: 4,
+				}},
+			}},
+		},
+	}, s.seriesTree)
+}
+
+func TestMemSeriesTreeMany(t *testing.T) {
+	snano := time.Second.Nanoseconds()
+
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	for i := 1; i < 200; i++ {
+		pt1 := NewProfileTree()
+		pt1.Insert(makeSample(int64(i), []uint64{2, 1}))
+		pt1.Insert(makeSample(2*int64(i), []uint64{4, 1}))
+
+		err = app.Append(context.Background(), &Profile{
+			Meta: InstantProfileMeta{
+				Timestamp: int64(i),
+				Duration:  snano,
+				Period:    snano,
+			},
+			Tree: pt1,
+		})
+		require.NoError(t, err)
+	}
+
+	require.Len(t, s.flatValues, 2)
+
+	it := NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "2|1|0"}])
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(i), it.At())
+	}
+
+	it = NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "4|1|0"}])
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, 2*int64(i), it.At())
+	}
+
+	require.Len(t, s.cumulativeValues, 4)
+	it = NewMultiChunkIterator(s.cumulativeValues[ProfileTreeValueNodeKey{location: "0"}])
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(i)+2*int64(i), it.At())
+	}
+
+	// The tree itself didn't change by adding more values but no new locations.
+	require.Equal(t, &MemSeriesTree{
+		s: s,
+		Roots: &MemSeriesTreeNode{
+			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
+			LocationID: 0, // root
+			Children: []*MemSeriesTreeNode{{
+				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
+				LocationID: 1,
+				Children: []*MemSeriesTreeNode{{
+					keys:       []ProfileTreeValueNodeKey{{location: "2|1|0"}},
+					LocationID: 2,
+				}, {
+					keys:       []ProfileTreeValueNodeKey{{location: "4|1|0"}},
 					LocationID: 4,
 				}},
 			}},

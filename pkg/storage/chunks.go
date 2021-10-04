@@ -21,26 +21,33 @@ import (
 // then it'll return 0 for sparseness.
 // MultiChunksIterator implements the MemSeriesValuesIterator.
 type MultiChunksIterator struct {
-	chunks     []chunkenc.Chunk
-	cit        chunkenc.Iterator
-	readChunks uint16
-	read       uint64 // read samples, need to track for seeking.
+	chunks []chunkenc.Chunk
+	cit    chunkenc.Iterator
+	read   uint64 // read samples, need to track for seeking.
 
-	val    int64
-	sparse bool
-	err    error
+	val int64
+	err error
 }
 
 func NewMultiChunkIterator(chunks []chunkenc.Chunk) *MultiChunksIterator {
 	return &MultiChunksIterator{chunks: chunks}
 }
 
+func (it *MultiChunksIterator) Read() uint64 {
+	return it.read
+}
+
 func (it *MultiChunksIterator) Next() bool {
-	if it.cit == nil {
-		it.cit = it.chunks[it.readChunks].Iterator(it.cit)
-		it.readChunks++
+	// Take the next chunk when the full samplesPerChunk have been read of the
+	// "current" chunk.
+	currentChunk := it.read / samplesPerChunk
+
+	if it.read%samplesPerChunk == 0 && currentChunk < uint64(len(it.chunks)) {
+		it.cit = it.chunks[currentChunk].Iterator(it.cit)
 	}
-	for it.cit.Next() {
+
+	next := it.cit.Next()
+	if next {
 		it.val = it.cit.At()
 		it.read++
 		return true
@@ -50,31 +57,15 @@ func (it *MultiChunksIterator) Next() bool {
 		return false
 	}
 
-	if it.readChunks < uint16(len(it.chunks)) {
-		it.cit = it.chunks[it.readChunks].Iterator(it.cit)
-		it.readChunks++
+	// The chunk doesn't have any more samples, but there are more chunks.
+	// This means the current chunk is now sparse.
+	it.val = 0
+	it.read++
 
-		// We need to immediately read the next value.
-		for it.cit.Next() {
-			it.val = it.cit.At()
-			it.read++
-			return true
-		}
-		// Rare case were we have an empty next chunk.
-		return false
-	}
-
-	it.sparse = true
-
-	// We've readChunks everything from all chunks.
-	return false
+	return true
 }
 
 func (it *MultiChunksIterator) At() int64 {
-	if it.sparse {
-		return 0
-	}
-
 	return it.val
 }
 
@@ -106,14 +97,12 @@ func (it *MultiChunksIterator) Seek(index uint64) bool {
 }
 
 func (it *MultiChunksIterator) Reset(chunks []chunkenc.Chunk) {
-	it.readChunks = 0
 	it.read = 0
 	it.val = 0
-	it.sparse = false
 	it.err = nil
 
 	it.chunks = chunks
-	it.cit = it.chunks[it.readChunks].Iterator(it.cit)
+	it.cit = nil
 }
 
 // timestampChunk wraps a chunkenc.Chunk to additionally track minTime and maxTime.

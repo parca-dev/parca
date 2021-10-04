@@ -168,6 +168,9 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 	ctx, span := a.s.tracer.Start(ctx, "Append")
 	defer span.End()
 
+	a.s.mu.Lock()
+	defer a.s.mu.Unlock()
+
 	if a.s.numSamples == 0 {
 		a.s.periodType = p.Meta.PeriodType
 		a.s.sampleType = p.Meta.SampleType
@@ -188,7 +191,6 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 	}
 
 	newChunks := false
-	a.s.mu.Lock()
 	if len(a.s.timestamps) == 0 {
 		newChunks = true
 	} else if a.s.timestamps[len(a.s.timestamps)-1].chunk.NumSamples() == 0 {
@@ -196,20 +198,10 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 	} else if a.s.timestamps[len(a.s.timestamps)-1].chunk.NumSamples() >= samplesPerChunk {
 		newChunks = true
 	}
-	a.s.mu.Unlock()
 
 	if newChunks {
 		_, newChunksSpan := a.s.tracer.Start(ctx, "newChunks")
 		defer newChunksSpan.End()
-
-		a.s.mu.Lock()
-
-		for k := range a.s.cumulativeValues {
-			a.s.cumulativeValues[k] = append(a.s.cumulativeValues[k], a.s.chunkPool.GetXOR())
-		}
-		for k := range a.s.flatValues {
-			a.s.flatValues[k] = append(a.s.flatValues[k], a.s.chunkPool.GetXOR())
-		}
 
 		tc := a.s.chunkPool.GetTimestamp()
 		tc.minTime = timestamp
@@ -217,7 +209,6 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 		a.s.timestamps = append(a.s.timestamps, tc)
 		timeApp, err := a.s.timestamps[len(a.s.timestamps)-1].chunk.Appender()
 		if err != nil {
-			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next timestamp chunk: %w", err)
 		}
 		a.timestamps = timeApp
@@ -225,7 +216,6 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 		a.s.durations = append(a.s.durations, a.s.chunkPool.GetRLE())
 		durationApp, err := a.s.durations[len(a.s.durations)-1].Appender()
 		if err != nil {
-			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next durations chunk: %w", err)
 		}
 		a.duration = durationApp
@@ -233,11 +223,20 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 		a.s.periods = append(a.s.periods, a.s.chunkPool.GetRLE())
 		periodsApp, err := a.s.periods[len(a.s.periods)-1].Appender()
 		if err != nil {
-			a.s.mu.Unlock()
 			return fmt.Errorf("failed to add the next periods chunk: %w", err)
 		}
 		a.periods = periodsApp
-		a.s.mu.Unlock()
+
+		for k := range a.s.cumulativeValues {
+			for len(a.s.cumulativeValues[k]) < len(a.s.timestamps) {
+				a.s.cumulativeValues[k] = append(a.s.cumulativeValues[k], a.s.chunkPool.GetXOR())
+			}
+		}
+		for k := range a.s.flatValues {
+			for len(a.s.flatValues[k]) < len(a.s.timestamps) {
+				a.s.flatValues[k] = append(a.s.flatValues[k], a.s.chunkPool.GetXOR())
+			}
+		}
 
 		newChunksSpan.End()
 	}
@@ -268,14 +267,12 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 	a.duration.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Duration)
 	a.periods.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Period)
 
-	a.s.mu.Lock()
 	if a.s.timestamps[len(a.s.timestamps)-1].minTime > timestamp {
 		a.s.timestamps[len(a.s.timestamps)-1].minTime = timestamp
 	}
 	if a.s.timestamps[len(a.s.timestamps)-1].maxTime < timestamp {
 		a.s.timestamps[len(a.s.timestamps)-1].maxTime = timestamp
 	}
-	a.s.mu.Unlock()
 
 	// Set the timestamp as minTime if timestamp != 0
 	if a.s.minTime == math.MaxInt64 && timestamp != 0 {

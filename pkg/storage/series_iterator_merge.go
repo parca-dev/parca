@@ -34,7 +34,17 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 	ms.s.mu.RLock()
 	defer ms.s.mu.RUnlock()
 
-	chunkStart, chunkEnd := ms.s.timestamps.indexRange(ms.mint, ms.maxt)
+	mint := ms.mint
+	if mint < ms.s.minTime {
+		mint = ms.s.minTime
+	}
+
+	maxt := ms.maxt
+	if maxt > ms.s.maxTime {
+		maxt = ms.s.maxTime
+	}
+
+	chunkStart, chunkEnd := ms.s.timestamps.indexRange(mint, maxt)
 	timestamps := make([]chunkenc.Chunk, 0, chunkEnd-chunkStart)
 	for _, t := range ms.s.timestamps[chunkStart:chunkEnd] {
 		timestamps = append(timestamps, t.chunk)
@@ -42,7 +52,7 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 
 	sl := &SliceProfileSeriesIterator{i: -1}
 
-	start, end, err := getIndexRange(NewMultiChunkIterator(timestamps), ms.mint, ms.maxt)
+	start, end, err := getIndexRange(NewMultiChunkIterator(timestamps), ms.s.numSamples, mint, maxt)
 	if err != nil {
 		sl.err = err
 		return sl

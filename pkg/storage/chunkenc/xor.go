@@ -221,8 +221,7 @@ type xorIterator struct {
 	leading  uint8
 	trailing uint8
 
-	sparse bool
-	err    error
+	err error
 }
 
 func (it *xorIterator) Seek(index uint16) bool {
@@ -239,14 +238,15 @@ func (it *xorIterator) Seek(index uint16) bool {
 }
 
 func (it *xorIterator) At() int64 {
-	if it.sparse {
-		return 0
-	}
 	return it.val
 }
 
 func (it *xorIterator) Err() error {
 	return it.err
+}
+
+func (it *xorIterator) Read() uint64 {
+	return uint64(it.numRead)
 }
 
 func (it *xorIterator) Reset(b []byte) {
@@ -259,13 +259,11 @@ func (it *xorIterator) Reset(b []byte) {
 	it.val = 0
 	it.leading = 0
 	it.trailing = 0
-	it.sparse = false
 	it.err = nil
 }
 
 func (it *xorIterator) Next() bool {
 	if it.err != nil || it.numRead == it.numTotal {
-		it.sparse = true
 		return false
 	}
 

@@ -47,19 +47,100 @@ func TestMultiChunks(t *testing.T) {
 	it.Seek(9)
 	require.Equal(t, int64(129), it.At())
 
-	seen := int64(130)
-	for it.Next() {
-		require.Equal(t, seen, it.At())
-		seen++
+	for i := int64(130); i <= 1_000; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, i, it.At())
 	}
 
 	require.NoError(t, it.Err())
-	require.Equal(t, int64(1_001), seen)
 
 	// check for sparseness. it should return 0
-	require.False(t, it.Next())
+	require.True(t, it.Next())
 	require.NoError(t, it.Err())
 	require.Equal(t, int64(0), it.At())
+}
+
+func TestMultiChunksSparse(t *testing.T) {
+	x1 := chunkenc.NewXORChunk()
+	app1, err := x1.Appender()
+	require.NoError(t, err)
+	app1.Append(1)
+
+	x2 := chunkenc.NewXORChunk()
+	app2, err := x2.Appender()
+	require.NoError(t, err)
+	app2.Append(1)
+
+	it := NewMultiChunkIterator(
+		[]chunkenc.Chunk{
+			x1,
+			x2,
+		},
+	)
+
+	for i := 0; i < 121; i++ {
+		require.True(t, it.Next())
+		if i == 120 {
+			require.Equal(t, int64(1), it.At())
+		} else if i == 0 {
+			require.Equal(t, int64(1), it.At())
+		} else {
+			require.Equal(t, int64(0), it.At())
+		}
+	}
+}
+
+func TestMultiChunksSparseMiddle(t *testing.T) {
+	x1 := chunkenc.NewXORChunk()
+	app1, err := x1.Appender()
+	require.NoError(t, err)
+	app1.AppendAt(50, 2)
+
+	x2 := chunkenc.NewXORChunk()
+	app2, err := x2.Appender()
+	require.NoError(t, err)
+	app2.Append(1)
+
+	it := NewMultiChunkIterator(
+		[]chunkenc.Chunk{
+			x1,
+			x2,
+		},
+	)
+
+	for i := 0; i < 121; i++ {
+		require.True(t, it.Next())
+		if i == 120 {
+			require.Equal(t, int64(1), it.At())
+		} else if i == 50 {
+			require.Equal(t, int64(2), it.At())
+		} else {
+			require.Equal(t, int64(0), it.At())
+		}
+	}
+}
+
+func TestMultiChunksEmptyFirst(t *testing.T) {
+	x := chunkenc.NewXORChunk()
+	app, err := x.Appender()
+	require.NoError(t, err)
+	app.Append(1)
+
+	it := NewMultiChunkIterator(
+		[]chunkenc.Chunk{
+			chunkenc.NewXORChunk(),
+			x,
+		},
+	)
+
+	for i := 0; i < 121; i++ {
+		require.True(t, it.Next())
+		if i == 120 {
+			require.Equal(t, int64(1), it.At())
+		} else {
+			require.Equal(t, int64(0), it.At())
+		}
+	}
 }
 
 func TestTimestampChunks_indexRange(t *testing.T) {

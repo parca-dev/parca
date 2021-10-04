@@ -199,20 +199,20 @@ type deltaIterator struct {
 
 	v int64
 
-	delta  uint64
-	sparse bool
-	err    error
+	delta uint64
+	err   error
 }
 
 func (it *deltaIterator) At() int64 {
-	if it.sparse {
-		return 0
-	}
 	return it.v
 }
 
 func (it *deltaIterator) Err() error {
 	return it.err
+}
+
+func (it deltaIterator) Read() uint64 {
+	return uint64(it.read)
 }
 
 func (it *deltaIterator) Seek(index uint16) bool {
@@ -238,13 +238,11 @@ func (it *deltaIterator) Reset(b []byte) {
 	it.v = 0
 
 	it.delta = 0
-	it.sparse = false
 	it.err = nil
 }
 
 func (it *deltaIterator) Next() bool {
 	if it.err != nil || it.read == it.total {
-		it.sparse = true
 		return false
 	}
 

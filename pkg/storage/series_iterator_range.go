@@ -14,6 +14,9 @@
 package storage
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
@@ -41,7 +44,7 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 	}
 
 	it := NewMultiChunkIterator(timestamps)
-	start, end, err := getIndexRange(it, rs.mint, rs.maxt)
+	start, end, err := getIndexRange(it, rs.s.numSamples, rs.mint, rs.maxt)
 	if err != nil {
 		return &MemRangeSeriesIterator{err: err}
 	}
@@ -171,14 +174,43 @@ func (it *MemRangeSeriesIterator) Next() bool {
 	}
 
 	if !it.timestampsIterator.Next() {
+		it.err = errors.New("unexpected end of timestamps iterator")
+		return false
+	}
+
+	if it.timestampsIterator.Err() != nil {
+		it.err = fmt.Errorf("next timestamp: %w", it.timestampsIterator.Err())
 		return false
 	}
 
 	if !it.durationsIterator.Next() {
+		it.err = errors.New("unexpected end of durations iterator")
+		return false
+	}
+
+	if it.durationsIterator.Err() != nil {
+		it.err = fmt.Errorf("next duration: %w", it.durationsIterator.Err())
 		return false
 	}
 
 	if !it.periodsIterator.Next() {
+		it.err = errors.New("unexpected end of periods iterator")
+		return false
+	}
+
+	if it.periodsIterator.Err() != nil {
+		it.err = fmt.Errorf("next period: %w", it.periodsIterator.Err())
+		return false
+	}
+
+	read := it.timestampsIterator.Read()
+
+	if dread := it.durationsIterator.Read(); dread != read {
+		it.err = fmt.Errorf("duration iterator in wrong iteration, expected %d got %d", read, dread)
+		return false
+	}
+	if pread := it.periodsIterator.Read(); pread != read {
+		it.err = fmt.Errorf("period iterator in wrong iteration, expected %d got %d", read, pread)
 		return false
 	}
 
@@ -188,11 +220,37 @@ func (it *MemRangeSeriesIterator) Next() bool {
 			child := iit.at()
 
 			for _, v := range child.flatValues {
-				v.Values.Next()
+				if !v.Values.Next() {
+					it.err = errors.New("unexpected end of flat value iterator")
+					return false
+				}
+
+				if v.Values.Err() != nil {
+					it.err = fmt.Errorf("next flat value: %w", v.Values.Err())
+					return false
+				}
+
+				if vread := v.Values.Read(); vread != read {
+					it.err = fmt.Errorf("flat value iterator in wrong iteration, expected %d got %d", read, vread)
+					return false
+				}
 			}
 
 			for _, v := range child.cumulativeValues {
-				v.Values.Next()
+				if !v.Values.Next() {
+					it.err = errors.New("unexpected end of cumulative value iterator")
+					return false
+				}
+
+				if v.Values.Err() != nil {
+					it.err = fmt.Errorf("next cumulative value: %w", v.Values.Err())
+					return false
+				}
+
+				if vread := v.Values.Read(); vread != read {
+					it.err = fmt.Errorf("wrong iteration for cumulative value, expected: %d, got: %d", read, vread)
+					return false
+				}
 			}
 
 			iit.StepInto()

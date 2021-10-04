@@ -140,7 +140,7 @@ func TestMemMergeSeriesTree(t *testing.T) {
 	ms := &MemMergeSeries{
 		s:    s,
 		mint: 0,
-		maxt: 2,
+		maxt: 3,
 	}
 	it := ms.Iterator()
 	require.True(t, it.Next())

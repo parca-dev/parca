@@ -237,37 +237,37 @@ func TestIteratorConsistency(t *testing.T) {
 func TestGetIndexRange(t *testing.T) {
 	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
 
-	start, end, err := getIndexRange(c.Iterator(nil), 1, 9)
+	start, end, err := getIndexRange(c.Iterator(nil), 5, 1, 9)
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), start)
 	require.Equal(t, uint64(5), end)
 
-	start, end, err = getIndexRange(c.Iterator(nil), 2, 9)
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 2, 9)
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), start)
 	require.Equal(t, uint64(5), end)
 
-	start, end, err = getIndexRange(c.Iterator(nil), 3, 6)
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 3, 6)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), start)
 	require.Equal(t, uint64(3), end)
 
-	start, end, err = getIndexRange(c.Iterator(nil), 3, 7)
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 3, 7)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), start)
 	require.Equal(t, uint64(4), end)
 
-	start, end, err = getIndexRange(c.Iterator(nil), 3, 8)
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 3, 8)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), start)
 	require.Equal(t, uint64(5), end)
 
-	start, end, err = getIndexRange(c.Iterator(nil), 3, 9)
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 3, 9)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), start)
 	require.Equal(t, uint64(5), end)
 
-	start, end, err = getIndexRange(c.Iterator(nil), 5, 7)
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 5, 7)
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), start)
 	require.Equal(t, uint64(4), end)
@@ -275,7 +275,7 @@ func TestGetIndexRange(t *testing.T) {
 
 func TestIteratorRangeSum(t *testing.T) {
 	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
-	start, end, err := getIndexRange(c.Iterator(nil), 3, 6)
+	start, end, err := getIndexRange(c.Iterator(nil), 5, 3, 6)
 	require.NoError(t, err)
 
 	sum, err := iteratorRangeSum(c.Iterator(nil), start, end)

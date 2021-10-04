@@ -40,7 +40,7 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 	}
 
 	it := NewMultiChunkIterator(timestamps)
-	start, end, err := getIndexRange(it, rs.mint, rs.maxt)
+	start, end, err := getIndexRange(it, rs.s.numSamples, rs.mint, rs.maxt)
 	if err != nil {
 		return &MemRangeSeriesIterator{err: err}
 	}
