@@ -16,6 +16,10 @@ package storage
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"runtime/pprof"
 	"testing"
 	"time"
@@ -91,6 +95,110 @@ func TestDB(t *testing.T) {
 			t.Fatalf("expected to see %s but did not", labels)
 		}
 	}
+}
+
+func TestDBConsistency(t *testing.T) {
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		"testdb",
+	)
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+	db := OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
+	ctx := context.Background()
+	app, err := db.Appender(ctx, labels.FromStrings("__name__", "cpu"))
+	require.NoError(t, err)
+
+	profiles := []*Profile{}
+	dir := "./testdata/many-samples"
+	items, err := ioutil.ReadDir(dir)
+	require.NoError(t, err)
+	j := 0
+	for _, item := range items {
+		if item.IsDir() {
+			continue
+		}
+
+		f, err := os.Open(filepath.Join(dir, item.Name()))
+		require.NoError(t, err)
+
+		p, err := profile.Parse(f)
+		require.NoError(t, err)
+		require.NoError(t, f.Close())
+
+		prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+		require.NoError(t, err)
+
+		profiles = append(profiles, prof)
+
+		require.NoError(t, app.Append(ctx, prof))
+		j++
+	}
+
+	q := db.Querier(
+		ctx,
+		profiles[0].Meta.Timestamp-1,
+		profiles[len(profiles)-1].Meta.Timestamp+1,
+	)
+	m, err := labels.NewMatcher(labels.MatchEqual, "__name__", "cpu")
+	require.NoError(t, err)
+
+	set := q.Select(nil, m)
+	i := 0
+	for set.Next() {
+		series := set.At()
+		it := series.Iterator()
+		for it.Next() {
+			p := it.At()
+			cp := CopyInstantProfile(p)
+			require.NoError(t, validateProfile(cp), "sample #%d not valid", i)
+			i++
+		}
+		require.NoError(t, it.Err())
+	}
+	require.NoError(t, set.Err())
+	require.Equal(t, j, i)
+}
+
+func validateProfile(p *Profile) error {
+	it := NewProfileTreeIterator(p.Tree)
+
+	for it.HasMore() {
+		if it.NextChild() {
+			n := it.At().(*ProfileTreeNode)
+			cumulative := n.CumulativeValue()
+			childrenCumulative := int64(0)
+			for _, c := range n.Children {
+				childrenCumulative += c.CumulativeValue()
+			}
+			if childrenCumulative > cumulative {
+				stackTrace := []int{}
+				for _, e := range it.stack {
+					stackTrace = append(stackTrace, int(e.node.LocationID()))
+				}
+				children := []struct {
+					loc int
+					cum int
+				}{}
+				for _, c := range n.Children {
+					children = append(children, struct {
+						loc int
+						cum int
+					}{loc: int(c.LocationID()), cum: int(c.CumulativeValue())})
+				}
+				return fmt.Errorf("unexpected sum %d of children %v at %v, node %d, expected %d", childrenCumulative, children, stackTrace, n.LocationID(), cumulative)
+			}
+
+			it.StepInto()
+			continue
+		}
+		it.StepUp()
+	}
+
+	return nil
 }
 
 func TestSliceSeriesSet(t *testing.T) {

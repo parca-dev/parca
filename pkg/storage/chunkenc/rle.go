@@ -119,9 +119,8 @@ type rleIterator struct {
 	// stores how many different values we have yet to see
 	vals uint16
 
-	v      int64
-	sparse bool
-	err    error
+	v   int64
+	err error
 }
 
 func (c *RLEChunk) iterator(it Iterator) *rleIterator {
@@ -139,7 +138,6 @@ func (c *RLEChunk) iterator(it Iterator) *rleIterator {
 
 func (it *rleIterator) Next() bool {
 	if it.err != nil || it.read == it.total {
-		it.sparse = true
 		return false
 	}
 
@@ -194,14 +192,15 @@ func (it *rleIterator) Seek(index uint16) bool {
 }
 
 func (it *rleIterator) At() int64 {
-	if it.sparse {
-		return 0
-	}
 	return it.v
 }
 
 func (it *rleIterator) Err() error {
 	return it.err
+}
+
+func (it *rleIterator) Read() uint64 {
+	return uint64(it.read)
 }
 
 func (it *rleIterator) Reset(b []byte) {
@@ -214,7 +213,6 @@ func (it *rleIterator) Reset(b []byte) {
 
 	it.lengthLeft = 0
 	it.v = 0
-	it.sparse = false
 	it.err = nil
 }
 

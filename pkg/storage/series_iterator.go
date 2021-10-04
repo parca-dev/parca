@@ -13,7 +13,12 @@
 
 package storage
 
-import "github.com/parca-dev/parca/pkg/storage/chunkenc"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+)
 
 // MemSeriesValuesIterator is an abstraction on iterator over values from possible multiple chunks.
 // It most likely is an abstraction like the MultiChunksIterator over []chunkenc.Chunk.
@@ -24,6 +29,8 @@ type MemSeriesValuesIterator interface {
 	At() int64
 	// Err returns the underlying errors. Next will return false when encountering errors.
 	Err() error
+	// Read returns how many iterations the iterator has read at any given moment.
+	Read() uint64
 }
 
 type MemSeriesIterator struct {
@@ -31,6 +38,7 @@ type MemSeriesIterator struct {
 	timestampsIterator MemSeriesValuesIterator
 	durationsIterator  MemSeriesValuesIterator
 	periodsIterator    MemSeriesValuesIterator
+	err                error
 
 	series     *MemSeries
 	numSamples uint16
@@ -39,8 +47,6 @@ type MemSeriesIterator struct {
 func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	root := &MemSeriesIteratorTreeNode{}
 
-	// TODO: this might be still wrong in case there are multiple roots with different labels?
-	// We might be never reading roots with labels...
 	rootKey := ProfileTreeValueNodeKey{location: "0"}
 	s.mu.RLock()
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
@@ -130,14 +136,43 @@ func (it *MemSeriesIterator) Next() bool {
 	}
 
 	if !it.timestampsIterator.Next() {
+		it.err = errors.New("unexpected end of timestamps iterator")
+		return false
+	}
+
+	if it.timestampsIterator.Err() != nil {
+		it.err = fmt.Errorf("next timestamp: %w", it.timestampsIterator.Err())
 		return false
 	}
 
 	if !it.durationsIterator.Next() {
+		it.err = errors.New("unexpected end of durations iterator")
+		return false
+	}
+
+	if it.durationsIterator.Err() != nil {
+		it.err = fmt.Errorf("next duration: %w", it.durationsIterator.Err())
 		return false
 	}
 
 	if !it.periodsIterator.Next() {
+		it.err = errors.New("unexpected end of periods iterator")
+		return false
+	}
+
+	if it.periodsIterator.Err() != nil {
+		it.err = fmt.Errorf("next period: %w", it.periodsIterator.Err())
+		return false
+	}
+
+	read := it.timestampsIterator.Read()
+
+	if dread := it.durationsIterator.Read(); dread != read {
+		it.err = fmt.Errorf("wrong iteration for duration, expected: %d, got: %d", read, dread)
+		return false
+	}
+	if pread := it.periodsIterator.Read(); pread != read {
+		it.err = fmt.Errorf("wrong iteration for periods, expected: %d, got: %d", read, pread)
 		return false
 	}
 
@@ -147,11 +182,37 @@ func (it *MemSeriesIterator) Next() bool {
 			child := iit.at()
 
 			for _, v := range child.flatValues {
-				v.Values.Next()
+				if !v.Values.Next() {
+					it.err = errors.New("unexpected end of flat value iterator")
+					return false
+				}
+
+				if v.Values.Err() != nil {
+					it.err = fmt.Errorf("next flat value: %w", v.Values.Err())
+					return false
+				}
+
+				if vread := v.Values.Read(); vread != read {
+					it.err = fmt.Errorf("wrong iteration for flat value, expected: %d, got: %d", read, vread)
+					return false
+				}
 			}
 
 			for _, v := range child.cumulativeValues {
-				v.Values.Next()
+				if !v.Values.Next() {
+					it.err = errors.New("unexpected end of cumulative value iterator")
+					return false
+				}
+
+				if v.Values.Err() != nil {
+					it.err = fmt.Errorf("next cumulative value: %w", v.Values.Err())
+					return false
+				}
+
+				if vread := v.Values.Read(); vread != read {
+					it.err = fmt.Errorf("wrong iteration for cumulative value, expected: %d, got: %d", read, vread)
+					return false
+				}
 			}
 
 			iit.StepInto()
@@ -238,11 +299,16 @@ func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
 	return res
 }
 
-func getIndexRange(it MemSeriesValuesIterator, mint, maxt int64) (uint64, uint64, error) {
+func getIndexRange(it MemSeriesValuesIterator, numSamples uint16, mint, maxt int64) (uint64, uint64, error) {
 	// figure out the index of the first sample > mint and the last sample < maxt
 	start := uint64(0)
 	end := uint64(0)
+	i := uint16(0)
 	for it.Next() {
+		if i == numSamples {
+			end++
+			break
+		}
 		t := it.At()
 		if t < mint {
 			start++
@@ -252,6 +318,7 @@ func getIndexRange(it MemSeriesValuesIterator, mint, maxt int64) (uint64, uint64
 		} else {
 			break
 		}
+		i++
 	}
 
 	return start, end, it.Err()
@@ -294,5 +361,5 @@ func (it *MemSeriesIterator) At() InstantProfile {
 }
 
 func (it *MemSeriesIterator) Err() error {
-	return nil
+	return it.err
 }

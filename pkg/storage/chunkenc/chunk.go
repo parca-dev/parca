@@ -106,6 +106,8 @@ type Iterator interface {
 	// Err returns the current error. It should be used only after iterator is
 	// exhausted, that is `Next` or `Seek` returns false.
 	Err() error
+	// Read returns how many iterations the iterator has read at any given moment.
+	Read() uint64
 }
 
 // NewNopIterator returns a new chunk iterator that does not hold any data.
@@ -119,6 +121,7 @@ func (nopIterator) Seek(uint16) bool { return false }
 func (nopIterator) At() int64        { return 0 }
 func (nopIterator) Next() bool       { return false }
 func (nopIterator) Err() error       { return nil }
+func (nopIterator) Read() uint64     { return 0 }
 
 // Pool is used to create and reuse chunk references to avoid allocations.
 type Pool interface {
