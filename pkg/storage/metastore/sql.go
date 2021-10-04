@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"unsafe"
 
 	"github.com/google/pprof/profile"
 	"go.opentelemetry.io/otel/attribute"
@@ -386,6 +387,7 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 
 	res := make(map[uint64][]locationLine, len(ids))
 	remainingIds := []uint64{}
+	maxRemainingId := uint64(0)
 	for _, id := range ids {
 		ll, found, err := s.cache.getLocationLinesByID(ctx, id)
 		if err != nil {
@@ -401,6 +403,9 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 			res[id] = ll
 			continue
 		}
+		if maxRemainingId < id {
+			maxRemainingId = id
+		}
 		remainingIds = append(remainingIds, id)
 	}
 	ids = remainingIds
@@ -409,19 +414,7 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 		return res, functionIDs, nil
 	}
 
-	sIds := ""
-	for i, id := range ids {
-		if i > 0 {
-			sIds += ","
-		}
-		sIds += strconv.FormatInt(int64(id), 10)
-	}
-
-	rows, err := s.db.QueryContext(ctx,
-		fmt.Sprintf(
-			`SELECT "location_id", "line", "function_id"
-				FROM "lines" WHERE location_id IN (%s)`, sIds),
-	)
+	rows, err := s.db.QueryContext(ctx, buildLinesByLocationIDsQuery(maxRemainingId, ids))
 	if err != nil {
 		return nil, nil, fmt.Errorf("execute SQL query: %w", err)
 	}
@@ -468,6 +461,41 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 	}
 
 	return res, functionIDs, nil
+}
+
+const (
+	queryStart = `SELECT "location_id", "line", "function_id"
+			FROM "lines" WHERE location_id IN (`
+	comma          = ','
+	closingBracket = ')'
+)
+
+func buildLinesByLocationIDsQuery(max uint64, ids []uint64) string {
+	maxLen := len(strconv.FormatUint(max, 10))
+
+	query := make([]byte, 0,
+		// The max value is known, and invididual string can be larger than it.
+		len(ids)*maxLen+
+			// Add the start of the query.
+			len(queryStart)+
+			// len(ids)-1 commas, and a closing bracket is len(ids).
+			len(ids),
+	)
+	query = append(query, queryStart...)
+
+	for i := range ids {
+		if i > 0 {
+			query = append(query, comma)
+		}
+		query = strconv.AppendUint(query, ids[i], 10)
+	}
+
+	query = append(query, closingBracket)
+	return unsafeString(query)
+}
+
+func unsafeString(b []byte) string {
+	return *((*string)(unsafe.Pointer(&b)))
 }
 
 func (s *sqlMetaStore) getFunctionsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Function, error) {
