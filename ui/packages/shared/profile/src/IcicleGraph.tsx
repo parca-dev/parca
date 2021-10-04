@@ -66,12 +66,14 @@ interface IcicleGraphNodesProps {
   data: FlamegraphNode.AsObject[]
   x: number
   y: number
-  width: number
+  total: number
+  totalWidth: number
   level: number
   curPath: string[]
   setCurPath: (path: string[]) => void
   setHoveringNode: (node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined) => void
   path: string[]
+  xScale: (value: number) => number
 }
 
 function diffColor (diff: number, cumulative: number): string {
@@ -106,7 +108,9 @@ export function IcicleGraphNodes ({
   data,
   x,
   y,
-  width,
+  xScale,
+  total,
+  totalWidth,
   level,
   setHoveringNode,
   path,
@@ -114,10 +118,6 @@ export function IcicleGraphNodes ({
   curPath
 }: IcicleGraphNodesProps) {
   const nodes = curPath.length === 0 ? data : data.filter((d) => d != null && curPath[0] === nodeLabel(d))
-
-  const xScale = scaleLinear()
-    .domain([0, nodes.reduce((sum, d) => sum + d.cumulative, 0)])
-    .range([0, width])
 
   const nextLevel = level + 1
 
@@ -130,7 +130,8 @@ export function IcicleGraphNodes ({
           .slice(0, i)
           .reduce((sum, d) => sum + d.cumulative, 0)
 
-        const width = xScale(d.cumulative)
+        const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1)
+        const width = ((nextCurPath.length > 0) || nextCurPath.length === 0 && curPath.length === 1) ? totalWidth : xScale(d.cumulative)
 
         if (width <= 1) {
           return <></>
@@ -147,8 +148,11 @@ export function IcicleGraphNodes ({
         }
 
         const xStart = xScale(start)
-        const nextWidth = xScale(d.cumulative)
-        const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1)
+        const newXScale = (nextCurPath.length === 0 && curPath.length === 1) ? (
+            scaleLinear()
+            .domain([0, d.cumulative])
+            .range([0, totalWidth])
+        ) : xScale
 
         const onMouseEnter = () => setHoveringNode(d)
         const onMouseLeave = () => setHoveringNode(undefined)
@@ -171,7 +175,9 @@ export function IcicleGraphNodes ({
                         data={d.childrenList}
                         x={xStart}
                         y={RowHeight}
-                        width={nextWidth}
+                        xScale={newXScale}
+                        total={total}
+                        totalWidth={totalWidth}
                         level={nextLevel}
                         setHoveringNode={setHoveringNode}
                         path={nextPath}
@@ -371,7 +377,9 @@ export const FlamegraphTooltip = ({
 
 interface IcicleGraphRootNodeProps {
   node: FlamegraphRootNode.AsObject
-  width: number
+  xScale: (value: number) => number
+  total: number
+  totalWidth: number
   curPath: string[]
   setCurPath: (path: string[]) => void
   setHoveringNode: (node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined) => void
@@ -379,7 +387,9 @@ interface IcicleGraphRootNodeProps {
 
 export function IcicleGraphRootNode ({
   node,
-  width,
+  xScale,
+  total,
+  totalWidth,
   setHoveringNode,
   setCurPath,
   curPath
@@ -391,6 +401,8 @@ export function IcicleGraphRootNode ({
   const onMouseLeave = () => setHoveringNode(undefined)
   const path = []
 
+  console.log(node)
+
   return (
         <g
             transform={'translate(0, 0)'}
@@ -398,7 +410,7 @@ export function IcicleGraphRootNode ({
             <IcicleRect
                 x={0}
                 y={0}
-                width={width}
+                width={totalWidth}
                 height={RowHeight}
                 name={'root'}
                 color={color}
@@ -410,7 +422,9 @@ export function IcicleGraphRootNode ({
                 data={node.childrenList}
                 x={0}
                 y={RowHeight}
-                width={width}
+                xScale={xScale}
+                total={total}
+                totalWidth={totalWidth}
                 level={0}
                 setHoveringNode={setHoveringNode}
                 path={path}
@@ -472,7 +486,7 @@ export default function IcicleGraph ({
     }
   }, [width])
 
-  if (graph.root === undefined) return <></>
+  if (graph.root === undefined || width === undefined) return <></>
 
   const throttledSetPos = throttle(setPos, 20)
   const onMouseMove = (e: React.MouseEvent<SVGSVGElement|HTMLDivElement>): void => {
@@ -481,6 +495,10 @@ export default function IcicleGraph ({
 
     throttledSetPos([rel[0], rel[1]])
   }
+
+  const xScale = scaleLinear()
+    .domain([0, graph.total])
+    .range([0, width])
 
   return (
       <div
@@ -506,7 +524,9 @@ export default function IcicleGraph ({
                       setHoveringNode={setHoveringNode}
                       curPath={curPath}
                       setCurPath={setCurPath}
-                      width={width !== undefined ? width : 0}
+                      xScale={xScale}
+                      total={graph.total}
+                      totalWidth={width}
                   />
               </g>
           </svg>
