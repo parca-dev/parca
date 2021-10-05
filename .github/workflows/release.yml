@@ -45,6 +45,7 @@ jobs:
   manifests:
     name: Manifests generate and release
     runs-on: ubuntu-latest
+    needs: goreleaser
     steps:
       - uses: actions/checkout@v2
 
@@ -75,6 +76,19 @@ jobs:
           files: |
             deploy/manifests.tar.gz
             deploy/manifests/manifest.yaml
+
+  publish-docs:
+    name: Publish Netlify
+    runs-on: ubuntu-latest
+    needs: manifests
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Publish
+      uses: netlify/actions/build@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
   container:
     name: Container build and push
