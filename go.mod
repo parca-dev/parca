@@ -9,6 +9,7 @@ require (
 	github.com/cortexproject/cortex v1.9.1-0.20210601081042-d7d87369965a // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/sroar v0.0.0-20210915181338-8dc690a08d84
+	github.com/gin-gonic/gin v1.7.0 // indirect
 	github.com/go-chi/cors v1.2.0
 	github.com/go-kit/log v0.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
