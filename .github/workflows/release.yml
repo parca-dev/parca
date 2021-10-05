@@ -73,7 +73,7 @@ jobs:
             deploy/manifests/manifest.yaml
 
   publish-docs:
-    name: Publish Netlify
+    name: Publish Docs
     runs-on: ubuntu-latest
     needs: manifests
     steps:
@@ -101,7 +101,7 @@ jobs:
 
       - name: Login to registry
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | buildah login -u parca-dev --password-stdin ghcr.io
+          echo "${{ secrets.PERSONAL_ACCESS_TOKEN }}" | buildah login -u parca-dev --password-stdin ghcr.io
 
       - name: Push container
         run: |

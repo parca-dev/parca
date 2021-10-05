@@ -187,7 +187,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 func validateId(id string) error {
 	_, err := hex.DecodeString(id)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to validate id: %w", err)
 	}
 	if len(id) <= 2 {
 		return errors.New("unexpectedly short ID")
