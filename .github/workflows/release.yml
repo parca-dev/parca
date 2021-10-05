@@ -40,7 +40,7 @@ jobs:
           version: latest
           args: release --rm-dist
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   manifests:
     name: Manifests generate and release
@@ -56,11 +56,6 @@ jobs:
 
       - name: Set up Jsonnet
         run: ./env-jsonnet.sh
-
-      - name: Configure git for private modules
-        env:
-          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: git config --global url."https://parca:${TOKEN}@github.com".insteadOf "https://github.com"
 
       - name: Generate
         run: cd deploy && make --always-make vendor manifests
@@ -98,13 +93,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build container
-        env:
-          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: make container
 
       - name: Login to registry
         run: |
-          echo "${{ secrets.PERSONAL_ACCESS_TOKEN }}" | buildah login -u parca-dev --password-stdin ghcr.io
+          echo "${{ secrets.GITHUB_TOKEN }}" | buildah login -u parca-dev --password-stdin ghcr.io
 
       - name: Push container
         run: |
