@@ -17,11 +17,6 @@ jobs:
         with:
           go-version: 1.16
 
-      - name: Configure git for private modules
-        env:
-          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: git config --global url."https://parca:${TOKEN}@github.com".insteadOf "https://github.com"
-
       - name: Set up environment
         run: ./env-proto.sh
 

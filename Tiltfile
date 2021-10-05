@@ -33,8 +33,6 @@ k8s_resource('parca-ui', port_forwards=3000)
 
 docker_build('parca.io/parca/parca-agent:dev', './tmp/parca-agent',
     dockerfile='./tmp/parca-agent/Dockerfile.dev',
-    # Until Parca will be public we need to supply a personal access token for the builds.
-    build_args={'TOKEN': read_file('./tmp/personal_access_token')},
 )
 k8s_yaml('deploy/tilt/parca-agent-daemonSet.yaml')
 k8s_resource('parca-agent', port_forwards=[7071])
