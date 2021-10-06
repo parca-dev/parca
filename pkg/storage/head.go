@@ -367,14 +367,14 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 
 	ir, err := q.head.Index()
 	if err != nil {
-		return nil
+		return &SliceSeriesSet{}
 	}
 
 	_, postingSpan := q.head.tracer.Start(ctx, "PostingsForMatchers")
 	postings, err := PostingsForMatchers(ir, ms...)
 	if err != nil {
 		postingSpan.End()
-		return nil
+		return &SliceSeriesSet{}
 	}
 	postingSpan.End()
 
