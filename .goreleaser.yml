@@ -27,8 +27,11 @@ checksum:
   name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ incpatch .Tag }}-next"
+release:
+  prerelease: auto
 changelog:
   sort: asc
+  use: github
   filters:
     exclude:
       - '^docs:'
