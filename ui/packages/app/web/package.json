@@ -28,7 +28,7 @@
     "d3": "^6.6.0",
     "d3-axis": "^3.0.0",
     "d3-scale-chromatic": "^2.0.0",
-    "d3-selection": "^2.0.0",
+    "d3-selection": "^3.0.0",
     "d3-shape": "^2.1.0",
     "immer": "^9.0.6",
     "isomorphic-unfetch": "^3.1.0",
