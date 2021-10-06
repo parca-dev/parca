@@ -26,7 +26,7 @@
     "@parca/profile": "0.0.0",
     "autoprefixer": "^10.3.4",
     "d3": "^6.6.0",
-    "d3-axis": "^2.1.0",
+    "d3-axis": "^3.0.0",
     "d3-scale-chromatic": "^2.0.0",
     "d3-selection": "^2.0.0",
     "d3-shape": "^2.1.0",
