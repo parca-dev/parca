@@ -25,7 +25,14 @@ jobs:
       - name: Build UI
         run: make ui
 
-      - name: Dry Run GoReleaser
+      - name: Validate
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser
+          version: latest
+          args: check
+
+      - name: Dry Run
         uses: goreleaser/goreleaser-action@v2
         with:
           distribution: goreleaser
