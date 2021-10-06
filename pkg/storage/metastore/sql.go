@@ -194,6 +194,7 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 	mappingIDsSeen := map[uint64]struct{}{}
 
 	remainingIds := []uint64{}
+	maxRemainingID := uint64(0)
 	for _, id := range ids {
 		l, found, err := s.cache.getLocationByID(ctx, id)
 		if err != nil {
@@ -209,24 +210,15 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 			}
 			continue
 		}
+		if maxRemainingID < id {
+			maxRemainingID = id
+		}
 		remainingIds = append(remainingIds, id)
 	}
 
 	if len(remainingIds) > 0 {
-		sIds := ""
-		for i, id := range remainingIds {
-			if i > 0 {
-				sIds += ","
-			}
-			sIds += strconv.FormatInt(int64(id), 10)
-		}
-
 		dbctx, dbspan := s.tracer.Start(ctx, "GetLocationsByIDs-SQL-query")
-		rows, err := s.db.QueryContext(dbctx,
-			fmt.Sprintf(`SELECT "id", "mapping_id", "address", "is_folded", "normalized_address", "lines"
-				FROM "locations"
-				WHERE id IN (%s)`, sIds),
-		)
+		rows, err := s.db.QueryContext(dbctx, buildLocationsByIDsQuery(maxRemainingID, remainingIds))
 		dbspan.End()
 		if err != nil {
 			return nil, fmt.Errorf("execute SQL query: %w", err)
@@ -312,6 +304,36 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 	}
 
 	return res, nil
+}
+
+const (
+	locsByIDsQueryStart = `SELECT "id", "mapping_id", "address", "is_folded", "normalized_address", "lines"
+				FROM "locations"
+				WHERE id IN (`
+)
+
+func buildLocationsByIDsQuery(max uint64, ids []uint64) string {
+	maxLen := len(strconv.FormatUint(max, 10))
+
+	query := make([]byte, 0,
+		// The max value is known, and invididual string can be larger than it.
+		len(ids)*maxLen+
+			// Add the start of the query.
+			len(locsByIDsQueryStart)+
+			// len(ids)-1 commas, and a closing bracket is len(ids).
+			len(ids),
+	)
+	query = append(query, locsByIDsQueryStart...)
+
+	for i := range ids {
+		if i > 0 {
+			query = append(query, comma)
+		}
+		query = strconv.AppendUint(query, ids[i], 10)
+	}
+
+	query = append(query, closingBracket)
+	return unsafeString(query)
 }
 
 func (s *sqlMetaStore) GetMappingsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Mapping, error) {
@@ -464,7 +486,7 @@ func (s *sqlMetaStore) getLinesByLocationIDs(ctx context.Context, ids ...uint64)
 }
 
 const (
-	queryStart = `SELECT "location_id", "line", "function_id"
+	linesByLocationsIDsQueryStart = `SELECT "location_id", "line", "function_id"
 			FROM "lines" WHERE location_id IN (`
 	comma          = ','
 	closingBracket = ')'
@@ -477,11 +499,11 @@ func buildLinesByLocationIDsQuery(max uint64, ids []uint64) string {
 		// The max value is known, and invididual string can be larger than it.
 		len(ids)*maxLen+
 			// Add the start of the query.
-			len(queryStart)+
+			len(linesByLocationsIDsQueryStart)+
 			// len(ids)-1 commas, and a closing bracket is len(ids).
 			len(ids),
 	)
-	query = append(query, queryStart...)
+	query = append(query, linesByLocationsIDsQueryStart...)
 
 	for i := range ids {
 		if i > 0 {

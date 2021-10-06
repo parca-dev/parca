@@ -36,3 +36,19 @@ func BenchmarkBuildLinesByLocationIDsQuery(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkBuildLocationsByIDsQuery(b *testing.B) {
+	for k := 0.; k <= 5; k++ {
+		n := uint64(math.Pow(10, k))
+		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			input := make([]uint64, 0, n)
+			for i := uint64(0); i < n; i++ {
+				input = append(input, i)
+			}
+
+			for i := 0; i < b.N; i++ {
+				result = buildLocationsByIDsQuery(input[len(input)-1], input)
+			}
+		})
+	}
+}
