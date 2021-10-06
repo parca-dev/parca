@@ -30,12 +30,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
@@ -251,14 +250,6 @@ func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Confi
 
 func initTracer(logger log.Logger, otlpAddress string) (trace.TracerProvider, func(), error) {
 	ctx := context.Background()
-	driver := otlpgrpc.NewDriver(
-		otlpgrpc.WithInsecure(),
-		otlpgrpc.WithEndpoint(otlpAddress),
-	)
-	exporter, err := otlp.NewExporter(ctx, driver)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create exporter: %w", err)
-	}
 
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
@@ -269,8 +260,20 @@ func initTracer(logger log.Logger, otlpAddress string) (trace.TracerProvider, fu
 		return nil, nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 
+	// Set up a trace exporter
+	exporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithEndpoint(otlpAddress),
+		otlptracegrpc.WithDialOption(grpc.WithBlock()),
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create trace exporter: %w", err)
+	}
+
+	// Register the trace exporter with a TracerProvider, using a batch
+	// span processor to aggregate spans before export.
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
-	tracerProvider := sdktrace.NewTracerProvider(
+	provider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithResource(res),
 		sdktrace.WithSpanProcessor(bsp),
@@ -278,9 +281,9 @@ func initTracer(logger log.Logger, otlpAddress string) (trace.TracerProvider, fu
 
 	// set global propagator to tracecontext (the default is no-op).
 	otel.SetTextMapPropagator(propagation.TraceContext{})
-	otel.SetTracerProvider(tracerProvider)
+	otel.SetTracerProvider(provider)
 
-	return tracerProvider, func() {
+	return provider, func() {
 		err := exporter.Shutdown(context.Background())
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to stop exporter", "err", err)
