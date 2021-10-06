@@ -29,6 +29,17 @@ snapshot:
   name_template: "{{ incpatch .Tag }}-next"
 release:
   prerelease: auto
+  # Defaults to empty.
+  footer: |
+    ## Docker images
+
+    `docker pull ghcr.io/parca-dev/parca:{{ .Tag }}`
+
+    ## Thanks!
+
+    Join our [Discord server](https://discord.com/invite/ZgUpYgpzXy);
+    Follow us on [Twitter](https://twitter.com/ParcaDev);
+    Read the [documentation](https://www.parca.dev/docs/overview).
 changelog:
   sort: asc
   use: github
