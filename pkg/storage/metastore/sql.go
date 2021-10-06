@@ -213,20 +213,8 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 	}
 
 	if len(remainingIds) > 0 {
-		sIds := ""
-		for i, id := range remainingIds {
-			if i > 0 {
-				sIds += ","
-			}
-			sIds += strconv.FormatInt(int64(id), 10)
-		}
-
 		dbctx, dbspan := s.tracer.Start(ctx, "GetLocationsByIDs-SQL-query")
-		rows, err := s.db.QueryContext(dbctx,
-			fmt.Sprintf(`SELECT "id", "mapping_id", "address", "is_folded", "normalized_address", "lines"
-				FROM "locations"
-				WHERE id IN (%s)`, sIds),
-		)
+		rows, err := s.db.QueryContext(dbctx, buildLocationsByIDsQuery(remainingIds))
 		dbspan.End()
 		if err != nil {
 			return nil, fmt.Errorf("execute SQL query: %w", err)
@@ -312,6 +300,20 @@ func (s *sqlMetaStore) GetLocationsByIDs(ctx context.Context, ids ...uint64) (
 	}
 
 	return res, nil
+}
+
+func buildLocationsByIDsQuery(ids []uint64) string {
+	sIds := ""
+	for i, id := range ids {
+		if i > 0 {
+			sIds += ","
+		}
+		sIds += strconv.FormatInt(int64(id), 10)
+	}
+
+	return fmt.Sprintf(`SELECT "id", "mapping_id", "address", "is_folded", "normalized_address", "lines"
+				FROM "locations"
+				WHERE id IN (%s)`, sIds)
 }
 
 func (s *sqlMetaStore) GetMappingsByIDs(ctx context.Context, ids ...uint64) (map[uint64]*profile.Mapping, error) {
