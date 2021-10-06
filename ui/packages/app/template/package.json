@@ -20,6 +20,6 @@
       "@parca/functions": "0.0.0"
     },
     "devDependencies": {
-      "@storybook/react": "^6.1.2"
+      "@storybook/react": "^6.3.9"
     }
   }
