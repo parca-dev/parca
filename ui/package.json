@@ -37,7 +37,7 @@
     "@mdx-js/loader": "^1.6.22",
     "@next/bundle-analyzer": "^11.1.0",
     "@next/eslint-plugin-next": "^11.1.0",
-    "@next/mdx": "^10.0.5",
+    "@next/mdx": "^11.1.2",
     "@storybook/addon-actions": "^6.3.7",
     "@storybook/addon-docs": "^6.3.7",
     "@storybook/addon-essentials": "^6.3.7",
