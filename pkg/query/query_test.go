@@ -584,3 +584,82 @@ func Test_Query_Merge(t *testing.T) {
 		})
 	}
 }
+
+func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
+	ctx := context.Background()
+	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		"querymulti",
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		s.Close()
+	})
+	q := New(
+		log.NewNopLogger(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		db,
+		s,
+	)
+
+	ls1 := labels.Labels{
+		labels.Label{
+			Name:  "__name__",
+			Value: "allocs",
+		},
+		labels.Label{
+			Name:  "namespace",
+			Value: "gitops-platform-metrics",
+		},
+		labels.Label{
+			Name:  "container",
+			Value: "c1",
+		},
+	}
+
+	ls2 := labels.Labels{
+		labels.Label{
+			Name:  "__name__",
+			Value: "allocs",
+		},
+		labels.Label{
+			Name:  "namespace",
+			Value: "gitops-platform-storage",
+		},
+		labels.Label{
+			Name:  "container",
+			Value: "c2",
+		},
+	}
+
+	end := time.Now()
+	start := end.Add(-5 * time.Minute)
+	t1 := (end.UnixNano() / 1000000) * 1000000
+	for _, ls := range []labels.Labels{ls1, ls2} {
+		app, err := db.Appender(ctx, ls)
+		require.NoError(t, err)
+
+		f, err := os.Open("../storage/testdata/profile1.pb.gz")
+		require.NoError(t, err)
+		p1, err := profile.Parse(f)
+		require.NoError(t, err)
+		require.NoError(t, f.Close())
+
+		p1.TimeNanos = t1
+
+		prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+		require.NoError(t, err)
+		err = app.Append(ctx, prof)
+		require.NoError(t, err)
+	}
+
+	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{
+		Query: `allocs{namespace="gitops-platform-metrics", container="c3"}`,
+		Start: timestamppb.New(start),
+		End:   timestamppb.New(end),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(resp.GetSeries()))
+}

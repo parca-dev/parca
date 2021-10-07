@@ -45,8 +45,8 @@ func init() {
 // PostingsForMatchers assembles a single postings iterator against the index reader
 // based on the given matchers. The resulting postings are not ordered by series.
 func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, error) {
-	bitmap := sroar.NewBitmap()
-	noBitmap := sroar.NewBitmap()
+	var bitmap *sroar.Bitmap
+	var noBitmap *sroar.Bitmap
 
 	// See which label must be non-empty.
 	// Optimization for case like {l=~".", l!="1"}.
@@ -72,6 +72,9 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 				if err != nil {
 					return nil, err
 				}
+				if noBitmap == nil {
+					noBitmap = sroar.NewBitmap()
+				}
 				noBitmap.Or(bm)
 			} else if isNot && !matchesEmpty { // l!=""
 				inverse, err := m.Inverse()
@@ -83,19 +86,20 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 					return nil, err
 				}
 
-				if bitmap.IsEmpty() {
+				if bitmap == nil {
 					bitmap = bm
 				} else {
 					bitmap.And(bm)
 				}
 			} else { // l="a"
+
 				// Non-Not matcher, use normal postingsForMatcher.
 				bm, err := postingsForMatcher(ix, m)
 				if err != nil {
 					return nil, err
 				}
 
-				if bitmap.IsEmpty() {
+				if bitmap == nil {
 					bitmap = bm
 				} else {
 					bitmap.And(bm)
@@ -110,12 +114,21 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 			if err != nil {
 				return nil, err
 			}
-			if noBitmap.IsEmpty() {
+
+			if noBitmap == nil {
 				noBitmap = bm
 			} else {
 				noBitmap.Or(bm)
 			}
 		}
+	}
+
+	if bitmap == nil {
+		bitmap = sroar.NewBitmap()
+	}
+
+	if noBitmap == nil {
+		noBitmap = sroar.NewBitmap()
 	}
 
 	// If there's nothing to subtract from, add in everything and remove the noBitmap later.
@@ -295,5 +308,6 @@ func inversePostingsForMatcher(ix IndexReader, m *labels.Matcher) (*sroar.Bitmap
 	if !isSorted {
 		sort.Strings(res)
 	}
+
 	return ix.Postings(m.Name, res...)
 }
