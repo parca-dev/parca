@@ -92,7 +92,7 @@ export class Query {
 
     // Parser.table is not defined in the type definitions, so we need to do this unfortunately.
     const parserTable = p.table as any[]
-    const column = parserTable.filter(c => c.states.find(s => s.data !== undefined && Object.prototype.hasOwnProperty.call(s.data, 'profileName')))[0]
+    const column = parserTable.filter(c => c.states.find(s => s.data !== undefined && s.data != null && Object.prototype.hasOwnProperty.call(s.data, 'profileName')))[0]
     if (column !== undefined) {
       const data = column.states.find(s => s.data !== undefined && Object.prototype.hasOwnProperty.call(s.data, 'profileName')).data
       const rest = input.slice(column.lexerState.col - 2)
