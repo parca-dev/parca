@@ -4,7 +4,6 @@ interface MetricsCircleProps {
   radius?: number
 }
 
-const defaultOpacity = '0.85'
 const defaultRadius = 3
 
 const MetricsCircle = ({ cx, cy, radius }: MetricsCircleProps): JSX.Element => (
@@ -13,7 +12,6 @@ const MetricsCircle = ({ cx, cy, radius }: MetricsCircleProps): JSX.Element => (
       cx={cx}
       cy={cy}
       r={radius !== undefined ? radius : defaultRadius}
-      style={{ opacity: defaultOpacity }}
     >
     </circle>
   </g>
