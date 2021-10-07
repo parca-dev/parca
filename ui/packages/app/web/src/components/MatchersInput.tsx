@@ -75,7 +75,7 @@ const MatchersInput = ({
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''))
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null)
   const { styles, attributes } = usePopper(inputRef, popperElement, {
-    placement: 'bottom'
+    placement: 'bottom-start'
   })
 
   const { response: labelNamesResponse, error: labelNamesError } = useLabelNames(queryClient)
@@ -240,10 +240,10 @@ const MatchersInput = ({
   return (
     <>
       <input
+        ref={setInputRef}
         type='text'
         className='bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm border-gray-300 dark:border-gray-600 border-b outline-none'
         placeholder='filter profiles...'
-        ref={setInputRef}
         onChange={onChange}
         value={value}
         onBlur={unfocus}
@@ -251,12 +251,11 @@ const MatchersInput = ({
         onKeyPress={handleKeyPress}
         onKeyDown={handleKeyDown}
       />
-      {focusedInput && showSuggest && suggestionSections.labelNames.length + suggestionSections.literals.length > 0 && (
+      {suggestionsLength > 0 && (
         <div
           ref={setPopperElement}
-          style={{ ...styles.popper, width: inputRef?.offsetWidth, marginLeft: 0 }}
+          style={{ ...styles.popper, marginLeft: 0 }}
           {...attributes.popper}
-          className='absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'
         >
           <Transition
             show={focusedInput && showSuggest}
@@ -265,7 +264,10 @@ const MatchersInput = ({
             leaveFrom='opacity-100'
             leaveTo='opacity-0'
           >
-            <div>
+            <div
+                style={{ width: inputRef?.offsetWidth }}
+                className='absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'
+            >
               {suggestionSections.labelNames.map((l, i) => (
                 <div
                   key={i}
