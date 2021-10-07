@@ -212,7 +212,6 @@ export const RawMetricsGraph = ({
   const graph = useRef(null)
   const [dragging, setDragging] = useState(false)
   const [hovering, setHovering] = useState(false)
-  const [selected, setSelected] = useState<HighlightedSeries | null>(null)
   const [relPos, setRelPos] = useState(-1)
   const [pos, setPos] = useState([0, 0])
   const [freezeTooltip, setFreezeTooltip] = useState(false)
@@ -244,7 +243,7 @@ export const RawMetricsGraph = ({
     }
   }, [])
 
-  const time: number = profile?.HistoryParams().time
+  const time: number = parseFloat(profile?.HistoryParams().time)
 
   if (width === undefined || width == null) {
     width = 0
@@ -372,16 +371,8 @@ export const RawMetricsGraph = ({
 
   const openClosestProfile = (): void => {
     if (highlighted != null) {
-      setSelected({
-        seriesIndex: highlighted.seriesIndex,
-        labels: highlighted.labels,
-        timestamp: highlighted.timestamp,
-        value: highlighted.value,
-        x: highlighted.x,
-        y: highlighted.y
-      })
       onSampleClick(
-        highlighted.timestamp,
+        Math.round(highlighted.timestamp),
         highlighted.value,
         highlighted.labels
       )
@@ -434,48 +425,53 @@ export const RawMetricsGraph = ({
     }
   }
 
-  useEffect(() => {
+  const findSelectedProfile = () => {
     if (profile == null) {
-      return
+      return null
     }
 
     let s: Series | null = null
+    let seriesIndex: number | null = null
 
     outer:
     for (let i = 0; i < series.length; i++) {
-      const keys = Object.keys(profile.labels)
+      const keys = profile.labels.map(e => e.name)
       for (let j = 0; j < keys.length; j++) {
-        const key = keys[j]
-        if (!(key in series[i].metric)) {
+        const labelName = keys[j]
+        const label = series[i].metric.find(e => e.name === labelName)
+        if (label === undefined) {
           continue outer // label doesn't exist to begin with
         }
-        if (profile.labels[key] !== series[i].metric[key]) {
+        if (profile.labels[j].value !== label.value) {
           continue outer // label values don't match
         }
       }
+      seriesIndex = i
       s = series[i]
     }
 
     if (s == null) {
-      return
+      return null
     }
     // Find the sample that matches the timestamp
     const sample = s.values.find((v) => {
-      return v[0] === time
+      return Math.round(v[0]) === time
     })
     if (sample === undefined) {
-      return
+      return null
     }
 
-    setSelected({
+    return {
       labels: [],
-      seriesIndex: -1,
+      seriesIndex: seriesIndex,
       timestamp: sample[0],
       value: sample[1],
       x: xScale(sample[0]),
       y: yScale(sample[1])
-    })
-  }, [time, width, profile, series, xScale, yScale])
+    }
+  }
+
+  const selected = findSelectedProfile()
 
   return (
       <>
@@ -556,20 +552,15 @@ export const RawMetricsGraph = ({
                               />
                           </g>
                       )}
-                      {selected != null
-                        ? (
-                          <g className="circle-group" style={{ fill: '#399' }}>
+                      {selected != null && (
+                          <g className="circle-group" style={{ fill: color(selected.seriesIndex) }}>
                             <MetricsCircle
                               cx={selected.x}
                               cy={selected.y}
                               radius={5}
                             />
                           </g>
-                          )
-                        : (
-                          <></>
-                          )
-                      }
+                      )}
                       <g
                           className="x axis"
                           fill="none"
