@@ -63,6 +63,8 @@ jobs:
       - name: Prepare
         run: |
           tar -zcvf deploy/manifests.tar.gz deploy/manifests
+          cp deploy/manifests/kubernetes/manifest.yaml deploy/kubernetes-manifest.yaml
+          cp deploy/manifests/openshift/manifest.yaml deploy/openshift-manifest.yaml
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -70,7 +72,8 @@ jobs:
         with:
           files: |
             deploy/manifests.tar.gz
-            deploy/manifests/manifest.yaml
+            deploy/kubernetes-manifest.yaml
+            deploy/openshift-manifest.yaml
 
   publish-docs:
     name: Publish Docs
