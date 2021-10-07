@@ -160,3 +160,10 @@ test('SuggestNextLabelName', () => {
     typeahead: ''
   }])
 })
+
+test('SuggestNextLabelNameSpace', () => {
+  expect(Query.suggest('test{test="a", ')).toMatchObject([{
+    type: 'labelName',
+    typeahead: ''
+  }])
+})
