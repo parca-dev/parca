@@ -8,10 +8,12 @@ vendor:
 .PHONY: manifests
 manifests: vendor $(shell find . -name 'vendor' -prune -o -name '*.libsonnet' -print -o -name '*.jsonnet' -print)
 	rm -rf manifests tilt
-	mkdir manifests tilt
-	jsonnet --tla-str version="$(VERSION)" -J vendor main.jsonnet -m manifests | xargs -I{} sh -c 'cat {} | gojsontoyaml > {}.yaml; rm -f {}' -- {}
+	mkdir -p manifests/openshift manifests/kubernetes tilt
+	jsonnet --tla-str version="$(VERSION)" -J vendor main.jsonnet -m manifests/kubernetes | xargs -I{} sh -c 'cat {} | gojsontoyaml > {}.yaml; rm -f {}' -- {}
+	awk 'BEGINFILE {print "---"}{print}' manifests/kubernetes/* > manifests/kubernetes/manifest.yaml
+	jsonnet --tla-str version="$(VERSION)" -J vendor openshift.jsonnet -m manifests/openshift | xargs -I{} sh -c 'cat {} | gojsontoyaml > {}.yaml; rm -f {}' -- {}
+	awk 'BEGINFILE {print "---"}{print}' manifests/openshift/* > manifests/openshift/manifest.yaml
 	jsonnet -J vendor dev.jsonnet -m tilt | xargs -I{} sh -c 'cat {} | gojsontoyaml > {}.yaml; rm -f {}' -- {}
-	awk 'BEGINFILE {print "---"}{print}' manifests/parca-server* > manifests/manifest.yaml
 
 fmt:
 	find . -name 'vendor' -prune -o -name '*.libsonnet' -print -o -name '*.jsonnet' -print | \

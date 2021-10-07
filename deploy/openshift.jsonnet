@@ -19,6 +19,7 @@ function(version='v0.0.3-alpha.2')
     version: version,
     replicas: 1,
     corsAllowedOrigins: '*',
+    securityContext: null,
   });
 
   {
