@@ -145,7 +145,7 @@ export const MetricsTooltip = ({
 
   return (
     <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
-      <div className="flex">
+      <div className="flex max-w-md">
         <div className="m-auto">
           <div className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90" style={{ borderWidth: 1 }}>
             <div className="flex flex-row">
@@ -188,7 +188,7 @@ export const MetricsTooltip = ({
                   })}
                 </span>
                 <span className="block text-gray-500 text-xs">
-                  Hold ctrl and click label to add to query.
+                  Hold shift and click label to add to query.
                 </span>
               </div>
             </div>
@@ -215,32 +215,32 @@ export const RawMetricsGraph = ({
   const [selected, setSelected] = useState<HighlightedSeries | null>(null)
   const [relPos, setRelPos] = useState(-1)
   const [pos, setPos] = useState([0, 0])
-  const [holdingCtrl, setHoldingCtrl] = useState(false)
+  const [freezeTooltip, setFreezeTooltip] = useState(false)
   const metricPointRef = useRef(null)
 
   useEffect(() => {
-    const handleCtrlDown = (event) => {
-      if (event.keyCode === 17) {
-        setHoldingCtrl(true)
+    const handleShiftDown = (event) => {
+      if (event.keyCode === 16) {
+        setFreezeTooltip(true)
       }
     }
-    window.addEventListener('keydown', handleCtrlDown)
+    window.addEventListener('keydown', handleShiftDown)
 
     return () => {
-      window.removeEventListener('keydown', handleCtrlDown)
+      window.removeEventListener('keydown', handleShiftDown)
     }
   }, [])
 
   useEffect(() => {
-    const handleCtrlDown = (event) => {
-      if (event.keyCode === 17) {
-        setHoldingCtrl(false)
+    const handleShiftUp = (event) => {
+      if (event.keyCode === 16) {
+        setFreezeTooltip(false)
       }
     }
-    window.addEventListener('keyup', handleCtrlDown)
+    window.addEventListener('keyup', handleShiftUp)
 
     return () => {
-      window.removeEventListener('keyup', handleCtrlDown)
+      window.removeEventListener('keyup', handleShiftUp)
     }
   }, [])
 
@@ -429,7 +429,7 @@ export const RawMetricsGraph = ({
     const yCoordinate = rel[1]
     const yCoordinateWithoutMargin = yCoordinate - margin
 
-    if (!holdingCtrl) {
+    if (!freezeTooltip) {
       throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin])
     }
   }
@@ -502,7 +502,10 @@ export const RawMetricsGraph = ({
           }
           <div
               ref={graph}
-              onMouseEnter={() => setHovering(true)}
+              onMouseEnter={function () {
+                setHovering(true)
+                setFreezeTooltip(false)
+              }}
               onMouseLeave={() => setHovering(false)}
           >
               <svg
