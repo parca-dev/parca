@@ -82,7 +82,7 @@
     "plop": "^2.7.4",
     "pm2": "^4.5.0",
     "postcss": "^8.3.6",
-    "prettier": "^2.3.2",
+    "prettier": "^2.4.1",
     "react-is": "^17.0.2",
     "react-test-renderer": "^17.0.2",
     "replace-in-files": "^3.0.0",
