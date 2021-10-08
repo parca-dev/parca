@@ -4,7 +4,10 @@ import { Parca, ParcaSmall } from '@parca/icons'
 import cx from 'classnames'
 import DarkModeToggle from './DarkModeToggle'
 
-const links = [{ name: 'Profiles', href: '/', current: true }]
+const links = [
+  { name: 'Profiles', href: '/', current: true, external: false },
+  { name: 'Help', href: 'https://parca.dev/docs/overview', current: false, external: true }
+]
 
 const Navbar = ({
   isDarkMode,
@@ -58,10 +61,11 @@ const Navbar = ({
                       <a
                         key={item.name}
                         href={item.href}
+                        target={item.external ? '_blank' : undefined}
                         className={cx(
                           item.current
                             ? 'bg-gray-900 text-white'
-                            : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white',
                           'px-3 py-2 rounded-md text-sm font-medium'
                         )}
                         aria-current={item.current ? 'page' : undefined}
@@ -71,6 +75,9 @@ const Navbar = ({
                     ))}
                   </div>
                 </div>
+              </div>
+              <div className='text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0'>
+                <a target='_blank' href='https://github.com/parca-dev/parca'>GitHub</a>
               </div>
               <div className='text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0'>
                 <DarkModeToggle isDarkMode={isDarkMode} setDarkMode={setDarkMode} />
