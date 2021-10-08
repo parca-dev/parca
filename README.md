@@ -67,3 +67,6 @@ Now Parca is running locally and its web UI is available on http://localhost:707
 By default Parca is scraping it's own pprof endpoints and you should see profiles show up over time. 
 The scrape configuration can be changed in the `parca.yaml` in the root of the repository. 
 
+### Credits
+
+Parca was originally developed by [Polar Signals](https://polarsignals.com/). Read the announcement blog post: https://www.polarsignals.com/blog/posts/2021/10/08/introducing-parca-we-got-funded/
