@@ -56,7 +56,7 @@ scrape_configs:
 		ScrapeConfigs: []*ScrapeConfig{{
 			JobName:        "conprof",
 			ScrapeInterval: model.Duration(10 * time.Second),
-			ScrapeTimeout:  model.Duration(11 * time.Second),
+			ScrapeTimeout:  model.Duration(10 * time.Second),
 			Scheme:         "http",
 			ProfilingConfig: &ProfilingConfig{
 				PprofConfig: PprofConfig{
