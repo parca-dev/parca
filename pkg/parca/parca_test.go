@@ -96,11 +96,3 @@ func Benchmark_Parca_WriteRaw(b *testing.B) {
 	cancel()
 	<-done
 }
-
-func Test_Parca_UnmarshalBadConfig(t *testing.T) {
-	ctx := context.Background()
-	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
-	err := Run(ctx, logger, reg, &Flags{ConfigPath: "testdata/bad_parca.yaml", Port: ":9090"})
-	require.Error(t, err)
-}

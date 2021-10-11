@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
@@ -35,6 +36,13 @@ import (
 type Config struct {
 	DebugInfo     *debuginfo.Config `yaml:"debug_info"`
 	ScrapeConfigs []*ScrapeConfig   `yaml:"scrape_configs,omitempty"`
+}
+
+// Validate returns an error if the config is not valid
+func (c *Config) Validate() error {
+	return validation.ValidateStruct(c,
+		validation.Field(&c.DebugInfo, validation.Required, debuginfo.Valid),
+	)
 }
 
 func trueValue() *bool {
