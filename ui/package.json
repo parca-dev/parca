@@ -44,7 +44,7 @@
     "@storybook/addon-links": "^6.3.10",
     "@storybook/addon-storyshots": "^6.3.7",
     "@storybook/builder-webpack5": "^6.3.4",
-    "@storybook/manager-webpack5": "^6.3.4",
+    "@storybook/manager-webpack5": "^6.3.10",
     "@storybook/react": "^6.3.10",
     "@svgr/webpack": "^5.5.0",
     "@testing-library/jest-dom": "^5.14.1",
