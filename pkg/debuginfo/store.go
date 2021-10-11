@@ -67,6 +67,7 @@ type Store struct {
 	symbolizer *symbolizer
 }
 
+// NewStore returns a new debug info store
 func NewStore(logger log.Logger, config *Config) (*Store, error) {
 	cfg, err := yaml.Marshal(config.Bucket)
 	if err != nil {

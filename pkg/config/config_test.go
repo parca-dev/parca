@@ -17,9 +17,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/require"
+	"github.com/thanos-io/thanos/pkg/objstore/client"
 )
 
 func TestLoad(t *testing.T) {
@@ -101,4 +103,52 @@ scrape_configs:
 	require.NoError(t, err)
 	require.Len(t, c.ScrapeConfigs, 1)
 	require.Equal(t, expected, c)
+}
+
+func Test_Config_Validation(t *testing.T) {
+
+	tests := map[string]struct {
+		cfg Config
+	}{
+		"nil debug": {
+			Config{
+				DebugInfo: nil,
+			},
+		},
+		"nil bucket": {
+			Config{
+				DebugInfo: &debuginfo.Config{
+					Bucket: nil,
+				},
+			},
+		},
+		"empty type": {
+			Config{
+				DebugInfo: &debuginfo.Config{
+					Bucket: &client.BucketConfig{
+						Config: struct {
+							Directory string
+						}{
+							Directory: "./tmp",
+						},
+					},
+				},
+			},
+		},
+		"empty config": {
+			Config{
+				DebugInfo: &debuginfo.Config{
+					Bucket: &client.BucketConfig{
+						Type: client.FILESYSTEM,
+					},
+				},
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			require.Error(t, test.cfg.Validate())
+		})
+	}
 }
