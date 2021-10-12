@@ -309,17 +309,18 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 	testcases := []struct {
 		before int64
 
-		truncated int
-		left      int
-		minTime   int64
-		maxTime   int64
+		truncated  int
+		left       int
+		minTime    int64
+		maxTime    int64
+		numSamples uint16
 	}{
-		{before: 10, truncated: 0, left: 5, minTime: 1, maxTime: 500},
-		{before: 50, truncated: 0, left: 5, minTime: 1, maxTime: 500},
-		{before: 123, truncated: 1, left: 4, minTime: 121, maxTime: 500},
-		{before: 256, truncated: 2, left: 3, minTime: 241, maxTime: 500},
-		{before: 490, truncated: 4, left: 1, minTime: 481, maxTime: 500},
-		{before: 1_000, truncated: 5, left: 0, minTime: math.MaxInt64, maxTime: math.MinInt64},
+		{before: 10, truncated: 0, left: 5, minTime: 1, maxTime: 500, numSamples: 500},
+		{before: 50, truncated: 0, left: 5, minTime: 1, maxTime: 500, numSamples: 500},
+		{before: 123, truncated: 1, left: 4, minTime: 121, maxTime: 500, numSamples: 380},
+		{before: 256, truncated: 2, left: 3, minTime: 241, maxTime: 500, numSamples: 260},
+		{before: 490, truncated: 4, left: 1, minTime: 481, maxTime: 500, numSamples: 20},
+		{before: 1_000, truncated: 5, left: 0, minTime: math.MaxInt64, maxTime: math.MinInt64, numSamples: 500},
 	}
 
 	chunkPool := newHeadChunkPool()
@@ -346,6 +347,7 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 
 			require.Equal(t, tc.minTime, s.minTime)
 			require.Equal(t, tc.maxTime, s.maxTime)
+			require.Equal(t, tc.numSamples, s.numSamples)
 
 			require.Equal(t, tc.left, len(s.timestamps))
 			require.Equal(t, tc.left, len(s.durations))
