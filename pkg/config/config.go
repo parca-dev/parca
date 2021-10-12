@@ -32,6 +32,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	pprofMemoryTotal       string = "memory_total"
+	pprofBlockTotal        string = "block_total"
+	pprofGoroutineTotal    string = "goroutine_total"
+	pprofMutexTotal        string = "mutex_total"
+	pprofProcessCpu        string = "process_cpu"
+	pprofThreadcreateTotal string = "threadcreate_total"
+)
+
 // Config holds all the configuration information for Parca
 type Config struct {
 	DebugInfo     *debuginfo.Config `yaml:"debug_info"`
@@ -53,32 +62,32 @@ func trueValue() *bool {
 func DefaultScrapeConfig() ScrapeConfig {
 	return ScrapeConfig{
 		ScrapeInterval: model.Duration(time.Second * 10),
-		ScrapeTimeout:  model.Duration(time.Second * 11),
+		ScrapeTimeout:  model.Duration(time.Second * 0),
 		Scheme:         "http",
 		ProfilingConfig: &ProfilingConfig{
 			PprofConfig: PprofConfig{
-				"memory_total": &PprofProfilingConfig{
+				pprofMemoryTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/heap",
 				},
-				"block_total": &PprofProfilingConfig{
+				pprofBlockTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/block",
 				},
-				"goroutine_total": &PprofProfilingConfig{
+				pprofGoroutineTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/goroutine",
 				},
-				"mutex_total": &PprofProfilingConfig{
+				pprofMutexTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/mutex",
 				},
-				"process_cpu": &PprofProfilingConfig{
+				pprofProcessCpu: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Delta:   true,
 					Path:    "/debug/pprof/profile",
 				},
-				"threadcreate_total": &PprofProfilingConfig{
+				pprofThreadcreateTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/threadcreate",
 				},
@@ -222,6 +231,21 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	for _, rlcfg := range c.RelabelConfigs {
 		if rlcfg == nil {
 			return errors.New("empty or null target relabeling rule in scrape config")
+		}
+	}
+
+	// Validate the scrape and timeout internal configuration. When /debug/pprof/profile scraping
+	// is enabled we need to make sure there is enough time to complete the scrape.
+	if c.ScrapeTimeout > c.ScrapeInterval {
+		return fmt.Errorf("scrape timeout must be smaller or equal to inverval for: %v", c.JobName)
+	}
+
+	if c.ScrapeTimeout == 0 {
+		c.ScrapeTimeout = c.ScrapeInterval
+	}
+	if cfg, ok := c.ProfilingConfig.PprofConfig[pprofProcessCpu]; ok {
+		if *cfg.Enabled && c.ScrapeTimeout < model.Duration(time.Second*2) {
+			return fmt.Errorf("%v scrape_timeout must be at least 2 seconds in %v", pprofProcessCpu, c.JobName)
 		}
 	}
 

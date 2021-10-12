@@ -370,7 +370,7 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 				}
 
 				if pcfg, found := cfg.ProfilingConfig.PprofConfig[profType]; found && pcfg.Delta {
-					params.Add("seconds", strconv.Itoa(int(time.Duration(cfg.ScrapeInterval)/time.Second)))
+					params.Add("seconds", strconv.Itoa(int(time.Duration(cfg.ScrapeTimeout)/time.Second)-1))
 				}
 
 				targets = append(targets, NewTarget(lbls, origLabels, params))
