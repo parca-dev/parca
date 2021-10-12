@@ -32,6 +32,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	pprofMemoryTotal       string = "memory_total"
+	pprofBlockTotal        string = "block_total"
+	pprofGoroutineTotal    string = "goroutine_total"
+	pprofMutexTotal        string = "mutex_total"
+	pprofProcessCpu        string = "process_cpu"
+	pprofThreadcreateTotal string = "threadcreate_total"
+)
+
 // Config holds all the configuration information for Parca
 type Config struct {
 	DebugInfo     *debuginfo.Config `yaml:"debug_info"`
@@ -57,28 +66,28 @@ func DefaultScrapeConfig() ScrapeConfig {
 		Scheme:         "http",
 		ProfilingConfig: &ProfilingConfig{
 			PprofConfig: PprofConfig{
-				"memory_total": &PprofProfilingConfig{
+				pprofMemoryTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/heap",
 				},
-				"block_total": &PprofProfilingConfig{
+				pprofBlockTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/block",
 				},
-				"goroutine_total": &PprofProfilingConfig{
+				pprofGoroutineTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/goroutine",
 				},
-				"mutex_total": &PprofProfilingConfig{
+				pprofMutexTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/mutex",
 				},
-				"process_cpu": &PprofProfilingConfig{
+				pprofProcessCpu: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Delta:   true,
 					Path:    "/debug/pprof/profile",
 				},
-				"threadcreate_total": &PprofProfilingConfig{
+				pprofThreadcreateTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/threadcreate",
 				},
