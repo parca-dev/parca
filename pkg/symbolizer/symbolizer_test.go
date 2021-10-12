@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package symbol
+package symbolizer
 
 import (
 	"bytes"
@@ -29,6 +29,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
@@ -67,20 +68,23 @@ func TestSymbolizer(t *testing.T) {
 
 	w := log.NewSyncWriter(os.Stderr)
 	logger := log.NewLogfmtLogger(w)
-	s, err := debuginfo.NewStore(logger, &debuginfo.Config{
-		Bucket: &client.BucketConfig{
-			Type: client.FILESYSTEM,
-			Config: filesystem.Config{
-				Directory: "testdata/",
+	s, err := debuginfo.NewStore(
+		logger,
+		symbol.NewSymbolizer(logger),
+		&debuginfo.Config{
+			Bucket: &client.BucketConfig{
+				Type: client.FILESYSTEM,
+				Config: filesystem.Config{
+					Directory: "testdata/",
+				},
 			},
-		},
-		Cache: &debuginfo.CacheConfig{
-			Type: debuginfo.FILESYSTEM,
-			Config: &debuginfo.FilesystemCacheConfig{
-				Directory: cacheDir,
+			Cache: &debuginfo.CacheConfig{
+				Type: debuginfo.FILESYSTEM,
+				Config: &debuginfo.FilesystemCacheConfig{
+					Directory: cacheDir,
+				},
 			},
-		},
-	})
+		})
 	require.NoError(t, err)
 
 	lis, err := net.Listen("tcp", ":0")
@@ -171,20 +175,24 @@ func TestRealSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(cacheDir)
 
-	dbgStr, err := debuginfo.NewStore(log.NewNopLogger(), &debuginfo.Config{
-		Bucket: &client.BucketConfig{
-			Type: client.FILESYSTEM,
-			Config: filesystem.Config{
-				Directory: "testdata/",
+	logger := log.NewNopLogger()
+	dbgStr, err := debuginfo.NewStore(
+		logger,
+		symbol.NewSymbolizer(logger),
+		&debuginfo.Config{
+			Bucket: &client.BucketConfig{
+				Type: client.FILESYSTEM,
+				Config: filesystem.Config{
+					Directory: "testdata/",
+				},
 			},
-		},
-		Cache: &debuginfo.CacheConfig{
-			Type: debuginfo.FILESYSTEM,
-			Config: &debuginfo.FilesystemCacheConfig{
-				Directory: cacheDir,
+			Cache: &debuginfo.CacheConfig{
+				Type: debuginfo.FILESYSTEM,
+				Config: &debuginfo.FilesystemCacheConfig{
+					Directory: cacheDir,
+				},
 			},
-		},
-	})
+		})
 	require.NoError(t, err)
 
 	var mStr TestProfileMetaStore

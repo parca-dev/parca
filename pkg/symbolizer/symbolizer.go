@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package symbol
+package symbolizer
 
 import (
 	"context"
@@ -97,6 +97,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 		level.Debug(s.logger).Log("msg", "storage symbolization request done", "buildid", mapping.BuildID)
 
 		for loc, lines := range symbolizedLines {
+			// TODO(kakkoyun): Demangle!
 			loc.Line = lines
 			// Only creates lines for given location.
 			if err := s.locations.Symbolize(ctx, loc); err != nil {

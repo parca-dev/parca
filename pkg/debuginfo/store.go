@@ -27,6 +27,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"google.golang.org/grpc/codes"
@@ -34,7 +35,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-	"github.com/parca-dev/parca/internal/pprof/binutils"
 )
 
 var ErrDebugInfoNotFound = errors.New("debug info not found")
@@ -64,11 +64,11 @@ type Store struct {
 	logger log.Logger
 
 	cacheDir   string
-	symbolizer *symbolizer
+	symbolizer *symbol.Symbolizer
 }
 
 // NewStore returns a new debug info store
-func NewStore(logger log.Logger, config *Config) (*Store, error) {
+func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config) (*Store, error) {
 	cfg, err := yaml.Marshal(config.Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("marshal content of object storage configuration: %w", err)
@@ -90,13 +90,10 @@ func NewStore(logger log.Logger, config *Config) (*Store, error) {
 	}
 
 	return &Store{
-		logger:   log.With(logger, "component", "debuginfo"),
-		bucket:   bucket,
-		cacheDir: cache.Directory,
-		symbolizer: &symbolizer{
-			logger: log.With(logger, "component", "debuginfo/symbolizer"),
-			bu:     &binutils.Binutils{},
-		},
+		logger:     log.With(logger, "component", "debuginfo"),
+		bucket:     bucket,
+		cacheDir:   cache.Directory,
+		symbolizer: symbolizer,
 	}, nil
 }
 
@@ -197,8 +194,6 @@ func validateId(id string) error {
 	return nil
 }
 
-type addr2Line func(addr uint64) ([]profile.Line, error)
-
 func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...*profile.Location) (map[*profile.Location][]profile.Line, error) {
 	localObjPath, err := s.fetchObjectFile(ctx, m.BuildID)
 	if err != nil {
@@ -206,7 +201,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
-	sourceLine, err := s.symbolizer.createAddr2Line(m, localObjPath)
+	addr2Line, err := s.symbolizer.NewAddr2Line(m, localObjPath)
 	if err != nil {
 		const msg = "failed to create add2LineFunc"
 		level.Debug(s.logger).Log("msg", msg, "object", m.BuildID, "err", err)
@@ -215,7 +210,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 
 	locationLines := map[*profile.Location][]profile.Line{}
 	for _, loc := range locations {
-		lines, err := sourceLine(loc.Address)
+		lines, err := addr2Line(loc.Address)
 		if err != nil {
 			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildID, "err", err)
 			continue

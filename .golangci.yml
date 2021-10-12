@@ -2,6 +2,7 @@ run:
   deadline: 5m
   skip-dirs:
     - internal/pprof
+    - internal/go
 linters-settings:
   errcheck:
     exclude: ./.errcheck_excludes.txt

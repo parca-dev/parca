@@ -36,7 +36,7 @@ format: go/fmt check-license
 
 .PHONY: go/fmt
 go/fmt:
-	go fmt `go list ./... | grep -v ./internal/pprof`
+	go fmt `go list ./... | grep -E -v "internal/pprof|internal/go"`
 
 .PHONY: check-license
 check-license:
@@ -44,7 +44,7 @@ check-license:
 
 .PHONY: go/test
 go/test:
-	 go test -v `go list ./... | grep -v ./internal/pprof`
+	 go test -v `go list ./... | grep -E -v "internal/pprof|internal/go"`
 
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/dist/*" -not -path "./ui/packages/app/web/.next/*")
 ui/packages/app/web/dist: $(UI_FILES)
