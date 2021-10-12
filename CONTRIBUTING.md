@@ -11,9 +11,6 @@ By contributing to this project you agree to sign a Contributor License Agreemen
 Parca follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
 # Prerequisites
 
-- Linux Kernel version 4.18+
-- A source of targets to discover from: Kubernetes or systemd.
-
 Install the following dependencies (Instructions are linked for each dependency).
 
 - [Go](https://golang.org/doc/install)
@@ -21,13 +18,6 @@ Install the following dependencies (Instructions are linked for each dependency)
 - [Docker](https://docs.docker.com/engine/install/)
 - [minikube](https://v1-18.docs.kubernetes.io/docs/tasks/tools/install-minikube/)
 - [kubectl](https://v1-18.docs.kubernetes.io/docs/tasks/tools/install-kubectl/)
-- [LLVM](https://apt.llvm.org/)
-    ```
-    $ sudo apt-get install llvm
-
-    $ sudo pacman -S  llvm
-     ```
-
 
 # Getting Started
 
