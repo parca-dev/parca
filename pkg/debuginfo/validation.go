@@ -33,7 +33,7 @@ func (v ValidRule) Validate(value interface{}) error {
 		return errors.New("DebugInfo is invalid")
 	}
 	return validation.ValidateStruct(c,
-		validation.Field(c.Bucket, validation.Required, BucketValid),
+		validation.Field(&c.Bucket, validation.Required, BucketValid),
 	)
 }
 
