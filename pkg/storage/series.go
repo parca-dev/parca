@@ -301,7 +301,7 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.timestamps[0].maxTime > mint {
+	if len(s.timestamps) == 0 || s.timestamps[0].maxTime > mint {
 		// We don't have anything to do and can exist early.
 		return 0
 	}
@@ -363,6 +363,13 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 	s.timestamps = s.timestamps[start:]
 	s.durations = s.durations[start:]
 	s.periods = s.periods[start:]
+
+	// Update the series' numSamples according to the number timestamps.
+	var numSamples uint16
+	for _, t := range s.timestamps {
+		numSamples += uint16(t.chunk.NumSamples())
+	}
+	s.numSamples = numSamples
 
 	for key, chunks := range s.cumulativeValues {
 		s.cumulativeValues[key] = chunks[start:]
