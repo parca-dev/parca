@@ -28,7 +28,18 @@ For new minor and major releases, create the `release-<major>.<minor>` branch st
 
 From now on, all work happens on the `release-<major>.<minor>` branch.
 
-Tag the new release with a tag named `v<major>.<minor>.<patch>`, e.g. `v2.1.3`. Note the `v` prefix. You can do the tagging on the commandline:
+### Via GitHub's UI
+
+Go to https://github.com/parca-dev/parca/releases/new and click on "Choose a tag" where you can type the new tag name.
+Click on "Create new tag" in the dropdown and make sure `main` is selected for a new major or minor release or the `release-<major>.<minor>` branch for a patch release. 
+The title of the release is the tag itself.  
+You can generate the changelog and then add additional contents from previous a release (like social media links and more).
+
+### Via CLI
+
+Alternatively, you can do the tagging on the commandline:
+
+Tag the new release with a tag named `v<major>.<minor>.<patch>`, e.g. `v2.1.3`. Note the `v` prefix.
 
 ```bash
 git tag -s "v2.1.3" -m "v2.1.3"
@@ -36,6 +47,8 @@ git push origin "v2.1.3"
 ```
 
 Signed tag with a GPG key is appreciated, but in case you can't add a GPG key to your Github account using the following [procedure](https://help.github.com/articles/generating-a-gpg-key/), you can replace the `-s` flag by `-a` flag of the `git tag` command to only annotate the tag without signing.
+
+## Final steps
 
 Our CI pipeline will automatically push the container images to [ghcr.io](ghcr.io/parca-dev/parca).
 
