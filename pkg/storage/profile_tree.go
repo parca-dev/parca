@@ -110,33 +110,7 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 			cur.Children = newChildren
 		}
 
-		// Nodes that might only have cumulativeValues
-		if cur.cumulativeValues == nil {
-			cur.cumulativeValues = []*ProfileTreeValueNode{{}}
-		}
-		cur.cumulativeValues[0].Value += sample.Value[0]
-
-		for _, cv := range cur.cumulativeValues {
-			// Populate the keys with the current subset of locations.
-			// i+1 because we additionally have the root in locationIDs.
-			cv.Key(locationIDs[i+1:]...)
-		}
-
 		cur = child
-	}
-
-	if cur.cumulativeValues == nil {
-		cur.cumulativeValues = []*ProfileTreeValueNode{{}}
-	}
-
-	cur.cumulativeValues[0].Value += sample.Value[0]
-	// TODO: We probably need to merge labels, numLabels and numUnits
-	cur.cumulativeValues[0].Label = sample.Label
-	cur.cumulativeValues[0].NumLabel = sample.NumLabel
-	cur.cumulativeValues[0].NumUnit = sample.NumUnit
-
-	for _, cv := range cur.cumulativeValues {
-		cv.Key(locationIDs...) // populate the keys
 	}
 
 	if cur.flatValues == nil {
@@ -147,6 +121,8 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 	cur.flatValues[0].Label = sample.Label
 	cur.flatValues[0].NumLabel = sample.NumLabel
 	cur.flatValues[0].NumUnit = sample.NumUnit
+
+	t.Roots.cumulativeValues[0].Value += sample.Value[0]
 
 	for _, fv := range cur.flatValues {
 		fv.Key(locationIDs...) //populate the keys
