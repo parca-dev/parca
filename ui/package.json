@@ -39,7 +39,7 @@
     "@next/eslint-plugin-next": "^11.1.0",
     "@next/mdx": "^11.1.2",
     "@storybook/addon-actions": "^6.3.7",
-    "@storybook/addon-docs": "^6.3.7",
+    "@storybook/addon-docs": "^6.3.11",
     "@storybook/addon-essentials": "^6.3.7",
     "@storybook/addon-links": "^6.3.11",
     "@storybook/addon-storyshots": "^6.3.7",
