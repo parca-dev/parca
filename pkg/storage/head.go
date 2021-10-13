@@ -271,15 +271,10 @@ func (h *Head) stats() {
 		for _, memSeries := range series {
 			stats := memSeries.stats()
 			h.seriesValues.WithLabelValues("flat").Observe(float64(len(stats.Flat)))
-			h.seriesValues.WithLabelValues("cumulative").Observe(float64(len(stats.Cumulatives)))
 
 			for _, s := range stats.Flat {
 				h.seriesChunksSize.WithLabelValues("flat").Observe(float64(s.bytes))
 				h.seriesChunksSamples.WithLabelValues("flat").Observe(float64(s.samples))
-			}
-			for _, s := range stats.Cumulatives {
-				h.seriesChunksSize.WithLabelValues("cumulative").Observe(float64(s.bytes))
-				h.seriesChunksSamples.WithLabelValues("cumulative").Observe(float64(s.samples))
 			}
 		}
 		h.series.locks[i].RUnlock()

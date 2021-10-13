@@ -57,6 +57,20 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 			profileTreeChild := pit.At()
 			pId := profileTreeChild.LocationID()
 
+			if pId == 0 {
+				if len(t.s.root) == 0 {
+					t.s.root = make([]chunkenc.Chunk, len(t.s.timestamps))
+					for i := 0; i < len(t.s.timestamps); i++ {
+						t.s.root[i] = t.s.chunkPool.GetXOR()
+					}
+				}
+				app, err := t.s.root[len(t.s.root)-1].Appender()
+				if err != nil {
+					return fmt.Errorf("failed to open root appender: %w", err)
+				}
+				app.AppendAt(index, profileTreeChild.CumulativeValue())
+			}
+
 			done := false
 			for {
 				if !sit.NextChild() {
@@ -99,28 +113,6 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 								t.s.numUnits[*n.key] = n.NumUnit
 							}
 						}
-					}
-
-					for _, n := range profileTreeChild.CumulativeValues() {
-						if n.key == nil {
-							n.Key(profileTreeChild.LocationID())
-						}
-
-						if len(t.s.cumulativeValues[*n.key]) == 0 {
-							// Create the needed amount of chunks based on how many timestamp chunks there are.
-							t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
-							for i := 0; i < len(t.s.timestamps); i++ {
-								t.s.cumulativeValues[*n.key][i] = t.s.chunkPool.GetXOR()
-							}
-						}
-						app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()
-						if err != nil {
-							return fmt.Errorf("failed to open cumulative appender: %w", err)
-						}
-						app.AppendAt(index, n.Value)
-
-						// We need to keep track of the node keys.
-						seriesTreeChild.addKey(*n.key)
 					}
 
 					node.Children = append(node.Children, seriesTreeChild)
@@ -169,28 +161,6 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					seriesTreeChild.addKey(*n.key)
 				}
 
-				for _, n := range profileTreeChild.CumulativeValues() {
-					if n.key == nil {
-						n.Key(profileTreeChild.LocationID())
-					}
-
-					if len(t.s.cumulativeValues[*n.key]) == 0 {
-						// Create the needed amount of chunks based on how many timestamp chunks there are.
-						t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
-						for i := 0; i < len(t.s.timestamps); i++ {
-							t.s.cumulativeValues[*n.key][i] = t.s.chunkPool.GetXOR()
-						}
-					}
-					app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()
-					if err != nil {
-						return fmt.Errorf("failed to open cumulative appender: %w", err)
-					}
-					app.AppendAt(index, n.Value)
-
-					// We need to keep track of the node keys.
-					seriesTreeChild.addKey(*n.key)
-				}
-
 				pit.StepInto()
 				sit.StepInto()
 				continue
@@ -222,28 +192,6 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					app, err := t.s.flatValues[*n.key][len(t.s.flatValues[*n.key])-1].Appender()
 					if err != nil {
 						return fmt.Errorf("failed to open flat appender: %w", err)
-					}
-					app.AppendAt(index, n.Value)
-
-					// We need to keep track of the node keys.
-					newChild.addKey(*n.key)
-				}
-
-				for _, n := range profileTreeChild.CumulativeValues() {
-					if n.key == nil {
-						n.Key(profileTreeChild.LocationID())
-					}
-
-					if len(t.s.cumulativeValues[*n.key]) == 0 {
-						// Create the needed amount of chunks based on how many timestamp chunks there are.
-						t.s.cumulativeValues[*n.key] = make([]chunkenc.Chunk, len(t.s.timestamps))
-						for i := 0; i < len(t.s.timestamps); i++ {
-							t.s.cumulativeValues[*n.key][i] = t.s.chunkPool.GetXOR()
-						}
-					}
-					app, err := t.s.cumulativeValues[*n.key][len(t.s.cumulativeValues[*n.key])-1].Appender()
-					if err != nil {
-						return fmt.Errorf("failed to open cumulative appender: %w", err)
 					}
 					app.AppendAt(index, n.Value)
 
