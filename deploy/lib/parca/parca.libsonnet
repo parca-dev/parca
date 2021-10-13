@@ -18,6 +18,7 @@ local defaults = {
   port: 7070,
 
   serviceMonitor: false,
+  storageRetentionTime: '',
 
   commonLabels:: {
     'app.kubernetes.io/name': 'parca',
@@ -207,7 +208,9 @@ function(params) {
           '--log-level=' + prc.config.logLevel,
         ] +
         (if prc.config.corsAllowedOrigins == '' then []
-         else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]),
+         else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]) + 
+        (if prc.config.storageRetentionTime == '' then []
+         else ['--storage-tsdb-retention-time=' + prc.config.storageRetentionTime]),
       ports: [
         { name: port.name, containerPort: port.port }
         for port in prc.service.spec.ports
