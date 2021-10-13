@@ -41,7 +41,7 @@
     "@storybook/addon-actions": "^6.3.7",
     "@storybook/addon-docs": "^6.3.7",
     "@storybook/addon-essentials": "^6.3.7",
-    "@storybook/addon-links": "^6.3.10",
+    "@storybook/addon-links": "^6.3.11",
     "@storybook/addon-storyshots": "^6.3.7",
     "@storybook/builder-webpack5": "^6.3.4",
     "@storybook/manager-webpack5": "^6.3.10",
