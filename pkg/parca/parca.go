@@ -85,7 +85,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	cfg := config.Config{}
-	if err := yaml.UnmarshalStrict(cfgContent, &cfg); err != nil {
+	if err := yaml.Unmarshal(cfgContent, &cfg); err != nil {
 		level.Error(logger).Log("msg", "failed to parse config", "err", err, "path", flags.ConfigPath)
 		return err
 	}
