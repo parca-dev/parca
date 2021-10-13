@@ -45,18 +45,26 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 		return &MemRangeSeriesIterator{err: err}
 	}
 
-	rootKey := ProfileTreeValueNodeKey{location: "0"}
-	rootIt := NewMultiChunkIterator(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
+	timestampIterator := NewMultiChunkIterator(timestamps)
+	durationsIterator := NewMultiChunkIterator(rs.s.durations[chunkStart:chunkEnd])
+	periodsIterator := NewMultiChunkIterator(rs.s.periods[chunkStart:chunkEnd])
+	rootIterator := NewMultiChunkIterator(rs.s.root[chunkStart:chunkEnd])
+
 	if start != 0 {
-		rootIt.Seek(start)
+		timestampIterator.Seek(start)
+		durationsIterator.Seek(start)
+		periodsIterator.Seek(start)
+		rootIterator.Seek(start)
+	}
+
+	numSamples := uint64(rs.s.numSamples)
+	if end-start < numSamples {
+		numSamples = end - start - 1
 	}
 
 	root := &MemSeriesIteratorTreeNode{}
 	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-		Values:   rootIt,
-		Label:    rs.s.labels[rootKey],
-		NumLabel: rs.s.numLabels[rootKey],
-		NumUnit:  rs.s.numUnits[rootKey],
+		Values: rootIterator,
 	})
 
 	// As an implementation detail of the tree stack iterator,
@@ -64,27 +72,9 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 	// We need to recreate the root and not simply append it itself, as that creates an endless recursion.
 	root.Children = append(root.Children, &MemSeriesIteratorTreeNode{
 		cumulativeValues: []*MemSeriesIteratorTreeValueNode{{
-			Values:   rootIt,
-			Label:    rs.s.labels[rootKey],
-			NumLabel: rs.s.numLabels[rootKey],
-			NumUnit:  rs.s.numUnits[rootKey],
+			Values: rootIterator,
 		}},
 	})
-
-	timestampIterator := NewMultiChunkIterator(timestamps)
-	durationsIterator := NewMultiChunkIterator(rs.s.durations[chunkStart:chunkEnd])
-	periodsIterator := NewMultiChunkIterator(rs.s.periods[chunkStart:chunkEnd])
-
-	if start != 0 {
-		timestampIterator.Seek(start)
-		durationsIterator.Seek(start)
-		periodsIterator.Seek(start)
-	}
-
-	numSamples := uint64(rs.s.numSamples)
-	if end-start < numSamples {
-		numSamples = end - start - 1
-	}
 
 	return &MemRangeSeriesIterator{
 		s:    rs.s,
