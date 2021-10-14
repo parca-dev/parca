@@ -38,7 +38,6 @@ COPY --chown=nobody:nogroup go.mod go.sum ./
 COPY --chown=nobody:nogroup ./cmd/parca ./cmd/parca
 COPY --chown=nobody:nogroup ./pkg ./pkg
 COPY --chown=nobody:nogroup ./gen ./gen
-COPY --chown=nobody:nogroup ./internal ./internal
 COPY --chown=nobody:nogroup ./proto ./proto
 COPY --chown=nobody:nogroup ./ui/ui.go ./ui/ui.go
 COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
