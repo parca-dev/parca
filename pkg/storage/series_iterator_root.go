@@ -14,6 +14,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
@@ -42,18 +44,14 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 	it := NewMultiChunkIterator(timestamps)
 	start, end, err := getIndexRange(it, rs.s.numSamples, rs.mint, rs.maxt)
 	if err != nil {
-		return &MemRangeSeriesIterator{err: err}
+		return &MemRootSeriesIterator{err: err}
 	}
 
 	timestampIterator := NewMultiChunkIterator(timestamps)
-	durationsIterator := NewMultiChunkIterator(rs.s.durations[chunkStart:chunkEnd])
-	periodsIterator := NewMultiChunkIterator(rs.s.periods[chunkStart:chunkEnd])
 	rootIterator := NewMultiChunkIterator(rs.s.root[chunkStart:chunkEnd])
 
 	if start != 0 {
 		timestampIterator.Seek(start)
-		durationsIterator.Seek(start)
-		periodsIterator.Seek(start)
 		rootIterator.Seek(start)
 	}
 
@@ -62,30 +60,82 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 		numSamples = end - start - 1
 	}
 
-	root := &MemSeriesIteratorTreeNode{}
-	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-		Values: rootIterator,
-	})
-
-	// As an implementation detail of the tree stack iterator,
-	// we need to have the root as child of the root once more.
-	// We need to recreate the root and not simply append it itself, as that creates an endless recursion.
-	root.Children = append(root.Children, &MemSeriesIteratorTreeNode{
-		cumulativeValues: []*MemSeriesIteratorTreeValueNode{{
-			Values: rootIterator,
-		}},
-	})
-
-	return &MemRangeSeriesIterator{
+	return &MemRootSeriesIterator{
 		s:    rs.s,
 		mint: rs.mint,
 		maxt: rs.maxt,
 
-		numSamples:         numSamples,
 		timestampsIterator: timestampIterator,
-		durationsIterator:  durationsIterator,
-		periodsIterator:    periodsIterator,
+		rootIterator:       rootIterator,
 
-		tree: &MemSeriesIteratorTree{Roots: root},
+		numSamples: numSamples,
 	}
+}
+
+type MemRootSeriesIterator struct {
+	s    *MemSeries
+	mint int64
+	maxt int64
+
+	timestampsIterator MemSeriesValuesIterator
+	rootIterator       MemSeriesValuesIterator
+
+	numSamples uint64
+	err        error
+}
+
+func (it *MemRootSeriesIterator) Next() bool {
+	it.s.mu.RLock()
+	defer it.s.mu.RUnlock()
+
+	if it.numSamples == 0 {
+		return false
+	}
+
+	if !it.timestampsIterator.Next() {
+		it.err = fmt.Errorf("unexpected end of timestamps iterator")
+		return false
+	}
+	if it.timestampsIterator.Err() != nil {
+		it.err = fmt.Errorf("next timestamp: %w", it.timestampsIterator.Err())
+		return false
+	}
+
+	if !it.rootIterator.Next() {
+		it.err = fmt.Errorf("unexpected end of root iterator")
+		return false
+	}
+	if it.rootIterator.Err() != nil {
+		it.err = fmt.Errorf("next root: %w", it.rootIterator.Err())
+		return false
+	}
+
+	tr := it.timestampsIterator.Read()
+	rr := it.rootIterator.Read()
+	if tr != rr {
+		it.err = fmt.Errorf("iteration mismatch for timestamps and roots: %d, got: %d", tr, rr)
+		return false
+	}
+
+	it.numSamples--
+	return true
+}
+
+func (it *MemRootSeriesIterator) At() InstantProfile {
+	return &Profile{
+		Meta: InstantProfileMeta{
+			Timestamp: it.timestampsIterator.At(),
+		},
+		Tree: &ProfileTree{
+			Roots: &ProfileTreeNode{
+				cumulativeValues: []*ProfileTreeValueNode{{
+					Value: it.rootIterator.At(),
+				}},
+			},
+		},
+	}
+}
+
+func (it *MemRootSeriesIterator) Err() error {
+	return it.err
 }
