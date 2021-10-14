@@ -89,21 +89,7 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 		},
 	}
 
-	rootKey := ProfileTreeValueNodeKey{location: "0"}
-
-	// reuse NewMultiChunkIterator with new chunks.
-	it.Reset(ms.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
-	sum, err := iteratorRangeSum(it, start, end)
-	if err != nil {
-		sl.err = err
-		return sl
-	}
-
-	cur := &ProfileTreeNode{
-		cumulativeValues: []*ProfileTreeValueNode{{
-			Value: sum,
-		}},
-	}
+	cur := &ProfileTreeNode{}
 
 	tree := &ProfileTree{Roots: cur}
 	p.Tree = tree
@@ -121,6 +107,15 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 
 	treeIt.StepInto()
 
+	var (
+		cumulativeValues = make([]*ProfileTreeValueNode, 128) // 128 is max stack depth
+		depth            uint8
+	)
+
+	tree.Roots.cumulativeValues = []*ProfileTreeValueNode{{}}
+	cumulativeValues[depth] = tree.Roots.cumulativeValues[0]
+	depth++
+
 	for {
 		hasMore := treeIt.HasMore()
 		if !hasMore {
@@ -133,6 +128,10 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 			n := &ProfileTreeNode{
 				locationID: child.LocationID,
 				Children:   make([]*ProfileTreeNode, 0, len(child.Children)),
+			}
+
+			if n.cumulativeValues == nil {
+				n.cumulativeValues = []*ProfileTreeValueNode{}
 			}
 
 			for _, key := range child.keys {
@@ -150,22 +149,23 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 							NumLabel: ms.s.numLabels[key],
 							NumUnit:  ms.s.numUnits[key],
 						})
+						n.cumulativeValues = append(n.cumulativeValues, &ProfileTreeValueNode{
+							Label:    ms.s.labels[key],
+							NumLabel: ms.s.numLabels[key],
+							NumUnit:  ms.s.numUnits[key],
+						})
+						cumulativeValues[depth] = n.cumulativeValues[len(n.cumulativeValues)-1]
+
+						for i := uint8(0); i <= depth; i++ {
+							cumulativeValues[i].Value += sum
+						}
 					}
 				}
-				if chunks, ok := ms.s.cumulativeValues[key]; ok {
-					it.Reset(chunks[chunkStart:chunkEnd])
-					sum, err := iteratorRangeSum(it, start, end)
-					if err != nil {
-						sl.err = err
-						return sl
-					}
-					n.cumulativeValues = append(n.cumulativeValues, &ProfileTreeValueNode{
-						Value:    sum,
-						Label:    ms.s.labels[key],
-						NumLabel: ms.s.numLabels[key],
-						NumUnit:  ms.s.numUnits[key],
-					})
-				}
+			}
+
+			if len(n.cumulativeValues) == 0 {
+				n.cumulativeValues = append(n.cumulativeValues, &ProfileTreeValueNode{})
+				cumulativeValues[depth] = n.cumulativeValues[len(n.cumulativeValues)-1]
 			}
 
 			cur := stack.Peek()
@@ -174,11 +174,14 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 			stack.Push(&ProfileTreeStackEntry{
 				node: n,
 			})
+
+			depth++
 			treeIt.StepInto()
 			continue
 		}
 		treeIt.StepUp()
 		stack.Pop()
+		depth--
 	}
 	return sl
 }

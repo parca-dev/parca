@@ -162,7 +162,7 @@ func (it *MemSeriesIterator) Next() bool {
 
 	var (
 		cumulativeValues = make([]*ProfileTreeValueNode, 128) // 128 is max stack depth
-		depth            uint16
+		depth            uint8
 	)
 
 	it.tree.Roots.cumulativeValues = []*ProfileTreeValueNode{{}}
@@ -206,7 +206,7 @@ func (it *MemSeriesIterator) Next() bool {
 				if vAt == 0 {
 					continue
 				}
-				for i := uint16(0); i <= depth; i++ {
+				for i := uint8(0); i <= depth; i++ {
 					cumulativeValues[i].Value += vAt
 				}
 			}
@@ -217,7 +217,6 @@ func (it *MemSeriesIterator) Next() bool {
 			}
 
 			depth++
-
 			iit.StepInto()
 			continue
 		}
