@@ -61,8 +61,7 @@ function(params) {
       ports: [
         {
           assert std.isNumber(prc.config.port),
-
-          name: 'all',
+          name: 'http',
           port: prc.config.port,
           targetPort: prc.config.port,
         },
@@ -279,7 +278,7 @@ function(params) {
       },
       endpoints: [
         {
-          port: 'http',
+          port: prc.service.spec.ports[0].name,
           relabelings: [{
             sourceLabels: ['namespace', 'pod'],
             separator: '/',
