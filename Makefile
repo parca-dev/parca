@@ -23,7 +23,7 @@ clean:
 	rm -rf ui/packages/app/web/.next
 
 .PHONY: go/deps
-go/deps: internal/pprof
+go/deps:
 	go mod tidy
 
 .PHONY: go/bin
@@ -36,7 +36,7 @@ format: go/fmt check-license
 
 .PHONY: go/fmt
 go/fmt:
-	go fmt `go list ./... | grep -E -v "internal/pprof|internal/go"`
+	go fmt `go list ./...`
 
 .PHONY: check-license
 check-license:
@@ -44,7 +44,7 @@ check-license:
 
 .PHONY: go/test
 go/test:
-	 go test -v `go list ./... | grep -E -v "internal/pprof|internal/go"`
+	 go test -v `go list ./...`
 
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/dist/*" -not -path "./ui/packages/app/web/.next/*")
 ui/packages/app/web/dist: $(UI_FILES)
@@ -68,7 +68,7 @@ proto/generate:
 proto/vendor:
 	buf mod update
 	mkdir -p proto/google/pprof
-	curl https://raw.githubusercontent.com/google/pprof/master/proto/profile.proto                                                 > proto/google/pprof/profile.proto
+	curl https://raw.githubusercontent.com/google/pprof/master/proto/profile.proto > proto/google/pprof/profile.proto
 
 .PHONY: container
 container:
@@ -98,11 +98,3 @@ dev/up: deploy/manifests
 .PHONY: dev/down
 dev/down:
 	source ./scripts/local-dev.sh && down
-
-internal/pprof:
-	rm -rf internal/pprof
-	rm -rf tmp/pprof
-	git clone https://github.com/google/pprof tmp/pprof
-	cp -r tmp/pprof/internal internal/pprof
-	find internal/pprof -type f -exec sed -i 's/github.com\/google\/pprof\/internal/github.com\/parca-dev\/parca\/internal\/pprof/g' {} +
-	rm -rf tmp/pprof

@@ -201,7 +201,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
-	addr2Line, err := s.symbolizer.NewAddr2Line(m, localObjPath)
+	liner, err := s.symbolizer.NewLiner(m, localObjPath)
 	if err != nil {
 		const msg = "failed to create add2LineFunc"
 		level.Debug(s.logger).Log("msg", msg, "object", m.BuildID, "err", err)
@@ -210,7 +210,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 
 	locationLines := map[*profile.Location][]profile.Line{}
 	for _, loc := range locations {
-		lines, err := addr2Line(loc.Address)
+		lines, err := liner.PCToLines(loc.Address)
 		if err != nil {
 			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildID, "err", err)
 			continue

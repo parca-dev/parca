@@ -20,24 +20,10 @@ import (
 	"fmt"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/internal/go/cmd/objfile"
 )
 
-type liner interface {
-	// PCToLine given a pc, returns the corresponding file, line, and function data.
-	// If unknown, returns "",0,nil.
-	PCToLine(uint64) (string, int, *gosym.Func)
-}
-
 func Go(path string) (func(addr uint64) ([]profile.Line, error), error) {
-	var tab liner
-	//tab, err := gosymtab(path)
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to create go symbtab: %w", err)
-	//}
-
-	// TODO(kakkoyun): Check if it worth the hassle!
-	tab, err := gopclntab(path)
+	tab, err := gosymtab(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
@@ -60,7 +46,7 @@ func Go(path string) (func(addr uint64) ([]profile.Line, error), error) {
 			line = 0
 		}
 
-		// TODO(kakkoyun): Find a way for inline functions.
+		// TODO(kakkoyun): Find a way to symbolize inline functions.
 		lines = append(lines, profile.Line{
 			Line: int64(line),
 			Function: &profile.Function{
@@ -73,21 +59,7 @@ func Go(path string) (func(addr uint64) ([]profile.Line, error), error) {
 	}, nil
 }
 
-func gopclntab(path string) (liner, error) {
-	f, err := objfile.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read objfile: %w", err)
-	}
-	defer f.Close()
-
-	tab, err := f.PCLineTable()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pclinetab objfile: %w", err)
-	}
-	return tab, nil
-}
-
-func gosymtab(path string) (liner, error) {
+func gosymtab(path string) (*gosym.Table, error) {
 	exe, err := elf.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open elf: %w", err)
@@ -100,7 +72,7 @@ func gosymtab(path string) (liner, error) {
 			return nil, errors.New(".gopclntab section has no bits")
 		}
 
-		// TODO(kakkoyun): Don't read just check existence!
+		// TODO(kakkoyun): Optimize.Don't read just check existence!
 		pclntab, err = sec.Data()
 		if err != nil {
 			return nil, fmt.Errorf("could not find .gopclntab section: %w", err)
@@ -113,7 +85,7 @@ func gosymtab(path string) (liner, error) {
 
 	var symtab []byte
 	if sec := exe.Section(".gosymtab"); sec != nil {
-		// TODO(kakkoyun): Don't read just check existence!
+		// TODO(kakkoyun): Optimize. Don't read just check existence!
 		symtab, _ = sec.Data()
 	}
 
@@ -127,54 +99,4 @@ func gosymtab(path string) (liner, error) {
 		return nil, fmt.Errorf("failed to build symtab or pclinetab: %w", err)
 	}
 	return table, nil
-}
-
-func IsSymbolizableGoObjFile(path string) (bool, error) {
-	// Checks ".note.go.buildid" section and symtab better to keep those sections in object file.
-	exe, err := elf.Open(path)
-	if err != nil {
-		return false, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer exe.Close()
-
-	isGo := false
-	for _, s := range exe.Sections {
-		if s.Name == ".note.go.buildid" {
-			isGo = true
-		}
-	}
-
-	// In case ".note.go.buildid" section is stripped, check for symbols.
-	if !isGo {
-		syms, err := exe.Symbols()
-		if err != nil {
-			return false, fmt.Errorf("failed to read symbols: %w", err)
-		}
-		for _, sym := range syms {
-			name := sym.Name
-			if name == "runtime.main" || name == "main.main" {
-				isGo = true
-			}
-			if name == "runtime.buildVersion" {
-				isGo = true
-			}
-		}
-	}
-
-	if !isGo {
-		return false, nil
-	}
-
-	// Check if the Go binary symbolizable.
-	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
-	var pclntab []byte
-	if sec := exe.Section(".gopclntab"); sec != nil {
-		// TODO(kakkoyun): Don't read just check existence!
-		pclntab, err = sec.Data()
-		if err != nil {
-			return false, fmt.Errorf("could not find .gopclntab section: %w", err)
-		}
-	}
-
-	return len(pclntab) > 0, nil
 }

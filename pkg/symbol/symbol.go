@@ -17,28 +17,38 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/internal/pprof/binutils"
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
+	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
 type Symbolizer struct {
 	logger log.Logger
-	// TODO(kakkoyun): Remove when dwarf implementation works!
-	bu *binutils.Binutils
+
+	demangler *demangle.Demangler
 }
 
-type addr2Line func(addr uint64) ([]profile.Line, error)
+type liner interface {
+	PCToLines(pc uint64) ([]profile.Line, error)
+}
 
-func NewSymbolizer(logger log.Logger) *Symbolizer {
+type funcLiner func(addr uint64) ([]profile.Line, error)
+
+func (f funcLiner) PCToLines(pc uint64) ([]profile.Line, error) { return f(pc) }
+
+func NewSymbolizer(logger log.Logger, demangleMode ...string) *Symbolizer {
+	var demangler *demangle.Demangler
+	if len(demangleMode) > 0 {
+		demangler = demangle.NewDemangler(demangleMode[0], false)
+	}
 	return &Symbolizer{
-		logger: log.With(logger, "component", "symbolizer"),
-		bu:     &binutils.Binutils{},
+		logger:    log.With(logger, "component", "symbolizer"),
+		demangler: demangler,
 	}
 }
 
-// TODO(kakkoyun): Do we need mapping? What is the advantage?
-func (s *Symbolizer) NewAddr2Line(m *profile.Mapping, file string) (addr2Line, error) {
+// TODO(kakkoyun): Do we still need mapping? What is the actual usecase?
+func (s *Symbolizer) NewLiner(m *profile.Mapping, file string) (liner, error) {
 	hasDWARF, err := elfutils.HasDWARF(file)
 	if err != nil {
 		level.Debug(s.logger).Log(
@@ -49,9 +59,10 @@ func (s *Symbolizer) NewAddr2Line(m *profile.Mapping, file string) (addr2Line, e
 	}
 	if hasDWARF {
 		level.Debug(s.logger).Log("msg", "using DWARF to resolve symbols", "file", file)
-		f, err := addr2line.DWARF(m, file)
+		f, err := addr2line.DWARF(s.demangler, m, file)
 		if err != nil {
-			level.Error(s.logger).Log("msg", "failed to open object file",
+			level.Error(s.logger).Log(
+				"msg", "failed to open object file",
 				"file", file,
 				"start", m.Start,
 				"limit", m.Limit,
@@ -60,12 +71,12 @@ func (s *Symbolizer) NewAddr2Line(m *profile.Mapping, file string) (addr2Line, e
 			)
 			return nil, err
 		}
-		return f, nil
+		return funcLiner(f), nil
 	}
 
 	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
 	// Keep that section and other identifying sections in the debug information file.
-	isGo, err := addr2line.IsSymbolizableGoObjFile(file)
+	isGo, err := elfutils.IsSymbolizableGoObjFile(file)
 	if err != nil {
 		level.Debug(s.logger).Log(
 			"msg", "failed to determine if binary is a Go binary",
@@ -79,20 +90,20 @@ func (s *Symbolizer) NewAddr2Line(m *profile.Mapping, file string) (addr2Line, e
 		level.Debug(s.logger).Log("msg", "symbolizing a Go binary", "file", file)
 		f, err := addr2line.Go(file)
 		if err == nil {
-			level.Debug(s.logger).Log("msg", "using go addr2Line to resolve symbols", "file", file)
-			return f, nil
+			level.Debug(s.logger).Log("msg", "using go liner to resolve symbols", "file", file)
+			return funcLiner(f), nil
 		}
 
 		level.Error(s.logger).Log(
-			"msg", "failed to create go addr2Line, falling back to binary addr2Line",
+			"msg", "failed to create go liner, falling back to binary liner",
 			"file", file,
 			"err", err,
 		)
 	}
 
 	// Just in case, underlying binutils can symbolize addresses.
-	level.Debug(s.logger).Log("msg", "falling back to binutils addr2Line resolve symbols", "file", file)
-	f, err := addr2line.DWARF(m, file)
+	level.Debug(s.logger).Log("msg", "falling back to binutils liner resolve symbols", "file", file)
+	f, err := addr2line.DWARF(s.demangler, m, file)
 	if err != nil {
 		level.Error(s.logger).Log("msg", "failed to open object file",
 			"file", file,
@@ -103,5 +114,5 @@ func (s *Symbolizer) NewAddr2Line(m *profile.Mapping, file string) (addr2Line, e
 		)
 		return nil, err
 	}
-	return f, nil
+	return funcLiner(f), nil
 }

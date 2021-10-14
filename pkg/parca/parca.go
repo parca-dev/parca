@@ -63,6 +63,8 @@ type Flags struct {
 
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
+
+	SymbolizerDemangleMode string `default:"" help:"Mode to demangle C++ symbols. Default mode is simplified: : no parameters, no templates, no return type" enum:"full,none,templates"`
 }
 
 // Run the parca server
@@ -143,8 +145,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	// TODO(kakkoyun): Add demangler options!
-	dbgInfo, err := debuginfo.NewStore(logger, symbol.NewSymbolizer(logger), cfg.DebugInfo)
+	dbgInfo, err := debuginfo.NewStore(logger, symbol.NewSymbolizer(logger, flags.SymbolizerDemangleMode), cfg.DebugInfo)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err

@@ -19,157 +19,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 
+	"github.com/go-delve/delve/pkg/dwarf/godwarf"
+	"github.com/go-delve/delve/pkg/dwarf/reader"
 	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
-func sourceLines(data *dwarf.Data, addr uint64, doDemangle bool) ([]profile.Line, error) {
-	// Reader returns a new Reader for Data.
-	// The reader is positioned at byte offset 0 in the DWARF “info” section.
-	er := data.Reader()
-	entry, err := er.SeekPC(addr)
-	if err != nil {
-		return nil, err
-	}
-	if entry == nil {
-		return nil, errors.New("failed to find a corresponding dwarf entry for given address")
-	}
-	fmt.Printf("SEEK Tag: %s\n", entry.Tag.GoString())
-
-	lr, err := data.LineReader(entry)
-	if err != nil {
-		return nil, err
-	}
-
-	le := dwarf.LineEntry{}
-	for {
-		err := lr.Next(&le)
-		if err != nil {
-			break
-		}
-		fmt.Printf("SEEK Address: %x - %v File: %s Line: %d IsStmt: %v PrologueEnd: %v BasicBlock: %v\n", le.Address, le.Address, le.File.Name, le.Line, le.IsStmt, le.PrologueEnd, le.BasicBlock)
-	}
-
-	var inline = false
-	lines := []profile.Line{}
-	for {
-		cu, err := er.Next()
-		if err != nil {
-			if err == io.EOF {
-				// We've reached the end of DWARF entries
-				break
-			}
-			continue
-		}
-		if cu == nil {
-			break
-		}
-		if cu.Tag == dwarf.TagCompileUnit {
-			break
-		}
-
-		// Check if this entry is a function
-		if cu.Tag == dwarf.TagSubprogram {
-			fmt.Printf("LOOP TAG: %s, Address: %x\n", cu.Tag.GoString(), cu.Offset)
-			functionName := getFunctionName(cu)
-
-			for _, field := range cu.Field {
-				fmt.Println(field.Attr, field.Val, field.Class)
-			}
-
-			// Decode CU's line table.
-			lr, err := data.LineReader(cu)
-			if err != nil {
-				return nil, err
-			} else if lr == nil {
-				//fmt.Println("Line reader empty")
-				continue
-			}
-			le := dwarf.LineEntry{}
-			for {
-				err := lr.Next(&le)
-				if err != nil {
-					break
-				}
-				fmt.Printf("LOOP Address: %x - %v File: %s Line: %d IsStmt: %v PrologueEnd: %v\n", le.Address, le.Address, le.File.Name, le.Line, le.IsStmt, le.PrologueEnd)
-			}
-
-			lines = append(lines, profile.Line{
-				Line: int64(le.Line),
-				Function: &profile.Function{
-					Name:     functionName,
-					Filename: le.File.Name,
-				},
-			})
-			continue
-		}
-
-		if entry.Tag == dwarf.TagInlinedSubroutine {
-			fmt.Printf("LOOP TAG: %s\n", cu.Tag.GoString())
-			// Only some entry types, such as TagCompileUnit or TagSubprogram, have PC ranges;
-			//  for others, this will return nil with no error.
-			rg, err := data.Ranges(cu)
-			if err != nil {
-				continue
-			}
-			fmt.Printf("LOOP Ranges ANY, %v\n", rg)
-			if len(rg) == 1 {
-				fmt.Printf("LOOP Ranges, Address: %v Addr: %x\n", addr, addr)
-				fmt.Printf("LOOP Ranges, Low: %x High: %x\n", rg[0][0], rg[0][1])
-				fmt.Printf("LOOP Range TAG: %s\n", cu.Tag.GoString())
-				if rg[0][0] <= addr && rg[0][1] > addr {
-					inline = true
-					break
-				}
-			}
-		}
-	}
-
-	if inline {
-		//	err := lr.SeekPC(addr, &line)
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//
-		//	err = lr.SeekPC(line.Address-1, &line)
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//
-		//	if line.Line == 0 {
-		//		err := lr.SeekPC(addr, &line)
-		//		if err != nil {
-		//			return nil, err
-		//		}
-		//		var line2 dwarf.LineEntry
-		//		lr.Next(&line2)
-		//		if line2.Line != 0 {
-		//			line = line2
-		//		}
-		//	}
-		//} else {
-		//	err = lr.SeekPC(addr, &line)
-		//	if err != nil {
-		//		return nil, err
-		//	}
-	}
-
-	return lines, nil
-}
-
-func getFunctionName(entry *dwarf.Entry) string {
-	var functionName string
-	for _, field := range entry.Field {
-		if field.Attr == dwarf.AttrName {
-			functionName = field.Val.(string)
-			// TODO(kakkoyun): Remove!
-			fmt.Println(functionName)
-		}
-	}
-	return functionName
-}
-
-func DWARF(_ *profile.Mapping, path string) (func(addr uint64) ([]profile.Line, error), error) {
+func DWARF(demangler *demangle.Demangler, _ *profile.Mapping, path string) (func(addr uint64) ([]profile.Line, error), error) {
 	// TODO(kakkoyun): Handle offset, start and limit?
 	//objFile, err := s.bu.Open(file, m.Start, m.Limit, m.Offset)
 	//if err != nil {
@@ -182,19 +40,13 @@ func DWARF(_ *profile.Mapping, path string) (func(addr uint64) ([]profile.Line, 
 	}
 	defer exe.Close()
 
-	//syms, err := exe.Symbols()
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to read symbols: %w", err)
-	//}
-
 	data, err := exe.DWARF()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}
 
 	return func(addr uint64) ([]profile.Line, error) {
-		// TODO(kakkoyun): Multiple frames? Inlined functions?
-		lines, err := sourceLines(data, addr, true)
+		lines, err := sourceLines(demangler, data, addr)
 		if err != nil {
 			return nil, err
 		}
@@ -205,4 +57,136 @@ func DWARF(_ *profile.Mapping, path string) (func(addr uint64) ([]profile.Line, 
 
 		return lines, nil
 	}, nil
+}
+
+func sourceLines(demangler *demangle.Demangler, data *dwarf.Data, addr uint64) ([]profile.Line, error) {
+	// The reader is positioned at byte offset 0 in the DWARF “info” section.
+	er := data.Reader()
+	cu, err := er.SeekPC(addr)
+	if err != nil {
+		return nil, err
+	}
+	if cu == nil {
+		return nil, errors.New("failed to find a corresponding dwarf entry for given address")
+	}
+
+	// The reader is positioned at byte offset 0 in the DWARF “line” section.
+	lr, err := data.LineReader(cu)
+	if err != nil {
+		return nil, err
+	}
+
+	lineEntries := []dwarf.LineEntry{}
+	for {
+		le := dwarf.LineEntry{}
+		err := lr.Next(&le)
+		if err != nil {
+			break
+		}
+		if le.IsStmt {
+			lineEntries = append(lineEntries, le)
+		}
+	}
+
+	subprograms := []*godwarf.Tree{}
+	abstractSubprograms := map[dwarf.Offset]*dwarf.Entry{}
+outer:
+	for {
+		entry, err := er.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			continue
+		}
+		if entry == nil {
+			break
+		}
+		if entry.Tag == dwarf.TagCompileUnit {
+			break
+		}
+
+		if entry.Tag == dwarf.TagSubprogram {
+			for _, field := range entry.Field {
+				if field.Attr == dwarf.AttrInline {
+					abstractSubprograms[entry.Offset] = entry
+					continue outer
+				}
+			}
+
+			tr, err := godwarf.LoadTree(entry.Offset, data, 0)
+			if err != nil {
+				return nil, err
+			}
+
+			if tr.ContainsPC(addr) {
+				subprograms = append(subprograms, tr)
+			}
+		}
+	}
+
+	lines := []profile.Line{}
+	for _, tr := range subprograms {
+		name := tr.Entry.Val(dwarf.AttrName).(string)
+		file, line := findLineInfo(lineEntries, tr.Ranges)
+		lines = append(lines, profile.Line{
+			Line: line,
+			Function: demangler.Demangle(&profile.Function{
+				Name:     name,
+				Filename: file,
+			}),
+		})
+
+		// If pc is 0 then all inlined calls will be returned.
+		for _, ch := range reader.InlineStack(tr, addr) {
+			var name string
+			if ch.Tag == dwarf.TagSubprogram {
+				name = tr.Entry.Val(dwarf.AttrName).(string)
+			} else {
+				abstractOrigin := abstractSubprograms[ch.Entry.Val(dwarf.AttrAbstractOrigin).(dwarf.Offset)]
+				name = getFunctionName(abstractOrigin)
+			}
+
+			file, line := findLineInfo(lineEntries, ch.Ranges)
+			lines = append(lines, profile.Line{
+				Line: line,
+				Function: demangler.Demangle(&profile.Function{
+					Name:     name,
+					Filename: file,
+				}),
+			})
+		}
+	}
+
+	return lines, nil
+}
+
+func findLineInfo(entries []dwarf.LineEntry, rg [][2]uint64) (string, int64) {
+	file := "?"
+	var line int64 = 0
+	i := sort.Search(len(entries), func(i int) bool {
+		return entries[i].Address >= rg[0][0]
+	})
+	if i >= len(entries) {
+		return file, line
+	}
+
+	le := dwarf.LineEntry{}
+	pc := entries[i].Address
+	if rg[0][0] <= pc && pc < rg[0][1] {
+		le = entries[i]
+		return le.File.Name, int64(le.Line)
+	}
+
+	return file, line
+}
+
+func getFunctionName(entry *dwarf.Entry) string {
+	var name string
+	for _, field := range entry.Field {
+		if field.Attr == dwarf.AttrName {
+			name = field.Val.(string)
+		}
+	}
+	return name
 }

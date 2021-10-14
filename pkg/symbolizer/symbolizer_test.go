@@ -70,7 +70,7 @@ func TestSymbolizer(t *testing.T) {
 	logger := log.NewLogfmtLogger(w)
 	s, err := debuginfo.NewStore(
 		logger,
-		symbol.NewSymbolizer(logger),
+		symbol.NewSymbolizer(logger, ""),
 		&debuginfo.Config{
 			Bucket: &client.BucketConfig{
 				Type: client.FILESYSTEM,
@@ -158,7 +158,7 @@ func TestSymbolizer(t *testing.T) {
 	})
 	require.Equal(t, 3, len(lines))
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[0].Function.Filename)
-	require.Equal(t, int64(10), lines[0].Line)
+	require.Equal(t, int64(7), lines[0].Line) // llvm-addr2line gives 10
 	require.Equal(t, "main.main", lines[0].Function.Name)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[1].Function.Filename)
 	require.Equal(t, int64(23), lines[1].Line)
@@ -285,7 +285,7 @@ func TestRealSymbolizer(t *testing.T) {
 	})
 	require.Equal(t, 3, len(lines))
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[0].Function.Filename)
-	require.Equal(t, int64(10), lines[0].Line)
+	require.Equal(t, int64(7), lines[0].Line) // llvm-addr2line gives 10
 	require.Equal(t, "main.main", lines[0].Function.Name)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[1].Function.Filename)
 	require.Equal(t, int64(23), lines[1].Line)
