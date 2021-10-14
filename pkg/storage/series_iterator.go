@@ -173,6 +173,7 @@ func (it *MemSeriesIterator) Next() bool {
 	for iit.HasMore() {
 		if iit.NextChild() {
 			child := iit.at()
+			child.cumulativeValues = nil // Clean cumulative values from previous iteration
 
 			for _, v := range child.flatValues {
 				if !v.Values.Next() {
