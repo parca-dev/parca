@@ -29,7 +29,7 @@ type Demangler struct {
 func NewDemangler(mode string, force bool) *Demangler {
 	var options []demangle.Option
 	switch mode {
-	case "": // demangled, simplified: no parameters, no templates, no return type
+	case "", "simple": // demangled, simplified: no parameters, no templates, no return type
 		options = []demangle.Option{demangle.NoParams, demangle.NoTemplateParams}
 	case "templates": // demangled, simplified: no parameters, no return type
 		options = []demangle.Option{demangle.NoParams}

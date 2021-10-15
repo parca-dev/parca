@@ -37,13 +37,13 @@ type funcLiner func(addr uint64) ([]profile.Line, error)
 func (f funcLiner) PCToLines(pc uint64) ([]profile.Line, error) { return f(pc) }
 
 func NewSymbolizer(logger log.Logger, demangleMode ...string) *Symbolizer {
-	var demangler *demangle.Demangler
+	var dm string
 	if len(demangleMode) > 0 {
-		demangler = demangle.NewDemangler(demangleMode[0], false)
+		dm = demangleMode[0]
 	}
 	return &Symbolizer{
 		logger:    log.With(logger, "component", "symbolizer"),
-		demangler: demangler,
+		demangler: demangle.NewDemangler(dm, false),
 	}
 }
 
@@ -101,8 +101,8 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, file string) (liner, error) {
 		)
 	}
 
-	// Just in case, underlying binutils can symbolize addresses.
-	level.Debug(s.logger).Log("msg", "falling back to binutils liner resolve symbols", "file", file)
+	// Just in case, underlying DWARF can symbolize addresses.
+	level.Debug(s.logger).Log("msg", "falling back to DWARF liner resolve symbols", "file", file)
 	f, err := addr2line.DWARF(s.demangler, m, file)
 	if err != nil {
 		level.Error(s.logger).Log("msg", "failed to open object file",

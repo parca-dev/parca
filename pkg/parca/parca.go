@@ -64,7 +64,7 @@ type Flags struct {
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
 
-	SymbolizerDemangleMode string `default:"" help:"Mode to demangle C++ symbols. Default mode is simplified: : no parameters, no templates, no return type" enum:"full,none,templates"`
+	SymbolizerDemangleMode string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: : no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 }
 
 // Run the parca server
