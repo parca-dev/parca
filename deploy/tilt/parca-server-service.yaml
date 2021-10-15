@@ -10,7 +10,7 @@ metadata:
   namespace: parca
 spec:
   ports:
-  - name: all
+  - name: http
     port: 7070
     targetPort: 7070
   selector:

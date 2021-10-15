@@ -40,7 +40,7 @@ spec:
         name: parca
         ports:
         - containerPort: 7070
-          name: all
+          name: http
         readinessProbe:
           exec:
             command:
@@ -54,6 +54,7 @@ spec:
         - mountPath: /var/parca
           name: parca-config
       nodeSelector:
+        kubernetes.io/arch: amd64
         kubernetes.io/os: linux
       securityContext:
         fsGroup: 65534
