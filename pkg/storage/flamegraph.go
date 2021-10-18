@@ -142,14 +142,9 @@ func GenerateFlamegraph(
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 
-	cumulative := n.CumulativeValue()
 	flamegraph := &pb.Flamegraph{
-		Root: &pb.FlamegraphRootNode{
-			Cumulative: cumulative,
-			Diff:       n.CumulativeDiffValue(),
-		},
-		Total: cumulative,
-		Unit:  meta.SampleType.Unit,
+		Root: &pb.FlamegraphRootNode{},
+		Unit: meta.SampleType.Unit,
 	}
 
 	rootNode := &pb.FlamegraphNode{}
@@ -210,6 +205,7 @@ func GenerateFlamegraph(
 		flamegraphStack.Pop()
 	}
 
+	flamegraph.Total = fakeRootNode.Cumulative
 	flamegraph.Root.Cumulative = fakeRootNode.Cumulative
 	flamegraph.Root.Diff = fakeRootNode.Diff
 	flamegraph.Root.Children = rootNode.Children

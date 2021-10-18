@@ -22,6 +22,10 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/storage"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -30,11 +34,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/storage"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 var (
@@ -112,14 +111,10 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		it := series.Iterator()
 		for it.Next() {
 			p := it.At()
-			pit := p.ProfileTree().Iterator()
-			if pit.NextChild() {
-				s := &pb.MetricsSample{
-					Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
-					Value:     pit.At().CumulativeValue(),
-				}
-				metricsSeries.Samples = append(metricsSeries.Samples, s)
-			}
+			metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
+				Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
+				Value:     p.ProfileTree().RootCumulativeValue(),
+			})
 			i++
 		}
 		profileSpan.SetAttributes(attribute.Int("i", i))

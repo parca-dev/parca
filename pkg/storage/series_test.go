@@ -55,8 +55,6 @@ func TestMemSeriesTree(t *testing.T) {
 	err := s.seriesTree.Insert(0, pt1)
 	require.NoError(t, err)
 
-	require.Equal(t, chunkenc.FromValuesXOR(3), s.root[0])
-
 	require.Len(t, s.flatValues, 2)
 	require.Equal(t, chunkenc.FromValuesXOR(1), s.flatValues[k2][0])
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0])
@@ -94,8 +92,6 @@ func TestMemSeriesTree(t *testing.T) {
 	err = s.seriesTree.Insert(1, pt2)
 	require.NoError(t, err)
 
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.root[0])
-
 	require.Len(t, s.flatValues, 2)
 	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2][0])
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0]) // sparse - nothing added
@@ -127,8 +123,6 @@ func TestMemSeriesTree(t *testing.T) {
 	s.timestamps[0] = &timestampChunk{chunk: chunkenc.FromValuesDelta(1, 2, 3)}
 	err = s.seriesTree.Insert(2, pt3)
 	require.NoError(t, err)
-
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.root[0])
 
 	require.Len(t, s.flatValues, 3)
 	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2][0])   // sparse - nothing added
@@ -173,8 +167,6 @@ func TestMemSeriesTree(t *testing.T) {
 	s.timestamps[0] = &timestampChunk{chunk: chunkenc.FromValuesDelta(1, 2, 3, 4, 5)}
 	err = s.seriesTree.Insert(4, pt5)
 	require.NoError(t, err)
-
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4, 6, 7), s.root[0])
 
 	require.Len(t, s.flatValues, 4)
 	require.Equal(t, chunkenc.FromValuesXOR(1, 3, 0, 0, 7), s.flatValues[k2][0])
@@ -232,9 +224,15 @@ func TestMemSeriesTreeMany(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	it := NewMultiChunkIterator(s.root)
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(2*i+i), it.At())
+	}
+
 	require.Len(t, s.flatValues, 2)
 
-	it := NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "2|1|0"}])
+	it = NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "2|1|0"}])
 	for i := 1; i < 200; i++ {
 		require.True(t, it.Next())
 		require.Equal(t, int64(i), it.At())

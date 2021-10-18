@@ -323,6 +323,11 @@ type MemSeriesInstantProfileTree struct {
 	itt *MemSeriesIteratorTree
 }
 
+func (t *MemSeriesInstantProfileTree) RootCumulativeValue() int64 {
+	// TODO
+	return 0
+}
+
 func (t *MemSeriesInstantProfileTree) Iterator() InstantProfileTreeIterator {
 	return NewMemSeriesIteratorTreeIterator(t.itt)
 }

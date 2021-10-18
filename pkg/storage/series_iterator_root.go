@@ -127,10 +127,9 @@ func (it *MemRootSeriesIterator) At() InstantProfile {
 			Timestamp: it.timestampsIterator.At(),
 		},
 		Tree: &ProfileTree{
-			Roots: &ProfileTreeNode{
-				cumulativeValues: []*ProfileTreeValueNode{{
-					Value: it.rootIterator.At(),
-				}},
+			Roots: &ProfileTreeRootNode{
+				CumulativeValue: it.rootIterator.At(),
+				ProfileTreeNode: &ProfileTreeNode{},
 			},
 		},
 	}

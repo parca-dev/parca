@@ -250,11 +250,18 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 		}
 		a.periods = app
 	}
+	if a.root == nil {
+		app, err := a.s.root[len(a.s.root)-1].Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next root chunk: %w", err)
+		}
+		a.root = app
+	}
 
 	a.timestamps.AppendAt(a.s.numSamples%samplesPerChunk, timestamp)
 	a.duration.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Duration)
 	a.periods.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Period)
-	// root is appended within appendTree method
+	a.root.AppendAt(a.s.numSamples%samplesPerChunk, p.ProfileTree().RootCumulativeValue())
 
 	if a.s.timestamps[len(a.s.timestamps)-1].minTime > timestamp {
 		a.s.timestamps[len(a.s.timestamps)-1].minTime = timestamp

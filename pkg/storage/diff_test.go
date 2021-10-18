@@ -63,14 +63,12 @@ func TestDiffProfileSimple(t *testing.T) {
 		SampleType: ValueType{Type: "samples", Unit: "count"},
 	}, dp.ProfileMeta())
 
-	res := []sample{}
+	var res []sample
 	err = WalkProfileTree(dp.ProfileTree(), func(n InstantProfileTreeNode) error {
 		res = append(res, sample{
-			id:             n.LocationID(),
-			flat:           n.FlatValues(),
-			flatDiff:       n.FlatDiffValues(),
-			cumulative:     n.CumulativeValues(),
-			cumulativeDiff: n.CumulativeDiffValues(),
+			id:       n.LocationID(),
+			flat:     n.FlatValues(),
+			flatDiff: n.FlatDiffValues(),
 		})
 		return nil
 	})
@@ -79,27 +77,9 @@ func TestDiffProfileSimple(t *testing.T) {
 	require.Equal(t, []sample{
 		{
 			id: uint64(0),
-			cumulative: []*ProfileTreeValueNode{{
-				key: &ProfileTreeValueNodeKey{
-					location: "0",
-				},
-				Value: int64(1),
-			}},
-			cumulativeDiff: []*ProfileTreeValueNode{{
-				Value: int64(-2),
-			}},
 		},
 		{
 			id: uint64(1),
-			cumulative: []*ProfileTreeValueNode{{
-				Value: int64(1),
-				key: &ProfileTreeValueNodeKey{
-					location: "1|0",
-				},
-			}},
-			cumulativeDiff: []*ProfileTreeValueNode{{
-				Value: int64(-2),
-			}},
 		},
 		{
 			id: uint64(3),
@@ -110,15 +90,6 @@ func TestDiffProfileSimple(t *testing.T) {
 				},
 			}},
 			flatDiff: []*ProfileTreeValueNode{{
-				Value: int64(1),
-			}},
-			cumulative: []*ProfileTreeValueNode{{
-				Value: int64(1),
-				key: &ProfileTreeValueNodeKey{
-					location: "3|1|0",
-				},
-			}},
-			cumulativeDiff: []*ProfileTreeValueNode{{
 				Value: int64(1),
 			}},
 		},
@@ -167,11 +138,9 @@ func TestDiffProfileDeep(t *testing.T) {
 	res := []sample{}
 	err = WalkProfileTree(dp.ProfileTree(), func(n InstantProfileTreeNode) error {
 		res = append(res, sample{
-			id:             n.LocationID(),
-			flat:           n.FlatValues(),
-			flatDiff:       n.FlatDiffValues(),
-			cumulative:     n.CumulativeValues(),
-			cumulativeDiff: n.CumulativeDiffValues(),
+			id:       n.LocationID(),
+			flat:     n.FlatValues(),
+			flatDiff: n.FlatDiffValues(),
 		})
 		return nil
 	})
@@ -180,39 +149,12 @@ func TestDiffProfileDeep(t *testing.T) {
 	require.Equal(t, []sample{
 		{
 			id: uint64(0),
-			cumulative: []*ProfileTreeValueNode{{
-				Value: int64(3),
-				key: &ProfileTreeValueNodeKey{
-					location: "0",
-				},
-			}},
-			cumulativeDiff: []*ProfileTreeValueNode{{
-				Value: int64(-9),
-			}},
 		},
 		{
 			id: uint64(2),
-			cumulative: []*ProfileTreeValueNode{{
-				Value: int64(3),
-				key: &ProfileTreeValueNodeKey{
-					location: "2|0",
-				},
-			}},
-			cumulativeDiff: []*ProfileTreeValueNode{{
-				Value: int64(-3),
-			}},
 		},
 		{
 			id: uint64(2),
-			cumulative: []*ProfileTreeValueNode{{
-				Value: int64(3),
-				key: &ProfileTreeValueNodeKey{
-					location: "2|2|0",
-				},
-			}},
-			cumulativeDiff: []*ProfileTreeValueNode{{
-				Value: int64(3),
-			}},
 		},
 		{
 			id: uint64(3),
@@ -223,15 +165,6 @@ func TestDiffProfileDeep(t *testing.T) {
 				},
 			}},
 			flatDiff: []*ProfileTreeValueNode{{
-				Value: int64(3),
-			}},
-			cumulative: []*ProfileTreeValueNode{{
-				Value: int64(3),
-				key: &ProfileTreeValueNodeKey{
-					location: "3|2|2|0",
-				},
-			}},
-			cumulativeDiff: []*ProfileTreeValueNode{{
 				Value: int64(3),
 			}},
 		},

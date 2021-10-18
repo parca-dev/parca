@@ -91,7 +91,7 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 
 	cur := &ProfileTreeNode{}
 
-	tree := &ProfileTree{Roots: cur}
+	tree := &ProfileTree{Roots: &ProfileTreeRootNode{ProfileTreeNode: cur}}
 	p.Tree = tree
 	sl.samples = append(sl.samples, p)
 
@@ -107,15 +107,6 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 
 	treeIt.StepInto()
 
-	var (
-		cumulativeValues = make([]*ProfileTreeValueNode, 128) // 128 is max stack depth
-		depth            uint8
-	)
-
-	tree.Roots.cumulativeValues = []*ProfileTreeValueNode{{}}
-	cumulativeValues[depth] = tree.Roots.cumulativeValues[0]
-	depth++
-
 	for {
 		hasMore := treeIt.HasMore()
 		if !hasMore {
@@ -128,10 +119,6 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 			n := &ProfileTreeNode{
 				locationID: child.LocationID,
 				Children:   make([]*ProfileTreeNode, 0, len(child.Children)),
-			}
-
-			if n.cumulativeValues == nil {
-				n.cumulativeValues = []*ProfileTreeValueNode{}
 			}
 
 			for _, key := range child.keys {
@@ -149,23 +136,8 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 							NumLabel: ms.s.numLabels[key],
 							NumUnit:  ms.s.numUnits[key],
 						})
-						n.cumulativeValues = append(n.cumulativeValues, &ProfileTreeValueNode{
-							Label:    ms.s.labels[key],
-							NumLabel: ms.s.numLabels[key],
-							NumUnit:  ms.s.numUnits[key],
-						})
-						cumulativeValues[depth] = n.cumulativeValues[len(n.cumulativeValues)-1]
-
-						for i := uint8(0); i <= depth; i++ {
-							cumulativeValues[i].Value += sum
-						}
 					}
 				}
-			}
-
-			if len(n.cumulativeValues) == 0 {
-				n.cumulativeValues = append(n.cumulativeValues, &ProfileTreeValueNode{})
-				cumulativeValues[depth] = n.cumulativeValues[len(n.cumulativeValues)-1]
 			}
 
 			cur := stack.Peek()
@@ -175,13 +147,11 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 				node: n,
 			})
 
-			depth++
 			treeIt.StepInto()
 			continue
 		}
 		treeIt.StepUp()
 		stack.Pop()
-		depth--
 	}
 	return sl
 }

@@ -26,15 +26,13 @@ import (
 )
 
 type ProfileTree struct {
-	Roots *ProfileTreeNode
+	Roots *ProfileTreeRootNode
 }
 
 func NewProfileTree() *ProfileTree {
 	return &ProfileTree{
-		Roots: &ProfileTreeNode{
-			cumulativeValues: []*ProfileTreeValueNode{{
-				Value: 0,
-			}},
+		Roots: &ProfileTreeRootNode{
+			ProfileTreeNode: &ProfileTreeNode{},
 		},
 	}
 }
@@ -74,12 +72,16 @@ func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.Profile
 	return profileTree, nil
 }
 
+func (t *ProfileTree) RootCumulativeValue() int64 {
+	return t.Roots.CumulativeValue
+}
+
 func (t *ProfileTree) Iterator() InstantProfileTreeIterator {
 	return NewProfileTreeIterator(t)
 }
 
 func (t *ProfileTree) Insert(sample *profile.Sample) {
-	cur := t.Roots
+	cur := t.Roots.ProfileTreeNode
 	locations := sample.Location
 
 	locationIDs := make([]uint64, 0, len(sample.Location)+1)
@@ -122,54 +124,33 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 	cur.flatValues[0].NumLabel = sample.NumLabel
 	cur.flatValues[0].NumUnit = sample.NumUnit
 
-	t.Roots.cumulativeValues[0].Value += sample.Value[0]
+	t.Roots.CumulativeValue += sample.Value[0]
 
 	for _, fv := range cur.flatValues {
 		fv.Key(locationIDs...) //populate the keys
 	}
 }
 
+// ProfileTreeRootNode is just like a ProfileTreeNode except it can
+// additionally hold the cumulative value of the root as an optimization.
+type ProfileTreeRootNode struct {
+	CumulativeValue int64
+	*ProfileTreeNode
+}
+
 type ProfileTreeNode struct {
-	locationID           uint64
-	flatValues           []*ProfileTreeValueNode
-	flatDiffValues       []*ProfileTreeValueNode
-	cumulativeValues     []*ProfileTreeValueNode
-	cumulativeDiffValues []*ProfileTreeValueNode
-	Children             []*ProfileTreeNode
+	locationID     uint64
+	flatValues     []*ProfileTreeValueNode
+	flatDiffValues []*ProfileTreeValueNode
+	Children       []*ProfileTreeNode
 }
 
 func (n *ProfileTreeNode) LocationID() uint64 {
 	return n.locationID
 }
 
-func (n *ProfileTreeNode) CumulativeValue() int64 {
-	res := int64(0)
-	for _, cv := range n.cumulativeValues {
-		res += cv.Value
-	}
-
-	return res
-}
-
-func (n *ProfileTreeNode) CumulativeDiffValue() int64 {
-	res := int64(0)
-	for _, cv := range n.cumulativeDiffValues {
-		res += cv.Value
-	}
-
-	return res
-}
-
-func (n *ProfileTreeNode) CumulativeDiffValues() []*ProfileTreeValueNode {
-	return n.cumulativeDiffValues
-}
-
 func (n *ProfileTreeNode) FlatDiffValues() []*ProfileTreeValueNode {
 	return n.flatDiffValues
-}
-
-func (n *ProfileTreeNode) CumulativeValues() []*ProfileTreeValueNode {
-	return n.cumulativeValues
 }
 
 func (n *ProfileTreeNode) FlatValues() []*ProfileTreeValueNode {

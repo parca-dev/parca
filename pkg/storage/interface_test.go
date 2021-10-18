@@ -117,44 +117,44 @@ func TestScaledInstantProfile(t *testing.T) {
 	sp := NewScaledInstantProfile(p, -1)
 	scaledTree := CopyInstantProfileTree(sp.ProfileTree())
 	require.Equal(t, &ProfileTree{
-		Roots: &ProfileTreeNode{
-			cumulativeValues: []*ProfileTreeValueNode{{
-				Value: -6,
-			}},
-			// Roots always have the LocationID 0.
-			locationID: 0,
-			Children: []*ProfileTreeNode{{
-				locationID: 1,
+		Roots: &ProfileTreeRootNode{
+			ProfileTreeNode: &ProfileTreeNode{
+				// Roots always have the LocationID 0.
+				locationID: 0,
 				Children: []*ProfileTreeNode{{
-					locationID: 2,
-					flatValues: []*ProfileTreeValueNode{{
-						Value: -2,
-						key: &ProfileTreeValueNodeKey{
-							location: "2|1|0",
-						},
-					}},
+					locationID: 1,
 					Children: []*ProfileTreeNode{{
-						locationID: 3,
+						locationID: 2,
+						flatValues: []*ProfileTreeValueNode{{
+							Value: -2,
+							key: &ProfileTreeValueNodeKey{
+								location: "2|1|0",
+							},
+						}},
 						Children: []*ProfileTreeNode{{
-							locationID: 4,
-							flatValues: []*ProfileTreeValueNode{{
-								key: &ProfileTreeValueNodeKey{
-									location: "4|3|2|1|0",
-								},
-								Value: -3,
-							}},
-						}, {
-							locationID: 5,
-							flatValues: []*ProfileTreeValueNode{{
-								key: &ProfileTreeValueNodeKey{
-									location: "5|3|2|1|0",
-								},
-								Value: -1,
+							locationID: 3,
+							Children: []*ProfileTreeNode{{
+								locationID: 4,
+								flatValues: []*ProfileTreeValueNode{{
+									key: &ProfileTreeValueNodeKey{
+										location: "4|3|2|1|0",
+									},
+									Value: -3,
+								}},
+							}, {
+								locationID: 5,
+								flatValues: []*ProfileTreeValueNode{{
+									key: &ProfileTreeValueNodeKey{
+										location: "5|3|2|1|0",
+									},
+									Value: -1,
+								}},
 							}},
 						}},
 					}},
 				}},
-			}}},
+			},
+		},
 	}, scaledTree)
 }
 

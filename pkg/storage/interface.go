@@ -24,13 +24,6 @@ import (
 
 type InstantProfileTreeNode interface {
 	LocationID() uint64
-
-	CumulativeValue() int64
-
-	CumulativeValues() []*ProfileTreeValueNode
-	CumulativeDiffValue() int64
-	CumulativeDiffValues() []*ProfileTreeValueNode
-
 	FlatValues() []*ProfileTreeValueNode
 	FlatDiffValues() []*ProfileTreeValueNode
 }
@@ -44,6 +37,7 @@ type InstantProfileTreeIterator interface {
 }
 
 type InstantProfileTree interface {
+	RootCumulativeValue() int64
 	Iterator() InstantProfileTreeIterator
 }
 
@@ -92,13 +86,14 @@ func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
 
 	node := it.At()
 	cur := &ProfileTreeNode{
-		locationID:           node.LocationID(),
-		flatDiffValues:       node.FlatDiffValues(),
-		flatValues:           node.FlatValues(),
-		cumulativeDiffValues: node.CumulativeDiffValues(),
-		cumulativeValues:     node.CumulativeValues(),
+		locationID:     node.LocationID(),
+		flatDiffValues: node.FlatDiffValues(),
+		flatValues:     node.FlatValues(),
 	}
-	tree := &ProfileTree{Roots: cur}
+	tree := &ProfileTree{Roots: &ProfileTreeRootNode{
+		CumulativeValue: pt.RootCumulativeValue(),
+		ProfileTreeNode: cur,
+	}}
 	stack := ProfileTreeStack{{node: cur}}
 
 	steppedInto := it.StepInto()
@@ -110,11 +105,9 @@ func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
 		if it.NextChild() {
 			node := it.At()
 			cur := &ProfileTreeNode{
-				locationID:           node.LocationID(),
-				flatDiffValues:       node.FlatDiffValues(),
-				flatValues:           node.FlatValues(),
-				cumulativeDiffValues: node.CumulativeDiffValues(),
-				cumulativeValues:     node.CumulativeValues(),
+				locationID:     node.LocationID(),
+				flatDiffValues: node.FlatDiffValues(),
+				flatValues:     node.FlatValues(),
 			}
 
 			stack.Peek().node.Children = append(stack.Peek().node.Children, cur)
@@ -251,6 +244,11 @@ type ScaledInstantProfileTree struct {
 	ratio float64
 }
 
+func (t *ScaledInstantProfileTree) RootCumulativeValue() int64 {
+	// TODO
+	return 0
+}
+
 func (t *ScaledInstantProfileTree) Iterator() InstantProfileTreeIterator {
 	return &ScaledInstantProfileTreeIterator{
 		it:    t.tree.Iterator(),
@@ -279,15 +277,9 @@ func (i *ScaledInstantProfileTreeIterator) At() InstantProfileTreeNode {
 		v.Value = int64(i.ratio * float64(v.Value))
 	}
 
-	cumulativeValues := n.CumulativeValues()
-	for _, v := range cumulativeValues {
-		v.Value = int64(i.ratio * float64(v.Value))
-	}
-
 	return &ProfileTreeNode{
-		locationID:       n.LocationID(),
-		flatValues:       flatValues,
-		cumulativeValues: cumulativeValues,
+		locationID: n.LocationID(),
+		flatValues: flatValues,
 	}
 }
 

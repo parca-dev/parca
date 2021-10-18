@@ -57,20 +57,6 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 			profileTreeChild := pit.At()
 			pId := profileTreeChild.LocationID()
 
-			if pId == 0 {
-				if len(t.s.root) == 0 {
-					t.s.root = make([]chunkenc.Chunk, len(t.s.timestamps))
-					for i := 0; i < len(t.s.timestamps); i++ {
-						t.s.root[i] = t.s.chunkPool.GetXOR()
-					}
-				}
-				app, err := t.s.root[len(t.s.root)-1].Appender()
-				if err != nil {
-					return fmt.Errorf("failed to open root appender: %w", err)
-				}
-				app.AppendAt(index, profileTreeChild.CumulativeValue())
-			}
-
 			done := false
 			for {
 				if !sit.NextChild() {
