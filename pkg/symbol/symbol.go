@@ -59,6 +59,8 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, file string) (liner, error) {
 	}
 	if hasDWARF {
 		level.Debug(s.logger).Log("msg", "using DWARF to resolve symbols", "file", file)
+		// TODO(kakkoyun): Add cache per file.
+		// TODO(kakkoyun): Make add2line.DWARF cache costly debug info maps.
 		f, err := addr2line.DWARF(s.demangler, m, file)
 		if err != nil {
 			level.Error(s.logger).Log(
@@ -93,7 +95,6 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, file string) (liner, error) {
 			level.Debug(s.logger).Log("msg", "using go liner to resolve symbols", "file", file)
 			return funcLiner(f), nil
 		}
-
 		level.Error(s.logger).Log(
 			"msg", "failed to create go liner, falling back to binary liner",
 			"file", file,

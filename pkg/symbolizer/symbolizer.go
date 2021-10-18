@@ -84,6 +84,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 	var result *multierror.Error
 	for id, mapping := range mappings {
 		level.Debug(s.logger).Log("msg", "storage symbolization request started", "buildid", mapping.BuildID)
+		// TODO(kakkoyun): Cache failed symbolization attempts per location.
 		symbolizedLines, err := s.debugInfo.Symbolize(ctx, mapping, mappingLocations[id]...)
 		if err != nil {
 			// It's ok if we don't have the symbols for given BuildID, it happens too often.

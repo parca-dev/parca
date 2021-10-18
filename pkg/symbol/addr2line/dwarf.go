@@ -46,6 +46,12 @@ func DWARF(demangler *demangle.Demangler, _ *profile.Mapping, path string) (func
 	}
 
 	return func(addr uint64) ([]profile.Line, error) {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("recovering from panic in DWARF binary add2line: %v", r)
+			}
+		}()
+
 		lines, err := sourceLines(demangler, data, addr)
 		if err != nil {
 			return nil, err
