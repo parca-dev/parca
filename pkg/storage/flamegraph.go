@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 
 	"github.com/google/pprof/profile"
@@ -159,34 +160,58 @@ func GenerateFlamegraph(
 	}
 	flamegraph.Height = int32(1)
 
+	var (
+		cumulativeValues = make([]*pb.FlamegraphNode, math.MaxUint8)
+		height           uint8
+	)
+
+	fakeRootNode := &pb.FlamegraphNode{}
+	cumulativeValues[height] = fakeRootNode
+	height++
+
 	for it.HasMore() {
 		if it.NextChild() {
 			child := it.At()
-			cumulative := child.CumulativeValue()
-			if cumulative > 0 {
-				id := child.LocationID()
-				l, found := locs[id]
-				if !found {
-					return nil, fmt.Errorf("could not find location with ID %d", id)
-				}
-				outerMost, innerMost := locationToTreeNodes(l, cumulative, child.CumulativeDiffValue())
-
-				flamegraphStack.Peek().node.Children = append(flamegraphStack.Peek().node.Children, outerMost)
-				flamegraphStack.Push(&TreeStackEntry{
-					node: innerMost,
-				})
-				if int32(len(flamegraphStack)) > flamegraph.Height {
-					flamegraph.Height = int32(len(flamegraphStack))
-				}
-
-				it.StepInto()
+			id := child.LocationID()
+			l, found := locs[id]
+			if !found {
+				return nil, fmt.Errorf("could not find location with ID %d", id)
 			}
+
+			outerMost, innerMost := locationToTreeNodes(l, 0, 0)
+
+			flamegraphStack.Peek().node.Children = append(flamegraphStack.Peek().node.Children, outerMost)
+			flamegraphStack.Push(&TreeStackEntry{
+				node: innerMost,
+			})
+			if int32(len(flamegraphStack)) > flamegraph.Height {
+				flamegraph.Height = int32(len(flamegraphStack))
+			}
+
+			cumulativeValues[height] = innerMost
+
+			for _, n := range child.FlatValues() {
+				for _, cumuNode := range cumulativeValues {
+					if cumuNode == nil {
+						break
+					}
+					cumuNode.Cumulative += n.Value
+				}
+			}
+
+			height++
+			it.StepInto()
 			continue
 		}
 
+		cumulativeValues[height] = nil
+		height--
 		it.StepUp()
 		flamegraphStack.Pop()
 	}
+
+	flamegraph.Root.Cumulative = fakeRootNode.Cumulative
+	flamegraph.Root.Diff = fakeRootNode.Diff
 	flamegraph.Root.Children = rootNode.Children
 
 	return aggregateByFunction(flamegraph), nil
