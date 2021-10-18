@@ -10,6 +10,7 @@ require (
 	github.com/dgraph-io/sroar v0.0.0-20210915181338-8dc690a08d84
 	github.com/gin-gonic/gin v1.7.0 // indirect
 	github.com/go-chi/cors v1.2.0
+	github.com/go-delve/delve v1.7.2
 	github.com/go-kit/log v0.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1

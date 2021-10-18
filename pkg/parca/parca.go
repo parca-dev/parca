@@ -27,6 +27,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/symbol"
+	"github.com/parca-dev/parca/pkg/symbolizer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/otel"
@@ -50,7 +52,6 @@ import (
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/storage"
-	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 type Flags struct {
@@ -62,6 +63,8 @@ type Flags struct {
 
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
+
+	SymbolizerDemangleMode string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: : no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 }
 
 // Run the parca server
@@ -92,12 +95,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	if err := cfg.Validate(); err != nil {
 		level.Error(logger).Log("msg", "parsed config invalid", "err", err, "path", flags.ConfigPath)
-		return err
-	}
-
-	dbgInfo, err := debuginfo.NewStore(logger, cfg.DebugInfo)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err
 	}
 
@@ -148,10 +145,28 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
+	dbgInfo, err := debuginfo.NewStore(logger, symbol.NewSymbolizer(logger, flags.SymbolizerDemangleMode), cfg.DebugInfo)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
+		return err
+	}
+
 	parcaserver := server.NewServer(reg)
 
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
+	{
+		sym := symbolizer.NewSymbolizer(logger, mStr, dbgInfo)
+		ctx, cancel := context.WithCancel(ctx)
+		gr.Add(
+			func() error {
+				return sym.Run(ctx, 10*time.Second)
+			},
+			func(_ error) {
+				level.Debug(logger).Log("msg", "symbolizer server shutting down")
+				cancel()
+			})
+	}
 	{
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(func() error {
@@ -223,18 +238,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			}
 		},
 	)
-	{
-		sym := symbol.NewSymbolizer(logger, mStr, dbgInfo)
-		ctx, cancel := context.WithCancel(ctx)
-		gr.Add(
-			func() error {
-				return sym.Run(ctx, 10*time.Second)
-			},
-			func(_ error) {
-				level.Debug(logger).Log("msg", "symbol server shutting down")
-				cancel()
-			})
-	}
 	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
 			return nil

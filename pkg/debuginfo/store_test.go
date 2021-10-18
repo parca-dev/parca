@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-kit/log"
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
@@ -40,20 +41,24 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(cacheDir)
 
-	s, err := NewStore(log.NewNopLogger(), &Config{
-		Bucket: &client.BucketConfig{
-			Type: client.FILESYSTEM,
-			Config: filesystem.Config{
-				Directory: dir,
+	logger := log.NewNopLogger()
+	s, err := NewStore(
+		logger,
+		symbol.NewSymbolizer(logger),
+		&Config{
+			Bucket: &client.BucketConfig{
+				Type: client.FILESYSTEM,
+				Config: filesystem.Config{
+					Directory: dir,
+				},
 			},
-		},
-		Cache: &CacheConfig{
-			Type: FILESYSTEM,
-			Config: &FilesystemCacheConfig{
-				Directory: cacheDir,
+			Cache: &CacheConfig{
+				Type: FILESYSTEM,
+				Config: &FilesystemCacheConfig{
+					Directory: cacheDir,
+				},
 			},
-		},
-	})
+		})
 	require.NoError(t, err)
 
 	lis, err := net.Listen("tcp", ":0")
