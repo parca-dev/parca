@@ -16,6 +16,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"runtime"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -65,15 +66,16 @@ func MergeSeriesSetProfiles(tracer trace.Tracer, ctx context.Context, set Series
 		func() error {
 			_, seriesSpan := tracer.Start(ctx, "seriesIterate")
 			defer seriesSpan.End()
+			defer close(profileCh)
 			for {
 				select {
 				case <-ctx.Done():
-					break
+					return ctx.Err()
 				default:
 				}
 
 				if !set.Next() {
-					break
+					return nil
 				}
 				series := set.At()
 
@@ -92,8 +94,6 @@ func MergeSeriesSetProfiles(tracer trace.Tracer, ctx context.Context, set Series
 					return err
 				}
 			}
-			close(profileCh)
-			return nil
 		},
 	)
 }
@@ -218,6 +218,10 @@ func MergeProfilesConcurrent(
 
 	if err := g.Wait(); err != nil {
 		return nil, err
+	}
+
+	if res == nil {
+		return nil, fmt.Errorf("no profiles to merge")
 	}
 
 	return res, nil
