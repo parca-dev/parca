@@ -193,6 +193,14 @@ func GenerateFlamegraph(
 					cumuNode.Cumulative += n.Value
 				}
 			}
+			for _, n := range child.FlatDiffValues() {
+				for _, cumuNode := range cumulativeValues {
+					if cumuNode == nil {
+						break
+					}
+					cumuNode.Diff += n.Value
+				}
+			}
 
 			height++
 			it.StepInto()

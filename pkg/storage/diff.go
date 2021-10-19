@@ -66,8 +66,7 @@ func (d *DiffProfile) ProfileTree() InstantProfileTree {
 }
 
 func (d *DiffProfileTree) RootCumulativeValue() int64 {
-	// TODO
-	return d.d.ProfileTree().RootCumulativeValue()
+	return 0
 }
 
 func (d *DiffProfileTree) Iterator() InstantProfileTreeIterator {
