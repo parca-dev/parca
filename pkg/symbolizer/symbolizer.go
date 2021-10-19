@@ -86,7 +86,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 		}
 		// Check if we already attempt to symbolize this location and failed.
 		if _, failedBefore := s.failed[loc.Mapping.BuildID][loc.Address]; failedBefore {
-			level.Debug(s.logger).Log("msg", "location already had been attempted symbolized and failed, skipping")
+			level.Debug(s.logger).Log("msg", "location already had been attempted to be symbolized and failed, skipping")
 			continue
 		}
 		mappings[loc.Mapping.BuildID] = loc.Mapping
