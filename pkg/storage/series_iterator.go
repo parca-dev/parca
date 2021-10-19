@@ -324,7 +324,6 @@ type MemSeriesInstantProfileTree struct {
 }
 
 func (t *MemSeriesInstantProfileTree) RootCumulativeValue() int64 {
-	// TODO
 	return 0
 }
 

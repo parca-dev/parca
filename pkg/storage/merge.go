@@ -284,7 +284,6 @@ func (m *MergeProfile) ProfileTree() InstantProfileTree {
 }
 
 func (m *MergeProfileTree) RootCumulativeValue() int64 {
-	// TODO
 	return 0
 }
 

@@ -245,7 +245,6 @@ type ScaledInstantProfileTree struct {
 }
 
 func (t *ScaledInstantProfileTree) RootCumulativeValue() int64 {
-	// TODO
 	return 0
 }
 
