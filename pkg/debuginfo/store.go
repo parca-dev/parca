@@ -203,7 +203,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 
 	liner, err := s.symbolizer.NewLiner(m, localObjPath)
 	if err != nil {
-		const msg = "failed to create add2LineFunc"
+		const msg = "failed to create liner"
 		level.Debug(s.logger).Log("msg", msg, "object", m.BuildID, "err", err)
 		return nil, fmt.Errorf(msg+": %w", err)
 	}

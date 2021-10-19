@@ -113,6 +113,9 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 				if prev, ok := s.attempts[buildID][loc.Address]; ok {
 					prev++
 					if prev >= s.attemptThreshold {
+						if _, ok := s.failed[buildID]; !ok {
+							s.failed[buildID] = map[uint64]struct{}{}
+						}
 						s.failed[buildID][loc.Address] = struct{}{}
 						delete(s.attempts[buildID], loc.Address)
 					} else {
@@ -120,8 +123,10 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 					}
 					continue
 				}
-
-				// First time failed
+				// First failed attempt
+				if _, ok := s.attempts[buildID]; !ok {
+					s.attempts[buildID] = map[uint64]int{}
+				}
 				s.attempts[buildID][loc.Address] = 1
 				continue
 			}

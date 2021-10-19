@@ -29,6 +29,10 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
+const (
+	dwarfTreeCacheSize = 8192 // size of the dwarfTree cache of each mapping
+)
+
 type dwarfLiner struct {
 	dwarfTreeCache simplelru.LRUCache
 	demangler      *demangle.Demangler
@@ -51,7 +55,7 @@ func DWARF(demangler *demangle.Demangler, _ *profile.Mapping, path string) (*dwa
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}
-	cache, err := lru.New(50)
+	cache, err := lru.New(dwarfTreeCacheSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize dwarf tree cache: %w", err)
 
@@ -137,7 +141,7 @@ outer:
 				}
 			}
 
-			tr, err := dl.getDWARFTree(entry, dl.data)
+			tr, err := dl.getDWARFTree(entry)
 			if err != nil {
 				return nil, fmt.Errorf("failed to extract dwarf tree: %w", err)
 			}
@@ -184,11 +188,11 @@ outer:
 	return lines, nil
 }
 
-func (dl *dwarfLiner) getDWARFTree(entry *dwarf.Entry, data *dwarf.Data) (*godwarf.Tree, error) {
+func (dl *dwarfLiner) getDWARFTree(entry *dwarf.Entry) (*godwarf.Tree, error) {
 	if tr, ok := dl.dwarfTreeCache.Get(entry.Offset); ok {
 		return tr.(*godwarf.Tree), nil
 	}
-	tr, err := godwarf.LoadTree(entry.Offset, data, 0)
+	tr, err := godwarf.LoadTree(entry.Offset, dl.data, 0)
 	if err != nil {
 		return nil, err
 	}

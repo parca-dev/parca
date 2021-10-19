@@ -29,6 +29,8 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
+const linerCacheSize = 50
+
 type Symbolizer struct {
 	logger    log.Logger
 	cache     simplelru.LRUCache
@@ -50,7 +52,7 @@ func NewSymbolizer(logger log.Logger, demangleMode ...string) *Symbolizer {
 	}
 	var cache simplelru.LRUCache
 	// e.g: Parca binary compressed DWARF data size ~8mb as of 10.2021
-	cache, err := lru.New(50) // Totally arbitrary.
+	cache, err := lru.New(linerCacheSize)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize liner cache", "err", err)
 		cache = noopLinerCache{}
@@ -152,6 +154,8 @@ func cacheKey(path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to open file: %w", err)
 	}
+	defer f.Close()
+
 	h := xxhash.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return "", fmt.Errorf("failed to hash debug info file: %w", err)
