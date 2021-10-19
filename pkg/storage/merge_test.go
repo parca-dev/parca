@@ -441,11 +441,9 @@ func TestMergeMany(t *testing.T) {
 }
 
 type sample struct {
-	id             uint64
-	flat           []*ProfileTreeValueNode
-	cumulative     []*ProfileTreeValueNode
-	flatDiff       []*ProfileTreeValueNode
-	cumulativeDiff []*ProfileTreeValueNode
+	id       uint64
+	flat     []*ProfileTreeValueNode
+	flatDiff []*ProfileTreeValueNode
 }
 
 func BenchmarkTreeMerge(b *testing.B) {
