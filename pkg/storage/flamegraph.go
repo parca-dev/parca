@@ -17,7 +17,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"sort"
 
 	"github.com/google/pprof/profile"
@@ -142,27 +141,19 @@ func GenerateFlamegraph(
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 
+	rootNode := &pb.FlamegraphNode{}
+
 	flamegraph := &pb.Flamegraph{
 		Root: &pb.FlamegraphRootNode{},
 		Unit: meta.SampleType.Unit,
 	}
 
-	rootNode := &pb.FlamegraphNode{}
 	flamegraphStack := TreeStack{{node: rootNode}}
 	steppedInto := it.StepInto()
 	if !steppedInto {
 		return flamegraph, nil
 	}
 	flamegraph.Height = int32(1)
-
-	var (
-		cumulativeValues = make([]*pb.FlamegraphNode, math.MaxUint8)
-		height           uint8
-	)
-
-	fakeRootNode := &pb.FlamegraphNode{}
-	cumulativeValues[height] = fakeRootNode
-	height++
 
 	for it.HasMore() {
 		if it.NextChild() {
@@ -183,39 +174,34 @@ func GenerateFlamegraph(
 				flamegraph.Height = int32(len(flamegraphStack))
 			}
 
-			cumulativeValues[height] = innerMost
-
 			for _, n := range child.FlatValues() {
-				for _, cumuNode := range cumulativeValues {
-					if cumuNode == nil {
-						break
-					}
-					cumuNode.Cumulative += n.Value
+				if n.Value == 0 {
+					continue
+				}
+				for _, entry := range flamegraphStack {
+					entry.node.Cumulative += n.Value
 				}
 			}
 			for _, n := range child.FlatDiffValues() {
-				for _, cumuNode := range cumulativeValues {
-					if cumuNode == nil {
-						break
-					}
-					cumuNode.Diff += n.Value
+				if n.Value == 0 {
+					continue
+				}
+				for _, entry := range flamegraphStack {
+					entry.node.Diff += n.Value
 				}
 			}
 
-			height++
 			it.StepInto()
 			continue
 		}
 
-		cumulativeValues[height] = nil
-		height--
 		it.StepUp()
 		flamegraphStack.Pop()
 	}
 
-	flamegraph.Total = fakeRootNode.Cumulative
-	flamegraph.Root.Cumulative = fakeRootNode.Cumulative
-	flamegraph.Root.Diff = fakeRootNode.Diff
+	flamegraph.Total = rootNode.Cumulative
+	flamegraph.Root.Cumulative = rootNode.Cumulative
+	flamegraph.Root.Diff = rootNode.Diff
 	flamegraph.Root.Children = rootNode.Children
 
 	return aggregateByFunction(flamegraph), nil
