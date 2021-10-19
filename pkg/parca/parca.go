@@ -65,7 +65,7 @@ type Flags struct {
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
-	SymbolizerNumberOfTries int    `default:3 help:"Number of tries to attempt to symbolize an unsybolized location"`
+	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 }
 
 // Run the parca server
