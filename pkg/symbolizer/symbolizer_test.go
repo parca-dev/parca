@@ -62,7 +62,7 @@ type TestFunctionStore interface {
 func TestSymbolizer(t *testing.T) {
 	_, dbgStr, mStr := setup(t)
 
-	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
+	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr, 1)
 	m := &profile.Mapping{
 		ID:      uint64(1),
 		Start:   4194304,
@@ -136,7 +136,7 @@ func TestRealSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 11, len(symLocs))
 
-	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
+	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr, 1)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
 	symLocs, err = mStr.GetSymbolizableLocations(ctx)
@@ -183,7 +183,7 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 174, len(symLocs))
 
-	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
+	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr, 1)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
 	symLocs, err = mStr.GetSymbolizableLocations(ctx)
@@ -233,7 +233,7 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 223, len(symLocs))
 
-	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
+	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr, 1)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
 	symLocs, err = mStr.GetSymbolizableLocations(ctx)
@@ -285,7 +285,7 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 159, len(symLocs))
 
-	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
+	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr, 1)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
 	symLocs, err = mStr.GetSymbolizableLocations(ctx)
@@ -337,7 +337,7 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 136, len(symLocs))
 
-	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr)
+	sym := NewSymbolizer(log.NewNopLogger(), mStr, dbgStr, 1)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
 	symLocs, err = mStr.GetSymbolizableLocations(ctx)

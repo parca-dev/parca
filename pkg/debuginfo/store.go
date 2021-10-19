@@ -213,7 +213,6 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 		lines, err := liner.PCToLines(loc.Address)
 		if err != nil {
 			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildID, "err", err)
-			continue
 		}
 		locationLines[loc] = append(locationLines[loc], lines...)
 	}

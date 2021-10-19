@@ -15,6 +15,7 @@ package elfutils
 
 import (
 	"debug/elf"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -62,7 +63,9 @@ func getDWARFSections(f *elf.File) (map[string]struct{}, error) {
 		if _, ok := sections[suffix]; !ok {
 			continue
 		}
-		exists[suffix] = struct{}{}
+		if s.Type == elf.SHT_PROGBITS {
+			exists[suffix] = struct{}{}
+		}
 	}
 
 	return exists, nil
@@ -106,14 +109,11 @@ func IsSymbolizableGoObjFile(path string) (bool, error) {
 
 	// Check if the Go binary symbolizable.
 	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
-	var pclntab []byte
 	if sec := exe.Section(".gopclntab"); sec != nil {
-		// TODO(kakkoyun): Optimize. Don't read just check existence!
-		pclntab, err = sec.Data()
-		if err != nil {
-			return false, fmt.Errorf("could not find .gopclntab section: %w", err)
+		if sec.Type == elf.SHT_PROGBITS {
+			return true, nil
 		}
 	}
 
-	return len(pclntab) > 0, nil
+	return false, errors.New("failed to detect .gopclntab section or section has no bits")
 }
