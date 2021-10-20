@@ -112,12 +112,12 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 }
 
 func (it *MemSeriesIterator) Next() bool {
-	it.series.mu.RLock()
-	defer it.series.mu.RUnlock()
-
-	if it.numSamples == 0 {
+	if it.err != nil || it.numSamples == 0 {
 		return false
 	}
+
+	it.series.mu.RLock()
+	defer it.series.mu.RUnlock()
 
 	if !it.timestampsIterator.Next() {
 		it.err = errors.New("unexpected end of timestamps iterator")

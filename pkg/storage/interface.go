@@ -162,6 +162,10 @@ type SliceProfileSeriesIterator struct {
 }
 
 func (i *SliceProfileSeriesIterator) Next() bool {
+	if i.err != nil {
+		return false
+	}
+
 	i.i++
 	return i.i < len(i.samples)
 }
