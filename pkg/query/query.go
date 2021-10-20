@@ -120,7 +120,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		profileSpan.SetAttributes(attribute.Int("i", i))
 		profileSpan.End()
 		if err := it.Err(); err != nil {
-			return nil, status.Error(codes.Internal, "failed to iterate")
+			return nil, status.Error(codes.Internal, fmt.Errorf("failed to iterate: %w", err).Error())
 		}
 
 		res.Series = append(res.Series, metricsSeries)

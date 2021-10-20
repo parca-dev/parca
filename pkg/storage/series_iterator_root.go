@@ -43,6 +43,9 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 
 	it := NewMultiChunkIterator(timestamps)
 	start, end, err := getIndexRange(it, rs.s.numSamples, rs.mint, rs.maxt)
+	if start == end {
+		return &MemRootSeriesIterator{err: fmt.Errorf("no samples within the time range")}
+	}
 	if err != nil {
 		return &MemRootSeriesIterator{err: err}
 	}
@@ -85,12 +88,12 @@ type MemRootSeriesIterator struct {
 }
 
 func (it *MemRootSeriesIterator) Next() bool {
-	it.s.mu.RLock()
-	defer it.s.mu.RUnlock()
-
-	if it.numSamples == 0 {
+	if it.err != nil || it.numSamples == 0 {
 		return false
 	}
+
+	it.s.mu.RLock()
+	defer it.s.mu.RUnlock()
 
 	if !it.timestampsIterator.Next() {
 		it.err = fmt.Errorf("unexpected end of timestamps iterator")

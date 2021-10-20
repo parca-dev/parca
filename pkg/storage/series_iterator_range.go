@@ -146,12 +146,12 @@ type MemRangeSeriesIterator struct {
 }
 
 func (it *MemRangeSeriesIterator) Next() bool {
-	it.s.mu.RLock()
-	defer it.s.mu.RUnlock()
-
-	if it.numSamples == 0 {
+	if it.err != nil || it.numSamples == 0 {
 		return false
 	}
+
+	it.s.mu.RLock()
+	defer it.s.mu.RUnlock()
 
 	if !it.timestampsIterator.Next() {
 		it.err = errors.New("unexpected end of timestamps iterator")
