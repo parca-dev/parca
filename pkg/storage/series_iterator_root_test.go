@@ -58,7 +58,6 @@ func TestMemRootSeries_Iterator(t *testing.T) {
 		itt := p.ProfileTree().Iterator()
 		for itt.HasMore() {
 			if itt.NextChild() {
-				//require.Equal(t, seen, itt.At().CumulativeValues()[0].Value)
 				itt.StepInto()
 			}
 			itt.StepUp()
