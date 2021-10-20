@@ -47,15 +47,7 @@ type MemSeriesIterator struct {
 func (s *MemSeries) Iterator() ProfileSeriesIterator {
 	root := &MemSeriesIteratorTreeNode{}
 
-	rootKey := ProfileTreeValueNodeKey{location: "0"}
 	s.mu.RLock()
-	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-		Values:   NewMultiChunkIterator(s.cumulativeValues[rootKey]),
-		Label:    s.labels[rootKey],
-		NumLabel: s.numLabels[rootKey],
-		NumUnit:  s.numUnits[rootKey],
-	})
-
 	timestamps := make([]chunkenc.Chunk, 0, len(s.timestamps))
 	for _, t := range s.timestamps {
 		timestamps = append(timestamps, t.chunk)
@@ -93,14 +85,6 @@ func (s *MemSeries) Iterator() ProfileSeriesIterator {
 			for _, key := range child.keys {
 				if chunks, ok := s.flatValues[key]; ok {
 					n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
-						Values:   NewMultiChunkIterator(chunks),
-						Label:    s.labels[key],
-						NumLabel: s.numLabels[key],
-						NumUnit:  s.numUnits[key],
-					})
-				}
-				if chunks, ok := s.cumulativeValues[key]; ok {
-					n.cumulativeValues = append(n.cumulativeValues, &MemSeriesIteratorTreeValueNode{
 						Values:   NewMultiChunkIterator(chunks),
 						Label:    s.labels[key],
 						NumLabel: s.numLabels[key],
@@ -176,10 +160,20 @@ func (it *MemSeriesIterator) Next() bool {
 		return false
 	}
 
+	var (
+		cumulativeValues = make([]*ProfileTreeValueNode, 128) // 128 is max stack depth
+		depth            uint8
+	)
+
+	it.tree.Roots.cumulativeValues = []*ProfileTreeValueNode{{}}
+	cumulativeValues[depth] = it.tree.Roots.cumulativeValues[0]
+	depth++
+
 	iit := NewMemSeriesIteratorTreeIterator(it.tree)
 	for iit.HasMore() {
 		if iit.NextChild() {
 			child := iit.at()
+			child.cumulativeValues = nil // Clean cumulative values from previous iteration
 
 			for _, v := range child.flatValues {
 				if !v.Values.Next() {
@@ -196,29 +190,41 @@ func (it *MemSeriesIterator) Next() bool {
 					it.err = fmt.Errorf("wrong iteration for flat value, expected: %d, got: %d", read, vread)
 					return false
 				}
+
+				if child.cumulativeValues == nil {
+					child.cumulativeValues = []*ProfileTreeValueNode{}
+				}
+
+				child.cumulativeValues = append(child.cumulativeValues, &ProfileTreeValueNode{
+					Label:    v.Label,
+					NumLabel: v.NumLabel,
+					NumUnit:  v.NumUnit,
+				})
+				cumulativeValues[depth] = child.cumulativeValues[len(child.cumulativeValues)-1]
+
+				vAt := v.Values.At()
+				if vAt == 0 {
+					continue
+				}
+				for i := uint8(0); i <= depth; i++ {
+					cumulativeValues[i].Value += vAt
+				}
 			}
 
-			for _, v := range child.cumulativeValues {
-				if !v.Values.Next() {
-					it.err = errors.New("unexpected end of cumulative value iterator")
-					return false
-				}
-
-				if v.Values.Err() != nil {
-					it.err = fmt.Errorf("next cumulative value: %w", v.Values.Err())
-					return false
-				}
-
-				if vread := v.Values.Read(); vread != read {
-					it.err = fmt.Errorf("wrong iteration for cumulative value, expected: %d, got: %d", read, vread)
-					return false
-				}
+			if len(child.flatValues) == 0 {
+				child.cumulativeValues = []*ProfileTreeValueNode{{}}
+				cumulativeValues[depth] = child.cumulativeValues[0]
 			}
 
+			depth++
 			iit.StepInto()
 			continue
 		}
 		iit.StepUp()
+
+		// Reset depth's value in case of encounter another stack trace in the same depth
+		cumulativeValues[depth] = &ProfileTreeValueNode{}
+		depth--
 	}
 
 	it.numSamples--
@@ -232,7 +238,7 @@ type MemSeriesIteratorTree struct {
 type MemSeriesIteratorTreeNode struct {
 	locationID       uint64
 	flatValues       []*MemSeriesIteratorTreeValueNode
-	cumulativeValues []*MemSeriesIteratorTreeValueNode
+	cumulativeValues []*ProfileTreeValueNode
 	Children         []*MemSeriesIteratorTreeNode
 }
 
@@ -250,9 +256,7 @@ func (n *MemSeriesIteratorTreeNode) LocationID() uint64 {
 func (n *MemSeriesIteratorTreeNode) CumulativeValue() int64 {
 	res := int64(0)
 	for _, v := range n.cumulativeValues {
-		if v.Values != nil {
-			res += v.Values.At()
-		}
+		res += v.Value
 	}
 	return res
 }
@@ -262,21 +266,7 @@ func (n *MemSeriesIteratorTreeNode) CumulativeDiffValue() int64 { return 0 }
 func (n *MemSeriesIteratorTreeNode) CumulativeDiffValues() []*ProfileTreeValueNode { return nil }
 
 func (n *MemSeriesIteratorTreeNode) CumulativeValues() []*ProfileTreeValueNode {
-	if len(n.cumulativeValues) == 0 { // For consistency with other iterators
-		return nil
-	}
-
-	res := make([]*ProfileTreeValueNode, 0, len(n.cumulativeValues))
-	for _, v := range n.cumulativeValues {
-		res = append(res, &ProfileTreeValueNode{
-			Value:    v.Values.At(),
-			Label:    v.Label,
-			NumLabel: v.NumLabel,
-			NumUnit:  v.NumUnit,
-		})
-	}
-
-	return res
+	return n.cumulativeValues
 }
 
 func (n *MemSeriesIteratorTreeNode) FlatDiffValues() []*ProfileTreeValueNode { return nil }
@@ -331,6 +321,10 @@ type MemSeriesInstantProfile struct {
 
 type MemSeriesInstantProfileTree struct {
 	itt *MemSeriesIteratorTree
+}
+
+func (t *MemSeriesInstantProfileTree) RootCumulativeValue() int64 {
+	return 0
 }
 
 func (t *MemSeriesInstantProfileTree) Iterator() InstantProfileTreeIterator {

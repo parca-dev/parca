@@ -49,20 +49,12 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		return &MemRangeSeriesIterator{err: err}
 	}
 
-	rootKey := ProfileTreeValueNodeKey{location: "0"}
-
-	rootIt := NewMultiChunkIterator(rs.s.cumulativeValues[rootKey][chunkStart:chunkEnd])
+	rootIt := NewMultiChunkIterator(rs.s.root[chunkStart:chunkEnd])
 	if start != 0 {
 		rootIt.Seek(start)
 	}
 
 	root := &MemSeriesIteratorTreeNode{}
-	root.cumulativeValues = append(root.cumulativeValues, &MemSeriesIteratorTreeValueNode{
-		Values:   rootIt,
-		Label:    rs.s.labels[rootKey],
-		NumLabel: rs.s.numLabels[rootKey],
-		NumUnit:  rs.s.numUnits[rootKey],
-	})
 
 	memItStack := MemSeriesIteratorTreeStack{{
 		node:  root,
@@ -87,18 +79,6 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 						it.Seek(start)
 					}
 					n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
-						Values:   it,
-						Label:    rs.s.labels[key],
-						NumLabel: rs.s.numLabels[key],
-						NumUnit:  rs.s.numUnits[key],
-					})
-				}
-				if chunks, ok := rs.s.cumulativeValues[key]; ok {
-					it := NewMultiChunkIterator(chunks[chunkStart:chunkEnd])
-					if start != 0 {
-						it.Seek(start) // We might need another interface with Seek(index uint64) for multi chunks.
-					}
-					n.cumulativeValues = append(n.cumulativeValues, &MemSeriesIteratorTreeValueNode{
 						Values:   it,
 						Label:    rs.s.labels[key],
 						NumLabel: rs.s.numLabels[key],
@@ -232,23 +212,6 @@ func (it *MemRangeSeriesIterator) Next() bool {
 
 				if vread := v.Values.Read(); vread != read {
 					it.err = fmt.Errorf("flat value iterator in wrong iteration, expected %d got %d", read, vread)
-					return false
-				}
-			}
-
-			for _, v := range child.cumulativeValues {
-				if !v.Values.Next() {
-					it.err = errors.New("unexpected end of cumulative value iterator")
-					return false
-				}
-
-				if v.Values.Err() != nil {
-					it.err = fmt.Errorf("next cumulative value: %w", v.Values.Err())
-					return false
-				}
-
-				if vread := v.Values.Read(); vread != read {
-					it.err = fmt.Errorf("wrong iteration for cumulative value, expected: %d, got: %d", read, vread)
 					return false
 				}
 			}

@@ -141,17 +141,13 @@ func GenerateFlamegraph(
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 
-	cumulative := n.CumulativeValue()
+	rootNode := &pb.FlamegraphNode{}
+
 	flamegraph := &pb.Flamegraph{
-		Root: &pb.FlamegraphRootNode{
-			Cumulative: cumulative,
-			Diff:       n.CumulativeDiffValue(),
-		},
-		Total: cumulative,
-		Unit:  meta.SampleType.Unit,
+		Root: &pb.FlamegraphRootNode{},
+		Unit: meta.SampleType.Unit,
 	}
 
-	rootNode := &pb.FlamegraphNode{}
 	flamegraphStack := TreeStack{{node: rootNode}}
 	steppedInto := it.StepInto()
 	if !steppedInto {
@@ -162,31 +158,50 @@ func GenerateFlamegraph(
 	for it.HasMore() {
 		if it.NextChild() {
 			child := it.At()
-			cumulative := child.CumulativeValue()
-			if cumulative > 0 {
-				id := child.LocationID()
-				l, found := locs[id]
-				if !found {
-					return nil, fmt.Errorf("could not find location with ID %d", id)
-				}
-				outerMost, innerMost := locationToTreeNodes(l, cumulative, child.CumulativeDiffValue())
-
-				flamegraphStack.Peek().node.Children = append(flamegraphStack.Peek().node.Children, outerMost)
-				flamegraphStack.Push(&TreeStackEntry{
-					node: innerMost,
-				})
-				if int32(len(flamegraphStack)) > flamegraph.Height {
-					flamegraph.Height = int32(len(flamegraphStack))
-				}
-
-				it.StepInto()
+			id := child.LocationID()
+			l, found := locs[id]
+			if !found {
+				return nil, fmt.Errorf("could not find location with ID %d", id)
 			}
+
+			outerMost, innerMost := locationToTreeNodes(l, 0, 0)
+
+			flamegraphStack.Peek().node.Children = append(flamegraphStack.Peek().node.Children, outerMost)
+			flamegraphStack.Push(&TreeStackEntry{
+				node: innerMost,
+			})
+			if int32(len(flamegraphStack)) > flamegraph.Height {
+				flamegraph.Height = int32(len(flamegraphStack))
+			}
+
+			for _, n := range child.FlatValues() {
+				if n.Value == 0 {
+					continue
+				}
+				for _, entry := range flamegraphStack {
+					entry.node.Cumulative += n.Value
+				}
+			}
+			for _, n := range child.FlatDiffValues() {
+				if n.Value == 0 {
+					continue
+				}
+				for _, entry := range flamegraphStack {
+					entry.node.Diff += n.Value
+				}
+			}
+
+			it.StepInto()
 			continue
 		}
 
 		it.StepUp()
 		flamegraphStack.Pop()
 	}
+
+	flamegraph.Total = rootNode.Cumulative
+	flamegraph.Root.Cumulative = rootNode.Cumulative
+	flamegraph.Root.Diff = rootNode.Diff
 	flamegraph.Root.Children = rootNode.Children
 
 	return aggregateByFunction(flamegraph), nil

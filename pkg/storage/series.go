@@ -41,18 +41,15 @@ type MemSeries struct {
 	timestamps       timestampChunks
 	durations        []chunkenc.Chunk
 	periods          []chunkenc.Chunk
-
-	// TODO: Might be worth combining behind some struct?
-	// Or maybe not because it's easier to serialize?
+	root             []chunkenc.Chunk
 
 	// mu locks the following maps for concurrent access.
 	mu sync.RWMutex
-	// Flat and cumulative values as well as labels by the node's ProfileTreeValueNodeKey.
-	flatValues       map[ProfileTreeValueNodeKey][]chunkenc.Chunk
-	cumulativeValues map[ProfileTreeValueNodeKey][]chunkenc.Chunk
-	labels           map[ProfileTreeValueNodeKey]map[string][]string
-	numLabels        map[ProfileTreeValueNodeKey]map[string][]int64
-	numUnits         map[ProfileTreeValueNodeKey]map[string][]string
+	// Flat values as well as labels by the node's ProfileTreeValueNodeKey.
+	flatValues map[ProfileTreeValueNodeKey][]chunkenc.Chunk
+	labels     map[ProfileTreeValueNodeKey]map[string][]string
+	numLabels  map[ProfileTreeValueNodeKey]map[string][]int64
+	numUnits   map[ProfileTreeValueNodeKey]map[string][]string
 
 	seriesTree *MemSeriesTree
 	numSamples uint16
@@ -72,14 +69,14 @@ func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64), chun
 		minTime: math.MaxInt64,
 		maxTime: math.MinInt64,
 
-		timestamps:       timestampChunks{},
-		durations:        make([]chunkenc.Chunk, 0, 1),
-		periods:          make([]chunkenc.Chunk, 0, 1),
-		flatValues:       make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
-		cumulativeValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
-		labels:           make(map[ProfileTreeValueNodeKey]map[string][]string),
-		numLabels:        make(map[ProfileTreeValueNodeKey]map[string][]int64),
-		numUnits:         make(map[ProfileTreeValueNodeKey]map[string][]string),
+		timestamps: timestampChunks{},
+		durations:  make([]chunkenc.Chunk, 0, 1),
+		periods:    make([]chunkenc.Chunk, 0, 1),
+		root:       make([]chunkenc.Chunk, 0, 1),
+		flatValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
+		labels:     make(map[ProfileTreeValueNodeKey]map[string][]string),
+		numLabels:  make(map[ProfileTreeValueNodeKey]map[string][]int64),
+		numUnits:   make(map[ProfileTreeValueNodeKey]map[string][]string),
 
 		updateMaxTime: updateMaxTime,
 		tracer:        trace.NewNoopTracerProvider().Tracer(""),
@@ -113,9 +110,8 @@ func (s *MemSeries) appendTree(profileTree *ProfileTree) error {
 }
 
 type MemSeriesStats struct {
-	samples     uint16
-	Cumulatives []MemSeriesValueStats
-	Flat        []MemSeriesValueStats
+	samples uint16
+	Flat    []MemSeriesValueStats
 }
 
 type MemSeriesValueStats struct {
@@ -128,7 +124,6 @@ func (s *MemSeries) stats() MemSeriesStats {
 	defer s.mu.RUnlock()
 
 	flat := make([]MemSeriesValueStats, 0, len(s.flatValues))
-	cumulative := make([]MemSeriesValueStats, 0, len(s.cumulativeValues))
 
 	for _, chunks := range s.flatValues {
 		for _, c := range chunks {
@@ -139,19 +134,9 @@ func (s *MemSeries) stats() MemSeriesStats {
 		}
 	}
 
-	for _, chunks := range s.cumulativeValues {
-		for _, c := range chunks {
-			cumulative = append(cumulative, MemSeriesValueStats{
-				samples: c.NumSamples(),
-				bytes:   len(c.Bytes()),
-			})
-		}
-	}
-
 	return MemSeriesStats{
-		samples:     s.numSamples,
-		Cumulatives: cumulative,
-		Flat:        flat,
+		samples: s.numSamples,
+		Flat:    flat,
 	}
 }
 
@@ -160,6 +145,7 @@ type MemSeriesAppender struct {
 	timestamps chunkenc.Appender
 	duration   chunkenc.Appender
 	periods    chunkenc.Appender
+	root       chunkenc.Appender
 }
 
 const samplesPerChunk = 120
@@ -227,11 +213,13 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 		}
 		a.periods = periodsApp
 
-		for k := range a.s.cumulativeValues {
-			for len(a.s.cumulativeValues[k]) < len(a.s.timestamps) {
-				a.s.cumulativeValues[k] = append(a.s.cumulativeValues[k], a.s.chunkPool.GetXOR())
-			}
+		a.s.root = append(a.s.root, a.s.chunkPool.GetXOR())
+		rootApp, err := a.s.root[len(a.s.root)-1].Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next root chunk: %w", err)
 		}
+		a.root = rootApp
+
 		for k := range a.s.flatValues {
 			for len(a.s.flatValues[k]) < len(a.s.timestamps) {
 				a.s.flatValues[k] = append(a.s.flatValues[k], a.s.chunkPool.GetXOR())
@@ -262,10 +250,18 @@ func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
 		}
 		a.periods = app
 	}
+	if a.root == nil {
+		app, err := a.s.root[len(a.s.root)-1].Appender()
+		if err != nil {
+			return fmt.Errorf("failed to add the next root chunk: %w", err)
+		}
+		a.root = app
+	}
 
 	a.timestamps.AppendAt(a.s.numSamples%samplesPerChunk, timestamp)
 	a.duration.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Duration)
 	a.periods.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Period)
+	a.root.AppendAt(a.s.numSamples%samplesPerChunk, p.ProfileTree().RootCumulativeValue())
 
 	if a.s.timestamps[len(a.s.timestamps)-1].minTime > timestamp {
 		a.s.timestamps[len(a.s.timestamps)-1].minTime = timestamp
@@ -321,17 +317,15 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 		for _, c := range s.periods {
 			_ = s.chunkPool.Put(c)
 		}
+		for _, c := range s.root {
+			_ = s.chunkPool.Put(c)
+		}
 
 		s.timestamps = s.timestamps[:0]
 		s.durations = s.durations[:0]
 		s.periods = s.periods[:0]
+		s.root = s.root[:0]
 
-		for key, chunks := range s.cumulativeValues {
-			for _, c := range chunks {
-				_ = s.chunkPool.Put(c)
-			}
-			s.cumulativeValues[key] = chunks[:0]
-		}
 		for key, chunks := range s.flatValues {
 			for _, c := range chunks {
 				_ = s.chunkPool.Put(c)
@@ -357,12 +351,14 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 		_ = s.chunkPool.Put(s.timestamps[i])
 		_ = s.chunkPool.Put(s.durations[i])
 		_ = s.chunkPool.Put(s.periods[i])
+		_ = s.chunkPool.Put(s.root[i])
 	}
 
 	// Truncate the beginning of the slices.
 	s.timestamps = s.timestamps[start:]
 	s.durations = s.durations[start:]
 	s.periods = s.periods[start:]
+	s.root = s.root[start:]
 
 	// Update the series' numSamples according to the number timestamps.
 	var numSamples uint16
@@ -371,9 +367,6 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 	}
 	s.numSamples = numSamples
 
-	for key, chunks := range s.cumulativeValues {
-		s.cumulativeValues[key] = chunks[start:]
-	}
 	for key, chunks := range s.flatValues {
 		s.flatValues[key] = chunks[start:]
 	}

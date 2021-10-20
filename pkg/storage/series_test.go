@@ -34,8 +34,6 @@ func TestMemSeriesTree(t *testing.T) {
 
 	// Note: These keys are not unique per location.
 	// For this test they simply seem to be.
-	k0 := ProfileTreeValueNodeKey{location: "0"}
-	k1 := ProfileTreeValueNodeKey{location: "1|0"}
 	k2 := ProfileTreeValueNodeKey{location: "2|1|0"}
 	k3 := ProfileTreeValueNodeKey{location: "3|1|0"}
 	k4 := ProfileTreeValueNodeKey{location: "4|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`}
@@ -61,12 +59,6 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXOR(1), s.flatValues[k2][0])
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0])
 
-	require.Len(t, s.cumulativeValues, 4)
-	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k0][0])
-	require.Equal(t, chunkenc.FromValuesXOR(3), s.cumulativeValues[k1][0])
-	require.Equal(t, chunkenc.FromValuesXOR(1), s.cumulativeValues[k2][0])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0])
-
 	require.Len(t, s.labels, 1)
 	require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]string{k4: label}, s.labels)
 	require.Equal(t, map[ProfileTreeValueNodeKey]map[string][]int64{k4: numLabel}, s.numLabels)
@@ -75,10 +67,8 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
 			LocationID: 0, // root
 			Children: []*MemSeriesTreeNode{{
-				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
 				LocationID: 1,
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
@@ -106,20 +96,12 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.flatValues[k2][0])
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0]) // sparse - nothing added
 
-	require.Len(t, s.cumulativeValues, 4)
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k0][0])
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3), s.cumulativeValues[k1][0])
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2][0])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0]) // sparse - nothing added
-
 	// The tree itself didn't change by adding more values but no new locations.
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
 			LocationID: 0, // root
 			Children: []*MemSeriesTreeNode{{
-				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
 				LocationID: 1,
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
@@ -147,22 +129,12 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.flatValues[k4][0])      // sparse - nothing added
 	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.flatValues[k3][0]) // new
 
-	require.Len(t, s.cumulativeValues, 5)
-
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k0][0])
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4), s.cumulativeValues[k1][0])
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.cumulativeValues[k2][0])   // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0])      // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.cumulativeValues[k3][0]) // new
-
 	// The tree itself didn't change by adding more values but no new locations.
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
 			LocationID: 0, // root
 			Children: []*MemSeriesTreeNode{{
-				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
 				LocationID: 1,
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
@@ -202,23 +174,12 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.flatValues[k3][0])
 	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.flatValues[k5][0])
 
-	require.Len(t, s.cumulativeValues, 6)
-
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4, 6, 7), s.cumulativeValues[k0][0])
-	require.Equal(t, chunkenc.FromValuesXOR(3, 3, 4, 6, 7), s.cumulativeValues[k1][0])
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3, 0, 6, 7), s.cumulativeValues[k2][0]) // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.cumulativeValues[k4][0])             // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.cumulativeValues[k3][0])        // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.cumulativeValues[k5][0])        // sparse - nothing added
-
 	// The tree itself didn't change by adding more values but no new locations.
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
 			LocationID: 0, // root
 			Children: []*MemSeriesTreeNode{{
-				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
 				LocationID: 1,
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
@@ -263,9 +224,15 @@ func TestMemSeriesTreeMany(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	it := NewMultiChunkIterator(s.root)
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(2*i+i), it.At())
+	}
+
 	require.Len(t, s.flatValues, 2)
 
-	it := NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "2|1|0"}])
+	it = NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "2|1|0"}])
 	for i := 1; i < 200; i++ {
 		require.True(t, it.Next())
 		require.Equal(t, int64(i), it.At())
@@ -277,21 +244,12 @@ func TestMemSeriesTreeMany(t *testing.T) {
 		require.Equal(t, 2*int64(i), it.At())
 	}
 
-	require.Len(t, s.cumulativeValues, 4)
-	it = NewMultiChunkIterator(s.cumulativeValues[ProfileTreeValueNodeKey{location: "0"}])
-	for i := 1; i < 200; i++ {
-		require.True(t, it.Next())
-		require.Equal(t, int64(i)+2*int64(i), it.At())
-	}
-
 	// The tree itself didn't change by adding more values but no new locations.
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			keys:       []ProfileTreeValueNodeKey{{location: "0"}},
 			LocationID: 0, // root
 			Children: []*MemSeriesTreeNode{{
-				keys:       []ProfileTreeValueNodeKey{{location: "1|0"}},
 				LocationID: 1,
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{{location: "2|1|0"}},
@@ -353,9 +311,6 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 			require.Equal(t, tc.left, len(s.durations))
 			require.Equal(t, tc.left, len(s.periods))
 
-			for _, c := range s.cumulativeValues {
-				require.Equal(t, tc.left, len(c))
-			}
 			for _, c := range s.flatValues {
 				require.Equal(t, tc.left, len(c))
 			}

@@ -287,6 +287,10 @@ func (m *MergeProfile) ProfileTree() InstantProfileTree {
 	}
 }
 
+func (m *MergeProfileTree) RootCumulativeValue() int64 {
+	return 0
+}
+
 func (m *MergeProfileTree) Iterator() InstantProfileTreeIterator {
 	return &MergeProfileTreeIterator{
 		a:      m.m.a.ProfileTree().Iterator(),
@@ -606,20 +610,8 @@ func MergeInstantProfileTreeNodes(a, b InstantProfileTreeNode) InstantProfileTre
 		}
 	}
 
-	cumulativeValues := []*ProfileTreeValueNode{{}}
-	cumulativeA := a.CumulativeValues()
-	if len(cumulativeA) > 0 {
-		cumulativeValues[0].Value += cumulativeA[0].Value
-	}
-
-	cumulativeB := b.CumulativeValues()
-	if len(cumulativeB) > 0 {
-		cumulativeValues[0].Value += cumulativeB[0].Value
-	}
-
 	return &ProfileTreeNode{
-		locationID:       a.LocationID(),
-		flatValues:       flatValues,
-		cumulativeValues: cumulativeValues,
+		locationID: a.LocationID(),
+		flatValues: flatValues,
 	}
 }

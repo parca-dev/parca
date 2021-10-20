@@ -65,6 +65,10 @@ func (d *DiffProfile) ProfileTree() InstantProfileTree {
 	}
 }
 
+func (d *DiffProfileTree) RootCumulativeValue() int64 {
+	return 0
+}
+
 func (d *DiffProfileTree) Iterator() InstantProfileTreeIterator {
 	return &DiffProfileTreeIterator{
 		base:         d.d.base.ProfileTree().Iterator(),
@@ -297,22 +301,9 @@ func DiffInstantProfileTreeNodes(base, compare InstantProfileTreeNode) InstantPr
 		flatValues[0].Value += flatB[0].Value
 	}
 
-	cumulativeValues := []*ProfileTreeValueNode{{}}
-	cumulativeA := base.CumulativeValues()
-	if len(cumulativeA) > 0 {
-		cumulativeValues[0].Value -= cumulativeA[0].Value
-	}
-
-	cumulativeB := compare.CumulativeValues()
-	if len(cumulativeB) > 0 {
-		cumulativeValues[0].Value += cumulativeB[0].Value
-	}
-
 	return &ProfileTreeNode{
-		locationID:           compare.LocationID(),
-		flatValues:           compare.FlatValues(),
-		cumulativeValues:     compare.CumulativeValues(),
-		flatDiffValues:       flatValues,
-		cumulativeDiffValues: cumulativeValues,
+		locationID:     compare.LocationID(),
+		flatValues:     compare.FlatValues(),
+		flatDiffValues: flatValues,
 	}
 }

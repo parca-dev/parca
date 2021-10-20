@@ -36,9 +36,10 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 				Period:    time.Second.Nanoseconds(),
 			},
 			Tree: &ProfileTree{
-				Roots: &ProfileTreeNode{
-					locationID:       0,
-					cumulativeValues: []*ProfileTreeValueNode{{Value: int64(i)}},
+				Roots: &ProfileTreeRootNode{
+					ProfileTreeNode: &ProfileTreeNode{
+						flatValues: []*ProfileTreeValueNode{{Value: int64(i)}},
+					},
 				},
 			},
 		}
@@ -56,7 +57,7 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 		itt := p.ProfileTree().Iterator()
 		for itt.HasMore() {
 			if itt.NextChild() {
-				require.Equal(t, seen, itt.At().CumulativeValues()[0].Value)
+				require.Equal(t, seen, itt.At().FlatValues()[0].Value)
 				itt.StepInto()
 			}
 			itt.StepUp()

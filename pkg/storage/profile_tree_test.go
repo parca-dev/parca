@@ -41,65 +41,42 @@ func TestProfileTreeInsert(t *testing.T) {
 	pt.Insert(s3)
 
 	require.Equal(t, &ProfileTree{
-		Roots: &ProfileTreeNode{
-			// Roots always have the LocationID 0.
-			locationID: 0,
-			cumulativeValues: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "0"},
-				Value: 6,
-			}},
-			Children: []*ProfileTreeNode{{
-				locationID: 1,
-				cumulativeValues: []*ProfileTreeValueNode{{
-					key:   &ProfileTreeValueNodeKey{location: "1|0"},
-					Value: 6,
-				}},
+		Roots: &ProfileTreeRootNode{
+			CumulativeValue: 6,
+			ProfileTreeNode: &ProfileTreeNode{
+				// Roots always have the LocationID 0.
+				locationID: 0,
 				Children: []*ProfileTreeNode{{
-					locationID: 2,
-					cumulativeValues: []*ProfileTreeValueNode{{
-						key:   &ProfileTreeValueNodeKey{location: "2|1|0"},
-						Value: 6,
-					}},
-					flatValues: []*ProfileTreeValueNode{{
-						key:   &ProfileTreeValueNodeKey{location: "2|1|0"},
-						Value: 2,
-					}},
+					locationID: 1,
 					Children: []*ProfileTreeNode{{
-						locationID: 3,
-						cumulativeValues: []*ProfileTreeValueNode{{
-							key:   &ProfileTreeValueNodeKey{location: "3|2|1|0"},
-							Value: 4,
+						locationID: 2,
+						flatValues: []*ProfileTreeValueNode{{
+							key:   &ProfileTreeValueNodeKey{location: "2|1|0"},
+							Value: 2,
 						}},
 						Children: []*ProfileTreeNode{{
-							locationID: 4,
-							cumulativeValues: []*ProfileTreeValueNode{{
-								key:      &ProfileTreeValueNodeKey{location: "4|3|2|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
-								Value:    3,
-								Label:    label,
-								NumLabel: numLabel,
-								NumUnit:  numUnit,
-							}},
-							flatValues: []*ProfileTreeValueNode{{
-								key:      &ProfileTreeValueNodeKey{location: "4|3|2|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
-								Value:    3,
-								Label:    label,
-								NumLabel: numLabel,
-								NumUnit:  numUnit,
-							}},
-						}, {
-							locationID: 5,
-							cumulativeValues: []*ProfileTreeValueNode{{
-								key:   &ProfileTreeValueNodeKey{location: "5|3|2|1|0"},
-								Value: 1,
-							}},
-							flatValues: []*ProfileTreeValueNode{{
-								key:   &ProfileTreeValueNodeKey{location: "5|3|2|1|0"},
-								Value: 1,
+							locationID: 3,
+							Children: []*ProfileTreeNode{{
+								locationID: 4,
+								flatValues: []*ProfileTreeValueNode{{
+									key:      &ProfileTreeValueNodeKey{location: "4|3|2|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
+									Value:    3,
+									Label:    label,
+									NumLabel: numLabel,
+									NumUnit:  numUnit,
+								}},
+							}, {
+								locationID: 5,
+								flatValues: []*ProfileTreeValueNode{{
+									key:   &ProfileTreeValueNodeKey{location: "5|3|2|1|0"},
+									Value: 1,
+								}},
 							}},
 						}},
 					}},
 				}},
-			}}},
+			},
+		},
 	}, pt)
 }
 

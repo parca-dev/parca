@@ -54,7 +54,7 @@ type ProfileTreeIterator struct {
 
 func NewProfileTreeIterator(t *ProfileTree) *ProfileTreeIterator {
 	root := &ProfileTreeStackEntry{
-		node:  &ProfileTreeNode{Children: []*ProfileTreeNode{t.Roots}},
+		node:  &ProfileTreeNode{Children: []*ProfileTreeNode{t.Roots.ProfileTreeNode}},
 		child: -1,
 	}
 	return &ProfileTreeIterator{

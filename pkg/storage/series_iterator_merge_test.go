@@ -150,22 +150,13 @@ func TestMemMergeSeriesTree(t *testing.T) {
 		Meta: InstantProfileMeta{
 			Timestamp: 1,
 		},
-		Tree: &ProfileTree{
-			Roots: &ProfileTreeNode{
-				cumulativeValues: []*ProfileTreeValueNode{{
-					Value: 6,
-				}},
+		Tree: &ProfileTree{Roots: &ProfileTreeRootNode{
+			ProfileTreeNode: &ProfileTreeNode{
 				Children: []*ProfileTreeNode{{
 					locationID: 1,
-					cumulativeValues: []*ProfileTreeValueNode{{
-						Value: 6,
-					}},
 					Children: []*ProfileTreeNode{{
 						locationID: 2,
 						flatValues: []*ProfileTreeValueNode{{
-							Value: 2,
-						}},
-						cumulativeValues: []*ProfileTreeValueNode{{
 							Value: 2,
 						}},
 					}, {
@@ -176,15 +167,9 @@ func TestMemMergeSeriesTree(t *testing.T) {
 							NumLabel: numLabel,
 							NumUnit:  numUnit,
 						}},
-						cumulativeValues: []*ProfileTreeValueNode{{
-							Value:    4,
-							Label:    label,
-							NumLabel: numLabel,
-							NumUnit:  numUnit,
-						}},
 					}},
 				}},
 			},
-		},
+		}},
 	}, p)
 }

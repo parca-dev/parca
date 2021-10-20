@@ -119,7 +119,6 @@ func TestMemSeriesIterator(t *testing.T) {
 		i := 0
 		err := WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
 			require.Equal(t, expected[i].LocationID, n.LocationID())
-			require.Equal(t, expected[i].CumulativeValues, n.CumulativeValues())
 			require.Equal(t, expected[i].FlatValues, n.FlatValues())
 			i++
 			return nil
@@ -172,7 +171,6 @@ func TestMemSeriesIterator(t *testing.T) {
 		i := 0
 		err := WalkProfileTree(instantProfile.ProfileTree(), func(n InstantProfileTreeNode) error {
 			require.Equal(t, expected[i].LocationID, n.LocationID())
-			require.Equal(t, expected[i].CumulativeValues, n.CumulativeValues())
 			require.Equal(t, expected[i].FlatValues, n.FlatValues())
 			i++
 			return nil
