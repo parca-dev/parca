@@ -54,6 +54,8 @@ import (
 	"github.com/parca-dev/parca/pkg/storage"
 )
 
+const symbolizationInterval = 10 * time.Second
+
 type Flags struct {
 	ConfigPath         string   `default:"parca.yaml" help:"Path to config file."`
 	LogLevel           string   `default:"info" enum:"error,warn,info,debug" help:"log level."`
@@ -64,7 +66,8 @@ type Flags struct {
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
 
-	SymbolizerDemangleMode string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: : no parameters, no templates, no return type" enum:"simple,full,none,templates"`
+	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
+	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 }
 
 // Run the parca server
@@ -145,26 +148,35 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	dbgInfo, err := debuginfo.NewStore(logger, symbol.NewSymbolizer(logger, flags.SymbolizerDemangleMode), cfg.DebugInfo)
+	sym, err := symbol.NewSymbolizer(logger,
+		symbol.WithDemangleMode(flags.SymbolizerDemangleMode),
+		symbol.WithAttemptThreshold(flags.SymbolizerNumberOfTries),
+		symbol.WithCacheItemTTL(symbolizationInterval*3),
+	)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize symbolizer", "err", err)
+		return err
+	}
+
+	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err
 	}
 
-	parcaserver := server.NewServer(reg)
-
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 	{
-		sym := symbolizer.NewSymbolizer(logger, mStr, dbgInfo)
+		s := symbolizer.New(logger, mStr, dbgInfo)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
 			func() error {
-				return sym.Run(ctx, 10*time.Second)
+				return s.Run(ctx, symbolizationInterval)
 			},
 			func(_ error) {
 				level.Debug(logger).Log("msg", "symbolizer server shutting down")
 				cancel()
+				sym.Close()
 			})
 	}
 	{
@@ -194,6 +206,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			m.Stop()
 		},
 	)
+	parcaserver := server.NewServer(reg)
 	gr.Add(
 		func() error {
 			return parcaserver.ListenAndServe(

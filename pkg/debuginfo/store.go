@@ -27,7 +27,6 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"google.golang.org/grpc/codes"
@@ -35,6 +34,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+
+	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 var ErrDebugInfoNotFound = errors.New("debug info not found")
@@ -203,7 +204,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 
 	liner, err := s.symbolizer.NewLiner(m, localObjPath)
 	if err != nil {
-		const msg = "failed to create add2LineFunc"
+		const msg = "failed to create liner"
 		level.Debug(s.logger).Log("msg", msg, "object", m.BuildID, "err", err)
 		return nil, fmt.Errorf(msg+": %w", err)
 	}

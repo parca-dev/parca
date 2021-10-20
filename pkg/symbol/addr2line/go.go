@@ -60,19 +60,18 @@ func Go(path string) (func(addr uint64) ([]profile.Line, error), error) {
 }
 
 func gosymtab(path string) (*gosym.Table, error) {
-	exe, err := elf.Open(path)
+	objFile, err := elf.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open elf: %w", err)
 	}
-	defer exe.Close()
+	defer objFile.Close()
 
 	var pclntab []byte
-	if sec := exe.Section(".gopclntab"); sec != nil {
+	if sec := objFile.Section(".gopclntab"); sec != nil {
 		if sec.Type == elf.SHT_NOBITS {
 			return nil, errors.New(".gopclntab section has no bits")
 		}
 
-		// TODO(kakkoyun): Optimize.Don't read just check existence!
 		pclntab, err = sec.Data()
 		if err != nil {
 			return nil, fmt.Errorf("could not find .gopclntab section: %w", err)
@@ -84,13 +83,12 @@ func gosymtab(path string) (*gosym.Table, error) {
 	}
 
 	var symtab []byte
-	if sec := exe.Section(".gosymtab"); sec != nil {
-		// TODO(kakkoyun): Optimize. Don't read just check existence!
+	if sec := objFile.Section(".gosymtab"); sec != nil {
 		symtab, _ = sec.Data()
 	}
 
 	var text uint64 = 0
-	if sec := exe.Section(".text"); sec != nil {
+	if sec := objFile.Section(".text"); sec != nil {
 		text = sec.Addr
 	}
 

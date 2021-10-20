@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/alecthomas/kong v0.2.17
 	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/sroar v0.0.0-20210915181338-8dc690a08d84
@@ -13,6 +14,7 @@ require (
 	github.com/go-delve/delve v1.7.2
 	github.com/go-kit/log v0.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
+	github.com/goburrow/cache v0.1.4
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-20201002093600-73cf2ae9d891
