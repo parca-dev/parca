@@ -14,6 +14,7 @@ require (
 	github.com/go-delve/delve v1.7.2
 	github.com/go-kit/log v0.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
+	github.com/goburrow/cache v0.1.4
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-20201002093600-73cf2ae9d891
@@ -21,7 +22,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/hashicorp/golang-lru v0.5.4
 	github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639
 	github.com/improbable-eng/grpc-web v0.14.0
 	github.com/oklog/run v1.1.0

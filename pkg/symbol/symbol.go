@@ -14,27 +14,34 @@
 package symbol
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/cespare/xxhash/v2"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/goburrow/cache"
 	"github.com/google/pprof/profile"
-	lru "github.com/hashicorp/golang-lru"
-	"github.com/hashicorp/golang-lru/simplelru"
+
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-const linerCacheSize = 50
+var ErrLinerFailedBefore = errors.New("failed to initialize liner")
 
 type Symbolizer struct {
 	logger    log.Logger
-	cache     simplelru.LRUCache
 	demangler *demangle.Demangler
+
+	cache     cache.Cache
+	cacheOpts []cache.Option
+
+	failed           map[string]struct{}
+	attemptThreshold int
 }
 
 type liner interface {
@@ -45,26 +52,71 @@ type funcLiner func(addr uint64) ([]profile.Line, error)
 
 func (f funcLiner) PCToLines(pc uint64) ([]profile.Line, error) { return f(pc) }
 
-func NewSymbolizer(logger log.Logger, demangleMode ...string) *Symbolizer {
-	var dm string
-	if len(demangleMode) > 0 {
-		dm = demangleMode[0]
+func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
+	log.With(logger, "component", "symbolizer")
+
+	const (
+		defaultDemangleMode     = "simple"
+		defaultCacheSize        = 1000
+		defaultCacheItemTTL     = time.Minute
+		defaultAttemptThreshold = 3
+	)
+
+	sym := &Symbolizer{
+		logger:    logger,
+		demangler: demangle.NewDemangler(defaultDemangleMode, false),
+
+		// e.g: Parca binary compressed DWARF data size ~8mb as of 10.2021
+		cacheOpts: []cache.Option{
+			cache.WithMaximumSize(defaultCacheSize),
+			cache.WithExpireAfterAccess(defaultCacheItemTTL),
+		},
+
+		failed:           map[string]struct{}{},
+		attemptThreshold: defaultAttemptThreshold,
 	}
-	var cache simplelru.LRUCache
-	// e.g: Parca binary compressed DWARF data size ~8mb as of 10.2021
-	cache, err := lru.New(linerCacheSize)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize liner cache", "err", err)
-		cache = noopLinerCache{}
+	for _, opt := range opts {
+		opt(sym)
 	}
-	return &Symbolizer{
-		logger:    log.With(logger, "component", "symbolizer"),
-		cache:     cache,
-		demangler: demangle.NewDemangler(dm, false),
-	}
+	sym.cache = cache.New(sym.cacheOpts...)
+
+	return sym, nil
 }
 
-func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
+func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (lnr liner, err error) {
+	hash, err := hash(path)
+	if err != nil {
+		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
+		hash = path
+	}
+
+	// Check if we already attempt to build a liner for this path.
+	if _, failedBefore := s.failed[hash]; failedBefore {
+		level.Debug(s.logger).Log("msg", "already failed to create liner for this debug info file, skipping")
+		return nil, ErrLinerFailedBefore
+	}
+
+	if val, ok := s.cache.GetIfPresent(hash); ok {
+		level.Debug(s.logger).Log("msg", "using cached liner to resolve symbols", "file", path)
+		return val.(liner), nil
+	}
+
+	lnr, err = s.newLiner(m, path)
+	if err != nil {
+		s.failed[hash] = struct{}{}
+		s.cache.Invalidate(hash)
+	}
+
+	level.Debug(s.logger).Log("msg", "liner cached", "file", path)
+	s.cache.Put(hash, lnr)
+	return
+}
+
+func (s *Symbolizer) Close() error {
+	return s.cache.Close()
+}
+
+func (s *Symbolizer) newLiner(m *profile.Mapping, path string) (liner, error) {
 	hasDWARF, err := elfutils.HasDWARF(path)
 	if err != nil {
 		level.Debug(s.logger).Log(
@@ -73,17 +125,9 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
 			"err", err,
 		)
 	}
-	cacheKey, err := cacheKey(path)
-	if err != nil {
-		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
-		cacheKey = path
-	}
 	if hasDWARF {
-		level.Debug(s.logger).Log("msg", "using DWARF to resolve symbols", "file", path)
-		if val, ok := s.cache.Get(cacheKey); ok {
-			return val.(liner), nil
-		}
-		lnr, err := addr2line.DWARF(s.demangler, m, path)
+		level.Debug(s.logger).Log("msg", "using DWARF liner to resolve symbols", "file", path)
+		lnr, err := addr2line.DWARF(s.logger, s.demangler, s.attemptThreshold, m, path)
 		if err != nil {
 			level.Error(s.logger).Log(
 				"msg", "failed to open object file",
@@ -95,7 +139,6 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
 			)
 			return nil, err
 		}
-		s.cache.Add(cacheKey, lnr)
 		return lnr, nil
 	}
 
@@ -113,13 +156,9 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
 		level.Debug(s.logger).Log("msg", "symbolizing a Go binary", "file", path)
-		if val, ok := s.cache.Get(cacheKey); ok {
-			return val.(liner), nil
-		}
 		f, err := addr2line.Go(path)
 		if err == nil {
 			level.Debug(s.logger).Log("msg", "using go liner to resolve symbols", "file", path)
-			s.cache.Add(cacheKey, funcLiner(f))
 			return funcLiner(f), nil
 		}
 		level.Error(s.logger).Log(
@@ -131,10 +170,7 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
 
 	// Just in case, underlying DWARF can symbolize addresses.
 	level.Debug(s.logger).Log("msg", "falling back to DWARF liner resolve symbols", "file", path)
-	if val, ok := s.cache.Get(cacheKey); ok {
-		return val.(liner), nil
-	}
-	lnr, err := addr2line.DWARF(s.demangler, m, path)
+	lnr, err := addr2line.DWARF(s.logger, s.demangler, s.attemptThreshold, m, path)
 	if err != nil {
 		level.Error(s.logger).Log("msg", "failed to open object file",
 			"file", path,
@@ -145,11 +181,10 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
 		)
 		return nil, err
 	}
-	s.cache.Add(cacheKey, lnr)
 	return lnr, nil
 }
 
-func cacheKey(path string) (string, error) {
+func hash(path string) (string, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to open file: %w", err)
@@ -161,50 +196,4 @@ func cacheKey(path string) (string, error) {
 		return "", fmt.Errorf("failed to hash debug info file: %w", err)
 	}
 	return string(h.Sum(nil)), nil
-}
-
-type noopLinerCache struct {
-}
-
-func (n noopLinerCache) Add(key, value interface{}) bool {
-	return false
-}
-
-func (n noopLinerCache) Get(key interface{}) (value interface{}, ok bool) {
-	return nil, false
-}
-
-func (n noopLinerCache) Contains(key interface{}) (ok bool) {
-	return false
-}
-
-func (n noopLinerCache) Peek(key interface{}) (value interface{}, ok bool) {
-	return nil, false
-}
-
-func (n noopLinerCache) Remove(key interface{}) bool {
-	return false
-}
-
-func (n noopLinerCache) RemoveOldest() (interface{}, interface{}, bool) {
-	return nil, nil, false
-}
-
-func (n noopLinerCache) GetOldest() (interface{}, interface{}, bool) {
-	return nil, nil, false
-}
-
-func (n noopLinerCache) Keys() []interface{} {
-	return nil
-}
-
-func (n noopLinerCache) Len() int {
-	return 0
-}
-
-func (n noopLinerCache) Purge() {
-}
-
-func (n noopLinerCache) Resize(i int) int {
-	return 0
 }

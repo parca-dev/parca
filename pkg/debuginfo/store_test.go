@@ -42,9 +42,12 @@ func TestStore(t *testing.T) {
 	defer os.RemoveAll(cacheDir)
 
 	logger := log.NewNopLogger()
+	sym, err := symbol.NewSymbolizer(logger)
+	require.NoError(t, err)
+
 	s, err := NewStore(
 		logger,
-		symbol.NewSymbolizer(logger),
+		sym,
 		&Config{
 			Bucket: &client.BucketConfig{
 				Type: client.FILESYSTEM,

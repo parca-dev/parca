@@ -27,7 +27,6 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"google.golang.org/grpc/codes"
@@ -35,6 +34,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+
+	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 var ErrDebugInfoNotFound = errors.New("debug info not found")
@@ -213,6 +214,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 		lines, err := liner.PCToLines(loc.Address)
 		if err != nil {
 			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildID, "err", err)
+			continue
 		}
 		locationLines[loc] = append(locationLines[loc], lines...)
 	}

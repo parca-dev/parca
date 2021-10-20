@@ -23,23 +23,31 @@ import (
 
 	"github.com/go-delve/delve/pkg/dwarf/godwarf"
 	"github.com/go-delve/delve/pkg/dwarf/reader"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
-	lru "github.com/hashicorp/golang-lru"
-	"github.com/hashicorp/golang-lru/simplelru"
+
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
-const (
-	dwarfTreeCacheSize = 8192 // size of the dwarfTree cache of each mapping
-)
+var ErrLocationFailedBefore = errors.New("failed to symbolized location")
 
 type dwarfLiner struct {
-	dwarfTreeCache simplelru.LRUCache
-	demangler      *demangle.Demangler
-	data           *dwarf.Data
+	logger    log.Logger
+	demangler *demangle.Demangler
+
+	mapping             *profile.Mapping
+	data                *dwarf.Data
+	lineEntries         map[dwarf.Offset][]dwarf.LineEntry
+	subprograms         map[dwarf.Offset][]*godwarf.Tree
+	abstractSubprograms map[dwarf.Offset]*dwarf.Entry
+
+	attemptThreshold int
+	attempts         map[uint64]int
+	failed           map[uint64]struct{}
 }
 
-func DWARF(demangler *demangle.Demangler, _ *profile.Mapping, path string) (*dwarfLiner, error) {
+func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold int, m *profile.Mapping, path string) (*dwarfLiner, error) {
 	// TODO(kakkoyun): Handle offset, start and limit for dynamically linked libraries.
 	//objFile, err := s.bu.Open(file, m.Start, m.Limit, m.Offset)
 	//if err != nil {
@@ -55,35 +63,127 @@ func DWARF(demangler *demangle.Demangler, _ *profile.Mapping, path string) (*dwa
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}
-	cache, err := lru.New(dwarfTreeCacheSize)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize dwarf tree cache: %w", err)
 
+	dl := &dwarfLiner{
+		logger:    logger,
+		demangler: demangler,
+
+		mapping: m,
+		data:    data,
+
+		lineEntries:         map[dwarf.Offset][]dwarf.LineEntry{},
+		subprograms:         map[dwarf.Offset][]*godwarf.Tree{},
+		abstractSubprograms: map[dwarf.Offset]*dwarf.Entry{},
+
+		attemptThreshold: attemptThreshold,
+		attempts:         map[uint64]int{},
+		failed:           map[uint64]struct{}{},
 	}
-	return &dwarfLiner{
-		demangler:      demangler,
-		dwarfTreeCache: cache,
-		data:           data,
-	}, nil
+	if err := dl.init(); err != nil {
+		return nil, err
+	}
+	return dl, nil
+}
+
+func (dl *dwarfLiner) init() error {
+	// The reader is positioned at byte offset 0 in the DWARF “info” section.
+	er := dl.data.Reader()
+	var cu *dwarf.Entry
+outer:
+	for {
+		entry, err := er.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			continue
+		}
+
+		if entry == nil {
+			break
+		}
+		if entry.Tag == dwarf.TagCompileUnit {
+			cu = entry
+			// The reader is positioned at byte offset 0 in the DWARF “line” section.
+			lr, err := dl.data.LineReader(cu)
+			if err != nil {
+				return err
+			}
+			if lr == nil {
+				continue
+			}
+
+			for {
+				le := dwarf.LineEntry{}
+				err := lr.Next(&le)
+				if err != nil {
+					break
+				}
+				if le.IsStmt {
+					dl.lineEntries[cu.Offset] = append(dl.lineEntries[cu.Offset], le)
+				}
+			}
+		}
+
+		if entry.Tag == dwarf.TagSubprogram {
+			for _, field := range entry.Field {
+				if field.Attr == dwarf.AttrInline {
+					dl.abstractSubprograms[entry.Offset] = entry
+					continue outer
+				}
+			}
+
+			tr, err := godwarf.LoadTree(entry.Offset, dl.data, 0)
+			if err != nil {
+				return fmt.Errorf("failed to extract dwarf tree: %w", err)
+			}
+
+			dl.subprograms[cu.Offset] = append(dl.subprograms[cu.Offset], tr)
+		}
+	}
+	return nil
 }
 
 func (dl *dwarfLiner) PCToLines(addr uint64) (lines []profile.Line, err error) {
+	// Check if we already attempt to symbolize this location and failed.
+	if _, failedBefore := dl.failed[addr]; failedBefore {
+		level.Debug(dl.logger).Log("msg", "location already had been attempted to be symbolized and failed, skipping")
+		return nil, ErrLocationFailedBefore
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("recovering from panic in DWARF binary add2line: %v", r)
+			err = dl.handleError(addr, fmt.Errorf("recovering from panic in DWARF binary add2line: %v", r))
 		}
 	}()
 
 	lines, err = dl.sourceLines(addr)
 	if err != nil {
-		return nil, err
+		return nil, dl.handleError(addr, err)
 	}
-
 	if len(lines) == 0 {
+		dl.failed[addr] = struct{}{}
+		delete(dl.attempts, addr)
 		return nil, errors.New("could not find any frames for given address")
 	}
 
 	return lines, nil
+}
+
+func (dl *dwarfLiner) handleError(addr uint64, err error) error {
+	if prev, ok := dl.attempts[addr]; ok {
+		prev++
+		if prev >= dl.attemptThreshold {
+			dl.failed[addr] = struct{}{}
+			delete(dl.attempts, addr)
+		} else {
+			dl.attempts[addr] = prev
+		}
+		return err
+	}
+	// First failed attempt
+	dl.attempts[addr] = 1
+	return err
 }
 
 func (dl *dwarfLiner) sourceLines(addr uint64) ([]profile.Line, error) {
@@ -97,65 +197,39 @@ func (dl *dwarfLiner) sourceLines(addr uint64) ([]profile.Line, error) {
 		return nil, errors.New("failed to find a corresponding dwarf entry for given address")
 	}
 
-	// The reader is positioned at byte offset 0 in the DWARF “line” section.
-	lr, err := dl.data.LineReader(cu)
-	if err != nil {
-		return nil, err
-	}
-
-	lineEntries := []dwarf.LineEntry{}
-	for {
-		le := dwarf.LineEntry{}
-		err := lr.Next(&le)
-		if err != nil {
-			break
-		}
-		if le.IsStmt {
-			lineEntries = append(lineEntries, le)
-		}
-	}
-
-	subprograms := []*godwarf.Tree{}
-	abstractSubprograms := map[dwarf.Offset]*dwarf.Entry{}
-outer:
-	for {
-		entry, err := er.Next()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			continue
-		}
-		if entry == nil {
-			break
-		}
-		if entry.Tag == dwarf.TagCompileUnit {
-			break
-		}
-
-		if entry.Tag == dwarf.TagSubprogram {
-			for _, field := range entry.Field {
-				if field.Attr == dwarf.AttrInline {
-					abstractSubprograms[entry.Offset] = entry
-					continue outer
-				}
-			}
-
-			tr, err := dl.getDWARFTree(entry)
-			if err != nil {
-				return nil, fmt.Errorf("failed to extract dwarf tree: %w", err)
-			}
-
-			if tr.ContainsPC(addr) {
-				subprograms = append(subprograms, tr)
-			}
-		}
-	}
-
 	lines := []profile.Line{}
-	for _, tr := range subprograms {
-		name := tr.Entry.Val(dwarf.AttrName).(string)
-		file, line := findLineInfo(lineEntries, tr.Ranges)
+	var tr *godwarf.Tree
+	for _, t := range dl.subprograms[cu.Offset] {
+		if t.ContainsPC(addr) {
+			tr = t
+			break
+		}
+	}
+	if tr == nil {
+		return lines, nil
+	}
+
+	name := tr.Entry.Val(dwarf.AttrName).(string)
+	file, line := findLineInfo(dl.lineEntries[cu.Offset], tr.Ranges)
+	lines = append(lines, profile.Line{
+		Line: line,
+		Function: dl.demangler.Demangle(&profile.Function{
+			Name:     name,
+			Filename: file,
+		}),
+	})
+
+	// If pc is 0 then all inlined calls will be returned.
+	for _, ch := range reader.InlineStack(tr, addr) {
+		var name string
+		if ch.Tag == dwarf.TagSubprogram {
+			name = tr.Entry.Val(dwarf.AttrName).(string)
+		} else {
+			abstractOrigin := dl.abstractSubprograms[ch.Entry.Val(dwarf.AttrAbstractOrigin).(dwarf.Offset)]
+			name = getFunctionName(abstractOrigin)
+		}
+
+		file, line := findLineInfo(dl.lineEntries[cu.Offset], ch.Ranges)
 		lines = append(lines, profile.Line{
 			Line: line,
 			Function: dl.demangler.Demangle(&profile.Function{
@@ -163,41 +237,9 @@ outer:
 				Filename: file,
 			}),
 		})
-
-		// If pc is 0 then all inlined calls will be returned.
-		for _, ch := range reader.InlineStack(tr, addr) {
-			var name string
-			if ch.Tag == dwarf.TagSubprogram {
-				name = tr.Entry.Val(dwarf.AttrName).(string)
-			} else {
-				abstractOrigin := abstractSubprograms[ch.Entry.Val(dwarf.AttrAbstractOrigin).(dwarf.Offset)]
-				name = getFunctionName(abstractOrigin)
-			}
-
-			file, line := findLineInfo(lineEntries, ch.Ranges)
-			lines = append(lines, profile.Line{
-				Line: line,
-				Function: dl.demangler.Demangle(&profile.Function{
-					Name:     name,
-					Filename: file,
-				}),
-			})
-		}
 	}
 
 	return lines, nil
-}
-
-func (dl *dwarfLiner) getDWARFTree(entry *dwarf.Entry) (*godwarf.Tree, error) {
-	if tr, ok := dl.dwarfTreeCache.Get(entry.Offset); ok {
-		return tr.(*godwarf.Tree), nil
-	}
-	tr, err := godwarf.LoadTree(entry.Offset, dl.data, 0)
-	if err != nil {
-		return nil, err
-	}
-	dl.dwarfTreeCache.Add(entry.Offset, tr)
-	return tr, nil
 }
 
 func findLineInfo(entries []dwarf.LineEntry, rg [][2]uint64) (string, int64) {

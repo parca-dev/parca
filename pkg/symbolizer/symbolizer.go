@@ -26,27 +26,20 @@ import (
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/runutil"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 type Symbolizer struct {
 	logger    log.Logger
 	locations metastore.LocationStore
 	debugInfo *debuginfo.Store
-
-	attemptThreshold int
-	attempts         map[string]map[uint64]int
-	failed           map[string]map[uint64]struct{}
 }
 
-func NewSymbolizer(logger log.Logger, loc metastore.LocationStore, info *debuginfo.Store, attemptThreshold int) *Symbolizer {
+func New(logger log.Logger, loc metastore.LocationStore, info *debuginfo.Store) *Symbolizer {
 	return &Symbolizer{
 		logger:    log.With(logger, "component", "symbolizer"),
 		locations: loc,
 		debugInfo: info,
-
-		attemptThreshold: attemptThreshold,
-		attempts:         map[string]map[uint64]int{},
-		failed:           map[string]map[uint64]struct{}{},
 	}
 }
 
@@ -84,11 +77,6 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
 			continue
 		}
-		// Check if we already attempt to symbolize this location and failed.
-		if _, failedBefore := s.failed[loc.Mapping.BuildID][loc.Address]; failedBefore {
-			level.Debug(s.logger).Log("msg", "location already had been attempted to be symbolized and failed, skipping")
-			continue
-		}
 		mappings[loc.Mapping.BuildID] = loc.Mapping
 		mappingLocations[loc.Mapping.BuildID] = append(mappingLocations[loc.Mapping.BuildID], loc)
 	}
@@ -103,34 +91,15 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 				level.Debug(s.logger).Log("msg", "failed to find the debug info in storage", "buildid", buildID)
 				continue
 			}
+			if errors.Is(err, symbol.ErrLinerFailedBefore) {
+				level.Debug(s.logger).Log("msg", "failed to symbolize before", "buildid", buildID)
+			}
 			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
 			continue
 		}
 		level.Debug(s.logger).Log("msg", "storage symbolization request done", "buildid", buildID)
 
 		for loc, lines := range symbolizedLocations {
-			if len(lines) == 0 {
-				if prev, ok := s.attempts[buildID][loc.Address]; ok {
-					prev++
-					if prev >= s.attemptThreshold {
-						if _, ok := s.failed[buildID]; !ok {
-							s.failed[buildID] = map[uint64]struct{}{}
-						}
-						s.failed[buildID][loc.Address] = struct{}{}
-						delete(s.attempts[buildID], loc.Address)
-					} else {
-						s.attempts[buildID][loc.Address] = prev
-					}
-					continue
-				}
-				// First failed attempt
-				if _, ok := s.attempts[buildID]; !ok {
-					s.attempts[buildID] = map[uint64]int{}
-				}
-				s.attempts[buildID][loc.Address] = 1
-				continue
-			}
-
 			loc.Line = lines
 			// Only creates lines for given location.
 			if err := s.locations.Symbolize(ctx, loc); err != nil {
@@ -139,6 +108,5 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 			}
 		}
 	}
-
 	return result.ErrorOrNil()
 }
