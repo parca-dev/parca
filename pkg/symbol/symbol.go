@@ -83,33 +83,34 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	return sym, nil
 }
 
-func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (lnr liner, err error) {
-	hash, err := hash(path)
+func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
+	h, err := hash(path)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
-		hash = path
+		h = path
 	}
 
 	// Check if we already attempt to build a liner for this path.
-	if _, failedBefore := s.failed[hash]; failedBefore {
+	if _, failedBefore := s.failed[h]; failedBefore {
 		level.Debug(s.logger).Log("msg", "already failed to create liner for this debug info file, skipping")
 		return nil, ErrLinerFailedBefore
 	}
 
-	if val, ok := s.cache.GetIfPresent(hash); ok {
+	if val, ok := s.cache.GetIfPresent(h); ok {
 		level.Debug(s.logger).Log("msg", "using cached liner to resolve symbols", "file", path)
 		return val.(liner), nil
 	}
 
-	lnr, err = s.newLiner(m, path)
+	lnr, err := s.newLiner(m, path)
 	if err != nil {
-		s.failed[hash] = struct{}{}
+		s.failed[h] = struct{}{}
 		s.cache.Invalidate(hash)
+		return nil, err
 	}
 
 	level.Debug(s.logger).Log("msg", "liner cached", "file", path)
-	s.cache.Put(hash, lnr)
-	return
+	s.cache.Put(h, lnr)
+	return lnr, nil
 }
 
 func (s *Symbolizer) Close() error {
@@ -168,20 +169,7 @@ func (s *Symbolizer) newLiner(m *profile.Mapping, path string) (liner, error) {
 		)
 	}
 
-	// Just in case, underlying DWARF can symbolize addresses.
-	level.Debug(s.logger).Log("msg", "falling back to DWARF liner resolve symbols", "file", path)
-	lnr, err := addr2line.DWARF(s.logger, s.demangler, s.attemptThreshold, m, path)
-	if err != nil {
-		level.Error(s.logger).Log("msg", "failed to open object file",
-			"file", path,
-			"start", m.Start,
-			"limit", m.Limit,
-			"offset", m.Offset,
-			"err", err,
-		)
-		return nil, err
-	}
-	return lnr, nil
+	return nil, errors.New("cannot create a liner from given object file")
 }
 
 func hash(path string) (string, error) {
