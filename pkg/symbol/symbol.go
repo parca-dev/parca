@@ -105,6 +105,7 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (lnr liner, err e
 	if err != nil {
 		s.failed[hash] = struct{}{}
 		s.cache.Invalidate(hash)
+		return
 	}
 
 	level.Debug(s.logger).Log("msg", "liner cached", "file", path)
