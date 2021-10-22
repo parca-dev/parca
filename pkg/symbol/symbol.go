@@ -48,10 +48,6 @@ type liner interface {
 	PCToLines(pc uint64) ([]profile.Line, error)
 }
 
-type funcLiner func(addr uint64) ([]profile.Line, error)
-
-func (f funcLiner) PCToLines(pc uint64) ([]profile.Line, error) { return f(pc) }
-
 func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	log.With(logger, "component", "symbolizer")
 
@@ -104,7 +100,7 @@ func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
 	lnr, err := s.newLiner(m, path)
 	if err != nil {
 		s.failed[h] = struct{}{}
-		s.cache.Invalidate(hash)
+		s.cache.Invalidate(h)
 		return nil, err
 	}
 
@@ -157,10 +153,10 @@ func (s *Symbolizer) newLiner(m *profile.Mapping, path string) (liner, error) {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
 		level.Debug(s.logger).Log("msg", "symbolizing a Go binary", "file", path)
-		f, err := addr2line.Go(path)
+		lnr, err := addr2line.Go(s.logger, path)
 		if err == nil {
 			level.Debug(s.logger).Log("msg", "using go liner to resolve symbols", "file", path)
-			return funcLiner(f), nil
+			return lnr, nil
 		}
 		level.Error(s.logger).Log(
 			"msg", "failed to create go liner, falling back to binary liner",
