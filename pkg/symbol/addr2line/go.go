@@ -19,44 +19,56 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 )
 
-func Go(path string) (func(addr uint64) ([]profile.Line, error), error) {
+type goLiner struct {
+	logger log.Logger
+
+	symtab *gosym.Table
+}
+
+func Go(logger log.Logger, path string) (*goLiner, error) {
 	tab, err := gosymtab(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
 
-	return func(addr uint64) (lines []profile.Line, err error) {
-		defer func() {
-			// PCToLine panics with "invalid memory address or nil pointer dereference",
-			//	- when it refers to an address that doesn't actually exist.
-			if r := recover(); r != nil {
-				err = fmt.Errorf("recovering from panic in go binary add2line: %v", r)
-			}
-		}()
-
-		file, line, fn := tab.PCToLine(addr)
-		name := "?"
-		if fn != nil {
-			name = fn.Name
-		} else {
-			file = "?"
-			line = 0
-		}
-
-		// TODO(kakkoyun): Find a way to symbolize inline functions.
-		lines = append(lines, profile.Line{
-			Line: int64(line),
-			Function: &profile.Function{
-				Name:     name,
-				Filename: file,
-			},
-		})
-
-		return lines, nil
+	return &goLiner{
+		logger: logger,
+		symtab: tab,
 	}, nil
+}
+
+func (gl *goLiner) PCToLines(addr uint64) (lines []profile.Line, err error) {
+	defer func() {
+		// PCToLine panics with "invalid memory address or nil pointer dereference",
+		//	- when it refers to an address that doesn't actually exist.
+		if r := recover(); r != nil {
+			err = fmt.Errorf("recovering from panic in go binary add2line: %v", r)
+		}
+	}()
+
+	file, line, fn := gl.symtab.PCToLine(addr)
+	name := "?"
+	if fn != nil {
+		name = fn.Name
+	} else {
+		file = "?"
+		line = 0
+	}
+
+	// TODO(kakkoyun): Find a way to symbolize inline functions.
+	lines = append(lines, profile.Line{
+		Line: int64(line),
+		Function: &profile.Function{
+			Name:     name,
+			Filename: file,
+		},
+	})
+
+	return lines, nil
 }
 
 func gosymtab(path string) (*gosym.Table, error) {
