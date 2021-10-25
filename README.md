@@ -70,3 +70,8 @@ The scrape configuration can be changed in the `parca.yaml` in the root of the r
 ### Credits
 
 Parca was originally developed by [Polar Signals](https://polarsignals.com/). Read the announcement blog post: https://www.polarsignals.com/blog/posts/2021/10/08/introducing-parca-we-got-funded/
+
+## Contributing
+
+Check out our [Contributing Guide](CONTRIBUTING.md) to get started!
+
