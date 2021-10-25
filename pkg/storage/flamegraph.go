@@ -167,11 +167,15 @@ func GenerateFlamegraph(
 			outerMost, innerMost := locationToTreeNodes(l, 0, 0)
 
 			flamegraphStack.Peek().node.Children = append(flamegraphStack.Peek().node.Children, outerMost)
-			flamegraphStack.Push(&TreeStackEntry{
-				node: innerMost,
-			})
-			if int32(len(flamegraphStack)) > flamegraph.Height {
-				flamegraph.Height = int32(len(flamegraphStack))
+
+			steppedInto := it.StepInto()
+			if steppedInto {
+				flamegraphStack.Push(&TreeStackEntry{
+					node: innerMost,
+				})
+				if int32(len(flamegraphStack)) > flamegraph.Height {
+					flamegraph.Height = int32(len(flamegraphStack))
+				}
 			}
 
 			for _, n := range child.FlatValues() {
@@ -191,7 +195,6 @@ func GenerateFlamegraph(
 				}
 			}
 
-			it.StepInto()
 			continue
 		}
 
@@ -301,6 +304,8 @@ func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.Flameg
 		return compare(node.Children[i], node.Children[j])
 	})
 
+	var cumulative int64
+
 	i, j := 0, 1
 	for i < len(node.Children)-1 {
 		current, next := node.Children[i], node.Children[j]
@@ -311,6 +316,7 @@ func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.Flameg
 				current.Meta.Mapping = &pb.Mapping{}
 			}
 
+			cumulative += next.Cumulative
 			current.Cumulative += next.Cumulative
 			current.Diff += next.Diff
 			current.Children = append(current.Children, next.Children...)
@@ -319,6 +325,11 @@ func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.Flameg
 			continue
 		}
 		i, j = i+1, j+1
+	}
+
+	// TODO: This is just a safeguard and should be properly fixed before this function.
+	if node.Cumulative < cumulative {
+		node.Cumulative = cumulative
 	}
 }
 
