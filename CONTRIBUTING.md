@@ -8,7 +8,7 @@ By contributing to this project you agree to sign a Contributor License Agreemen
 
 # Code of Conduct
 
-Parca follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+Parca follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md). Please contact the Parca maintainers at parca-team@googlegroups.com to report any CoC violations.
 # Prerequisites
 
 Install the following dependencies (Instructions are linked for each dependency).
