@@ -37,14 +37,17 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 	rs.s.mu.RLock()
 	defer rs.s.mu.RUnlock()
 
+	var numSamples uint64
+
 	chunkStart, chunkEnd := rs.s.timestamps.indexRange(rs.mint, rs.maxt)
 	timestamps := make([]chunkenc.Chunk, 0, chunkEnd-chunkStart)
 	for _, t := range rs.s.timestamps[chunkStart:chunkEnd] {
+		numSamples += uint64(t.chunk.NumSamples())
 		timestamps = append(timestamps, t.chunk)
 	}
 
 	it := NewMultiChunkIterator(timestamps)
-	start, end, err := getIndexRange(it, rs.s.numSamples, rs.mint, rs.maxt)
+	start, end, err := getIndexRange(it, numSamples, rs.mint, rs.maxt)
 	if err != nil {
 		return &MemRangeSeriesIterator{err: err}
 	}
@@ -111,7 +114,6 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		periodsIterator.Seek(start)
 	}
 
-	numSamples := uint64(rs.s.numSamples)
 	if end-start < numSamples {
 		numSamples = end - start - 1
 	}

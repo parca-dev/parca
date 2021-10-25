@@ -289,17 +289,21 @@ func (n *MemSeriesIteratorTreeNode) FlatValues() []*ProfileTreeValueNode {
 	return res
 }
 
-func getIndexRange(it MemSeriesValuesIterator, numSamples uint16, mint, maxt int64) (uint64, uint64, error) {
+func getIndexRange(it MemSeriesValuesIterator, numSamples uint64, mint, maxt int64) (uint64, uint64, error) {
 	// figure out the index of the first sample > mint and the last sample < maxt
 	start := uint64(0)
 	end := uint64(0)
-	i := uint16(0)
+	i := uint64(0)
 	for it.Next() {
 		if i == numSamples {
 			end++
 			break
 		}
 		t := it.At()
+		// MultiChunkIterator might return sparse values - shouldn't usually happen though.
+		if t == 0 {
+			break
+		}
 		if t < mint {
 			start++
 		}
