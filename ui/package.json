@@ -58,7 +58,7 @@
     "babel-jest": "^27.3.1",
     "babel-loader": "^8.2.2",
     "babel-plugin-module-resolver": "^4.1.0",
-    "css-loader": "^6.0.0",
+    "css-loader": "^6.4.0",
     "dev-kong": "^0.11.0",
     "eslint": "^7.32.0",
     "eslint-config-standard-with-typescript": "^21.0.1",
