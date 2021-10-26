@@ -80,7 +80,7 @@
     "local-web-server": "^5.1.1",
     "next-transpile-modules": "^8.0.0",
     "plop": "^2.7.6",
-    "pm2": "^4.5.0",
+    "pm2": "^5.1.2",
     "postcss": "^8.3.6",
     "prettier": "^2.4.1",
     "react-is": "^17.0.2",
