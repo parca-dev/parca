@@ -21,6 +21,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/cenkalti/backoff"
 	"github.com/google/pprof/profile"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -602,6 +603,7 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 		err  error
 		m    *profile.Mapping
 	)
+	var f func() error
 	if l.Mapping != nil {
 		// Make sure mapping already exists in the database.
 		m, err = s.getMappingByID(ctx, int64(l.Mapping.ID))
@@ -618,9 +620,11 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 		}
 		defer stmt.Close()
 
-		res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(m.ID), int64(k.NormalizedAddress), k.Lines)
+		f = func() error {
+			res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(m.ID), int64(k.NormalizedAddress), k.Lines)
+			return err
+		}
 	} else {
-
 		stmt, err = s.db.PrepareContext(ctx, `INSERT INTO "locations" (
                           address, is_folded, normalized_address, lines
                          ) values(?,?,?,?)`)
@@ -629,7 +633,14 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 		}
 		defer stmt.Close()
 
-		res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(k.NormalizedAddress), k.Lines)
+		f = func() error {
+			res, err = stmt.ExecContext(ctx, int64(l.Address), l.IsFolded, int64(k.NormalizedAddress), k.Lines)
+			return err
+		}
+	}
+
+	if err := backoff.Retry(f, backoff.WithContext(backoff.WithMaxRetries(backoff.NewConstantBackOff(10*time.Millisecond), 3), ctx)); err != nil {
+		return 0, fmt.Errorf("backoff SQL statement: %w", err)
 	}
 
 	if err != nil {
