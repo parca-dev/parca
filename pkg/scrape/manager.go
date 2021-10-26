@@ -146,7 +146,7 @@ func (m *Manager) Run(tsets <-chan map[string][]*targetgroup.Group) error {
 	for {
 		select {
 		case ts := <-tsets:
-			m.updateTsets(ts)
+			m.updateTests(ts)
 
 			select {
 			case m.triggerReload <- struct{}{}:
@@ -229,7 +229,7 @@ func (m *Manager) Stop() {
 	close(m.graceShut)
 }
 
-func (m *Manager) updateTsets(tsets map[string][]*targetgroup.Group) {
+func (m *Manager) updateTests(tsets map[string][]*targetgroup.Group) {
 	m.mtxScrape.Lock()
 	m.targetSets = tsets
 	m.mtxScrape.Unlock()
