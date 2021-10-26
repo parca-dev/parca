@@ -639,7 +639,10 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *profile.Location) 
 		}
 	}
 
-	backoff.Retry(f, backoff.WithContext(backoff.WithMaxRetries(backoff.NewConstantBackOff(10*time.Millisecond), 3), ctx))
+	if err := backoff.Retry(f, backoff.WithContext(backoff.WithMaxRetries(backoff.NewConstantBackOff(10*time.Millisecond), 3), ctx)); err != nil {
+		return 0, fmt.Errorf("backoff SQL statement: %w", err)
+	}
+
 	if err != nil {
 		return 0, fmt.Errorf("execute SQL statement: %w", err)
 	}
