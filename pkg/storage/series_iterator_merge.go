@@ -44,15 +44,18 @@ func (ms *MemMergeSeries) Iterator() ProfileSeriesIterator {
 		maxt = ms.s.maxTime
 	}
 
+	var numSamples uint64
+
 	chunkStart, chunkEnd := ms.s.timestamps.indexRange(mint, maxt)
 	timestamps := make([]chunkenc.Chunk, 0, chunkEnd-chunkStart)
 	for _, t := range ms.s.timestamps[chunkStart:chunkEnd] {
+		numSamples += uint64(t.chunk.NumSamples())
 		timestamps = append(timestamps, t.chunk)
 	}
 
 	sl := &SliceProfileSeriesIterator{i: -1}
 
-	start, end, err := getIndexRange(NewMultiChunkIterator(timestamps), ms.s.numSamples, mint, maxt)
+	start, end, err := getIndexRange(NewMultiChunkIterator(timestamps), numSamples, mint, maxt)
 	if err != nil {
 		sl.err = err
 		return sl

@@ -111,6 +111,9 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		it := series.Iterator()
 		for it.Next() {
 			p := it.At()
+			if p.ProfileMeta().Timestamp == 0 {
+				return nil, status.Error(codes.Internal, "profile's timestamp is 0")
+			}
 			metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
 				Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
 				Value:     p.ProfileTree().RootCumulativeValue(),

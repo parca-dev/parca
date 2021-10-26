@@ -269,6 +269,11 @@ func TestGetIndexRange(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), start)
 	require.Equal(t, uint64(4), end)
+
+	start, end, err = getIndexRange(NewMultiChunkIterator([]chunkenc.Chunk{c}), 123, 1, 12)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), start)
+	require.Equal(t, uint64(5), end)
 }
 
 func TestIteratorRangeSum(t *testing.T) {
