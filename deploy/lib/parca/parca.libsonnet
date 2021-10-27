@@ -11,6 +11,18 @@ local defaults = {
 
   configPath: '/var/parca/parca.yaml',
   configmapName: 'parca-config',
+  config: {
+    debug_info: {
+      bucket: {
+        type: 'FILESYSTEM',
+        config: { directory: './tmp' },
+      },
+      cache: {
+        type: 'FILESYSTEM',
+        config: { directory: './tmp' },
+      },
+    },
+  },
   corsAllowedOrigins: '',
   logLevel: 'info',
 
@@ -181,18 +193,7 @@ function(params) {
       namespace: prc.config.namespace,
     },
     data: {
-      'parca.yaml': std.manifestYamlDoc({
-        debug_info: {
-          bucket: {
-            type: 'FILESYSTEM',
-            config: { directory: './tmp' },
-          },
-          cache: {
-            type: 'FILESYSTEM',
-            config: { directory: './tmp' },
-          },
-        },
-      }),
+      'parca.yaml': std.manifestYamlDoc(prc.config.config),
     },
   },
 
