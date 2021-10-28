@@ -23,6 +23,13 @@ service QueryService {
         };
     }
 
+    // Query performs a profile query
+    rpc QueryPprof(QueryRequest) returns (QueryPprofResponse) {
+        option (google.api.http) = {
+            get: "/profiles/query/pprof"
+        };
+    }
+
     // Series is unimplemented
     rpc Series(SeriesRequest) returns (SeriesResponse) {
         option (google.api.http) = {
@@ -337,6 +344,11 @@ message QueryResponse{
         // flamegraph is a flamegraph representation of the report
         Flamegraph flamegraph = 5;
     }
+}
+
+// QueryPprofResponse holds a pb.gz pprof profile for downloading
+message QueryPprofResponse {
+    bytes profile = 1;
 }
 
 // SeriesRequest is unimplemented

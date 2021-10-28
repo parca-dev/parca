@@ -28,6 +28,15 @@ QueryService.Query = {
   responseType: parca_query_v1alpha1_query_pb.QueryResponse
 };
 
+QueryService.QueryPprof = {
+  methodName: "QueryPprof",
+  service: QueryService,
+  requestStream: false,
+  responseStream: false,
+  requestType: parca_query_v1alpha1_query_pb.QueryRequest,
+  responseType: parca_query_v1alpha1_query_pb.QueryPprofResponse
+};
+
 QueryService.Series = {
   methodName: "Series",
   service: QueryService,
@@ -98,6 +107,37 @@ QueryServiceClient.prototype.query = function query(requestMessage, metadata, ca
     callback = arguments[1];
   }
   var client = grpc.unary(QueryService.Query, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+QueryServiceClient.prototype.queryPprof = function queryPprof(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(QueryService.QueryPprof, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

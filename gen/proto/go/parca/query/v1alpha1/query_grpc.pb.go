@@ -22,6 +22,8 @@ type QueryServiceClient interface {
 	QueryRange(ctx context.Context, in *QueryRangeRequest, opts ...grpc.CallOption) (*QueryRangeResponse, error)
 	// Query performs a profile query
 	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error)
+	// Query performs a profile query
+	QueryPprof(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryPprofResponse, error)
 	// Series is unimplemented
 	Series(ctx context.Context, in *SeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
 	// Labels returns the set of label names against a given matching string and time frame
@@ -50,6 +52,15 @@ func (c *queryServiceClient) QueryRange(ctx context.Context, in *QueryRangeReque
 func (c *queryServiceClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error) {
 	out := new(QueryResponse)
 	err := c.cc.Invoke(ctx, "/parca.query.v1alpha1.QueryService/Query", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryServiceClient) QueryPprof(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryPprofResponse, error) {
+	out := new(QueryPprofResponse)
+	err := c.cc.Invoke(ctx, "/parca.query.v1alpha1.QueryService/QueryPprof", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +102,8 @@ type QueryServiceServer interface {
 	QueryRange(context.Context, *QueryRangeRequest) (*QueryRangeResponse, error)
 	// Query performs a profile query
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
+	// Query performs a profile query
+	QueryPprof(context.Context, *QueryRequest) (*QueryPprofResponse, error)
 	// Series is unimplemented
 	Series(context.Context, *SeriesRequest) (*SeriesResponse, error)
 	// Labels returns the set of label names against a given matching string and time frame
@@ -108,6 +121,9 @@ func (UnimplementedQueryServiceServer) QueryRange(context.Context, *QueryRangeRe
 }
 func (UnimplementedQueryServiceServer) Query(context.Context, *QueryRequest) (*QueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Query not implemented")
+}
+func (UnimplementedQueryServiceServer) QueryPprof(context.Context, *QueryRequest) (*QueryPprofResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryPprof not implemented")
 }
 func (UnimplementedQueryServiceServer) Series(context.Context, *SeriesRequest) (*SeriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Series not implemented")
@@ -162,6 +178,24 @@ func _QueryService_Query_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServiceServer).Query(ctx, req.(*QueryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _QueryService_QueryPprof_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServiceServer).QueryPprof(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/parca.query.v1alpha1.QueryService/QueryPprof",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServiceServer).QueryPprof(ctx, req.(*QueryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -234,6 +268,10 @@ var QueryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Query",
 			Handler:    _QueryService_Query_Handler,
+		},
+		{
+			MethodName: "QueryPprof",
+			Handler:    _QueryService_QueryPprof_Handler,
 		},
 		{
 			MethodName: "Series",

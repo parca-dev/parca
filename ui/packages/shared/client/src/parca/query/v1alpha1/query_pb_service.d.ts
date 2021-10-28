@@ -22,6 +22,15 @@ type QueryServiceQuery = {
   readonly responseType: typeof parca_query_v1alpha1_query_pb.QueryResponse;
 };
 
+type QueryServiceQueryPprof = {
+  readonly methodName: string;
+  readonly service: typeof QueryService;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof parca_query_v1alpha1_query_pb.QueryRequest;
+  readonly responseType: typeof parca_query_v1alpha1_query_pb.QueryPprofResponse;
+};
+
 type QueryServiceSeries = {
   readonly methodName: string;
   readonly service: typeof QueryService;
@@ -53,6 +62,7 @@ export class QueryService {
   static readonly serviceName: string;
   static readonly QueryRange: QueryServiceQueryRange;
   static readonly Query: QueryServiceQuery;
+  static readonly QueryPprof: QueryServiceQueryPprof;
   static readonly Series: QueryServiceSeries;
   static readonly Labels: QueryServiceLabels;
   static readonly Values: QueryServiceValues;
@@ -107,6 +117,15 @@ export class QueryServiceClient {
   query(
     requestMessage: parca_query_v1alpha1_query_pb.QueryRequest,
     callback: (error: ServiceError|null, responseMessage: parca_query_v1alpha1_query_pb.QueryResponse|null) => void
+  ): UnaryResponse;
+  queryPprof(
+    requestMessage: parca_query_v1alpha1_query_pb.QueryRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: parca_query_v1alpha1_query_pb.QueryPprofResponse|null) => void
+  ): UnaryResponse;
+  queryPprof(
+    requestMessage: parca_query_v1alpha1_query_pb.QueryRequest,
+    callback: (error: ServiceError|null, responseMessage: parca_query_v1alpha1_query_pb.QueryPprofResponse|null) => void
   ): UnaryResponse;
   series(
     requestMessage: parca_query_v1alpha1_query_pb.SeriesRequest,

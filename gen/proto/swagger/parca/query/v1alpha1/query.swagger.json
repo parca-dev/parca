@@ -314,6 +314,193 @@
         ]
       }
     },
+    "/profiles/query/pprof": {
+      "get": {
+        "summary": "Query performs a profile query",
+        "operationId": "QueryService_QueryPprof",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1QueryPprofResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mode",
+            "description": "mode indicates the type of query performed.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED query unspecified\n - MODE_DIFF: MODE_DIFF is a diff query\n - MODE_MERGE: MODE_MERGE is a merge query",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "MODE_SINGLE_UNSPECIFIED",
+              "MODE_DIFF",
+              "MODE_MERGE"
+            ],
+            "default": "MODE_SINGLE_UNSPECIFIED"
+          },
+          {
+            "name": "diff.a.mode",
+            "description": "mode is the selection of the diff mode.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "MODE_SINGLE_UNSPECIFIED",
+              "MODE_MERGE"
+            ],
+            "default": "MODE_SINGLE_UNSPECIFIED"
+          },
+          {
+            "name": "diff.a.merge.query",
+            "description": "query is the query string to match profiles for merge.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.a.merge.start",
+            "description": "start is the beginning of the evaluation time window.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.merge.end",
+            "description": "end is the end of the evaluation time window.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.single.time",
+            "description": "time is the point in time to perform the profile request.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.a.single.query",
+            "description": "query is the query string to retrieve the profile.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.b.mode",
+            "description": "mode is the selection of the diff mode.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "MODE_SINGLE_UNSPECIFIED",
+              "MODE_MERGE"
+            ],
+            "default": "MODE_SINGLE_UNSPECIFIED"
+          },
+          {
+            "name": "diff.b.merge.query",
+            "description": "query is the query string to match profiles for merge.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "diff.b.merge.start",
+            "description": "start is the beginning of the evaluation time window.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.merge.end",
+            "description": "end is the end of the evaluation time window.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.single.time",
+            "description": "time is the point in time to perform the profile request.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "diff.b.single.query",
+            "description": "query is the query string to retrieve the profile.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "merge.query",
+            "description": "query is the query string to match profiles for merge.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "merge.start",
+            "description": "start is the beginning of the evaluation time window.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "merge.end",
+            "description": "end is the end of the evaluation time window.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "single.time",
+            "description": "time is the point in time to perform the profile request.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "single.query",
+            "description": "query is the query string to retrieve the profile.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportType",
+            "description": "report_type is the type of report to return.\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
+            ],
+            "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
     "/profiles/query_range": {
       "get": {
         "summary": "QueryRange performs a profile query over a time range",
@@ -810,6 +997,16 @@
       "default": "MODE_SINGLE_UNSPECIFIED",
       "description": "- MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
       "title": "Mode specifies the type of diff"
+    },
+    "v1alpha1QueryPprofResponse": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "title": "QueryPprofResponse holds a pb.gz pprof profile for downloading"
     },
     "v1alpha1QueryRangeResponse": {
       "type": "object",

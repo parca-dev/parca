@@ -77,7 +77,7 @@ func RegisterProfileStoreServiceHandlerServer(ctx context.Context, mux *runtime.
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/WriteRaw", runtime.WithHTTPPathPattern("/profiles/writeraw"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/WriteRaw")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -139,7 +139,7 @@ func RegisterProfileStoreServiceHandlerClient(ctx context.Context, mux *runtime.
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/WriteRaw", runtime.WithHTTPPathPattern("/profiles/writeraw"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/WriteRaw")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return

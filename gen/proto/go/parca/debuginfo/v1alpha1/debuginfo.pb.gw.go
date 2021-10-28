@@ -121,7 +121,7 @@ func RegisterDebugInfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebugInfoService/Exists", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebugInfoService/Exists"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebugInfoService/Exists")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -190,7 +190,7 @@ func RegisterDebugInfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebugInfoService/Exists", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebugInfoService/Exists"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebugInfoService/Exists")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -210,7 +210,7 @@ func RegisterDebugInfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebugInfoService/Upload", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebugInfoService/Upload"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebugInfoService/Upload")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return

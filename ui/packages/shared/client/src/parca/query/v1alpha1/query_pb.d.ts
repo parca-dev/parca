@@ -630,6 +630,28 @@ export namespace QueryResponse {
   }
 }
 
+export class QueryPprofResponse extends jspb.Message {
+  getProfile(): Uint8Array | string;
+  getProfile_asU8(): Uint8Array;
+  getProfile_asB64(): string;
+  setProfile(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): QueryPprofResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: QueryPprofResponse): QueryPprofResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: QueryPprofResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): QueryPprofResponse;
+  static deserializeBinaryFromReader(message: QueryPprofResponse, reader: jspb.BinaryReader): QueryPprofResponse;
+}
+
+export namespace QueryPprofResponse {
+  export type AsObject = {
+    profile: Uint8Array | string,
+  }
+}
+
 export class SeriesRequest extends jspb.Message {
   clearMatchList(): void;
   getMatchList(): Array<string>;
