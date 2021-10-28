@@ -48,23 +48,40 @@ func TestMemRootSeries_Iterator(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	it := (&MemRootSeries{s: s, mint: 74, maxt: 420}).Iterator()
+	// Query subset of timestamps
+	{
+		it := (&MemRootSeries{s: s, mint: 74, maxt: 420}).Iterator()
 
-	seen := int64(75)
-	for it.Next() {
-		p := it.At()
-		require.Equal(t, seen, p.ProfileMeta().Timestamp)
+		seen := int64(75)
+		for it.Next() {
+			p := it.At()
+			require.Equal(t, seen, p.ProfileMeta().Timestamp)
 
-		itt := p.ProfileTree().Iterator()
-		for itt.HasMore() {
-			if itt.NextChild() {
-				itt.StepInto()
+			itt := p.ProfileTree().Iterator()
+			for itt.HasMore() {
+				if itt.NextChild() {
+					itt.StepInto()
+				}
+				itt.StepUp()
 			}
-			itt.StepUp()
+			seen++
 		}
-		seen++
+
+		require.NoError(t, it.Err())
+		require.Equal(t, int64(420), it.At().ProfileMeta().Timestamp)
 	}
 
-	require.NoError(t, it.Err())
-	require.Equal(t, int64(421), seen) // 421 would be seen next but 420 was the last value.
+	// Query everything
+	{
+		it := (&MemRootSeries{s: s, mint: 0, maxt: 1000}).Iterator()
+
+		seen := int64(1)
+		for it.Next() {
+			p := it.At()
+			require.Equal(t, seen, p.ProfileMeta().Timestamp)
+			seen++
+		}
+
+		require.Equal(t, int64(499), it.At().ProfileMeta().Timestamp)
+	}
 }
