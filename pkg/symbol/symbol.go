@@ -24,8 +24,8 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/goburrow/cache"
-	"github.com/google/pprof/profile"
 
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -45,7 +45,7 @@ type Symbolizer struct {
 }
 
 type liner interface {
-	PCToLines(pc uint64) ([]profile.Line, error)
+	PCToLines(pc uint64) ([]metastore.LocationLine, error)
 }
 
 func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
@@ -79,7 +79,7 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	return sym, nil
 }
 
-func (s *Symbolizer) NewLiner(m *profile.Mapping, path string) (liner, error) {
+func (s *Symbolizer) NewLiner(m *metastore.Mapping, path string) (liner, error) {
 	h, err := hash(path)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
@@ -113,7 +113,7 @@ func (s *Symbolizer) Close() error {
 	return s.cache.Close()
 }
 
-func (s *Symbolizer) newLiner(m *profile.Mapping, path string) (liner, error) {
+func (s *Symbolizer) newLiner(m *metastore.Mapping, path string) (liner, error) {
 	hasDWARF, err := elfutils.HasDWARF(path)
 	if err != nil {
 		level.Debug(s.logger).Log(

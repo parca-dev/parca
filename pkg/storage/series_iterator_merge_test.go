@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -106,9 +107,15 @@ func TestMemMergeSeriesTree(t *testing.T) {
 		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
 	)
 
-	s11 := makeSample(1, []uint64{2, 1})
+	s11 := makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 
-	s12 := makeSample(2, []uint64{4, 1})
+	s12 := makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 	s12.Label = label
 	s12.NumLabel = numLabel
 	s12.NumUnit = numUnit
@@ -153,14 +160,14 @@ func TestMemMergeSeriesTree(t *testing.T) {
 		Tree: &ProfileTree{Roots: &ProfileTreeRootNode{
 			ProfileTreeNode: &ProfileTreeNode{
 				Children: []*ProfileTreeNode{{
-					locationID: 1,
+					locationID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Children: []*ProfileTreeNode{{
-						locationID: 2,
+						locationID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 						flatValues: []*ProfileTreeValueNode{{
 							Value: 2,
 						}},
 					}, {
-						locationID: 4,
+						locationID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 						flatValues: []*ProfileTreeValueNode{{
 							Value:    4,
 							Label:    label,

@@ -420,7 +420,7 @@ func (i *MergeProfileTreeIterator) NextChild() bool {
 	locA := atA.LocationID()
 	locB := atB.LocationID()
 
-	if locA < locB {
+	if uuidCompare(locA, locB) == -1 {
 		nextA := i.a.NextChild()
 		if nextA {
 			return true
@@ -430,7 +430,7 @@ func (i *MergeProfileTreeIterator) NextChild() bool {
 		return true
 	}
 
-	if locA > locB {
+	if uuidCompare(locA, locB) == 1 {
 		nextB := i.b.NextChild()
 		if nextB {
 			return true
@@ -482,11 +482,11 @@ func (i *MergeProfileTreeIterator) At() InstantProfileTreeNode {
 	locA := atA.LocationID()
 	locB := atB.LocationID()
 
-	if locA < locB {
+	if uuidCompare(locA, locB) == -1 {
 		return atA
 	}
 
-	if locA > locB {
+	if uuidCompare(locA, locB) == 1 {
 		return atB
 	}
 
@@ -547,7 +547,7 @@ func (i *MergeProfileTreeIterator) StepInto() bool {
 	locA := atA.LocationID()
 	locB := atB.LocationID()
 
-	if locA < locB {
+	if uuidCompare(locA, locB) == -1 {
 		steppedInto := i.a.StepInto()
 		if steppedInto {
 			i.stackA.Push(&InstantProfileTreeStackItem{node: atA})
@@ -556,7 +556,7 @@ func (i *MergeProfileTreeIterator) StepInto() bool {
 		return steppedInto
 	}
 
-	if locA > locB {
+	if uuidCompare(locA, locB) == 1 {
 		steppedInto := i.b.StepInto()
 		if steppedInto {
 			i.stackB.Push(&InstantProfileTreeStackItem{node: atB})

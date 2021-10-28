@@ -18,7 +18,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -34,12 +34,12 @@ type TestProfileMetaStore interface {
 
 type TestLocationStore interface {
 	LocationStore
-	GetLocations(ctx context.Context) ([]*profile.Location, error)
+	GetLocations(ctx context.Context) ([]*Location, error)
 }
 
 type TestFunctionStore interface {
 	FunctionStore
-	GetFunctions(ctx context.Context) ([]*profile.Function, error)
+	GetFunctions(ctx context.Context) ([]*Function, error)
 }
 
 func TestNewInMemorySQLiteMetaStore(t *testing.T) {
@@ -97,16 +97,17 @@ func TestDiskLocationStore(t *testing.T) {
 func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 	ctx := context.Background()
 
-	largeLoc := -1
-	l := &profile.Location{
-		ID:      uint64(largeLoc),
+	loc1 := uuid.New()
+	l := &Location{
+		ID:      loc1,
 		Address: uint64(42),
 	}
 	_, err := s.CreateLocation(ctx, l)
 	require.NoError(t, err)
 
-	l1 := &profile.Location{
-		ID:      uint64(18),
+	loc2 := uuid.New()
+	l1 := &Location{
+		ID:      loc2,
 		Address: uint64(421),
 	}
 	_, err = s.CreateLocation(ctx, l1)
@@ -125,14 +126,15 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 
 	require.Equal(t, l1, locByID[l1.ID])
 
-	f := &profile.Function{
-		ID:         1,
-		Name:       "name",
-		SystemName: "systemName",
-		Filename:   "filename",
-		StartLine:  22,
+	f := &Function{
+		FunctionKey: FunctionKey{
+			Name:       "name",
+			SystemName: "systemName",
+			Filename:   "filename",
+			StartLine:  22,
+		},
 	}
-	l1.Line = []profile.Line{
+	l1.Lines = []LocationLine{
 		{Line: 1, Function: f},
 		{Line: 5, Function: f},
 	}
@@ -177,30 +179,33 @@ func TestDiskFunctionStore(t *testing.T) {
 
 func functionStoreTest(t *testing.T, s TestFunctionStore) {
 	ctx := context.Background()
+	var err error
 
-	f := &profile.Function{
-		ID:         1,
-		Name:       "name",
-		SystemName: "systemName",
-		Filename:   "filename",
-		StartLine:  22,
+	f := &Function{
+		FunctionKey: FunctionKey{
+			Name:       "name",
+			SystemName: "systemName",
+			Filename:   "filename",
+			StartLine:  22,
+		},
 	}
-	_, err := s.CreateFunction(ctx, f)
+	f.ID, err = s.CreateFunction(ctx, f)
 	require.NoError(t, err)
 
-	f1 := &profile.Function{
-		ID:         2,
-		Name:       "name",
-		SystemName: "systemName",
-		Filename:   "filename",
-		StartLine:  42,
+	f1 := &Function{
+		FunctionKey: FunctionKey{
+			Name:       "name",
+			SystemName: "systemName",
+			Filename:   "filename",
+			StartLine:  42,
+		},
 	}
-	_, err = s.CreateFunction(ctx, f1)
+	f1.ID, err = s.CreateFunction(ctx, f1)
 	require.NoError(t, err)
 
 	funcByID, err := s.GetFunctionByKey(ctx, MakeFunctionKey(f))
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), funcByID.ID)
+	require.Equal(t, f.ID, funcByID.ID)
 	require.Equal(t, f.Name, funcByID.Name)
 	require.Equal(t, f.SystemName, funcByID.SystemName)
 	require.Equal(t, f.Filename, funcByID.Filename)
@@ -244,10 +249,9 @@ func TestDiskMappingStore(t *testing.T) {
 
 func mappingStoreTest(t *testing.T, s MappingStore) {
 	ctx := context.Background()
+	var err error
 
-	largeLoc := -1
-	m := &profile.Mapping{
-		ID:              uint64((largeLoc)),
+	m := &Mapping{
 		Start:           1,
 		Limit:           10,
 		Offset:          5,
@@ -258,11 +262,10 @@ func mappingStoreTest(t *testing.T, s MappingStore) {
 		HasLineNumbers:  false,
 		HasInlineFrames: false,
 	}
-	_, err := s.CreateMapping(ctx, m)
+	m.ID, err = s.CreateMapping(ctx, m)
 	require.NoError(t, err)
 
-	m1 := &profile.Mapping{
-		ID:              18,
+	m1 := &Mapping{
 		Start:           12,
 		Limit:           110,
 		Offset:          51,
@@ -273,12 +276,12 @@ func mappingStoreTest(t *testing.T, s MappingStore) {
 		HasLineNumbers:  false,
 		HasInlineFrames: true,
 	}
-	_, err = s.CreateMapping(ctx, m1)
+	m1.ID, err = s.CreateMapping(ctx, m1)
 	require.NoError(t, err)
 
 	mapByKey, err := s.GetMappingByKey(ctx, MakeMappingKey(m))
 	require.NoError(t, err)
-	require.Equal(t, uint64(largeLoc), mapByKey.ID)
+	require.Equal(t, m.ID, mapByKey.ID)
 	require.Equal(t, m.Start, mapByKey.Start)
 	require.Equal(t, m.Limit, mapByKey.Limit)
 	require.Equal(t, m.Offset, mapByKey.Offset)
@@ -322,10 +325,9 @@ func TestDiskMetaStore(t *testing.T) {
 
 func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 	ctx := context.Background()
+	var err error
 
-	largeLoc := -1
-	m := &profile.Mapping{
-		ID:              uint64(largeLoc),
+	m := &Mapping{
 		Start:           1,
 		Limit:           10,
 		Offset:          5,
@@ -336,19 +338,17 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 		HasLineNumbers:  false,
 		HasInlineFrames: false,
 	}
-	_, err := s.CreateMapping(ctx, m)
+	m.ID, err = s.CreateMapping(ctx, m)
 	require.NoError(t, err)
 
-	l := &profile.Location{
-		ID:      uint64(8),
+	l := &Location{
 		Address: uint64(42),
 		Mapping: m,
 	}
-	_, err = s.CreateLocation(ctx, l)
+	l.ID, err = s.CreateLocation(ctx, l)
 	require.NoError(t, err)
 
-	m1 := &profile.Mapping{
-		ID:              18,
+	m1 := &Mapping{
 		Start:           12,
 		Limit:           110,
 		Offset:          51,
@@ -359,29 +359,29 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 		HasLineNumbers:  false,
 		HasInlineFrames: true,
 	}
-	_, err = s.CreateMapping(ctx, m1)
+	m1.ID, err = s.CreateMapping(ctx, m1)
 	require.NoError(t, err)
 
-	f := &profile.Function{
-		ID:         1,
-		Name:       "name",
-		SystemName: "systemName",
-		Filename:   "filename",
-		StartLine:  22,
+	f := &Function{
+		FunctionKey: FunctionKey{
+			Name:       "name",
+			SystemName: "systemName",
+			Filename:   "filename",
+			StartLine:  22,
+		},
 	}
-	_, err = s.CreateFunction(ctx, f)
+	f.ID, err = s.CreateFunction(ctx, f)
 	require.NoError(t, err)
 
-	l1 := &profile.Location{
-		ID:      uint64(18),
+	l1 := &Location{
 		Address: uint64(421),
 		Mapping: m1,
-		Line: []profile.Line{
+		Lines: []LocationLine{
 			{Line: 1, Function: f},
 			{Line: 5, Function: f},
 		},
 	}
-	_, err = s.CreateLocation(ctx, l1)
+	l1.ID, err = s.CreateLocation(ctx, l1)
 	require.NoError(t, err)
 
 	locs, err := s.GetLocations(ctx)
@@ -396,4 +396,17 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(unsymlocs))
 	require.Equal(t, l, unsymlocs[0])
+}
+
+func TestBuildLinesByLocationIDsQuery(t *testing.T) {
+	q := buildLinesByLocationIDsQuery([]uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+	})
+
+	require.Equal(
+		t,
+		`SELECT "location_id", "line", "function_id" FROM "lines" WHERE location_id IN ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002')`,
+		q,
+	)
 }

@@ -455,11 +455,11 @@ export namespace FlamegraphNodeMeta {
 }
 
 export class Location extends jspb.Message {
-  getId(): number;
-  setId(value: number): void;
+  getId(): string;
+  setId(value: string): void;
 
-  getMappingId(): number;
-  setMappingId(value: number): void;
+  getMappingId(): string;
+  setMappingId(value: string): void;
 
   getAddress(): number;
   setAddress(value: number): void;
@@ -479,19 +479,19 @@ export class Location extends jspb.Message {
 
 export namespace Location {
   export type AsObject = {
-    id: number,
-    mappingId: number,
+    id: string,
+    mappingId: string,
     address: number,
     isFolded: boolean,
   }
 }
 
 export class Line extends jspb.Message {
-  getLocationId(): number;
-  setLocationId(value: number): void;
+  getLocationId(): string;
+  setLocationId(value: string): void;
 
-  getFunctionId(): number;
-  setFunctionId(value: number): void;
+  getFunctionId(): string;
+  setFunctionId(value: string): void;
 
   getLine(): number;
   setLine(value: number): void;
@@ -508,15 +508,15 @@ export class Line extends jspb.Message {
 
 export namespace Line {
   export type AsObject = {
-    locationId: number,
-    functionId: number,
+    locationId: string,
+    functionId: string,
     line: number,
   }
 }
 
 export class Mapping extends jspb.Message {
-  getId(): number;
-  setId(value: number): void;
+  getId(): string;
+  setId(value: string): void;
 
   getStart(): number;
   setStart(value: number): void;
@@ -545,7 +545,7 @@ export class Mapping extends jspb.Message {
 
 export namespace Mapping {
   export type AsObject = {
-    id: number,
+    id: string,
     start: number,
     limit: number,
     offset: number,
@@ -555,8 +555,8 @@ export namespace Mapping {
 }
 
 export class Function extends jspb.Message {
-  getId(): number;
-  setId(value: number): void;
+  getId(): string;
+  setId(value: string): void;
 
   getName(): string;
   setName(value: string): void;
@@ -582,7 +582,7 @@ export class Function extends jspb.Message {
 
 export namespace Function {
   export type AsObject = {
-    id: number,
+    id: string,
     name: string,
     systemName: string,
     filename: string,

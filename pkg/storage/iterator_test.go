@@ -16,19 +16,37 @@ package storage
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
 func TestProfileTreeIterator(t *testing.T) {
 	pt := NewProfileTree()
-	pt.Insert(makeSample(2, []uint64{2, 1}))
-	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
-	pt.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
-	pt.Insert(makeSample(1, []uint64{3, 3, 1}))
+	pt.Insert(makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
 
 	it := pt.Iterator()
 
-	res := []uint64{}
+	res := []uuid.UUID{}
 	for {
 		if !it.HasMore() {
 			break
@@ -42,5 +60,14 @@ func TestProfileTreeIterator(t *testing.T) {
 		it.StepUp()
 	}
 
-	require.Equal(t, []uint64{0, 1, 2, 3, 4, 5, 3, 3}, res)
+	require.Equal(t, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+	}, res)
 }

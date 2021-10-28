@@ -3674,8 +3674,8 @@ proto.parca.query.v1alpha1.Location.prototype.toObject = function(opt_includeIns
  */
 proto.parca.query.v1alpha1.Location.toObject = function(includeInstance, msg) {
   var f, obj = {
-    id: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    mappingId: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    mappingId: jspb.Message.getFieldWithDefault(msg, 2, ""),
     address: jspb.Message.getFieldWithDefault(msg, 3, 0),
     isFolded: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
   };
@@ -3715,11 +3715,11 @@ proto.parca.query.v1alpha1.Location.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMappingId(value);
       break;
     case 3:
@@ -3760,15 +3760,15 @@ proto.parca.query.v1alpha1.Location.prototype.serializeBinary = function() {
 proto.parca.query.v1alpha1.Location.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getId();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (f.length > 0) {
+    writer.writeString(
       1,
       f
     );
   }
   f = message.getMappingId();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (f.length > 0) {
+    writer.writeString(
       2,
       f
     );
@@ -3791,38 +3791,38 @@ proto.parca.query.v1alpha1.Location.serializeBinaryToWriter = function(message, 
 
 
 /**
- * optional uint64 id = 1;
- * @return {number}
+ * optional string id = 1;
+ * @return {string}
  */
 proto.parca.query.v1alpha1.Location.prototype.getId = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
- * @param {number} value
+ * @param {string} value
  * @return {!proto.parca.query.v1alpha1.Location} returns this
  */
 proto.parca.query.v1alpha1.Location.prototype.setId = function(value) {
-  return jspb.Message.setProto3IntField(this, 1, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
 /**
- * optional uint64 mapping_id = 2;
- * @return {number}
+ * optional string mapping_id = 2;
+ * @return {string}
  */
 proto.parca.query.v1alpha1.Location.prototype.getMappingId = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
 
 /**
- * @param {number} value
+ * @param {string} value
  * @return {!proto.parca.query.v1alpha1.Location} returns this
  */
 proto.parca.query.v1alpha1.Location.prototype.setMappingId = function(value) {
-  return jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -3894,8 +3894,8 @@ proto.parca.query.v1alpha1.Line.prototype.toObject = function(opt_includeInstanc
  */
 proto.parca.query.v1alpha1.Line.toObject = function(includeInstance, msg) {
   var f, obj = {
-    locationId: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    functionId: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    locationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    functionId: jspb.Message.getFieldWithDefault(msg, 2, ""),
     line: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
@@ -3934,11 +3934,11 @@ proto.parca.query.v1alpha1.Line.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readString());
       msg.setLocationId(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFunctionId(value);
       break;
     case 3:
@@ -3975,15 +3975,15 @@ proto.parca.query.v1alpha1.Line.prototype.serializeBinary = function() {
 proto.parca.query.v1alpha1.Line.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getLocationId();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (f.length > 0) {
+    writer.writeString(
       1,
       f
     );
   }
   f = message.getFunctionId();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (f.length > 0) {
+    writer.writeString(
       2,
       f
     );
@@ -3999,38 +3999,38 @@ proto.parca.query.v1alpha1.Line.serializeBinaryToWriter = function(message, writ
 
 
 /**
- * optional uint64 location_id = 1;
- * @return {number}
+ * optional string location_id = 1;
+ * @return {string}
  */
 proto.parca.query.v1alpha1.Line.prototype.getLocationId = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
- * @param {number} value
+ * @param {string} value
  * @return {!proto.parca.query.v1alpha1.Line} returns this
  */
 proto.parca.query.v1alpha1.Line.prototype.setLocationId = function(value) {
-  return jspb.Message.setProto3IntField(this, 1, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
 /**
- * optional uint64 function_id = 2;
- * @return {number}
+ * optional string function_id = 2;
+ * @return {string}
  */
 proto.parca.query.v1alpha1.Line.prototype.getFunctionId = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
 
 /**
- * @param {number} value
+ * @param {string} value
  * @return {!proto.parca.query.v1alpha1.Line} returns this
  */
 proto.parca.query.v1alpha1.Line.prototype.setFunctionId = function(value) {
-  return jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -4084,7 +4084,7 @@ proto.parca.query.v1alpha1.Mapping.prototype.toObject = function(opt_includeInst
  */
 proto.parca.query.v1alpha1.Mapping.toObject = function(includeInstance, msg) {
   var f, obj = {
-    id: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
     start: jspb.Message.getFieldWithDefault(msg, 2, 0),
     limit: jspb.Message.getFieldWithDefault(msg, 3, 0),
     offset: jspb.Message.getFieldWithDefault(msg, 4, 0),
@@ -4127,7 +4127,7 @@ proto.parca.query.v1alpha1.Mapping.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
@@ -4180,8 +4180,8 @@ proto.parca.query.v1alpha1.Mapping.prototype.serializeBinary = function() {
 proto.parca.query.v1alpha1.Mapping.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getId();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (f.length > 0) {
+    writer.writeString(
       1,
       f
     );
@@ -4225,20 +4225,20 @@ proto.parca.query.v1alpha1.Mapping.serializeBinaryToWriter = function(message, w
 
 
 /**
- * optional uint64 id = 1;
- * @return {number}
+ * optional string id = 1;
+ * @return {string}
  */
 proto.parca.query.v1alpha1.Mapping.prototype.getId = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
- * @param {number} value
+ * @param {string} value
  * @return {!proto.parca.query.v1alpha1.Mapping} returns this
  */
 proto.parca.query.v1alpha1.Mapping.prototype.setId = function(value) {
-  return jspb.Message.setProto3IntField(this, 1, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -4364,7 +4364,7 @@ proto.parca.query.v1alpha1.Function.prototype.toObject = function(opt_includeIns
  */
 proto.parca.query.v1alpha1.Function.toObject = function(includeInstance, msg) {
   var f, obj = {
-    id: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
     name: jspb.Message.getFieldWithDefault(msg, 2, ""),
     systemName: jspb.Message.getFieldWithDefault(msg, 3, ""),
     filename: jspb.Message.getFieldWithDefault(msg, 4, ""),
@@ -4406,7 +4406,7 @@ proto.parca.query.v1alpha1.Function.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
@@ -4455,8 +4455,8 @@ proto.parca.query.v1alpha1.Function.prototype.serializeBinary = function() {
 proto.parca.query.v1alpha1.Function.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getId();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (f.length > 0) {
+    writer.writeString(
       1,
       f
     );
@@ -4493,20 +4493,20 @@ proto.parca.query.v1alpha1.Function.serializeBinaryToWriter = function(message, 
 
 
 /**
- * optional uint64 id = 1;
- * @return {number}
+ * optional string id = 1;
+ * @return {string}
  */
 proto.parca.query.v1alpha1.Function.prototype.getId = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
 /**
- * @param {number} value
+ * @param {string} value
  * @return {!proto.parca.query.v1alpha1.Function} returns this
  */
 proto.parca.query.v1alpha1.Function.prototype.setId = function(value) {
-  return jspb.Message.setProto3IntField(this, 1, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 

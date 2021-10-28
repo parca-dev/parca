@@ -16,17 +16,18 @@ package storage
 import (
 	"testing"
 
-	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
 )
 
-func makeSample(value int64, locationIds []uint64) *profile.Sample {
-	s := &profile.Sample{
-		Value: []int64{value},
+func makeSample(value int64, locationIds []uuid.UUID) *Sample {
+	s := &Sample{
+		Value: value,
 	}
 
 	for _, id := range locationIds {
-		s.Location = append(s.Location, &profile.Location{ID: id})
+		s.Location = append(s.Location, &metastore.Location{ID: id})
 	}
 
 	return s
@@ -35,18 +36,28 @@ func makeSample(value int64, locationIds []uint64) *profile.Sample {
 func Test_SortSamples_EdgeCases(t *testing.T) {
 
 	tests := map[string]struct {
-		samples []*profile.Sample
+		samples []*Sample
 	}{
 		"empty first": {
-			samples: []*profile.Sample{
-				makeSample(1, []uint64{}),
-				makeSample(1, []uint64{6, 3, 1, 2}),
+			samples: []*Sample{
+				makeSample(1, []uuid.UUID{}),
+				makeSample(1, []uuid.UUID{
+					uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+					uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				}),
 			},
 		},
 		"empty second": {
-			samples: []*profile.Sample{
-				makeSample(1, []uint64{6, 3, 1, 2}),
-				makeSample(1, []uint64{}),
+			samples: []*Sample{
+				makeSample(1, []uuid.UUID{
+					uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+					uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				}),
+				makeSample(1, []uuid.UUID{}),
 			},
 		},
 	}
@@ -57,9 +68,14 @@ func Test_SortSamples_EdgeCases(t *testing.T) {
 			sortSamples(test.samples)
 
 			require.Equal(t,
-				[]*profile.Sample{
-					makeSample(1, []uint64{}),
-					makeSample(1, []uint64{6, 3, 1, 2}),
+				[]*Sample{
+					makeSample(1, []uuid.UUID{}),
+					makeSample(1, []uuid.UUID{
+						uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+						uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					}),
 				},
 				test.samples,
 			)
@@ -68,19 +84,41 @@ func Test_SortSamples_EdgeCases(t *testing.T) {
 }
 
 func TestSortSamples(t *testing.T) {
-	samples := []*profile.Sample{
-		makeSample(1, []uint64{6, 3, 1}),
-		makeSample(1, []uint64{5, 3, 1}),
-		makeSample(1, []uint64{3, 1}),
+	samples := []*Sample{
+		makeSample(1, []uuid.UUID{
+			uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		}),
+		makeSample(1, []uuid.UUID{
+			uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		}),
+		makeSample(1, []uuid.UUID{
+			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		}),
 	}
 
 	sortSamples(samples)
 
 	require.Equal(t,
-		[]*profile.Sample{
-			makeSample(1, []uint64{3, 1}),
-			makeSample(1, []uint64{5, 3, 1}),
-			makeSample(1, []uint64{6, 3, 1}),
+		[]*Sample{
+			makeSample(1, []uuid.UUID{
+				uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			}),
+			makeSample(1, []uuid.UUID{
+				uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			}),
+			makeSample(1, []uuid.UUID{
+				uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			}),
 		},
 		samples,
 	)

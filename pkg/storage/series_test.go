@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
@@ -34,14 +35,20 @@ func TestMemSeriesTree(t *testing.T) {
 
 	// Note: These keys are not unique per location.
 	// For this test they simply seem to be.
-	k2 := ProfileTreeValueNodeKey{location: "2|1|0"}
-	k3 := ProfileTreeValueNodeKey{location: "3|1|0"}
-	k4 := ProfileTreeValueNodeKey{location: "4|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`}
-	k5 := ProfileTreeValueNodeKey{location: "5|2|1|0"}
+	k2 := ProfileTreeValueNodeKey{location: "00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"}
+	k3 := ProfileTreeValueNodeKey{location: "00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"}
+	k4 := ProfileTreeValueNodeKey{location: "00000000-0000-0000-0000-000000000004|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`}
+	k5 := ProfileTreeValueNodeKey{location: "00000000-0000-0000-0000-000000000005|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"}
 
-	s11 := makeSample(1, []uint64{2, 1})
+	s11 := makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 
-	s12 := makeSample(2, []uint64{4, 1})
+	s12 := makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 	s12.Label = label
 	s12.NumLabel = numLabel
 	s12.NumUnit = numUnit
@@ -67,15 +74,15 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			LocationID: 0, // root
+			LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000000"), // root
 			Children: []*MemSeriesTreeNode{{
-				LocationID: 1,
+				LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
-					LocationID: 2,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				}, {
 					keys:       []ProfileTreeValueNodeKey{k4},
-					LocationID: 4,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 				}},
 			}},
 		},
@@ -83,7 +90,10 @@ func TestMemSeriesTree(t *testing.T) {
 
 	// Merging another profileTree onto the existing one
 
-	s3 := makeSample(3, []uint64{2, 1})
+	s3 := makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 
 	pt2 := NewProfileTree()
 	pt2.Insert(s3)
@@ -100,22 +110,25 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			LocationID: 0, // root
+			LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000000"), // root
 			Children: []*MemSeriesTreeNode{{
-				LocationID: 1,
+				LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
-					LocationID: 2,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				}, {
 					keys:       []ProfileTreeValueNodeKey{k4},
-					LocationID: 4,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 				}},
 			}},
 		},
 	}, s.seriesTree)
 
 	// Merging another profileTree onto the existing one with one new Location
-	s4 := makeSample(4, []uint64{3, 1})
+	s4 := makeSample(4, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 
 	pt3 := NewProfileTree()
 	pt3.Insert(s4)
@@ -133,25 +146,29 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			LocationID: 0, // root
+			LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000000"), // root
 			Children: []*MemSeriesTreeNode{{
-				LocationID: 1,
+				LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
-					LocationID: 2,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				}, {
 					keys:       []ProfileTreeValueNodeKey{k3},
-					LocationID: 3,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 				}, {
 					keys:       []ProfileTreeValueNodeKey{k4},
-					LocationID: 4,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 				}},
 			}},
 		},
 	}, s.seriesTree)
 
 	// Merging another profileTree onto the existing one with one new Location
-	s5 := makeSample(6, []uint64{5, 2, 1})
+	s5 := makeSample(6, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 	pt4 := NewProfileTree()
 	pt4.Insert(s5)
 
@@ -160,7 +177,10 @@ func TestMemSeriesTree(t *testing.T) {
 	require.NoError(t, err)
 
 	// Merging another profileTree onto the existing one with one new Location
-	s6 := makeSample(7, []uint64{2, 1})
+	s6 := makeSample(7, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 	pt5 := NewProfileTree()
 	pt5.Insert(s6)
 
@@ -178,22 +198,22 @@ func TestMemSeriesTree(t *testing.T) {
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			LocationID: 0, // root
+			LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000000"), // root
 			Children: []*MemSeriesTreeNode{{
-				LocationID: 1,
+				LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				Children: []*MemSeriesTreeNode{{
 					keys:       []ProfileTreeValueNodeKey{k2},
-					LocationID: 2,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					Children: []*MemSeriesTreeNode{{
 						keys:       []ProfileTreeValueNodeKey{k5},
-						LocationID: 5,
+						LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000005"),
 					}},
 				}, {
 					keys:       []ProfileTreeValueNodeKey{k3},
-					LocationID: 3,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 				}, {
 					keys:       []ProfileTreeValueNodeKey{k4},
-					LocationID: 4,
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 				}},
 			}},
 		},
@@ -210,8 +230,14 @@ func TestMemSeriesTreeMany(t *testing.T) {
 
 	for i := 1; i < 200; i++ {
 		pt1 := NewProfileTree()
-		pt1.Insert(makeSample(int64(i), []uint64{2, 1}))
-		pt1.Insert(makeSample(2*int64(i), []uint64{4, 1}))
+		pt1.Insert(makeSample(int64(i), []uuid.UUID{
+			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		}))
+		pt1.Insert(makeSample(2*int64(i), []uuid.UUID{
+			uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		}))
 
 		err = app.Append(context.Background(), &Profile{
 			Meta: InstantProfileMeta{
@@ -232,13 +258,13 @@ func TestMemSeriesTreeMany(t *testing.T) {
 
 	require.Len(t, s.flatValues, 2)
 
-	it = NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "2|1|0"}])
+	it = NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"}])
 	for i := 1; i < 200; i++ {
 		require.True(t, it.Next())
 		require.Equal(t, int64(i), it.At())
 	}
 
-	it = NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "4|1|0"}])
+	it = NewMultiChunkIterator(s.flatValues[ProfileTreeValueNodeKey{location: "00000000-0000-0000-0000-000000000004|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"}])
 	for i := 1; i < 200; i++ {
 		require.True(t, it.Next())
 		require.Equal(t, 2*int64(i), it.At())
@@ -248,15 +274,15 @@ func TestMemSeriesTreeMany(t *testing.T) {
 	require.Equal(t, &MemSeriesTree{
 		s: s,
 		Roots: &MemSeriesTreeNode{
-			LocationID: 0, // root
+			LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000000"), // root
 			Children: []*MemSeriesTreeNode{{
-				LocationID: 1,
+				LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				Children: []*MemSeriesTreeNode{{
-					keys:       []ProfileTreeValueNodeKey{{location: "2|1|0"}},
-					LocationID: 2,
+					keys:       []ProfileTreeValueNodeKey{{location: "00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"}},
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				}, {
-					keys:       []ProfileTreeValueNodeKey{{location: "4|1|0"}},
-					LocationID: 4,
+					keys:       []ProfileTreeValueNodeKey{{location: "00000000-0000-0000-0000-000000000004|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"}},
+					LocationID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 				}},
 			}},
 		},
@@ -292,7 +318,10 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 			require.NoError(t, err)
 
 			pt := NewProfileTree()
-			pt.Insert(makeSample(1, []uint64{2, 1}))
+			pt.Insert(makeSample(1, []uuid.UUID{
+				uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			}))
 
 			for i := int64(1); i <= 500; i++ {
 				require.NoError(t, app.Append(ctx, &Profile{
@@ -326,7 +355,10 @@ func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
 	require.NoError(t, err)
 
 	pt := NewProfileTree()
-	pt.Insert(makeSample(1, []uint64{2, 1}))
+	pt.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
 
 	for i := int64(1); i < 500; i++ {
 		require.NoError(t, app.Append(ctx, &Profile{
@@ -383,7 +415,10 @@ func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {
 	require.NoError(b, err)
 
 	pt := NewProfileTree()
-	pt.Insert(makeSample(1, []uint64{2, 1}))
+	pt.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
 	p := &Profile{Tree: pt}
 
 	for i := 1; i <= b.N; i++ {

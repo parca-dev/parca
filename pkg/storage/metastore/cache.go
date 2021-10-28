@@ -17,7 +17,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -25,19 +25,19 @@ type metaStoreCache struct {
 	metrics *metrics
 
 	locationsMtx   *sync.RWMutex
-	locationsByID  map[uint64]Location
-	locationsByKey map[LocationKey]uint64
+	locationsByID  map[uuid.UUID]SerializedLocation
+	locationsByKey map[LocationKey]uuid.UUID
 
 	mappingsMtx   *sync.RWMutex
-	mappingsByID  map[uint64]profile.Mapping
-	mappingsByKey map[MappingKey]uint64
+	mappingsByID  map[uuid.UUID]Mapping
+	mappingsByKey map[MappingKey]uuid.UUID
 
 	functionsMtx   *sync.RWMutex
-	functionsByID  map[uint64]profile.Function
-	functionsByKey map[FunctionKey]uint64
+	functionsByID  map[uuid.UUID]Function
+	functionsByKey map[FunctionKey]uuid.UUID
 
 	locationLinesMtx  *sync.RWMutex
-	locationLinesByID map[uint64][]locationLine
+	locationLinesByID map[uuid.UUID][]Line
 }
 
 type metrics struct {
@@ -125,26 +125,26 @@ func newMetaStoreCache(reg prometheus.Registerer) *metaStoreCache {
 		metrics: newMetaStoreCacheMetrics(reg),
 
 		locationsMtx:   &sync.RWMutex{},
-		locationsByID:  map[uint64]Location{},
-		locationsByKey: map[LocationKey]uint64{},
+		locationsByID:  map[uuid.UUID]SerializedLocation{},
+		locationsByKey: map[LocationKey]uuid.UUID{},
 
 		mappingsMtx:   &sync.RWMutex{},
-		mappingsByID:  map[uint64]profile.Mapping{},
-		mappingsByKey: map[MappingKey]uint64{},
+		mappingsByID:  map[uuid.UUID]Mapping{},
+		mappingsByKey: map[MappingKey]uuid.UUID{},
 
 		functionsMtx:   &sync.RWMutex{},
-		functionsByID:  map[uint64]profile.Function{},
-		functionsByKey: map[FunctionKey]uint64{},
+		functionsByID:  map[uuid.UUID]Function{},
+		functionsByKey: map[FunctionKey]uuid.UUID{},
 
 		locationLinesMtx:  &sync.RWMutex{},
-		locationLinesByID: map[uint64][]locationLine{},
+		locationLinesByID: map[uuid.UUID][]Line{},
 	}
 }
 
-func (c *metaStoreCache) getLocationByKey(ctx context.Context, k LocationKey) (Location, bool, error) {
+func (c *metaStoreCache) getLocationByKey(ctx context.Context, k LocationKey) (SerializedLocation, bool, error) {
 	select {
 	case <-ctx.Done():
-		return Location{}, false, ctx.Err()
+		return SerializedLocation{}, false, ctx.Err()
 	default:
 	}
 
@@ -154,23 +154,23 @@ func (c *metaStoreCache) getLocationByKey(ctx context.Context, k LocationKey) (L
 	id, found := c.locationsByKey[k]
 	if !found {
 		c.metrics.locationKeyMisses.Inc()
-		return Location{}, false, nil
+		return SerializedLocation{}, false, nil
 	}
 
 	l, found := c.locationsByID[id]
 	if !found {
 		c.metrics.locationKeyMisses.Inc()
-		return Location{}, false, nil
+		return SerializedLocation{}, false, nil
 	}
 
 	c.metrics.locationKeyHits.Inc()
 	return l, found, nil
 }
 
-func (c *metaStoreCache) getLocationByID(ctx context.Context, id uint64) (Location, bool, error) {
+func (c *metaStoreCache) getLocationByID(ctx context.Context, id uuid.UUID) (SerializedLocation, bool, error) {
 	select {
 	case <-ctx.Done():
-		return Location{}, false, ctx.Err()
+		return SerializedLocation{}, false, ctx.Err()
 	default:
 	}
 
@@ -180,14 +180,14 @@ func (c *metaStoreCache) getLocationByID(ctx context.Context, id uint64) (Locati
 	l, found := c.locationsByID[id]
 	if !found {
 		c.metrics.locationIdHits.Inc()
-		return Location{}, false, nil
+		return SerializedLocation{}, false, nil
 	}
 
 	c.metrics.locationIdHits.Inc()
 	return l, found, nil
 }
 
-func (c *metaStoreCache) setLocationByKey(ctx context.Context, k LocationKey, l Location) error {
+func (c *metaStoreCache) setLocationByKey(ctx context.Context, k LocationKey, l SerializedLocation) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -203,7 +203,7 @@ func (c *metaStoreCache) setLocationByKey(ctx context.Context, k LocationKey, l 
 	return nil
 }
 
-func (c *metaStoreCache) setLocationByID(ctx context.Context, l Location) error {
+func (c *metaStoreCache) setLocationByID(ctx context.Context, l SerializedLocation) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -218,10 +218,10 @@ func (c *metaStoreCache) setLocationByID(ctx context.Context, l Location) error 
 	return nil
 }
 
-func (c *metaStoreCache) getMappingByKey(ctx context.Context, k MappingKey) (profile.Mapping, bool, error) {
+func (c *metaStoreCache) getMappingByKey(ctx context.Context, k MappingKey) (Mapping, bool, error) {
 	select {
 	case <-ctx.Done():
-		return profile.Mapping{}, false, ctx.Err()
+		return Mapping{}, false, ctx.Err()
 	default:
 	}
 
@@ -231,23 +231,23 @@ func (c *metaStoreCache) getMappingByKey(ctx context.Context, k MappingKey) (pro
 	id, found := c.mappingsByKey[k]
 	if !found {
 		c.metrics.mappingKeyMisses.Inc()
-		return profile.Mapping{}, false, nil
+		return Mapping{}, false, nil
 	}
 
 	m, found := c.mappingsByID[id]
 	if !found {
 		c.metrics.mappingKeyMisses.Inc()
-		return profile.Mapping{}, false, nil
+		return Mapping{}, false, nil
 	}
 
 	c.metrics.mappingKeyHits.Inc()
 	return m, found, nil
 }
 
-func (c *metaStoreCache) getMappingByID(ctx context.Context, id uint64) (profile.Mapping, bool, error) {
+func (c *metaStoreCache) getMappingByID(ctx context.Context, id uuid.UUID) (Mapping, bool, error) {
 	select {
 	case <-ctx.Done():
-		return profile.Mapping{}, false, ctx.Err()
+		return Mapping{}, false, ctx.Err()
 	default:
 	}
 
@@ -257,14 +257,14 @@ func (c *metaStoreCache) getMappingByID(ctx context.Context, id uint64) (profile
 	m, found := c.mappingsByID[id]
 	if !found {
 		c.metrics.mappingIdHits.Inc()
-		return profile.Mapping{}, false, nil
+		return Mapping{}, false, nil
 	}
 
 	c.metrics.mappingIdHits.Inc()
 	return m, found, nil
 }
 
-func (c *metaStoreCache) setMappingByKey(ctx context.Context, k MappingKey, m profile.Mapping) error {
+func (c *metaStoreCache) setMappingByKey(ctx context.Context, k MappingKey, m Mapping) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -280,7 +280,7 @@ func (c *metaStoreCache) setMappingByKey(ctx context.Context, k MappingKey, m pr
 	return nil
 }
 
-func (c *metaStoreCache) setMappingByID(ctx context.Context, m profile.Mapping) error {
+func (c *metaStoreCache) setMappingByID(ctx context.Context, m Mapping) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -295,10 +295,10 @@ func (c *metaStoreCache) setMappingByID(ctx context.Context, m profile.Mapping) 
 	return nil
 }
 
-func (c *metaStoreCache) getFunctionByKey(ctx context.Context, k FunctionKey) (profile.Function, bool, error) {
+func (c *metaStoreCache) getFunctionByKey(ctx context.Context, k FunctionKey) (Function, bool, error) {
 	select {
 	case <-ctx.Done():
-		return profile.Function{}, false, ctx.Err()
+		return Function{}, false, ctx.Err()
 	default:
 	}
 
@@ -308,20 +308,20 @@ func (c *metaStoreCache) getFunctionByKey(ctx context.Context, k FunctionKey) (p
 	id, found := c.functionsByKey[k]
 	if !found {
 		c.metrics.functionKeyMisses.Inc()
-		return profile.Function{}, false, nil
+		return Function{}, false, nil
 	}
 
 	fn, found := c.functionsByID[id]
 	if !found {
 		c.metrics.functionKeyMisses.Inc()
-		return profile.Function{}, false, nil
+		return Function{}, false, nil
 	}
 
 	c.metrics.functionKeyHits.Inc()
 	return fn, found, nil
 }
 
-func (c *metaStoreCache) setFunctionByKey(ctx context.Context, k FunctionKey, f profile.Function) error {
+func (c *metaStoreCache) setFunctionByKey(ctx context.Context, k FunctionKey, f Function) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -337,10 +337,10 @@ func (c *metaStoreCache) setFunctionByKey(ctx context.Context, k FunctionKey, f 
 	return nil
 }
 
-func (c *metaStoreCache) getFunctionByID(ctx context.Context, functionID uint64) (profile.Function, bool, error) {
+func (c *metaStoreCache) getFunctionByID(ctx context.Context, functionID uuid.UUID) (Function, bool, error) {
 	select {
 	case <-ctx.Done():
-		return profile.Function{}, false, ctx.Err()
+		return Function{}, false, ctx.Err()
 	default:
 	}
 
@@ -350,14 +350,14 @@ func (c *metaStoreCache) getFunctionByID(ctx context.Context, functionID uint64)
 	f, found := c.functionsByID[functionID]
 	if !found {
 		c.metrics.functionIdMisses.Inc()
-		return profile.Function{}, false, nil
+		return Function{}, false, nil
 	}
 
 	c.metrics.functionIdHits.Inc()
 	return f, found, nil
 }
 
-func (c *metaStoreCache) setFunctionByID(ctx context.Context, f profile.Function) error {
+func (c *metaStoreCache) setFunctionByID(ctx context.Context, f Function) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -371,14 +371,14 @@ func (c *metaStoreCache) setFunctionByID(ctx context.Context, f profile.Function
 	return nil
 }
 
-func (c *metaStoreCache) setLocationLinesByID(ctx context.Context, locationID uint64, ll []locationLine) error {
+func (c *metaStoreCache) setLocationLinesByID(ctx context.Context, locationID uuid.UUID, ll []Line) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
 	}
 
-	v := make([]locationLine, len(ll))
+	v := make([]Line, len(ll))
 	copy(v, ll)
 
 	c.locationLinesMtx.Lock()
@@ -389,7 +389,7 @@ func (c *metaStoreCache) setLocationLinesByID(ctx context.Context, locationID ui
 	return nil
 }
 
-func (c *metaStoreCache) getLocationLinesByID(ctx context.Context, locationID uint64) ([]locationLine, bool, error) {
+func (c *metaStoreCache) getLocationLinesByID(ctx context.Context, locationID uuid.UUID) ([]Line, bool, error) {
 	select {
 	case <-ctx.Done():
 		return nil, false, ctx.Err()
@@ -405,7 +405,7 @@ func (c *metaStoreCache) getLocationLinesByID(ctx context.Context, locationID ui
 		return nil, false, nil
 	}
 
-	v := make([]locationLine, len(ll))
+	v := make([]Line, len(ll))
 	copy(v, ll)
 
 	c.metrics.locationLinesIdHits.Inc()

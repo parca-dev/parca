@@ -14,14 +14,15 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
@@ -42,15 +43,15 @@ func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.Profile
 		logger:    l,
 		metaStore: s,
 
-		samples: make(map[stacktraceKey]*profile.Sample, len(p.Sample)),
+		samples: make(map[stacktraceKey]*Sample, len(p.Sample)),
 
 		// Profile-specific hash tables for each profile inserted.
-		locationsByID: make(map[uint64]*profile.Location, len(p.Location)),
-		functionsByID: make(map[uint64]*profile.Function, len(p.Function)),
+		locationsByID: make(map[uint64]*metastore.Location, len(p.Location)),
+		functionsByID: make(map[uint64]*metastore.Function, len(p.Function)),
 		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
 	}
 
-	samples := make([]*profile.Sample, 0, len(p.Sample))
+	samples := make([]*Sample, 0, len(p.Sample))
 	for _, s := range p.Sample {
 		if !isZeroSample(s) {
 			sa, isNew, err := pn.mapSample(ctx, s, sampleIndex)
@@ -62,7 +63,6 @@ func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.Profile
 			}
 		}
 	}
-	sortSamples(samples)
 
 	profileTree := NewProfileTree()
 	for _, s := range samples {
@@ -80,15 +80,21 @@ func (t *ProfileTree) Iterator() InstantProfileTreeIterator {
 	return NewProfileTreeIterator(t)
 }
 
-func (t *ProfileTree) Insert(sample *profile.Sample) {
+func uuidCompare(a, b uuid.UUID) int {
+	ab := [16]byte(a)
+	bb := [16]byte(b)
+	return bytes.Compare(ab[:], bb[:])
+}
+
+func (t *ProfileTree) Insert(sample *Sample) {
 	cur := t.Roots.ProfileTreeNode
 	locations := sample.Location
 
-	locationIDs := make([]uint64, 0, len(sample.Location)+1)
+	locationIDs := make([]uuid.UUID, 0, len(sample.Location)+1)
 	for _, l := range sample.Location {
 		locationIDs = append(locationIDs, l.ID)
 	}
-	locationIDs = append(locationIDs, 0) // add the root
+	locationIDs = append(locationIDs, uuid.UUID{}) // add the root
 
 	for i := len(locations) - 1; i >= 0; i-- {
 		nextId := locations[i].ID
@@ -96,7 +102,10 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 		var child *ProfileTreeNode
 
 		// Binary search for child in list. If it exists continue to use the existing one.
-		index := sort.Search(len(cur.Children), func(i int) bool { return cur.Children[i].LocationID() >= nextId })
+		index := sort.Search(len(cur.Children), func(i int) bool {
+			cmp := uuidCompare(cur.Children[i].LocationID(), nextId)
+			return cmp == 0 || cmp == 1
+		})
 		if index < len(cur.Children) && cur.Children[index].LocationID() == nextId {
 			// Child with this ID already exists.
 			child = cur.Children[index]
@@ -118,13 +127,13 @@ func (t *ProfileTree) Insert(sample *profile.Sample) {
 	if cur.flatValues == nil {
 		cur.flatValues = []*ProfileTreeValueNode{{}}
 	}
-	cur.flatValues[0].Value += sample.Value[0]
+	cur.flatValues[0].Value += sample.Value
 	// TODO: We probably need to merge labels, numLabels and numUnits
 	cur.flatValues[0].Label = sample.Label
 	cur.flatValues[0].NumLabel = sample.NumLabel
 	cur.flatValues[0].NumUnit = sample.NumUnit
 
-	t.Roots.CumulativeValue += sample.Value[0]
+	t.Roots.CumulativeValue += sample.Value
 
 	for _, fv := range cur.flatValues {
 		fv.Key(locationIDs...) //populate the keys
@@ -139,13 +148,13 @@ type ProfileTreeRootNode struct {
 }
 
 type ProfileTreeNode struct {
-	locationID     uint64
+	locationID     uuid.UUID
 	flatValues     []*ProfileTreeValueNode
 	flatDiffValues []*ProfileTreeValueNode
 	Children       []*ProfileTreeNode
 }
 
-func (n *ProfileTreeNode) LocationID() uint64 {
+func (n *ProfileTreeNode) LocationID() uuid.UUID {
 	return n.locationID
 }
 
@@ -185,14 +194,14 @@ func (k *ProfileTreeValueNodeKey) Equals(o ProfileTreeValueNodeKey) bool {
 	return true
 }
 
-func (n *ProfileTreeValueNode) Key(locationIDs ...uint64) {
+func (n *ProfileTreeValueNode) Key(locationIDs ...uuid.UUID) {
 	if n.key != nil {
 		return
 	}
 
 	ids := make([]string, len(locationIDs))
 	for i, l := range locationIDs {
-		ids[i] = strconv.FormatUint(l, 10)
+		ids[i] = l.String()
 	}
 
 	labels := make([]string, 0, len(n.Label))

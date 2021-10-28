@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/pprof/profile"
 	"github.com/hashicorp/go-multierror"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/runutil"
@@ -62,10 +61,10 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	})
 }
 
-func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Location) error {
+func (s *Symbolizer) symbolize(ctx context.Context, locations []*metastore.Location) error {
 	// Aggregate locations per mapping to get prepared for batch request.
-	mappings := map[string]*profile.Mapping{}
-	mappingLocations := map[string][]*profile.Location{}
+	mappings := map[string]*metastore.Mapping{}
+	mappingLocations := map[string][]*metastore.Location{}
 	for _, loc := range locations {
 		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
 		if loc.Mapping == nil || len(loc.Mapping.BuildID) == 0 || loc.Mapping.Unsymbolizable() {
@@ -73,7 +72,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 			continue
 		}
 		// Already symbolized!
-		if len(loc.Line) > 0 {
+		if len(loc.Lines) > 0 {
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
 			continue
 		}
@@ -100,7 +99,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*profile.Locatio
 		level.Debug(s.logger).Log("msg", "storage symbolization request done", "buildid", buildID)
 
 		for loc, lines := range symbolizedLocations {
-			loc.Line = lines
+			loc.Lines = lines
 			// Only creates lines for given location.
 			if err := s.locations.Symbolize(ctx, loc); err != nil {
 				result = multierror.Append(result, fmt.Errorf("failed to update location %d: %w", loc.ID, err))

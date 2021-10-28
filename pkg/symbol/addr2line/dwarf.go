@@ -25,8 +25,8 @@ import (
 	"github.com/go-delve/delve/pkg/dwarf/reader"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/pprof/profile"
 
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
@@ -36,7 +36,7 @@ type dwarfLiner struct {
 	logger    log.Logger
 	demangler *demangle.Demangler
 
-	mapping             *profile.Mapping
+	mapping             *metastore.Mapping
 	data                *dwarf.Data
 	lineEntries         map[dwarf.Offset][]dwarf.LineEntry
 	subprograms         map[dwarf.Offset][]*godwarf.Tree
@@ -47,7 +47,7 @@ type dwarfLiner struct {
 	failed           map[uint64]struct{}
 }
 
-func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold int, m *profile.Mapping, path string) (*dwarfLiner, error) {
+func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold int, m *metastore.Mapping, path string) (*dwarfLiner, error) {
 	// TODO(kakkoyun): Handle offset, start and limit for dynamically linked libraries.
 	//objFile, err := s.bu.Open(file, m.Start, m.Limit, m.Offset)
 	//if err != nil {
@@ -144,7 +144,7 @@ outer:
 	return nil
 }
 
-func (dl *dwarfLiner) PCToLines(addr uint64) (lines []profile.Line, err error) {
+func (dl *dwarfLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
 	// Check if we already attempt to symbolize this location and failed.
 	if _, failedBefore := dl.failed[addr]; failedBefore {
 		level.Debug(dl.logger).Log("msg", "location already had been attempted to be symbolized and failed, skipping")
@@ -186,7 +186,7 @@ func (dl *dwarfLiner) handleError(addr uint64, err error) error {
 	return err
 }
 
-func (dl *dwarfLiner) sourceLines(addr uint64) ([]profile.Line, error) {
+func (dl *dwarfLiner) sourceLines(addr uint64) ([]metastore.LocationLine, error) {
 	// The reader is positioned at byte offset 0 in the DWARF “info” section.
 	er := dl.data.Reader()
 	cu, err := er.SeekPC(addr)
@@ -197,7 +197,7 @@ func (dl *dwarfLiner) sourceLines(addr uint64) ([]profile.Line, error) {
 		return nil, errors.New("failed to find a corresponding dwarf entry for given address")
 	}
 
-	lines := []profile.Line{}
+	lines := []metastore.LocationLine{}
 	var tr *godwarf.Tree
 	for _, t := range dl.subprograms[cu.Offset] {
 		if t.ContainsPC(addr) {
@@ -211,11 +211,13 @@ func (dl *dwarfLiner) sourceLines(addr uint64) ([]profile.Line, error) {
 
 	name := tr.Entry.Val(dwarf.AttrName).(string)
 	file, line := findLineInfo(dl.lineEntries[cu.Offset], tr.Ranges)
-	lines = append(lines, profile.Line{
+	lines = append(lines, metastore.LocationLine{
 		Line: line,
-		Function: dl.demangler.Demangle(&profile.Function{
-			Name:     name,
-			Filename: file,
+		Function: dl.demangler.Demangle(&metastore.Function{
+			FunctionKey: metastore.FunctionKey{
+				Name:     name,
+				Filename: file,
+			},
 		}),
 	})
 
@@ -230,11 +232,13 @@ func (dl *dwarfLiner) sourceLines(addr uint64) ([]profile.Line, error) {
 		}
 
 		file, line := findLineInfo(dl.lineEntries[cu.Offset], ch.Ranges)
-		lines = append(lines, profile.Line{
+		lines = append(lines, metastore.LocationLine{
 			Line: line,
-			Function: dl.demangler.Demangle(&profile.Function{
-				Name:     name,
-				Filename: file,
+			Function: dl.demangler.Demangle(&metastore.Function{
+				FunctionKey: metastore.FunctionKey{
+					Name:     name,
+					Filename: file,
+				},
 			}),
 		})
 	}

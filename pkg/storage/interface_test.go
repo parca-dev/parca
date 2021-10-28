@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -55,45 +56,62 @@ func TestCopyInstantProfileTree(t *testing.T) {
 func TestProfileTreeValueNode_Key(t *testing.T) {
 	testcases := []struct {
 		node     ProfileTreeValueNode
-		location uint64
+		location uuid.UUID
 		key      *ProfileTreeValueNodeKey
 	}{{
 		node:     ProfileTreeValueNode{},
-		location: 0, // root
-		key:      &ProfileTreeValueNodeKey{location: "0"},
+		location: uuid.UUID{}, // root
+		key: &ProfileTreeValueNodeKey{
+			location: "00000000-0000-0000-0000-000000000000",
+		},
 	}, {
 		node:     ProfileTreeValueNode{},
-		location: 1,
-		key:      &ProfileTreeValueNodeKey{location: "1"},
+		location: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		key: &ProfileTreeValueNodeKey{
+			location: "00000000-0000-0000-0000-000000000001",
+		},
 	}, {
 		node:     ProfileTreeValueNode{},
-		location: 2,
-		key:      &ProfileTreeValueNodeKey{location: "2"},
+		location: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		key: &ProfileTreeValueNodeKey{
+			location: "00000000-0000-0000-0000-000000000002",
+		},
 	}, {
 		node:     ProfileTreeValueNode{Value: 123}, // Value doesn't matter
-		location: 1,
-		key:      &ProfileTreeValueNodeKey{location: "1"},
+		location: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		key: &ProfileTreeValueNodeKey{
+			location: "00000000-0000-0000-0000-000000000001",
+		},
 	}, {
 		node:     ProfileTreeValueNode{Label: map[string][]string{"foo": {"bar"}}},
-		location: 1,
-		key:      &ProfileTreeValueNodeKey{location: "1", labels: `"foo"["bar"]`},
+		location: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		key: &ProfileTreeValueNodeKey{
+			location: "00000000-0000-0000-0000-000000000001",
+			labels:   `"foo"["bar"]`,
+		},
 	}, {
 		node:     ProfileTreeValueNode{Label: map[string][]string{"foo": {"bar", "baz"}}},
-		location: 1,
-		key:      &ProfileTreeValueNodeKey{location: "1", labels: `"foo"["bar" "baz"]`},
+		location: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		key: &ProfileTreeValueNodeKey{
+			location: "00000000-0000-0000-0000-000000000001",
+			labels:   `"foo"["bar" "baz"]`,
+		},
 	}, {
 		node:     ProfileTreeValueNode{Label: map[string][]string{"foo": {"bar", "baz"}, "a": {"b"}}},
-		location: 1,
-		key:      &ProfileTreeValueNodeKey{location: "1", labels: `"a"["b"]"foo"["bar" "baz"]`},
+		location: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		key: &ProfileTreeValueNodeKey{
+			location: "00000000-0000-0000-0000-000000000001",
+			labels:   `"a"["b"]"foo"["bar" "baz"]`,
+		},
 	}, {
 		node: ProfileTreeValueNode{
 			Label:    map[string][]string{"foo": {"bar"}},
 			NumLabel: map[string][]int64{"foo": {123}},
 			NumUnit:  map[string][]string{"foo": {"count"}},
 		},
-		location: 1,
+		location: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		key: &ProfileTreeValueNodeKey{
-			location:  "1",
+			location:  "00000000-0000-0000-0000-000000000001",
 			labels:    `"foo"["bar"]`,
 			numlabels: `"foo"[7b][636f756e74]`,
 		},
@@ -106,9 +124,22 @@ func TestProfileTreeValueNode_Key(t *testing.T) {
 
 func TestScaledInstantProfile(t *testing.T) {
 	pt := NewProfileTree()
-	pt.Insert(makeSample(2, []uint64{2, 1}))
-	pt.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
-	pt.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
+	pt.Insert(makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
 
 	p := &Profile{
 		Tree: pt,
@@ -120,32 +151,32 @@ func TestScaledInstantProfile(t *testing.T) {
 		Roots: &ProfileTreeRootNode{
 			ProfileTreeNode: &ProfileTreeNode{
 				// Roots always have the LocationID 0.
-				locationID: 0,
+				locationID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 				Children: []*ProfileTreeNode{{
-					locationID: 1,
+					locationID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Children: []*ProfileTreeNode{{
-						locationID: 2,
+						locationID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 						flatValues: []*ProfileTreeValueNode{{
 							Value: -2,
 							key: &ProfileTreeValueNodeKey{
-								location: "2|1|0",
+								location: "00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000",
 							},
 						}},
 						Children: []*ProfileTreeNode{{
-							locationID: 3,
+							locationID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 							Children: []*ProfileTreeNode{{
-								locationID: 4,
+								locationID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 								flatValues: []*ProfileTreeValueNode{{
 									key: &ProfileTreeValueNodeKey{
-										location: "4|3|2|1|0",
+										location: "00000000-0000-0000-0000-000000000004|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000",
 									},
 									Value: -3,
 								}},
 							}, {
-								locationID: 5,
+								locationID: uuid.MustParse("00000000-0000-0000-0000-000000000005"),
 								flatValues: []*ProfileTreeValueNode{{
 									key: &ProfileTreeValueNodeKey{
-										location: "5|3|2|1|0",
+										location: "00000000-0000-0000-0000-000000000005|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000",
 									},
 									Value: -1,
 								}},

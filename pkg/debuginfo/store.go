@@ -26,7 +26,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/pprof/profile"
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"google.golang.org/grpc/codes"
@@ -35,6 +34,7 @@ import (
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/parca-dev/parca/pkg/symbol"
 )
 
@@ -195,7 +195,7 @@ func validateId(id string) error {
 	return nil
 }
 
-func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...*profile.Location) (map[*profile.Location][]profile.Line, error) {
+func (s *Store) Symbolize(ctx context.Context, m *metastore.Mapping, locations ...*metastore.Location) (map[*metastore.Location][]metastore.LocationLine, error) {
 	localObjPath, err := s.fetchObjectFile(ctx, m.BuildID)
 	if err != nil {
 		level.Debug(s.logger).Log("msg", "failed to fetch object", "object", m.BuildID, "err", err)
@@ -209,7 +209,7 @@ func (s *Store) Symbolize(ctx context.Context, m *profile.Mapping, locations ...
 		return nil, fmt.Errorf(msg+": %w", err)
 	}
 
-	locationLines := map[*profile.Location][]profile.Line{}
+	locationLines := map[*metastore.Location][]metastore.LocationLine{}
 	for _, loc := range locations {
 		lines, err := liner.PCToLines(loc.Address)
 		if err != nil {

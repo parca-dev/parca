@@ -146,7 +146,7 @@ func (i *DiffProfileTreeIterator) NextChild() bool {
 	locBase := atBase.LocationID()
 	locCompare := atCompare.LocationID()
 
-	for locBase < locCompare && !i.baseStack.Peek().done {
+	for uuidCompare(locBase, locCompare) == -1 && !i.baseStack.Peek().done {
 		nextBase := i.base.NextChild()
 		if nextBase {
 			atBase = i.base.At()
@@ -156,7 +156,7 @@ func (i *DiffProfileTreeIterator) NextChild() bool {
 		i.baseStack.Peek().done = true
 	}
 
-	if locBase > locCompare || i.baseStack.Peek().done {
+	if uuidCompare(locBase, locCompare) == 1 || i.baseStack.Peek().done {
 		nextCompare := i.compare.NextChild()
 		if nextCompare {
 			return true
@@ -243,7 +243,7 @@ func (i *DiffProfileTreeIterator) StepInto() bool {
 	locBase := atBase.LocationID()
 	locCompare := atCompare.LocationID()
 
-	if locBase > locCompare {
+	if uuidCompare(locBase, locCompare) == 1 {
 		atCompare := i.compare.At()
 		steppedInto := i.compare.StepInto()
 		if steppedInto {

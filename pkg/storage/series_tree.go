@@ -16,13 +16,14 @@ package storage
 import (
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
 type MemSeriesTreeNode struct {
 	keys []ProfileTreeValueNodeKey
 
-	LocationID uint64
+	LocationID uuid.UUID
 	Children   []*MemSeriesTreeNode
 }
 
@@ -109,7 +110,8 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 					break
 				}
 				sId := sit.At().LocationID
-				if pId == sId || pId < sId {
+				cmp := uuidCompare(pId, sId)
+				if cmp <= 0 {
 					break
 				}
 			}
@@ -154,7 +156,7 @@ func (t *MemSeriesTree) Insert(index uint16, profileTree *ProfileTree) error {
 
 			// The node with the location id in the profile-tree is smaller,
 			// this means this node is not present yet in the series-tree, so it has to be added at the current child position.
-			if pId < sId {
+			if uuidCompare(pId, sId) == -1 {
 				node := sit.Node()
 				childIndex := sit.ChildIndex()
 				newChildren := make([]*MemSeriesTreeNode, len(node.Children)+1)

@@ -241,7 +241,7 @@ message FlamegraphNodeMeta {
 
     // location is the location for the code
     Location location = 1;
-    
+
     // mapping is the mapping into code
     Mapping mapping = 2;
 
@@ -256,10 +256,10 @@ message FlamegraphNodeMeta {
 message Location {
 
     // id ...
-    uint64 id = 1;
+    string id = 1;
 
     // mapping_id ...
-    uint64 mapping_id = 2;
+    string mapping_id = 2;
 
     // address ...
     uint64 address = 3;
@@ -272,10 +272,10 @@ message Location {
 message Line {
 
     // location_id ...
-    uint64 location_id = 1;
+    string location_id = 1;
 
     // function_id ...
-    uint64 function_id = 2;
+    string function_id = 2;
 
     // line ...
     int64 line = 3;
@@ -285,7 +285,7 @@ message Line {
 message Mapping {
 
     // id ...
-    uint64 id = 1;
+    string id = 1;
 
     // start ...
     uint64 start = 2;
@@ -307,7 +307,7 @@ message Mapping {
 message Function {
 
     // id ...
-    uint64 id = 1;
+    string id = 1;
 
     // name ...
     string name = 2;

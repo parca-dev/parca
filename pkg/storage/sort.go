@@ -15,11 +15,9 @@ package storage
 
 import (
 	"sort"
-
-	"github.com/google/pprof/profile"
 )
 
-func sortSamples(samples []*profile.Sample) {
+func sortSamples(samples []*Sample) {
 	sort.Slice(samples, func(i, j int) bool {
 		// TODO need to take labels into account
 		stacktrace1 := samples[i].Location
@@ -37,9 +35,9 @@ func sortSamples(samples []*profile.Sample) {
 			case k <= stacktrace1Len && k >= stacktrace2Len:
 				// This means the stacktraces are identical up until this point, but stacktrace2 is ending, and shorter stactraces are "lower" than longer ones.
 				return false
-			case stacktrace1[stacktrace1Len-k].ID < stacktrace2[stacktrace2Len-k].ID:
+			case uuidCompare(stacktrace1[stacktrace1Len-k].ID, stacktrace2[stacktrace2Len-k].ID) == -1:
 				return true
-			case stacktrace1[stacktrace1Len-k].ID > stacktrace2[stacktrace2Len-k].ID:
+			case uuidCompare(stacktrace1[stacktrace1Len-k].ID, stacktrace2[stacktrace2Len-k].ID) == 1:
 				return false
 			default:
 				// This means the stack traces are identical up until this point. So advance to the next.

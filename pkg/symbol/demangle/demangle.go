@@ -16,8 +16,8 @@ package demangle
 import (
 	"strings"
 
-	"github.com/google/pprof/profile"
 	"github.com/ianlancetaylor/demangle"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 type Demangler struct {
@@ -50,7 +50,7 @@ func NewDemangler(mode string, force bool) *Demangler {
 // names, simplified according to demanglerMode. If force is set,
 // overwrite any names that appear already demangled.
 // A modified version of pprof demangler.
-func (d *Demangler) Demangle(fn *profile.Function) *profile.Function {
+func (d *Demangler) Demangle(fn *metastore.Function) *metastore.Function {
 	if d == nil {
 		return fn
 	}

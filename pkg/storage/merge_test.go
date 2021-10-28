@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -31,7 +32,10 @@ import (
 
 func TestMergeProfileSimple(t *testing.T) {
 	pt1 := NewProfileTree()
-	pt1.Insert(makeSample(2, []uint64{2, 1}))
+	pt1.Insert(makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
 
 	p1 := &Profile{
 		Tree: pt1,
@@ -45,7 +49,10 @@ func TestMergeProfileSimple(t *testing.T) {
 	}
 
 	pt2 := NewProfileTree()
-	pt2.Insert(makeSample(1, []uint64{3, 1}))
+	pt2.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
 
 	p2 := &Profile{
 		Tree: pt2,
@@ -81,22 +88,22 @@ func TestMergeProfileSimple(t *testing.T) {
 
 	require.Equal(t, []sample{
 		{
-			id: uint64(0),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 		},
 		{
-			id: uint64(1),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		},
 		{
-			id: uint64(2),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "2|1|0"},
+				key:   &ProfileTreeValueNodeKey{location: "00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"},
 				Value: int64(2),
 			}},
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "3|1|0"},
+				key:   &ProfileTreeValueNodeKey{location: "00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000"},
 				Value: int64(1),
 			}},
 		},
@@ -105,10 +112,23 @@ func TestMergeProfileSimple(t *testing.T) {
 
 func TestMergeProfileDeep(t *testing.T) {
 	pt1 := NewProfileTree()
-	pt1.Insert(makeSample(3, []uint64{3, 3, 2}))
-	pt1.Insert(makeSample(3, []uint64{6, 2}))
-	pt1.Insert(makeSample(3, []uint64{2, 3}))
-	pt1.Insert(makeSample(3, []uint64{1, 3}))
+	pt1.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+	}))
+	pt1.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+	}))
+	pt1.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+	}))
+	pt1.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+	}))
 
 	p1 := &Profile{
 		Tree: pt1,
@@ -122,7 +142,11 @@ func TestMergeProfileDeep(t *testing.T) {
 	}
 
 	pt2 := NewProfileTree()
-	pt2.Insert(makeSample(3, []uint64{3, 2, 2}))
+	pt2.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+	}))
 
 	p2 := &Profile{
 		Tree: pt2,
@@ -158,52 +182,62 @@ func TestMergeProfileDeep(t *testing.T) {
 
 	require.Equal(t, []sample{
 		{
-			id: uint64(0),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 		},
 		{
-			id: uint64(2),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		},
 		{
-			id: uint64(2),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "3|2|2|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(3),
 			}},
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "3|3|2|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(3),
 			}},
 		},
 		{
-			id: uint64(6),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "6|2|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000006|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(3),
 			}},
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 		},
 		{
-			id: uint64(1),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "1|3|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(3),
 			}},
 		},
 		{
-			id: uint64(2),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "2|3|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(3),
 			}},
 		},
@@ -212,11 +246,31 @@ func TestMergeProfileDeep(t *testing.T) {
 
 func TestMergeProfile(t *testing.T) {
 	pt1 := NewProfileTree()
-	pt1.Insert(makeSample(2, []uint64{2, 1}))
-	pt1.Insert(makeSample(1, []uint64{6, 3, 2, 1}))
-	pt1.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
-	pt1.Insert(makeSample(3, []uint64{3, 3, 2}))
-	pt1.Insert(makeSample(3, []uint64{6, 2}))
+	pt1.Insert(makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt1.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt1.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt1.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+	}))
+	pt1.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+	}))
 
 	p1 := &Profile{
 		Tree: pt1,
@@ -230,10 +284,27 @@ func TestMergeProfile(t *testing.T) {
 	}
 
 	pt2 := NewProfileTree()
-	pt2.Insert(makeSample(2, []uint64{2, 1}))
-	pt2.Insert(makeSample(1, []uint64{5, 3, 2, 1}))
-	pt2.Insert(makeSample(3, []uint64{4, 3, 2, 1}))
-	pt2.Insert(makeSample(3, []uint64{3, 2, 2}))
+	pt2.Insert(makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt2.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt2.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+	pt2.Insert(makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+	}))
 
 	p2 := &Profile{
 		Tree: pt2,
@@ -269,67 +340,77 @@ func TestMergeProfile(t *testing.T) {
 
 	require.Equal(t, []sample{
 		{
-			id: uint64(0),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 		},
 		{
-			id: uint64(1),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		},
 		{
-			id: uint64(2),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 			flat: []*ProfileTreeValueNode{{
 				Value: int64(4),
 			}},
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 		},
 		{
-			id: uint64(4),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 			flat: []*ProfileTreeValueNode{{
 				Value: int64(6),
 			}},
 		},
 		{
-			id: uint64(5),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000005"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "5|3|2|1|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000005|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(1),
 			}},
 		},
 		{
-			id: uint64(6),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "6|3|2|1|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000006|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(1),
 			}},
 		},
 		{
-			id: uint64(2),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		},
 		{
-			id: uint64(2),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "3|2|2|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(3),
 			}},
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 		},
 		{
-			id: uint64(3),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "3|3|2|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(3),
 			}},
 		},
 		{
-			id: uint64(6),
+			id: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 			flat: []*ProfileTreeValueNode{{
-				key:   &ProfileTreeValueNodeKey{location: "6|2|0"},
+				key: &ProfileTreeValueNodeKey{
+					location: "00000000-0000-0000-0000-000000000006|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000000",
+				},
 				Value: int64(3),
 			}},
 		},
@@ -395,7 +476,7 @@ func TestMergeMany(t *testing.T) {
 }
 
 type sample struct {
-	id       uint64
+	id       uuid.UUID
 	flat     []*ProfileTreeValueNode
 	flatDiff []*ProfileTreeValueNode
 }
