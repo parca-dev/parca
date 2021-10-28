@@ -68,7 +68,7 @@ func TestMemRootSeries_Iterator(t *testing.T) {
 		}
 
 		require.NoError(t, it.Err())
-		require.Equal(t, int64(420), it.At().ProfileMeta().Timestamp)
+		require.Equal(t, int64(419), it.At().ProfileMeta().Timestamp)
 	}
 
 	// Query everything
