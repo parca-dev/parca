@@ -14,6 +14,7 @@
 package query
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/google/pprof/profile"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
@@ -363,6 +365,48 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 	}, sel...)
 
 	return storage.MergeSeriesSetProfiles(q.tracer, ctx, set)
+}
+
+func (q *Query) QueryPprof(ctx context.Context, req *pb.QueryRequest) (*pb.QueryPprofResponse, error) {
+	switch req.GetMode() {
+	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
+		p, err := q.selectSingle(ctx, req.GetSingle())
+		if err != nil {
+			return nil, err
+		}
+
+		return q.renderPprof(ctx, p)
+	default:
+		return nil, status.Error(codes.Unimplemented, "unimplemented")
+	}
+}
+
+func (q *Query) renderPprof(ctx context.Context, p storage.InstantProfile) (*pb.QueryPprofResponse, error) {
+	pp := profile.Profile{
+		SampleType: []*profile.ValueType{{
+			Type: p.ProfileMeta().SampleType.Type,
+			Unit: p.ProfileMeta().SampleType.Unit,
+		}},
+		//DefaultSampleType: "",
+		//Sample:            nil,
+		//Mapping:           nil,
+		//Location:          nil,
+		//Function:          nil,
+		//Comments:          nil,
+		//DropFrames:        "",
+		//KeepFrames:        "",
+		TimeNanos:     p.ProfileMeta().Timestamp,
+		DurationNanos: p.ProfileMeta().Duration,
+		Period:        p.ProfileMeta().Period,
+		//PeriodType:    nil,
+	}
+
+	var buf bytes.Buffer
+	if err := pp.Write(&buf); err != nil {
+		return nil, err
+	}
+
+	return &pb.QueryPprofResponse{Profile: buf.Bytes()}, nil
 }
 
 // Series issues a series request against the storage
