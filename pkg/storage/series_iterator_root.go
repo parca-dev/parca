@@ -63,7 +63,9 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 
 	// Set numSamples correctly if only subset selected.
 	if end-start < numSamples {
-		numSamples = end - start - 1
+		// -1 for length to index
+		// -1 for exclusive first sample
+		numSamples = end - start - 2
 	}
 
 	return &MemRootSeriesIterator{

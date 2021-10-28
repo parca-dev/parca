@@ -193,6 +193,61 @@ func Test_QueryRange_Limited(t *testing.T) {
 	}
 }
 
+func Test_QueryRange_Ranged(t *testing.T) {
+	ctx := context.Background()
+	reg := prometheus.NewRegistry()
+	logger := log.NewNopLogger()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	db := storage.OpenDB(reg, tracer, nil)
+	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		reg,
+		tracer,
+		"queryrangeranged",
+	)
+	t.Cleanup(func() {
+		s.Close()
+	})
+	require.NoError(t, err)
+
+	f, err := os.Open("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(f)
+	require.NoError(t, err)
+
+	lset := labels.FromStrings("__name__", "allocs")
+
+	app, err := db.Appender(ctx, lset)
+	require.NoError(t, err)
+
+	start := time.Now()
+
+	for i := 0; i < 500; i++ {
+		p.TimeNanos = start.Add(time.Duration(i) * time.Second).UnixNano()
+		pprof, err := storage.ProfileFromPprof(ctx, logger, s, p, 0)
+		require.NoError(t, err)
+		err = app.Append(ctx, pprof)
+		require.NoError(t, err)
+	}
+
+	q := New(logger, tracer, db, s)
+
+	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{
+		Query: "allocs",
+		Start: timestamppb.New(start.Add(199 * time.Second)), // only 200 will be included
+		End:   timestamppb.New(start.Add(1000 * time.Second)),
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, resp.Series)
+	require.NotEmpty(t, resp.Series[0].Samples)
+
+	for i, s := range resp.Series[0].Samples {
+		expectedTime := start.Add(time.Duration(200+i) * time.Second).Unix()
+		require.Equal(t, expectedTime, s.Timestamp.GetSeconds(), "failed to find the correct timestamp in iteration: %d", i)
+		require.Equal(t, int64(310797348), s.Value)
+	}
+}
+
 func Test_QueryRange_InputValidation(t *testing.T) {
 	ctx := context.Background()
 	end := time.Now()
