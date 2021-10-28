@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
@@ -112,7 +113,8 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		for it.Next() {
 			p := it.At()
 			if p.ProfileMeta().Timestamp == 0 {
-				return nil, status.Error(codes.Internal, "profile's timestamp is 0")
+				level.Warn(q.logger).Log("msg", "timestamp is 0", "i", i)
+				continue
 			}
 			metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
 				Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
