@@ -6,7 +6,7 @@ module.exports = {
   modulePaths: ['.'],
   transform: {
     '\\.[jt]sx?$': [
-      'babel-jest',
+      '@swc/jest',
       {
         rootMode: 'upward'
       }

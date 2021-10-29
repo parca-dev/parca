@@ -247,7 +247,7 @@ function generateGetBoundingClientRect (contextElement: Element, x = 0, y = 0) {
     left: domRect.x + x,
     right: domRect.x + x,
     bottom: domRect.y + y
-  })
+  } as ClientRect)
 }
 
 const virtualElement = {
@@ -258,7 +258,7 @@ const virtualElement = {
     left: 0,
     right: 0,
     bottom: 0
-  })
+  } as ClientRect)
 }
 
 export const FlamegraphTooltip = ({

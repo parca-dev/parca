@@ -18,7 +18,7 @@ module.exports = withBundleAnalyzer(
       // In an effort to make builds reproducible.
       return 'static'
     },
-    webpack5: true,
+    //swcMinify: true,
     optimization: {
       moduleIds: 'deterministic'
     },

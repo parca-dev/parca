@@ -5,7 +5,7 @@
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js src/*",
     "dev": "../../../node_modules/.bin/next dev",
-    "build": "yarn clean && ../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
+    "build": "../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
     "clean": "rimraf .next && rimraf out",
     "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
     "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
