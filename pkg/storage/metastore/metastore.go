@@ -72,7 +72,7 @@ func MakeLocationKey(l *profile.Location) LocationKey {
 	// runtime/language eg. ruby or python. In those cases we have no better
 	// uniqueness factor than the actual functions, and since there is no
 	// address there is no potential for asynchronously symbolizing.
-	if key.NormalizedAddress != 0 {
+	if key.NormalizedAddress == 0 {
 		lines := make([]string, len(l.Line)*2)
 		for i, line := range l.Line {
 			if line.Function != nil {
