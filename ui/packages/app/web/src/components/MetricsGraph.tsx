@@ -12,6 +12,7 @@ import throttle from 'lodash.throttle'
 import { CalcWidth } from '@parca/dynamicsize'
 import { MetricsSeries as MetricsSeriesPb, MetricsSample, Label } from '@parca/client'
 import { usePopper } from 'react-popper'
+import type { VirtualElement } from '@popperjs/core'
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb.AsObject[]
@@ -81,25 +82,27 @@ interface MetricsTooltipProps {
 
 function generateGetBoundingClientRect (contextElement: Element, x = 0, y = 0) {
   const domRect = contextElement.getBoundingClientRect()
-  return () => ({
+  return () => ({ // eslint-disable-line @typescript-eslint/consistent-type-assertions
     width: 0,
     height: 0,
     top: domRect.y + y,
     left: domRect.x + x,
     right: domRect.x + x,
     bottom: domRect.y + y
-  })
+  } as ClientRect)
 }
 
-const virtualElement = {
-  getBoundingClientRect: () => ({
-    width: 0,
-    height: 0,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0
-  })
+const virtualElement: VirtualElement = {
+  getBoundingClientRect: () => {
+    return { // eslint-disable-line @typescript-eslint/consistent-type-assertions
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0
+    } as ClientRect
+  }
 }
 
 export const MetricsTooltip = ({
