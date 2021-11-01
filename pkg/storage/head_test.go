@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
@@ -32,7 +33,10 @@ func TestHead_MaxTime(t *testing.T) {
 	require.NoError(t, err)
 
 	pt := NewProfileTree()
-	pt.Insert(makeSample(1, []uint64{2, 1}))
+	pt.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
 
 	for i := int64(1); i < 500; i++ {
 		require.NoError(t, app.Append(ctx, &Profile{
@@ -124,7 +128,10 @@ func TestHead_Truncate(t *testing.T) {
 	h := NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 
 	pt := NewProfileTree()
-	pt.Insert(makeSample(1, []uint64{2, 1}))
+	pt.Insert(makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
 
 	ctx := context.Background()
 	{

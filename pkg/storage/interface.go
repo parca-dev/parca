@@ -19,11 +19,12 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 type InstantProfileTreeNode interface {
-	LocationID() uint64
+	LocationID() uuid.UUID
 	FlatValues() []*ProfileTreeValueNode
 	FlatDiffValues() []*ProfileTreeValueNode
 }

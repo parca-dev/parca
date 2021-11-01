@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"math"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 var result string
@@ -25,13 +27,15 @@ func BenchmarkBuildLinesByLocationIDsQuery(b *testing.B) {
 	for k := 0.; k <= 6; k++ {
 		n := uint64(math.Pow(10, k))
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
-			input := make([]uint64, 0, n)
+			b.StopTimer()
+			input := make([]uuid.UUID, 0, n)
 			for i := uint64(0); i < n; i++ {
-				input = append(input, i)
+				input = append(input, uuid.New())
 			}
+			b.StartTimer()
 
 			for i := 0; i < b.N; i++ {
-				result = buildLinesByLocationIDsQuery(input[len(input)-1], input)
+				result = buildLinesByLocationIDsQuery(input)
 			}
 		})
 	}
@@ -41,13 +45,15 @@ func BenchmarkBuildLocationsByIDsQuery(b *testing.B) {
 	for k := 0.; k <= 5; k++ {
 		n := uint64(math.Pow(10, k))
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
-			input := make([]uint64, 0, n)
+			b.StopTimer()
+			input := make([]uuid.UUID, 0, n)
 			for i := uint64(0); i < n; i++ {
-				input = append(input, i)
+				input = append(input, uuid.New())
 			}
+			b.StartTimer()
 
 			for i := 0; i < b.N; i++ {
-				result = buildLocationsByIDsQuery(input[len(input)-1], input)
+				result = buildLocationsByIDsQuery(input)
 			}
 		})
 	}

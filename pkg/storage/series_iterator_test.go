@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
@@ -45,11 +46,17 @@ func TestMemSeriesIterator(t *testing.T) {
 	{
 		pt := NewProfileTree()
 		{
-			s := makeSample(1, []uint64{2, 1})
+			s := makeSample(1, []uuid.UUID{
+				uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			})
 			pt.Insert(s)
 		}
 		{
-			s := makeSample(2, []uint64{4, 1})
+			s := makeSample(2, []uuid.UUID{
+				uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			})
 			s.Label = label
 			s.NumLabel = numLabel
 			s.NumUnit = numUnit
@@ -63,10 +70,16 @@ func TestMemSeriesIterator(t *testing.T) {
 	{
 		pt := NewProfileTree()
 		{
-			pt.Insert(makeSample(3, []uint64{3, 1}))
+			pt.Insert(makeSample(3, []uuid.UUID{
+				uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			}))
 		}
 		{
-			pt.Insert(makeSample(4, []uint64{4, 1}))
+			pt.Insert(makeSample(4, []uuid.UUID{
+				uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			}))
 		}
 
 		err := s.appendTree(pt)
@@ -87,30 +100,30 @@ func TestMemSeriesIterator(t *testing.T) {
 		}, instantProfile.ProfileMeta())
 
 		expected := []struct {
-			LocationID       uint64
+			LocationID       uuid.UUID
 			CumulativeValues []*ProfileTreeValueNode
 			FlatValues       []*ProfileTreeValueNode
 		}{
 			{
-				LocationID:       0,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 3}},
 			},
 			{
-				LocationID:       1,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 3}},
 			},
 			{
-				LocationID:       2,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 1}},
 				FlatValues:       []*ProfileTreeValueNode{{Value: 1}},
 			},
 			{
-				LocationID:       3,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 0}},
 				FlatValues:       []*ProfileTreeValueNode{{Value: 0}},
 			},
 			{
-				LocationID:       4,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}, {Value: 0}},
 				FlatValues:       []*ProfileTreeValueNode{{Value: 2, Label: label, NumLabel: numLabel, NumUnit: numUnit}, {Value: 0}},
 			},
@@ -139,30 +152,30 @@ func TestMemSeriesIterator(t *testing.T) {
 		}, instantProfile.ProfileMeta())
 
 		expected := []struct {
-			LocationID       uint64
+			LocationID       uuid.UUID
 			CumulativeValues []*ProfileTreeValueNode
 			FlatValues       []*ProfileTreeValueNode
 		}{
 			{
-				LocationID:       0,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 7}},
 			},
 			{
-				LocationID:       1,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 7}},
 			},
 			{
-				LocationID:       2,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 0}},
 				FlatValues:       []*ProfileTreeValueNode{{Value: 0}},
 			},
 			{
-				LocationID:       3,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 3}},
 				FlatValues:       []*ProfileTreeValueNode{{Value: 3}},
 			},
 			{
-				LocationID:       4,
+				LocationID:       uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 				CumulativeValues: []*ProfileTreeValueNode{{Value: 0, Label: label, NumLabel: numLabel, NumUnit: numUnit}, {Value: 4}},
 				FlatValues:       []*ProfileTreeValueNode{{Value: 0, Label: label, NumLabel: numLabel, NumUnit: numUnit}, {Value: 4}},
 			},
@@ -211,7 +224,7 @@ func TestIteratorConsistency(t *testing.T) {
 
 	profileTree := profile.Tree
 
-	res1 := []uint64{}
+	res1 := []uuid.UUID{}
 	err = WalkProfileTree(profileTree, func(n InstantProfileTreeNode) error {
 		res1 = append(res1, n.LocationID())
 		return nil
@@ -222,7 +235,7 @@ func TestIteratorConsistency(t *testing.T) {
 	require.True(t, sit.Next())
 	require.NoError(t, sit.Err())
 
-	res2 := []uint64{}
+	res2 := []uuid.UUID{}
 	err = WalkProfileTree(sit.At().ProfileTree(), func(n InstantProfileTreeNode) error {
 		res2 = append(res2, n.LocationID())
 		return nil

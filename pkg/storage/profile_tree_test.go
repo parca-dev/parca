@@ -16,6 +16,7 @@ package storage
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,13 +29,26 @@ func TestProfileTreeInsert(t *testing.T) {
 
 	pt := NewProfileTree()
 
-	s1 := makeSample(2, []uint64{2, 1})
+	s1 := makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 	pt.Insert(s1)
 
-	s2 := makeSample(1, []uint64{5, 3, 2, 1})
+	s2 := makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 	pt.Insert(s2)
 
-	s3 := makeSample(3, []uint64{4, 3, 2, 1})
+	s3 := makeSample(3, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
 	s3.Label = label
 	s3.NumLabel = numLabel
 	s3.NumUnit = numUnit
@@ -45,30 +59,37 @@ func TestProfileTreeInsert(t *testing.T) {
 			CumulativeValue: 6,
 			ProfileTreeNode: &ProfileTreeNode{
 				// Roots always have the LocationID 0.
-				locationID: 0,
+				locationID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 				Children: []*ProfileTreeNode{{
-					locationID: 1,
+					locationID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Children: []*ProfileTreeNode{{
-						locationID: 2,
+						locationID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 						flatValues: []*ProfileTreeValueNode{{
-							key:   &ProfileTreeValueNodeKey{location: "2|1|0"},
+							key: &ProfileTreeValueNodeKey{
+								location: "00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000",
+							},
 							Value: 2,
 						}},
 						Children: []*ProfileTreeNode{{
-							locationID: 3,
+							locationID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 							Children: []*ProfileTreeNode{{
-								locationID: 4,
+								locationID: uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 								flatValues: []*ProfileTreeValueNode{{
-									key:      &ProfileTreeValueNodeKey{location: "4|3|2|1|0", labels: `"foo"["bar" "baz"]`, numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
+									key: &ProfileTreeValueNodeKey{
+										location:  "00000000-0000-0000-0000-000000000004|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000",
+										labels:    `"foo"["bar" "baz"]`,
+										numlabels: `"foo"[1 2][6279746573 6f626a65637473]`},
 									Value:    3,
 									Label:    label,
 									NumLabel: numLabel,
 									NumUnit:  numUnit,
 								}},
 							}, {
-								locationID: 5,
+								locationID: uuid.MustParse("00000000-0000-0000-0000-000000000005"),
 								flatValues: []*ProfileTreeValueNode{{
-									key:   &ProfileTreeValueNodeKey{location: "5|3|2|1|0"},
+									key: &ProfileTreeValueNodeKey{
+										location: "00000000-0000-0000-0000-000000000005|00000000-0000-0000-0000-000000000003|00000000-0000-0000-0000-000000000002|00000000-0000-0000-0000-000000000001|00000000-0000-0000-0000-000000000000",
+									},
 									Value: 1,
 								}},
 							}},

@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 )
 
 type LocationStack []*profile.Location
@@ -65,9 +66,9 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 func generatePprof(ctx context.Context, locationStore Locations, ip InstantProfile) (*profile.Profile, error) {
 	meta := ip.ProfileMeta()
 
-	mappingByID := map[uint64]*profile.Mapping{}
-	functionByID := map[uint64]*profile.Function{}
-	locationByID := map[uint64]*profile.Location{}
+	mappingByID := map[uuid.UUID]*profile.Mapping{}
+	functionByID := map[uuid.UUID]*profile.Function{}
+	locationByID := map[uuid.UUID]*profile.Location{}
 	p := &profile.Profile{
 		PeriodType:    &profile.ValueType{Type: meta.PeriodType.Type, Unit: meta.PeriodType.Unit},
 		SampleType:    []*profile.ValueType{{Type: meta.SampleType.Type, Unit: meta.SampleType.Unit}},
@@ -117,7 +118,7 @@ func generatePprof(ctx context.Context, locationStore Locations, ip InstantProfi
 			}
 
 			var lines []profile.Line
-			for _, line := range loc.Line {
+			for _, line := range loc.Lines {
 				if line.Function != nil {
 					function, seenFunction := functionByID[line.Function.ID]
 					if !seenFunction {
@@ -163,7 +164,8 @@ func generatePprof(ctx context.Context, locationStore Locations, ip InstantProfi
 
 	n := it.At()
 	loc := n.LocationID()
-	if loc != uint64(0) {
+	emptyUUID := uuid.UUID{}
+	if loc != emptyUUID {
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 

@@ -19,10 +19,11 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 type TreeStackEntry struct {
@@ -105,7 +106,7 @@ func (fgi *FlamegraphIterator) StepUp() {
 }
 
 type Locations interface {
-	GetLocationsByIDs(ctx context.Context, id ...uint64) (map[uint64]*profile.Location, error)
+	GetLocationsByIDs(ctx context.Context, id ...uuid.UUID) (map[uuid.UUID]*metastore.Location, error)
 }
 
 func GenerateFlamegraph(
@@ -137,7 +138,8 @@ func GenerateFlamegraph(
 
 	n := it.At()
 	loc := n.LocationID()
-	if loc != uint64(0) {
+	emptyUUID := uuid.UUID{}
+	if loc != emptyUUID {
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 
@@ -210,12 +212,12 @@ func GenerateFlamegraph(
 	return aggregateByFunction(flamegraph), nil
 }
 
-func getLocations(ctx context.Context, tracer trace.Tracer, locations Locations, pt InstantProfileTree) (map[uint64]*profile.Location, error) {
+func getLocations(ctx context.Context, tracer trace.Tracer, locations Locations, pt InstantProfileTree) (map[uuid.UUID]*metastore.Location, error) {
 	ctx, locationsSpan := tracer.Start(ctx, "get-locations")
 	defer locationsSpan.End()
 
-	locationIDs := []uint64{}
-	locationIDsSeen := map[uint64]struct{}{}
+	locationIDs := []uuid.UUID{}
+	locationIDsSeen := map[uuid.UUID]struct{}{}
 	err := WalkProfileTree(pt, func(n InstantProfileTreeNode) error {
 		id := n.LocationID()
 		if _, seen := locationIDsSeen[id]; !seen {
@@ -365,13 +367,13 @@ func equalsByName(a, b *pb.FlamegraphNode) bool {
 	return a.Meta.Function.Name == b.Meta.Function.Name
 }
 
-func locationToTreeNodes(location *profile.Location, value, diff int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
-	mappingId := uint64(0)
+func locationToTreeNodes(location *metastore.Location, value, diff int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
+	mappingId := uuid.UUID{}
 	var mapping *pb.Mapping
 	if location.Mapping != nil {
 		mappingId = location.Mapping.ID
 		mapping = &pb.Mapping{
-			Id:      location.Mapping.ID,
+			Id:      location.Mapping.ID.String(),
 			Start:   location.Mapping.Start,
 			Limit:   location.Mapping.Limit,
 			Offset:  location.Mapping.Offset,
@@ -380,12 +382,12 @@ func locationToTreeNodes(location *profile.Location, value, diff int64) (outerMo
 		}
 	}
 
-	if len(location.Line) > 0 {
+	if len(location.Lines) > 0 {
 		outerMost, innerMost = linesToTreeNodes(
 			location,
 			mappingId,
 			mapping,
-			location.Line,
+			location.Lines,
 			value,
 			diff,
 		)
@@ -395,8 +397,8 @@ func locationToTreeNodes(location *profile.Location, value, diff int64) (outerMo
 	n := &pb.FlamegraphNode{
 		Meta: &pb.FlamegraphNodeMeta{
 			Location: &pb.Location{
-				Id:        location.ID,
-				MappingId: mappingId,
+				Id:        location.ID.String(),
+				MappingId: mappingId.String(),
 				Address:   location.Address,
 				IsFolded:  location.IsFolded,
 			},
@@ -410,7 +412,14 @@ func locationToTreeNodes(location *profile.Location, value, diff int64) (outerMo
 
 // linesToTreeNodes turns inlined `lines` into a stack of TreeNode items and
 // returns the outerMost and innerMost items.
-func linesToTreeNodes(location *profile.Location, mappingId uint64, mapping *pb.Mapping, lines []profile.Line, value, diff int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
+func linesToTreeNodes(
+	location *metastore.Location,
+	mappingId uuid.UUID,
+	mapping *pb.Mapping,
+	lines []metastore.LocationLine,
+	value int64,
+	diff int64,
+) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
 	for i, line := range lines {
 		var children []*pb.FlamegraphNode = nil
 		if i > 0 {
@@ -419,21 +428,21 @@ func linesToTreeNodes(location *profile.Location, mappingId uint64, mapping *pb.
 		outerMost = &pb.FlamegraphNode{
 			Meta: &pb.FlamegraphNodeMeta{
 				Location: &pb.Location{
-					Id:        location.ID,
-					MappingId: mappingId,
+					Id:        location.ID.String(),
+					MappingId: mappingId.String(),
 					Address:   location.Address,
 					IsFolded:  location.IsFolded,
 				},
 				Function: &pb.Function{
-					Id:         line.Function.ID,
+					Id:         line.Function.ID.String(),
 					Name:       line.Function.Name,
 					SystemName: line.Function.SystemName,
 					Filename:   line.Function.Filename,
 					StartLine:  line.Function.StartLine,
 				},
 				Line: &pb.Line{
-					LocationId: location.ID,
-					FunctionId: line.Function.ID,
+					LocationId: location.ID.String(),
+					FunctionId: line.Function.ID.String(),
 					Line:       line.Line,
 				},
 				Mapping: mapping,

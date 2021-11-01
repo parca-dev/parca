@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/go-kit/log"
-	"github.com/google/pprof/profile"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 type goLiner struct {
@@ -41,7 +41,7 @@ func Go(logger log.Logger, path string) (*goLiner, error) {
 	}, nil
 }
 
-func (gl *goLiner) PCToLines(addr uint64) (lines []profile.Line, err error) {
+func (gl *goLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
 	defer func() {
 		// PCToLine panics with "invalid memory address or nil pointer dereference",
 		//	- when it refers to an address that doesn't actually exist.
@@ -60,11 +60,13 @@ func (gl *goLiner) PCToLines(addr uint64) (lines []profile.Line, err error) {
 	}
 
 	// TODO(kakkoyun): Find a way to symbolize inline functions.
-	lines = append(lines, profile.Line{
+	lines = append(lines, metastore.LocationLine{
 		Line: int64(line),
-		Function: &profile.Function{
-			Name:     name,
-			Filename: file,
+		Function: &metastore.Function{
+			FunctionKey: metastore.FunctionKey{
+				Name:     name,
+				Filename: file,
+			},
 		},
 	})
 

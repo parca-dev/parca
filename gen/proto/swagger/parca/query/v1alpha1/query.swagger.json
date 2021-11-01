@@ -464,12 +464,10 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "uint64",
           "description": "id ..."
         },
         "mappingId": {
           "type": "string",
-          "format": "uint64",
           "description": "mapping_id ..."
         },
         "address": {
@@ -617,7 +615,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "uint64",
           "description": "id ..."
         },
         "name": {
@@ -678,12 +675,10 @@
       "properties": {
         "locationId": {
           "type": "string",
-          "format": "uint64",
           "description": "location_id ..."
         },
         "functionId": {
           "type": "string",
-          "format": "uint64",
           "description": "function_id ..."
         },
         "line": {
@@ -699,7 +694,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "uint64",
           "description": "id ..."
         },
         "start": {

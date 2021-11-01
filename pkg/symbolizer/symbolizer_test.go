@@ -51,20 +51,21 @@ type TestProfileMetaStore interface {
 
 type TestLocationStore interface {
 	metastore.LocationStore
-	GetLocations(ctx context.Context) ([]*profile.Location, error)
+	GetLocations(ctx context.Context) ([]*metastore.Location, error)
 }
 
 type TestFunctionStore interface {
 	metastore.FunctionStore
-	GetFunctions(ctx context.Context) ([]*profile.Function, error)
+	GetFunctions(ctx context.Context) ([]*metastore.Function, error)
 }
 
 func TestSymbolizer(t *testing.T) {
+	var err error
+
 	_, dbgStr, mStr := setup(t)
 
 	sym := New(log.NewNopLogger(), mStr, dbgStr)
-	m := &profile.Mapping{
-		ID:      uint64(1),
+	m := &metastore.Mapping{
 		Start:   4194304,
 		Limit:   4603904,
 		BuildID: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
@@ -72,14 +73,14 @@ func TestSymbolizer(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := mStr.CreateMapping(ctx, m)
+	m.ID, err = mStr.CreateMapping(ctx, m)
 	require.NoError(t, err)
 
-	locs := []*profile.Location{{
+	locs := []*metastore.Location{{
 		Mapping: m,
 		Address: 0x463781,
 	}}
-	_, err = mStr.CreateLocation(ctx, locs[0])
+	locs[0].ID, err = mStr.CreateLocation(ctx, locs[0])
 	require.NoError(t, err)
 
 	allLocs, err := mStr.GetLocations(ctx)
@@ -105,7 +106,7 @@ func TestSymbolizer(t *testing.T) {
 	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
 
-	lines := allLocs[0].Line
+	lines := allLocs[0].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -151,7 +152,7 @@ func TestRealSymbolizer(t *testing.T) {
 	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
 
-	lines := allLocs[4].Line
+	lines := allLocs[4].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -198,7 +199,7 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
 
-	lines := allLocs[2].Line
+	lines := allLocs[2].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -207,7 +208,7 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 	require.Equal(t, int64(5), lines[0].Line)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", lines[0].Function.Name)
 
-	lines = allLocs[3].Line
+	lines = allLocs[3].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -248,7 +249,7 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
 
-	lines := allLocs[1].Line
+	lines := allLocs[1].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -257,7 +258,7 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 	require.Equal(t, int64(5), lines[0].Line)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", lines[0].Function.Name)
 
-	lines = allLocs[2].Line
+	lines = allLocs[2].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -300,7 +301,7 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
 
-	lines := allLocs[13].Line
+	lines := allLocs[13].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -309,7 +310,7 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	require.Equal(t, int64(13), lines[0].Line) // with DWARF 5
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", lines[0].Function.Name)
 
-	lines = allLocs[14].Line
+	lines = allLocs[14].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -352,7 +353,7 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	allLocs, err = mStr.GetLocations(ctx)
 	require.NoError(t, err)
 
-	lines := allLocs[1].Line
+	lines := allLocs[1].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -362,7 +363,7 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	require.Equal(t, int64(13), lines[0].Line) // with DWARF 5
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", lines[0].Function.Name)
 
-	lines = allLocs[2].Line
+	lines = allLocs[2].Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})

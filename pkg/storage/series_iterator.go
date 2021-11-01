@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
@@ -236,7 +237,7 @@ type MemSeriesIteratorTree struct {
 }
 
 type MemSeriesIteratorTreeNode struct {
-	locationID       uint64
+	locationID       uuid.UUID
 	flatValues       []*MemSeriesIteratorTreeValueNode
 	cumulativeValues []*ProfileTreeValueNode
 	Children         []*MemSeriesIteratorTreeNode
@@ -249,7 +250,7 @@ type MemSeriesIteratorTreeValueNode struct {
 	NumUnit  map[string][]string
 }
 
-func (n *MemSeriesIteratorTreeNode) LocationID() uint64 {
+func (n *MemSeriesIteratorTreeNode) LocationID() uuid.UUID {
 	return n.locationID
 }
 
