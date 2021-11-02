@@ -374,31 +374,116 @@ func (q *Query) QueryPprof(ctx context.Context, req *pb.QueryRequest) (*pb.Query
 		if err != nil {
 			return nil, err
 		}
-
 		return q.renderPprof(ctx, p)
+
+	// TODO: Add merge and diff profile support
+
 	default:
 		return nil, status.Error(codes.Unimplemented, "unimplemented")
 	}
 }
 
 func (q *Query) renderPprof(ctx context.Context, p storage.InstantProfile) (*pb.QueryPprofResponse, error) {
+	var samples []*profile.Sample
+	locationIDMap := map[uint64]struct{}{}
+
+	locationStack := []uint64{}
+
+	it := p.ProfileTree().Iterator()
+	for it.HasMore() {
+		if it.NextChild() {
+			child := it.At()
+			id := child.LocationID()
+
+			locationStack = append(locationStack, id)
+			if _, found := locationIDMap[id]; !found {
+				locationIDMap[child.LocationID()] = struct{}{}
+			}
+
+			for _, n := range child.FlatValues() {
+				locations := make([]*profile.Location, 0, len(locationStack))
+				for i := len(locationStack) - 1; i > 0; i-- {
+					locations = append(locations, &profile.Location{ID: locationStack[i]})
+				}
+
+				samples = append(samples, &profile.Sample{
+					Location: locations,
+					Value:    []int64{n.Value},
+					Label:    n.Label,
+					NumLabel: n.NumLabel,
+					NumUnit:  n.NumUnit,
+				})
+			}
+
+			it.StepInto()
+			continue
+		}
+
+		if len(locationStack) > 0 {
+			locationStack = locationStack[:len(locationStack)-1]
+		}
+		it.StepUp()
+	}
+
+	locationIDs := make([]uint64, 0, len(locationIDMap))
+	for id := range locationIDMap {
+		locationIDs = append(locationIDs, id)
+	}
+
+	locationsMap, err := q.metaStore.GetLocationsByIDs(ctx, locationIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	mappingsMap := map[uint64]*profile.Mapping{}
+	functionsMap := map[uint64]*profile.Function{}
+
+	locations := make([]*profile.Location, 0, len(locationsMap))
+	for _, l := range locationsMap {
+		if l.Mapping != nil {
+			mappingsMap[l.Mapping.ID] = l.Mapping
+		}
+
+		for _, line := range l.Line {
+			if line.Function != nil {
+				functionsMap[line.Function.ID] = line.Function
+			}
+		}
+		locations = append(locations, l)
+	}
+
+	mappings := make([]*profile.Mapping, 0, len(mappingsMap))
+	for _, m := range mappingsMap {
+		mappings = append(mappings, m)
+	}
+
+	functions := make([]*profile.Function, 0, len(functionsMap))
+	for _, f := range functionsMap {
+		functions = append(functions, f)
+	}
+
+	for i, sample := range samples {
+		for j, l := range sample.Location {
+			samples[i].Location[j] = locationsMap[l.ID]
+		}
+	}
+
 	pp := profile.Profile{
+		Sample:        samples,
+		Location:      locations,
+		Function:      functions,
+		Mapping:       mappings,
+		TimeNanos:     p.ProfileMeta().Timestamp,
+		DurationNanos: p.ProfileMeta().Duration,
+		Period:        p.ProfileMeta().Period,
 		SampleType: []*profile.ValueType{{
 			Type: p.ProfileMeta().SampleType.Type,
 			Unit: p.ProfileMeta().SampleType.Unit,
 		}},
-		//DefaultSampleType: "",
-		//Sample:            nil,
-		//Mapping:           nil,
-		//Location:          nil,
-		//Function:          nil,
-		//Comments:          nil,
-		//DropFrames:        "",
-		//KeepFrames:        "",
-		TimeNanos:     p.ProfileMeta().Timestamp,
-		DurationNanos: p.ProfileMeta().Duration,
-		Period:        p.ProfileMeta().Period,
-		//PeriodType:    nil,
+		PeriodType: &profile.ValueType{
+			Type: p.ProfileMeta().PeriodType.Type,
+			Unit: p.ProfileMeta().PeriodType.Unit,
+		},
 	}
 
 	var buf bytes.Buffer

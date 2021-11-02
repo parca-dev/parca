@@ -44,9 +44,9 @@ export const useQuery = (
 }
 
 export const ProfileView = ({
-                              queryClient,
-                              profileSource
-                            }: ProfileViewProps): JSX.Element => {
+  queryClient,
+  profileSource
+}: ProfileViewProps): JSX.Element => {
   const { response, error } = useQuery(queryClient, profileSource)
 
   if (error != null) {
@@ -75,32 +75,37 @@ export const ProfileView = ({
     )
   }
 
+  const downloadPProf = (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault()
+
+    const req = profileSource.QueryRequest()
+    queryClient.queryPprof(req, (error: ServiceError | null, responseMessage: parca_query_v1alpha1_query_pb.QueryPprofResponse | null) => {
+      if (responseMessage !== null) {
+        const bytes = responseMessage.getProfile()
+        const blob = new Blob([bytes], { type: 'application/octet-stream' })
+
+        const link = document.createElement('a')
+        link.href = window.URL.createObjectURL(blob)
+        link.download = 'profile.pb.gz'
+        link.click()
+      }
+    })
+  }
+
   return (
     <>
       <div className="py-3">
         <Card>
           <Card.Body>
-            <Button
-              onClick={(e: React.MouseEvent<HTMLElement>) => {
-                e.preventDefault()
-                const req = profileSource.QueryRequest()
-                queryClient.queryPprof(req, (error: ServiceError | null, responseMessage: parca_query_v1alpha1_query_pb.QueryPprofResponse | null) => {
-                  if (responseMessage !== null) {
-                    const bytes = responseMessage.getProfile()
-                    const blob = new Blob([bytes], { type: 'application/octet-stream' })
-
-                    const link = document.createElement('a')
-                    link.href = window.URL.createObjectURL(blob)
-                    link.download = 'profile.pb.gz'
-                    link.click()
-                  }
-                })
-              }}
-            >Download</Button>
+            <div className='flex space-x-4 py-3'>
+              {/* TODO: Proper offset */}
+              <div className="w-full"/>
+              <div className="w-full"/>
+              <div className="w-full"/>
+              <Button color='neutral' onClick={downloadPProf}>Download pprof</Button>
+            </div>
             <CalcWidth throttle={300} delay={2000}>
-              <ProfileIcicleGraph
-                graph={response.getFlamegraph()?.toObject()}
-              />
+              <ProfileIcicleGraph graph={response.getFlamegraph()?.toObject()}/>
             </CalcWidth>
           </Card.Body>
         </Card>
