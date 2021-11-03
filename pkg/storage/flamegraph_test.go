@@ -408,161 +408,246 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 }
 
 func TestAggregateByFunction(t *testing.T) {
-	fg := &pb.Flamegraph{Total: 12, Root: &pb.FlamegraphRootNode{
-		Cumulative: 12,
-		Children: []*pb.FlamegraphNode{{
-			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
-					Name: "1",
-				},
-				Line:     &pb.Line{},
-				Location: &pb.Location{},
-			},
+	fg := &pb.Flamegraph{
+		Total: 12,
+		Root: &pb.FlamegraphRootNode{
 			Cumulative: 12,
-			Children: []*pb.FlamegraphNode{
-				{
-					Meta: &pb.FlamegraphNodeMeta{
-						Function: &pb.Function{
-							Name: "2",
-						},
-						Line:     &pb.Line{},
-						Location: &pb.Location{},
-					},
-					Cumulative: 6,
-					Children: []*pb.FlamegraphNode{{
-						Cumulative: 4,
-						Meta: &pb.FlamegraphNodeMeta{
-							Function: &pb.Function{
-								Name: "3",
-							},
-							Line:     &pb.Line{},
-							Location: &pb.Location{},
-						},
-						Children: []*pb.FlamegraphNode{{
-							Meta: &pb.FlamegraphNodeMeta{
-								Function: &pb.Function{
-									Name: "4",
-								},
-								Line:     &pb.Line{},
-								Location: &pb.Location{},
-							},
-							Cumulative: 3,
-						}, {
-							Meta: &pb.FlamegraphNodeMeta{
-								Function: &pb.Function{
-									Name: "5",
-								},
-								Line:     &pb.Line{},
-								Location: &pb.Location{},
-							},
-							Cumulative: 1,
-						}},
-					}},
-				},
-				{
-					Meta: &pb.FlamegraphNodeMeta{
-						Function: &pb.Function{
-							Name: "2",
-						},
-						Line:     &pb.Line{},
-						Location: &pb.Location{},
-					},
-					Cumulative: 6,
-					Children: []*pb.FlamegraphNode{{
-						Meta: &pb.FlamegraphNodeMeta{
-							Function: &pb.Function{
-								Name: "3",
-							},
-							Line:     &pb.Line{},
-							Location: &pb.Location{},
-						},
-						Cumulative: 4,
-						Children: []*pb.FlamegraphNode{{
-							Meta: &pb.FlamegraphNodeMeta{
-								Function: &pb.Function{
-									Name: "4",
-								},
-								Line:     &pb.Line{},
-								Location: &pb.Location{},
-							},
-							Cumulative: 3,
-						}, {
-							Meta: &pb.FlamegraphNodeMeta{
-								Function: &pb.Function{
-									Name: "5",
-								},
-								Line:     &pb.Line{},
-								Location: &pb.Location{},
-							},
-							Cumulative: 1,
-						}},
-					}},
-				},
-			},
-		}, {
-			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
-					Name: "1",
-				},
-				Line:     &pb.Line{},
-				Location: &pb.Location{},
-			},
-			Cumulative: 2,
-		}},
-	}}
-
-	afg := &pb.Flamegraph{Total: 12, Root: &pb.FlamegraphRootNode{
-		Cumulative: 12,
-		Children: []*pb.FlamegraphNode{{
-			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
-					Name: "1",
-				},
-				Location: &pb.Location{},
-			},
-			Cumulative: 14,
 			Children: []*pb.FlamegraphNode{{
-				Cumulative: 12,
 				Meta: &pb.FlamegraphNodeMeta{
 					Function: &pb.Function{
-						Name: "2",
+						Name: "1",
 					},
+					Line:     &pb.Line{},
 					Location: &pb.Location{},
 				},
+				Cumulative: 12,
 				Children: []*pb.FlamegraphNode{
 					{
 						Meta: &pb.FlamegraphNodeMeta{
 							Function: &pb.Function{
-								Name: "3",
+								Name: "2",
 							},
+							Line:     &pb.Line{},
 							Location: &pb.Location{},
 						},
-						Cumulative: 8,
-						Children: []*pb.FlamegraphNode{
-							{
+						Cumulative: 6,
+						Children: []*pb.FlamegraphNode{{
+							Cumulative: 4,
+							Meta: &pb.FlamegraphNodeMeta{
+								Function: &pb.Function{
+									Name: "3",
+								},
+								Line:     &pb.Line{},
+								Location: &pb.Location{},
+							},
+							Children: []*pb.FlamegraphNode{{
 								Meta: &pb.FlamegraphNodeMeta{
 									Function: &pb.Function{
 										Name: "4",
 									},
+									Line:     &pb.Line{},
 									Location: &pb.Location{},
 								},
-								Cumulative: 6,
+								Cumulative: 3,
 							}, {
 								Meta: &pb.FlamegraphNodeMeta{
 									Function: &pb.Function{
 										Name: "5",
 									},
+									Line:     &pb.Line{},
 									Location: &pb.Location{},
 								},
-								Cumulative: 2,
+								Cumulative: 1,
+							}},
+						}},
+					},
+					{
+						Meta: &pb.FlamegraphNodeMeta{
+							Function: &pb.Function{
+								Name: "2",
+							},
+							Line:     &pb.Line{},
+							Location: &pb.Location{},
+						},
+						Cumulative: 6,
+						Children: []*pb.FlamegraphNode{{
+							Meta: &pb.FlamegraphNodeMeta{
+								Function: &pb.Function{
+									Name: "3",
+								},
+								Line:     &pb.Line{},
+								Location: &pb.Location{},
+							},
+							Cumulative: 4,
+							Children: []*pb.FlamegraphNode{{
+								Meta: &pb.FlamegraphNodeMeta{
+									Function: &pb.Function{
+										Name: "4",
+									},
+									Line:     &pb.Line{},
+									Location: &pb.Location{},
+								},
+								Cumulative: 3,
+							}, {
+								Meta: &pb.FlamegraphNodeMeta{
+									Function: &pb.Function{
+										Name: "5",
+									},
+									Line:     &pb.Line{},
+									Location: &pb.Location{},
+								},
+								Cumulative: 1,
+							}},
+						}},
+					},
+				},
+			}, {
+				Meta: &pb.FlamegraphNodeMeta{
+					Function: &pb.Function{
+						Name: "1",
+					},
+					Line:     &pb.Line{},
+					Location: &pb.Location{},
+				},
+				Cumulative: 2,
+			}},
+		},
+	}
+
+	afg := &pb.Flamegraph{
+		Total: 12,
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: 12,
+			Children: []*pb.FlamegraphNode{{
+				Meta: &pb.FlamegraphNodeMeta{
+					Function: &pb.Function{
+						Name: "1",
+					},
+					Location: &pb.Location{},
+				},
+				Cumulative: 14,
+				Children: []*pb.FlamegraphNode{{
+					Cumulative: 12,
+					Meta: &pb.FlamegraphNodeMeta{
+						Function: &pb.Function{
+							Name: "2",
+						},
+						Location: &pb.Location{},
+					},
+					Children: []*pb.FlamegraphNode{
+						{
+							Meta: &pb.FlamegraphNodeMeta{
+								Function: &pb.Function{
+									Name: "3",
+								},
+								Location: &pb.Location{},
+							},
+							Cumulative: 8,
+							Children: []*pb.FlamegraphNode{
+								{
+									Meta: &pb.FlamegraphNodeMeta{
+										Function: &pb.Function{
+											Name: "4",
+										},
+										Location: &pb.Location{},
+									},
+									Cumulative: 6,
+								}, {
+									Meta: &pb.FlamegraphNodeMeta{
+										Function: &pb.Function{
+											Name: "5",
+										},
+										Location: &pb.Location{},
+									},
+									Cumulative: 2,
+								},
 							},
 						},
 					},
 				},
-			},
-			},
-		}},
-	}}
+				},
+			}},
+		},
+	}
 
 	require.Equal(t, afg, aggregateByFunction(fg))
+}
+
+func TestAggregateByFunction2(t *testing.T) {
+	in := &pb.Flamegraph{
+		Total:  30_000_000,
+		Height: 6,
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: 30_000_000,
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 30_000_000,
+				Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.gcBgMarkWorker"}},
+				Children: []*pb.FlamegraphNode{{
+					Cumulative: 30_000_000,
+					Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.systemstack"}},
+					Children: []*pb.FlamegraphNode{{
+						Cumulative: 30_000_000,
+						Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.gcBgMarkWorker.func2"}},
+						Children: []*pb.FlamegraphNode{{
+							Cumulative: 20_000_000,
+							Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.gcDrain"}},
+							Children: []*pb.FlamegraphNode{{
+								Cumulative: 10_000_000,
+								Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.heapBits.bits"}},
+							}, {
+								Cumulative: 10_000_000,
+								Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.scanobject"}},
+								Children: []*pb.FlamegraphNode{{
+									Cumulative: 10_000_000,
+									Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.markBits.isMarked"}},
+								}},
+							}},
+						}, {
+							Cumulative: 10_000_000,
+							Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.gcDrain"}},
+						}},
+					}},
+				}},
+			}},
+		},
+	}
+
+	result := aggregateByFunction(in)
+
+	expected := &pb.Flamegraph{
+		Total:  30_000_000,
+		Height: 6,
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: 30_000_000,
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 30_000_000,
+				Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.gcBgMarkWorker"}},
+				Children: []*pb.FlamegraphNode{{
+					Cumulative: 30_000_000,
+					Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.systemstack"}},
+					Children: []*pb.FlamegraphNode{{
+						Cumulative: 30_000_000,
+						Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.gcBgMarkWorker.func2"}},
+						Children: []*pb.FlamegraphNode{{
+							Cumulative: 30_000_000,
+							Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.gcDrain"}},
+							Children: []*pb.FlamegraphNode{{
+								Cumulative: 10_000_000,
+								Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.heapBits.bits"}},
+							}, {
+								Cumulative: 10_000_000,
+								Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.scanobject"}},
+								Children: []*pb.FlamegraphNode{{
+									Cumulative: 10_000_000,
+									Meta:       &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "runtime.markBits.isMarked"}},
+								}},
+							}},
+						}},
+					}},
+				}},
+			}},
+		},
+	}
+
+	require.Equal(t, expected, result)
 }
