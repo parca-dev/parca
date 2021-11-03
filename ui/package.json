@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@mdx-js/loader": "^1.6.22",
-    "@next/bundle-analyzer": "^12.0.1",
+    "@next/bundle-analyzer": "^12.0.2",
     "@next/eslint-plugin-next": "^12.0.2",
     "@next/mdx": "^12.0.1",
     "@storybook/addon-actions": "^6.3.12",
