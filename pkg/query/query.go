@@ -14,6 +14,7 @@
 package query
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -162,11 +163,11 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
-		return q.singleRequest(ctx, req.GetSingle())
+		return q.singleRequest(ctx, req.GetSingle(), req.GetReportType())
 	case pb.QueryRequest_MODE_MERGE:
-		return q.mergeRequest(ctx, req.GetMerge())
+		return q.mergeRequest(ctx, req.GetMerge(), req.GetReportType())
 	case pb.QueryRequest_MODE_DIFF:
-		return q.diffRequest(ctx, req.GetDiff())
+		return q.diffRequest(ctx, req.GetDiff(), req.GetReportType())
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
@@ -191,13 +192,13 @@ func (q *Query) selectSingle(ctx context.Context, s *pb.SingleProfile) (storage.
 	return p, nil
 }
 
-func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile) (*pb.QueryResponse, error) {
+func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	p, err := q.selectSingle(ctx, s)
 	if err != nil {
 		return nil, err
 	}
 
-	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, reportType)
 }
 
 func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.InstantProfile, error) {
@@ -220,7 +221,7 @@ func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.In
 	return p, nil
 }
 
-func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.QueryResponse, error) {
+func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	ctx, span := q.tracer.Start(ctx, "mergeRequest")
 	defer span.End()
 
@@ -229,10 +230,10 @@ func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.Query
 		return nil, err
 	}
 
-	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, reportType)
 }
 
-func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryResponse, error) {
+func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	ctx, span := q.tracer.Start(ctx, "diffRequest")
 	defer span.End()
 
@@ -259,7 +260,7 @@ func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryRe
 	}
 	diffSpan.End()
 
-	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, reportType)
 }
 
 func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (storage.InstantProfile, error) {
@@ -291,6 +292,20 @@ func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ 
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
 			},
+		}, nil
+	case pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED:
+		pp, err := storage.GeneratePprof(ctx, q.metaStore, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+		}
+
+		var buf bytes.Buffer
+		if err := pp.Write(&buf); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")

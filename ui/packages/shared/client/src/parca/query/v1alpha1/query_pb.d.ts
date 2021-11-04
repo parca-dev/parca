@@ -314,6 +314,7 @@ export namespace QueryRequest {
 
   export interface ReportTypeMap {
     REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: 0;
+    REPORT_TYPE_PPROF_UNSPECIFIED: 1;
   }
 
   export const ReportType: ReportTypeMap;
@@ -608,6 +609,13 @@ export class QueryResponse extends jspb.Message {
   getFlamegraph(): Flamegraph | undefined;
   setFlamegraph(value?: Flamegraph): void;
 
+  hasPprof(): boolean;
+  clearPprof(): void;
+  getPprof(): Uint8Array | string;
+  getPprof_asU8(): Uint8Array;
+  getPprof_asB64(): string;
+  setPprof(value: Uint8Array | string): void;
+
   getReportCase(): QueryResponse.ReportCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QueryResponse.AsObject;
@@ -622,11 +630,13 @@ export class QueryResponse extends jspb.Message {
 export namespace QueryResponse {
   export type AsObject = {
     flamegraph?: Flamegraph.AsObject,
+    pprof: Uint8Array | string,
   }
 
   export enum ReportCase {
     REPORT_NOT_SET = 0,
     FLAMEGRAPH = 5,
+    PPROF = 6,
   }
 }
 

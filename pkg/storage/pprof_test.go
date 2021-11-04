@@ -47,7 +47,7 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, err)
 	p, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
-	res, err := generatePprof(ctx, l, p)
+	res, err := GeneratePprof(ctx, l, p)
 	require.NoError(t, err)
 
 	tmpfile, err := ioutil.TempFile("", "pprof")

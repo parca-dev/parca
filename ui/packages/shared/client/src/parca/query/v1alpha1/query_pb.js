@@ -2580,7 +2580,8 @@ proto.parca.query.v1alpha1.QueryRequest.Mode = {
  * @enum {number}
  */
 proto.parca.query.v1alpha1.QueryRequest.ReportType = {
-  REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: 0
+  REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: 0,
+  REPORT_TYPE_PPROF_UNSPECIFIED: 1
 };
 
 /**
@@ -4715,14 +4716,15 @@ proto.parca.query.v1alpha1.Function.prototype.setStartLine = function(value) {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.parca.query.v1alpha1.QueryResponse.oneofGroups_ = [[5]];
+proto.parca.query.v1alpha1.QueryResponse.oneofGroups_ = [[5,6]];
 
 /**
  * @enum {number}
  */
 proto.parca.query.v1alpha1.QueryResponse.ReportCase = {
   REPORT_NOT_SET: 0,
-  FLAMEGRAPH: 5
+  FLAMEGRAPH: 5,
+  PPROF: 6
 };
 
 /**
@@ -4763,7 +4765,8 @@ proto.parca.query.v1alpha1.QueryResponse.prototype.toObject = function(opt_inclu
  */
 proto.parca.query.v1alpha1.QueryResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    flamegraph: (f = msg.getFlamegraph()) && proto.parca.query.v1alpha1.Flamegraph.toObject(includeInstance, f)
+    flamegraph: (f = msg.getFlamegraph()) && proto.parca.query.v1alpha1.Flamegraph.toObject(includeInstance, f),
+    pprof: msg.getPprof_asB64()
   };
 
   if (includeInstance) {
@@ -4805,6 +4808,10 @@ proto.parca.query.v1alpha1.QueryResponse.deserializeBinaryFromReader = function(
       reader.readMessage(value,proto.parca.query.v1alpha1.Flamegraph.deserializeBinaryFromReader);
       msg.setFlamegraph(value);
       break;
+    case 6:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setPprof(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -4840,6 +4847,13 @@ proto.parca.query.v1alpha1.QueryResponse.serializeBinaryToWriter = function(mess
       5,
       f,
       proto.parca.query.v1alpha1.Flamegraph.serializeBinaryToWriter
+    );
+  }
+  f = /** @type {!(string|Uint8Array)} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
+    writer.writeBytes(
+      6,
+      f
     );
   }
 };
@@ -4879,6 +4893,66 @@ proto.parca.query.v1alpha1.QueryResponse.prototype.clearFlamegraph = function() 
  */
 proto.parca.query.v1alpha1.QueryResponse.prototype.hasFlamegraph = function() {
   return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional bytes pprof = 6;
+ * @return {!(string|Uint8Array)}
+ */
+proto.parca.query.v1alpha1.QueryResponse.prototype.getPprof = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * optional bytes pprof = 6;
+ * This is a type-conversion wrapper around `getPprof()`
+ * @return {string}
+ */
+proto.parca.query.v1alpha1.QueryResponse.prototype.getPprof_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getPprof()));
+};
+
+
+/**
+ * optional bytes pprof = 6;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getPprof()`
+ * @return {!Uint8Array}
+ */
+proto.parca.query.v1alpha1.QueryResponse.prototype.getPprof_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getPprof()));
+};
+
+
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.parca.query.v1alpha1.QueryResponse} returns this
+ */
+proto.parca.query.v1alpha1.QueryResponse.prototype.setPprof = function(value) {
+  return jspb.Message.setOneofField(this, 6, proto.parca.query.v1alpha1.QueryResponse.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.parca.query.v1alpha1.QueryResponse} returns this
+ */
+proto.parca.query.v1alpha1.QueryResponse.prototype.clearPprof = function() {
+  return jspb.Message.setOneofField(this, 6, proto.parca.query.v1alpha1.QueryResponse.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.parca.query.v1alpha1.QueryResponse.prototype.hasPprof = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
