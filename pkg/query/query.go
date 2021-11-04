@@ -112,6 +112,18 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		it := series.Iterator()
 		for it.Next() {
 			p := it.At()
+			if metricsSeries.PeriodType == nil {
+				metricsSeries.PeriodType = &pb.ValueType{
+					Type: p.ProfileMeta().PeriodType.Type,
+					Unit: p.ProfileMeta().PeriodType.Unit,
+				}
+			}
+			if metricsSeries.SampleType == nil {
+				metricsSeries.SampleType = &pb.ValueType{
+					Type: p.ProfileMeta().SampleType.Type,
+					Unit: p.ProfileMeta().SampleType.Unit,
+				}
+			}
 			if p.ProfileMeta().Timestamp == 0 {
 				level.Warn(q.logger).Log("msg", "timestamp is 0", "i", i)
 				continue

@@ -771,6 +771,14 @@
             "$ref": "#/definitions/v1alpha1MetricsSample"
           },
           "title": "samples is the set of top-level cumulative values of the corresponding profiles"
+        },
+        "periodType": {
+          "$ref": "#/definitions/v1alpha1ValueType",
+          "title": "period_type is the value type of profile period"
+        },
+        "sampleType": {
+          "$ref": "#/definitions/v1alpha1ValueType",
+          "title": "sample_type is the value type of profile sample"
         }
       },
       "title": "MetricsSeries is a set of labels and corresponding sample values"
@@ -855,6 +863,20 @@
         }
       },
       "title": "SingleProfile contains parameters for a single profile query request"
+    },
+    "v1alpha1ValueType": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "title": "type is the type of the value"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit of the value"
+        }
+      },
+      "title": "ValueType represents a value, including its type and unit"
     },
     "v1alpha1ValuesResponse": {
       "type": "object",
