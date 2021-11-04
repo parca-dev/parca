@@ -16,17 +16,10 @@ service QueryService {
         };
     }
 
-    // Query performs a profile query 
+    // Query performs a profile query
     rpc Query(QueryRequest) returns (QueryResponse) {
         option (google.api.http) = {
             get: "/profiles/query"
-        };
-    }
-
-    // Query performs a profile query
-    rpc QueryPprof(QueryRequest) returns (QueryPprofResponse) {
-        option (google.api.http) = {
-            get: "/profiles/query/pprof"
         };
     }
 
@@ -93,7 +86,7 @@ message MetricsSeries {
 
 // MetricsSample is a cumulative value and timestamp of a profile
 message MetricsSample {
-    
+
     // timestamp is the time the profile was ingested
     google.protobuf.Timestamp timestamp = 1;
 
@@ -163,10 +156,10 @@ message ProfileDiffSelection {
 
 // QueryRequest is a request for a profile query
 message QueryRequest{
-    
+
     // Mode is the type of query request
     enum Mode {
-        
+
         // MODE_SINGLE_UNSPECIFIED query unspecified
         MODE_SINGLE_UNSPECIFIED = 0;
 
@@ -198,6 +191,9 @@ message QueryRequest{
 
         // REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
         REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
+
+        // REPORT_TYPE_PPROF_UNSPECIFIED unspecified
+        REPORT_TYPE_PPROF_UNSPECIFIED = 1;
     }
 
     // report_type is the type of report to return
@@ -235,7 +231,7 @@ message FlamegraphRootNode {
 
 // FlamegraphNode represents a node in the graph
 message FlamegraphNode {
-    
+
     // meta is the metadata about the node
     FlamegraphNodeMeta meta = 1;
 
@@ -245,7 +241,7 @@ message FlamegraphNode {
     // diff is the diff
     int64 diff = 3;
 
-    // children are the child nodes 
+    // children are the child nodes
     repeated FlamegraphNode children = 4;
 }
 
@@ -337,18 +333,16 @@ message Function {
 
 // QueryResponse is the returned report for the given query
 message QueryResponse{
-    
+
     // report is the generated report
     oneof report {
 
         // flamegraph is a flamegraph representation of the report
         Flamegraph flamegraph = 5;
-    }
-}
 
-// QueryPprofResponse holds a pb.gz pprof profile for downloading
-message QueryPprofResponse {
-    bytes profile = 1;
+        // pprof is a pprof profile as compressed bytes
+        bytes pprof = 6;
+    }
 }
 
 // SeriesRequest is unimplemented

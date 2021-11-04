@@ -314,6 +314,7 @@ export namespace QueryRequest {
 
   export interface ReportTypeMap {
     REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: 0;
+    REPORT_TYPE_PPROF_UNSPECIFIED: 1;
   }
 
   export const ReportType: ReportTypeMap;
@@ -608,6 +609,13 @@ export class QueryResponse extends jspb.Message {
   getFlamegraph(): Flamegraph | undefined;
   setFlamegraph(value?: Flamegraph): void;
 
+  hasPprof(): boolean;
+  clearPprof(): void;
+  getPprof(): Uint8Array | string;
+  getPprof_asU8(): Uint8Array;
+  getPprof_asB64(): string;
+  setPprof(value: Uint8Array | string): void;
+
   getReportCase(): QueryResponse.ReportCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QueryResponse.AsObject;
@@ -622,33 +630,13 @@ export class QueryResponse extends jspb.Message {
 export namespace QueryResponse {
   export type AsObject = {
     flamegraph?: Flamegraph.AsObject,
+    pprof: Uint8Array | string,
   }
 
   export enum ReportCase {
     REPORT_NOT_SET = 0,
     FLAMEGRAPH = 5,
-  }
-}
-
-export class QueryPprofResponse extends jspb.Message {
-  getProfile(): Uint8Array | string;
-  getProfile_asU8(): Uint8Array;
-  getProfile_asB64(): string;
-  setProfile(value: Uint8Array | string): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): QueryPprofResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: QueryPprofResponse): QueryPprofResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: QueryPprofResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): QueryPprofResponse;
-  static deserializeBinaryFromReader(message: QueryPprofResponse, reader: jspb.BinaryReader): QueryPprofResponse;
-}
-
-export namespace QueryPprofResponse {
-  export type AsObject = {
-    profile: Uint8Array | string,
+    PPROF = 6,
   }
 }
 
