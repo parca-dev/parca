@@ -64,7 +64,7 @@ func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold in
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}
 
-	dl := &dwarfLiner{
+	return &dwarfLiner{
 		logger:    logger,
 		demangler: demangler,
 
@@ -78,17 +78,47 @@ func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold in
 		attemptThreshold: attemptThreshold,
 		attempts:         map[uint64]int{},
 		failed:           map[uint64]struct{}{},
-	}
-	if err := dl.init(); err != nil {
-		return nil, err
-	}
-	return dl, nil
+	}, nil
 }
 
-func (dl *dwarfLiner) init() error {
-	// The reader is positioned at byte offset 0 in the DWARF “info” section.
+func (dl *dwarfLiner) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
+	if _, ok := dl.lineEntries[cu.Offset]; ok {
+		// Already created.
+		return nil
+	}
+
+	// The reader is positioned at byte offset 0 in the DWARF “line” section.
+	lr, err := dl.data.LineReader(cu)
+	if err != nil {
+		return err
+	}
+	if lr == nil {
+		return errors.New("failed to initialize line reader")
+	}
+
+	for {
+		le := dwarf.LineEntry{}
+		err := lr.Next(&le)
+		if err != nil {
+			break
+		}
+		if le.IsStmt {
+			dl.lineEntries[cu.Offset] = append(dl.lineEntries[cu.Offset], le)
+		}
+	}
+
 	er := dl.data.Reader()
-	var cu *dwarf.Entry
+	// The reader is positioned at byte offset of compile unit in the DWARF “info” section.
+	er.Seek(cu.Offset)
+	entry, err := er.Next()
+	if err != nil || entry == nil {
+		return errors.New("failed to read entry for compile unit")
+	}
+
+	if entry.Tag != dwarf.TagCompileUnit {
+		return errors.New("failed to find entry for compile unit")
+	}
+
 outer:
 	for {
 		entry, err := er.Next()
@@ -98,31 +128,12 @@ outer:
 			}
 			continue
 		}
-
 		if entry == nil {
 			break
 		}
 		if entry.Tag == dwarf.TagCompileUnit {
-			cu = entry
-			// The reader is positioned at byte offset 0 in the DWARF “line” section.
-			lr, err := dl.data.LineReader(cu)
-			if err != nil {
-				return err
-			}
-			if lr == nil {
-				continue
-			}
-
-			for {
-				le := dwarf.LineEntry{}
-				err := lr.Next(&le)
-				if err != nil {
-					break
-				}
-				if le.IsStmt {
-					dl.lineEntries[cu.Offset] = append(dl.lineEntries[cu.Offset], le)
-				}
-			}
+			// Reached to another compile unit.
+			break
 		}
 
 		if entry.Tag == dwarf.TagSubprogram {
@@ -141,6 +152,7 @@ outer:
 			dl.subprograms[cu.Offset] = append(dl.subprograms[cu.Offset], tr)
 		}
 	}
+
 	return nil
 }
 
@@ -195,6 +207,10 @@ func (dl *dwarfLiner) sourceLines(addr uint64) ([]metastore.LocationLine, error)
 	}
 	if cu == nil {
 		return nil, errors.New("failed to find a corresponding dwarf entry for given address")
+	}
+
+	if err := dl.ensureLookUpTablesBuilt(cu); err != nil {
+		return nil, err
 	}
 
 	lines := []metastore.LocationLine{}
