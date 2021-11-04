@@ -79,7 +79,7 @@ export const ProfileView = ({
     e.preventDefault()
 
     const req = profileSource.QueryRequest()
-    req.setReportType(ReportType.REPORT_TYPE_PPROF_UNSPECIFIED)
+    req.setReportType(QueryRequest.ReportType.REPORT_TYPE_PPROF_UNSPECIFIED)
 
     queryClient.query(req, (error: ServiceError | null, responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null) => {
       if (responseMessage !== null) {
