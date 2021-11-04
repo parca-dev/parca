@@ -76,6 +76,12 @@ message MetricsSeries {
 
     // samples is the set of top-level cumulative values of the corresponding profiles
     repeated MetricsSample samples = 2;
+
+    // period_type is the value type of profile period
+    ValueType period_type = 3;
+
+    // sample_type is the value type of profile sample
+    ValueType sample_type = 4;
 }
 
 // MetricsSample is a cumulative value and timestamp of a profile
@@ -396,4 +402,14 @@ message ValuesResponse{
 
     // warnings is unimplemented
     repeated string warnings     = 2;
+}
+
+// ValueType represents a value, including its type and unit
+message ValueType{
+
+    // type is the type of the value
+    string type = 1;
+
+    // unit is the unit of the value
+    string unit = 2;
 }

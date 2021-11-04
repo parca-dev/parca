@@ -78,6 +78,7 @@ interface MetricsTooltipProps {
   highlighted: HighlightedSeries
   onLabelClick: (labelName: string, labelValue: string) => void
   contextElement: Element | null
+  sampleUnit: string
 }
 
 function generateGetBoundingClientRect (contextElement: Element, x = 0, y = 0) {
@@ -110,7 +111,8 @@ export const MetricsTooltip = ({
   y,
   highlighted,
   onLabelClick,
-  contextElement
+  contextElement,
+  sampleUnit
 }: MetricsTooltipProps): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null)
 
@@ -162,7 +164,7 @@ export const MetricsTooltip = ({
                           Value
                         </td>
                         <td className="w-3/4">
-                          {nFormatter(highlighted.value, 1)}
+                          {nFormatter(highlighted.value, sampleUnit, 1)}
                         </td>
                       </tr>
                       <tr>
@@ -255,6 +257,7 @@ export const RawMetricsGraph = ({
   const height = Math.min(width / 2.5, 400)
   const margin = 50
   const marginRight = 20
+  const sampleUnit = data[0].sampleType !== undefined ? data[0].sampleType.unit : ''
 
   const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb.AsObject) {
     if (s.labelset !== undefined) {
@@ -495,6 +498,7 @@ export const RawMetricsGraph = ({
                       highlighted={highlighted}
                       onLabelClick={onLabelClick}
                       contextElement={graph.current}
+                      sampleUnit={sampleUnit}
                   />
               </div>
               )
@@ -614,7 +618,7 @@ export const RawMetricsGraph = ({
                                       x={-9}
                                       dy={'0.32em'}
                                   >
-                                      {nFormatter(d, 1)}
+                                      {nFormatter(d, sampleUnit, 1)}
                                   </text>
                               </g>
                           ))}

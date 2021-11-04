@@ -75,6 +75,16 @@ export class MetricsSeries extends jspb.Message {
   setSamplesList(value: Array<MetricsSample>): void;
   addSamples(value?: MetricsSample, index?: number): MetricsSample;
 
+  hasPeriodType(): boolean;
+  clearPeriodType(): void;
+  getPeriodType(): ValueType | undefined;
+  setPeriodType(value?: ValueType): void;
+
+  hasSampleType(): boolean;
+  clearSampleType(): void;
+  getSampleType(): ValueType | undefined;
+  setSampleType(value?: ValueType): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): MetricsSeries.AsObject;
   static toObject(includeInstance: boolean, msg: MetricsSeries): MetricsSeries.AsObject;
@@ -89,6 +99,8 @@ export namespace MetricsSeries {
   export type AsObject = {
     labelset?: parca_profilestore_v1alpha1_profilestore_pb.LabelSet.AsObject,
     samplesList: Array<MetricsSample.AsObject>,
+    periodType?: ValueType.AsObject,
+    sampleType?: ValueType.AsObject,
   }
 }
 
@@ -793,6 +805,30 @@ export namespace ValuesResponse {
   export type AsObject = {
     labelValuesList: Array<string>,
     warningsList: Array<string>,
+  }
+}
+
+export class ValueType extends jspb.Message {
+  getType(): string;
+  setType(value: string): void;
+
+  getUnit(): string;
+  setUnit(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ValueType.AsObject;
+  static toObject(includeInstance: boolean, msg: ValueType): ValueType.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ValueType, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ValueType;
+  static deserializeBinaryFromReader(message: ValueType, reader: jspb.BinaryReader): ValueType;
+}
+
+export namespace ValueType {
+  export type AsObject = {
+    type: string,
+    unit: string,
   }
 }
 
