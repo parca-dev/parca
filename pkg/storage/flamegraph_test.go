@@ -31,20 +31,20 @@ import (
 
 func TestTreeStack(t *testing.T) {
 	s := TreeStack{}
-	s.Push(&TreeStackEntry{node: &pb.FlamegraphNode{Meta: &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "a"}}}})
-	s.Push(&TreeStackEntry{node: &pb.FlamegraphNode{Meta: &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "b"}}}})
+	s.Push(&TreeStackEntry{nodes: []*pb.FlamegraphNode{{Meta: &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "a"}}}}})
+	s.Push(&TreeStackEntry{nodes: []*pb.FlamegraphNode{{Meta: &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "b"}}}}})
 
 	require.Equal(t, 2, s.Size())
 
 	e, hasMore := s.Pop()
 	require.True(t, hasMore)
-	require.Equal(t, "b", e.node.Meta.Function.Name)
+	require.Equal(t, "b", e.nodes[0].Meta.Function.Name)
 
 	require.Equal(t, 1, s.Size())
 
 	e, hasMore = s.Pop()
 	require.True(t, hasMore)
-	require.Equal(t, "a", e.node.Meta.Function.Name)
+	require.Equal(t, "a", e.nodes[0].Meta.Function.Name)
 
 	require.Equal(t, 0, s.Size())
 
@@ -53,7 +53,7 @@ func TestTreeStack(t *testing.T) {
 }
 
 func TestLinesToTreeNodes(t *testing.T) {
-	outerMost, innerMost := linesToTreeNodes(&metastore.Location{}, uuid.MustParse("00000000-0000-0000-0000-000000000001"), &pb.Mapping{}, []metastore.LocationLine{
+	nodes := linesToTreeNodes(&metastore.Location{}, uuid.MustParse("00000000-0000-0000-0000-000000000001"), &pb.Mapping{}, []metastore.LocationLine{
 		{
 			Function: &metastore.Function{
 				FunctionKey: metastore.FunctionKey{
@@ -73,10 +73,9 @@ func TestLinesToTreeNodes(t *testing.T) {
 				},
 			},
 		},
-	}, 2, 0)
+	})
 
-	require.Equal(t, &pb.FlamegraphNode{
-		Cumulative: 2,
+	require.Equal(t, []*pb.FlamegraphNode{{
 		Meta: &pb.FlamegraphNodeMeta{
 			Function: &pb.Function{
 				Id:   "00000000-0000-0000-0000-000000000000",
@@ -93,7 +92,6 @@ func TestLinesToTreeNodes(t *testing.T) {
 			Mapping: &pb.Mapping{},
 		},
 		Children: []*pb.FlamegraphNode{{
-			Cumulative: 2,
 			Meta: &pb.FlamegraphNodeMeta{
 				Function: &pb.Function{
 					Id:   "00000000-0000-0000-0000-000000000000",
@@ -110,7 +108,6 @@ func TestLinesToTreeNodes(t *testing.T) {
 				Mapping: &pb.Mapping{},
 			},
 			Children: []*pb.FlamegraphNode{{
-				Cumulative: 2,
 				Meta: &pb.FlamegraphNodeMeta{
 					Function: &pb.Function{
 						Id:   "00000000-0000-0000-0000-000000000000",
@@ -128,9 +125,40 @@ func TestLinesToTreeNodes(t *testing.T) {
 				},
 			}},
 		}},
-	}, outerMost)
-	require.Equal(t, &pb.FlamegraphNode{
-		Cumulative: 2,
+	}, {
+		Meta: &pb.FlamegraphNodeMeta{
+			Function: &pb.Function{
+				Id:   "00000000-0000-0000-0000-000000000000",
+				Name: "printf",
+			},
+			Line: &pb.Line{
+				LocationId: "00000000-0000-0000-0000-000000000000",
+				FunctionId: "00000000-0000-0000-0000-000000000000",
+			},
+			Location: &pb.Location{
+				Id:        "00000000-0000-0000-0000-000000000000",
+				MappingId: "00000000-0000-0000-0000-000000000001",
+			},
+			Mapping: &pb.Mapping{},
+		},
+		Children: []*pb.FlamegraphNode{{
+			Meta: &pb.FlamegraphNodeMeta{
+				Function: &pb.Function{
+					Id:   "00000000-0000-0000-0000-000000000000",
+					Name: "memcpy",
+				},
+				Line: &pb.Line{
+					LocationId: "00000000-0000-0000-0000-000000000000",
+					FunctionId: "00000000-0000-0000-0000-000000000000",
+				},
+				Location: &pb.Location{
+					Id:        "00000000-0000-0000-0000-000000000000",
+					MappingId: "00000000-0000-0000-0000-000000000001",
+				},
+				Mapping: &pb.Mapping{},
+			},
+		}},
+	}, {
 		Meta: &pb.FlamegraphNodeMeta{
 			Function: &pb.Function{
 				Id:   "00000000-0000-0000-0000-000000000000",
@@ -146,7 +174,7 @@ func TestLinesToTreeNodes(t *testing.T) {
 			},
 			Mapping: &pb.Mapping{},
 		},
-	}, innerMost)
+	}}, nodes)
 }
 
 type fakeLocations struct {
@@ -155,6 +183,118 @@ type fakeLocations struct {
 
 func (l *fakeLocations) GetLocationsByIDs(ctx context.Context, ids ...uuid.UUID) (map[uuid.UUID]*metastore.Location, error) {
 	return l.m, nil
+}
+
+func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
+	ctx := context.Background()
+
+	pt := NewProfileTree()
+	pt.Insert(makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+
+	m := &metastore.Mapping{
+		ID: uuid.MustParse("00000000-0000-0000-0000-0000000000a1"),
+	}
+	l := &fakeLocations{m: map[uuid.UUID]*metastore.Location{
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"): {
+			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			Mapping: m,
+			Lines: []metastore.LocationLine{{
+				Function: &metastore.Function{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f1"),
+					FunctionKey: metastore.FunctionKey{Name: "1"},
+				},
+			}},
+		},
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"): {
+			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			Mapping: m,
+			Lines: []metastore.LocationLine{{
+				Function: &metastore.Function{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f3"),
+					FunctionKey: metastore.FunctionKey{Name: "3"},
+				},
+			}, {
+				Function: &metastore.Function{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f2"),
+					FunctionKey: metastore.FunctionKey{Name: "2"},
+				},
+			}},
+		},
+	}}
+
+	fg, err := GenerateFlamegraph(
+		ctx,
+		trace.NewNoopTracerProvider().Tracer(""),
+		l,
+		&Profile{Tree: pt},
+	)
+	require.NoError(t, err)
+	require.Equal(t, &pb.Flamegraph{Height: 3, Total: 2, Root: &pb.FlamegraphRootNode{
+		Cumulative: 2,
+		Children: []*pb.FlamegraphNode{{
+			Meta: &pb.FlamegraphNodeMeta{
+				Function: &pb.Function{
+					Id:   "00000000-0000-0000-0000-0000000000f1",
+					Name: "1",
+				},
+				Line: &pb.Line{
+					LocationId: "00000000-0000-0000-0000-000000000001",
+					FunctionId: "00000000-0000-0000-0000-0000000000f1",
+				},
+				Location: &pb.Location{
+					Id:        "00000000-0000-0000-0000-000000000001",
+					MappingId: "00000000-0000-0000-0000-0000000000a1",
+				},
+				Mapping: &pb.Mapping{
+					Id: "00000000-0000-0000-0000-0000000000a1",
+				},
+			},
+			Cumulative: 2,
+			Children: []*pb.FlamegraphNode{{
+				Meta: &pb.FlamegraphNodeMeta{
+					Function: &pb.Function{
+						Id:   "00000000-0000-0000-0000-0000000000f2",
+						Name: "2",
+					},
+					Line: &pb.Line{
+						LocationId: "00000000-0000-0000-0000-000000000002",
+						FunctionId: "00000000-0000-0000-0000-0000000000f2",
+					},
+					Location: &pb.Location{
+						Id:        "00000000-0000-0000-0000-000000000002",
+						MappingId: "00000000-0000-0000-0000-0000000000a1",
+					},
+					Mapping: &pb.Mapping{
+						Id: "00000000-0000-0000-0000-0000000000a1",
+					},
+				},
+				Cumulative: 2,
+				Children: []*pb.FlamegraphNode{{
+					Meta: &pb.FlamegraphNodeMeta{
+						Function: &pb.Function{
+							Id:   "00000000-0000-0000-0000-0000000000f3",
+							Name: "3",
+						},
+						Line: &pb.Line{
+							LocationId: "00000000-0000-0000-0000-000000000002",
+							FunctionId: "00000000-0000-0000-0000-0000000000f3",
+						},
+						Location: &pb.Location{
+							Id:        "00000000-0000-0000-0000-000000000002",
+							MappingId: "00000000-0000-0000-0000-0000000000a1",
+						},
+						Mapping: &pb.Mapping{
+							Id: "00000000-0000-0000-0000-0000000000a1",
+						},
+					},
+					Cumulative: 2,
+				}},
+			}},
+		}},
+	}}, fg)
 }
 
 func TestGenerateFlamegraph(t *testing.T) {

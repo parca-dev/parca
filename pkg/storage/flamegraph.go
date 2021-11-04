@@ -27,7 +27,7 @@ import (
 )
 
 type TreeStackEntry struct {
-	node         *pb.FlamegraphNode
+	nodes        []*pb.FlamegraphNode
 	currentChild int
 }
 
@@ -66,7 +66,7 @@ type FlamegraphIterator struct {
 
 func NewFlamegraphIterator(fgRoot *pb.FlamegraphNode) *FlamegraphIterator {
 	root := &TreeStackEntry{
-		node:         fgRoot,
+		nodes:        []*pb.FlamegraphNode{fgRoot},
 		currentChild: -1,
 	}
 	return &FlamegraphIterator{
@@ -81,20 +81,26 @@ func (fgi *FlamegraphIterator) HasMore() bool {
 func (fgi *FlamegraphIterator) NextChild() bool {
 	fgi.stack.Peek().currentChild++
 
-	return len(fgi.stack.Peek().node.Children) > fgi.stack.Peek().currentChild
+	peekNodes := fgi.stack.Peek().nodes
+	peekNode := peekNodes[len(peekNodes)-1]
+	return len(peekNode.Children) > fgi.stack.Peek().currentChild
 }
 
 func (fgi *FlamegraphIterator) At() *pb.FlamegraphNode {
-	return fgi.stack.Peek().node.Children[fgi.stack.Peek().currentChild]
+	peekNodes := fgi.stack.Peek().nodes
+	peekNode := peekNodes[len(peekNodes)-1]
+	return peekNode.Children[fgi.stack.Peek().currentChild]
 }
 
 func (fgi *FlamegraphIterator) StepInto() bool {
-	if len(fgi.stack.Peek().node.Children) <= fgi.stack.Peek().currentChild {
+	peekNodes := fgi.stack.Peek().nodes
+	peekNode := peekNodes[len(peekNodes)-1]
+	if len(peekNode.Children) <= fgi.stack.Peek().currentChild {
 		return false
 	}
 
 	fgi.stack.Push(&TreeStackEntry{
-		node:         fgi.stack.Peek().node.Children[fgi.stack.Peek().currentChild],
+		nodes:        []*pb.FlamegraphNode{peekNode.Children[fgi.stack.Peek().currentChild]},
 		currentChild: -1,
 	})
 
@@ -150,7 +156,7 @@ func GenerateFlamegraph(
 		Unit: meta.SampleType.Unit,
 	}
 
-	flamegraphStack := TreeStack{{node: rootNode}}
+	flamegraphStack := TreeStack{{nodes: []*pb.FlamegraphNode{rootNode}}}
 	steppedInto := it.StepInto()
 	if !steppedInto {
 		return flamegraph, nil
@@ -166,14 +172,16 @@ func GenerateFlamegraph(
 				return nil, fmt.Errorf("could not find location with ID %d", id)
 			}
 
-			outerMost, innerMost := locationToTreeNodes(l, 0, 0)
+			nodes := locationToTreeNodes(l)
 
-			flamegraphStack.Peek().node.Children = append(flamegraphStack.Peek().node.Children, outerMost)
+			peekNodes := flamegraphStack.Peek().nodes
+			peekNode := peekNodes[len(peekNodes)-1]
+			peekNode.Children = append(peekNode.Children, nodes[0])
 
 			steppedInto := it.StepInto()
 			if steppedInto {
 				flamegraphStack.Push(&TreeStackEntry{
-					node: innerMost,
+					nodes: nodes,
 				})
 				if int32(len(flamegraphStack)) > flamegraph.Height {
 					flamegraph.Height = int32(len(flamegraphStack))
@@ -185,7 +193,9 @@ func GenerateFlamegraph(
 					continue
 				}
 				for _, entry := range flamegraphStack {
-					entry.node.Cumulative += n.Value
+					for _, node := range entry.nodes {
+						node.Cumulative += n.Value
+					}
 				}
 			}
 			for _, n := range child.FlatDiffValues() {
@@ -193,7 +203,9 @@ func GenerateFlamegraph(
 					continue
 				}
 				for _, entry := range flamegraphStack {
-					entry.node.Diff += n.Value
+					for _, node := range entry.nodes {
+						node.Diff += n.Value
+					}
 				}
 			}
 
@@ -264,7 +276,7 @@ func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
 		Cumulative: fg.Root.Cumulative,
 		Diff:       fg.Root.Diff,
 	}
-	stack := TreeStack{{node: newRootNode}}
+	stack := TreeStack{{nodes: []*pb.FlamegraphNode{newRootNode}}}
 
 	for it.HasMore() {
 		if it.NextChild() {
@@ -275,12 +287,14 @@ func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
 				Diff:       node.Diff,
 			}
 			mergeChildren(node, compareByName, equalsByName)
-			stack.Peek().node.Children = append(stack.Peek().node.Children, cur)
+			peekNodes := stack.Peek().nodes
+			peekNode := peekNodes[len(peekNodes)-1]
+			peekNode.Children = append(peekNode.Children, cur)
 
 			steppedInto := it.StepInto()
 			if steppedInto {
 				stack.Push(&TreeStackEntry{
-					node: cur,
+					nodes: []*pb.FlamegraphNode{cur},
 				})
 			}
 			continue
@@ -367,7 +381,10 @@ func equalsByName(a, b *pb.FlamegraphNode) bool {
 	return a.Meta.Function.Name == b.Meta.Function.Name
 }
 
-func locationToTreeNodes(location *metastore.Location, value, diff int64) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
+// locationToTreeNodes converts a location to its tree nodes, if the location
+// has multiple inlined functions it creates multiple nodes for each inlined
+// function.
+func locationToTreeNodes(location *metastore.Location) []*pb.FlamegraphNode {
 	mappingId := uuid.UUID{}
 	var mapping *pb.Mapping
 	if location.Mapping != nil {
@@ -383,18 +400,15 @@ func locationToTreeNodes(location *metastore.Location, value, diff int64) (outer
 	}
 
 	if len(location.Lines) > 0 {
-		outerMost, innerMost = linesToTreeNodes(
+		return linesToTreeNodes(
 			location,
 			mappingId,
 			mapping,
 			location.Lines,
-			value,
-			diff,
 		)
-		return outerMost, innerMost
 	}
 
-	n := &pb.FlamegraphNode{
+	return []*pb.FlamegraphNode{{
 		Meta: &pb.FlamegraphNodeMeta{
 			Location: &pb.Location{
 				Id:        location.ID.String(),
@@ -404,57 +418,77 @@ func locationToTreeNodes(location *metastore.Location, value, diff int64) (outer
 			},
 			Mapping: mapping,
 		},
-		Cumulative: value,
-		Diff:       diff,
-	}
-	return n, n
+	}}
 }
 
 // linesToTreeNodes turns inlined `lines` into a stack of TreeNode items and
-// returns the outerMost and innerMost items.
+// returns the slice of items in order from outer-most to inner-most.
 func linesToTreeNodes(
 	location *metastore.Location,
 	mappingId uuid.UUID,
 	mapping *pb.Mapping,
 	lines []metastore.LocationLine,
-	value int64,
-	diff int64,
-) (outerMost *pb.FlamegraphNode, innerMost *pb.FlamegraphNode) {
-	for i, line := range lines {
-		var children []*pb.FlamegraphNode = nil
-		if i > 0 {
-			children = []*pb.FlamegraphNode{outerMost}
-		}
-		outerMost = &pb.FlamegraphNode{
-			Meta: &pb.FlamegraphNodeMeta{
-				Location: &pb.Location{
-					Id:        location.ID.String(),
-					MappingId: mappingId.String(),
-					Address:   location.Address,
-					IsFolded:  location.IsFolded,
-				},
-				Function: &pb.Function{
-					Id:         line.Function.ID.String(),
-					Name:       line.Function.Name,
-					SystemName: line.Function.SystemName,
-					Filename:   line.Function.Filename,
-					StartLine:  line.Function.StartLine,
-				},
-				Line: &pb.Line{
-					LocationId: location.ID.String(),
-					FunctionId: line.Function.ID.String(),
-					Line:       line.Line,
-				},
-				Mapping: mapping,
-			},
-			Children:   children,
-			Cumulative: value,
-			Diff:       diff,
-		}
-		if i == 0 {
-			innerMost = outerMost
-		}
+) []*pb.FlamegraphNode {
+	if len(lines) == 0 {
+		return nil
 	}
 
-	return outerMost, innerMost
+	res := make([]*pb.FlamegraphNode, len(lines))
+	var prev *pb.FlamegraphNode
+
+	// Same as locations, lines are in order from deepest to highest in the
+	// stack. Therefore we start with the innermost, and work ourselves
+	// outwards. We want the result to be from higest to deepest to be inserted
+	// into our flamegraph at our "current" position that's calling
+	// linesToTreeNodes.
+	for i := 0; i < len(lines); i++ {
+		node := lineToTreeNode(
+			location,
+			mappingId,
+			mapping,
+			lines[i],
+			prev,
+		)
+		res[len(lines)-1-i] = node
+		prev = node
+	}
+
+	return res
+}
+
+func lineToTreeNode(
+	location *metastore.Location,
+	mappingId uuid.UUID,
+	mapping *pb.Mapping,
+	line metastore.LocationLine,
+	child *pb.FlamegraphNode,
+) *pb.FlamegraphNode {
+	var children []*pb.FlamegraphNode
+	if child != nil {
+		children = []*pb.FlamegraphNode{child}
+	}
+	return &pb.FlamegraphNode{
+		Meta: &pb.FlamegraphNodeMeta{
+			Location: &pb.Location{
+				Id:        location.ID.String(),
+				MappingId: mappingId.String(),
+				Address:   location.Address,
+				IsFolded:  location.IsFolded,
+			},
+			Function: &pb.Function{
+				Id:         line.Function.ID.String(),
+				Name:       line.Function.Name,
+				SystemName: line.Function.SystemName,
+				Filename:   line.Function.Filename,
+				StartLine:  line.Function.StartLine,
+			},
+			Line: &pb.Line{
+				LocationId: location.ID.String(),
+				FunctionId: line.Function.ID.String(),
+				Line:       line.Line,
+			},
+			Mapping: mapping,
+		},
+		Children: children,
+	}
 }
