@@ -257,7 +257,7 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/QueryRange")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/QueryRange", runtime.WithHTTPPathPattern("/profiles/query_range"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -280,7 +280,7 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Query")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Query", runtime.WithHTTPPathPattern("/profiles/query"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -303,7 +303,7 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Series")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Series", runtime.WithHTTPPathPattern("/profiles/series"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -326,7 +326,7 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Labels")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Labels", runtime.WithHTTPPathPattern("/profiles/labels"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -349,7 +349,7 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Values")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Values", runtime.WithHTTPPathPattern("/profiles/labels/{label_name}/values"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -411,7 +411,7 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/QueryRange")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/QueryRange", runtime.WithHTTPPathPattern("/profiles/query_range"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -431,7 +431,7 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Query")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Query", runtime.WithHTTPPathPattern("/profiles/query"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -451,7 +451,7 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Series")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Series", runtime.WithHTTPPathPattern("/profiles/series"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -471,7 +471,7 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Labels")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Labels", runtime.WithHTTPPathPattern("/profiles/labels"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -491,7 +491,7 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Values")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Values", runtime.WithHTTPPathPattern("/profiles/labels/{label_name}/values"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
