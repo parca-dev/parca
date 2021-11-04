@@ -33,7 +33,7 @@ local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({
 local parcaUI = (import 'parca/parca-ui.libsonnet')({
   name: 'parca-ui',
   namespace: ns.metadata.name,
-  image: 'parca.io/parca-dev/parca-ui:dev',
+  image: 'parca.io/parca/parca-ui:dev',
   version: 'dev',
   replicas: 1,
   apiEndpoint: 'http://localhost:7070',

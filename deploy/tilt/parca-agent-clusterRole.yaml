@@ -1,5 +1,5 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/component: observability
@@ -8,11 +8,17 @@ metadata:
     app.kubernetes.io/version: dev
   name: parca-agent
   namespace: parca
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: parca-agent
-subjects:
-- kind: ServiceAccount
-  name: parca-agent
-  namespace: parca
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get

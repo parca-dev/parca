@@ -39,9 +39,16 @@ spec:
               fieldPath: spec.nodeName
         image: parca.io/parca/parca-agent:dev
         name: parca-agent
+        ports:
+        - containerPort: 7071
+          hostPort: 7071
+          name: http
+        resources: {}
         securityContext:
           privileged: true
         volumeMounts:
+        - mountPath: /tmp
+          name: tmp
         - mountPath: /host/root
           name: root
           readOnly: true
@@ -58,9 +65,10 @@ spec:
           name: cgroup
         - mountPath: /sys/fs/bpf
           name: bpffs
-        - mountPath: /etc/localtime
-          name: localtime
       hostPID: true
+      nodeSelector:
+        kubernetes.io/arch: amd64
+        kubernetes.io/os: linux
       serviceAccountName: parca-agent
       tolerations:
       - effect: NoSchedule
@@ -68,6 +76,8 @@ spec:
       - effect: NoExecute
         operator: Exists
       volumes:
+      - emptyDir: {}
+        name: tmp
       - hostPath:
           path: /
         name: root
@@ -89,6 +99,3 @@ spec:
       - hostPath:
           path: /sys/kernel/debug
         name: debugfs
-      - hostPath:
-          path: /etc/localtime
-        name: localtime

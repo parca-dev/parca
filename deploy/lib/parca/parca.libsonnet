@@ -208,7 +208,7 @@ function(params) {
           '--log-level=' + prc.config.logLevel,
         ] +
         (if prc.config.corsAllowedOrigins == '' then []
-         else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]) + 
+         else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]) +
         (if prc.config.storageRetentionTime == '' then []
          else ['--storage-tsdb-retention-time=' + prc.config.storageRetentionTime]),
       ports: [

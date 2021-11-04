@@ -27,7 +27,7 @@ spec:
       - env:
         - name: NEXT_PUBLIC_API_ENDPOINT
           value: http://localhost:7070
-        image: parca.io/parca-dev/parca-ui:dev
+        image: parca.io/parca/parca-ui:dev
         name: parca-ui
         ports:
         - containerPort: 3000
