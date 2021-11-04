@@ -79,9 +79,11 @@ export const ProfileView = ({
     e.preventDefault()
 
     const req = profileSource.QueryRequest()
-    queryClient.queryPprof(req, (error: ServiceError | null, responseMessage: parca_query_v1alpha1_query_pb.QueryPprofResponse | null) => {
+    req.setReportType(ReportType.REPORT_TYPE_PPROF_UNSPECIFIED)
+
+    queryClient.query(req, (error: ServiceError | null, responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null) => {
       if (responseMessage !== null) {
-        const bytes = responseMessage.getProfile()
+        const bytes = responseMessage.getPprof()
         const blob = new Blob([bytes], { type: 'application/octet-stream' })
 
         const link = document.createElement('a')
@@ -97,12 +99,12 @@ export const ProfileView = ({
       <div className="py-3">
         <Card>
           <Card.Body>
-            <div className='flex space-x-4 py-3'>
+            <div className="flex space-x-4 py-3">
               {/* TODO: Proper offset */}
               <div className="w-full"/>
               <div className="w-full"/>
               <div className="w-full"/>
-              <Button color='neutral' onClick={downloadPProf}>Download pprof</Button>
+              <Button color="neutral" onClick={downloadPProf}>Download pprof</Button>
             </div>
             <CalcWidth throttle={300} delay={2000}>
               <ProfileIcicleGraph graph={response.getFlamegraph()?.toObject()}/>
