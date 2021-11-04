@@ -24,7 +24,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/pprof/profile"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
@@ -164,11 +163,11 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
-		return q.singleRequest(ctx, req.GetSingle())
+		return q.singleRequest(ctx, req.GetSingle(), req.GetReportType())
 	case pb.QueryRequest_MODE_MERGE:
-		return q.mergeRequest(ctx, req.GetMerge())
+		return q.mergeRequest(ctx, req.GetMerge(), req.GetReportType())
 	case pb.QueryRequest_MODE_DIFF:
-		return q.diffRequest(ctx, req.GetDiff())
+		return q.diffRequest(ctx, req.GetDiff(), req.GetReportType())
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
@@ -193,13 +192,13 @@ func (q *Query) selectSingle(ctx context.Context, s *pb.SingleProfile) (storage.
 	return p, nil
 }
 
-func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile) (*pb.QueryResponse, error) {
+func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	p, err := q.selectSingle(ctx, s)
 	if err != nil {
 		return nil, err
 	}
 
-	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, reportType)
 }
 
 func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.InstantProfile, error) {
@@ -222,7 +221,7 @@ func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.In
 	return p, nil
 }
 
-func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.QueryResponse, error) {
+func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	ctx, span := q.tracer.Start(ctx, "mergeRequest")
 	defer span.End()
 
@@ -231,10 +230,10 @@ func (q *Query) mergeRequest(ctx context.Context, m *pb.MergeProfile) (*pb.Query
 		return nil, err
 	}
 
-	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, reportType)
 }
 
-func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryResponse, error) {
+func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	ctx, span := q.tracer.Start(ctx, "diffRequest")
 	defer span.End()
 
@@ -261,7 +260,7 @@ func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile) (*pb.QueryRe
 	}
 	diffSpan.End()
 
-	return q.renderReport(ctx, p, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED)
+	return q.renderReport(ctx, p, reportType)
 }
 
 func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (storage.InstantProfile, error) {
@@ -293,6 +292,20 @@ func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ 
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
 			},
+		}, nil
+	case pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED:
+		pp, err := storage.GeneratePprof(ctx, q.metaStore, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+		}
+
+		var buf bytes.Buffer
+		if err := pp.Write(&buf); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")
@@ -365,133 +378,6 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 	}, sel...)
 
 	return storage.MergeSeriesSetProfiles(q.tracer, ctx, set)
-}
-
-func (q *Query) QueryPprof(ctx context.Context, req *pb.QueryRequest) (*pb.QueryPprofResponse, error) {
-	switch req.GetMode() {
-	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
-		p, err := q.selectSingle(ctx, req.GetSingle())
-		if err != nil {
-			return nil, err
-		}
-		return q.renderPprof(ctx, p)
-
-	// TODO: Add merge and diff profile support
-
-	default:
-		return nil, status.Error(codes.Unimplemented, "unimplemented")
-	}
-}
-
-func (q *Query) renderPprof(ctx context.Context, p storage.InstantProfile) (*pb.QueryPprofResponse, error) {
-	var samples []*profile.Sample
-	locationIDMap := map[uint64]struct{}{}
-
-	locationStack := []uint64{}
-
-	it := p.ProfileTree().Iterator()
-	for it.HasMore() {
-		if it.NextChild() {
-			child := it.At()
-			id := child.LocationID()
-
-			locationStack = append(locationStack, id)
-			if _, found := locationIDMap[id]; !found {
-				locationIDMap[child.LocationID()] = struct{}{}
-			}
-
-			for _, n := range child.FlatValues() {
-				locations := make([]*profile.Location, 0, len(locationStack))
-				for i := len(locationStack) - 1; i > 0; i-- {
-					locations = append(locations, &profile.Location{ID: locationStack[i]})
-				}
-
-				samples = append(samples, &profile.Sample{
-					Location: locations,
-					Value:    []int64{n.Value},
-					Label:    n.Label,
-					NumLabel: n.NumLabel,
-					NumUnit:  n.NumUnit,
-				})
-			}
-
-			it.StepInto()
-			continue
-		}
-
-		if len(locationStack) > 0 {
-			locationStack = locationStack[:len(locationStack)-1]
-		}
-		it.StepUp()
-	}
-
-	locationIDs := make([]uint64, 0, len(locationIDMap))
-	for id := range locationIDMap {
-		locationIDs = append(locationIDs, id)
-	}
-
-	locationsMap, err := q.metaStore.GetLocationsByIDs(ctx, locationIDs...)
-	if err != nil {
-		return nil, err
-	}
-
-	mappingsMap := map[uint64]*profile.Mapping{}
-	functionsMap := map[uint64]*profile.Function{}
-
-	locations := make([]*profile.Location, 0, len(locationsMap))
-	for _, l := range locationsMap {
-		if l.Mapping != nil {
-			mappingsMap[l.Mapping.ID] = l.Mapping
-		}
-
-		for _, line := range l.Line {
-			if line.Function != nil {
-				functionsMap[line.Function.ID] = line.Function
-			}
-		}
-		locations = append(locations, l)
-	}
-
-	mappings := make([]*profile.Mapping, 0, len(mappingsMap))
-	for _, m := range mappingsMap {
-		mappings = append(mappings, m)
-	}
-
-	functions := make([]*profile.Function, 0, len(functionsMap))
-	for _, f := range functionsMap {
-		functions = append(functions, f)
-	}
-
-	for i, sample := range samples {
-		for j, l := range sample.Location {
-			samples[i].Location[j] = locationsMap[l.ID]
-		}
-	}
-
-	pp := profile.Profile{
-		Sample:        samples,
-		Location:      locations,
-		Function:      functions,
-		Mapping:       mappings,
-		TimeNanos:     p.ProfileMeta().Timestamp,
-		DurationNanos: p.ProfileMeta().Duration,
-		Period:        p.ProfileMeta().Period,
-		SampleType: []*profile.ValueType{{
-			Type: p.ProfileMeta().SampleType.Type,
-			Unit: p.ProfileMeta().SampleType.Unit,
-		}},
-		PeriodType: &profile.ValueType{
-			Type: p.ProfileMeta().PeriodType.Type,
-			Unit: p.ProfileMeta().PeriodType.Unit,
-		},
-	}
-
-	var buf bytes.Buffer
-	if err := pp.Write(&buf); err != nil {
-		return nil, err
-	}
-
-	return &pb.QueryPprofResponse{Profile: buf.Bytes()}, nil
 }
 
 // Series issues a series request against the storage

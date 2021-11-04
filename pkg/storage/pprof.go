@@ -63,7 +63,7 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 	return a
 }
 
-func generatePprof(ctx context.Context, locationStore Locations, ip InstantProfile) (*profile.Profile, error) {
+func GeneratePprof(ctx context.Context, locationStore Locations, ip InstantProfile) (*profile.Profile, error) {
 	meta := ip.ProfileMeta()
 
 	mappingByID := map[uuid.UUID]*profile.Mapping{}
@@ -89,6 +89,7 @@ func generatePprof(ctx context.Context, locationStore Locations, ip InstantProfi
 		id := n.LocationID()
 		_, seenLocation := locationByID[id]
 		if !seenLocation {
+			// TODO(metalmatze): Improve this by calling once with a slice of IDs
 			locs, err := locationStore.GetLocationsByIDs(ctx, id)
 			if err != nil {
 				return err
