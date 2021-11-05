@@ -1328,10 +1328,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.0.tgz#87de7af9c231826fdd68ac7258f77c429e0e5fcf"
   integrity sha512-wdppn25U8z/2yiaT6YGquE6X8sSv7hNMWSXYSSU1jGv/yd6XqjXgTDJ8KP4NgjTXfJ3GbRjeeb8RTV7a/VpM+w==
 
-"@improbable-eng/grpc-web-node-http-transport@^0.14.1":
-  version "0.14.1"
-  resolved "https://registry.yarnpkg.com/@improbable-eng/grpc-web-node-http-transport/-/grpc-web-node-http-transport-0.14.1.tgz#16c078db2e10aca9a8f7fb235a80b2fa447273a3"
-  integrity sha512-ZsCTzI1iKUbmQjB5DNZSI5/hvdliuaPpS2h8mVj1QzynL3IFb5NrNnHVHbfcH1wbm26Ka6Z1CrKFGvKLrmbFIg==
+"@improbable-eng/grpc-web-node-http-transport@^0.15.0":
+  version "0.15.0"
+  resolved "https://registry.yarnpkg.com/@improbable-eng/grpc-web-node-http-transport/-/grpc-web-node-http-transport-0.15.0.tgz#5a064472ef43489cbd075a91fb831c2abeb09d68"
+  integrity sha512-HLgJfVolGGpjc9DWPhmMmXJx8YGzkek7jcCFO1YYkSOoO81MWRZentPOd/JiKiZuU08wtc4BG+WNuGzsQB5jZA==
 
 "@improbable-eng/grpc-web@^0.14.0":
   version "0.14.1"
