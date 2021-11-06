@@ -302,6 +302,7 @@ export namespace QueryRequest {
 
   export interface ReportTypeMap {
     REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: 0;
+    REPORT_TYPE_TOP: 1;
   }
 
   export const ReportType: ReportTypeMap;
@@ -311,6 +312,106 @@ export namespace QueryRequest {
     DIFF = 2,
     MERGE = 3,
     SINGLE = 4,
+  }
+}
+
+export class Top extends jspb.Message {
+  clearListList(): void;
+  getListList(): Array<TopNode>;
+  setListList(value: Array<TopNode>): void;
+  addList(value?: TopNode, index?: number): TopNode;
+
+  getReported(): number;
+  setReported(value: number): void;
+
+  getTotal(): number;
+  setTotal(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Top.AsObject;
+  static toObject(includeInstance: boolean, msg: Top): Top.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Top, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Top;
+  static deserializeBinaryFromReader(message: Top, reader: jspb.BinaryReader): Top;
+}
+
+export namespace Top {
+  export type AsObject = {
+    listList: Array<TopNode.AsObject>,
+    reported: number,
+    total: number,
+  }
+}
+
+export class TopNode extends jspb.Message {
+  hasMeta(): boolean;
+  clearMeta(): void;
+  getMeta(): TopNodeMeta | undefined;
+  setMeta(value?: TopNodeMeta): void;
+
+  getCumulative(): number;
+  setCumulative(value: number): void;
+
+  getFlat(): number;
+  setFlat(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TopNode.AsObject;
+  static toObject(includeInstance: boolean, msg: TopNode): TopNode.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: TopNode, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TopNode;
+  static deserializeBinaryFromReader(message: TopNode, reader: jspb.BinaryReader): TopNode;
+}
+
+export namespace TopNode {
+  export type AsObject = {
+    meta?: TopNodeMeta.AsObject,
+    cumulative: number,
+    flat: number,
+  }
+}
+
+export class TopNodeMeta extends jspb.Message {
+  hasLocation(): boolean;
+  clearLocation(): void;
+  getLocation(): Location | undefined;
+  setLocation(value?: Location): void;
+
+  hasMapping(): boolean;
+  clearMapping(): void;
+  getMapping(): Mapping | undefined;
+  setMapping(value?: Mapping): void;
+
+  hasFunction(): boolean;
+  clearFunction(): void;
+  getFunction(): Function | undefined;
+  setFunction(value?: Function): void;
+
+  hasLine(): boolean;
+  clearLine(): void;
+  getLine(): Line | undefined;
+  setLine(value?: Line): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TopNodeMeta.AsObject;
+  static toObject(includeInstance: boolean, msg: TopNodeMeta): TopNodeMeta.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: TopNodeMeta, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TopNodeMeta;
+  static deserializeBinaryFromReader(message: TopNodeMeta, reader: jspb.BinaryReader): TopNodeMeta;
+}
+
+export namespace TopNodeMeta {
+  export type AsObject = {
+    location?: Location.AsObject,
+    mapping?: Mapping.AsObject,
+    pb_function?: Function.AsObject,
+    line?: Line.AsObject,
   }
 }
 
@@ -395,6 +496,9 @@ export class FlamegraphNode extends jspb.Message {
   setChildrenList(value: Array<FlamegraphNode>): void;
   addChildren(value?: FlamegraphNode, index?: number): FlamegraphNode;
 
+  getFlat(): number;
+  setFlat(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): FlamegraphNode.AsObject;
   static toObject(includeInstance: boolean, msg: FlamegraphNode): FlamegraphNode.AsObject;
@@ -411,6 +515,7 @@ export namespace FlamegraphNode {
     cumulative: number,
     diff: number,
     childrenList: Array<FlamegraphNode.AsObject>,
+    flat: number,
   }
 }
 
@@ -596,6 +701,11 @@ export class QueryResponse extends jspb.Message {
   getFlamegraph(): Flamegraph | undefined;
   setFlamegraph(value?: Flamegraph): void;
 
+  hasTop(): boolean;
+  clearTop(): void;
+  getTop(): Top | undefined;
+  setTop(value?: Top): void;
+
   getReportCase(): QueryResponse.ReportCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QueryResponse.AsObject;
@@ -610,11 +720,13 @@ export class QueryResponse extends jspb.Message {
 export namespace QueryResponse {
   export type AsObject = {
     flamegraph?: Flamegraph.AsObject,
+    top?: Top.AsObject,
   }
 
   export enum ReportCase {
     REPORT_NOT_SET = 0,
     FLAMEGRAPH = 5,
+    TOP = 6,
   }
 }
 
