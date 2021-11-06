@@ -185,10 +185,55 @@ message QueryRequest{
 
         // REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
         REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
+
+        // REPORT_TYPE_TOP top report
+        REPORT_TYPE_TOP = 1;
     }
 
     // report_type is the type of report to return
     ReportType report_type = 5;
+}
+
+// Top is the top report type
+message Top {
+
+    // list are the list of ordered elements of the table
+    repeated TopNode list = 1;
+    
+    // reported is the number of lines reported 
+    int32 reported = 2;
+
+    // total is the number of lines that exist in the report
+    int32 total = 3;
+}
+
+// TopNode is a node entry in a top list
+message TopNode {
+
+    // meta is the metadata about the node
+    TopNodeMeta meta = 1;
+
+    // cumulative is the cumulative value of the node
+    int64 cumulative = 2;
+
+    // flat is the flat value of the node
+    int64 flat = 3;
+}
+
+// TopNodeMeta is the metadata for a given node
+message TopNodeMeta {
+
+    // location is the location for the code
+    Location location = 1;
+    
+    // mapping is the mapping into code
+    Mapping mapping = 2;
+
+    // function is the function information
+    Function function = 3;
+
+    // line is the line location
+    Line line = 4;
 }
 
 // Flamegraph is the flame graph report type
@@ -234,6 +279,9 @@ message FlamegraphNode {
 
     // children are the child nodes 
     repeated FlamegraphNode children = 4;
+
+    // flat is the flat value for this node
+    int64 flat = 5;
 }
 
 // FlamegraphNodeMeta is the metadata for a given node
@@ -330,6 +378,9 @@ message QueryResponse{
 
         // flamegraph is a flamegraph representation of the report
         Flamegraph flamegraph = 5;
+
+        // top is a top list representation of the report
+        Top top = 6;
     }
 }
 
