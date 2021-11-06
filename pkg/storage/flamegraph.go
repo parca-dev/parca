@@ -181,6 +181,7 @@ func GenerateFlamegraph(
 				for _, entry := range flamegraphStack {
 					entry.node.Cumulative += n.Value
 				}
+				innerMost.Flat += n.Value
 			}
 			for _, n := range child.FlatDiffValues() {
 				if n.Value == 0 {
@@ -268,6 +269,7 @@ func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
 				Meta:       node.Meta,
 				Cumulative: node.Cumulative,
 				Diff:       node.Diff,
+				Flat:       node.Flat,
 			}
 			mergeChildren(node, compareByName, equalsByName)
 			stack.Peek().node.Children = append(stack.Peek().node.Children, cur)

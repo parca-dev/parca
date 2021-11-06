@@ -145,6 +145,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 		l,
 		&Profile{Tree: pt},
 	)
+
 	require.NoError(t, err)
 	require.Equal(t, &pb.Flamegraph{Height: 5, Total: 6, Root: &pb.FlamegraphRootNode{
 		Cumulative: 6,
@@ -156,6 +157,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 				Line:     &pb.Line{},
 				Location: &pb.Location{},
 			},
+			Flat:       0,
 			Cumulative: 6,
 			Children: []*pb.FlamegraphNode{{
 				Meta: &pb.FlamegraphNodeMeta{
@@ -165,6 +167,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 					Line:     &pb.Line{},
 					Location: &pb.Location{},
 				},
+				Flat:       2,
 				Cumulative: 6,
 				Children: []*pb.FlamegraphNode{{
 					Meta: &pb.FlamegraphNodeMeta{
@@ -174,6 +177,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 						Line:     &pb.Line{},
 						Location: &pb.Location{},
 					},
+					Flat:       0,
 					Cumulative: 4,
 					Children: []*pb.FlamegraphNode{{
 						Meta: &pb.FlamegraphNodeMeta{
@@ -183,6 +187,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 							Line:     &pb.Line{},
 							Location: &pb.Location{},
 						},
+						Flat:       3,
 						Cumulative: 3,
 					}, {
 						Meta: &pb.FlamegraphNodeMeta{
@@ -192,6 +197,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 							Line:     &pb.Line{},
 							Location: &pb.Location{},
 						},
+						Flat:       1,
 						Cumulative: 1,
 					}},
 				}},
