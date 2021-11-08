@@ -94,7 +94,7 @@ func (t *ProfileTree) Insert(sample *Sample) {
 	for _, l := range sample.Location {
 		locationIDs = append(locationIDs, l.ID)
 	}
-	locationIDs = append(locationIDs, uuid.UUID{}) // add the root
+	locationIDs = append(locationIDs, uuid.Nil) // add the root
 
 	for i := len(locations) - 1; i >= 0; i-- {
 		nextId := locations[i].ID

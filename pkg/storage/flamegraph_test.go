@@ -177,53 +177,74 @@ func TestLinesToTreeNodes(t *testing.T) {
 	}}, nodes)
 }
 
-type fakeLocations struct {
-	m map[uuid.UUID]*metastore.Location
-}
-
-func (l *fakeLocations) GetLocationsByIDs(ctx context.Context, ids ...uuid.UUID) (map[uuid.UUID]*metastore.Location, error) {
-	return l.m, nil
-}
-
 func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
 	ctx := context.Background()
+	var err error
+
+	l := metastore.NewBadgerMetastore(
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		metastore.NewRandomUUIDGenerator(),
+	)
+
+	m := &metastore.Mapping{File: "a"}
+	m.ID, err = l.CreateMapping(ctx, m)
+	require.NoError(t, err)
+
+	f1 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "1",
+		},
+	}
+	f1.ID, err = l.CreateFunction(ctx, f1)
+	require.NoError(t, err)
+
+	f2 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "2",
+		},
+	}
+	f2.ID, err = l.CreateFunction(ctx, f2)
+	require.NoError(t, err)
+
+	f3 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "3",
+		},
+	}
+	f3.ID, err = l.CreateFunction(ctx, f3)
+	require.NoError(t, err)
+
+	l1 := &metastore.Location{
+		Mapping: m,
+		Lines: []metastore.LocationLine{
+			{
+				Function: f1,
+			},
+		},
+	}
+	l1.ID, err = l.CreateLocation(ctx, l1)
+	require.NoError(t, err)
+
+	l2 := &metastore.Location{
+		Mapping: m,
+		Lines: []metastore.LocationLine{
+			{
+				Function: f3,
+			},
+			{
+				Function: f2,
+			},
+		},
+	}
+	l2.ID, err = l.CreateLocation(ctx, l2)
+	require.NoError(t, err)
 
 	pt := NewProfileTree()
 	pt.Insert(makeSample(2, []uuid.UUID{
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		l2.ID,
+		l1.ID,
 	}))
-
-	m := &metastore.Mapping{
-		ID: uuid.MustParse("00000000-0000-0000-0000-0000000000a1"),
-	}
-	l := &fakeLocations{m: map[uuid.UUID]*metastore.Location{
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"): {
-			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			Mapping: m,
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f1"),
-					FunctionKey: metastore.FunctionKey{Name: "1"},
-				},
-			}},
-		},
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"): {
-			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			Mapping: m,
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f3"),
-					FunctionKey: metastore.FunctionKey{Name: "3"},
-				},
-			}, {
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f2"),
-					FunctionKey: metastore.FunctionKey{Name: "2"},
-				},
-			}},
-		},
-	}}
 
 	fg, err := GenerateFlamegraph(
 		ctx,
@@ -237,57 +258,60 @@ func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
 				Function: &pb.Function{
-					Id:   "00000000-0000-0000-0000-0000000000f1",
+					Id:   f1.ID.String(),
 					Name: "1",
 				},
 				Line: &pb.Line{
-					LocationId: "00000000-0000-0000-0000-000000000001",
-					FunctionId: "00000000-0000-0000-0000-0000000000f1",
+					LocationId: l1.ID.String(),
+					FunctionId: f1.ID.String(),
 				},
 				Location: &pb.Location{
-					Id:        "00000000-0000-0000-0000-000000000001",
-					MappingId: "00000000-0000-0000-0000-0000000000a1",
+					Id:        l1.ID.String(),
+					MappingId: m.ID.String(),
 				},
 				Mapping: &pb.Mapping{
-					Id: "00000000-0000-0000-0000-0000000000a1",
+					Id:   m.ID.String(),
+					File: "a",
 				},
 			},
 			Cumulative: 2,
 			Children: []*pb.FlamegraphNode{{
 				Meta: &pb.FlamegraphNodeMeta{
 					Function: &pb.Function{
-						Id:   "00000000-0000-0000-0000-0000000000f2",
+						Id:   f2.ID.String(),
 						Name: "2",
 					},
 					Line: &pb.Line{
-						LocationId: "00000000-0000-0000-0000-000000000002",
-						FunctionId: "00000000-0000-0000-0000-0000000000f2",
+						LocationId: l2.ID.String(),
+						FunctionId: f2.ID.String(),
 					},
 					Location: &pb.Location{
-						Id:        "00000000-0000-0000-0000-000000000002",
-						MappingId: "00000000-0000-0000-0000-0000000000a1",
+						Id:        l2.ID.String(),
+						MappingId: m.ID.String(),
 					},
 					Mapping: &pb.Mapping{
-						Id: "00000000-0000-0000-0000-0000000000a1",
+						Id:   m.ID.String(),
+						File: "a",
 					},
 				},
 				Cumulative: 2,
 				Children: []*pb.FlamegraphNode{{
 					Meta: &pb.FlamegraphNodeMeta{
 						Function: &pb.Function{
-							Id:   "00000000-0000-0000-0000-0000000000f3",
+							Id:   f3.ID.String(),
 							Name: "3",
 						},
 						Line: &pb.Line{
-							LocationId: "00000000-0000-0000-0000-000000000002",
-							FunctionId: "00000000-0000-0000-0000-0000000000f3",
+							LocationId: l2.ID.String(),
+							FunctionId: f3.ID.String(),
 						},
 						Location: &pb.Location{
-							Id:        "00000000-0000-0000-0000-000000000002",
-							MappingId: "00000000-0000-0000-0000-0000000000a1",
+							Id:        l2.ID.String(),
+							MappingId: m.ID.String(),
 						},
 						Mapping: &pb.Mapping{
-							Id: "00000000-0000-0000-0000-0000000000a1",
+							Id:   m.ID.String(),
+							File: "a",
 						},
 					},
 					Cumulative: 2,
@@ -299,80 +323,131 @@ func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
 
 func TestGenerateFlamegraph(t *testing.T) {
 	ctx := context.Background()
+	var err error
+	l := metastore.NewBadgerMetastore(
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		metastore.NewRandomUUIDGenerator(),
+	)
+
+	m := &metastore.Mapping{
+		File: "a",
+	}
+	m.ID, err = l.CreateMapping(ctx, m)
+	require.NoError(t, err)
+
+	f1 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "1",
+		},
+	}
+	f1.ID, err = l.CreateFunction(ctx, f1)
+	require.NoError(t, err)
+
+	f2 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "2",
+		},
+	}
+	f2.ID, err = l.CreateFunction(ctx, f2)
+	require.NoError(t, err)
+
+	f3 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "3",
+		},
+	}
+	f3.ID, err = l.CreateFunction(ctx, f3)
+	require.NoError(t, err)
+
+	f4 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "4",
+		},
+	}
+	f4.ID, err = l.CreateFunction(ctx, f4)
+	require.NoError(t, err)
+
+	f5 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "5",
+		},
+	}
+	f5.ID, err = l.CreateFunction(ctx, f5)
+	require.NoError(t, err)
+
+	l1 := &metastore.Location{
+		Mapping: m,
+		Lines: []metastore.LocationLine{
+			{
+				Function: f1,
+			},
+		},
+	}
+	l1.ID, err = l.CreateLocation(ctx, l1)
+	require.NoError(t, err)
+
+	l2 := &metastore.Location{
+		Mapping: m,
+		Lines: []metastore.LocationLine{
+			{
+				Function: f2,
+			},
+		},
+	}
+	l2.ID, err = l.CreateLocation(ctx, l2)
+	require.NoError(t, err)
+
+	l3 := &metastore.Location{
+		Mapping: m,
+		Lines: []metastore.LocationLine{
+			{
+				Function: f3,
+			},
+		},
+	}
+	l3.ID, err = l.CreateLocation(ctx, l3)
+	require.NoError(t, err)
+
+	l4 := &metastore.Location{
+		Mapping: m,
+		Lines: []metastore.LocationLine{
+			{
+				Function: f4,
+			},
+		},
+	}
+	l4.ID, err = l.CreateLocation(ctx, l4)
+	require.NoError(t, err)
+
+	l5 := &metastore.Location{
+		Mapping: m,
+		Lines: []metastore.LocationLine{
+			{
+				Function: f5,
+			},
+		},
+	}
+	l5.ID, err = l.CreateLocation(ctx, l5)
+	require.NoError(t, err)
 
 	pt := NewProfileTree()
 	pt.Insert(makeSample(2, []uuid.UUID{
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		l2.ID,
+		l1.ID,
 	}))
 	pt.Insert(makeSample(1, []uuid.UUID{
-		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		l5.ID,
+		l3.ID,
+		l2.ID,
+		l1.ID,
 	}))
 	pt.Insert(makeSample(3, []uuid.UUID{
-		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		l4.ID,
+		l3.ID,
+		l2.ID,
+		l1.ID,
 	}))
-
-	m := &metastore.Mapping{
-		ID: uuid.MustParse("00000000-0000-0000-0000-0000000000a1"),
-	}
-	l := &fakeLocations{m: map[uuid.UUID]*metastore.Location{
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"): {
-			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			Mapping: m,
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f1"),
-					FunctionKey: metastore.FunctionKey{Name: "1"},
-				},
-			}},
-		},
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"): {
-			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			Mapping: m,
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f2"),
-					FunctionKey: metastore.FunctionKey{Name: "2"},
-				},
-			}},
-		},
-		uuid.MustParse("00000000-0000-0000-0000-000000000003"): {
-			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-			Mapping: m,
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f3"),
-					FunctionKey: metastore.FunctionKey{Name: "3"},
-				},
-			}},
-		},
-		uuid.MustParse("00000000-0000-0000-0000-000000000004"): {
-			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000004"),
-			Mapping: m,
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f4"),
-					FunctionKey: metastore.FunctionKey{Name: "4"},
-				},
-			}},
-		},
-		uuid.MustParse("00000000-0000-0000-0000-000000000005"): {
-			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-			Mapping: m,
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f5"),
-					FunctionKey: metastore.FunctionKey{Name: "5"},
-				},
-			}},
-		},
-	}}
 
 	fg, err := GenerateFlamegraph(
 		ctx,
@@ -386,95 +461,100 @@ func TestGenerateFlamegraph(t *testing.T) {
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
 				Function: &pb.Function{
-					Id:   "00000000-0000-0000-0000-0000000000f1",
+					Id:   f1.ID.String(),
 					Name: "1",
 				},
 				Line: &pb.Line{
-					LocationId: "00000000-0000-0000-0000-000000000001",
-					FunctionId: "00000000-0000-0000-0000-0000000000f1",
+					LocationId: l1.ID.String(),
+					FunctionId: f1.ID.String(),
 				},
 				Location: &pb.Location{
-					Id:        "00000000-0000-0000-0000-000000000001",
-					MappingId: "00000000-0000-0000-0000-0000000000a1",
+					Id:        l1.ID.String(),
+					MappingId: m.ID.String(),
 				},
 				Mapping: &pb.Mapping{
-					Id: "00000000-0000-0000-0000-0000000000a1",
+					Id:   m.ID.String(),
+					File: "a",
 				},
 			},
 			Cumulative: 6,
 			Children: []*pb.FlamegraphNode{{
 				Meta: &pb.FlamegraphNodeMeta{
 					Function: &pb.Function{
-						Id:   "00000000-0000-0000-0000-0000000000f2",
+						Id:   f2.ID.String(),
 						Name: "2",
 					},
 					Line: &pb.Line{
-						LocationId: "00000000-0000-0000-0000-000000000002",
-						FunctionId: "00000000-0000-0000-0000-0000000000f2",
+						LocationId: l2.ID.String(),
+						FunctionId: f2.ID.String(),
 					},
 					Location: &pb.Location{
-						Id:        "00000000-0000-0000-0000-000000000002",
-						MappingId: "00000000-0000-0000-0000-0000000000a1",
+						Id:        l2.ID.String(),
+						MappingId: m.ID.String(),
 					},
 					Mapping: &pb.Mapping{
-						Id: "00000000-0000-0000-0000-0000000000a1",
+						Id:   m.ID.String(),
+						File: "a",
 					},
 				},
 				Cumulative: 6,
 				Children: []*pb.FlamegraphNode{{
 					Meta: &pb.FlamegraphNodeMeta{
 						Function: &pb.Function{
-							Id:   "00000000-0000-0000-0000-0000000000f3",
+							Id:   f3.ID.String(),
 							Name: "3",
 						},
 						Line: &pb.Line{
-							LocationId: "00000000-0000-0000-0000-000000000003",
-							FunctionId: "00000000-0000-0000-0000-0000000000f3",
+							LocationId: l3.ID.String(),
+							FunctionId: f3.ID.String(),
 						},
 						Location: &pb.Location{
-							Id:        "00000000-0000-0000-0000-000000000003",
-							MappingId: "00000000-0000-0000-0000-0000000000a1",
+							Id:        l3.ID.String(),
+							MappingId: m.ID.String(),
 						},
 						Mapping: &pb.Mapping{
-							Id: "00000000-0000-0000-0000-0000000000a1",
+							Id:   m.ID.String(),
+							File: "a",
 						},
 					},
 					Cumulative: 4,
 					Children: []*pb.FlamegraphNode{{
 						Meta: &pb.FlamegraphNodeMeta{
 							Function: &pb.Function{
-								Id:   "00000000-0000-0000-0000-0000000000f4",
+								Id:   f4.ID.String(),
 								Name: "4",
 							},
 							Line: &pb.Line{
-								LocationId: "00000000-0000-0000-0000-000000000004",
-								FunctionId: "00000000-0000-0000-0000-0000000000f4",
+								LocationId: l4.ID.String(),
+								FunctionId: f4.ID.String(),
 							},
 							Location: &pb.Location{
-								Id:        "00000000-0000-0000-0000-000000000004",
-								MappingId: "00000000-0000-0000-0000-0000000000a1",
+								Id:        l4.ID.String(),
+								MappingId: m.ID.String(),
 							},
 							Mapping: &pb.Mapping{
-								Id: "00000000-0000-0000-0000-0000000000a1",
+								Id:   m.ID.String(),
+								File: "a",
 							},
 						},
 						Cumulative: 3,
 					}, {
 						Meta: &pb.FlamegraphNodeMeta{
 							Function: &pb.Function{
-								Id:   "00000000-0000-0000-0000-0000000000f5",
+								Id:   f5.ID.String(),
 								Name: "5",
 							},
 							Line: &pb.Line{
-								LocationId: "00000000-0000-0000-0000-000000000005",
-								FunctionId: "00000000-0000-0000-0000-0000000000f5",
+								LocationId: l5.ID.String(),
+								FunctionId: f5.ID.String(),
 							},
 							Location: &pb.Location{
-								Id:        "00000000-0000-0000-0000-000000000005",
-								MappingId: "00000000-0000-0000-0000-0000000000a1",
+								Id:        l5.ID.String(),
+								MappingId: m.ID.String(),
 							},
 							Mapping: &pb.Mapping{
-								Id: "00000000-0000-0000-0000-0000000000a1",
+								Id:   m.ID.String(),
+								File: "a",
 							},
 						},
 						Cumulative: 1,

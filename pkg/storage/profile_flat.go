@@ -18,20 +18,8 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
-
-type MetaStore interface {
-	CreateFunction(ctx context.Context, f *metastore.Function) (uuid.UUID, error)
-	GetFunctionByKey(ctx context.Context, key metastore.FunctionKey) (*metastore.Function, error)
-
-	CreateLocation(ctx context.Context, l *metastore.Location) (uuid.UUID, error)
-	GetLocationByKey(ctx context.Context, k metastore.LocationKey) (*metastore.Location, error)
-
-	CreateMapping(ctx context.Context, m *metastore.Mapping) (uuid.UUID, error)
-	GetMappingByKey(ctx context.Context, key metastore.MappingKey) (*metastore.Mapping, error)
-}
 
 // FlatProfilesFromPprof extracts a Profile from each sample index included in the pprof profile.
 func FlatProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) ([]*FlatProfile, error) {
@@ -47,7 +35,7 @@ func FlatProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.Profil
 	return fps, nil
 }
 
-func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore MetaStore, p *profile.Profile, sampleIndex int) (*FlatProfile, error) {
+func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*FlatProfile, error) {
 	pfn := &profileFlatNormalizer{
 		logger:    logger,
 		metaStore: metaStore,
@@ -83,7 +71,7 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore Meta
 
 type profileFlatNormalizer struct {
 	logger    log.Logger
-	metaStore MetaStore
+	metaStore metastore.ProfileMetaStore
 
 	samples map[stacktraceKey]*Sample
 	// Memoization tables within a profile.
@@ -166,7 +154,7 @@ func (pn *profileFlatNormalizer) mapLocation(ctx context.Context, src *profile.L
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
 	k := metastore.MakeLocationKey(l)
-	loc, err := pn.metaStore.GetLocationByKey(ctx, k)
+	loc, err := metastore.GetLocationByKey(ctx, pn.metaStore, k)
 	if err != nil && err != metastore.ErrLocationNotFound {
 		return nil, err
 	}

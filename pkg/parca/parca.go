@@ -69,6 +69,8 @@ type Flags struct {
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
+
+	Metastore string `default:"sqliteinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
 }
 
 // Run the parca server
@@ -102,17 +104,30 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	mStr, err := metastore.NewInMemorySQLiteProfileMetaStore(
-		reg,
-		// Produces high cardinality traces - uncomment locally if needed.
-		//tracerProvider.Tracer("inmemory-sqlite"),
-		trace.NewNoopTracerProvider().Tracer("inmemory-sqlite"),
-	)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
+	var mStr metastore.ProfileMetaStore
+	switch flags.Metastore {
+	case "sqliteinmemory":
+		mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
+			reg,
+			// Produces high cardinality traces - uncomment locally if needed.
+			//tracerProvider.Tracer("inmemory-sqlite"),
+			trace.NewNoopTracerProvider().Tracer("inmemory-sqlite"),
+		)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
+			return err
+		}
+		defer mStr.Close()
+	case "badgerinmemory":
+		mStr = metastore.NewBadgerMetastore(
+			reg,
+			tracerProvider.Tracer("badgerinmemory"),
+			metastore.NewRandomUUIDGenerator(),
+		)
+	default:
+		level.Error(logger).Log("msg", "unknown metastore implementation", "chosen", flags.Metastore)
 		return err
 	}
-	defer mStr.Close()
 
 	db := storage.OpenDB(
 		reg,

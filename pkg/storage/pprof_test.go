@@ -67,33 +67,54 @@ func TestGeneratePprof(t *testing.T) {
 
 func TestGeneratePprofNilMapping(t *testing.T) {
 	ctx := context.Background()
+	var err error
+
+	l := metastore.NewBadgerMetastore(
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		metastore.NewRandomUUIDGenerator(),
+	)
+	f1 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "1",
+		},
+	}
+	f1.ID, err = l.CreateFunction(ctx, f1)
+	require.NoError(t, err)
+
+	f2 := &metastore.Function{
+		FunctionKey: metastore.FunctionKey{
+			Name: "2",
+		},
+	}
+	f2.ID, err = l.CreateFunction(ctx, f2)
+	require.NoError(t, err)
+
+	l1 := &metastore.Location{
+		Lines: []metastore.LocationLine{
+			{
+				Function: f1,
+			},
+		},
+	}
+	l1.ID, err = l.CreateLocation(ctx, l1)
+	require.NoError(t, err)
+
+	l2 := &metastore.Location{
+		Lines: []metastore.LocationLine{
+			{
+				Function: f2,
+			},
+		},
+	}
+	l2.ID, err = l.CreateLocation(ctx, l2)
+	require.NoError(t, err)
 
 	pt := NewProfileTree()
 	pt.Insert(makeSample(2, []uuid.UUID{
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		l2.ID,
+		l1.ID,
 	}))
-
-	l := &fakeLocations{m: map[uuid.UUID]*metastore.Location{
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"): {
-			ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f1"),
-					FunctionKey: metastore.FunctionKey{Name: "1"},
-				},
-			}},
-		},
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"): {
-			ID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			Lines: []metastore.LocationLine{{
-				Function: &metastore.Function{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f2"),
-					FunctionKey: metastore.FunctionKey{Name: "2"},
-				},
-			}},
-		},
-	}}
 
 	res, err := GeneratePprof(ctx, l, &Profile{Tree: pt})
 	require.NoError(t, err)

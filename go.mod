@@ -8,6 +8,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
+	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dgraph-io/sroar v0.0.0-20210915181338-8dc690a08d84
 	github.com/gin-gonic/gin v1.7.0 // indirect
 	github.com/go-chi/cors v1.2.0
@@ -15,7 +16,6 @@ require (
 	github.com/go-kit/log v0.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1
 	github.com/google/uuid v1.1.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0

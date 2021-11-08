@@ -28,13 +28,14 @@ type TestProfileMetaStore interface {
 	TestLocationStore
 	TestFunctionStore
 	MappingStore
+	LocationLineStore
 	Close() error
 	Ping() error
 }
 
 type TestLocationStore interface {
 	LocationStore
-	GetLocations(ctx context.Context) ([]*Location, error)
+	GetLocations(ctx context.Context) ([]SerializedLocation, []uuid.UUID, error)
 }
 
 type TestFunctionStore interface {
@@ -113,15 +114,21 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 	_, err = s.CreateLocation(ctx, l1)
 	require.NoError(t, err)
 
-	locs, err := s.GetLocations(context.Background())
-	require.NoError(t, err)
-	require.Equal(t, locs[0].Address, l.Address)
-	require.Equal(t, locs[1].Address, l1.Address)
-
-	l1, err = s.GetLocationByKey(ctx, MakeLocationKey(l1))
+	locs, err := GetLocations(context.Background(), s)
 	require.NoError(t, err)
 
-	locByID, err := s.GetLocationsByIDs(ctx, l1.ID)
+	if locs[0].Address == 42 {
+		require.Equal(t, locs[0].Address, l.Address)
+		require.Equal(t, locs[1].Address, l1.Address)
+	} else {
+		require.Equal(t, locs[1].Address, l.Address)
+		require.Equal(t, locs[0].Address, l1.Address)
+	}
+
+	l1, err = GetLocationByKey(ctx, s, MakeLocationKey(l1))
+	require.NoError(t, err)
+
+	locByID, err := GetLocationsByIDs(ctx, s, l1.ID)
 	require.NoError(t, err)
 
 	require.Equal(t, l1, locByID[l1.ID])
@@ -142,9 +149,39 @@ func LocationStoreTest(t *testing.T, s TestProfileMetaStore) {
 	err = s.Symbolize(ctx, l1)
 	require.NoError(t, err)
 
-	locByID, err = s.GetLocationsByIDs(ctx, l1.ID)
+	locByID, err = GetLocationsByIDs(ctx, s, l1.ID)
 	require.NoError(t, err)
 	require.Equal(t, l1, locByID[l1.ID])
+}
+
+func LocationLinesStoreTest(t *testing.T, s LocationLineStore) {
+	ctx := context.Background()
+
+	locID := uuid.New()
+	f1ID := uuid.New()
+	ll := []LocationLine{{
+		Line: 2,
+		Function: &Function{
+			ID: f1ID,
+			FunctionKey: FunctionKey{
+				Name: "f1",
+			},
+		},
+	}}
+	err := s.CreateLocationLines(ctx, locID, ll)
+	require.NoError(t, err)
+
+	llRetrieved, functionIDs, err := s.GetLinesByLocationIDs(ctx, locID)
+	require.NoError(t, err)
+	require.Equal(t, []uuid.UUID{f1ID}, functionIDs)
+	require.Equal(t, map[uuid.UUID][]Line{
+		locID: {
+			{
+				Line:       2,
+				FunctionID: f1ID,
+			},
+		},
+	}, llRetrieved)
 }
 
 func TestInMemorySQLiteFunctionStore(t *testing.T) {
@@ -213,8 +250,18 @@ func functionStoreTest(t *testing.T, s TestFunctionStore) {
 
 	funcs, err := s.GetFunctions(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, funcs[0], f)
-	require.Equal(t, funcs[1], f1)
+
+	// Order is not guaranteed, so make sure it's one of the two possibilities.
+
+	if funcs[0].StartLine == 22 {
+		require.Equal(t, funcs[0], f)
+		require.Equal(t, funcs[1], f1)
+	}
+
+	if funcs[0].StartLine == 42 {
+		require.Equal(t, funcs[0], f1)
+		require.Equal(t, funcs[1], f)
+	}
 }
 
 func TestInMemorySQLiteMappingStore(t *testing.T) {
@@ -384,15 +431,19 @@ func metaStoreTest(t *testing.T, s TestProfileMetaStore) {
 	l1.ID, err = s.CreateLocation(ctx, l1)
 	require.NoError(t, err)
 
-	locs, err := s.GetLocations(ctx)
+	locs, err := GetLocations(ctx, s)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(locs))
-	l.ID = locs[0].ID
-	require.Equal(t, l, locs[0])
-	l1.ID = locs[1].ID
-	require.Equal(t, l1, locs[1])
 
-	unsymlocs, err := s.GetSymbolizableLocations(ctx)
+	if locs[0].Address == uint64(42) {
+		require.Equal(t, l, locs[0])
+		require.Equal(t, l1, locs[1])
+	} else {
+		require.Equal(t, l, locs[1])
+		require.Equal(t, l1, locs[0])
+	}
+
+	unsymlocs, err := GetSymbolizableLocations(ctx, s)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(unsymlocs))
 	require.Equal(t, l, unsymlocs[0])

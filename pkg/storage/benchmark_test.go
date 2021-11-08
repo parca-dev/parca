@@ -89,7 +89,11 @@ func BenchmarkAppends(b *testing.B) {
 
 	logger := log.NewNopLogger()
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(prometheus.NewRegistry(), otel.Tracer("foo"), "store")
+	l := metastore.NewBadgerMetastore(
+		prometheus.NewRegistry(),
+		otel.Tracer("foo"),
+		metastore.NewRandomUUIDGenerator(),
+	)
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		l.Close()
@@ -135,7 +139,11 @@ func BenchmarkIterator(b *testing.B) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	logger := log.NewNopLogger()
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(registry, tracer)
+	l := metastore.NewBadgerMetastore(
+		registry,
+		tracer,
+		metastore.NewRandomUUIDGenerator(),
+	)
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		l.Close()

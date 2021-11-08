@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/uuid"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -45,7 +46,7 @@ func (fp *FlatProfile) Samples() []*Sample {
 	return fp.samples
 }
 
-func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, locations Locations, p InstantFlatProfile) (*pb.Flamegraph, error) {
+func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p InstantFlatProfile) (*pb.Flamegraph, error) {
 	rootNode := &pb.FlamegraphNode{}
 	cur := rootNode
 
@@ -62,7 +63,7 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, locations 
 		}
 	}
 	// Get the full locations for the location UUIDs
-	locationsMap, err := locations.GetLocationsByIDs(ctx, locationUUIDs...)
+	locationsMap, err := metastore.GetLocationsByIDs(ctx, metaStore, locationUUIDs...)
 	if err != nil {
 		return nil, fmt.Errorf("get locations by ids: %w", err)
 	}

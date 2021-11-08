@@ -41,24 +41,6 @@ import (
 	"github.com/parca-dev/parca/pkg/debuginfo"
 )
 
-type TestProfileMetaStore interface {
-	TestLocationStore
-	TestFunctionStore
-	metastore.MappingStore
-	Close() error
-	Ping() error
-}
-
-type TestLocationStore interface {
-	metastore.LocationStore
-	GetLocations(ctx context.Context) ([]*metastore.Location, error)
-}
-
-type TestFunctionStore interface {
-	metastore.FunctionStore
-	GetFunctions(ctx context.Context) ([]*metastore.Function, error)
-}
-
 func TestSymbolizer(t *testing.T) {
 	var err error
 
@@ -83,18 +65,18 @@ func TestSymbolizer(t *testing.T) {
 	locs[0].ID, err = mStr.CreateLocation(ctx, locs[0])
 	require.NoError(t, err)
 
-	allLocs, err := mStr.GetLocations(ctx)
+	allLocs, err := metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(allLocs))
 
-	symLocs, err := mStr.GetSymbolizableLocations(ctx)
+	symLocs, err := metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(symLocs))
 
 	err = sym.symbolize(context.Background(), symLocs)
 	require.NoError(t, err)
 
-	symLocs, err = mStr.GetSymbolizableLocations(ctx)
+	symLocs, err = metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(symLocs))
 
@@ -103,7 +85,7 @@ func TestSymbolizer(t *testing.T) {
 	require.Equal(t, 3, len(functions))
 
 	// Get updated locations.
-	allLocs, err = mStr.GetLocations(ctx)
+	allLocs, err = metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 
 	lines := allLocs[0].Lines
@@ -111,6 +93,7 @@ func TestSymbolizer(t *testing.T) {
 		return lines[i].Line < lines[j].Line
 	})
 	require.Equal(t, 3, len(lines))
+
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", lines[0].Function.Filename)
 	require.Equal(t, int64(7), lines[0].Line) // llvm-addr2line gives 10
 	require.Equal(t, "main.main", lines[0].Function.Name)
@@ -122,6 +105,15 @@ func TestSymbolizer(t *testing.T) {
 	require.Equal(t, "main.iterate", lines[2].Function.Name)
 }
 
+func findLocWithAddress(locs []*metastore.Location, address uint64) *metastore.Location {
+	for _, l := range locs {
+		if l.Address == address {
+			return l
+		}
+	}
+	return nil
+}
+
 func TestRealSymbolizer(t *testing.T) {
 	conn, dbgStr, mStr := setup(t)
 
@@ -129,18 +121,18 @@ func TestRealSymbolizer(t *testing.T) {
 
 	ctx := context.Background()
 
-	allLocs, err := mStr.GetLocations(ctx)
+	allLocs, err := metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 32, len(allLocs))
 
-	symLocs, err := mStr.GetSymbolizableLocations(ctx)
+	symLocs, err := metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 11, len(symLocs))
 
 	sym := New(log.NewNopLogger(), mStr, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
-	symLocs, err = mStr.GetSymbolizableLocations(ctx)
+	symLocs, err = metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(symLocs))
 
@@ -149,10 +141,10 @@ func TestRealSymbolizer(t *testing.T) {
 	require.Equal(t, 31, len(functions))
 
 	// Get updated locations.
-	allLocs, err = mStr.GetLocations(ctx)
+	allLocs, err = metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 
-	lines := allLocs[4].Lines
+	lines := findLocWithAddress(allLocs, 0x463784).Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -176,18 +168,18 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 
 	ctx := context.Background()
 
-	allLocs, err := mStr.GetLocations(ctx)
+	allLocs, err := metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 174, len(allLocs))
 
-	symLocs, err := mStr.GetSymbolizableLocations(ctx)
+	symLocs, err := metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 174, len(symLocs))
 
 	sym := New(log.NewNopLogger(), mStr, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
-	symLocs, err = mStr.GetSymbolizableLocations(ctx)
+	symLocs, err = metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(symLocs))
 
@@ -196,19 +188,23 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 	require.Equal(t, 127, len(functions))
 
 	// Get updated locations.
-	allLocs, err = mStr.GetLocations(ctx)
+	allLocs, err = metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 
-	lines := allLocs[2].Lines
-	sort.SliceStable(lines, func(i, j int) bool {
-		return lines[i].Line < lines[j].Line
-	})
+	for _, loc := range allLocs {
+		lines := loc.Lines
+		sort.SliceStable(lines, func(i, j int) bool {
+			return lines[i].Line < lines[j].Line
+		})
+	}
+
+	lines := findLocWithAddress(allLocs, 0x6491de).Lines
 	require.Equal(t, 1, len(lines))
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/fib/fib.go", lines[0].Function.Filename)
 	require.Equal(t, int64(5), lines[0].Line)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", lines[0].Function.Name)
 
-	lines = allLocs[3].Lines
+	lines = findLocWithAddress(allLocs, 0x649e46).Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -226,18 +222,18 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 
 	ctx := context.Background()
 
-	allLocs, err := mStr.GetLocations(ctx)
+	allLocs, err := metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 223, len(allLocs))
 
-	symLocs, err := mStr.GetSymbolizableLocations(ctx)
+	symLocs, err := metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 223, len(symLocs))
 
 	sym := New(log.NewNopLogger(), mStr, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
-	symLocs, err = mStr.GetSymbolizableLocations(ctx)
+	symLocs, err = metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(symLocs))
 
@@ -246,10 +242,10 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 	require.Equal(t, 136, len(functions))
 
 	// Get updated locations.
-	allLocs, err = mStr.GetLocations(ctx)
+	allLocs, err = metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 
-	lines := allLocs[1].Lines
+	lines := findLocWithAddress(allLocs, 0x77157c).Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -258,7 +254,7 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 	require.Equal(t, int64(5), lines[0].Line)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", lines[0].Function.Name)
 
-	lines = allLocs[2].Lines
+	lines = findLocWithAddress(allLocs, 0x77265c).Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -278,18 +274,18 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 
 	ctx := context.Background()
 
-	allLocs, err := mStr.GetLocations(ctx)
+	allLocs, err := metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 159, len(allLocs))
 
-	symLocs, err := mStr.GetSymbolizableLocations(ctx)
+	symLocs, err := metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 159, len(symLocs))
 
 	sym := New(log.NewNopLogger(), mStr, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
-	symLocs, err = mStr.GetSymbolizableLocations(ctx)
+	symLocs, err = metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(symLocs))
 
@@ -298,10 +294,10 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	require.Equal(t, 99, len(functions))
 
 	// Get updated locations.
-	allLocs, err = mStr.GetLocations(ctx)
+	allLocs, err = metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 
-	lines := allLocs[13].Lines
+	lines := findLocWithAddress(allLocs, 0x6491de).Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -310,7 +306,7 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	require.Equal(t, int64(13), lines[0].Line) // with DWARF 5
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", lines[0].Function.Name)
 
-	lines = allLocs[14].Lines
+	lines = findLocWithAddress(allLocs, 0x649e46).Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -330,18 +326,18 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 
 	ctx := context.Background()
 
-	allLocs, err := mStr.GetLocations(ctx)
+	allLocs, err := metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 136, len(allLocs))
 
-	symLocs, err := mStr.GetSymbolizableLocations(ctx)
+	symLocs, err := metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 136, len(symLocs))
 
 	sym := New(log.NewNopLogger(), mStr, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, symLocs))
 
-	symLocs, err = mStr.GetSymbolizableLocations(ctx)
+	symLocs, err = metastore.GetSymbolizableLocations(ctx, mStr)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(symLocs))
 
@@ -350,10 +346,10 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	require.Equal(t, 80, len(functions))
 
 	// Get updated locations.
-	allLocs, err = mStr.GetLocations(ctx)
+	allLocs, err = metastore.GetLocations(ctx, mStr)
 	require.NoError(t, err)
 
-	lines := allLocs[1].Lines
+	lines := findLocWithAddress(allLocs, 0x6491de).Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -363,7 +359,7 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	require.Equal(t, int64(13), lines[0].Line) // with DWARF 5
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", lines[0].Function.Name)
 
-	lines = allLocs[2].Lines
+	lines = findLocWithAddress(allLocs, 0x649e46).Lines
 	sort.SliceStable(lines, func(i, j int) bool {
 		return lines[i].Line < lines[j].Line
 	})
@@ -396,7 +392,7 @@ func ingest(t *testing.T, conn *grpc.ClientConn, path string) error {
 	return err
 }
 
-func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, TestProfileMetaStore) {
+func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileMetaStore) {
 	t.Helper()
 
 	cacheDir, err := ioutil.TempDir("", "parca-test-cache-*")
@@ -428,13 +424,11 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, TestProfileMetaSto
 		})
 	require.NoError(t, err)
 
-	var mStr TestProfileMetaStore
-	mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
+	mStr := metastore.NewBadgerMetastore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		t.Name(),
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		mStr.Close()
 	})
