@@ -36,7 +36,7 @@
     "lodash.throttle": "^4.1.1",
     "postcss": "^8.3.6",
     "tailwindcss": "^2.2.19",
-    "zustand": "^3.5.13"
+    "zustand": "^3.6.4"
   },
   "devDependencies": {
     "@storybook/react": "^6.3.12",
