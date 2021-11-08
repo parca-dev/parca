@@ -74,4 +74,4 @@ Parca was originally developed by [Polar Signals](https://polarsignals.com/). Re
 ## Contributing
 
 Check out our [Contributing Guide](CONTRIBUTING.md) to get started!
-
+It explains how compile Parca, run it with Tilt as container in Kubernetes and send a Pull Request.
