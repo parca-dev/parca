@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -57,6 +58,53 @@ func TestGeneratePprof(t *testing.T) {
 	require.NoError(t, tmpfile.Close())
 
 	f, err = os.Open(tmpfile.Name())
+	require.NoError(t, err)
+	resProf, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	require.NoError(t, resProf.CheckValid())
+}
+
+func TestGeneratePprofNilMapping(t *testing.T) {
+	ctx := context.Background()
+
+	pt := NewProfileTree()
+	pt.Insert(makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}))
+
+	l := &fakeLocations{m: map[uuid.UUID]*metastore.Location{
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"): {
+			ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			Lines: []metastore.LocationLine{{
+				Function: &metastore.Function{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f1"),
+					FunctionKey: metastore.FunctionKey{Name: "1"},
+				},
+			}},
+		},
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"): {
+			ID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			Lines: []metastore.LocationLine{{
+				Function: &metastore.Function{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-0000000000f2"),
+					FunctionKey: metastore.FunctionKey{Name: "2"},
+				},
+			}},
+		},
+	}}
+
+	res, err := GeneratePprof(ctx, l, &Profile{Tree: pt})
+	require.NoError(t, err)
+
+	tmpfile, err := ioutil.TempFile("", "pprof")
+	defer os.Remove(tmpfile.Name())
+	require.NoError(t, err)
+	require.NoError(t, res.Write(tmpfile))
+	require.NoError(t, tmpfile.Close())
+
+	f, err := os.Open(tmpfile.Name())
 	require.NoError(t, err)
 	resProf, err := profile.Parse(f)
 	require.NoError(t, err)

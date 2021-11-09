@@ -140,11 +140,16 @@ func GeneratePprof(ctx context.Context, locationStore Locations, ip InstantProfi
 				}
 			}
 
-			location := &profile.Location{
-				ID:      uint64(len(p.Location) + 1),
-				Mapping: mapping,
+			addr := loc.Address
+			if mapping != nil {
 				// TODO: Is this right?
-				Address:  loc.Address + mapping.Offset,
+				addr += mapping.Offset
+			}
+
+			location := &profile.Location{
+				ID:       uint64(len(p.Location) + 1),
+				Mapping:  mapping,
+				Address:  addr,
 				Line:     lines,
 				IsFolded: loc.IsFolded,
 			}
