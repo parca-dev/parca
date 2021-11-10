@@ -32,10 +32,11 @@ import (
 )
 
 type ProfileStore struct {
-	logger    log.Logger
-	tracer    trace.Tracer
-	app       storage.Appendable
-	metaStore metastore.ProfileMetaStore
+	logger       log.Logger
+	tracer       trace.Tracer
+	app          storage.Appendable
+	metaStore    metastore.ProfileMetaStore
+	profileTrees bool // Feature flag to disable profileTree usage - eventually removed
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileStore{}
@@ -45,12 +46,14 @@ func NewProfileStore(
 	tracer trace.Tracer,
 	app storage.Appendable,
 	metaStore metastore.ProfileMetaStore,
+	profileTrees bool,
 ) *ProfileStore {
 	return &ProfileStore{
-		logger:    logger,
-		tracer:    tracer,
-		app:       app,
-		metaStore: metaStore,
+		logger:       logger,
+		tracer:       tracer,
+		app:          app,
+		metaStore:    metaStore,
+		profileTrees: profileTrees,
 	}
 }
 
@@ -77,46 +80,89 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			convertCtx, convertSpan := s.tracer.Start(ctx, "profile-from-pprof")
-			profiles, err := storage.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
-			if err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to normalize pprof: %v", err)
-			}
+			if !s.profileTrees {
+				convertCtx, convertSpan := s.tracer.Start(ctx, "profile-tree-from-pprof")
+				profiles, err := storage.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
+				if err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to normalize pprof: %v", err)
+				}
+				convertSpan.End()
 
-			convertSpan.End()
-			appendCtx, appendSpan := s.tracer.Start(ctx, "append-profiles")
-			for _, prof := range profiles {
-				profLabelset := ls.Copy()
-				found := false
-				for i, label := range profLabelset {
-					if label.Name == "__name__" {
-						found = true
-						profLabelset[i] = labels.Label{
-							Name:  "__name__",
-							Value: label.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+				appendCtx, appendSpan := s.tracer.Start(ctx, "append-profile-trees")
+				for _, prof := range profiles {
+					profLabelset := ls.Copy()
+					found := false
+					for i, label := range profLabelset {
+						if label.Name == "__name__" {
+							found = true
+							profLabelset[i] = labels.Label{
+								Name:  "__name__",
+								Value: label.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+							}
 						}
 					}
-				}
-				if !found {
-					profLabelset = append(profLabelset, labels.Label{
-						Name:  "__name__",
-						Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-					})
-				}
-				sort.Sort(profLabelset)
+					if !found {
+						profLabelset = append(profLabelset, labels.Label{
+							Name:  "__name__",
+							Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+						})
+					}
+					sort.Sort(profLabelset)
 
-				level.Debug(s.logger).Log("msg", "writing sample", "label_set", profLabelset.String(), "timestamp", prof.Meta.Timestamp)
+					level.Debug(s.logger).Log("msg", "writing sample", "label_set", profLabelset.String(), "timestamp", prof.Meta.Timestamp)
 
-				app, err := s.app.Appender(appendCtx, profLabelset)
+					app, err := s.app.Appender(appendCtx, profLabelset)
+					if err != nil {
+						return nil, err
+					}
+
+					if err := app.Append(appendCtx, prof); err != nil {
+						return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
+					}
+				}
+				appendSpan.End()
+			} else {
+				convertCtx, convertSpan := s.tracer.Start(ctx, "profile-from-pprof")
+				profiles, err := storage.FlatProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
 				if err != nil {
-					return nil, err
+					return nil, status.Errorf(codes.Internal, "failed to normalize pprof: %v", err)
+				}
+				convertSpan.End()
+
+				appendCtx, appendSpan := s.tracer.Start(ctx, "append-profiles")
+				for _, prof := range profiles {
+					profLabelset := ls.Copy()
+					found := false
+					for i, label := range profLabelset {
+						if label.Name == "__name__" {
+							found = true
+							profLabelset[i] = labels.Label{
+								Name:  "__name__",
+								Value: label.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+							}
+						}
+					}
+					if !found {
+						profLabelset = append(profLabelset, labels.Label{
+							Name:  "__name__",
+							Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+						})
+					}
+					sort.Sort(profLabelset)
+
+					level.Debug(s.logger).Log("msg", "writing sample", "label_set", profLabelset.String(), "timestamp", prof.Meta.Timestamp)
+
+					app, err := s.app.Appender(appendCtx, profLabelset)
+					if err != nil {
+						return nil, err
+					}
+
+					if app.AppendFlat(appendCtx, prof); err != nil {
+						return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
+					}
 				}
 
-				if err := app.Append(appendCtx, prof); err != nil {
-					return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
-				}
 			}
-			appendSpan.End()
 		}
 	}
 

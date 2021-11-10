@@ -95,6 +95,7 @@ type Labels interface {
 
 type Appender interface {
 	Append(ctx context.Context, p *Profile) error
+	AppendFlat(ctx context.Context, p *FlatProfile) error
 }
 
 type SliceSeriesSet struct {

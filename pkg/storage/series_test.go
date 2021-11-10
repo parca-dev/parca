@@ -26,6 +26,68 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMemSeries(t *testing.T) {
+	var (
+		label    = map[string][]string{"foo": {"bar", "baz"}}
+		numLabel = map[string][]int64{"foo": {1, 2}}
+		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
+	)
+
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	s11 := makeSample(1, []uuid.UUID{uuid2, uuid1})
+	s12 := makeSample(2, []uuid.UUID{uuid4, uuid1})
+	s12.Label = label
+	s12.NumLabel = numLabel
+	s12.NumUnit = numUnit
+
+	k11 := makeStacktraceKey(s11)
+	k12 := makeStacktraceKey(s12)
+
+	fp := &FlatProfile{
+		Meta: InstantProfileMeta{
+			PeriodType: ValueType{Type: ""},
+			SampleType: ValueType{Type: ""},
+			Timestamp:  1000,
+			Duration:   time.Second.Nanoseconds(),
+			Period:     time.Second.Nanoseconds(),
+		},
+		samples: []*Sample{s11, s12},
+	}
+
+	err = app.AppendFlat(ctx, fp)
+	require.NoError(t, err)
+
+	require.Len(t, s.samples, 2)
+	require.Equal(t, chunkenc.FromValuesXOR(1), s.samples[k11][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[k12][0])
+
+	s3 := makeSample(3, []uuid.UUID{uuid2, uuid1})
+
+	fp = &FlatProfile{
+		Meta: InstantProfileMeta{
+			PeriodType: ValueType{Type: ""},
+			SampleType: ValueType{Type: ""},
+			Timestamp:  2000,
+			Duration:   time.Second.Nanoseconds(),
+			Period:     time.Second.Nanoseconds(),
+		},
+		samples: []*Sample{s3},
+	}
+
+	err = app.AppendFlat(ctx, fp)
+	require.NoError(t, err)
+
+	require.Len(t, s.samples, 2)
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[k11][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[k12][0]) // sparse - nothing added
+}
+
 func TestMemSeriesTree(t *testing.T) {
 	var (
 		label    = map[string][]string{"foo": {"bar", "baz"}}

@@ -255,6 +255,22 @@ func (a *initAppender) Append(ctx context.Context, p *Profile) error {
 	return a.app.Append(ctx, p)
 }
 
+func (a *initAppender) AppendFlat(ctx context.Context, p *FlatProfile) error {
+	if a.app != nil {
+		return a.app.AppendFlat(ctx, p)
+	}
+
+	a.head.initTime(p.Meta.Timestamp)
+
+	var err error
+	a.app, err = a.head.appender(ctx, a.lset)
+	if err != nil {
+		return err
+	}
+
+	return a.app.AppendFlat(ctx, p)
+}
+
 // MinTime returns the lowest time bound on visible data in the head.
 func (h *Head) MinTime() int64 {
 	return h.minTime.Load()
