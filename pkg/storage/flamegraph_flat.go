@@ -1,3 +1,16 @@
+// Copyright 2021 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package storage
 
 import (
@@ -73,8 +86,16 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, locations 
 				newChildren := make([]*pb.FlamegraphNode, len(cur.Children)+1)
 				copy(newChildren, cur.Children[:index])
 
-				// TODO: Might be problematic with inlined functions again
-				child = locationToTreeNodes(location)[0]
+				nodes := locationToTreeNodes(location)
+				for i, n := range nodes {
+					if i == 0 {
+						// Ignore the first node as we add to it later
+						continue
+					}
+					n.Cumulative += s.Value
+				}
+
+				child = nodes[0]
 				newChildren[index] = child
 				copy(newChildren[index+1:], cur.Children[index:])
 				cur.Children = newChildren

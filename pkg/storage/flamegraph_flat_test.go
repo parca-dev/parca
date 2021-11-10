@@ -1,3 +1,16 @@
+// Copyright 2021 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package storage
 
 import (
@@ -135,6 +148,71 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 						},
 						Cumulative: 1,
 					}},
+				}},
+			}},
+		}},
+	}}, fg)
+}
+
+func TestGenerateInlinedFunctionFlamegraphFlat(t *testing.T) {
+	m := &metastore.Mapping{ID: uuida1}
+	l := &fakeLocations{m: map[uuid.UUID]*metastore.Location{
+		uuid1: {
+			ID:      uuid1,
+			Mapping: m,
+			Lines: []metastore.LocationLine{{
+				Function: &metastore.Function{ID: uuidf1, FunctionKey: metastore.FunctionKey{Name: "1"}},
+			}},
+		},
+		uuid2: {
+			ID:      uuid2,
+			Mapping: m,
+			Lines: []metastore.LocationLine{{
+				Function: &metastore.Function{ID: uuidf3, FunctionKey: metastore.FunctionKey{Name: "3"}},
+			}, {
+				Function: &metastore.Function{ID: uuidf2, FunctionKey: metastore.FunctionKey{Name: "2"}},
+			}},
+		},
+	}}
+
+	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	fp := &FlatProfile{
+		Meta: InstantProfileMeta{},
+		samples: []*Sample{
+			makeSample(2, []uuid.UUID{uuid2, uuid1}),
+		},
+	}
+
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, l, fp)
+	require.NoError(t, err)
+	require.Equal(t, &pb.Flamegraph{Height: 3, Total: 2, Root: &pb.FlamegraphRootNode{
+		Cumulative: 2,
+		Children: []*pb.FlamegraphNode{{
+			Cumulative: 2,
+			Meta: &pb.FlamegraphNodeMeta{
+				Function: &pb.Function{Id: idf1, Name: "1"},
+				Line:     &pb.Line{LocationId: id1, FunctionId: idf1},
+				Location: &pb.Location{Id: id1, MappingId: ida1},
+				Mapping:  &pb.Mapping{Id: ida1},
+			},
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 2,
+				Meta: &pb.FlamegraphNodeMeta{
+					Function: &pb.Function{Id: idf2, Name: "2"},
+					Line:     &pb.Line{LocationId: id2, FunctionId: idf2},
+					Location: &pb.Location{Id: id2, MappingId: ida1},
+					Mapping:  &pb.Mapping{Id: ida1},
+				},
+				Children: []*pb.FlamegraphNode{{
+					Cumulative: 2,
+					Meta: &pb.FlamegraphNodeMeta{
+						Function: &pb.Function{Id: idf3, Name: "3"},
+						Line:     &pb.Line{LocationId: id2, FunctionId: idf3},
+						Location: &pb.Location{Id: id2, MappingId: ida1},
+						Mapping:  &pb.Mapping{Id: ida1},
+					},
 				}},
 			}},
 		}},
