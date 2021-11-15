@@ -127,7 +127,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 			}
 			if p.ProfileMeta().Timestamp == 0 {
 				level.Warn(q.logger).Log("msg", "timestamp is 0", "i", i)
-				continue
+				break
 			}
 			metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
 				Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
