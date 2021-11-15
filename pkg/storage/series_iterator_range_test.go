@@ -47,7 +47,7 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420}).Iterator()
+	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420, trees: true}).Iterator()
 
 	seen := int64(75)
 	for it.Next() {

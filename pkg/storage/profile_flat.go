@@ -76,7 +76,7 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore Meta
 	// More over, the map's key should be the stacktrace's unique UUID as mapped by the metastore.
 
 	return &FlatProfile{
-		Meta:    InstantProfileMeta{},
+		Meta:    ProfileMetaFromPprof(p, sampleIndex),
 		samples: samples,
 	}, nil
 }

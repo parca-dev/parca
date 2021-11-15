@@ -134,6 +134,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		tracerProvider.Tracer("query-service"),
 		db,
 		mStr,
+		flags.StorageTSDBProfileTrees,
 	)
 
 	ctx, cancel := context.WithCancel(ctx)

@@ -80,7 +80,7 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			if !s.profileTrees {
+			if s.profileTrees {
 				convertCtx, convertSpan := s.tracer.Start(ctx, "profile-tree-from-pprof")
 				profiles, err := storage.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
 				if err != nil {
@@ -157,11 +157,11 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 						return nil, err
 					}
 
-					if app.AppendFlat(appendCtx, prof); err != nil {
+					if err := app.AppendFlat(appendCtx, prof); err != nil {
 						return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
 					}
 				}
-
+				appendSpan.End()
 			}
 		}
 	}

@@ -33,6 +33,10 @@ type FlatProfile struct {
 	samples []*Sample
 }
 
+func (fp *FlatProfile) ProfileTree() InstantProfileTree {
+	panic("won't be implement - use Profile instead")
+}
+
 func (fp *FlatProfile) ProfileMeta() InstantProfileMeta {
 	return fp.Meta
 }
@@ -121,5 +125,5 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, locations 
 	flamegraph.Root.Diff = rootNode.Diff
 	flamegraph.Root.Children = rootNode.Children
 
-	return flamegraph, nil
+	return aggregateByFunction(flamegraph), nil
 }

@@ -50,7 +50,7 @@ func TestMemRootSeries_Iterator(t *testing.T) {
 
 	// Query subset of timestamps
 	{
-		it := (&MemRootSeries{s: s, mint: 74, maxt: 420}).Iterator()
+		it := (&MemRootSeries{s: s, mint: 74, maxt: 420, trees: true}).Iterator()
 
 		seen := int64(75)
 		for it.Next() {

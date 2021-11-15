@@ -71,6 +71,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 		ctx,
 		int64(0),
 		int64(n),
+		true,
 	).Select(nil, &labels.Matcher{
 		Type:  labels.MatchEqual,
 		Name:  "__name__",
@@ -84,6 +85,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 		ctx,
 		int64(0),
 		int64(n),
+		true,
 	).Select(&SelectHints{
 		Start: int64(0),
 		End:   int64(n),

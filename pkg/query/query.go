@@ -46,10 +46,11 @@ var (
 // Query is the read api interface for parca
 // It implements the proto/query/query.proto APIServer interface
 type Query struct {
-	logger    log.Logger
-	tracer    trace.Tracer
-	queryable storage.Queryable
-	metaStore metastore.ProfileMetaStore
+	logger       log.Logger
+	tracer       trace.Tracer
+	queryable    storage.Queryable
+	metaStore    metastore.ProfileMetaStore
+	profileTrees bool // Feature flag to disable profileTree usage - eventually removed
 }
 
 func New(
@@ -57,12 +58,14 @@ func New(
 	tracer trace.Tracer,
 	queryable storage.Queryable,
 	metaStore metastore.ProfileMetaStore,
+	profileTrees bool,
 ) *Query {
 	return &Query{
-		queryable: queryable,
-		metaStore: metaStore,
-		logger:    logger,
-		tracer:    tracer,
+		queryable:    queryable,
+		metaStore:    metaStore,
+		logger:       logger,
+		tracer:       tracer,
+		profileTrees: profileTrees,
 	}
 }
 
@@ -87,6 +90,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		ctx,
 		timestamp.FromTime(start),
 		timestamp.FromTime(end),
+		q.profileTrees,
 	)
 	set := query.Select(&storage.SelectHints{
 		Start: timestamp.FromTime(start),
@@ -129,10 +133,23 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 				level.Warn(q.logger).Log("msg", "timestamp is 0", "i", i)
 				continue
 			}
-			metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
-				Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
-				Value:     p.ProfileTree().RootCumulativeValue(),
-			})
+
+			if q.profileTrees {
+				metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
+					Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
+					Value:     p.ProfileTree().RootCumulativeValue(),
+				})
+			} else {
+				// TODO: If Samples would be a map we could instantly access the root here
+				for _, s := range p.Samples() {
+					if len(s.Location) == 0 {
+						metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
+							Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
+							Value:     s.Value,
+						})
+					}
+				}
+			}
 			i++
 		}
 		profileSpan.SetAttributes(attribute.Int("i", i))
@@ -283,11 +300,18 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := storage.GenerateFlamegraph(ctx, q.tracer, q.metaStore, p)
+		var (
+			fg  *pb.Flamegraph
+			err error
+		)
+		if q.profileTrees {
+			fg, err = storage.GenerateFlamegraph(ctx, q.tracer, q.metaStore, p)
+		} else {
+			fg, err = storage.GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
+		}
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
-
 		return &pb.QueryResponse{
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
@@ -329,6 +353,7 @@ func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Ti
 		ctx,
 		timestamp.FromTime(t.Add(-5*time.Minute)),
 		timestamp.FromTime(t.Add(5*time.Minute)),
+		q.profileTrees,
 	)
 	set := query.Select(nil, sel...)
 	ctx, seriesSpan := q.tracer.Start(ctx, "seriesIterate")
@@ -369,6 +394,7 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 		ctx,
 		startTs,
 		endTs,
+		q.profileTrees,
 	)
 
 	set := query.Select(&storage.SelectHints{
@@ -408,6 +434,7 @@ func (q *Query) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsRe
 		ctx,
 		timestamp.FromTime(start),
 		timestamp.FromTime(end),
+		q.profileTrees,
 	)
 
 	var (
@@ -473,6 +500,7 @@ func (q *Query) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesRe
 		ctx,
 		timestamp.FromTime(start),
 		timestamp.FromTime(end),
+		q.profileTrees,
 	)
 
 	var (

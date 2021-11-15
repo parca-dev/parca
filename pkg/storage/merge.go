@@ -291,6 +291,10 @@ func (m *MergeProfileTree) RootCumulativeValue() int64 {
 	return 0
 }
 
+func (m *MergeProfile) Samples() []*Sample {
+	panic("implement me")
+}
+
 func (m *MergeProfileTree) Iterator() InstantProfileTreeIterator {
 	return &MergeProfileTreeIterator{
 		a:      m.m.a.ProfileTree().Iterator(),

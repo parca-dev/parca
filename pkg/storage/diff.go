@@ -55,6 +55,10 @@ func (d *DiffProfile) ProfileMeta() InstantProfileMeta {
 	return d.meta
 }
 
+func (d *DiffProfile) Samples() []*Sample {
+	panic("implement me")
+}
+
 type DiffProfileTree struct {
 	d *DiffProfile
 }

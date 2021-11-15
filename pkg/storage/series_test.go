@@ -159,6 +159,55 @@ func TestMemSeries(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 5), s.periods[0])
 }
 
+func TestMemSeriesMany(t *testing.T) {
+	snano := time.Second.Nanoseconds()
+
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	s1 := makeSample(0, []uuid.UUID{uuid2, uuid1})
+	s2 := makeSample(0, []uuid.UUID{uuid4, uuid1})
+	k1 := makeStacktraceKey(s1)
+	k2 := makeStacktraceKey(s2)
+
+	ctx := context.Background()
+	for i := 1; i < 200; i++ {
+		s1.Value = int64(i)
+		s2.Value = int64(2 * i)
+
+		err = app.AppendFlat(ctx, &FlatProfile{
+			Meta: InstantProfileMeta{
+				Timestamp: int64(i),
+				Duration:  snano,
+				Period:    snano,
+			},
+			samples: []*Sample{s1, s2},
+		})
+		require.NoError(t, err)
+	}
+
+	it := NewMultiChunkIterator(s.root)
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(2*i+i), it.At())
+	}
+
+	require.Len(t, s.samples, 2)
+
+	it = NewMultiChunkIterator(s.samples[k1])
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(i), it.At())
+	}
+	it = NewMultiChunkIterator(s.samples[k2])
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(2*i), it.At())
+	}
+}
+
 func TestMemSeriesTree(t *testing.T) {
 	var (
 		label    = map[string][]string{"foo": {"bar", "baz"}}

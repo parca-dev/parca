@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.opentelemetry.io/otel/trace"
@@ -46,7 +47,8 @@ type MemSeries struct {
 	// mu locks the following maps for concurrent access.
 	mu sync.RWMutex
 
-	samples map[stacktraceKey][]chunkenc.Chunk
+	samples   map[stacktraceKey][]chunkenc.Chunk
+	locations map[stacktraceKey][]*metastore.Location
 
 	// TODO: part of profileTree - eventually remove it
 	// Flat values as well as labels by the node's ProfileTreeValueNodeKey.
@@ -78,7 +80,8 @@ func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64), chun
 		periods:    make([]chunkenc.Chunk, 0, 1),
 		root:       make([]chunkenc.Chunk, 0, 1),
 
-		samples: make(map[stacktraceKey][]chunkenc.Chunk),
+		samples:   make(map[stacktraceKey][]chunkenc.Chunk),
+		locations: make(map[stacktraceKey][]*metastore.Location),
 
 		// TODO: part of profileTree - eventually remove it
 		flatValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
@@ -413,10 +416,6 @@ func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) erro
 	a.duration.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Duration)
 	a.periods.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Period)
 
-	// TODO: Figure out how to get the root sample and then append it's value
-	// Additionally, we might not even need this extra chunk anymore
-	//a.root.AppendAt(a.s.numSamples%samplesPerChunk, p.ProfileTree().RootCumulativeValue())
-
 	if a.s.timestamps[len(a.s.timestamps)-1].minTime > timestamp {
 		a.s.timestamps[len(a.s.timestamps)-1].minTime = timestamp
 	}
@@ -429,10 +428,11 @@ func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) erro
 		a.s.minTime = timestamp
 	}
 
+	var rootCumulative int64
+
 	for _, s := range p.Samples() {
 		k := makeStacktraceKey(s)
-
-		if len(a.s.samples[k]) == 0 {
+		if a.s.samples[k] == nil {
 			a.s.samples[k] = make([]chunkenc.Chunk, len(a.s.timestamps))
 			for i := 0; i < len(a.s.timestamps); i++ {
 				a.s.samples[k][i] = a.s.chunkPool.GetXOR()
@@ -444,7 +444,16 @@ func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) erro
 			return fmt.Errorf("failed to open flat sample appender: %w", err)
 		}
 		app.AppendAt(a.s.numSamples%samplesPerChunk, s.Value)
+
+		// TODO: Eventually this should be referenced by stacktrace key with the new metastore
+		if _, found := a.s.locations[k]; !found {
+			a.s.locations[k] = s.Location
+		}
+
+		rootCumulative += s.Value
 	}
+
+	a.root.AppendAt(a.s.numSamples%samplesPerChunk, rootCumulative)
 
 	a.s.storeMaxTime(timestamp)
 

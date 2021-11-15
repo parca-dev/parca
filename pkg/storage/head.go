@@ -331,12 +331,13 @@ func (h *Head) appender(ctx context.Context, lset labels.Labels) (Appender, erro
 	return s.Appender()
 }
 
-func (h *Head) Querier(ctx context.Context, mint, maxt int64) Querier {
+func (h *Head) Querier(ctx context.Context, mint, maxt int64, trees bool) Querier {
 	return &HeadQuerier{
-		head: h,
-		ctx:  ctx,
-		mint: mint,
-		maxt: maxt,
+		head:  h,
+		ctx:   ctx,
+		mint:  mint,
+		maxt:  maxt,
+		trees: trees,
 	}
 }
 
@@ -344,6 +345,7 @@ type HeadQuerier struct {
 	head       *Head
 	ctx        context.Context
 	mint, maxt int64
+	trees      bool
 }
 
 func (q *HeadQuerier) LabelNames(ms ...*labels.Matcher) ([]string, Warnings, error) {
@@ -421,10 +423,10 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 			continue
 		}
 		if hints != nil && hints.Root {
-			ss = append(ss, &MemRootSeries{s: s, mint: mint, maxt: maxt})
+			ss = append(ss, &MemRootSeries{s: s, mint: mint, maxt: maxt, trees: q.trees})
 			continue
 		}
-		ss = append(ss, &MemRangeSeries{s: s, mint: mint, maxt: maxt})
+		ss = append(ss, &MemRangeSeries{s: s, mint: mint, maxt: maxt, trees: q.trees})
 	}
 
 	return &SliceSeriesSet{

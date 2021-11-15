@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 // MemSeriesValuesIterator is an abstraction on iterator over values from possible multiple chunks.
@@ -352,6 +353,10 @@ func (p *MemSeriesInstantProfile) ProfileMeta() InstantProfileMeta {
 	}
 }
 
+func (p *MemSeriesInstantProfile) Samples() []*Sample {
+	panic("won't be implemented - use MemSeriesInstantFlatProfile instead")
+}
+
 func (it *MemSeriesIterator) At() InstantProfile {
 	return &MemSeriesInstantProfile{
 		itt: it.tree,
@@ -361,4 +366,44 @@ func (it *MemSeriesIterator) At() InstantProfile {
 
 func (it *MemSeriesIterator) Err() error {
 	return it.err
+}
+
+type MemSeriesInstantFlatProfile struct {
+	PeriodType ValueType
+	SampleType ValueType
+
+	timestampsIterator MemSeriesValuesIterator
+	durationsIterator  MemSeriesValuesIterator
+	periodsIterator    MemSeriesValuesIterator
+
+	sampleIterators map[stacktraceKey]MemSeriesValuesIterator
+	locations       map[stacktraceKey][]*metastore.Location
+}
+
+func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {
+	return InstantProfileMeta{
+		PeriodType: m.PeriodType,
+		SampleType: m.SampleType,
+		Timestamp:  m.timestampsIterator.At(),
+		Duration:   m.durationsIterator.At(),
+		Period:     m.periodsIterator.At(),
+	}
+}
+
+func (m MemSeriesInstantFlatProfile) Samples() []*Sample {
+	samples := make([]*Sample, 0, len(m.sampleIterators))
+	for k, it := range m.sampleIterators {
+		samples = append(samples, &Sample{
+			Value:    it.At(),
+			Location: m.locations[k],
+			Label:    nil, // TODO
+			NumLabel: nil, // TODO
+			NumUnit:  nil, // TODO
+		})
+	}
+	return samples
+}
+
+func (m MemSeriesInstantFlatProfile) ProfileTree() InstantProfileTree {
+	panic("won't be implemented - use MemSeriesInstantProfile instead")
 }
