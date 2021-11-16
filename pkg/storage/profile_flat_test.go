@@ -15,9 +15,9 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -46,5 +46,14 @@ func TestProfileFlatNormalizer(t *testing.T) {
 
 	p, err := FlatProfileFromPprof(context.Background(), log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
-	fmt.Printf("%+v\n", p)
+
+	require.Equal(t, InstantProfileMeta{
+		PeriodType: ValueType{Type: "cpu", Unit: "nanoseconds"},
+		SampleType: ValueType{Type: "samples", Unit: "count"},
+		Timestamp:  1626013307085,
+		Duration:   30000181568,
+		Period:     10 * time.Millisecond.Nanoseconds(),
+	}, p.ProfileMeta())
+
+	require.Len(t, p.Samples(), 32)
 }
