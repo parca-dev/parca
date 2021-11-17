@@ -65,6 +65,7 @@ type Flags struct {
 
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
+	StorageTSDBProfileTrees     bool          `default:"true" help:"Enable profile tree storage in the TSDB" hidden:"true"`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -126,12 +127,14 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		tracerProvider.Tracer("profilestore"),
 		db,
 		mStr,
+		flags.StorageTSDBProfileTrees,
 	)
 	q := query.New(
 		logger,
 		tracerProvider.Tracer("query-service"),
 		db,
 		mStr,
+		flags.StorageTSDBProfileTrees,
 	)
 
 	ctx, cancel := context.WithCancel(ctx)

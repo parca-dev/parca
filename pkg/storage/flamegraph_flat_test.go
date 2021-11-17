@@ -15,11 +15,15 @@ package storage
 
 import (
 	"context"
+	"os"
 	"testing"
 
+	"github.com/go-kit/log"
+	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -217,4 +221,39 @@ func TestGenerateInlinedFunctionFlamegraphFlat(t *testing.T) {
 			}},
 		}},
 	}}, fg)
+}
+
+func TestGenerateFlamegraphFromFlatProfile(t *testing.T) {
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	reg := prometheus.NewRegistry()
+
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		reg,
+		tracer,
+		"generateflamegraphfrominstantprofile",
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		l.Close()
+	})
+
+	testGenerateFlamegraphFromFlatProfile(t, l)
+}
+
+func testGenerateFlamegraphFromFlatProfile(t *testing.T, l metastore.ProfileMetaStore) *pb.Flamegraph {
+	ctx := context.Background()
+
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	flatProfile, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphFlat(ctx, trace.NewNoopTracerProvider().Tracer(""), l, flatProfile)
+	require.NoError(t, err)
+
+	return fg
 }

@@ -52,7 +52,7 @@ func BenchmarkHeadQuerier_Select(b *testing.B) {
 
 	for s := 1; s <= numSeries; s *= 10 {
 		b.Run(fmt.Sprintf("%dof%d", s, numSeries), func(b *testing.B) {
-			q := h.Querier(ctx, 0, int64(s))
+			q := h.Querier(ctx, 0, int64(s), false)
 
 			b.ReportAllocs()
 			b.ResetTimer()

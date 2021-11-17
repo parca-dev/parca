@@ -72,6 +72,7 @@ func TestDB(t *testing.T) {
 		ctx,
 		timestamp.FromTime(time.Now().Add(-10*time.Second)),
 		timestamp.FromTime(time.Now().Add(10*time.Second)),
+		true,
 	)
 	m, err := labels.NewMatcher(labels.MatchEqual, "namespace", "default")
 	require.NoError(t, err)

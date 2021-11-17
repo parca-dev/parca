@@ -37,7 +37,7 @@ type SelectHints struct {
 }
 
 type Queryable interface {
-	Querier(ctx context.Context, mint, maxt int64) Querier
+	Querier(ctx context.Context, mint, maxt int64, trees bool) Querier
 }
 
 type Querier interface {
@@ -95,6 +95,7 @@ type Labels interface {
 
 type Appender interface {
 	Append(ctx context.Context, p *Profile) error
+	AppendFlat(ctx context.Context, p *FlatProfile) error
 }
 
 type SliceSeriesSet struct {
@@ -142,8 +143,8 @@ func (db *DB) Appender(ctx context.Context, lset labels.Labels) (Appender, error
 	return db.head.Appender(ctx, lset)
 }
 
-func (db *DB) Querier(ctx context.Context, mint, maxt int64) Querier {
-	return db.head.Querier(ctx, mint, maxt)
+func (db *DB) Querier(ctx context.Context, mint, maxt int64, trees bool) Querier {
+	return db.head.Querier(ctx, mint, maxt, trees)
 }
 
 func (db *DB) Run(ctx context.Context) error {

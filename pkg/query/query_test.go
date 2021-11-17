@@ -46,6 +46,7 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		nil,
+		true,
 	)
 
 	// Query last 5 minutes
@@ -79,6 +80,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
+		true,
 	)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -144,6 +146,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
+		true,
 	)
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
@@ -230,7 +233,7 @@ func Test_QueryRange_Ranged(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	q := New(logger, tracer, db, s)
+	q := New(logger, tracer, db, s, true)
 
 	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: "allocs",
@@ -291,6 +294,7 @@ func Test_QueryRange_InputValidation(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		nil,
 		nil,
+		true,
 	)
 
 	t.Parallel()
@@ -348,6 +352,7 @@ func Test_Query_InputValidation(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		nil,
 		nil,
+		true,
 	)
 
 	t.Parallel()
@@ -378,6 +383,7 @@ func Test_Query_Simple(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
+		true,
 	)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -437,6 +443,7 @@ func Test_Query_Diff(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
+		true,
 	)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -543,6 +550,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 					trace.NewNoopTracerProvider().Tracer(""),
 					db,
 					s,
+					true,
 				)
 
 				app, err := db.Appender(ctx, labels.Labels{
@@ -606,6 +614,7 @@ func Test_Query_Merge(t *testing.T) {
 			trace.NewNoopTracerProvider().Tracer(""),
 			db,
 			s,
+			true,
 		)
 
 		app, err := db.Appender(ctx, labels.Labels{
@@ -657,6 +666,7 @@ func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
+		true,
 	)
 
 	ls1 := labels.Labels{

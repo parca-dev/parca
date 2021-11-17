@@ -26,6 +26,188 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMemSeries(t *testing.T) {
+	var (
+		label    = map[string][]string{"foo": {"bar", "baz"}}
+		numLabel = map[string][]int64{"foo": {1, 2}}
+		numUnit  = map[string][]string{"foo": {"bytes", "objects"}}
+	)
+
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	s11 := makeSample(1, []uuid.UUID{uuid2, uuid1})
+	s12 := makeSample(2, []uuid.UUID{uuid4, uuid1})
+	s12.Label = label
+	s12.NumLabel = numLabel
+	s12.NumUnit = numUnit
+
+	k11 := makeStacktraceKey(s11)
+	k12 := makeStacktraceKey(s12)
+
+	fp1 := &FlatProfile{
+		Meta: InstantProfileMeta{
+			PeriodType: ValueType{},
+			SampleType: ValueType{},
+			Timestamp:  1000,
+			Duration:   time.Second.Nanoseconds(),
+			Period:     time.Second.Nanoseconds(),
+		},
+		samples: []*Sample{s11, s12},
+	}
+
+	err = app.AppendFlat(ctx, fp1)
+	require.NoError(t, err)
+
+	require.Len(t, s.samples, 2)
+	require.Equal(t, chunkenc.FromValuesXOR(1), s.samples[k11][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[k12][0])
+
+	s2 := makeSample(3, []uuid.UUID{uuid2, uuid1})
+	fp2 := &FlatProfile{
+		Meta: InstantProfileMeta{
+			PeriodType: ValueType{},
+			SampleType: ValueType{},
+			Timestamp:  2000,
+			Duration:   time.Second.Nanoseconds(),
+			Period:     time.Second.Nanoseconds(),
+		},
+		samples: []*Sample{s2},
+	}
+
+	err = app.AppendFlat(ctx, fp2)
+	require.NoError(t, err)
+
+	require.Len(t, s.samples, 2)
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[k11][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[k12][0]) // sparse - nothing added
+
+	// Add another sample with one new Location
+	s3 := makeSample(4, []uuid.UUID{uuid3, uuid1})
+	k3 := makeStacktraceKey(s3)
+
+	fp3 := &FlatProfile{
+		Meta: InstantProfileMeta{
+			PeriodType: ValueType{},
+			SampleType: ValueType{},
+			Timestamp:  3000,
+			Duration:   time.Second.Nanoseconds(),
+			Period:     time.Second.Nanoseconds(),
+		},
+		samples: []*Sample{s3},
+	}
+
+	err = app.AppendFlat(ctx, fp3)
+	require.NoError(t, err)
+
+	require.Len(t, s.samples, 3)
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[k11][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[k12][0])    // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[k3][0])
+
+	// Merging another profileTree onto the existing one with one new Location
+	s4 := makeSample(6, []uuid.UUID{uuid5, uuid2, uuid1})
+	k4 := makeStacktraceKey(s4)
+	fp4 := &FlatProfile{
+		Meta: InstantProfileMeta{
+			PeriodType: ValueType{},
+			SampleType: ValueType{},
+			Timestamp:  4000,
+			Duration:   time.Second.Nanoseconds(),
+			Period:     time.Second.Nanoseconds(),
+		},
+		samples: []*Sample{s4},
+	}
+
+	err = app.AppendFlat(ctx, fp4)
+	require.NoError(t, err)
+
+	require.Len(t, s.samples, 4)
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[k11][0])  // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[k12][0])     // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[k3][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.samples[k4][0])
+
+	// Merging another profileTree onto the existing one with one new Location
+	s5 := makeSample(7, []uuid.UUID{uuid2, uuid1})
+	fp5 := &FlatProfile{
+		Meta: InstantProfileMeta{
+			PeriodType: ValueType{},
+			SampleType: ValueType{},
+			Timestamp:  5000,
+			Duration:   time.Second.Nanoseconds(),
+			Period:     time.Second.Nanoseconds(),
+		},
+		samples: []*Sample{s5},
+	}
+	err = app.AppendFlat(ctx, fp5)
+	require.NoError(t, err)
+
+	require.Len(t, s.samples, 4)
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3, 0, 0, 7), s.samples[k11][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[k12][0])     // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[k3][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.samples[k4][0]) // sparse - nothing added
+
+	require.Equal(t, uint16(5), s.numSamples)
+	require.Equal(t, chunkenc.FromValuesDelta(1000, 2000, 3000, 4000, 5000), s.timestamps[0].chunk)
+	require.Equal(t, chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 5), s.durations[0])
+	require.Equal(t, chunkenc.FromValuesRLE(time.Second.Nanoseconds(), 5), s.periods[0])
+}
+
+func TestMemSeriesMany(t *testing.T) {
+	snano := time.Second.Nanoseconds()
+
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(int64) {}, newHeadChunkPool())
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	s1 := makeSample(0, []uuid.UUID{uuid2, uuid1})
+	s2 := makeSample(0, []uuid.UUID{uuid4, uuid1})
+	k1 := makeStacktraceKey(s1)
+	k2 := makeStacktraceKey(s2)
+
+	ctx := context.Background()
+	for i := 1; i < 200; i++ {
+		s1.Value = int64(i)
+		s2.Value = int64(2 * i)
+
+		err = app.AppendFlat(ctx, &FlatProfile{
+			Meta: InstantProfileMeta{
+				Timestamp: int64(i),
+				Duration:  snano,
+				Period:    snano,
+			},
+			samples: []*Sample{s1, s2},
+		})
+		require.NoError(t, err)
+	}
+
+	it := NewMultiChunkIterator(s.root)
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(2*i+i), it.At())
+	}
+
+	require.Len(t, s.samples, 2)
+
+	it = NewMultiChunkIterator(s.samples[k1])
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(i), it.At())
+	}
+	it = NewMultiChunkIterator(s.samples[k2])
+	for i := 1; i < 200; i++ {
+		require.True(t, it.Next())
+		require.Equal(t, int64(2*i), it.At())
+	}
+}
+
 func TestMemSeriesTree(t *testing.T) {
 	var (
 		label    = map[string][]string{"foo": {"bar", "baz"}}
@@ -90,13 +272,13 @@ func TestMemSeriesTree(t *testing.T) {
 
 	// Merging another profileTree onto the existing one
 
-	s3 := makeSample(3, []uuid.UUID{
+	s2 := makeSample(3, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
 
 	pt2 := NewProfileTree()
-	pt2.Insert(s3)
+	pt2.Insert(s2)
 
 	s.timestamps[0] = &timestampChunk{chunk: chunkenc.FromValuesDelta(1, 2)}
 	err = s.seriesTree.Insert(1, pt2)
@@ -125,13 +307,13 @@ func TestMemSeriesTree(t *testing.T) {
 	}, s.seriesTree)
 
 	// Merging another profileTree onto the existing one with one new Location
-	s4 := makeSample(4, []uuid.UUID{
+	s3 := makeSample(4, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
 
 	pt3 := NewProfileTree()
-	pt3.Insert(s4)
+	pt3.Insert(s3)
 
 	s.timestamps[0] = &timestampChunk{chunk: chunkenc.FromValuesDelta(1, 2, 3)}
 	err = s.seriesTree.Insert(2, pt3)
@@ -164,25 +346,25 @@ func TestMemSeriesTree(t *testing.T) {
 	}, s.seriesTree)
 
 	// Merging another profileTree onto the existing one with one new Location
-	s5 := makeSample(6, []uuid.UUID{
+	s4 := makeSample(6, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
 	pt4 := NewProfileTree()
-	pt4.Insert(s5)
+	pt4.Insert(s4)
 
 	s.timestamps[0] = &timestampChunk{chunk: chunkenc.FromValuesDelta(1, 2, 3, 4)}
 	err = s.seriesTree.Insert(3, pt4)
 	require.NoError(t, err)
 
 	// Merging another profileTree onto the existing one with one new Location
-	s6 := makeSample(7, []uuid.UUID{
+	s5 := makeSample(7, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
 	pt5 := NewProfileTree()
-	pt5.Insert(s6)
+	pt5.Insert(s5)
 
 	s.timestamps[0] = &timestampChunk{chunk: chunkenc.FromValuesDelta(1, 2, 3, 4, 5)}
 	err = s.seriesTree.Insert(4, pt5)

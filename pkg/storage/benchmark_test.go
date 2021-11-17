@@ -104,11 +104,19 @@ func BenchmarkAppends(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
+	//for i := 0; i < b.N; i++ {
+	//	p := profiles[i%len(profiles)]
+	//	pprof, err := storage.ProfileFromPprof(ctx, logger, l, p, 0)
+	//	require.NoError(b, err)
+	//	err = app.Append(ctx, pprof)
+	//	require.NoError(b, err)
+	//}
+
 	for i := 0; i < b.N; i++ {
 		p := profiles[i%len(profiles)]
-		pprof, err := storage.ProfileFromPprof(ctx, logger, l, p, 0)
+		pprof, err := storage.FlatProfileFromPprof(ctx, logger, l, p, 0)
 		require.NoError(b, err)
-		err = app.Append(ctx, pprof)
+		err = app.AppendFlat(ctx, pprof)
 		require.NoError(b, err)
 	}
 
@@ -140,9 +148,9 @@ func BenchmarkIterator(b *testing.B) {
 	require.NoError(b, err)
 	for i := 0; i < b.N; i++ {
 		pprof := profiles[i%len(profiles)]
-		p, err := storage.ProfileFromPprof(ctx, logger, l, pprof, 0)
+		p, err := storage.FlatProfileFromPprof(ctx, logger, l, pprof, 0)
 		require.NoError(b, err)
-		err = app.Append(ctx, p)
+		err = app.AppendFlat(ctx, p)
 		require.NoError(b, err)
 	}
 
@@ -152,9 +160,9 @@ func BenchmarkIterator(b *testing.B) {
 
 	var q storage.Querier
 	if b.N == 1 {
-		q = db.Querier(context.Background(), math.MinInt64, math.MaxInt64)
+		q = db.Querier(context.Background(), math.MinInt64, math.MaxInt64, false)
 	} else {
-		q = db.Querier(context.Background(), 1614253659535, 1614262838920)
+		q = db.Querier(context.Background(), 1614253659535, 1614262838920, false)
 	}
 
 	b.ReportAllocs()
