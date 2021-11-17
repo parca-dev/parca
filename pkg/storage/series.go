@@ -374,7 +374,7 @@ func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) erro
 		}
 		a.root = rootApp
 
-		for k, _ := range a.s.samples {
+		for k := range a.s.samples {
 			for len(a.s.samples[k]) < len(a.s.timestamps) {
 				a.s.samples[k] = append(a.s.samples[k], a.s.chunkPool.GetXOR())
 			}
