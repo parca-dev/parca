@@ -17,7 +17,7 @@ func TestMakeStacktraceKey(t *testing.T) {
 		NumUnit:  map[string][]string{"foo": {"cpu", "memory"}},
 	}
 
-	k := []byte(makeStacktraceKeyBytes(s))
+	k := []byte(makeStacktraceKey(s))
 
 	require.Len(t, k, 119)
 
@@ -63,6 +63,6 @@ func BenchmarkMakeStacktraceKey(b *testing.B) {
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		_ = makeStacktraceKeyBytes(s)
+		_ = makeStacktraceKey(s)
 	}
 }

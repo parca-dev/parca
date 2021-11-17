@@ -15,9 +15,7 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -247,42 +245,10 @@ func (pn *profileNormalizer) mapFunction(ctx context.Context, src *profile.Funct
 	return f, nil
 }
 
-type stacktraceKey struct {
-	locations string
-	labels    string
-	numlabels string
-}
+type stacktraceKey []byte
 
 // key generates stacktraceKey to be used as a key for maps.
 func makeStacktraceKey(sample *Sample) stacktraceKey {
-	ids := make([]string, len(sample.Location))
-	for i, l := range sample.Location {
-		ids[i] = l.ID.String()
-	}
-
-	labels := make([]string, 0, len(sample.Label))
-	for k, v := range sample.Label {
-		labels = append(labels, fmt.Sprintf("%q%q", k, v))
-	}
-	sort.Strings(labels)
-
-	numlabels := make([]string, 0, len(sample.NumLabel))
-	for k, v := range sample.NumLabel {
-		numlabels = append(numlabels, fmt.Sprintf("%q%x%x", k, v, sample.NumUnit[k]))
-	}
-	sort.Strings(numlabels)
-
-	return stacktraceKey{
-		locations: strings.Join(ids, "|"),
-		labels:    strings.Join(labels, ""),
-		numlabels: strings.Join(numlabels, ""),
-	}
-}
-
-type stacktraceKeyBytes []byte
-
-// key generates stacktraceKeyBytes to be used as a key for maps.
-func makeStacktraceKeyBytes(sample *Sample) stacktraceKeyBytes {
 	numLocations := len(sample.Location)
 	locationLength := (16 * numLocations) + (numLocations - 1)
 
