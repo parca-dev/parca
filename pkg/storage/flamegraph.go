@@ -112,13 +112,13 @@ func (fgi *FlamegraphIterator) StepUp() {
 }
 
 type Locations interface {
-	GetLocationsByIDs(ctx context.Context, id ...uuid.UUID) (map[uuid.UUID]*metastore.Location, error)
+	GetLocationsByIDs(ctx context.Context, id ...uuid.UUID) (map[uuid.UUID]metastore.SerializedLocation, []uuid.UUID, error)
 }
 
 func GenerateFlamegraph(
 	ctx context.Context,
 	tracer trace.Tracer,
-	locations Locations,
+	metaStore metastore.ProfileMetaStore,
 	p InstantProfile,
 ) (*pb.Flamegraph, error) {
 	fgCtx, fgSpan := tracer.Start(ctx, "generate-flamegraph")
@@ -129,7 +129,7 @@ func GenerateFlamegraph(
 	pt := CopyInstantProfileTree(p.ProfileTree())
 	copySpan.End()
 
-	locs, err := getLocations(fgCtx, tracer, locations, pt)
+	locs, err := getLocations(fgCtx, tracer, metaStore, pt)
 	if err != nil {
 		return nil, fmt.Errorf("get locations: %w", err)
 	}
@@ -144,8 +144,7 @@ func GenerateFlamegraph(
 
 	n := it.At()
 	loc := n.LocationID()
-	emptyUUID := uuid.UUID{}
-	if loc != emptyUUID {
+	if loc != uuid.Nil {
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 
@@ -224,7 +223,7 @@ func GenerateFlamegraph(
 	return aggregateByFunction(flamegraph), nil
 }
 
-func getLocations(ctx context.Context, tracer trace.Tracer, locations Locations, pt InstantProfileTree) (map[uuid.UUID]*metastore.Location, error) {
+func getLocations(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, pt InstantProfileTree) (map[uuid.UUID]*metastore.Location, error) {
 	ctx, locationsSpan := tracer.Start(ctx, "get-locations")
 	defer locationsSpan.End()
 
@@ -242,7 +241,7 @@ func getLocations(ctx context.Context, tracer trace.Tracer, locations Locations,
 		return nil, fmt.Errorf("walk profile tree: %w", err)
 	}
 
-	locs, err := locations.GetLocationsByIDs(ctx, locationIDs...)
+	locs, err := metastore.GetLocationsByIDs(ctx, metaStore, locationIDs[1:]...)
 	if err != nil {
 		return nil, fmt.Errorf("get locations by ids: %w", err)
 	}
@@ -385,7 +384,7 @@ func equalsByName(a, b *pb.FlamegraphNode) bool {
 // has multiple inlined functions it creates multiple nodes for each inlined
 // function.
 func locationToTreeNodes(location *metastore.Location) []*pb.FlamegraphNode {
-	mappingId := uuid.UUID{}
+	mappingId := uuid.Nil
 	var mapping *pb.Mapping
 	if location.Mapping != nil {
 		mappingId = location.Mapping.ID

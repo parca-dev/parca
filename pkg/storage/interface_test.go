@@ -60,7 +60,7 @@ func TestProfileTreeValueNode_Key(t *testing.T) {
 		key      *ProfileTreeValueNodeKey
 	}{{
 		node:     ProfileTreeValueNode{},
-		location: uuid.UUID{}, // root
+		location: uuid.Nil, // root
 		key: &ProfileTreeValueNodeKey{
 			location: "00000000-0000-0000-0000-000000000000",
 		},

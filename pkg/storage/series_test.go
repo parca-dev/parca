@@ -40,6 +40,12 @@ func TestMemSeries(t *testing.T) {
 
 	ctx := context.Background()
 
+	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
+	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
+	uuid4 := uuid.MustParse("00000000-0000-0000-0000-000000000004")
+	uuid5 := uuid.MustParse("00000000-0000-0000-0000-000000000005")
+
 	s11 := makeSample(1, []uuid.UUID{uuid2, uuid1})
 	s12 := makeSample(2, []uuid.UUID{uuid4, uuid1})
 	s12.Label = label
@@ -166,6 +172,10 @@ func TestMemSeriesMany(t *testing.T) {
 
 	app, err := s.Appender()
 	require.NoError(t, err)
+
+	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
+	uuid4 := uuid.MustParse("00000000-0000-0000-0000-000000000004")
 
 	s1 := makeSample(0, []uuid.UUID{uuid2, uuid1})
 	s2 := makeSample(0, []uuid.UUID{uuid4, uuid1})

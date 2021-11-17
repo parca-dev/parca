@@ -120,7 +120,7 @@ func (pn *profileNormalizer) mapLocation(ctx context.Context, src *profile.Locat
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
 	k := metastore.MakeLocationKey(l)
-	loc, err := pn.metaStore.GetLocationByKey(ctx, k)
+	loc, err := metastore.GetLocationByKey(ctx, pn.metaStore, k)
 	if err != nil && err != metastore.ErrLocationNotFound {
 		return nil, err
 	}

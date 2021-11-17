@@ -66,15 +66,14 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"queryrangevalid",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		s.Close()
 	})
-	require.NoError(t, err)
 	q := New(
 		log.NewNopLogger(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -132,15 +131,14 @@ func Test_QueryRange_Valid(t *testing.T) {
 func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"queryrangelimited",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		s.Close()
 	})
-	require.NoError(t, err)
 	q := New(
 		log.NewNopLogger(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -203,15 +201,14 @@ func Test_QueryRange_Ranged(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	db := storage.OpenDB(reg, tracer, nil)
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
 		reg,
 		tracer,
-		"queryrangeranged",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		s.Close()
 	})
-	require.NoError(t, err)
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
@@ -369,12 +366,11 @@ func Test_Query_InputValidation(t *testing.T) {
 func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"querysimple",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
@@ -429,12 +425,11 @@ func Test_Query_Simple(t *testing.T) {
 func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"querydiff",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
@@ -520,12 +515,11 @@ func Test_Query_Diff(t *testing.T) {
 
 func Benchmark_Query_Merge(b *testing.B) {
 	ctx := context.Background()
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"benchquerymerge",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(b, err)
 	b.Cleanup(func() {
 		s.Close()
 	})
@@ -588,12 +582,11 @@ func Benchmark_Query_Merge(b *testing.B) {
 func Test_Query_Merge(t *testing.T) {
 	ctx := context.Background()
 
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"querymerge",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})
@@ -652,12 +645,11 @@ func Test_Query_Merge(t *testing.T) {
 func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"querymulti",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		s.Close()
 	})

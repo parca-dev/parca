@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 type LocationStack []*profile.Location
@@ -63,7 +64,7 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 	return a
 }
 
-func GeneratePprof(ctx context.Context, locationStore Locations, ip InstantProfile) (*profile.Profile, error) {
+func GeneratePprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip InstantProfile) (*profile.Profile, error) {
 	meta := ip.ProfileMeta()
 
 	mappingByID := map[uuid.UUID]*profile.Mapping{}
@@ -90,7 +91,7 @@ func GeneratePprof(ctx context.Context, locationStore Locations, ip InstantProfi
 		_, seenLocation := locationByID[id]
 		if !seenLocation {
 			// TODO(metalmatze): Improve this by calling once with a slice of IDs
-			locs, err := locationStore.GetLocationsByIDs(ctx, id)
+			locs, err := metastore.GetLocationsByIDs(ctx, metaStore, id)
 			if err != nil {
 				return err
 			}
@@ -170,8 +171,7 @@ func GeneratePprof(ctx context.Context, locationStore Locations, ip InstantProfi
 
 	n := it.At()
 	loc := n.LocationID()
-	emptyUUID := uuid.UUID{}
-	if loc != emptyUUID {
+	if loc != uuid.Nil {
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 

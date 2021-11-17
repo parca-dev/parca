@@ -15,7 +15,9 @@ package metastore
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -31,6 +33,7 @@ var (
 
 type ProfileMetaStore interface {
 	LocationStore
+	LocationLineStore
 	FunctionStore
 	MappingStore
 	Close() error
@@ -38,11 +41,17 @@ type ProfileMetaStore interface {
 }
 
 type LocationStore interface {
-	GetLocationByKey(ctx context.Context, k LocationKey) (*Location, error)
-	GetLocationsByIDs(ctx context.Context, id ...uuid.UUID) (map[uuid.UUID]*Location, error)
+	GetLocations(ctx context.Context) ([]SerializedLocation, []uuid.UUID, error)
+	GetLocationByKey(ctx context.Context, k LocationKey) (SerializedLocation, error)
+	GetLocationsByIDs(ctx context.Context, id ...uuid.UUID) (map[uuid.UUID]SerializedLocation, []uuid.UUID, error)
 	CreateLocation(ctx context.Context, l *Location) (uuid.UUID, error)
 	Symbolize(ctx context.Context, location *Location) error
-	GetSymbolizableLocations(ctx context.Context) ([]*Location, error)
+	GetSymbolizableLocations(ctx context.Context) ([]SerializedLocation, []uuid.UUID, error)
+}
+
+type LocationLineStore interface {
+	CreateLocationLines(ctx context.Context, locID uuid.UUID, lines []LocationLine) error
+	GetLinesByLocationIDs(ctx context.Context, id ...uuid.UUID) (map[uuid.UUID][]Line, []uuid.UUID, error)
 }
 
 type Location struct {
@@ -78,7 +87,24 @@ type LocationKey struct {
 	IsFolded          bool
 }
 
-var unsetUUID = uuid.UUID{}
+func (l *Location) Key() LocationKey {
+	return MakeLocationKey(l)
+}
+
+const locationsKeyPrefix = "locations/by-key/"
+
+func (k LocationKey) Bytes() []byte {
+	buf := make([]byte, len(locationsKeyPrefix)+8+16+8+len(k.Lines))
+	copy(buf, locationsKeyPrefix)
+	copy(buf[len(locationsKeyPrefix):], k.MappingID[:])
+	binary.BigEndian.PutUint64(buf[len(locationsKeyPrefix)+16:], k.NormalizedAddress)
+	if k.IsFolded {
+		// If IsFolded is false this means automatically that these 8 bytes are 0.
+		binary.BigEndian.PutUint64(buf[len(locationsKeyPrefix)+8+16:], 1)
+	}
+	copy(buf[len(locationsKeyPrefix)+8+16+8:], k.Lines)
+	return buf
+}
 
 func MakeLocationKey(l *Location) LocationKey {
 	key := LocationKey{
@@ -112,6 +138,8 @@ func MakeLocationKey(l *Location) LocationKey {
 type FunctionStore interface {
 	GetFunctionByKey(ctx context.Context, key FunctionKey) (*Function, error)
 	CreateFunction(ctx context.Context, f *Function) (uuid.UUID, error)
+	GetFunctionsByIDs(ctx context.Context, ids ...uuid.UUID) (map[uuid.UUID]*Function, error)
+	GetFunctions(ctx context.Context) ([]*Function, error)
 }
 
 type Function struct {
@@ -119,9 +147,26 @@ type Function struct {
 	FunctionKey
 }
 
+func (f Function) Key() FunctionKey {
+	return f.FunctionKey
+}
+
 type FunctionKey struct {
 	StartLine                  int64
 	Name, SystemName, Filename string
+}
+
+const functionKeyPrefix = "functions/by-key/"
+
+func (f FunctionKey) Bytes() []byte {
+	buf := make([]byte, len(functionKeyPrefix)+len(f.Name)+len(f.SystemName)+len(f.Filename)+8)
+	copy(buf, functionKeyPrefix)
+	binary.BigEndian.PutUint64(buf[len(functionKeyPrefix):], uint64(f.StartLine))
+	copy(buf[len(functionKeyPrefix)+8:], f.Name)
+	copy(buf[len(functionKeyPrefix)+8+len(f.Name):], f.SystemName)
+	copy(buf[len(functionKeyPrefix)+8+len(f.Name)+len(f.SystemName):], f.Filename)
+
+	return buf
 }
 
 func MakeFunctionKey(f *Function) FunctionKey {
@@ -136,6 +181,7 @@ func MakeFunctionKey(f *Function) FunctionKey {
 type MappingStore interface {
 	GetMappingByKey(ctx context.Context, key MappingKey) (*Mapping, error)
 	CreateMapping(ctx context.Context, m *Mapping) (uuid.UUID, error)
+	GetMappingsByIDs(ctx context.Context, ids ...uuid.UUID) (map[uuid.UUID]*Mapping, error)
 }
 
 type Mapping struct {
@@ -159,9 +205,26 @@ func (m *Mapping) Unsymbolizable() bool {
 	return strings.HasPrefix(name, "[") || strings.HasPrefix(name, "linux-vdso") || strings.HasPrefix(m.File, "/dev/dri/")
 }
 
+// Key returns a key for the mapping.
+func (m *Mapping) Key() MappingKey {
+	return MakeMappingKey(m)
+}
+
 type MappingKey struct {
 	Size, Offset  uint64
 	BuildIDOrFile string
+}
+
+const mappingKeyPrefix = "mappings/by-key/"
+
+func (k MappingKey) Bytes() []byte {
+	buf := make([]byte, len(mappingKeyPrefix)+len(k.BuildIDOrFile)+16)
+	copy(buf, mappingKeyPrefix)
+	binary.BigEndian.PutUint64(buf[len(mappingKeyPrefix):], k.Size)
+	binary.BigEndian.PutUint64(buf[len(mappingKeyPrefix)+8:], k.Offset)
+	copy(buf[len(mappingKeyPrefix)+16:], k.BuildIDOrFile)
+
+	return buf
 }
 
 func MakeMappingKey(m *Mapping) MappingKey {
@@ -190,4 +253,154 @@ func MakeMappingKey(m *Mapping) MappingKey {
 		// treated as the same mapping during merging.
 	}
 	return key
+}
+
+func GetLocationByKey(ctx context.Context, s ProfileMetaStore, k LocationKey) (*Location, error) {
+	res := Location{}
+
+	l, err := s.GetLocationByKey(ctx, k)
+	if err != nil {
+		return nil, err
+	}
+
+	res.ID = l.ID
+	res.Address = l.Address
+	res.IsFolded = l.IsFolded
+
+	if k.MappingID != uuid.Nil {
+		mappings, err := s.GetMappingsByIDs(ctx, k.MappingID)
+		if err != nil {
+			return nil, fmt.Errorf("get mapping by ID: %w", err)
+		}
+		res.Mapping = mappings[k.MappingID]
+	}
+
+	linesByLocation, functionIDs, err := s.GetLinesByLocationIDs(ctx, l.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get lines by location ID: %w", err)
+	}
+
+	functions, err := s.GetFunctionsByIDs(ctx, functionIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("get functions by IDs: %w", err)
+	}
+
+	for _, line := range linesByLocation[l.ID] {
+		res.Lines = append(res.Lines, LocationLine{
+			Line:     line.Line,
+			Function: functions[line.FunctionID],
+		})
+	}
+
+	return &res, nil
+}
+
+func GetLocationsByIDs(ctx context.Context, s ProfileMetaStore, ids ...uuid.UUID) (
+	map[uuid.UUID]*Location,
+	error,
+) {
+	locs, mappingIDs, err := s.GetLocationsByIDs(ctx, ids...)
+	if err != nil {
+		return nil, fmt.Errorf("get locations by IDs: %w", err)
+	}
+
+	return getLocationsFromSerializedLocations(ctx, s, ids, locs, mappingIDs)
+}
+
+// Only used in tests so not as important to be efficient.
+func GetLocations(ctx context.Context, s ProfileMetaStore) ([]*Location, error) {
+	lArr, mappingIDs, err := s.GetLocations(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get serialized locations: %w", err)
+	}
+
+	l := map[uuid.UUID]SerializedLocation{}
+	locIDs := []uuid.UUID{}
+	for _, loc := range lArr {
+		l[loc.ID] = loc
+		locIDs = append(locIDs, loc.ID)
+	}
+
+	locs, err := getLocationsFromSerializedLocations(ctx, s, locIDs, l, mappingIDs)
+	if err != nil {
+		return nil, fmt.Errorf("get locations: %w", err)
+	}
+
+	res := make([]*Location, 0, len(locs))
+	for _, loc := range locs {
+		res = append(res, loc)
+	}
+
+	return res, nil
+}
+
+func getLocationsFromSerializedLocations(ctx context.Context, s ProfileMetaStore, ids []uuid.UUID, locs map[uuid.UUID]SerializedLocation, mappingIDs []uuid.UUID) (map[uuid.UUID]*Location, error) {
+	mappings, err := s.GetMappingsByIDs(ctx, mappingIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("get mappings by IDs: %w", err)
+	}
+
+	linesByLocation, functionIDs, err := s.GetLinesByLocationIDs(ctx, ids...)
+	if err != nil {
+		return nil, fmt.Errorf("get lines by location IDs: %w", err)
+	}
+
+	functions, err := s.GetFunctionsByIDs(ctx, functionIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("get functions by ids: %w", err)
+	}
+
+	res := make(map[uuid.UUID]*Location, len(locs))
+	for locationID, loc := range locs {
+		location := &Location{
+			ID:       loc.ID,
+			Address:  loc.Address,
+			IsFolded: loc.IsFolded,
+		}
+		location.Mapping = mappings[loc.MappingID]
+		locationLines := linesByLocation[locationID]
+		if len(locationLines) > 0 {
+			lines := make([]LocationLine, 0, len(locationLines))
+			for _, line := range locationLines {
+				function, found := functions[line.FunctionID]
+				if found {
+					lines = append(lines, LocationLine{
+						Line:     line.Line,
+						Function: function,
+					})
+				}
+			}
+			location.Lines = lines
+		}
+		res[locationID] = location
+	}
+
+	return res, nil
+}
+
+func GetSymbolizableLocations(ctx context.Context, s ProfileMetaStore) (
+	[]*Location,
+	error,
+) {
+	locs, mappingIDs, err := s.GetSymbolizableLocations(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get symbolizable locations: %w", err)
+	}
+
+	mappings, err := s.GetMappingsByIDs(ctx, mappingIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("get mappings by IDs: %w", err)
+	}
+
+	res := make([]*Location, 0, len(locs))
+	for _, loc := range locs {
+		res = append(res, &Location{
+			ID:       loc.ID,
+			Address:  loc.Address,
+			IsFolded: loc.IsFolded,
+			Mapping:  mappings[loc.MappingID],
+		})
+	}
+
+	return res, nil
 }

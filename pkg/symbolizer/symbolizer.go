@@ -30,21 +30,21 @@ import (
 
 type Symbolizer struct {
 	logger    log.Logger
-	locations metastore.LocationStore
+	metaStore metastore.ProfileMetaStore
 	debugInfo *debuginfo.Store
 }
 
-func New(logger log.Logger, loc metastore.LocationStore, info *debuginfo.Store) *Symbolizer {
+func New(logger log.Logger, metaStore metastore.ProfileMetaStore, info *debuginfo.Store) *Symbolizer {
 	return &Symbolizer{
 		logger:    log.With(logger, "component", "symbolizer"),
-		locations: loc,
+		metaStore: metaStore,
 		debugInfo: info,
 	}
 }
 
 func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	return runutil.Repeat(interval, ctx.Done(), func() error {
-		locations, err := s.locations.GetSymbolizableLocations(ctx)
+		locations, err := metastore.GetSymbolizableLocations(ctx, s.metaStore)
 		if err != nil {
 			return err
 		}
@@ -100,8 +100,9 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*metastore.Locat
 
 		for loc, lines := range symbolizedLocations {
 			loc.Lines = lines
+
 			// Only creates lines for given location.
-			if err := s.locations.Symbolize(ctx, loc); err != nil {
+			if err := s.metaStore.Symbolize(ctx, loc); err != nil {
 				result = multierror.Append(result, fmt.Errorf("failed to update location %d: %w", loc.ID, err))
 				continue
 			}
