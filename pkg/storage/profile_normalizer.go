@@ -15,9 +15,7 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -33,7 +31,7 @@ type profileNormalizer struct {
 	mappingsByID  map[uint64]mapInfo
 
 	// Memoization tables for profile entities.
-	samples   map[stacktraceKey]*Sample
+	samples   map[string]*Sample
 	metaStore metastore.ProfileMetaStore
 }
 
@@ -79,14 +77,14 @@ func (pn *profileNormalizer) mapSample(ctx context.Context, src *profile.Sample,
 	// account for the remapped mapping. Add current values to the
 	// existing sample.
 	k := makeStacktraceKey(s)
-	sa, found := pn.samples[k]
+	sa, found := pn.samples[string(k)]
 	if found {
 		sa.Value += src.Value[sampleIndex]
 		return sa, false, nil
 	}
 
 	s.Value += src.Value[sampleIndex]
-	pn.samples[k] = s
+	pn.samples[string(k)] = s
 	return s, true, nil
 }
 
@@ -247,34 +245,111 @@ func (pn *profileNormalizer) mapFunction(ctx context.Context, src *profile.Funct
 	return f, nil
 }
 
-type stacktraceKey struct {
-	locations string
-	labels    string
-	numlabels string
-}
+type stacktraceKey []byte
 
 // key generates stacktraceKey to be used as a key for maps.
 func makeStacktraceKey(sample *Sample) stacktraceKey {
-	ids := make([]string, len(sample.Location))
+	numLocations := len(sample.Location)
+	if numLocations == 0 {
+		return []byte{}
+	}
+
+	locationLength := (16 * numLocations) + (numLocations - 1)
+
+	labelsLength := 0
+	labelName := make([]string, 0, len(sample.Label))
+	for l, vs := range sample.Label {
+		labelName = append(labelName, l)
+
+		labelsLength += len(l) + 2 // +2 for the quotes
+		for _, v := range vs {
+			labelsLength += len(v) + 2 // +2 for the quotes
+		}
+		labelsLength += len(vs) - 1 // spaces
+		labelsLength += 2           // square brackets
+	}
+	sort.Strings(labelName)
+
+	numLabelsLength := 0
+	numLabelNames := make([]string, 0, len(sample.NumLabel))
+	for l, int64s := range sample.NumLabel {
+		numLabelNames = append(numLabelNames, l)
+
+		numLabelsLength += len(l) + 2      // +2 for the quotes
+		numLabelsLength += 2               // square brackets
+		numLabelsLength += 8 * len(int64s) // 8*8=64bit
+
+		if len(sample.NumUnit[l]) > 0 {
+			for i := range int64s {
+				numLabelsLength += len(sample.NumUnit[l][i]) + 2 // numUnit string +2 for quotes
+			}
+
+			numLabelsLength += 2               // square brackets
+			numLabelsLength += len(int64s) - 1 // spaces
+		}
+	}
+	sort.Strings(numLabelNames)
+
+	length := locationLength + labelsLength + numLabelsLength
+	key := make([]byte, 0, length)
+
 	for i, l := range sample.Location {
-		ids[i] = l.ID.String()
+		key = append(key, l.ID[:]...)
+		if i != len(sample.Location)-1 {
+			key = append(key, '|')
+		}
 	}
 
-	labels := make([]string, 0, len(sample.Label))
-	for k, v := range sample.Label {
-		labels = append(labels, fmt.Sprintf("%q%q", k, v))
-	}
-	sort.Strings(labels)
+	for i := 0; i < len(sample.Label); i++ {
+		l := labelName[i]
+		vs := sample.Label[l]
+		key = append(key, '"')
+		key = append(key, l...)
+		key = append(key, '"')
 
-	numlabels := make([]string, 0, len(sample.NumLabel))
-	for k, v := range sample.NumLabel {
-		numlabels = append(numlabels, fmt.Sprintf("%q%x%x", k, v, sample.NumUnit[k]))
+		key = append(key, '[')
+		for i, v := range vs {
+			key = append(key, '"')
+			key = append(key, v...)
+			key = append(key, '"')
+			if i != len(vs)-1 {
+				key = append(key, ' ')
+			}
+		}
+		key = append(key, ']')
 	}
-	sort.Strings(numlabels)
 
-	return stacktraceKey{
-		locations: strings.Join(ids, "|"),
-		labels:    strings.Join(labels, ""),
-		numlabels: strings.Join(numlabels, ""),
+	for i := 0; i < len(sample.NumLabel); i++ {
+		l := numLabelNames[i]
+		int64s := sample.NumLabel[l]
+
+		key = append(key, '"')
+		key = append(key, l...)
+		key = append(key, '"')
+
+		key = append(key, '[')
+		for _, v := range int64s {
+			// Writing int64 to pre-allocated key by shifting per byte
+			for shift := 56; shift >= 0; shift -= 8 {
+				key = append(key, byte(v>>shift))
+			}
+		}
+		key = append(key, ']')
+
+		key = append(key, '[')
+		for i := range int64s {
+			if len(sample.NumUnit[l]) > 0 {
+				s := sample.NumUnit[l][i]
+				key = append(key, '"')
+				key = append(key, s...)
+				key = append(key, '"')
+				if i != len(int64s)-1 {
+					key = append(key, ' ')
+				}
+			}
+		}
+		key = append(key, ']')
 	}
+
+	return key
 }

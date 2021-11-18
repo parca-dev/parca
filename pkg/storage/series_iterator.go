@@ -376,8 +376,8 @@ type MemSeriesInstantFlatProfile struct {
 	durationsIterator  MemSeriesValuesIterator
 	periodsIterator    MemSeriesValuesIterator
 
-	sampleIterators map[stacktraceKey]MemSeriesValuesIterator
-	locations       map[stacktraceKey][]*metastore.Location
+	sampleIterators map[string]MemSeriesValuesIterator
+	locations       map[string][]*metastore.Location
 }
 
 func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {

@@ -2,20 +2,20 @@ goos: linux
 goarch: amd64
 pkg: github.com/parca-dev/parca/pkg/storage
 cpu: AMD Ryzen 9 3900X 12-Core Processor            
-BenchmarkAppends-24    	    2500	  16743501 ns/op	 9839116 B/op	  139925 allocs/op
+BenchmarkAppends-24    	    2500	  23191754 ns/op	11810337 B/op	  148637 allocs/op
 PASS
-ok  	github.com/parca-dev/parca/pkg/storage	55.886s
+ok  	github.com/parca-dev/parca/pkg/storage	72.441s
 goos: linux
 goarch: amd64
 pkg: github.com/parca-dev/parca/pkg/storage
 cpu: AMD Ryzen 9 3900X 12-Core Processor            
-BenchmarkAppends-24    	    2500	  16699756 ns/op	 9839168 B/op	  139926 allocs/op
+BenchmarkAppends-24    	    2500	  23070674 ns/op	11810247 B/op	  148637 allocs/op
 PASS
-ok  	github.com/parca-dev/parca/pkg/storage	55.735s
+ok  	github.com/parca-dev/parca/pkg/storage	72.493s
 goos: linux
 goarch: amd64
 pkg: github.com/parca-dev/parca/pkg/storage
 cpu: AMD Ryzen 9 3900X 12-Core Processor            
-BenchmarkAppends-24    	    2500	  16895825 ns/op	 9839081 B/op	  139925 allocs/op
+BenchmarkAppends-24    	    2500	  23371644 ns/op	11810516 B/op	  148638 allocs/op
 PASS
-ok  	github.com/parca-dev/parca/pkg/storage	56.375s
+ok  	github.com/parca-dev/parca/pkg/storage	72.910s
