@@ -131,7 +131,7 @@ func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
 type InstantProfile interface {
 	ProfileTree() InstantProfileTree
 	ProfileMeta() InstantProfileMeta
-	Samples() []*Sample
+	Samples() map[string]*Sample
 }
 
 type ProfileSeriesIterator interface {
@@ -157,7 +157,7 @@ func (p *Profile) ProfileMeta() InstantProfileMeta {
 	return p.Meta
 }
 
-func (p *Profile) Samples() []*Sample {
+func (p *Profile) Samples() map[string]*Sample {
 	panic("won't be implemented - use FlatProfile instead")
 }
 
@@ -249,7 +249,7 @@ func (p *ScaledInstantProfile) ProfileTree() InstantProfileTree {
 	}
 }
 
-func (p *ScaledInstantProfile) Samples() []*Sample {
+func (p *ScaledInstantProfile) Samples() map[string]*Sample {
 	return p.p.Samples()
 }
 

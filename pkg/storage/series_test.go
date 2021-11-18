@@ -63,7 +63,10 @@ func TestMemSeries(t *testing.T) {
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: []*Sample{s11, s12},
+		samples: map[string]*Sample{
+			string(k11): s11,
+			string(k12): s12,
+		},
 	}
 
 	err = app.AppendFlat(ctx, fp1)
@@ -82,7 +85,9 @@ func TestMemSeries(t *testing.T) {
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: []*Sample{s2},
+		samples: map[string]*Sample{
+			string(k11): s2,
+		},
 	}
 
 	err = app.AppendFlat(ctx, fp2)
@@ -104,7 +109,9 @@ func TestMemSeries(t *testing.T) {
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: []*Sample{s3},
+		samples: map[string]*Sample{
+			string(k3): s3,
+		},
 	}
 
 	err = app.AppendFlat(ctx, fp3)
@@ -126,7 +133,9 @@ func TestMemSeries(t *testing.T) {
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: []*Sample{s4},
+		samples: map[string]*Sample{
+			string(k4): s4,
+		},
 	}
 
 	err = app.AppendFlat(ctx, fp4)
@@ -148,7 +157,9 @@ func TestMemSeries(t *testing.T) {
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: []*Sample{s5},
+		samples: map[string]*Sample{
+			string(k11): s5,
+		},
 	}
 	err = app.AppendFlat(ctx, fp5)
 	require.NoError(t, err)
@@ -193,7 +204,10 @@ func TestMemSeriesMany(t *testing.T) {
 				Duration:  snano,
 				Period:    snano,
 			},
-			samples: []*Sample{s1, s2},
+			samples: map[string]*Sample{
+				string(k1): s1,
+				string(k2): s2,
+			},
 		})
 		require.NoError(t, err)
 	}

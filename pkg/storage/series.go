@@ -430,24 +430,23 @@ func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) erro
 
 	var rootCumulative int64
 
-	for _, s := range p.Samples() {
-		k := makeStacktraceKey(s)
-		if a.s.samples[string(k)] == nil {
-			a.s.samples[string(k)] = make([]chunkenc.Chunk, len(a.s.timestamps))
+	for k, s := range p.Samples() {
+		if a.s.samples[k] == nil {
+			a.s.samples[k] = make([]chunkenc.Chunk, len(a.s.timestamps))
 			for i := 0; i < len(a.s.timestamps); i++ {
-				a.s.samples[string(k)][i] = a.s.chunkPool.GetXOR()
+				a.s.samples[k][i] = a.s.chunkPool.GetXOR()
 			}
 		}
 
-		app, err := a.s.samples[string(k)][len(a.s.samples[string(k)])-1].Appender()
+		app, err := a.s.samples[k][len(a.s.samples[k])-1].Appender()
 		if err != nil {
 			return fmt.Errorf("failed to open flat sample appender: %w", err)
 		}
 		app.AppendAt(a.s.numSamples%samplesPerChunk, s.Value)
 
 		// TODO: Eventually this should be referenced by stacktrace key with the new metastore
-		if _, found := a.s.locations[string(k)]; !found {
-			a.s.locations[string(k)] = s.Location
+		if _, found := a.s.locations[k]; !found {
+			a.s.locations[k] = s.Location
 		}
 
 		rootCumulative += s.Value

@@ -156,9 +156,9 @@ func (it *MemRootSeriesIterator) At() InstantProfile {
 				PeriodType: it.s.periodType,
 				SampleType: it.s.sampleType,
 			},
-			samples: []*Sample{{
-				Value: it.rootIterator.At(),
-			}},
+			samples: map[string]*Sample{
+				"": {Value: it.rootIterator.At()},
+			},
 		}
 	}
 }

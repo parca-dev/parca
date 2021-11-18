@@ -171,9 +171,17 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	s1 := makeSample(1, []uuid.UUID{l5.ID, l3.ID, l2.ID, l1.ID})
 	s2 := makeSample(3, []uuid.UUID{l4.ID, l3.ID, l2.ID, l1.ID})
 
+	k0 := makeStacktraceKey(s0)
+	k1 := makeStacktraceKey(s1)
+	k2 := makeStacktraceKey(s2)
+
 	fp := &FlatProfile{
-		Meta:    InstantProfileMeta{},
-		samples: []*Sample{s0, s1, s2},
+		Meta: InstantProfileMeta{},
+		samples: map[string]*Sample{
+			string(k0): s0,
+			string(k1): s1,
+			string(k2): s2,
+		},
 	}
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
@@ -296,10 +304,13 @@ func TestGenerateInlinedFunctionFlamegraphFlat(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
+	s0 := makeSample(2, []uuid.UUID{l2.ID, l1.ID})
+	k0 := makeStacktraceKey(s0)
+
 	fp := &FlatProfile{
 		Meta: InstantProfileMeta{},
-		samples: []*Sample{
-			makeSample(2, []uuid.UUID{l2.ID, l1.ID}),
+		samples: map[string]*Sample{
+			string(k0): s0,
 		},
 	}
 

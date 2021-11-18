@@ -55,7 +55,7 @@ func (d *DiffProfile) ProfileMeta() InstantProfileMeta {
 	return d.meta
 }
 
-func (d *DiffProfile) Samples() []*Sample {
+func (d *DiffProfile) Samples() map[string]*Sample {
 	panic("implement me")
 }
 
