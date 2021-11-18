@@ -292,7 +292,40 @@ func (m *MergeProfileTree) RootCumulativeValue() int64 {
 }
 
 func (m *MergeProfile) Samples() map[string]*Sample {
-	panic("implement me")
+	as := m.a.Samples()
+	bs := m.b.Samples()
+
+	samples := make(map[string]*Sample, len(as)+len(bs)) // TODO: Don't allocate a new map, and especially not worst case
+
+	// Merge intersection for A to B
+	for k, s := range as {
+		samples[k] = &Sample{
+			Value:    s.Value,
+			Location: s.Location,
+			Label:    s.Label,
+			NumLabel: s.NumLabel,
+			NumUnit:  s.NumUnit,
+		}
+		if b, found := bs[k]; found {
+			// Sum the actual values if k is found in bs
+			samples[k].Value += b.Value
+		}
+	}
+	for k, s := range bs {
+		if _, found := samples[k]; found {
+			// skip samples that exist in the final map, they've been merged already
+			continue
+		}
+		samples[k] = &Sample{
+			Value:    s.Value,
+			Location: s.Location,
+			Label:    s.Label,
+			NumLabel: s.NumLabel,
+			NumUnit:  s.NumUnit,
+		}
+	}
+
+	return samples
 }
 
 func (m *MergeProfileTree) Iterator() InstantProfileTreeIterator {
