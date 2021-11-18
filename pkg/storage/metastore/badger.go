@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	badger "github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/trace"
@@ -62,7 +62,11 @@ func NewBadgerMetastore(
 	tracer trace.Tracer,
 	uuidGenerator UUIDGenerator,
 ) *BadgerMetastore {
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+	db, err := badger.Open(
+		badger.DefaultOptions("").
+			WithInMemory(true).
+			WithLoggingLevel(badger.ERROR),
+	)
 	if err != nil {
 		panic(err)
 	}

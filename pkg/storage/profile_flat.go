@@ -40,7 +40,7 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 		logger:    logger,
 		metaStore: metaStore,
 
-		samples:       make(map[stacktraceKey]*Sample, len(p.Sample)),
+		samples:       make(map[string]*Sample, len(p.Sample)),
 		locationsByID: make(map[uint64]*metastore.Location, len(p.Location)),
 		functionsByID: make(map[uint64]*metastore.Function, len(p.Function)),
 		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
@@ -73,7 +73,7 @@ type profileFlatNormalizer struct {
 	logger    log.Logger
 	metaStore metastore.ProfileMetaStore
 
-	samples map[stacktraceKey]*Sample
+	samples map[string]*Sample
 	// Memoization tables within a profile.
 	locationsByID map[uint64]*metastore.Location
 	functionsByID map[uint64]*metastore.Function
@@ -113,14 +113,14 @@ func (pn *profileFlatNormalizer) mapSample(ctx context.Context, src *profile.Sam
 	// account for the remapped mapping. Add current values to the
 	// existing sample.
 	k := makeStacktraceKey(s)
-	sa, found := pn.samples[k]
+	sa, found := pn.samples[string(k)]
 	if found {
 		sa.Value += src.Value[sampleIndex]
 		return sa, false, nil
 	}
 
 	s.Value += src.Value[sampleIndex]
-	pn.samples[k] = s
+	pn.samples[string(k)] = s
 	return s, true, nil
 }
 

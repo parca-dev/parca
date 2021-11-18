@@ -31,7 +31,7 @@ type profileNormalizer struct {
 	mappingsByID  map[uint64]mapInfo
 
 	// Memoization tables for profile entities.
-	samples   map[stacktraceKey]*Sample
+	samples   map[string]*Sample
 	metaStore metastore.ProfileMetaStore
 }
 
@@ -77,14 +77,14 @@ func (pn *profileNormalizer) mapSample(ctx context.Context, src *profile.Sample,
 	// account for the remapped mapping. Add current values to the
 	// existing sample.
 	k := makeStacktraceKey(s)
-	sa, found := pn.samples[k]
+	sa, found := pn.samples[string(k)]
 	if found {
 		sa.Value += src.Value[sampleIndex]
 		return sa, false, nil
 	}
 
 	s.Value += src.Value[sampleIndex]
-	pn.samples[k] = s
+	pn.samples[string(k)] = s
 	return s, true, nil
 }
 
@@ -250,6 +250,10 @@ type stacktraceKey []byte
 // key generates stacktraceKey to be used as a key for maps.
 func makeStacktraceKey(sample *Sample) stacktraceKey {
 	numLocations := len(sample.Location)
+	if numLocations == 0 {
+		return []byte{}
+	}
+
 	locationLength := (16 * numLocations) + (numLocations - 1)
 
 	labelsLength := 0
@@ -275,11 +279,14 @@ func makeStacktraceKey(sample *Sample) stacktraceKey {
 		numLabelsLength += 2               // square brackets
 		numLabelsLength += 8 * len(int64s) // 8*8=64bit
 
-		for _, i := range int64s {
-			numLabelsLength += len(sample.NumUnit[l][i]) + 2 // numUnit string +2 for quotes
+		if len(sample.NumUnit[l]) > 0 {
+			for i := range int64s {
+				numLabelsLength += len(sample.NumUnit[l][i]) + 2 // numUnit string +2 for quotes
+			}
+
+			numLabelsLength += 2               // square brackets
+			numLabelsLength += len(int64s) - 1 // spaces
 		}
-		numLabelsLength += 2               // square brackets
-		numLabelsLength += len(int64s) - 1 // spaces
 	}
 	sort.Strings(numLabelNames)
 
@@ -330,13 +337,15 @@ func makeStacktraceKey(sample *Sample) stacktraceKey {
 		key = append(key, ']')
 
 		key = append(key, '[')
-		for index, i := range int64s {
-			s := sample.NumUnit[l][i]
-			key = append(key, '"')
-			key = append(key, s...)
-			key = append(key, '"')
-			if index != len(int64s)-1 {
-				key = append(key, ' ')
+		for i := range int64s {
+			if len(sample.NumUnit[l]) > 0 {
+				s := sample.NumUnit[l][i]
+				key = append(key, '"')
+				key = append(key, s...)
+				key = append(key, '"')
+				if i != len(int64s)-1 {
+					key = append(key, ' ')
+				}
 			}
 		}
 		key = append(key, ']')

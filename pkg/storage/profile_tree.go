@@ -43,7 +43,7 @@ func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.Profile
 		logger:    l,
 		metaStore: s,
 
-		samples: make(map[stacktraceKey]*Sample, len(p.Sample)),
+		samples: make(map[string]*Sample, len(p.Sample)),
 
 		// Profile-specific hash tables for each profile inserted.
 		locationsByID: make(map[uint64]*metastore.Location, len(p.Location)),

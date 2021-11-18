@@ -47,8 +47,8 @@ type MemSeries struct {
 	// mu locks the following maps for concurrent access.
 	mu sync.RWMutex
 
-	samples   map[stacktraceKey][]chunkenc.Chunk
-	locations map[stacktraceKey][]*metastore.Location
+	samples   map[string][]chunkenc.Chunk
+	locations map[string][]*metastore.Location
 
 	// TODO: part of profileTree - eventually remove it
 	// Flat values as well as labels by the node's ProfileTreeValueNodeKey.
@@ -80,8 +80,8 @@ func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64), chun
 		periods:    make([]chunkenc.Chunk, 0, 1),
 		root:       make([]chunkenc.Chunk, 0, 1),
 
-		samples:   make(map[stacktraceKey][]chunkenc.Chunk),
-		locations: make(map[stacktraceKey][]*metastore.Location),
+		samples:   make(map[string][]chunkenc.Chunk),
+		locations: make(map[string][]*metastore.Location),
 
 		// TODO: part of profileTree - eventually remove it
 		flatValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
@@ -432,22 +432,22 @@ func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) erro
 
 	for _, s := range p.Samples() {
 		k := makeStacktraceKey(s)
-		if a.s.samples[k] == nil {
-			a.s.samples[k] = make([]chunkenc.Chunk, len(a.s.timestamps))
+		if a.s.samples[string(k)] == nil {
+			a.s.samples[string(k)] = make([]chunkenc.Chunk, len(a.s.timestamps))
 			for i := 0; i < len(a.s.timestamps); i++ {
-				a.s.samples[k][i] = a.s.chunkPool.GetXOR()
+				a.s.samples[string(k)][i] = a.s.chunkPool.GetXOR()
 			}
 		}
 
-		app, err := a.s.samples[k][len(a.s.samples[k])-1].Appender()
+		app, err := a.s.samples[string(k)][len(a.s.samples[string(k)])-1].Appender()
 		if err != nil {
 			return fmt.Errorf("failed to open flat sample appender: %w", err)
 		}
 		app.AppendAt(a.s.numSamples%samplesPerChunk, s.Value)
 
 		// TODO: Eventually this should be referenced by stacktrace key with the new metastore
-		if _, found := a.s.locations[k]; !found {
-			a.s.locations[k] = s.Location
+		if _, found := a.s.locations[string(k)]; !found {
+			a.s.locations[string(k)] = s.Location
 		}
 
 		rootCumulative += s.Value
