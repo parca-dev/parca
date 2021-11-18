@@ -46,26 +46,18 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
 	}
 
-	samples := make([]*Sample, 0, len(p.Sample))
 	for _, s := range p.Sample {
 		if !isZeroSample(s) {
-			sa, isNew, err := pfn.mapSample(ctx, s, sampleIndex)
+			_, _, err := pfn.mapSample(ctx, s, sampleIndex)
 			if err != nil {
 				return nil, err
-			}
-			if isNew {
-				samples = append(samples, sa)
 			}
 		}
 	}
 
-	// IDEA: Return samples as map[stacktraceKey]*Sample since that's what we're storing later.
-	// Then we wouldn't need to recompute the stacktraceKey, I don't see why a slice would be needed either.
-	// More over, the map's key should be the stacktrace's unique UUID as mapped by the metastore.
-
 	return &FlatProfile{
 		Meta:    ProfileMetaFromPprof(p, sampleIndex),
-		samples: samples,
+		samples: pfn.samples,
 	}, nil
 }
 

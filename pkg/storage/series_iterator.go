@@ -353,7 +353,7 @@ func (p *MemSeriesInstantProfile) ProfileMeta() InstantProfileMeta {
 	}
 }
 
-func (p *MemSeriesInstantProfile) Samples() []*Sample {
+func (p *MemSeriesInstantProfile) Samples() map[string]*Sample {
 	panic("won't be implemented - use MemSeriesInstantFlatProfile instead")
 }
 
@@ -390,16 +390,16 @@ func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {
 	}
 }
 
-func (m MemSeriesInstantFlatProfile) Samples() []*Sample {
-	samples := make([]*Sample, 0, len(m.sampleIterators))
+func (m MemSeriesInstantFlatProfile) Samples() map[string]*Sample {
+	samples := make(map[string]*Sample, len(m.sampleIterators))
 	for k, it := range m.sampleIterators {
-		samples = append(samples, &Sample{
+		samples[k] = &Sample{
 			Value:    it.At(),
 			Location: m.locations[k],
 			Label:    nil, // TODO
 			NumLabel: nil, // TODO
 			NumUnit:  nil, // TODO
-		})
+		}
 	}
 	return samples
 }

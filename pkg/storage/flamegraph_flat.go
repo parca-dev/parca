@@ -26,12 +26,12 @@ import (
 
 type InstantFlatProfile interface {
 	ProfileMeta() InstantProfileMeta
-	Samples() []*Sample
+	Samples() map[string]*Sample
 }
 
 type FlatProfile struct {
 	Meta    InstantProfileMeta
-	samples []*Sample
+	samples map[string]*Sample
 }
 
 func (fp *FlatProfile) ProfileTree() InstantProfileTree {
@@ -42,7 +42,7 @@ func (fp *FlatProfile) ProfileMeta() InstantProfileMeta {
 	return fp.Meta
 }
 
-func (fp *FlatProfile) Samples() []*Sample {
+func (fp *FlatProfile) Samples() map[string]*Sample {
 	return fp.samples
 }
 

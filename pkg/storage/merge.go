@@ -291,7 +291,7 @@ func (m *MergeProfileTree) RootCumulativeValue() int64 {
 	return 0
 }
 
-func (m *MergeProfile) Samples() []*Sample {
+func (m *MergeProfile) Samples() map[string]*Sample {
 	panic("implement me")
 }
 
