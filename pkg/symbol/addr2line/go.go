@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/go-kit/log"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
@@ -62,11 +63,9 @@ func (gl *goLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err e
 	// TODO(kakkoyun): Find a way to symbolize inline functions.
 	lines = append(lines, metastore.LocationLine{
 		Line: int64(line),
-		Function: &metastore.Function{
-			FunctionKey: metastore.FunctionKey{
-				Name:     name,
-				Filename: file,
-			},
+		Function: &pb.Function{
+			Name:     name,
+			Filename: file,
 		},
 	})
 

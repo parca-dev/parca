@@ -23,6 +23,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
@@ -47,7 +48,7 @@ func ProfileTreeFromPprof(ctx context.Context, l log.Logger, s metastore.Profile
 
 		// Profile-specific hash tables for each profile inserted.
 		locationsByID: make(map[uint64]*metastore.Location, len(p.Location)),
-		functionsByID: make(map[uint64]*metastore.Function, len(p.Function)),
+		functionsByID: make(map[uint64]*pb.Function, len(p.Function)),
 		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
 	}
 

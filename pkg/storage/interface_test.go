@@ -36,15 +36,15 @@ func TestCopyInstantProfileTree(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"compyinstantprofiletree",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()
 	})
-	require.NoError(t, err)
 	profileTree, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 

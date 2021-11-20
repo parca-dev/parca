@@ -25,6 +25,7 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/goburrow/cache"
 
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
@@ -79,7 +80,7 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	return sym, nil
 }
 
-func (s *Symbolizer) NewLiner(m *metastore.Mapping, path string) (liner, error) {
+func (s *Symbolizer) NewLiner(m *pb.Mapping, path string) (liner, error) {
 	h, err := hash(path)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
@@ -113,7 +114,7 @@ func (s *Symbolizer) Close() error {
 	return s.cache.Close()
 }
 
-func (s *Symbolizer) newLiner(m *metastore.Mapping, path string) (liner, error) {
+func (s *Symbolizer) newLiner(m *pb.Mapping, path string) (liner, error) {
 	hasDWARF, err := elfutils.HasDWARF(path)
 	if err != nil {
 		level.Debug(s.logger).Log(

@@ -21,18 +21,20 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
+	metapb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestTreeStack(t *testing.T) {
 	s := TreeStack{}
-	s.Push(&TreeStackEntry{nodes: []*pb.FlamegraphNode{{Meta: &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "a"}}}}})
-	s.Push(&TreeStackEntry{nodes: []*pb.FlamegraphNode{{Meta: &pb.FlamegraphNodeMeta{Function: &pb.Function{Name: "b"}}}}})
+	s.Push(&TreeStackEntry{nodes: []*pb.FlamegraphNode{{Meta: &pb.FlamegraphNodeMeta{Function: &metapb.Function{Name: "a"}}}}})
+	s.Push(&TreeStackEntry{nodes: []*pb.FlamegraphNode{{Meta: &pb.FlamegraphNodeMeta{Function: &metapb.Function{Name: "b"}}}}})
 
 	require.Equal(t, 2, s.Size())
 
@@ -52,127 +54,138 @@ func TestTreeStack(t *testing.T) {
 	require.False(t, hasMore)
 }
 
+func uuidBytes(s string) []byte {
+	u, err := uuid.Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return u[:]
+}
+
 func TestLinesToTreeNodes(t *testing.T) {
-	nodes := linesToTreeNodes(&metastore.Location{}, uuid.MustParse("00000000-0000-0000-0000-000000000001"), &pb.Mapping{}, []metastore.LocationLine{
+	nodes := linesToTreeNodes(&metastore.Location{ID: uuid.Nil}, &metapb.Mapping{Id: uuidBytes("00000000-0000-0000-0000-000000000001")}, []metastore.LocationLine{
 		{
-			Function: &metastore.Function{
-				FunctionKey: metastore.FunctionKey{
-					Name: "memcpy",
-				},
+			Function: &metapb.Function{
+				Id:   uuid.Nil[:],
+				Name: "memcpy",
 			},
 		}, {
-			Function: &metastore.Function{
-				FunctionKey: metastore.FunctionKey{
-					Name: "printf",
-				},
+			Function: &metapb.Function{
+				Id:   uuid.Nil[:],
+				Name: "printf",
 			},
 		}, {
-			Function: &metastore.Function{
-				FunctionKey: metastore.FunctionKey{
-					Name: "log",
-				},
+			Function: &metapb.Function{
+				Id:   uuid.Nil[:],
+				Name: "log",
 			},
 		},
 	})
 
 	require.Equal(t, []*pb.FlamegraphNode{{
 		Meta: &pb.FlamegraphNodeMeta{
-			Function: &pb.Function{
-				Id:   "00000000-0000-0000-0000-000000000000",
+			Function: &metapb.Function{
+				Id:   uuidBytes("00000000-0000-0000-0000-000000000000"),
 				Name: "log",
 			},
-			Line: &pb.Line{
-				LocationId: "00000000-0000-0000-0000-000000000000",
-				FunctionId: "00000000-0000-0000-0000-000000000000",
+			Line: &metapb.Line{
+				FunctionId: uuidBytes("00000000-0000-0000-0000-000000000000"),
 			},
-			Location: &pb.Location{
-				Id:        "00000000-0000-0000-0000-000000000000",
-				MappingId: "00000000-0000-0000-0000-000000000001",
+			Location: &metapb.Location{
+				Id:        uuidBytes("00000000-0000-0000-0000-000000000000"),
+				MappingId: uuidBytes("00000000-0000-0000-0000-000000000001"),
 			},
-			Mapping: &pb.Mapping{},
+			Mapping: &metapb.Mapping{
+				Id: uuidBytes("00000000-0000-0000-0000-000000000001"),
+			},
 		},
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
-					Id:   "00000000-0000-0000-0000-000000000000",
+				Function: &metapb.Function{
+					Id:   uuidBytes("00000000-0000-0000-0000-000000000000"),
 					Name: "printf",
 				},
-				Line: &pb.Line{
-					LocationId: "00000000-0000-0000-0000-000000000000",
-					FunctionId: "00000000-0000-0000-0000-000000000000",
+				Line: &metapb.Line{
+					FunctionId: uuidBytes("00000000-0000-0000-0000-000000000000"),
 				},
-				Location: &pb.Location{
-					Id:        "00000000-0000-0000-0000-000000000000",
-					MappingId: "00000000-0000-0000-0000-000000000001",
+				Location: &metapb.Location{
+					Id:        uuidBytes("00000000-0000-0000-0000-000000000000"),
+					MappingId: uuidBytes("00000000-0000-0000-0000-000000000001"),
 				},
-				Mapping: &pb.Mapping{},
+				Mapping: &metapb.Mapping{
+					Id: uuidBytes("00000000-0000-0000-0000-000000000001"),
+				},
 			},
 			Children: []*pb.FlamegraphNode{{
 				Meta: &pb.FlamegraphNodeMeta{
-					Function: &pb.Function{
-						Id:   "00000000-0000-0000-0000-000000000000",
+					Function: &metapb.Function{
+						Id:   uuidBytes("00000000-0000-0000-0000-000000000000"),
 						Name: "memcpy",
 					},
-					Line: &pb.Line{
-						LocationId: "00000000-0000-0000-0000-000000000000",
-						FunctionId: "00000000-0000-0000-0000-000000000000",
+					Line: &metapb.Line{
+						FunctionId: uuidBytes("00000000-0000-0000-0000-000000000000"),
 					},
-					Location: &pb.Location{
-						Id:        "00000000-0000-0000-0000-000000000000",
-						MappingId: "00000000-0000-0000-0000-000000000001",
+					Location: &metapb.Location{
+						Id:        uuidBytes("00000000-0000-0000-0000-000000000000"),
+						MappingId: uuidBytes("00000000-0000-0000-0000-000000000001"),
 					},
-					Mapping: &pb.Mapping{},
+					Mapping: &metapb.Mapping{
+						Id: uuidBytes("00000000-0000-0000-0000-000000000001"),
+					},
 				},
 			}},
 		}},
 	}, {
 		Meta: &pb.FlamegraphNodeMeta{
-			Function: &pb.Function{
-				Id:   "00000000-0000-0000-0000-000000000000",
+			Function: &metapb.Function{
+				Id:   uuidBytes("00000000-0000-0000-0000-000000000000"),
 				Name: "printf",
 			},
-			Line: &pb.Line{
-				LocationId: "00000000-0000-0000-0000-000000000000",
-				FunctionId: "00000000-0000-0000-0000-000000000000",
+			Line: &metapb.Line{
+				FunctionId: uuidBytes("00000000-0000-0000-0000-000000000000"),
 			},
-			Location: &pb.Location{
-				Id:        "00000000-0000-0000-0000-000000000000",
-				MappingId: "00000000-0000-0000-0000-000000000001",
+			Location: &metapb.Location{
+				Id:        uuidBytes("00000000-0000-0000-0000-000000000000"),
+				MappingId: uuidBytes("00000000-0000-0000-0000-000000000001"),
 			},
-			Mapping: &pb.Mapping{},
+			Mapping: &metapb.Mapping{
+				Id: uuidBytes("00000000-0000-0000-0000-000000000001"),
+			},
 		},
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
-					Id:   "00000000-0000-0000-0000-000000000000",
+				Function: &metapb.Function{
+					Id:   uuidBytes("00000000-0000-0000-0000-000000000000"),
 					Name: "memcpy",
 				},
-				Line: &pb.Line{
-					LocationId: "00000000-0000-0000-0000-000000000000",
-					FunctionId: "00000000-0000-0000-0000-000000000000",
+				Line: &metapb.Line{
+					FunctionId: uuidBytes("00000000-0000-0000-0000-000000000000"),
 				},
-				Location: &pb.Location{
-					Id:        "00000000-0000-0000-0000-000000000000",
-					MappingId: "00000000-0000-0000-0000-000000000001",
+				Location: &metapb.Location{
+					Id:        uuidBytes("00000000-0000-0000-0000-000000000000"),
+					MappingId: uuidBytes("00000000-0000-0000-0000-000000000001"),
 				},
-				Mapping: &pb.Mapping{},
+				Mapping: &metapb.Mapping{
+					Id: uuidBytes("00000000-0000-0000-0000-000000000001"),
+				},
 			},
 		}},
 	}, {
 		Meta: &pb.FlamegraphNodeMeta{
-			Function: &pb.Function{
-				Id:   "00000000-0000-0000-0000-000000000000",
+			Function: &metapb.Function{
+				Id:   uuidBytes("00000000-0000-0000-0000-000000000000"),
 				Name: "memcpy",
 			},
-			Line: &pb.Line{
-				LocationId: "00000000-0000-0000-0000-000000000000",
-				FunctionId: "00000000-0000-0000-0000-000000000000",
+			Line: &metapb.Line{
+				FunctionId: uuidBytes("00000000-0000-0000-0000-000000000000"),
 			},
-			Location: &pb.Location{
-				Id:        "00000000-0000-0000-0000-000000000000",
-				MappingId: "00000000-0000-0000-0000-000000000001",
+			Location: &metapb.Location{
+				Id:        uuidBytes("00000000-0000-0000-0000-000000000000"),
+				MappingId: uuidBytes("00000000-0000-0000-0000-000000000001"),
 			},
-			Mapping: &pb.Mapping{},
+			Mapping: &metapb.Mapping{
+				Id: uuidBytes("00000000-0000-0000-0000-000000000001"),
+			},
 		},
 	}}, nodes)
 }
@@ -182,37 +195,34 @@ func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
 	var err error
 
 	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),
 	)
 
-	m := &metastore.Mapping{File: "a"}
-	m.ID, err = l.CreateMapping(ctx, m)
+	m := &metapb.Mapping{
+		File: "a",
+	}
+	m.Id, err = l.CreateMapping(ctx, m)
 	require.NoError(t, err)
 
-	f1 := &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name: "1",
-		},
+	f1 := &metapb.Function{
+		Name: "1",
 	}
-	f1.ID, err = l.CreateFunction(ctx, f1)
+	f1.Id, err = l.CreateFunction(ctx, f1)
 	require.NoError(t, err)
 
-	f2 := &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name: "2",
-		},
+	f2 := &metapb.Function{
+		Name: "2",
 	}
-	f2.ID, err = l.CreateFunction(ctx, f2)
+	f2.Id, err = l.CreateFunction(ctx, f2)
 	require.NoError(t, err)
 
-	f3 := &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name: "3",
-		},
+	f3 := &metapb.Function{
+		Name: "3",
 	}
-	f3.ID, err = l.CreateFunction(ctx, f3)
+	f3.Id, err = l.CreateFunction(ctx, f3)
 	require.NoError(t, err)
 
 	l1 := &metastore.Location{
@@ -223,7 +233,10 @@ func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
 			},
 		},
 	}
-	l1.ID, err = l.CreateLocation(ctx, l1)
+	l1ID, err := l.CreateLocation(ctx, l1)
+	require.NoError(t, err)
+
+	l1.ID, err = uuid.FromBytes(l1ID)
 	require.NoError(t, err)
 
 	l2 := &metastore.Location{
@@ -237,7 +250,10 @@ func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
 			},
 		},
 	}
-	l2.ID, err = l.CreateLocation(ctx, l2)
+	l2ID, err := l.CreateLocation(ctx, l2)
+	require.NoError(t, err)
+
+	l2.ID, err = uuid.FromBytes(l2ID)
 	require.NoError(t, err)
 
 	pt := NewProfileTree()
@@ -253,64 +269,61 @@ func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
 		&Profile{Tree: pt},
 	)
 	require.NoError(t, err)
-	require.Equal(t, &pb.Flamegraph{Height: 3, Total: 2, Root: &pb.FlamegraphRootNode{
+	require.True(t, proto.Equal(&pb.Flamegraph{Height: 3, Total: 2, Root: &pb.FlamegraphRootNode{
 		Cumulative: 2,
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
-					Id:   f1.ID.String(),
+				Function: &metapb.Function{
+					Id:   f1.Id,
 					Name: "1",
 				},
-				Line: &pb.Line{
-					LocationId: l1.ID.String(),
-					FunctionId: f1.ID.String(),
+				Line: &metapb.Line{
+					FunctionId: f1.Id,
 				},
-				Location: &pb.Location{
-					Id:        l1.ID.String(),
-					MappingId: m.ID.String(),
+				Location: &metapb.Location{
+					Id:        l1.ID[:],
+					MappingId: m.Id,
 				},
-				Mapping: &pb.Mapping{
-					Id:   m.ID.String(),
+				Mapping: &metapb.Mapping{
+					Id:   m.Id,
 					File: "a",
 				},
 			},
 			Cumulative: 2,
 			Children: []*pb.FlamegraphNode{{
 				Meta: &pb.FlamegraphNodeMeta{
-					Function: &pb.Function{
-						Id:   f2.ID.String(),
+					Function: &metapb.Function{
+						Id:   f2.Id,
 						Name: "2",
 					},
-					Line: &pb.Line{
-						LocationId: l2.ID.String(),
-						FunctionId: f2.ID.String(),
+					Line: &metapb.Line{
+						FunctionId: f2.Id,
 					},
-					Location: &pb.Location{
-						Id:        l2.ID.String(),
-						MappingId: m.ID.String(),
+					Location: &metapb.Location{
+						Id:        l2.ID[:],
+						MappingId: m.Id,
 					},
-					Mapping: &pb.Mapping{
-						Id:   m.ID.String(),
+					Mapping: &metapb.Mapping{
+						Id:   m.Id,
 						File: "a",
 					},
 				},
 				Cumulative: 2,
 				Children: []*pb.FlamegraphNode{{
 					Meta: &pb.FlamegraphNodeMeta{
-						Function: &pb.Function{
-							Id:   f3.ID.String(),
+						Function: &metapb.Function{
+							Id:   f3.Id,
 							Name: "3",
 						},
-						Line: &pb.Line{
-							LocationId: l2.ID.String(),
-							FunctionId: f3.ID.String(),
+						Line: &metapb.Line{
+							FunctionId: f3.Id,
 						},
-						Location: &pb.Location{
-							Id:        l2.ID.String(),
-							MappingId: m.ID.String(),
+						Location: &metapb.Location{
+							Id:        l2.ID[:],
+							MappingId: m.Id,
 						},
-						Mapping: &pb.Mapping{
-							Id:   m.ID.String(),
+						Mapping: &metapb.Mapping{
+							Id:   m.Id,
 							File: "a",
 						},
 					},
@@ -318,62 +331,53 @@ func TestGenerateInlinedFunctionFlamegraph(t *testing.T) {
 				}},
 			}},
 		}},
-	}}, fg)
+	}}, fg))
 }
 
 func TestGenerateFlamegraph(t *testing.T) {
 	ctx := context.Background()
 	var err error
 	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),
 	)
 
-	m := &metastore.Mapping{
+	m := &metapb.Mapping{
 		File: "a",
 	}
-	m.ID, err = l.CreateMapping(ctx, m)
+	m.Id, err = l.CreateMapping(ctx, m)
 	require.NoError(t, err)
 
-	f1 := &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name: "1",
-		},
+	f1 := &metapb.Function{
+		Name: "1",
 	}
-	f1.ID, err = l.CreateFunction(ctx, f1)
+	f1.Id, err = l.CreateFunction(ctx, f1)
 	require.NoError(t, err)
 
-	f2 := &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name: "2",
-		},
+	f2 := &metapb.Function{
+		Name: "2",
 	}
-	f2.ID, err = l.CreateFunction(ctx, f2)
+	f2.Id, err = l.CreateFunction(ctx, f2)
 	require.NoError(t, err)
 
-	f3 := &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name: "3",
-		},
+	f3 := &metapb.Function{
+		Name: "3",
 	}
-	f3.ID, err = l.CreateFunction(ctx, f3)
+	f3.Id, err = l.CreateFunction(ctx, f3)
 	require.NoError(t, err)
 
-	f4 := &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name: "4",
-		},
+	f4 := &metapb.Function{
+		Name: "4",
 	}
-	f4.ID, err = l.CreateFunction(ctx, f4)
+	f4.Id, err = l.CreateFunction(ctx, f4)
 	require.NoError(t, err)
 
-	f5 := &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name: "5",
-		},
+	f5 := &metapb.Function{
+		Name: "5",
 	}
-	f5.ID, err = l.CreateFunction(ctx, f5)
+	f5.Id, err = l.CreateFunction(ctx, f5)
 	require.NoError(t, err)
 
 	l1 := &metastore.Location{
@@ -384,7 +388,10 @@ func TestGenerateFlamegraph(t *testing.T) {
 			},
 		},
 	}
-	l1.ID, err = l.CreateLocation(ctx, l1)
+	l1ID, err := l.CreateLocation(ctx, l1)
+	require.NoError(t, err)
+
+	l1.ID, err = uuid.FromBytes(l1ID)
 	require.NoError(t, err)
 
 	l2 := &metastore.Location{
@@ -395,7 +402,10 @@ func TestGenerateFlamegraph(t *testing.T) {
 			},
 		},
 	}
-	l2.ID, err = l.CreateLocation(ctx, l2)
+	l2ID, err := l.CreateLocation(ctx, l2)
+	require.NoError(t, err)
+
+	l2.ID, err = uuid.FromBytes(l2ID)
 	require.NoError(t, err)
 
 	l3 := &metastore.Location{
@@ -406,7 +416,10 @@ func TestGenerateFlamegraph(t *testing.T) {
 			},
 		},
 	}
-	l3.ID, err = l.CreateLocation(ctx, l3)
+	l3ID, err := l.CreateLocation(ctx, l3)
+	require.NoError(t, err)
+
+	l3.ID, err = uuid.FromBytes(l3ID)
 	require.NoError(t, err)
 
 	l4 := &metastore.Location{
@@ -417,7 +430,10 @@ func TestGenerateFlamegraph(t *testing.T) {
 			},
 		},
 	}
-	l4.ID, err = l.CreateLocation(ctx, l4)
+	l4ID, err := l.CreateLocation(ctx, l4)
+	require.NoError(t, err)
+
+	l4.ID, err = uuid.FromBytes(l4ID)
 	require.NoError(t, err)
 
 	l5 := &metastore.Location{
@@ -428,7 +444,10 @@ func TestGenerateFlamegraph(t *testing.T) {
 			},
 		},
 	}
-	l5.ID, err = l.CreateLocation(ctx, l5)
+	l5ID, err := l.CreateLocation(ctx, l5)
+	require.NoError(t, err)
+
+	l5.ID, err = uuid.FromBytes(l5ID)
 	require.NoError(t, err)
 
 	pt := NewProfileTree()
@@ -456,104 +475,99 @@ func TestGenerateFlamegraph(t *testing.T) {
 		&Profile{Tree: pt},
 	)
 	require.NoError(t, err)
-	require.Equal(t, &pb.Flamegraph{Height: 5, Total: 6, Root: &pb.FlamegraphRootNode{
+	require.True(t, proto.Equal(&pb.Flamegraph{Height: 5, Total: 6, Root: &pb.FlamegraphRootNode{
 		Cumulative: 6,
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
-					Id:   f1.ID.String(),
+				Function: &metapb.Function{
+					Id:   f1.Id,
 					Name: "1",
 				},
-				Line: &pb.Line{
-					LocationId: l1.ID.String(),
-					FunctionId: f1.ID.String(),
+				Line: &metapb.Line{
+					FunctionId: f1.Id,
 				},
-				Location: &pb.Location{
-					Id:        l1.ID.String(),
-					MappingId: m.ID.String(),
+				Location: &metapb.Location{
+					Id:        l1.ID[:],
+					MappingId: m.Id,
 				},
-				Mapping: &pb.Mapping{
-					Id:   m.ID.String(),
+				Mapping: &metapb.Mapping{
+					Id:   m.Id,
 					File: "a",
 				},
 			},
 			Cumulative: 6,
 			Children: []*pb.FlamegraphNode{{
 				Meta: &pb.FlamegraphNodeMeta{
-					Function: &pb.Function{
-						Id:   f2.ID.String(),
+					Function: &metapb.Function{
+						Id:   f2.Id,
 						Name: "2",
 					},
-					Line: &pb.Line{
-						LocationId: l2.ID.String(),
-						FunctionId: f2.ID.String(),
+					Line: &metapb.Line{
+						FunctionId: f2.Id,
 					},
-					Location: &pb.Location{
-						Id:        l2.ID.String(),
-						MappingId: m.ID.String(),
+					Location: &metapb.Location{
+						Id:        l2.ID[:],
+						MappingId: m.Id,
 					},
-					Mapping: &pb.Mapping{
-						Id:   m.ID.String(),
+					Mapping: &metapb.Mapping{
+						Id:   m.Id,
 						File: "a",
 					},
 				},
 				Cumulative: 6,
 				Children: []*pb.FlamegraphNode{{
 					Meta: &pb.FlamegraphNodeMeta{
-						Function: &pb.Function{
-							Id:   f3.ID.String(),
+						Function: &metapb.Function{
+							Id:   f3.Id,
 							Name: "3",
 						},
-						Line: &pb.Line{
-							LocationId: l3.ID.String(),
-							FunctionId: f3.ID.String(),
+						Line: &metapb.Line{
+							FunctionId: f3.Id,
 						},
-						Location: &pb.Location{
-							Id:        l3.ID.String(),
-							MappingId: m.ID.String(),
+						Location: &metapb.Location{
+							Id:        l3.ID[:],
+							MappingId: m.Id,
 						},
-						Mapping: &pb.Mapping{
-							Id:   m.ID.String(),
+						Mapping: &metapb.Mapping{
+							Id:   m.Id,
 							File: "a",
 						},
 					},
 					Cumulative: 4,
 					Children: []*pb.FlamegraphNode{{
 						Meta: &pb.FlamegraphNodeMeta{
-							Function: &pb.Function{
-								Id:   f4.ID.String(),
+							Function: &metapb.Function{
+								Id:   f4.Id,
 								Name: "4",
 							},
-							Line: &pb.Line{
-								LocationId: l4.ID.String(),
-								FunctionId: f4.ID.String(),
+							Line: &metapb.Line{
+								FunctionId: f4.Id,
 							},
-							Location: &pb.Location{
-								Id:        l4.ID.String(),
-								MappingId: m.ID.String(),
+							Location: &metapb.Location{
+								Id:        l4.ID[:],
+								MappingId: m.Id,
 							},
-							Mapping: &pb.Mapping{
-								Id:   m.ID.String(),
+							Mapping: &metapb.Mapping{
+								Id:   m.Id,
 								File: "a",
 							},
 						},
 						Cumulative: 3,
 					}, {
 						Meta: &pb.FlamegraphNodeMeta{
-							Function: &pb.Function{
-								Id:   f5.ID.String(),
+							Function: &metapb.Function{
+								Id:   f5.Id,
 								Name: "5",
 							},
-							Line: &pb.Line{
-								LocationId: l5.ID.String(),
-								FunctionId: f5.ID.String(),
+							Line: &metapb.Line{
+								FunctionId: f5.Id,
 							},
-							Location: &pb.Location{
-								Id:        l5.ID.String(),
-								MappingId: m.ID.String(),
+							Location: &metapb.Location{
+								Id:        l5.ID[:],
+								MappingId: m.Id,
 							},
-							Mapping: &pb.Mapping{
-								Id:   m.ID.String(),
+							Mapping: &metapb.Mapping{
+								Id:   m.Id,
 								File: "a",
 							},
 						},
@@ -562,8 +576,7 @@ func TestGenerateFlamegraph(t *testing.T) {
 				}},
 			}},
 		}},
-	}},
-		fg)
+	}}, fg))
 }
 
 func testGenerateFlamegraphFromProfileTree(t *testing.T, l metastore.ProfileMetaStore) *pb.Flamegraph {
@@ -594,12 +607,12 @@ func testGenerateFlamegraphFromProfileTree(t *testing.T, l metastore.ProfileMeta
 func TestGenerateFlamegraphFromProfileTree(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		reg,
 		tracer,
-		"generateflamegraphfrominstantprofile",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -644,12 +657,12 @@ func testGenerateFlamegraphFromInstantProfile(t *testing.T, l metastore.ProfileM
 func TestGenerateFlamegraphFromInstantProfile(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		reg,
 		tracer,
-		"generateflamegraphfrominstantprofile",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -660,12 +673,12 @@ func TestGenerateFlamegraphFromInstantProfile(t *testing.T) {
 func TestFlamegraphConsistency(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		reg,
 		tracer,
-		"generateflamegraphfrominstantprofile",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -680,12 +693,12 @@ func TestFlamegraphConsistency(t *testing.T) {
 func TestGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		reg,
 		tracer,
-		"generateflamegraphfrominstantprofile",
+		metastore.NewRandomUUIDGenerator(),
 	)
-	require.NoError(t, err)
 	t.Cleanup(func() {
 		l.Close()
 	})
@@ -739,15 +752,15 @@ func TestControlGenerateFlamegraphFromMergeProfile(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"controlgenerateflamegraphfrommergeprofile",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()
 	})
-	require.NoError(t, err)
 	profileTree, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 
@@ -774,15 +787,15 @@ func BenchmarkGenerateFlamegraph(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"flamegraph",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	b.Cleanup(func() {
 		l.Close()
 	})
-	require.NoError(b, err)
 	profileTree, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(b, err)
 
@@ -805,48 +818,48 @@ func TestAggregateByFunction(t *testing.T) {
 		Cumulative: 12,
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
+				Function: &metapb.Function{
 					Name: "1",
 				},
-				Line:     &pb.Line{},
-				Location: &pb.Location{},
+				Line:     &metapb.Line{},
+				Location: &metapb.Location{},
 			},
 			Cumulative: 12,
 			Children: []*pb.FlamegraphNode{
 				{
 					Meta: &pb.FlamegraphNodeMeta{
-						Function: &pb.Function{
+						Function: &metapb.Function{
 							Name: "2",
 						},
-						Line:     &pb.Line{},
-						Location: &pb.Location{},
+						Line:     &metapb.Line{},
+						Location: &metapb.Location{},
 					},
 					Cumulative: 6,
 					Children: []*pb.FlamegraphNode{{
 						Cumulative: 4,
 						Meta: &pb.FlamegraphNodeMeta{
-							Function: &pb.Function{
+							Function: &metapb.Function{
 								Name: "3",
 							},
-							Line:     &pb.Line{},
-							Location: &pb.Location{},
+							Line:     &metapb.Line{},
+							Location: &metapb.Location{},
 						},
 						Children: []*pb.FlamegraphNode{{
 							Meta: &pb.FlamegraphNodeMeta{
-								Function: &pb.Function{
+								Function: &metapb.Function{
 									Name: "4",
 								},
-								Line:     &pb.Line{},
-								Location: &pb.Location{},
+								Line:     &metapb.Line{},
+								Location: &metapb.Location{},
 							},
 							Cumulative: 3,
 						}, {
 							Meta: &pb.FlamegraphNodeMeta{
-								Function: &pb.Function{
+								Function: &metapb.Function{
 									Name: "5",
 								},
-								Line:     &pb.Line{},
-								Location: &pb.Location{},
+								Line:     &metapb.Line{},
+								Location: &metapb.Location{},
 							},
 							Cumulative: 1,
 						}},
@@ -854,38 +867,38 @@ func TestAggregateByFunction(t *testing.T) {
 				},
 				{
 					Meta: &pb.FlamegraphNodeMeta{
-						Function: &pb.Function{
+						Function: &metapb.Function{
 							Name: "2",
 						},
-						Line:     &pb.Line{},
-						Location: &pb.Location{},
+						Line:     &metapb.Line{},
+						Location: &metapb.Location{},
 					},
 					Cumulative: 6,
 					Children: []*pb.FlamegraphNode{{
 						Meta: &pb.FlamegraphNodeMeta{
-							Function: &pb.Function{
+							Function: &metapb.Function{
 								Name: "3",
 							},
-							Line:     &pb.Line{},
-							Location: &pb.Location{},
+							Line:     &metapb.Line{},
+							Location: &metapb.Location{},
 						},
 						Cumulative: 4,
 						Children: []*pb.FlamegraphNode{{
 							Meta: &pb.FlamegraphNodeMeta{
-								Function: &pb.Function{
+								Function: &metapb.Function{
 									Name: "4",
 								},
-								Line:     &pb.Line{},
-								Location: &pb.Location{},
+								Line:     &metapb.Line{},
+								Location: &metapb.Location{},
 							},
 							Cumulative: 3,
 						}, {
 							Meta: &pb.FlamegraphNodeMeta{
-								Function: &pb.Function{
+								Function: &metapb.Function{
 									Name: "5",
 								},
-								Line:     &pb.Line{},
-								Location: &pb.Location{},
+								Line:     &metapb.Line{},
+								Location: &metapb.Location{},
 							},
 							Cumulative: 1,
 						}},
@@ -894,11 +907,11 @@ func TestAggregateByFunction(t *testing.T) {
 			},
 		}, {
 			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
+				Function: &metapb.Function{
 					Name: "1",
 				},
-				Line:     &pb.Line{},
-				Location: &pb.Location{},
+				Line:     &metapb.Line{},
+				Location: &metapb.Location{},
 			},
 			Cumulative: 2,
 		}},
@@ -908,44 +921,44 @@ func TestAggregateByFunction(t *testing.T) {
 		Cumulative: 12,
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
-				Function: &pb.Function{
+				Function: &metapb.Function{
 					Name: "1",
 				},
-				Location: &pb.Location{},
+				Location: &metapb.Location{},
 			},
 			Cumulative: 14,
 			Children: []*pb.FlamegraphNode{{
 				Cumulative: 12,
 				Meta: &pb.FlamegraphNodeMeta{
-					Function: &pb.Function{
+					Function: &metapb.Function{
 						Name: "2",
 					},
-					Location: &pb.Location{},
+					Location: &metapb.Location{},
 				},
 				Children: []*pb.FlamegraphNode{
 					{
 						Meta: &pb.FlamegraphNodeMeta{
-							Function: &pb.Function{
+							Function: &metapb.Function{
 								Name: "3",
 							},
-							Location: &pb.Location{},
+							Location: &metapb.Location{},
 						},
 						Cumulative: 8,
 						Children: []*pb.FlamegraphNode{
 							{
 								Meta: &pb.FlamegraphNodeMeta{
-									Function: &pb.Function{
+									Function: &metapb.Function{
 										Name: "4",
 									},
-									Location: &pb.Location{},
+									Location: &metapb.Location{},
 								},
 								Cumulative: 6,
 							}, {
 								Meta: &pb.FlamegraphNodeMeta{
-									Function: &pb.Function{
+									Function: &metapb.Function{
 										Name: "5",
 									},
-									Location: &pb.Location{},
+									Location: &metapb.Location{},
 								},
 								Cumulative: 2,
 							},

@@ -25,6 +25,8 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/storage"
@@ -47,22 +49,25 @@ func TestSymbolizer(t *testing.T) {
 	_, dbgStr, mStr := setup(t)
 
 	sym := New(log.NewNopLogger(), mStr, dbgStr)
-	m := &metastore.Mapping{
+	m := &pb.Mapping{
 		Start:   4194304,
 		Limit:   4603904,
-		BuildID: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
+		BuildId: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
 	}
 
 	ctx := context.Background()
 
-	m.ID, err = mStr.CreateMapping(ctx, m)
+	m.Id, err = mStr.CreateMapping(ctx, m)
 	require.NoError(t, err)
 
 	locs := []*metastore.Location{{
 		Mapping: m,
 		Address: 0x463781,
 	}}
-	locs[0].ID, err = mStr.CreateLocation(ctx, locs[0])
+	locs0ID, err := mStr.CreateLocation(ctx, locs[0])
+	require.NoError(t, err)
+
+	locs[0].ID, err = uuid.FromBytes(locs0ID)
 	require.NoError(t, err)
 
 	allLocs, err := metastore.GetLocations(ctx, mStr)
@@ -425,6 +430,7 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileM
 	require.NoError(t, err)
 
 	mStr := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),

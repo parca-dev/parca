@@ -67,6 +67,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),
@@ -132,6 +133,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),
@@ -202,6 +204,7 @@ func Test_QueryRange_Ranged(t *testing.T) {
 
 	db := storage.OpenDB(reg, tracer, nil)
 	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		reg,
 		tracer,
 		metastore.NewRandomUUIDGenerator(),
@@ -367,6 +370,7 @@ func Test_Query_Simple(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),
@@ -426,6 +430,7 @@ func Test_Query_Diff(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),
@@ -516,6 +521,7 @@ func Test_Query_Diff(t *testing.T) {
 func Benchmark_Query_Merge(b *testing.B) {
 	ctx := context.Background()
 	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),
@@ -583,6 +589,7 @@ func Test_Query_Merge(t *testing.T) {
 	ctx := context.Background()
 
 	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),
@@ -646,6 +653,7 @@ func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
 	ctx := context.Background()
 	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		metastore.NewRandomUUIDGenerator(),

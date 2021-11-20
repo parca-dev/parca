@@ -14,20 +14,23 @@
 package metastore
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestMappingKeyBytes(t *testing.T) {
-	k := MappingKey{
-		Size:          1,
-		Offset:        2,
-		BuildIDOrFile: "",
+	m := &pb.Mapping{
+		Start:  0,
+		Limit:  1,
+		Offset: 2,
 	}
 
-	require.Equal(t, k.Bytes(), []byte{
+	require.Equal(t, MakeMappingKey(m), []byte{
 		0x6d,
 		0x61,
 		0x70,
@@ -50,8 +53,8 @@ func TestMappingKeyBytes(t *testing.T) {
 		0x0,
 		0x0,
 		0x0,
+		0x10,
 		0x0,
-		0x1,
 		0x0,
 		0x0,
 		0x0,
@@ -62,13 +65,14 @@ func TestMappingKeyBytes(t *testing.T) {
 		0x2,
 	})
 
-	k = MappingKey{
-		Size:          1,
-		Offset:        2,
-		BuildIDOrFile: "a",
+	m = &pb.Mapping{
+		Start:  0,
+		Limit:  1,
+		Offset: 2,
+		File:   "a",
 	}
 
-	require.Equal(t, k.Bytes(), []byte{
+	require.Equal(t, MakeMappingKey(m), []byte{
 		0x6d,
 		0x61,
 		0x70,
@@ -91,8 +95,8 @@ func TestMappingKeyBytes(t *testing.T) {
 		0x0,
 		0x0,
 		0x0,
+		0x10,
 		0x0,
-		0x1,
 		0x0,
 		0x0,
 		0x0,
@@ -106,14 +110,14 @@ func TestMappingKeyBytes(t *testing.T) {
 }
 
 func TestFunctionKeyBytes(t *testing.T) {
-	k := FunctionKey{
+	f := &pb.Function{
 		StartLine:  3,
 		Name:       "a",
 		SystemName: "b",
 		Filename:   "c",
 	}
 
-	require.Equal(t, k.Bytes(), []byte{
+	require.Equal(t, MakeFunctionKey(f), []byte{
 		0x66,
 		0x75,
 		0x6e,
@@ -146,29 +150,31 @@ func TestFunctionKeyBytes(t *testing.T) {
 }
 
 func TestLocationKeyBytes(t *testing.T) {
-	k := LocationKey{
-		NormalizedAddress: 3,
-		MappingID: uuid.UUID{
-			0x02,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x03,
+	l := &Location{
+		Address: 3,
+		Mapping: &pb.Mapping{
+			Id: []byte{
+				0x02,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x03,
+			},
 		},
 	}
 
-	require.Equal(t, k.Bytes(), []byte{
+	require.Equal(t, MakeLocationKey(l), []byte{
 		0x6c,
 		0x6f,
 		0x63,
@@ -219,4 +225,286 @@ func TestLocationKeyBytes(t *testing.T) {
 		0x00,
 		0x00,
 	})
+}
+
+func mappingStoreTest(t *testing.T, s MappingStore) {
+	ctx := context.Background()
+	var err error
+
+	m := &pb.Mapping{
+		Start:           1,
+		Limit:           10,
+		Offset:          5,
+		File:            "file",
+		BuildId:         "buildID0",
+		HasFunctions:    false,
+		HasFilenames:    false,
+		HasLineNumbers:  false,
+		HasInlineFrames: false,
+	}
+	m.Id, err = s.CreateMapping(ctx, m)
+	require.NoError(t, err)
+
+	m1 := &pb.Mapping{
+		Start:           12,
+		Limit:           110,
+		Offset:          51,
+		File:            "file1",
+		BuildId:         "buildID1",
+		HasFunctions:    true,
+		HasFilenames:    true,
+		HasLineNumbers:  false,
+		HasInlineFrames: true,
+	}
+	m1.Id, err = s.CreateMapping(ctx, m1)
+	require.NoError(t, err)
+
+	mapByKey, err := s.GetMappingByKey(ctx, m)
+	require.NoError(t, err)
+	require.Equal(t, m.Id, mapByKey.Id)
+	require.Equal(t, m.Start, mapByKey.Start)
+	require.Equal(t, m.Limit, mapByKey.Limit)
+	require.Equal(t, m.Offset, mapByKey.Offset)
+	require.Equal(t, m.File, mapByKey.File)
+	require.Equal(t, m.BuildId, mapByKey.BuildId)
+	require.Equal(t, m.HasFunctions, mapByKey.HasFunctions)
+	require.Equal(t, m.HasFilenames, mapByKey.HasFilenames)
+	require.Equal(t, m.HasLineNumbers, mapByKey.HasLineNumbers)
+	require.Equal(t, m.HasInlineFrames, mapByKey.HasInlineFrames)
+}
+
+func functionStoreTest(t *testing.T, s FunctionStore) {
+	ctx := context.Background()
+	var err error
+
+	f := &pb.Function{
+		Name:       "name",
+		SystemName: "systemName",
+		Filename:   "filename",
+		StartLine:  22,
+	}
+	f.Id, err = s.CreateFunction(ctx, f)
+	require.NoError(t, err)
+
+	f1 := &pb.Function{
+		Name:       "name",
+		SystemName: "systemName",
+		Filename:   "filename",
+		StartLine:  42,
+	}
+	f1.Id, err = s.CreateFunction(ctx, f1)
+	require.NoError(t, err)
+
+	funcByID, err := s.GetFunctionByKey(ctx, f)
+	require.NoError(t, err)
+	require.Equal(t, f.Id, funcByID.Id)
+	require.Equal(t, f.Name, funcByID.Name)
+	require.Equal(t, f.SystemName, funcByID.SystemName)
+	require.Equal(t, f.Filename, funcByID.Filename)
+	require.Equal(t, f.StartLine, funcByID.StartLine)
+
+	funcs, err := s.GetFunctions(context.Background())
+	require.NoError(t, err)
+
+	// Order is not guaranteed, so make sure it's one of the two possibilities.
+
+	if funcs[0].StartLine == 22 {
+		require.True(t, proto.Equal(funcs[0], f))
+		require.True(t, proto.Equal(funcs[1], f1))
+	}
+
+	if funcs[0].StartLine == 42 {
+		require.True(t, proto.Equal(funcs[0], f1))
+		require.True(t, proto.Equal(funcs[1], f))
+	}
+}
+
+func LocationLinesStoreTest(t *testing.T, s LocationLineStore) {
+	ctx := context.Background()
+
+	locID := uuid.New()
+	f1ID := uuid.New()
+	ll := []LocationLine{{
+		Line: 2,
+		Function: &pb.Function{
+			Id:   f1ID[:],
+			Name: "f1",
+		},
+	}}
+	err := s.CreateLocationLines(ctx, locID[:], ll)
+	require.NoError(t, err)
+
+	llRetrieved, functionIDs, err := s.GetLinesByLocationIDs(ctx, locID[:])
+	require.NoError(t, err)
+	require.Equal(t, [][]byte{f1ID[:]}, functionIDs)
+	require.Equal(t, map[string][]*pb.Line{
+		string(locID[:]): {
+			{
+				Line:       2,
+				FunctionId: f1ID[:],
+			},
+		},
+	}, llRetrieved)
+}
+
+func LocationStoreTest(t *testing.T, s ProfileMetaStore) {
+	ctx := context.Background()
+
+	l := &Location{
+		Address: uint64(42),
+	}
+	lID, err := s.CreateLocation(ctx, l)
+	require.NoError(t, err)
+
+	lUUID, err := uuid.FromBytes(lID)
+	require.NoError(t, err)
+
+	l.ID = lUUID
+
+	l1 := &Location{
+		Address: uint64(421),
+	}
+	l1ID, err := s.CreateLocation(ctx, l1)
+	require.NoError(t, err)
+
+	l1UUID, err := uuid.FromBytes(l1ID)
+	require.NoError(t, err)
+
+	l1.ID = l1UUID
+
+	locs, err := GetLocations(context.Background(), s)
+	require.NoError(t, err)
+
+	if locs[0].Address == 42 {
+		require.Equal(t, locs[0].Address, l.Address)
+		require.Equal(t, locs[1].Address, l1.Address)
+	} else {
+		require.Equal(t, locs[1].Address, l.Address)
+		require.Equal(t, locs[0].Address, l1.Address)
+	}
+
+	l1, err = GetLocationByKey(ctx, s, l1)
+	require.NoError(t, err)
+
+	locByID, err := GetLocationsByIDs(ctx, s, l1.ID[:])
+	require.NoError(t, err)
+
+	require.Equal(t, l1, locByID[string(l1.ID[:])])
+
+	f := &pb.Function{
+		Name:       "name",
+		SystemName: "systemName",
+		Filename:   "filename",
+		StartLine:  22,
+	}
+	l1.Lines = []LocationLine{
+		{Line: 1, Function: f},
+		{Line: 5, Function: f},
+	}
+
+	err = s.Symbolize(ctx, l1)
+	require.NoError(t, err)
+
+	locByID, err = GetLocationsByIDs(ctx, s, l1.ID[:])
+	require.NoError(t, err)
+	res := locByID[string(l1.ID[:])]
+	requireEqualLocation(t, l1, res)
+}
+
+func requireEqualLocation(t *testing.T, expected *Location, compared *Location) {
+	require.Equal(t, expected.ID, compared.ID)
+	require.Equal(t, expected.Address, compared.Address)
+	require.Equal(t, expected.IsFolded, compared.IsFolded)
+	if expected.Mapping != nil {
+		require.NotNil(t, compared.Mapping)
+		require.True(t, proto.Equal(expected.Mapping, compared.Mapping))
+	}
+	require.Equal(t, len(expected.Lines), len(compared.Lines))
+	for i := range expected.Lines {
+		require.Equal(t, expected.Lines[i].Line, compared.Lines[i].Line)
+		require.True(t, proto.Equal(expected.Lines[i].Function, compared.Lines[i].Function))
+	}
+}
+
+func metaStoreTest(t *testing.T, s ProfileMetaStore) {
+	ctx := context.Background()
+	var err error
+
+	m := &pb.Mapping{
+		Start:           1,
+		Limit:           10,
+		Offset:          5,
+		File:            "file",
+		BuildId:         "buildID0",
+		HasFunctions:    false,
+		HasFilenames:    false,
+		HasLineNumbers:  false,
+		HasInlineFrames: false,
+	}
+	m.Id, err = s.CreateMapping(ctx, m)
+	require.NoError(t, err)
+
+	l := &Location{
+		Address: uint64(42),
+		Mapping: m,
+	}
+	locId, err := s.CreateLocation(ctx, l)
+	require.NoError(t, err)
+
+	l.ID, err = uuid.FromBytes(locId)
+	require.NoError(t, err)
+
+	m1 := &pb.Mapping{
+		Start:           12,
+		Limit:           110,
+		Offset:          51,
+		File:            "file1",
+		BuildId:         "buildID1",
+		HasFunctions:    true,
+		HasFilenames:    true,
+		HasLineNumbers:  false,
+		HasInlineFrames: true,
+	}
+	m1.Id, err = s.CreateMapping(ctx, m1)
+	require.NoError(t, err)
+
+	f := &pb.Function{
+		Name:       "name",
+		SystemName: "systemName",
+		Filename:   "filename",
+		StartLine:  22,
+	}
+	f.Id, err = s.CreateFunction(ctx, f)
+	require.NoError(t, err)
+
+	l1 := &Location{
+		Address: uint64(421),
+		Mapping: m1,
+		Lines: []LocationLine{
+			{Line: 1, Function: f},
+			{Line: 5, Function: f},
+		},
+	}
+	loc1Id, err := s.CreateLocation(ctx, l1)
+	require.NoError(t, err)
+
+	l1.ID, err = uuid.FromBytes(loc1Id)
+	require.NoError(t, err)
+
+	locs, err := GetLocations(ctx, s)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(locs))
+
+	if locs[0].Address == uint64(42) {
+		requireEqualLocation(t, l, locs[0])
+		requireEqualLocation(t, l1, locs[1])
+	} else {
+		requireEqualLocation(t, l, locs[1])
+		requireEqualLocation(t, l1, locs[0])
+	}
+
+	unsymlocs, err := GetSymbolizableLocations(ctx, s)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(unsymlocs))
+	requireEqualLocation(t, l, unsymlocs[0])
 }

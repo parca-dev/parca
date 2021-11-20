@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/dgraph-io/badger/v3"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/trace"
@@ -55,18 +57,35 @@ type BadgerMetastore struct {
 	uuidGenerator UUIDGenerator
 }
 
+type BadgerLogger struct {
+	logger log.Logger
+}
+
+func (l *BadgerLogger) Errorf(f string, v ...interface{}) {
+	level.Error(l.logger).Log("msg", fmt.Sprintf(f, v...))
+}
+
+func (l *BadgerLogger) Warningf(f string, v ...interface{}) {
+	level.Warn(l.logger).Log("msg", fmt.Sprintf(f, v...))
+}
+
+func (l *BadgerLogger) Infof(f string, v ...interface{}) {
+	level.Info(l.logger).Log("msg", fmt.Sprintf(f, v...))
+}
+
+func (l *BadgerLogger) Debugf(f string, v ...interface{}) {
+	level.Debug(l.logger).Log("msg", fmt.Sprintf(f, v...))
+}
+
 // NewBadgerMetastore returns a new BadgerMetastore with using in-memory badger
 // instance.
 func NewBadgerMetastore(
+	logger log.Logger,
 	reg prometheus.Registerer,
 	tracer trace.Tracer,
 	uuidGenerator UUIDGenerator,
 ) *BadgerMetastore {
-	db, err := badger.Open(
-		badger.DefaultOptions("").
-			WithInMemory(true).
-			WithLoggingLevel(badger.ERROR),
-	)
+	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true).WithLogger(&BadgerLogger{logger: logger}))
 	if err != nil {
 		panic(err)
 	}
@@ -89,8 +108,8 @@ func (m *BadgerMetastore) Ping() error {
 }
 
 // GetMappingsByIDs returns the mappings for the given IDs.
-func (m *BadgerMetastore) GetMappingsByIDs(ctx context.Context, ids ...uuid.UUID) (map[uuid.UUID]*Mapping, error) {
-	mappings := map[uuid.UUID]*Mapping{}
+func (m *BadgerMetastore) GetMappingsByIDs(ctx context.Context, ids ...[]byte) (map[string]*pb.Mapping, error) {
+	mappings := map[string]*pb.Mapping{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		for _, id := range ids {
 			item, err := txn.Get(append([]byte("mappings/by-id/"), id[:]...))
@@ -104,24 +123,8 @@ func (m *BadgerMetastore) GetMappingsByIDs(ctx context.Context, ids ...uuid.UUID
 				if err != nil {
 					return err
 				}
-				id, err := uuid.FromBytes(ma.Id)
-				if err != nil {
-					return err
-				}
 
-				mappings[id] = &Mapping{
-					ID:              id,
-					Start:           ma.Start,
-					Limit:           ma.Limit,
-					Offset:          ma.Offset,
-					File:            ma.File,
-					BuildID:         ma.BuildId,
-					HasFunctions:    ma.HasFunctions,
-					HasFilenames:    ma.HasFilenames,
-					HasLineNumbers:  ma.HasLineNumbers,
-					HasInlineFrames: ma.HasInlineFrames,
-				}
-
+				mappings[string(id)] = ma
 				return nil
 			})
 			if err != nil {
@@ -136,11 +139,11 @@ func (m *BadgerMetastore) GetMappingsByIDs(ctx context.Context, ids ...uuid.UUID
 }
 
 // GetMappingByKey returns the mapping for the given key.
-func (m *BadgerMetastore) GetMappingByKey(ctx context.Context, k MappingKey) (*Mapping, error) {
+func (m *BadgerMetastore) GetMappingByKey(ctx context.Context, key *pb.Mapping) (*pb.Mapping, error) {
 	ma := &pb.Mapping{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		var err error
-		item, err := txn.Get(k.Bytes())
+		item, err := txn.Get(MakeMappingKey(key))
 		if err == badger.ErrKeyNotFound {
 			return ErrMappingNotFound
 		}
@@ -169,48 +172,20 @@ func (m *BadgerMetastore) GetMappingByKey(ctx context.Context, k MappingKey) (*M
 		return nil, err
 	}
 
-	id, err := uuid.FromBytes(ma.Id)
+	return ma, nil
+}
+
+// CreateMapping creates a new mapping in the database.
+func (m *BadgerMetastore) CreateMapping(ctx context.Context, mapping *pb.Mapping) ([]byte, error) {
+	mappingID := m.uuidGenerator.New()
+	mapping.Id = mappingID[:]
+	buf, err := proto.Marshal(mapping)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Mapping{
-		ID:              id,
-		Start:           ma.Start,
-		Limit:           ma.Limit,
-		Offset:          ma.Offset,
-		File:            ma.File,
-		BuildID:         ma.BuildId,
-		HasFunctions:    ma.HasFunctions,
-		HasFilenames:    ma.HasFilenames,
-		HasLineNumbers:  ma.HasLineNumbers,
-		HasInlineFrames: ma.HasInlineFrames,
-	}, err
-}
-
-// CreateMapping creates a new mapping in the database.
-func (m *BadgerMetastore) CreateMapping(ctx context.Context, mapping *Mapping) (uuid.UUID, error) {
-	mappingID := m.uuidGenerator.New()
-	ma := &pb.Mapping{
-		Id:              mappingID[:],
-		Start:           mapping.Start,
-		Limit:           mapping.Limit,
-		Offset:          mapping.Offset,
-		File:            mapping.File,
-		BuildId:         mapping.BuildID,
-		HasFunctions:    mapping.HasFunctions,
-		HasFilenames:    mapping.HasFilenames,
-		HasLineNumbers:  mapping.HasLineNumbers,
-		HasInlineFrames: mapping.HasInlineFrames,
-	}
-
-	buf, err := proto.Marshal(ma)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
 	err = m.db.Update(func(txn *badger.Txn) error {
-		err := txn.Set(mapping.Key().Bytes(), mappingID[:])
+		err := txn.Set(MakeMappingKey(mapping), mappingID[:])
 		if err != nil {
 			return err
 		}
@@ -218,27 +193,21 @@ func (m *BadgerMetastore) CreateMapping(ctx context.Context, mapping *Mapping) (
 		return txn.Set(append([]byte("mappings/by-id/"), mappingID[:]...), buf)
 	})
 
-	return mappingID, err
+	return mapping.Id, err
 }
 
 // CreateFunction creates a new function in the database.
-func (m *BadgerMetastore) CreateFunction(ctx context.Context, function *Function) (uuid.UUID, error) {
+func (m *BadgerMetastore) CreateFunction(ctx context.Context, f *pb.Function) ([]byte, error) {
 	functionID := m.uuidGenerator.New()
-	f := &pb.Function{
-		Id:         functionID[:],
-		StartLine:  function.FunctionKey.StartLine,
-		Name:       function.FunctionKey.Name,
-		SystemName: function.FunctionKey.SystemName,
-		Filename:   function.FunctionKey.Filename,
-	}
+	f.Id = functionID[:]
 
 	buf, err := proto.Marshal(f)
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	err = m.db.Update(func(txn *badger.Txn) error {
-		err := txn.Set(function.Key().Bytes(), f.Id)
+		err := txn.Set(MakeFunctionKey(f), f.Id)
 		if err != nil {
 			return err
 		}
@@ -246,15 +215,15 @@ func (m *BadgerMetastore) CreateFunction(ctx context.Context, function *Function
 		return txn.Set(append([]byte("functions/by-id/"), f.Id...), buf)
 	})
 
-	return functionID, err
+	return f.Id, err
 }
 
 // GetFunctionByKey returns the function for the given key.
-func (m *BadgerMetastore) GetFunctionByKey(ctx context.Context, k FunctionKey) (*Function, error) {
+func (m *BadgerMetastore) GetFunctionByKey(ctx context.Context, key *pb.Function) (*pb.Function, error) {
 	f := &pb.Function{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		var err error
-		item, err := txn.Get(k.Bytes())
+		item, err := txn.Get(MakeFunctionKey(key))
 		if err == badger.ErrKeyNotFound {
 			return ErrFunctionNotFound
 		}
@@ -283,25 +252,12 @@ func (m *BadgerMetastore) GetFunctionByKey(ctx context.Context, k FunctionKey) (
 		return nil, err
 	}
 
-	id, err := uuid.FromBytes(f.Id)
-	if err != nil {
-		return nil, fmt.Errorf("parse function ID (%v): %w", f, err)
-	}
-
-	return &Function{
-		ID: id,
-		FunctionKey: FunctionKey{
-			StartLine:  f.StartLine,
-			Name:       f.Name,
-			SystemName: f.SystemName,
-			Filename:   f.Filename,
-		},
-	}, nil
+	return f, nil
 }
 
 // GetFunctions returns all functions in the database.
-func (m *BadgerMetastore) GetFunctions(ctx context.Context) ([]*Function, error) {
-	var functions []*Function
+func (m *BadgerMetastore) GetFunctions(ctx context.Context) ([]*pb.Function, error) {
+	var functions []*pb.Function
 	err := m.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
@@ -316,19 +272,7 @@ func (m *BadgerMetastore) GetFunctions(ctx context.Context) ([]*Function, error)
 				if err != nil {
 					return err
 				}
-				id, err := uuid.FromBytes(f.Id)
-				if err != nil {
-					return err
-				}
-				functions = append(functions, &Function{
-					ID: id,
-					FunctionKey: FunctionKey{
-						StartLine:  f.StartLine,
-						Name:       f.Name,
-						SystemName: f.SystemName,
-						Filename:   f.Filename,
-					},
-				})
+				functions = append(functions, f)
 				return nil
 			})
 			if err != nil {
@@ -341,8 +285,8 @@ func (m *BadgerMetastore) GetFunctions(ctx context.Context) ([]*Function, error)
 }
 
 // GetFunctionByID returns the function for the given ID.
-func (m *BadgerMetastore) GetFunctionsByIDs(ctx context.Context, ids ...uuid.UUID) (map[uuid.UUID]*Function, error) {
-	functions := map[uuid.UUID]*Function{}
+func (m *BadgerMetastore) GetFunctionsByIDs(ctx context.Context, ids ...[]byte) (map[string]*pb.Function, error) {
+	functions := map[string]*pb.Function{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		for _, id := range ids {
 			item, err := txn.Get(append([]byte("functions/by-id/"), id[:]...))
@@ -356,21 +300,8 @@ func (m *BadgerMetastore) GetFunctionsByIDs(ctx context.Context, ids ...uuid.UUI
 				if err != nil {
 					return err
 				}
-				id, err := uuid.FromBytes(f.Id)
-				if err != nil {
-					return err
-				}
 
-				functions[id] = &Function{
-					ID: id,
-					FunctionKey: FunctionKey{
-						StartLine:  f.StartLine,
-						Name:       f.Name,
-						SystemName: f.SystemName,
-						Filename:   f.Filename,
-					},
-				}
-
+				functions[string(id)] = f
 				return nil
 			})
 			if err != nil {
@@ -385,16 +316,16 @@ func (m *BadgerMetastore) GetFunctionsByIDs(ctx context.Context, ids ...uuid.UUI
 }
 
 // CreateLocationLines writes a set of lines related to a location to the database.
-func (m *BadgerMetastore) CreateLocationLines(ctx context.Context, locID uuid.UUID, lines []LocationLine) error {
+func (m *BadgerMetastore) CreateLocationLines(ctx context.Context, locID []byte, lines []LocationLine) error {
 	l := &pb.LocationLines{
-		Id:    locID[:],
+		Id:    locID,
 		Lines: make([]*pb.Line, 0, len(lines)),
 	}
 
 	for _, line := range lines {
 		l.Lines = append(l.Lines, &pb.Line{
 			Line:       line.Line,
-			FunctionId: line.Function.ID[:],
+			FunctionId: line.Function.Id,
 		})
 	}
 
@@ -409,14 +340,14 @@ func (m *BadgerMetastore) CreateLocationLines(ctx context.Context, locID uuid.UU
 }
 
 // GetLinesByLocationIDs returns the lines for the given location IDs.
-func (m *BadgerMetastore) GetLinesByLocationIDs(ctx context.Context, ids ...uuid.UUID) (
-	map[uuid.UUID][]Line,
-	[]uuid.UUID,
+func (m *BadgerMetastore) GetLinesByLocationIDs(ctx context.Context, ids ...[]byte) (
+	map[string][]*pb.Line,
+	[][]byte,
 	error,
 ) {
-	linesByLocation := map[uuid.UUID][]Line{}
-	functionsSeen := map[uuid.UUID]struct{}{}
-	functionsIDs := []uuid.UUID{}
+	linesByLocation := map[string][]*pb.Line{}
+	functionsSeen := map[string]struct{}{}
+	functionsIDs := [][]byte{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		for _, id := range ids {
 			item, err := txn.Get(append([]byte("locations-lines/"), id[:]...))
@@ -424,35 +355,24 @@ func (m *BadgerMetastore) GetLinesByLocationIDs(ctx context.Context, ids ...uuid
 				continue
 			}
 			if err != nil {
-				return fmt.Errorf("failed to get location lines for ID %s: %w", id.String(), err)
+				return fmt.Errorf("failed to get location lines for ID %q: %w", id, err)
 			}
 
 			err = item.Value(func(val []byte) error {
 				l := &pb.LocationLines{}
 				err := proto.Unmarshal(val, l)
 				if err != nil {
-					return fmt.Errorf("failed to unmarshal location lines for ID %s: %w", id.String(), err)
+					return fmt.Errorf("failed to unmarshal location lines for ID %q: %w", id, err)
 				}
 
-				lines := make([]Line, 0, len(l.Lines))
 				for _, line := range l.Lines {
-					functionID, err := uuid.FromBytes(line.FunctionId)
-					if err != nil {
-						return fmt.Errorf("function ID from bytes: %w", err)
+					if _, ok := functionsSeen[string(line.FunctionId)]; !ok {
+						functionsIDs = append(functionsIDs, line.FunctionId)
+						functionsSeen[string(line.FunctionId)] = struct{}{}
 					}
-
-					if _, ok := functionsSeen[functionID]; !ok {
-						functionsIDs = append(functionsIDs, functionID)
-						functionsSeen[functionID] = struct{}{}
-					}
-
-					lines = append(lines, Line{
-						Line:       line.Line,
-						FunctionID: functionID,
-					})
 				}
 
-				linesByLocation[id] = lines
+				linesByLocation[string(id)] = l.Lines
 				return nil
 			})
 			if err != nil {
@@ -468,11 +388,11 @@ func (m *BadgerMetastore) GetLinesByLocationIDs(ctx context.Context, ids ...uuid
 	return linesByLocation, functionsIDs, nil
 }
 
-func (m *BadgerMetastore) GetLocationByKey(ctx context.Context, k LocationKey) (SerializedLocation, error) {
+func (m *BadgerMetastore) GetLocationByKey(ctx context.Context, key *Location) (*pb.Location, error) {
 	l := &pb.Location{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		var err error
-		item, err := txn.Get(k.Bytes())
+		item, err := txn.Get(MakeLocationKey(key))
 		if err == badger.ErrKeyNotFound {
 			return ErrLocationNotFound
 		}
@@ -498,38 +418,20 @@ func (m *BadgerMetastore) GetLocationByKey(ctx context.Context, k LocationKey) (
 		})
 	})
 	if err != nil {
-		return SerializedLocation{}, err
+		return nil, err
 	}
 
-	id, err := uuid.FromBytes(l.Id)
-	if err != nil {
-		return SerializedLocation{}, err
-	}
-
-	var mappingID uuid.UUID
-	if len(l.MappingId) > 0 && !bytes.Equal(l.MappingId, uuid.Nil[:]) {
-		mappingID, err = uuid.FromBytes(l.MappingId)
-		if err != nil {
-			return SerializedLocation{}, err
-		}
-	}
-
-	return SerializedLocation{
-		ID:        id,
-		Address:   l.Address,
-		MappingID: mappingID,
-		IsFolded:  l.IsFolded,
-	}, nil
+	return l, nil
 }
 
-func (m *BadgerMetastore) GetLocationsByIDs(ctx context.Context, ids ...uuid.UUID) (
-	map[uuid.UUID]SerializedLocation,
-	[]uuid.UUID,
+func (m *BadgerMetastore) GetLocationsByIDs(ctx context.Context, ids ...[]byte) (
+	map[string]*pb.Location,
+	[][]byte,
 	error,
 ) {
-	locations := map[uuid.UUID]SerializedLocation{}
-	mappingsSeen := map[uuid.UUID]struct{}{}
-	mappingIDs := []uuid.UUID{}
+	locations := map[string]*pb.Location{}
+	mappingsSeen := map[string]struct{}{}
+	mappingIDs := [][]byte{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		for _, id := range ids {
 			item, err := txn.Get(append([]byte("locations/by-id/"), id[:]...))
@@ -544,25 +446,14 @@ func (m *BadgerMetastore) GetLocationsByIDs(ctx context.Context, ids ...uuid.UUI
 					return err
 				}
 
-				var mappingID uuid.UUID
 				if len(l.MappingId) > 0 && !bytes.Equal(l.MappingId, uuid.Nil[:]) {
-					mappingID, err = uuid.FromBytes(l.MappingId)
-					if err != nil {
-						return fmt.Errorf("mapping ID from bytes: %w", err)
-					}
-
-					if _, ok := mappingsSeen[mappingID]; !ok {
-						mappingIDs = append(mappingIDs, mappingID)
-						mappingsSeen[mappingID] = struct{}{}
+					if _, ok := mappingsSeen[string(l.MappingId)]; !ok {
+						mappingIDs = append(mappingIDs, l.MappingId)
+						mappingsSeen[string(l.MappingId)] = struct{}{}
 					}
 				}
 
-				locations[id] = SerializedLocation{
-					ID:        id,
-					Address:   l.Address,
-					MappingID: mappingID,
-					IsFolded:  l.IsFolded,
-				}
+				locations[string(id)] = l
 				return nil
 			})
 			if err != nil {
@@ -578,7 +469,7 @@ func (m *BadgerMetastore) GetLocationsByIDs(ctx context.Context, ids ...uuid.UUI
 	return locations, mappingIDs, nil
 }
 
-func (m *BadgerMetastore) CreateLocation(ctx context.Context, l *Location) (uuid.UUID, error) {
+func (m *BadgerMetastore) CreateLocation(ctx context.Context, l *Location) ([]byte, error) {
 	id := m.uuidGenerator.New()
 	loc := &pb.Location{
 		Id:       id[:],
@@ -587,16 +478,16 @@ func (m *BadgerMetastore) CreateLocation(ctx context.Context, l *Location) (uuid
 	}
 
 	if l.Mapping != nil {
-		loc.MappingId = l.Mapping.ID[:]
+		loc.MappingId = l.Mapping.Id
 	}
 
 	buf, err := proto.Marshal(loc)
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	err = m.db.Update(func(txn *badger.Txn) error {
-		err := txn.Set(l.Key().Bytes(), id[:])
+		err := txn.Set(MakeLocationKey(l), id[:])
 		if err != nil {
 			return err
 		}
@@ -611,18 +502,18 @@ func (m *BadgerMetastore) CreateLocation(ctx context.Context, l *Location) (uuid
 		return txn.Set(append([]byte("locations/by-id/"), id[:]...), buf)
 	})
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	if len(l.Lines) > 0 {
-		return id, m.CreateLocationLines(ctx, id, l.Lines)
+		return loc.Id, m.CreateLocationLines(ctx, loc.Id, l.Lines)
 	}
 
-	return id, nil
+	return loc.Id, nil
 }
 
-func (m *BadgerMetastore) GetSymbolizableLocations(ctx context.Context) ([]SerializedLocation, []uuid.UUID, error) {
-	ids := []uuid.UUID{}
+func (m *BadgerMetastore) GetSymbolizableLocations(ctx context.Context) ([]*pb.Location, [][]byte, error) {
+	ids := [][]byte{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchValues = false
@@ -632,14 +523,7 @@ func (m *BadgerMetastore) GetSymbolizableLocations(ctx context.Context) ([]Seria
 		prefixLen := len(prefix)
 
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-			item := it.Item()
-
-			id, err := uuid.FromBytes(item.Key()[prefixLen:])
-			if err != nil {
-				return err
-			}
-
-			ids = append(ids, id)
+			ids = append(ids, it.Item().KeyCopy(nil)[prefixLen:])
 		}
 		return nil
 	})
@@ -652,7 +536,7 @@ func (m *BadgerMetastore) GetSymbolizableLocations(ctx context.Context) ([]Seria
 		return nil, nil, err
 	}
 
-	locs := make([]SerializedLocation, 0, len(locsByIDs))
+	locs := make([]*pb.Location, 0, len(locsByIDs))
 	for _, loc := range locsByIDs {
 		locs = append(locs, loc)
 	}
@@ -660,14 +544,14 @@ func (m *BadgerMetastore) GetSymbolizableLocations(ctx context.Context) ([]Seria
 	return locs, mappingIDs, nil
 }
 
-func (m *BadgerMetastore) GetLocations(ctx context.Context) ([]SerializedLocation, []uuid.UUID, error) {
+func (m *BadgerMetastore) GetLocations(ctx context.Context) ([]*pb.Location, [][]byte, error) {
 	return m.getLocations(ctx, []byte("locations/by-id/"))
 }
 
-func (m *BadgerMetastore) getLocations(ctx context.Context, prefix []byte) ([]SerializedLocation, []uuid.UUID, error) {
-	locations := []SerializedLocation{}
-	mappingsSeen := map[uuid.UUID]struct{}{}
-	mappingIDs := []uuid.UUID{}
+func (m *BadgerMetastore) getLocations(ctx context.Context, prefix []byte) ([]*pb.Location, [][]byte, error) {
+	locations := []*pb.Location{}
+	mappingsSeen := map[string]struct{}{}
+	mappingIDs := [][]byte{}
 	err := m.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
@@ -681,30 +565,15 @@ func (m *BadgerMetastore) getLocations(ctx context.Context, prefix []byte) ([]Se
 				if err != nil {
 					return err
 				}
-				id, err := uuid.FromBytes(l.Id)
-				if err != nil {
-					return err
-				}
 
-				var mappingID uuid.UUID
 				if len(l.MappingId) > 0 && !bytes.Equal(l.MappingId, uuid.Nil[:]) {
-					mappingID, err = uuid.FromBytes(l.MappingId)
-					if err != nil {
-						return fmt.Errorf("mapping ID from bytes: %w", err)
-					}
-
-					if _, ok := mappingsSeen[mappingID]; !ok {
-						mappingIDs = append(mappingIDs, mappingID)
-						mappingsSeen[mappingID] = struct{}{}
+					if _, ok := mappingsSeen[string(l.MappingId)]; !ok {
+						mappingIDs = append(mappingIDs, l.MappingId)
+						mappingsSeen[string(l.MappingId)] = struct{}{}
 					}
 				}
 
-				locations = append(locations, SerializedLocation{
-					ID:        id,
-					Address:   l.Address,
-					MappingID: mappingID,
-					IsFolded:  l.IsFolded,
-				})
+				locations = append(locations, l)
 				return nil
 			})
 			if err != nil {
@@ -717,15 +586,15 @@ func (m *BadgerMetastore) getLocations(ctx context.Context, prefix []byte) ([]Se
 }
 
 func (m *BadgerMetastore) Symbolize(ctx context.Context, l *Location) error {
-	var err error
 	for _, l := range l.Lines {
-		l.Function.ID, err = m.getOrCreateFunction(ctx, l.Function)
+		functionID, err := m.getOrCreateFunction(ctx, l.Function)
 		if err != nil {
 			return fmt.Errorf("get or create function: %w", err)
 		}
+		l.Function.Id = functionID[:]
 	}
 
-	if err := m.CreateLocationLines(ctx, l.ID, l.Lines); err != nil {
+	if err := m.CreateLocationLines(ctx, l.ID[:], l.Lines); err != nil {
 		return fmt.Errorf("create lines: %w", err)
 	}
 
@@ -734,18 +603,18 @@ func (m *BadgerMetastore) Symbolize(ctx context.Context, l *Location) error {
 	})
 }
 
-func (m *BadgerMetastore) getOrCreateFunction(ctx context.Context, f *Function) (uuid.UUID, error) {
-	fn, err := m.GetFunctionByKey(ctx, MakeFunctionKey(f))
+func (m *BadgerMetastore) getOrCreateFunction(ctx context.Context, f *pb.Function) ([]byte, error) {
+	fn, err := m.GetFunctionByKey(ctx, f)
 	if err == nil {
-		return fn.ID, nil
+		return fn.Id, nil
 	}
 	if err != nil && err != ErrFunctionNotFound {
-		return uuid.Nil, fmt.Errorf("get function by key: %w", err)
+		return nil, fmt.Errorf("get function by key: %w", err)
 	}
 
 	id, err := m.CreateFunction(ctx, f)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("create function: %w", err)
+		return nil, fmt.Errorf("create function: %w", err)
 	}
 
 	return id, nil

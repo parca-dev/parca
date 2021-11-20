@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2020 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -26,6 +26,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
@@ -36,7 +37,7 @@ type dwarfLiner struct {
 	logger    log.Logger
 	demangler *demangle.Demangler
 
-	mapping             *metastore.Mapping
+	mapping             *pb.Mapping
 	data                *dwarf.Data
 	lineEntries         map[dwarf.Offset][]dwarf.LineEntry
 	subprograms         map[dwarf.Offset][]*godwarf.Tree
@@ -47,7 +48,7 @@ type dwarfLiner struct {
 	failed           map[uint64]struct{}
 }
 
-func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold int, m *metastore.Mapping, path string) (*dwarfLiner, error) {
+func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold int, m *pb.Mapping, path string) (*dwarfLiner, error) {
 	// TODO(kakkoyun): Handle offset, start and limit for dynamically linked libraries.
 	//objFile, err := s.bu.Open(file, m.Start, m.Limit, m.Offset)
 	//if err != nil {
@@ -229,11 +230,9 @@ func (dl *dwarfLiner) sourceLines(addr uint64) ([]metastore.LocationLine, error)
 	file, line := findLineInfo(dl.lineEntries[cu.Offset], tr.Ranges)
 	lines = append(lines, metastore.LocationLine{
 		Line: line,
-		Function: dl.demangler.Demangle(&metastore.Function{
-			FunctionKey: metastore.FunctionKey{
-				Name:     name,
-				Filename: file,
-			},
+		Function: dl.demangler.Demangle(&pb.Function{
+			Name:     name,
+			Filename: file,
 		}),
 	})
 
@@ -250,11 +249,9 @@ func (dl *dwarfLiner) sourceLines(addr uint64) ([]metastore.LocationLine, error)
 		file, line := findLineInfo(dl.lineEntries[cu.Offset], ch.Ranges)
 		lines = append(lines, metastore.LocationLine{
 			Line: line,
-			Function: dl.demangler.Demangle(&metastore.Function{
-				FunctionKey: metastore.FunctionKey{
-					Name:     name,
-					Filename: file,
-				},
+			Function: dl.demangler.Demangle(&pb.Function{
+				Name:     name,
+				Filename: file,
 			}),
 		})
 	}

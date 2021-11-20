@@ -22,6 +22,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/hashicorp/go-multierror"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/runutil"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
@@ -63,11 +64,11 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 func (s *Symbolizer) symbolize(ctx context.Context, locations []*metastore.Location) error {
 	// Aggregate locations per mapping to get prepared for batch request.
-	mappings := map[string]*metastore.Mapping{}
+	mappings := map[string]*pb.Mapping{}
 	mappingLocations := map[string][]*metastore.Location{}
 	for _, loc := range locations {
 		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
-		if loc.Mapping == nil || len(loc.Mapping.BuildID) == 0 || loc.Mapping.Unsymbolizable() {
+		if loc.Mapping == nil || len(loc.Mapping.BuildId) == 0 || metastore.UnsymbolizableMapping(loc.Mapping) {
 			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
 			continue
 		}
@@ -76,8 +77,8 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*metastore.Locat
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
 			continue
 		}
-		mappings[loc.Mapping.BuildID] = loc.Mapping
-		mappingLocations[loc.Mapping.BuildID] = append(mappingLocations[loc.Mapping.BuildID], loc)
+		mappings[loc.Mapping.BuildId] = loc.Mapping
+		mappingLocations[loc.Mapping.BuildId] = append(mappingLocations[loc.Mapping.BuildId], loc)
 	}
 
 	var result *multierror.Error

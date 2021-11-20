@@ -90,6 +90,7 @@ func BenchmarkAppends(b *testing.B) {
 	logger := log.NewNopLogger()
 
 	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		otel.Tracer("foo"),
 		metastore.NewRandomUUIDGenerator(),
@@ -140,6 +141,7 @@ func BenchmarkIterator(b *testing.B) {
 	logger := log.NewNopLogger()
 
 	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		registry,
 		tracer,
 		metastore.NewRandomUUIDGenerator(),

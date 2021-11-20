@@ -32,15 +32,15 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	s, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	s := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		tracer,
-		"memseriesconsistency",
+		trace.NewNoopTracerProvider().Tracer(""),
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		s.Close()
 	})
-	require.NoError(t, err)
 	f, err := os.Open("./testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	pprof1, err := profile.Parse(f)

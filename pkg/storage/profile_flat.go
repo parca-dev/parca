@@ -18,6 +18,9 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
+
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
@@ -42,7 +45,7 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 
 		samples:       make(map[string]*Sample, len(p.Sample)),
 		locationsByID: make(map[uint64]*metastore.Location, len(p.Location)),
-		functionsByID: make(map[uint64]*metastore.Function, len(p.Function)),
+		functionsByID: make(map[uint64]*pb.Function, len(p.Function)),
 		mappingsByID:  make(map[uint64]mapInfo, len(p.Mapping)),
 	}
 
@@ -68,7 +71,7 @@ type profileFlatNormalizer struct {
 	samples map[string]*Sample
 	// Memoization tables within a profile.
 	locationsByID map[uint64]*metastore.Location
-	functionsByID map[uint64]*metastore.Function
+	functionsByID map[uint64]*pb.Function
 	mappingsByID  map[uint64]mapInfo
 }
 
@@ -145,8 +148,7 @@ func (pn *profileFlatNormalizer) mapLocation(ctx context.Context, src *profile.L
 	}
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping ID.
-	k := metastore.MakeLocationKey(l)
-	loc, err := metastore.GetLocationByKey(ctx, pn.metaStore, k)
+	loc, err := metastore.GetLocationByKey(ctx, pn.metaStore, l)
 	if err != nil && err != metastore.ErrLocationNotFound {
 		return nil, err
 	}
@@ -161,7 +163,11 @@ func (pn *profileFlatNormalizer) mapLocation(ctx context.Context, src *profile.L
 		return nil, err
 	}
 
-	l.ID = id
+	l.ID, err = uuid.FromBytes(id)
+	if err != nil {
+		return nil, err
+	}
+
 	return l, nil
 }
 
@@ -175,14 +181,13 @@ func (pn *profileFlatNormalizer) mapMapping(ctx context.Context, src *profile.Ma
 	}
 
 	// Check memoization tables.
-	mk := metastore.MakeMappingKey(&metastore.Mapping{
+	m, err := pn.metaStore.GetMappingByKey(ctx, &pb.Mapping{
 		Start:   src.Start,
 		Limit:   src.Limit,
 		Offset:  src.Offset,
 		File:    src.File,
-		BuildID: src.BuildID,
+		BuildId: src.BuildID,
 	})
-	m, err := pn.metaStore.GetMappingByKey(ctx, mk)
 	if err != nil && err != metastore.ErrMappingNotFound {
 		return mapInfo{}, err
 	}
@@ -191,12 +196,12 @@ func (pn *profileFlatNormalizer) mapMapping(ctx context.Context, src *profile.Ma
 		pn.mappingsByID[src.ID] = mi
 		return mi, nil
 	}
-	m = &metastore.Mapping{
+	m = &pb.Mapping{
 		Start:           src.Start,
 		Limit:           src.Limit,
 		Offset:          src.Offset,
 		File:            src.File,
-		BuildID:         src.BuildID,
+		BuildId:         src.BuildID,
 		HasFunctions:    src.HasFunctions,
 		HasFilenames:    src.HasFilenames,
 		HasLineNumbers:  src.HasLineNumbers,
@@ -208,7 +213,7 @@ func (pn *profileFlatNormalizer) mapMapping(ctx context.Context, src *profile.Ma
 	if err != nil {
 		return mapInfo{}, err
 	}
-	m.ID = id
+	m.Id = id
 	mi := mapInfo{m, 0}
 	pn.mappingsByID[src.ID] = mi
 	return mi, nil
@@ -226,22 +231,19 @@ func (pn *profileFlatNormalizer) mapLine(ctx context.Context, src profile.Line) 
 	}, nil
 }
 
-func (pn *profileFlatNormalizer) mapFunction(ctx context.Context, src *profile.Function) (*metastore.Function, error) {
+func (pn *profileFlatNormalizer) mapFunction(ctx context.Context, src *profile.Function) (*pb.Function, error) {
 	if src == nil {
 		return nil, nil
 	}
 	if f, ok := pn.functionsByID[src.ID]; ok {
 		return f, nil
 	}
-	k := metastore.MakeFunctionKey(&metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name:       src.Name,
-			SystemName: src.SystemName,
-			Filename:   src.Filename,
-			StartLine:  src.StartLine,
-		},
+	f, err := pn.metaStore.GetFunctionByKey(ctx, &pb.Function{
+		Name:       src.Name,
+		SystemName: src.SystemName,
+		Filename:   src.Filename,
+		StartLine:  src.StartLine,
 	})
-	f, err := pn.metaStore.GetFunctionByKey(ctx, k)
 	if err != nil && err != metastore.ErrFunctionNotFound {
 		return nil, err
 	}
@@ -249,20 +251,18 @@ func (pn *profileFlatNormalizer) mapFunction(ctx context.Context, src *profile.F
 		pn.functionsByID[src.ID] = f
 		return f, nil
 	}
-	f = &metastore.Function{
-		FunctionKey: metastore.FunctionKey{
-			Name:       src.Name,
-			SystemName: src.SystemName,
-			Filename:   src.Filename,
-			StartLine:  src.StartLine,
-		},
+	f = &pb.Function{
+		Name:       src.Name,
+		SystemName: src.SystemName,
+		Filename:   src.Filename,
+		StartLine:  src.StartLine,
 	}
 
 	id, err := pn.metaStore.CreateFunction(ctx, f)
 	if err != nil {
 		return nil, err
 	}
-	f.ID = id
+	f.Id = id
 
 	pn.functionsByID[src.ID] = f
 	return f, nil
