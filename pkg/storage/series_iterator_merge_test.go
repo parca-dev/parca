@@ -78,7 +78,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 		Value: "allocs",
 	})
 
-	p1, err := MergeSeriesSetProfiles(tracer, ctx, set)
+	p1, err := MergeSeriesSetProfiles(ctx, tracer, true, set)
 	require.NoError(t, err)
 
 	set = db.Querier(
@@ -95,7 +95,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 		Name:  "__name__",
 		Value: "allocs",
 	})
-	p2, err := MergeSeriesSetProfiles(tracer, ctx, set)
+	p2, err := MergeSeriesSetProfiles(ctx, tracer, true, set)
 	require.NoError(t, err)
 
 	require.Equal(t, p1, p2)
@@ -153,7 +153,7 @@ func TestMemMergeSeriesTree(t *testing.T) {
 	}
 	it := ms.Iterator()
 	require.True(t, it.Next())
-	p := CopyInstantProfile(it.At())
+	p := CopyInstantTreeProfile(it.At())
 
 	require.Equal(t, &Profile{
 		Meta: InstantProfileMeta{

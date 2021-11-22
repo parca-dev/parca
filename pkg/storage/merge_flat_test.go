@@ -14,12 +14,20 @@
 package storage
 
 import (
+	"context"
+	"fmt"
+	"math"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/go-kit/log"
+	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestMergeFlatProfileSimple(t *testing.T) {
@@ -59,8 +67,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 		},
 	}
 
-	//mp, err := MergeProfiles(p1, p2)
-	mp, err := NewMergeProfile(p1, p2)
+	mp, err := MergeProfiles(false, p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -131,7 +138,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 		},
 	}
 
-	mp, err := NewMergeProfile(p1, p2)
+	mp, err := MergeProfiles(false, p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -226,8 +233,7 @@ func TestMergeFlatProfile(t *testing.T) {
 		},
 	}
 
-	//mp, err := MergeProfiles(p1, p2)
-	mp, err := NewMergeProfile(p1, p2)
+	mp, err := MergeProfiles(false, p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -268,4 +274,141 @@ func TestMergeFlatProfile(t *testing.T) {
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid2}, {ID: uuid2}},
 	}, merged[string(k7)])
+}
+
+func TestMergeSingleFlat(t *testing.T) {
+	ctx := context.Background()
+
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		"mergesingle",
+	)
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+	prof, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	require.NoError(t, err)
+
+	m, err := MergeProfiles(false, prof)
+	require.NoError(t, err)
+	require.Len(t, m.Samples(), 32)
+}
+
+func TestMergeManyFlat(t *testing.T) {
+	ctx := context.Background()
+
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		"mergemany",
+	)
+	t.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(t, err)
+	prof, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	require.NoError(t, err)
+
+	num := 1000
+	profiles := make([]InstantProfile, 0, 1000)
+	for i := 0; i < num; i++ {
+		profiles = append(profiles, prof)
+	}
+
+	m, err := MergeProfiles(false, profiles...)
+	require.NoError(t, err)
+	CopyInstantFlatProfile(m)
+}
+
+func BenchmarkFlatMerge(b *testing.B) {
+	ctx := context.Background()
+
+	f, err := os.Open("testdata/profile1.pb.gz")
+	require.NoError(b, err)
+	p1, err := profile.Parse(f)
+	require.NoError(b, err)
+	require.NoError(b, f.Close())
+	f, err = os.Open("testdata/profile2.pb.gz")
+	require.NoError(b, err)
+	p2, err := profile.Parse(f)
+	require.NoError(b, err)
+	require.NoError(b, f.Close())
+
+	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		"treemerge",
+	)
+	b.Cleanup(func() {
+		l.Close()
+	})
+	require.NoError(b, err)
+	profile1, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(b, err)
+	profile2, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	require.NoError(b, err)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	m, err := MergeProfiles(false, profile1, profile2)
+	require.NoError(b, err)
+	CopyInstantFlatProfile(m)
+}
+
+func BenchmarkMergeFlatMany(b *testing.B) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	registry := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	for k := 0.; k <= 10; k++ {
+		n := int(math.Pow(2, k))
+		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			f, err := os.Open("testdata/profile1.pb.gz")
+			require.NoError(b, err)
+			p, err := profile.Parse(f)
+			require.NoError(b, err)
+			require.NoError(b, f.Close())
+
+			l := metastore.NewBadgerMetastore(
+				logger,
+				registry,
+				tracer,
+				metastore.NewRandomUUIDGenerator(),
+			)
+			defer func() {
+				l.Close()
+			}()
+
+			prof, err := FlatProfileFromPprof(ctx, logger, l, p, 0)
+			require.NoError(b, err)
+
+			profiles := make([]InstantProfile, 0, n)
+			for i := 0; i < n; i++ {
+				profiles = append(profiles, prof)
+			}
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				m, err := MergeProfiles(false, profiles...)
+				require.NoError(b, err)
+				CopyInstantFlatProfile(m)
+			}
+		})
+	}
 }

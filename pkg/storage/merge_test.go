@@ -65,7 +65,7 @@ func TestMergeProfileSimple(t *testing.T) {
 		},
 	}
 
-	mp, err := MergeProfiles(p1, p2)
+	mp, err := MergeProfiles(true, p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -159,7 +159,7 @@ func TestMergeProfileDeep(t *testing.T) {
 		},
 	}
 
-	mp, err := MergeProfiles(p1, p2)
+	mp, err := MergeProfiles(true, p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -317,7 +317,7 @@ func TestMergeProfile(t *testing.T) {
 		},
 	}
 
-	mp, err := MergeProfiles(p1, p2)
+	mp, err := MergeProfiles(true, p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
@@ -438,7 +438,7 @@ func TestMergeSingle(t *testing.T) {
 	prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
-	m, err := MergeProfiles(prof)
+	m, err := MergeProfiles(true, prof)
 	require.NoError(t, err)
 	CopyInstantProfileTree(m.ProfileTree())
 }
@@ -470,7 +470,7 @@ func TestMergeMany(t *testing.T) {
 		profiles = append(profiles, prof)
 	}
 
-	m, err := MergeProfiles(profiles...)
+	m, err := MergeProfiles(true, profiles...)
 	require.NoError(t, err)
 	CopyInstantProfileTree(m.ProfileTree())
 }
@@ -531,8 +531,9 @@ func BenchmarkTreeMerge(b *testing.B) {
 		},
 	}
 
+	b.ReportAllocs()
 	b.ResetTimer()
-	m, err := MergeProfiles(prof1, prof2)
+	m, err := MergeProfiles(true, prof1, prof2)
 	require.NoError(b, err)
 	CopyInstantProfileTree(m.ProfileTree())
 }
@@ -549,41 +550,51 @@ func BenchmarkMerge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
+	b.ReportAllocs()
 	b.ResetTimer()
-	_, err = profile.Merge([]*profile.Profile{p1, p2})
-	require.NoError(b, err)
+	for i := 0; i < b.N; i++ {
+		_, err = profile.Merge([]*profile.Profile{p1, p2})
+		require.NoError(b, err)
+	}
 }
 
 func BenchmarkMergeMany(b *testing.B) {
-	for k := 0.; k <= 10; k++ {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	registry := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	for k := 0.; k <= 8; k++ {
 		n := int(math.Pow(2, k))
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			f, err := os.Open("testdata/profile1.pb.gz")
+			require.NoError(b, err)
+			p, err := profile.Parse(f)
+			require.NoError(b, err)
+			require.NoError(b, f.Close())
+
+			l := metastore.NewBadgerMetastore(
+				logger,
+				registry,
+				tracer,
+				metastore.NewRandomUUIDGenerator(),
+			)
+			defer func() {
+				l.Close()
+			}()
+
+			prof, err := ProfileFromPprof(ctx, logger, l, p, 0)
+			require.NoError(b, err)
+
+			profiles := make([]InstantProfile, 0, n)
+			for i := 0; i < n; i++ {
+				profiles = append(profiles, prof)
+			}
+
+			b.ReportAllocs()
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				ctx := context.Background()
-				f, err := os.Open("testdata/profile1.pb.gz")
-				require.NoError(b, err)
-				p, err := profile.Parse(f)
-				require.NoError(b, err)
-				require.NoError(b, f.Close())
-
-				l := metastore.NewBadgerMetastore(
-					log.NewNopLogger(),
-					prometheus.NewRegistry(),
-					trace.NewNoopTracerProvider().Tracer(""),
-					metastore.NewRandomUUIDGenerator(),
-				)
-				b.Cleanup(func() {
-					l.Close()
-				})
-				prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
-				require.NoError(b, err)
-
-				profiles := make([]InstantProfile, 0, n)
-				for i := 0; i < n; i++ {
-					profiles = append(profiles, prof)
-				}
-
-				m, err := MergeProfiles(profiles...)
+				m, err := MergeProfiles(true, profiles...)
 				require.NoError(b, err)
 				CopyInstantProfileTree(m.ProfileTree())
 			}

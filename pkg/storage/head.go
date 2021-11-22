@@ -418,7 +418,9 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 		if seriesMinTime > maxt {
 			continue
 		}
-		if hints != nil && hints.Merge {
+		// Only need for profile trees now,
+		// flat profiles can simply use the generic MemRangeSeries.
+		if hints != nil && hints.Merge && q.trees {
 			ss = append(ss, &MemMergeSeries{s: s, mint: mint, maxt: maxt})
 			continue
 		}
