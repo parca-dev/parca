@@ -44,7 +44,7 @@
     "@storybook/react": "^6.3.12",
     "@svgr/webpack": "^5.5.0",
     "@swc/cli": "^0.1.51",
-    "@swc/core": "^1.2.107",
+    "@swc/core": "^1.2.111",
     "@swc/jest": "^0.2.5",
     "@testing-library/jest-dom": "^5.15.0",
     "@testing-library/react": "^12.1.2",
