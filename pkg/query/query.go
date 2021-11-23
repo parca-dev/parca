@@ -403,7 +403,7 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 		Merge: true,
 	}, sel...)
 
-	return storage.MergeSeriesSetProfiles(q.tracer, ctx, set)
+	return storage.MergeSeriesSetProfiles(ctx, q.tracer, q.profileTrees, set)
 }
 
 // Series issues a series request against the storage

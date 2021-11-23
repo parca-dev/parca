@@ -37,12 +37,13 @@ type MergeProfile struct {
 	meta InstantProfileMeta
 }
 
-func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
+func MergeProfiles(profileTrees bool, profiles ...InstantProfile) (InstantProfile, error) {
 	profileCh := make(chan InstantProfile)
 
 	return MergeProfilesConcurrent(
-		trace.NewNoopTracerProvider().Tracer(""),
 		context.Background(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		profileTrees,
 		profileCh,
 		runtime.NumCPU(),
 		func() error {
@@ -55,12 +56,13 @@ func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
 	)
 }
 
-func MergeSeriesSetProfiles(tracer trace.Tracer, ctx context.Context, set SeriesSet) (InstantProfile, error) {
+func MergeSeriesSetProfiles(ctx context.Context, tracer trace.Tracer, profileTrees bool, set SeriesSet) (InstantProfile, error) {
 	profileCh := make(chan InstantProfile)
 
 	return MergeProfilesConcurrent(
-		tracer,
 		ctx,
+		tracer,
+		profileTrees,
 		profileCh,
 		runtime.NumCPU(),
 		func() error {
@@ -85,7 +87,11 @@ func MergeSeriesSetProfiles(tracer trace.Tracer, ctx context.Context, set Series
 				for it.Next() {
 					// Have to copy as profile pointer is not stable for more than the
 					// current iteration.
-					profileCh <- CopyInstantProfile(it.At())
+					if profileTrees {
+						profileCh <- CopyInstantTreeProfile(it.At())
+					} else {
+						profileCh <- CopyInstantFlatProfile(it.At())
+					}
 					i++
 				}
 				profileSpan.End()
@@ -99,8 +105,9 @@ func MergeSeriesSetProfiles(tracer trace.Tracer, ctx context.Context, set Series
 }
 
 func MergeProfilesConcurrent(
-	tracer trace.Tracer,
 	ctx context.Context,
+	tracer trace.Tracer,
+	profileTrees bool,
 	profileCh chan InstantProfile,
 	concurrency int,
 	producerFunc func() error,
@@ -208,7 +215,12 @@ func MergeProfilesConcurrent(
 						return err
 					}
 
-					p := CopyInstantProfile(m)
+					var p InstantProfile
+					if profileTrees {
+						p = CopyInstantTreeProfile(m)
+					} else {
+						p = CopyInstantFlatProfile(m)
+					}
 
 					resCh <- p
 				}
@@ -292,7 +304,40 @@ func (m *MergeProfileTree) RootCumulativeValue() int64 {
 }
 
 func (m *MergeProfile) Samples() map[string]*Sample {
-	panic("implement me")
+	as := m.a.Samples()
+	bs := m.b.Samples()
+
+	samples := make(map[string]*Sample, len(as)+len(bs)) // TODO: Don't allocate a new map, and especially not worst case
+
+	// Merge intersection for A to B
+	for k, s := range as {
+		samples[k] = &Sample{
+			Value:    s.Value,
+			Location: s.Location,
+			Label:    s.Label,
+			NumLabel: s.NumLabel,
+			NumUnit:  s.NumUnit,
+		}
+		if b, found := bs[k]; found {
+			// Sum the actual values if k is found in bs
+			samples[k].Value += b.Value
+		}
+	}
+	for k, s := range bs {
+		if _, found := samples[k]; found {
+			// skip samples that exist in the final map, they've been merged already
+			continue
+		}
+		samples[k] = &Sample{
+			Value:    s.Value,
+			Location: s.Location,
+			Label:    s.Label,
+			NumLabel: s.NumLabel,
+			NumUnit:  s.NumUnit,
+		}
+	}
+
+	return samples
 }
 
 func (m *MergeProfileTree) Iterator() InstantProfileTreeIterator {

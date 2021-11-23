@@ -72,10 +72,17 @@ func WalkProfileTree(pt InstantProfileTree, f func(n InstantProfileTreeNode) err
 	return nil
 }
 
-func CopyInstantProfile(p InstantProfile) *Profile {
+func CopyInstantTreeProfile(p InstantProfile) *Profile {
 	return &Profile{
 		Meta: p.ProfileMeta(),
 		Tree: CopyInstantProfileTree(p.ProfileTree()),
+	}
+}
+
+func CopyInstantFlatProfile(p InstantProfile) *FlatProfile {
+	return &FlatProfile{
+		Meta:    p.ProfileMeta(),
+		samples: p.Samples(),
 	}
 }
 
