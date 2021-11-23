@@ -33,7 +33,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/parca-dev/parca/pkg/symbol"
 )
@@ -195,17 +195,17 @@ func validateId(id string) error {
 	return nil
 }
 
-func (s *Store) Symbolize(ctx context.Context, m *metastore.Mapping, locations ...*metastore.Location) (map[*metastore.Location][]metastore.LocationLine, error) {
-	localObjPath, err := s.fetchObjectFile(ctx, m.BuildID)
+func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*metastore.Location) (map[*metastore.Location][]metastore.LocationLine, error) {
+	localObjPath, err := s.fetchObjectFile(ctx, m.BuildId)
 	if err != nil {
-		level.Debug(s.logger).Log("msg", "failed to fetch object", "object", m.BuildID, "err", err)
+		level.Debug(s.logger).Log("msg", "failed to fetch object", "object", m.BuildId, "err", err)
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
 	liner, err := s.symbolizer.NewLiner(m, localObjPath)
 	if err != nil {
 		const msg = "failed to create liner"
-		level.Debug(s.logger).Log("msg", msg, "object", m.BuildID, "err", err)
+		level.Debug(s.logger).Log("msg", msg, "object", m.BuildId, "err", err)
 		return nil, fmt.Errorf(msg+": %w", err)
 	}
 
@@ -213,7 +213,7 @@ func (s *Store) Symbolize(ctx context.Context, m *metastore.Mapping, locations .
 	for _, loc := range locations {
 		lines, err := liner.PCToLines(loc.Address)
 		if err != nil {
-			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildID, "err", err)
+			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildId, "err", err)
 			continue
 		}
 		locationLines[loc] = append(locationLines[loc], lines...)

@@ -70,7 +70,7 @@ type Flags struct {
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 
-	Metastore string `default:"sqliteinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
+	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
 }
 
 // Run the parca server
@@ -120,6 +120,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		defer mStr.Close()
 	case "badgerinmemory":
 		mStr = metastore.NewBadgerMetastore(
+			logger,
 			reg,
 			tracerProvider.Tracer("badgerinmemory"),
 			metastore.NewRandomUUIDGenerator(),

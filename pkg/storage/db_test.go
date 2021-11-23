@@ -31,15 +31,15 @@ import (
 )
 
 func TestDB(t *testing.T) {
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"testdb",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()
 	})
-	require.NoError(t, err)
 	db := OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 	ctx := context.Background()
 	app1, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test1"}})

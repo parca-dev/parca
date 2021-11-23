@@ -5,6 +5,7 @@ package parca.query.v1alpha1;
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "parca/profilestore/v1alpha1/profilestore.proto";
+import "parca/metastore/v1alpha1/metastore.proto";
 
 // QueryService is the service that provides APIs to retrieve and inspect profiles
 service QueryService {
@@ -249,86 +250,16 @@ message FlamegraphNode {
 message FlamegraphNodeMeta {
 
     // location is the location for the code
-    Location location = 1;
+    parca.metastore.v1alpha1.Location location = 1;
 
     // mapping is the mapping into code
-    Mapping mapping = 2;
+    parca.metastore.v1alpha1.Mapping mapping = 2;
 
     // function is the function information
-    Function function = 3;
+    parca.metastore.v1alpha1.Function function = 3;
 
     // line is the line location
-    Line line = 4;
-}
-
-// Location is the location metadata
-message Location {
-
-    // id ...
-    string id = 1;
-
-    // mapping_id ...
-    string mapping_id = 2;
-
-    // address ...
-    uint64 address = 3;
-
-    // is_folded ...
-    bool is_folded = 4;
-}
-
-// Line ...
-message Line {
-
-    // location_id ...
-    string location_id = 1;
-
-    // function_id ...
-    string function_id = 2;
-
-    // line ...
-    int64 line = 3;
-}
-
-// Mapping ...
-message Mapping {
-
-    // id ...
-    string id = 1;
-
-    // start ...
-    uint64 start = 2;
-
-    // limit ...
-    uint64 limit = 3;
-
-    // offset ...
-    uint64 offset = 4;
-
-    // file ...
-    string file = 5;
-
-    // build_id ...
-    string build_id = 6;
-}
-
-// Function ...
-message Function {
-
-    // id ...
-    string id = 1;
-
-    // name ...
-    string name = 2;
-
-    // system_name ...
-    string system_name = 3;
-
-    // filename ...
-    string filename = 4;
-
-    // start_line ...
-    int64 start_line = 5;
+    parca.metastore.v1alpha1.Line line = 4;
 }
 
 // QueryResponse is the returned report for the given query

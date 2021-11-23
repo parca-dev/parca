@@ -205,15 +205,15 @@ func TestIteratorConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"iteratorconsistency",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()
 	})
-	require.NoError(t, err)
 	s := NewMemSeries(1, labels.Labels{{Name: "test_name", Value: "test_value"}}, func(int64) {}, newHeadChunkPool())
 	require.NoError(t, err)
 	app, err := s.Appender()

@@ -209,10 +209,11 @@ func BenchmarkDiff(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"benchdiff",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	require.NoError(b, err)
 	b.Cleanup(func() {

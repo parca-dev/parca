@@ -5,6 +5,7 @@ import * as jspb from "google-protobuf";
 import * as google_api_annotations_pb from "../../../google/api/annotations_pb";
 import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
 import * as parca_profilestore_v1alpha1_profilestore_pb from "../../../parca/profilestore/v1alpha1/profilestore_pb";
+import * as parca_metastore_v1alpha1_metastore_pb from "../../../parca/metastore/v1alpha1/metastore_pb";
 
 export class QueryRangeRequest extends jspb.Message {
   getQuery(): string;
@@ -430,23 +431,23 @@ export namespace FlamegraphNode {
 export class FlamegraphNodeMeta extends jspb.Message {
   hasLocation(): boolean;
   clearLocation(): void;
-  getLocation(): Location | undefined;
-  setLocation(value?: Location): void;
+  getLocation(): parca_metastore_v1alpha1_metastore_pb.Location | undefined;
+  setLocation(value?: parca_metastore_v1alpha1_metastore_pb.Location): void;
 
   hasMapping(): boolean;
   clearMapping(): void;
-  getMapping(): Mapping | undefined;
-  setMapping(value?: Mapping): void;
+  getMapping(): parca_metastore_v1alpha1_metastore_pb.Mapping | undefined;
+  setMapping(value?: parca_metastore_v1alpha1_metastore_pb.Mapping): void;
 
   hasFunction(): boolean;
   clearFunction(): void;
-  getFunction(): Function | undefined;
-  setFunction(value?: Function): void;
+  getFunction(): parca_metastore_v1alpha1_metastore_pb.Function | undefined;
+  setFunction(value?: parca_metastore_v1alpha1_metastore_pb.Function): void;
 
   hasLine(): boolean;
   clearLine(): void;
-  getLine(): Line | undefined;
-  setLine(value?: Line): void;
+  getLine(): parca_metastore_v1alpha1_metastore_pb.Line | undefined;
+  setLine(value?: parca_metastore_v1alpha1_metastore_pb.Line): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): FlamegraphNodeMeta.AsObject;
@@ -460,146 +461,10 @@ export class FlamegraphNodeMeta extends jspb.Message {
 
 export namespace FlamegraphNodeMeta {
   export type AsObject = {
-    location?: Location.AsObject,
-    mapping?: Mapping.AsObject,
-    pb_function?: Function.AsObject,
-    line?: Line.AsObject,
-  }
-}
-
-export class Location extends jspb.Message {
-  getId(): string;
-  setId(value: string): void;
-
-  getMappingId(): string;
-  setMappingId(value: string): void;
-
-  getAddress(): number;
-  setAddress(value: number): void;
-
-  getIsFolded(): boolean;
-  setIsFolded(value: boolean): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): Location.AsObject;
-  static toObject(includeInstance: boolean, msg: Location): Location.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: Location, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): Location;
-  static deserializeBinaryFromReader(message: Location, reader: jspb.BinaryReader): Location;
-}
-
-export namespace Location {
-  export type AsObject = {
-    id: string,
-    mappingId: string,
-    address: number,
-    isFolded: boolean,
-  }
-}
-
-export class Line extends jspb.Message {
-  getLocationId(): string;
-  setLocationId(value: string): void;
-
-  getFunctionId(): string;
-  setFunctionId(value: string): void;
-
-  getLine(): number;
-  setLine(value: number): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): Line.AsObject;
-  static toObject(includeInstance: boolean, msg: Line): Line.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: Line, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): Line;
-  static deserializeBinaryFromReader(message: Line, reader: jspb.BinaryReader): Line;
-}
-
-export namespace Line {
-  export type AsObject = {
-    locationId: string,
-    functionId: string,
-    line: number,
-  }
-}
-
-export class Mapping extends jspb.Message {
-  getId(): string;
-  setId(value: string): void;
-
-  getStart(): number;
-  setStart(value: number): void;
-
-  getLimit(): number;
-  setLimit(value: number): void;
-
-  getOffset(): number;
-  setOffset(value: number): void;
-
-  getFile(): string;
-  setFile(value: string): void;
-
-  getBuildId(): string;
-  setBuildId(value: string): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): Mapping.AsObject;
-  static toObject(includeInstance: boolean, msg: Mapping): Mapping.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: Mapping, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): Mapping;
-  static deserializeBinaryFromReader(message: Mapping, reader: jspb.BinaryReader): Mapping;
-}
-
-export namespace Mapping {
-  export type AsObject = {
-    id: string,
-    start: number,
-    limit: number,
-    offset: number,
-    file: string,
-    buildId: string,
-  }
-}
-
-export class Function extends jspb.Message {
-  getId(): string;
-  setId(value: string): void;
-
-  getName(): string;
-  setName(value: string): void;
-
-  getSystemName(): string;
-  setSystemName(value: string): void;
-
-  getFilename(): string;
-  setFilename(value: string): void;
-
-  getStartLine(): number;
-  setStartLine(value: number): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): Function.AsObject;
-  static toObject(includeInstance: boolean, msg: Function): Function.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: Function, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): Function;
-  static deserializeBinaryFromReader(message: Function, reader: jspb.BinaryReader): Function;
-}
-
-export namespace Function {
-  export type AsObject = {
-    id: string,
-    name: string,
-    systemName: string,
-    filename: string,
-    startLine: number,
+    location?: parca_metastore_v1alpha1_metastore_pb.Location.AsObject,
+    mapping?: parca_metastore_v1alpha1_metastore_pb.Mapping.AsObject,
+    pb_function?: parca_metastore_v1alpha1_metastore_pb.Function.AsObject,
+    line?: parca_metastore_v1alpha1_metastore_pb.Line.AsObject,
   }
 }
 

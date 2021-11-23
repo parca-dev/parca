@@ -67,9 +67,9 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 func GeneratePprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip InstantProfile) (*profile.Profile, error) {
 	meta := ip.ProfileMeta()
 
-	mappingByID := map[uuid.UUID]*profile.Mapping{}
-	functionByID := map[uuid.UUID]*profile.Function{}
-	locationByID := map[uuid.UUID]*profile.Location{}
+	mappingByID := map[string]*profile.Mapping{}
+	functionByID := map[string]*profile.Function{}
+	locationByID := map[string]*profile.Location{}
 	p := &profile.Profile{
 		PeriodType:    &profile.ValueType{Type: meta.PeriodType.Type, Unit: meta.PeriodType.Unit},
 		SampleType:    []*profile.ValueType{{Type: meta.SampleType.Type, Unit: meta.SampleType.Unit}},
@@ -88,19 +88,19 @@ func GeneratePprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip
 			return nil
 		}
 		id := n.LocationID()
-		_, seenLocation := locationByID[id]
+		_, seenLocation := locationByID[string(id[:])]
 		if !seenLocation {
 			// TODO(metalmatze): Improve this by calling once with a slice of IDs
-			locs, err := metastore.GetLocationsByIDs(ctx, metaStore, id)
+			locs, err := metastore.GetLocationsByIDs(ctx, metaStore, id[:])
 			if err != nil {
 				return err
 			}
-			loc := locs[id]
+			loc := locs[string(id[:])]
 
 			var mapping *profile.Mapping
 			if loc.Mapping != nil {
 				var seenMapping bool
-				mapping, seenMapping = mappingByID[loc.Mapping.ID]
+				mapping, seenMapping = mappingByID[string(loc.Mapping.Id)]
 				if !seenMapping {
 					mapping = &profile.Mapping{
 						ID:              uint64(len(p.Mapping) + 1),
@@ -108,21 +108,21 @@ func GeneratePprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip
 						Limit:           loc.Mapping.Limit,
 						Offset:          loc.Mapping.Offset,
 						File:            loc.Mapping.File,
-						BuildID:         loc.Mapping.BuildID,
+						BuildID:         loc.Mapping.BuildId,
 						HasFunctions:    loc.Mapping.HasFunctions,
 						HasFilenames:    loc.Mapping.HasFilenames,
 						HasLineNumbers:  loc.Mapping.HasLineNumbers,
 						HasInlineFrames: loc.Mapping.HasInlineFrames,
 					}
 					p.Mapping = append(p.Mapping, mapping)
-					mappingByID[loc.Mapping.ID] = mapping
+					mappingByID[string(loc.Mapping.Id)] = mapping
 				}
 			}
 
 			var lines []profile.Line
 			for _, line := range loc.Lines {
 				if line.Function != nil {
-					function, seenFunction := functionByID[line.Function.ID]
+					function, seenFunction := functionByID[string(line.Function.Id)]
 					if !seenFunction {
 						function = &profile.Function{
 							ID:         uint64(len(p.Function) + 1),
@@ -132,7 +132,7 @@ func GeneratePprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip
 							StartLine:  line.Function.StartLine,
 						}
 						p.Function = append(p.Function, function)
-						functionByID[line.Function.ID] = function
+						functionByID[string(line.Function.Id)] = function
 					}
 					lines = append(lines, profile.Line{
 						Function: function,
@@ -155,7 +155,7 @@ func GeneratePprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip
 				IsFolded: loc.IsFolded,
 			}
 			p.Location = append(p.Location, location)
-			locationByID[id] = location
+			locationByID[string(id[:])] = location
 		}
 		return nil
 	})
@@ -182,7 +182,7 @@ func GeneratePprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip
 		if it.NextChild() {
 			node := it.At()
 			id := node.LocationID()
-			l, found := locationByID[id]
+			l, found := locationByID[string(id[:])]
 			if !found {
 				return nil, fmt.Errorf("unknown location ID %v", id)
 			}

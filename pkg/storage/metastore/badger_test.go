@@ -16,12 +16,14 @@ package metastore
 import (
 	"testing"
 
+	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/trace"
 )
 
 func TestBadgerStoreMappingStore(t *testing.T) {
 	db := NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		NewRandomUUIDGenerator(),
@@ -35,6 +37,7 @@ func TestBadgerStoreMappingStore(t *testing.T) {
 
 func TestBadgerStoreFunctionStore(t *testing.T) {
 	db := NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		NewRandomUUIDGenerator(),
@@ -48,6 +51,7 @@ func TestBadgerStoreFunctionStore(t *testing.T) {
 
 func TestBadgerStoreLocationLinesStore(t *testing.T) {
 	db := NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		NewRandomUUIDGenerator(),
@@ -61,6 +65,7 @@ func TestBadgerStoreLocationLinesStore(t *testing.T) {
 
 func TestBadgerStoreLocationStore(t *testing.T) {
 	db := NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
 		NewRandomUUIDGenerator(),

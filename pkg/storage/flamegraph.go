@@ -14,6 +14,7 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -22,12 +23,13 @@ import (
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
 
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 type TreeStackEntry struct {
-	nodes        []*pb.FlamegraphNode
+	nodes        []*querypb.FlamegraphNode
 	currentChild int
 }
 
@@ -64,9 +66,9 @@ type FlamegraphIterator struct {
 	stack TreeStack
 }
 
-func NewFlamegraphIterator(fgRoot *pb.FlamegraphNode) *FlamegraphIterator {
+func NewFlamegraphIterator(fgRoot *querypb.FlamegraphNode) *FlamegraphIterator {
 	root := &TreeStackEntry{
-		nodes:        []*pb.FlamegraphNode{fgRoot},
+		nodes:        []*querypb.FlamegraphNode{fgRoot},
 		currentChild: -1,
 	}
 	return &FlamegraphIterator{
@@ -86,7 +88,7 @@ func (fgi *FlamegraphIterator) NextChild() bool {
 	return len(peekNode.Children) > fgi.stack.Peek().currentChild
 }
 
-func (fgi *FlamegraphIterator) At() *pb.FlamegraphNode {
+func (fgi *FlamegraphIterator) At() *querypb.FlamegraphNode {
 	peekNodes := fgi.stack.Peek().nodes
 	peekNode := peekNodes[len(peekNodes)-1]
 	return peekNode.Children[fgi.stack.Peek().currentChild]
@@ -100,7 +102,7 @@ func (fgi *FlamegraphIterator) StepInto() bool {
 	}
 
 	fgi.stack.Push(&TreeStackEntry{
-		nodes:        []*pb.FlamegraphNode{peekNode.Children[fgi.stack.Peek().currentChild]},
+		nodes:        []*querypb.FlamegraphNode{peekNode.Children[fgi.stack.Peek().currentChild]},
 		currentChild: -1,
 	})
 
@@ -112,7 +114,7 @@ func (fgi *FlamegraphIterator) StepUp() {
 }
 
 type Locations interface {
-	GetLocationsByIDs(ctx context.Context, id ...uuid.UUID) (map[uuid.UUID]metastore.SerializedLocation, []uuid.UUID, error)
+	GetLocationsByIDs(ctx context.Context, id ...[]byte) (map[string]*pb.Location, [][]byte, error)
 }
 
 func GenerateFlamegraph(
@@ -120,7 +122,7 @@ func GenerateFlamegraph(
 	tracer trace.Tracer,
 	metaStore metastore.ProfileMetaStore,
 	p InstantProfile,
-) (*pb.Flamegraph, error) {
+) (*querypb.Flamegraph, error) {
 	fgCtx, fgSpan := tracer.Start(ctx, "generate-flamegraph")
 	defer fgSpan.End()
 
@@ -148,14 +150,14 @@ func GenerateFlamegraph(
 		return nil, errors.New("expected root node to be first node returned by iterator")
 	}
 
-	rootNode := &pb.FlamegraphNode{}
+	rootNode := &querypb.FlamegraphNode{}
 
-	flamegraph := &pb.Flamegraph{
-		Root: &pb.FlamegraphRootNode{},
+	flamegraph := &querypb.Flamegraph{
+		Root: &querypb.FlamegraphRootNode{},
 		Unit: meta.SampleType.Unit,
 	}
 
-	flamegraphStack := TreeStack{{nodes: []*pb.FlamegraphNode{rootNode}}}
+	flamegraphStack := TreeStack{{nodes: []*querypb.FlamegraphNode{rootNode}}}
 	steppedInto := it.StepInto()
 	if !steppedInto {
 		return flamegraph, nil
@@ -166,7 +168,7 @@ func GenerateFlamegraph(
 		if it.NextChild() {
 			child := it.At()
 			id := child.LocationID()
-			l, found := locs[id]
+			l, found := locs[string(id[:])]
 			if !found {
 				return nil, fmt.Errorf("could not find location with ID %d", id)
 			}
@@ -223,17 +225,17 @@ func GenerateFlamegraph(
 	return aggregateByFunction(flamegraph), nil
 }
 
-func getLocations(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, pt InstantProfileTree) (map[uuid.UUID]*metastore.Location, error) {
+func getLocations(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, pt InstantProfileTree) (map[string]*metastore.Location, error) {
 	ctx, locationsSpan := tracer.Start(ctx, "get-locations")
 	defer locationsSpan.End()
 
-	locationIDs := []uuid.UUID{}
-	locationIDsSeen := map[uuid.UUID]struct{}{}
+	locationIDs := [][]byte{}
+	locationIDsSeen := map[string]struct{}{}
 	err := WalkProfileTree(pt, func(n InstantProfileTreeNode) error {
 		id := n.LocationID()
-		if _, seen := locationIDsSeen[id]; !seen {
-			locationIDs = append(locationIDs, id)
-			locationIDsSeen[id] = struct{}{}
+		if _, seen := locationIDsSeen[string(id[:])]; !seen {
+			locationIDs = append(locationIDs, id[:])
+			locationIDsSeen[string(id[:])] = struct{}{}
 		}
 		return nil
 	})
@@ -241,6 +243,8 @@ func getLocations(ctx context.Context, tracer trace.Tracer, metaStore metastore.
 		return nil, fmt.Errorf("walk profile tree: %w", err)
 	}
 
+	// First ID is the root node, which is an empty UUID and we won't find it
+	// in the locations.
 	locs, err := metastore.GetLocationsByIDs(ctx, metaStore, locationIDs[1:]...)
 	if err != nil {
 		return nil, fmt.Errorf("get locations by ids: %w", err)
@@ -249,8 +253,8 @@ func getLocations(ctx context.Context, tracer trace.Tracer, metaStore metastore.
 	return locs, nil
 }
 
-func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
-	oldRootNode := &pb.FlamegraphNode{
+func aggregateByFunction(fg *querypb.Flamegraph) *querypb.Flamegraph {
+	oldRootNode := &querypb.FlamegraphNode{
 		Cumulative: fg.Root.Cumulative,
 		Diff:       fg.Root.Diff,
 		Children:   fg.Root.Children,
@@ -258,10 +262,10 @@ func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
 	mergeChildren(oldRootNode, compareByName, equalsByName)
 
 	it := NewFlamegraphIterator(oldRootNode)
-	tree := &pb.Flamegraph{
+	tree := &querypb.Flamegraph{
 		Total:  fg.Total,
 		Height: fg.Height,
-		Root: &pb.FlamegraphRootNode{
+		Root: &querypb.FlamegraphRootNode{
 			Cumulative: fg.Root.Cumulative,
 			Diff:       fg.Root.Diff,
 		},
@@ -271,16 +275,16 @@ func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
 		return tree
 	}
 
-	newRootNode := &pb.FlamegraphNode{
+	newRootNode := &querypb.FlamegraphNode{
 		Cumulative: fg.Root.Cumulative,
 		Diff:       fg.Root.Diff,
 	}
-	stack := TreeStack{{nodes: []*pb.FlamegraphNode{newRootNode}}}
+	stack := TreeStack{{nodes: []*querypb.FlamegraphNode{newRootNode}}}
 
 	for it.HasMore() {
 		if it.NextChild() {
 			node := it.At()
-			cur := &pb.FlamegraphNode{
+			cur := &querypb.FlamegraphNode{
 				Meta:       node.Meta,
 				Cumulative: node.Cumulative,
 				Diff:       node.Diff,
@@ -293,7 +297,7 @@ func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
 			steppedInto := it.StepInto()
 			if steppedInto {
 				stack.Push(&TreeStackEntry{
-					nodes: []*pb.FlamegraphNode{cur},
+					nodes: []*querypb.FlamegraphNode{cur},
 				})
 			}
 			continue
@@ -309,7 +313,7 @@ func aggregateByFunction(fg *pb.Flamegraph) *pb.Flamegraph {
 
 // mergeChildren sorts and merges the children of the given node if they are equals (in-place).
 // compare function used for sorting and equals function used for comparing two nodes before merging.
-func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.FlamegraphNode) bool) {
+func mergeChildren(node *querypb.FlamegraphNode, compare, equals func(a, b *querypb.FlamegraphNode) bool) {
 	if len(node.Children) < 2 {
 		return
 	}
@@ -327,7 +331,7 @@ func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.Flameg
 		if equals(current, next) {
 			// Merge children into the first one
 			current.Meta.Line = nil
-			if current.Meta.Mapping != nil && next.Meta.Mapping != nil && current.Meta.Mapping.Id != next.Meta.Mapping.Id {
+			if current.Meta.Mapping != nil && next.Meta.Mapping != nil && !bytes.Equal(current.Meta.Mapping.Id, next.Meta.Mapping.Id) {
 				current.Meta.Mapping = &pb.Mapping{}
 			}
 
@@ -348,7 +352,7 @@ func mergeChildren(node *pb.FlamegraphNode, compare, equals func(a, b *pb.Flameg
 	}
 }
 
-func compareByName(a, b *pb.FlamegraphNode) bool {
+func compareByName(a, b *querypb.FlamegraphNode) bool {
 	if a.Meta.Function != nil && b.Meta.Function == nil {
 		return false
 	}
@@ -364,7 +368,7 @@ func compareByName(a, b *pb.FlamegraphNode) bool {
 	return a.Meta.Function.Name <= b.Meta.Function.Name
 }
 
-func equalsByName(a, b *pb.FlamegraphNode) bool {
+func equalsByName(a, b *querypb.FlamegraphNode) bool {
 	if a.Meta.Function != nil && b.Meta.Function == nil {
 		return false
 	}
@@ -383,39 +387,28 @@ func equalsByName(a, b *pb.FlamegraphNode) bool {
 // locationToTreeNodes converts a location to its tree nodes, if the location
 // has multiple inlined functions it creates multiple nodes for each inlined
 // function.
-func locationToTreeNodes(location *metastore.Location) []*pb.FlamegraphNode {
-	mappingId := uuid.Nil
-	var mapping *pb.Mapping
-	if location.Mapping != nil {
-		mappingId = location.Mapping.ID
-		mapping = &pb.Mapping{
-			Id:      location.Mapping.ID.String(),
-			Start:   location.Mapping.Start,
-			Limit:   location.Mapping.Limit,
-			Offset:  location.Mapping.Offset,
-			File:    location.Mapping.File,
-			BuildId: location.Mapping.BuildID,
-		}
-	}
-
+func locationToTreeNodes(location *metastore.Location) []*querypb.FlamegraphNode {
 	if len(location.Lines) > 0 {
 		return linesToTreeNodes(
 			location,
-			mappingId,
-			mapping,
+			location.Mapping,
 			location.Lines,
 		)
 	}
 
-	return []*pb.FlamegraphNode{{
-		Meta: &pb.FlamegraphNodeMeta{
+	var mappingId []byte
+	if location.Mapping != nil {
+		mappingId = location.Mapping.Id
+	}
+	return []*querypb.FlamegraphNode{{
+		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
-				Id:        location.ID.String(),
-				MappingId: mappingId.String(),
+				Id:        location.ID[:],
+				MappingId: mappingId,
 				Address:   location.Address,
 				IsFolded:  location.IsFolded,
 			},
-			Mapping: mapping,
+			Mapping: location.Mapping,
 		},
 	}}
 }
@@ -424,16 +417,15 @@ func locationToTreeNodes(location *metastore.Location) []*pb.FlamegraphNode {
 // returns the slice of items in order from outer-most to inner-most.
 func linesToTreeNodes(
 	location *metastore.Location,
-	mappingId uuid.UUID,
 	mapping *pb.Mapping,
 	lines []metastore.LocationLine,
-) []*pb.FlamegraphNode {
+) []*querypb.FlamegraphNode {
 	if len(lines) == 0 {
 		return nil
 	}
 
-	res := make([]*pb.FlamegraphNode, len(lines))
-	var prev *pb.FlamegraphNode
+	res := make([]*querypb.FlamegraphNode, len(lines))
+	var prev *querypb.FlamegraphNode
 
 	// Same as locations, lines are in order from deepest to highest in the
 	// stack. Therefore we start with the innermost, and work ourselves
@@ -443,7 +435,6 @@ func linesToTreeNodes(
 	for i := 0; i < len(lines); i++ {
 		node := lineToTreeNode(
 			location,
-			mappingId,
 			mapping,
 			lines[i],
 			prev,
@@ -457,33 +448,29 @@ func linesToTreeNodes(
 
 func lineToTreeNode(
 	location *metastore.Location,
-	mappingId uuid.UUID,
 	mapping *pb.Mapping,
 	line metastore.LocationLine,
-	child *pb.FlamegraphNode,
-) *pb.FlamegraphNode {
-	var children []*pb.FlamegraphNode
+	child *querypb.FlamegraphNode,
+) *querypb.FlamegraphNode {
+	var children []*querypb.FlamegraphNode
 	if child != nil {
-		children = []*pb.FlamegraphNode{child}
+		children = []*querypb.FlamegraphNode{child}
 	}
-	return &pb.FlamegraphNode{
-		Meta: &pb.FlamegraphNodeMeta{
+	var mappingId []byte
+	if mapping != nil {
+		mappingId = mapping.Id
+	}
+	return &querypb.FlamegraphNode{
+		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
-				Id:        location.ID.String(),
-				MappingId: mappingId.String(),
+				Id:        location.ID[:],
+				MappingId: mappingId,
 				Address:   location.Address,
 				IsFolded:  location.IsFolded,
 			},
-			Function: &pb.Function{
-				Id:         line.Function.ID.String(),
-				Name:       line.Function.Name,
-				SystemName: line.Function.SystemName,
-				Filename:   line.Function.Filename,
-				StartLine:  line.Function.StartLine,
-			},
+			Function: line.Function,
 			Line: &pb.Line{
-				LocationId: location.ID.String(),
-				FunctionId: line.Function.ID.String(),
+				FunctionId: line.Function.Id,
 				Line:       line.Line,
 			},
 			Mapping: mapping,

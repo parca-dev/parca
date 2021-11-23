@@ -426,15 +426,15 @@ func TestMergeSingle(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"mergesingle",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()
 	})
-	require.NoError(t, err)
 	prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
@@ -452,15 +452,15 @@ func TestMergeMany(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"mergemany",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()
 	})
-	require.NoError(t, err)
 	prof, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
@@ -495,15 +495,15 @@ func BenchmarkTreeMerge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"treemerge",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	b.Cleanup(func() {
 		l.Close()
 	})
-	require.NoError(b, err)
 	profileTree1, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(b, err)
 	profileTree2, err := ProfileTreeFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
@@ -566,12 +566,12 @@ func BenchmarkMergeMany(b *testing.B) {
 				require.NoError(b, err)
 				require.NoError(b, f.Close())
 
-				l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+				l := metastore.NewBadgerMetastore(
+					log.NewNopLogger(),
 					prometheus.NewRegistry(),
 					trace.NewNoopTracerProvider().Tracer(""),
-					"bencmergequery",
+					metastore.NewRandomUUIDGenerator(),
 				)
-				require.NoError(b, err)
 				b.Cleanup(func() {
 					l.Close()
 				})
