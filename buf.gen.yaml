@@ -9,11 +9,10 @@ plugins:
   - name: go
     out: gen/proto/go
     opt: paths=source_relative
-  - name: go-grpc
+  - remote: buf.build/cerbos/plugins/vtproto:v0.2.0-1
     out: gen/proto/go
     opt:
-      - paths=source_relative
-      - require_unimplemented_servers=false
+      - paths=source_relative,features=marshal+unmarshal+size+pool+grpc
   - name: js
     out: ui/packages/shared/client/src
     opt:

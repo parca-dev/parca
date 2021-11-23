@@ -119,7 +119,7 @@ func (m *BadgerMetastore) GetMappingsByIDs(ctx context.Context, ids ...[]byte) (
 
 			err = item.Value(func(val []byte) error {
 				ma := &pb.Mapping{}
-				err := proto.Unmarshal(val, ma)
+				err := ma.UnmarshalVT(val)
 				if err != nil {
 					return err
 				}
@@ -165,7 +165,7 @@ func (m *BadgerMetastore) GetMappingByKey(ctx context.Context, key *pb.Mapping) 
 		}
 
 		return item.Value(func(val []byte) error {
-			return proto.Unmarshal(val, ma)
+			return ma.UnmarshalVT(val)
 		})
 	})
 	if err != nil {
@@ -245,7 +245,7 @@ func (m *BadgerMetastore) GetFunctionByKey(ctx context.Context, key *pb.Function
 		}
 
 		return item.Value(func(val []byte) error {
-			return proto.Unmarshal(val, f)
+			return f.UnmarshalVT(val)
 		})
 	})
 	if err != nil {
@@ -268,7 +268,7 @@ func (m *BadgerMetastore) GetFunctions(ctx context.Context) ([]*pb.Function, err
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			err := it.Item().Value(func(val []byte) error {
 				f := &pb.Function{}
-				err := proto.Unmarshal(val, f)
+				err := f.UnmarshalVT(val)
 				if err != nil {
 					return err
 				}
@@ -296,7 +296,7 @@ func (m *BadgerMetastore) GetFunctionsByIDs(ctx context.Context, ids ...[]byte) 
 
 			err = item.Value(func(val []byte) error {
 				f := &pb.Function{}
-				err := proto.Unmarshal(val, f)
+				err := f.UnmarshalVT(val)
 				if err != nil {
 					return err
 				}
@@ -360,7 +360,7 @@ func (m *BadgerMetastore) GetLinesByLocationIDs(ctx context.Context, ids ...[]by
 
 			err = item.Value(func(val []byte) error {
 				l := &pb.LocationLines{}
-				err := proto.Unmarshal(val, l)
+				err := l.UnmarshalVT(val)
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal location lines for ID %q: %w", id, err)
 				}
@@ -414,7 +414,7 @@ func (m *BadgerMetastore) GetLocationByKey(ctx context.Context, key *Location) (
 		}
 
 		return item.Value(func(val []byte) error {
-			return proto.Unmarshal(val, l)
+			return l.UnmarshalVT(val)
 		})
 	})
 	if err != nil {
@@ -441,7 +441,7 @@ func (m *BadgerMetastore) GetLocationsByIDs(ctx context.Context, ids ...[]byte) 
 
 			err = item.Value(func(val []byte) error {
 				l := &pb.Location{}
-				err := proto.Unmarshal(val, l)
+				err := l.UnmarshalVT(val)
 				if err != nil {
 					return err
 				}
@@ -561,7 +561,7 @@ func (m *BadgerMetastore) getLocations(ctx context.Context, prefix []byte) ([]*p
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			err := it.Item().Value(func(val []byte) error {
 				l := &pb.Location{}
-				err := proto.Unmarshal(val, l)
+				err := l.UnmarshalVT(val)
 				if err != nil {
 					return err
 				}

@@ -46,6 +46,8 @@ var (
 // Query is the read api interface for parca
 // It implements the proto/query/query.proto APIServer interface
 type Query struct {
+	pb.UnimplementedQueryServiceServer
+
 	logger       log.Logger
 	tracer       trace.Tracer
 	queryable    storage.Queryable
