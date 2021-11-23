@@ -21,6 +21,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 
@@ -119,6 +120,8 @@ func NewManager(logger log.Logger, reg prometheus.Registerer, store profilepb.Pr
 // Manager maintains a set of scrape pools and manages start/stop cycles
 // when receiving new target groups form the discovery manager.
 type Manager struct {
+	scrapepb.UnimplementedScrapeServiceServer
+
 	logger    log.Logger
 	store     profilepb.ProfileStoreServiceServer
 	graceShut chan struct{}

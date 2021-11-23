@@ -61,6 +61,8 @@ type CacheConfig struct {
 }
 
 type Store struct {
+	debuginfopb.UnimplementedDebugInfoServiceServer
+
 	bucket objstore.Bucket
 	logger log.Logger
 

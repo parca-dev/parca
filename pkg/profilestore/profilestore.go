@@ -32,6 +32,8 @@ import (
 )
 
 type ProfileStore struct {
+	profilestorepb.UnimplementedProfileStoreServiceServer
+
 	logger       log.Logger
 	tracer       trace.Tracer
 	app          storage.Appendable
