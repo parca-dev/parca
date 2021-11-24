@@ -26,16 +26,22 @@ import (
 )
 
 var (
-	version string
-	commit  string
-	date    string
-	builtBy string
+	version string = "dev"
+	commit  string = "dev"
+	date    string = "dev"
+	builtBy string = "dev"
 )
 
 func main() {
 	ctx := context.Background()
 	flags := &parca.Flags{}
+
 	kong.Parse(flags)
+
+	if flags.Version {
+		fmt.Printf("parca, version %s (commit: %s)\n", version, commit)
+		return
+	}
 
 	serverStr := figure.NewColorFigure("Parca", "roman", "cyan", true)
 	serverStr.Print()
@@ -51,7 +57,8 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 
-	err := parca.Run(ctx, logger, registry, flags)
+	err := parca.Run(ctx, logger, registry, flags, version)
+
 	if err != nil {
 		level.Error(logger).Log("msg", "Program exited with error", "err", err)
 		os.Exit(1)

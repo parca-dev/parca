@@ -14,12 +14,14 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/pprof"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/go-chi/cors"
@@ -71,12 +73,14 @@ type Server struct {
 	http.Server
 	grpcProbe *prober.GRPCProbe
 	reg       *prometheus.Registry
+	version   string
 }
 
-func NewServer(reg *prometheus.Registry) *Server {
+func NewServer(reg *prometheus.Registry, version string) *Server {
 	return &Server{
 		grpcProbe: prober.NewGRPC(),
 		reg:       reg,
+		version:   version,
 	}
 }
 
@@ -150,16 +154,23 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		return fmt.Errorf("failed to register pprof handlers: %w", err)
 	}
 
+	// Strip the subpath
 	uiFS, err := fs.Sub(ui.FS, "packages/app/web/dist")
 	if err != nil {
 		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
+	}
+
+	uiHandler, err := s.uiHandler(uiFS)
+
+	if err != nil {
+		return fmt.Errorf("failed to walk ui filesystem: %w", err)
 	}
 
 	s.Server = http.Server{
 		Addr: port,
 		Handler: grpcHandlerFunc(
 			srv,
-			fallbackNotFound(mux, http.FileServer(http.FS(uiFS))),
+			fallbackNotFound(mux, uiHandler),
 			allowedCORSOrigins,
 		),
 		ReadTimeout:  5 * time.Second, // TODO make config option
@@ -184,6 +195,77 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.grpcProbe.NotReady(nil)
 	return s.Server.Shutdown(ctx)
+}
+
+// uiHandler initialize a http.ServerMux with the UI files.
+//
+// There is currently no way to go between `http.FileServer(http.FS(uiFS))` and execute
+// templates. Taking an FS registering paths and executing templates seems to be the best option
+// for now.
+func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
+	uiHandler := http.ServeMux{}
+
+	err := fs.WalkDir(uiFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		b, err := fs.ReadFile(uiFS, path)
+
+		if err != nil {
+			return fmt.Errorf("failed to read ui file %s: %w", path, err)
+		}
+
+		tmpl, err := template.New(path).Parse(string(b))
+
+		if err != nil {
+			return fmt.Errorf("failed to parse ui file %s: %w", path, err)
+		}
+
+		var outputBuffer bytes.Buffer
+
+		err = tmpl.Execute(&outputBuffer, struct {
+			Version string
+		}{
+			s.version,
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to execute ui file %s: %w", path, err)
+		}
+
+		fi, err := d.Info()
+
+		if err != nil {
+			return fmt.Errorf("failed to receive file info %s: %w", path, err)
+		}
+
+		outputBytes := outputBuffer.Bytes()
+
+		paths := []string{fmt.Sprintf("/%s", path)}
+
+		if paths[0] == "/index.html" {
+			paths = append(paths, "/")
+		}
+
+		for _, path := range paths {
+			uiHandler.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+				http.ServeContent(w, r, d.Name(), fi.ModTime(), bytes.NewReader(outputBytes))
+			})
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &uiHandler, nil
 }
 
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowedCORSOrigins []string) http.Handler {
