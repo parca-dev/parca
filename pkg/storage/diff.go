@@ -56,7 +56,21 @@ func (d *DiffProfile) ProfileMeta() InstantProfileMeta {
 }
 
 func (d *DiffProfile) Samples() map[string]*Sample {
-	panic("implement me")
+	bs := d.base.Samples()
+	cs := d.compare.Samples()
+
+	ss := make(map[string]*Sample, len(bs))
+
+	for k, s := range cs {
+		if sb, ok := bs[k]; ok {
+			s.DiffValue = s.Value - sb.Value
+			ss[k] = s
+		} else {
+			ss[k] = s
+		}
+	}
+
+	return ss
 }
 
 type DiffProfileTree struct {

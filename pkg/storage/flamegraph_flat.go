@@ -98,6 +98,7 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 						continue
 					}
 					n.Cumulative += s.Value
+					n.Diff += s.DiffValue
 				}
 
 				child = nodes[0]
@@ -110,10 +111,12 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 
 			// Add the value to the cumulative value for each node
 			cur.Cumulative += s.Value
+			cur.Diff += s.DiffValue
 		}
 
 		// Sum up the value to the cumulative value of the root
 		rootNode.Cumulative += s.Value
+		rootNode.Diff += s.DiffValue
 
 		// For next sample start at the root again
 		cur = rootNode

@@ -195,6 +195,8 @@ func TestDiffProfileDeep(t *testing.T) {
 	}, res)
 }
 
+// go test -bench=BenchmarkDiff -count=3 ./pkg/storage | tee ./pkg/storage/benchmark/diff-tree.txt
+
 func BenchmarkDiff(b *testing.B) {
 	ctx := context.Background()
 
@@ -247,6 +249,9 @@ func BenchmarkDiff(b *testing.B) {
 	}
 
 	b.Run("simple", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+
 		for i := 0; i < b.N; i++ {
 			d, err := NewDiffProfile(prof1, prof2)
 			require.NoError(b, err)

@@ -38,11 +38,12 @@ type profileNormalizer struct {
 }
 
 type Sample struct {
-	Location []*metastore.Location
-	Value    int64
-	Label    map[string][]string
-	NumLabel map[string][]int64
-	NumUnit  map[string][]string
+	Location  []*metastore.Location
+	Value     int64
+	DiffValue int64
+	Label     map[string][]string
+	NumLabel  map[string][]int64
+	NumUnit   map[string][]string
 }
 
 // Returns the mapped sample and whether it is new or a known sample.
