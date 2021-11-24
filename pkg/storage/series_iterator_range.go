@@ -60,7 +60,7 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		rootIt.Seek(start)
 	}
 
-	var sampleIterators map[string]MemSeriesValuesIterator
+	var sampleIterators map[[16]byte]MemSeriesValuesIterator
 
 	root := &MemSeriesIteratorTreeNode{}
 	if rs.trees {
@@ -109,9 +109,9 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 			memItStack.Pop()
 		}
 	} else {
-		sampleIterators = make(map[string]MemSeriesValuesIterator, len(rs.s.samples))
+		sampleIterators = make(map[[16]byte]MemSeriesValuesIterator, len(rs.s.samples))
 		for key, chunks := range rs.s.samples {
-			sampleIterators[string(key)] = NewMultiChunkIterator(chunks)
+			sampleIterators[key] = NewMultiChunkIterator(chunks)
 		}
 	}
 
@@ -159,13 +159,13 @@ type MemRangeSeriesIterator struct {
 	durationsIterator  MemSeriesValuesIterator
 	periodsIterator    MemSeriesValuesIterator
 
-	sampleIterators map[string]MemSeriesValuesIterator
+	sampleIterators map[[16]byte]MemSeriesValuesIterator
 
 	numSamples uint64 // uint16 might not be enough for many chunks (~500+)
 	err        error
 
 	trees     bool
-	locations map[string][]*metastore.Location
+	locations map[[16]byte][]*metastore.Location
 }
 
 func (it *MemRangeSeriesIterator) Next() bool {

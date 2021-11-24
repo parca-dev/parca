@@ -303,11 +303,11 @@ func (m *MergeProfileTree) RootCumulativeValue() int64 {
 	return 0
 }
 
-func (m *MergeProfile) Samples() map[string]*Sample {
+func (m *MergeProfile) Samples() map[[16]byte]*Sample {
 	as := m.a.Samples()
 	bs := m.b.Samples()
 
-	samples := make(map[string]*Sample, len(as)+len(bs)) // TODO: Don't allocate a new map, and especially not worst case
+	samples := make(map[[16]byte]*Sample, len(as)+len(bs)) // TODO: Don't allocate a new map, and especially not worst case
 
 	// Merge intersection for A to B
 	for k, s := range as {

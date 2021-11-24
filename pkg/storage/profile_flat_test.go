@@ -38,7 +38,7 @@ func TestProfileFlatNormalizer(t *testing.T) {
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		metastore.NewRandomUUIDGenerator(),
+		NewLinearUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()

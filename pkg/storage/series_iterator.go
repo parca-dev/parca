@@ -353,7 +353,7 @@ func (p *MemSeriesInstantProfile) ProfileMeta() InstantProfileMeta {
 	}
 }
 
-func (p *MemSeriesInstantProfile) Samples() map[string]*Sample {
+func (p *MemSeriesInstantProfile) Samples() map[[16]byte]*Sample {
 	panic("won't be implemented - use MemSeriesInstantFlatProfile instead")
 }
 
@@ -376,8 +376,8 @@ type MemSeriesInstantFlatProfile struct {
 	durationsIterator  MemSeriesValuesIterator
 	periodsIterator    MemSeriesValuesIterator
 
-	sampleIterators map[string]MemSeriesValuesIterator
-	locations       map[string][]*metastore.Location
+	sampleIterators map[[16]byte]MemSeriesValuesIterator
+	locations       map[[16]byte][]*metastore.Location
 }
 
 func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {
@@ -390,8 +390,8 @@ func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {
 	}
 }
 
-func (m MemSeriesInstantFlatProfile) Samples() map[string]*Sample {
-	samples := make(map[string]*Sample, len(m.sampleIterators))
+func (m MemSeriesInstantFlatProfile) Samples() map[[16]byte]*Sample {
+	samples := make(map[[16]byte]*Sample, len(m.sampleIterators))
 	for k, it := range m.sampleIterators {
 		samples[k] = &Sample{
 			Value:    it.At(),

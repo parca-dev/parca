@@ -62,11 +62,13 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	// We need UUID generation to be linear for this test to work as UUID are
 	// sorted in the Flamegraph result, so predictable UUIDs are necessary for
 	// a stable result.
+	uuidGenerator := NewLinearUUIDGenerator()
+
 	l := metastore.NewBadgerMetastore(
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		NewLinearUUIDGenerator(),
+		uuidGenerator,
 	)
 
 	m := &metapb.Mapping{
@@ -179,16 +181,16 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	s1 := makeSample(1, []uuid.UUID{l5.ID, l3.ID, l2.ID, l1.ID})
 	s2 := makeSample(3, []uuid.UUID{l4.ID, l3.ID, l2.ID, l1.ID})
 
-	k0 := makeStacktraceKey(s0)
-	k1 := makeStacktraceKey(s1)
-	k2 := makeStacktraceKey(s2)
+	k0 := uuidGenerator.New()
+	k1 := uuidGenerator.New()
+	k2 := uuidGenerator.New()
 
 	fp := &FlatProfile{
 		Meta: InstantProfileMeta{},
-		samples: map[string]*Sample{
-			string(k0): s0,
-			string(k1): s1,
-			string(k2): s2,
+		samples: map[[16]byte]*Sample{
+			k0: s0,
+			k1: s1,
+			k2: s2,
 		},
 	}
 
@@ -249,11 +251,12 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 func TestGenerateInlinedFunctionFlamegraphFlat(t *testing.T) {
 	ctx := context.Background()
 	var err error
+	uuidGenerator := metastore.NewRandomUUIDGenerator()
 	l := metastore.NewBadgerMetastore(
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		metastore.NewRandomUUIDGenerator(),
+		uuidGenerator,
 	)
 
 	m := &metapb.Mapping{
@@ -314,12 +317,12 @@ func TestGenerateInlinedFunctionFlamegraphFlat(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	s0 := makeSample(2, []uuid.UUID{l2.ID, l1.ID})
-	k0 := makeStacktraceKey(s0)
+	k0 := uuidGenerator.New()
 
 	fp := &FlatProfile{
 		Meta: InstantProfileMeta{},
-		samples: map[string]*Sample{
-			string(k0): s0,
+		samples: map[[16]byte]*Sample{
+			k0: s0,
 		},
 	}
 

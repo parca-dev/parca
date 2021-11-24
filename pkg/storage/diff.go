@@ -55,11 +55,11 @@ func (d *DiffProfile) ProfileMeta() InstantProfileMeta {
 	return d.meta
 }
 
-func (d *DiffProfile) Samples() map[string]*Sample {
+func (d *DiffProfile) Samples() map[[16]byte]*Sample {
 	bs := d.base.Samples()
 	cs := d.compare.Samples()
 
-	ss := make(map[string]*Sample, len(bs))
+	ss := make(map[[16]byte]*Sample, len(bs))
 
 	for k, s := range cs {
 		if sb, ok := bs[k]; ok {

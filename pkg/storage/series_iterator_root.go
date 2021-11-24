@@ -16,6 +16,7 @@ package storage
 import (
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
@@ -156,8 +157,8 @@ func (it *MemRootSeriesIterator) At() InstantProfile {
 				PeriodType: it.s.periodType,
 				SampleType: it.s.sampleType,
 			},
-			samples: map[string]*Sample{
-				"": {Value: it.rootIterator.At()},
+			samples: map[[16]byte]*Sample{
+				uuid.Nil: {Value: it.rootIterator.At()},
 			},
 		}
 	}
