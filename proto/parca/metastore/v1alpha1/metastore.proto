@@ -2,6 +2,36 @@ syntax = "proto3";
 
 package parca.metastore.v1alpha1;
 
+// Sample is a stack trace with optional labels.
+message Sample {
+    // location_ids are locations that define the stack trace.
+    repeated bytes location_ids = 1;
+    // labels are extra labels for a stack trace.
+    map<string, SampleLabel> labels = 2;
+    // num_labels are the num of labels.
+    map<string, SampleNumLabel> num_labels = 3;
+    // num_units are the units for the labels.
+    map<string, SampleNumUnit> num_units = 4;
+}
+
+// SampleLabel are the labels added to a Sample.
+message SampleLabel {
+    // labels for a label in a Sample.
+    repeated string labels = 1;
+}
+
+// SampleNumLabel are the num of labels of a Sample.
+message SampleNumLabel {
+    // num_labels are the num_label of a Sample.
+    repeated int64 num_labels = 1;
+}
+
+// SampleNumUnit are the num units of a Sample.
+message SampleNumUnit {
+    // units of a labels of a Sample.
+    repeated string units = 1;
+}
+
 // Location describes a single location of a stack traces.
 message Location {
     // id is the unique identifier for the location.
