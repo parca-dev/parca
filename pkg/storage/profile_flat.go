@@ -108,14 +108,47 @@ func (pn *profileFlatNormalizer) mapSample(ctx context.Context, src *profile.Sam
 	// account for the remapped mapping. Add current values to the
 	// existing sample.
 	k := makeStacktraceKey(s)
-	sa, found := pn.samples[string(k)]
+
+	stacktraceUUID, err := pn.metaStore.GetStacktraceByKey(ctx, k)
+	if err != nil && err != metastore.ErrStacktraceNotFound {
+		return nil, false, err
+	}
+	if stacktraceUUID == uuid.Nil {
+		pbs := &pb.Sample{}
+		pbs.LocationIds = make([][]byte, 0, len(s.Location))
+		for _, l := range s.Location {
+			pbs.LocationIds = append(pbs.LocationIds, l.ID[:])
+		}
+
+		pbs.Labels = make(map[string]*pb.SampleLabel, len(s.Label))
+		for l, strings := range s.Label {
+			pbs.Labels[l] = &pb.SampleLabel{Labels: strings}
+		}
+
+		pbs.NumLabels = make(map[string]*pb.SampleNumLabel, len(s.NumLabel))
+		for l, int64s := range s.NumLabel {
+			pbs.NumLabels[l] = &pb.SampleNumLabel{NumLabels: int64s}
+		}
+
+		pbs.NumUnits = make(map[string]*pb.SampleNumUnit, len(s.NumUnit))
+		for l, strings := range s.NumUnit {
+			pbs.NumUnits[l] = &pb.SampleNumUnit{Units: strings}
+		}
+
+		stacktraceUUID, err = pn.metaStore.CreateStacktrace(ctx, k, pbs)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
+	sa, found := pn.samples[stacktraceUUID]
 	if found {
 		sa.Value += src.Value[sampleIndex]
 		return sa, false, nil
 	}
 
 	s.Value += src.Value[sampleIndex]
-	pn.samples[string(k)] = s
+	pn.samples[stacktraceUUID] = s
 	return s, true, nil
 }
 
