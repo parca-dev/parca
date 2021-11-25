@@ -15,9 +15,11 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -61,6 +63,73 @@ func TestGeneratePprof(t *testing.T) {
 	f, err = os.Open(tmpfile.Name())
 	require.NoError(t, err)
 	resProf, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	require.NoError(t, resProf.CheckValid())
+}
+
+func TestGenerateFlatPprof(t *testing.T) {
+	ctx := context.Background()
+
+	f, err := os.Open("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+	p1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		metastore.NewRandomUUIDGenerator(),
+	)
+	t.Cleanup(func() {
+		l.Close()
+	})
+	p, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	require.NoError(t, err)
+	res, err := GenerateFlatPprof(ctx, l, p)
+	require.NoError(t, err)
+
+	require.Equal(t, &profile.ValueType{Type: "space", Unit: "bytes"}, res.PeriodType)
+	require.Equal(t, []*profile.ValueType{{Type: "alloc_objects", Unit: "count"}}, res.SampleType)
+	require.Equal(t, time.Date(2020, 12, 17, 10, 8, 38, 549000000, time.UTC).UnixNano(), res.TimeNanos)
+	require.Equal(t, int64(0), res.DurationNanos)
+	require.Equal(t, int64(524288), res.Period)
+
+	require.Equal(t, []*profile.Mapping{{
+		ID:              1,
+		Start:           4194304,
+		Limit:           23252992,
+		Offset:          0,
+		File:            "/bin/operator",
+		BuildID:         "",
+		HasFunctions:    true,
+		HasFilenames:    false,
+		HasLineNumbers:  false,
+		HasInlineFrames: false,
+	}}, res.Mapping)
+
+	require.Len(t, res.Function, 974)
+	require.Len(t, res.Location, 1886)
+	require.Len(t, res.Sample, 4650)
+
+	tmpfile, err := ioutil.TempFile("", "pprof")
+	defer os.Remove(tmpfile.Name())
+	require.NoError(t, err)
+	require.NoError(t, res.Write(tmpfile))
+	require.NoError(t, tmpfile.Close())
+
+	f, err = os.Open(tmpfile.Name())
+	require.NoError(t, err)
+	resProf, err := profile.Parse(f)
+
+	for _, s := range resProf.Sample {
+		if s.Location == nil {
+			fmt.Println("locations nil")
+		}
+	}
+
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 	require.NoError(t, resProf.CheckValid())
