@@ -19,7 +19,7 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
-const stacktraceKeyPrefix = "stacktrace/by-key/"
+//const stacktraceKeyPrefix = "stacktrace/by-key/"
 
 const stacktraceIDPrefix = "stacktrace/by-id/"
 
