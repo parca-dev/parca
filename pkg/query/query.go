@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/google/pprof/profile"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
@@ -320,9 +321,20 @@ func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ 
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED:
-		pp, err := storage.GeneratePprof(ctx, q.metaStore, p)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+		var (
+			pp  *profile.Profile
+			err error
+		)
+		if q.profileTrees {
+			pp, err = storage.GeneratePprof(ctx, q.metaStore, p)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+			}
+		} else {
+			pp, err = storage.GenerateFlatPprof(ctx, q.metaStore, p)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+			}
 		}
 
 		var buf bytes.Buffer
