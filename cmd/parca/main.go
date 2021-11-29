@@ -28,8 +28,6 @@ import (
 var (
 	version string = "dev"
 	commit  string = "dev"
-	date    string = "dev"
-	builtBy string = "dev"
 )
 
 func main() {
@@ -50,8 +48,6 @@ func main() {
 	level.Debug(logger).Log("msg", "parca initialized",
 		"version", version,
 		"commit", commit,
-		"date", date,
-		"builtBy", builtBy,
 		"config", fmt.Sprint(flags),
 	)
 

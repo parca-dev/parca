@@ -15,7 +15,7 @@ builds:
       - -trimpath
       - -v
     ldflags:
-      - main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`
+      - main.version={{.Version}} -X main.commit={{.Commit}}`
 archives:
   - replacements:
       darwin: Darwin
