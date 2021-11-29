@@ -76,7 +76,7 @@ Please make sure to update tests as appropriate.
 
 This is roughly what the contribution workflow should look like:
 
-- Create a topic branch from where you want to base your work (usually master).
+- Create a topic branch from where you want to base your work (usually main).
 - Make commits of logical units.
 - Make sure the tests pass, and add any new tests as appropriate.
 - Make sure your commit messages follow the commit guidelines (see below).

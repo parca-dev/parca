@@ -62,6 +62,7 @@ type Flags struct {
 	Port               string   `default:":7070" help:"Port string for server"`
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
 	OTLPAddress        string   `help:"OpenTelemetry collector address to send traces to."`
+	Version            bool     `help:"Show application version."`
 
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
@@ -74,7 +75,7 @@ type Flags struct {
 }
 
 // Run the parca server
-func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags *Flags) error {
+func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags *Flags, version string) error {
 	tracerProvider := trace.NewNoopTracerProvider()
 	if flags.OTLPAddress != "" {
 		var closer func()
@@ -225,7 +226,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			m.Stop()
 		},
 	)
-	parcaserver := server.NewServer(reg)
+	parcaserver := server.NewServer(reg, version)
 	gr.Add(
 		func() error {
 			return parcaserver.ListenAndServe(

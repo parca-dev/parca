@@ -76,6 +76,9 @@ const Navbar = ({
                   </div>
                 </div>
               </div>
+              <div className='text-gray-500 dark:text-gray-0 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0'>
+                {'{{.Version}}'}
+              </div>
               <div className='text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0'>
                 <a target='_blank' href='https://github.com/parca-dev/parca'>GitHub</a>
               </div>
