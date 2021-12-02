@@ -44,8 +44,8 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k1: s1,
+		samples: map[string]*Sample{
+			string(k1[:]): s1,
 		},
 	}
 
@@ -60,8 +60,8 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k2: s2,
+		samples: map[string]*Sample{
+			string(k2[:]): s2,
 		},
 	}
 
@@ -79,7 +79,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 		Value:     1,
 		DiffValue: 0,
 		Location:  []*metastore.Location{{ID: uuid3}, {ID: uuid1}},
-	}, diffed[k2])
+	}, diffed[string(k2[:])])
 }
 
 func TestDiffFlatProfileDeep(t *testing.T) {
@@ -106,11 +106,11 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k0: s0,
-			k1: s1,
-			k2: s2,
-			k3: s3,
+		samples: map[string]*Sample{
+			string(k0[:]): s0,
+			string(k1[:]): s1,
+			string(k2[:]): s2,
+			string(k3[:]): s3,
 		},
 	}
 
@@ -127,9 +127,9 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k4: s4,
-			k2: s5,
+		samples: map[string]*Sample{
+			string(k4[:]): s4,
+			string(k2[:]): s5,
 		},
 	}
 
@@ -147,12 +147,12 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 		Value:     3,
 		DiffValue: 0,
 		Location:  []*metastore.Location{{ID: uuid3}, {ID: uuid2}, {ID: uuid2}},
-	}, diffed[k4])
+	}, diffed[string(k4[:])])
 	require.Equal(t, &Sample{
 		Value:     5,
 		DiffValue: 2,
 		Location:  []*metastore.Location{{ID: uuid2}, {ID: uuid3}},
-	}, diffed[k2])
+	}, diffed[string(k2[:])])
 }
 
 // go test -bench=BenchmarkFlatDiff -count=3 ./pkg/storage | tee ./pkg/storage/benchmark/diff-flat.txt

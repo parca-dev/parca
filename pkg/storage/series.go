@@ -47,9 +47,9 @@ type MemSeries struct {
 	// mu locks the following maps for concurrent access.
 	mu sync.RWMutex
 
-	samples map[[16]byte][]chunkenc.Chunk
+	samples map[string][]chunkenc.Chunk
 	// TODO: Remove this after having implemented the metastore stacktraces.
-	locations map[[16]byte][]*metastore.Location
+	locations map[string][]*metastore.Location
 
 	// TODO: part of profileTree - eventually remove it
 	// Flat values as well as labels by the node's ProfileTreeValueNodeKey.
@@ -81,8 +81,8 @@ func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64), chun
 		periods:    make([]chunkenc.Chunk, 0, 1),
 		root:       make([]chunkenc.Chunk, 0, 1),
 
-		samples:   make(map[[16]byte][]chunkenc.Chunk),
-		locations: make(map[[16]byte][]*metastore.Location),
+		samples:   make(map[string][]chunkenc.Chunk),
+		locations: make(map[string][]*metastore.Location),
 
 		// TODO: part of profileTree - eventually remove it
 		flatValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),

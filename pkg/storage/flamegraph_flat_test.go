@@ -187,10 +187,10 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 
 	fp := &FlatProfile{
 		Meta: InstantProfileMeta{},
-		samples: map[[16]byte]*Sample{
-			k0: s0,
-			k1: s1,
-			k2: s2,
+		samples: map[string]*Sample{
+			string(k0[:]): s0,
+			string(k1[:]): s1,
+			string(k2[:]): s2,
 		},
 	}
 
@@ -321,8 +321,8 @@ func TestGenerateInlinedFunctionFlamegraphFlat(t *testing.T) {
 
 	fp := &FlatProfile{
 		Meta: InstantProfileMeta{},
-		samples: map[[16]byte]*Sample{
-			k0: s0,
+		samples: map[string]*Sample{
+			string(k0[:]): s0,
 		},
 	}
 

@@ -46,8 +46,8 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k1: s1,
+		samples: map[string]*Sample{
+			string(k1[:]): s1,
 		},
 	}
 
@@ -62,8 +62,8 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k2: s2,
+		samples: map[string]*Sample{
+			string(k2[:]): s2,
 		},
 	}
 
@@ -83,11 +83,11 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	require.Equal(t, &Sample{
 		Value:    2,
 		Location: []*metastore.Location{{ID: uuid2}, {ID: uuid1}},
-	}, merged[k1])
+	}, merged[string(k1[:])])
 	require.Equal(t, &Sample{
 		Value:    1,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid1}},
-	}, merged[k2])
+	}, merged[string(k2[:])])
 }
 
 func TestMergeFlatProfileDeep(t *testing.T) {
@@ -114,11 +114,11 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k1: s1,
-			k2: s2,
-			k3: s3,
-			k4: s4,
+		samples: map[string]*Sample{
+			string(k1[:]): s1,
+			string(k2[:]): s2,
+			string(k3[:]): s3,
+			string(k4[:]): s4,
 		},
 	}
 
@@ -133,8 +133,8 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k5: s5,
+		samples: map[string]*Sample{
+			string(k5[:]): s5,
 		},
 	}
 
@@ -155,23 +155,23 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid1}, {ID: uuid3}},
-	}, merged[k1])
+	}, merged[string(k1[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid2}, {ID: uuid3}},
-	}, merged[k2])
+	}, merged[string(k2[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid3}, {ID: uuid2}},
-	}, merged[k3])
+	}, merged[string(k3[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid6}, {ID: uuid2}},
-	}, merged[k4])
+	}, merged[string(k4[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid2}, {ID: uuid2}},
-	}, merged[k5])
+	}, merged[string(k5[:])])
 }
 
 func TestMergeFlatProfile(t *testing.T) {
@@ -202,12 +202,12 @@ func TestMergeFlatProfile(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k1: s1,
-			k2: s2,
-			k3: s3,
-			k4: s4,
-			k5: s5,
+		samples: map[string]*Sample{
+			string(k1[:]): s1,
+			string(k2[:]): s2,
+			string(k3[:]): s3,
+			string(k4[:]): s4,
+			string(k5[:]): s5,
 		},
 	}
 
@@ -225,11 +225,11 @@ func TestMergeFlatProfile(t *testing.T) {
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[[16]byte]*Sample{
-			k1: s1,
-			k3: s3,
-			k6: s6,
-			k7: s7,
+		samples: map[string]*Sample{
+			string(k1[:]): s1,
+			string(k3[:]): s3,
+			string(k6[:]): s6,
+			string(k7[:]): s7,
 		},
 	}
 
@@ -249,31 +249,31 @@ func TestMergeFlatProfile(t *testing.T) {
 	require.Equal(t, &Sample{
 		Value:    4, // 2 + 2
 		Location: []*metastore.Location{{ID: uuid2}, {ID: uuid1}},
-	}, merged[k1])
+	}, merged[string(k1[:])])
 	require.Equal(t, &Sample{
 		Value:    1,
 		Location: []*metastore.Location{{ID: uuid6}, {ID: uuid3}, {ID: uuid2}, {ID: uuid1}},
-	}, merged[k2])
+	}, merged[string(k2[:])])
 	require.Equal(t, &Sample{
 		Value:    6, // 3 + 3
 		Location: []*metastore.Location{{ID: uuid4}, {ID: uuid3}, {ID: uuid2}, {ID: uuid1}},
-	}, merged[k3])
+	}, merged[string(k3[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid3}, {ID: uuid2}},
-	}, merged[k4])
+	}, merged[string(k4[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid6}, {ID: uuid2}},
-	}, merged[k5])
+	}, merged[string(k5[:])])
 	require.Equal(t, &Sample{
 		Value:    1,
 		Location: []*metastore.Location{{ID: uuid5}, {ID: uuid3}, {ID: uuid2}, {ID: uuid1}},
-	}, merged[k6])
+	}, merged[string(k6[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid2}, {ID: uuid2}},
-	}, merged[k7])
+	}, merged[string(k7[:])])
 }
 
 func TestMergeSingleFlat(t *testing.T) {
