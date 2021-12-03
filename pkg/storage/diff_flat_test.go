@@ -34,7 +34,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 
 	s1 := makeSample(3, []uuid.UUID{uuid2, uuid1})
-	k1 := makeStacktraceKey(s1)
+	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -45,12 +45,12 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k1): s1,
+			string(k1[:]): s1,
 		},
 	}
 
 	s2 := makeSample(1, []uuid.UUID{uuid3, uuid1})
-	k2 := makeStacktraceKey(s2)
+	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -61,7 +61,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k2): s2,
+			string(k2[:]): s2,
 		},
 	}
 
@@ -79,7 +79,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 		Value:     1,
 		DiffValue: 0,
 		Location:  []*metastore.Location{{ID: uuid3}, {ID: uuid1}},
-	}, diffed[string(k2)])
+	}, diffed[string(k2[:])])
 }
 
 func TestDiffFlatProfileDeep(t *testing.T) {
@@ -93,10 +93,10 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 	s2 := makeSample(3, []uuid.UUID{uuid2, uuid3})
 	s3 := makeSample(3, []uuid.UUID{uuid1, uuid3})
 
-	k0 := makeStacktraceKey(s0)
-	k1 := makeStacktraceKey(s1)
-	k2 := makeStacktraceKey(s2)
-	k3 := makeStacktraceKey(s3)
+	k0 := uuid.MustParse("00000000-0000-0000-0000-0000000000e0")
+	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
+	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
+	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -107,18 +107,17 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k0): s0,
-			string(k1): s1,
-			string(k2): s2,
-			string(k3): s3,
+			string(k0[:]): s0,
+			string(k1[:]): s1,
+			string(k2[:]): s2,
+			string(k3[:]): s3,
 		},
 	}
 
 	s4 := makeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
 	s5 := makeSample(5, []uuid.UUID{uuid2, uuid3})
 
-	k4 := makeStacktraceKey(s4)
-	k5 := makeStacktraceKey(s5)
+	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -129,8 +128,8 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k4): s4,
-			string(k5): s5,
+			string(k4[:]): s4,
+			string(k2[:]): s5,
 		},
 	}
 
@@ -148,12 +147,12 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 		Value:     3,
 		DiffValue: 0,
 		Location:  []*metastore.Location{{ID: uuid3}, {ID: uuid2}, {ID: uuid2}},
-	}, diffed[string(k4)])
+	}, diffed[string(k4[:])])
 	require.Equal(t, &Sample{
 		Value:     5,
 		DiffValue: 2,
 		Location:  []*metastore.Location{{ID: uuid2}, {ID: uuid3}},
-	}, diffed[string(k5)])
+	}, diffed[string(k2[:])])
 }
 
 // go test -bench=BenchmarkFlatDiff -count=3 ./pkg/storage | tee ./pkg/storage/benchmark/diff-flat.txt

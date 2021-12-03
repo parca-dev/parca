@@ -16,6 +16,7 @@ package metastore
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/dgraph-io/badger/v3"
@@ -105,6 +106,50 @@ func (m *BadgerMetastore) Close() error {
 // Ping returns an error if the metastore is not available.
 func (m *BadgerMetastore) Ping() error {
 	return nil
+}
+
+func (m *BadgerMetastore) GetStacktraceByKey(ctx context.Context, key []byte) (uuid.UUID, error) {
+	var id uuid.UUID
+
+	err := m.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			return ErrStacktraceNotFound
+		}
+		if err != nil {
+			return err
+		}
+
+		return item.Value(func(val []byte) error {
+			id, err = uuid.FromBytes(val)
+			return err
+		})
+	})
+
+	return id, err
+}
+
+func (m *BadgerMetastore) GetStacktraceByID(ctx context.Context, id []byte) (*pb.Sample, error) {
+	return nil, ErrStacktraceNotFound
+}
+
+func (m *BadgerMetastore) CreateStacktrace(ctx context.Context, key []byte, sample *pb.Sample) (uuid.UUID, error) {
+	stacktraceID := m.uuidGenerator.New()
+
+	buf, err := proto.Marshal(sample)
+	if err != nil {
+		return stacktraceID, err
+	}
+
+	err = m.db.Update(func(txn *badger.Txn) error {
+		err := txn.Set(append([]byte(stacktraceIDPrefix), stacktraceID[:]...), buf)
+		if err != nil {
+			return err
+		}
+		return txn.Set(key, stacktraceID[:])
+	})
+
+	return stacktraceID, err
 }
 
 // GetMappingsByIDs returns the mappings for the given IDs.

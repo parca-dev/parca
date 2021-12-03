@@ -111,7 +111,7 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 	} else {
 		sampleIterators = make(map[string]MemSeriesValuesIterator, len(rs.s.samples))
 		for key, chunks := range rs.s.samples {
-			sampleIterators[string(key)] = NewMultiChunkIterator(chunks)
+			sampleIterators[key] = NewMultiChunkIterator(chunks)
 		}
 	}
 

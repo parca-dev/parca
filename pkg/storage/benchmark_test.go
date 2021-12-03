@@ -79,7 +79,7 @@ func loadProfiles(b *testing.B, amount int) ([]*profile.Profile, error) {
 	return profiles, nil
 }
 
-// for i in {1..3}; do go test -bench=BenchmarkAppends --benchtime=2500x -benchmem -memprofile ./pkg/storage/benchmark/db-appends-memory.pb.gz -cpuprofile ./pkg/storage/benchmark/db-appends-cpu.pb.gz ./pkg/storage >> ./pkg/storage/benchmark/db-appends.txt; done
+// go test -bench=BenchmarkAppends --count=5 --benchtime=2500x -benchmem -memprofile ./pkg/storage/benchmark/db-appends-memory.pb.gz -cpuprofile ./pkg/storage/benchmark/db-appends-cpu.pb.gz ./pkg/storage | tee ./pkg/storage/benchmark/db-appends.txt
 
 func BenchmarkAppends(b *testing.B) {
 	ctx := context.Background()
@@ -128,7 +128,7 @@ func BenchmarkAppends(b *testing.B) {
 	b.StopTimer()
 }
 
-// for i in {1..3}; do go test -bench=BenchmarkIterator --benchtime=2500x -benchmem -memprofile ./pkg/storage/benchmark/db-iterator-memory.pb.gz -cpuprofile ./pkg/storage/benchmark/db-iterator-cpu.pb.gz ./pkg/storage >> ./pkg/storage/benchmark/db-iterator.txt; done
+// go test -bench=BenchmarkIterator --count=5 --benchtime=2500x -benchmem -memprofile ./pkg/storage/benchmark/db-iterator-memory.pb.gz -cpuprofile ./pkg/storage/benchmark/db-iterator-cpu.pb.gz ./pkg/storage | tee ./pkg/storage/benchmark/db-iterator.txt
 
 func BenchmarkIterator(b *testing.B) {
 	ctx := context.Background()

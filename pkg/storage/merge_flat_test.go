@@ -36,7 +36,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 
 	s1 := makeSample(2, []uuid.UUID{uuid2, uuid1})
-	k1 := makeStacktraceKey(s1)
+	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -47,12 +47,12 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k1): s1,
+			string(k1[:]): s1,
 		},
 	}
 
 	s2 := makeSample(1, []uuid.UUID{uuid3, uuid1})
-	k2 := makeStacktraceKey(s2)
+	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -63,7 +63,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k2): s2,
+			string(k2[:]): s2,
 		},
 	}
 
@@ -83,11 +83,11 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	require.Equal(t, &Sample{
 		Value:    2,
 		Location: []*metastore.Location{{ID: uuid2}, {ID: uuid1}},
-	}, merged[string(k1)])
+	}, merged[string(k1[:])])
 	require.Equal(t, &Sample{
 		Value:    1,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid1}},
-	}, merged[string(k2)])
+	}, merged[string(k2[:])])
 }
 
 func TestMergeFlatProfileDeep(t *testing.T) {
@@ -101,10 +101,10 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	s3 := makeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
 	s4 := makeSample(3, []uuid.UUID{uuid6, uuid2})
 
-	k1 := makeStacktraceKey(s1)
-	k2 := makeStacktraceKey(s2)
-	k3 := makeStacktraceKey(s3)
-	k4 := makeStacktraceKey(s4)
+	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
+	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
+	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
+	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -115,15 +115,15 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k1): s1,
-			string(k2): s2,
-			string(k3): s3,
-			string(k4): s4,
+			string(k1[:]): s1,
+			string(k2[:]): s2,
+			string(k3[:]): s3,
+			string(k4[:]): s4,
 		},
 	}
 
 	s5 := makeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
-	k5 := makeStacktraceKey(s5)
+	k5 := uuid.MustParse("00000000-0000-0000-0000-0000000000e5")
 
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -134,7 +134,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k5): s5,
+			string(k5[:]): s5,
 		},
 	}
 
@@ -155,23 +155,23 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid1}, {ID: uuid3}},
-	}, merged[string(k1)])
+	}, merged[string(k1[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid2}, {ID: uuid3}},
-	}, merged[string(k2)])
+	}, merged[string(k2[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid3}, {ID: uuid2}},
-	}, merged[string(k3)])
+	}, merged[string(k3[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid6}, {ID: uuid2}},
-	}, merged[string(k4)])
+	}, merged[string(k4[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid2}, {ID: uuid2}},
-	}, merged[string(k5)])
+	}, merged[string(k5[:])])
 }
 
 func TestMergeFlatProfile(t *testing.T) {
@@ -188,11 +188,11 @@ func TestMergeFlatProfile(t *testing.T) {
 	s4 := makeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
 	s5 := makeSample(3, []uuid.UUID{uuid6, uuid2})
 
-	k1 := makeStacktraceKey(s1)
-	k2 := makeStacktraceKey(s2)
-	k3 := makeStacktraceKey(s3)
-	k4 := makeStacktraceKey(s4)
-	k5 := makeStacktraceKey(s5)
+	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
+	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
+	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
+	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
+	k5 := uuid.MustParse("00000000-0000-0000-0000-0000000000e5")
 
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -203,19 +203,19 @@ func TestMergeFlatProfile(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k1): s1,
-			string(k2): s2,
-			string(k3): s3,
-			string(k4): s4,
-			string(k5): s5,
+			string(k1[:]): s1,
+			string(k2[:]): s2,
+			string(k3[:]): s3,
+			string(k4[:]): s4,
+			string(k5[:]): s5,
 		},
 	}
 
 	s6 := makeSample(1, []uuid.UUID{uuid5, uuid3, uuid2, uuid1})
 	s7 := makeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
 
-	k6 := makeStacktraceKey(s6)
-	k7 := makeStacktraceKey(s7)
+	k6 := uuid.MustParse("00000000-0000-0000-0000-0000000000e6")
+	k7 := uuid.MustParse("00000000-0000-0000-0000-0000000000e7")
 
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -226,10 +226,10 @@ func TestMergeFlatProfile(t *testing.T) {
 			Period:     100,
 		},
 		samples: map[string]*Sample{
-			string(k1): s1,
-			string(k3): s3,
-			string(k6): s6,
-			string(k7): s7,
+			string(k1[:]): s1,
+			string(k3[:]): s3,
+			string(k6[:]): s6,
+			string(k7[:]): s7,
 		},
 	}
 
@@ -249,31 +249,31 @@ func TestMergeFlatProfile(t *testing.T) {
 	require.Equal(t, &Sample{
 		Value:    4, // 2 + 2
 		Location: []*metastore.Location{{ID: uuid2}, {ID: uuid1}},
-	}, merged[string(k1)])
+	}, merged[string(k1[:])])
 	require.Equal(t, &Sample{
 		Value:    1,
 		Location: []*metastore.Location{{ID: uuid6}, {ID: uuid3}, {ID: uuid2}, {ID: uuid1}},
-	}, merged[string(k2)])
+	}, merged[string(k2[:])])
 	require.Equal(t, &Sample{
 		Value:    6, // 3 + 3
 		Location: []*metastore.Location{{ID: uuid4}, {ID: uuid3}, {ID: uuid2}, {ID: uuid1}},
-	}, merged[string(k3)])
+	}, merged[string(k3[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid3}, {ID: uuid2}},
-	}, merged[string(k4)])
+	}, merged[string(k4[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid6}, {ID: uuid2}},
-	}, merged[string(k5)])
+	}, merged[string(k5[:])])
 	require.Equal(t, &Sample{
 		Value:    1,
 		Location: []*metastore.Location{{ID: uuid5}, {ID: uuid3}, {ID: uuid2}, {ID: uuid1}},
-	}, merged[string(k6)])
+	}, merged[string(k6[:])])
 	require.Equal(t, &Sample{
 		Value:    3,
 		Location: []*metastore.Location{{ID: uuid3}, {ID: uuid2}, {ID: uuid2}},
-	}, merged[string(k7)])
+	}, merged[string(k7[:])])
 }
 
 func TestMergeSingleFlat(t *testing.T) {
@@ -285,10 +285,11 @@ func TestMergeSingleFlat(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"mergesingle",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()
@@ -311,10 +312,11 @@ func TestMergeManyFlat(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		"mergemany",
+		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()

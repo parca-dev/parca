@@ -47,7 +47,8 @@ type MemSeries struct {
 	// mu locks the following maps for concurrent access.
 	mu sync.RWMutex
 
-	samples   map[string][]chunkenc.Chunk
+	samples map[string][]chunkenc.Chunk
+	// TODO: Remove this after having implemented the metastore stacktraces.
 	locations map[string][]*metastore.Location
 
 	// TODO: part of profileTree - eventually remove it

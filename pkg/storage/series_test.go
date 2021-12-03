@@ -52,8 +52,8 @@ func TestMemSeries(t *testing.T) {
 	s12.NumLabel = numLabel
 	s12.NumUnit = numUnit
 
-	k11 := makeStacktraceKey(s11)
-	k12 := makeStacktraceKey(s12)
+	k11 := uuid.MustParse("00000000-0000-0000-0000-000000000e11")
+	k12 := uuid.MustParse("00000000-0000-0000-0000-000000000e12")
 
 	fp1 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -64,8 +64,8 @@ func TestMemSeries(t *testing.T) {
 			Period:     time.Second.Nanoseconds(),
 		},
 		samples: map[string]*Sample{
-			string(k11): s11,
-			string(k12): s12,
+			string(k11[:]): s11,
+			string(k12[:]): s12,
 		},
 	}
 
@@ -73,8 +73,8 @@ func TestMemSeries(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.samples, 2)
-	require.Equal(t, chunkenc.FromValuesXOR(1), s.samples[string(k11)][0])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12)][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1), s.samples[string(k11[:])][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0])
 
 	s2 := makeSample(3, []uuid.UUID{uuid2, uuid1})
 	fp2 := &FlatProfile{
@@ -86,7 +86,7 @@ func TestMemSeries(t *testing.T) {
 			Period:     time.Second.Nanoseconds(),
 		},
 		samples: map[string]*Sample{
-			string(k11): s2,
+			string(k11[:]): s2,
 		},
 	}
 
@@ -94,12 +94,12 @@ func TestMemSeries(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.samples, 2)
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[string(k11)][0])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12)][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[string(k11[:])][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0]) // sparse - nothing added
 
 	// Add another sample with one new Location
 	s3 := makeSample(4, []uuid.UUID{uuid3, uuid1})
-	k3 := makeStacktraceKey(s3)
+	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 
 	fp3 := &FlatProfile{
 		Meta: InstantProfileMeta{
@@ -110,7 +110,7 @@ func TestMemSeries(t *testing.T) {
 			Period:     time.Second.Nanoseconds(),
 		},
 		samples: map[string]*Sample{
-			string(k3): s3,
+			string(k3[:]): s3,
 		},
 	}
 
@@ -118,13 +118,14 @@ func TestMemSeries(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.samples, 3)
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[string(k11)][0]) // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12)][0])    // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[string(k3)][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[string(k11[:])][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0])    // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[string(k3[:])][0])
 
 	// Merging another profileTree onto the existing one with one new Location
 	s4 := makeSample(6, []uuid.UUID{uuid5, uuid2, uuid1})
-	k4 := makeStacktraceKey(s4)
+	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
+
 	fp4 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{},
@@ -134,7 +135,7 @@ func TestMemSeries(t *testing.T) {
 			Period:     time.Second.Nanoseconds(),
 		},
 		samples: map[string]*Sample{
-			string(k4): s4,
+			string(k4[:]): s4,
 		},
 	}
 
@@ -142,10 +143,10 @@ func TestMemSeries(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, s.samples, 4)
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[string(k11)][0])  // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12)][0])     // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[string(k3)][0]) // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.samples[string(k4)][0])
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3), s.samples[string(k11[:])][0])  // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0])     // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[string(k3[:])][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.samples[string(k4[:])][0])
 
 	// Merging another profileTree onto the existing one with one new Location
 	s5 := makeSample(7, []uuid.UUID{uuid2, uuid1})
@@ -158,17 +159,17 @@ func TestMemSeries(t *testing.T) {
 			Period:     time.Second.Nanoseconds(),
 		},
 		samples: map[string]*Sample{
-			string(k11): s5,
+			string(k11[:]): s5,
 		},
 	}
 	err = app.AppendFlat(ctx, fp5)
 	require.NoError(t, err)
 
 	require.Len(t, s.samples, 4)
-	require.Equal(t, chunkenc.FromValuesXOR(1, 3, 0, 0, 7), s.samples[string(k11)][0])
-	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12)][0])     // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[string(k3)][0]) // sparse - nothing added
-	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.samples[string(k4)][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXOR(1, 3, 0, 0, 7), s.samples[string(k11[:])][0])
+	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0])     // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[string(k3[:])][0]) // sparse - nothing added
+	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.samples[string(k4[:])][0]) // sparse - nothing added
 
 	require.Equal(t, uint16(5), s.numSamples)
 	require.Equal(t, chunkenc.FromValuesDelta(1000, 2000, 3000, 4000, 5000), s.timestamps[0].chunk)
@@ -190,8 +191,9 @@ func TestMemSeriesMany(t *testing.T) {
 
 	s1 := makeSample(0, []uuid.UUID{uuid2, uuid1})
 	s2 := makeSample(0, []uuid.UUID{uuid4, uuid1})
-	k1 := makeStacktraceKey(s1)
-	k2 := makeStacktraceKey(s2)
+
+	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
+	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
 	ctx := context.Background()
 	for i := 1; i < 200; i++ {
@@ -205,8 +207,8 @@ func TestMemSeriesMany(t *testing.T) {
 				Period:    snano,
 			},
 			samples: map[string]*Sample{
-				string(k1): s1,
-				string(k2): s2,
+				string(k1[:]): s1,
+				string(k2[:]): s2,
 			},
 		})
 		require.NoError(t, err)
@@ -220,12 +222,12 @@ func TestMemSeriesMany(t *testing.T) {
 
 	require.Len(t, s.samples, 2)
 
-	it = NewMultiChunkIterator(s.samples[string(k1)])
+	it = NewMultiChunkIterator(s.samples[string(k1[:])])
 	for i := 1; i < 200; i++ {
 		require.True(t, it.Next())
 		require.Equal(t, int64(i), it.At())
 	}
-	it = NewMultiChunkIterator(s.samples[string(k2)])
+	it = NewMultiChunkIterator(s.samples[string(k2[:])])
 	for i := 1; i < 200; i++ {
 		require.True(t, it.Next())
 		require.Equal(t, int64(2*i), it.At())

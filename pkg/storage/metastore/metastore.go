@@ -26,18 +26,25 @@ import (
 )
 
 var (
-	ErrLocationNotFound = errors.New("location not found")
-	ErrMappingNotFound  = errors.New("mapping not found")
-	ErrFunctionNotFound = errors.New("function not found")
+	ErrStacktraceNotFound = errors.New("stacktrace not found")
+	ErrLocationNotFound   = errors.New("location not found")
+	ErrMappingNotFound    = errors.New("mapping not found")
+	ErrFunctionNotFound   = errors.New("function not found")
 )
 
 type ProfileMetaStore interface {
+	StacktraceStore
 	LocationStore
 	LocationLineStore
 	FunctionStore
 	MappingStore
 	Close() error
 	Ping() error
+}
+
+type StacktraceStore interface {
+	GetStacktraceByKey(ctx context.Context, key []byte) (uuid.UUID, error)
+	CreateStacktrace(ctx context.Context, key []byte, sample *pb.Sample) (uuid.UUID, error)
 }
 
 type LocationStore interface {

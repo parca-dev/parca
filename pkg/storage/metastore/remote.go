@@ -13,6 +13,13 @@
 
 package metastore
 
+import (
+	"context"
+
+	"github.com/google/uuid"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+)
+
 var _ ProfileMetaStore = &RemoteMetaStore{}
 
 type RemoteMetaStore struct {
@@ -20,5 +27,13 @@ type RemoteMetaStore struct {
 }
 
 func NewRemoteProfileMetaStore(addr string) (*RemoteMetaStore, error) {
+	panic("implement me")
+}
+
+func (r RemoteMetaStore) GetStacktraceByKey(ctx context.Context, key []byte) (uuid.UUID, error) {
+	panic("implement me")
+}
+
+func (r RemoteMetaStore) CreateStacktrace(ctx context.Context, key []byte, sample *pb.Sample) (uuid.UUID, error) {
 	panic("implement me")
 }

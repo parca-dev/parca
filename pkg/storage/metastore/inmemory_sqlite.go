@@ -14,9 +14,12 @@
 package metastore
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
+	"github.com/google/uuid"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/trace"
 	_ "modernc.org/sqlite"
@@ -53,4 +56,12 @@ func NewInMemorySQLiteProfileMetaStore(
 	}
 
 	return &InMemorySQLiteMetaStore{sqlMetaStore: sqlite}, nil
+}
+
+func (i InMemorySQLiteMetaStore) GetStacktraceByKey(ctx context.Context, key []byte) (uuid.UUID, error) {
+	panic("implement me")
+}
+
+func (i InMemorySQLiteMetaStore) CreateStacktrace(ctx context.Context, key []byte, sample *pb.Sample) (uuid.UUID, error) {
+	panic("implement me")
 }

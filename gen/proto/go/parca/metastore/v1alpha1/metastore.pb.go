@@ -20,6 +20,229 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Sample is a stack trace with optional labels.
+type Sample struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// location_ids are locations that define the stack trace.
+	LocationIds [][]byte `protobuf:"bytes,1,rep,name=location_ids,json=locationIds,proto3" json:"location_ids,omitempty"`
+	// labels are extra labels for a stack trace.
+	Labels map[string]*SampleLabel `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// num_labels are the num of labels.
+	NumLabels map[string]*SampleNumLabel `protobuf:"bytes,3,rep,name=num_labels,json=numLabels,proto3" json:"num_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// num_units are the units for the labels.
+	NumUnits map[string]*SampleNumUnit `protobuf:"bytes,4,rep,name=num_units,json=numUnits,proto3" json:"num_units,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (x *Sample) Reset() {
+	*x = Sample{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Sample) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Sample) ProtoMessage() {}
+
+func (x *Sample) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Sample.ProtoReflect.Descriptor instead.
+func (*Sample) Descriptor() ([]byte, []int) {
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Sample) GetLocationIds() [][]byte {
+	if x != nil {
+		return x.LocationIds
+	}
+	return nil
+}
+
+func (x *Sample) GetLabels() map[string]*SampleLabel {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *Sample) GetNumLabels() map[string]*SampleNumLabel {
+	if x != nil {
+		return x.NumLabels
+	}
+	return nil
+}
+
+func (x *Sample) GetNumUnits() map[string]*SampleNumUnit {
+	if x != nil {
+		return x.NumUnits
+	}
+	return nil
+}
+
+// SampleLabel are the labels added to a Sample.
+type SampleLabel struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// labels for a label in a Sample.
+	Labels []string `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty"`
+}
+
+func (x *SampleLabel) Reset() {
+	*x = SampleLabel{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SampleLabel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SampleLabel) ProtoMessage() {}
+
+func (x *SampleLabel) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SampleLabel.ProtoReflect.Descriptor instead.
+func (*SampleLabel) Descriptor() ([]byte, []int) {
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *SampleLabel) GetLabels() []string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+// SampleNumLabel are the num of labels of a Sample.
+type SampleNumLabel struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// num_labels are the num_label of a Sample.
+	NumLabels []int64 `protobuf:"varint,1,rep,packed,name=num_labels,json=numLabels,proto3" json:"num_labels,omitempty"`
+}
+
+func (x *SampleNumLabel) Reset() {
+	*x = SampleNumLabel{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SampleNumLabel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SampleNumLabel) ProtoMessage() {}
+
+func (x *SampleNumLabel) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SampleNumLabel.ProtoReflect.Descriptor instead.
+func (*SampleNumLabel) Descriptor() ([]byte, []int) {
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SampleNumLabel) GetNumLabels() []int64 {
+	if x != nil {
+		return x.NumLabels
+	}
+	return nil
+}
+
+// SampleNumUnit are the num units of a Sample.
+type SampleNumUnit struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// units of a labels of a Sample.
+	Units []string `protobuf:"bytes,1,rep,name=units,proto3" json:"units,omitempty"`
+}
+
+func (x *SampleNumUnit) Reset() {
+	*x = SampleNumUnit{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SampleNumUnit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SampleNumUnit) ProtoMessage() {}
+
+func (x *SampleNumUnit) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SampleNumUnit.ProtoReflect.Descriptor instead.
+func (*SampleNumUnit) Descriptor() ([]byte, []int) {
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *SampleNumUnit) GetUnits() []string {
+	if x != nil {
+		return x.Units
+	}
+	return nil
+}
+
 // Location describes a single location of a stack traces.
 type Location struct {
 	state         protoimpl.MessageState
@@ -39,7 +262,7 @@ type Location struct {
 func (x *Location) Reset() {
 	*x = Location{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[0]
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -52,7 +275,7 @@ func (x *Location) String() string {
 func (*Location) ProtoMessage() {}
 
 func (x *Location) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[0]
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +288,7 @@ func (x *Location) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Location.ProtoReflect.Descriptor instead.
 func (*Location) Descriptor() ([]byte, []int) {
-	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{0}
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Location) GetId() []byte {
@@ -111,7 +334,7 @@ type LocationLines struct {
 func (x *LocationLines) Reset() {
 	*x = LocationLines{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[1]
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -124,7 +347,7 @@ func (x *LocationLines) String() string {
 func (*LocationLines) ProtoMessage() {}
 
 func (x *LocationLines) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[1]
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -137,7 +360,7 @@ func (x *LocationLines) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LocationLines.ProtoReflect.Descriptor instead.
 func (*LocationLines) Descriptor() ([]byte, []int) {
-	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{1}
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LocationLines) GetId() []byte {
@@ -169,7 +392,7 @@ type Line struct {
 func (x *Line) Reset() {
 	*x = Line{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[2]
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -182,7 +405,7 @@ func (x *Line) String() string {
 func (*Line) ProtoMessage() {}
 
 func (x *Line) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[2]
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -195,7 +418,7 @@ func (x *Line) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Line.ProtoReflect.Descriptor instead.
 func (*Line) Descriptor() ([]byte, []int) {
-	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{2}
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Line) GetFunctionId() []byte {
@@ -234,7 +457,7 @@ type Function struct {
 func (x *Function) Reset() {
 	*x = Function{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[3]
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -247,7 +470,7 @@ func (x *Function) String() string {
 func (*Function) ProtoMessage() {}
 
 func (x *Function) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[3]
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -260,7 +483,7 @@ func (x *Function) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Function.ProtoReflect.Descriptor instead.
 func (*Function) Descriptor() ([]byte, []int) {
-	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{3}
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Function) GetId() []byte {
@@ -329,7 +552,7 @@ type Mapping struct {
 func (x *Mapping) Reset() {
 	*x = Mapping{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[4]
+		mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -342,7 +565,7 @@ func (x *Mapping) String() string {
 func (*Mapping) ProtoMessage() {}
 
 func (x *Mapping) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[4]
+	mi := &file_parca_metastore_v1alpha1_metastore_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -355,7 +578,7 @@ func (x *Mapping) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Mapping.ProtoReflect.Descriptor instead.
 func (*Mapping) Descriptor() ([]byte, []int) {
-	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{4}
+	return file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Mapping) GetId() []byte {
@@ -435,7 +658,51 @@ var file_parca_metastore_v1alpha1_metastore_proto_rawDesc = []byte{
 	0x65, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x6d, 0x65, 0x74, 0x61, 0x73,
 	0x74, 0x6f, 0x72, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x18, 0x70, 0x61, 0x72, 0x63,
 	0x61, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x22, 0x70, 0x0a, 0x08, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x70, 0x68, 0x61, 0x31, 0x22, 0xbe, 0x04, 0x0a, 0x06, 0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x12,
+	0x21, 0x0a, 0x0c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x73, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0b, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49,
+	0x64, 0x73, 0x12, 0x44, 0x0a, 0x06, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x73,
+	0x74, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x53, 0x61,
+	0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79,
+	0x52, 0x06, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x12, 0x4e, 0x0a, 0x0a, 0x6e, 0x75, 0x6d, 0x5f,
+	0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2f, 0x2e, 0x70,
+	0x61, 0x72, 0x63, 0x61, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x2e, 0x76,
+	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x4e,
+	0x75, 0x6d, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x09, 0x6e,
+	0x75, 0x6d, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x12, 0x4b, 0x0a, 0x09, 0x6e, 0x75, 0x6d, 0x5f,
+	0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x70, 0x61,
+	0x72, 0x63, 0x61, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31,
+	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x4e, 0x75,
+	0x6d, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x08, 0x6e, 0x75, 0x6d,
+	0x55, 0x6e, 0x69, 0x74, 0x73, 0x1a, 0x60, 0x0a, 0x0b, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x45,
+	0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x3b, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x6d, 0x65,
+	0x74, 0x61, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
+	0x2e, 0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x52, 0x05, 0x76, 0x61,
+	0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x1a, 0x66, 0x0a, 0x0e, 0x4e, 0x75, 0x6d, 0x4c, 0x61,
+	0x62, 0x65, 0x6c, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x3e, 0x0a, 0x05, 0x76,
+	0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x70, 0x61, 0x72,
+	0x63, 0x61, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x4e, 0x75, 0x6d, 0x4c,
+	0x61, 0x62, 0x65, 0x6c, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x1a,
+	0x64, 0x0a, 0x0d, 0x4e, 0x75, 0x6d, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79,
+	0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b,
+	0x65, 0x79, 0x12, 0x3d, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x27, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x73, 0x74,
+	0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x53, 0x61, 0x6d,
+	0x70, 0x6c, 0x65, 0x4e, 0x75, 0x6d, 0x55, 0x6e, 0x69, 0x74, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75,
+	0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x25, 0x0a, 0x0b, 0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x4c,
+	0x61, 0x62, 0x65, 0x6c, 0x12, 0x16, 0x0a, 0x06, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x22, 0x2f, 0x0a, 0x0e,
+	0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x4e, 0x75, 0x6d, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x12, 0x1d,
+	0x0a, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x6c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x03, 0x52, 0x09, 0x6e, 0x75, 0x6d, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x22, 0x25, 0x0a,
+	0x0d, 0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x4e, 0x75, 0x6d, 0x55, 0x6e, 0x69, 0x74, 0x12, 0x14,
+	0x0a, 0x05, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x05, 0x75,
+	0x6e, 0x69, 0x74, 0x73, 0x22, 0x70, 0x0a, 0x08, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
 	0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x02, 0x69, 0x64,
 	0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
 	0x04, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x61,
@@ -511,21 +778,34 @@ func file_parca_metastore_v1alpha1_metastore_proto_rawDescGZIP() []byte {
 	return file_parca_metastore_v1alpha1_metastore_proto_rawDescData
 }
 
-var file_parca_metastore_v1alpha1_metastore_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_parca_metastore_v1alpha1_metastore_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_parca_metastore_v1alpha1_metastore_proto_goTypes = []interface{}{
-	(*Location)(nil),      // 0: parca.metastore.v1alpha1.Location
-	(*LocationLines)(nil), // 1: parca.metastore.v1alpha1.LocationLines
-	(*Line)(nil),          // 2: parca.metastore.v1alpha1.Line
-	(*Function)(nil),      // 3: parca.metastore.v1alpha1.Function
-	(*Mapping)(nil),       // 4: parca.metastore.v1alpha1.Mapping
+	(*Sample)(nil),         // 0: parca.metastore.v1alpha1.Sample
+	(*SampleLabel)(nil),    // 1: parca.metastore.v1alpha1.SampleLabel
+	(*SampleNumLabel)(nil), // 2: parca.metastore.v1alpha1.SampleNumLabel
+	(*SampleNumUnit)(nil),  // 3: parca.metastore.v1alpha1.SampleNumUnit
+	(*Location)(nil),       // 4: parca.metastore.v1alpha1.Location
+	(*LocationLines)(nil),  // 5: parca.metastore.v1alpha1.LocationLines
+	(*Line)(nil),           // 6: parca.metastore.v1alpha1.Line
+	(*Function)(nil),       // 7: parca.metastore.v1alpha1.Function
+	(*Mapping)(nil),        // 8: parca.metastore.v1alpha1.Mapping
+	nil,                    // 9: parca.metastore.v1alpha1.Sample.LabelsEntry
+	nil,                    // 10: parca.metastore.v1alpha1.Sample.NumLabelsEntry
+	nil,                    // 11: parca.metastore.v1alpha1.Sample.NumUnitsEntry
 }
 var file_parca_metastore_v1alpha1_metastore_proto_depIdxs = []int32{
-	2, // 0: parca.metastore.v1alpha1.LocationLines.lines:type_name -> parca.metastore.v1alpha1.Line
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	9,  // 0: parca.metastore.v1alpha1.Sample.labels:type_name -> parca.metastore.v1alpha1.Sample.LabelsEntry
+	10, // 1: parca.metastore.v1alpha1.Sample.num_labels:type_name -> parca.metastore.v1alpha1.Sample.NumLabelsEntry
+	11, // 2: parca.metastore.v1alpha1.Sample.num_units:type_name -> parca.metastore.v1alpha1.Sample.NumUnitsEntry
+	6,  // 3: parca.metastore.v1alpha1.LocationLines.lines:type_name -> parca.metastore.v1alpha1.Line
+	1,  // 4: parca.metastore.v1alpha1.Sample.LabelsEntry.value:type_name -> parca.metastore.v1alpha1.SampleLabel
+	2,  // 5: parca.metastore.v1alpha1.Sample.NumLabelsEntry.value:type_name -> parca.metastore.v1alpha1.SampleNumLabel
+	3,  // 6: parca.metastore.v1alpha1.Sample.NumUnitsEntry.value:type_name -> parca.metastore.v1alpha1.SampleNumUnit
+	7,  // [7:7] is the sub-list for method output_type
+	7,  // [7:7] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_parca_metastore_v1alpha1_metastore_proto_init() }
@@ -535,7 +815,7 @@ func file_parca_metastore_v1alpha1_metastore_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Location); i {
+			switch v := v.(*Sample); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -547,7 +827,7 @@ func file_parca_metastore_v1alpha1_metastore_proto_init() {
 			}
 		}
 		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LocationLines); i {
+			switch v := v.(*SampleLabel); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -559,7 +839,7 @@ func file_parca_metastore_v1alpha1_metastore_proto_init() {
 			}
 		}
 		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Line); i {
+			switch v := v.(*SampleNumLabel); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -571,7 +851,7 @@ func file_parca_metastore_v1alpha1_metastore_proto_init() {
 			}
 		}
 		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Function); i {
+			switch v := v.(*SampleNumUnit); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -583,6 +863,54 @@ func file_parca_metastore_v1alpha1_metastore_proto_init() {
 			}
 		}
 		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Location); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LocationLines); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Line); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Function); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_parca_metastore_v1alpha1_metastore_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Mapping); i {
 			case 0:
 				return &v.state
@@ -601,7 +929,7 @@ func file_parca_metastore_v1alpha1_metastore_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_parca_metastore_v1alpha1_metastore_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
