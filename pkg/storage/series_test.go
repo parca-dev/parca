@@ -614,6 +614,71 @@ func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
 	require.Equal(t, int64(1_233), s.maxTime)
 }
 
+func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
+	ctx := context.Background()
+	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(i int64) {}, newHeadChunkPool())
+
+	app, err := s.Appender()
+	require.NoError(t, err)
+
+	s1 := makeSample(1, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
+	k1 := makeStacktraceKey(s1)
+
+	for i := int64(1); i < 500; i++ {
+		require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
+			Meta: InstantProfileMeta{Timestamp: i},
+			samples: map[string]*Sample{
+				string(k1): s1,
+			},
+		}))
+	}
+
+	// Truncating won't do anything here.
+	require.Equal(t, 0, s.truncateChunksBefore(75))
+	require.Equal(t, int64(1), s.minTime)
+	require.Equal(t, int64(499), s.maxTime)
+
+	// Truncate the first two chunks.
+	require.Equal(t, 2, s.truncateChunksBefore(256))
+
+	require.Equal(t, int64(241), s.minTime)
+	require.Equal(t, int64(499), s.maxTime)
+
+	// Test for appending working correctly after truncating.
+	for i := int64(500); i < 1_000; i++ {
+		require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
+			Meta: InstantProfileMeta{Timestamp: i},
+			samples: map[string]*Sample{
+				string(k1): s1,
+			},
+		}))
+	}
+
+	require.Equal(t, int64(241), s.minTime)
+	require.Equal(t, int64(999), s.maxTime)
+
+	// Truncate all chunks.
+	require.Equal(t, 7, s.truncateChunksBefore(1_234))
+	require.Equal(t, int64(math.MaxInt64), s.minTime)
+	require.Equal(t, int64(math.MinInt64), s.maxTime)
+
+	// Append more profiles after truncating all chunks.
+	for i := int64(1_100); i < 1_234; i++ {
+		require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
+			Meta: InstantProfileMeta{Timestamp: i},
+			samples: map[string]*Sample{
+				string(k1): s1,
+			},
+		}))
+	}
+
+	require.Equal(t, int64(1_100), s.minTime)
+	require.Equal(t, int64(1_233), s.maxTime)
+}
+
 // for i in {1..10}; do go test -bench=BenchmarkMemSeries_truncateChunksBefore --benchtime=100000x ./pkg/storage >> ./pkg/storage/benchmark/series-truncate.txt; done
 
 func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {

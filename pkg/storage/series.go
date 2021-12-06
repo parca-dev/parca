@@ -542,6 +542,9 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 	for key, chunks := range s.flatValues {
 		s.flatValues[key] = chunks[start:]
 	}
+	for key, chunks := range s.samples {
+		s.samples[key] = chunks[start:]
+	}
 
 	s.minTime = s.timestamps[0].minTime
 
