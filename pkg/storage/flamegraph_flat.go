@@ -50,11 +50,11 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 	rootNode := &pb.FlamegraphNode{}
 	cur := rootNode
 
-	var height int32
+	samples := p.Samples()
 
 	locationUUIDSeen := map[string]struct{}{}
 	locationUUIDs := [][]byte{}
-	for _, s := range p.Samples() {
+	for _, s := range samples {
 		for _, l := range s.Location {
 			if _, seen := locationUUIDSeen[string(l.ID[:])]; !seen {
 				locationUUIDSeen[string(l.ID[:])] = struct{}{}
@@ -68,7 +68,9 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 		return nil, fmt.Errorf("get locations by ids: %w", err)
 	}
 
-	for _, s := range p.Samples() {
+	var height int32
+
+	for _, s := range samples {
 		if int32(len(s.Location)) > height {
 			height = int32(len(s.Location))
 		}
@@ -84,10 +86,26 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 			})
 
 			if index < len(cur.Children) && bytes.Equal(cur.Children[index].GetMeta().GetLocation().GetId(), nextID[:]) {
-				// The node already exists in the flamegraph, we can simply add the value and diff value and continue with this child's children next.
-				cur = cur.Children[index]
-				cur.Cumulative += s.Value
-				cur.Diff += s.DiffValue
+				nodes := locationToTreeNodes(location)
+				if len(nodes) > 1 {
+					// We need to merge this subtree onto the existing subtree with the current node.
+					child := nodes[0]
+					for _, node := range nodes {
+						// What if there's a new subtree we haven't seen before under this existing node?
+						index := sort.Search(len(child.Children), func(i int) bool {
+							cmp := bytes.Compare(child.Children[i].GetMeta().GetLocation().GetId(), node.GetMeta().GetLocation().GetId())
+							return cmp == 0 || cmp == 1
+						})
+						child = child.GetChildren()[index]
+						child.Cumulative += s.Value
+						child.Diff += s.DiffValue
+					}
+				} else {
+					// The node already exists in the flame graph, we can simply add the value and diff value and continue with this child's children next.
+					cur = cur.Children[index]
+					cur.Cumulative += s.Value
+					cur.Diff += s.DiffValue
+				}
 			} else {
 				nodes := locationToTreeNodes(location)
 				if len(nodes) > 1 {
