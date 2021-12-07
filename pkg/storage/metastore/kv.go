@@ -15,28 +15,14 @@ package metastore
 
 import (
 	"encoding/binary"
-	"fmt"
-
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
 const (
-	v1prefix = "v1"
-)
-
-const (
-	//const stacktraceKey = "stacktrace/by-key/"
-	stacktraceID = "stacktrace/by-id/"
-	locationsKey = "locations/by-key/"
-	functionKey  = "functions/by-key/"
-	mappingKey   = "mappings/by-key/"
-)
-
-var (
-	stacktraceIDPrefix = versionedPrefix(v1prefix, stacktraceID)
-	locationsKeyPrefix = versionedPrefix(v1prefix, locationsKey)
-	functionKeyPrefix  = versionedPrefix(v1prefix, functionKey)
-	mappingKeyPrefix   = versionedPrefix(v1prefix, mappingKey)
+	stacktraceIDPrefix = "v1/stacktrace/by-id/"
+	locationsKeyPrefix = "v1/locations/by-key/"
+	functionKeyPrefix  = "v1/functions/by-key/"
+	mappingKeyPrefix   = "v1/mappings/by-key/"
 )
 
 func MakeLocationKey(l *Location) []byte {
@@ -130,8 +116,4 @@ func MakeMappingKey(m *pb.Mapping) []byte {
 	copy(buf[len(mappingKeyPrefix)+16:], buildIDOrFile)
 
 	return buf
-}
-
-func versionedPrefix(version, prefix string) string {
-	return fmt.Sprintf("%s/%s", version, prefix)
 }
