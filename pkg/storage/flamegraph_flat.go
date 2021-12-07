@@ -69,8 +69,6 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 	}
 
 	for _, s := range p.Samples() {
-		var child *pb.FlamegraphNode
-
 		if int32(len(s.Location)) > height {
 			height = int32(len(s.Location))
 		}
@@ -86,32 +84,54 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 			})
 
 			if index < len(cur.Children) && bytes.Equal(cur.Children[index].GetMeta().GetLocation().GetId(), nextID[:]) {
-				child = cur.Children[index]
+				// The node already exists in the flamegraph, we can simply add the value and diff value and continue with this child's children next.
+				cur = cur.Children[index]
+				cur.Cumulative += s.Value
+				cur.Diff += s.DiffValue
 			} else {
-				newChildren := make([]*pb.FlamegraphNode, len(cur.Children)+1)
-				copy(newChildren, cur.Children[:index])
-
 				nodes := locationToTreeNodes(location)
-				for i, n := range nodes {
-					if i == 0 {
-						// Ignore the first node as we add to it later
-						continue
+				if len(nodes) > 1 {
+					// There are multiple inlined nodes.
+					// We iterate over these nodes, adding value and diff value,
+					// and make the first node the leaf whereas the last is the root of this subtree.
+					// In the end we insert the last node (sub tree root node) as child to the cur children.
+					// We set the leaf node (first node) as cur to continue inserting the next nodes with it.
+					for i := len(nodes) - 1; i >= 0; i-- {
+						node := nodes[i]
+						node.Cumulative += s.Value
+						node.Diff += s.DiffValue
+						if i > 0 {
+							node.Children = []*pb.FlamegraphNode{nodes[i-1]}
+						} else {
+							node.Children = nil
+						}
 					}
-					n.Cumulative += s.Value
-					n.Diff += s.DiffValue
+
+					newChildren := make([]*pb.FlamegraphNode, len(cur.Children)+1)
+					copy(newChildren, cur.Children[:index])
+					newChildren[index] = nodes[len(nodes)-1] // Add the root of these nodes to the current children
+					copy(newChildren[index+1:], cur.Children[index:])
+					cur.Children = newChildren
+
+					cur = nodes[0] // Continue with the leaf of these nodes
+				} else {
+					// There is only one node to insert and the node hasn't been in the flame graph before.
+					// The value and diff value are added to the node, and
+					// we insert the node to the correct index within the node's current children.
+					node := nodes[0]
+					node.Cumulative += s.Value
+					node.Diff += s.DiffValue
+
+					newChildren := make([]*pb.FlamegraphNode, len(cur.Children)+1)
+					copy(newChildren, cur.Children[:index])
+
+					newChildren[index] = node
+					copy(newChildren[index+1:], cur.Children[index:])
+					cur.Children = newChildren
+
+					cur = node
 				}
-
-				child = nodes[0]
-				newChildren[index] = child
-				copy(newChildren[index+1:], cur.Children[index:])
-				cur.Children = newChildren
 			}
-
-			cur = child
-
-			// Add the value to the cumulative value for each node
-			cur.Cumulative += s.Value
-			cur.Diff += s.DiffValue
 		}
 
 		// Sum up the value to the cumulative value of the root

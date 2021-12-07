@@ -181,16 +181,16 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	s1 := makeSample(1, []uuid.UUID{l5.ID, l3.ID, l2.ID, l1.ID})
 	s2 := makeSample(3, []uuid.UUID{l4.ID, l3.ID, l2.ID, l1.ID})
 
-	k0 := uuidGenerator.New()
-	k1 := uuidGenerator.New()
-	k2 := uuidGenerator.New()
+	k0 := makeStacktraceKey(s0)
+	k1 := makeStacktraceKey(s1)
+	k2 := makeStacktraceKey(s2)
 
 	fp := &FlatProfile{
 		Meta: InstantProfileMeta{},
 		samples: map[string]*Sample{
-			string(k0[:]): s0,
-			string(k1[:]): s1,
-			string(k2[:]): s2,
+			string(k0): s0,
+			string(k1): s1,
+			string(k2): s2,
 		},
 	}
 
@@ -248,118 +248,6 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	}}, fg))
 }
 
-func TestGenerateInlinedFunctionFlamegraphFlat(t *testing.T) {
-	ctx := context.Background()
-	var err error
-	uuidGenerator := metastore.NewRandomUUIDGenerator()
-	l := metastore.NewBadgerMetastore(
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
-		uuidGenerator,
-	)
-
-	m := &metapb.Mapping{
-		File: "a",
-	}
-	m.Id, err = l.CreateMapping(ctx, m)
-	require.NoError(t, err)
-
-	f1 := &metapb.Function{
-		Name: "1",
-	}
-	f1.Id, err = l.CreateFunction(ctx, f1)
-	require.NoError(t, err)
-
-	f2 := &metapb.Function{
-		Name: "2",
-	}
-	f2.Id, err = l.CreateFunction(ctx, f2)
-	require.NoError(t, err)
-
-	f3 := &metapb.Function{
-		Name: "3",
-	}
-	f3.Id, err = l.CreateFunction(ctx, f3)
-	require.NoError(t, err)
-
-	l1 := &metastore.Location{
-		Mapping: m,
-		Lines: []metastore.LocationLine{
-			{
-				Function: f1,
-			},
-		},
-	}
-	l1ID, err := l.CreateLocation(ctx, l1)
-	require.NoError(t, err)
-
-	l1.ID, err = uuid.FromBytes(l1ID)
-	require.NoError(t, err)
-
-	l2 := &metastore.Location{
-		Mapping: m,
-		Lines: []metastore.LocationLine{
-			{
-				Function: f3,
-			},
-			{
-				Function: f2,
-			},
-		},
-	}
-	l2ID, err := l.CreateLocation(ctx, l2)
-	require.NoError(t, err)
-
-	l2.ID, err = uuid.FromBytes(l2ID)
-	require.NoError(t, err)
-
-	tracer := trace.NewNoopTracerProvider().Tracer("")
-
-	s0 := makeSample(2, []uuid.UUID{l2.ID, l1.ID})
-	k0 := uuidGenerator.New()
-
-	fp := &FlatProfile{
-		Meta: InstantProfileMeta{},
-		samples: map[string]*Sample{
-			string(k0[:]): s0,
-		},
-	}
-
-	fg, err := GenerateFlamegraphFlat(ctx, tracer, l, fp)
-	require.NoError(t, err)
-	require.True(t, proto.Equal(&pb.Flamegraph{Height: 3, Total: 2, Root: &pb.FlamegraphRootNode{
-		Cumulative: 2,
-		Children: []*pb.FlamegraphNode{{
-			Cumulative: 2,
-			Meta: &pb.FlamegraphNodeMeta{
-				Function: &metapb.Function{Id: f1.Id, Name: "1"},
-				Line:     &metapb.Line{FunctionId: f1.Id},
-				Location: &metapb.Location{Id: l1.ID[:], MappingId: m.Id},
-				Mapping:  &metapb.Mapping{Id: m.Id, File: "a"},
-			},
-			Children: []*pb.FlamegraphNode{{
-				Cumulative: 2,
-				Meta: &pb.FlamegraphNodeMeta{
-					Function: &metapb.Function{Id: f2.Id, Name: "2"},
-					Line:     &metapb.Line{FunctionId: f2.Id},
-					Location: &metapb.Location{Id: l2.ID[:], MappingId: m.Id},
-					Mapping:  &metapb.Mapping{Id: m.Id, File: "a"},
-				},
-				Children: []*pb.FlamegraphNode{{
-					Cumulative: 2,
-					Meta: &pb.FlamegraphNodeMeta{
-						Function: &metapb.Function{Id: f3.Id, Name: "3"},
-						Line:     &metapb.Line{FunctionId: f3.Id},
-						Location: &metapb.Location{Id: l2.ID[:], MappingId: m.Id},
-						Mapping:  &metapb.Mapping{Id: m.Id, File: "a"},
-					},
-				}},
-			}},
-		}},
-	}}, fg))
-}
-
 func TestGenerateFlamegraphFromFlatProfile(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
@@ -393,4 +281,134 @@ func testGenerateFlamegraphFromFlatProfile(t *testing.T, l metastore.ProfileMeta
 	require.NoError(t, err)
 
 	return fg
+}
+
+func TestGenerateFlamegraphWithInlined(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	store := metastore.NewBadgerMetastore(logger, reg, tracer, NewLinearUUIDGenerator())
+
+	functions := []*profile.Function{
+		{ID: 72, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
+		{ID: 53, Name: "internal/poll.(*FD).Accept", SystemName: "internal/poll.(*FD).Accept", Filename: "internal/poll/fd_unix.go"},
+		{ID: 12, Name: "internal/poll.(*pollDesc).waitRead", SystemName: "internal/poll.(*pollDesc).waitRead", Filename: "internal/poll/fd_poll_runtime.go"},
+		{ID: 4, Name: "internal/poll.(*pollDesc).wait", SystemName: "internal/poll.(*pollDesc).wait", Filename: "internal/poll/fd_poll_runtime.go"},
+	}
+	locations := []*profile.Location{
+		{ID: 4, Address: 94658718830132, Line: []profile.Line{{Line: 173, Function: functions[0]}}},
+		{ID: 16, Address: 94658718611115, Line: []profile.Line{
+			{Line: 89, Function: functions[1]},
+			{Line: 402, Function: functions[2]},
+		}},
+		{ID: 50, Address: 94658718597969, Line: []profile.Line{{Line: 84, Function: functions[3]}}},
+	}
+	samples := []*profile.Sample{
+		{
+			Location: []*profile.Location{locations[2], locations[1], locations[0]},
+			Value:    []int64{1},
+		},
+	}
+	p := &profile.Profile{
+		SampleType: []*profile.ValueType{{Type: "", Unit: ""}},
+		PeriodType: &profile.ValueType{Type: "", Unit: ""},
+		Sample:     samples,
+		Location:   locations,
+		Function:   functions,
+	}
+
+	fp, err := FlatProfileFromPprof(ctx, logger, store, p, 0)
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)
+	require.NoError(t, err)
+
+	require.Equal(t, &pb.Flamegraph{
+		Total:  1,
+		Height: 4,
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: 1,
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 1,
+				Meta: &pb.FlamegraphNodeMeta{
+					Location: &metapb.Location{
+						Id:      []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7},
+						Address: 94658718830132,
+					},
+					Line: &metapb.Line{
+						FunctionId: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
+						Line:       173,
+					},
+					Function: &metapb.Function{
+						Id:         []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
+						StartLine:  0,
+						Name:       "net.(*netFD).accept",
+						SystemName: "net.(*netFD).accept",
+						Filename:   "net/fd_unix.go",
+					},
+				},
+				Children: []*pb.FlamegraphNode{{
+					Cumulative: 1,
+					Meta: &pb.FlamegraphNodeMeta{
+						Location: &metapb.Location{
+							Id:      []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5},
+							Address: 94658718611115,
+						},
+						Line: &metapb.Line{
+							FunctionId: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3},
+							Line:       89,
+						},
+						Function: &metapb.Function{
+							Id:         []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3},
+							StartLine:  0,
+							Name:       "internal/poll.(*FD).Accept",
+							SystemName: "internal/poll.(*FD).Accept",
+							Filename:   "internal/poll/fd_unix.go",
+						},
+					},
+					Children: []*pb.FlamegraphNode{{
+						Cumulative: 1,
+						Meta: &pb.FlamegraphNodeMeta{
+							Location: &metapb.Location{
+								Id:      []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5},
+								Address: 94658718611115,
+							},
+							Function: &metapb.Function{
+								Id:         []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
+								Name:       "internal/poll.(*pollDesc).waitRead",
+								SystemName: "internal/poll.(*pollDesc).waitRead",
+								Filename:   "internal/poll/fd_poll_runtime.go",
+							},
+							Line: &metapb.Line{
+								FunctionId: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
+								Line:       402,
+							},
+						},
+						Children: []*pb.FlamegraphNode{{
+							Cumulative: 1,
+							Meta: &pb.FlamegraphNodeMeta{
+								Location: &metapb.Location{
+									Id:      []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+									Address: 94658718597969,
+								},
+								Function: &metapb.Function{
+									Id:         []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+									Name:       "internal/poll.(*pollDesc).wait",
+									SystemName: "internal/poll.(*pollDesc).wait",
+									Filename:   "internal/poll/fd_poll_runtime.go",
+								},
+								Line: &metapb.Line{
+									FunctionId: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+									Line:       84,
+								},
+							},
+							Children: nil,
+						}},
+					}},
+				}},
+			}},
+		},
+	}, fg)
 }
