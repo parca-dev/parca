@@ -15,15 +15,15 @@ package metastore
 
 import (
 	"encoding/binary"
-
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
-//const stacktraceKeyPrefix = "stacktrace/by-key/"
-
-const stacktraceIDPrefix = "stacktrace/by-id/"
-
-const locationsKeyPrefix = "locations/by-key/"
+const (
+	stacktraceIDPrefix = "v1/stacktrace/by-id/"
+	locationsKeyPrefix = "v1/locations/by-key/"
+	functionKeyPrefix  = "v1/functions/by-key/"
+	mappingKeyPrefix   = "v1/mappings/by-key/"
+)
 
 func MakeLocationKey(l *Location) []byte {
 	normalizedAddress := l.Address
@@ -75,8 +75,6 @@ func MakeLocationKey(l *Location) []byte {
 	return buf
 }
 
-const functionKeyPrefix = "functions/by-key/"
-
 func MakeFunctionKey(f *pb.Function) []byte {
 	buf := make([]byte, len(functionKeyPrefix)+len(f.Name)+len(f.SystemName)+len(f.Filename)+8)
 	copy(buf, functionKeyPrefix)
@@ -87,8 +85,6 @@ func MakeFunctionKey(f *pb.Function) []byte {
 
 	return buf
 }
-
-const mappingKeyPrefix = "mappings/by-key/"
 
 func MakeMappingKey(m *pb.Mapping) []byte {
 	// Normalize addresses to handle address space randomization.
