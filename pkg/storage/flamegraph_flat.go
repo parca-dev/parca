@@ -48,13 +48,13 @@ func (fp *FlatProfile) Samples() map[string]*Sample {
 
 func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p InstantFlatProfile) (*pb.Flamegraph, error) {
 	rootNode := &pb.FlamegraphNode{}
-	cur := rootNode
+	current := rootNode
 
-	var height int32
+	samples := p.Samples()
 
 	locationUUIDSeen := map[string]struct{}{}
 	locationUUIDs := [][]byte{}
-	for _, s := range p.Samples() {
+	for _, s := range samples {
 		for _, l := range s.Location {
 			if _, seen := locationUUIDSeen[string(l.ID[:])]; !seen {
 				locationUUIDSeen[string(l.ID[:])] = struct{}{}
@@ -68,7 +68,9 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 		return nil, fmt.Errorf("get locations by ids: %w", err)
 	}
 
-	for _, s := range p.Samples() {
+	var height int32
+
+	for _, s := range samples {
 		if int32(len(s.Location)) > height {
 			height = int32(len(s.Location))
 		}
@@ -76,60 +78,41 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 		// Reverse walking the location as stacked location are like 3 > 2 > 1 > 0 where 0 is the root.
 		for i := len(s.Location) - 1; i >= 0; i-- {
 			location := locationsMap[string(s.Location[i].ID[:])] // use the fully populated location
-			nextID := location.ID
 
-			index := sort.Search(len(cur.Children), func(i int) bool {
-				cmp := bytes.Compare(cur.Children[i].GetMeta().GetLocation().GetId(), nextID[:])
-				return cmp == 0 || cmp == 1
-			})
+			nodes := locationToTreeNodes(location)
+			for j := len(nodes) - 1; j >= 0; j-- {
+				node := nodes[j]
 
-			if index < len(cur.Children) && bytes.Equal(cur.Children[index].GetMeta().GetLocation().GetId(), nextID[:]) {
-				// The node already exists in the flamegraph, we can simply add the value and diff value and continue with this child's children next.
-				cur = cur.Children[index]
-				cur.Cumulative += s.Value
-				cur.Diff += s.DiffValue
-			} else {
-				nodes := locationToTreeNodes(location)
-				if len(nodes) > 1 {
-					// There are multiple inlined nodes.
-					// We iterate over these nodes, adding value and diff value,
-					// and make the first node the leaf whereas the last is the root of this subtree.
-					// In the end we insert the last node (sub tree root node) as child to the cur children.
-					// We set the leaf node (first node) as cur to continue inserting the next nodes with it.
-					for i := len(nodes) - 1; i >= 0; i-- {
-						node := nodes[i]
-						node.Cumulative += s.Value
-						node.Diff += s.DiffValue
-						if i > 0 {
-							node.Children = []*pb.FlamegraphNode{nodes[i-1]}
-						} else {
-							node.Children = nil
-						}
-					}
+				index := sort.Search(len(current.GetChildren()), func(i int) bool {
+					cmp := bytes.Compare(current.GetChildren()[i].GetMeta().GetLocation().GetId(), node.GetMeta().GetLocation().GetId())
+					return cmp == 0 || cmp == 1
+				})
 
-					newChildren := make([]*pb.FlamegraphNode, len(cur.Children)+1)
-					copy(newChildren, cur.Children[:index])
-					newChildren[index] = nodes[len(nodes)-1] // Add the root of these nodes to the current children
-					copy(newChildren[index+1:], cur.Children[index:])
-					cur.Children = newChildren
-
-					cur = nodes[0] // Continue with the leaf of these nodes
+				if index < len(current.GetChildren()) && bytes.Equal(
+					current.GetChildren()[index].GetMeta().GetLocation().GetId(),
+					node.GetMeta().GetLocation().GetId(),
+				) {
+					// Insert onto existing node
+					current = current.Children[index]
+					current.Cumulative += s.Value
+					current.Diff += s.DiffValue
 				} else {
-					// There is only one node to insert and the node hasn't been in the flame graph before.
-					// The value and diff value are added to the node, and
-					// we insert the node to the correct index within the node's current children.
-					node := nodes[0]
+					// Insert new node
 					node.Cumulative += s.Value
 					node.Diff += s.DiffValue
 
-					newChildren := make([]*pb.FlamegraphNode, len(cur.Children)+1)
-					copy(newChildren, cur.Children[:index])
+					newChildren := make([]*pb.FlamegraphNode, len(current.Children)+1)
+					copy(newChildren, current.Children[:index])
 
 					newChildren[index] = node
-					copy(newChildren[index+1:], cur.Children[index:])
-					cur.Children = newChildren
+					copy(newChildren[index+1:], current.Children[index:])
+					current.Children = newChildren
 
-					cur = node
+					current = node
+
+					// There is a case where locationToTreeNodes returns the node pointing to its parent,
+					// resulting in an endless loop. We remove all possible children and add them later ourselves.
+					current.Children = nil
 				}
 			}
 		}
@@ -139,7 +122,7 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 		rootNode.Diff += s.DiffValue
 
 		// For next sample start at the root again
-		cur = rootNode
+		current = rootNode
 	}
 
 	flamegraph := &pb.Flamegraph{Root: &pb.FlamegraphRootNode{}}
