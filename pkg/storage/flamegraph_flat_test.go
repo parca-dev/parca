@@ -434,10 +434,6 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 			{Line: 402, Function: functions[2]},
 		}},
 		{ID: 50, Address: 94658718597969, Line: []profile.Line{{Line: 84, Function: functions[3]}}},
-		//{ID: 56, Address: 94658719078476, Line: []profile.Line{
-		//	{Line: 89, Function: functions[1]},
-		//	{Line: 402, Function: functions[2]},
-		//}},
 	}
 	samples := []*profile.Sample{
 		{
@@ -463,7 +459,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)
 	require.NoError(t, err)
 
-	require.Equal(t, &pb.Flamegraph{
+	expected := &pb.Flamegraph{
 		Total:  3,
 		Height: 4,
 		Root: &pb.FlamegraphRootNode{
@@ -525,7 +521,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 							},
 						},
 						Children: []*pb.FlamegraphNode{{
-							Cumulative: 3,
+							Cumulative: 1,
 							Meta: &pb.FlamegraphNodeMeta{
 								Location: &metapb.Location{
 									Id:      []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
@@ -548,5 +544,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 				}},
 			}},
 		},
-	}, fg)
+	}
+
+	require.Equal(t, expected, fg)
 }
