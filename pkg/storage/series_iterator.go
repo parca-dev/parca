@@ -394,11 +394,7 @@ func (m MemSeriesInstantFlatProfile) Samples() map[string]*Sample {
 	samples := make(map[string]*Sample, len(m.sampleIterators))
 	for k, it := range m.sampleIterators {
 		samples[k] = &Sample{
-			Value:    it.At(),
-			Location: m.locations[k],
-			Label:    nil, // TODO
-			NumLabel: nil, // TODO
-			NumUnit:  nil, // TODO
+			Value: it.At(),
 		}
 	}
 	return samples

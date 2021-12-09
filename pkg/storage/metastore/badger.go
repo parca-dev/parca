@@ -129,8 +129,38 @@ func (m *BadgerMetastore) GetStacktraceByKey(ctx context.Context, key []byte) (u
 	return id, err
 }
 
-func (m *BadgerMetastore) GetStacktraceByID(ctx context.Context, id []byte) (*pb.Sample, error) {
-	return nil, ErrStacktraceNotFound
+func (m *BadgerMetastore) GetStacktraceByIDs(ctx context.Context, ids ...[]byte) (map[string]*pb.Sample, error) {
+	samples := map[string]*pb.Sample{}
+
+	err := m.db.View(func(txn *badger.Txn) error {
+		for _, id := range ids {
+			item, err := txn.Get(append([]byte(stacktraceIDPrefix), id[:]...))
+			if err == badger.ErrKeyNotFound {
+				return ErrStacktraceNotFound
+			}
+			if err != nil {
+				return err
+			}
+			err = item.Value(func(val []byte) error {
+				s := &pb.Sample{}
+				err := s.UnmarshalVT(val)
+				if err != nil {
+					return err
+				}
+				samples[string(id)] = s
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return samples, err
 }
 
 func (m *BadgerMetastore) CreateStacktrace(ctx context.Context, key []byte, sample *pb.Sample) (uuid.UUID, error) {

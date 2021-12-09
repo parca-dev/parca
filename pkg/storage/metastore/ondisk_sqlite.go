@@ -62,6 +62,10 @@ func (o OnDiskSQLiteMetaStore) GetStacktraceByKey(ctx context.Context, key []byt
 	panic("implement me")
 }
 
+func (o OnDiskSQLiteMetaStore) GetStacktraceByIDs(ctx context.Context, ids ...[]byte) (map[string]*pb.Sample, error) {
+	panic("implement me")
+}
+
 func (o OnDiskSQLiteMetaStore) CreateStacktrace(ctx context.Context, key []byte, sample *pb.Sample) (uuid.UUID, error) {
 	panic("implement me")
 }

@@ -44,6 +44,7 @@ type ProfileMetaStore interface {
 
 type StacktraceStore interface {
 	GetStacktraceByKey(ctx context.Context, key []byte) (uuid.UUID, error)
+	GetStacktraceByIDs(ctx context.Context, ids ...[]byte) (map[string]*pb.Sample, error)
 	CreateStacktrace(ctx context.Context, key []byte, sample *pb.Sample) (uuid.UUID, error)
 }
 
