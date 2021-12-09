@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 // import ProfileSVG from './ProfileSVG'
 // import ProfileTop from './ProfileTop'
 import { CalcWidth } from '@parca/dynamicsize'
@@ -47,6 +47,7 @@ export const ProfileView = ({
   queryClient,
   profileSource
 }: ProfileViewProps): JSX.Element => {
+  const icicleGraphRef = useRef<{ resetIcicleGraph: () => void }>(null)
   const { response, error } = useQuery(queryClient, profileSource)
 
   if (error != null) {
@@ -94,20 +95,33 @@ export const ProfileView = ({
     })
   }
 
+  const resetIcicleGraph = (e: React.MouseEvent<HTMLElement>) => {
+    if (icicleGraphRef.current) {
+      icicleGraphRef.current.resetIcicleGraph()
+    }
+  }
+
   return (
     <>
-      <div className="py-3">
+      <div className='py-3'>
         <Card>
           <Card.Body>
-            <div className="flex space-x-4 py-3">
+            <div className='flex space-x-4 py-3'>
               {/* TODO: Proper offset */}
-              <div className="w-full"/>
-              <div className="w-full"/>
-              <div className="w-full"/>
-              <Button color="neutral" onClick={downloadPProf}>Download pprof</Button>
+              <div className='w-1/4'>
+                <Button color='neutral' onClick={resetIcicleGraph}>
+                  Reset View
+                </Button>
+              </div>
+
+              <div className='w-full' />
+              <div className='w-full' />
+              <Button color='neutral' onClick={downloadPProf}>
+                Download pprof
+              </Button>
             </div>
             <CalcWidth throttle={300} delay={2000}>
-              <ProfileIcicleGraph graph={response.getFlamegraph()?.toObject()}/>
+              <ProfileIcicleGraph ref={icicleGraphRef} graph={response.getFlamegraph()?.toObject()} />
             </CalcWidth>
           </Card.Body>
         </Card>

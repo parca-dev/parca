@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import IcicleGraph from './IcicleGraph'
 import { Flamegraph } from '@parca/client'
 
@@ -16,32 +16,33 @@ function arrayEquals (a, b): boolean {
   )
 }
 
-export default function ProfileIcicleGraph ({
-  width,
-  graph
-}: ProfileIcicleGraphProps) {
-  const [curPath, setCurPath] = useState<string[]>([])
+const ProfileIcicleGraph = forwardRef<{ resetIcicleGraph: () => void }, ProfileIcicleGraphProps>((props, ref) => {
+    const [curPath, setCurPath] = useState<string[]>([])
 
-  useEffect(() => {
-    setCurPath([])
-  }, [graph])
+    const { width, graph } = props
 
-  if (graph === undefined) return <div>no data...</div>
-  const total = graph.total
-  if (total === 0) return <>Profile has no samples</>
+    useEffect(() => {
+      setCurPath([])
+    }, [graph])
 
-  const setNewCurPath = (path: string[]) => {
-    if (!arrayEquals(curPath, path)) {
-      setCurPath(path)
+    useImperativeHandle(ref, () => ({
+      resetIcicleGraph() {
+        setCurPath([])
+      }
+    }))
+
+    if (graph === undefined) return <div>no data...</div>
+    const total = graph.total
+    if (total === 0) return <>Profile has no samples</>
+
+    const setNewCurPath = (path: string[]) => {
+      if (!arrayEquals(curPath, path)) {
+        setCurPath(path)
+      }
     }
-  }
 
-  return (
-        <IcicleGraph
-          width={width}
-          graph={graph}
-          curPath={curPath}
-          setCurPath={setNewCurPath}
-        />
-  )
-}
+    return <IcicleGraph width={width} graph={graph} curPath={curPath} setCurPath={setNewCurPath} />
+  }
+)
+
+export default ProfileIcicleGraph
