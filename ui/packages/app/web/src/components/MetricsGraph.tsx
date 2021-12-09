@@ -149,7 +149,7 @@ export const MetricsTooltip = ({
   const highlightedNameLabel: Label.AsObject = nameLabel !== undefined ? (nameLabel) : ({ name: '', value: '' })
 
   return (
-    <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
+    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-10">
       <div className="flex max-w-md">
         <div className="m-auto">
           <div className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90" style={{ borderWidth: 1 }}>
