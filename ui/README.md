@@ -6,17 +6,28 @@ of [Next.js](https://nextjs.org/)
 
 ## Development
 
-First, run the development server:
+The Next.js app requires an environment variable for the API endpoint so as to talk to the Parca backend. Create a file named `env.local` to add the environment variable for the API endpoint.
 
-```shell
-npm run dev
-# or
-yarn dev
+```
+NEXT_PUBLIC_API_ENDPOINT=http://localhost:7070
 ```
 
+Then, start the Parca backend by running the command below. The `--cors-allowed-origins='*'` flag allows for enabling CORS headers on Parca.
+
+```shell
+./bin/parca --cors-allowed-origins='*'
+```
+
+Now the Parca backend will be running and available at `localhost:7070`.
+
+Finally, run the development server for the Next.js app:
+
+```shell
+yarn workspace @parca/web dev
+```
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+You can start editing the UI by modifying any of the components in the `ui/packages/app/web` directory. The app auto-updates as you edit the files.
 
 ## Build
 
