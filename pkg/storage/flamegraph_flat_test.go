@@ -185,12 +185,19 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	k1 := makeStacktraceKey(s1)
 	k2 := makeStacktraceKey(s2)
 
+	stacktraceID0, err := l.CreateStacktrace(ctx, k0, &metapb.Sample{LocationIds: [][]byte{l2.ID[:], l1.ID[:]}})
+	require.NoError(t, err)
+	stacktraceID1, err := l.CreateStacktrace(ctx, k1, &metapb.Sample{LocationIds: [][]byte{l5.ID[:], l3.ID[:], l2.ID[:], l1.ID[:]}})
+	require.NoError(t, err)
+	stacktraceID2, err := l.CreateStacktrace(ctx, k2, &metapb.Sample{LocationIds: [][]byte{l4.ID[:], l3.ID[:], l2.ID[:], l1.ID[:]}})
+	require.NoError(t, err)
+
 	fp := &FlatProfile{
 		Meta: InstantProfileMeta{},
 		samples: map[string]*Sample{
-			string(k0): s0,
-			string(k1): s1,
-			string(k2): s2,
+			string(stacktraceID0[:]): s0,
+			string(stacktraceID1[:]): s1,
+			string(stacktraceID2[:]): s2,
 		},
 	}
 

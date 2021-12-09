@@ -34,6 +34,10 @@ func (r RemoteMetaStore) GetStacktraceByKey(ctx context.Context, key []byte) (uu
 	panic("implement me")
 }
 
+func (r RemoteMetaStore) GetStacktraceByIDs(ctx context.Context, ids ...[]byte) (map[string]*pb.Sample, error) {
+	panic("implement me")
+}
+
 func (r RemoteMetaStore) CreateStacktrace(ctx context.Context, key []byte, sample *pb.Sample) (uuid.UUID, error) {
 	panic("implement me")
 }
