@@ -19,6 +19,15 @@ export interface IQueryResult {
   error: ServiceError | null
 }
 
+function arrayEquals(a, b): boolean {
+  return (
+    Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index])
+  )
+}
+
 export const useQuery = (
   client: QueryServiceClient,
   profileSource: ProfileSource
@@ -47,7 +56,7 @@ export const ProfileView = ({
   queryClient,
   profileSource
 }: ProfileViewProps): JSX.Element => {
-  const icicleGraphRef = useRef<{ resetIcicleGraph: () => void }>(null)
+  const [curPath, setCurPath] = useState<string[]>([])
   const { response, error } = useQuery(queryClient, profileSource)
 
   if (error != null) {
@@ -96,8 +105,12 @@ export const ProfileView = ({
   }
 
   const resetIcicleGraph = (e: React.MouseEvent<HTMLElement>) => {
-    if (icicleGraphRef.current) {
-      icicleGraphRef.current.resetIcicleGraph()
+    setCurPath([])
+  }
+
+  const setNewCurPath = (path: string[]) => {
+    if (!arrayEquals(curPath, path)) {
+      setCurPath(path)
     }
   }
 
@@ -107,9 +120,8 @@ export const ProfileView = ({
         <Card>
           <Card.Body>
             <div className='flex space-x-4 py-3'>
-              {/* TODO: Proper offset */}
               <div className='w-1/4'>
-                <Button color='neutral' onClick={resetIcicleGraph}>
+                <Button color='neutral' onClick={resetIcicleGraph} disabled={curPath.length === 0}>
                   Reset View
                 </Button>
               </div>
@@ -121,7 +133,11 @@ export const ProfileView = ({
               </Button>
             </div>
             <CalcWidth throttle={300} delay={2000}>
-              <ProfileIcicleGraph ref={icicleGraphRef} graph={response.getFlamegraph()?.toObject()} />
+              <ProfileIcicleGraph
+                curPath={curPath}
+                setNewCurPath={setNewCurPath}
+                graph={response.getFlamegraph()?.toObject()}
+              />
             </CalcWidth>
           </Card.Body>
         </Card>
