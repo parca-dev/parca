@@ -1,5 +1,6 @@
 CMD_DOCKER ?= docker
 CMD_GIT ?= git
+SHELL := /bin/bash
 ifeq ($(GITHUB_BRANCH_NAME),)
 	BRANCH := $(shell git rev-parse --abbrev-ref HEAD)-
 else
