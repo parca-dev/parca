@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 // import ProfileSVG from './ProfileSVG'
 // import ProfileTop from './ProfileTop'
 import { CalcWidth } from '@parca/dynamicsize'
@@ -17,6 +17,15 @@ interface ProfileViewProps {
 export interface IQueryResult {
   response: QueryResponse | null
   error: ServiceError | null
+}
+
+function arrayEquals(a, b): boolean {
+  return (
+    Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index])
+  )
 }
 
 export const useQuery = (
@@ -47,6 +56,7 @@ export const ProfileView = ({
   queryClient,
   profileSource
 }: ProfileViewProps): JSX.Element => {
+  const [curPath, setCurPath] = useState<string[]>([])
   const { response, error } = useQuery(queryClient, profileSource)
 
   if (error != null) {
@@ -94,20 +104,40 @@ export const ProfileView = ({
     })
   }
 
+  const resetIcicleGraph = (e: React.MouseEvent<HTMLElement>) => {
+    setCurPath([])
+  }
+
+  const setNewCurPath = (path: string[]) => {
+    if (!arrayEquals(curPath, path)) {
+      setCurPath(path)
+    }
+  }
+
   return (
     <>
-      <div className="py-3">
+      <div className='py-3'>
         <Card>
           <Card.Body>
-            <div className="flex space-x-4 py-3">
-              {/* TODO: Proper offset */}
-              <div className="w-full"/>
-              <div className="w-full"/>
-              <div className="w-full"/>
-              <Button color="neutral" onClick={downloadPProf}>Download pprof</Button>
+            <div className='flex space-x-4 py-3'>
+              <div className='w-1/4'>
+                <Button color='neutral' onClick={resetIcicleGraph} disabled={curPath.length === 0}>
+                  Reset View
+                </Button>
+              </div>
+
+              <div className='w-full' />
+              <div className='w-full' />
+              <Button color='neutral' onClick={downloadPProf}>
+                Download pprof
+              </Button>
             </div>
             <CalcWidth throttle={300} delay={2000}>
-              <ProfileIcicleGraph graph={response.getFlamegraph()?.toObject()}/>
+              <ProfileIcicleGraph
+                curPath={curPath}
+                setNewCurPath={setNewCurPath}
+                graph={response.getFlamegraph()?.toObject()}
+              />
             </CalcWidth>
           </Card.Body>
         </Card>
