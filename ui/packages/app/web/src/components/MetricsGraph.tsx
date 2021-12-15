@@ -5,7 +5,6 @@ import MetricsSeries from './metrics/MetricsSeries'
 import MetricsCircle from './metrics/MetricsCircle'
 import { pointer } from 'd3-selection'
 import { formatForTimespan } from '../libs/time'
-import { nFormatter } from '../libs/unit'
 import { SingleProfileSelection, timeFormat } from '@parca/profile'
 import { cutToMaxStringLength } from '../libs/utils'
 import throttle from 'lodash.throttle'
@@ -13,6 +12,7 @@ import { CalcWidth } from '@parca/dynamicsize'
 import { MetricsSeries as MetricsSeriesPb, MetricsSample, Label } from '@parca/client'
 import { usePopper } from 'react-popper'
 import type { VirtualElement } from '@popperjs/core'
+import { valueFormatter } from '@parca/functions'
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb.AsObject[]
@@ -83,14 +83,15 @@ interface MetricsTooltipProps {
 
 function generateGetBoundingClientRect (contextElement: Element, x = 0, y = 0) {
   const domRect = contextElement.getBoundingClientRect()
-  return () => ({ // eslint-disable-line @typescript-eslint/consistent-type-assertions
-    width: 0,
-    height: 0,
-    top: domRect.y + y,
-    left: domRect.x + x,
-    right: domRect.x + x,
-    bottom: domRect.y + y
-  } as ClientRect)
+  return () =>
+    ({ // eslint-disable-line @typescript-eslint/consistent-type-assertions
+      width: 0,
+      height: 0,
+      top: domRect.y + y,
+      left: domRect.x + x,
+      right: domRect.x + x,
+      bottom: domRect.y + y
+    } as ClientRect)
 }
 
 const virtualElement: VirtualElement = {
@@ -145,54 +146,56 @@ export const MetricsTooltip = ({
     }
   }, [x, y, contextElement, update])
 
-  const nameLabel: Label.AsObject | undefined = highlighted?.labels.find((e) => e.name === '__name__')
-  const highlightedNameLabel: Label.AsObject = nameLabel !== undefined ? (nameLabel) : ({ name: '', value: '' })
+  const nameLabel: Label.AsObject | undefined = highlighted?.labels.find(e => e.name === '__name__')
+  const highlightedNameLabel: Label.AsObject =
+    nameLabel !== undefined ? nameLabel : { name: '', value: '' }
 
   return (
-    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-10">
-      <div className="flex max-w-md">
-        <div className="m-auto">
-          <div className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90" style={{ borderWidth: 1 }}>
-            <div className="flex flex-row">
-              <div className="ml-2 mr-6">
-                <span className="font-semibold">{highlightedNameLabel.value}</span>
-                <span className="block text-gray-700 dark:text-gray-300 my-2">
-                  <table className="table-auto">
+    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className='z-10'>
+      <div className='flex max-w-md'>
+        <div className='m-auto'>
+          <div
+            className='border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90'
+            style={{ borderWidth: 1 }}
+          >
+            <div className='flex flex-row'>
+              <div className='ml-2 mr-6'>
+                <span className='font-semibold'>{highlightedNameLabel.value}</span>
+                <span className='block text-gray-700 dark:text-gray-300 my-2'>
+                  <table className='table-auto'>
                     <tbody>
                       <tr>
-                        <td className="w-1/4">
-                          Value
-                        </td>
-                        <td className="w-3/4">
-                          {nFormatter(highlighted.value, sampleUnit, 1)}
+                        <td className='w-1/4'>Value</td>
+                        <td className='w-3/4'>
+                          {valueFormatter(highlighted.value, sampleUnit, 1)}
                         </td>
                       </tr>
                       <tr>
-                        <td className="w-1/4">
-                          At
-                        </td>
-                        <td className="w-3/4">
+                        <td className='w-1/4'>At</td>
+                        <td className='w-3/4'>
                           {moment(highlighted.timestamp).utc().format(timeFormat)}
                         </td>
                       </tr>
                     </tbody>
                   </table>
                 </span>
-                <span className="block text-gray-500 my-2">
-                  {highlighted.labels.filter((label: Label.AsObject) => (label.name !== '__name__')).map(function (label: Label.AsObject) {
-                    return (
-                      <button
-                        key={label.name}
-                        type="button"
-                        className="inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3"
-                        onClick={() => onLabelClick(label.name, label.value)}
-                      >
-                        {cutToMaxStringLength(`${label.name}="${label.value}"`, 37)}
-                      </button>
-                    )
-                  })}
+                <span className='block text-gray-500 my-2'>
+                  {highlighted.labels
+                    .filter((label: Label.AsObject) => label.name !== '__name__')
+                    .map(function (label: Label.AsObject) {
+                      return (
+                        <button
+                          key={label.name}
+                          type='button'
+                          className='inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3'
+                          onClick={() => onLabelClick(label.name, label.value)}
+                        >
+                          {cutToMaxStringLength(`${label.name}="${label.value}"`, 37)}
+                        </button>
+                      )
+                    })}
                 </span>
-                <span className="block text-gray-500 text-xs">
+                <span className='block text-gray-500 text-xs'>
                   Hold shift and click label to add to query.
                 </span>
               </div>
@@ -223,7 +226,7 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null)
 
   useEffect(() => {
-    const handleShiftDown = (event) => {
+    const handleShiftDown = event => {
       if (event.keyCode === 16) {
         setFreezeTooltip(true)
       }
@@ -236,7 +239,7 @@ export const RawMetricsGraph = ({
   }, [])
 
   useEffect(() => {
-    const handleShiftUp = (event) => {
+    const handleShiftUp = event => {
       if (event.keyCode === 16) {
         setFreezeTooltip(false)
       }
@@ -259,21 +262,29 @@ export const RawMetricsGraph = ({
   const marginRight = 20
   const sampleUnit = data[0].sampleType !== undefined ? data[0].sampleType.unit : ''
 
-  const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb.AsObject) {
+  const series: Series[] = data.reduce<Series[]>(function (
+    agg: Series[],
+    s: MetricsSeriesPb.AsObject
+  ) {
     if (s.labelset !== undefined) {
       agg.push({
         metric: s.labelset.labelsList,
-        values: s.samplesList.reduce<number[][]>(function (agg: number[][], d: MetricsSample.AsObject) {
+        values: s.samplesList.reduce<number[][]>(function (
+          agg: number[][],
+          d: MetricsSample.AsObject
+        ) {
           if (d.timestamp !== undefined && d.value !== undefined) {
             const t = (d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6
             agg.push([t, d.value])
           }
           return agg
-        }, [])
+        },
+        [])
       })
     }
     return agg
-  }, [])
+  },
+  [])
 
   const extentsX = series.map(function (s) {
     return d3.extent(s.values, function (d) {
@@ -325,10 +336,7 @@ export const RawMetricsGraph = ({
         const x = xScale(d[0])
         const y = yScale(d[1])
 
-        return Math.sqrt(
-          Math.pow(pos[0] - x, 2) +
-          Math.pow(pos[1] - y, 2)
-        )
+        return Math.sqrt(Math.pow(pos[0] - x, 2) + Math.pow(pos[1] - y, 2))
       })
 
       const pointIndex = d3.minIndex(distances)
@@ -377,11 +385,7 @@ export const RawMetricsGraph = ({
 
   const openClosestProfile = (): void => {
     if (highlighted != null) {
-      onSampleClick(
-        Math.round(highlighted.timestamp),
-        highlighted.value,
-        highlighted.labels
-      )
+      onSampleClick(Math.round(highlighted.timestamp), highlighted.value, highlighted.labels)
     }
   }
 
@@ -417,7 +421,7 @@ export const RawMetricsGraph = ({
 
   const throttledSetPos = throttle(setPos, 20)
 
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement|HTMLDivElement, MouseEvent>): void => {
+  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
     // X/Y coordinate array relative to svg
     const rel = pointer(e)
 
@@ -439,8 +443,7 @@ export const RawMetricsGraph = ({
     let s: Series | null = null
     let seriesIndex: number | null = null
 
-    outer:
-    for (let i = 0; i < series.length; i++) {
+    outer: for (let i = 0; i < series.length; i++) {
       const keys = profile.labels.map(e => e.name)
       for (let j = 0; j < keys.length; j++) {
         const labelName = keys[j]
@@ -460,7 +463,7 @@ export const RawMetricsGraph = ({
       return null
     }
     // Find the sample that matches the timestamp
-    const sample = s.values.find((v) => {
+    const sample = s.values.find(v => {
       return Math.round(v[0]) === time
     })
     if (sample === undefined) {
@@ -480,152 +483,124 @@ export const RawMetricsGraph = ({
   const selected = findSelectedProfile()
 
   return (
-      <>
-          {(highlighted != null) &&
-              hovering &&
-              !dragging &&
-              pos[0] !== 0 &&
-              pos[1] !== 0 &&
-              (
-              <div
-                  onMouseMove={onMouseMove}
-                  onMouseEnter={() => setHovering(true)}
-                  onMouseLeave={() => setHovering(false)}
-              >
-                  <MetricsTooltip
-                      x={pos[0] + margin}
-                      y={pos[1] + margin}
-                      highlighted={highlighted}
-                      onLabelClick={onLabelClick}
-                      contextElement={graph.current}
-                      sampleUnit={sampleUnit}
+    <>
+      {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
+        <div
+          onMouseMove={onMouseMove}
+          onMouseEnter={() => setHovering(true)}
+          onMouseLeave={() => setHovering(false)}
+        >
+          <MetricsTooltip
+            x={pos[0] + margin}
+            y={pos[1] + margin}
+            highlighted={highlighted}
+            onLabelClick={onLabelClick}
+            contextElement={graph.current}
+            sampleUnit={sampleUnit}
+          />
+        </div>
+      )}
+      <div
+        ref={graph}
+        onMouseEnter={function () {
+          setHovering(true)
+          setFreezeTooltip(false)
+        }}
+        onMouseLeave={() => setHovering(false)}
+      >
+        <svg
+          width={`${width}px`}
+          height={`${height + margin}px`}
+          onMouseDown={onMouseDown}
+          onMouseUp={onMouseUp}
+          onMouseMove={onMouseMove}
+        >
+          <g transform={`translate(${margin}, 0)`}>
+            {dragging && (
+              <g className='zoom-time-rect'>
+                <rect
+                  className='bar'
+                  x={pos[0] - relPos < 0 ? pos[0] : relPos}
+                  y={0}
+                  height={height}
+                  width={Math.abs(pos[0] - relPos)}
+                  fill={'rgba(0, 0, 0, 0.125)'}
+                />
+              </g>
+            )}
+          </g>
+          <g transform={`translate(${margin}, ${margin})`}>
+            <g className='lines'>
+              {series.map((s, i) => (
+                <g key={i} className='line'>
+                  <MetricsSeries
+                    data={s}
+                    line={l}
+                    color={color(i)}
+                    strokeWidth={
+                      hovering && highlighted != null && i === highlighted.seriesIndex
+                        ? lineStrokeHover
+                        : lineStroke
+                    }
+                    xScale={xScale}
+                    yScale={yScale}
                   />
-              </div>
-              )
-          }
-          <div
-              ref={graph}
-              onMouseEnter={function () {
-                setHovering(true)
-                setFreezeTooltip(false)
-              }}
-              onMouseLeave={() => setHovering(false)}
-          >
-              <svg
-                  width={`${width}px`}
-                  height={`${height + margin}px`}
-                  onMouseDown={onMouseDown}
-                  onMouseUp={onMouseUp}
-                  onMouseMove={onMouseMove}
+                </g>
+              ))}
+            </g>
+            {hovering && highlighted != null && (
+              <g
+                className='circle-group'
+                ref={metricPointRef}
+                style={{ fill: color(highlighted.seriesIndex) }}
               >
-                  <g
-                      transform={`translate(${margin}, 0)`}
-                  >
-                      {dragging && (
-                          <g className="zoom-time-rect">
-                              <rect
-                                  className="bar"
-                                  x={(pos[0] - relPos) < 0 ? pos[0] : relPos}
-                                  y={0}
-                                  height={height}
-                                  width={Math.abs(pos[0] - relPos)}
-                                  fill={'rgba(0, 0, 0, 0.125)'}
-                              />
-                          </g>
-                      )}
-                  </g>
-                  <g
-                      transform={`translate(${margin}, ${margin})`}
-                  >
-                      <g className="lines">
-                          {series.map((s, i) => (
-                              <g key={i} className="line">
-                                  <MetricsSeries
-                                      data={s}
-                                      line={l}
-                                      color={color(i)}
-                                      strokeWidth={(hovering && highlighted != null && i === highlighted.seriesIndex) ? lineStrokeHover : lineStroke}
-                                      xScale={xScale}
-                                      yScale={yScale}
-                                  />
-                              </g>
-                          ))}
-                      </g>
-                      {hovering && highlighted != null && (
-                          <g className="circle-group" ref={metricPointRef} style={{ fill: color(highlighted.seriesIndex) }}>
-                              <MetricsCircle
-                                  cx={highlighted.x}
-                                  cy={highlighted.y}
-                              />
-                          </g>
-                      )}
-                      {selected != null && (
-                          <g className="circle-group" style={{ fill: color(selected.seriesIndex) }}>
-                            <MetricsCircle
-                              cx={selected.x}
-                              cy={selected.y}
-                              radius={5}
-                            />
-                          </g>
-                      )}
-                      <g
-                          className="x axis"
-                          fill="none"
-                          fontSize="10"
-                          textAnchor="middle"
-                          transform={`translate(0,${height - margin})`}
-                      >
-                          {xScale.ticks(5).map((d, i) => (
-                              <g
-                                  key={i}
-                                  className="tick"
-                                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                                  transform={`translate(${xScale(d)}, 0)`}
-                              >
-                                  <line
-                                      y2={6}
-                                      stroke="currentColor"
-                                  />
-                                  <text
-                                      fill="currentColor"
-                                      dy=".71em"
-                                      y={9}
-                                  >
-                                      {moment(d).utc().format(formatForTimespan(from, to))}
-                                  </text>
-                              </g>
-                          ))}
-                      </g>
-                      <g
-                          className="y axis"
-                          textAnchor="end"
-                          fontSize="10"
-                          fill="none"
-                      >
-                          {yScale.ticks(3).map((d, i) => (
-                              <g
-                                  key={i}
-                                  className="tick"
-                                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                                  transform={`translate(0, ${yScale(d)})`}
-                              >
-                                  <line
-                                      stroke="currentColor"
-                                      x2={-6}
-                                  />
-                                  <text
-                                      fill="currentColor"
-                                      x={-9}
-                                      dy={'0.32em'}
-                                  >
-                                      {nFormatter(d, sampleUnit, 1)}
-                                  </text>
-                              </g>
-                          ))}
-                      </g>
-                  </g>
-              </svg>
-          </div>
-      </>
+                <MetricsCircle cx={highlighted.x} cy={highlighted.y} />
+              </g>
+            )}
+            {selected != null && (
+              <g className='circle-group' style={{ fill: color(selected.seriesIndex) }}>
+                <MetricsCircle cx={selected.x} cy={selected.y} radius={5} />
+              </g>
+            )}
+            <g
+              className='x axis'
+              fill='none'
+              fontSize='10'
+              textAnchor='middle'
+              transform={`translate(0,${height - margin})`}
+            >
+              {xScale.ticks(5).map((d, i) => (
+                <g
+                  key={i}
+                  className='tick'
+                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                  transform={`translate(${xScale(d)}, 0)`}
+                >
+                  <line y2={6} stroke='currentColor' />
+                  <text fill='currentColor' dy='.71em' y={9}>
+                    {moment(d).utc().format(formatForTimespan(from, to))}
+                  </text>
+                </g>
+              ))}
+            </g>
+            <g className='y axis' textAnchor='end' fontSize='10' fill='none'>
+              {yScale.ticks(3).map((d, i) => (
+                <g
+                  key={i}
+                  className='tick'
+                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                  transform={`translate(0, ${yScale(d)})`}
+                >
+                  <line stroke='currentColor' x2={-6} />
+                  <text fill='currentColor' x={-9} dy={'0.32em'}>
+                    {valueFormatter(d, sampleUnit, 1)}
+                  </text>
+                </g>
+              ))}
+            </g>
+          </g>
+        </svg>
+      </div>
+    </>
   )
 }
