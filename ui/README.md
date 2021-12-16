@@ -6,7 +6,7 @@ of [Next.js](https://nextjs.org/)
 
 ## Development
 
-The Next.js app requires an environment variable for the API endpoint so as to talk to the Parca backend. Create a file named `env.local` to add the environment variable for the API endpoint.
+The Next.js app requires an environment variable for the API endpoint so as to talk to the Parca backend. Create a file named `.env.local` in `packages/app/web/` to add the environment variable for the API endpoint.
 
 ```
 NEXT_PUBLIC_API_ENDPOINT=http://localhost:7070
