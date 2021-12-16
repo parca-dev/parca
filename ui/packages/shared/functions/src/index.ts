@@ -42,6 +42,10 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
   const absoluteNum = Math.abs(num)
   const format = knownValueFormatters[unit]
 
+  if (format === undefined || format === null) {
+    return num.toString()
+  }
+
   const rx = /\.0+$|(\.[0-9]*[1-9])0+$/
   let i
   for (i = format.length - 1; i > 0; i--) {
