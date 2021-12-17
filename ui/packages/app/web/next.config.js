@@ -26,7 +26,8 @@ module.exports = withBundleAnalyzer(
       NEXT_PUBLIC_BUILD_REVISION: process.env.BUILD_REVISION || 'DEVELOP'
     },
     basePath: process.env.PATH_PREFIX,
-    webpack: (config) => {
+    assetPrefix: '/parca/assets',
+    webpack: config => {
       config.module.rules.push({
         test: /\.svg$/,
         use: ['@svgr/webpack']

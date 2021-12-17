@@ -253,9 +253,11 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 		}
 
 		for _, path := range paths {
-			uiHandler.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+			handler := func(w http.ResponseWriter, r *http.Request) {
 				http.ServeContent(w, r, d.Name(), fi.ModTime(), bytes.NewReader(outputBytes))
-			})
+			};
+			uiHandler.HandleFunc(path, handler);
+			uiHandler.HandleFunc("/parca/assets" + path, handler);
 		}
 
 		return nil

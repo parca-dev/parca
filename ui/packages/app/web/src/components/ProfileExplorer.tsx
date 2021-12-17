@@ -76,7 +76,7 @@ const ProfileExplorer = ({
     )
     const selectQuery = async (q: QuerySelection): Promise<boolean> => {
       return await router.push({
-        pathname: '/',
+        pathname: document.location.pathname,
         // Filtering the _a suffix causes us to reset potential profile
         // selection when running a new query.
         query: {
