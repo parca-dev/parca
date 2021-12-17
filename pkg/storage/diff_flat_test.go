@@ -39,7 +39,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -55,7 +55,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -69,7 +69,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-		SampleType: ValueType{Type: "samples", Unit: "count"},
+		SampleType: ValueType{Type: "numSamples", Unit: "count"},
 	}, dp.ProfileMeta())
 
 	diffed := dp.Samples()
@@ -101,7 +101,7 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -122,7 +122,7 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -137,7 +137,7 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-		SampleType: ValueType{Type: "samples", Unit: "count"},
+		SampleType: ValueType{Type: "numSamples", Unit: "count"},
 	}, dp.ProfileMeta())
 
 	diffed := dp.Samples()

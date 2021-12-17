@@ -14,7 +14,10 @@
 package storage
 
 import (
+	"bytes"
 	"sort"
+
+	"github.com/google/uuid"
 )
 
 func sortSamples(samples []*Sample) {
@@ -45,4 +48,10 @@ func sortSamples(samples []*Sample) {
 			}
 		}
 	})
+}
+
+func uuidCompare(a, b uuid.UUID) int {
+	ab := [16]byte(a)
+	bb := [16]byte(b)
+	return bytes.Compare(ab[:], bb[:])
 }

@@ -17,22 +17,7 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
-	"github.com/google/uuid"
 )
-
-type InstantProfileTreeNode interface {
-	LocationID() uuid.UUID
-	FlatValues() []*ProfileTreeValueNode
-	FlatDiffValues() []*ProfileTreeValueNode
-}
-
-type InstantProfileTreeIterator interface {
-	HasMore() bool
-	NextChild() bool
-	At() InstantProfileTreeNode
-	StepInto() bool
-	StepUp()
-}
 
 type ValueType struct {
 	Type string
@@ -120,39 +105,4 @@ func (p *ScaledInstantProfile) ProfileMeta() InstantProfileMeta {
 
 func (p *ScaledInstantProfile) Samples() map[string]*Sample {
 	return p.p.Samples()
-}
-
-type ScaledInstantProfileTreeIterator struct {
-	it    InstantProfileTreeIterator
-	ratio float64
-}
-
-func (i *ScaledInstantProfileTreeIterator) HasMore() bool {
-	return i.it.HasMore()
-}
-
-func (i *ScaledInstantProfileTreeIterator) NextChild() bool {
-	return i.it.NextChild()
-}
-
-func (i *ScaledInstantProfileTreeIterator) At() InstantProfileTreeNode {
-	n := i.it.At()
-
-	flatValues := n.FlatValues()
-	for _, v := range flatValues {
-		v.Value = int64(i.ratio * float64(v.Value))
-	}
-
-	return &ProfileTreeNode{
-		locationID: n.LocationID(),
-		flatValues: flatValues,
-	}
-}
-
-func (i *ScaledInstantProfileTreeIterator) StepInto() bool {
-	return i.it.StepInto()
-}
-
-func (i *ScaledInstantProfileTreeIterator) StepUp() {
-	i.it.StepUp()
 }

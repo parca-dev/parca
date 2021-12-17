@@ -158,7 +158,7 @@ func (it *MemRangeSeriesIterator) Next() bool {
 
 	for _, sit := range it.sampleIterators {
 		if !sit.Next() {
-			it.err = errors.New("unexpected end of samples iterator")
+			it.err = errors.New("unexpected end of numSamples iterator")
 			return false
 		}
 	}

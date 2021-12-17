@@ -108,7 +108,7 @@ func NewHead(r prometheus.Registerer, tracer trace.Tracer, opts *HeadOptions) *H
 		}, []string{"values"}),
 		seriesChunksSamples: prometheus.NewSummaryVec(prometheus.SummaryOpts{
 			Name:       "parca_tsdb_head_series_chunk_samples",
-			Help:       "The amount of samples in the cumulative and flat chunks.",
+			Help:       "The amount of numSamples in the cumulative and flat chunks.",
 			Objectives: map[float64]float64{0.1: 0.05, 0.2: 0.05, 0.3: 0.05, 0.4: 0.05, 0.5: 0.05, 0.6: 0.05, 0.7: 0.05, 0.8: 0.05, 0.9: 0.01, 0.99: 0.001},
 		}, []string{"values"}),
 		profilesAppended: prometheus.NewCounter(prometheus.CounterOpts{
@@ -270,9 +270,9 @@ func (h *Head) stats() {
 		h.series.locks[i].RLock()
 		for _, memSeries := range series {
 			stats := memSeries.stats()
-			h.seriesValues.WithLabelValues("flat").Observe(float64(len(stats.Flat)))
+			h.seriesValues.WithLabelValues("flat").Observe(float64(len(stats.samples)))
 
-			for _, s := range stats.Flat {
+			for _, s := range stats.samples {
 				h.seriesChunksSize.WithLabelValues("flat").Observe(float64(s.bytes))
 				h.seriesChunksSamples.WithLabelValues("flat").Observe(float64(s.samples))
 			}

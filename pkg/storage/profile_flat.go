@@ -64,6 +64,15 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 	}, nil
 }
 
+func isZeroSample(s *profile.Sample) bool {
+	for _, v := range s.Value {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 type profileFlatNormalizer struct {
 	logger    log.Logger
 	metaStore metastore.ProfileMetaStore

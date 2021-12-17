@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.opentelemetry.io/otel/trace"
@@ -48,15 +47,6 @@ type MemSeries struct {
 	mu sync.RWMutex
 
 	samples map[string][]chunkenc.Chunk
-	// TODO: Remove this after having implemented the metastore stacktraces.
-	locations map[string][]*metastore.Location
-
-	// TODO: part of profileTree - eventually remove it
-	// Flat values as well as labels by the node's ProfileTreeValueNodeKey.
-	flatValues map[ProfileTreeValueNodeKey][]chunkenc.Chunk
-	labels     map[ProfileTreeValueNodeKey]map[string][]string
-	numLabels  map[ProfileTreeValueNodeKey]map[string][]int64
-	numUnits   map[ProfileTreeValueNodeKey]map[string][]string
 
 	numSamples uint16
 
@@ -80,14 +70,7 @@ func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64), chun
 		periods:    make([]chunkenc.Chunk, 0, 1),
 		root:       make([]chunkenc.Chunk, 0, 1),
 
-		samples:   make(map[string][]chunkenc.Chunk),
-		locations: make(map[string][]*metastore.Location),
-
-		// TODO: part of profileTree - eventually remove it
-		flatValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
-		labels:     make(map[ProfileTreeValueNodeKey]map[string][]string),
-		numLabels:  make(map[ProfileTreeValueNodeKey]map[string][]int64),
-		numUnits:   make(map[ProfileTreeValueNodeKey]map[string][]string),
+		samples: make(map[string][]chunkenc.Chunk),
 
 		updateMaxTime: updateMaxTime,
 		tracer:        trace.NewNoopTracerProvider().Tracer(""),
@@ -112,8 +95,8 @@ func (s *MemSeries) Appender() (*MemSeriesAppender, error) {
 }
 
 type MemSeriesStats struct {
-	samples uint16
-	Flat    []MemSeriesValueStats
+	numSamples uint16
+	samples    []MemSeriesValueStats
 }
 
 type MemSeriesValueStats struct {
@@ -125,11 +108,11 @@ func (s *MemSeries) stats() MemSeriesStats {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	flat := make([]MemSeriesValueStats, 0, len(s.flatValues))
+	samples := make([]MemSeriesValueStats, 0, len(s.samples))
 
-	for _, chunks := range s.flatValues {
+	for _, chunks := range s.samples {
 		for _, c := range chunks {
-			flat = append(flat, MemSeriesValueStats{
+			samples = append(samples, MemSeriesValueStats{
 				samples: c.NumSamples(),
 				bytes:   len(c.Bytes()),
 			})
@@ -137,8 +120,8 @@ func (s *MemSeries) stats() MemSeriesStats {
 	}
 
 	return MemSeriesStats{
-		samples: s.numSamples,
-		Flat:    flat,
+		numSamples: s.numSamples,
+		samples:    samples,
 	}
 }
 
@@ -292,11 +275,6 @@ func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) erro
 		}
 		app.AppendAt(a.s.numSamples%samplesPerChunk, s.Value)
 
-		// TODO: Eventually this should be referenced by stacktrace key with the new metastore
-		if _, found := a.s.locations[k]; !found {
-			a.s.locations[k] = s.Location
-		}
-
 		rootCumulative += s.Value
 	}
 
@@ -345,13 +323,6 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 		s.periods = s.periods[:0]
 		s.root = s.root[:0]
 
-		for key, chunks := range s.flatValues {
-			for _, c := range chunks {
-				_ = s.chunkPool.Put(c)
-			}
-			s.flatValues[key] = chunks[:0]
-		}
-
 		s.minTime = math.MaxInt64
 		s.maxTime = math.MinInt64
 
@@ -386,19 +357,11 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 	}
 	s.numSamples = numSamples
 
-	for key, chunks := range s.flatValues {
-		s.flatValues[key] = chunks[start:]
-	}
 	for key, chunks := range s.samples {
 		s.samples[key] = chunks[start:]
 	}
 
 	s.minTime = s.timestamps[0].minTime
-
-	// TODO: Truncate seriesTree and labels...
-	// We could somehow a list of the keys for empty chunks while iterating through them above.
-	// With that list we could at least somewhat more quickly figure out which nodes in the tree
-	// and also which labels to get rid of.
 
 	return start
 }

@@ -51,9 +51,9 @@ func TestDB(t *testing.T) {
 	p, err := profile.Parse(b)
 	require.NoError(t, err)
 
-	prof1, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof1, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
-	require.NoError(t, app1.Append(ctx, prof1))
+	require.NoError(t, app1.AppendFlat(ctx, prof1))
 
 	app2, err := db.Appender(ctx, labels.Labels{{Name: "namespace", Value: "default"}, {Name: "container", Value: "test2"}})
 	require.NoError(t, err)
@@ -64,15 +64,14 @@ func TestDB(t *testing.T) {
 	p, err = profile.Parse(b)
 	require.NoError(t, err)
 
-	prof2, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof2, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
-	require.NoError(t, app2.Append(ctx, prof2))
+	require.NoError(t, app2.AppendFlat(ctx, prof2))
 
 	q := db.Querier(
 		ctx,
 		timestamp.FromTime(time.Now().Add(-10*time.Second)),
 		timestamp.FromTime(time.Now().Add(10*time.Second)),
-		true,
 	)
 	m, err := labels.NewMatcher(labels.MatchEqual, "namespace", "default")
 	require.NoError(t, err)
@@ -94,25 +93,25 @@ func TestDB(t *testing.T) {
 	}
 }
 
-func TestSliceSeriesSet(t *testing.T) {
-	ss := SliceSeriesSet{
-		series: []Series{},
-		i:      -1,
-	}
-
-	for i := 0; i < 100; i++ {
-		ss.series = append(ss.series, &MemSeries{
-			id:      uint64(i),
-			minTime: 0,
-			maxTime: int64(i),
-		})
-	}
-
-	// Iterate over all series
-	for i := 0; i < 100; i++ {
-		require.True(t, ss.Next())
-		require.Equal(t, &MemSeries{id: uint64(i), maxTime: int64(i)}, ss.At())
-	}
-	require.NoError(t, ss.Err())
-	require.False(t, ss.Next())
-}
+//func TestSliceSeriesSet(t *testing.T) {
+//	ss := SliceSeriesSet{
+//		series: []Series{},
+//		i:      -1,
+//	}
+//
+//	for i := 0; i < 100; i++ {
+//		ss.series = append(ss.series, &MemSeries{
+//			id:      uint64(i),
+//			minTime: 0,
+//			maxTime: int64(i),
+//		})
+//	}
+//
+//	// Iterate over all series
+//	for i := 0; i < 100; i++ {
+//		require.True(t, ss.Next())
+//		require.Equal(t, &MemSeries{id: uint64(i), maxTime: int64(i)}, ss.At())
+//	}
+//	require.NoError(t, ss.Err())
+//	require.False(t, ss.Next())
+//}
