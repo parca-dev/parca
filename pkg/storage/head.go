@@ -239,22 +239,6 @@ type initAppender struct {
 	head *Head
 }
 
-func (a *initAppender) Append(ctx context.Context, p *Profile) error {
-	if a.app != nil {
-		return a.app.Append(ctx, p)
-	}
-
-	a.head.initTime(p.Meta.Timestamp)
-
-	var err error
-	a.app, err = a.head.appender(ctx, a.lset)
-	if err != nil {
-		return err
-	}
-
-	return a.app.Append(ctx, p)
-}
-
 func (a *initAppender) AppendFlat(ctx context.Context, p *FlatProfile) error {
 	if a.app != nil {
 		return a.app.AppendFlat(ctx, p)
@@ -331,13 +315,12 @@ func (h *Head) appender(ctx context.Context, lset labels.Labels) (Appender, erro
 	return s.Appender()
 }
 
-func (h *Head) Querier(ctx context.Context, mint, maxt int64, trees bool) Querier {
+func (h *Head) Querier(ctx context.Context, mint, maxt int64) Querier {
 	return &HeadQuerier{
-		head:  h,
-		ctx:   ctx,
-		mint:  mint,
-		maxt:  maxt,
-		trees: trees,
+		head: h,
+		ctx:  ctx,
+		mint: mint,
+		maxt: maxt,
 	}
 }
 
@@ -345,7 +328,6 @@ type HeadQuerier struct {
 	head       *Head
 	ctx        context.Context
 	mint, maxt int64
-	trees      bool
 }
 
 func (q *HeadQuerier) LabelNames(ms ...*labels.Matcher) ([]string, Warnings, error) {
@@ -418,17 +400,11 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 		if seriesMinTime > maxt {
 			continue
 		}
-		// Only need for profile trees now,
-		// flat profiles can simply use the generic MemRangeSeries.
-		if hints != nil && hints.Merge && q.trees {
-			ss = append(ss, &MemMergeSeries{s: s, mint: mint, maxt: maxt})
-			continue
-		}
 		if hints != nil && hints.Root {
-			ss = append(ss, &MemRootSeries{s: s, mint: mint, maxt: maxt, trees: q.trees})
+			ss = append(ss, &MemRootSeries{s: s, mint: mint, maxt: maxt})
 			continue
 		}
-		ss = append(ss, &MemRangeSeries{s: s, mint: mint, maxt: maxt, trees: q.trees})
+		ss = append(ss, &MemRangeSeries{s: s, mint: mint, maxt: maxt})
 	}
 
 	return &SliceSeriesSet{

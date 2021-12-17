@@ -14,13 +14,10 @@
 package storage
 
 import (
-	"context"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
 type InstantProfileTreeNode interface {
@@ -37,11 +34,6 @@ type InstantProfileTreeIterator interface {
 	StepUp()
 }
 
-type InstantProfileTree interface {
-	RootCumulativeValue() int64
-	Iterator() InstantProfileTreeIterator
-}
-
 type ValueType struct {
 	Type string
 	Unit string
@@ -55,30 +47,6 @@ type InstantProfileMeta struct {
 	Period     int64
 }
 
-func WalkProfileTree(pt InstantProfileTree, f func(n InstantProfileTreeNode) error) error {
-	it := pt.Iterator()
-
-	for it.HasMore() {
-		if it.NextChild() {
-			if err := f(it.At()); err != nil {
-				return err
-			}
-			it.StepInto()
-			continue
-		}
-		it.StepUp()
-	}
-
-	return nil
-}
-
-func CopyInstantTreeProfile(p InstantProfile) *Profile {
-	return &Profile{
-		Meta: p.ProfileMeta(),
-		Tree: CopyInstantProfileTree(p.ProfileTree()),
-	}
-}
-
 func CopyInstantFlatProfile(p InstantProfile) *FlatProfile {
 	return &FlatProfile{
 		Meta:    p.ProfileMeta(),
@@ -86,57 +54,7 @@ func CopyInstantFlatProfile(p InstantProfile) *FlatProfile {
 	}
 }
 
-func CopyInstantProfileTree(pt InstantProfileTree) *ProfileTree {
-	it := pt.Iterator()
-	if !it.HasMore() || !it.NextChild() {
-		return nil
-	}
-
-	node := it.At()
-	cur := &ProfileTreeNode{
-		locationID:     node.LocationID(),
-		flatDiffValues: node.FlatDiffValues(),
-		flatValues:     node.FlatValues(),
-	}
-	tree := &ProfileTree{Roots: &ProfileTreeRootNode{
-		CumulativeValue: pt.RootCumulativeValue(),
-		ProfileTreeNode: cur,
-	}}
-	stack := ProfileTreeStack{{node: cur}}
-
-	steppedInto := it.StepInto()
-	if !steppedInto {
-		return tree
-	}
-
-	for it.HasMore() {
-		if it.NextChild() {
-			node := it.At()
-			cur := &ProfileTreeNode{
-				locationID:     node.LocationID(),
-				flatDiffValues: node.FlatDiffValues(),
-				flatValues:     node.FlatValues(),
-			}
-
-			stack.Peek().node.Children = append(stack.Peek().node.Children, cur)
-
-			steppedInto := it.StepInto()
-			if steppedInto {
-				stack.Push(&ProfileTreeStackEntry{
-					node: cur,
-				})
-			}
-			continue
-		}
-		it.StepUp()
-		stack.Pop()
-	}
-
-	return tree
-}
-
 type InstantProfile interface {
-	ProfileTree() InstantProfileTree
 	ProfileMeta() InstantProfileMeta
 	Samples() map[string]*Sample
 }
@@ -149,23 +67,6 @@ type ProfileSeriesIterator interface {
 
 type ProfileSeries interface {
 	Iterator() ProfileSeriesIterator
-}
-
-type Profile struct {
-	Tree *ProfileTree
-	Meta InstantProfileMeta
-}
-
-func (p *Profile) ProfileTree() InstantProfileTree {
-	return p.Tree
-}
-
-func (p *Profile) ProfileMeta() InstantProfileMeta {
-	return p.Meta
-}
-
-func (p *Profile) Samples() map[string]*Sample {
-	panic("won't be implemented - use FlatProfile instead")
 }
 
 type SliceProfileSeriesIterator struct {
@@ -189,38 +90,6 @@ func (i *SliceProfileSeriesIterator) At() InstantProfile {
 
 func (i *SliceProfileSeriesIterator) Err() error {
 	return i.err
-}
-
-// ProfilesFromPprof extracts a Profile from each sample index included in the
-// pprof profile.
-func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) ([]*Profile, error) {
-	ps := make([]*Profile, 0, len(p.SampleType))
-
-	for i := range p.SampleType {
-		tree, err := ProfileTreeFromPprof(ctx, l, s, p, i)
-		if err != nil {
-			return nil, err
-		}
-
-		ps = append(ps, &Profile{
-			Tree: tree,
-			Meta: ProfileMetaFromPprof(p, i),
-		})
-	}
-
-	return ps, nil
-}
-
-func ProfileFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*Profile, error) {
-	tree, err := ProfileTreeFromPprof(ctx, l, s, p, sampleIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Profile{
-		Tree: tree,
-		Meta: ProfileMetaFromPprof(p, sampleIndex),
-	}, nil
 }
 
 func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {
@@ -249,31 +118,8 @@ func (p *ScaledInstantProfile) ProfileMeta() InstantProfileMeta {
 	return p.p.ProfileMeta()
 }
 
-func (p *ScaledInstantProfile) ProfileTree() InstantProfileTree {
-	return &ScaledInstantProfileTree{
-		tree:  p.p.ProfileTree(),
-		ratio: p.ratio,
-	}
-}
-
 func (p *ScaledInstantProfile) Samples() map[string]*Sample {
 	return p.p.Samples()
-}
-
-type ScaledInstantProfileTree struct {
-	tree  InstantProfileTree
-	ratio float64
-}
-
-func (t *ScaledInstantProfileTree) RootCumulativeValue() int64 {
-	return 0
-}
-
-func (t *ScaledInstantProfileTree) Iterator() InstantProfileTreeIterator {
-	return &ScaledInstantProfileTreeIterator{
-		it:    t.tree.Iterator(),
-		ratio: t.ratio,
-	}
 }
 
 type ScaledInstantProfileTreeIterator struct {
