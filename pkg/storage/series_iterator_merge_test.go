@@ -20,7 +20,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -47,7 +46,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p, err := ProfileFromPprof(ctx, log.NewNopLogger(), s, pprof1, 0)
+	p, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), s, pprof1, 0)
 	require.NoError(t, err)
 
 	db := OpenDB(prometheus.NewRegistry(), tracer, nil)
@@ -63,7 +62,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 	n := 1024
 	for j := 0; j < n; j++ {
 		p.Meta.Timestamp = int64(j + 1)
-		err = app.Append(ctx, p)
+		err = app.AppendFlat(ctx, p)
 		require.NoError(t, err)
 	}
 
@@ -71,21 +70,19 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 		ctx,
 		int64(0),
 		int64(n),
-		true,
 	).Select(nil, &labels.Matcher{
 		Type:  labels.MatchEqual,
 		Name:  "__name__",
 		Value: "allocs",
 	})
 
-	p1, err := MergeSeriesSetProfiles(ctx, tracer, true, set)
+	p1, err := MergeSeriesSetProfiles(ctx, tracer, set)
 	require.NoError(t, err)
 
 	set = db.Querier(
 		ctx,
 		int64(0),
 		int64(n),
-		true,
 	).Select(&SelectHints{
 		Start: int64(0),
 		End:   int64(n),
@@ -95,7 +92,7 @@ func TestMergeMemSeriesConsistency(t *testing.T) {
 		Name:  "__name__",
 		Value: "allocs",
 	})
-	p2, err := MergeSeriesSetProfiles(ctx, tracer, true, set)
+	p2, err := MergeSeriesSetProfiles(ctx, tracer, set)
 	require.NoError(t, err)
 
 	require.Equal(t, p1, p2)

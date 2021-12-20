@@ -525,15 +525,8 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 			app, err := s.Appender()
 			require.NoError(t, err)
 
-			pt := NewProfileTree()
-			pt.Insert(makeSample(1, []uuid.UUID{
-				uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			}))
-
 			for i := int64(1); i <= 500; i++ {
-				require.NoError(t, app.Append(ctx, &Profile{
-					Tree: pt,
+				require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
 					Meta: InstantProfileMeta{Timestamp: i},
 				}))
 			}
@@ -548,70 +541,11 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 			require.Equal(t, tc.left, len(s.durations))
 			require.Equal(t, tc.left, len(s.periods))
 
-			for _, c := range s.flatValues {
+			for _, c := range s.samples {
 				require.Equal(t, tc.left, len(c))
 			}
 		})
 	}
-}
-
-func TestMemSeries_truncateChunksBeforeConcurrent(t *testing.T) {
-	ctx := context.Background()
-	s := NewMemSeries(0, labels.FromStrings("a", "b"), func(i int64) {}, newHeadChunkPool())
-
-	app, err := s.Appender()
-	require.NoError(t, err)
-
-	pt := NewProfileTree()
-	pt.Insert(makeSample(1, []uuid.UUID{
-		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-	}))
-
-	for i := int64(1); i < 500; i++ {
-		require.NoError(t, app.Append(ctx, &Profile{
-			Tree: pt,
-			Meta: InstantProfileMeta{Timestamp: i},
-		}))
-	}
-
-	// Truncating won't do anything here.
-	require.Equal(t, 0, s.truncateChunksBefore(75))
-	require.Equal(t, int64(1), s.minTime)
-	require.Equal(t, int64(499), s.maxTime)
-
-	// Truncate the first two chunks.
-	require.Equal(t, 2, s.truncateChunksBefore(256))
-
-	require.Equal(t, int64(241), s.minTime)
-	require.Equal(t, int64(499), s.maxTime)
-
-	// Test for appending working correctly after truncating.
-	for i := int64(500); i < 1_000; i++ {
-		require.NoError(t, app.Append(ctx, &Profile{
-			Tree: pt,
-			Meta: InstantProfileMeta{Timestamp: i},
-		}))
-	}
-
-	require.Equal(t, int64(241), s.minTime)
-	require.Equal(t, int64(999), s.maxTime)
-
-	// Truncate all chunks.
-	require.Equal(t, 7, s.truncateChunksBefore(1_234))
-	require.Equal(t, int64(math.MaxInt64), s.minTime)
-	require.Equal(t, int64(math.MinInt64), s.maxTime)
-
-	// Append more profiles after truncating all chunks.
-	for i := int64(1_100); i < 1_234; i++ {
-		require.NoError(t, app.Append(ctx, &Profile{
-			Tree: pt,
-			Meta: InstantProfileMeta{Timestamp: i},
-		}))
-	}
-
-	require.Equal(t, int64(1_100), s.minTime)
-	require.Equal(t, int64(1_233), s.maxTime)
 }
 
 func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
@@ -687,16 +621,22 @@ func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {
 	app, err := s.Appender()
 	require.NoError(b, err)
 
-	pt := NewProfileTree()
-	pt.Insert(makeSample(1, []uuid.UUID{
+	sample := makeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-	}))
-	p := &Profile{Tree: pt}
+	})
+	sampleKey := makeStacktraceKey(sample)
+
+	p := &FlatProfile{
+		Meta: InstantProfileMeta{},
+		samples: map[string]*Sample{
+			string(sampleKey): sample,
+		},
+	}
 
 	for i := 1; i <= b.N; i++ {
 		p.Meta.Timestamp = int64(i)
-		_ = app.Append(ctx, p)
+		_ = app.AppendFlat(ctx, p)
 	}
 
 	// Truncate the first roughly 2/3 of all chunks.

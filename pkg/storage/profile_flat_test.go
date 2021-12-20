@@ -49,7 +49,7 @@ func TestProfileFlatNormalizer(t *testing.T) {
 
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "nanoseconds"},
-		SampleType: ValueType{Type: "numSamples", Unit: "count"},
+		SampleType: ValueType{Type: "samples", Unit: "count"},
 		Timestamp:  1626013307085,
 		Duration:   30000181568,
 		Period:     10 * time.Millisecond.Nanoseconds(),

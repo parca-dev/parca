@@ -104,5 +104,9 @@ func (p *ScaledInstantProfile) ProfileMeta() InstantProfileMeta {
 }
 
 func (p *ScaledInstantProfile) Samples() map[string]*Sample {
-	return p.p.Samples()
+	samples := p.p.Samples()
+	for _, s := range samples {
+		s.Value = int64(p.ratio * float64(s.Value))
+	}
+	return samples
 }

@@ -39,8 +39,7 @@ func BenchmarkHeadQuerier_Select(b *testing.B) {
 	for i := 1; i <= numSeries; i++ {
 		app, err := h.Appender(ctx, labels.FromStrings("foo", "bar", "s", fmt.Sprintf("%d%s", i, postingsBenchSuffix)))
 		require.NoError(b, err)
-		err = app.Append(ctx, &Profile{
-			Tree: NewProfileTree(),
+		err = app.AppendFlat(ctx, &FlatProfile{
 			Meta: InstantProfileMeta{
 				Timestamp: int64(i),
 			},
@@ -52,7 +51,7 @@ func BenchmarkHeadQuerier_Select(b *testing.B) {
 
 	for s := 1; s <= numSeries; s *= 10 {
 		b.Run(fmt.Sprintf("%dof%d", s, numSeries), func(b *testing.B) {
-			q := h.Querier(ctx, 0, int64(s), false)
+			q := h.Querier(ctx, 0, int64(s))
 
 			b.ReportAllocs()
 			b.ResetTimer()

@@ -23,50 +23,11 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/google/uuid"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
-
-func TestGeneratePprof(t *testing.T) {
-	ctx := context.Background()
-
-	f, err := os.Open("testdata/alloc_objects.pb.gz")
-	require.NoError(t, err)
-	p1, err := profile.Parse(f)
-	require.NoError(t, err)
-	require.NoError(t, f.Close())
-
-	l := metastore.NewBadgerMetastore(
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
-		metastore.NewRandomUUIDGenerator(),
-	)
-	t.Cleanup(func() {
-		l.Close()
-	})
-	p, err := ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
-	require.NoError(t, err)
-	res, err := GeneratePprof(ctx, l, p)
-	require.NoError(t, err)
-
-	tmpfile, err := ioutil.TempFile("", "pprof")
-	defer os.Remove(tmpfile.Name())
-	require.NoError(t, err)
-	require.NoError(t, res.Write(tmpfile))
-	require.NoError(t, tmpfile.Close())
-
-	f, err = os.Open(tmpfile.Name())
-	require.NoError(t, err)
-	resProf, err := profile.Parse(f)
-	require.NoError(t, err)
-	require.NoError(t, f.Close())
-	require.NoError(t, resProf.CheckValid())
-}
 
 func TestGenerateFlatPprof(t *testing.T) {
 	ctx := context.Background()

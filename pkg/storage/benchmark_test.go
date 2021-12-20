@@ -170,9 +170,9 @@ func BenchmarkIterator(b *testing.B) {
 
 	var q storage.Querier
 	if b.N == 1 {
-		q = db.Querier(context.Background(), math.MinInt64, math.MaxInt64, false)
+		q = db.Querier(context.Background(), math.MinInt64, math.MaxInt64)
 	} else {
-		q = db.Querier(context.Background(), 1614253659535, 1614262838920, false)
+		q = db.Querier(context.Background(), 1614253659535, 1614262838920)
 	}
 
 	b.ReportAllocs()
