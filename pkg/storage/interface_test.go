@@ -17,8 +17,21 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/stretchr/testify/require"
 )
+
+func makeSample(value int64, locationIds []uuid.UUID) *Sample {
+	s := &Sample{
+		Value: value,
+	}
+
+	for _, id := range locationIds {
+		s.Location = append(s.Location, &metastore.Location{ID: id})
+	}
+
+	return s
+}
 
 func TestScaledInstantProfile(t *testing.T) {
 	s1 := makeSample(2, []uuid.UUID{

@@ -77,7 +77,6 @@ func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore
 	}
 
 	for _, s := range ip.Samples() {
-
 		locations := make([]*profile.Location, 0, len(s.Location))
 		for _, l := range s.Location {
 			if loc, ok := locationByID[string(l.ID[:])]; ok {
@@ -89,21 +88,23 @@ func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore
 				pm *profile.Mapping
 				ok bool
 			)
-			if pm, ok = mappingByID[string(l.Mapping.Id)]; !ok {
-				lm := l.Mapping
-				pm := &profile.Mapping{
-					ID:              0, // set later
-					Start:           lm.Start,
-					Limit:           lm.Limit,
-					Offset:          lm.Offset,
-					File:            lm.File,
-					BuildID:         lm.BuildId,
-					HasFunctions:    lm.HasFunctions,
-					HasFilenames:    lm.HasFilenames,
-					HasLineNumbers:  lm.HasLineNumbers,
-					HasInlineFrames: lm.HasInlineFrames,
+			if l.Mapping != nil {
+				if pm, ok = mappingByID[string(l.Mapping.Id)]; !ok {
+					lm := l.Mapping
+					pm := &profile.Mapping{
+						ID:              0, // set later
+						Start:           lm.Start,
+						Limit:           lm.Limit,
+						Offset:          lm.Offset,
+						File:            lm.File,
+						BuildID:         lm.BuildId,
+						HasFunctions:    lm.HasFunctions,
+						HasFilenames:    lm.HasFilenames,
+						HasLineNumbers:  lm.HasLineNumbers,
+						HasInlineFrames: lm.HasInlineFrames,
+					}
+					mappingByID[string(lm.Id)] = pm
 				}
-				mappingByID[string(lm.Id)] = pm
 			}
 
 			lines := make([]profile.Line, 0, len(l.Lines))

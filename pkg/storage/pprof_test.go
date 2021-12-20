@@ -23,6 +23,8 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -144,13 +146,17 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	l2.ID, err = uuid.FromBytes(l2ID)
 	require.NoError(t, err)
 
-	pt := NewProfileTree()
-	pt.Insert(makeSample(2, []uuid.UUID{
+	sample := makeSample(2, []uuid.UUID{
 		l2.ID,
 		l1.ID,
-	}))
+	})
+	key := makeStacktraceKey(sample)
 
-	res, err := GeneratePprof(ctx, l, &Profile{Tree: pt})
+	res, err := GenerateFlatPprof(ctx, l, &FlatProfile{
+		samples: map[string]*Sample{
+			string(key): sample,
+		},
+	})
 	require.NoError(t, err)
 
 	tmpfile, err := ioutil.TempFile("", "pprof")
