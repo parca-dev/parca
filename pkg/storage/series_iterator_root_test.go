@@ -53,13 +53,8 @@ func TestMemRootSeries_Iterator(t *testing.T) {
 		for it.Next() {
 			p := it.At()
 			require.Equal(t, seen, p.ProfileMeta().Timestamp)
-
-			itt := p.ProfileTree().Iterator()
-			for itt.HasMore() {
-				if itt.NextChild() {
-					itt.StepInto()
-				}
-				itt.StepUp()
+			for _, sample := range p.Samples() {
+				require.Equal(t, seen, sample.Value)
 			}
 			seen++
 		}
