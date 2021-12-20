@@ -63,7 +63,7 @@ type MemSeriesInstantFlatProfile struct {
 	durationsIterator  MemSeriesValuesIterator
 	periodsIterator    MemSeriesValuesIterator
 
-	sampleIterators map[string]MemSeriesValuesIterator
+	sampleIterators map[string]*MultiChunksIterator
 }
 
 func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {

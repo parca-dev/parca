@@ -57,9 +57,7 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		rootIt.Seek(start)
 	}
 
-	var sampleIterators map[string]MemSeriesValuesIterator
-
-	sampleIterators = make(map[string]MemSeriesValuesIterator, len(rs.s.samples))
+	sampleIterators := make(map[string]*MultiChunksIterator, len(rs.s.samples))
 	for key, chunks := range rs.s.samples {
 		sampleIterators[key] = NewMultiChunkIterator(chunks)
 	}
@@ -72,6 +70,9 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		timestampIterator.Seek(start)
 		durationsIterator.Seek(start)
 		periodsIterator.Seek(start)
+		for _, sampleIterator := range sampleIterators {
+			sampleIterator.Seek(start)
+		}
 	}
 
 	if end-start < numSamples {
@@ -101,7 +102,7 @@ type MemRangeSeriesIterator struct {
 	durationsIterator  MemSeriesValuesIterator
 	periodsIterator    MemSeriesValuesIterator
 
-	sampleIterators map[string]MemSeriesValuesIterator
+	sampleIterators map[string]*MultiChunksIterator
 
 	numSamples uint64 // uint16 might not be enough for many chunks (~500+)
 	err        error
@@ -159,6 +160,10 @@ func (it *MemRangeSeriesIterator) Next() bool {
 	for _, sit := range it.sampleIterators {
 		if !sit.Next() {
 			it.err = errors.New("unexpected end of numSamples iterator")
+			return false
+		}
+		if sread := sit.Read(); sread != read {
+			it.err = fmt.Errorf("sample iterator in wrong iteration, expected %d got %d", read, sread)
 			return false
 		}
 	}
