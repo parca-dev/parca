@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
@@ -28,39 +29,36 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 	app, err := s.Appender()
 	require.NoError(t, err)
 
+	s1 := makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
+	k1 := makeStacktraceKey(s1)
+
 	for i := 1; i <= 500; i++ {
-		p := Profile{
+		s1.Value = int64(i)
+		p := &FlatProfile{
 			Meta: InstantProfileMeta{
 				Timestamp: int64(i),
 				Duration:  time.Second.Nanoseconds(),
 				Period:    time.Second.Nanoseconds(),
 			},
-			Tree: &ProfileTree{
-				Roots: &ProfileTreeRootNode{
-					ProfileTreeNode: &ProfileTreeNode{
-						flatValues: []*ProfileTreeValueNode{{Value: int64(i)}},
-					},
-				},
+			samples: map[string]*Sample{
+				string(k1): s1,
 			},
 		}
-		err = app.Append(ctx, &p)
+		err = app.AppendFlat(ctx, p)
 		require.NoError(t, err)
 	}
 
-	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420, trees: true}).Iterator()
+	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420}).Iterator()
 
 	seen := int64(75)
 	for it.Next() {
 		p := it.At()
 		require.Equal(t, seen, p.ProfileMeta().Timestamp)
-
-		itt := p.ProfileTree().Iterator()
-		for itt.HasMore() {
-			if itt.NextChild() {
-				require.Equal(t, seen, itt.At().FlatValues()[0].Value)
-				itt.StepInto()
-			}
-			itt.StepUp()
+		for _, sample := range p.Samples() {
+			require.Equal(t, seen, sample.Value)
 		}
 		seen++
 	}
