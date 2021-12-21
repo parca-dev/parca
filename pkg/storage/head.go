@@ -108,7 +108,7 @@ func NewHead(r prometheus.Registerer, tracer trace.Tracer, opts *HeadOptions) *H
 		}, []string{"values"}),
 		seriesChunksSamples: prometheus.NewSummaryVec(prometheus.SummaryOpts{
 			Name:       "parca_tsdb_head_series_chunk_samples",
-			Help:       "The amount of samples in the cumulative and flat chunks.",
+			Help:       "The amount of numSamples in the cumulative and flat chunks.",
 			Objectives: map[float64]float64{0.1: 0.05, 0.2: 0.05, 0.3: 0.05, 0.4: 0.05, 0.5: 0.05, 0.6: 0.05, 0.7: 0.05, 0.8: 0.05, 0.9: 0.01, 0.99: 0.001},
 		}, []string{"values"}),
 		profilesAppended: prometheus.NewCounter(prometheus.CounterOpts{
@@ -239,22 +239,6 @@ type initAppender struct {
 	head *Head
 }
 
-func (a *initAppender) Append(ctx context.Context, p *Profile) error {
-	if a.app != nil {
-		return a.app.Append(ctx, p)
-	}
-
-	a.head.initTime(p.Meta.Timestamp)
-
-	var err error
-	a.app, err = a.head.appender(ctx, a.lset)
-	if err != nil {
-		return err
-	}
-
-	return a.app.Append(ctx, p)
-}
-
 func (a *initAppender) AppendFlat(ctx context.Context, p *FlatProfile) error {
 	if a.app != nil {
 		return a.app.AppendFlat(ctx, p)
@@ -286,9 +270,9 @@ func (h *Head) stats() {
 		h.series.locks[i].RLock()
 		for _, memSeries := range series {
 			stats := memSeries.stats()
-			h.seriesValues.WithLabelValues("flat").Observe(float64(len(stats.Flat)))
+			h.seriesValues.WithLabelValues("flat").Observe(float64(len(stats.samples)))
 
-			for _, s := range stats.Flat {
+			for _, s := range stats.samples {
 				h.seriesChunksSize.WithLabelValues("flat").Observe(float64(s.bytes))
 				h.seriesChunksSamples.WithLabelValues("flat").Observe(float64(s.samples))
 			}
@@ -331,13 +315,12 @@ func (h *Head) appender(ctx context.Context, lset labels.Labels) (Appender, erro
 	return s.Appender()
 }
 
-func (h *Head) Querier(ctx context.Context, mint, maxt int64, trees bool) Querier {
+func (h *Head) Querier(ctx context.Context, mint, maxt int64) Querier {
 	return &HeadQuerier{
-		head:  h,
-		ctx:   ctx,
-		mint:  mint,
-		maxt:  maxt,
-		trees: trees,
+		head: h,
+		ctx:  ctx,
+		mint: mint,
+		maxt: maxt,
 	}
 }
 
@@ -345,7 +328,6 @@ type HeadQuerier struct {
 	head       *Head
 	ctx        context.Context
 	mint, maxt int64
-	trees      bool
 }
 
 func (q *HeadQuerier) LabelNames(ms ...*labels.Matcher) ([]string, Warnings, error) {
@@ -418,17 +400,11 @@ func (q *HeadQuerier) Select(hints *SelectHints, ms ...*labels.Matcher) SeriesSe
 		if seriesMinTime > maxt {
 			continue
 		}
-		// Only need for profile trees now,
-		// flat profiles can simply use the generic MemRangeSeries.
-		if hints != nil && hints.Merge && q.trees {
-			ss = append(ss, &MemMergeSeries{s: s, mint: mint, maxt: maxt})
-			continue
-		}
 		if hints != nil && hints.Root {
-			ss = append(ss, &MemRootSeries{s: s, mint: mint, maxt: maxt, trees: q.trees})
+			ss = append(ss, &MemRootSeries{s: s, mint: mint, maxt: maxt})
 			continue
 		}
-		ss = append(ss, &MemRangeSeries{s: s, mint: mint, maxt: maxt, trees: q.trees})
+		ss = append(ss, &MemRangeSeries{s: s, mint: mint, maxt: maxt})
 	}
 
 	return &SliceSeriesSet{

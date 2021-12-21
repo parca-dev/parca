@@ -22,10 +22,9 @@ import (
 
 // MemRootSeries is an iterator that only queries the cumulative values for the root of each series.
 type MemRootSeries struct {
-	s     *MemSeries
-	mint  int64
-	maxt  int64
-	trees bool
+	s    *MemSeries
+	mint int64
+	maxt int64
 }
 
 func (rs *MemRootSeries) Labels() labels.Labels {
@@ -78,8 +77,6 @@ func (rs *MemRootSeries) Iterator() ProfileSeriesIterator {
 		rootIterator:       rootIterator,
 
 		numSamples: numSamples,
-
-		trees: rs.trees,
 	}
 }
 
@@ -93,8 +90,6 @@ type MemRootSeriesIterator struct {
 
 	numSamples uint64
 	err        error
-
-	trees bool
 }
 
 func (it *MemRootSeriesIterator) Next() bool {
@@ -135,31 +130,15 @@ func (it *MemRootSeriesIterator) Next() bool {
 }
 
 func (it *MemRootSeriesIterator) At() InstantProfile {
-	if it.trees {
-		return &Profile{
-			Meta: InstantProfileMeta{
-				Timestamp:  it.timestampsIterator.At(),
-				PeriodType: it.s.periodType,
-				SampleType: it.s.sampleType,
-			},
-			Tree: &ProfileTree{
-				Roots: &ProfileTreeRootNode{
-					CumulativeValue: it.rootIterator.At(),
-					ProfileTreeNode: &ProfileTreeNode{},
-				},
-			},
-		}
-	} else {
-		return &FlatProfile{
-			Meta: InstantProfileMeta{
-				Timestamp:  it.timestampsIterator.At(),
-				PeriodType: it.s.periodType,
-				SampleType: it.s.sampleType,
-			},
-			samples: map[string]*Sample{
-				"": {Value: it.rootIterator.At()},
-			},
-		}
+	return &FlatProfile{
+		Meta: InstantProfileMeta{
+			Timestamp:  it.timestampsIterator.At(),
+			PeriodType: it.s.periodType,
+			SampleType: it.s.sampleType,
+		},
+		samples: map[string]*Sample{
+			"": {Value: it.rootIterator.At()},
+		},
 	}
 }
 

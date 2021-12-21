@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"go.opentelemetry.io/otel/trace"
@@ -48,16 +47,6 @@ type MemSeries struct {
 	mu sync.RWMutex
 
 	samples map[string][]chunkenc.Chunk
-	// TODO: Remove this after having implemented the metastore stacktraces.
-	locations map[string][]*metastore.Location
-
-	// TODO: part of profileTree - eventually remove it
-	// Flat values as well as labels by the node's ProfileTreeValueNodeKey.
-	flatValues map[ProfileTreeValueNodeKey][]chunkenc.Chunk
-	labels     map[ProfileTreeValueNodeKey]map[string][]string
-	numLabels  map[ProfileTreeValueNodeKey]map[string][]int64
-	numUnits   map[ProfileTreeValueNodeKey]map[string][]string
-	seriesTree *MemSeriesTree
 
 	numSamples uint16
 
@@ -81,21 +70,13 @@ func NewMemSeries(id uint64, lset labels.Labels, updateMaxTime func(int64), chun
 		periods:    make([]chunkenc.Chunk, 0, 1),
 		root:       make([]chunkenc.Chunk, 0, 1),
 
-		samples:   make(map[string][]chunkenc.Chunk),
-		locations: make(map[string][]*metastore.Location),
-
-		// TODO: part of profileTree - eventually remove it
-		flatValues: make(map[ProfileTreeValueNodeKey][]chunkenc.Chunk),
-		labels:     make(map[ProfileTreeValueNodeKey]map[string][]string),
-		numLabels:  make(map[ProfileTreeValueNodeKey]map[string][]int64),
-		numUnits:   make(map[ProfileTreeValueNodeKey]map[string][]string),
+		samples: make(map[string][]chunkenc.Chunk),
 
 		updateMaxTime: updateMaxTime,
 		tracer:        trace.NewNoopTracerProvider().Tracer(""),
 
 		chunkPool: chunkPool,
 	}
-	s.seriesTree = &MemSeriesTree{s: s}
 
 	return s
 }
@@ -113,17 +94,9 @@ func (s *MemSeries) Appender() (*MemSeriesAppender, error) {
 	return &MemSeriesAppender{s: s}, nil
 }
 
-func (s *MemSeries) appendTree(profileTree *ProfileTree) error {
-	if s.seriesTree == nil {
-		s.seriesTree = &MemSeriesTree{s: s}
-	}
-
-	return s.seriesTree.Insert(s.numSamples%samplesPerChunk, profileTree)
-}
-
 type MemSeriesStats struct {
-	samples uint16
-	Flat    []MemSeriesValueStats
+	numSamples uint16
+	samples    []MemSeriesValueStats
 }
 
 type MemSeriesValueStats struct {
@@ -135,11 +108,11 @@ func (s *MemSeries) stats() MemSeriesStats {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	flat := make([]MemSeriesValueStats, 0, len(s.flatValues))
+	samples := make([]MemSeriesValueStats, 0, len(s.samples))
 
-	for _, chunks := range s.flatValues {
+	for _, chunks := range s.samples {
 		for _, c := range chunks {
-			flat = append(flat, MemSeriesValueStats{
+			samples = append(samples, MemSeriesValueStats{
 				samples: c.NumSamples(),
 				bytes:   len(c.Bytes()),
 			})
@@ -147,8 +120,8 @@ func (s *MemSeries) stats() MemSeriesStats {
 	}
 
 	return MemSeriesStats{
-		samples: s.numSamples,
-		Flat:    flat,
+		numSamples: s.numSamples,
+		samples:    samples,
 	}
 }
 
@@ -161,149 +134,6 @@ type MemSeriesAppender struct {
 }
 
 const samplesPerChunk = 120
-
-func (a *MemSeriesAppender) Append(ctx context.Context, p *Profile) error {
-	ctx, span := a.s.tracer.Start(ctx, "AppendTree")
-	defer span.End()
-
-	a.s.mu.Lock()
-	defer a.s.mu.Unlock()
-
-	if a.s.numSamples == 0 {
-		a.s.periodType = p.Meta.PeriodType
-		a.s.sampleType = p.Meta.SampleType
-	}
-
-	if !equalValueType(a.s.periodType, p.Meta.PeriodType) {
-		return ErrPeriodTypeMismatch
-	}
-
-	if !equalValueType(a.s.sampleType, p.Meta.SampleType) {
-		return ErrSampleTypeMismatch
-	}
-
-	timestamp := p.Meta.Timestamp
-
-	if timestamp <= a.s.maxTime {
-		return ErrOutOfOrderSample
-	}
-
-	newChunks := false
-	if len(a.s.timestamps) == 0 {
-		newChunks = true
-	} else if a.s.timestamps[len(a.s.timestamps)-1].chunk.NumSamples() == 0 {
-		newChunks = true
-	} else if a.s.timestamps[len(a.s.timestamps)-1].chunk.NumSamples() >= samplesPerChunk {
-		newChunks = true
-	}
-
-	if newChunks {
-		_, newChunksSpan := a.s.tracer.Start(ctx, "newChunks")
-		defer newChunksSpan.End()
-
-		tc := a.s.chunkPool.GetTimestamp()
-		tc.minTime = timestamp
-		tc.maxTime = timestamp
-		a.s.timestamps = append(a.s.timestamps, tc)
-		timeApp, err := a.s.timestamps[len(a.s.timestamps)-1].chunk.Appender()
-		if err != nil {
-			return fmt.Errorf("failed to add the next timestamp chunk: %w", err)
-		}
-		a.timestamps = timeApp
-
-		a.s.durations = append(a.s.durations, a.s.chunkPool.GetRLE())
-		durationApp, err := a.s.durations[len(a.s.durations)-1].Appender()
-		if err != nil {
-			return fmt.Errorf("failed to add the next durations chunk: %w", err)
-		}
-		a.duration = durationApp
-
-		a.s.periods = append(a.s.periods, a.s.chunkPool.GetRLE())
-		periodsApp, err := a.s.periods[len(a.s.periods)-1].Appender()
-		if err != nil {
-			return fmt.Errorf("failed to add the next periods chunk: %w", err)
-		}
-		a.periods = periodsApp
-
-		a.s.root = append(a.s.root, a.s.chunkPool.GetXOR())
-		rootApp, err := a.s.root[len(a.s.root)-1].Appender()
-		if err != nil {
-			return fmt.Errorf("failed to add the next root chunk: %w", err)
-		}
-		a.root = rootApp
-
-		for k := range a.s.flatValues {
-			for len(a.s.flatValues[k]) < len(a.s.timestamps) {
-				a.s.flatValues[k] = append(a.s.flatValues[k], a.s.chunkPool.GetXOR())
-			}
-		}
-
-		newChunksSpan.End()
-	}
-
-	if a.timestamps == nil {
-		app, err := a.s.timestamps[len(a.s.timestamps)-1].chunk.Appender()
-		if err != nil {
-			return fmt.Errorf("failed to add the next timestamp chunk: %w", err)
-		}
-		a.timestamps = app
-	}
-	if a.duration == nil {
-		app, err := a.s.durations[len(a.s.durations)-1].Appender()
-		if err != nil {
-			return fmt.Errorf("failed to add the next duration chunk: %w", err)
-		}
-		a.duration = app
-	}
-	if a.periods == nil {
-		app, err := a.s.periods[len(a.s.periods)-1].Appender()
-		if err != nil {
-			return fmt.Errorf("failed to add the next periods chunk: %w", err)
-		}
-		a.periods = app
-	}
-	if a.root == nil {
-		app, err := a.s.root[len(a.s.root)-1].Appender()
-		if err != nil {
-			return fmt.Errorf("failed to add the next root chunk: %w", err)
-		}
-		a.root = app
-	}
-
-	a.timestamps.AppendAt(a.s.numSamples%samplesPerChunk, timestamp)
-	a.duration.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Duration)
-	a.periods.AppendAt(a.s.numSamples%samplesPerChunk, p.Meta.Period)
-	a.root.AppendAt(a.s.numSamples%samplesPerChunk, p.ProfileTree().RootCumulativeValue())
-
-	if a.s.timestamps[len(a.s.timestamps)-1].minTime > timestamp {
-		a.s.timestamps[len(a.s.timestamps)-1].minTime = timestamp
-	}
-	if a.s.timestamps[len(a.s.timestamps)-1].maxTime < timestamp {
-		a.s.timestamps[len(a.s.timestamps)-1].maxTime = timestamp
-	}
-
-	// Set the timestamp as minTime if timestamp != 0
-	if a.s.minTime == math.MaxInt64 && timestamp != 0 {
-		a.s.minTime = timestamp
-	}
-
-	_, appendTreeSpan := a.s.tracer.Start(ctx, "appendTree")
-	// appendTree locks the maps itself.
-	if err := a.s.appendTree(p.Tree); err != nil {
-		appendTreeSpan.End()
-		return err
-	}
-	appendTreeSpan.End()
-
-	a.s.storeMaxTime(timestamp)
-
-	a.s.numSamples++
-
-	if a.s.samplesAppended != nil {
-		a.s.samplesAppended.Inc()
-	}
-	return nil
-}
 
 func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) error {
 	ctx, span := a.s.tracer.Start(ctx, "AppendFlat")
@@ -445,11 +275,6 @@ func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) erro
 		}
 		app.AppendAt(a.s.numSamples%samplesPerChunk, s.Value)
 
-		// TODO: Eventually this should be referenced by stacktrace key with the new metastore
-		if _, found := a.s.locations[k]; !found {
-			a.s.locations[k] = s.Location
-		}
-
 		rootCumulative += s.Value
 	}
 
@@ -498,13 +323,6 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 		s.periods = s.periods[:0]
 		s.root = s.root[:0]
 
-		for key, chunks := range s.flatValues {
-			for _, c := range chunks {
-				_ = s.chunkPool.Put(c)
-			}
-			s.flatValues[key] = chunks[:0]
-		}
-
 		s.minTime = math.MaxInt64
 		s.maxTime = math.MinInt64
 
@@ -539,19 +357,11 @@ func (s *MemSeries) truncateChunksBefore(mint int64) (removed int) {
 	}
 	s.numSamples = numSamples
 
-	for key, chunks := range s.flatValues {
-		s.flatValues[key] = chunks[start:]
-	}
 	for key, chunks := range s.samples {
 		s.samples[key] = chunks[start:]
 	}
 
 	s.minTime = s.timestamps[0].minTime
-
-	// TODO: Truncate seriesTree and labels...
-	// We could somehow a list of the keys for empty chunks while iterating through them above.
-	// With that list we could at least somewhat more quickly figure out which nodes in the tree
-	// and also which labels to get rid of.
 
 	return start
 }

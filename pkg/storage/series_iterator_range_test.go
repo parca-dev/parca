@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
 )
@@ -28,43 +30,84 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 	app, err := s.Appender()
 	require.NoError(t, err)
 
+	s1 := makeSample(2, []uuid.UUID{
+		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	})
+	k1 := makeStacktraceKey(s1)
+
 	for i := 1; i <= 500; i++ {
-		p := Profile{
+		s1.Value = int64(i)
+		p := FlatProfile{
 			Meta: InstantProfileMeta{
 				Timestamp: int64(i),
 				Duration:  time.Second.Nanoseconds(),
 				Period:    time.Second.Nanoseconds(),
 			},
-			Tree: &ProfileTree{
-				Roots: &ProfileTreeRootNode{
-					ProfileTreeNode: &ProfileTreeNode{
-						flatValues: []*ProfileTreeValueNode{{Value: int64(i)}},
-					},
-				},
+			samples: map[string]*Sample{
+				string(k1): s1,
 			},
 		}
-		err = app.Append(ctx, &p)
+		err = app.AppendFlat(ctx, &p)
 		require.NoError(t, err)
 	}
 
-	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420, trees: true}).Iterator()
+	it := (&MemRangeSeries{s: s, mint: 74, maxt: 420}).Iterator()
 
 	seen := int64(75)
 	for it.Next() {
 		p := it.At()
 		require.Equal(t, seen, p.ProfileMeta().Timestamp)
-
-		itt := p.ProfileTree().Iterator()
-		for itt.HasMore() {
-			if itt.NextChild() {
-				require.Equal(t, seen, itt.At().FlatValues()[0].Value)
-				itt.StepInto()
-			}
-			itt.StepUp()
+		for _, sample := range p.Samples() {
+			require.Equal(t, seen, sample.Value)
 		}
 		seen++
 	}
 
 	require.NoError(t, it.Err())
 	require.Equal(t, int64(421), seen) // 421 would be seen next but 420 was the last value.
+}
+
+func TestGetIndexRange(t *testing.T) {
+	c := chunkenc.FromValuesDelta(2, 4, 6, 7, 8)
+
+	start, end, err := getIndexRange(c.Iterator(nil), 5, 1, 9)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), start)
+	require.Equal(t, uint64(5), end)
+
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 2, 9)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), start)
+	require.Equal(t, uint64(5), end)
+
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 3, 6)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(3), end)
+
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 3, 7)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(4), end)
+
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 3, 8)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(5), end)
+
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 3, 9)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), start)
+	require.Equal(t, uint64(5), end)
+
+	start, end, err = getIndexRange(c.Iterator(nil), 5, 5, 7)
+	require.NoError(t, err)
+	require.Equal(t, uint64(2), start)
+	require.Equal(t, uint64(4), end)
+
+	start, end, err = getIndexRange(NewMultiChunkIterator([]chunkenc.Chunk{c}), 123, 1, 12)
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), start)
+	require.Equal(t, uint64(5), end)
 }

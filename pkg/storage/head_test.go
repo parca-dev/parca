@@ -32,16 +32,16 @@ func TestHead_MaxTime(t *testing.T) {
 	app, err := h.Appender(ctx, labels.FromStrings("foo", "bar"))
 	require.NoError(t, err)
 
-	pt := NewProfileTree()
-	pt.Insert(makeSample(1, []uuid.UUID{
+	s := makeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-	}))
+	})
+	k := makeStacktraceKey(s)
 
 	for i := int64(1); i < 500; i++ {
-		require.NoError(t, app.Append(ctx, &Profile{
-			Tree: pt,
-			Meta: InstantProfileMeta{Timestamp: i},
+		require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
+			Meta:    InstantProfileMeta{Timestamp: i},
+			samples: map[string]*Sample{string(k): s},
 		}))
 		require.Equal(t, i, h.MaxTime())
 	}
@@ -127,11 +127,11 @@ func BenchmarkStripeSeries(b *testing.B) {
 func TestHead_Truncate(t *testing.T) {
 	h := NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 
-	pt := NewProfileTree()
-	pt.Insert(makeSample(1, []uuid.UUID{
+	s := makeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-	}))
+	})
+	k := makeStacktraceKey(s)
 
 	ctx := context.Background()
 	{
@@ -139,9 +139,9 @@ func TestHead_Truncate(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := int64(1); i <= 500; i++ {
-			require.NoError(t, app.Append(ctx, &Profile{
-				Tree: pt,
-				Meta: InstantProfileMeta{Timestamp: i},
+			require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
+				Meta:    InstantProfileMeta{Timestamp: i},
+				samples: map[string]*Sample{string(k): s},
 			}))
 		}
 	}
@@ -150,9 +150,9 @@ func TestHead_Truncate(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := int64(100); i < 768; i++ {
-			require.NoError(t, app.Append(ctx, &Profile{
-				Tree: pt,
-				Meta: InstantProfileMeta{Timestamp: i},
+			require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
+				Meta:    InstantProfileMeta{Timestamp: i},
+				samples: map[string]*Sample{string(k): s},
 			}))
 		}
 	}

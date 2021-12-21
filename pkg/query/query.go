@@ -24,7 +24,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/pprof/profile"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/storage"
@@ -49,11 +48,10 @@ var (
 type Query struct {
 	pb.UnimplementedQueryServiceServer
 
-	logger       log.Logger
-	tracer       trace.Tracer
-	queryable    storage.Queryable
-	metaStore    metastore.ProfileMetaStore
-	profileTrees bool // Feature flag to disable profileTree usage - eventually removed
+	logger    log.Logger
+	tracer    trace.Tracer
+	queryable storage.Queryable
+	metaStore metastore.ProfileMetaStore
 }
 
 func New(
@@ -61,14 +59,12 @@ func New(
 	tracer trace.Tracer,
 	queryable storage.Queryable,
 	metaStore metastore.ProfileMetaStore,
-	profileTrees bool,
 ) *Query {
 	return &Query{
-		queryable:    queryable,
-		metaStore:    metaStore,
-		logger:       logger,
-		tracer:       tracer,
-		profileTrees: profileTrees,
+		queryable: queryable,
+		metaStore: metaStore,
+		logger:    logger,
+		tracer:    tracer,
 	}
 }
 
@@ -93,7 +89,6 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 		ctx,
 		timestamp.FromTime(start),
 		timestamp.FromTime(end),
-		q.profileTrees,
 	)
 	set := query.Select(&storage.SelectHints{
 		Start: timestamp.FromTime(start),
@@ -137,21 +132,11 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 				break
 			}
 
-			if q.profileTrees {
+			for _, s := range p.Samples() {
 				metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
 					Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
-					Value:     p.ProfileTree().RootCumulativeValue(),
+					Value:     s.Value,
 				})
-			} else {
-				// TODO: If Samples would be a map we could instantly access the root here
-				for _, s := range p.Samples() {
-					if len(s.Location) == 0 {
-						metricsSeries.Samples = append(metricsSeries.Samples, &pb.MetricsSample{
-							Timestamp: timestamppb.New(timestamp.Time(p.ProfileMeta().Timestamp)),
-							Value:     s.Value,
-						})
-					}
-				}
 			}
 			i++
 		}
@@ -303,15 +288,7 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		var (
-			fg  *pb.Flamegraph
-			err error
-		)
-		if q.profileTrees {
-			fg, err = storage.GenerateFlamegraph(ctx, q.tracer, q.metaStore, p)
-		} else {
-			fg, err = storage.GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
-		}
+		fg, err := storage.GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
@@ -321,20 +298,9 @@ func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ 
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED:
-		var (
-			pp  *profile.Profile
-			err error
-		)
-		if q.profileTrees {
-			pp, err = storage.GeneratePprof(ctx, q.metaStore, p)
-			if err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
-			}
-		} else {
-			pp, err = storage.GenerateFlatPprof(ctx, q.metaStore, p)
-			if err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
-			}
+		pp, err := storage.GenerateFlatPprof(ctx, q.metaStore, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
 		var buf bytes.Buffer
@@ -367,7 +333,6 @@ func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Ti
 		ctx,
 		timestamp.FromTime(t.Add(-5*time.Minute)),
 		timestamp.FromTime(t.Add(5*time.Minute)),
-		q.profileTrees,
 	)
 	set := query.Select(nil, sel...)
 	ctx, seriesSpan := q.tracer.Start(ctx, "seriesIterate")
@@ -408,7 +373,6 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 		ctx,
 		startTs,
 		endTs,
-		q.profileTrees,
 	)
 
 	set := query.Select(&storage.SelectHints{
@@ -417,7 +381,7 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 		Merge: true,
 	}, sel...)
 
-	return storage.MergeSeriesSetProfiles(ctx, q.tracer, q.profileTrees, set)
+	return storage.MergeSeriesSetProfiles(ctx, q.tracer, set)
 }
 
 // Series issues a series request against the storage
@@ -448,7 +412,6 @@ func (q *Query) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsRe
 		ctx,
 		timestamp.FromTime(start),
 		timestamp.FromTime(end),
-		q.profileTrees,
 	)
 
 	var (
@@ -514,7 +477,6 @@ func (q *Query) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesRe
 		ctx,
 		timestamp.FromTime(start),
 		timestamp.FromTime(end),
-		q.profileTrees,
 	)
 
 	var (

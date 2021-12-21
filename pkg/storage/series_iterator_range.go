@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
 
@@ -28,8 +27,6 @@ type MemRangeSeries struct {
 	s    *MemSeries
 	mint int64
 	maxt int64
-
-	trees bool
 }
 
 func (rs *MemRangeSeries) Labels() labels.Labels {
@@ -60,59 +57,9 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		rootIt.Seek(start)
 	}
 
-	var sampleIterators map[string]MemSeriesValuesIterator
-
-	root := &MemSeriesIteratorTreeNode{}
-	if rs.trees {
-		memItStack := MemSeriesIteratorTreeStack{{
-			node:  root,
-			child: 0,
-		}}
-
-		treeIt := rs.s.seriesTree.Iterator()
-
-		for treeIt.HasMore() {
-			if treeIt.NextChild() {
-				child := treeIt.At()
-
-				n := &MemSeriesIteratorTreeNode{
-					locationID: child.LocationID,
-					Children:   make([]*MemSeriesIteratorTreeNode, 0, len(child.Children)),
-				}
-
-				for _, key := range child.keys {
-					if chunks, ok := rs.s.flatValues[key]; ok {
-						it := NewMultiChunkIterator(chunks[chunkStart:chunkEnd])
-						if start != 0 {
-							it.Seek(start)
-						}
-						n.flatValues = append(n.flatValues, &MemSeriesIteratorTreeValueNode{
-							Values:   it,
-							Label:    rs.s.labels[key],
-							NumLabel: rs.s.numLabels[key],
-							NumUnit:  rs.s.numUnits[key],
-						})
-					}
-				}
-
-				cur := memItStack.Peek()
-				cur.node.Children = append(cur.node.Children, n)
-
-				memItStack.Push(&MemSeriesIteratorTreeStackEntry{
-					node:  n,
-					child: 0,
-				})
-				treeIt.StepInto()
-				continue
-			}
-			treeIt.StepUp()
-			memItStack.Pop()
-		}
-	} else {
-		sampleIterators = make(map[string]MemSeriesValuesIterator, len(rs.s.samples))
-		for key, chunks := range rs.s.samples {
-			sampleIterators[key] = NewMultiChunkIterator(chunks)
-		}
+	sampleIterators := make(map[string]*MultiChunksIterator, len(rs.s.samples))
+	for key, chunks := range rs.s.samples {
+		sampleIterators[key] = NewMultiChunkIterator(chunks)
 	}
 
 	timestampIterator := NewMultiChunkIterator(timestamps)
@@ -123,6 +70,9 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		timestampIterator.Seek(start)
 		durationsIterator.Seek(start)
 		periodsIterator.Seek(start)
+		for _, sampleIterator := range sampleIterators {
+			sampleIterator.Seek(start)
+		}
 	}
 
 	if end-start < numSamples {
@@ -138,15 +88,51 @@ func (rs *MemRangeSeries) Iterator() ProfileSeriesIterator {
 		timestampsIterator: timestampIterator,
 		durationsIterator:  durationsIterator,
 		periodsIterator:    periodsIterator,
-		tree: &MemSeriesIteratorTree{
-			Roots: root,
-		},
 
 		sampleIterators: sampleIterators,
-		locations:       rs.s.locations,
-
-		trees: rs.trees,
 	}
+}
+
+func getIndexRange(it MemSeriesValuesIterator, numSamples uint64, mint, maxt int64) (uint64, uint64, error) {
+	// figure out the index of the first sample > mint and the last sample < maxt
+	start := uint64(0)
+	end := uint64(0)
+	i := uint64(0)
+	for it.Next() {
+		if i == numSamples {
+			end++
+			break
+		}
+		t := it.At()
+		// MultiChunkIterator might return sparse values - shouldn't usually happen though.
+		if t == 0 {
+			break
+		}
+		if t < mint {
+			start++
+		}
+		if t <= maxt {
+			end++
+		} else {
+			break
+		}
+		i++
+	}
+
+	return start, end, it.Err()
+}
+
+// MemSeriesValuesIterator is an abstraction on iterator over values from possible multiple chunks.
+// It most likely is an abstraction like the MultiChunksIterator over []chunkenc.Chunk.
+type MemSeriesValuesIterator interface {
+	// Next iterates to the next value and returns true if there's more.
+	Next() bool
+	// At returns the current value.
+	At() int64
+	// Err returns the underlying errors. Next will return false when encountering errors.
+	Err() error
+	// Read returns how many iterations the iterator has read at any given moment.
+	Read() uint64
 }
 
 type MemRangeSeriesIterator struct {
@@ -154,18 +140,14 @@ type MemRangeSeriesIterator struct {
 	mint int64
 	maxt int64
 
-	tree               *MemSeriesIteratorTree
 	timestampsIterator MemSeriesValuesIterator
 	durationsIterator  MemSeriesValuesIterator
 	periodsIterator    MemSeriesValuesIterator
 
-	sampleIterators map[string]MemSeriesValuesIterator
+	sampleIterators map[string]*MultiChunksIterator
 
 	numSamples uint64 // uint16 might not be enough for many chunks (~500+)
 	err        error
-
-	trees     bool
-	locations map[string][]*metastore.Location
 }
 
 func (it *MemRangeSeriesIterator) Next() bool {
@@ -217,40 +199,14 @@ func (it *MemRangeSeriesIterator) Next() bool {
 		return false
 	}
 
-	if it.trees {
-		iit := NewMemSeriesIteratorTreeIterator(it.tree)
-		for iit.HasMore() {
-			if iit.NextChild() {
-				child := iit.at()
-
-				for _, v := range child.flatValues {
-					if !v.Values.Next() {
-						it.err = errors.New("unexpected end of flat value iterator")
-						return false
-					}
-
-					if v.Values.Err() != nil {
-						it.err = fmt.Errorf("next flat value: %w", v.Values.Err())
-						return false
-					}
-
-					if vread := v.Values.Read(); vread != read {
-						it.err = fmt.Errorf("flat value iterator in wrong iteration, expected %d got %d", read, vread)
-						return false
-					}
-				}
-
-				iit.StepInto()
-				continue
-			}
-			iit.StepUp()
+	for _, sit := range it.sampleIterators {
+		if !sit.Next() {
+			it.err = errors.New("unexpected end of numSamples iterator")
+			return false
 		}
-	} else {
-		for _, sit := range it.sampleIterators {
-			if !sit.Next() {
-				it.err = errors.New("unexpected end of samples iterator")
-				return false
-			}
+		if sread := sit.Read(); sread != read {
+			it.err = fmt.Errorf("sample iterator in wrong iteration, expected %d got %d", read, sread)
+			return false
 		}
 	}
 
@@ -259,32 +215,48 @@ func (it *MemRangeSeriesIterator) Next() bool {
 }
 
 func (it *MemRangeSeriesIterator) At() InstantProfile {
-	if it.trees {
-		return &MemSeriesInstantProfile{
-			itt: it.tree,
-			it: &MemSeriesIterator{
-				tree:               it.tree,
-				timestampsIterator: it.timestampsIterator,
-				durationsIterator:  it.durationsIterator,
-				periodsIterator:    it.periodsIterator,
-				series:             it.s,
-				numSamples:         uint16(it.numSamples - 1), // should be an uint64 eventually.
-			},
-		}
-	} else {
-		return &MemSeriesInstantFlatProfile{
-			PeriodType: it.s.periodType,
-			SampleType: it.s.sampleType,
+	return &MemSeriesInstantFlatProfile{
+		PeriodType: it.s.periodType,
+		SampleType: it.s.sampleType,
 
-			timestampsIterator: it.timestampsIterator,
-			durationsIterator:  it.durationsIterator,
-			periodsIterator:    it.periodsIterator,
-			sampleIterators:    it.sampleIterators,
-			locations:          it.locations,
-		}
+		timestampsIterator: it.timestampsIterator,
+		durationsIterator:  it.durationsIterator,
+		periodsIterator:    it.periodsIterator,
+		sampleIterators:    it.sampleIterators,
 	}
 }
 
 func (it *MemRangeSeriesIterator) Err() error {
 	return it.err
+}
+
+type MemSeriesInstantFlatProfile struct {
+	PeriodType ValueType
+	SampleType ValueType
+
+	timestampsIterator MemSeriesValuesIterator
+	durationsIterator  MemSeriesValuesIterator
+	periodsIterator    MemSeriesValuesIterator
+
+	sampleIterators map[string]*MultiChunksIterator
+}
+
+func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {
+	return InstantProfileMeta{
+		PeriodType: m.PeriodType,
+		SampleType: m.SampleType,
+		Timestamp:  m.timestampsIterator.At(),
+		Duration:   m.durationsIterator.At(),
+		Period:     m.periodsIterator.At(),
+	}
+}
+
+func (m MemSeriesInstantFlatProfile) Samples() map[string]*Sample {
+	samples := make(map[string]*Sample, len(m.sampleIterators))
+	for k, it := range m.sampleIterators {
+		samples[k] = &Sample{
+			Value: it.At(),
+		}
+	}
+	return samples
 }

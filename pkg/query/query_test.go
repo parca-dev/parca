@@ -46,7 +46,6 @@ func Test_QueryRange_EmptyStore(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		nil,
-		true,
 	)
 
 	// Query last 5 minutes
@@ -80,7 +79,6 @@ func Test_QueryRange_Valid(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
-		true,
 	)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -99,9 +97,9 @@ func Test_QueryRange_Valid(t *testing.T) {
 	// Overwrite the profile's timestamp to be within the last 5min.
 	p.TimeNanos = time.Now().UnixNano()
 
-	prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
+	prof, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
 	require.NoError(t, err)
-	err = app.Append(ctx, prof)
+	err = app.AppendFlat(ctx, prof)
 	require.NoError(t, err)
 
 	// Query last 5 minutes
@@ -146,7 +144,6 @@ func Test_QueryRange_Limited(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
-		true,
 	)
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
@@ -171,9 +168,9 @@ func Test_QueryRange_Limited(t *testing.T) {
 		// Overwrite the profile's timestamp to be within the last 5min.
 		p.TimeNanos = time.Now().UnixNano()
 
-		prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
+		prof, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
 		require.NoError(t, err)
-		err = app.Append(ctx, prof)
+		err = app.AppendFlat(ctx, prof)
 		require.NoError(t, err)
 	}
 
@@ -227,13 +224,13 @@ func Test_QueryRange_Ranged(t *testing.T) {
 
 	for i := 0; i < 500; i++ {
 		p.TimeNanos = start.Add(time.Duration(i) * time.Second).UnixNano()
-		pprof, err := storage.ProfileFromPprof(ctx, logger, s, p, 0)
+		pprof, err := storage.FlatProfileFromPprof(ctx, logger, s, p, 0)
 		require.NoError(t, err)
-		err = app.Append(ctx, pprof)
+		err = app.AppendFlat(ctx, pprof)
 		require.NoError(t, err)
 	}
 
-	q := New(logger, tracer, db, s, true)
+	q := New(logger, tracer, db, s)
 
 	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: "allocs",
@@ -294,7 +291,6 @@ func Test_QueryRange_InputValidation(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		nil,
 		nil,
-		true,
 	)
 
 	t.Parallel()
@@ -352,7 +348,6 @@ func Test_Query_InputValidation(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		nil,
 		nil,
-		true,
 	)
 
 	t.Parallel()
@@ -383,7 +378,6 @@ func Test_Query_Simple(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
-		true,
 	)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -403,9 +397,9 @@ func Test_Query_Simple(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	prof, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(t, err)
-	err = app.Append(ctx, prof)
+	err = app.AppendFlat(ctx, prof)
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -443,7 +437,6 @@ func Test_Query_Diff(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
-		true,
 	)
 
 	app, err := db.Appender(ctx, labels.Labels{
@@ -469,9 +462,9 @@ func Test_Query_Diff(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	prof1, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	prof1, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(t, err)
-	err = app.Append(ctx, prof1)
+	err = app.AppendFlat(ctx, prof1)
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 10)
@@ -479,9 +472,9 @@ func Test_Query_Diff(t *testing.T) {
 	t2 := (time.Now().UnixNano() / 1000000) * 1000000
 	p2.TimeNanos = t2
 
-	prof2, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p2, 0)
+	prof2, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p2, 0)
 	require.NoError(t, err)
-	err = app.Append(ctx, prof2)
+	err = app.AppendFlat(ctx, prof2)
 	require.NoError(t, err)
 
 	_, err = q.Query(ctx, &pb.QueryRequest{
@@ -535,7 +528,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	p, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	p, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(b, err)
 
 	for k := 0.; k <= 10; k++ {
@@ -550,7 +543,6 @@ func Benchmark_Query_Merge(b *testing.B) {
 					trace.NewNoopTracerProvider().Tracer(""),
 					db,
 					s,
-					true,
 				)
 
 				app, err := db.Appender(ctx, labels.Labels{
@@ -563,7 +555,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				require.NoError(b, err)
 				for j := 0; j < n; j++ {
 					p.Meta.Timestamp = int64(j + 1)
-					err = app.Append(ctx, p)
+					err = app.AppendFlat(ctx, p)
 					require.NoError(b, err)
 				}
 				b.StartTimer()
@@ -604,7 +596,7 @@ func Test_Query_Merge(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	p, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(t, err)
 
 	for k := 0.; k <= 10; k++ {
@@ -614,7 +606,6 @@ func Test_Query_Merge(t *testing.T) {
 			trace.NewNoopTracerProvider().Tracer(""),
 			db,
 			s,
-			true,
 		)
 
 		app, err := db.Appender(ctx, labels.Labels{
@@ -629,7 +620,7 @@ func Test_Query_Merge(t *testing.T) {
 		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
 			for j := 0; j < n; j++ {
 				p.Meta.Timestamp = int64(j + 1)
-				err = app.Append(ctx, p)
+				err = app.AppendFlat(ctx, p)
 				require.NoError(t, err)
 			}
 
@@ -666,7 +657,6 @@ func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		s,
-		true,
 	)
 
 	ls1 := labels.Labels{
@@ -714,9 +704,9 @@ func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
 
 		p1.TimeNanos = t1
 
-		prof, err := storage.ProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+		prof, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 		require.NoError(t, err)
-		err = app.Append(ctx, prof)
+		err = app.AppendFlat(ctx, prof)
 		require.NoError(t, err)
 	}
 

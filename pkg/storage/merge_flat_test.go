@@ -41,7 +41,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -57,7 +57,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -67,11 +67,11 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 		},
 	}
 
-	mp, err := MergeProfiles(false, p1, p2)
+	mp, err := MergeProfiles(p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-		SampleType: ValueType{Type: "samples", Unit: "count"},
+		SampleType: ValueType{Type: "numSamples", Unit: "count"},
 		Timestamp:  1,
 		Duration:   int64(time.Second * 20),
 		Period:     100,
@@ -109,7 +109,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -128,7 +128,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -138,11 +138,11 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 		},
 	}
 
-	mp, err := MergeProfiles(false, p1, p2)
+	mp, err := MergeProfiles(p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-		SampleType: ValueType{Type: "samples", Unit: "count"},
+		SampleType: ValueType{Type: "numSamples", Unit: "count"},
 		Timestamp:  1,
 		Duration:   int64(time.Second * 20),
 		Period:     100,
@@ -197,7 +197,7 @@ func TestMergeFlatProfile(t *testing.T) {
 	p1 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -220,7 +220,7 @@ func TestMergeFlatProfile(t *testing.T) {
 	p2 := &FlatProfile{
 		Meta: InstantProfileMeta{
 			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "samples", Unit: "count"},
+			SampleType: ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
@@ -233,11 +233,11 @@ func TestMergeFlatProfile(t *testing.T) {
 		},
 	}
 
-	mp, err := MergeProfiles(false, p1, p2)
+	mp, err := MergeProfiles(p1, p2)
 	require.NoError(t, err)
 	require.Equal(t, InstantProfileMeta{
 		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-		SampleType: ValueType{Type: "samples", Unit: "count"},
+		SampleType: ValueType{Type: "numSamples", Unit: "count"},
 		Timestamp:  1,
 		Duration:   int64(time.Second * 20),
 		Period:     100,
@@ -298,7 +298,7 @@ func TestMergeSingleFlat(t *testing.T) {
 	prof, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
-	m, err := MergeProfiles(false, prof)
+	m, err := MergeProfiles(prof)
 	require.NoError(t, err)
 	require.Len(t, m.Samples(), 32)
 }
@@ -331,7 +331,7 @@ func TestMergeManyFlat(t *testing.T) {
 		profiles = append(profiles, prof)
 	}
 
-	m, err := MergeProfiles(false, profiles...)
+	m, err := MergeProfiles(profiles...)
 	require.NoError(t, err)
 	CopyInstantFlatProfile(m)
 }
@@ -366,7 +366,7 @@ func BenchmarkFlatMerge(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	m, err := MergeProfiles(false, profile1, profile2)
+	m, err := MergeProfiles(profile1, profile2)
 	require.NoError(b, err)
 	CopyInstantFlatProfile(m)
 }
@@ -407,7 +407,7 @@ func BenchmarkMergeFlatMany(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				m, err := MergeProfiles(false, profiles...)
+				m, err := MergeProfiles(profiles...)
 				require.NoError(b, err)
 				CopyInstantFlatProfile(m)
 			}

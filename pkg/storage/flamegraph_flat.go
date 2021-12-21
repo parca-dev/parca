@@ -34,10 +34,6 @@ type FlatProfile struct {
 	samples map[string]*Sample
 }
 
-func (fp *FlatProfile) ProfileTree() InstantProfileTree {
-	panic("won't be implement - use Profile instead")
-}
-
 func (fp *FlatProfile) ProfileMeta() InstantProfileMeta {
 	return fp.Meta
 }

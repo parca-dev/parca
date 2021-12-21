@@ -445,7 +445,6 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileM
 		trace.NewNoopTracerProvider().Tracer(""),
 		db,
 		mStr,
-		true,
 	)
 
 	lis, err := net.Listen("tcp", ":0")

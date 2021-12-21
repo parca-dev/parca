@@ -31,38 +31,30 @@ func TestMemRootSeries_Iterator(t *testing.T) {
 
 	var i int64
 	for i = 1; i < 500; i++ {
-		p := Profile{
+		p := &FlatProfile{
 			Meta: InstantProfileMeta{
 				Timestamp: i,
 				Duration:  time.Second.Nanoseconds(),
 				Period:    time.Second.Nanoseconds(),
 			},
-			Tree: &ProfileTree{
-				Roots: &ProfileTreeRootNode{
-					CumulativeValue: i,
-					ProfileTreeNode: &ProfileTreeNode{},
-				},
+			samples: map[string]*Sample{
+				"": {Value: i},
 			},
 		}
-		err = app.Append(ctx, &p)
+		err = app.AppendFlat(ctx, p)
 		require.NoError(t, err)
 	}
 
 	// Query subset of timestamps
 	{
-		it := (&MemRootSeries{s: s, mint: 74, maxt: 420, trees: true}).Iterator()
+		it := (&MemRootSeries{s: s, mint: 74, maxt: 420}).Iterator()
 
 		seen := int64(75)
 		for it.Next() {
 			p := it.At()
 			require.Equal(t, seen, p.ProfileMeta().Timestamp)
-
-			itt := p.ProfileTree().Iterator()
-			for itt.HasMore() {
-				if itt.NextChild() {
-					itt.StepInto()
-				}
-				itt.StepUp()
+			for _, sample := range p.Samples() {
+				require.Equal(t, seen, sample.Value)
 			}
 			seen++
 		}
