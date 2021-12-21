@@ -275,14 +275,6 @@ func (m *MergeProfile) ProfileMeta() InstantProfileMeta {
 	return m.meta
 }
 
-type MergeProfileTree struct {
-	m *MergeProfile
-}
-
-func (m *MergeProfileTree) RootCumulativeValue() int64 {
-	return 0
-}
-
 func (m *MergeProfile) Samples() map[string]*Sample {
 	as := m.a.Samples()
 	bs := m.b.Samples()

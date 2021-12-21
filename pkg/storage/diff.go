@@ -72,11 +72,3 @@ func (d *DiffProfile) Samples() map[string]*Sample {
 
 	return ss
 }
-
-type DiffProfileTree struct {
-	d *DiffProfile
-}
-
-func (d *DiffProfileTree) RootCumulativeValue() int64 {
-	return 0
-}
