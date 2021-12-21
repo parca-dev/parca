@@ -38,7 +38,7 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 
 	for i := 1; i <= 500; i++ {
 		s1.Value = int64(i)
-		p := FlatProfile{
+		p := &FlatProfile{
 			Meta: InstantProfileMeta{
 				Timestamp: int64(i),
 				Duration:  time.Second.Nanoseconds(),
@@ -48,7 +48,7 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 				string(k1): s1,
 			},
 		}
-		err = app.AppendFlat(ctx, &p)
+		err = app.AppendFlat(ctx, p)
 		require.NoError(t, err)
 	}
 
