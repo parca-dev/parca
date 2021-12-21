@@ -8,7 +8,7 @@ on:
 
 jobs:
   goreleaser:
-    name: Goreleaer Dry
+    name: Goreleaser Dry
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
