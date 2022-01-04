@@ -302,7 +302,6 @@ func initTracer(logger log.Logger, otlpAddress string) (trace.TracerProvider, fu
 	exporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(otlpAddress),
-		otlptracegrpc.WithDialOption(grpc.WithBlock()),
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create trace exporter: %w", err)
