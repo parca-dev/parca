@@ -106,3 +106,11 @@ Fixes #38
 The first line is the subject and should be no longer than 70 characters, the second line is always blank, and other lines should be wrapped at 80 characters. This allows the message to be easier to read on GitHub as well as in various git tools.
 
 
+# UI Project - Code Formatting Guidelines
+
+We use [Prettier](https://prettier.io/docs/en/options.html) for code formatting the files in the UI project. The following are the configuration overrides over Prettier's defaults:
+
+1. `printWidth`: `100`
+2. `singleQuote`: `true`
+3. `bracketSpacing`: `false`
+4. `arrowParens`: `'avoid'`
