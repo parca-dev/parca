@@ -1,11 +1,11 @@
 // package: parca.query.v1alpha1
 // file: parca/query/v1alpha1/query.proto
 
-import * as jspb from "google-protobuf";
-import * as google_api_annotations_pb from "../../../google/api/annotations_pb";
-import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
-import * as parca_profilestore_v1alpha1_profilestore_pb from "../../../parca/profilestore/v1alpha1/profilestore_pb";
-import * as parca_metastore_v1alpha1_metastore_pb from "../../../parca/metastore/v1alpha1/metastore_pb";
+import * as jspb from 'google-protobuf';
+import * as google_api_annotations_pb from '../../../google/api/annotations_pb';
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
+import * as parca_profilestore_v1alpha1_profilestore_pb from '../../../parca/profilestore/v1alpha1/profilestore_pb';
+import * as parca_metastore_v1alpha1_metastore_pb from '../../../parca/metastore/v1alpha1/metastore_pb';
 
 export class QueryRangeRequest extends jspb.Message {
   getQuery(): string;
@@ -31,16 +31,19 @@ export class QueryRangeRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: QueryRangeRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): QueryRangeRequest;
-  static deserializeBinaryFromReader(message: QueryRangeRequest, reader: jspb.BinaryReader): QueryRangeRequest;
+  static deserializeBinaryFromReader(
+    message: QueryRangeRequest,
+    reader: jspb.BinaryReader
+  ): QueryRangeRequest;
 }
 
 export namespace QueryRangeRequest {
   export type AsObject = {
-    query: string,
-    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    limit: number,
-  }
+    query: string;
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    limit: number;
+  };
 }
 
 export class QueryRangeResponse extends jspb.Message {
@@ -56,13 +59,16 @@ export class QueryRangeResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: QueryRangeResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): QueryRangeResponse;
-  static deserializeBinaryFromReader(message: QueryRangeResponse, reader: jspb.BinaryReader): QueryRangeResponse;
+  static deserializeBinaryFromReader(
+    message: QueryRangeResponse,
+    reader: jspb.BinaryReader
+  ): QueryRangeResponse;
 }
 
 export namespace QueryRangeResponse {
   export type AsObject = {
-    seriesList: Array<MetricsSeries.AsObject>,
-  }
+    seriesList: Array<MetricsSeries.AsObject>;
+  };
 }
 
 export class MetricsSeries extends jspb.Message {
@@ -93,16 +99,19 @@ export class MetricsSeries extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: MetricsSeries, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): MetricsSeries;
-  static deserializeBinaryFromReader(message: MetricsSeries, reader: jspb.BinaryReader): MetricsSeries;
+  static deserializeBinaryFromReader(
+    message: MetricsSeries,
+    reader: jspb.BinaryReader
+  ): MetricsSeries;
 }
 
 export namespace MetricsSeries {
   export type AsObject = {
-    labelset?: parca_profilestore_v1alpha1_profilestore_pb.LabelSet.AsObject,
-    samplesList: Array<MetricsSample.AsObject>,
-    periodType?: ValueType.AsObject,
-    sampleType?: ValueType.AsObject,
-  }
+    labelset?: parca_profilestore_v1alpha1_profilestore_pb.LabelSet.AsObject;
+    samplesList: Array<MetricsSample.AsObject>;
+    periodType?: ValueType.AsObject;
+    sampleType?: ValueType.AsObject;
+  };
 }
 
 export class MetricsSample extends jspb.Message {
@@ -121,14 +130,17 @@ export class MetricsSample extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: MetricsSample, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): MetricsSample;
-  static deserializeBinaryFromReader(message: MetricsSample, reader: jspb.BinaryReader): MetricsSample;
+  static deserializeBinaryFromReader(
+    message: MetricsSample,
+    reader: jspb.BinaryReader
+  ): MetricsSample;
 }
 
 export namespace MetricsSample {
   export type AsObject = {
-    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    value: number,
-  }
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    value: number;
+  };
 }
 
 export class MergeProfile extends jspb.Message {
@@ -152,15 +164,18 @@ export class MergeProfile extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: MergeProfile, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): MergeProfile;
-  static deserializeBinaryFromReader(message: MergeProfile, reader: jspb.BinaryReader): MergeProfile;
+  static deserializeBinaryFromReader(
+    message: MergeProfile,
+    reader: jspb.BinaryReader
+  ): MergeProfile;
 }
 
 export namespace MergeProfile {
   export type AsObject = {
-    query: string,
-    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-  }
+    query: string;
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
 }
 
 export class SingleProfile extends jspb.Message {
@@ -179,14 +194,17 @@ export class SingleProfile extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: SingleProfile, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): SingleProfile;
-  static deserializeBinaryFromReader(message: SingleProfile, reader: jspb.BinaryReader): SingleProfile;
+  static deserializeBinaryFromReader(
+    message: SingleProfile,
+    reader: jspb.BinaryReader
+  ): SingleProfile;
 }
 
 export namespace SingleProfile {
   export type AsObject = {
-    time?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    query: string,
-  }
+    time?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    query: string;
+  };
 }
 
 export class DiffProfile extends jspb.Message {
@@ -212,9 +230,9 @@ export class DiffProfile extends jspb.Message {
 
 export namespace DiffProfile {
   export type AsObject = {
-    a?: ProfileDiffSelection.AsObject,
-    b?: ProfileDiffSelection.AsObject,
-  }
+    a?: ProfileDiffSelection.AsObject;
+    b?: ProfileDiffSelection.AsObject;
+  };
 }
 
 export class ProfileDiffSelection extends jspb.Message {
@@ -234,20 +252,26 @@ export class ProfileDiffSelection extends jspb.Message {
   getOptionsCase(): ProfileDiffSelection.OptionsCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ProfileDiffSelection.AsObject;
-  static toObject(includeInstance: boolean, msg: ProfileDiffSelection): ProfileDiffSelection.AsObject;
+  static toObject(
+    includeInstance: boolean,
+    msg: ProfileDiffSelection
+  ): ProfileDiffSelection.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ProfileDiffSelection, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ProfileDiffSelection;
-  static deserializeBinaryFromReader(message: ProfileDiffSelection, reader: jspb.BinaryReader): ProfileDiffSelection;
+  static deserializeBinaryFromReader(
+    message: ProfileDiffSelection,
+    reader: jspb.BinaryReader
+  ): ProfileDiffSelection;
 }
 
 export namespace ProfileDiffSelection {
   export type AsObject = {
-    mode: ProfileDiffSelection.ModeMap[keyof ProfileDiffSelection.ModeMap],
-    merge?: MergeProfile.AsObject,
-    single?: SingleProfile.AsObject,
-  }
+    mode: ProfileDiffSelection.ModeMap[keyof ProfileDiffSelection.ModeMap];
+    merge?: MergeProfile.AsObject;
+    single?: SingleProfile.AsObject;
+  };
 
   export interface ModeMap {
     MODE_SINGLE_UNSPECIFIED: 0;
@@ -293,17 +317,20 @@ export class QueryRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: QueryRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): QueryRequest;
-  static deserializeBinaryFromReader(message: QueryRequest, reader: jspb.BinaryReader): QueryRequest;
+  static deserializeBinaryFromReader(
+    message: QueryRequest,
+    reader: jspb.BinaryReader
+  ): QueryRequest;
 }
 
 export namespace QueryRequest {
   export type AsObject = {
-    mode: QueryRequest.ModeMap[keyof QueryRequest.ModeMap],
-    diff?: DiffProfile.AsObject,
-    merge?: MergeProfile.AsObject,
-    single?: SingleProfile.AsObject,
-    reportType: QueryRequest.ReportTypeMap[keyof QueryRequest.ReportTypeMap],
-  }
+    mode: QueryRequest.ModeMap[keyof QueryRequest.ModeMap];
+    diff?: DiffProfile.AsObject;
+    merge?: MergeProfile.AsObject;
+    single?: SingleProfile.AsObject;
+    reportType: QueryRequest.ReportTypeMap[keyof QueryRequest.ReportTypeMap];
+  };
 
   export interface ModeMap {
     MODE_SINGLE_UNSPECIFIED: 0;
@@ -355,11 +382,11 @@ export class Flamegraph extends jspb.Message {
 
 export namespace Flamegraph {
   export type AsObject = {
-    root?: FlamegraphRootNode.AsObject,
-    total: number,
-    unit: string,
-    height: number,
-  }
+    root?: FlamegraphRootNode.AsObject;
+    total: number;
+    unit: string;
+    height: number;
+  };
 }
 
 export class FlamegraphRootNode extends jspb.Message {
@@ -381,15 +408,18 @@ export class FlamegraphRootNode extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: FlamegraphRootNode, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): FlamegraphRootNode;
-  static deserializeBinaryFromReader(message: FlamegraphRootNode, reader: jspb.BinaryReader): FlamegraphRootNode;
+  static deserializeBinaryFromReader(
+    message: FlamegraphRootNode,
+    reader: jspb.BinaryReader
+  ): FlamegraphRootNode;
 }
 
 export namespace FlamegraphRootNode {
   export type AsObject = {
-    cumulative: number,
-    diff: number,
-    childrenList: Array<FlamegraphNode.AsObject>,
-  }
+    cumulative: number;
+    diff: number;
+    childrenList: Array<FlamegraphNode.AsObject>;
+  };
 }
 
 export class FlamegraphNode extends jspb.Message {
@@ -416,16 +446,19 @@ export class FlamegraphNode extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: FlamegraphNode, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): FlamegraphNode;
-  static deserializeBinaryFromReader(message: FlamegraphNode, reader: jspb.BinaryReader): FlamegraphNode;
+  static deserializeBinaryFromReader(
+    message: FlamegraphNode,
+    reader: jspb.BinaryReader
+  ): FlamegraphNode;
 }
 
 export namespace FlamegraphNode {
   export type AsObject = {
-    meta?: FlamegraphNodeMeta.AsObject,
-    cumulative: number,
-    diff: number,
-    childrenList: Array<FlamegraphNode.AsObject>,
-  }
+    meta?: FlamegraphNodeMeta.AsObject;
+    cumulative: number;
+    diff: number;
+    childrenList: Array<FlamegraphNode.AsObject>;
+  };
 }
 
 export class FlamegraphNodeMeta extends jspb.Message {
@@ -456,16 +489,19 @@ export class FlamegraphNodeMeta extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: FlamegraphNodeMeta, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): FlamegraphNodeMeta;
-  static deserializeBinaryFromReader(message: FlamegraphNodeMeta, reader: jspb.BinaryReader): FlamegraphNodeMeta;
+  static deserializeBinaryFromReader(
+    message: FlamegraphNodeMeta,
+    reader: jspb.BinaryReader
+  ): FlamegraphNodeMeta;
 }
 
 export namespace FlamegraphNodeMeta {
   export type AsObject = {
-    location?: parca_metastore_v1alpha1_metastore_pb.Location.AsObject,
-    mapping?: parca_metastore_v1alpha1_metastore_pb.Mapping.AsObject,
-    pb_function?: parca_metastore_v1alpha1_metastore_pb.Function.AsObject,
-    line?: parca_metastore_v1alpha1_metastore_pb.Line.AsObject,
-  }
+    location?: parca_metastore_v1alpha1_metastore_pb.Location.AsObject;
+    mapping?: parca_metastore_v1alpha1_metastore_pb.Mapping.AsObject;
+    pb_function?: parca_metastore_v1alpha1_metastore_pb.Function.AsObject;
+    line?: parca_metastore_v1alpha1_metastore_pb.Line.AsObject;
+  };
 }
 
 export class QueryResponse extends jspb.Message {
@@ -489,14 +525,17 @@ export class QueryResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: QueryResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): QueryResponse;
-  static deserializeBinaryFromReader(message: QueryResponse, reader: jspb.BinaryReader): QueryResponse;
+  static deserializeBinaryFromReader(
+    message: QueryResponse,
+    reader: jspb.BinaryReader
+  ): QueryResponse;
 }
 
 export namespace QueryResponse {
   export type AsObject = {
-    flamegraph?: Flamegraph.AsObject,
-    pprof: Uint8Array | string,
-  }
+    flamegraph?: Flamegraph.AsObject;
+    pprof: Uint8Array | string;
+  };
 
   export enum ReportCase {
     REPORT_NOT_SET = 0,
@@ -528,15 +567,18 @@ export class SeriesRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: SeriesRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): SeriesRequest;
-  static deserializeBinaryFromReader(message: SeriesRequest, reader: jspb.BinaryReader): SeriesRequest;
+  static deserializeBinaryFromReader(
+    message: SeriesRequest,
+    reader: jspb.BinaryReader
+  ): SeriesRequest;
 }
 
 export namespace SeriesRequest {
   export type AsObject = {
-    matchList: Array<string>,
-    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-  }
+    matchList: Array<string>;
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
 }
 
 export class SeriesResponse extends jspb.Message {
@@ -547,12 +589,14 @@ export class SeriesResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: SeriesResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): SeriesResponse;
-  static deserializeBinaryFromReader(message: SeriesResponse, reader: jspb.BinaryReader): SeriesResponse;
+  static deserializeBinaryFromReader(
+    message: SeriesResponse,
+    reader: jspb.BinaryReader
+  ): SeriesResponse;
 }
 
 export namespace SeriesResponse {
-  export type AsObject = {
-  }
+  export type AsObject = {};
 }
 
 export class LabelsRequest extends jspb.Message {
@@ -578,15 +622,18 @@ export class LabelsRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: LabelsRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): LabelsRequest;
-  static deserializeBinaryFromReader(message: LabelsRequest, reader: jspb.BinaryReader): LabelsRequest;
+  static deserializeBinaryFromReader(
+    message: LabelsRequest,
+    reader: jspb.BinaryReader
+  ): LabelsRequest;
 }
 
 export namespace LabelsRequest {
   export type AsObject = {
-    matchList: Array<string>,
-    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-  }
+    matchList: Array<string>;
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
 }
 
 export class LabelsResponse extends jspb.Message {
@@ -607,14 +654,17 @@ export class LabelsResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: LabelsResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): LabelsResponse;
-  static deserializeBinaryFromReader(message: LabelsResponse, reader: jspb.BinaryReader): LabelsResponse;
+  static deserializeBinaryFromReader(
+    message: LabelsResponse,
+    reader: jspb.BinaryReader
+  ): LabelsResponse;
 }
 
 export namespace LabelsResponse {
   export type AsObject = {
-    labelNamesList: Array<string>,
-    warningsList: Array<string>,
-  }
+    labelNamesList: Array<string>;
+    warningsList: Array<string>;
+  };
 }
 
 export class ValuesRequest extends jspb.Message {
@@ -643,16 +693,19 @@ export class ValuesRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ValuesRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ValuesRequest;
-  static deserializeBinaryFromReader(message: ValuesRequest, reader: jspb.BinaryReader): ValuesRequest;
+  static deserializeBinaryFromReader(
+    message: ValuesRequest,
+    reader: jspb.BinaryReader
+  ): ValuesRequest;
 }
 
 export namespace ValuesRequest {
   export type AsObject = {
-    labelName: string,
-    matchList: Array<string>,
-    start?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    end?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-  }
+    labelName: string;
+    matchList: Array<string>;
+    start?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    end?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
 }
 
 export class ValuesResponse extends jspb.Message {
@@ -673,14 +726,17 @@ export class ValuesResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ValuesResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ValuesResponse;
-  static deserializeBinaryFromReader(message: ValuesResponse, reader: jspb.BinaryReader): ValuesResponse;
+  static deserializeBinaryFromReader(
+    message: ValuesResponse,
+    reader: jspb.BinaryReader
+  ): ValuesResponse;
 }
 
 export namespace ValuesResponse {
   export type AsObject = {
-    labelValuesList: Array<string>,
-    warningsList: Array<string>,
-  }
+    labelValuesList: Array<string>;
+    warningsList: Array<string>;
+  };
 }
 
 export class ValueType extends jspb.Message {
@@ -702,8 +758,7 @@ export class ValueType extends jspb.Message {
 
 export namespace ValueType {
   export type AsObject = {
-    type: string,
-    unit: string,
-  }
+    type: string;
+    unit: string;
+  };
 }
-

@@ -1,7 +1,7 @@
 // package: parca.debuginfo.v1alpha1
 // file: parca/debuginfo/v1alpha1/debuginfo.proto
 
-import * as jspb from "google-protobuf";
+import * as jspb from 'google-protobuf';
 
 export class ExistsRequest extends jspb.Message {
   getBuildId(): string;
@@ -14,13 +14,16 @@ export class ExistsRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExistsRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExistsRequest;
-  static deserializeBinaryFromReader(message: ExistsRequest, reader: jspb.BinaryReader): ExistsRequest;
+  static deserializeBinaryFromReader(
+    message: ExistsRequest,
+    reader: jspb.BinaryReader
+  ): ExistsRequest;
 }
 
 export namespace ExistsRequest {
   export type AsObject = {
-    buildId: string,
-  }
+    buildId: string;
+  };
 }
 
 export class ExistsResponse extends jspb.Message {
@@ -34,13 +37,16 @@ export class ExistsResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExistsResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExistsResponse;
-  static deserializeBinaryFromReader(message: ExistsResponse, reader: jspb.BinaryReader): ExistsResponse;
+  static deserializeBinaryFromReader(
+    message: ExistsResponse,
+    reader: jspb.BinaryReader
+  ): ExistsResponse;
 }
 
 export namespace ExistsResponse {
   export type AsObject = {
-    exists: boolean,
-  }
+    exists: boolean;
+  };
 }
 
 export class UploadRequest extends jspb.Message {
@@ -64,14 +70,17 @@ export class UploadRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: UploadRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): UploadRequest;
-  static deserializeBinaryFromReader(message: UploadRequest, reader: jspb.BinaryReader): UploadRequest;
+  static deserializeBinaryFromReader(
+    message: UploadRequest,
+    reader: jspb.BinaryReader
+  ): UploadRequest;
 }
 
 export namespace UploadRequest {
   export type AsObject = {
-    info?: UploadInfo.AsObject,
-    chunkData: Uint8Array | string,
-  }
+    info?: UploadInfo.AsObject;
+    chunkData: Uint8Array | string;
+  };
 
   export enum DataCase {
     DATA_NOT_SET = 0,
@@ -96,8 +105,8 @@ export class UploadInfo extends jspb.Message {
 
 export namespace UploadInfo {
   export type AsObject = {
-    buildId: string,
-  }
+    buildId: string;
+  };
 }
 
 export class UploadResponse extends jspb.Message {
@@ -114,13 +123,15 @@ export class UploadResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: UploadResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): UploadResponse;
-  static deserializeBinaryFromReader(message: UploadResponse, reader: jspb.BinaryReader): UploadResponse;
+  static deserializeBinaryFromReader(
+    message: UploadResponse,
+    reader: jspb.BinaryReader
+  ): UploadResponse;
 }
 
 export namespace UploadResponse {
   export type AsObject = {
-    buildId: string,
-    size: number,
-  }
+    buildId: string;
+    size: number;
+  };
 }
-

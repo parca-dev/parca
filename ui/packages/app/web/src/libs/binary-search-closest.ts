@@ -1,32 +1,29 @@
-export default function binarySearchClosest (
-  sortedArray: number[],
-  seekElement: number
-): number {
+export default function binarySearchClosest(sortedArray: number[], seekElement: number): number {
   if (sortedArray.length === 1) {
-    return 0
+    return 0;
   }
 
-  let startIndex = 0
-  let endIndex: number = sortedArray.length - 1
+  let startIndex = 0;
+  let endIndex: number = sortedArray.length - 1;
   while (startIndex <= endIndex) {
     if (endIndex - startIndex === 1) {
-      const distanceToStart = seekElement - sortedArray[startIndex]
-      const distanceToEnd = sortedArray[endIndex] - seekElement
+      const distanceToStart = seekElement - sortedArray[startIndex];
+      const distanceToEnd = sortedArray[endIndex] - seekElement;
       if (distanceToStart < distanceToEnd) {
-        return startIndex
+        return startIndex;
       }
       if (distanceToStart > distanceToEnd) {
-        return endIndex
+        return endIndex;
       }
     }
-    const mid = startIndex + Math.floor((endIndex - startIndex) / 2)
-    const guess = sortedArray[mid]
+    const mid = startIndex + Math.floor((endIndex - startIndex) / 2);
+    const guess = sortedArray[mid];
     if (guess > seekElement) {
-      endIndex = mid
+      endIndex = mid;
     } else {
-      startIndex = mid
+      startIndex = mid;
     }
   }
 
-  return -1
+  return -1;
 }

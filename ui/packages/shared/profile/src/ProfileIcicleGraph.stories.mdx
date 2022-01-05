@@ -1,11 +1,11 @@
-import { action } from '@storybook/addon-actions'
-import { Meta, Story, Canvas } from '@storybook/addon-docs'
-import ProfileIcicleGraph from './ProfileIcicleGraph'
-import { QueryResponse } from '@parca/client'
-import queryResponseSimple from './testdata/fg-simple.json'
-import queryResponseDiff from './testdata/fg-diff.json'
+import {action} from '@storybook/addon-actions';
+import {Meta, Story, Canvas} from '@storybook/addon-docs';
+import ProfileIcicleGraph from './ProfileIcicleGraph';
+import {QueryResponse} from '@parca/client';
+import queryResponseSimple from './testdata/fg-simple.json';
+import queryResponseDiff from './testdata/fg-diff.json';
 
-<Meta title='template/ProfileIcicleGraph' component={ProfileIcicleGraph} />
+<Meta title="template/ProfileIcicleGraph" component={ProfileIcicleGraph} />
 
 # ProfileIcicleGraph
 
@@ -13,20 +13,19 @@ ProfileIcicleGraph documentation.
 
 <Canvas>
   <Story
-    name='Simple'
+    name="Simple"
     args={{
-        graph: queryResponseSimple.flamegraph,
+      graph: queryResponseSimple.flamegraph,
     }}
   >
     {args => <ProfileIcicleGraph {...args} />}
   </Story>
   <Story
-    name='Diff'
+    name="Diff"
     args={{
-        graph: queryResponseDiff.flamegraph,
+      graph: queryResponseDiff.flamegraph,
     }}
   >
     {args => <ProfileIcicleGraph {...args} />}
   </Story>
 </Canvas>
-

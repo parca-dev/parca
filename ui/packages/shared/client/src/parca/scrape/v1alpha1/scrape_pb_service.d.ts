@@ -1,8 +1,8 @@
 // package: parca.scrape.v1alpha1
 // file: parca/scrape/v1alpha1/scrape.proto
 
-import * as parca_scrape_v1alpha1_scrape_pb from "../../../parca/scrape/v1alpha1/scrape_pb";
-import {grpc} from "@improbable-eng/grpc-web";
+import * as parca_scrape_v1alpha1_scrape_pb from '../../../parca/scrape/v1alpha1/scrape_pb';
+import {grpc} from '@improbable-eng/grpc-web';
 
 type ScrapeServiceTargets = {
   readonly methodName: string;
@@ -18,8 +18,8 @@ export class ScrapeService {
   static readonly Targets: ScrapeServiceTargets;
 }
 
-export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
-export type Status = { details: string, code: number; metadata: grpc.Metadata }
+export type ServiceError = {message: string; code: number; metadata: grpc.Metadata};
+export type Status = {details: string; code: number; metadata: grpc.Metadata};
 
 interface UnaryResponse {
   cancel(): void;
@@ -53,11 +53,16 @@ export class ScrapeServiceClient {
   targets(
     requestMessage: parca_scrape_v1alpha1_scrape_pb.TargetsRequest,
     metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: parca_scrape_v1alpha1_scrape_pb.TargetsResponse|null) => void
+    callback: (
+      error: ServiceError | null,
+      responseMessage: parca_scrape_v1alpha1_scrape_pb.TargetsResponse | null
+    ) => void
   ): UnaryResponse;
   targets(
     requestMessage: parca_scrape_v1alpha1_scrape_pb.TargetsRequest,
-    callback: (error: ServiceError|null, responseMessage: parca_scrape_v1alpha1_scrape_pb.TargetsResponse|null) => void
+    callback: (
+      error: ServiceError | null,
+      responseMessage: parca_scrape_v1alpha1_scrape_pb.TargetsResponse | null
+    ) => void
   ): UnaryResponse;
 }
-

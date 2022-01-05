@@ -1,8 +1,8 @@
 // package: parca.profilestore.v1alpha1
 // file: parca/profilestore/v1alpha1/profilestore.proto
 
-import * as jspb from "google-protobuf";
-import * as google_api_annotations_pb from "../../../google/api/annotations_pb";
+import * as jspb from 'google-protobuf';
+import * as google_api_annotations_pb from '../../../google/api/annotations_pb';
 
 export class WriteRawRequest extends jspb.Message {
   getTenant(): string;
@@ -20,14 +20,17 @@ export class WriteRawRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: WriteRawRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): WriteRawRequest;
-  static deserializeBinaryFromReader(message: WriteRawRequest, reader: jspb.BinaryReader): WriteRawRequest;
+  static deserializeBinaryFromReader(
+    message: WriteRawRequest,
+    reader: jspb.BinaryReader
+  ): WriteRawRequest;
 }
 
 export namespace WriteRawRequest {
   export type AsObject = {
-    tenant: string,
-    seriesList: Array<RawProfileSeries.AsObject>,
-  }
+    tenant: string;
+    seriesList: Array<RawProfileSeries.AsObject>;
+  };
 }
 
 export class WriteRawResponse extends jspb.Message {
@@ -38,12 +41,14 @@ export class WriteRawResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: WriteRawResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): WriteRawResponse;
-  static deserializeBinaryFromReader(message: WriteRawResponse, reader: jspb.BinaryReader): WriteRawResponse;
+  static deserializeBinaryFromReader(
+    message: WriteRawResponse,
+    reader: jspb.BinaryReader
+  ): WriteRawResponse;
 }
 
 export namespace WriteRawResponse {
-  export type AsObject = {
-  }
+  export type AsObject = {};
 }
 
 export class RawProfileSeries extends jspb.Message {
@@ -64,14 +69,17 @@ export class RawProfileSeries extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RawProfileSeries, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RawProfileSeries;
-  static deserializeBinaryFromReader(message: RawProfileSeries, reader: jspb.BinaryReader): RawProfileSeries;
+  static deserializeBinaryFromReader(
+    message: RawProfileSeries,
+    reader: jspb.BinaryReader
+  ): RawProfileSeries;
 }
 
 export namespace RawProfileSeries {
   export type AsObject = {
-    labels?: LabelSet.AsObject,
-    samplesList: Array<RawSample.AsObject>,
-  }
+    labels?: LabelSet.AsObject;
+    samplesList: Array<RawSample.AsObject>;
+  };
 }
 
 export class Label extends jspb.Message {
@@ -93,9 +101,9 @@ export class Label extends jspb.Message {
 
 export namespace Label {
   export type AsObject = {
-    name: string,
-    value: string,
-  }
+    name: string;
+    value: string;
+  };
 }
 
 export class LabelSet extends jspb.Message {
@@ -116,8 +124,8 @@ export class LabelSet extends jspb.Message {
 
 export namespace LabelSet {
   export type AsObject = {
-    labelsList: Array<Label.AsObject>,
-  }
+    labelsList: Array<Label.AsObject>;
+  };
 }
 
 export class RawSample extends jspb.Message {
@@ -138,7 +146,6 @@ export class RawSample extends jspb.Message {
 
 export namespace RawSample {
   export type AsObject = {
-    rawProfile: Uint8Array | string,
-  }
+    rawProfile: Uint8Array | string;
+  };
 }
-

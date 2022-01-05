@@ -1,7 +1,7 @@
 // package: parca.metastore.v1alpha1
 // file: parca/metastore/v1alpha1/metastore.proto
 
-import * as jspb from "google-protobuf";
+import * as jspb from 'google-protobuf';
 
 export class Sample extends jspb.Message {
   clearLocationIdsList(): void;
@@ -29,11 +29,11 @@ export class Sample extends jspb.Message {
 
 export namespace Sample {
   export type AsObject = {
-    locationIdsList: Array<Uint8Array | string>,
-    labelsMap: Array<[string, SampleLabel.AsObject]>,
-    numLabelsMap: Array<[string, SampleNumLabel.AsObject]>,
-    numUnitsMap: Array<[string, SampleNumUnit.AsObject]>,
-  }
+    locationIdsList: Array<Uint8Array | string>;
+    labelsMap: Array<[string, SampleLabel.AsObject]>;
+    numLabelsMap: Array<[string, SampleNumLabel.AsObject]>;
+    numUnitsMap: Array<[string, SampleNumUnit.AsObject]>;
+  };
 }
 
 export class SampleLabel extends jspb.Message {
@@ -54,8 +54,8 @@ export class SampleLabel extends jspb.Message {
 
 export namespace SampleLabel {
   export type AsObject = {
-    labelsList: Array<string>,
-  }
+    labelsList: Array<string>;
+  };
 }
 
 export class SampleNumLabel extends jspb.Message {
@@ -71,13 +71,16 @@ export class SampleNumLabel extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: SampleNumLabel, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): SampleNumLabel;
-  static deserializeBinaryFromReader(message: SampleNumLabel, reader: jspb.BinaryReader): SampleNumLabel;
+  static deserializeBinaryFromReader(
+    message: SampleNumLabel,
+    reader: jspb.BinaryReader
+  ): SampleNumLabel;
 }
 
 export namespace SampleNumLabel {
   export type AsObject = {
-    numLabelsList: Array<number>,
-  }
+    numLabelsList: Array<number>;
+  };
 }
 
 export class SampleNumUnit extends jspb.Message {
@@ -93,13 +96,16 @@ export class SampleNumUnit extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: SampleNumUnit, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): SampleNumUnit;
-  static deserializeBinaryFromReader(message: SampleNumUnit, reader: jspb.BinaryReader): SampleNumUnit;
+  static deserializeBinaryFromReader(
+    message: SampleNumUnit,
+    reader: jspb.BinaryReader
+  ): SampleNumUnit;
 }
 
 export namespace SampleNumUnit {
   export type AsObject = {
-    unitsList: Array<string>,
-  }
+    unitsList: Array<string>;
+  };
 }
 
 export class Location extends jspb.Message {
@@ -131,11 +137,11 @@ export class Location extends jspb.Message {
 
 export namespace Location {
   export type AsObject = {
-    id: Uint8Array | string,
-    address: number,
-    mappingId: Uint8Array | string,
-    isFolded: boolean,
-  }
+    id: Uint8Array | string;
+    address: number;
+    mappingId: Uint8Array | string;
+    isFolded: boolean;
+  };
 }
 
 export class LocationLines extends jspb.Message {
@@ -156,14 +162,17 @@ export class LocationLines extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: LocationLines, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): LocationLines;
-  static deserializeBinaryFromReader(message: LocationLines, reader: jspb.BinaryReader): LocationLines;
+  static deserializeBinaryFromReader(
+    message: LocationLines,
+    reader: jspb.BinaryReader
+  ): LocationLines;
 }
 
 export namespace LocationLines {
   export type AsObject = {
-    id: Uint8Array | string,
-    linesList: Array<Line.AsObject>,
-  }
+    id: Uint8Array | string;
+    linesList: Array<Line.AsObject>;
+  };
 }
 
 export class Line extends jspb.Message {
@@ -187,9 +196,9 @@ export class Line extends jspb.Message {
 
 export namespace Line {
   export type AsObject = {
-    functionId: Uint8Array | string,
-    line: number,
-  }
+    functionId: Uint8Array | string;
+    line: number;
+  };
 }
 
 export class Function extends jspb.Message {
@@ -222,12 +231,12 @@ export class Function extends jspb.Message {
 
 export namespace Function {
   export type AsObject = {
-    id: Uint8Array | string,
-    startLine: number,
-    name: string,
-    systemName: string,
-    filename: string,
-  }
+    id: Uint8Array | string;
+    startLine: number;
+    name: string;
+    systemName: string;
+    filename: string;
+  };
 }
 
 export class Mapping extends jspb.Message {
@@ -275,16 +284,15 @@ export class Mapping extends jspb.Message {
 
 export namespace Mapping {
   export type AsObject = {
-    id: Uint8Array | string,
-    start: number,
-    limit: number,
-    offset: number,
-    file: string,
-    buildId: string,
-    hasFunctions: boolean,
-    hasFilenames: boolean,
-    hasLineNumbers: boolean,
-    hasInlineFrames: boolean,
-  }
+    id: Uint8Array | string;
+    start: number;
+    limit: number;
+    offset: number;
+    file: string;
+    buildId: string;
+    hasFunctions: boolean;
+    hasFilenames: boolean;
+    hasLineNumbers: boolean;
+    hasInlineFrames: boolean;
+  };
 }
-
