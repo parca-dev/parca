@@ -10,7 +10,9 @@
     "build": "next build",
     "export": "rm -rf .next && next build && next export -o dist",
     "generate": "plop --plopfile .plop/plopfile.ts",
-    "storybook": "start-storybook -p 6006"
+    "storybook": "start-storybook -p 6006",
+    "prepare": "cd .. && husky install ui/.husky",
+    "pre-commit": "lint-staged"
   },
   "workspaces": [
     "packages/app/*",
@@ -69,10 +71,12 @@
     "eslint-plugin-standard": "^5.0.0",
     "fs-extra": "^10.0.0",
     "globby": "^12.0.2",
+    "husky": "^7.0.4",
     "identity-obj-proxy": "^3.0.0",
     "internal-ip": "^7.0.0",
     "jest": "^27.3.1",
     "jest-runtime": "^27.3.1",
+    "lint-staged": "^12.1.5",
     "local-web-server": "^5.1.1",
     "next-transpile-modules": "^9.0.0",
     "plop": "^2.7.6",
@@ -90,5 +94,8 @@
     "ts-node": "^10.3.0",
     "typescript": "^4.3.5",
     "webpack": "^5.64.2"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,md,html,css,scss}": "prettier --write"
   }
 }
