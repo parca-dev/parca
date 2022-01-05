@@ -25,7 +25,7 @@
     "classnames": "^2.3.1",
     "date-fns": "^2.25.0",
     "google-protobuf": "^3.19.0",
-    "next": "^12.0.3",
+    "next": "^12.0.7",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
@@ -39,7 +39,7 @@
     "@storybook/addon-essentials": "^6.3.12",
     "@storybook/addon-links": "^6.3.12",
     "@storybook/addon-storyshots": "^6.3.7",
-    "@storybook/builder-webpack5": "^6.3.12",
+    "@storybook/builder-webpack5": "^6.4.9",
     "@storybook/manager-webpack5": "^6.3.12",
     "@storybook/react": "^6.3.12",
     "@svgr/webpack": "^5.5.0",
