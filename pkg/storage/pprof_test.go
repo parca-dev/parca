@@ -26,7 +26,7 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"

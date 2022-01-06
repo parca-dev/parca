@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 )
 
 type InstantProfileMeta struct {

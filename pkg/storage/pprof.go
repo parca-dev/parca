@@ -18,7 +18,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 )
 
 type LocationStack []*profile.Location
