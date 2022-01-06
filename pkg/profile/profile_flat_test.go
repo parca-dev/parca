@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package profile
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 )
 
 func TestProfileFlatNormalizer(t *testing.T) {
-	f, err := os.Open("testdata/profile1.pb.gz")
+	f, err := os.Open("../storage/testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
 	require.NoError(t, err)
@@ -38,7 +38,7 @@ func TestProfileFlatNormalizer(t *testing.T) {
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		NewLinearUUIDGenerator(),
+		metastore.NewLinearUUIDGenerator(),
 	)
 	t.Cleanup(func() {
 		l.Close()

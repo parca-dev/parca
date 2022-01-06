@@ -28,6 +28,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
@@ -119,7 +120,7 @@ func BenchmarkAppends(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		p := profiles[i%len(profiles)]
-		pprof, err := storage.FlatProfileFromPprof(ctx, logger, l, p, 0)
+		pprof, err := parcaprofile.FlatProfileFromPprof(ctx, logger, l, p, 0)
 		require.NoError(b, err)
 		err = app.AppendFlat(ctx, pprof)
 		require.NoError(b, err)
@@ -158,7 +159,7 @@ func BenchmarkIterator(b *testing.B) {
 	require.NoError(b, err)
 	for i := 0; i < b.N; i++ {
 		pprof := profiles[i%len(profiles)]
-		p, err := storage.FlatProfileFromPprof(ctx, logger, l, pprof, 0)
+		p, err := parcaprofile.FlatProfileFromPprof(ctx, logger, l, pprof, 0)
 		require.NoError(b, err)
 		err = app.AppendFlat(ctx, p)
 		require.NoError(b, err)

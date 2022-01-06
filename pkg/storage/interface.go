@@ -13,40 +13,11 @@
 
 package storage
 
-import (
-	"time"
-
-	"github.com/google/pprof/profile"
-)
-
-type ValueType struct {
-	Type string
-	Unit string
-}
-
-type InstantProfileMeta struct {
-	PeriodType ValueType
-	SampleType ValueType
-	Timestamp  int64
-	Duration   int64
-	Period     int64
-}
-
-func CopyInstantFlatProfile(p InstantProfile) *FlatProfile {
-	return &FlatProfile{
-		Meta:    p.ProfileMeta(),
-		samples: p.Samples(),
-	}
-}
-
-type InstantProfile interface {
-	ProfileMeta() InstantProfileMeta
-	Samples() map[string]*Sample
-}
+import "github.com/parca-dev/parca/pkg/profile"
 
 type ProfileSeriesIterator interface {
 	Next() bool
-	At() InstantProfile
+	At() profile.InstantProfile
 	Err() error
 }
 
@@ -55,7 +26,7 @@ type ProfileSeries interface {
 }
 
 type SliceProfileSeriesIterator struct {
-	samples []InstantProfile
+	samples []profile.InstantProfile
 	i       int
 	err     error
 }
@@ -69,44 +40,10 @@ func (i *SliceProfileSeriesIterator) Next() bool {
 	return i.i < len(i.samples)
 }
 
-func (i *SliceProfileSeriesIterator) At() InstantProfile {
+func (i *SliceProfileSeriesIterator) At() profile.InstantProfile {
 	return i.samples[i.i]
 }
 
 func (i *SliceProfileSeriesIterator) Err() error {
 	return i.err
-}
-
-func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {
-	return InstantProfileMeta{
-		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
-		Duration:   p.DurationNanos,
-		Period:     p.Period,
-		PeriodType: ValueType{Type: p.PeriodType.Type, Unit: p.PeriodType.Unit},
-		SampleType: ValueType{Type: p.SampleType[sampleIndex].Type, Unit: p.SampleType[sampleIndex].Unit},
-	}
-}
-
-type ScaledInstantProfile struct {
-	p     InstantProfile
-	ratio float64
-}
-
-func NewScaledInstantProfile(p InstantProfile, ratio float64) InstantProfile {
-	return &ScaledInstantProfile{
-		p:     p,
-		ratio: ratio,
-	}
-}
-
-func (p *ScaledInstantProfile) ProfileMeta() InstantProfileMeta {
-	return p.p.ProfileMeta()
-}
-
-func (p *ScaledInstantProfile) Samples() map[string]*Sample {
-	samples := p.p.Samples()
-	for _, s := range samples {
-		s.Value = int64(p.ratio * float64(s.Value))
-	}
-	return samples
 }

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
@@ -49,8 +50,8 @@ func TestHeadIndexReader_LabelValues(t *testing.T) {
 			{Name: "tens", Value: fmt.Sprintf("value%d", i/10)},
 		})
 		require.NoError(t, err)
-		err = app.AppendFlat(ctx, &FlatProfile{
-			Meta: InstantProfileMeta{
+		err = app.AppendFlat(ctx, &profile.FlatProfile{
+			Meta: profile.InstantProfileMeta{
 				Timestamp: int64(100 + i),
 			},
 		})

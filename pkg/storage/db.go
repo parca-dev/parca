@@ -17,6 +17,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/timestamp"
@@ -94,7 +95,7 @@ type Labels interface {
 }
 
 type Appender interface {
-	AppendFlat(ctx context.Context, p *FlatProfile) error
+	AppendFlat(ctx context.Context, p *profile.FlatProfile) error
 }
 
 type SliceSeriesSet struct {

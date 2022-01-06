@@ -25,6 +25,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -49,7 +50,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	t.Cleanup(func() {
 		l.Close()
 	})
-	p, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	p, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 	res, err := GenerateFlatPprof(ctx, l, p)
 	require.NoError(t, err)
@@ -150,10 +151,10 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 		l2.ID,
 		l1.ID,
 	})
-	key := makeStacktraceKey(sample)
+	key := parcaprofile.MakeStacktraceKey(sample)
 
-	res, err := GenerateFlatPprof(ctx, l, &FlatProfile{
-		samples: map[string]*Sample{
+	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.FlatProfile{
+		FlatSamples: map[string]*parcaprofile.Sample{
 			string(key): sample,
 		},
 	})

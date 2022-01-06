@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
@@ -34,17 +35,17 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
-	k1 := makeStacktraceKey(s1)
+	k1 := profile.MakeStacktraceKey(s1)
 
 	for i := 1; i <= 500; i++ {
 		s1.Value = int64(i)
-		p := &FlatProfile{
-			Meta: InstantProfileMeta{
+		p := &profile.FlatProfile{
+			Meta: profile.InstantProfileMeta{
 				Timestamp: int64(i),
 				Duration:  time.Second.Nanoseconds(),
 				Period:    time.Second.Nanoseconds(),
 			},
-			samples: map[string]*Sample{
+			FlatSamples: map[string]*profile.Sample{
 				string(k1): s1,
 			},
 		}
