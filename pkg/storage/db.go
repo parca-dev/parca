@@ -19,8 +19,8 @@ import (
 
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/pkg/labels"
-	"github.com/prometheus/prometheus/pkg/timestamp"
+	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/timestamp"
 	"go.opentelemetry.io/otel/trace"
 )
 

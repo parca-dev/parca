@@ -22,7 +22,7 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

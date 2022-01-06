@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/parca-dev/parca/pkg/profile"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 )
 

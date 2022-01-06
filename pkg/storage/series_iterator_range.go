@@ -19,7 +19,7 @@ import (
 
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 )
 
 // MemRangeSeries is an iterator that only queries certain chunks within the range and
