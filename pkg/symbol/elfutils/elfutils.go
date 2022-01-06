@@ -20,14 +20,27 @@ import (
 	"strings"
 )
 
+var dwarfSuffix = func(s *elf.Section) string {
+	switch {
+	case strings.HasPrefix(s.Name, ".debug_"):
+		return s.Name[7:]
+	case strings.HasPrefix(s.Name, ".zdebug_"):
+		return s.Name[8:]
+	case strings.HasPrefix(s.Name, "__debug_"): // macos
+		return s.Name[8:]
+	default:
+		return ""
+	}
+}
+
 func HasDWARF(path string) (bool, error) {
-	exe, err := elf.Open(path)
+	f, err := elf.Open(path)
 	if err != nil {
 		return false, fmt.Errorf("failed to open elf: %w", err)
 	}
-	defer exe.Close()
+	defer f.Close()
 
-	sections, err := getDWARFSections(exe)
+	sections, err := readableDWARFSections(f)
 	if err != nil {
 		return false, fmt.Errorf("failed to read DWARF sections: %w", err)
 	}
@@ -36,20 +49,7 @@ func HasDWARF(path string) (bool, error) {
 }
 
 // A simplified and modified version of debug/elf.DWARF().
-func getDWARFSections(f *elf.File) (map[string]struct{}, error) {
-	dwarfSuffix := func(s *elf.Section) string {
-		switch {
-		case strings.HasPrefix(s.Name, ".debug_"):
-			return s.Name[7:]
-		case strings.HasPrefix(s.Name, ".zdebug_"):
-			return s.Name[8:]
-		case strings.HasPrefix(s.Name, "__debug_"): // macos
-			return s.Name[8:]
-		default:
-			return ""
-		}
-	}
-
+func readableDWARFSections(f *elf.File) (map[string]struct{}, error) {
 	// There are many DWARf sections, but these are the ones
 	// the debug/dwarf package started with "abbrev", "info", "str", "line", "ranges".
 	// Possible candidates for future: "loc", "loclists", "rnglists"
@@ -73,14 +73,14 @@ func getDWARFSections(f *elf.File) (map[string]struct{}, error) {
 
 func IsSymbolizableGoObjFile(path string) (bool, error) {
 	// Checks ".note.go.buildid" section and symtab better to keep those sections in object file.
-	exe, err := elf.Open(path)
+	f, err := elf.Open(path)
 	if err != nil {
 		return false, fmt.Errorf("failed to open elf: %w", err)
 	}
-	defer exe.Close()
+	defer f.Close()
 
 	isGo := false
-	for _, s := range exe.Sections {
+	for _, s := range f.Sections {
 		if s.Name == ".note.go.buildid" {
 			isGo = true
 		}
@@ -88,7 +88,7 @@ func IsSymbolizableGoObjFile(path string) (bool, error) {
 
 	// In case ".note.go.buildid" section is stripped, check for symbols.
 	if !isGo {
-		syms, err := exe.Symbols()
+		syms, err := f.Symbols()
 		if err != nil {
 			return false, fmt.Errorf("failed to read symbols: %w", err)
 		}
@@ -109,7 +109,7 @@ func IsSymbolizableGoObjFile(path string) (bool, error) {
 
 	// Check if the Go binary symbolizable.
 	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
-	if sec := exe.Section(".gopclntab"); sec != nil {
+	if sec := f.Section(".gopclntab"); sec != nil {
 		if sec.Type == elf.SHT_PROGBITS {
 			return true, nil
 		}
