@@ -16,7 +16,7 @@ package profile
 import (
 	"testing"
 
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/stretchr/testify/require"
 )
 

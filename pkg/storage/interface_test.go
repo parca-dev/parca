@@ -18,7 +18,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/stretchr/testify/require"
 )
 
