@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {
@@ -43,7 +44,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 	var conn grpc.ClientConnInterface
 	err := backoff.Retry(func() error {
 		var err error
-		conn, err = grpc.Dial(":9090", grpc.WithInsecure())
+		conn, err = grpc.Dial(":9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			return err
 		}

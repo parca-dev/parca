@@ -28,9 +28,9 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/storage"
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -38,6 +38,7 @@ import (
 	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
@@ -466,7 +467,7 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileM
 		}
 	}()
 
-	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())
+	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		conn.Close()
