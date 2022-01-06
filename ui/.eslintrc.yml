@@ -1,5 +1,8 @@
 # Parse all files with TypeScript.
-extends: 'standard-with-typescript'
+extends:
+  - 'standard-with-typescript'
+  - 'prettier'
+
 parserOptions:
   project: './tsconfig.json'
   createDefaultProgram: true

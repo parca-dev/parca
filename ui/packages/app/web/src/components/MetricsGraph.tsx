@@ -84,8 +84,8 @@ interface MetricsTooltipProps {
 function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
   const domRect = contextElement.getBoundingClientRect();
   return () =>
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     ({
-      // eslint-disable-line @typescript-eslint/consistent-type-assertions
       width: 0,
       height: 0,
       top: domRect.y + y,
@@ -97,8 +97,8 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
 
 const virtualElement: VirtualElement = {
   getBoundingClientRect: () => {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
-      // eslint-disable-line @typescript-eslint/consistent-type-assertions
       width: 0,
       height: 0,
       top: 0,

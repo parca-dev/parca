@@ -59,6 +59,7 @@
     "css-loader": "^6.5.1",
     "dev-kong": "^0.11.0",
     "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
     "eslint-config-standard-with-typescript": "^21.0.1",
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-jest": "^25.3.4",
