@@ -26,6 +26,7 @@ import (
 	"github.com/go-kit/log/level"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -178,7 +179,7 @@ func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryRespo
 	}
 }
 
-func (q *Query) selectSingle(ctx context.Context, s *pb.SingleProfile) (storage.InstantProfile, error) {
+func (q *Query) selectSingle(ctx context.Context, s *pb.SingleProfile) (profile.InstantProfile, error) {
 	sel, err := parser.ParseMetricSelector(s.Query)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
@@ -206,7 +207,7 @@ func (q *Query) singleRequest(ctx context.Context, s *pb.SingleProfile, reportTy
 	return q.renderReport(ctx, p, reportType)
 }
 
-func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (storage.InstantProfile, error) {
+func (q *Query) selectMerge(ctx context.Context, m *pb.MergeProfile) (profile.InstantProfile, error) {
 	ctx, span := q.tracer.Start(ctx, "selectMerge")
 	defer span.End()
 
@@ -268,9 +269,9 @@ func (q *Query) diffRequest(ctx context.Context, d *pb.DiffProfile, reportType p
 	return q.renderReport(ctx, p, reportType)
 }
 
-func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (storage.InstantProfile, error) {
+func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (profile.InstantProfile, error) {
 	var (
-		p   storage.InstantProfile
+		p   profile.InstantProfile
 		err error
 	)
 	switch s.Mode {
@@ -285,7 +286,7 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 	return p, err
 }
 
-func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
 		fg, err := storage.GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
@@ -316,7 +317,7 @@ func (q *Query) renderReport(ctx context.Context, p storage.InstantProfile, typ 
 	}
 }
 
-func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Time) (storage.InstantProfile, error) {
+func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Time) (profile.InstantProfile, error) {
 	requestedTime := timestamp.FromTime(t)
 
 	ctx, span := q.tracer.Start(ctx, "findSingle")
@@ -361,7 +362,7 @@ func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Ti
 	return nil, nil
 }
 
-func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end time.Time) (storage.InstantProfile, error) {
+func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end time.Time) (profile.InstantProfile, error) {
 	ctx, span := q.tracer.Start(ctx, "merge")
 	span.SetAttributes(attribute.Int64("start", start.Unix()))
 	span.SetAttributes(attribute.Int64("end", end.Unix()))

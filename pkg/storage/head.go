@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/parca-dev/parca/pkg/storage/index"
 	"github.com/prometheus/client_golang/prometheus"
@@ -239,7 +240,7 @@ type initAppender struct {
 	head *Head
 }
 
-func (a *initAppender) AppendFlat(ctx context.Context, p *FlatProfile) error {
+func (a *initAppender) AppendFlat(ctx context.Context, p *profile.FlatProfile) error {
 	if a.app != nil {
 		return a.app.AppendFlat(ctx, p)
 	}

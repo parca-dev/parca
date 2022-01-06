@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package profile
 
 import (
 	"context"
@@ -59,8 +59,8 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 	}
 
 	return &FlatProfile{
-		Meta:    ProfileMetaFromPprof(p, sampleIndex),
-		samples: pfn.samples,
+		Meta:        ProfileMetaFromPprof(p, sampleIndex),
+		FlatSamples: pfn.samples,
 	}, nil
 }
 
@@ -116,7 +116,7 @@ func (pn *profileFlatNormalizer) mapSample(ctx context.Context, src *profile.Sam
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping. Add current values to the
 	// existing sample.
-	k := makeStacktraceKey(s)
+	k := MakeStacktraceKey(s)
 
 	stacktraceUUID, err := pn.metaStore.GetStacktraceByKey(ctx, k)
 	if err != nil && err != metastore.ErrStacktraceNotFound {

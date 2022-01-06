@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/parca-dev/parca/pkg/profile"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
@@ -31,14 +32,14 @@ var (
 )
 
 type MergeProfile struct {
-	a InstantProfile
-	b InstantProfile
+	a profile.InstantProfile
+	b profile.InstantProfile
 
-	meta InstantProfileMeta
+	meta profile.InstantProfileMeta
 }
 
-func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
-	profileCh := make(chan InstantProfile)
+func MergeProfiles(profiles ...profile.InstantProfile) (profile.InstantProfile, error) {
+	profileCh := make(chan profile.InstantProfile)
 
 	return MergeProfilesConcurrent(
 		context.Background(),
@@ -55,8 +56,8 @@ func MergeProfiles(profiles ...InstantProfile) (InstantProfile, error) {
 	)
 }
 
-func MergeSeriesSetProfiles(ctx context.Context, tracer trace.Tracer, set SeriesSet) (InstantProfile, error) {
-	profileCh := make(chan InstantProfile)
+func MergeSeriesSetProfiles(ctx context.Context, tracer trace.Tracer, set SeriesSet) (profile.InstantProfile, error) {
+	profileCh := make(chan profile.InstantProfile)
 
 	return MergeProfilesConcurrent(
 		ctx,
@@ -85,7 +86,7 @@ func MergeSeriesSetProfiles(ctx context.Context, tracer trace.Tracer, set Series
 				for it.Next() {
 					// Have to copy as profile pointer is not stable for more than the
 					// current iteration.
-					profileCh <- CopyInstantFlatProfile(it.At())
+					profileCh <- profile.CopyInstantFlatProfile(it.At())
 					i++
 				}
 				profileSpan.End()
@@ -101,18 +102,18 @@ func MergeSeriesSetProfiles(ctx context.Context, tracer trace.Tracer, set Series
 func MergeProfilesConcurrent(
 	ctx context.Context,
 	tracer trace.Tracer,
-	profileCh chan InstantProfile,
+	profileCh chan profile.InstantProfile,
 	concurrency int,
 	producerFunc func() error,
-) (InstantProfile, error) {
+) (profile.InstantProfile, error) {
 	ctx, span := tracer.Start(ctx, "MergeProfilesConcurrent")
 	span.SetAttributes(attribute.Int("concurrency", concurrency))
 	defer span.End()
 
-	var res InstantProfile
+	var res profile.InstantProfile
 
-	resCh := make(chan InstantProfile, concurrency)
-	pairCh := make(chan [2]InstantProfile)
+	resCh := make(chan profile.InstantProfile, concurrency)
+	pairCh := make(chan [2]profile.InstantProfile)
 
 	var mergesPerformed atomic.Uint32
 	var profilesRead atomic.Uint32
@@ -122,7 +123,7 @@ func MergeProfilesConcurrent(
 	g.Go(producerFunc)
 
 	g.Go(func() error {
-		var first InstantProfile
+		var first profile.InstantProfile
 		select {
 		case first = <-profileCh:
 			if first == nil {
@@ -134,7 +135,7 @@ func MergeProfilesConcurrent(
 			return ctx.Err()
 		}
 
-		var second InstantProfile
+		var second profile.InstantProfile
 		select {
 		case second = <-profileCh:
 			if second == nil {
@@ -147,7 +148,7 @@ func MergeProfilesConcurrent(
 			return ctx.Err()
 		}
 
-		pairCh <- [2]InstantProfile{first, second}
+		pairCh <- [2]profile.InstantProfile{first, second}
 
 		for {
 			first = nil
@@ -188,7 +189,7 @@ func MergeProfilesConcurrent(
 				}
 			}
 
-			pairCh <- [2]InstantProfile{first, second}
+			pairCh <- [2]profile.InstantProfile{first, second}
 		}
 	})
 
@@ -199,7 +200,7 @@ func MergeProfilesConcurrent(
 				case <-ctx.Done():
 					return nil
 				case pair := <-pairCh:
-					if pair == [2]InstantProfile{nil, nil} {
+					if pair == [2]profile.InstantProfile{nil, nil} {
 						return nil
 					}
 
@@ -208,7 +209,7 @@ func MergeProfilesConcurrent(
 						return err
 					}
 
-					resCh <- CopyInstantFlatProfile(m)
+					resCh <- profile.CopyInstantFlatProfile(m)
 				}
 			}
 		})
@@ -225,7 +226,7 @@ func MergeProfilesConcurrent(
 	return res, nil
 }
 
-func NewMergeProfile(a, b InstantProfile) (InstantProfile, error) {
+func NewMergeProfile(a, b profile.InstantProfile) (profile.InstantProfile, error) {
 	if a != nil && b == nil {
 		return a, nil
 	}
@@ -257,7 +258,7 @@ func NewMergeProfile(a, b InstantProfile) (InstantProfile, error) {
 	return &MergeProfile{
 		a: a,
 		b: b,
-		meta: InstantProfileMeta{
+		meta: profile.InstantProfileMeta{
 			PeriodType: metaA.PeriodType,
 			SampleType: metaA.SampleType,
 			Timestamp:  timestamp,
@@ -267,23 +268,23 @@ func NewMergeProfile(a, b InstantProfile) (InstantProfile, error) {
 	}, nil
 }
 
-func equalValueType(a ValueType, b ValueType) bool {
+func equalValueType(a profile.ValueType, b profile.ValueType) bool {
 	return a.Type == b.Type && a.Unit == b.Unit
 }
 
-func (m *MergeProfile) ProfileMeta() InstantProfileMeta {
+func (m *MergeProfile) ProfileMeta() profile.InstantProfileMeta {
 	return m.meta
 }
 
-func (m *MergeProfile) Samples() map[string]*Sample {
+func (m *MergeProfile) Samples() map[string]*profile.Sample {
 	as := m.a.Samples()
 	bs := m.b.Samples()
 
-	samples := make(map[string]*Sample, len(as)+len(bs)) // TODO: Don't allocate a new map, and especially not worst case
+	samples := make(map[string]*profile.Sample, len(as)+len(bs)) // TODO: Don't allocate a new map, and especially not worst case
 
 	// Merge intersection for A to B
 	for k, s := range as {
-		samples[k] = &Sample{
+		samples[k] = &profile.Sample{
 			Value:    s.Value,
 			Location: s.Location,
 			Label:    s.Label,
@@ -300,7 +301,7 @@ func (m *MergeProfile) Samples() map[string]*Sample {
 			// skip samples that exist in the final map, they've been merged already
 			continue
 		}
-		samples[k] = &Sample{
+		samples[k] = &profile.Sample{
 			Value:    s.Value,
 			Location: s.Location,
 			Label:    s.Label,

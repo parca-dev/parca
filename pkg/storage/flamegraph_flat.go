@@ -20,29 +20,12 @@ import (
 	"sort"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"go.opentelemetry.io/otel/trace"
 )
 
-type InstantFlatProfile interface {
-	ProfileMeta() InstantProfileMeta
-	Samples() map[string]*Sample
-}
-
-type FlatProfile struct {
-	Meta    InstantProfileMeta
-	samples map[string]*Sample
-}
-
-func (fp *FlatProfile) ProfileMeta() InstantProfileMeta {
-	return fp.Meta
-}
-
-func (fp *FlatProfile) Samples() map[string]*Sample {
-	return fp.samples
-}
-
-func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p InstantFlatProfile) (*pb.Flamegraph, error) {
+func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p profile.InstantFlatProfile) (*pb.Flamegraph, error) {
 	rootNode := &pb.FlamegraphNode{}
 	current := rootNode
 

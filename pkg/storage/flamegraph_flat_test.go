@@ -15,7 +15,6 @@ package storage
 
 import (
 	"context"
-	"encoding/binary"
 	"os"
 	"testing"
 
@@ -24,36 +23,13 @@ import (
 	"github.com/google/uuid"
 	metapb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 )
-
-// Some tests need UUID generation to be predictable, so this generator just
-// returns monotonically increasing UUIDs as if the UUID was a 16 byte integer.
-type LinearUUIDGenerator struct {
-	i uint64
-}
-
-// NewLinearUUIDGenerator returns a new LinearUUIDGenerator.
-func NewLinearUUIDGenerator() metastore.UUIDGenerator {
-	return &LinearUUIDGenerator{}
-}
-
-// New returns the next UUID according to the current count.
-func (g *LinearUUIDGenerator) New() uuid.UUID {
-	g.i++
-	buf := make([]byte, 16)
-	binary.BigEndian.PutUint64(buf[8:], g.i)
-	id, err := uuid.FromBytes(buf)
-	if err != nil {
-		panic(err)
-	}
-
-	return id
-}
 
 func TestGenerateFlamegraphFlat(t *testing.T) {
 	ctx := context.Background()
@@ -62,7 +38,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	// We need UUID generation to be linear for this test to work as UUID are
 	// sorted in the Flamegraph result, so predictable UUIDs are necessary for
 	// a stable result.
-	uuidGenerator := NewLinearUUIDGenerator()
+	uuidGenerator := metastore.NewLinearUUIDGenerator()
 
 	l := metastore.NewBadgerMetastore(
 		log.NewNopLogger(),
@@ -181,9 +157,9 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	s1 := makeSample(1, []uuid.UUID{l5.ID, l3.ID, l2.ID, l1.ID})
 	s2 := makeSample(3, []uuid.UUID{l4.ID, l3.ID, l2.ID, l1.ID})
 
-	k0 := makeStacktraceKey(s0)
-	k1 := makeStacktraceKey(s1)
-	k2 := makeStacktraceKey(s2)
+	k0 := parcaprofile.MakeStacktraceKey(s0)
+	k1 := parcaprofile.MakeStacktraceKey(s1)
+	k2 := parcaprofile.MakeStacktraceKey(s2)
 
 	stacktraceID0, err := l.CreateStacktrace(ctx, k0, &metapb.Sample{LocationIds: [][]byte{l2.ID[:], l1.ID[:]}})
 	require.NoError(t, err)
@@ -192,9 +168,9 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	stacktraceID2, err := l.CreateStacktrace(ctx, k2, &metapb.Sample{LocationIds: [][]byte{l4.ID[:], l3.ID[:], l2.ID[:], l1.ID[:]}})
 	require.NoError(t, err)
 
-	fp := &FlatProfile{
-		Meta: InstantProfileMeta{},
-		samples: map[string]*Sample{
+	fp := &parcaprofile.FlatProfile{
+		Meta: parcaprofile.InstantProfileMeta{},
+		FlatSamples: map[string]*parcaprofile.Sample{
 			string(stacktraceID0[:]): s0,
 			string(stacktraceID1[:]): s1,
 			string(stacktraceID2[:]): s2,
@@ -281,7 +257,7 @@ func testGenerateFlamegraphFromFlatProfile(t *testing.T, l metastore.ProfileMeta
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	flatProfile, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	flatProfile, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, trace.NewNoopTracerProvider().Tracer(""), l, flatProfile)
@@ -296,7 +272,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	store := metastore.NewBadgerMetastore(logger, reg, tracer, NewLinearUUIDGenerator())
+	store := metastore.NewBadgerMetastore(logger, reg, tracer, metastore.NewLinearUUIDGenerator())
 
 	functions := []*profile.Function{
 		{ID: 72, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -326,7 +302,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 		Function:   functions,
 	}
 
-	fp, err := FlatProfileFromPprof(ctx, logger, store, p, 0)
+	fp, err := parcaprofile.FlatProfileFromPprof(ctx, logger, store, p, 0)
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)
@@ -426,7 +402,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	store := metastore.NewBadgerMetastore(logger, reg, tracer, NewLinearUUIDGenerator())
+	store := metastore.NewBadgerMetastore(logger, reg, tracer, metastore.NewLinearUUIDGenerator())
 
 	functions := []*profile.Function{
 		{ID: 72, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -460,7 +436,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 		Function:   functions,
 	}
 
-	fp, err := FlatProfileFromPprof(ctx, logger, store, p, 0)
+	fp, err := parcaprofile.FlatProfileFromPprof(ctx, logger, store, p, 0)
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)

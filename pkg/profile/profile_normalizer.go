@@ -11,33 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package profile
 
 import (
 	"sort"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
-
-type Sample struct {
-	Location  []*metastore.Location
-	Value     int64
-	DiffValue int64
-	Label     map[string][]string
-	NumLabel  map[string][]int64
-	NumUnit   map[string][]string
-}
 
 type mapInfo struct {
 	m      *pb.Mapping
 	offset int64
 }
 
-type stacktraceKey []byte
+type StacktraceKey []byte
 
-// key generates stacktraceKey to be used as a key for maps.
-func makeStacktraceKey(sample *Sample) stacktraceKey {
+// MakeStacktraceKey generates stacktraceKey to be used as a key for maps.
+func MakeStacktraceKey(sample *Sample) StacktraceKey {
 	numLocations := len(sample.Location)
 	if numLocations == 0 {
 		return []byte{}

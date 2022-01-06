@@ -16,6 +16,7 @@ package metastore
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -46,6 +47,31 @@ func (g *RandomUUIDGenerator) New() uuid.UUID {
 // NewRandomUUIDGenerator returns a new random UUID generator.
 func NewRandomUUIDGenerator() UUIDGenerator {
 	return &RandomUUIDGenerator{}
+}
+
+// Some tests need UUID generation to be predictable, so this generator just
+// returns monotonically increasing UUIDs as if the UUID was a 16 byte integer.
+// WARNING: THIS IS ONLY MEANT FOR TESTING.
+type LinearUUIDGenerator struct {
+	i uint64
+}
+
+// NewLinearUUIDGenerator returns a new LinearUUIDGenerator.
+func NewLinearUUIDGenerator() UUIDGenerator {
+	return &LinearUUIDGenerator{}
+}
+
+// New returns the next UUID according to the current count.
+func (g *LinearUUIDGenerator) New() uuid.UUID {
+	g.i++
+	buf := make([]byte, 16)
+	binary.BigEndian.PutUint64(buf[8:], g.i)
+	id, err := uuid.FromBytes(buf)
+	if err != nil {
+		panic(err)
+	}
+
+	return id
 }
 
 // BadgerMetastore is an implementation of the metastore using the badger KV

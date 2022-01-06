@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/stretchr/testify/require"
@@ -55,15 +56,15 @@ func TestMemSeries(t *testing.T) {
 	k11 := uuid.MustParse("00000000-0000-0000-0000-000000000e11")
 	k12 := uuid.MustParse("00000000-0000-0000-0000-000000000e12")
 
-	fp1 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{},
-			SampleType: ValueType{},
+	fp1 := &profile.FlatProfile{
+		Meta: profile.InstantProfileMeta{
+			PeriodType: profile.ValueType{},
+			SampleType: profile.ValueType{},
 			Timestamp:  1000,
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*profile.Sample{
 			string(k11[:]): s11,
 			string(k12[:]): s12,
 		},
@@ -77,15 +78,15 @@ func TestMemSeries(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0])
 
 	s2 := makeSample(3, []uuid.UUID{uuid2, uuid1})
-	fp2 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{},
-			SampleType: ValueType{},
+	fp2 := &profile.FlatProfile{
+		Meta: profile.InstantProfileMeta{
+			PeriodType: profile.ValueType{},
+			SampleType: profile.ValueType{},
 			Timestamp:  2000,
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*profile.Sample{
 			string(k11[:]): s2,
 		},
 	}
@@ -101,15 +102,15 @@ func TestMemSeries(t *testing.T) {
 	s3 := makeSample(4, []uuid.UUID{uuid3, uuid1})
 	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 
-	fp3 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{},
-			SampleType: ValueType{},
+	fp3 := &profile.FlatProfile{
+		Meta: profile.InstantProfileMeta{
+			PeriodType: profile.ValueType{},
+			SampleType: profile.ValueType{},
 			Timestamp:  3000,
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*profile.Sample{
 			string(k3[:]): s3,
 		},
 	}
@@ -126,15 +127,15 @@ func TestMemSeries(t *testing.T) {
 	s4 := makeSample(6, []uuid.UUID{uuid5, uuid2, uuid1})
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
-	fp4 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{},
-			SampleType: ValueType{},
+	fp4 := &profile.FlatProfile{
+		Meta: profile.InstantProfileMeta{
+			PeriodType: profile.ValueType{},
+			SampleType: profile.ValueType{},
 			Timestamp:  4000,
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*profile.Sample{
 			string(k4[:]): s4,
 		},
 	}
@@ -150,15 +151,15 @@ func TestMemSeries(t *testing.T) {
 
 	// Merging another profileTree onto the existing one with one new Location
 	s5 := makeSample(7, []uuid.UUID{uuid2, uuid1})
-	fp5 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{},
-			SampleType: ValueType{},
+	fp5 := &profile.FlatProfile{
+		Meta: profile.InstantProfileMeta{
+			PeriodType: profile.ValueType{},
+			SampleType: profile.ValueType{},
 			Timestamp:  5000,
 			Duration:   time.Second.Nanoseconds(),
 			Period:     time.Second.Nanoseconds(),
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*profile.Sample{
 			string(k11[:]): s5,
 		},
 	}
@@ -200,13 +201,13 @@ func TestMemSeriesMany(t *testing.T) {
 		s1.Value = int64(i)
 		s2.Value = int64(2 * i)
 
-		err = app.AppendFlat(ctx, &FlatProfile{
-			Meta: InstantProfileMeta{
+		err = app.AppendFlat(ctx, &profile.FlatProfile{
+			Meta: profile.InstantProfileMeta{
 				Timestamp: int64(i),
 				Duration:  snano,
 				Period:    snano,
 			},
-			samples: map[string]*Sample{
+			FlatSamples: map[string]*profile.Sample{
 				string(k1[:]): s1,
 				string(k2[:]): s2,
 			},
@@ -263,8 +264,8 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 			require.NoError(t, err)
 
 			for i := int64(1); i <= 500; i++ {
-				require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
-					Meta: InstantProfileMeta{Timestamp: i},
+				require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+					Meta: profile.InstantProfileMeta{Timestamp: i},
 				}))
 			}
 
@@ -296,12 +297,12 @@ func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
-	k1 := makeStacktraceKey(s1)
+	k1 := profile.MakeStacktraceKey(s1)
 
 	for i := int64(1); i < 500; i++ {
-		require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
-			Meta: InstantProfileMeta{Timestamp: i},
-			samples: map[string]*Sample{
+		require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+			Meta: profile.InstantProfileMeta{Timestamp: i},
+			FlatSamples: map[string]*profile.Sample{
 				string(k1): s1,
 			},
 		}))
@@ -320,9 +321,9 @@ func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
 
 	// Test for appending working correctly after truncating.
 	for i := int64(500); i < 1_000; i++ {
-		require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
-			Meta: InstantProfileMeta{Timestamp: i},
-			samples: map[string]*Sample{
+		require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+			Meta: profile.InstantProfileMeta{Timestamp: i},
+			FlatSamples: map[string]*profile.Sample{
 				string(k1): s1,
 			},
 		}))
@@ -338,9 +339,9 @@ func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
 
 	// Append more profiles after truncating all chunks.
 	for i := int64(1_100); i < 1_234; i++ {
-		require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
-			Meta: InstantProfileMeta{Timestamp: i},
-			samples: map[string]*Sample{
+		require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+			Meta: profile.InstantProfileMeta{Timestamp: i},
+			FlatSamples: map[string]*profile.Sample{
 				string(k1): s1,
 			},
 		}))
@@ -362,11 +363,11 @@ func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
-	sampleKey := makeStacktraceKey(sample)
+	sampleKey := profile.MakeStacktraceKey(sample)
 
-	p := &FlatProfile{
-		Meta: InstantProfileMeta{},
-		samples: map[string]*Sample{
+	p := &profile.FlatProfile{
+		Meta: profile.InstantProfileMeta{},
+		FlatSamples: map[string]*profile.Sample{
 			string(sampleKey): sample,
 		},
 	}

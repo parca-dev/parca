@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
@@ -214,7 +215,7 @@ func (it *MemRangeSeriesIterator) Next() bool {
 	return true
 }
 
-func (it *MemRangeSeriesIterator) At() InstantProfile {
+func (it *MemRangeSeriesIterator) At() profile.InstantProfile {
 	return &MemSeriesInstantFlatProfile{
 		PeriodType: it.s.periodType,
 		SampleType: it.s.sampleType,
@@ -231,8 +232,8 @@ func (it *MemRangeSeriesIterator) Err() error {
 }
 
 type MemSeriesInstantFlatProfile struct {
-	PeriodType ValueType
-	SampleType ValueType
+	PeriodType profile.ValueType
+	SampleType profile.ValueType
 
 	timestampsIterator MemSeriesValuesIterator
 	durationsIterator  MemSeriesValuesIterator
@@ -241,8 +242,8 @@ type MemSeriesInstantFlatProfile struct {
 	sampleIterators map[string]*MultiChunksIterator
 }
 
-func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {
-	return InstantProfileMeta{
+func (m MemSeriesInstantFlatProfile) ProfileMeta() profile.InstantProfileMeta {
+	return profile.InstantProfileMeta{
 		PeriodType: m.PeriodType,
 		SampleType: m.SampleType,
 		Timestamp:  m.timestampsIterator.At(),
@@ -251,10 +252,10 @@ func (m MemSeriesInstantFlatProfile) ProfileMeta() InstantProfileMeta {
 	}
 }
 
-func (m MemSeriesInstantFlatProfile) Samples() map[string]*Sample {
-	samples := make(map[string]*Sample, len(m.sampleIterators))
+func (m MemSeriesInstantFlatProfile) Samples() map[string]*profile.Sample {
+	samples := make(map[string]*profile.Sample, len(m.sampleIterators))
 	for k, it := range m.sampleIterators {
-		samples[k] = &Sample{
+		samples[k] = &profile.Sample{
 			Value: it.At(),
 		}
 	}

@@ -17,6 +17,7 @@ import (
 	"context"
 
 	"github.com/google/pprof/profile"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/metastore"
 )
 
@@ -61,7 +62,7 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 	return a
 }
 
-func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip InstantProfile) (*profile.Profile, error) {
+func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip parcaprofile.InstantProfile) (*profile.Profile, error) {
 	meta := ip.ProfileMeta()
 
 	mappingByID := map[string]*profile.Mapping{}

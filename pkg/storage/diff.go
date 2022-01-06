@@ -15,6 +15,8 @@ package storage
 
 import (
 	"errors"
+
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 var (
@@ -23,13 +25,13 @@ var (
 )
 
 type DiffProfile struct {
-	base    InstantProfile
-	compare InstantProfile
+	base    profile.InstantProfile
+	compare profile.InstantProfile
 
-	meta InstantProfileMeta
+	meta profile.InstantProfileMeta
 }
 
-func NewDiffProfile(base, compare InstantProfile) (*DiffProfile, error) {
+func NewDiffProfile(base, compare profile.InstantProfile) (*DiffProfile, error) {
 	baseMeta := base.ProfileMeta()
 	compareMeta := compare.ProfileMeta()
 
@@ -44,22 +46,22 @@ func NewDiffProfile(base, compare InstantProfile) (*DiffProfile, error) {
 	return &DiffProfile{
 		base:    base,
 		compare: compare,
-		meta: InstantProfileMeta{
+		meta: profile.InstantProfileMeta{
 			PeriodType: baseMeta.PeriodType,
 			SampleType: baseMeta.SampleType,
 		},
 	}, nil
 }
 
-func (d *DiffProfile) ProfileMeta() InstantProfileMeta {
+func (d *DiffProfile) ProfileMeta() profile.InstantProfileMeta {
 	return d.meta
 }
 
-func (d *DiffProfile) Samples() map[string]*Sample {
+func (d *DiffProfile) Samples() map[string]*profile.Sample {
 	bs := d.base.Samples()
 	cs := d.compare.Samples()
 
-	ss := make(map[string]*Sample, len(bs))
+	ss := make(map[string]*profile.Sample, len(bs))
 
 	for k, s := range cs {
 		if sb, ok := bs[k]; ok {
