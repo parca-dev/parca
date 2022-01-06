@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package query
 
 import (
 	"context"
@@ -153,9 +153,9 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	l5.ID, err = uuid.FromBytes(l5ID)
 	require.NoError(t, err)
 
-	s0 := makeSample(2, []uuid.UUID{l2.ID, l1.ID})
-	s1 := makeSample(1, []uuid.UUID{l5.ID, l3.ID, l2.ID, l1.ID})
-	s2 := makeSample(3, []uuid.UUID{l4.ID, l3.ID, l2.ID, l1.ID})
+	s0 := parcaprofile.MakeSample(2, []uuid.UUID{l2.ID, l1.ID})
+	s1 := parcaprofile.MakeSample(1, []uuid.UUID{l5.ID, l3.ID, l2.ID, l1.ID})
+	s2 := parcaprofile.MakeSample(3, []uuid.UUID{l4.ID, l3.ID, l2.ID, l1.ID})
 
 	k0 := parcaprofile.MakeStacktraceKey(s0)
 	k1 := parcaprofile.MakeStacktraceKey(s1)
@@ -251,7 +251,7 @@ func TestGenerateFlamegraphFromFlatProfile(t *testing.T) {
 func testGenerateFlamegraphFromFlatProfile(t *testing.T, l metastore.ProfileMetaStore) *pb.Flamegraph {
 	ctx := context.Background()
 
-	f, err := os.Open("testdata/profile1.pb.gz")
+	f, err := os.Open("../storage/testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
 	require.NoError(t, err)

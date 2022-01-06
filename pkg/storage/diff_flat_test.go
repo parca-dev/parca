@@ -34,7 +34,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 
-	s1 := makeSample(3, []uuid.UUID{uuid2, uuid1})
+	s1 := parcaprofile.MakeSample(3, []uuid.UUID{uuid2, uuid1})
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 
 	p1 := &parcaprofile.FlatProfile{
@@ -50,7 +50,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 		},
 	}
 
-	s2 := makeSample(1, []uuid.UUID{uuid3, uuid1})
+	s2 := parcaprofile.MakeSample(1, []uuid.UUID{uuid3, uuid1})
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
 	p2 := &parcaprofile.FlatProfile{
@@ -89,10 +89,10 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 	uuid6 := uuid.MustParse("00000000-0000-0000-0000-000000000006")
 
-	s0 := makeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
-	s1 := makeSample(3, []uuid.UUID{uuid6, uuid2})
-	s2 := makeSample(3, []uuid.UUID{uuid2, uuid3})
-	s3 := makeSample(3, []uuid.UUID{uuid1, uuid3})
+	s0 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
+	s1 := parcaprofile.MakeSample(3, []uuid.UUID{uuid6, uuid2})
+	s2 := parcaprofile.MakeSample(3, []uuid.UUID{uuid2, uuid3})
+	s3 := parcaprofile.MakeSample(3, []uuid.UUID{uuid1, uuid3})
 
 	k0 := uuid.MustParse("00000000-0000-0000-0000-0000000000e0")
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
@@ -115,8 +115,8 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 		},
 	}
 
-	s4 := makeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
-	s5 := makeSample(5, []uuid.UUID{uuid2, uuid3})
+	s4 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
+	s5 := parcaprofile.MakeSample(5, []uuid.UUID{uuid2, uuid3})
 
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 

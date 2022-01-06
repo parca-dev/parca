@@ -289,7 +289,7 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := storage.GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
+		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
@@ -299,7 +299,7 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED:
-		pp, err := storage.GenerateFlatPprof(ctx, q.metaStore, p)
+		pp, err := GenerateFlatPprof(ctx, q.metaStore, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}

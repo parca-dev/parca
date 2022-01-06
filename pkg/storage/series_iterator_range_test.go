@@ -31,7 +31,7 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 	app, err := s.Appender()
 	require.NoError(t, err)
 
-	s1 := makeSample(2, []uuid.UUID{
+	s1 := profile.MakeSample(2, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/parca-dev/parca/pkg/metastore"
 )
 
@@ -104,4 +105,18 @@ func (p *ScaledInstantProfile) Samples() map[string]*Sample {
 		s.Value = int64(p.ratio * float64(s.Value))
 	}
 	return samples
+}
+
+// MakeSample creates a sample from a stack trace (list of locations) and a
+// value. Mostly meant for testing.
+func MakeSample(value int64, locationIds []uuid.UUID) *Sample {
+	s := &Sample{
+		Value: value,
+	}
+
+	for _, id := range locationIds {
+		s.Location = append(s.Location, &metastore.Location{ID: id})
+	}
+
+	return s
 }
