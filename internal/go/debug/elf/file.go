@@ -102,6 +102,10 @@ type Section struct {
 // Even if the section is stored compressed in the ELF file,
 // Data returns uncompressed data.
 func (s *Section) Data() ([]byte, error) {
+	// NOTICE(kakkoyun): Only modified bit from upstream.
+	if s.Type == SHT_NOBITS {
+		return []byte{}, nil
+	}
 	dat := make([]byte, s.Size)
 	n, err := io.ReadFull(s.Open(), dat)
 	return dat[0:n], err
