@@ -36,7 +36,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 
-	s1 := makeSample(2, []uuid.UUID{uuid2, uuid1})
+	s1 := parcaprofile.MakeSample(2, []uuid.UUID{uuid2, uuid1})
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 
 	p1 := &parcaprofile.FlatProfile{
@@ -52,7 +52,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 		},
 	}
 
-	s2 := makeSample(1, []uuid.UUID{uuid3, uuid1})
+	s2 := parcaprofile.MakeSample(1, []uuid.UUID{uuid3, uuid1})
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
 	p2 := &parcaprofile.FlatProfile{
@@ -97,10 +97,10 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 	uuid6 := uuid.MustParse("00000000-0000-0000-0000-000000000006")
 
-	s1 := makeSample(3, []uuid.UUID{uuid1, uuid3})
-	s2 := makeSample(3, []uuid.UUID{uuid2, uuid3})
-	s3 := makeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
-	s4 := makeSample(3, []uuid.UUID{uuid6, uuid2})
+	s1 := parcaprofile.MakeSample(3, []uuid.UUID{uuid1, uuid3})
+	s2 := parcaprofile.MakeSample(3, []uuid.UUID{uuid2, uuid3})
+	s3 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
+	s4 := parcaprofile.MakeSample(3, []uuid.UUID{uuid6, uuid2})
 
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
@@ -123,7 +123,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 		},
 	}
 
-	s5 := makeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
+	s5 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
 	k5 := uuid.MustParse("00000000-0000-0000-0000-0000000000e5")
 
 	p2 := &parcaprofile.FlatProfile{
@@ -183,11 +183,11 @@ func TestMergeFlatProfile(t *testing.T) {
 	uuid5 := uuid.MustParse("00000000-0000-0000-0000-000000000005")
 	uuid6 := uuid.MustParse("00000000-0000-0000-0000-000000000006")
 
-	s1 := makeSample(2, []uuid.UUID{uuid2, uuid1})
-	s2 := makeSample(1, []uuid.UUID{uuid6, uuid3, uuid2, uuid1})
-	s3 := makeSample(3, []uuid.UUID{uuid4, uuid3, uuid2, uuid1})
-	s4 := makeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
-	s5 := makeSample(3, []uuid.UUID{uuid6, uuid2})
+	s1 := parcaprofile.MakeSample(2, []uuid.UUID{uuid2, uuid1})
+	s2 := parcaprofile.MakeSample(1, []uuid.UUID{uuid6, uuid3, uuid2, uuid1})
+	s3 := parcaprofile.MakeSample(3, []uuid.UUID{uuid4, uuid3, uuid2, uuid1})
+	s4 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
+	s5 := parcaprofile.MakeSample(3, []uuid.UUID{uuid6, uuid2})
 
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
@@ -212,8 +212,8 @@ func TestMergeFlatProfile(t *testing.T) {
 		},
 	}
 
-	s6 := makeSample(1, []uuid.UUID{uuid5, uuid3, uuid2, uuid1})
-	s7 := makeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
+	s6 := parcaprofile.MakeSample(1, []uuid.UUID{uuid5, uuid3, uuid2, uuid1})
+	s7 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
 
 	k6 := uuid.MustParse("00000000-0000-0000-0000-0000000000e6")
 	k7 := uuid.MustParse("00000000-0000-0000-0000-0000000000e7")

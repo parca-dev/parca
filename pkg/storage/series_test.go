@@ -47,8 +47,8 @@ func TestMemSeries(t *testing.T) {
 	uuid4 := uuid.MustParse("00000000-0000-0000-0000-000000000004")
 	uuid5 := uuid.MustParse("00000000-0000-0000-0000-000000000005")
 
-	s11 := makeSample(1, []uuid.UUID{uuid2, uuid1})
-	s12 := makeSample(2, []uuid.UUID{uuid4, uuid1})
+	s11 := profile.MakeSample(1, []uuid.UUID{uuid2, uuid1})
+	s12 := profile.MakeSample(2, []uuid.UUID{uuid4, uuid1})
 	s12.Label = label
 	s12.NumLabel = numLabel
 	s12.NumUnit = numUnit
@@ -77,7 +77,7 @@ func TestMemSeries(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXOR(1), s.samples[string(k11[:])][0])
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0])
 
-	s2 := makeSample(3, []uuid.UUID{uuid2, uuid1})
+	s2 := profile.MakeSample(3, []uuid.UUID{uuid2, uuid1})
 	fp2 := &profile.FlatProfile{
 		Meta: profile.InstantProfileMeta{
 			PeriodType: profile.ValueType{},
@@ -99,7 +99,7 @@ func TestMemSeries(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0]) // sparse - nothing added
 
 	// Add another sample with one new Location
-	s3 := makeSample(4, []uuid.UUID{uuid3, uuid1})
+	s3 := profile.MakeSample(4, []uuid.UUID{uuid3, uuid1})
 	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 
 	fp3 := &profile.FlatProfile{
@@ -124,7 +124,7 @@ func TestMemSeries(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXORAt(2, 4), s.samples[string(k3[:])][0])
 
 	// Merging another profileTree onto the existing one with one new Location
-	s4 := makeSample(6, []uuid.UUID{uuid5, uuid2, uuid1})
+	s4 := profile.MakeSample(6, []uuid.UUID{uuid5, uuid2, uuid1})
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
 	fp4 := &profile.FlatProfile{
@@ -150,7 +150,7 @@ func TestMemSeries(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXORAt(3, 6), s.samples[string(k4[:])][0])
 
 	// Merging another profileTree onto the existing one with one new Location
-	s5 := makeSample(7, []uuid.UUID{uuid2, uuid1})
+	s5 := profile.MakeSample(7, []uuid.UUID{uuid2, uuid1})
 	fp5 := &profile.FlatProfile{
 		Meta: profile.InstantProfileMeta{
 			PeriodType: profile.ValueType{},
@@ -190,8 +190,8 @@ func TestMemSeriesMany(t *testing.T) {
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid4 := uuid.MustParse("00000000-0000-0000-0000-000000000004")
 
-	s1 := makeSample(0, []uuid.UUID{uuid2, uuid1})
-	s2 := makeSample(0, []uuid.UUID{uuid4, uuid1})
+	s1 := profile.MakeSample(0, []uuid.UUID{uuid2, uuid1})
+	s2 := profile.MakeSample(0, []uuid.UUID{uuid4, uuid1})
 
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
@@ -293,7 +293,7 @@ func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
 	app, err := s.Appender()
 	require.NoError(t, err)
 
-	s1 := makeSample(1, []uuid.UUID{
+	s1 := profile.MakeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
@@ -359,7 +359,7 @@ func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {
 	app, err := s.Appender()
 	require.NoError(b, err)
 
-	sample := makeSample(1, []uuid.UUID{
+	sample := profile.MakeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package query
 
 import (
 	"context"
@@ -147,7 +147,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	l2.ID, err = uuid.FromBytes(l2ID)
 	require.NoError(t, err)
 
-	sample := makeSample(2, []uuid.UUID{
+	sample := parcaprofile.MakeSample(2, []uuid.UUID{
 		l2.ID,
 		l1.ID,
 	})

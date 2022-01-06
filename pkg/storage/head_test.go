@@ -33,7 +33,7 @@ func TestHead_MaxTime(t *testing.T) {
 	app, err := h.Appender(ctx, labels.FromStrings("foo", "bar"))
 	require.NoError(t, err)
 
-	s := makeSample(1, []uuid.UUID{
+	s := profile.MakeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
@@ -128,7 +128,7 @@ func BenchmarkStripeSeries(b *testing.B) {
 func TestHead_Truncate(t *testing.T) {
 	h := NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 
-	s := makeSample(1, []uuid.UUID{
+	s := profile.MakeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
