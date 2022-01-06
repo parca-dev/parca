@@ -23,7 +23,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"go.opentelemetry.io/otel/attribute"

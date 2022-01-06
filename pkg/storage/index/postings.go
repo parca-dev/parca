@@ -18,7 +18,7 @@ import (
 	"sync"
 
 	"github.com/dgraph-io/sroar"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 )
 
 var allPostingsKey = labels.Label{}

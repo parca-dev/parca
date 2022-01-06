@@ -19,7 +19,7 @@ import (
 	"sort"
 
 	"github.com/dgraph-io/sroar"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 )
 
 var (

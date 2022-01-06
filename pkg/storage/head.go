@@ -23,7 +23,7 @@ import (
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/parca-dev/parca/pkg/storage/index"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"

@@ -23,7 +23,7 @@ import (
 
 	"github.com/dgraph-io/sroar"
 	"github.com/parca-dev/parca/pkg/storage/index"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 )
 
 // Bitmap used by func isRegexMetaCharacter to check whether a character needs to be escaped.
