@@ -30,6 +30,7 @@ COPY --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
 
 COPY ./cmd /app/cmd
 COPY ./pkg /app/pkg
+COPY ./internal /app/internal
 COPY ./proto /app/proto
 COPY ./gen /app/gen
 
