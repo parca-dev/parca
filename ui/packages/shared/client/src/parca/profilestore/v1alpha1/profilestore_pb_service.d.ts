@@ -1,8 +1,8 @@
 // package: parca.profilestore.v1alpha1
 // file: parca/profilestore/v1alpha1/profilestore.proto
 
-import * as parca_profilestore_v1alpha1_profilestore_pb from '../../../parca/profilestore/v1alpha1/profilestore_pb';
-import {grpc} from '@improbable-eng/grpc-web';
+import * as parca_profilestore_v1alpha1_profilestore_pb from "../../../parca/profilestore/v1alpha1/profilestore_pb";
+import {grpc} from "@improbable-eng/grpc-web";
 
 type ProfileStoreServiceWriteRaw = {
   readonly methodName: string;
@@ -18,8 +18,8 @@ export class ProfileStoreService {
   static readonly WriteRaw: ProfileStoreServiceWriteRaw;
 }
 
-export type ServiceError = {message: string; code: number; metadata: grpc.Metadata};
-export type Status = {details: string; code: number; metadata: grpc.Metadata};
+export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
+export type Status = { details: string, code: number; metadata: grpc.Metadata }
 
 interface UnaryResponse {
   cancel(): void;
@@ -53,16 +53,11 @@ export class ProfileStoreServiceClient {
   writeRaw(
     requestMessage: parca_profilestore_v1alpha1_profilestore_pb.WriteRawRequest,
     metadata: grpc.Metadata,
-    callback: (
-      error: ServiceError | null,
-      responseMessage: parca_profilestore_v1alpha1_profilestore_pb.WriteRawResponse | null
-    ) => void
+    callback: (error: ServiceError|null, responseMessage: parca_profilestore_v1alpha1_profilestore_pb.WriteRawResponse|null) => void
   ): UnaryResponse;
   writeRaw(
     requestMessage: parca_profilestore_v1alpha1_profilestore_pb.WriteRawRequest,
-    callback: (
-      error: ServiceError | null,
-      responseMessage: parca_profilestore_v1alpha1_profilestore_pb.WriteRawResponse | null
-    ) => void
+    callback: (error: ServiceError|null, responseMessage: parca_profilestore_v1alpha1_profilestore_pb.WriteRawResponse|null) => void
   ): UnaryResponse;
 }
+

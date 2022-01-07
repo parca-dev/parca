@@ -1,8 +1,8 @@
 // package: parca.debuginfo.v1alpha1
 // file: parca/debuginfo/v1alpha1/debuginfo.proto
 
-import * as parca_debuginfo_v1alpha1_debuginfo_pb from '../../../parca/debuginfo/v1alpha1/debuginfo_pb';
-import {grpc} from '@improbable-eng/grpc-web';
+import * as parca_debuginfo_v1alpha1_debuginfo_pb from "../../../parca/debuginfo/v1alpha1/debuginfo_pb";
+import {grpc} from "@improbable-eng/grpc-web";
 
 type DebugInfoServiceExists = {
   readonly methodName: string;
@@ -28,8 +28,8 @@ export class DebugInfoService {
   static readonly Upload: DebugInfoServiceUpload;
 }
 
-export type ServiceError = {message: string; code: number; metadata: grpc.Metadata};
-export type Status = {details: string; code: number; metadata: grpc.Metadata};
+export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
+export type Status = { details: string, code: number; metadata: grpc.Metadata }
 
 interface UnaryResponse {
   cancel(): void;
@@ -63,19 +63,12 @@ export class DebugInfoServiceClient {
   exists(
     requestMessage: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsRequest,
     metadata: grpc.Metadata,
-    callback: (
-      error: ServiceError | null,
-      responseMessage: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsResponse | null
-    ) => void
+    callback: (error: ServiceError|null, responseMessage: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsResponse|null) => void
   ): UnaryResponse;
   exists(
     requestMessage: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsRequest,
-    callback: (
-      error: ServiceError | null,
-      responseMessage: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsResponse | null
-    ) => void
+    callback: (error: ServiceError|null, responseMessage: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsResponse|null) => void
   ): UnaryResponse;
-  upload(
-    metadata?: grpc.Metadata
-  ): RequestStream<parca_debuginfo_v1alpha1_debuginfo_pb.UploadRequest>;
+  upload(metadata?: grpc.Metadata): RequestStream<parca_debuginfo_v1alpha1_debuginfo_pb.UploadRequest>;
 }
+

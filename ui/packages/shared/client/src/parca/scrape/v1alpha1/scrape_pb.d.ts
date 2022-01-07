@@ -1,11 +1,11 @@
 // package: parca.scrape.v1alpha1
 // file: parca/scrape/v1alpha1/scrape.proto
 
-import * as jspb from 'google-protobuf';
-import * as google_api_annotations_pb from '../../../google/api/annotations_pb';
-import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
-import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
-import * as parca_profilestore_v1alpha1_profilestore_pb from '../../../parca/profilestore/v1alpha1/profilestore_pb';
+import * as jspb from "google-protobuf";
+import * as google_api_annotations_pb from "../../../google/api/annotations_pb";
+import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
+import * as google_protobuf_duration_pb from "google-protobuf/google/protobuf/duration_pb";
+import * as parca_profilestore_v1alpha1_profilestore_pb from "../../../parca/profilestore/v1alpha1/profilestore_pb";
 
 export class TargetsRequest extends jspb.Message {
   getState(): TargetsRequest.StateMap[keyof TargetsRequest.StateMap];
@@ -18,16 +18,13 @@ export class TargetsRequest extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: TargetsRequest, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): TargetsRequest;
-  static deserializeBinaryFromReader(
-    message: TargetsRequest,
-    reader: jspb.BinaryReader
-  ): TargetsRequest;
+  static deserializeBinaryFromReader(message: TargetsRequest, reader: jspb.BinaryReader): TargetsRequest;
 }
 
 export namespace TargetsRequest {
   export type AsObject = {
-    state: TargetsRequest.StateMap[keyof TargetsRequest.StateMap];
-  };
+    state: TargetsRequest.StateMap[keyof TargetsRequest.StateMap],
+  }
 
   export interface StateMap {
     STATE_ANY_UNSPECIFIED: 0;
@@ -48,16 +45,13 @@ export class TargetsResponse extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: TargetsResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): TargetsResponse;
-  static deserializeBinaryFromReader(
-    message: TargetsResponse,
-    reader: jspb.BinaryReader
-  ): TargetsResponse;
+  static deserializeBinaryFromReader(message: TargetsResponse, reader: jspb.BinaryReader): TargetsResponse;
 }
 
 export namespace TargetsResponse {
   export type AsObject = {
-    targetsMap: Array<[string, Targets.AsObject]>;
-  };
+    targetsMap: Array<[string, Targets.AsObject]>,
+  }
 }
 
 export class Targets extends jspb.Message {
@@ -78,8 +72,8 @@ export class Targets extends jspb.Message {
 
 export namespace Targets {
   export type AsObject = {
-    targetsList: Array<Target.AsObject>;
-  };
+    targetsList: Array<Target.AsObject>,
+  }
 }
 
 export class Target extends jspb.Message {
@@ -124,14 +118,14 @@ export class Target extends jspb.Message {
 
 export namespace Target {
   export type AsObject = {
-    discoveredLabels?: parca_profilestore_v1alpha1_profilestore_pb.LabelSet.AsObject;
-    labels?: parca_profilestore_v1alpha1_profilestore_pb.LabelSet.AsObject;
-    lastError: string;
-    lastScrape?: google_protobuf_timestamp_pb.Timestamp.AsObject;
-    lastScrapeDuration?: google_protobuf_duration_pb.Duration.AsObject;
-    url: string;
-    health: Target.HealthMap[keyof Target.HealthMap];
-  };
+    discoveredLabels?: parca_profilestore_v1alpha1_profilestore_pb.LabelSet.AsObject,
+    labels?: parca_profilestore_v1alpha1_profilestore_pb.LabelSet.AsObject,
+    lastError: string,
+    lastScrape?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    lastScrapeDuration?: google_protobuf_duration_pb.Duration.AsObject,
+    url: string,
+    health: Target.HealthMap[keyof Target.HealthMap],
+  }
 
   export interface HealthMap {
     HEALTH_UNKNOWN_UNSPECIFIED: 0;
@@ -141,3 +135,4 @@ export namespace Target {
 
   export const Health: HealthMap;
 }
+

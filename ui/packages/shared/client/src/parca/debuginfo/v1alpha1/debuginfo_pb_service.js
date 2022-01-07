@@ -1,31 +1,31 @@
 // package: parca.debuginfo.v1alpha1
 // file: parca/debuginfo/v1alpha1/debuginfo.proto
 
-var parca_debuginfo_v1alpha1_debuginfo_pb = require('../../../parca/debuginfo/v1alpha1/debuginfo_pb');
-var grpc = require('@improbable-eng/grpc-web').grpc;
+var parca_debuginfo_v1alpha1_debuginfo_pb = require("../../../parca/debuginfo/v1alpha1/debuginfo_pb");
+var grpc = require("@improbable-eng/grpc-web").grpc;
 
 var DebugInfoService = (function () {
   function DebugInfoService() {}
-  DebugInfoService.serviceName = 'parca.debuginfo.v1alpha1.DebugInfoService';
+  DebugInfoService.serviceName = "parca.debuginfo.v1alpha1.DebugInfoService";
   return DebugInfoService;
-})();
+}());
 
 DebugInfoService.Exists = {
-  methodName: 'Exists',
+  methodName: "Exists",
   service: DebugInfoService,
   requestStream: false,
   responseStream: false,
   requestType: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsRequest,
-  responseType: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsResponse,
+  responseType: parca_debuginfo_v1alpha1_debuginfo_pb.ExistsResponse
 };
 
 DebugInfoService.Upload = {
-  methodName: 'Upload',
+  methodName: "Upload",
   service: DebugInfoService,
   requestStream: true,
   responseStream: false,
   requestType: parca_debuginfo_v1alpha1_debuginfo_pb.UploadRequest,
-  responseType: parca_debuginfo_v1alpha1_debuginfo_pb.UploadResponse,
+  responseType: parca_debuginfo_v1alpha1_debuginfo_pb.UploadResponse
 };
 
 exports.DebugInfoService = DebugInfoService;
@@ -56,32 +56,32 @@ DebugInfoServiceClient.prototype.exists = function exists(requestMessage, metada
           callback(null, response.message);
         }
       }
-    },
+    }
   });
   return {
     cancel: function () {
       callback = null;
       client.close();
-    },
+    }
   };
 };
 
 DebugInfoServiceClient.prototype.upload = function upload(metadata) {
   var listeners = {
     end: [],
-    status: [],
+    status: []
   };
   var client = grpc.client(DebugInfoService.Upload, {
     host: this.serviceHost,
     metadata: metadata,
-    transport: this.options.transport,
+    transport: this.options.transport
   });
   client.onEnd(function (status, statusMessage, trailers) {
     listeners.status.forEach(function (handler) {
-      handler({code: status, details: statusMessage, metadata: trailers});
+      handler({ code: status, details: statusMessage, metadata: trailers });
     });
     listeners.end.forEach(function (handler) {
-      handler({code: status, details: statusMessage, metadata: trailers});
+      handler({ code: status, details: statusMessage, metadata: trailers });
     });
     listeners = null;
   });
@@ -103,8 +103,9 @@ DebugInfoServiceClient.prototype.upload = function upload(metadata) {
     cancel: function () {
       listeners = null;
       client.close();
-    },
+    }
   };
 };
 
 exports.DebugInfoServiceClient = DebugInfoServiceClient;
+

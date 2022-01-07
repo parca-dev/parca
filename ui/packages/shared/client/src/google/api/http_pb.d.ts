@@ -1,7 +1,7 @@
 // package: google.api
 // file: google/api/http.proto
 
-import * as jspb from 'google-protobuf';
+import * as jspb from "google-protobuf";
 
 export class Http extends jspb.Message {
   clearRulesList(): void;
@@ -24,9 +24,9 @@ export class Http extends jspb.Message {
 
 export namespace Http {
   export type AsObject = {
-    rulesList: Array<HttpRule.AsObject>;
-    fullyDecodeReservedExpansion: boolean;
-  };
+    rulesList: Array<HttpRule.AsObject>,
+    fullyDecodeReservedExpansion: boolean,
+  }
 }
 
 export class HttpRule extends jspb.Message {
@@ -87,17 +87,17 @@ export class HttpRule extends jspb.Message {
 
 export namespace HttpRule {
   export type AsObject = {
-    selector: string;
-    get: string;
-    put: string;
-    post: string;
-    pb_delete: string;
-    patch: string;
-    custom?: CustomHttpPattern.AsObject;
-    body: string;
-    responseBody: string;
-    additionalBindingsList: Array<HttpRule.AsObject>;
-  };
+    selector: string,
+    get: string,
+    put: string,
+    post: string,
+    pb_delete: string,
+    patch: string,
+    custom?: CustomHttpPattern.AsObject,
+    body: string,
+    responseBody: string,
+    additionalBindingsList: Array<HttpRule.AsObject>,
+  }
 
   export enum PatternCase {
     PATTERN_NOT_SET = 0,
@@ -124,15 +124,13 @@ export class CustomHttpPattern extends jspb.Message {
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: CustomHttpPattern, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): CustomHttpPattern;
-  static deserializeBinaryFromReader(
-    message: CustomHttpPattern,
-    reader: jspb.BinaryReader
-  ): CustomHttpPattern;
+  static deserializeBinaryFromReader(message: CustomHttpPattern, reader: jspb.BinaryReader): CustomHttpPattern;
 }
 
 export namespace CustomHttpPattern {
   export type AsObject = {
-    kind: string;
-    path: string;
-  };
+    kind: string,
+    path: string,
+  }
 }
+

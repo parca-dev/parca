@@ -1,58 +1,58 @@
 // package: parca.query.v1alpha1
 // file: parca/query/v1alpha1/query.proto
 
-var parca_query_v1alpha1_query_pb = require('../../../parca/query/v1alpha1/query_pb');
-var grpc = require('@improbable-eng/grpc-web').grpc;
+var parca_query_v1alpha1_query_pb = require("../../../parca/query/v1alpha1/query_pb");
+var grpc = require("@improbable-eng/grpc-web").grpc;
 
 var QueryService = (function () {
   function QueryService() {}
-  QueryService.serviceName = 'parca.query.v1alpha1.QueryService';
+  QueryService.serviceName = "parca.query.v1alpha1.QueryService";
   return QueryService;
-})();
+}());
 
 QueryService.QueryRange = {
-  methodName: 'QueryRange',
+  methodName: "QueryRange",
   service: QueryService,
   requestStream: false,
   responseStream: false,
   requestType: parca_query_v1alpha1_query_pb.QueryRangeRequest,
-  responseType: parca_query_v1alpha1_query_pb.QueryRangeResponse,
+  responseType: parca_query_v1alpha1_query_pb.QueryRangeResponse
 };
 
 QueryService.Query = {
-  methodName: 'Query',
+  methodName: "Query",
   service: QueryService,
   requestStream: false,
   responseStream: false,
   requestType: parca_query_v1alpha1_query_pb.QueryRequest,
-  responseType: parca_query_v1alpha1_query_pb.QueryResponse,
+  responseType: parca_query_v1alpha1_query_pb.QueryResponse
 };
 
 QueryService.Series = {
-  methodName: 'Series',
+  methodName: "Series",
   service: QueryService,
   requestStream: false,
   responseStream: false,
   requestType: parca_query_v1alpha1_query_pb.SeriesRequest,
-  responseType: parca_query_v1alpha1_query_pb.SeriesResponse,
+  responseType: parca_query_v1alpha1_query_pb.SeriesResponse
 };
 
 QueryService.Labels = {
-  methodName: 'Labels',
+  methodName: "Labels",
   service: QueryService,
   requestStream: false,
   responseStream: false,
   requestType: parca_query_v1alpha1_query_pb.LabelsRequest,
-  responseType: parca_query_v1alpha1_query_pb.LabelsResponse,
+  responseType: parca_query_v1alpha1_query_pb.LabelsResponse
 };
 
 QueryService.Values = {
-  methodName: 'Values',
+  methodName: "Values",
   service: QueryService,
   requestStream: false,
   responseStream: false,
   requestType: parca_query_v1alpha1_query_pb.ValuesRequest,
-  responseType: parca_query_v1alpha1_query_pb.ValuesResponse,
+  responseType: parca_query_v1alpha1_query_pb.ValuesResponse
 };
 
 exports.QueryService = QueryService;
@@ -83,13 +83,13 @@ QueryServiceClient.prototype.queryRange = function queryRange(requestMessage, me
           callback(null, response.message);
         }
       }
-    },
+    }
   });
   return {
     cancel: function () {
       callback = null;
       client.close();
-    },
+    }
   };
 };
 
@@ -114,13 +114,13 @@ QueryServiceClient.prototype.query = function query(requestMessage, metadata, ca
           callback(null, response.message);
         }
       }
-    },
+    }
   });
   return {
     cancel: function () {
       callback = null;
       client.close();
-    },
+    }
   };
 };
 
@@ -145,13 +145,13 @@ QueryServiceClient.prototype.series = function series(requestMessage, metadata, 
           callback(null, response.message);
         }
       }
-    },
+    }
   });
   return {
     cancel: function () {
       callback = null;
       client.close();
-    },
+    }
   };
 };
 
@@ -176,13 +176,13 @@ QueryServiceClient.prototype.labels = function labels(requestMessage, metadata, 
           callback(null, response.message);
         }
       }
-    },
+    }
   });
   return {
     cancel: function () {
       callback = null;
       client.close();
-    },
+    }
   };
 };
 
@@ -207,14 +207,15 @@ QueryServiceClient.prototype.values = function values(requestMessage, metadata, 
           callback(null, response.message);
         }
       }
-    },
+    }
   });
   return {
     cancel: function () {
       callback = null;
       client.close();
-    },
+    }
   };
 };
 
 exports.QueryServiceClient = QueryServiceClient;
+

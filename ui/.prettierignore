@@ -5,3 +5,5 @@ out/
 .yarn/
 coverage/
 
+# Exclude protobuf generated files
+packages/shared/client

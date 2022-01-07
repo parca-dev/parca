@@ -1,22 +1,22 @@
 // package: parca.profilestore.v1alpha1
 // file: parca/profilestore/v1alpha1/profilestore.proto
 
-var parca_profilestore_v1alpha1_profilestore_pb = require('../../../parca/profilestore/v1alpha1/profilestore_pb');
-var grpc = require('@improbable-eng/grpc-web').grpc;
+var parca_profilestore_v1alpha1_profilestore_pb = require("../../../parca/profilestore/v1alpha1/profilestore_pb");
+var grpc = require("@improbable-eng/grpc-web").grpc;
 
 var ProfileStoreService = (function () {
   function ProfileStoreService() {}
-  ProfileStoreService.serviceName = 'parca.profilestore.v1alpha1.ProfileStoreService';
+  ProfileStoreService.serviceName = "parca.profilestore.v1alpha1.ProfileStoreService";
   return ProfileStoreService;
-})();
+}());
 
 ProfileStoreService.WriteRaw = {
-  methodName: 'WriteRaw',
+  methodName: "WriteRaw",
   service: ProfileStoreService,
   requestStream: false,
   responseStream: false,
   requestType: parca_profilestore_v1alpha1_profilestore_pb.WriteRawRequest,
-  responseType: parca_profilestore_v1alpha1_profilestore_pb.WriteRawResponse,
+  responseType: parca_profilestore_v1alpha1_profilestore_pb.WriteRawResponse
 };
 
 exports.ProfileStoreService = ProfileStoreService;
@@ -26,11 +26,7 @@ function ProfileStoreServiceClient(serviceHost, options) {
   this.options = options || {};
 }
 
-ProfileStoreServiceClient.prototype.writeRaw = function writeRaw(
-  requestMessage,
-  metadata,
-  callback
-) {
+ProfileStoreServiceClient.prototype.writeRaw = function writeRaw(requestMessage, metadata, callback) {
   if (arguments.length === 2) {
     callback = arguments[1];
   }
@@ -51,14 +47,15 @@ ProfileStoreServiceClient.prototype.writeRaw = function writeRaw(
           callback(null, response.message);
         }
       }
-    },
+    }
   });
   return {
     cancel: function () {
       callback = null;
       client.close();
-    },
+    }
   };
 };
 
 exports.ProfileStoreServiceClient = ProfileStoreServiceClient;
+
