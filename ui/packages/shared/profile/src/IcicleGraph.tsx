@@ -8,6 +8,16 @@ import {valueFormatter} from '@parca/functions';
 
 const RowHeight = 20;
 
+const icicleRectStyles = {
+  cursor: 'pointer',
+  transition: 'opacity .15s linear',
+};
+const fadedIcicleRectStyles = {
+  cursor: 'pointer',
+  transition: 'opacity .15s linear',
+  opacity: '0.5',
+};
+
 interface IcicleRectProps {
   x: number;
   y: number;
@@ -18,6 +28,7 @@ interface IcicleRectProps {
   onMouseEnter: (e: MouseEvent) => void;
   onMouseLeave: (e: MouseEvent) => void;
   onClick: (e: MouseEvent) => void;
+  curPath: string[];
 }
 
 function IcicleRect({
@@ -30,11 +41,15 @@ function IcicleRect({
   onMouseEnter,
   onMouseLeave,
   onClick,
+  curPath,
 }: IcicleRectProps) {
+  const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
+  const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
+
   return (
     <g
       transform={`translate(${x + 1}, ${y + 1})`}
-      style={{cursor: 'pointer'}}
+      style={styles}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={onClick}
@@ -171,8 +186,9 @@ export function IcicleGraphNodes({
         const onMouseLeave = () => setHoveringNode(undefined);
 
         return (
-          <React.Fragment key={key}>
+          <React.Fragment>
             <IcicleRect
+              key={`rect-${key}`}
               x={xStart}
               y={0}
               width={width}
@@ -182,9 +198,11 @@ export function IcicleGraphNodes({
               onClick={onClick}
               onMouseEnter={onMouseEnter}
               onMouseLeave={onMouseLeave}
+              curPath={curPath}
             />
             {data !== undefined && data.length > 0 && (
               <IcicleGraphNodes
+                key={`node-${key}`}
                 data={d.childrenList}
                 x={xStart}
                 y={RowHeight}
@@ -431,8 +449,6 @@ export function IcicleGraphRootNode({
   const onMouseLeave = () => setHoveringNode(undefined);
   const path = [];
 
-  console.log(node);
-
   return (
     <g transform={'translate(0, 0)'}>
       <IcicleRect
@@ -445,6 +461,7 @@ export function IcicleGraphRootNode({
         onClick={onClick}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
+        curPath={curPath}
       />
       <MemoizedIcicleGraphNodes
         data={node.childrenList}
