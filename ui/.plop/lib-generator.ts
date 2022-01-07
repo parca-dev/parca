@@ -1,19 +1,19 @@
-import { NodePlopAPI } from 'plop'
+import {NodePlopAPI} from 'plop';
 
 export const libGenerator = (plop: NodePlopAPI) => {
   const prompts = [
     {
       type: 'input',
       name: 'libName',
-      message: 'Library name'
+      message: 'Library name',
     },
     {
       type: 'input',
       name: 'description',
-      message: 'Library description'
-    }
-  ]
-  const actions = ({ libName, description }) => {
+      message: 'Library description',
+    },
+  ];
+  const actions = ({libName, description}) => {
     return [
       {
         type: 'copy-files',
@@ -22,16 +22,16 @@ export const libGenerator = (plop: NodePlopAPI) => {
           dest: `packages/shared/${libName}`,
           replaceInFiles: {
             '@parca/functions': `@parca/${libName}`,
-            'Templated shared functions': description
-          }
-        }
-      }
-    ]
-  }
+            'Templated shared functions': description,
+          },
+        },
+      },
+    ];
+  };
 
   return {
     description: 'Shared Module Generator',
     prompts,
-    actions
-  }
-}
+    actions,
+  };
+};

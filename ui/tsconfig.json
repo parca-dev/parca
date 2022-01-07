@@ -1,16 +1,10 @@
 {
   "extends": "./config/next.tsconfig.json",
-  "include": [
-    "./tests/**/*",
-    "./.storybook/*",
-    "./packages/**/*"
-  ],
+  "include": ["./tests/**/*", "./.storybook/*", "./packages/**/*"],
   "compilerOptions": {
     "module": "CommonJS",
     "isolatedModules": true,
     "baseUrl": "."
   },
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

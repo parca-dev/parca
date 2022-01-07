@@ -25,6 +25,7 @@ Finally, run the development server for the Next.js app:
 ```shell
 yarn workspace @parca/web dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the UI by modifying any of the components in the `ui/packages/app/web` directory. The app auto-updates as you edit the files.
@@ -64,11 +65,13 @@ yarn export
 > Before make sure all the tools you need are installed. The Linux users can simply run `//env.sh`.
 
 You can set up a cluster and all else you need by simply running:
+
 ```shell
 make dev/up
 ```
 
 For a simple local development setup we use [Tilt](https://tilt.dev).
+
 ```shell
 tilt up
 ```

@@ -1,19 +1,19 @@
-import cx from 'classnames'
+import cx from 'classnames';
 
 const BUTTON_COLORS = {
   primary: {
     text: 'text-gray-100 dark-gray-900',
     bg: 'bg-indigo-600',
-    border: 'border-indigo-500'
+    border: 'border-indigo-500',
   },
   neutral: {
     text: 'text-gray-900 dark:text-gray-100',
     bg: 'bg-gray-50 dark:bg-gray-900',
-    border: 'border-gray-200 dark:border-gray-600'
-  }
-}
+    border: 'border-gray-200 dark:border-gray-600',
+  },
+};
 
-export type ButtonColor = keyof typeof BUTTON_COLORS
+export type ButtonColor = keyof typeof BUTTON_COLORS;
 
 const Button = ({
   disabled = false,
@@ -21,13 +21,13 @@ const Button = ({
   children,
   ...props
 }: {
-  disabled?: boolean
-  color?: ButtonColor
-  children: React.ReactNode
+  disabled?: boolean;
+  color?: ButtonColor;
+  children: React.ReactNode;
 } & JSX.IntrinsicElements['button']) => {
   return (
     <button
-      type='button'
+      type="button"
       className={cx(
         disabled ? 'opacity-50 pointer-events-none' : '',
         BUTTON_COLORS[color].bg,
@@ -39,7 +39,7 @@ const Button = ({
     >
       {children}
     </button>
-  )
-}
+  );
+};
 
-export default Button
+export default Button;

@@ -1,26 +1,26 @@
 .profile-search-bar .queryExpressionInput {
-    box-shadow: none;
-    border-radius: 0;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    border-bottom: 1px solid #9b9fa3;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  box-shadow: none;
+  border-radius: 0;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #9b9fa3;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .profile-search-bar .queryExpressionInput:focus {
-    outline: none;
-    border-color: #80bdff;
+  outline: none;
+  border-color: #80bdff;
 }
 
 .profile-search-bar .btn-outline-secondary.dropdown-toggle {
-    color: #6c757d !important;
-    background-color: white !important;
-    box-shadow: none !important;
+  color: #6c757d !important;
+  background-color: white !important;
+  box-shadow: none !important;
 }
 
 .profile-search-bar .btn {
-    box-shadow: none !important;
+  box-shadow: none !important;
 }
 
 .react-autosuggest__container {

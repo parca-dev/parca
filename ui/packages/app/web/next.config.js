@@ -1,38 +1,38 @@
-const { dependencies } = require('./package.json')
+const {dependencies} = require('./package.json');
 
 const withTM = require('next-transpile-modules')(
   Object.keys(dependencies || []).filter(dependency => dependency.startsWith('@parca/')),
-  { debug: true }
-)
+  {debug: true}
+);
 
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true'
-})
+  enabled: process.env.ANALYZE === 'true',
+});
 
-require('crypto').randomBytes = () => 'FIXED_PREVIEW_MODE_ID'
+require('crypto').randomBytes = () => 'FIXED_PREVIEW_MODE_ID';
 
 module.exports = withBundleAnalyzer(
   withTM({
     trailingSlash: process.env.NODE_ENV === 'production',
     generateBuildId: async () => {
       // In an effort to make builds reproducible.
-      return 'static'
+      return 'static';
     },
     //swcMinify: true,
     optimization: {
-      moduleIds: 'deterministic'
+      moduleIds: 'deterministic',
     },
     env: {
-      NEXT_PUBLIC_BUILD_REVISION: process.env.BUILD_REVISION || 'DEVELOP'
+      NEXT_PUBLIC_BUILD_REVISION: process.env.BUILD_REVISION || 'DEVELOP',
     },
     basePath: process.env.PATH_PREFIX,
-    webpack: (config) => {
+    webpack: config => {
       config.module.rules.push({
         test: /\.svg$/,
-        use: ['@svgr/webpack']
-      })
+        use: ['@svgr/webpack'],
+      });
 
-      return config
-    }
+      return config;
+    },
   })
-)
+);

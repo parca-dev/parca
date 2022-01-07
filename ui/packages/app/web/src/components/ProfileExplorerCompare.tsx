@@ -1,19 +1,19 @@
-import ProfileSelector, { QuerySelection } from './ProfileSelector'
-import { ProfileDiffSource, ProfileSelection, ProfileView } from '@parca/profile'
-import { Query } from '@parca/parser'
-import { QueryServiceClient } from '@parca/client'
+import ProfileSelector, {QuerySelection} from './ProfileSelector';
+import {ProfileDiffSource, ProfileSelection, ProfileView} from '@parca/profile';
+import {Query} from '@parca/parser';
+import {QueryServiceClient} from '@parca/client';
 
 interface ProfileExplorerCompareProps {
-  queryClient: QueryServiceClient
+  queryClient: QueryServiceClient;
 
-  queryA: QuerySelection
-  queryB: QuerySelection
-  profileA: ProfileSelection | null
-  profileB: ProfileSelection | null
-  selectQueryA: (query: QuerySelection) => void
-  selectQueryB: (query: QuerySelection) => void
-  selectProfileA: (source: ProfileSelection) => void
-  selectProfileB: (source: ProfileSelection) => void
+  queryA: QuerySelection;
+  queryB: QuerySelection;
+  profileA: ProfileSelection | null;
+  profileB: ProfileSelection | null;
+  selectQueryA: (query: QuerySelection) => void;
+  selectQueryB: (query: QuerySelection) => void;
+  selectProfileA: (source: ProfileSelection) => void;
+  selectProfileB: (source: ProfileSelection) => void;
 }
 
 const ProfileExplorerCompare = ({
@@ -25,7 +25,7 @@ const ProfileExplorerCompare = ({
   selectQueryA,
   selectQueryB,
   selectProfileA,
-  selectProfileB
+  selectProfileB,
 }: ProfileExplorerCompareProps): JSX.Element => {
   return (
     <>
@@ -56,26 +56,23 @@ const ProfileExplorerCompare = ({
         </div>
       </div>
       <div className="grid grid-cols-1">
-        {profileA != null && profileB != null
-          ? (
-            <ProfileView
-              queryClient={queryClient}
-              profileSource={
-                new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
-              }
-            />
-            )
-          : (
-            <div>
-              <div className='my-20 text-center'>
-                <p>Select a profile on both sides.</p>
-              </div>
+        {profileA != null && profileB != null ? (
+          <ProfileView
+            queryClient={queryClient}
+            profileSource={
+              new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
+            }
+          />
+        ) : (
+          <div>
+            <div className="my-20 text-center">
+              <p>Select a profile on both sides.</p>
             </div>
-            )
-        }
+          </div>
+        )}
       </div>
     </>
-  )
-}
+  );
+};
 
-export default ProfileExplorerCompare
+export default ProfileExplorerCompare;

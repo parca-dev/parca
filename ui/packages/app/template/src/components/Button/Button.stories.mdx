@@ -1,8 +1,8 @@
-import { action } from '@storybook/addon-actions'
-import { Meta, Story, Canvas } from '@storybook/addon-docs/blocks'
-import { Button } from './Button'
+import {action} from '@storybook/addon-actions';
+import {Meta, Story, Canvas} from '@storybook/addon-docs/blocks';
+import {Button} from './Button';
 
-<Meta title='template/Button' component={Button} />
+<Meta title="template/Button" component={Button} />
 
 # Button
 
@@ -11,13 +11,12 @@ Markdown documentation.
 
 <Canvas>
   <Story
-    name='Regular'
+    name="Regular"
     args={{
       label: 'This is a Button',
-      onClick: action('clicked')
+      onClick: action('clicked'),
     }}
   >
     {args => <Button {...args} />}
   </Story>
 </Canvas>
-

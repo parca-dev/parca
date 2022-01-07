@@ -1,19 +1,16 @@
-import { QuerySelection } from './ProfileSelector'
-import { ProfileSelection, ProfileSelectionFromParams, SuffixParams } from '@parca/profile'
-import { NextRouter, withRouter } from 'next/router'
-import ProfileExplorerSingle from './ProfileExplorerSingle'
-import ProfileExplorerCompare from './ProfileExplorerCompare'
-import { QueryServiceClient } from '@parca/client'
+import {QuerySelection} from './ProfileSelector';
+import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca/profile';
+import {NextRouter, withRouter} from 'next/router';
+import ProfileExplorerSingle from './ProfileExplorerSingle';
+import ProfileExplorerCompare from './ProfileExplorerCompare';
+import {QueryServiceClient} from '@parca/client';
 
 interface ProfileExplorerProps {
-  router: NextRouter
-  queryClient: QueryServiceClient
+  router: NextRouter;
+  queryClient: QueryServiceClient;
 }
 
-const ProfileExplorer = ({
-  router,
-  queryClient
-}: ProfileExplorerProps): JSX.Element => {
+const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Element => {
   /* eslint-disable */
   // Disable eslint due to params being snake case
   const {
@@ -32,30 +29,31 @@ const ProfileExplorer = ({
     labels_b,
     time_b,
     time_selection_b,
-    compare_b
-  } = router.query
+    compare_b,
+  } = router.query;
   /* eslint-enable */
 
-  const queryParams = Object.fromEntries(Object.entries(router.query))
+  const queryParams = Object.fromEntries(Object.entries(router.query));
 
-  const filterSuffix = (o: { [key: string]: (string | string[] | undefined) }, suffix: string): { [key: string]: (string | string[] | undefined) } =>
-    Object.fromEntries(
-      Object.entries(o).filter(([key]) => !key.endsWith(suffix))
-    )
+  const filterSuffix = (
+    o: {[key: string]: string | string[] | undefined},
+    suffix: string
+  ): {[key: string]: string | string[] | undefined} =>
+    Object.fromEntries(Object.entries(o).filter(([key]) => !key.endsWith(suffix)));
 
   const selectProfileA = async (p: ProfileSelection): Promise<boolean> => {
     return await router.push({
       pathname: '/',
-      query: { ...queryParams, ...SuffixParams(p.HistoryParams(), '_a') }
-    })
-  }
+      query: {...queryParams, ...SuffixParams(p.HistoryParams(), '_a')},
+    });
+  };
 
   const selectProfileB = async (p: ProfileSelection): Promise<boolean> => {
     return await router.push({
       pathname: '/',
-      query: { ...queryParams, ...SuffixParams(p.HistoryParams(), '_b') }
-    })
-  }
+      query: {...queryParams, ...SuffixParams(p.HistoryParams(), '_b')},
+    });
+  };
 
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
@@ -64,8 +62,8 @@ const ProfileExplorer = ({
       from: parseInt(from_a as string),
       to: parseInt(to_a as string),
       merge: (merge_a as string) === 'true',
-      timeSelection: time_selection_a as string
-    }
+      timeSelection: time_selection_a as string,
+    };
     const profile = ProfileSelectionFromParams(
       expression_a as string,
       from_a as string,
@@ -73,7 +71,7 @@ const ProfileExplorer = ({
       merge_a as string,
       labels_a as string[],
       time_a as string
-    )
+    );
     const selectQuery = async (q: QuerySelection): Promise<boolean> => {
       return await router.push({
         pathname: '/',
@@ -86,17 +84,17 @@ const ProfileExplorer = ({
             from_a: q.from.toString(),
             to_a: q.to.toString(),
             merge_a: q.merge,
-            time_selection_a: q.timeSelection
-          }
-        }
-      })
-    }
+            time_selection_a: q.timeSelection,
+          },
+        },
+      });
+    };
     const selectProfile = async (p: ProfileSelection): Promise<boolean> => {
       return await router.push({
         pathname: '/',
-        query: { ...queryParams, ...SuffixParams(p.HistoryParams(), '_a') }
-      })
-    }
+        query: {...queryParams, ...SuffixParams(p.HistoryParams(), '_a')},
+      });
+    };
 
     const compareProfile = (): void => {
       let compareQuery = {
@@ -112,21 +110,21 @@ const ProfileExplorer = ({
         from_b: query.from.toString(),
         to_b: query.to.toString(),
         merge_b: query.merge,
-        time_selection_b: query.timeSelection
-      }
+        time_selection_b: query.timeSelection,
+      };
 
       if (profile != null) {
         compareQuery = {
           ...SuffixParams(profile.HistoryParams(), '_a'),
-          ...compareQuery
-        }
+          ...compareQuery,
+        };
       }
 
       void router.push({
         pathname: '/',
-        query: compareQuery
-      })
-    }
+        query: compareQuery,
+      });
+    };
 
     return (
       <ProfileExplorerSingle
@@ -137,7 +135,7 @@ const ProfileExplorer = ({
         selectProfile={selectProfile}
         compareProfile={compareProfile}
       />
-    )
+    );
   }
 
   const queryA = {
@@ -145,15 +143,15 @@ const ProfileExplorer = ({
     from: parseInt(from_a as string),
     to: parseInt(to_a as string),
     merge: (merge_a as string) === 'true',
-    timeSelection: time_selection_a as string
-  }
+    timeSelection: time_selection_a as string,
+  };
   const queryB = {
     expression: expression_b as string,
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
     merge: (merge_b as string) === 'true',
-    timeSelection: time_selection_b as string
-  }
+    timeSelection: time_selection_b as string,
+  };
 
   const profileA = ProfileSelectionFromParams(
     expression_a as string,
@@ -162,7 +160,7 @@ const ProfileExplorer = ({
     merge_a as string,
     labels_a as string[],
     time_a as string
-  )
+  );
   const profileB = ProfileSelectionFromParams(
     expression_b as string,
     from_b as string,
@@ -170,7 +168,7 @@ const ProfileExplorer = ({
     merge_b as string,
     labels_b as string[],
     time_b as string
-  )
+  );
 
   const selectQueryA = async (q: QuerySelection): Promise<boolean> => {
     return await router.push({
@@ -185,11 +183,11 @@ const ProfileExplorer = ({
           from_a: q.from.toString(),
           to_a: q.to.toString(),
           merge_a: q.merge,
-          time_selection_a: q.timeSelection
-        }
-      }
-    })
-  }
+          time_selection_a: q.timeSelection,
+        },
+      },
+    });
+  };
 
   const selectQueryB = async (q: QuerySelection): Promise<boolean> => {
     return await router.push({
@@ -204,11 +202,11 @@ const ProfileExplorer = ({
           from_b: q.from.toString(),
           to_b: q.to.toString(),
           merge_b: q.merge,
-          time_selection_b: q.timeSelection
-        }
-      }
-    })
-  }
+          time_selection_b: q.timeSelection,
+        },
+      },
+    });
+  };
 
   return (
     <ProfileExplorerCompare
@@ -222,7 +220,7 @@ const ProfileExplorer = ({
       selectProfileA={selectProfileA}
       selectProfileB={selectProfileB}
     />
-  )
-}
+  );
+};
 
-export default withRouter(ProfileExplorer)
+export default withRouter(ProfileExplorer);

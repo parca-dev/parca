@@ -8,15 +8,15 @@ module.exports = {
     '\\.[jt]sx?$': [
       '@swc/jest',
       {
-        rootMode: 'upward'
-      }
+        rootMode: 'upward',
+      },
     ],
-    '^.+\\.mdx$': '@storybook/addon-docs/jest-transform-mdx'
+    '^.+\\.mdx$': '@storybook/addon-docs/jest-transform-mdx',
   },
   collectCoverage: true,
   coveragePathIgnorePatterns: ['node_modules', 'out', '.next', '.storybook', '.stories.mdx'],
   moduleNameMapper: {
-    '\\.(css|scss)$': 'identity-obj-proxy'
+    '\\.(css|scss)$': 'identity-obj-proxy',
   },
-  testEnvironment: 'jsdom'
-}
+  testEnvironment: 'jsdom',
+};
