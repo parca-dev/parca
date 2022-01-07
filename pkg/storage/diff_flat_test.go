@@ -22,7 +22,8 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -33,49 +34,49 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 
-	s1 := makeSample(3, []uuid.UUID{uuid2, uuid1})
+	s1 := parcaprofile.MakeSample(3, []uuid.UUID{uuid2, uuid1})
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 
-	p1 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "numSamples", Unit: "count"},
+	p1 := &parcaprofile.FlatProfile{
+		Meta: parcaprofile.InstantProfileMeta{
+			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
+			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*parcaprofile.Sample{
 			string(k1[:]): s1,
 		},
 	}
 
-	s2 := makeSample(1, []uuid.UUID{uuid3, uuid1})
+	s2 := parcaprofile.MakeSample(1, []uuid.UUID{uuid3, uuid1})
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
-	p2 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "numSamples", Unit: "count"},
+	p2 := &parcaprofile.FlatProfile{
+		Meta: parcaprofile.InstantProfileMeta{
+			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
+			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*parcaprofile.Sample{
 			string(k2[:]): s2,
 		},
 	}
 
 	dp, err := NewDiffProfile(p1, p2)
 	require.NoError(t, err)
-	require.Equal(t, InstantProfileMeta{
-		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-		SampleType: ValueType{Type: "numSamples", Unit: "count"},
+	require.Equal(t, parcaprofile.InstantProfileMeta{
+		PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
+		SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
 	}, dp.ProfileMeta())
 
 	diffed := dp.Samples()
 	require.Len(t, diffed, 1)
 
-	require.Equal(t, &Sample{
+	require.Equal(t, &parcaprofile.Sample{
 		Value:     1,
 		DiffValue: 0,
 		Location:  []*metastore.Location{{ID: uuid3}, {ID: uuid1}},
@@ -88,25 +89,25 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 	uuid6 := uuid.MustParse("00000000-0000-0000-0000-000000000006")
 
-	s0 := makeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
-	s1 := makeSample(3, []uuid.UUID{uuid6, uuid2})
-	s2 := makeSample(3, []uuid.UUID{uuid2, uuid3})
-	s3 := makeSample(3, []uuid.UUID{uuid1, uuid3})
+	s0 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid3, uuid2})
+	s1 := parcaprofile.MakeSample(3, []uuid.UUID{uuid6, uuid2})
+	s2 := parcaprofile.MakeSample(3, []uuid.UUID{uuid2, uuid3})
+	s3 := parcaprofile.MakeSample(3, []uuid.UUID{uuid1, uuid3})
 
 	k0 := uuid.MustParse("00000000-0000-0000-0000-0000000000e0")
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 
-	p1 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "numSamples", Unit: "count"},
+	p1 := &parcaprofile.FlatProfile{
+		Meta: parcaprofile.InstantProfileMeta{
+			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
+			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*parcaprofile.Sample{
 			string(k0[:]): s0,
 			string(k1[:]): s1,
 			string(k2[:]): s2,
@@ -114,20 +115,20 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 		},
 	}
 
-	s4 := makeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
-	s5 := makeSample(5, []uuid.UUID{uuid2, uuid3})
+	s4 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
+	s5 := parcaprofile.MakeSample(5, []uuid.UUID{uuid2, uuid3})
 
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
-	p2 := &FlatProfile{
-		Meta: InstantProfileMeta{
-			PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-			SampleType: ValueType{Type: "numSamples", Unit: "count"},
+	p2 := &parcaprofile.FlatProfile{
+		Meta: parcaprofile.InstantProfileMeta{
+			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
+			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
 			Timestamp:  1,
 			Duration:   int64(time.Second * 10),
 			Period:     100,
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*parcaprofile.Sample{
 			string(k4[:]): s4,
 			string(k2[:]): s5,
 		},
@@ -135,20 +136,20 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 
 	dp, err := NewDiffProfile(p1, p2)
 	require.NoError(t, err)
-	require.Equal(t, InstantProfileMeta{
-		PeriodType: ValueType{Type: "cpu", Unit: "cycles"},
-		SampleType: ValueType{Type: "numSamples", Unit: "count"},
+	require.Equal(t, parcaprofile.InstantProfileMeta{
+		PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
+		SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
 	}, dp.ProfileMeta())
 
 	diffed := dp.Samples()
 	require.Len(t, diffed, 2)
 
-	require.Equal(t, &Sample{
+	require.Equal(t, &parcaprofile.Sample{
 		Value:     3,
 		DiffValue: 0,
 		Location:  []*metastore.Location{{ID: uuid3}, {ID: uuid2}, {ID: uuid2}},
 	}, diffed[string(k4[:])])
-	require.Equal(t, &Sample{
+	require.Equal(t, &parcaprofile.Sample{
 		Value:     5,
 		DiffValue: 2,
 		Location:  []*metastore.Location{{ID: uuid2}, {ID: uuid3}},
@@ -181,9 +182,9 @@ func BenchmarkFlatDiff(b *testing.B) {
 	b.Cleanup(func() {
 		l.Close()
 	})
-	profile1, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile1, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(b, err)
-	profile2, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profile2, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 	require.NoError(b, err)
 
 	b.Run("simple", func(b *testing.B) {
@@ -193,7 +194,7 @@ func BenchmarkFlatDiff(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			d, err := NewDiffProfile(profile1, profile2)
 			require.NoError(b, err)
-			CopyInstantFlatProfile(d)
+			parcaprofile.CopyInstantFlatProfile(d)
 		}
 	})
 }

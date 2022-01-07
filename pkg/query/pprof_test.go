@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package query
 
 import (
 	"context"
@@ -25,7 +25,8 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -49,7 +50,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	t.Cleanup(func() {
 		l.Close()
 	})
-	p, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	p, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 	res, err := GenerateFlatPprof(ctx, l, p)
 	require.NoError(t, err)
@@ -146,14 +147,14 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	l2.ID, err = uuid.FromBytes(l2ID)
 	require.NoError(t, err)
 
-	sample := makeSample(2, []uuid.UUID{
+	sample := parcaprofile.MakeSample(2, []uuid.UUID{
 		l2.ID,
 		l1.ID,
 	})
-	key := makeStacktraceKey(sample)
+	key := parcaprofile.MakeStacktraceKey(sample)
 
-	res, err := GenerateFlatPprof(ctx, l, &FlatProfile{
-		samples: map[string]*Sample{
+	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.FlatProfile{
+		FlatSamples: map[string]*parcaprofile.Sample{
 			string(key): sample,
 		},
 	})

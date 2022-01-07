@@ -11,17 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package profile
 
 import (
 	"testing"
 
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMakeStacktraceKey(t *testing.T) {
-	g := NewLinearUUIDGenerator()
+	g := metastore.NewLinearUUIDGenerator()
 
 	s := &Sample{
 		Location: []*metastore.Location{{ID: g.New()}, {ID: g.New()}, {ID: g.New()}},
@@ -30,7 +30,7 @@ func TestMakeStacktraceKey(t *testing.T) {
 		NumUnit:  map[string][]string{"foo": {"cpu", "memory"}},
 	}
 
-	k := []byte(makeStacktraceKey(s))
+	k := []byte(MakeStacktraceKey(s))
 
 	require.Len(t, k, 119)
 
@@ -64,7 +64,7 @@ func TestMakeStacktraceKey(t *testing.T) {
 }
 
 func BenchmarkMakeStacktraceKey(b *testing.B) {
-	g := NewLinearUUIDGenerator()
+	g := metastore.NewLinearUUIDGenerator()
 	s := &Sample{
 		Location: []*metastore.Location{{ID: g.New()}, {ID: g.New()}, {ID: g.New()}},
 		Label:    map[string][]string{"foo": {"bar", "baz"}},
@@ -76,6 +76,6 @@ func BenchmarkMakeStacktraceKey(b *testing.B) {
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		_ = makeStacktraceKey(s)
+		_ = MakeStacktraceKey(s)
 	}
 }

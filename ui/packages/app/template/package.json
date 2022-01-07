@@ -1,25 +1,25 @@
 {
-    "name": "@parca/template",
-    "version": "0.0.0",
-    "description": "Frontend App Template",
-    "scripts": {
-      "dev": "../../../node_modules/.bin/next dev",
-      "build": "yarn clean && ../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
-      "clean": "rimraf .next && rimraf out",
-      "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
-      "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
-      "storybook": "start-storybook -p 6006"
-    },
-    "config": {
-      "port": 3000,
-      "path": "/"
-    },
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-      "@parca/functions": "0.0.0"
-    },
-    "devDependencies": {
-      "@storybook/react": "^6.3.12"
-    }
+  "name": "@parca/template",
+  "version": "0.0.0",
+  "description": "Frontend App Template",
+  "scripts": {
+    "dev": "../../../node_modules/.bin/next dev",
+    "build": "yarn clean && ../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
+    "clean": "rimraf .next && rimraf out",
+    "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
+    "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
+    "storybook": "start-storybook -p 6006"
+  },
+  "config": {
+    "port": 3000,
+    "path": "/"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@parca/functions": "0.0.0"
+  },
+  "devDependencies": {
+    "@storybook/react": "^6.3.12"
   }
+}

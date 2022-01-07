@@ -1,5 +1,8 @@
 # Parse all files with TypeScript.
-extends: 'standard-with-typescript'
+extends:
+  - 'standard-with-typescript'
+  - 'prettier'
+
 parserOptions:
   project: './tsconfig.json'
   createDefaultProgram: true
@@ -29,10 +32,10 @@ rules:
     - varsIgnorePattern: _
       argsIgnorePattern: _
 
-  no-labels: [ error, { allowLoop: true } ]
+  no-labels: [error, {allowLoop: true}]
   no-void: 0
   # TODO fix these in follow ups
-  "@typescript-eslint/explicit-function-return-type": "off"
+  '@typescript-eslint/explicit-function-return-type': 'off'
   #'@typescript-eslint/member-delimiter-style':
   #  - error
   #  - singleline:

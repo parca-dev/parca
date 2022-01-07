@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
@@ -34,8 +34,6 @@ func TestPostingsForMatchers(t *testing.T) {
 	h.postings.Add(4, labels.Labels{{Name: "n", Value: "2.5"}})
 
 	ir := &headIndexReader{head: h}
-
-	var empty []uint64
 
 	testcases := []struct {
 		name     string
@@ -61,7 +59,7 @@ func TestPostingsForMatchers(t *testing.T) {
 			{Type: labels.MatchEqual, Name: "n", Value: "1"},
 			{Type: labels.MatchEqual, Name: "i", Value: "missing"},
 		},
-		exp: empty,
+		exp: []uint64{},
 	}, {
 		name: `missing=""`,
 		matchers: []*labels.Matcher{
@@ -86,7 +84,7 @@ func TestPostingsForMatchers(t *testing.T) {
 		matchers: []*labels.Matcher{
 			{Type: labels.MatchNotEqual, Name: "missing", Value: ""},
 		},
-		exp: empty,
+		exp: []uint64{},
 	}, {
 		name: `n="1",n!="2"`,
 		matchers: []*labels.Matcher{
@@ -189,7 +187,7 @@ func TestPostingsForMatchers(t *testing.T) {
 			labels.MustNewMatcher(labels.MatchEqual, "n", "1"),
 			labels.MustNewMatcher(labels.MatchNotRegexp, "i", "^.*$"),
 		},
-		exp: empty,
+		exp: []uint64{},
 	}, {
 		name: `n="1",i!~"^.+$"`,
 		matchers: []*labels.Matcher{

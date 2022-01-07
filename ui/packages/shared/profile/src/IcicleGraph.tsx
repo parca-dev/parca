@@ -1,34 +1,34 @@
-import React, { MouseEvent, useEffect, useRef, useState } from 'react'
-import { throttle } from 'lodash'
-import { pointer } from 'd3-selection'
-import { scaleLinear } from 'd3-scale'
-import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client'
-import { usePopper } from 'react-popper'
-import { valueFormatter } from '@parca/functions'
+import React, {MouseEvent, useEffect, useRef, useState} from 'react';
+import {throttle} from 'lodash';
+import {pointer} from 'd3-selection';
+import {scaleLinear} from 'd3-scale';
+import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {usePopper} from 'react-popper';
+import {valueFormatter} from '@parca/functions';
 
-const RowHeight = 20
+const RowHeight = 20;
 
 const icicleRectStyles = {
   cursor: 'pointer',
-  transition: 'opacity .15s linear'
-}
+  transition: 'opacity .15s linear',
+};
 const fadedIcicleRectStyles = {
   cursor: 'pointer',
   transition: 'opacity .15s linear',
-  opacity: '0.5'
-}
+  opacity: '0.5',
+};
 
 interface IcicleRectProps {
-  x: number
-  y: number
-  width: number
-  height: number
-  color: string
-  name: string
-  onMouseEnter: (e: MouseEvent) => void
-  onMouseLeave: (e: MouseEvent) => void
-  onClick: (e: MouseEvent) => void
-  curPath: string[]
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  name: string;
+  onMouseEnter: (e: MouseEvent) => void;
+  onMouseLeave: (e: MouseEvent) => void;
+  onClick: (e: MouseEvent) => void;
+  curPath: string[];
 }
 
 function IcicleRect({
@@ -41,11 +41,10 @@ function IcicleRect({
   onMouseEnter,
   onMouseLeave,
   onClick,
-  curPath
+  curPath,
 }: IcicleRectProps) {
-  const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1]
-
-  const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles
+  const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
+  const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
 
   return (
     <g
@@ -61,75 +60,77 @@ function IcicleRect({
         width={width - 1}
         height={height - 1}
         style={{
-          fill: color
+          fill: color,
         }}
       />
       {width > 5 && (
         <svg width={width - 5} height={height}>
-          <text x={5} y={13} style={{ fontSize: '12px' }}>
+          <text x={5} y={13} style={{fontSize: '12px'}}>
             {name}
           </text>
         </svg>
       )}
     </g>
-  )
+  );
 }
 
 interface IcicleGraphNodesProps {
-  data: FlamegraphNode.AsObject[]
-  x: number
-  y: number
-  total: number
-  totalWidth: number
-  level: number
-  curPath: string[]
-  setCurPath: (path: string[]) => void
-  setHoveringNode: (node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined) => void
-  path: string[]
-  xScale: (value: number) => number
+  data: FlamegraphNode.AsObject[];
+  x: number;
+  y: number;
+  total: number;
+  totalWidth: number;
+  level: number;
+  curPath: string[];
+  setCurPath: (path: string[]) => void;
+  setHoveringNode: (
+    node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined
+  ) => void;
+  path: string[];
+  xScale: (value: number) => number;
 }
 
 function diffColor(diff: number, cumulative: number): string {
-  const prevValue = cumulative - diff
-  const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0
+  const prevValue = cumulative - diff;
+  const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0;
 
   const diffTransparency =
-    Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0
+    Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
   const color =
     diff === 0
       ? '#90c7e0'
       : diff > 0
       ? `rgba(221, 46, 69, ${diffTransparency})`
-      : `rgba(59, 165, 93, ${diffTransparency})`
+      : `rgba(59, 165, 93, ${diffTransparency})`;
 
-  return color
+  return color;
 }
 
 function getLastItem(thePath: string): string {
-  const index = thePath.lastIndexOf('/')
-  if (index === -1) return thePath
+  const index = thePath.lastIndexOf('/');
+  if (index === -1) return thePath;
 
-  return thePath.substring(index + 1)
+  return thePath.substring(index + 1);
 }
 
 export function nodeLabel(node: FlamegraphNode.AsObject): string {
-  if (node.meta === undefined) return '<unknown>'
+  if (node.meta === undefined) return '<unknown>';
   const mapping = `${
     node.meta?.mapping?.file !== undefined && node.meta?.mapping?.file !== ''
       ? '[' + getLastItem(node.meta.mapping.file) + '] '
       : ''
-  }`
+  }`;
   if (node.meta.pb_function?.name !== undefined && node.meta.pb_function?.name !== '')
-    return mapping + node.meta.pb_function.name
+    return mapping + node.meta.pb_function.name;
 
   const address = `${
     node.meta.location?.address !== undefined && node.meta.location?.address !== 0
       ? '0x' + node.meta.location.address.toString(16)
       : ''
-  }`
-  const fallback = `${mapping}${address}`
+  }`;
+  const fallback = `${mapping}${address}`;
 
-  return fallback === '' ? '<unknown>' : fallback
+  return fallback === '' ? '<unknown>' : fallback;
 }
 
 export function IcicleGraphNodes({
@@ -143,48 +144,46 @@ export function IcicleGraphNodes({
   setHoveringNode,
   path,
   setCurPath,
-  curPath
+  curPath,
 }: IcicleGraphNodesProps) {
   const nodes =
-    curPath.length === 0 ? data : data.filter(d => d != null && curPath[0] === nodeLabel(d))
+    curPath.length === 0 ? data : data.filter(d => d != null && curPath[0] === nodeLabel(d));
 
-  const nextLevel = level + 1
-  const currentSelectedName = curPath[curPath.length - 1]
-  const currentSelectedLevel = curPath.indexOf(currentSelectedName)
+  const nextLevel = level + 1;
 
   return (
     <g transform={`translate(${x}, ${y})`}>
       {nodes.map((d, i) => {
-        const start = nodes.slice(0, i).reduce((sum, d) => sum + d.cumulative, 0)
+        const start = nodes.slice(0, i).reduce((sum, d) => sum + d.cumulative, 0);
 
-        const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1)
+        const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);
         const width =
           nextCurPath.length > 0 || (nextCurPath.length === 0 && curPath.length === 1)
             ? totalWidth
-            : xScale(d.cumulative)
+            : xScale(d.cumulative);
 
         if (width <= 1) {
-          return <></>
+          return <></>;
         }
 
-        const key = `${level}-${i}`
-        const name = nodeLabel(d)
-        const nextPath = path.concat([name])
+        const key = `${level}-${i}`;
+        const name = nodeLabel(d);
+        const nextPath = path.concat([name]);
 
-        const color = diffColor(d.diff === undefined ? 0 : d.diff, d.cumulative)
+        const color = diffColor(d.diff === undefined ? 0 : d.diff, d.cumulative);
 
         const onClick = () => {
-          setCurPath(nextPath)
-        }
+          setCurPath(nextPath);
+        };
 
-        const xStart = xScale(start)
+        const xStart = xScale(start);
         const newXScale =
           nextCurPath.length === 0 && curPath.length === 1
             ? scaleLinear().domain([0, d.cumulative]).range([0, totalWidth])
-            : xScale
+            : xScale;
 
-        const onMouseEnter = () => setHoveringNode(d)
-        const onMouseLeave = () => setHoveringNode(undefined)
+        const onMouseEnter = () => setHoveringNode(d);
+        const onMouseLeave = () => setHoveringNode(undefined);
 
         return (
           <React.Fragment>
@@ -218,37 +217,37 @@ export function IcicleGraphNodes({
               />
             )}
           </React.Fragment>
-        )
+        );
       })}
     </g>
-  )
+  );
 }
 
-const MemoizedIcicleGraphNodes = React.memo(IcicleGraphNodes)
+const MemoizedIcicleGraphNodes = React.memo(IcicleGraphNodes);
 
 interface FlamegraphTooltipProps {
-  x: number
-  y: number
-  unit: string
-  total: number
-  hoveringNode: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined
-  contextElement: Element | null
+  x: number;
+  y: number;
+  unit: string;
+  total: number;
+  hoveringNode: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined;
+  contextElement: Element | null;
 }
 
 const FlamegraphNodeTooltipTableRows = ({
-  hoveringNode
+  hoveringNode,
 }: {
-  hoveringNode: FlamegraphNode.AsObject
+  hoveringNode: FlamegraphNode.AsObject;
 }): JSX.Element => {
-  if (hoveringNode.meta === undefined) return <></>
+  if (hoveringNode.meta === undefined) return <></>;
 
   return (
     <>
       {hoveringNode.meta.pb_function?.filename !== undefined &&
         hoveringNode.meta.pb_function?.filename !== '' && (
           <tr>
-            <td className='w-1/5'>File</td>
-            <td className='w-4/5'>
+            <td className="w-1/5">File</td>
+            <td className="w-4/5">
               {hoveringNode.meta.pb_function.filename}
               {hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== 0
                 ? ` +${hoveringNode.meta.line.line.toString()}`
@@ -264,22 +263,22 @@ const FlamegraphNodeTooltipTableRows = ({
       {hoveringNode.meta.location?.address !== undefined &&
         hoveringNode.meta.location?.address !== 0 && (
           <tr>
-            <td className='w-1/5'>Address</td>
-            <td className='w-4/5'>{' 0x' + hoveringNode.meta.location.address.toString(16)}</td>
+            <td className="w-1/5">Address</td>
+            <td className="w-4/5">{' 0x' + hoveringNode.meta.location.address.toString(16)}</td>
           </tr>
         )}
       {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.file !== '' && (
         <tr>
-          <td className='w-1/5'>Binary</td>
-          <td className='w-4/5'>{getLastItem(hoveringNode.meta.mapping.file)}</td>
+          <td className="w-1/5">Binary</td>
+          <td className="w-4/5">{getLastItem(hoveringNode.meta.mapping.file)}</td>
         </tr>
       )}
     </>
-  )
-}
+  );
+};
 
 function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
-  const domRect = contextElement.getBoundingClientRect()
+  const domRect = contextElement.getBoundingClientRect();
   return () =>
     ({
       width: 0,
@@ -287,8 +286,8 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
       top: domRect.y + y,
       left: domRect.x + x,
       right: domRect.x + x,
-      bottom: domRect.y + y
-    } as ClientRect)
+      bottom: domRect.y + y,
+    } as ClientRect);
 }
 
 const virtualElement = {
@@ -299,9 +298,9 @@ const virtualElement = {
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0
-    } as ClientRect)
-}
+      bottom: 0,
+    } as ClientRect),
+};
 
 export const FlamegraphTooltip = ({
   x,
@@ -309,11 +308,11 @@ export const FlamegraphTooltip = ({
   unit,
   total,
   hoveringNode,
-  contextElement
+  contextElement,
 }: FlamegraphTooltipProps): JSX.Element => {
-  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null)
+  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
-  const { styles, attributes, ...popperProps } = usePopper(virtualElement, popperElement, {
+  const {styles, attributes, ...popperProps} = usePopper(virtualElement, popperElement, {
     placement: 'auto-start',
     strategy: 'absolute',
     modifiers: [
@@ -321,56 +320,56 @@ export const FlamegraphTooltip = ({
         name: 'preventOverflow',
         options: {
           tether: false,
-          altAxis: true
-        }
+          altAxis: true,
+        },
       },
       {
         name: 'offset',
         options: {
-          offset: [30, 30]
-        }
-      }
-    ]
-  })
+          offset: [30, 30],
+        },
+      },
+    ],
+  });
 
-  const update = popperProps.update
+  const update = popperProps.update;
 
   useEffect(() => {
     if (contextElement != null) {
-      virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y)
-      update?.()
+      virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y);
+      update?.();
     }
-  }, [x, y, contextElement, update])
+  }, [x, y, contextElement, update]);
 
-  if (hoveringNode === undefined || hoveringNode == null) return <></>
+  if (hoveringNode === undefined || hoveringNode == null) return <></>;
 
-  const diff = hoveringNode.diff === undefined ? 0 : hoveringNode.diff
-  const prevValue = hoveringNode.cumulative - diff
-  const diffRatio = Math.abs(diff) > 0 ? diff / prevValue : 0
-  const diffSign = diff > 0 ? '+' : ''
-  const diffValueText = diffSign + valueFormatter(diff, unit, 1)
-  const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%'
-  const diffText = `${diffValueText} (${diffPercentageText})`
+  const diff = hoveringNode.diff === undefined ? 0 : hoveringNode.diff;
+  const prevValue = hoveringNode.cumulative - diff;
+  const diffRatio = Math.abs(diff) > 0 ? diff / prevValue : 0;
+  const diffSign = diff > 0 ? '+' : '';
+  const diffValueText = diffSign + valueFormatter(diff, unit, 1);
+  const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
+  const diffText = `${diffValueText} (${diffPercentageText})`;
 
-  const hoveringFlamegraphNode = hoveringNode as FlamegraphNode.AsObject
+  const hoveringFlamegraphNode = hoveringNode as FlamegraphNode.AsObject;
   const metaRows =
     hoveringFlamegraphNode.meta === undefined ? (
       <></>
     ) : (
       <FlamegraphNodeTooltipTableRows hoveringNode={hoveringNode as FlamegraphNode.AsObject} />
-    )
+    );
 
   return (
     <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
-      <div className='flex'>
-        <div className='m-auto'>
+      <div className="flex">
+        <div className="m-auto">
           <div
-            className='border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90'
-            style={{ borderWidth: 1 }}
+            className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
+            style={{borderWidth: 1}}
           >
-            <div className='flex flex-row'>
-              <div className='ml-2 mr-6'>
-                <span className='font-semibold'>
+            <div className="flex flex-row">
+              <div className="ml-2 mr-6">
+                <span className="font-semibold">
                   {hoveringFlamegraphNode.meta === undefined ? (
                     <p>root</p>
                   ) : (
@@ -393,20 +392,20 @@ export const FlamegraphTooltip = ({
                     </>
                   )}
                 </span>
-                <span className='text-gray-700 dark:text-gray-300 my-2'>
-                  <table className='table-fixed'>
+                <span className="text-gray-700 dark:text-gray-300 my-2">
+                  <table className="table-fixed">
                     <tbody>
                       <tr>
-                        <td className='w-1/5'>Cumulative</td>
-                        <td className='w-4/5'>
+                        <td className="w-1/5">Cumulative</td>
+                        <td className="w-4/5">
                           {valueFormatter(hoveringNode.cumulative, unit, 2)} (
                           {((hoveringNode.cumulative * 100) / total).toFixed(2)}%)
                         </td>
                       </tr>
                       {hoveringNode.diff !== undefined && diff !== 0 && (
                         <tr>
-                          <td className='w-1/5'>Diff</td>
-                          <td className='w-4/5'>{diffText}</td>
+                          <td className="w-1/5">Diff</td>
+                          <td className="w-4/5">{diffText}</td>
                         </tr>
                       )}
                       {metaRows}
@@ -419,17 +418,19 @@ export const FlamegraphTooltip = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 interface IcicleGraphRootNodeProps {
-  node: FlamegraphRootNode.AsObject
-  xScale: (value: number) => number
-  total: number
-  totalWidth: number
-  curPath: string[]
-  setCurPath: (path: string[]) => void
-  setHoveringNode: (node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined) => void
+  node: FlamegraphRootNode.AsObject;
+  xScale: (value: number) => number;
+  total: number;
+  totalWidth: number;
+  curPath: string[];
+  setCurPath: (path: string[]) => void;
+  setHoveringNode: (
+    node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined
+  ) => void;
 }
 
 export function IcicleGraphRootNode({
@@ -439,14 +440,14 @@ export function IcicleGraphRootNode({
   totalWidth,
   setHoveringNode,
   setCurPath,
-  curPath
+  curPath,
 }: IcicleGraphRootNodeProps) {
-  const color = diffColor(node.diff === undefined ? 0 : node.diff, node.cumulative)
+  const color = diffColor(node.diff === undefined ? 0 : node.diff, node.cumulative);
 
-  const onClick = () => setCurPath([])
-  const onMouseEnter = () => setHoveringNode(node)
-  const onMouseLeave = () => setHoveringNode(undefined)
-  const path = []
+  const onClick = () => setCurPath([]);
+  const onMouseEnter = () => setHoveringNode(node);
+  const onMouseLeave = () => setHoveringNode(undefined);
+  const path = [];
 
   return (
     <g transform={'translate(0, 0)'}>
@@ -476,44 +477,44 @@ export function IcicleGraphRootNode({
         setCurPath={setCurPath}
       />
     </g>
-  )
+  );
 }
 
-const MemoizedIcicleGraphRootNode = React.memo(IcicleGraphRootNode)
+const MemoizedIcicleGraphRootNode = React.memo(IcicleGraphRootNode);
 
 interface IcicleGraphProps {
-  graph: Flamegraph.AsObject
-  width?: number
-  curPath: string[]
-  setCurPath: (path: string[]) => void
+  graph: Flamegraph.AsObject;
+  width?: number;
+  curPath: string[];
+  setCurPath: (path: string[]) => void;
 }
 
-export default function IcicleGraph({ graph, width, setCurPath, curPath }: IcicleGraphProps) {
+export default function IcicleGraph({graph, width, setCurPath, curPath}: IcicleGraphProps) {
   const [hoveringNode, setHoveringNode] = useState<
     FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined
-  >()
-  const [pos, setPos] = useState([0, 0])
-  const [height, setHeight] = useState(0)
-  const svg = useRef(null)
-  const ref = useRef<SVGGElement>(null)
+  >();
+  const [pos, setPos] = useState([0, 0]);
+  const [height, setHeight] = useState(0);
+  const svg = useRef(null);
+  const ref = useRef<SVGGElement>(null);
 
   useEffect(() => {
     if (ref.current != null) {
-      setHeight(ref?.current.getBoundingClientRect().height)
+      setHeight(ref?.current.getBoundingClientRect().height);
     }
-  }, [width])
+  }, [width]);
 
-  if (graph.root === undefined || width === undefined) return <></>
+  if (graph.root === undefined || width === undefined) return <></>;
 
-  const throttledSetPos = throttle(setPos, 20)
+  const throttledSetPos = throttle(setPos, 20);
   const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
     // X/Y coordinate array relative to svg
-    const rel = pointer(e)
+    const rel = pointer(e);
 
-    throttledSetPos([rel[0], rel[1]])
-  }
+    throttledSetPos([rel[0], rel[1]]);
+  };
 
-  const xScale = scaleLinear().domain([0, graph.total]).range([0, width])
+  const xScale = scaleLinear().domain([0, graph.total]).range([0, width]);
 
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
@@ -539,5 +540,5 @@ export default function IcicleGraph({ graph, width, setCurPath, curPath }: Icicl
         </g>
       </svg>
     </div>
-  )
+  );
 }

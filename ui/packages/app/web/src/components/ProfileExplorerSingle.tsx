@@ -1,14 +1,14 @@
-import ProfileSelector, { QuerySelection } from './ProfileSelector'
-import { ProfileSelection, ProfileView } from '@parca/profile'
-import { QueryServiceClient } from '@parca/client'
+import ProfileSelector, {QuerySelection} from './ProfileSelector';
+import {ProfileSelection, ProfileView} from '@parca/profile';
+import {QueryServiceClient} from '@parca/client';
 
 interface ProfileExplorerSingleProps {
-  queryClient: QueryServiceClient
-  query: QuerySelection
-  selectQuery: (query: QuerySelection) => void
-  selectProfile: (source: ProfileSelection) => void
-  profile: ProfileSelection | null
-  compareProfile: () => void
+  queryClient: QueryServiceClient;
+  query: QuerySelection;
+  selectQuery: (query: QuerySelection) => void;
+  selectProfile: (source: ProfileSelection) => void;
+  profile: ProfileSelection | null;
+  compareProfile: () => void;
 }
 
 const ProfileExplorerSingle = ({
@@ -17,7 +17,7 @@ const ProfileExplorerSingle = ({
   selectQuery,
   selectProfile,
   profile,
-  compareProfile
+  compareProfile,
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
     <>
@@ -37,20 +37,15 @@ const ProfileExplorerSingle = ({
       </div>
       <div className="grid grid-cols-1">
         <div>
-          {profile != null
-            ? (
-              <ProfileView
-                queryClient={queryClient}
-                profileSource={profile.ProfileSource()}
-              />
-              )
-            : (
-              <></>
-              )}
+          {profile != null ? (
+            <ProfileView queryClient={queryClient} profileSource={profile.ProfileSource()} />
+          ) : (
+            <></>
+          )}
         </div>
       </div>
     </>
-  )
-}
+  );
+};
 
-export default ProfileExplorerSingle
+export default ProfileExplorerSingle;

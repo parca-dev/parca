@@ -11,13 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package query
 
 import (
 	"context"
 
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/metastore"
 )
 
 type LocationStack []*profile.Location
@@ -61,7 +62,7 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 	return a
 }
 
-func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip InstantProfile) (*profile.Profile, error) {
+func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip parcaprofile.InstantProfile) (*profile.Profile, error) {
 	meta := ip.ProfileMeta()
 
 	mappingByID := map[string]*profile.Mapping{}

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/dgraph-io/sroar"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 )
 

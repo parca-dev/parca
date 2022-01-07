@@ -26,7 +26,7 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbolizer"
 	"github.com/prometheus/client_golang/prometheus"

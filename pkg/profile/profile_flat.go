@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package profile
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"github.com/google/uuid"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 )
 
 // FlatProfilesFromPprof extracts a Profile from each sample index included in the pprof profile.
@@ -59,8 +59,8 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 	}
 
 	return &FlatProfile{
-		Meta:    ProfileMetaFromPprof(p, sampleIndex),
-		samples: pfn.samples,
+		Meta:        ProfileMetaFromPprof(p, sampleIndex),
+		FlatSamples: pfn.samples,
 	}, nil
 }
 
@@ -116,7 +116,7 @@ func (pn *profileFlatNormalizer) mapSample(ctx context.Context, src *profile.Sam
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping. Add current values to the
 	// existing sample.
-	k := makeStacktraceKey(s)
+	k := MakeStacktraceKey(s)
 
 	stacktraceUUID, err := pn.metaStore.GetStacktraceByKey(ctx, k)
 	if err != nil && err != metastore.ErrStacktraceNotFound {

@@ -1,1 +1,1 @@
-export * from './CalcWidth'
+export * from './CalcWidth';

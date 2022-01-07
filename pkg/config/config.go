@@ -29,7 +29,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	_ "github.com/prometheus/prometheus/discovery/install" // Imported for registration side-effect
 	"github.com/prometheus/prometheus/discovery/targetgroup"
-	"github.com/prometheus/prometheus/pkg/relabel"
+	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v2"
 )
 

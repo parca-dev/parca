@@ -19,8 +19,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -32,16 +33,16 @@ func TestHead_MaxTime(t *testing.T) {
 	app, err := h.Appender(ctx, labels.FromStrings("foo", "bar"))
 	require.NoError(t, err)
 
-	s := makeSample(1, []uuid.UUID{
+	s := profile.MakeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
-	k := makeStacktraceKey(s)
+	k := profile.MakeStacktraceKey(s)
 
 	for i := int64(1); i < 500; i++ {
-		require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
-			Meta:    InstantProfileMeta{Timestamp: i},
-			samples: map[string]*Sample{string(k): s},
+		require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+			Meta:        profile.InstantProfileMeta{Timestamp: i},
+			FlatSamples: map[string]*profile.Sample{string(k): s},
 		}))
 		require.Equal(t, i, h.MaxTime())
 	}
@@ -127,11 +128,11 @@ func BenchmarkStripeSeries(b *testing.B) {
 func TestHead_Truncate(t *testing.T) {
 	h := NewHead(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
 
-	s := makeSample(1, []uuid.UUID{
+	s := profile.MakeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
-	k := makeStacktraceKey(s)
+	k := profile.MakeStacktraceKey(s)
 
 	ctx := context.Background()
 	{
@@ -139,9 +140,9 @@ func TestHead_Truncate(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := int64(1); i <= 500; i++ {
-			require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
-				Meta:    InstantProfileMeta{Timestamp: i},
-				samples: map[string]*Sample{string(k): s},
+			require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+				Meta:        profile.InstantProfileMeta{Timestamp: i},
+				FlatSamples: map[string]*profile.Sample{string(k): s},
 			}))
 		}
 	}
@@ -150,9 +151,9 @@ func TestHead_Truncate(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := int64(100); i < 768; i++ {
-			require.NoError(t, app.AppendFlat(ctx, &FlatProfile{
-				Meta:    InstantProfileMeta{Timestamp: i},
-				samples: map[string]*Sample{string(k): s},
+			require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+				Meta:        profile.InstantProfileMeta{Timestamp: i},
+				FlatSamples: map[string]*profile.Sample{string(k): s},
 			}))
 		}
 	}

@@ -20,9 +20,10 @@ import (
 	"math"
 	"sync"
 
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -34,8 +35,8 @@ type MemSeries struct {
 	id   uint64
 	lset labels.Labels
 
-	periodType ValueType
-	sampleType ValueType
+	periodType profile.ValueType
+	sampleType profile.ValueType
 
 	minTime, maxTime int64
 	timestamps       timestampChunks
@@ -135,7 +136,7 @@ type MemSeriesAppender struct {
 
 const samplesPerChunk = 120
 
-func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *FlatProfile) error {
+func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *profile.FlatProfile) error {
 	ctx, span := a.s.tracer.Start(ctx, "AppendFlat")
 	defer span.End()
 

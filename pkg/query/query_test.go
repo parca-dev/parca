@@ -24,9 +24,9 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
@@ -35,6 +35,7 @@ import (
 
 	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage"
 )
 
@@ -97,7 +98,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	// Overwrite the profile's timestamp to be within the last 5min.
 	p.TimeNanos = time.Now().UnixNano()
 
-	prof, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
+	prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
 	require.NoError(t, err)
 	err = app.AppendFlat(ctx, prof)
 	require.NoError(t, err)
@@ -168,7 +169,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 		// Overwrite the profile's timestamp to be within the last 5min.
 		p.TimeNanos = time.Now().UnixNano()
 
-		prof, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
+		prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
 		require.NoError(t, err)
 		err = app.AppendFlat(ctx, prof)
 		require.NoError(t, err)
@@ -224,7 +225,7 @@ func Test_QueryRange_Ranged(t *testing.T) {
 
 	for i := 0; i < 500; i++ {
 		p.TimeNanos = start.Add(time.Duration(i) * time.Second).UnixNano()
-		pprof, err := storage.FlatProfileFromPprof(ctx, logger, s, p, 0)
+		pprof, err := parcaprofile.FlatProfileFromPprof(ctx, logger, s, p, 0)
 		require.NoError(t, err)
 		err = app.AppendFlat(ctx, pprof)
 		require.NoError(t, err)
@@ -397,7 +398,7 @@ func Test_Query_Simple(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	prof, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(t, err)
 	err = app.AppendFlat(ctx, prof)
 	require.NoError(t, err)
@@ -462,7 +463,7 @@ func Test_Query_Diff(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	prof1, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	prof1, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(t, err)
 	err = app.AppendFlat(ctx, prof1)
 	require.NoError(t, err)
@@ -472,7 +473,7 @@ func Test_Query_Diff(t *testing.T) {
 	t2 := (time.Now().UnixNano() / 1000000) * 1000000
 	p2.TimeNanos = t2
 
-	prof2, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p2, 0)
+	prof2, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p2, 0)
 	require.NoError(t, err)
 	err = app.AppendFlat(ctx, prof2)
 	require.NoError(t, err)
@@ -528,7 +529,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	p, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	p, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(b, err)
 
 	for k := 0.; k <= 10; k++ {
@@ -596,7 +597,7 @@ func Test_Query_Merge(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	p, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 	require.NoError(t, err)
 
 	for k := 0.; k <= 10; k++ {
@@ -704,7 +705,7 @@ func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
 
 		p1.TimeNanos = t1
 
-		prof, err := storage.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+		prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p1, 0)
 		require.NoError(t, err)
 		err = app.AppendFlat(ctx, prof)
 		require.NoError(t, err)

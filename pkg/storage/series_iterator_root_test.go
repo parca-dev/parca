@@ -18,7 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/parca-dev/parca/pkg/profile"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,13 +32,13 @@ func TestMemRootSeries_Iterator(t *testing.T) {
 
 	var i int64
 	for i = 1; i < 500; i++ {
-		p := &FlatProfile{
-			Meta: InstantProfileMeta{
+		p := &profile.FlatProfile{
+			Meta: profile.InstantProfileMeta{
 				Timestamp: i,
 				Duration:  time.Second.Nanoseconds(),
 				Period:    time.Second.Nanoseconds(),
 			},
-			samples: map[string]*Sample{
+			FlatSamples: map[string]*profile.Sample{
 				"": {Value: i},
 			},
 		}

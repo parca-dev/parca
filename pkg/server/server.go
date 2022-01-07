@@ -42,6 +42,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	grpc_health "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
@@ -125,7 +126,7 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		),
 	)
 
-	opts := []grpc.DialOption{grpc.WithInsecure()}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	mux := runtime.NewServeMux()
 	for _, r := range registerables {
 		if err := r.Register(ctx, srv, mux, port, opts); err != nil {

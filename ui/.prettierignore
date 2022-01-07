@@ -1,6 +1,9 @@
 .next/
+dist/
 node_modules/
 out/
 .yarn/
 coverage/
 
+# Exclude protobuf generated files
+packages/shared/client
