@@ -25,6 +25,8 @@ RUN yarn workspace @parca/web build
 FROM docker.io/golang@sha256:7e31a85c5b182e446c9e0e6fba57c522902f281a6a5a6cbd25afa17ac48a6b85 as builder
 RUN mkdir /.cache && chown nobody:nogroup /.cache && touch -t 202101010000.00 /.cache
 
+ARG VERSION
+ARG COMMIT
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 ENV GOARCH=amd64
@@ -42,7 +44,7 @@ COPY --chown=nobody:nogroup ./gen ./gen
 COPY --chown=nobody:nogroup ./proto ./proto
 COPY --chown=nobody:nogroup ./ui/ui.go ./ui/ui.go
 COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
-RUN go build -trimpath -o parca ./cmd/parca
+RUN go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -trimpath -o parca ./cmd/parca
 RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 
 # this image is what docker.io/alpine:3.14.1 on August 13 2021
