@@ -76,7 +76,7 @@ proto/vendor:
 
 .PHONY: container
 container:
-	buildah build-using-dockerfile --timestamp 0 --layers -t $(OUT_DOCKER):$(VERSION)
+	buildah build-using-dockerfile --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: push-container
 push-container:
