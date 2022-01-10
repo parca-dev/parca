@@ -48,9 +48,7 @@ require (
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/klog/v2 v2.40.1 // indirect
-	modernc.org/ccgo/v3 v3.14.0 // indirect
-	modernc.org/libc v1.13.2 // indirect
-	modernc.org/sqlite v1.14.3
+	modernc.org/sqlite v1.14.4
 	nhooyr.io/websocket v1.8.7 // indirect
 )
 
