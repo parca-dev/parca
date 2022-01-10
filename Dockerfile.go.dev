@@ -1,5 +1,5 @@
 # Designed to only used by Tilt to iterate faster on the API.
-FROM golang:1.17.5-alpine AS builder
+FROM golang:1.17.6-alpine AS builder
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ COPY ./gen /app/gen
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -o parca ./cmd/parca
 
-FROM golang:1.17.5-alpine
+FROM golang:1.17.6-alpine
 
 COPY --from=builder /go/bin/dlv /
 COPY --from=builder /go/bin/grpc-health-probe /
