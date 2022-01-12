@@ -299,13 +299,14 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return.\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF_UNSPECIFIED: REPORT_TYPE_PPROF_UNSPECIFIED unspecified",
+            "description": "report_type is the type of report to return.\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
               "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-              "REPORT_TYPE_PPROF_UNSPECIFIED"
+              "REPORT_TYPE_PPROF",
+              "REPORT_TYPE_TOP"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           }
@@ -429,10 +430,11 @@
       "type": "string",
       "enum": [
         "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-        "REPORT_TYPE_PPROF_UNSPECIFIED"
+        "REPORT_TYPE_PPROF",
+        "REPORT_TYPE_TOP"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF_UNSPECIFIED: REPORT_TYPE_PPROF_UNSPECIFIED unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Location": {
@@ -865,6 +867,10 @@
           "type": "string",
           "format": "byte",
           "title": "pprof is a pprof profile as compressed bytes"
+        },
+        "top": {
+          "$ref": "#/definitions/v1alpha1Top",
+          "title": "top is a top list representation of the report"
         }
       },
       "title": "QueryResponse is the returned report for the given query"
@@ -887,6 +893,71 @@
         }
       },
       "title": "SingleProfile contains parameters for a single profile query request"
+    },
+    "v1alpha1Top": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TopNode"
+          },
+          "title": "list are the list of ordered elements of the table"
+        },
+        "reported": {
+          "type": "integer",
+          "format": "int32",
+          "title": "reported is the number of lines reported"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32",
+          "title": "total is the number of lines that exist in the report"
+        }
+      },
+      "title": "Top is the top report type"
+    },
+    "v1alpha1TopNode": {
+      "type": "object",
+      "properties": {
+        "meta": {
+          "$ref": "#/definitions/v1alpha1TopNodeMeta",
+          "title": "meta is the metadata about the node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the node"
+        },
+        "flat": {
+          "type": "string",
+          "format": "int64",
+          "title": "flat is the flat value of the node"
+        }
+      },
+      "title": "TopNode is a node entry in a top list"
+    },
+    "v1alpha1TopNodeMeta": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/metastorev1alpha1Location",
+          "title": "location is the location for the code"
+        },
+        "mapping": {
+          "$ref": "#/definitions/v1alpha1Mapping",
+          "title": "mapping is the mapping into code"
+        },
+        "function": {
+          "$ref": "#/definitions/v1alpha1Function",
+          "title": "function is the function information"
+        },
+        "line": {
+          "$ref": "#/definitions/v1alpha1Line",
+          "title": "line is the line location"
+        }
+      },
+      "title": "TopNodeMeta is the metadata for a given node"
     },
     "v1alpha1ValueType": {
       "type": "object",

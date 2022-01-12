@@ -193,12 +193,57 @@ message QueryRequest{
         // REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
         REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
 
-        // REPORT_TYPE_PPROF_UNSPECIFIED unspecified
-        REPORT_TYPE_PPROF_UNSPECIFIED = 1;
+        // REPORT_TYPE_PPROF unspecified
+        REPORT_TYPE_PPROF = 1;
+
+        // REPORT_TYPE_TOP unspecified
+        REPORT_TYPE_TOP = 2;
     }
 
     // report_type is the type of report to return
     ReportType report_type = 5;
+}
+
+// Top is the top report type
+message Top {
+
+    // list are the list of ordered elements of the table
+    repeated TopNode list = 1;
+
+    // reported is the number of lines reported
+    int32 reported = 2;
+
+    // total is the number of lines that exist in the report
+    int32 total = 3;
+}
+
+// TopNode is a node entry in a top list
+message TopNode {
+
+    // meta is the metadata about the node
+    TopNodeMeta meta = 1;
+
+    // cumulative is the cumulative value of the node
+    int64 cumulative = 2;
+
+    // flat is the flat value of the node
+    int64 flat = 3;
+}
+
+// TopNodeMeta is the metadata for a given node
+message TopNodeMeta {
+
+    // location is the location for the code
+    parca.metastore.v1alpha1.Location location = 1;
+
+    // mapping is the mapping into code
+    parca.metastore.v1alpha1.Mapping mapping = 2;
+
+    // function is the function information
+    parca.metastore.v1alpha1.Function function = 3;
+
+    // line is the line location
+    parca.metastore.v1alpha1.Line line = 4;
 }
 
 // Flamegraph is the flame graph report type
@@ -273,6 +318,9 @@ message QueryResponse{
 
         // pprof is a pprof profile as compressed bytes
         bytes pprof = 6;
+
+        // top is a top list representation of the report
+        Top top = 7;
     }
 }
 
