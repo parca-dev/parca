@@ -1,8 +1,10 @@
 {
-  "version": "0.0.0",
+  "version": "0.1.0",
   "npmClient": "yarn",
   "tagVersionPrefix": "v-ui",
-  "packages": ["packages/shared/*"],
+  "packages": [
+    "packages/shared/*"
+  ],
   "command": {
     "publish": {
       "conventionalCommits": true
