@@ -1,5 +1,6 @@
 {
   "name": "@parca/template",
+  "private": true,
   "version": "0.0.0",
   "description": "Frontend App Template",
   "scripts": {

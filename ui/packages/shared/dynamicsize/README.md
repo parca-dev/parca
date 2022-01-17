@@ -1,0 +1,1 @@
+# Dynamically resize Parca components
