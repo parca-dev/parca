@@ -1,0 +1,35 @@
+import {Meta, Story, Preview, Props} from '@storybook/addon-docs/blocks';
+
+import Input from '../index';
+
+<Meta title="Components/Input" component={Input} />
+
+# Input
+
+A Component to select a range of dates with time.
+
+## Examples
+
+### Default
+
+<Preview>
+  <Story name="Default">
+    <div className="bg-gray-300 p-8">
+      <Input />
+    </div>
+  </Story>
+</Preview>
+
+### type=number
+
+<Preview>
+  <Story name="type=number">
+    <div className="bg-gray-300 p-8">
+      <Input type="number" defaultValue="1" />
+    </div>
+  </Story>
+</Preview>
+
+## Props
+
+<Props of={Input} />
