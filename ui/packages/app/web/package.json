@@ -18,7 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@parca/client": "0.0.0",
+    "@parca/client": "0.1.1",
     "@parca/dynamicsize": "0.0.0",
     "@parca/functions": "0.0.0",
     "@parca/icons": "0.0.0",
