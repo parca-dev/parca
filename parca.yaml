@@ -16,6 +16,6 @@ scrape_configs:
       - targets: [ '127.0.0.1:7070' ]
     profiling_config:
       pprof_config:
-        fgprof: 
+        fgprof:
           enabled: true
           path: /debug/pprof/fgprof

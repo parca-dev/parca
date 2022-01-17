@@ -40,6 +40,7 @@ const (
 	pprofMutexTotal        string = "mutex_total"
 	pprofProcessCpu        string = "process_cpu"
 	pprofThreadcreateTotal string = "threadcreate_total"
+	fgprof string = "fgprof"
 )
 
 // Config holds all the configuration information for Parca
@@ -91,6 +92,10 @@ func DefaultScrapeConfig() ScrapeConfig {
 				pprofThreadcreateTotal: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/threadcreate",
+				},
+				fgprof: &PprofProfilingConfig{
+					Enabled: trueValue(),
+					Path:    "/debug/pprof/fgprof",
 				},
 			},
 		},
