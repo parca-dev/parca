@@ -1,6 +1,6 @@
 {
   "name": "@parcaui/parser",
-  "version": "0.7.0",
+  "version": "0.7.4",
   "description": "JavaScript parser implementation for the continuous profiling language",
   "main": "src/index.ts",
   "scripts": {
