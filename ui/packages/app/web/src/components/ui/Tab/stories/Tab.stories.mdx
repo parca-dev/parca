@@ -1,0 +1,23 @@
+import {Meta, Story, Preview, Props} from '@storybook/addon-docs/blocks';
+
+import Tab from '../index';
+
+<Meta title="Components/Tab" component={Tab} />
+
+# Tab
+
+A Component to select a range of dates with time.
+
+## Examples
+
+### Default
+
+<Preview>
+  <Story name="Default">
+    <Tab tabs={["Tab 1", "Tab 2", "Tab 3"]} panels={["content 1", "content 2", "content 3"].map(text => (<div className="flex justify-center items-center h-32">{text}</div>))}/>
+  </Story>
+</Preview>
+
+## Props
+
+<Props of={Tab} />
