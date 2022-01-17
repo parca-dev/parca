@@ -13,6 +13,13 @@ export interface SelectItem {
   element: SelectElement;
 }
 
+export function contructItemsFromArray(items: any[]): SelectItem[] {
+  return items.map(item => ({
+    key: item.key,
+    element: {active: <>{item.label}</>, expanded: <>{item.label}</>},
+  }));
+}
+
 const Select = ({
   items,
   selectedKey,
