@@ -2,10 +2,10 @@ import {Fragment, useRef, useState} from 'react';
 import cx from 'classnames';
 import {Tab as HeadlessTab} from '@headlessui/react';
 
-const Tab = ({tabs, panels}) => {
+const Tab = ({tabs, panels, defaultTabIndex = 0}) => {
   return (
-    <HeadlessTab.Group>
-      <HeadlessTab.List className="flex p-1 space-x-1 bg-blue-900/20 rounded-xl">
+    <HeadlessTab.Group defaultIndex={defaultTabIndex}>
+      <HeadlessTab.List className="flex p-1 space-x-1 bg-blue-900/20 rounded-xl w-[80%] mx-auto">
         {tabs.map((tab, idx) => (
           <HeadlessTab
             key={idx}
