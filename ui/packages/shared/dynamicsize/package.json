@@ -1,8 +1,7 @@
 {
   "name": "@parca/dynamicsize",
-  "version": "0.0.0",
+  "version": "0.7.0",
   "description": "Library all around dynamically sizing components.",
-  "dependencies": {},
   "main": "src/index.tsx",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*"
