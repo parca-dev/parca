@@ -3135,9 +3135,6 @@
   version "6.4.10"
   resolved "https://registry.yarnpkg.com/@storybook/core/-/core-6.4.10.tgz#53c6367a4d0000cb486d3e2515183418ef6c03bf"
   integrity sha512-+4pGgP1nX8sil/C4Ks5A5sDglH+8xGOKVpSteKHTnrgdmwcd7DZxohJeRfoF/LCXcunhXBpRS1TYjZ+uC3IQaQ==
-  dependencies:
-    "@storybook/core-client" "6.4.10"
-    "@storybook/core-server" "6.4.10"
 
 "@storybook/csf-tools@6.3.12":
   version "6.3.12"
@@ -3494,6 +3491,27 @@
     lodash "^4.17.21"
     prettier "^2.2.1"
     regenerator-runtime "^0.13.7"
+
+"@storybook/store@6.4.10":
+  version "6.4.10"
+  resolved "https://registry.yarnpkg.com/@storybook/store/-/store-6.4.10.tgz#48018090ec2bc7bff30a40230870346576f9fdac"
+  integrity sha512-sXgGDjyFFP73Du21i++igruHMtunFTxl+I9YzmKJG1sg41B1bG/TTxQpl+4JEkC/DEaDlA3v6CS14+A+JNX6IQ==
+  dependencies:
+    "@storybook/addons" "6.4.10"
+    "@storybook/client-logger" "6.4.10"
+    "@storybook/core-events" "6.4.10"
+    "@storybook/csf" "0.0.2--canary.87bc651.0"
+    core-js "^3.8.2"
+    fast-deep-equal "^3.1.3"
+    global "^4.4.0"
+    lodash "^4.17.21"
+    memoizerific "^1.11.3"
+    regenerator-runtime "^0.13.7"
+    slash "^3.0.0"
+    stable "^0.1.8"
+    synchronous-promise "^2.0.15"
+    ts-dedent "^2.0.0"
+    util-deprecate "^1.0.2"
 
 "@storybook/theming@6.3.12":
   version "6.3.12"
