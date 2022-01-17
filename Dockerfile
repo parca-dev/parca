@@ -27,9 +27,10 @@ RUN mkdir /.cache && chown nobody:nogroup /.cache && touch -t 202101010000.00 /.
 
 ARG VERSION
 ARG COMMIT
+ARG ARCH=amd64
 ENV CGO_ENABLED=0
 ENV GOOS=linux
-ENV GOARCH=amd64
+ENV GOARCH=$ARCH
 
 WORKDIR /app
 
@@ -46,6 +47,8 @@ COPY --chown=nobody:nogroup ./ui/ui.go ./ui/ui.go
 COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
 RUN go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -trimpath -o parca ./cmd/parca
 RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
+# Predicatable path for copying over to final image
+RUN if [ "$(go env GOHOSTARCH)" != "$(go env GOARCH)" ]; then mv "$(go env GOPATH)/bin/$(go env GOOS)_$(go env GOARCH)/grpc-health-probe" "$(go env GOPATH)/bin/grpc-health-probe"; fi
 
 # this image is what docker.io/alpine:3.14.1 on August 13 2021
 FROM docker.io/alpine@sha256:be9bdc0ef8e96dbc428dc189b31e2e3b05523d96d12ed627c37aa2936653258c
