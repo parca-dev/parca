@@ -1,5 +1,5 @@
 {
-  "name": "@parca/profile",
+  "name": "@parcaui/profile",
   "version": "0.7.3",
   "description": "Profile viewing libraries",
   "dependencies": {

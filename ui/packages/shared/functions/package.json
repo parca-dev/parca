@@ -1,5 +1,5 @@
 {
-  "name": "@parca/functions",
+  "name": "@parcaui/functions",
   "version": "0.7.0",
   "description": "Templated shared functions",
   "main": "src/index.ts",
