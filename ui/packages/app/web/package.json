@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js src/*",
@@ -24,7 +24,7 @@
     "@parca/functions": "^0.7.0",
     "@parca/icons": "^0.7.0",
     "@parca/parser": "^0.7.0",
-    "@parca/profile": "^0.7.2",
+    "@parca/profile": "^0.7.3",
     "autoprefixer": "^10.3.7",
     "d3": "^7.3.0",
     "d3-axis": "^3.0.0",
