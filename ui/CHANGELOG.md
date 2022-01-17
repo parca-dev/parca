@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.1](https://github.com/yomete/parca/compare/ui-v0.7.1...ui-v0.7.1) (2022-01-17)
+
+### Reverts
+
+- Revert "ui-v0.7.1" ([7fd6652](https://github.com/yomete/parca/commit/7fd6652a745d222383aea0ed56aa3033d808a925))
+
 # 0.7.0 (2022-01-17)
 
 ### Bug Fixes
