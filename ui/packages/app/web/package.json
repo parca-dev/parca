@@ -21,7 +21,7 @@
     "@parca/client": "0.1.1",
     "@parca/dynamicsize": "0.0.0",
     "@parca/functions": "0.0.0",
-    "@parca/icons": "0.0.0",
+    "@parca/icons": "0.1.1",
     "@parca/parser": "0.0.0",
     "@parca/profile": "0.0.0",
     "autoprefixer": "^10.3.7",
