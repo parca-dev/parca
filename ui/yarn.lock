@@ -2305,11 +2305,6 @@
     "@opencensus/core" "^0.0.8"
     uuid "^3.2.1"
 
-"@parca/client@0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@parca/client/-/client-0.1.1.tgz#a88a2b0e3de25388c49dbc9011589d305e7ab269"
-  integrity sha512-zvPC2obeCHe51uI3AAf4/0I8xY9uVfoD9z/pxsOdXwL2TviOupI30FnVJ3fxuk5MUiLDn9QYg9jCv28RrfNGJQ==
-
 "@pm2/agent@~2.0.0":
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@pm2/agent/-/agent-2.0.1.tgz#0edffc54cd8ee2b12f90136264e7880f3f78c79d"
@@ -4639,10 +4634,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react@*", "@types/react@^17.0.36":
-  version "17.0.36"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.36.tgz#0d81e0e2419e6a8e9ba6af5e3a0608e70835d7d1"
-  integrity sha512-CUFUp01OdfbpN/76v4koqgcpcRGT3sYOq3U3N6q0ZVGcyeP40NUdVU+EWe3hs34RNaTefiYyBzOpxBBidCc5zw==
+"@types/react@*", "@types/react@^17.0.38":
+  version "17.0.38"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.38.tgz#f24249fefd89357d5fa71f739a686b8d7c7202bd"
+  integrity sha512-SI92X1IA+FMnP3qM5m4QReluXzhcmovhZnLNm3pyeQlooi02qI7sLiepEYqT678uNiyc25XfCqxREFpy3W7YhQ==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
