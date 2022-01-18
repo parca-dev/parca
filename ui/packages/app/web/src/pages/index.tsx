@@ -1,4 +1,4 @@
-import {QueryServiceClient} from '@parca/client';
+import {QueryServiceClient} from '@parcaui/client';
 import ProfileExplorer from 'components/ProfileExplorer';
 import {NextRouter, withRouter} from 'next/router';
 

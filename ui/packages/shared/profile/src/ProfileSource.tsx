@@ -1,6 +1,6 @@
 import React from 'react';
 import moment from 'moment';
-import {Query} from '@parca/parser';
+import {Query} from '@parcaui/parser';
 import {
   Label,
   QueryRequest,
@@ -8,7 +8,7 @@ import {
   SingleProfile,
   MergeProfile,
   DiffProfile,
-} from '@parca/client';
+} from '@parcaui/client';
 import {Timestamp} from 'google-protobuf/google/protobuf/timestamp_pb';
 
 export interface ProfileSource {

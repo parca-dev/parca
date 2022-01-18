@@ -1,13 +1,13 @@
 import React, {useEffect, useState, useRef} from 'react';
 // import ProfileSVG from './ProfileSVG'
 // import ProfileTop from './ProfileTop'
-import {CalcWidth} from '@parca/dynamicsize';
+import {CalcWidth} from '@parcaui/dynamicsize';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
-import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
+import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parcaui/client';
 import Card from '../../../app/web/src/components/ui/Card';
 import Button from '@parca/web/src/components/ui/Button';
-import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
+import * as parca_query_v1alpha1_query_pb from '@parcaui/client/src/parca/query/v1alpha1/query_pb';
 
 interface ProfileViewProps {
   queryClient: QueryServiceClient;

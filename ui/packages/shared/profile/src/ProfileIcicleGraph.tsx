@@ -1,5 +1,5 @@
 import IcicleGraph from './IcicleGraph';
-import {Flamegraph} from '@parca/client';
+import {Flamegraph} from '@parcaui/client';
 
 interface ProfileIcicleGraphProps {
   width?: number;

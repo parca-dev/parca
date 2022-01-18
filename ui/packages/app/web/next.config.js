@@ -1,7 +1,7 @@
 const {dependencies} = require('./package.json');
 
 const withTM = require('next-transpile-modules')(
-  Object.keys(dependencies || []).filter(dependency => dependency.startsWith('@parca/')),
+  Object.keys(dependencies || []).filter(dependency => dependency.startsWith('@parcaui/')),
   {debug: true}
 );
 
@@ -18,7 +18,7 @@ module.exports = withBundleAnalyzer(
       // In an effort to make builds reproducible.
       return 'static';
     },
-    //swcMinify: true,
+    // swcMinify: true,
     optimization: {
       moduleIds: 'deterministic',
     },

@@ -1,14 +1,14 @@
 import React, {useState, useEffect} from 'react';
 import moment from 'moment';
 import MetricsGraph from './MetricsGraph';
-import {ProfileSelection, SingleProfileSelection} from '@parca/profile';
+import {ProfileSelection, SingleProfileSelection} from '@parcaui/profile';
 import {
   QueryRangeRequest,
   QueryRangeResponse,
   Label,
   QueryServiceClient,
   ServiceError,
-} from '@parca/client';
+} from '@parcaui/client';
 import {Timestamp} from 'google-protobuf/google/protobuf/timestamp_pb';
 
 interface ProfileMetricsGraphProps {

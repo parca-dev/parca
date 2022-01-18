@@ -1,7 +1,7 @@
 import ProfileSelector, {QuerySelection} from './ProfileSelector';
-import {ProfileDiffSource, ProfileSelection, ProfileView} from '@parca/profile';
-import {Query} from '@parca/parser';
-import {QueryServiceClient} from '@parca/client';
+import {ProfileDiffSource, ProfileSelection, ProfileView} from '@parcaui/profile';
+import {Query} from '@parcaui/parser';
+import {QueryServiceClient} from '@parcaui/client';
 
 interface ProfileExplorerCompareProps {
   queryClient: QueryServiceClient;

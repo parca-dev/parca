@@ -5,14 +5,14 @@ import MetricsSeries from './metrics/MetricsSeries';
 import MetricsCircle from './metrics/MetricsCircle';
 import {pointer} from 'd3-selection';
 import {formatForTimespan} from '../libs/time';
-import {SingleProfileSelection, timeFormat} from '@parca/profile';
+import {SingleProfileSelection, timeFormat} from '@parcaui/profile';
 import {cutToMaxStringLength} from '../libs/utils';
 import throttle from 'lodash.throttle';
-import {CalcWidth} from '@parca/dynamicsize';
-import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
+import {CalcWidth} from '@parcaui/dynamicsize';
+import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parcaui/client';
 import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
-import {valueFormatter} from '@parca/functions';
+import {valueFormatter} from '@parcaui/functions';
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb.AsObject[];
