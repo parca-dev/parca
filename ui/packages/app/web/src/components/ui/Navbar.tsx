@@ -1,6 +1,6 @@
 import {Disclosure} from '@headlessui/react';
 import {MenuIcon, XIcon} from '@heroicons/react/outline';
-import {Parca, ParcaSmall} from '@parcaui/icons';
+import {Parca, ParcaSmall} from '@parca/icons';
 import cx from 'classnames';
 import DarkModeToggle from './DarkModeToggle';
 

@@ -2,9 +2,9 @@ import React, {MouseEvent, useEffect, useRef, useState} from 'react';
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
-import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parcaui/client';
+import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {usePopper} from 'react-popper';
-import {valueFormatter} from '@parcaui/functions';
+import {valueFormatter} from '@parca/functions';
 
 const RowHeight = 20;
 

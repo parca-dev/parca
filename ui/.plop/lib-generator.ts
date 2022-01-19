@@ -21,7 +21,7 @@ export const libGenerator = (plop: NodePlopAPI) => {
           source: 'packages/shared/functions',
           dest: `packages/shared/${libName}`,
           replaceInFiles: {
-            '@parcaui/functions': `@parcaui/${libName}`,
+            '@parca/functions': `@parca/${libName}`,
             'Templated shared functions': description,
           },
         },

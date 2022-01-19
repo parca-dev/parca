@@ -1,7 +1,7 @@
 import React, {Fragment, useState, useEffect} from 'react';
 import {Transition} from '@headlessui/react';
-import {Query} from '@parcaui/parser';
-import {LabelsResponse, LabelsRequest, QueryServiceClient, ServiceError} from '@parcaui/client';
+import {Query} from '@parca/parser';
+import {LabelsResponse, LabelsRequest, QueryServiceClient, ServiceError} from '@parca/client';
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
 
