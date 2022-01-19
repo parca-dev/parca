@@ -2,7 +2,7 @@ name: UI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, automate-lerna-publishing ]
   pull_request:
     branches: [ main ]
 
@@ -46,3 +46,33 @@ jobs:
         working-directory: ui
         run: npm run lint
         continue-on-error: true
+
+  publish-ui-components:
+    name: Publish UI components to NPM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+
+      - name: Ensure access
+        run: |
+          npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+          npm whoami
+        env:
+          NPM_TOKEN: ${{ secrets.NPMTOKEN }}
+
+      - name: Config git user
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Bootstrap lerna
+        run: yarn bootstrap
+
+      - name: Bump versions and publish packages
+        run: yarn publish:ci
