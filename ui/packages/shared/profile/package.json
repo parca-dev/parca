@@ -1,9 +1,9 @@
 {
   "name": "@parcaui/profile",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@parcaui/client": "^0.7.6",
+    "@parcaui/client": "^0.7.7",
     "@parcaui/dynamicsize": "^0.7.0",
     "@parcaui/parser": "^0.7.0",
     "d3-scale": "^4.0.2"
