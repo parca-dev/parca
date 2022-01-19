@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.9](https://github.com/yomete/parca/compare/ui-v0.7.8...ui-v0.7.9) (2022-01-19)
+
+**Note:** Version bump only for package ui
+
 ## [0.7.8](https://github.com/yomete/parca/compare/ui-v0.7.7...ui-v0.7.8) (2022-01-19)
 
 ## [0.7.6](https://github.com/yomete/parca/compare/ui-v0.7.5...ui-v0.7.6) (2022-01-19)
