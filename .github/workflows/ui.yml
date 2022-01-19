@@ -60,6 +60,7 @@ jobs:
           node-version: 12
 
       - name: Ensure access
+        working-directory: ui
         run: |
           npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
           npm whoami
@@ -72,7 +73,9 @@ jobs:
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Bootstrap lerna
+        working-directory: ui
         run: yarn bootstrap
 
       - name: Bump versions and publish packages
+        working-directory: ui
         run: yarn publish:ci
