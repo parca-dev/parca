@@ -14,7 +14,7 @@
     "prepare": "cd .. && husky install ui/.husky",
     "pre-commit": "lint-staged",
     "bootstrap": "lerna bootstrap",
-    "publish:ci": "lerna publish --yes"
+    "publish:ci": "lerna publish --yes --no-verify-access"
   },
   "workspaces": [
     "packages/app/*",

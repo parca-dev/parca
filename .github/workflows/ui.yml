@@ -55,9 +55,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2.5.1
         with:
-          node-version: 12
+          node-version: ${{ matrix.node-version }}
 
       - name: Ensure access
         working-directory: ui
