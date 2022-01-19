@@ -1,6 +1,6 @@
 import ProfileSelector, {QuerySelection} from './ProfileSelector';
-import {ProfileSelection, ProfileView} from '@parcaui/profile';
-import {QueryServiceClient} from '@parcaui/client';
+import {ProfileSelection, ProfileView} from '@parca/profile';
+import {QueryServiceClient} from '@parca/client';
 
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;

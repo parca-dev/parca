@@ -18,7 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@parcaui/functions": "^0.7.0"
+    "@parca/functions": "^0.7.0"
   },
   "devDependencies": {
     "@storybook/react": "^6.3.12"

@@ -14,7 +14,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "paths": {
-      "@parcaui/*": ["../packages/shared/*"]
+      "@parca/*": ["../packages/shared/*"]
     },
     "strictNullChecks": true
   }

@@ -1,5 +1,5 @@
 {
-  "name": "@parcaui/icons",
+  "name": "@parca/icons",
   "version": "0.7.8",
   "description": "Parca commonly used icons",
   "main": "src/index.tsx",

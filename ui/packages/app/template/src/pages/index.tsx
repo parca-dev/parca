@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {NextPage} from 'next';
 import {Button} from 'components/Button';
-import {capitalize} from '@parcaui/functions';
+import {capitalize} from '@parca/functions';
 
 const Index: NextPage = () => {
   const handleClick = (): void => {

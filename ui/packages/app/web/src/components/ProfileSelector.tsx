@@ -1,6 +1,6 @@
-import {QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse} from '@parcaui/client';
-import {Query} from '@parcaui/parser';
-import {ProfileSelection, timeFormatShort} from '@parcaui/profile';
+import {QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse} from '@parca/client';
+import {Query} from '@parca/parser';
+import {ProfileSelection, timeFormatShort} from '@parca/profile';
 import moment from 'moment';
 import React, {useEffect, useState} from 'react';
 import ProfileMetricsGraph from '../components/ProfileMetricsGraph';

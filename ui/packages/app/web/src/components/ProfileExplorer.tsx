@@ -1,9 +1,9 @@
 import {QuerySelection} from './ProfileSelector';
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parcaui/profile';
+import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca/profile';
 import {NextRouter, withRouter} from 'next/router';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
-import {QueryServiceClient} from '@parcaui/client';
+import {QueryServiceClient} from '@parca/client';
 
 interface ProfileExplorerProps {
   router: NextRouter;
