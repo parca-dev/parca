@@ -9,6 +9,9 @@
   "command": {
     "publish": {
       "conventionalCommits": true
+    },
+    "version": {
+      "allowBranch": "main"
     }
   }
 }
