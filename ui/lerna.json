@@ -1,14 +1,15 @@
 {
-  "version": "0.7.4",
+  "version": "0.7.9",
   "npmClient": "yarn",
   "tagVersionPrefix": "ui-v",
   "useWorkspaces": true,
-  "packages": [
-    "packages/shared/*"
-  ],
+  "packages": ["packages/shared/*"],
   "command": {
     "publish": {
       "conventionalCommits": true
+    },
+    "version": {
+      "allowBranch": "main"
     }
   }
 }

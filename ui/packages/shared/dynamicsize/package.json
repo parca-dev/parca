@@ -1,6 +1,6 @@
 {
   "name": "@parcaui/dynamicsize",
-  "version": "0.7.4",
+  "version": "0.7.9",
   "description": "Library all around dynamically sizing components.",
   "main": "src/index.tsx",
   "scripts": {
