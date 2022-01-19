@@ -1,6 +1,6 @@
 {
   "name": "@parcaui/client",
-  "version": "0.7.7",
+  "version": "0.7.8",
   "description": "Parca API Client",
   "main": "src/index.ts",
   "scripts": {

@@ -1,7 +1,7 @@
 {
   "name": "@parca/template",
   "private": true,
-  "version": "0.7.7",
+  "version": "0.7.8",
   "description": "Frontend App Template",
   "scripts": {
     "dev": "../../../node_modules/.bin/next dev",
