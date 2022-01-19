@@ -2,7 +2,7 @@ name: UI
 
 on:
   push:
-    branches: [ main, automate-lerna-publishing ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -70,7 +70,6 @@ jobs:
         working-directory: ui
         run: |
           npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-          npm whoami
         env:
           NPM_TOKEN: ${{ secrets.NPMTOKEN }}
 
