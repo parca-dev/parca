@@ -1,13 +1,14 @@
 import {Fragment, useRef, useState} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
-import {DateTimeRange} from './utils';
+import {DateTimeRange, DateUnion, POSITIONS, POSITION_TYPE, RelativeDate} from './utils';
 import {useClickAway} from 'react-use';
 import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
 
 const DateTimeRangePicker = () => {
   const [range, setRange] = useState<DateTimeRange>(new DateTimeRange());
   const [isActive, setIsActive] = useState<boolean>(false);
+  const [activePosition, setActivePosition] = useState<POSITION_TYPE>(POSITIONS.FROM);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickAway(containerRef, () => {
     setIsActive(false);
@@ -15,7 +16,7 @@ const DateTimeRangePicker = () => {
 
   return (
     <Popover className="relative">
-      <div ref={containerRef} className="relative items-center w-[330px]">
+      <div ref={containerRef} className="relative items-center w-[330px] ">
         <DateTimeRangePickerTrigger
           range={range}
           isActive={isActive}
@@ -34,7 +35,14 @@ const DateTimeRangePicker = () => {
         >
           <Popover.Panel className="absolute z-10 w-screen max-w-sm mt-2">
             <div className="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
-              <DateTimeRangePickerPanel />{' '}
+              <DateTimeRangePickerPanel
+                date={range.getDateForPosition(activePosition)}
+                position={activePosition}
+                onChange={(date: DateUnion, position: POSITION_TYPE) => {
+                  range.setDateForPosition(date, position);
+                  setRange(new DateTimeRange(range.from, range.to));
+                }}
+              />
             </div>
           </Popover.Panel>
         </Transition>
