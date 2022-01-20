@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca-agent
     app.kubernetes.io/name: parca-agent
-    app.kubernetes.io/version: dev
+    app.kubernetes.io/version: v0.4.1
   name: parca-agent
   namespace: parca
 roleRef:

@@ -21,20 +21,6 @@ function up() {
         # minikube start -p parca --driver=kvm2 --kubernetes-version=v1.22.3 --cpus=12 --memory=40gb --disk-size=120gb --docker-opt dns=8.8.8.8
     fi
 
-    # Pull parca-agent repo to build live image
-    if [ -d "tmp/parca-agent" ]
-    then
-        pushd tmp/parca-agent
-        git pull origin main
-        git submodule init && git submodule update
-        popd
-    else
-        git clone git@github.com:parca-dev/parca-agent.git tmp/parca-agent
-        pushd tmp/parca-agent
-        git submodule init && git submodule update
-        popd
-    fi
-
     # Deploy all services into the cluster
     deploy
 
@@ -44,7 +30,6 @@ function up() {
 # Tears down a local minikube cluster
 function down() {
     minikube delete -p parca
-    rm -rf tmp/parca-agent
 }
 
 # Deploys the dev env into the minikube cluster
