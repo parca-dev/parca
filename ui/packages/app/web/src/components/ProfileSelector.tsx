@@ -162,7 +162,6 @@ const ProfileSelector = ({
     (error === undefined || error == null) && response !== undefined && response != null
       ? response.labelValuesList
       : [];
-  console.log('🚀 ~ file: ProfileSelector.tsx ~ line 154 ~ profileNames', profileNames);
 
   const profileLabels = profileNames.map(name => ({
     key: name,
