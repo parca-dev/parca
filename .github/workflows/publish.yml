@@ -9,6 +9,8 @@ jobs:
   publish-ui-components:
     name: Publish UI components to NPM
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
         node-version: [ 14.x ]
