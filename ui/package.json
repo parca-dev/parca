@@ -12,7 +12,9 @@
     "generate": "plop --plopfile .plop/plopfile.ts",
     "storybook": "start-storybook -p 6006",
     "prepare": "cd .. && husky install ui/.husky",
-    "pre-commit": "lint-staged"
+    "pre-commit": "lint-staged",
+    "bootstrap": "lerna bootstrap",
+    "publish:ci": "lerna publish --yes --no-verify-access"
   },
   "workspaces": [
     "packages/app/*",
@@ -77,6 +79,7 @@
     "internal-ip": "^7.0.0",
     "jest": "^27.4.7",
     "jest-runtime": "^27.3.1",
+    "lerna": "^4.0.0",
     "lint-staged": "^12.1.7",
     "local-web-server": "^5.1.1",
     "next-transpile-modules": "^9.0.0",

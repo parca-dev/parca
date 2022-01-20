@@ -1,6 +1,7 @@
 {
   "name": "@parca/web",
-  "version": "0.0.0",
+  "private": true,
+  "version": "0.7.10",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js src/*",
@@ -18,12 +19,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@parca/client": "0.0.0",
-    "@parca/dynamicsize": "0.0.0",
-    "@parca/functions": "0.0.0",
-    "@parca/icons": "0.0.0",
-    "@parca/parser": "0.0.0",
-    "@parca/profile": "0.0.0",
+    "@parca/client": "^0.7.10",
+    "@parca/dynamicsize": "^0.7.10",
+    "@parca/functions": "^0.7.10",
+    "@parca/icons": "^0.7.10",
+    "@parca/parser": "^0.7.10",
+    "@parca/profile": "^0.7.10",
     "autoprefixer": "^10.3.7",
     "d3": "^7.3.0",
     "d3-axis": "^3.0.0",

@@ -18,7 +18,7 @@ module.exports = withBundleAnalyzer(
       // In an effort to make builds reproducible.
       return 'static';
     },
-    //swcMinify: true,
+    // swcMinify: true,
     optimization: {
       moduleIds: 'deterministic',
     },
