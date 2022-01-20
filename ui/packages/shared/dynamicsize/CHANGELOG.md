@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.7.11 (2022-01-20)
+
+**Note:** Version bump only for package @parca/dynamicsize
+
 ## [0.7.10](https://github.com/yomete/parca/compare/ui-v0.7.9...ui-v0.7.10) (2022-01-19)
 
 **Note:** Version bump only for package @parca/dynamicsize

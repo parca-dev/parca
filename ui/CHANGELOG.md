@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.7.11 (2022-01-20)
+
+### Reverts
+
+- Revert "area/ui: Temp remove command.version.allowBranch in lerna.json" ([04d3dd3](https://github.com/parca-dev/parca/commit/04d3dd3066deeaf10c1691f2d8feddad73ded2c8))
+- Revert "ui-v0.7.1" ([7fd6652](https://github.com/parca-dev/parca/commit/7fd6652a745d222383aea0ed56aa3033d808a925))
+
 ## [0.7.10](https://github.com/yomete/parca/compare/ui-v0.7.9...ui-v0.7.10) (2022-01-19)
 
 **Note:** Version bump only for package ui
