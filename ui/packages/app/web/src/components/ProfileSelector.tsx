@@ -76,6 +76,14 @@ const wellKnownProfiles = {
     name: 'Block Contention Time Total',
     help: 'Time delayed stack traces caused by blocking on synchronization primitives.',
   },
+  fgprof_samples_count: {
+    name: 'Fgprof Samples Total',
+    help: 'CPU profile samples observed regardless of their current On/Off CPU scheduling status',
+  },
+  fgprof_time_nanoseconds: {
+    name: 'Fgprof Samples Time Total',
+    help: 'CPU profile measured regardless of their current On/Off CPU scheduling status in nanoseconds',
+  },
   goroutine_total_goroutine_count: {
     name: 'Goroutine Created Total',
     help: 'Stack traces of all current goroutines.',
