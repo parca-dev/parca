@@ -1,0 +1,46 @@
+name: Publish
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [ main ]
+
+jobs:
+  publish-ui-components:
+    name: Publish UI components to NPM
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [ 14.x ]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "0"
+
+      - name: Pull all tags for Lerna semantic release
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2.5.1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Ensure access
+        working-directory: ui
+        run: |
+          npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+        env:
+          NPM_TOKEN: ${{ secrets.NPMTOKEN }}
+
+      - name: Config git user
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Bootstrap lerna
+        working-directory: ui
+        run: yarn bootstrap
+
+      - name: Bump versions and publish packages
+        working-directory: ui
+        run: yarn publish:ci
