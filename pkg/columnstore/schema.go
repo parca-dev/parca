@@ -62,6 +62,10 @@ func (i *StringIterator) Next() bool {
 	return i.Enc.Next()
 }
 
+func (i *StringIterator) IsNull() bool {
+	return i.Enc.IsNull()
+}
+
 func (i *StringIterator) Value() interface{} {
 	return i.Enc.Value()
 }
@@ -94,6 +98,10 @@ func (i *Int64Iterator) Next() bool {
 	return i.Enc.Next()
 }
 
+func (i *Int64Iterator) IsNull() bool {
+	return i.Enc.IsNull()
+}
+
 func (i *Int64Iterator) Value() interface{} {
 	return i.Enc.Value()
 }
@@ -118,6 +126,7 @@ func (d ColumnDefinition) String() string {
 }
 
 type Schema struct {
-	Columns   []ColumnDefinition
-	OrderedBy []string
+	Columns     []ColumnDefinition
+	OrderedBy   []string
+	GranuleSize int
 }

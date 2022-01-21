@@ -34,6 +34,7 @@ type Encoding interface {
 type EncodingIterator interface {
 	Next() bool
 	Value() interface{}
+	IsNull() bool
 	Err() error
 }
 
@@ -112,6 +113,14 @@ func (i *PlainIterator) Next() bool {
 	i.index++
 	i.maxIterations--
 	return true
+}
+
+func (i *PlainIterator) IsNull() bool {
+	if i.index >= len(i.values) {
+		return true
+	}
+
+	return i.values[i.index] == nil
 }
 
 func (i *PlainIterator) Value() interface{} {
