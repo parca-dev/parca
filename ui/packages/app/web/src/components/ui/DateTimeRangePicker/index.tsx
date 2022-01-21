@@ -1,4 +1,5 @@
 import {Fragment, useRef, useState} from 'react';
+import cx from 'classnames';
 import {Popover, Transition} from '@headlessui/react';
 import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
 import {DateTimeRange, DateUnion, POSITIONS, POSITION_TYPE} from './utils';
@@ -38,7 +39,12 @@ const DateTimeRangePicker = () => {
           leaveFrom="opacity-100 translate-y-0"
           leaveTo="opacity-0 translate-y-1"
         >
-          <Popover.Panel className="absolute z-10 w-screen max-w-sm mt-2 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 arrow-top text-gray-100 dark:text-gray-800">
+          <Popover.Panel
+            className={cx(
+              'absolute z-10 w-screen max-w-sm mt-2 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 arrow-top text-gray-100 dark:text-gray-800',
+              {'left-12': activePosition === POSITIONS.TO}
+            )}
+          >
             <DateTimeRangePickerPanel
               date={range.getDateForPosition(activePosition)}
               position={activePosition}
