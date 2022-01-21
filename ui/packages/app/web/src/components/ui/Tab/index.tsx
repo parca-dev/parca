@@ -28,7 +28,7 @@ const Tab = ({tabs, panels, defaultTabIndex = 0}) => {
           <HeadlessTab.Panel
             key={idx}
             className={cx(
-              'bg-white rounded-xl p-3',
+              'rounded-xl p-3',
               'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60'
             )}
           >

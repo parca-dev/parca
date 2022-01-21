@@ -1,0 +1,19 @@
+.arrow-top {
+  position: relative;
+}
+
+.arrow-top:before,
+.arrow-top:after {
+  content: '';
+  position: absolute;
+  left: calc(50% - 10px);
+  top: -20px;
+  border-top: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid;
+  border-left: 10px solid transparent;
+}
+
+.arrow-top:after {
+  top: -19px;
+}

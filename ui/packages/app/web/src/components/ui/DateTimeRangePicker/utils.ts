@@ -36,7 +36,7 @@ export class DateTimeRange {
   from: DateUnion;
   to: DateUnion;
 
-  constructor(from = null, to = null) {
+  constructor(from: null | DateUnion = null, to: null | DateUnion = null) {
     this.from = from || new RelativeDate(UNITS.HOUR, 1);
     this.to = to || new RelativeDate(UNITS.MINUTE, 0);
   }

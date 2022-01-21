@@ -16,7 +16,7 @@ const DateTimeRangePickerPanel = ({
 }: DateTimeRangePickerProps) => {
   return (
     <Popover.Panel className="">
-      <div className="bg-gray-200 dark:bg-gray-800">
+      <div className="bg-gray-100 dark:bg-gray-800 p-4">
         <Tab
           tabs={['Absolute', 'Relative']}
           panels={[

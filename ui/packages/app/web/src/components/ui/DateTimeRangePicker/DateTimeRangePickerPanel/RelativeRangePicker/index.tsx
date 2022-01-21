@@ -1,8 +1,8 @@
-import Select, {contructItemsFromArray} from '../../Select';
+import Select, {contructItemsFromArray} from 'components/ui/Select';
 import {useState} from 'react';
-import Input from '../../Input';
+import Input from 'components/ui/Input';
 import Button from 'components/ui/Button';
-import {RelativeDate, UNITS, UNIT_TYPE} from '../utils';
+import {RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 import {capitalizeFirstLetter} from 'libs/utils';
 
 const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
