@@ -29,41 +29,78 @@ func TestTable(t *testing.T) {
 		//),
 	}
 
-	rows := []Row{{
-		Values: []interface{}{
-			[]DynamicColumnValue{
-				{Name: "label1", Value: "value1"},
-				{Name: "label2", Value: "value2"},
+	table := NewTable(schema)
+	err := table.Insert(
+		[]Row{{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+				},
+				int64(1),
+				int64(1),
 			},
-			int64(1),
-			int64(1),
-		},
-	}, {
-		Values: []interface{}{
-			[]DynamicColumnValue{
-				{Name: "label1", Value: "value1"},
-				{Name: "label2", Value: "value2"},
-				{Name: "label3", Value: "value3"},
+		}, {
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+					{Name: "label3", Value: "value3"},
+				},
+				int64(2),
+				int64(2),
 			},
-			int64(2),
-			int64(2),
-		},
-	}, {
-		Values: []interface{}{
-			[]DynamicColumnValue{
-				{Name: "label1", Value: "value1"},
-				{Name: "label2", Value: "value2"},
-				{Name: "label4", Value: "value4"},
+		}, {
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+					{Name: "label4", Value: "value4"},
+				},
+				int64(3),
+				int64(3),
 			},
-			int64(3),
-			int64(3),
-		},
-	}}
-
-	part, err := NewPart(schema, rows)
+		}},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fmt.Println(part.String())
+	err = table.Insert(
+		[]Row{{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+				},
+				int64(2),
+				int64(2),
+			},
+		}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = table.Insert(
+		[]Row{{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+					{Name: "label3", Value: "value3"},
+				},
+				int64(3),
+				int64(3),
+			},
+		}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	it := table.Iterator()
+	for it.Next() {
+		fmt.Println(it.Row())
+	}
 }

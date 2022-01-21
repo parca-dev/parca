@@ -1,7 +1,6 @@
 package columnstore
 
 import (
-	"fmt"
 	"sort"
 )
 
@@ -11,14 +10,14 @@ type Appender interface {
 
 type Iterator interface {
 	Next() bool
+	IsNull() bool
 	Value() interface{}
 	Err() error
 }
 
 type Column interface {
 	Appender() (Appender, error)
-	Iterator() Iterator
-	String() string
+	Iterator(maxIterations int) Iterator
 }
 
 func NewColumn(def ColumnDefinition) Column {
@@ -30,9 +29,8 @@ func NewColumn(def ColumnDefinition) Column {
 }
 
 type StaticColumn struct {
-	def   ColumnDefinition
-	data  Encoding
-	count int
+	def  ColumnDefinition
+	data Encoding
 }
 
 func NewStaticColumn(def ColumnDefinition) *StaticColumn {
@@ -42,41 +40,12 @@ func NewStaticColumn(def ColumnDefinition) *StaticColumn {
 	}
 }
 
-type staticColumnAppender struct {
-	column *StaticColumn
-	app    Appender
-}
-
-func (a *staticColumnAppender) AppendAt(index int, values interface{}) error {
-	err := a.app.AppendAt(index, values)
-	if err != nil {
-		return err
-	}
-
-	a.column.count++
-	return nil
-}
-
 func (c *StaticColumn) Appender() (Appender, error) {
-	return c.def.Type.NewAppender(&staticColumnAppender{column: c, app: c.data}), nil
+	return c.def.Type.NewAppender(c.data), nil
 }
 
-func (c *StaticColumn) Iterator() Iterator {
-	return c.def.Type.NewIterator(c.data.Iterator(c.count))
-}
-
-func (c *StaticColumn) String() string {
-	res := c.def.String()
-
-	it := c.Iterator()
-	for it.Next() {
-		res += "\n" + fmt.Sprint(it.Value())
-	}
-	if it.Err() != nil {
-		res += "\nerror: " + it.Err().Error()
-	}
-
-	return res
+func (c *StaticColumn) Iterator(maxIterations int) Iterator {
+	return c.def.Type.NewIterator(c.data.Iterator(maxIterations))
 }
 
 type DynamicColumn struct {
@@ -84,8 +53,6 @@ type DynamicColumn struct {
 
 	data           map[string]Encoding
 	dynamicColumns []string
-
-	count int
 }
 
 func NewDynamicColumn(def ColumnDefinition) *DynamicColumn {
@@ -99,31 +66,16 @@ func (c *DynamicColumn) Appender() (Appender, error) {
 	return &DynamicAppender{column: c}, nil
 }
 
-func (c *DynamicColumn) Iterator() Iterator {
+func (c *DynamicColumn) Iterator(maxIterations int) Iterator {
 	its := make([]EncodingIterator, len(c.dynamicColumns))
 	cols := make([]string, len(c.dynamicColumns))
 
 	for i, d := range c.dynamicColumns {
-		its[i] = c.data[d].Iterator(c.count)
+		its[i] = c.data[d].Iterator(maxIterations)
 		cols[i] = d
 	}
 
 	return &DynamicIterator{iterators: its, dynamicColumnNames: cols}
-}
-
-func (c *DynamicColumn) String() string {
-	res := c.def.String()
-
-	for _, d := range c.dynamicColumns {
-		res += "\n" + "dynamicColumn: " + d
-
-		it := c.data[d].Iterator(c.count)
-		for it.Next() {
-			res += "\n" + fmt.Sprint(it.Value())
-		}
-	}
-
-	return res
 }
 
 type DynamicAppender struct {
@@ -136,13 +88,7 @@ type DynamicColumnValue struct {
 }
 
 func (a *DynamicAppender) AppendAt(index int, v interface{}) error {
-	err := a.DynamicAppendAt(index, v.([]DynamicColumnValue))
-	if err != nil {
-		return err
-	}
-
-	a.column.count++
-	return nil
+	return a.DynamicAppendAt(index, v.([]DynamicColumnValue))
 }
 
 func (a *DynamicAppender) DynamicAppendAt(index int, v []DynamicColumnValue) error {
@@ -180,11 +126,24 @@ func (i *DynamicIterator) Value() interface{} {
 	res := make([]DynamicColumnValue, 0, len(i.iterators))
 
 	for j, it := range i.iterators {
-		v := it.Value()
-		res = append(res, DynamicColumnValue{Name: i.dynamicColumnNames[j], Value: v})
+		if it.IsNull() {
+			continue
+		}
+
+		res = append(res, DynamicColumnValue{Name: i.dynamicColumnNames[j], Value: it.Value()})
 	}
 
 	return res
+}
+
+func (i *DynamicIterator) IsNull() bool {
+	for _, it := range i.iterators {
+		if !it.IsNull() {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (i *DynamicIterator) Err() error {
