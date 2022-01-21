@@ -4,7 +4,7 @@ Parca is licensed under the [Apache 2.0](https://www.apache.org/licenses/LICENSE
 
 # Certificate of Origin
 
-By contributing to this project you agree to sign a Contributor License Agreement(CLA).
+By contributing to this project you agree to [sign a Contributor License Agreement(CLA)](https://cla-assistant.io/parca-dev/parca).
 
 # Code of Conduct
 
