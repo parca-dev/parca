@@ -31,7 +31,7 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
-var ErrLocationFailedBefore = errors.New("failed to symbolized location")
+var ErrLocationFailedBefore = errors.New("failed to symbolize location, attempts are exhausted")
 
 type dwarfLiner struct {
 	logger    log.Logger
