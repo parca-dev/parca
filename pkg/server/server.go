@@ -151,7 +151,7 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 			return
 		}
 		if r.URL.Path == "/debug/pprof/fgprof" {
-    	fgprof.Handler().ServeHTTP(w, r)
+			fgprof.Handler().ServeHTTP(w, r)
 			return
 		}
 		pprof.Index(w, r)
