@@ -21,11 +21,11 @@ const RelativeRangePicker = ({date, onChange = () => null}: RelativeRangePickerP
   const [unit, setUnit] = useState<UNIT_TYPE>(date.unit);
   const [value, setValue] = useState<number>(date.value);
   return (
-    <div className="bg-gray-200 dark:bg-gray-800 ">
+    <div className="bg-gray-200 dark:bg-gray-800 rounded p-2">
       <div className="flex justify-between p-1 py-8">
         <Input
           type="number"
-          className="w-1/2"
+          className="w-1/2 mr-2"
           value={value}
           onChange={e => setValue(parseInt(e.target.value, 10))}
         />

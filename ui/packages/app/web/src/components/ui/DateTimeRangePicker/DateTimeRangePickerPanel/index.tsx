@@ -15,20 +15,19 @@ const DateTimeRangePickerPanel = ({
   onChange = () => null,
 }: DateTimeRangePickerProps) => {
   return (
-    <Popover.Panel className="">
-      <div className="bg-gray-100 dark:bg-gray-800 p-4">
-        <Tab
-          tabs={['Absolute', 'Relative']}
-          panels={[
-            'Absolute',
-            <RelativeRangePicker
-              date={date as RelativeDate}
-              onChange={date => onChange(date, position)}
-            />,
-          ]}
-          defaultTabIndex={1}
-        />
-      </div>
+    <Popover.Panel className="bg-gray-100 dark:bg-gray-800 p-4 text-black dark:text-white">
+      <Tab
+        tabs={['Absolute', 'Relative']}
+        panels={[
+          'Absolute',
+          <RelativeRangePicker
+            key={position}
+            date={date as RelativeDate}
+            onChange={date => onChange(date, position)}
+          />,
+        ]}
+        defaultTabIndex={date.isRelative() ? 1 : 0}
+      />
     </Popover.Panel>
   );
 };
