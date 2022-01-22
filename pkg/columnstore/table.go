@@ -107,9 +107,20 @@ func (g *Granule) Cardinality() int {
 	return res
 }
 
+// Iterator merges all parts iin a Granule before returning an iterator over that part
+// NOTE: this may not be the optimal way to perform a merge during iteration. But it's technically correct
 func (g *Granule) Iterator() *GranuleIterator {
-	its := make([]*PartIterator, len(g.parts))
 
+	// Merge the parts
+	p, err := Merge(g.parts...)
+	if err != nil {
+		panic("merge failure")
+	}
+
+	// replace the granules parts with the merged part
+	g.parts = []*Part{p}
+
+	its := make([]*PartIterator, len(g.parts))
 	for i, p := range g.parts {
 		its[i] = p.Iterator()
 	}
@@ -124,9 +135,6 @@ type GranuleIterator struct {
 	currPartIndex int
 }
 
-// TODO: This iterator implementation is totally wrong. It iterates over all
-// parts one by one, but it should be merging them and return them in order.
-// But hey ... it does something.
 func (gi *GranuleIterator) Next() bool {
 	if gi.its[gi.currPartIndex].Next() {
 		return true
