@@ -107,6 +107,29 @@ func (g *Granule) Cardinality() int {
 	return res
 }
 
+// Split a granule into n granules. Returns the granules in order.
+// This assumes the Granule has had it's parts merged into a single part
+func (g *Granule) Split(n int) []*Granule {
+	if len(g.parts) > 1 {
+		return []*Granule{g} // do nothing
+	}
+
+	size := g.parts[0].Cardinality / n
+
+	// Build all the new granules
+	granules := make([]*Granule, 0, n)
+	for i := 0; i < n; i++ {
+		switch i {
+		case n - 1: // remainder included in last Granule
+			granules = append(granules, NewGranule(g.parts[i*size:]...))
+		default:
+			granules = append(granules, NewGranule(g.parts[i*size:i*size+size]...))
+		}
+	}
+
+	return granules
+}
+
 // Iterator merges all parts iin a Granule before returning an iterator over that part
 // NOTE: this may not be the optimal way to perform a merge during iteration. But it's technically correct
 func (g *Granule) Iterator() *GranuleIterator {
