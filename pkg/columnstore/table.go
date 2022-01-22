@@ -107,24 +107,43 @@ func (g *Granule) Cardinality() int {
 	return res
 }
 
-// Split a granule into n granules. Returns the granules in order.
+// Split a granule into n sized granules. Returns the granules in order.
 // This assumes the Granule has had it's parts merged into a single part
 func (g *Granule) Split(n int) []*Granule {
 	if len(g.parts) > 1 {
 		return []*Granule{g} // do nothing
 	}
 
-	size := g.parts[0].Cardinality / n
+	// How many granules we'll need to build
+	count := g.parts[0].Cardinality / n
+	if g.parts[0].Cardinality%n != 0 {
+		count++
+	}
 
 	// Build all the new granules
-	granules := make([]*Granule, 0, n)
-	for i := 0; i < n; i++ {
-		switch i {
-		case n - 1: // remainder included in last Granule
-			granules = append(granules, NewGranule(g.parts[i*size:]...))
-		default:
-			granules = append(granules, NewGranule(g.parts[i*size:i*size+size]...))
+	granules := make([]*Granule, 0, count)
+
+	it := g.parts[0].Iterator()
+	rows := make([]Row, 0, n)
+	for it.Next() {
+		rows = append(rows, Row{Values: it.Values()})
+		if len(rows) == n {
+			p, err := NewPart(g.parts[0].schema, rows)
+			if err != nil {
+				panic("dun goofed")
+			}
+			granules = append(granules, NewGranule(p))
+			rows = make([]Row, 0, n)
 		}
+	}
+
+	// Save the remaining Granule
+	if len(rows) != 0 {
+		p, err := NewPart(g.parts[0].schema, rows)
+		if err != nil {
+			panic("dun goofed")
+		}
+		granules = append(granules, NewGranule(p))
 	}
 
 	return granules
