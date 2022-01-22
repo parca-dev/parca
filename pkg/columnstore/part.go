@@ -127,34 +127,6 @@ func (s SortableRows) Less(i, j int) bool {
 		vj := s[j].Values[k]
 
 		switch vi.(type) {
-		case string:
-			switch {
-			case vi.(string) < vj.(string):
-				return true
-			case vi.(string) > vj.(string):
-				return false
-			}
-		case uint64:
-			switch {
-			case vi.(uint64) < vj.(uint64):
-				return true
-			case vi.(uint64) > vj.(uint64):
-				return false
-			}
-		case int:
-			switch {
-			case vi.(int) < vj.(int):
-				return true
-			case vi.(int) > vj.(int):
-				return false
-			}
-		case int64:
-			switch {
-			case vi.(int64) < vj.(int64):
-				return true
-			case vi.(int64) > vj.(int64):
-				return false
-			}
 		case []DynamicColumnValue:
 
 			dci := vi.([]DynamicColumnValue)
@@ -182,6 +154,12 @@ func (s SortableRows) Less(i, j int) bool {
 			}
 
 		default:
+			switch compare(vi, vj) {
+			case LessThan:
+				return true
+			case GreaterThan:
+				return false
+			}
 			panic("at the disco")
 		}
 	}
