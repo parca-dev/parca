@@ -40,8 +40,14 @@ func (t *Table) Insert(rows []Row) error {
 		}
 
 		granule.AddPart(p)
-
-		// TODO: somewhere here compactions of a granule need to be scheduled.
+		if granule.Cardinality() >= t.schema.GranuleSize {
+			// TODO: splits should be performed in the background. Do it now for simplicity
+			granules := granule.Split(t.schema.GranuleSize / 2) // TODO magic numbers
+			t.index.Delete(granule)
+			for _, g := range granules {
+				t.index.ReplaceOrInsert(g)
+			}
+		}
 	}
 
 	return nil

@@ -201,7 +201,6 @@ func (r Row) Less(than Row) bool {
 			case GreaterThan:
 				return false
 			}
-			panic("at the disco")
 		}
 	}
 

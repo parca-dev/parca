@@ -23,8 +23,8 @@ func TestTable(t *testing.T) {
 			Type:     Int64Type,
 			Encoding: PlainEncoding,
 		}},
-		OrderedBy: []string{"labels", "timestamp"},
-		//WithGranuleSize(2^13), // 8192
+		OrderedBy:   []string{"labels", "timestamp"},
+		GranuleSize: 2 ^ 13, // 8192
 		//WithOrderedColumns(
 		//	labelsColumn,
 		//	timestampColumn,
@@ -128,4 +128,100 @@ func TestTable(t *testing.T) {
 	require.Equal(t, 2, granuels[0].parts[0].Cardinality)
 	require.Equal(t, 2, granuels[1].parts[0].Cardinality)
 	require.Equal(t, 1, granuels[2].parts[0].Cardinality)
+}
+
+func Test_Table_GranuleSplit(t *testing.T) {
+	schema := Schema{
+		Columns: []ColumnDefinition{{
+			Name:     "labels",
+			Type:     StringType,
+			Encoding: PlainEncoding,
+			Dynamic:  true,
+		}, {
+			Name:     "timestamp",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}, {
+			Name:     "value",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}},
+		OrderedBy:   []string{"labels", "timestamp"},
+		GranuleSize: 4,
+	}
+
+	table := NewTable(schema)
+	err := table.Insert(
+		[]Row{{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+				},
+				int64(1),
+				int64(1),
+			},
+		}, {
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+					{Name: "label3", Value: "value3"},
+				},
+				int64(2),
+				int64(2),
+			},
+		}, {
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+					{Name: "label4", Value: "value4"},
+				},
+				int64(3),
+				int64(3),
+			},
+		}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = table.Insert(
+		[]Row{{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+				},
+				int64(2),
+				int64(2),
+			},
+		}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = table.Insert(
+		[]Row{{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+					{Name: "label3", Value: "value3"},
+				},
+				int64(3),
+				int64(3),
+			},
+		}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	it := table.Iterator()
+	for it.Next() {
+		fmt.Println(it.Row())
+	}
 }
