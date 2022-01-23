@@ -109,6 +109,14 @@ func TestTable(t *testing.T) {
 	// Expect the merge to have left us with one granule with one part
 	require.Equal(t, 1, len(table.granules))
 	require.Equal(t, 1, len(table.granules[0].parts))
+	require.Equal(t, []interface{}{
+		[]DynamicColumnValue{
+			{Name: "label1", Value: "value1"},
+			{Name: "label2", Value: "value2"},
+		},
+		int64(1),
+		int64(1),
+	}, table.granules[0].least.Values)
 
 	// Split the granule
 	granuels := table.granules[0].Split(2)
