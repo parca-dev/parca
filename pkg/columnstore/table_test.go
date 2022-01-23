@@ -117,6 +117,7 @@ func TestTable(t *testing.T) {
 		int64(1),
 		int64(1),
 	}, table.granules[0].least.Values)
+	require.Equal(t, 1, table.index.Len())
 
 	// Split the granule
 	granuels := table.granules[0].Split(2)
