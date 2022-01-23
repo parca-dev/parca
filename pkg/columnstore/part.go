@@ -121,10 +121,51 @@ func (s SortableRows) Len() int { return len(s) }
 
 // Less implements the sort.Interface interface
 func (s SortableRows) Less(i, j int) bool {
+	return s[i].Less(s[j])
+}
 
-	for k := 0; k < len(s[i].Values); k++ {
-		vi := s[i].Values[k]
-		vj := s[j].Values[k]
+// Swap implements the sort.Interface interface
+func (s SortableRows) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func compare(a, b interface{}) Comparison {
+	switch a.(type) {
+	case string:
+		switch {
+		case a.(string) < b.(string):
+			return LessThan
+		case a.(string) > b.(string):
+			return GreaterThan
+		default:
+			return Equal
+		}
+	case uint64:
+		switch {
+		case a.(uint64) < b.(uint64):
+			return LessThan
+		case a.(uint64) > b.(uint64):
+			return GreaterThan
+		default:
+			return Equal
+		}
+	case int64:
+		switch {
+		case a.(int64) < b.(int64):
+			return LessThan
+		case a.(int64) > b.(int64):
+			return GreaterThan
+		default:
+			return Equal
+		}
+	default:
+		panic("unsupported compare")
+	}
+}
+
+// Less returns true if the row is Less than the given row
+func (r Row) Less(than Row) bool {
+	for k := 0; k < len(r.Values); k++ {
+		vi := r.Values[k]
+		vj := than.Values[k]
 
 		switch vi.(type) {
 		case []DynamicColumnValue:
@@ -165,41 +206,4 @@ func (s SortableRows) Less(i, j int) bool {
 	}
 
 	return true
-}
-
-// Swap implements the sort.Interface interface
-func (s SortableRows) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-func compare(a, b interface{}) Comparison {
-	switch a.(type) {
-	case string:
-		switch {
-		case a.(string) < b.(string):
-			return LessThan
-		case a.(string) > b.(string):
-			return GreaterThan
-		default:
-			return Equal
-		}
-	case uint64:
-		switch {
-		case a.(uint64) < b.(uint64):
-			return LessThan
-		case a.(uint64) > b.(uint64):
-			return GreaterThan
-		default:
-			return Equal
-		}
-	case int64:
-		switch {
-		case a.(int64) < b.(int64):
-			return LessThan
-		case a.(int64) > b.(int64):
-			return GreaterThan
-		default:
-			return Equal
-		}
-	default:
-		panic("unsupported compare")
-	}
 }

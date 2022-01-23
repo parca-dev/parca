@@ -1,12 +1,21 @@
 package columnstore
 
+import (
+	"github.com/google/btree"
+)
+
 type Table struct {
 	schema   Schema
 	granules []*Granule
+
+	index *btree.BTree
 }
 
 func NewTable(schema Schema) *Table {
-	return &Table{schema: schema}
+	return &Table{
+		schema: schema,
+		index:  btree.New(2), // TODO make the degree a setting
+	}
 }
 
 func (t *Table) Insert(rows []Row) error {
