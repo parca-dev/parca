@@ -1,5 +1,7 @@
 package columnstore
 
+import "github.com/google/btree"
+
 type Granule struct {
 
 	// least is the row that exists within the Granule that is the least.
@@ -142,6 +144,6 @@ func (gi *GranuleIterator) Err() error {
 }
 
 // Less implements the btree.Item interface
-func (g *Granule) Less(than *Granule) bool {
-	return g.least.Less(than.least)
+func (g *Granule) Less(than btree.Item) bool {
+	return g.least.Less(than.(*Granule).least)
 }

@@ -26,7 +26,9 @@ func (t *Table) Insert(rows []Row) error {
 			return err
 		}
 
-		t.granules = append(t.granules, NewGranule(p))
+		g := NewGranule(p)
+		t.index.ReplaceOrInsert(g)
+		t.granules = append(t.granules, g)
 		return nil
 	}
 
