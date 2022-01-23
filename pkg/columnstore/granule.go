@@ -9,11 +9,38 @@ type Granule struct {
 }
 
 func NewGranule(parts ...*Part) *Granule {
-	return &Granule{parts: parts}
+	g := &Granule{
+		parts: parts,
+	}
+
+	// Find the least column
+	for i, p := range parts {
+		it := p.Iterator()
+		if it.Next() { // Since we assume a part is sorted, we need only to look at the first row in each Part
+			r := Row{Values: it.Values()}
+			switch i {
+			case 0:
+				g.least = r
+			default:
+				if r.Less(g.least) {
+					g.least = r
+				}
+			}
+		}
+	}
+
+	return g
 }
 
 func (g *Granule) AddPart(p *Part) {
 	g.parts = append(g.parts, p)
+	it := p.Iterator()
+	if it.Next() {
+		r := Row{Values: it.Values()}
+		if r.Less(g.least) {
+			g.least = r
+		}
+	}
 }
 
 func (g *Granule) Cardinality() int {
