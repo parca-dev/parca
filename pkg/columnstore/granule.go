@@ -1,6 +1,10 @@
 package columnstore
 
 type Granule struct {
+
+	// least is the row that exists within the Granule that is the least.
+	// This is used for quick insertion into the btree, without requiring an iterator
+	least Row
 	parts []*Part
 }
 
@@ -108,4 +112,9 @@ func (gi *GranuleIterator) Row() Row {
 
 func (gi *GranuleIterator) Err() error {
 	return gi.its[gi.currPartIndex].Err()
+}
+
+// Less implements the btree.Item interface
+func (g *Granule) Less(than *Granule) bool {
+	return g.least.Less(than.least)
 }
