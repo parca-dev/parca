@@ -50,7 +50,7 @@ const RelativeDatePicker = ({date, onChange = () => null, position}: RelativeDat
           Apply
         </ApplyButton>
       </div>
-      <div className="my-4 mt-8 border-b-2 border-gray-300 text-gray-400 text-sm leading-[0px] mx-auto text-center">
+      <div className="my-4 mt-8 border-b-2 border-gray-300 text-gray-400 text-xs leading-[0px] mx-auto text-center">
         <span className="bg-gray-200 dark:bg-gray-800 px-1">OR</span>
       </div>
       <div className="max-w-1/2 mx-auto py-2">
