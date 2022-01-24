@@ -204,5 +204,5 @@ func (r Row) Less(than Row) bool {
 		}
 	}
 
-	return true
+	return false
 }
