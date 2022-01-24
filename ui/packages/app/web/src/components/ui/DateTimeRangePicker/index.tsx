@@ -25,7 +25,6 @@ const DateTimeRangePicker = () => {
           isActive={isActive}
           activePosition={activePosition}
           onClick={position => {
-            console.log('onClick', position);
             setIsActive(true);
             setActivePosition(position);
           }}

@@ -1,7 +1,8 @@
 import {Popover} from '@headlessui/react';
 import Tab from '../../Tab';
-import type {DateUnion, POSITION_TYPE, RelativeDate} from '../utils';
-import RelativeRangePicker from './RelativeRangePicker';
+import type {AbsoluteDate, DateUnion, POSITION_TYPE, RelativeDate} from '../utils';
+import RelativeDatePicker from './RelativeDatePicker';
+import AbsoluteDatePicker from './AbsoluteDatePicker';
 
 type DateTimeRangePickerProps = {
   date: DateUnion;
@@ -14,19 +15,25 @@ const DateTimeRangePickerPanel = ({
   position,
   onChange = () => null,
 }: DateTimeRangePickerProps) => {
+  console.log('DateTimeRangePickerPanel', date, position, date.isRelative());
   return (
     <Popover.Panel className="bg-gray-100 dark:bg-gray-800 p-4 text-black dark:text-white">
       <Tab
         tabs={['Absolute', 'Relative']}
         panels={[
-          'Absolute',
-          <RelativeRangePicker
+          <AbsoluteDatePicker
+            key={position}
+            date={date as AbsoluteDate}
+            onChange={date => onChange(date, position)}
+          />,
+          <RelativeDatePicker
             key={position}
             date={date as RelativeDate}
             onChange={date => onChange(date, position)}
           />,
         ]}
         defaultTabIndex={date.isRelative() ? 1 : 0}
+        key={position}
       />
     </Popover.Panel>
   );

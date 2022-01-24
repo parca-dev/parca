@@ -28,6 +28,10 @@ export class RelativeDate implements BaseDate {
 
 export class AbsoluteDate implements BaseDate {
   isRelative = () => false;
+  value: Date;
+  constructor(value: Date) {
+    this.value = value || getDateHoursAgo(1);
+  }
 }
 
 export type DateUnion = RelativeDate | AbsoluteDate;
@@ -74,5 +78,11 @@ export const formatDateStringForUI = dateString => {
     }
     return `${value} ${unit}${value > 1 ? 's' : ''} ago`;
   }
-  return dateString;
+  return dateString.value.toLocaleString();
+};
+
+export const getDateHoursAgo = (hours = 1) => {
+  const now = new Date();
+  now.setHours(now.getHours() - hours);
+  return now;
 };

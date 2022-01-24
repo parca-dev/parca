@@ -12,12 +12,12 @@ const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
   }));
 };
 
-type RelativeRangePickerProps = {
+type RelativeDatePickerProps = {
   date: RelativeDate;
   onChange?: (date: RelativeDate) => void;
 };
 
-const RelativeRangePicker = ({date, onChange = () => null}: RelativeRangePickerProps) => {
+const RelativeDatePicker = ({date, onChange = () => null}: RelativeDatePickerProps) => {
   const [unit, setUnit] = useState<UNIT_TYPE>(date.unit);
   const [value, setValue] = useState<number>(date.value);
   return (
@@ -50,4 +50,4 @@ const RelativeRangePicker = ({date, onChange = () => null}: RelativeRangePickerP
   );
 };
 
-export default RelativeRangePicker;
+export default RelativeDatePicker;
