@@ -1,6 +1,8 @@
 package columnstore
 
 import (
+	"fmt"
+
 	"github.com/google/btree"
 )
 
@@ -39,9 +41,20 @@ func (t *Table) Insert(rows []Row) error {
 
 		granule.AddPart(p)
 		if granule.Cardinality() >= t.schema.GranuleSize {
+
 			// TODO: splits should be performed in the background. Do it now for simplicity
+
+			newpart, err := Merge(granule.parts...) // need to merge all parts in a granule before splitting
+			if err != nil {
+				return err
+			}
+			granule.parts = []*Part{newpart}
+
 			granules := granule.Split(t.schema.GranuleSize / 2) // TODO magic numbers
-			t.index.Delete(granule)
+			deleted := t.index.Delete(granule)
+			if deleted == nil {
+				return fmt.Errorf("failed to delete granule during split")
+			}
 			for _, g := range granules {
 				t.index.ReplaceOrInsert(g)
 			}
