@@ -61,7 +61,6 @@ export class DateTimeRange {
   }
 
   setDateForPosition(date: DateUnion, position: string) {
-    console.log('setDateForPosition', date, position);
     if (position === POSITIONS.FROM) {
       this.from = date;
     } else {

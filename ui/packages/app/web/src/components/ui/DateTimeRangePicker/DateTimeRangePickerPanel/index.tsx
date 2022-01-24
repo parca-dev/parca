@@ -15,9 +15,8 @@ const DateTimeRangePickerPanel = ({
   position,
   onChange = () => null,
 }: DateTimeRangePickerProps) => {
-  console.log('DateTimeRangePickerPanel', date, position, date.isRelative());
   return (
-    <Popover.Panel className="bg-gray-100 dark:bg-gray-800 p-1 text-black dark:text-white">
+    <div className="bg-gray-100 dark:bg-gray-800 p-1 text-black dark:text-white">
       <Tab
         tabs={['Absolute', 'Relative']}
         panels={[
@@ -37,7 +36,7 @@ const DateTimeRangePickerPanel = ({
         defaultTabIndex={date.isRelative() ? 1 : 0}
         key={position}
       />
-    </Popover.Panel>
+    </div>
   );
 };
 

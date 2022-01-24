@@ -5,9 +5,9 @@ import ConditionalWrapper from 'components/ConditionalWrapper';
 
 const Delimiter = () => <span className="mx-2">→</span>;
 
-const PositionButton = ({isActive, position, onClick, date}) => {
+const PositionButton = ({isActive, position, onClick, date, buttonRef}) => {
   return (
-    <button onClick={e => onClick(e, position)}>
+    <button onClick={e => onClick(e, position)} ref={buttonRef}>
       <span className={cx({underline: isActive})}>{formatDateStringForUI(date)}</span>
     </button>
   );
@@ -18,6 +18,8 @@ type DateTimeRangePickerTriggerProps = {
   onClick: (position: POSITION_TYPE) => void;
   activePosition: POSITION_TYPE;
   isActive: boolean;
+  fromRef: React.RefObject<HTMLDivElement>;
+  toRef: React.RefObject<HTMLDivElement>;
 };
 
 const DateTimeRangePickerTrigger = ({
@@ -25,6 +27,8 @@ const DateTimeRangePickerTrigger = ({
   onClick,
   isActive,
   activePosition,
+  fromRef,
+  toRef,
 }: DateTimeRangePickerTriggerProps) => {
   const buttonClick = (e, position: POSITION_TYPE = POSITIONS.FROM) => {
     e.stopPropagation();
@@ -53,6 +57,7 @@ const DateTimeRangePickerTrigger = ({
               position={POSITIONS.FROM}
               date={range.from}
               onClick={buttonClick}
+              buttonRef={fromRef}
             />
             <Delimiter />
             <PositionButton
@@ -60,6 +65,7 @@ const DateTimeRangePickerTrigger = ({
               position={POSITIONS.TO}
               date={range.to}
               onClick={buttonClick}
+              buttonRef={toRef}
             />
           </div>
         ) : (

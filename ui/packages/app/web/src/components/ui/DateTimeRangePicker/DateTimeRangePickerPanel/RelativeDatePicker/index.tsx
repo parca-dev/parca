@@ -22,8 +22,8 @@ type RelativeDatePickerProps = {
 };
 
 const RelativeDatePicker = ({date, onChange = () => null, position}: RelativeDatePickerProps) => {
-  const [unit, setUnit] = useState<UNIT_TYPE>(date.unit);
-  const [value, setValue] = useState<number>(date.value);
+  const [unit, setUnit] = useState<UNIT_TYPE>(date.isRelative() ? date.unit : UNITS.HOUR);
+  const [value, setValue] = useState<number>(date.isRelative() ? date.value : 1);
   return (
     <div className="bg-gray-200 dark:bg-gray-800 rounded p-2">
       <div className="flex justify-between p-1 py-8">
@@ -44,7 +44,6 @@ const RelativeDatePicker = ({date, onChange = () => null, position}: RelativeDat
         <ApplyButton
           position={position}
           onClick={() => {
-            console.log(value, unit);
             onChange(new RelativeDate(unit, value));
           }}
         />
