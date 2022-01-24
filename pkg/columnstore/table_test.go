@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/btree"
 	"github.com/stretchr/testify/require"
 )
 
@@ -101,14 +102,20 @@ func TestTable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	it := table.Iterator()
-	for it.Next() {
-		fmt.Println(it.Row())
-	}
+	table.Iterator(func(i btree.Item) bool {
+		g := i.(*Granule)
+		it := g.Iterator()
+		for it.Next() {
+			fmt.Println(it.Row())
+		}
+
+		return true
+	})
 
 	// Expect the merge to have left us with one granule with one part
-	require.Equal(t, 1, len(table.granules))
-	require.Equal(t, 1, len(table.granules[0].parts))
+	require.Equal(t, 1, table.index.Len())
+	require.Equal(t, 1, len(table.index.Min().(*Granule).parts))
+	require.Equal(t, 5, table.index.Min().(*Granule).Cardinality())
 	require.Equal(t, []interface{}{
 		[]DynamicColumnValue{
 			{Name: "label1", Value: "value1"},
@@ -116,18 +123,8 @@ func TestTable(t *testing.T) {
 		},
 		int64(1),
 		int64(1),
-	}, table.granules[0].least.Values)
+	}, table.index.Min().(*Granule).least.Values)
 	require.Equal(t, 1, table.index.Len())
-
-	// Split the granule
-	granuels := table.granules[0].Split(2)
-	require.Equal(t, 3, len(granuels))
-	require.Equal(t, 1, len(granuels[0].parts))
-	require.Equal(t, 1, len(granuels[1].parts))
-	require.Equal(t, 1, len(granuels[2].parts))
-	require.Equal(t, 2, granuels[0].parts[0].Cardinality)
-	require.Equal(t, 2, granuels[1].parts[0].Cardinality)
-	require.Equal(t, 1, granuels[2].parts[0].Cardinality)
 }
 
 func Test_Table_GranuleSplit(t *testing.T) {
@@ -220,8 +217,18 @@ func Test_Table_GranuleSplit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	it := table.Iterator()
-	for it.Next() {
-		fmt.Println(it.Row())
-	}
+	table.Iterator(func(i btree.Item) bool {
+		g := i.(*Granule)
+		it := g.Iterator()
+		fmt.Println("-----------------Granule----------------")
+		for it.Next() {
+			fmt.Println(it.Row())
+		}
+		fmt.Println("----------------------------------------")
+
+		return true
+	})
+
+	require.Equal(t, 2, table.index.Len())
+	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality())
 }
