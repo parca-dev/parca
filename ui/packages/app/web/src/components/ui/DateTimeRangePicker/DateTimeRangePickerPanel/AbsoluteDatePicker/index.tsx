@@ -33,7 +33,9 @@ const AbsoluteDatePicker = ({date, onChange = () => null, position}: AbsoluteDat
           onClick={() => {
             onChange(new AbsoluteDate(value));
           }}
-        />
+        >
+          Apply
+        </ApplyButton>
       </div>
     </div>
   );
