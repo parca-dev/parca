@@ -88,7 +88,7 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 		for ; j < len(rows); j++ {
 			if rows[j].Less(g.least) {
 				if prev != nil {
-					rowsByGranule[g] = append(rowsByGranule[g], rows[j])
+					rowsByGranule[prev] = append(rowsByGranule[prev], rows[j])
 					prev = nil
 				}
 				return true // continue btree iteration
