@@ -17,17 +17,19 @@ const DateTimeRangePickerPanel = ({
 }: DateTimeRangePickerProps) => {
   console.log('DateTimeRangePickerPanel', date, position, date.isRelative());
   return (
-    <Popover.Panel className="bg-gray-100 dark:bg-gray-800 p-4 text-black dark:text-white">
+    <Popover.Panel className="bg-gray-100 dark:bg-gray-800 p-1 text-black dark:text-white">
       <Tab
         tabs={['Absolute', 'Relative']}
         panels={[
           <AbsoluteDatePicker
             key={position}
+            position={position}
             date={date as AbsoluteDate}
             onChange={date => onChange(date, position)}
           />,
           <RelativeDatePicker
             key={position}
+            position={position}
             date={date as RelativeDate}
             onChange={date => onChange(date, position)}
           />,

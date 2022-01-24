@@ -2,8 +2,11 @@ import Select, {contructItemsFromArray} from 'components/ui/Select';
 import {useState} from 'react';
 import Input from 'components/ui/Input';
 import Button from 'components/ui/Button';
-import {RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
+import {POSITION_TYPE, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 import {capitalizeFirstLetter} from 'libs/utils';
+import ConditionalWrapper from 'components/ConditionalWrapper';
+import {Popover} from '@headlessui/react';
+import ApplyButton from '../ApplyButton';
 
 const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
   return UNITS.map(unit => ({
@@ -15,9 +18,10 @@ const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
 type RelativeDatePickerProps = {
   date: RelativeDate;
   onChange?: (date: RelativeDate) => void;
+  position?: POSITION_TYPE;
 };
 
-const RelativeDatePicker = ({date, onChange = () => null}: RelativeDatePickerProps) => {
+const RelativeDatePicker = ({date, onChange = () => null, position}: RelativeDatePickerProps) => {
   const [unit, setUnit] = useState<UNIT_TYPE>(date.unit);
   const [value, setValue] = useState<number>(date.value);
   return (
@@ -37,14 +41,13 @@ const RelativeDatePicker = ({date, onChange = () => null}: RelativeDatePickerPro
         />
       </div>
       <div className="max-w-1/2 mx-auto py-2 pt-4">
-        <Button
+        <ApplyButton
+          position={position}
           onClick={() => {
             console.log(value, unit);
             onChange(new RelativeDate(unit, value));
           }}
-        >
-          Apply
-        </Button>
+        />
       </div>
     </div>
   );
