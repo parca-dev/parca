@@ -79,7 +79,6 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 	}
 
 	// TODO: we might be able to do ascend less than or ascend greater than here?
-	// TODO I'm not actually certain this logic is correct, but my brain is mush at this point
 	j := 0
 	var prev *Granule
 	t.index.Ascend(func(i btree.Item) bool {
@@ -89,25 +88,25 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 			if rows[j].Less(g.least) {
 				if prev != nil {
 					rowsByGranule[prev] = append(rowsByGranule[prev], rows[j])
-					prev = nil
+					continue
 				}
 				return true // continue btree iteration
 			}
 
 			// stop at the first granule where this is not the least
 			// this might be the correct granule, but we need to check that it isn't the next granule
-			if prev != nil {
-				rowsByGranule[g] = append(rowsByGranule[g], rows[j])
-				prev = nil
-			} else {
-				prev = g
-				return true // continue btree iteration
-			}
+			prev = g
+			return true // continue btree iteration
 		}
 
 		// All rows accounted for
 		return false
 	})
+
+	// Save any remaining rows that belong into prev
+	for ; j < len(rows); j++ {
+		rowsByGranule[prev] = append(rowsByGranule[prev], rows[j])
+	}
 
 	return rowsByGranule
 }
