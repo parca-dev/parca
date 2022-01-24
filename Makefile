@@ -87,11 +87,11 @@ container:
 
 .PHONY: push-container
 push-container:
-	buildah manifest push --all $(OUT_DOCKER):$(VERSION)
+	buildah manifest push --all $(OUT_DOCKER):$(VERSION) docker://$(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-quay-container
 push-quay-container:
-	buildah manifest push --all $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
+	buildah manifest push --all $(OUT_DOCKER):$(VERSION) docker://quay.io/parca/parca:$(VERSION)
 
 .PHONY: deploy/manifests
 deploy/manifests:
