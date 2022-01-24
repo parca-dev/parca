@@ -25,7 +25,7 @@ const RelativeDatePicker = ({date, onChange = () => null, position}: RelativeDat
   const [unit, setUnit] = useState<UNIT_TYPE>(date.isRelative() ? date.unit : UNITS.HOUR);
   const [value, setValue] = useState<number>(date.isRelative() ? date.value : 1);
   return (
-    <div className="bg-gray-200 dark:bg-gray-800 rounded p-2">
+    <div className="p-1">
       <div className="flex justify-between p-1 py-4">
         <Input
           type="number"
@@ -51,7 +51,7 @@ const RelativeDatePicker = ({date, onChange = () => null, position}: RelativeDat
         </ApplyButton>
       </div>
       <div className="my-4 mt-8 border-b-2 border-gray-300 text-gray-400 text-xs leading-[0px] mx-auto text-center">
-        <span className="bg-gray-200 dark:bg-gray-800 px-1">OR</span>
+        <span className="bg-gray-100 dark:bg-gray-800 px-1">OR</span>
       </div>
       <div className="max-w-1/2 mx-auto py-2">
         <ApplyButton

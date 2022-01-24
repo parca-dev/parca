@@ -23,7 +23,7 @@ const AbsoluteDatePicker = ({date, onChange = () => null, position}: AbsoluteDat
     date.isRelative() ? getDateHoursAgo(position === POSITIONS.FROM ? 1 : 0) : date.value
   );
   return (
-    <div className="bg-gray-200 dark:bg-gray-800 rounded p-1">
+    <div className="p-1">
       <div className="flex justify-center p-1">
         <DatePicker selected={value} onChange={date => setValue(date)} showTimeInput inline />
       </div>
