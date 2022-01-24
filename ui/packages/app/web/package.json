@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.7.11",
+  "version": "0.7.12",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js src/*",
