@@ -1,6 +1,8 @@
 package columnstore
 
-import "github.com/google/btree"
+import (
+	"github.com/google/btree"
+)
 
 type Granule struct {
 
