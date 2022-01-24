@@ -231,4 +231,5 @@ func Test_Table_GranuleSplit(t *testing.T) {
 
 	require.Equal(t, 2, table.index.Len())
 	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality())
+	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality())
 }

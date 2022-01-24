@@ -78,7 +78,36 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 		return rowsByGranule
 	}
 
-	// TODO: general case: split rows into groups of rows belonging to the respective granule.
+	// TODO: we might be able to do ascend less than or ascend greater than here?
+	// TODO I'm not actually certain this logic is correct, but my brain is mush at this point
+	j := 0
+	var prev *Granule
+	t.index.Ascend(func(i btree.Item) bool {
+		g := i.(*Granule)
+
+		for ; j < len(rows); j++ {
+			if rows[j].Less(g.least) {
+				if prev != nil {
+					rowsByGranule[g] = append(rowsByGranule[g], rows[j])
+					prev = nil
+				}
+				return true // continue btree iteration
+			}
+
+			// stop at the first granule where this is not the least
+			// this might be the correct granule, but we need to check that it isn't the next granule
+			if prev != nil {
+				rowsByGranule[g] = append(rowsByGranule[g], rows[j])
+				prev = nil
+			} else {
+				prev = g
+				return true // continue btree iteration
+			}
+		}
+
+		// All rows accounted for
+		return false
+	})
 
 	return rowsByGranule
 }
