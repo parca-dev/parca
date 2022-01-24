@@ -5,8 +5,7 @@ import (
 )
 
 type Table struct {
-	schema   Schema
-	granules []*Granule
+	schema Schema
 
 	index *btree.BTree
 }
@@ -20,7 +19,7 @@ func NewTable(schema Schema) *Table {
 
 func (t *Table) Insert(rows []Row) error {
 	// Special case: if there are no granules, create the very first one and immediately insert the first part.
-	if len(t.granules) == 0 {
+	if t.index.Len() == 0 {
 		p, err := NewPart(t.schema, rows)
 		if err != nil {
 			return err
@@ -28,7 +27,6 @@ func (t *Table) Insert(rows []Row) error {
 
 		g := NewGranule(p)
 		t.index.ReplaceOrInsert(g)
-		t.granules = append(t.granules, g)
 		return nil
 	}
 
@@ -53,49 +51,17 @@ func (t *Table) Insert(rows []Row) error {
 	return nil
 }
 
-func (t *Table) Iterator() *TableIterator {
-	its := make([]*GranuleIterator, len(t.granules))
-
-	for i, g := range t.granules {
-		its[i] = g.Iterator()
-	}
-
-	return &TableIterator{
-		its: its,
-	}
-}
-
-type TableIterator struct {
-	its              []*GranuleIterator
-	currGranuleIndex int
-}
-
-func (ti *TableIterator) Next() bool {
-	if ti.its[ti.currGranuleIndex].Next() {
-		return true
-	}
-
-	ti.currGranuleIndex++
-	if ti.currGranuleIndex >= len(ti.its) {
-		return false
-	}
-	return ti.its[ti.currGranuleIndex].Next()
-}
-
-func (ti *TableIterator) Row() Row {
-	return ti.its[ti.currGranuleIndex].Row()
-}
-
-func (ti *TableIterator) Err() error {
-	return ti.its[ti.currGranuleIndex].Err()
+// Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
+func (t *Table) Iterator(iterator btree.ItemIterator) {
+	t.index.Ascend(iterator)
 }
 
 func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 	rowsByGranule := map[*Granule][]Row{}
 
 	// Special case: if there is only one granule, insert parts into it until full.
-	if len(t.granules) == 1 {
-		rowsByGranule[t.granules[0]] = rows
+	if t.index.Len() == 1 {
+		rowsByGranule[t.index.Min().(*Granule)] = rows
 		return rowsByGranule
 	}
 
