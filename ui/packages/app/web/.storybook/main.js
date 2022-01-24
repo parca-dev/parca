@@ -45,6 +45,8 @@ module.exports = {
     config.resolve.alias = {
       ...config.resolve?.alias,
       '@': [path.resolve(__dirname, '../src/'), path.resolve(__dirname, '../')],
+      components: path.resolve(__dirname, '../src/components/'),
+      libs: path.resolve(__dirname, '../src/libs/'),
     };
     config.resolve.plugins = [...(config.resolve.plugins || []), new TsconfigPathsPlugin()];
     return config;

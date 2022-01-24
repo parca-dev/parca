@@ -9,7 +9,9 @@
     "clean": "rimraf .next && rimraf out",
     "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
     "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
-    "storybook": "start-storybook -p 6006"
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook -c ./.storybook/",
+    "chromatic": "npx chromatic --project-token=56c5f39ae692"
   },
   "config": {
     "port": 3000,
@@ -42,6 +44,7 @@
     "zustand": "^3.5.13"
   },
   "devDependencies": {
+    "chromatic": "^6.4.1",
     "react-dom": "^17.0.2"
   }
 }
