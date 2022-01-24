@@ -24,6 +24,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/felixge/fgprof"
 	"github.com/go-chi/cors"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -147,6 +148,10 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	err = mux.HandlePath(http.MethodGet, "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		if r.URL.Path == "/debug/pprof/profile" {
 			pprof.Profile(w, r)
+			return
+		}
+		if r.URL.Path == "/debug/pprof/fgprof" {
+			fgprof.Handler().ServeHTTP(w, r)
 			return
 		}
 		pprof.Index(w, r)
