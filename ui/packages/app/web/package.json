@@ -35,7 +35,7 @@
     "isomorphic-unfetch": "^3.1.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
-    "postcss": "^8.3.6",
+    "postcss": "^8.4.5",
     "tailwindcss": "^3.0.1",
     "zustand": "^3.5.13"
   },
