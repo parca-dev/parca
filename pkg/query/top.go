@@ -40,7 +40,7 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 		return nil, fmt.Errorf("get locations by ids: %w", err)
 	}
 
-	list := make([]*pb.TopNode, 0, len(samples))
+	functionMap := map[string]*pb.TopNode{}
 	for sampleUUID, sample := range samples {
 		s := sampleMap[sampleUUID]
 
@@ -64,11 +64,24 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 			}
 		}
 
-		list = append(list, &pb.TopNode{
-			Meta:       meta,
-			Cumulative: sample.Value,
-			Flat:       sample.Value,
-		})
+		if sample.Value  == 0 {
+			continue
+		}
+
+		if f, exists:= functionMap[meta.Function.Name]; exists {
+			f.Flat += sample.Value
+		} else {
+			functionMap[meta.Function.Name] = &pb.TopNode{
+				Meta: meta,
+				Cumulative: 0,
+				Flat: sample.Value,
+			}
+		}
+	}
+
+	list := make([]*pb.TopNode, 0, len(functionMap))
+	for _, f := range functionMap {
+		list = append(list, f)
 	}
 
 	return &pb.Top{
