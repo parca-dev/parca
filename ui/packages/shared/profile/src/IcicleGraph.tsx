@@ -113,6 +113,7 @@ function getLastItem(thePath: string): string {
   return thePath.substring(index + 1);
 }
 
+// TODO(yomete): Expect meta to be passed and work on that to be able to be used by Top
 export function nodeLabel(node: FlamegraphNode.AsObject): string {
   if (node.meta === undefined) return '<unknown>';
   const mapping = `${

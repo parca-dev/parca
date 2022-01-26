@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 // import ProfileSVG from './ProfileSVG'
 // import ProfileTop from './ProfileTop'
-import { CalcWidth } from '@parca/dynamicsize';
+import {CalcWidth} from '@parca/dynamicsize';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
-import { ProfileSource } from './ProfileSource';
-import { QueryRequest, QueryResponse, QueryServiceClient, ServiceError } from '@parca/client';
+import {ProfileSource} from './ProfileSource';
+import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
 import Card from '../../../app/web/src/components/ui/Card';
 import Button from '@parca/web/src/components/ui/Button';
+import TopTable from './TopTable';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 
 interface ProfileViewProps {
@@ -34,7 +35,7 @@ export const useQuery = (
 ): IQueryResult => {
   const [result, setResult] = useState<IQueryResult>({
     response: null,
-    error: null
+    error: null,
   });
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export const useQuery = (
     client.query(req, (error: ServiceError | null, responseMessage: QueryResponse | null) => {
       setResult({
         response: responseMessage,
-        error: error
+        error: error,
       });
     });
   }, [client, profileSource]);
@@ -52,9 +53,9 @@ export const useQuery = (
   return result;
 };
 
-export const ProfileView = ({ queryClient, profileSource }: ProfileViewProps): JSX.Element => {
+export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX.Element => {
   const [curPath, setCurPath] = useState<string[]>([]);
-  const { response, error } = useQuery(queryClient, profileSource);
+  const {response, error} = useQuery(queryClient, profileSource);
 
   if (error != null) {
     return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
@@ -68,7 +69,7 @@ export const ProfileView = ({ queryClient, profileSource }: ProfileViewProps): J
           justifyContent: 'center',
           alignItems: 'center',
           height: 'inherit',
-          marginTop: 100
+          marginTop: 100,
         }}
       >
         <svg
@@ -110,7 +111,7 @@ export const ProfileView = ({ queryClient, profileSource }: ProfileViewProps): J
       ) => {
         if (responseMessage !== null) {
           const bytes = responseMessage.getPprof();
-          const blob = new Blob([bytes], { type: 'application/octet-stream' });
+          const blob = new Blob([bytes], {type: 'application/octet-stream'});
 
           const link = document.createElement('a');
           link.href = window.URL.createObjectURL(blob);
@@ -120,25 +121,6 @@ export const ProfileView = ({ queryClient, profileSource }: ProfileViewProps): J
       }
     );
   };
-
-  const triggerTopTable = (e: React.MouseEvent<HTMLElement>) => {
-    e.preventDefault();
-
-    const req = profileSource.QueryRequest();
-    req.setReportType(QueryRequest.ReportType.REPORT_TYPE_TOP);
-
-    queryClient.query(
-      req,
-      (
-        error: ServiceError | null,
-        responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null
-      ) => {
-        if (error !== null) {
-          alert(error)
-        }
-      }
-    )
-  }
 
   const resetIcicleGraph = (e: React.MouseEvent<HTMLElement>) => {
     setCurPath([]);
@@ -162,21 +144,25 @@ export const ProfileView = ({ queryClient, profileSource }: ProfileViewProps): J
                 </Button>
               </div>
 
-              <div className="w-full"/>
-              <Button color="neutral" onClick={triggerTopTable}>
-                Trigger Top
-              </Button>
+              <div className="w-full" />
+
               <Button color="neutral" onClick={downloadPProf}>
                 Download pprof
               </Button>
             </div>
-            <CalcWidth throttle={300} delay={2000}>
-              <ProfileIcicleGraph
-                curPath={curPath}
-                setNewCurPath={setNewCurPath}
-                graph={response.getFlamegraph()?.toObject()}
-              />
-            </CalcWidth>
+            <div className="w-1/2">
+              <TopTable queryClient={queryClient} profileSource={profileSource} />
+            </div>
+
+            <div className="w-1/2">
+              <CalcWidth throttle={300} delay={2000}>
+                <ProfileIcicleGraph
+                  curPath={curPath}
+                  setNewCurPath={setNewCurPath}
+                  graph={response.getFlamegraph()?.toObject()}
+                />
+              </CalcWidth>
+            </div>
           </Card.Body>
         </Card>
       </div>
