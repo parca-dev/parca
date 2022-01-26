@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/btree"
+	"github.com/apache/arrow/go/arrow/memory"
 	"github.com/stretchr/testify/require"
 )
 
@@ -102,19 +102,18 @@ func TestTable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	table.Iterator(func(i btree.Item) bool {
-		g := i.(*Granule)
-		it := g.Iterator()
-		for it.Next() {
-			fmt.Println(it.Row())
-		}
+	err = table.Iterator(memory.NewGoAllocator(), func(ar *ArrowRecord) bool {
+		fmt.Println(ar)
 
 		return true
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// Expect the merge to have left us with one granule with one part
+	// One granule with 3 parts
 	require.Equal(t, 1, table.index.Len())
-	require.Equal(t, 1, len(table.index.Min().(*Granule).parts))
+	require.Equal(t, 3, len(table.index.Min().(*Granule).parts))
 	require.Equal(t, 5, table.index.Min().(*Granule).Cardinality())
 	require.Equal(t, []interface{}{
 		[]DynamicColumnValue{
@@ -217,13 +216,13 @@ func Test_Table_GranuleSplit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	table.Iterator(func(i btree.Item) bool {
-		g := i.(*Granule)
-		it := g.Iterator()
-		fmt.Println("-----------------Granule----------------")
-		for it.Next() {
-			fmt.Println(it.Row())
+	table.granuleIterator(func(g *Granule) bool {
+		ar, err := g.ArrowRecord(memory.NewGoAllocator())
+		if err != nil {
+			t.Fatal(err)
 		}
+		fmt.Println("-----------------Granule----------------")
+		fmt.Println(ar)
 		fmt.Println("----------------------------------------")
 
 		return true

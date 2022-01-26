@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/alecthomas/kong v0.3.0
+	github.com/apache/arrow/go/arrow v0.0.0-20200923215132-ac86123a3f01
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be

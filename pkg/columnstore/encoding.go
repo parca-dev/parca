@@ -36,6 +36,7 @@ type EncodingIterator interface {
 	Value() interface{}
 	IsNull() bool
 	Err() error
+	Cardinality() int
 }
 
 func NewEncoding(t EncodingType) Encoding {
@@ -103,6 +104,10 @@ type PlainIterator struct {
 	values        []interface{}
 	index         int
 	maxIterations int
+}
+
+func (i *PlainIterator) Cardinality() int {
+	return i.maxIterations
 }
 
 func (i *PlainIterator) Next() bool {

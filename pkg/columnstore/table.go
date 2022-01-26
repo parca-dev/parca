@@ -2,24 +2,32 @@ package columnstore
 
 import (
 	"fmt"
+	"sync"
 
+	"github.com/apache/arrow/go/arrow/memory"
 	"github.com/google/btree"
 )
 
 type Table struct {
 	schema Schema
 
+	mtx   *sync.RWMutex
 	index *btree.BTree
 }
 
 func NewTable(schema Schema) *Table {
 	return &Table{
 		schema: schema,
-		index:  btree.New(2), // TODO make the degree a setting
+
+		mtx:   &sync.RWMutex{},
+		index: btree.New(2), // TODO make the degree a setting
 	}
 }
 
 func (t *Table) Insert(rows []Row) error {
+	t.mtx.Lock()
+	defer t.mtx.Unlock()
+
 	// Special case: if there are no granules, create the very first one and immediately insert the first part.
 	if t.index.Len() == 0 {
 		p, err := NewPart(t.schema, rows)
@@ -65,8 +73,29 @@ func (t *Table) Insert(rows []Row) error {
 }
 
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
-func (t *Table) Iterator(iterator btree.ItemIterator) {
-	t.index.Ascend(iterator)
+func (t *Table) Iterator(pool memory.Allocator, iterator func(r *ArrowRecord) bool) error {
+	t.mtx.RLock()
+	defer t.mtx.RUnlock()
+
+	var err error
+	t.granuleIterator(func(g *Granule) bool {
+		var r *ArrowRecord
+		r, err = g.ArrowRecord(pool)
+		if err != nil {
+			return false
+		}
+		res := iterator(r)
+		r.Release()
+		return res
+	})
+	return err
+}
+
+func (t *Table) granuleIterator(iterator func(g *Granule) bool) {
+	t.index.Ascend(func(i btree.Item) bool {
+		g := i.(*Granule)
+		return iterator(g)
+	})
 }
 
 func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
