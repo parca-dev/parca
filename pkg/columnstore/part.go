@@ -3,6 +3,8 @@ package columnstore
 import (
 	"math"
 	"sort"
+
+	"github.com/apache/arrow/go/arrow/memory"
 )
 
 // Comparison is a result from the compare function
@@ -59,6 +61,20 @@ func (p *Part) Iterator() *PartIterator {
 	return &PartIterator{
 		columnIterators: columnIterators,
 	}
+}
+
+func (p *Part) ArrowColumns(pool memory.Allocator) ([]ArrowColumn, error) {
+	res := make([]ArrowColumn, len(p.columns))
+
+	var err error
+	for i, c := range p.columns {
+		res[i], err = c.ArrowColumn(pool, p.Cardinality)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return res, nil
 }
 
 type PartIterator struct {

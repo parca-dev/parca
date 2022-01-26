@@ -1,6 +1,7 @@
 package columnstore
 
 import (
+	"github.com/apache/arrow/go/arrow/memory"
 	"github.com/google/btree"
 )
 
@@ -39,6 +40,8 @@ func NewGranule(parts ...*Part) *Granule {
 func (g *Granule) AddPart(p *Part) {
 	g.parts = append(g.parts, p)
 	it := p.Iterator()
+
+	// TODO: Part is sorted, so we only need to look at the first row.
 	if it.Next() {
 		r := Row{Values: it.Values()}
 		if r.Less(g.least) {
@@ -99,50 +102,19 @@ func (g *Granule) Split(n int) []*Granule {
 
 // Iterator merges all parts iin a Granule before returning an iterator over that part
 // NOTE: this may not be the optimal way to perform a merge during iteration. But it's technically correct
-func (g *Granule) Iterator() *GranuleIterator {
-
+func (g *Granule) ArrowRecord(pool memory.Allocator) (*ArrowRecord, error) {
 	// Merge the parts
 	p, err := Merge(g.parts...)
 	if err != nil {
-		panic("merge failure")
+		return nil, err
 	}
 
-	// replace the granules parts with the merged part
-	g.parts = []*Part{p}
-
-	its := make([]*PartIterator, len(g.parts))
-	for i, p := range g.parts {
-		its[i] = p.Iterator()
+	cols, err := p.ArrowColumns(pool)
+	if err != nil {
+		return nil, err
 	}
 
-	return &GranuleIterator{
-		its: its,
-	}
-}
-
-type GranuleIterator struct {
-	its           []*PartIterator
-	currPartIndex int
-}
-
-func (gi *GranuleIterator) Next() bool {
-	if gi.its[gi.currPartIndex].Next() {
-		return true
-	}
-
-	gi.currPartIndex++
-	if gi.currPartIndex >= len(gi.its) {
-		return false
-	}
-	return gi.its[gi.currPartIndex].Next()
-}
-
-func (gi *GranuleIterator) Row() Row {
-	return Row{Values: gi.its[gi.currPartIndex].Values()}
-}
-
-func (gi *GranuleIterator) Err() error {
-	return gi.its[gi.currPartIndex].Err()
+	return NewArrowRecord(cols), nil
 }
 
 // Less implements the btree.Item interface

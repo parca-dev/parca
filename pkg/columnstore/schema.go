@@ -1,6 +1,11 @@
 package columnstore
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/apache/arrow/go/arrow/array"
+	"github.com/apache/arrow/go/arrow/memory"
+)
 
 type DataType int
 
@@ -37,6 +42,62 @@ func (t DataType) NewIterator(it EncodingIterator) Iterator {
 		return &StringIterator{Enc: it}
 	case Int64Type:
 		return &Int64Iterator{Enc: it}
+	default:
+		panic("unsupported data type")
+	}
+}
+
+func (t DataType) NewArrowArrayFromIterator(pool memory.Allocator, it EncodingIterator) (array.Interface, error) {
+	length := it.Cardinality()
+	switch t {
+	case StringType:
+		all := make([]string, length)
+		notNulls := make([]bool, length)
+		it := &StringIterator{Enc: it}
+		i := 0
+		for it.Next() {
+			if i == length {
+				break
+			}
+			if !it.IsNull() {
+				notNulls[i] = true
+				all[i] = it.StringValue()
+			}
+			i++
+		}
+		if it.Err() != nil {
+			return nil, it.Err()
+		}
+
+		builder := array.NewStringBuilder(pool)
+		defer builder.Release()
+
+		builder.AppendValues(all, notNulls)
+		return builder.NewStringArray(), nil
+	case Int64Type:
+		all := make([]int64, length)
+		notNulls := make([]bool, length)
+		it := &Int64Iterator{Enc: it}
+		i := 0
+		for it.Next() {
+			if i == length {
+				break
+			}
+			if !it.IsNull() {
+				notNulls[i] = true
+				all[i] = it.Int64Value()
+			}
+			i++
+		}
+		if it.Err() != nil {
+			return nil, it.Err()
+		}
+
+		builder := array.NewInt64Builder(pool)
+		defer builder.Release()
+
+		builder.AppendValues(all, notNulls)
+		return builder.NewInt64Array(), nil
 	default:
 		panic("unsupported data type")
 	}
@@ -106,8 +167,8 @@ func (i *Int64Iterator) Value() interface{} {
 	return i.Enc.Value()
 }
 
-func (i *Int64Iterator) Int64Value() string {
-	return i.Value().(string)
+func (i *Int64Iterator) Int64Value() int64 {
+	return i.Value().(int64)
 }
 
 func (i *Int64Iterator) Err() error {
@@ -119,6 +180,10 @@ type ColumnDefinition struct {
 	Type     DataType
 	Encoding EncodingType
 	Dynamic  bool
+
+	// This doesn't do anything in the in-memory representation yet but it is
+	// passed onto the Apache Arrow frames.
+	Nullable bool
 }
 
 func (d ColumnDefinition) String() string {
