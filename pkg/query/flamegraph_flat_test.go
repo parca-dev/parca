@@ -23,8 +23,8 @@ import (
 	"github.com/google/uuid"
 	metapb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/metastore"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -295,8 +295,8 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 		},
 	}
 	p := &profile.Profile{
-		SampleType: []*profile.ValueType{{Type: "", Unit: ""}},
-		PeriodType: &profile.ValueType{Type: "", Unit: ""},
+		SampleType: []*profile.ValueType{{Type: "alloc_space", Unit: "bytes"}},
+		PeriodType: &profile.ValueType{Type: "space", Unit: "bytes"},
 		Sample:     samples,
 		Location:   locations,
 		Function:   functions,
@@ -311,6 +311,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	require.Equal(t, &pb.Flamegraph{
 		Total:  1,
 		Height: 4,
+		Unit:   "bytes",
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: 1,
 			Children: []*pb.FlamegraphNode{{
