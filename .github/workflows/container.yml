@@ -18,8 +18,17 @@ jobs:
         shell: bash
         run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
+      # To build multi-arch images, see also: https://github.com/redhat-actions/buildah-build#multi-arch-builds
+      - name: Install qemu dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
       - name: Build container
         run: make container
+
+      - name: Check images created
+        run: buildah images | grep 'ghcr.io/parca-dev/parca'
 
       - name: Login to registry
         if: ${{ github.event_name != 'pull_request' }}

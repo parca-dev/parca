@@ -1,0 +1,17 @@
+{
+  "version": "0.7.13",
+  "npmClient": "yarn",
+  "tagVersionPrefix": "ui-v",
+  "useWorkspaces": true,
+  "packages": [
+    "packages/shared/*"
+  ],
+  "command": {
+    "publish": {
+      "conventionalCommits": true
+    },
+    "version": {
+      "allowBranch": "main"
+    }
+  }
+}

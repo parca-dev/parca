@@ -18,7 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prometheus/prometheus/pkg/labels"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -39,8 +40,8 @@ func BenchmarkHeadQuerier_Select(b *testing.B) {
 	for i := 1; i <= numSeries; i++ {
 		app, err := h.Appender(ctx, labels.FromStrings("foo", "bar", "s", fmt.Sprintf("%d%s", i, postingsBenchSuffix)))
 		require.NoError(b, err)
-		err = app.AppendFlat(ctx, &FlatProfile{
-			Meta: InstantProfileMeta{
+		err = app.AppendFlat(ctx, &parcaprofile.FlatProfile{
+			Meta: parcaprofile.InstantProfileMeta{
 				Timestamp: int64(i),
 			},
 		})

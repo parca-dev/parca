@@ -16,8 +16,9 @@ package storage
 import (
 	"fmt"
 
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/prometheus/prometheus/model/labels"
 )
 
 // MemRootSeries is an iterator that only queries the cumulative values for the root of each series.
@@ -129,14 +130,14 @@ func (it *MemRootSeriesIterator) Next() bool {
 	return true
 }
 
-func (it *MemRootSeriesIterator) At() InstantProfile {
-	return &FlatProfile{
-		Meta: InstantProfileMeta{
+func (it *MemRootSeriesIterator) At() profile.InstantProfile {
+	return &profile.FlatProfile{
+		Meta: profile.InstantProfileMeta{
 			Timestamp:  it.timestampsIterator.At(),
 			PeriodType: it.s.periodType,
 			SampleType: it.s.sampleType,
 		},
-		samples: map[string]*Sample{
+		FlatSamples: map[string]*profile.Sample{
 			"": {Value: it.rootIterator.At()},
 		},
 	}

@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/instance: parca-agent
     app.kubernetes.io/name: parca-agent
-    app.kubernetes.io/version: dev
+    app.kubernetes.io/version: v0.4.1
   name: parca-agent
   namespace: parca
 spec:
@@ -20,7 +20,7 @@ spec:
         app.kubernetes.io/component: observability
         app.kubernetes.io/instance: parca-agent
         app.kubernetes.io/name: parca-agent
-        app.kubernetes.io/version: dev
+        app.kubernetes.io/version: v0.4.1
     spec:
       containers:
       - args:
@@ -37,7 +37,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: parca.io/parca/parca-agent:dev
+        image: ghcr.io/parca-dev/parca-agent:v0.4.1
         name: parca-agent
         ports:
         - containerPort: 7071

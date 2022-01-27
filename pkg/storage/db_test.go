@@ -22,10 +22,11 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/pkg/labels"
-	"github.com/prometheus/prometheus/pkg/timestamp"
+	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -51,7 +52,7 @@ func TestDB(t *testing.T) {
 	p, err := profile.Parse(b)
 	require.NoError(t, err)
 
-	prof1, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof1, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 	require.NoError(t, app1.AppendFlat(ctx, prof1))
 
@@ -64,7 +65,7 @@ func TestDB(t *testing.T) {
 	p, err = profile.Parse(b)
 	require.NoError(t, err)
 
-	prof2, err := FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof2, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 	require.NoError(t, app2.AppendFlat(ctx, prof2))
 

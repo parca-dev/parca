@@ -15,7 +15,6 @@ package addr2line
 
 import (
 	"debug/dwarf"
-	"debug/elf"
 	"errors"
 	"fmt"
 	"io"
@@ -27,11 +26,12 @@ import (
 	"github.com/go-kit/log/level"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/internal/go/debug/elf"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
-var ErrLocationFailedBefore = errors.New("failed to symbolized location")
+var ErrLocationFailedBefore = errors.New("failed to symbolize location, attempts are exhausted")
 
 type dwarfLiner struct {
 	logger    log.Logger
@@ -50,17 +50,17 @@ type dwarfLiner struct {
 
 func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold int, m *pb.Mapping, path string) (*dwarfLiner, error) {
 	// TODO(kakkoyun): Handle offset, start and limit for dynamically linked libraries.
-	//objFile, err := s.bu.Open(file, m.Start, m.Limit, m.Offset)
+	//f, err := s.bu.Open(file, m.Start, m.Limit, m.Offset)
 	//if err != nil {
 	//	return nil, fmt.Errorf("open object file: %w", err)
 	//}
-	objFile, err := elf.Open(path)
+	f, err := elf.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open elf: %w", err)
 	}
-	defer objFile.Close()
+	defer f.Close()
 
-	data, err := objFile.DWARF()
+	data, err := f.DWARF()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}

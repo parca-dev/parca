@@ -28,13 +28,12 @@ import (
 	"github.com/go-kit/log/level"
 	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
-	"github.com/prometheus/prometheus/pkg/labels"
-	"github.com/prometheus/prometheus/pkg/pool"
+	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/util/pool"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -329,7 +328,7 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 	default:
 		b, err := ioutil.ReadAll(io.TeeReader(resp.Body, w))
 		if err != nil {
-			return errors.Wrap(err, "failed to read body")
+			return fmt.Errorf("failed to read body: %w", err)
 		}
 
 		if len(b) == 0 {

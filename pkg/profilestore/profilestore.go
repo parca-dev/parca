@@ -21,13 +21,14 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
-	"github.com/prometheus/prometheus/pkg/labels"
+	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage"
 )
 
@@ -80,7 +81,7 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 			}
 
 			convertCtx, convertSpan := s.tracer.Start(ctx, "profile-from-pprof")
-			profiles, err := storage.FlatProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
+			profiles, err := parcaprofile.FlatProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "failed to normalize pprof: %v", err)
 			}

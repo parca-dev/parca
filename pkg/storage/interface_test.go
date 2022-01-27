@@ -17,52 +17,40 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/parca-dev/parca/pkg/storage/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/stretchr/testify/require"
 )
 
-func makeSample(value int64, locationIds []uuid.UUID) *Sample {
-	s := &Sample{
-		Value: value,
-	}
-
-	for _, id := range locationIds {
-		s.Location = append(s.Location, &metastore.Location{ID: id})
-	}
-
-	return s
-}
-
 func TestScaledInstantProfile(t *testing.T) {
-	s1 := makeSample(2, []uuid.UUID{
+	s1 := profile.MakeSample(2, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
-	s2 := makeSample(1, []uuid.UUID{
+	s2 := profile.MakeSample(1, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000005"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
-	s3 := makeSample(3, []uuid.UUID{
+	s3 := profile.MakeSample(3, []uuid.UUID{
 		uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	})
-	k1 := makeStacktraceKey(s1)
-	k2 := makeStacktraceKey(s2)
-	k3 := makeStacktraceKey(s3)
+	k1 := profile.MakeStacktraceKey(s1)
+	k2 := profile.MakeStacktraceKey(s2)
+	k3 := profile.MakeStacktraceKey(s3)
 
-	p := &FlatProfile{
-		samples: map[string]*Sample{
+	p := &profile.FlatProfile{
+		FlatSamples: map[string]*profile.Sample{
 			string(k1): s1,
 			string(k2): s2,
 			string(k3): s3,
 		},
 	}
 
-	sp := NewScaledInstantProfile(p, -1)
+	sp := profile.NewScaledInstantProfile(p, -1)
 
 	expected := map[string]int64{
 		string(k1): -2,
@@ -77,7 +65,7 @@ func TestScaledInstantProfile(t *testing.T) {
 func TestSliceProfileSeriesIterator(t *testing.T) {
 	it := &SliceProfileSeriesIterator{
 		i:       -1,
-		samples: []InstantProfile{&FlatProfile{}},
+		samples: []profile.InstantProfile{&profile.FlatProfile{}},
 	}
 
 	require.True(t, it.Next())
