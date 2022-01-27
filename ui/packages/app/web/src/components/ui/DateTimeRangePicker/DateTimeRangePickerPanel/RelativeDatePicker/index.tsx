@@ -1,11 +1,8 @@
 import Select, {contructItemsFromArray} from 'components/ui/Select';
 import {useState} from 'react';
 import Input from 'components/ui/Input';
-import Button from 'components/ui/Button';
 import {POSITION_TYPE, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 import {capitalizeFirstLetter} from 'libs/utils';
-import ConditionalWrapper from 'components/ConditionalWrapper';
-import {Popover} from '@headlessui/react';
 import ApplyButton from '../ApplyButton';
 
 const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
@@ -15,11 +12,11 @@ const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
   }));
 };
 
-type RelativeDatePickerProps = {
+interface RelativeDatePickerProps {
   date: RelativeDate;
   onChange?: (date: RelativeDate) => void;
   position?: POSITION_TYPE;
-};
+}
 
 const RelativeDatePicker = ({date, onChange = () => null, position}: RelativeDatePickerProps) => {
   const [unit, setUnit] = useState<UNIT_TYPE>(date.isRelative() ? date.unit : UNITS.HOUR);

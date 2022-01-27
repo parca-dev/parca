@@ -29,8 +29,8 @@ export class RelativeDate implements BaseDate {
 export class AbsoluteDate implements BaseDate {
   isRelative = () => false;
   value: Date;
-  constructor(value: Date) {
-    this.value = value || getDateHoursAgo(1);
+  constructor(value?: Date) {
+    this.value = value ?? getDateHoursAgo(1);
   }
 }
 
@@ -41,11 +41,11 @@ export class DateTimeRange {
   to: DateUnion;
 
   constructor(from: null | DateUnion = null, to: null | DateUnion = null) {
-    this.from = from || new RelativeDate(UNITS.HOUR, 1);
-    this.to = to || new RelativeDate(UNITS.MINUTE, 0);
+    this.from = from ?? new RelativeDate(UNITS.HOUR, 1);
+    this.to = to ?? new RelativeDate(UNITS.MINUTE, 0);
   }
 
-  getRangeStringForUI() {
+  getRangeStringForUI(): String {
     if (this.from.isRelative() && this.to.isRelative() && (this.to as RelativeDate).value === 0) {
       const from = this.from as RelativeDate;
       return `Last ${from.value} ${from.unit}${from.value > 1 ? 's' : ''}`;
@@ -69,9 +69,9 @@ export class DateTimeRange {
   }
 }
 
-export const formatDateStringForUI = dateString => {
+export const formatDateStringForUI: (dateString: DateUnion) => string = dateString => {
   if (dateString.isRelative()) {
-    const {unit, value} = dateString;
+    const {unit, value} = dateString as RelativeDate;
     if (value === 0) {
       return 'now';
     }

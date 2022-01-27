@@ -1,14 +1,13 @@
-import {Popover} from '@headlessui/react';
 import Tab from '../../Tab';
 import type {AbsoluteDate, DateUnion, POSITION_TYPE, RelativeDate} from '../utils';
 import RelativeDatePicker from './RelativeDatePicker';
 import AbsoluteDatePicker from './AbsoluteDatePicker';
 
-type DateTimeRangePickerProps = {
+interface DateTimeRangePickerProps {
   date: DateUnion;
   position: POSITION_TYPE;
   onChange?: (date: DateUnion, position: POSITION_TYPE) => void;
-};
+}
 
 const DateTimeRangePickerPanel = ({
   date,

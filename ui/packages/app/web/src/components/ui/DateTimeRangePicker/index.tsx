@@ -1,6 +1,6 @@
-import {Fragment, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import cx from 'classnames';
-import {Popover, Transition} from '@headlessui/react';
+import {Popover} from '@headlessui/react';
 import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
 import {DateTimeRange, DateUnion, POSITIONS, POSITION_TYPE} from './utils';
 import {useClickAway} from 'react-use';
@@ -9,7 +9,7 @@ import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
 import './style.css';
 
 const getElementPosition = (element: HTMLElement | null) => {
-  if (!element) {
+  if (element == null) {
     return null;
   }
   return element.offsetLeft + element.offsetWidth / 2;
@@ -54,7 +54,7 @@ const DateTimeRangePicker = () => {
               {'left-12': activePosition === POSITIONS.TO}
             )}
             style={
-              leftPosition
+              leftPosition != null && !Number.isNaN(leftPosition)
                 ? {
                     left: leftPosition - POPOVER_WIDTH / 2,
                   }
