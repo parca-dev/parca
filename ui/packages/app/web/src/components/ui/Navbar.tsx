@@ -5,8 +5,9 @@ import cx from 'classnames';
 import DarkModeToggle from './DarkModeToggle';
 
 const links = [
-  {name: 'Profiles', href: '/', current: true, external: false},
-  {name: 'Help', href: 'https://parca.dev/docs/overview', current: false, external: true},
+  {name: 'Profiles', href: '/', external: false},
+  {name: 'Targets', href: '/targets', external: false},
+  {name: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 ];
 
 const Navbar = ({
@@ -16,6 +17,11 @@ const Navbar = ({
   isDarkMode: boolean;
   setDarkMode: (mode: boolean) => void;
 }) => {
+  const getPageByHref = (href: string): {name: string; href: string; external: boolean} =>
+    links.find(link => link.href === href) || links[0];
+  const currentPage = getPageByHref(window.location.pathname);
+  const isCurrentPage = item => item.href === currentPage.href;
+
   return (
     <Disclosure as="nav" className="dark:bg-gray-900 relative z-10">
       {({open}) => (
@@ -57,12 +63,12 @@ const Navbar = ({
                         href={item.href}
                         target={item.external ? '_blank' : undefined}
                         className={cx(
-                          item.current
+                          isCurrentPage(item)
                             ? 'bg-gray-900 text-white'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white',
                           'px-3 py-2 rounded-md text-sm font-medium'
                         )}
-                        aria-current={item.current ? 'page' : undefined}
+                        aria-current={isCurrentPage(item) ? 'page' : undefined}
                       >
                         {item.name}
                       </a>
@@ -91,12 +97,12 @@ const Navbar = ({
                   key={item.name}
                   href={item.href}
                   className={cx(
-                    item.current
+                    isCurrentPage(item)
                       ? 'bg-gray-900 text-white'
                       : 'text-gray-300 hover:bg-gray-700 hover:text-white',
                     'block px-3 py-2 rounded-md text-base font-medium'
                   )}
-                  aria-current={item.current ? 'page' : undefined}
+                  aria-current={isCurrentPage(item) ? 'page' : undefined}
                 >
                   {item.name}
                 </a>
