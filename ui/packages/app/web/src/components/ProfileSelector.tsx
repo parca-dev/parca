@@ -10,6 +10,7 @@ import CompareButton from './CompareButton';
 import Button from './ui/Button';
 import ButtonGroup from './ui/ButtonGroup';
 import Card from './ui/Card';
+import CloseIcon from './ui/CloseIcon';
 import Select, {SelectElement} from './ui/Select';
 
 interface TimeSelection {
@@ -30,6 +31,7 @@ interface ProfileSelectorProps {
   querySelection: QuerySelection;
   selectProfile: (source: ProfileSelection) => void;
   selectQuery: (query: QuerySelection) => void;
+  closeProfile: () => void;
   enforcedProfileName: string;
   profileSelection: ProfileSelection | null;
   comparing: boolean;
@@ -152,6 +154,7 @@ const ProfileSelector = ({
   querySelection,
   selectProfile,
   selectQuery,
+  closeProfile,
   enforcedProfileName,
   profileSelection,
   comparing,
@@ -351,6 +354,11 @@ const ProfileSelector = ({
       <Card>
         <Card.Header>
           <div className="flex space-x-4">
+            {comparing && (
+              <button type="button" onClick={() => closeProfile()}>
+                <CloseIcon />
+              </button>
+            )}
             <Select
               items={profileLabels}
               selectedKey={selectedProfileName}

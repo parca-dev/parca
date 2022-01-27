@@ -28,6 +28,7 @@ const ProfileExplorerSingle = ({
             querySelection={query}
             selectQuery={selectQuery}
             selectProfile={selectProfile}
+            closeProfile={() => {}}
             profileSelection={profile}
             comparing={false}
             onCompareProfile={compareProfile}
