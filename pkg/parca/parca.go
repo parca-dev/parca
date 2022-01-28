@@ -141,7 +141,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	s := profilestore.NewProfileStore(
 		logger,
 		tracerProvider.Tracer("profilestore"),
-		db,
 		mStr,
 	)
 	q := query.New(

@@ -8,23 +8,48 @@ import (
 	"github.com/google/btree"
 )
 
+var ErrNoSchema = fmt.Errorf("no schema")
+
 type Table struct {
-	schema Schema
+	db *DB
+
+	smtx              *sync.Mutex
+	schemaInitialized bool
+	schema            Schema
 
 	mtx   *sync.RWMutex
 	index *btree.BTree
 }
 
-func NewTable(schema Schema) *Table {
-	return &Table{
-		schema: schema,
+func (t *Table) EnsureSchema(s Schema) error {
+	t.smtx.Lock()
+	defer t.smtx.Unlock()
 
-		mtx:   &sync.RWMutex{},
-		index: btree.New(2), // TODO make the degree a setting
+	if t.schemaInitialized {
+		if s.Equals(t.schema) {
+			return nil
+		}
+		return fmt.Errorf("schema mismatch: %v != %v", s, t.schema)
 	}
+
+	t.schema = s
+	t.schemaInitialized = true
+	return nil
+}
+
+func (t *Table) ensureSchemaInitialized() error {
+	if !t.schemaInitialized {
+		return ErrNoSchema
+	}
+	return nil
 }
 
 func (t *Table) Insert(rows []Row) error {
+	err := t.ensureSchemaInitialized()
+	if err != nil {
+		return err
+	}
+
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 
@@ -74,10 +99,14 @@ func (t *Table) Insert(rows []Row) error {
 
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
 func (t *Table) Iterator(pool memory.Allocator, iterator func(r *ArrowRecord) bool) error {
+	err := t.ensureSchemaInitialized()
+	if err != nil {
+		return err
+	}
+
 	t.mtx.RLock()
 	defer t.mtx.RUnlock()
 
-	var err error
 	t.granuleIterator(func(g *Granule) bool {
 		var r *ArrowRecord
 		r, err = g.ArrowRecord(pool)

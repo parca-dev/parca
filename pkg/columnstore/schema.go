@@ -3,176 +3,102 @@ package columnstore
 import (
 	"fmt"
 
+	"github.com/apache/arrow/go/arrow"
 	"github.com/apache/arrow/go/arrow/array"
 	"github.com/apache/arrow/go/arrow/memory"
 )
 
-type DataType int
+type DataType interface {
+	String() string
+	NewAppender(enc Encoding) Appender
+	NewIterator(it EncodingIterator) Iterator
+	NewArrowArrayFromIterator(memory.Allocator, EncodingIterator) (array.Interface, error)
+	AppendIteratorToArrow(EncodingIterator, array.Builder) error
+	ArrowDataType() arrow.DataType
+}
+
+type PrimitiveType int
 
 const (
-	StringType DataType = iota
+	StringType PrimitiveType = iota
 	Int64Type
+	UUIDType
 )
 
-func (t DataType) String() string {
+func (t PrimitiveType) String() string {
 	switch t {
 	case StringType:
 		return "string"
 	case Int64Type:
 		return "int64"
+	case UUIDType:
+		return "uuid"
 	default:
 		return "unknown"
 	}
 }
 
-func (t DataType) NewAppender(app Appender) Appender {
+func (t PrimitiveType) NewAppender(enc Encoding) Appender {
 	switch t {
 	case StringType:
-		return &StringAppender{app: app}
+		return &StringAppender{enc: enc}
 	case Int64Type:
-		return &Int64Appender{app: app}
+		return &Int64Appender{enc: enc}
+	case UUIDType:
+		return &UUIDAppender{enc: enc}
 	default:
 		panic("unsupported data type")
 	}
 }
 
-func (t DataType) NewIterator(it EncodingIterator) Iterator {
+func (t PrimitiveType) NewIterator(it EncodingIterator) Iterator {
 	switch t {
 	case StringType:
 		return &StringIterator{Enc: it}
 	case Int64Type:
 		return &Int64Iterator{Enc: it}
+	case UUIDType:
+		return &UUIDIterator{Enc: it}
 	default:
 		panic("unsupported data type")
 	}
 }
 
-func (t DataType) NewArrowArrayFromIterator(pool memory.Allocator, it EncodingIterator) (array.Interface, error) {
-	length := it.Cardinality()
+func (t PrimitiveType) NewArrowArrayFromIterator(pool memory.Allocator, it EncodingIterator) (array.Interface, error) {
 	switch t {
 	case StringType:
-		all := make([]string, length)
-		notNulls := make([]bool, length)
-		it := &StringIterator{Enc: it}
-		i := 0
-		for it.Next() {
-			if i == length {
-				break
-			}
-			if !it.IsNull() {
-				notNulls[i] = true
-				all[i] = it.StringValue()
-			}
-			i++
-		}
-		if it.Err() != nil {
-			return nil, it.Err()
-		}
-
-		builder := array.NewStringBuilder(pool)
-		defer builder.Release()
-
-		builder.AppendValues(all, notNulls)
-		return builder.NewStringArray(), nil
+		return NewStringArrowArrayFromIterator(pool, it)
 	case Int64Type:
-		all := make([]int64, length)
-		notNulls := make([]bool, length)
-		it := &Int64Iterator{Enc: it}
-		i := 0
-		for it.Next() {
-			if i == length {
-				break
-			}
-			if !it.IsNull() {
-				notNulls[i] = true
-				all[i] = it.Int64Value()
-			}
-			i++
-		}
-		if it.Err() != nil {
-			return nil, it.Err()
-		}
-
-		builder := array.NewInt64Builder(pool)
-		defer builder.Release()
-
-		builder.AppendValues(all, notNulls)
-		return builder.NewInt64Array(), nil
+		return NewInt64ArrowArrayFromIterator(pool, it)
+	case UUIDType:
+		return NewUUIDArrowArrayFromIterator(pool, it)
 	default:
 		panic("unsupported data type")
 	}
 }
 
-type StringAppender struct {
-	app Appender
+func (t PrimitiveType) AppendIteratorToArrow(it EncodingIterator, builder array.Builder) error {
+	switch t {
+	case StringType:
+		return AppendStringIteratorToArrow(it, builder)
+	case Int64Type:
+		return AppendInt64IteratorToArrow(it, builder)
+	case UUIDType:
+		return AppendUUIDIteratorToArrow(it, builder)
+	default:
+		panic("unsupported data type")
+	}
 }
 
-func (a *StringAppender) AppendAt(index int, v interface{}) error {
-	return a.AppendStringAt(index, v.(string))
-}
-
-func (a *StringAppender) AppendStringAt(index int, v string) error {
-	return a.app.AppendAt(index, v)
-}
-
-type StringIterator struct {
-	Enc EncodingIterator
-}
-
-func (i *StringIterator) Next() bool {
-	return i.Enc.Next()
-}
-
-func (i *StringIterator) IsNull() bool {
-	return i.Enc.IsNull()
-}
-
-func (i *StringIterator) Value() interface{} {
-	return i.Enc.Value()
-}
-
-func (i *StringIterator) StringValue() string {
-	return i.Value().(string)
-}
-
-func (i *StringIterator) Err() error {
-	return i.Enc.Err()
-}
-
-type Int64Appender struct {
-	app Appender
-}
-
-func (a *Int64Appender) AppendAt(index int, v interface{}) error {
-	return a.AppendInt64At(index, v.(int64))
-}
-
-func (a *Int64Appender) AppendInt64At(index int, v int64) error {
-	return a.app.AppendAt(index, v)
-}
-
-type Int64Iterator struct {
-	Enc EncodingIterator
-}
-
-func (i *Int64Iterator) Next() bool {
-	return i.Enc.Next()
-}
-
-func (i *Int64Iterator) IsNull() bool {
-	return i.Enc.IsNull()
-}
-
-func (i *Int64Iterator) Value() interface{} {
-	return i.Enc.Value()
-}
-
-func (i *Int64Iterator) Int64Value() int64 {
-	return i.Value().(int64)
-}
-
-func (i *Int64Iterator) Err() error {
-	return i.Enc.Err()
+func (t PrimitiveType) ArrowDataType() arrow.DataType {
+	switch t {
+	case StringType:
+		return &arrow.StringType{}
+	case Int64Type:
+		return &arrow.Int64Type{}
+	default:
+		panic("unsupported data type")
+	}
 }
 
 type ColumnDefinition struct {
@@ -194,4 +120,23 @@ type Schema struct {
 	Columns     []ColumnDefinition
 	OrderedBy   []string
 	GranuleSize int
+}
+
+func (s Schema) Equals(other Schema) bool {
+	if len(s.Columns) != len(other.Columns) {
+		return false
+	}
+	for i, c := range s.Columns {
+		if c != other.Columns[i] {
+			return false
+		}
+	}
+
+	for i, c := range s.OrderedBy {
+		if c != other.OrderedBy[i] {
+			return false
+		}
+	}
+
+	return s.GranuleSize == other.GranuleSize
 }

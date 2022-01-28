@@ -32,8 +32,15 @@ func TestTable(t *testing.T) {
 		//),
 	}
 
-	table := NewTable(schema)
-	err := table.Insert(
+	c := New()
+	db := c.DB("test")
+	table := db.Table("test")
+	err := table.EnsureSchema(schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = table.Insert(
 		[]Row{{
 			Values: []interface{}{
 				[]DynamicColumnValue{
@@ -146,8 +153,15 @@ func Test_Table_GranuleSplit(t *testing.T) {
 		GranuleSize: 4,
 	}
 
-	table := NewTable(schema)
-	err := table.Insert(
+	c := New()
+	db := c.DB("test")
+	table := db.Table("test")
+	err := table.EnsureSchema(schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = table.Insert(
 		[]Row{{
 			Values: []interface{}{
 				[]DynamicColumnValue{

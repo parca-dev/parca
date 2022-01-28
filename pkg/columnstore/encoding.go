@@ -93,24 +93,24 @@ func (c *Plain) AppendAt(index int, v interface{}) error {
 }
 
 func (c *Plain) Iterator(maxIterations int) EncodingIterator {
-	return &PlainIterator{
+	return &PlainSparseIterator{
 		values:        c.values,
 		index:         -1,
 		maxIterations: maxIterations,
 	}
 }
 
-type PlainIterator struct {
+type PlainSparseIterator struct {
 	values        []interface{}
 	index         int
 	maxIterations int
 }
 
-func (i *PlainIterator) Cardinality() int {
+func (i *PlainSparseIterator) Cardinality() int {
 	return i.maxIterations
 }
 
-func (i *PlainIterator) Next() bool {
+func (i *PlainSparseIterator) Next() bool {
 	if i.maxIterations == 0 {
 		return false
 	}
@@ -120,7 +120,7 @@ func (i *PlainIterator) Next() bool {
 	return true
 }
 
-func (i *PlainIterator) IsNull() bool {
+func (i *PlainSparseIterator) IsNull() bool {
 	if i.index >= len(i.values) {
 		return true
 	}
@@ -128,7 +128,7 @@ func (i *PlainIterator) IsNull() bool {
 	return i.values[i.index] == nil
 }
 
-func (i *PlainIterator) Value() interface{} {
+func (i *PlainSparseIterator) Value() interface{} {
 	if i.index >= len(i.values) {
 		// We allow going over the index to allow for sparse data. The caller
 		// is responsible for controlling how many values are read.
@@ -138,6 +138,14 @@ func (i *PlainIterator) Value() interface{} {
 	return i.values[i.index]
 }
 
-func (i *PlainIterator) Err() error {
+func (i *PlainSparseIterator) Err() error {
 	return nil
+}
+
+func (c *Plain) NonSparseIterator() EncodingIterator {
+	return &PlainSparseIterator{
+		values:        c.values,
+		index:         -1,
+		maxIterations: len(c.values),
+	}
 }

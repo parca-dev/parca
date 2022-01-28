@@ -7,7 +7,8 @@ import (
 )
 
 type Appender interface {
-	AppendAt(index int, values interface{}) error
+	AppendAt(index int, value interface{}) error
+	AppendValuesAt(index int, values []interface{}) error
 }
 
 type Iterator interface {
@@ -123,6 +124,15 @@ type DynamicColumnValue struct {
 
 func (a *DynamicAppender) AppendAt(index int, v interface{}) error {
 	return a.DynamicAppendAt(index, v.([]DynamicColumnValue))
+}
+
+func (a *DynamicAppender) AppendValuesAt(index int, vs []interface{}) error {
+	for i, v := range vs {
+		if err := a.DynamicAppendAt(index+i, v.([]DynamicColumnValue)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a *DynamicAppender) DynamicAppendAt(index int, v []DynamicColumnValue) error {
