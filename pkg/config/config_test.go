@@ -21,7 +21,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/require"
-	"github.com/thanos-io/thanos/pkg/objstore/client"
+	"github.com/brancz/objstore/client"
 )
 
 func TestLoad(t *testing.T) {

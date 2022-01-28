@@ -27,8 +27,8 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/stretchr/testify/require"
-	"github.com/thanos-io/thanos/pkg/objstore/client"
-	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
+	"github.com/brancz/objstore/client"
+	"github.com/brancz/objstore/filesystem"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
