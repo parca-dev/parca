@@ -1,5 +1,4 @@
 const path = require('path');
-const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
   stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -19,11 +18,20 @@ module.exports = {
       },
     },
   ],
+  features: {
+    storyStoreV7: true,
+  },
   framework: '@storybook/react',
   core: {
     builder: 'webpack5',
   },
+  // A workaround for a storybook regression, see https://github.com/storybookjs/storybook/issues/14197#issuecomment-949337652
+  babel: async options => ({
+    ...options,
+    plugins: [['@babel/plugin-proposal-class-properties', {loose: true}]],
+  }),
   webpackFinal: config => {
+    config.module.rules[0].test = /\.(mjs|tsx?|ts?|jsx?)$/;
     config.module.rules.push({
       test: /\.scss$/,
       use: [
@@ -48,7 +56,6 @@ module.exports = {
       components: path.resolve(__dirname, '../src/components/'),
       libs: path.resolve(__dirname, '../src/libs/'),
     };
-    config.resolve.plugins = [...(config.resolve.plugins || []), new TsconfigPathsPlugin()];
     return config;
   },
 };
