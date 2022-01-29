@@ -112,22 +112,60 @@ func (g *Granule) ArrowRecord(pool memory.Allocator) (arrow.Record, error) {
 		return nil, err
 	}
 
+	// Prefetch all dynamic columns
+	cols := make([]int, len(p.columns))
+	names := make([][]string, len(p.columns))
+	for i, c := range p.columns {
+		if p.schema.Columns[i].Dynamic {
+			cols[i] = len(c.(*DynamicColumn).dynamicColumns)
+			names[i] = make([]string, cols[i])
+			for j, name := range c.(*DynamicColumn).dynamicColumns {
+				names[i][j] = name
+			}
+		}
+	}
+
 	// Build the record
-	bld := array.NewRecordBuilder(pool, p.schema.ToArrow())
+	bld := array.NewRecordBuilder(pool, p.schema.ToArrow(names, cols))
 	defer bld.Release()
 
-	// TODO dynamic columns
+	i := 0 // i is the index into our arrow schema
+	for j, c := range p.columns {
 
-	for i, c := range p.columns {
-		it := c.Iterator(p.Cardinality)
-		for it.Next() {
-			it.Value()
-			switch bld.Schema().Field(i).Type.ID() {
-			case arrow.BinaryTypes.String.ID():
-				bld.Field(i).(*array.StringBuilder).Append(it.Value().(string))
-			case arrow.PrimitiveTypes.Int64.ID():
-				bld.Field(i).(*array.Int64Builder).Append(it.Value().(int64))
+		switch p.schema.Columns[j].Dynamic {
+		case true: // expand the dynamic columns
+			d := c.(*DynamicColumn) // TODO this is gross and we should change this iteration
+			for k, name := range d.dynamicColumns {
+				it := d.data[name].Iterator(p.Cardinality)
+				for it.Next() {
+					switch bld.Schema().Field(i).Type.ID() {
+					case arrow.BinaryTypes.String.ID():
+						if it.Value() == nil {
+							bld.Field(i + k).(*array.StringBuilder).AppendNull()
+						} else {
+							bld.Field(i + k).(*array.StringBuilder).Append(it.Value().(string))
+						}
+					case arrow.PrimitiveTypes.Int64.ID():
+						if it.Value() == nil {
+							bld.Field(i + k).(*array.Int64Builder).AppendNull()
+						} else {
+							bld.Field(i + k).(*array.Int64Builder).Append(it.Value().(int64))
+						}
+					}
+				}
 			}
+			i += len(d.dynamicColumns)
+		default:
+			it := c.Iterator(p.Cardinality)
+			for it.Next() {
+				switch bld.Schema().Field(i).Type.ID() {
+				case arrow.BinaryTypes.String.ID():
+					bld.Field(i).(*array.StringBuilder).Append(it.Value().(string))
+				case arrow.PrimitiveTypes.Int64.ID():
+					bld.Field(i).(*array.Int64Builder).Append(it.Value().(int64))
+				}
+			}
+			i++
 		}
 	}
 
