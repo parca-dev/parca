@@ -140,3 +140,18 @@ func (s Schema) Equals(other Schema) bool {
 
 	return s.GranuleSize == other.GranuleSize
 }
+
+// ToArrow returns the schema in arrow schema format
+func (s Schema) ToArrow() *arrow.Schema {
+
+	fields := make([]arrow.Field, 0, len(s.Columns))
+
+	for _, c := range s.Columns {
+		fields = append(fields, arrow.Field{
+			Name: c.Name,
+			Type: c.Type.ArrowDataType(),
+		})
+	}
+
+	return arrow.NewSchema(fields, nil)
+}
