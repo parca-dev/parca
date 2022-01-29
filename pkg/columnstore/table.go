@@ -148,7 +148,6 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 					rowsByGranule[prev] = append(rowsByGranule[prev], rows[j])
 					continue
 				}
-				return true // continue btree iteration
 			}
 
 			// stop at the first granule where this is not the least

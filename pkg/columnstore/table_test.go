@@ -373,16 +373,4 @@ func Test_Table_InsertLowest(t *testing.T) {
 	require.Equal(t, 2, table.index.Len())
 	require.Equal(t, 3, table.index.Min().(*Granule).Cardinality()) // [1,10,11]
 	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality()) // [12,13,14]
-
-	table.granuleIterator(func(g *Granule) bool {
-		ar, err := g.ArrowRecord(memory.NewGoAllocator())
-		if err != nil {
-			t.Fatal(err)
-		}
-		fmt.Println("-----------------Granule----------------")
-		fmt.Println(ar)
-		fmt.Println("----------------------------------------")
-
-		return true
-	})
 }
