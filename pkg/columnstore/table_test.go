@@ -334,6 +334,7 @@ func Test_Table_InsertLowest(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Adding a 5th element should cause a split
 	err = table.Insert([]Row{
 		{
 			Values: []interface{}{
@@ -348,6 +349,30 @@ func Test_Table_InsertLowest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	require.Equal(t, 2, table.index.Len())
+	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality()) // [10,11]
+	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality()) // [12,13,14]
+
+	// Insert a new column that is the lowest column yet; expect it to be added to the minimum column
+	err = table.Insert([]Row{
+		{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+				},
+				int64(10),
+				int64(10),
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	require.Equal(t, 2, table.index.Len())
+	require.Equal(t, 3, table.index.Min().(*Granule).Cardinality()) // [1,10,11]
+	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality()) // [12,13,14]
 
 	table.granuleIterator(func(g *Granule) bool {
 		ar, err := g.ArrowRecord(memory.NewGoAllocator())
