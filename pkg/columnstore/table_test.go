@@ -112,6 +112,7 @@ func TestTable(t *testing.T) {
 
 	err = table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) bool {
 		fmt.Println(ar)
+		defer ar.Release()
 
 		return true
 	})
@@ -236,6 +237,7 @@ func Test_Table_GranuleSplit(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer ar.Release()
 		fmt.Println("-----------------Granule----------------")
 		fmt.Println(ar)
 		fmt.Println("----------------------------------------")
