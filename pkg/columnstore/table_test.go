@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/stretchr/testify/require"
 )
@@ -109,7 +110,7 @@ func TestTable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = table.Iterator(memory.NewGoAllocator(), func(ar *ArrowRecord) bool {
+	err = table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) bool {
 		fmt.Println(ar)
 
 		return true

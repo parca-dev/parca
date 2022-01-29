@@ -146,6 +146,8 @@ func (s Schema) ToArrow() *arrow.Schema {
 
 	fields := make([]arrow.Field, 0, len(s.Columns))
 
+	// TODO we need to handle dynamic columns
+
 	for _, c := range s.Columns {
 		fields = append(fields, arrow.Field{
 			Name: c.Name,

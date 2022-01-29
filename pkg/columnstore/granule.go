@@ -3,6 +3,8 @@ package columnstore
 import (
 	"fmt"
 
+	"github.com/apache/arrow/go/v7/arrow"
+	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/google/btree"
 )
@@ -102,21 +104,34 @@ func (g *Granule) Split(n int) ([]*Granule, error) {
 	return granules, nil
 }
 
-// Iterator merges all parts iin a Granule before returning an iterator over that part
-// NOTE: this may not be the optimal way to perform a merge during iteration. But it's technically correct
-func (g *Granule) ArrowRecord(pool memory.Allocator) (*ArrowRecord, error) {
+// ArrowRecord merges all parts in a Granule before returning an ArrowRecord over that part
+func (g *Granule) ArrowRecord(pool memory.Allocator) (arrow.Record, error) {
 	// Merge the parts
 	p, err := Merge(g.parts...)
 	if err != nil {
 		return nil, err
 	}
 
-	cols, err := p.ArrowColumns(pool)
-	if err != nil {
-		return nil, err
+	// Build the record
+	bld := array.NewRecordBuilder(pool, p.schema.ToArrow())
+	defer bld.Release()
+
+	// TODO dynamic columns
+
+	for i, c := range p.columns {
+		it := c.Iterator(p.Cardinality)
+		for it.Next() {
+			it.Value()
+			switch bld.Schema().Field(i).Type.ID() {
+			case arrow.BinaryTypes.String.ID():
+				bld.Field(i).(*array.StringBuilder).Append(it.Value().(string))
+			case arrow.PrimitiveTypes.Int64.ID():
+				bld.Field(i).(*array.Int64Builder).Append(it.Value().(int64))
+			}
+		}
 	}
 
-	return NewArrowRecord(cols), nil
+	return bld.NewRecord(), nil
 }
 
 // Less implements the btree.Item interface
