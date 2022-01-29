@@ -2,8 +2,6 @@ package columnstore
 
 import (
 	"sort"
-
-	"github.com/apache/arrow/go/v7/arrow/memory"
 )
 
 type Appender interface {
@@ -21,7 +19,6 @@ type Iterator interface {
 type Column interface {
 	Appender() (Appender, error)
 	Iterator(maxIterations int) Iterator
-	ArrowColumn(pool memory.Allocator, length int) (ArrowColumn, error)
 }
 
 func NewColumn(def ColumnDefinition) Column {
@@ -52,16 +49,6 @@ func (c *StaticColumn) Iterator(maxIterations int) Iterator {
 	return c.def.Type.NewIterator(c.data.Iterator(maxIterations))
 }
 
-func (c *StaticColumn) ArrowColumn(pool memory.Allocator, length int) (ArrowColumn, error) {
-	it := c.data.Iterator(length)
-	arrowArray, err := c.def.Type.NewArrowArrayFromIterator(pool, it)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewStaticArrowColumn(c.def.Name, arrowArray), nil
-}
-
 type DynamicColumn struct {
 	def ColumnDefinition
 
@@ -90,27 +77,6 @@ func (c *DynamicColumn) Iterator(maxIterations int) Iterator {
 	}
 
 	return &DynamicIterator{iterators: its, dynamicColumnNames: cols}
-}
-
-func (c *DynamicColumn) ArrowColumn(pool memory.Allocator, length int) (ArrowColumn, error) {
-	colNames := make([]string, 0, len(c.dynamicColumns))
-	cols := make(map[string]*StaticArrowColumn, len(c.dynamicColumns))
-
-	for _, d := range c.dynamicColumns {
-		colNames = append(colNames, d)
-		it := c.data[d].Iterator(length)
-		arrowArray, err := c.def.Type.NewArrowArrayFromIterator(pool, it)
-		if err != nil {
-			return nil, err
-		}
-
-		cols[d], err = NewStaticArrowColumn(d, arrowArray), nil
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return NewDynamicArrowColumn(c.def.Name, colNames, cols), nil
 }
 
 type DynamicAppender struct {
