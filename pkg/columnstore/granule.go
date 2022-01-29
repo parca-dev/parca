@@ -58,7 +58,8 @@ func (g *Granule) Cardinality() int {
 	return res
 }
 
-// Split a granule into n sized granules. Returns the granules in order.
+// Split a granule into n sized granules. With the last granule containing the remainder.
+// Returns the granules in order.
 // This assumes the Granule has had it's parts merged into a single part
 func (g *Granule) Split(n int) []*Granule {
 	if len(g.parts) > 1 {
@@ -67,9 +68,6 @@ func (g *Granule) Split(n int) []*Granule {
 
 	// How many granules we'll need to build
 	count := g.parts[0].Cardinality / n
-	if g.parts[0].Cardinality%n != 0 {
-		count++
-	}
 
 	// Build all the new granules
 	granules := make([]*Granule, 0, count)
@@ -78,7 +76,7 @@ func (g *Granule) Split(n int) []*Granule {
 	rows := make([]Row, 0, n)
 	for it.Next() {
 		rows = append(rows, Row{Values: it.Values()})
-		if len(rows) == n {
+		if len(rows) == n && len(granules) != count-1 { // If we have n rows, and aren't on the last granule, create the n-sized granule
 			p, err := NewPart(g.parts[0].schema, rows)
 			if err != nil {
 				panic("dun goofed")

@@ -246,3 +246,118 @@ func Test_Table_GranuleSplit(t *testing.T) {
 	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality())
 	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality())
 }
+
+/*
+
+	This test is meant for the following case
+	If the table index is as follows
+
+	[10,11]
+		\
+		[12,13,14]
+
+
+	And we try and insert [8,9], we expect them to be inserted into the top granule
+
+	[8,9,10,11]
+		\
+		[12,13]
+
+*/
+func Test_Table_InsertLowest(t *testing.T) {
+	schema := Schema{
+		Columns: []ColumnDefinition{{
+			Name:     "labels",
+			Type:     StringType,
+			Encoding: PlainEncoding,
+			Dynamic:  true,
+		}, {
+			Name:     "timestamp",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}, {
+			Name:     "value",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}},
+		OrderedBy:   []string{"labels", "timestamp"},
+		GranuleSize: 4,
+	}
+
+	c := New()
+	db := c.DB("test")
+	table := db.Table("test")
+	err := table.EnsureSchema(schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = table.Insert([]Row{
+		{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label10", Value: "value10"},
+				},
+				int64(2),
+				int64(2),
+			},
+		},
+		{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label11", Value: "value11"},
+				},
+				int64(2),
+				int64(2),
+			},
+		},
+		{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label12", Value: "value12"},
+				},
+				int64(2),
+				int64(2),
+			},
+		},
+		{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label13", Value: "value13"},
+				},
+				int64(2),
+				int64(2),
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = table.Insert([]Row{
+		{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label14", Value: "value14"},
+				},
+				int64(2),
+				int64(2),
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	table.granuleIterator(func(g *Granule) bool {
+		ar, err := g.ArrowRecord(memory.NewGoAllocator())
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("-----------------Granule----------------")
+		fmt.Println(ar)
+		fmt.Println("----------------------------------------")
+
+		return true
+	})
+}
