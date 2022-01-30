@@ -136,40 +136,40 @@ func (g *Granule) ArrowRecord(pool memory.Allocator) (arrow.Record, error) {
 		case true: // expand the dynamic columns
 			d := c.(*DynamicColumn) // TODO this is gross and we should change this iteration
 			for k, name := range d.dynamicColumns {
-				it := d.data[name].Iterator(p.Cardinality)
-				for it.Next() {
-					switch bld.Schema().Field(i).Type.ID() {
-					case arrow.BinaryTypes.String.ID():
-						if it.Value() == nil {
-							bld.Field(i + k).(*array.StringBuilder).AppendNull()
-						} else {
-							bld.Field(i + k).(*array.StringBuilder).Append(it.Value().(string))
-						}
-					case arrow.PrimitiveTypes.Int64.ID():
-						if it.Value() == nil {
-							bld.Field(i + k).(*array.Int64Builder).AppendNull()
-						} else {
-							bld.Field(i + k).(*array.Int64Builder).Append(it.Value().(int64))
-						}
-					}
-				}
+				buildFromIterator(i, i+k, bld, d.data[name].Iterator(p.Cardinality))
 			}
 			i += len(d.dynamicColumns)
 		default:
-			it := c.Iterator(p.Cardinality)
-			for it.Next() {
-				switch bld.Schema().Field(i).Type.ID() {
-				case arrow.BinaryTypes.String.ID():
-					bld.Field(i).(*array.StringBuilder).Append(it.Value().(string))
-				case arrow.PrimitiveTypes.Int64.ID():
-					bld.Field(i).(*array.Int64Builder).Append(it.Value().(int64))
-				}
-			}
+			buildFromIterator(i, i, bld, c.Iterator(p.Cardinality))
 			i++
 		}
 	}
 
 	return bld.NewRecord(), nil
+}
+
+type SimpleIterator interface {
+	Next() bool
+	Value() interface{}
+}
+
+func buildFromIterator(i, j int, bld *array.RecordBuilder, it SimpleIterator) {
+	for it.Next() {
+		switch bld.Schema().Field(i).Type.ID() {
+		case arrow.BinaryTypes.String.ID():
+			if it.Value() == nil {
+				bld.Field(j).(*array.StringBuilder).AppendNull()
+			} else {
+				bld.Field(j).(*array.StringBuilder).Append(it.Value().(string))
+			}
+		case arrow.PrimitiveTypes.Int64.ID():
+			if it.Value() == nil {
+				bld.Field(j).(*array.Int64Builder).AppendNull()
+			} else {
+				bld.Field(j).(*array.Int64Builder).Append(it.Value().(int64))
+			}
+		}
+	}
 }
 
 // Less implements the btree.Item interface
