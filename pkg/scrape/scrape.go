@@ -477,9 +477,13 @@ mainLoop:
 					},
 				},
 			})
-			if err != nil && errc != nil {
-				level.Debug(sl.l).Log("err", err)
-				errc <- err
+			if err != nil {
+				switch errc {
+				case nil:
+					level.Error(sl.l).Log("msg", "WriteRaw failed for scraped profile", "err", err)
+				default:
+					errc <- err
+				}
 			}
 
 			sl.target.health = HealthGood
