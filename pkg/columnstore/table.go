@@ -83,7 +83,10 @@ func (t *Table) Insert(rows []Row) error {
 			}
 			granule.parts = []*Part{newpart}
 
-			granules := granule.Split(t.schema.GranuleSize / 2) // TODO magic numbers
+			granules, err := granule.Split(t.schema.GranuleSize / 2) // TODO magic numbers
+			if err != nil {
+				return fmt.Errorf("granule split failed after AddPart: %w", err)
+			}
 			deleted := t.index.Delete(granule)
 			if deleted == nil {
 				return fmt.Errorf("failed to delete granule during split")

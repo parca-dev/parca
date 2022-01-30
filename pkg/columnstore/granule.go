@@ -1,6 +1,8 @@
 package columnstore
 
 import (
+	"fmt"
+
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/google/btree"
 )
@@ -61,9 +63,9 @@ func (g *Granule) Cardinality() int {
 // Split a granule into n sized granules. With the last granule containing the remainder.
 // Returns the granules in order.
 // This assumes the Granule has had it's parts merged into a single part
-func (g *Granule) Split(n int) []*Granule {
+func (g *Granule) Split(n int) ([]*Granule, error) {
 	if len(g.parts) > 1 {
-		return []*Granule{g} // do nothing
+		return []*Granule{g}, nil // do nothing
 	}
 
 	// How many granules we'll need to build
@@ -79,7 +81,7 @@ func (g *Granule) Split(n int) []*Granule {
 		if len(rows) == n && len(granules) != count-1 { // If we have n rows, and aren't on the last granule, create the n-sized granule
 			p, err := NewPart(g.parts[0].schema, rows)
 			if err != nil {
-				panic("dun goofed")
+				return nil, fmt.Errorf("failed to create new part: %w", err)
 			}
 			granules = append(granules, NewGranule(p))
 			rows = make([]Row, 0, n)
@@ -90,12 +92,14 @@ func (g *Granule) Split(n int) []*Granule {
 	if len(rows) != 0 {
 		p, err := NewPart(g.parts[0].schema, rows)
 		if err != nil {
-			panic("dun goofed")
+			if err != nil {
+				return nil, fmt.Errorf("failed to create new part: %w", err)
+			}
 		}
 		granules = append(granules, NewGranule(p))
 	}
 
-	return granules
+	return granules, nil
 }
 
 // Iterator merges all parts iin a Granule before returning an iterator over that part
