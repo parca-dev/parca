@@ -50,7 +50,7 @@ func NewProfileStore(
 ) *ProfileStore {
 	s := columnstore.New()
 	db := s.DB("parca")
-	table := db.Table("stacktraces")
+	table := db.Table("stacktraces") // TODO we need to define a schema here
 
 	return &ProfileStore{
 		logger:    logger,
