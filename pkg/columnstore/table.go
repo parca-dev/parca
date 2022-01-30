@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/google/btree"
 )
@@ -101,7 +102,7 @@ func (t *Table) Insert(rows []Row) error {
 }
 
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
-func (t *Table) Iterator(pool memory.Allocator, iterator func(r *ArrowRecord) bool) error {
+func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) bool) error {
 	err := t.ensureSchemaInitialized()
 	if err != nil {
 		return err
@@ -111,8 +112,7 @@ func (t *Table) Iterator(pool memory.Allocator, iterator func(r *ArrowRecord) bo
 	defer t.mtx.RUnlock()
 
 	t.granuleIterator(func(g *Granule) bool {
-		var r *ArrowRecord
-		r, err = g.ArrowRecord(pool)
+		r, err := g.ArrowRecord(pool)
 		if err != nil {
 			return false
 		}

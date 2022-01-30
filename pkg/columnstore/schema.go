@@ -140,3 +140,29 @@ func (s Schema) Equals(other Schema) bool {
 
 	return s.GranuleSize == other.GranuleSize
 }
+
+// ToArrow returns the schema in arrow schema format
+func (s Schema) ToArrow(dynamicColNames [][]string, dynamicColCounts []int) *arrow.Schema {
+
+	fields := make([]arrow.Field, 0, len(s.Columns))
+	for i, c := range s.Columns {
+
+		switch c.Dynamic {
+		case true: // split out the dynamic columns into multiple arrow cols
+			for j := 0; j < dynamicColCounts[i]; j++ {
+				fields = append(fields, arrow.Field{
+					Name: dynamicColNames[i][j],
+					Type: c.Type.ArrowDataType(),
+				})
+			}
+		default:
+			fields = append(fields, arrow.Field{
+				Name: c.Name,
+				Type: c.Type.ArrowDataType(),
+			})
+		}
+
+	}
+
+	return arrow.NewSchema(fields, nil)
+}

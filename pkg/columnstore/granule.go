@@ -3,6 +3,8 @@ package columnstore
 import (
 	"fmt"
 
+	"github.com/apache/arrow/go/v7/arrow"
+	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/google/btree"
 )
@@ -102,21 +104,72 @@ func (g *Granule) Split(n int) ([]*Granule, error) {
 	return granules, nil
 }
 
-// Iterator merges all parts iin a Granule before returning an iterator over that part
-// NOTE: this may not be the optimal way to perform a merge during iteration. But it's technically correct
-func (g *Granule) ArrowRecord(pool memory.Allocator) (*ArrowRecord, error) {
+// ArrowRecord merges all parts in a Granule before returning an ArrowRecord over that part
+func (g *Granule) ArrowRecord(pool memory.Allocator) (arrow.Record, error) {
 	// Merge the parts
 	p, err := Merge(g.parts...)
 	if err != nil {
 		return nil, err
 	}
 
-	cols, err := p.ArrowColumns(pool)
-	if err != nil {
-		return nil, err
+	// Prefetch all dynamic columns
+	cols := make([]int, len(p.columns))
+	names := make([][]string, len(p.columns))
+	for i, c := range p.columns {
+		if p.schema.Columns[i].Dynamic {
+			cols[i] = len(c.(*DynamicColumn).dynamicColumns)
+			names[i] = make([]string, cols[i])
+			for j, name := range c.(*DynamicColumn).dynamicColumns {
+				names[i][j] = name
+			}
+		}
 	}
 
-	return NewArrowRecord(cols), nil
+	// Build the record
+	bld := array.NewRecordBuilder(pool, p.schema.ToArrow(names, cols))
+	defer bld.Release()
+
+	i := 0 // i is the index into our arrow schema
+	for j, c := range p.columns {
+
+		switch p.schema.Columns[j].Dynamic {
+		case true: // expand the dynamic columns
+			d := c.(*DynamicColumn) // TODO this is gross and we should change this iteration
+			for k, name := range d.dynamicColumns {
+				buildFromIterator(i, i+k, bld, d.data[name].Iterator(p.Cardinality))
+			}
+			i += len(d.dynamicColumns)
+		default:
+			buildFromIterator(i, i, bld, c.Iterator(p.Cardinality))
+			i++
+		}
+	}
+
+	return bld.NewRecord(), nil
+}
+
+type SimpleIterator interface {
+	Next() bool
+	Value() interface{}
+}
+
+func buildFromIterator(i, j int, bld *array.RecordBuilder, it SimpleIterator) {
+	for it.Next() {
+		switch bld.Schema().Field(i).Type.ID() {
+		case arrow.BinaryTypes.String.ID():
+			if it.Value() == nil {
+				bld.Field(j).(*array.StringBuilder).AppendNull()
+			} else {
+				bld.Field(j).(*array.StringBuilder).Append(it.Value().(string))
+			}
+		case arrow.PrimitiveTypes.Int64.ID():
+			if it.Value() == nil {
+				bld.Field(j).(*array.Int64Builder).AppendNull()
+			} else {
+				bld.Field(j).(*array.Int64Builder).Append(it.Value().(int64))
+			}
+		}
+	}
 }
 
 // Less implements the btree.Item interface
