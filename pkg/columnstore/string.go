@@ -1,8 +1,8 @@
 package columnstore
 
 import (
-	"github.com/apache/arrow/go/arrow/array"
-	"github.com/apache/arrow/go/arrow/memory"
+	"github.com/apache/arrow/go/v7/arrow/array"
+	"github.com/apache/arrow/go/v7/arrow/memory"
 )
 
 type StringAppender struct {

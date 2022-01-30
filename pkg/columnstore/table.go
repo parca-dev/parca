@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/apache/arrow/go/arrow/memory"
+	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/google/btree"
 )
 

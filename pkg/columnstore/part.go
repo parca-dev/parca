@@ -4,7 +4,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/apache/arrow/go/arrow/memory"
+	"github.com/apache/arrow/go/v7/arrow/memory"
 )
 
 // Comparison is a result from the compare function

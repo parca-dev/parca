@@ -1,6 +1,8 @@
 package profilestore
 
-import "github.com/parca-dev/parca/pkg/columnstore"
+import (
+	"github.com/parca-dev/parca/pkg/columnstore"
+)
 
 func createSchema() columnstore.Schema {
 	return columnstore.Schema{

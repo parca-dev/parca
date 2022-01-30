@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/OneOfOne/xxhash v1.2.6 // indirect
 	github.com/alecthomas/kong v0.3.0
-	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40
+	github.com/apache/arrow/go/v7 v7.0.0-20220128165118-f92219d05e02
 	github.com/brancz/objstore v0.0.0-20220128171049-60dd94d87175
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cespare/xxhash/v2 v2.1.2
@@ -44,7 +44,6 @@ require (
 	go.opentelemetry.io/otel/sdk v1.3.0
 	go.opentelemetry.io/otel/trace v1.3.0
 	go.uber.org/atomic v1.9.0
-	golang.org/x/exp v0.0.0-20200821190819-94841d0725da // indirect
 	golang.org/x/net v0.0.0-20220105145211-5b0dc2dfae98
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5
@@ -53,12 +52,13 @@ require (
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/klog/v2 v2.40.1 // indirect
-	modernc.org/sqlite v1.14.5
+	modernc.org/sqlite v1.14.4
 	nhooyr.io/websocket v1.8.7 // indirect
 )
 
 // Prometheus v2.32.1
-replace github.com/prometheus/prometheus => github.com/prometheus/prometheus v1.8.2-0.20211217191541-41f1a8125e66
+replace github.com/prometheus/prometheus => github.com/brancz/prometheus v1.8.2-0.20220128155714-ea7e413da991
 
 replace go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v0.24.0
+
+replace github.com/apache/arrow/go/v7 => github.com/zeroshade/arrow/go/v7 v7.0.0-20220117181957-a49180fd1f45
