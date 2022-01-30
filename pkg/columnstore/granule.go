@@ -41,12 +41,12 @@ func (g *Granule) AddPart(p *Part) {
 	g.parts = append(g.parts, p)
 	it := p.Iterator()
 
-	// TODO: Part is sorted, so we only need to look at the first row.
 	if it.Next() {
 		r := Row{Values: it.Values()}
 		if r.Less(g.least) {
 			g.least = r
 		}
+		return
 	}
 }
 
