@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTable(t *testing.T) {
+func basicTable(t *testing.T, granuleSize int) *Table {
 	schema := Schema{
 		Columns: []ColumnDefinition{{
 			Name:     "labels",
@@ -26,22 +26,20 @@ func TestTable(t *testing.T) {
 			Encoding: PlainEncoding,
 		}},
 		OrderedBy:   []string{"labels", "timestamp"},
-		GranuleSize: 2 ^ 13, // 8192
-		//WithOrderedColumns(
-		//	labelsColumn,
-		//	timestampColumn,
-		//),
+		GranuleSize: granuleSize,
 	}
 
 	c := New()
 	db := c.DB("test")
-	table := db.Table("test")
-	err := table.EnsureSchema(schema)
-	if err != nil {
-		t.Fatal(err)
-	}
+	table := db.Table("test", schema)
 
-	err = table.Insert(
+	return table
+}
+
+func TestTable(t *testing.T) {
+	table := basicTable(t, 2^12)
+
+	err := table.Insert(
 		[]Row{{
 			Values: []interface{}{
 				[]DynamicColumnValue{
@@ -136,34 +134,9 @@ func TestTable(t *testing.T) {
 }
 
 func Test_Table_GranuleSplit(t *testing.T) {
-	schema := Schema{
-		Columns: []ColumnDefinition{{
-			Name:     "labels",
-			Type:     StringType,
-			Encoding: PlainEncoding,
-			Dynamic:  true,
-		}, {
-			Name:     "timestamp",
-			Type:     Int64Type,
-			Encoding: PlainEncoding,
-		}, {
-			Name:     "value",
-			Type:     Int64Type,
-			Encoding: PlainEncoding,
-		}},
-		OrderedBy:   []string{"labels", "timestamp"},
-		GranuleSize: 4,
-	}
+	table := basicTable(t, 4)
 
-	c := New()
-	db := c.DB("test")
-	table := db.Table("test")
-	err := table.EnsureSchema(schema)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = table.Insert(
+	err := table.Insert(
 		[]Row{{
 			Values: []interface{}{
 				[]DynamicColumnValue{
@@ -268,34 +241,9 @@ func Test_Table_GranuleSplit(t *testing.T) {
 
 */
 func Test_Table_InsertLowest(t *testing.T) {
-	schema := Schema{
-		Columns: []ColumnDefinition{{
-			Name:     "labels",
-			Type:     StringType,
-			Encoding: PlainEncoding,
-			Dynamic:  true,
-		}, {
-			Name:     "timestamp",
-			Type:     Int64Type,
-			Encoding: PlainEncoding,
-		}, {
-			Name:     "value",
-			Type:     Int64Type,
-			Encoding: PlainEncoding,
-		}},
-		OrderedBy:   []string{"labels", "timestamp"},
-		GranuleSize: 4,
-	}
+	table := basicTable(t, 4)
 
-	c := New()
-	db := c.DB("test")
-	table := db.Table("test")
-	err := table.EnsureSchema(schema)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = table.Insert([]Row{
+	err := table.Insert([]Row{
 		{
 			Values: []interface{}{
 				[]DynamicColumnValue{

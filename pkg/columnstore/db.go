@@ -53,7 +53,7 @@ func (s *ColumnStore) DB(name string) *DB {
 	return db
 }
 
-func (db *DB) Table(name string) *Table {
+func (db *DB) Table(name string, schema Schema) *Table {
 	db.mtx.RLock()
 	table, ok := db.tables[name]
 	db.mtx.RUnlock()
@@ -72,10 +72,10 @@ func (db *DB) Table(name string) *Table {
 	}
 
 	table = &Table{
-		db:    db,
-		smtx:  &sync.Mutex{},
-		mtx:   &sync.RWMutex{},
-		index: btree.New(2), // TODO make the degree a setting
+		db:     db,
+		schema: schema,
+		mtx:    &sync.RWMutex{},
+		index:  btree.New(2), // TODO make the degree a setting
 	}
 
 	db.tables[name] = table
