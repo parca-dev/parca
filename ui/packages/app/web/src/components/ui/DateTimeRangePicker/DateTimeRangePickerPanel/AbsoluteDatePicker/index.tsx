@@ -18,7 +18,13 @@ const AbsoluteDatePicker = ({date, onChange = () => null, position}: AbsoluteDat
   return (
     <div className="p-1">
       <div className="flex justify-center p-1">
-        <DatePicker selected={value} onChange={date => setValue(date)} showTimeInput inline />
+        <DatePicker
+          selected={value}
+          onChange={date => setValue(date)}
+          showTimeInput
+          inline
+          selectsRange
+        />
       </div>
       <div className="max-w-1/2 mx-auto p-2">
         <ApplyButton

@@ -80,7 +80,7 @@ export const formatDateStringForUI: (dateString: DateUnion) => string = dateStri
   return dateString.value.toLocaleString();
 };
 
-export const getDateHoursAgo = (hours = 1) => {
+export const getDateHoursAgo = (hours = 1): Date => {
   const now = new Date();
   now.setHours(now.getHours() - hours);
   return now;
