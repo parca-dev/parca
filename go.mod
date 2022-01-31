@@ -28,7 +28,7 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20211126204342-3ad08eb09c01
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/oklog/run v1.1.0
-	github.com/prometheus/client_golang v1.12.0
+	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v1.8.2-0.20211217191541-41f1a8125e66
 	github.com/stretchr/testify v1.7.0
