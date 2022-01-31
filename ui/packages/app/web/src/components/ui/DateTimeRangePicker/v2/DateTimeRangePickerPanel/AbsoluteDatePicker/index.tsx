@@ -34,7 +34,7 @@ const AbsoluteDatePickerV2 = ({
   );
   return (
     <div className="p-4">
-      <div className="mb-2">
+      <div className="mb-2 hidden">
         <span className="uppercase text-xs text-gray-500">Absolute Range</span>
       </div>
       <div className="flex flex-col justify-center">
@@ -47,7 +47,7 @@ const AbsoluteDatePickerV2 = ({
             onChange={date => setFrom(date)}
             showTimeInput
             dateFormat="MMMM d, yyyy h:mm aa"
-            className="text-sm w-48 p-1"
+            className="text-sm w-48 p-2 rounded-md border border-gray-200"
           />
         </div>
         <div className="mb-1">
@@ -59,7 +59,7 @@ const AbsoluteDatePickerV2 = ({
             onChange={date => setTo(date)}
             showTimeInput
             dateFormat="MMMM d, yyyy h:mm aa"
-            className="text-sm w-48 p-1"
+            className="text-sm w-48 p-2 rounded-md border border-gray-200"
           />
         </div>
       </div>

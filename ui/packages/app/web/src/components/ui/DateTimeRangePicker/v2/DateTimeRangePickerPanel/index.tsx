@@ -21,8 +21,8 @@ const DateTimeRangePickerPanelV2 = ({
   onChange = () => null,
 }: DateTimeRangePickerPropsV2) => {
   return (
-    <div className="flex flex-row w-[550px] bg-gray-100 dark:bg-gray-800 text-black dark:text-white">
-      <div className=" border-r-[1px] border-gray-200">
+    <div className="flex flex-row w-[550px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white">
+      <div className=" border-r border-gray-200">
         <RelativeDatePicker
           key={position}
           position={position}

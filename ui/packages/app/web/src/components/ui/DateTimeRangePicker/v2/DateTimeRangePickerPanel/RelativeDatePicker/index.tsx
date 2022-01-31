@@ -65,16 +65,16 @@ const RelativeDatePickerV2 = ({
   return (
     <div className="p-4 w-[300px]">
       <div className="pb-2">
-        <div className="mb-4">
+        <div className="mb-4 hidden">
           <span className="uppercase text-xs text-gray-500">Quick Ranges</span>
         </div>
-        <div className="grid grid-rows-3 grid-flow-col">
+        <div className="grid grid-rows-3 grid-flow-col gap-2">
           {quickPresetRanges.map(({title, unit, value}) => (
             <Button
               onClick={() => {
                 onChange(new RelativeDate(unit, value), NOW);
               }}
-              color="neutral"
+              color="link"
             >
               {title}
             </Button>
@@ -89,7 +89,7 @@ const RelativeDatePickerV2 = ({
           <span className="uppercase text-xs text-gray-600 mr-4">Last</span>
           <Input
             type="number"
-            className="w-16 mr-2"
+            className="w-16 mr-2 text-sm border border-gray-200"
             value={value}
             onChange={e => setValue(parseInt(e.target.value, 10))}
           />
