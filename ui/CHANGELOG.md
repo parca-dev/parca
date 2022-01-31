@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.8.0](https://github.com/parca-dev/parca/compare/ui-v0.7.13...ui-v0.8.0) (2022-01-31)
+
+### Features
+
+- close profile card in compare view ([d2a4d11](https://github.com/parca-dev/parca/commit/d2a4d11ea294577164ec44f94f53c2b2df0a723a))
+
 ## [0.7.13](https://github.com/parca-dev/parca/compare/ui-v0.7.12...ui-v0.7.13) (2022-01-25)
 
 **Note:** Version bump only for package ui
