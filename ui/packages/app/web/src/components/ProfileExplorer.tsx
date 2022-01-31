@@ -41,6 +41,17 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
   ): {[key: string]: string | string[] | undefined} =>
     Object.fromEntries(Object.entries(o).filter(([key]) => !key.endsWith(suffix)));
 
+  const swapQueryParameters = (o: {
+    [key: string]: string | string[] | undefined;
+  }): {[key: string]: string | string[] | undefined} => {
+    Object.entries(o).forEach(([key, value]) => {
+      if (key.endsWith('_b')) {
+        o[key.slice(0, -2) + '_a'] = value;
+      }
+    });
+    return o;
+  };
+
   const selectProfileA = async (p: ProfileSelection): Promise<boolean> => {
     return await router.push({
       pathname: '/',
@@ -208,6 +219,23 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
     });
   };
 
+  const closeProfile = async (card: string): Promise<boolean> => {
+    let newQueryParameters = queryParams;
+    if (card === 'A') {
+      newQueryParameters = swapQueryParameters(queryParams);
+    }
+
+    return await router.push({
+      pathname: '/',
+      query: {
+        ...filterSuffix(newQueryParameters, '_b'),
+        ...{
+          compare_a: 'false',
+        },
+      },
+    });
+  };
+
   return (
     <ProfileExplorerCompare
       queryClient={queryClient}
@@ -219,6 +247,7 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
       selectQueryB={selectQueryB}
       selectProfileA={selectProfileA}
       selectProfileB={selectProfileB}
+      closeProfile={closeProfile}
     />
   );
 };
