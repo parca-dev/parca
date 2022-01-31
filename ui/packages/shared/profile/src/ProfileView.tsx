@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
-// import ProfileSVG from './ProfileSVG'
-// import ProfileTop from './ProfileTop'
+import cx from 'classnames';
+
 import {CalcWidth} from '@parca/dynamicsize';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
@@ -56,6 +56,7 @@ export const useQuery = (
 export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX.Element => {
   const [curPath, setCurPath] = useState<string[]>([]);
   const {response, error} = useQuery(queryClient, profileSource);
+  const [currentView, setCurrentView] = useState<string>('icicle');
 
   if (error != null) {
     return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
@@ -137,31 +138,86 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
       <div className="py-3">
         <Card>
           <Card.Body>
-            <div className="flex space-x-4 py-3">
-              <div className="w-1/4">
-                <Button color="neutral" onClick={resetIcicleGraph} disabled={curPath.length === 0}>
-                  Reset View
-                </Button>
+            <div className="flex py-3 w-full">
+              <div className="w-1/2 flex space-x-4">
+                <div>
+                  <Button
+                    color="neutral"
+                    onClick={resetIcicleGraph}
+                    disabled={curPath.length === 0}
+                  >
+                    Reset View
+                  </Button>
+                </div>
+
+                <div>
+                  <Button color="neutral" onClick={downloadPProf}>
+                    Download pprof
+                  </Button>
+                </div>
               </div>
 
-              <div className="w-full" />
-
-              <Button color="neutral" onClick={downloadPProf}>
-                Download pprof
-              </Button>
+              <div className="flex min-w-[500px] ml-auto">
+                <Button
+                  color="neutral"
+                  className="rounded-tr-none rounded-br-none"
+                  onClick={() => setCurrentView('icicle')}
+                >
+                  Icicle Graph
+                </Button>
+                <Button
+                  color="neutral"
+                  className="rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0"
+                  onClick={() => setCurrentView('both')}
+                >
+                  Both
+                </Button>
+                <Button
+                  color="neutral"
+                  className="rounded-tl-none rounded-bl-none"
+                  onClick={() => setCurrentView('table')}
+                >
+                  Table
+                </Button>
+              </div>
             </div>
-            <div className="w-1/2">
-              <TopTable queryClient={queryClient} profileSource={profileSource} />
-            </div>
 
-            <div className="w-1/2">
-              <CalcWidth throttle={300} delay={2000}>
-                <ProfileIcicleGraph
-                  curPath={curPath}
-                  setNewCurPath={setNewCurPath}
-                  graph={response.getFlamegraph()?.toObject()}
-                />
-              </CalcWidth>
+            <div className="flex space-x-4">
+              {currentView === 'table' && (
+                <div className="w-full">
+                  <TopTable queryClient={queryClient} profileSource={profileSource} />
+                </div>
+              )}
+
+              {currentView === 'icicle' && (
+                <div className="w-full">
+                  <CalcWidth throttle={300} delay={2000}>
+                    <ProfileIcicleGraph
+                      curPath={curPath}
+                      setNewCurPath={setNewCurPath}
+                      graph={response.getFlamegraph()?.toObject()}
+                    />
+                  </CalcWidth>
+                </div>
+              )}
+
+              {currentView === 'both' && (
+                <>
+                  <div className="w-1/2">
+                    <TopTable queryClient={queryClient} profileSource={profileSource} />
+                  </div>
+
+                  <div className="w-1/2">
+                    <CalcWidth throttle={300} delay={2000}>
+                      <ProfileIcicleGraph
+                        curPath={curPath}
+                        setNewCurPath={setNewCurPath}
+                        graph={response.getFlamegraph()?.toObject()}
+                      />
+                    </CalcWidth>
+                  </div>
+                </>
+              )}
             </div>
           </Card.Body>
         </Card>

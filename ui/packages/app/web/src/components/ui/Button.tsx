@@ -19,10 +19,12 @@ const Button = ({
   disabled = false,
   color = 'primary',
   children,
+  className,
   ...props
 }: {
   disabled?: boolean;
   color?: ButtonColor;
+  className?: string;
   children: React.ReactNode;
 } & JSX.IntrinsicElements['button']) => {
   return (
@@ -32,6 +34,7 @@ const Button = ({
         disabled ? 'opacity-50 pointer-events-none' : '',
         BUTTON_COLORS[color].bg,
         BUTTON_COLORS[color].text,
+        className,
         `cursor-pointer group relative w-full flex justify-center py-2 px-4 border-t border-r border-b border-l ${BUTTON_COLORS[color].border} text-sm font-medium rounded-md text-whitefocus:outline-none focus:ring-2 focus:ring-offset-2`
       )}
       disabled={disabled}
