@@ -6,7 +6,9 @@ import {DateTimeRange, DateUnion, POSITIONS, POSITION_TYPE} from './utils';
 import {useClickAway} from 'react-use';
 import DateTimeRangePickerPanelv1 from './DateTimeRangePickerPanel';
 import DateTimeRangePickerPanelv2 from './v2/DateTimeRangePickerPanel';
+import DateTimeRangePickerPanelv3 from './v3/DateTimeRangePickerPanel';
 import DateTimeRangePickerTriggerv2 from './v2/DateTimeRangePickerTrigger';
+import DateTimeRangePickerTriggerv3 from './v3/DateTimeRangePickerTrigger';
 
 import './style.css';
 
@@ -19,7 +21,7 @@ const getElementPosition = (element: HTMLElement | null) => {
 
 const POPOVER_WIDTH = 384;
 
-const DateTimeRangePicker = ({isV2 = false}) => {
+const DateTimeRangePicker = ({version = 'v1'}) => {
   const [range, setRange] = useState<DateTimeRange>(new DateTimeRange());
   const [isActive, setIsActive] = useState<boolean>(true);
   const [activePosition, setActivePosition] = useState<POSITION_TYPE>(POSITIONS.FROM);
@@ -29,9 +31,13 @@ const DateTimeRangePicker = ({isV2 = false}) => {
   useClickAway(containerRef, () => {
     setIsActive(false);
   });
-  const DateTimeRangePickerTrigger = isV2
-    ? DateTimeRangePickerTriggerv2
-    : DateTimeRangePickerTriggerv1;
+  let DateTimeRangePickerTrigger = DateTimeRangePickerTriggerv1;
+  if (version === 'v2') {
+    DateTimeRangePickerTrigger = DateTimeRangePickerTriggerv2;
+  }
+  if (version === 'v3') {
+    DateTimeRangePickerTrigger = DateTimeRangePickerTriggerv3;
+  }
 
   const fromLeftPosition = getElementPosition(fromRef.current);
   const toLeftPosition = getElementPosition(toRef.current);
@@ -67,7 +73,7 @@ const DateTimeRangePicker = ({isV2 = false}) => {
             }
             static
           >
-            {!isV2 ? (
+            {version === 'v1' ? (
               <DateTimeRangePickerPanelv1
                 date={range.getDateForPosition(activePosition)}
                 position={activePosition}
@@ -81,7 +87,8 @@ const DateTimeRangePicker = ({isV2 = false}) => {
                   }
                 }}
               />
-            ) : (
+            ) : null}
+            {version === 'v2' ? (
               <DateTimeRangePickerPanelv2
                 range={range}
                 position={activePosition}
@@ -90,7 +97,17 @@ const DateTimeRangePicker = ({isV2 = false}) => {
                   setIsActive(false);
                 }}
               />
-            )}
+            ) : null}
+            {version === 'v3' ? (
+              <DateTimeRangePickerPanelv3
+                range={range}
+                position={activePosition}
+                onChange={(from: DateUnion, to: DateUnion) => {
+                  setRange(new DateTimeRange(from, to));
+                  setIsActive(false);
+                }}
+              />
+            ) : null}
           </Popover.Panel>
         ) : null}
       </div>
