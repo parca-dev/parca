@@ -1,0 +1,26 @@
+{
+  "projectName": "parca",
+  "projectOwner": "parca-dev",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "brancz",
+      "name": "Frederic Branczyk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4546722?v=4",
+      "profile": "https://brancz.com/",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    }
+  ],
+  "contributorsPerLine": 5,
+  "skipCi": true
+}
