@@ -25,6 +25,7 @@ type Table struct {
 
 type tableMetrics struct {
 	granulesCreated  prometheus.Counter
+	granulesSplits   prometheus.Counter
 	rowsInserted     prometheus.Counter
 	zeroRowsInserted prometheus.Counter
 	rowInsertSize    prometheus.Histogram
@@ -38,7 +39,7 @@ func newTable(
 ) *Table {
 	reg = prometheus.WrapRegistererWith(prometheus.Labels{"table": name}, reg)
 
-	return &Table{
+	t := &Table{
 		db:     db,
 		schema: schema,
 		mtx:    &sync.RWMutex{},
@@ -47,6 +48,10 @@ func newTable(
 			granulesCreated: promauto.With(reg).NewCounter(prometheus.CounterOpts{
 				Name: "granules_created",
 				Help: "Number of granules created.",
+			}),
+			granulesSplits: promauto.With(reg).NewCounter(prometheus.CounterOpts{
+				Name: "granules_splits",
+				Help: "Number of granules splits executed.",
 			}),
 			rowsInserted: promauto.With(reg).NewCounter(prometheus.CounterOpts{
 				Name: "rows_inserted",
@@ -63,6 +68,17 @@ func newTable(
 			}),
 		},
 	}
+
+	promauto.With(reg).NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "index_size",
+		Help: "Number of granules in the table index currently.",
+	}, func() float64 {
+		t.mtx.RLock()
+		defer t.mtx.RUnlock()
+		return float64(t.index.Len())
+	})
+
+	return t
 }
 
 func (t *Table) Insert(rows []Row) error {
@@ -110,6 +126,7 @@ func (t *Table) Insert(rows []Row) error {
 			granule.parts = []*Part{newpart}
 
 			granules, err := granule.Split(t.schema.GranuleSize / 2) // TODO magic numbers
+			t.metrics.granulesSplits.Inc()
 			if err != nil {
 				return fmt.Errorf("granule split failed after AddPart: %w", err)
 			}
