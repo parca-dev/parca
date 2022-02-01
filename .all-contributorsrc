@@ -77,6 +77,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "s-urbaniak",
+      "name": "Sergiusz Urbaniak",
+      "avatar_url": "https://avatars.githubusercontent.com/u/375856?v=4",
+      "profile": "https://github.com/s-urbaniak",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 5,
