@@ -23,7 +23,7 @@ const POPOVER_WIDTH = 384;
 
 const DateTimeRangePicker = ({version = 'v1'}) => {
   const [range, setRange] = useState<DateTimeRange>(new DateTimeRange());
-  const [isActive, setIsActive] = useState<boolean>(true);
+  const [isActive, setIsActive] = useState<boolean>(false);
   const [activePosition, setActivePosition] = useState<POSITION_TYPE>(POSITIONS.FROM);
   const containerRef = useRef<HTMLDivElement>(null);
   const fromRef = useRef<HTMLDivElement>(null);
