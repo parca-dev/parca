@@ -17,7 +17,8 @@
       "profile": "https://brancz.com/",
       "contributions": [
         "code",
-        "doc"
+        "doc",
+        "infra"
       ]
     },
     {
@@ -27,7 +28,8 @@
       "profile": "https://github.com/thorfour",
       "contributions": [
         "code",
-        "doc"
+        "doc",
+        "infra"
       ]
     },
     {
@@ -37,7 +39,8 @@
       "profile": "https://matthiasloibl.com/",
       "contributions": [
         "code",
-        "doc"
+        "doc",
+        "infra"
       ]
     },
     {
@@ -103,6 +106,17 @@
       "profile": "https://yeya24.github.io/",
       "contributions": [
         "code",
+        "infra"
+      ]
+    },
+    {
+      "login": "fpuc",
+      "name": "Felix",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1822814?v=4",
+      "profile": "https://github.com/fpuc",
+      "contributions": [
+        "code",
+        "doc",
         "infra"
       ]
     }
