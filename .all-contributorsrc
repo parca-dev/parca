@@ -86,6 +86,15 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "paulfantom",
+      "name": "Paweł Krupa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3531758?v=4",
+      "profile": "https://pawel.krupa.net.pl/",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 5,
