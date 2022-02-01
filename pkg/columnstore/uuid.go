@@ -1,6 +1,8 @@
 package columnstore
 
 import (
+	"bytes"
+
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/apache/arrow/go/v7/arrow/memory"
@@ -12,17 +14,18 @@ type UUIDAppender struct {
 	enc Encoding
 }
 
+func CompareUUID(a, b UUID) int {
+	ab := [16]byte(a)
+	bb := [16]byte(b)
+	return bytes.Compare(ab[:], bb[:])
+}
+
 func (a *UUIDAppender) AppendAt(index int, v interface{}) error {
 	return a.AppendUUIDAt(index, v.(UUID))
 }
 
-func (a *UUIDAppender) AppendValuesAt(index int, vs []interface{}) error {
-	for i, v := range vs {
-		if err := a.AppendUUIDAt(index+i, v.(UUID)); err != nil {
-			return err
-		}
-	}
-	return nil
+func (a *UUIDAppender) AppendValuesAt(index int, vs interface{}) error {
+	return a.AppendUUIDValuesAt(index, vs.([]UUID))
 }
 
 func (a *UUIDAppender) AppendUUIDValuesAt(index int, vs []UUID) error {
@@ -75,6 +78,25 @@ func NewUUIDArrowArrayFromIterator(pool memory.Allocator, eit EncodingIterator) 
 		return nil, err
 	}
 	return builder.NewFixedSizeBinaryArray(), nil
+}
+
+func NewUUIDArrayFromIterator(eit EncodingIterator) (interface{}, error) {
+	arr := make([]UUID, eit.Cardinality())
+	uit := &UUIDIterator{Enc: eit}
+	i := 0
+	for uit.Next() {
+		if uit.IsNull() {
+			i++
+			continue
+		}
+		arr[i] = uit.UUIDValue()
+		i++
+	}
+	if uit.Err() != nil {
+		return nil, uit.Err()
+	}
+
+	return arr, nil
 }
 
 func AppendUUIDIteratorToArrow(eit EncodingIterator, builder array.Builder) error {

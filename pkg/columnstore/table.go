@@ -21,6 +21,10 @@ type Table struct {
 }
 
 func (t *Table) Insert(rows []Row) error {
+	if len(rows) == 0 {
+		return nil
+	}
+
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 

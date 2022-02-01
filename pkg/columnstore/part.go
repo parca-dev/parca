@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"math"
+	"reflect"
 	"sort"
 )
 
@@ -127,6 +128,9 @@ func (s SortableRows) Less(i, j int) bool {
 // Swap implements the sort.Interface interface
 func (s SortableRows) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
+// TODO comparison int values are well defined in Go, -1 for less than, 0 for
+// equal, 1 for greater than. We should use that instead of the custom return
+// values.
 func compare(a, b interface{}) Comparison {
 	switch a.(type) {
 	case string:
@@ -156,8 +160,18 @@ func compare(a, b interface{}) Comparison {
 		default:
 			return Equal
 		}
+	case UUID:
+		res := CompareUUID(a.(UUID), b.(UUID))
+		switch res {
+		case -1:
+			return LessThan
+		case 1:
+			return GreaterThan
+		default:
+			return Equal
+		}
 	default:
-		panic("unsupported compare")
+		panic("unsupported compare for type " + reflect.TypeOf(a).String())
 	}
 }
 
@@ -193,7 +207,8 @@ func (r Row) Less(than Row) bool {
 			case len(dci) > len(dcj):
 				return false
 			}
-
+		case []UUID:
+			return UUIDsLess(vi.([]UUID), vj.([]UUID))
 		default:
 			switch compare(vi, vj) {
 			case LessThan:
@@ -205,4 +220,28 @@ func (r Row) Less(than Row) bool {
 	}
 
 	return false
+}
+
+func UUIDsLess(uuids1, uuids2 []UUID) bool {
+	uuids1Len := len(uuids1)
+	uuids2Len := len(uuids2)
+
+	k := 0
+	for {
+		switch {
+		case k >= uuids1Len && k <= uuids2Len:
+			// This means the UUIDs are identical up until this point, but uuids1 is ending, and shorter slices are "smaller" than longer ones.
+			return true
+		case k <= uuids1Len && k >= uuids2Len:
+			// This means the UUIDs are identical up until this point, but uuids2 is ending, and shorter slices are "lower" than longer ones.
+			return false
+		case CompareUUID(uuids1[k], uuids2[k]) == -1:
+			return true
+		case CompareUUID(uuids1[k], uuids2[k]) == 1:
+			return false
+		default:
+			// This means the slices of UUIDs are identical up until this point. So advance to the next.
+			k++
+		}
+	}
 }

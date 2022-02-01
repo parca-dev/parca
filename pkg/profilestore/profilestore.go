@@ -50,7 +50,7 @@ func NewProfileStore(
 ) *ProfileStore {
 	s := columnstore.New()
 	db := s.DB("parca")
-	table := db.Table("stacktraces") // TODO we need to define a schema here
+	table := db.Table("stacktraces", parcaProfilingTableSchema()) // TODO we need to define a schema here
 
 	return &ProfileStore{
 		logger:    logger,
@@ -172,36 +172,6 @@ type SampleRow struct {
 func sortSampleRows(samples []*SampleRow) {
 	sort.Slice(samples, func(i, j int) bool {
 		// TODO need to take labels into account
-		return stacktraceLess(samples[i].Stacktrace, samples[j].Stacktrace)
+		return columnstore.UUIDsLess(samples[i].Stacktrace, samples[j].Stacktrace)
 	})
-}
-
-func stacktraceLess(stacktrace1, stacktrace2 []columnstore.UUID) bool {
-	stacktrace1Len := len(stacktrace1)
-	stacktrace2Len := len(stacktrace2)
-
-	k := 0
-	for {
-		switch {
-		case k >= stacktrace1Len && k <= stacktrace2Len:
-			// This means the stacktraces are identical up until this point, but stacktrace1 is ending, and shorter stactraces are "smaller" than longer ones.
-			return true
-		case k <= stacktrace1Len && k >= stacktrace2Len:
-			// This means the stacktraces are identical up until this point, but stacktrace2 is ending, and shorter stactraces are "lower" than longer ones.
-			return false
-		case uuidCompare(stacktrace1[k], stacktrace2[k]) == -1:
-			return true
-		case uuidCompare(stacktrace1[k], stacktrace2[k]) == 1:
-			return false
-		default:
-			// This means the stack traces are identical up until this point. So advance to the next.
-			k++
-		}
-	}
-}
-
-func uuidCompare(a, b columnstore.UUID) int {
-	ab := [16]byte(a)
-	bb := [16]byte(b)
-	return bytes.Compare(ab[:], bb[:])
 }

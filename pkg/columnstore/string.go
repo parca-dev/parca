@@ -13,13 +13,8 @@ func (a *StringAppender) AppendAt(index int, v interface{}) error {
 	return a.AppendStringAt(index, v.(string))
 }
 
-func (a *StringAppender) AppendValuesAt(index int, vs []interface{}) error {
-	for i, v := range vs {
-		if err := a.AppendStringAt(index+i, v.(string)); err != nil {
-			return err
-		}
-	}
-	return nil
+func (a *StringAppender) AppendValuesAt(index int, vs interface{}) error {
+	return a.AppendStringValuesAt(index, vs.([]string))
 }
 
 func (a *StringAppender) AppendStringValuesAt(index int, vs []string) error {
@@ -68,6 +63,25 @@ func NewStringArrowArrayFromIterator(pool memory.Allocator, eit EncodingIterator
 		return nil, err
 	}
 	return builder.NewStringArray(), nil
+}
+
+func NewStringArrayFromIterator(eit EncodingIterator) (interface{}, error) {
+	arr := make([]string, eit.Cardinality())
+	sit := &StringIterator{Enc: eit}
+	i := 0
+	for sit.Next() {
+		if sit.IsNull() {
+			i++
+			continue
+		}
+		arr[i] = sit.StringValue()
+		i++
+	}
+	if sit.Err() != nil {
+		return nil, sit.Err()
+	}
+
+	return arr, nil
 }
 
 func AppendStringIteratorToArrow(eit EncodingIterator, builder array.Builder) error {

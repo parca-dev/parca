@@ -13,14 +13,8 @@ func (a *Int64Appender) AppendAt(index int, v interface{}) error {
 	return a.AppendInt64At(index, v.(int64))
 }
 
-func (a *Int64Appender) AppendValuesAt(index int, vs []interface{}) error {
-	for i, v := range vs {
-		if err := a.AppendInt64At(index+i, v.(int64)); err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (a *Int64Appender) AppendValuesAt(index int, vs interface{}) error {
+	return a.AppendInt64ValuesAt(index, vs.([]int64))
 }
 
 func (a *Int64Appender) AppendInt64ValuesAt(index int, vs []int64) error {
@@ -70,6 +64,25 @@ func NewInt64ArrowArrayFromIterator(pool memory.Allocator, eit EncodingIterator)
 		return nil, err
 	}
 	return builder.NewInt64Array(), nil
+}
+
+func NewInt64ArrayFromIterator(eit EncodingIterator) (interface{}, error) {
+	arr := make([]int64, eit.Cardinality())
+	iit := &Int64Iterator{Enc: eit}
+	i := 0
+	for iit.Next() {
+		if iit.IsNull() {
+			i++
+			continue
+		}
+		arr[i] = iit.Int64Value()
+		i++
+	}
+	if iit.Err() != nil {
+		return nil, iit.Err()
+	}
+
+	return arr, nil
 }
 
 func AppendInt64IteratorToArrow(eit EncodingIterator, builder array.Builder) error {

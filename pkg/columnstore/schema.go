@@ -13,6 +13,7 @@ type DataType interface {
 	NewAppender(enc Encoding) Appender
 	NewIterator(it EncodingIterator) Iterator
 	NewArrowArrayFromIterator(memory.Allocator, EncodingIterator) (array.Interface, error)
+	NewArrayFromIterator(EncodingIterator) (interface{}, error)
 	AppendIteratorToArrow(EncodingIterator, array.Builder) error
 	ArrowDataType() arrow.DataType
 }
@@ -72,6 +73,19 @@ func (t PrimitiveType) NewArrowArrayFromIterator(pool memory.Allocator, it Encod
 		return NewInt64ArrowArrayFromIterator(pool, it)
 	case UUIDType:
 		return NewUUIDArrowArrayFromIterator(pool, it)
+	default:
+		panic("unsupported data type")
+	}
+}
+
+func (t PrimitiveType) NewArrayFromIterator(it EncodingIterator) (interface{}, error) {
+	switch t {
+	case StringType:
+		return NewStringArrayFromIterator(it)
+	case Int64Type:
+		return NewInt64ArrayFromIterator(it)
+	case UUIDType:
+		return NewUUIDArrayFromIterator(it)
 	default:
 		panic("unsupported data type")
 	}

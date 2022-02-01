@@ -28,6 +28,7 @@ func (t *ListType) NewAppender(enc Encoding) Appender {
 func (t *ListType) NewIterator(it EncodingIterator) Iterator {
 	return &ListIterator{
 		Enc: it,
+		t:   t,
 	}
 }
 
@@ -43,18 +44,16 @@ type ListAppender struct {
 func (a *ListAppender) AppendAt(index int, v interface{}) error {
 	enc := NewPlain()
 	app := a.t.elementType.NewAppender(enc)
-	vs := v.([]interface{})
-	for i, v := range vs {
-		if err := app.AppendAt(i, v); err != nil {
-			return err
-		}
+	if err := app.AppendValuesAt(0, v); err != nil {
+		return err
 	}
 
 	return a.enc.AppendAt(index, enc)
 }
 
-func (a *ListAppender) AppendValuesAt(index int, vs []interface{}) error {
-	for i, v := range vs {
+func (a *ListAppender) AppendValuesAt(index int, vs interface{}) error {
+	values := vs.([]interface{})
+	for i, v := range values {
 		if err := a.AppendAt(index+i, v); err != nil {
 			return err
 		}
@@ -65,19 +64,43 @@ func (a *ListAppender) AppendValuesAt(index int, vs []interface{}) error {
 }
 
 type ListIterator struct {
-	Enc EncodingIterator
+	Enc       EncodingIterator
+	t         *ListType
+	err       error
+	cur       interface{}
+	curIsNull bool
 }
 
 func (i *ListIterator) Next() bool {
-	return i.Enc.Next()
+	next := i.Enc.Next()
+	if !next {
+		return false
+	}
+
+	if i.IsNull() {
+		i.curIsNull = true
+		return true
+	}
+
+	i.curIsNull = false
+	enc := i.Enc.Value().(*Plain)
+	it := enc.NonSparseIterator()
+	v, err := i.t.elementType.NewArrayFromIterator(it)
+	if err != nil {
+		i.err = err
+		return false
+	}
+
+	i.cur = v
+	return true
 }
 
 func (i *ListIterator) IsNull() bool {
-	return i.Enc.IsNull()
+	return i.curIsNull
 }
 
 func (i *ListIterator) Value() interface{} {
-	return i.Enc.Value()
+	return i.cur
 }
 
 func (i *ListIterator) Err() error {
@@ -94,6 +117,27 @@ func (t *ListType) NewArrowArrayFromIterator(pool memory.Allocator, eit Encoding
 	}
 
 	return builder.NewListArray(), nil
+}
+
+func (t *ListType) NewArrayFromIterator(eit EncodingIterator) (interface{}, error) {
+	arr := make([]interface{}, eit.Cardinality())
+	it := &ListIterator{Enc: eit}
+	i := 0
+	for it.Next() {
+		if it.IsNull() {
+			arr[i] = nil
+			i++
+			continue
+		}
+
+		arr[i] = it.Value()
+		i++
+	}
+	if it.Err() != nil {
+		return nil, it.Err()
+	}
+
+	return arr, nil
 }
 
 func (t *ListType) AppendIteratorToArrow(eit EncodingIterator, builder array.Builder) error {

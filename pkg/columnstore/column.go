@@ -6,7 +6,7 @@ import (
 
 type Appender interface {
 	AppendAt(index int, value interface{}) error
-	AppendValuesAt(index int, values []interface{}) error
+	AppendValuesAt(index int, values interface{}) error
 }
 
 type Iterator interface {
@@ -92,9 +92,10 @@ func (a *DynamicAppender) AppendAt(index int, v interface{}) error {
 	return a.DynamicAppendAt(index, v.([]DynamicColumnValue))
 }
 
-func (a *DynamicAppender) AppendValuesAt(index int, vs []interface{}) error {
-	for i, v := range vs {
-		if err := a.DynamicAppendAt(index+i, v.([]DynamicColumnValue)); err != nil {
+func (a *DynamicAppender) AppendValuesAt(index int, vs interface{}) error {
+	dynamicValues := vs.([][]DynamicColumnValue)
+	for i, v := range dynamicValues {
+		if err := a.DynamicAppendAt(index+i, v); err != nil {
 			return err
 		}
 	}
