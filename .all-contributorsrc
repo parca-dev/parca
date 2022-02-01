@@ -119,6 +119,15 @@
         "doc",
         "infra"
       ]
+    },
+    {
+      "login": "cbrgm",
+      "name": "Christian Bargmann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24737434?v=4",
+      "profile": "https://cbrgm.net/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
