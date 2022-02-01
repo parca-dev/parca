@@ -60,6 +60,6 @@ func parcaProfilingTableSchema() columnstore.Schema {
 			Type:     columnstore.Int64Type,
 			Encoding: columnstore.PlainEncoding,
 		}},
-		GranuleSize: 2 ^ 13, // 8192
+		GranuleSize: 8192, // 2^13
 	}
 }

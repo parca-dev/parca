@@ -7,12 +7,15 @@ import (
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/google/btree"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var ErrNoSchema = fmt.Errorf("no schema")
 
 type Table struct {
-	db *DB
+	db      *DB
+	metrics *tableMetrics
 
 	schema Schema
 
@@ -20,8 +23,56 @@ type Table struct {
 	index *btree.BTree
 }
 
+type tableMetrics struct {
+	granulesCreated  prometheus.Counter
+	rowsInserted     prometheus.Counter
+	zeroRowsInserted prometheus.Counter
+	rowInsertSize    prometheus.Histogram
+}
+
+func newTable(
+	db *DB,
+	name string,
+	schema Schema,
+	reg prometheus.Registerer,
+) *Table {
+	reg = prometheus.WrapRegistererWith(prometheus.Labels{"table": name}, reg)
+
+	return &Table{
+		db:     db,
+		schema: schema,
+		mtx:    &sync.RWMutex{},
+		index:  btree.New(2), // TODO make the degree a setting
+		metrics: &tableMetrics{
+			granulesCreated: promauto.With(reg).NewCounter(prometheus.CounterOpts{
+				Name: "granules_created",
+				Help: "Number of granules created.",
+			}),
+			rowsInserted: promauto.With(reg).NewCounter(prometheus.CounterOpts{
+				Name: "rows_inserted",
+				Help: "Number of rows inserted into table.",
+			}),
+			zeroRowsInserted: promauto.With(reg).NewCounter(prometheus.CounterOpts{
+				Name: "zero_rows_inserted",
+				Help: "Number of times it was attempted to insert zero rows into the table.",
+			}),
+			rowInsertSize: promauto.With(reg).NewHistogram(prometheus.HistogramOpts{
+				Name:    "row_insert_size",
+				Help:    "Size of batch inserts into table.",
+				Buckets: prometheus.ExponentialBuckets(1, 2, 10),
+			}),
+		},
+	}
+}
+
 func (t *Table) Insert(rows []Row) error {
+	defer func() {
+		t.metrics.rowsInserted.Add(float64(len(rows)))
+		t.metrics.rowInsertSize.Observe(float64(len(rows)))
+	}()
+
 	if len(rows) == 0 {
+		t.metrics.zeroRowsInserted.Add(float64(len(rows)))
 		return nil
 	}
 
@@ -35,7 +86,7 @@ func (t *Table) Insert(rows []Row) error {
 			return err
 		}
 
-		g := NewGranule(p)
+		g := NewGranule(t.metrics.granulesCreated, p)
 		t.index.ReplaceOrInsert(g)
 		return nil
 	}

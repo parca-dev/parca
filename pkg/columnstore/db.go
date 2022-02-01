@@ -3,18 +3,24 @@ package columnstore
 import (
 	"sync"
 
-	"github.com/google/btree"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type ColumnStore struct {
 	mtx *sync.RWMutex
 	dbs map[string]*DB
+	reg prometheus.Registerer
 }
 
-func New() *ColumnStore {
+func New(reg prometheus.Registerer) *ColumnStore {
+	if reg == nil {
+		reg = prometheus.NewRegistry()
+	}
+
 	return &ColumnStore{
 		mtx: &sync.RWMutex{},
 		dbs: map[string]*DB{},
+		reg: reg,
 	}
 }
 
@@ -23,6 +29,7 @@ type DB struct {
 
 	mtx    *sync.RWMutex
 	tables map[string]*Table
+	reg    prometheus.Registerer
 }
 
 func (s *ColumnStore) DB(name string) *DB {
@@ -47,6 +54,7 @@ func (s *ColumnStore) DB(name string) *DB {
 		name:   name,
 		mtx:    &sync.RWMutex{},
 		tables: map[string]*Table{},
+		reg:    prometheus.WrapRegistererWith(prometheus.Labels{"db": name}, s.reg),
 	}
 
 	s.dbs[name] = db
@@ -71,13 +79,7 @@ func (db *DB) Table(name string, schema Schema) *Table {
 		return table
 	}
 
-	table = &Table{
-		db:     db,
-		schema: schema,
-		mtx:    &sync.RWMutex{},
-		index:  btree.New(2), // TODO make the degree a setting
-	}
-
+	table = newTable(db, name, schema, db.reg)
 	db.tables[name] = table
 	return table
 }

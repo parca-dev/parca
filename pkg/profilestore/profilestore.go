@@ -23,6 +23,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/parca-dev/parca/pkg/columnstore"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
@@ -44,11 +45,12 @@ type ProfileStore struct {
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileStore{}
 
 func NewProfileStore(
+	reg prometheus.Registerer,
 	logger log.Logger,
 	tracer trace.Tracer,
 	metaStore metastore.ProfileMetaStore,
 ) *ProfileStore {
-	s := columnstore.New()
+	s := columnstore.New(reg)
 	db := s.DB("parca")
 	table := db.Table("stacktraces", parcaProfilingTableSchema()) // TODO we need to define a schema here
 

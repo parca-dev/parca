@@ -7,6 +7,7 @@ import (
 	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/google/btree"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Granule struct {
@@ -15,11 +16,14 @@ type Granule struct {
 	// This is used for quick insertion into the btree, without requiring an iterator
 	least Row
 	parts []*Part
+
+	granulesCreated prometheus.Counter
 }
 
-func NewGranule(parts ...*Part) *Granule {
+func NewGranule(granulesCreated prometheus.Counter, parts ...*Part) *Granule {
 	g := &Granule{
-		parts: parts,
+		granulesCreated: granulesCreated,
+		parts:           parts,
 	}
 
 	// Find the least column
@@ -38,6 +42,7 @@ func NewGranule(parts ...*Part) *Granule {
 		}
 	}
 
+	granulesCreated.Inc()
 	return g
 }
 
@@ -85,7 +90,7 @@ func (g *Granule) Split(n int) ([]*Granule, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
 			}
-			granules = append(granules, NewGranule(p))
+			granules = append(granules, NewGranule(g.granulesCreated, p))
 			rows = make([]Row, 0, n)
 		}
 	}
@@ -98,7 +103,7 @@ func (g *Granule) Split(n int) ([]*Granule, error) {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
 			}
 		}
-		granules = append(granules, NewGranule(p))
+		granules = append(granules, NewGranule(g.granulesCreated, p))
 	}
 
 	return granules, nil
