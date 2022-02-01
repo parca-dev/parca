@@ -95,6 +95,16 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "yeya24",
+      "name": "Ben Ye",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25150124?v=4",
+      "profile": "https://yeya24.github.io/",
+      "contributions": [
+        "code",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 5,
