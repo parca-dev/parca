@@ -29,6 +29,16 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "metalmatze",
+      "name": "Matthias Loibl",
+      "avatar_url": "https://avatars.githubusercontent.com/u/872251?v=4",
+      "profile": "https://matthiasloibl.com/",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 5,
