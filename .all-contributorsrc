@@ -68,6 +68,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "zecke",
+      "name": "Holger Freyther",
+      "avatar_url": "https://avatars.githubusercontent.com/u/390178?v=4",
+      "profile": "http://moiji-mobile.com/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
