@@ -29,7 +29,7 @@ func basicTable(t *testing.T, granuleSize int) *Table {
 		GranuleSize: granuleSize,
 	}
 
-	c := New()
+	c := New(nil)
 	db := c.DB("test")
 	table := db.Table("test", schema)
 
