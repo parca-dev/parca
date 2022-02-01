@@ -138,6 +138,16 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "derekparker",
+      "name": "Derek Parker",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1314079?v=4",
+      "profile": "https://derkthedaring.info/",
+      "contributions": [
+        "code",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 5,
