@@ -158,6 +158,16 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "monicawoj",
+      "name": "Monica Wojciechowska",
+      "avatar_url": "https://avatars.githubusercontent.com/u/14791956?v=4",
+      "profile": "http://thepolishamerican.com/",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 5,
