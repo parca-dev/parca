@@ -39,6 +39,16 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "kakkoyun",
+      "name": "Kemal Akkoyun",
+      "avatar_url": "https://avatars.githubusercontent.com/u/536449?v=4",
+      "profile": "https://kakkoyun.me/",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 5,
