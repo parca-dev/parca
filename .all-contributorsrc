@@ -59,6 +59,15 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "jessicalins",
+      "name": "Jéssica Lins ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6627121?v=4",
+      "profile": "https://github.com/jessicalins",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 5,
