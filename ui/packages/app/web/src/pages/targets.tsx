@@ -50,8 +50,6 @@ const TargetsPage = (_: TargetsPageProps): JSX.Element => {
     return {[key]: value.targetsList};
   };
 
-  // TODO remove the mock data below
-  // const targetsMap = [['first_list', {targetsList: [{ health: 1}, {health: 2}, {health: 3}]}], ['second_list', {targetsList: [{ health: 4}, {health: 5}, {health: 6}]}]]
   const {targetsMap} = targetsResponse || {};
   const targetNamespaces = targetsMap?.map(item =>
     getKeyValuePairFromArray(item[0] as string, item[1] as {targetsList})
@@ -66,8 +64,8 @@ const TargetsPage = (_: TargetsPageProps): JSX.Element => {
               const name = Object.keys(namespace)[0];
               const targets = namespace[name];
               return (
-                <div key={name} className="p-10">
-                  <div>Name: {name}</div>
+                <div key={name} className="p-2 border-b-2">
+                  <div>{name}</div>
                   <TargetsTable targets={targets} />
                 </div>
               );

@@ -6,11 +6,11 @@ import LastScrapeCell from './LastScrapeCell';
 import {getHealthStatus} from './utils';
 
 enum TargetsTableHeader {
-  Url = 'URL',
-  HealthStatus = 'Health Status',
-  Labels = 'Labels',
-  LastScrape = 'Last Scrape',
-  LastError = 'Last Error',
+  url = 'URL',
+  health = 'Health Status',
+  labels = 'Labels',
+  lastScrape = 'Last Scrape',
+  lastError = 'Last Error',
 }
 
 const getRowContentByHeader = ({
@@ -23,7 +23,7 @@ const getRowContentByHeader = ({
   key: string;
 }) => {
   switch (header) {
-    case TargetsTableHeader.Url: {
+    case TargetsTableHeader.url: {
       const {url} = target;
       return (
         <td key={key} className="px-6 py-4 whitespace-nowrap">
@@ -31,14 +31,14 @@ const getRowContentByHeader = ({
         </td>
       );
     }
-    case TargetsTableHeader.Labels: {
+    case TargetsTableHeader.labels: {
       const {
         labels: {labelsList: labels},
         discoveredLabels: {labelsList: discoveredLabels},
       } = target;
       return <LabelsCell labels={labels} discoveredLabels={discoveredLabels} key={key} />;
     }
-    case TargetsTableHeader.LastError: {
+    case TargetsTableHeader.lastError: {
       const {lastError} = target;
       return (
         <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -46,13 +46,13 @@ const getRowContentByHeader = ({
         </td>
       );
     }
-    case TargetsTableHeader.LastScrape: {
+    case TargetsTableHeader.lastScrape: {
       const {lastScrape, lastScrapeDuration} = target;
       return (
         <LastScrapeCell key={key} lastScrape={lastScrape} lastScrapeDuration={lastScrapeDuration} />
       );
     }
-    case TargetsTableHeader.HealthStatus: {
+    case TargetsTableHeader.health: {
       const {health} = target;
       const {label, colorVariant} = getHealthStatus(health);
       return (
@@ -68,7 +68,7 @@ const getRowContentByHeader = ({
 };
 
 const TargetsTable = ({targets}: {targets: TargetsResponse.AsObject[]}) => {
-  const headers = Object.values(TargetsTableHeader) as Array<keyof typeof TargetsTableHeader>;
+  const headers = Object.keys(TargetsTableHeader) as Array<keyof typeof TargetsTableHeader>;
 
   return (
     <table className="min-w-full divide-y divide-gray-200">
@@ -80,19 +80,18 @@ const TargetsTable = ({targets}: {targets: TargetsResponse.AsObject[]}) => {
               scope="col"
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              {header}
+              {TargetsTableHeader[header]}
             </th>
           ))}
         </tr>
       </thead>
       <tbody className="bg-white divide-y divide-gray-200">
         {targets.map((target: TargetsResponse.AsObject) => {
-          console.log(target);
           return (
             <tr key={target['url']}>
               {headers.map((header: string) => {
                 const key = `table-cell-${header}-${target['url']}`;
-                return getRowContentByHeader({header, target, key});
+                return getRowContentByHeader({header: TargetsTableHeader[header], target, key});
               })}
             </tr>
           );
