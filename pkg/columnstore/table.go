@@ -18,9 +18,9 @@ type Table struct {
 	metrics *tableMetrics
 
 	schema Schema
+	index  *btree.BTree
 
-	mtx   *sync.RWMutex
-	index *btree.BTree
+	sync.RWMutex
 }
 
 type tableMetrics struct {
@@ -42,7 +42,6 @@ func newTable(
 	t := &Table{
 		db:     db,
 		schema: schema,
-		mtx:    &sync.RWMutex{},
 		index:  btree.New(2), // TODO make the degree a setting
 		metrics: &tableMetrics{
 			granulesCreated: promauto.With(reg).NewCounter(prometheus.CounterOpts{
@@ -73,10 +72,13 @@ func newTable(
 		Name: "index_size",
 		Help: "Number of granules in the table index currently.",
 	}, func() float64 {
-		t.mtx.RLock()
-		defer t.mtx.RUnlock()
+		t.RLock()
+		defer t.RUnlock()
 		return float64(t.index.Len())
 	})
+
+	g := NewGranule(t.metrics.granulesCreated, []*Part{}...)
+	t.index.ReplaceOrInsert(g)
 
 	return t
 }
@@ -92,20 +94,8 @@ func (t *Table) Insert(rows []Row) error {
 		return nil
 	}
 
-	t.mtx.Lock()
-	defer t.mtx.Unlock()
-
-	// Special case: if there are no granules, create the very first one and immediately insert the first part.
-	if t.index.Len() == 0 {
-		p, err := NewPart(t.schema, rows)
-		if err != nil {
-			return err
-		}
-
-		g := NewGranule(t.metrics.granulesCreated, p)
-		t.index.ReplaceOrInsert(g)
-		return nil
-	}
+	t.RLock()
+	defer t.RUnlock()
 
 	rowsToInsertPerGranule := t.splitRowsByGranule(rows)
 	for granule, rows := range rowsToInsertPerGranule {
@@ -116,38 +106,52 @@ func (t *Table) Insert(rows []Row) error {
 
 		granule.AddPart(p)
 		if granule.Cardinality() >= t.schema.GranuleSize {
-
-			// TODO: splits should be performed in the background. Do it now for simplicity
-
-			newpart, err := Merge(granule.parts...) // need to merge all parts in a granule before splitting
-			if err != nil {
-				return err
-			}
-			granule.parts = []*Part{newpart}
-
-			granules, err := granule.Split(t.schema.GranuleSize / 2) // TODO magic numbers
-			t.metrics.granulesSplits.Inc()
-			if err != nil {
-				return fmt.Errorf("granule split failed after AddPart: %w", err)
-			}
-			deleted := t.index.Delete(granule)
-			if deleted == nil {
-				return fmt.Errorf("failed to delete granule during split")
-			}
-			for _, g := range granules {
-				t.index.ReplaceOrInsert(g)
-			}
+			go t.splitGranule(granule) // TODO there may be a better way to schedule this
 		}
 	}
 
 	return nil
 }
 
+func (t *Table) splitGranule(granule *Granule) {
+	t.Lock()
+	defer t.Unlock()
+	granule.Lock()
+	defer granule.Unlock()
+
+	// Recheck to ensure the granule still needs to be split
+	if granule.pruned || granule.cardinality() < t.schema.GranuleSize {
+		return
+	}
+
+	newpart, err := Merge(granule.parts...) // need to merge all parts in a granule before splitting
+	if err != nil {
+		panic("failed to merge: TODO log this")
+	}
+	granule.parts = []*Part{newpart}
+
+	granules, err := granule.split(t.schema.GranuleSize / 2) // TODO magic numbers
+	if err != nil {
+		panic("granule split failed after AddPart: TODO log this")
+	}
+
+	deleted := t.index.Delete(granule)
+	if deleted == nil {
+		panic("failed to delete granule during split: TODO log this")
+	}
+
+	// mark this granule as having been pruned
+	granule.pruned = true
+
+	for _, g := range granules {
+		t.index.ReplaceOrInsert(g)
+	}
+}
+
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
 func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) bool) error {
-	t.mtx.RLock()
-	defer t.mtx.RUnlock()
-
+	t.RLock()
+	defer t.RUnlock()
 	var err error
 	t.granuleIterator(func(g *Granule) bool {
 		var r arrow.Record
@@ -183,6 +187,8 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 	var prev *Granule
 	t.index.Ascend(func(i btree.Item) bool {
 		g := i.(*Granule)
+		g.RLock()
+		defer g.RUnlock()
 
 		for ; j < len(rows); j++ {
 			if rows[j].Less(g.least) {
