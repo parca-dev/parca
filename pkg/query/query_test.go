@@ -167,7 +167,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 		require.NoError(t, err)
 
 		// Overwrite the profile's timestamp to be within the last 5min.
-		p.TimeNanos = time.Now().UnixNano()
+		p.TimeNanos = time.Now().UTC().UnixNano()
 
 		prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), s, p, 0)
 		require.NoError(t, err)
@@ -175,9 +175,9 @@ func Test_QueryRange_Limited(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// Query last 5 minutes
-	end := time.Now()
-	start := end.Add(-5 * time.Minute)
+	// Query last 15 minutes
+	end := time.Now().UTC()
+	start := end.Add(-15 * time.Minute)
 
 	limit := rand.Intn(numSeries)
 	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{

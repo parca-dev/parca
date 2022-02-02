@@ -70,7 +70,7 @@ TODO:
 
 # Making a PR
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change. If you are not entirely sure about this, you can discuss this on the [PolarSignals Discord](https://discord.gg/knw3u5X9bs) server as well.
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change. If you are not entirely sure about this, you can discuss this on the [Parca Discord](https://discord.gg/ZgUpYgpzXy) server as well.
 
 Please make sure to update tests as appropriate.
 

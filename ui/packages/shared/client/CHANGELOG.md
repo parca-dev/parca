@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.8.0](https://github.com/parca-dev/parca/compare/ui-v0.7.13...ui-v0.8.0) (2022-01-31)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
 ## 0.7.11 (2022-01-20)
 
 **Note:** Version bump only for package @parca/client

@@ -3,7 +3,7 @@ module github.com/parca-dev/parca
 go 1.16
 
 require (
-	github.com/alecthomas/kong v0.3.0
+	github.com/alecthomas/kong v0.4.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -28,7 +28,7 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20211126204342-3ad08eb09c01
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/oklog/run v1.1.0
-	github.com/prometheus/client_golang v1.12.0
+	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v1.8.2-0.20211217191541-41f1a8125e66
 	github.com/stretchr/testify v1.7.0
@@ -42,7 +42,7 @@ require (
 	golang.org/x/net v0.0.0-20220105145211-5b0dc2dfae98
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5
-	google.golang.org/grpc v1.43.0
+	google.golang.org/grpc v1.44.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/ini.v1 v1.66.2 // indirect
