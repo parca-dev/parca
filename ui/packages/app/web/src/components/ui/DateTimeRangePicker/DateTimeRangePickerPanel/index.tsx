@@ -12,18 +12,18 @@ const DateTimeRangePickerPanel = ({range, onChange = () => null}: DateTimeRangeP
   return (
     <div className="w-[300px] p-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white">
       <Tab
-        tabs={['Absolute', 'Relative']}
+        tabs={['Relative', 'Absolute']}
         panels={[
-          <AbsoluteDatePicker
-            range={range}
-            onChange={(from, to) => onChange(from as DateUnion, to as DateUnion)}
-          />,
           <RelativeDatePicker
             range={range}
             onChange={(from, to) => onChange(from as DateUnion, to as DateUnion)}
           />,
+          <AbsoluteDatePicker
+            range={range}
+            onChange={(from, to) => onChange(from as DateUnion, to as DateUnion)}
+          />,
         ]}
-        defaultTabIndex={range.from.isRelative() ? 1 : 0}
+        defaultTabIndex={range.from.isRelative() ? 0 : 1}
       />
     </div>
   );

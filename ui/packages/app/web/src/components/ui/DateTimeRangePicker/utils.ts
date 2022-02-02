@@ -50,7 +50,12 @@ export class DateTimeRange {
       const from = this.from as RelativeDate;
       return `Last ${from.value} ${from.unit}${from.value > 1 ? 's' : ''}`;
     }
-    return `${formatDateStringForUI(this.from)} → ${formatDateStringForUI(this.to)}`;
+    const formattedFrom = formatDateStringForUI(this.from);
+    const formattedTo = formatDateStringForUI(this.to).replace(
+      `${formattedFrom.split(',')[0]},`,
+      ''
+    );
+    return `${formattedFrom} → ${formattedTo}`;
   }
 
   getDateForPosition(position: POSITION_TYPE) {
@@ -77,7 +82,14 @@ export const formatDateStringForUI: (dateString: DateUnion) => string = dateStri
     }
     return `${value} ${unit}${value > 1 ? 's' : ''} ago`;
   }
-  return dateString.value.toLocaleString();
+  return (dateString.value as Date).toLocaleDateString('en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+  });
 };
 
 export const getDateHoursAgo = (hours = 1): Date => {

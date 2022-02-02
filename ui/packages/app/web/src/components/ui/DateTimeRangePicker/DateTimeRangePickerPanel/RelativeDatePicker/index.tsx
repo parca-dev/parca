@@ -1,9 +1,8 @@
 import Select, {contructItemsFromArray} from 'components/ui/Select';
 import {useState} from 'react';
 import Input from 'components/ui/Input';
-import {DateTimeRange, POSITION_TYPE, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
+import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 import {capitalizeFirstLetter} from 'libs/utils';
-import ApplyButton from '../ApplyButton';
 import Button from 'components/ui/Button';
 
 const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
@@ -70,6 +69,7 @@ const RelativeDatePicker = ({range, onChange = () => null}: RelativeDatePickerPr
                 onChange(new RelativeDate(unit, value), NOW);
               }}
               color="link"
+              key={title}
             >
               {title}
             </Button>
@@ -96,13 +96,13 @@ const RelativeDatePicker = ({range, onChange = () => null}: RelativeDatePickerPr
           />
         </div>
         <div className="w-32 mx-auto pb-2">
-          <ApplyButton
+          <Button
             onClick={() => {
               onChange(new RelativeDate(unit, value), NOW);
             }}
           >
             Apply
-          </ApplyButton>
+          </Button>
         </div>
       </div>
       <p className="text-gray-500 text-xs italic text-center mx-4">
