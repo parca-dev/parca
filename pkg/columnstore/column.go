@@ -16,17 +16,28 @@ type Iterator interface {
 	Err() error
 }
 
-type Column interface {
-	Appender() (Appender, error)
+type Iterable interface {
 	Iterator(maxIterations int) Iterator
 }
 
-func NewColumn(def ColumnDefinition) Column {
+func NewImmutableColumn(def ColumnDefinition, appendFunc func(app Appender) error) (Iterable, error) {
 	if def.Dynamic {
-		return NewDynamicColumn(def)
+		c := NewDynamicColumn(def)
+		app, err := c.Appender()
+		if err != nil {
+			return nil, err
+		}
+		err = appendFunc(app)
+		return c, err
 	}
 
-	return NewStaticColumn(def)
+	c := NewStaticColumn(def)
+	app, err := c.Appender()
+	if err != nil {
+		return nil, err
+	}
+	err = appendFunc(app)
+	return c, err
 }
 
 type StaticColumn struct {

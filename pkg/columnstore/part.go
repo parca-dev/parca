@@ -6,22 +6,13 @@ import (
 	"sort"
 )
 
-// Comparison is a result from the compare function
-type Comparison int
-
-const (
-	LessThan    Comparison = iota
-	GreaterThan Comparison = iota
-	Equal       Comparison = iota
-)
-
 type Row struct {
 	Values []interface{}
 }
 
 type Part struct {
 	schema      Schema
-	columns     []Column
+	columns     []Iterable
 	Cardinality int
 }
 
@@ -30,20 +21,21 @@ func NewPart(schema Schema, rows []Row) (*Part, error) {
 		schema:      schema,
 		Cardinality: len(rows),
 	}
-	p.columns = make([]Column, len(schema.Columns))
+	p.columns = make([]Iterable, len(schema.Columns))
 
+	var err error
 	for i, c := range schema.Columns {
-		p.columns[i] = NewColumn(c)
-		app, err := p.columns[i].Appender()
+		p.columns[i], err = NewImmutableColumn(c, func(app Appender) error {
+			for j := range rows {
+				err := app.AppendAt(j, rows[j].Values[i])
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 		if err != nil {
 			return nil, err
-		}
-
-		for j := range rows {
-			err := app.AppendAt(j, rows[j].Values[i])
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 
@@ -131,45 +123,37 @@ func (s SortableRows) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 // TODO comparison int values are well defined in Go, -1 for less than, 0 for
 // equal, 1 for greater than. We should use that instead of the custom return
 // values.
-func compare(a, b interface{}) Comparison {
+func compare(a, b interface{}) int {
 	switch a.(type) {
 	case string:
 		switch {
 		case a.(string) < b.(string):
-			return LessThan
+			return -1
 		case a.(string) > b.(string):
-			return GreaterThan
+			return 1
 		default:
-			return Equal
+			return 0
 		}
 	case uint64:
 		switch {
 		case a.(uint64) < b.(uint64):
-			return LessThan
+			return -1
 		case a.(uint64) > b.(uint64):
-			return GreaterThan
+			return 1
 		default:
-			return Equal
+			return 0
 		}
 	case int64:
 		switch {
 		case a.(int64) < b.(int64):
-			return LessThan
+			return -1
 		case a.(int64) > b.(int64):
-			return GreaterThan
+			return 1
 		default:
-			return Equal
+			return 0
 		}
 	case UUID:
-		res := CompareUUID(a.(UUID), b.(UUID))
-		switch res {
-		case -1:
-			return LessThan
-		case 1:
-			return GreaterThan
-		default:
-			return Equal
-		}
+		return CompareUUID(a.(UUID), b.(UUID))
 	default:
 		panic("unsupported compare for type " + reflect.TypeOf(a).String())
 	}
@@ -193,9 +177,9 @@ func (r Row) Less(than Row) bool {
 					return true
 				case dci[l].Name < dcj[l].Name:
 					return false
-				case compare(dci[l].Value, dcj[l].Value) == LessThan:
+				case compare(dci[l].Value, dcj[l].Value) == -1:
 					return true
-				case compare(dci[l].Value, dcj[l].Value) == GreaterThan:
+				case compare(dci[l].Value, dcj[l].Value) == 1:
 					return false
 				}
 			}
@@ -211,9 +195,9 @@ func (r Row) Less(than Row) bool {
 			return UUIDsLess(vi.([]UUID), vj.([]UUID))
 		default:
 			switch compare(vi, vj) {
-			case LessThan:
+			case -1:
 				return true
-			case GreaterThan:
+			case 1:
 				return false
 			}
 		}
