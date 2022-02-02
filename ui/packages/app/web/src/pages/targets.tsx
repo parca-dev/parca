@@ -7,7 +7,7 @@ import {
   ServiceError,
 } from '@parca/client';
 import {NextRouter, withRouter} from 'next/router';
-import TargetsTable from '../components/TargetsTable';
+import TargetsTable from '../components/Targets/TargetsTable';
 
 const apiEndpoint = process.env.NEXT_PUBLIC_API_ENDPOINT;
 
@@ -53,7 +53,7 @@ const TargetsPage = (_: TargetsPageProps): JSX.Element => {
   // TODO remove the mock data below
   // const targetsMap = [['first_list', {targetsList: [{ health: 1}, {health: 2}, {health: 3}]}], ['second_list', {targetsList: [{ health: 4}, {health: 5}, {health: 6}]}]]
   const {targetsMap} = targetsResponse || {};
-  const targetsLists = targetsMap?.map(item =>
+  const targetNamespaces = targetsMap?.map(item =>
     getKeyValuePairFromArray(item[0] as string, item[1] as {targetsList})
   );
 
@@ -62,13 +62,13 @@ const TargetsPage = (_: TargetsPageProps): JSX.Element => {
       <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
           <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            {targetsLists?.map(target => {
-              const targetName = Object.keys(target)[0];
-              const targetEndpointsList = target[targetName];
+            {targetNamespaces?.map(namespace => {
+              const name = Object.keys(namespace)[0];
+              const targets = namespace[name];
               return (
-                <div key={targetName}>
-                  <div>Name: {targetName}</div>
-                  <TargetsTable endpoints={targetEndpointsList} />
+                <div key={name} className="p-10">
+                  <div>Name: {name}</div>
+                  <TargetsTable targets={targets} />
                 </div>
               );
             })}
