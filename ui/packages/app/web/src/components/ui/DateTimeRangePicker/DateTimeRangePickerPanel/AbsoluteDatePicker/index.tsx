@@ -10,6 +10,16 @@ interface AbsoluteDatePickerProps {
   onChange?: (from: AbsoluteDate, to: AbsoluteDate) => void;
 }
 
+const ReactDateTimePicker = ({selected, onChange}) => (
+  <DatePicker
+    selected={selected}
+    onChange={onChange}
+    showTimeInput
+    dateFormat="MMMM d, yyyy h:mm aa"
+    className="text-sm w-48 p-2 rounded-md  bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+  />
+);
+
 const AbsoluteDatePicker = ({range, onChange = () => null}: AbsoluteDatePickerProps) => {
   const [from, setFrom] = useState<Date>(
     range.from.isRelative() ? getDateHoursAgo(1) : (range.from as AbsoluteDate).value
@@ -20,32 +30,20 @@ const AbsoluteDatePicker = ({range, onChange = () => null}: AbsoluteDatePickerPr
   return (
     <div className="p-4">
       <div className="mb-2 hidden">
-        <span className="uppercase text-xs text-gray-500">Absolute Range</span>
+        <span className="uppercase text-xs">Absolute Range</span>
       </div>
       <div className="flex flex-col justify-center">
         <div className="mb-2">
           <div className="mb-2">
-            <span className="uppercase text-xs text-gray-500">From:</span>
+            <span className="uppercase text-xs">From:</span>
           </div>
-          <DatePicker
-            selected={from}
-            onChange={date => setFrom(date)}
-            showTimeInput
-            dateFormat="MMMM d, yyyy h:mm aa"
-            className="text-sm w-48 p-2 rounded-md border border-gray-200"
-          />
+          <ReactDateTimePicker selected={from} onChange={date => setFrom(date)} />
         </div>
         <div className="mb-1">
           <div className="mb-2">
-            <span className="uppercase text-xs text-gray-500">To:</span>
+            <span className="uppercase text-xs">To:</span>
           </div>
-          <DatePicker
-            selected={to}
-            onChange={date => setTo(date)}
-            showTimeInput
-            dateFormat="MMMM d, yyyy h:mm aa"
-            className="text-sm w-48 p-2 rounded-md border border-gray-200"
-          />
+          <ReactDateTimePicker selected={to} onChange={date => setTo(date)} />
         </div>
       </div>
       <div className="w-32 mx-auto mt-4">

@@ -77,14 +77,14 @@ const RelativeDatePicker = ({range, onChange = () => null}: RelativeDatePickerPr
         </div>
       </div>
       <div>
-        <div className="my-4 border-b-[1px] border-gray-200 text-gray-400 text-xs leading-[0px] mx-auto text-center">
+        <div className="my-4 border-b-[1px] border-gray-200 text-xs leading-[0px] mx-auto text-center">
           <span className="bg-gray-100 dark:bg-gray-800 px-1">OR</span>
         </div>
         <div className="flex items-center justify-center p-1 my-4">
-          <span className="uppercase text-xs text-gray-600 mr-4">Last</span>
+          <span className="uppercase text-xs mr-4">Last</span>
           <Input
             type="number"
-            className="w-16 mr-2 text-sm border border-gray-200"
+            className="w-16 mr-2 text-sm"
             value={value}
             onChange={e => setValue(parseInt(e.target.value, 10))}
           />

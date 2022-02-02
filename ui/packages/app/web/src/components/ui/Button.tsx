@@ -18,7 +18,7 @@ const BUTTON_COLORS = {
     padding: 'py-2 px-4',
   },
   link: {
-    text: 'text-gray-600 dark:text-gray-100 justify-start',
+    text: 'text-gray-600 dark:text-gray-300 justify-start',
     bg: '',
     border: '',
     fontWeight: 'font-normal',

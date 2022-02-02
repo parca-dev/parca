@@ -10,7 +10,7 @@ interface DateTimeRangePickerProps {
 
 const DateTimeRangePickerPanel = ({range, onChange = () => null}: DateTimeRangePickerProps) => {
   return (
-    <div className="w-[300px] p-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white">
+    <div className="w-[300px] p-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
       <Tab
         tabs={['Relative', 'Absolute']}
         panels={[
