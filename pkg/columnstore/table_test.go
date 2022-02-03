@@ -208,7 +208,23 @@ func Test_Table_GranuleSplit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(time.Second)
+	// Wait for the index to be updated by the asynchronous granule split.
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
+	for {
+		select {
+		case <-timer.C:
+			t.Fatal("timeout")
+		default:
+		}
+
+		table.Lock()
+		if table.index.Len() == 2 {
+			table.Unlock()
+			break
+		}
+		table.Unlock()
+	}
 
 	table.Iterator(memory.NewGoAllocator(), func(r arrow.Record) bool {
 		defer r.Release()
@@ -299,7 +315,23 @@ func Test_Table_InsertLowest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(time.Second)
+	// Wait for the index to be updated by the asynchronous granule split.
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
+	for {
+		select {
+		case <-timer.C:
+			t.Fatal("timeout")
+		default:
+		}
+
+		table.Lock()
+		if table.index.Len() == 2 {
+			table.Unlock()
+			break
+		}
+		table.Unlock()
+	}
 
 	require.Equal(t, 2, table.index.Len())
 	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality()) // [10,11]
