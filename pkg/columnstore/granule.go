@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
@@ -11,6 +12,7 @@ import (
 )
 
 type Granule struct {
+	sync.RWMutex
 
 	// least is the row that exists within the Granule that is the least.
 	// This is used for quick insertion into the btree, without requiring an iterator
@@ -18,6 +20,9 @@ type Granule struct {
 	parts []*Part
 
 	granulesCreated prometheus.Counter
+
+	// pruned indicates if this Granule is longer found in the index
+	pruned bool
 }
 
 func NewGranule(granulesCreated prometheus.Counter, parts ...*Part) *Granule {
@@ -47,6 +52,9 @@ func NewGranule(granulesCreated prometheus.Counter, parts ...*Part) *Granule {
 }
 
 func (g *Granule) AddPart(p *Part) {
+	g.Lock()
+	defer g.Unlock()
+
 	g.parts = append(g.parts, p)
 	it := p.Iterator()
 
@@ -60,6 +68,13 @@ func (g *Granule) AddPart(p *Part) {
 }
 
 func (g *Granule) Cardinality() int {
+	g.RLock()
+	defer g.RUnlock()
+
+	return g.cardinality()
+}
+
+func (g *Granule) cardinality() int {
 	res := 0
 	for _, p := range g.parts {
 		res += p.Cardinality
@@ -67,10 +82,10 @@ func (g *Granule) Cardinality() int {
 	return res
 }
 
-// Split a granule into n sized granules. With the last granule containing the remainder.
+// split a granule into n sized granules. With the last granule containing the remainder.
 // Returns the granules in order.
 // This assumes the Granule has had it's parts merged into a single part
-func (g *Granule) Split(n int) ([]*Granule, error) {
+func (g *Granule) split(n int) ([]*Granule, error) {
 	if len(g.parts) > 1 {
 		return []*Granule{g}, nil // do nothing
 	}
@@ -111,6 +126,9 @@ func (g *Granule) Split(n int) ([]*Granule, error) {
 
 // ArrowRecord merges all parts in a Granule before returning an ArrowRecord over that part
 func (g *Granule) ArrowRecord(pool memory.Allocator) (arrow.Record, error) {
+	g.RLock()
+	defer g.RUnlock()
+
 	// Merge the parts
 	p, err := Merge(g.parts...)
 	if err != nil {

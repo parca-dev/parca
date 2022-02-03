@@ -161,6 +161,9 @@ func compare(a, b interface{}) int {
 
 // Less returns true if the row is Less than the given row
 func (r Row) Less(than Row) bool {
+	if than.Values == nil { // in the 0 case always return true
+		return true
+	}
 	for k := 0; k < len(r.Values); k++ {
 		vi := r.Values[k]
 		vj := than.Values[k]
