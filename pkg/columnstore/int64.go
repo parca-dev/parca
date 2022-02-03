@@ -108,3 +108,94 @@ func AppendInt64IteratorToArrow(eit EncodingIterator, builder array.Builder) err
 
 	return nil
 }
+
+func Int64ArrayScalarEqual(left *array.Int64, right int64) (*Bitmap, error) {
+	res := NewBitmap()
+
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if left.Value(i) == right {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+func Int64ArrayScalarNotEqual(left *array.Int64, right int64) (*Bitmap, error) {
+	res := NewBitmap()
+
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			res.Add(uint32(i))
+			continue
+		}
+		if left.Value(i) != right {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+func Int64ArrayScalarLessThan(left *array.Int64, right int64) (*Bitmap, error) {
+	res := NewBitmap()
+
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if left.Value(i) < right {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+func Int64ArrayScalarLessThanOrEqual(left *array.Int64, right int64) (*Bitmap, error) {
+	res := NewBitmap()
+
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if left.Value(i) <= right {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+func Int64ArrayScalarGreaterThan(left *array.Int64, right int64) (*Bitmap, error) {
+	res := NewBitmap()
+
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if left.Value(i) > right {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+func Int64ArrayScalarGreaterThanOrEqual(left *array.Int64, right int64) (*Bitmap, error) {
+	res := NewBitmap()
+
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if left.Value(i) >= right {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}

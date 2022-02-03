@@ -124,3 +124,34 @@ func AppendUUIDIteratorToArrow(eit EncodingIterator, builder array.Builder) erro
 
 	return nil
 }
+
+func UUIDArrayScalarEqual(left *array.FixedSizeBinary, right UUID) (*Bitmap, error) {
+	rightUUID := right[:]
+	res := NewBitmap()
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if bytes.Compare(left.Value(i), rightUUID) == 0 {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+func UUIDArrayScalarNotEqual(left *array.FixedSizeBinary, right UUID) (*Bitmap, error) {
+	rightUUID := right[:]
+	res := NewBitmap()
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			res.Add(uint32(i))
+			continue
+		}
+		if bytes.Compare(left.Value(i), rightUUID) != 0 {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}

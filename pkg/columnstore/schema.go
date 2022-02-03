@@ -110,6 +110,8 @@ func (t PrimitiveType) ArrowDataType() arrow.DataType {
 		return &arrow.StringType{}
 	case Int64Type:
 		return &arrow.Int64Type{}
+	case UUIDType:
+		return UUIDFixedSizeBinaryType
 	default:
 		panic("unsupported data type")
 	}
@@ -136,6 +138,15 @@ type Schema struct {
 	GranuleSize int
 }
 
+func (s Schema) ColumnDefinition(name string) (ColumnDefinition, bool) {
+	for _, c := range s.Columns {
+		if !c.Dynamic && c.Name == name {
+			return c, true
+		}
+	}
+	return ColumnDefinition{}, false
+}
+
 func (s Schema) Equals(other Schema) bool {
 	if len(s.Columns) != len(other.Columns) {
 		return false
@@ -157,7 +168,6 @@ func (s Schema) Equals(other Schema) bool {
 
 // ToArrow returns the schema in arrow schema format
 func (s Schema) ToArrow(dynamicColNames [][]string, dynamicColCounts []int) *arrow.Schema {
-
 	fields := make([]arrow.Field, 0, len(s.Columns))
 	for i, c := range s.Columns {
 
@@ -165,7 +175,7 @@ func (s Schema) ToArrow(dynamicColNames [][]string, dynamicColCounts []int) *arr
 		case true: // split out the dynamic columns into multiple arrow cols
 			for j := 0; j < dynamicColCounts[i]; j++ {
 				fields = append(fields, arrow.Field{
-					Name: dynamicColNames[i][j],
+					Name: c.Name + "." + dynamicColNames[i][j],
 					Type: c.Type.ArrowDataType(),
 				})
 			}

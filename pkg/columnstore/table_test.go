@@ -111,11 +111,11 @@ func TestTable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) bool {
+	err = table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) error {
 		fmt.Println(ar)
 		defer ar.Release()
 
-		return true
+		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -226,10 +226,10 @@ func Test_Table_GranuleSplit(t *testing.T) {
 		table.Unlock()
 	}
 
-	table.Iterator(memory.NewGoAllocator(), func(r arrow.Record) bool {
+	table.Iterator(memory.NewGoAllocator(), func(r arrow.Record) error {
 		defer r.Release()
 		fmt.Println(r)
-		return true
+		return nil
 	})
 
 	require.Equal(t, 2, table.index.Len())
@@ -400,11 +400,11 @@ func Test_Table_Concurrency(t *testing.T) {
 	wg.Wait()
 
 	totalrows := int64(0)
-	err := table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) bool {
+	err := table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) error {
 		totalrows += ar.NumRows()
 		defer ar.Release()
 
-		return true
+		return nil
 	})
 	require.NoError(t, err)
 	require.Equal(t, int64(n*inserts*rows), totalrows)

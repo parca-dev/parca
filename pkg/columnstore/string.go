@@ -1,6 +1,8 @@
 package columnstore
 
 import (
+	"regexp"
+
 	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 )
@@ -106,4 +108,70 @@ func AppendStringIteratorToArrow(eit EncodingIterator, builder array.Builder) er
 	}
 
 	return nil
+}
+
+func StringArrayScalarEqual(left *array.String, right string) (*Bitmap, error) {
+	res := NewBitmap()
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if left.Value(i) == right {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+func StringArrayScalarNotEqual(left *array.String, right string) (*Bitmap, error) {
+	res := NewBitmap()
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			res.Add(uint32(i))
+			continue
+		}
+		if left.Value(i) != right {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+// Wrapping the regex matcher to allow for custom optimizations.
+type RegexMatcher struct {
+	regex *regexp.Regexp
+}
+
+func (m *RegexMatcher) MatchString(s string) bool {
+	return m.regex.MatchString(s)
+}
+
+func StringArrayScalarRegexMatch(left *array.String, right *RegexMatcher) (*Bitmap, error) {
+	res := NewBitmap()
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if right.MatchString(left.Value(i)) {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
+}
+
+func StringArrayScalarRegexNotMatch(left *array.String, right *RegexMatcher) (*Bitmap, error) {
+	res := NewBitmap()
+	for i := 0; i < left.Len(); i++ {
+		if left.IsNull(i) {
+			continue
+		}
+		if !right.MatchString(left.Value(i)) {
+			res.Add(uint32(i))
+		}
+	}
+
+	return res, nil
 }

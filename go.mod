@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/OneOfOne/xxhash v1.2.6 // indirect
+	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/alecthomas/kong v0.3.0
 	github.com/apache/arrow/go/v7 v7.0.0-20220128165118-f92219d05e02
 	github.com/brancz/objstore v0.0.0-20220128171049-60dd94d87175

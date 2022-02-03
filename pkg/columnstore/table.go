@@ -149,7 +149,7 @@ func (t *Table) splitGranule(granule *Granule) {
 }
 
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
-func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) bool) error {
+func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) error) error {
 	t.RLock()
 	defer t.RUnlock()
 	var err error
@@ -159,9 +159,9 @@ func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) bo
 		if err != nil {
 			return false
 		}
-		res := iterator(r)
+		err = iterator(r)
 		r.Release()
-		return res
+		return err == nil
 	})
 	return err
 }
