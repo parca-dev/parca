@@ -4,8 +4,9 @@ import {Parca, ParcaSmall} from '@parca/icons';
 import cx from 'classnames';
 import DarkModeToggle from './DarkModeToggle';
 
+const homePage = {name: 'Profiles', href: '/', external: false};
 const links = [
-  {name: 'Profiles', href: '/', external: false},
+  homePage,
   {name: 'Targets', href: '/targets', external: false},
   {name: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 ];
@@ -17,8 +18,8 @@ const Navbar = ({
   isDarkMode: boolean;
   setDarkMode: (mode: boolean) => void;
 }) => {
-  const getPageByHref = (href: string): {name: string; href: string; external: boolean} =>
-    links.find(link => link.href === href) || links[0];
+  const getPageByHref = (href: string = '/'): {name: string; href: string; external: boolean} =>
+    links.find(link => link.href === href) || homePage;
   const currentPage = getPageByHref(window.location.pathname);
   const isCurrentPage = item => item.href === currentPage.href;
 
