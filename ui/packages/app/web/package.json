@@ -12,7 +12,7 @@
     "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook -c ./.storybook/",
-    "chromatic": "npx chromatic --project-token=56c5f39ae692"
+    "chromatic": "chromatic"
   },
   "config": {
     "port": 3000,
