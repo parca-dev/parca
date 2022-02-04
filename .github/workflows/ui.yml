@@ -3,8 +3,12 @@ name: UI
 on:
   push:
     branches: [ main ]
+    paths:
+      - ui/**
   pull_request:
     branches: [ main ]
+    paths:
+      - ui/**
 
 jobs:
   test:
