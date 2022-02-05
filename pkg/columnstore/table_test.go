@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
@@ -209,22 +208,7 @@ func Test_Table_GranuleSplit(t *testing.T) {
 	}
 
 	// Wait for the index to be updated by the asynchronous granule split.
-	timer := time.NewTimer(time.Second)
-	defer timer.Stop()
-	for {
-		select {
-		case <-timer.C:
-			t.Fatal("timeout")
-		default:
-		}
-
-		table.Lock()
-		if table.index.Len() == 2 {
-			table.Unlock()
-			break
-		}
-		table.Unlock()
-	}
+	table.Sync()
 
 	table.Iterator(memory.NewGoAllocator(), func(r arrow.Record) error {
 		defer r.Release()
@@ -316,22 +300,7 @@ func Test_Table_InsertLowest(t *testing.T) {
 	}
 
 	// Wait for the index to be updated by the asynchronous granule split.
-	timer := time.NewTimer(time.Second)
-	defer timer.Stop()
-	for {
-		select {
-		case <-timer.C:
-			t.Fatal("timeout")
-		default:
-		}
-
-		table.Lock()
-		if table.index.Len() == 2 {
-			table.Unlock()
-			break
-		}
-		table.Unlock()
-	}
+	table.Sync()
 
 	require.Equal(t, 2, table.index.Len())
 	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality()) // [10,11]

@@ -21,6 +21,7 @@ type Table struct {
 	index  *btree.BTree
 
 	sync.RWMutex
+	sync.WaitGroup
 }
 
 type tableMetrics struct {
@@ -83,6 +84,14 @@ func newTable(
 	return t
 }
 
+// Sync the table. This will return once all split operations have completed.
+// Currently it does not prevent new inserts from happening, so this is only
+// safe to rely on if you control all writers. In the future we may need to add a way to
+// block new writes as well.
+func (t *Table) Sync() {
+	t.Wait()
+}
+
 func (t *Table) Insert(rows []Row) error {
 	defer func() {
 		t.metrics.rowsInserted.Add(float64(len(rows)))
@@ -106,6 +115,7 @@ func (t *Table) Insert(rows []Row) error {
 
 		granule.AddPart(p)
 		if granule.Cardinality() >= t.schema.GranuleSize {
+			t.Add(1)
 			go t.splitGranule(granule) // TODO there may be a better way to schedule this
 		}
 	}
@@ -114,6 +124,7 @@ func (t *Table) Insert(rows []Row) error {
 }
 
 func (t *Table) splitGranule(granule *Granule) {
+	defer t.Done()
 	t.Lock()
 	defer t.Unlock()
 	granule.Lock()

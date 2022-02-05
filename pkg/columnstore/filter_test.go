@@ -89,6 +89,7 @@ func TestFilter(t *testing.T) {
 	}
 
 	pool := memory.NewGoAllocator()
+	t.Parallel()
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			rows := int64(0)
