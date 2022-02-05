@@ -61,7 +61,7 @@ func TestFilter(t *testing.T) {
 	}
 
 	pool := memory.NewGoAllocator()
-	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label4").Equal(StringLiteral("value4")), func(ar arrow.Record) error {
+	err = table.Iterator(pool, Filter(pool, StaticColumnRef("timestamp").GreaterThanOrEqual(Int64Literal(2)), func(ar arrow.Record) error {
 		fmt.Println(ar)
 		defer ar.Release()
 
@@ -69,5 +69,35 @@ func TestFilter(t *testing.T) {
 	}))
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func Test_BuildIndexRanges(t *testing.T) {
+	tests := map[string]struct {
+		indicies []uint32
+		expected []IndexRange
+	}{
+		"no consecutive": {
+			indicies: []uint32{1, 3, 5, 7, 9},
+			expected: []IndexRange{{Start: 1, End: 2}, {Start: 3, End: 4}, {Start: 5, End: 6}, {Start: 7, End: 8}, {Start: 9, End: 10}},
+		},
+		"only consecutive": {
+			indicies: []uint32{1, 2},
+			expected: []IndexRange{{Start: 1, End: 3}},
+		},
+		"only 1": {
+			indicies: []uint32{1},
+			expected: []IndexRange{{Start: 1, End: 2}},
+		},
+		"multiple": {
+			indicies: []uint32{1, 2, 7, 8, 9},
+			expected: []IndexRange{{Start: 1, End: 3}, {Start: 7, End: 10}},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			require.Equal(t, test.expected, buildIndexRanges(test.indicies))
+		})
 	}
 }
