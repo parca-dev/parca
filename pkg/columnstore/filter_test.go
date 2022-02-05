@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/apache/arrow/go/v7/arrow"
@@ -37,7 +38,7 @@ func TestFilter(t *testing.T) {
 		}, {
 			Values: []interface{}{
 				[]DynamicColumnValue{
-					{Name: "label1", Value: "value1"},
+					{Name: "label1", Value: "value2"},
 					{Name: "label2", Value: "value2"},
 					{Name: "label3", Value: "value3"},
 				},
@@ -47,7 +48,7 @@ func TestFilter(t *testing.T) {
 		}, {
 			Values: []interface{}{
 				[]DynamicColumnValue{
-					{Name: "label1", Value: "value1"},
+					{Name: "label1", Value: "value3"},
 					{Name: "label2", Value: "value2"},
 					{Name: "label4", Value: "value4"},
 				},
@@ -88,7 +89,9 @@ func TestFilter(t *testing.T) {
 	fmt.Println("-------")
 
 	rows = 0
-	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label1").GreaterThanOrEqual(StringLiteral("value1")), func(ar arrow.Record) error {
+	reg, err := regexp.Compile("value.")
+	require.NoError(t, err)
+	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label1").RegexMatch(&RegexMatcher{regex: reg}), func(ar arrow.Record) error {
 		rows += ar.NumRows()
 		fmt.Println(ar)
 		defer ar.Release()
