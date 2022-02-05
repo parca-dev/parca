@@ -8,6 +8,7 @@ import (
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
+	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,7 +34,7 @@ func basicTable(t *testing.T, granuleSize int) *Table {
 
 	c := New(nil)
 	db := c.DB("test")
-	table := db.Table("test", schema)
+	table := db.Table("test", schema, log.NewNopLogger())
 
 	return table
 }
@@ -401,7 +402,7 @@ func Benchmark_Table_Insert_10Rows_10Writers(b *testing.B) {
 
 	c := New(nil)
 	db := c.DB("test")
-	table := db.Table("test", schema)
+	table := db.Table("test", schema, log.NewNopLogger())
 	generateRows := func(n int) []Row {
 		rows := make([]Row, 0, n)
 		for i := 0; i < n; i++ {

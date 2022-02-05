@@ -6,6 +6,8 @@ import (
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/google/btree"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -16,6 +18,7 @@ var ErrNoSchema = fmt.Errorf("no schema")
 type Table struct {
 	db      *DB
 	metrics *tableMetrics
+	logger  log.Logger
 
 	schema Schema
 	index  *btree.BTree
@@ -37,6 +40,7 @@ func newTable(
 	name string,
 	schema Schema,
 	reg prometheus.Registerer,
+	logger log.Logger,
 ) *Table {
 	reg = prometheus.WrapRegistererWith(prometheus.Labels{"table": name}, reg)
 
@@ -137,18 +141,18 @@ func (t *Table) splitGranule(granule *Granule) {
 
 	newpart, err := Merge(granule.parts...) // need to merge all parts in a granule before splitting
 	if err != nil {
-		panic("failed to merge: TODO log this")
+		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
 	granule.parts = []*Part{newpart}
 
 	granules, err := granule.split(t.schema.GranuleSize / 2) // TODO magic numbers
 	if err != nil {
-		panic("granule split failed after AddPart: TODO log this")
+		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}
 
 	deleted := t.index.Delete(granule)
 	if deleted == nil {
-		panic("failed to delete granule during split: TODO log this")
+		level.Error(t.logger).Log("msg", "failed to delete granule during split")
 	}
 
 	// mark this granule as having been pruned
