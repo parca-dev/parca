@@ -63,6 +63,8 @@ type IndexRange struct {
 	End   uint32
 }
 
+// buildIndexRanges returns a set of continguous index ranges from the given indicies
+// ex: [1,2,7,8,9] would return [{Start:1, End:2},{Start:7,End:9}]
 func buildIndexRanges(indices []uint32) []IndexRange {
 	ranges := []IndexRange{}
 
@@ -70,6 +72,7 @@ func buildIndexRanges(indices []uint32) []IndexRange {
 		Start: indices[0],
 		End:   indices[0] + 1,
 	}
+
 	for _, i := range indices[1:] {
 		if i == cur.End {
 			cur.End++
@@ -82,9 +85,6 @@ func buildIndexRanges(indices []uint32) []IndexRange {
 		}
 	}
 
-	if cur.Start == cur.End-1 {
-		ranges = append(ranges, cur)
-	}
-
+	ranges = append(ranges, cur)
 	return ranges
 }
