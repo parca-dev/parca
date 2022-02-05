@@ -61,39 +61,42 @@ func TestFilter(t *testing.T) {
 	}
 
 	pool := memory.NewGoAllocator()
+	rows := int64(0)
 	err = table.Iterator(pool, Filter(pool, StaticColumnRef("timestamp").GreaterThanOrEqual(Int64Literal(2)), func(ar arrow.Record) error {
 		fmt.Println(ar)
+		rows += ar.NumRows()
 		defer ar.Release()
 
 		return nil
 	}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	require.Equal(t, int64(2), rows)
 
 	fmt.Println("------")
 
+	rows = 0
 	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label4").Equal(StringLiteral("value4")), func(ar arrow.Record) error {
 		fmt.Println(ar)
+		rows += ar.NumRows()
 		defer ar.Release()
 
 		return nil
 	}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	require.Equal(t, int64(1), rows)
 
 	fmt.Println("-------")
 
+	rows = 0
 	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label1").GreaterThanOrEqual(StringLiteral("value1")), func(ar arrow.Record) error {
+		rows += ar.NumRows()
 		fmt.Println(ar)
 		defer ar.Release()
 
 		return nil
 	}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	require.Equal(t, int64(3), rows)
 }
 
 func Test_BuildIndexRanges(t *testing.T) {
