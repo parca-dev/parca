@@ -70,6 +70,30 @@ func TestFilter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	fmt.Println("------")
+
+	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label4").Equal(StringLiteral("value4")), func(ar arrow.Record) error {
+		fmt.Println(ar)
+		defer ar.Release()
+
+		return nil
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("-------")
+
+	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label1").GreaterThanOrEqual(StringLiteral("value1")), func(ar arrow.Record) error {
+		fmt.Println(ar)
+		defer ar.Release()
+
+		return nil
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func Test_BuildIndexRanges(t *testing.T) {
