@@ -1,7 +1,6 @@
 package columnstore
 
 import (
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -61,45 +60,48 @@ func TestFilter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pool := memory.NewGoAllocator()
-	rows := int64(0)
-	err = table.Iterator(pool, Filter(pool, StaticColumnRef("timestamp").GreaterThanOrEqual(Int64Literal(2)), func(ar arrow.Record) error {
-		fmt.Println(ar)
-		rows += ar.NumRows()
-		defer ar.Release()
-
-		return nil
-	}))
-	require.NoError(t, err)
-	require.Equal(t, int64(2), rows)
-
-	fmt.Println("------")
-
-	rows = 0
-	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label4").Equal(StringLiteral("value4")), func(ar arrow.Record) error {
-		fmt.Println(ar)
-		rows += ar.NumRows()
-		defer ar.Release()
-
-		return nil
-	}))
-	require.NoError(t, err)
-	require.Equal(t, int64(1), rows)
-
-	fmt.Println("-------")
-
-	rows = 0
 	reg, err := regexp.Compile("value.")
 	require.NoError(t, err)
-	err = table.Iterator(pool, Filter(pool, DynamicColumnRef("labels").Column("label1").RegexMatch(&RegexMatcher{regex: reg}), func(ar arrow.Record) error {
-		rows += ar.NumRows()
-		fmt.Println(ar)
-		defer ar.Release()
 
-		return nil
-	}))
+	nomatch, err := regexp.Compile("values.*")
 	require.NoError(t, err)
-	require.Equal(t, int64(3), rows)
+
+	tests := map[string]struct {
+		filterExpr BooleanExpression
+		rows       int64
+	}{
+		">= int64": {
+			filterExpr: StaticColumnRef("timestamp").GreaterThanOrEqual(Int64Literal(2)),
+			rows:       2,
+		},
+		"== string": {
+			filterExpr: DynamicColumnRef("labels").Column("label4").Equal(StringLiteral("value4")),
+			rows:       1,
+		},
+		"regexp simple match": {
+			filterExpr: DynamicColumnRef("labels").Column("label1").RegexMatch(&RegexMatcher{regex: reg}),
+			rows:       3,
+		},
+		"regexp no match": {
+			filterExpr: DynamicColumnRef("labels").Column("label1").RegexMatch(&RegexMatcher{regex: nomatch}),
+			rows:       0,
+		},
+	}
+
+	pool := memory.NewGoAllocator()
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			rows := int64(0)
+			err = table.Iterator(pool, Filter(pool, test.filterExpr, func(ar arrow.Record) error {
+				rows += ar.NumRows()
+				defer ar.Release()
+
+				return nil
+			}))
+			require.NoError(t, err)
+			require.Equal(t, test.rows, rows)
+		})
+	}
 }
 
 func Test_BuildIndexRanges(t *testing.T) {
