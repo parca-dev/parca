@@ -52,7 +52,7 @@ func NewProfileStore(
 ) *ProfileStore {
 	s := columnstore.New(reg)
 	db := s.DB("parca")
-	table := db.Table("stacktraces", parcaProfilingTableSchema()) // TODO we need to define a schema here
+	table := db.Table("stacktraces", parcaProfilingTableSchema(), logger)
 
 	return &ProfileStore{
 		logger:    logger,
