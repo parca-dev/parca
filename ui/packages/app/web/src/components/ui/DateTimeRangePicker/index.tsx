@@ -25,13 +25,13 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
           range={range}
           isActive={isActive}
           onClick={() => {
-            setIsActive(true);
+            setIsActive(!isActive);
           }}
         />
         {isActive ? (
           <Popover.Panel
             className={cx(
-              'absolute z-10 w-fit mt-2 rounded shadow-lg ring-1 ring-black ring-opacity-5'
+              'absolute z-10 w-fit mt-2 rounded shadow-lg ring-1 ring-black ring-opacity-5 border dark:border-gray-600'
             )}
             static
           >
