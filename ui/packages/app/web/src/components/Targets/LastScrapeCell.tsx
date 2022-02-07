@@ -12,7 +12,7 @@ const LastScrapeCell = ({key, lastScrape, lastScrapeDuration}) => {
   });
 
   return (
-    <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+    <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200">
       <p>Last Scrape: {formatRelative(startInMilliseconds, endInMilliseconds)}</p>
       <p>Duration: {formatDuration(durationMilliseconds)}</p>
     </td>
