@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/apache/arrow/go/v7/arrow"
@@ -25,6 +26,7 @@ type Expression interface {
 type ArrayExpression interface {
 	Expression
 	GetData(r arrow.Record) (arrow.Array, bool, error)
+	ArrowFieldMatcher() ArrowFieldMatcher
 }
 
 type ScalarExpression interface {
@@ -45,13 +47,25 @@ func DynamicColumnRef(name string) dynamicColumnRef {
 	return dynamicColumnRef{Name: name}
 }
 
+type DynamicColumnMatcher struct {
+	Name string
+}
+
+func (m DynamicColumnMatcher) MatchArrowField(columnName string) bool {
+	return strings.HasPrefix(columnName, m.Name)
+}
+
+func (d dynamicColumnRef) ArrowFieldMatcher() ArrowFieldMatcher {
+	return DynamicColumnMatcher{Name: d.Name}
+}
+
 type dynamicColumnInstanceRef struct {
 	r    dynamicColumnRef
 	Name string
 }
 
 func (d dynamicColumnRef) Column(name string) ArrayRef {
-	return ArrayRef{array: dynamicColumnInstanceRef{
+	return ArrayRef{ArrayExpression: dynamicColumnInstanceRef{
 		r:    d,
 		Name: name,
 	}}
@@ -87,12 +101,24 @@ func (d dynamicColumnInstanceRef) GetData(r arrow.Record) (arrow.Array, bool, er
 	return r.Column(fields[0]), true, nil
 }
 
+type StaticArrowFieldMatcher struct {
+	Name string
+}
+
+func (m StaticArrowFieldMatcher) MatchArrowField(columnName string) bool {
+	return columnName == m.Name
+}
+
+func (d dynamicColumnInstanceRef) ArrowFieldMatcher() ArrowFieldMatcher {
+	return StaticArrowFieldMatcher{Name: d.r.Name + "." + d.Name}
+}
+
 type staticColumnRef struct {
 	Name string
 }
 
 func StaticColumnRef(name string) ArrayRef {
-	return ArrayRef{array: staticColumnRef{Name: name}}
+	return ArrayRef{ArrayExpression: staticColumnRef{Name: name}}
 }
 
 var (
@@ -125,40 +151,44 @@ func (c staticColumnRef) GetData(r arrow.Record) (arrow.Array, bool, error) {
 	return r.Column(fields[0]), true, nil
 }
 
+func (c staticColumnRef) ArrowFieldMatcher() ArrowFieldMatcher {
+	return StaticArrowFieldMatcher{Name: c.Name}
+}
+
 type ArrayRef struct {
-	array ArrayExpression
+	ArrayExpression
 }
 
 func (a ArrayRef) Equal(expr ScalarExpression) BinaryScalarExpression {
-	return BinaryScalarExpression{Left: a.array, Right: expr, Operator: Equal}
+	return BinaryScalarExpression{Left: a.ArrayExpression, Right: expr, Operator: Equal}
 }
 
 func (a ArrayRef) NotEqual(expr ScalarExpression) BinaryScalarExpression {
-	return BinaryScalarExpression{Left: a.array, Right: expr, Operator: NotEqual}
+	return BinaryScalarExpression{Left: a.ArrayExpression, Right: expr, Operator: NotEqual}
 }
 
 func (a ArrayRef) GreaterThan(expr ScalarExpression) BinaryScalarExpression {
-	return BinaryScalarExpression{Left: a.array, Right: expr, Operator: GreaterThan}
+	return BinaryScalarExpression{Left: a.ArrayExpression, Right: expr, Operator: GreaterThan}
 }
 
 func (a ArrayRef) GreaterThanOrEqual(expr ScalarExpression) BinaryScalarExpression {
-	return BinaryScalarExpression{Left: a.array, Right: expr, Operator: GreaterThanOrEqual}
+	return BinaryScalarExpression{Left: a.ArrayExpression, Right: expr, Operator: GreaterThanOrEqual}
 }
 
 func (a ArrayRef) LessThan(expr ScalarExpression) BinaryScalarExpression {
-	return BinaryScalarExpression{Left: a.array, Right: expr, Operator: LessThan}
+	return BinaryScalarExpression{Left: a.ArrayExpression, Right: expr, Operator: LessThan}
 }
 
 func (a ArrayRef) LessThanOrEqual(expr ScalarExpression) BinaryScalarExpression {
-	return BinaryScalarExpression{Left: a.array, Right: expr, Operator: LessThanOrEqual}
+	return BinaryScalarExpression{Left: a.ArrayExpression, Right: expr, Operator: LessThanOrEqual}
 }
 
 func (a ArrayRef) RegexMatch(regex *RegexMatcher) RegexScalarExpression {
-	return RegexScalarExpression{left: a.array, right: regex}
+	return RegexScalarExpression{left: a.ArrayExpression, right: regex}
 }
 
 func (a ArrayRef) RegexNotMatch(regex *RegexMatcher) RegexScalarExpression {
-	return RegexScalarExpression{left: a.array, right: regex, notMatch: true}
+	return RegexScalarExpression{left: a.ArrayExpression, right: regex, notMatch: true}
 }
 
 type RegexScalarExpression struct {

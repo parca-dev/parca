@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/OneOfOne/xxhash v1.2.6 // indirect
-	github.com/RoaringBitmap/roaring v0.9.4 // indirect
+	github.com/RoaringBitmap/roaring v0.9.4
 	github.com/alecthomas/kong v0.3.0
 	github.com/apache/arrow/go/v7 v7.0.0-20220128165118-f92219d05e02
 	github.com/brancz/objstore v0.0.0-20220128171049-60dd94d87175
@@ -13,6 +13,7 @@ require (
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dgraph-io/sroar v0.0.0-20211209113350-3e3f1b382a64
+	github.com/dgryski/go-metro v0.0.0-20211217172704-adc40b04c140
 	github.com/felixge/fgprof v0.9.2
 	github.com/gin-gonic/gin v1.7.7 // indirect
 	github.com/go-chi/cors v1.2.0
