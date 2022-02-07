@@ -4,8 +4,6 @@ import {Popover} from '@headlessui/react';
 import {DateTimeRange, DateUnion} from './utils';
 import {useClickAway} from 'react-use';
 import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
-
-import './style.css';
 import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
 
 interface DateTimeRangePickerProps {
@@ -33,7 +31,7 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
         {isActive ? (
           <Popover.Panel
             className={cx(
-              'absolute z-10 w-fit mt-2 rounded shadow-lg ring-1 ring-black ring-opacity-5 arrow-top text-gray-100 dark:text-gray-800'
+              'absolute z-10 w-fit mt-2 rounded shadow-lg ring-1 ring-black ring-opacity-5'
             )}
             static
           >

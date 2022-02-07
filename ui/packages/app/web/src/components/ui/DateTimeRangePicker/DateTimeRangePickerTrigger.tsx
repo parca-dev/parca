@@ -22,8 +22,9 @@ const DateTimeRangePickerTrigger = ({
       <div
         onClick={onClick}
         className={cx(
-          'text-gray-600 dark:text-gray-300 relative flex justify-between min-w-[200px] bg-gray-50 dark:bg-gray-900 border-t border-r border-b border-l dark:border-gray-600 rounded-md shadow-sm px-3 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm',
-          {'!justify-center': isActive}
+          'text-gray-600 dark:text-gray-300 relative flex justify-between min-w-[200px] border-t border-r border-b border-l dark:border-gray-600 rounded-md shadow-sm px-3 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm',
+          {'bg-gray-50 dark:bg-gray-900': !isActive},
+          {'!justify-center, bg-gray-200 dark:bg-gray-800': isActive}
         )}
       >
         {isActive && range.from.isRelative()

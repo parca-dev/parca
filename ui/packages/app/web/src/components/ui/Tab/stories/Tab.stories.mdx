@@ -14,7 +14,10 @@ A Component to select a range of dates with time.
 
 <Preview>
   <Story name="Default">
-    <Tab tabs={["Tab 1", "Tab 2", "Tab 3"]} panels={["content 1", "content 2", "content 3"].map(text => (<div className="flex justify-center items-center h-32">{text}</div>))}/>
+    <Tab
+      tabs={["Tab 1", "Tab 2", "Tab 3"]}
+      panels={["content 1", "content 2", "content 3"].map(text => (<div className="flex justify-center items-center h-32 text-gray-700 dark:text-gray-300">{text}</div>))}
+    />
   </Story>
 </Preview>
 
@@ -24,7 +27,7 @@ A Component to select a range of dates with time.
   <Story name="Custom Default Tab">
     <Tab 
       tabs={["Tab 1", "Tab 2", "Tab 3"]}
-      panels={["content 1", "content 2", "content 3"].map(text => (<div className="flex justify-center items-center h-32">{text}</div>))}
+      panels={["content 1", "content 2", "content 3"].map(text => (<div className="flex justify-center items-center h-32 text-gray-700 dark:text-gray-300">{text}</div>))}
       defaultTabIndex={1}
     />
   </Story>
