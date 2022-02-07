@@ -33,7 +33,7 @@ const Select = ({
   onSelection: (value: string | undefined) => void;
   placeholder?: string;
   width?: number;
-  className: string;
+  className?: string;
 }): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,

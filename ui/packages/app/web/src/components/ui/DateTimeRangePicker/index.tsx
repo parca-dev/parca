@@ -8,8 +8,12 @@ import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
 import './style.css';
 import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
 
-const DateTimeRangePicker = () => {
-  const [range, setRange] = useState<DateTimeRange>(new DateTimeRange());
+interface DateTimeRangePickerProps {
+  onRangeSelection: (range: DateTimeRange) => void;
+  range: DateTimeRange;
+}
+
+const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps) => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickAway(containerRef, () => {
@@ -36,7 +40,7 @@ const DateTimeRangePicker = () => {
             <DateTimeRangePickerPanel
               range={range}
               onChange={(from: DateUnion, to: DateUnion) => {
-                setRange(new DateTimeRange(from, to));
+                onRangeSelection(new DateTimeRange(from, to));
                 setIsActive(false);
               }}
             />
