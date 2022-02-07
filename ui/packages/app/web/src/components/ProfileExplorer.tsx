@@ -11,6 +11,9 @@ interface ProfileExplorerProps {
 }
 
 const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Element => {
+  if (!router.isReady) {
+    return <div>Loading...</div>;
+  }
   /* eslint-disable */
   // Disable eslint due to params being snake case
   const {

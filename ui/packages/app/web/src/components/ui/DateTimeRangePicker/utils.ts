@@ -72,6 +72,73 @@ export class DateTimeRange {
       this.to = date;
     }
   }
+
+  getMs(date) {
+    if (date.isRelative()) {
+      return getRelativeDateMs(date as RelativeDate);
+    }
+    return date.value.getTime();
+  }
+
+  getFromMs() {
+    return this.getMs(this.from);
+  }
+
+  getToMs() {
+    return this.getMs(this.to);
+  }
+
+  getDateStringKey(date: DateUnion) {
+    if (date.isRelative()) {
+      const relativeDate = date as RelativeDate;
+      return `${relativeDate.unit}|${relativeDate.value}`;
+    }
+    const absoluteDate = date as AbsoluteDate;
+    return `${absoluteDate.value.getTime()}`;
+  }
+
+  getFromDateStringKey() {
+    return this.getDateStringKey(this.from);
+  }
+
+  getToDateStringKey() {
+    return this.getDateStringKey(this.to);
+  }
+
+  getRangeKey() {
+    if (this.from.isRelative()) {
+      return `relative:${this.getFromDateStringKey()}`;
+    }
+    return `absolute:${this.getFromDateStringKey()}-${this.getToDateStringKey()}`;
+  }
+
+  static fromRangeKey(rangeKey: string) {
+    try {
+      const [rangeType, rangeValueKey] = rangeKey.split(':');
+      if (rangeType === 'relative') {
+        const [unit, value] = rangeValueKey.split('|');
+        return new DateTimeRange(
+          new RelativeDate(unit, parseInt(value, 10)),
+          new RelativeDate(UNITS.MINUTE, 0)
+        );
+      }
+      if (rangeType === 'absolute') {
+        const [fromKey, toKey] = rangeValueKey.split('-');
+        return new DateTimeRange(
+          new AbsoluteDate(new Date(parseInt(fromKey, 10))),
+          new AbsoluteDate(new Date(parseInt(toKey, 10)))
+        );
+      }
+      throw 'Invalid range key';
+    } catch (err) {
+      console.error('Error while parsing range key', rangeKey, err);
+    }
+    return new DateTimeRange();
+  }
+
+  static fromAbsoluteDates(from: number, to: number) {
+    return new DateTimeRange(new AbsoluteDate(new Date(from)), new AbsoluteDate(new Date(to)));
+  }
 }
 
 export const formatDateStringForUI: (dateString: DateUnion) => string = dateString => {
@@ -96,4 +163,19 @@ export const getDateHoursAgo = (hours = 1): Date => {
   const now = new Date();
   now.setHours(now.getHours() - hours);
   return now;
+};
+
+const getRelativeDateMs = (date: RelativeDate): number => {
+  const now = new Date().getTime();
+  const {unit, value} = date;
+  switch (unit) {
+    case UNITS.MINUTE:
+      return now - value * 60 * 1000;
+    case UNITS.HOUR:
+      return now - value * 60 * 60 * 1000;
+    case UNITS.DAY:
+      return now - value * 24 * 60 * 60 * 1000;
+    default:
+      return now;
+  }
 };
