@@ -1,6 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
-// import ProfileSVG from './ProfileSVG'
-// import ProfileTop from './ProfileTop'
+import React, {useEffect, useState} from 'react';
 import {CalcWidth} from '@parca/dynamicsize';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
@@ -108,6 +106,10 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
         error: ServiceError | null,
         responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null
       ) => {
+        if (error != null) {
+          console.error('Error while querying', error);
+          return;
+        }
         if (responseMessage !== null) {
           const bytes = responseMessage.getPprof();
           const blob = new Blob([bytes], {type: 'application/octet-stream'});
@@ -121,7 +123,7 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
     );
   };
 
-  const resetIcicleGraph = (e: React.MouseEvent<HTMLElement>) => {
+  const resetIcicleGraph = (_: React.MouseEvent<HTMLElement>) => {
     setCurPath([]);
   };
 

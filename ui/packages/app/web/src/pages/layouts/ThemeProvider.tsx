@@ -1,5 +1,5 @@
-import {useStore} from 'store';
-import {selectUi} from 'store/ui.state';
+import {useStore} from '../../store';
+import {selectUi} from '../../store/ui.state';
 import cx from 'classnames';
 
 const ThemeProvider = ({children}) => {

@@ -4,7 +4,7 @@
   "version": "0.8.0",
   "description": "Parca Web Interface",
   "scripts": {
-    "lint": "eslint --ext .ts,.tsx,.js src/*",
+    "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
     "dev": "../../../node_modules/.bin/next dev",
     "build": "../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
     "clean": "rimraf .next && rimraf out",
