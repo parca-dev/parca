@@ -2,7 +2,7 @@ import Select, {contructItemsFromArray} from 'components/ui/Select';
 import {useState} from 'react';
 import Input from 'components/ui/Input';
 import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
-import {capitalizeFirstLetter} from 'libs/utils';
+import {capitalizeFirstLetter} from '../../../../../libs/utils';
 import Button from 'components/ui/Button';
 
 const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
