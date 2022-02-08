@@ -1,7 +1,6 @@
 import cx from 'classnames';
 import {DateTimeRange, formatDateStringForUI} from './utils';
 import {Popover} from '@headlessui/react';
-import ConditionalWrapper from 'components/ConditionalWrapper';
 
 interface DateTimeRangePickerTriggerProps {
   range: DateTimeRange;
@@ -16,10 +15,6 @@ const DateTimeRangePickerTrigger = ({
 }: DateTimeRangePickerTriggerProps) => {
   return (
     <>
-      {/*} <ConditionalWrapper
-      condition={!isActive}
-      wrapper={({children}) => <Popover.Button>{children}</Popover.Button>}
-  >*/}
       <Popover.Button onClick={onClick}>
         <div
           onClick={onClick}

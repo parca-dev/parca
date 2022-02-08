@@ -73,11 +73,11 @@ export class DateTimeRange {
     }
   }
 
-  getMs(date) {
+  getMs(date: DateUnion) {
     if (date.isRelative()) {
       return getRelativeDateMs(date as RelativeDate);
     }
-    return date.value.getTime();
+    return (date as AbsoluteDate).value.getTime();
   }
 
   getFromMs() {
@@ -129,7 +129,7 @@ export class DateTimeRange {
           new AbsoluteDate(new Date(parseInt(toKey, 10)))
         );
       }
-      throw 'Invalid range key';
+      throw new Error('Invalid range key');
     } catch (err) {
       console.error('Error while parsing range key', rangeKey, err);
     }
