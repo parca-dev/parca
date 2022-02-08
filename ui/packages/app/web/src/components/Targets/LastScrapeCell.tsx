@@ -1,22 +1,19 @@
 import React from 'react';
-import {formatDuration, formatRelative, formatToMilliseconds, now} from './utils';
+import {TimeObject, formatDuration, TimeUnits} from '@parca/functions';
 
-const LastScrapeCell = ({key, lastScrape, lastScrapeDuration}) => {
-  const {seconds: scrapeSeconds, nanos: scrapeNanos} = lastScrape;
-  const {seconds: durationSeconds, nanos: durationNanos} = lastScrapeDuration;
-  const startInMilliseconds = formatToMilliseconds({seconds: scrapeSeconds, nanos: scrapeNanos});
-  const endInMilliseconds = now();
-  const durationMilliseconds = formatToMilliseconds({
-    seconds: durationSeconds,
-    nanos: durationNanos,
-  });
-
-  return (
-    <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200">
-      <p>Last Scrape: {formatRelative(startInMilliseconds, endInMilliseconds)}</p>
-      <p>Duration: {formatDuration(durationMilliseconds)}</p>
-    </td>
-  );
-};
+const LastScrapeCell = ({
+  key,
+  lastScrape,
+  lastScrapeDuration,
+}: {
+  key: string;
+  lastScrape: TimeObject;
+  lastScrapeDuration: TimeObject;
+}) => (
+  <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200">
+    <p>Last Scrape: {formatDuration(lastScrape, TimeUnits.Nanoseconds)} ago</p>
+    <p>Duration: {formatDuration(lastScrapeDuration, TimeUnits.Nanoseconds)}</p>
+  </td>
+);
 
 export default LastScrapeCell;
