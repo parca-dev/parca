@@ -63,6 +63,8 @@ type CacheConfig struct {
 type Store struct {
 	debuginfopb.UnimplementedDebugInfoServiceServer
 
+	debuginfodClientCache *ObjectStorageDebugInfodClientCache
+
 	bucket objstore.Bucket
 	logger log.Logger
 
@@ -70,12 +72,14 @@ type Store struct {
 	symbolizer *symbol.Symbolizer
 }
 
-// NewStore returns a new debug info store.
-func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config) (*Store, error) {
+// NewStore returns a new debug info store
+func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, debuginfodUrl string) (*Store, error) {
 	cfg, err := yaml.Marshal(config.Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("marshal content of object storage configuration: %w", err)
 	}
+
+	debuginfodClientCache := NewObjectStorageDebugInfodClientCache(NewHttpDebugInfoClient(debuginfodUrl))
 
 	bucket, err := client.NewBucket(logger, cfg, nil, "parca")
 	if err != nil {
@@ -93,10 +97,11 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config) 
 	}
 
 	return &Store{
-		logger:     log.With(logger, "component", "debuginfo"),
-		bucket:     bucket,
-		cacheDir:   cache.Directory,
-		symbolizer: symbolizer,
+		debuginfodClientCache: debuginfodClientCache,
+		logger:                log.With(logger, "component", "debuginfo"),
+		bucket:                bucket,
+		cacheDir:              cache.Directory,
+		symbolizer:            symbolizer,
 	}, nil
 }
 
@@ -228,9 +233,12 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 	// Check if it's already cached locally; if not download.
 	if _, err := os.Stat(mappingPath); os.IsNotExist(err) {
 		r, err := s.bucket.Get(ctx, path.Join(buildID, "debuginfo"))
+
 		if s.bucket.IsObjNotFoundErr(err) {
-			level.Debug(s.logger).Log("msg", "object not found", "object", buildID, "err", err)
-			return "", ErrDebugInfoNotFound
+			level.Debug(s.logger).Log("msg", "object not found in parca object storage", "object", buildID, "err", err)
+			//return "", ErrDebugInfoNotFound
+			//if publicDebuginfodBuildIDExists()
+			r, err = s.debuginfodClientCache.GetDebugInfo(buildID)
 		}
 		if err != nil {
 			return "", fmt.Errorf("get object from object storage: %w", err)

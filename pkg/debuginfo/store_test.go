@@ -63,7 +63,8 @@ func TestStore(t *testing.T) {
 					Directory: cacheDir,
 				},
 			},
-		})
+		},
+		"https://debuginfod.systemtap.org")
 	require.NoError(t, err)
 
 	lis, err := net.Listen("tcp", ":0")
