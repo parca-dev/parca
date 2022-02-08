@@ -27,7 +27,13 @@ const getRowContentByHeader = ({
       const {url} = target;
       return (
         <td key={key} className="px-6 py-4 whitespace-nowrap">
-          <p className="text-sm text-gray-900 text-bold dark:text-gray-200">{url}</p>
+          <a
+            className="text-sm text-gray-900 text-bold dark:text-gray-200"
+            href={url}
+            target="_blank"
+          >
+            {url}
+          </a>
         </td>
       );
     }
