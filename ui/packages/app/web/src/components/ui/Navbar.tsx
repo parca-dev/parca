@@ -65,7 +65,7 @@ const Navbar = ({
                         target={item.external ? '_blank' : undefined}
                         className={cx(
                           isCurrentPage(item)
-                            ? 'bg-gray-900 text-white'
+                            ? 'bg-gray-900 dark:bg-gray-700 text-white'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white',
                           'px-3 py-2 rounded-md text-sm font-medium'
                         )}
