@@ -9,8 +9,8 @@ interface Unit {
   symbol: string;
 }
 export interface TimeObject {
-  nanoseconds?: number;
-  microseconds?: number;
+  nanos?: number;
+  micros?: number;
   milliseconds?: number;
   seconds?: number;
   minutes?: number;
@@ -21,8 +21,8 @@ export interface TimeObject {
 }
 
 export enum TimeUnits {
-  Nanoseconds = 'nanoseconds',
-  Microseconds = 'microseconds',
+  Nanos = 'nanos',
+  Micros = 'micros',
   Milliseconds = 'milliseconds',
   Seconds = 'seconds',
   Minutes = 'minutes',
@@ -33,8 +33,8 @@ export enum TimeUnits {
 }
 
 const unitsInTime = {
-  [TimeUnits.Nanoseconds]: {multiplier: 1, symbol: 'ns'},
-  [TimeUnits.Microseconds]: {multiplier: 1e3, symbol: 'µs'},
+  [TimeUnits.Nanos]: {multiplier: 1, symbol: 'ns'},
+  [TimeUnits.Micros]: {multiplier: 1e3, symbol: 'µs'},
   [TimeUnits.Milliseconds]: {multiplier: 1e6, symbol: 'ms'},
   [TimeUnits.Seconds]: {multiplier: 1e9, symbol: 's'},
   [TimeUnits.Minutes]: {multiplier: 6 * 1e10, symbol: 'm'},
@@ -55,35 +55,39 @@ export const convertTime = (value: number, from: TimeUnits, to: TimeUnits): numb
   return (value * startUnit.multiplier) / endUnit.multiplier;
 };
 
-export const formatDuration = (timeObject: TimeObject, to: TimeUnits) => {
+export const formatDuration = (timeObject: TimeObject, to?: number): string => {
   let values: string[] = [];
   const unitsLargeToSmall = Object.values(TimeUnits).reverse();
 
-  let nanoseconds = Object.keys(timeObject)
+  let nanos = Object.keys(timeObject)
     .map(unit => {
       return timeObject[unit]
-        ? convertTime(timeObject[unit], TimeUnits[unit], TimeUnits.Nanoseconds)
+        ? convertTime(timeObject[unit], unit as TimeUnits, TimeUnits.Nanos)
         : 0;
     })
     .reduce((prev, curr) => prev + curr, 0);
 
-  // for more than one second, just show up until whole seconds; otherwise, show whole microseconds
-  if (Math.floor(nanoseconds / unitsInTime[TimeUnits.Seconds].multiplier) > 0) {
+  if (to) {
+    nanos = to - nanos;
+  }
+
+  // for more than one second, just show up until whole seconds; otherwise, show whole micros
+  if (Math.floor(nanos / unitsInTime[TimeUnits.Seconds].multiplier) > 0) {
     for (let i = 0; i < unitsLargeToSmall.length; i++) {
       const multiplier = unitsInTime[unitsLargeToSmall[i]].multiplier;
 
-      if (nanoseconds > multiplier) {
+      if (nanos > multiplier) {
         if (unitsLargeToSmall[i] === TimeUnits.Milliseconds) {
           break;
         } else {
-          const amount = Math.floor(nanoseconds / multiplier);
+          const amount = Math.floor(nanos / multiplier);
           values = [...values, `${amount}${unitsInTime[unitsLargeToSmall[i]].symbol}`];
-          nanoseconds -= amount * multiplier;
+          nanos -= amount * multiplier;
         }
       }
     }
   } else {
-    const milliseconds = Math.floor(nanoseconds / unitsInTime[TimeUnits.Milliseconds].multiplier);
+    const milliseconds = Math.floor(nanos / unitsInTime[TimeUnits.Milliseconds].multiplier);
     if (milliseconds > 0) {
       values = [`${milliseconds}${unitsInTime[TimeUnits.Milliseconds].symbol}`];
     } else {
@@ -116,7 +120,7 @@ const unitsInCount = {
 
 const knownValueFormatters = {
   bytes: unitsInBytes,
-  nanoseconds: unitsInTime,
+  nanos: unitsInTime,
   count: unitsInCount,
 };
 

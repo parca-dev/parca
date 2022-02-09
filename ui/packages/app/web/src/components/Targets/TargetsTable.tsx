@@ -1,5 +1,5 @@
 import React from 'react';
-import {TargetsResponse} from '@parca/client';
+import {Target} from '@parca/client';
 import Pill from '../ui/Pill';
 import LabelsCell from './LabelsCell';
 import LastScrapeCell from './LastScrapeCell';
@@ -76,7 +76,7 @@ const getRowContentByHeader = ({
   }
 };
 
-const TargetsTable = ({targets}: {targets: TargetsResponse.AsObject[]}) => {
+const TargetsTable = ({targets}: {targets: Target.AsObject[]}) => {
   const headers = Object.keys(TargetsTableHeader) as Array<keyof typeof TargetsTableHeader>;
 
   return (
@@ -95,11 +95,11 @@ const TargetsTable = ({targets}: {targets: TargetsResponse.AsObject[]}) => {
         </tr>
       </thead>
       <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
-        {targets.map((target: TargetsResponse.AsObject) => {
+        {targets.map((target: Target.AsObject) => {
           return (
-            <tr key={target['url']}>
+            <tr key={target.url}>
               {headers.map((header: string) => {
-                const key = `table-cell-${header}-${target['url']}`;
+                const key = `table-cell-${header}-${target.url}`;
                 return getRowContentByHeader({header: TargetsTableHeader[header], target, key});
               })}
             </tr>
