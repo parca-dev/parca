@@ -11,7 +11,7 @@ const LabelsCell = ({key, labels, discoveredLabels}) => {
   return (
     <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex flex-col w-96">
       <div className="flex flex-wrap">
-        {allLabels.length &&
+        {allLabels.length > 0 &&
           allLabels.map((item: {name: string; value: string}) => {
             return (
               <div className="pb-1 pr-1">

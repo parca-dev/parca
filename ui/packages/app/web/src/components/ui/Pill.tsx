@@ -30,12 +30,10 @@ const VARIANTS = {
 export type Variant = keyof typeof VARIANTS;
 
 const Pill = ({
-  inverted = false,
   variant = 'primary',
   children,
   ...props
 }: {
-  inverted?: boolean;
   variant?: Variant;
   children: React.ReactNode;
 } & JSX.IntrinsicElements['span']) => (

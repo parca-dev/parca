@@ -255,6 +255,10 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 			paths = append(paths, "/")
 		}
 
+		if paths[0] == "/targets/index.html" {
+			paths = append(paths, "/targets")
+		}
+
 		for _, path := range paths {
 			uiHandler.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 				http.ServeContent(w, r, d.Name(), fi.ModTime(), bytes.NewReader(b))

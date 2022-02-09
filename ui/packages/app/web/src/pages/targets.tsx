@@ -32,6 +32,7 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
         });
       }
     );
+    /* eslint-disable react-hooks/exhaustive-deps */
   }, []);
 
   return result;
