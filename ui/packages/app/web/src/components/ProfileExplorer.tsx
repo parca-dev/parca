@@ -9,18 +9,21 @@ interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
 }
 
+const transformToArray = params => params.split(',');
+
 const parseParams = (querystring: string) => {
-  // parse query string
   const params = new URLSearchParams(querystring);
 
   const obj: any = {};
-
-  // iterate over all keys
   for (const key of params.keys()) {
     if (params.getAll(key).length > 1) {
       obj[key] = params.getAll(key);
     } else {
-      obj[key] = params.get(key);
+      if (params.get(key).includes(',')) {
+        obj[key] = transformToArray(params.get(key));
+      } else {
+        obj[key] = params.get(key);
+      }
     }
   }
 
@@ -31,8 +34,6 @@ const convertToQueryParams = params =>
   Object.keys(params)
     .map(key => key + '=' + params[key])
     .join('&');
-
-const transformToObject = params => params.split(',');
 
 const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
   const location = useLocation();
@@ -59,8 +60,6 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
     compare_b,
   } = parseParams(location.search);
   /* eslint-enable */
-
-  console.log('🚀 ~ file: ProfileExplorer.tsx ~ line 65 ~ labels_a', parseParams(location.search));
 
   const queryParams = parseParams(location.search);
 

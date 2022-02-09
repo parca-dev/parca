@@ -5,11 +5,11 @@
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js src/*",
-    "dev": "../../../node_modules/.bin/next dev",
+    "nextjs-dev": "../../../node_modules/.bin/next dev",
     "clean": "rimraf .next && rimraf out",
     "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
     "storybook": "start-storybook -p 6006",
-    "start": "craco start",
+    "dev": "craco start",
     "build": "craco build",
     "eject": "craco eject"
   },
