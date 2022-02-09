@@ -1,11 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {
-  Targets,
-  TargetsRequest,
-  TargetsResponse,
-  ScrapeServiceClient,
-  ServiceError,
-} from '@parca/client';
+import {TargetsRequest, TargetsResponse, ScrapeServiceClient, ServiceError} from '@parca/client';
 import {NextRouter, withRouter} from 'next/router';
 import TargetsTable from '../components/Targets/TargetsTable';
 
@@ -45,14 +39,14 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
 
 const TargetsPage = (_: TargetsPageProps): JSX.Element => {
   const scrapeClient = new ScrapeServiceClient(apiEndpoint === undefined ? '' : apiEndpoint);
-  const {response: targetsResponse, error: targetsError} = useTargets(scrapeClient);
+  const {response: targetsResponse} = useTargets(scrapeClient);
   const getKeyValuePairFromArray = (key: string, value: {targetsList}) => {
     return {[key]: value.targetsList};
   };
 
-  const {targetsMap} = targetsResponse || {};
+  const {targetsMap} = targetsResponse ?? {};
   const targetNamespaces = targetsMap?.map(item =>
-    getKeyValuePairFromArray(item[0] as string, item[1] as {targetsList})
+    getKeyValuePairFromArray(item[0], item[1] as {targetsList})
   );
 
   return (

@@ -4,12 +4,11 @@ import {Parca, ParcaSmall} from '@parca/icons';
 import cx from 'classnames';
 import DarkModeToggle from './DarkModeToggle';
 
-const homePage = {name: 'Profiles', href: '/', external: false};
-const links = [
-  homePage,
-  {name: 'Targets', href: '/targets', external: false},
-  {name: 'Help', href: 'https://parca.dev/docs/overview', external: true},
-];
+const links = {
+  '/': {label: 'Profiles', href: '/', external: false},
+  '/targets': {label: 'Targets', href: '/targets', external: false},
+  '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
+};
 
 const Navbar = ({
   isDarkMode,
@@ -19,7 +18,7 @@ const Navbar = ({
   setDarkMode: (mode: boolean) => void;
 }) => {
   const getPageByHref = (href: string = '/'): {name: string; href: string; external: boolean} =>
-    links.find(link => link.href === href) || homePage;
+    links[href] ?? links['/'];
   const currentPage = getPageByHref(window.location.pathname);
   const isCurrentPage = item => item.href === currentPage.href;
 
@@ -58,9 +57,9 @@ const Navbar = ({
                 </div>
                 <div className="hidden sm:block sm:ml-6">
                   <div className="flex space-x-4">
-                    {links.map(item => (
+                    {Object.values(links).map(item => (
                       <a
-                        key={item.name}
+                        key={item.label}
                         href={item.href}
                         target={item.external ? '_blank' : undefined}
                         className={cx(
@@ -71,7 +70,7 @@ const Navbar = ({
                         )}
                         aria-current={isCurrentPage(item) ? 'page' : undefined}
                       >
-                        {item.name}
+                        {item.label}
                       </a>
                     ))}
                   </div>
@@ -93,9 +92,9 @@ const Navbar = ({
 
           <Disclosure.Panel className="sm:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              {links.map(item => (
+              {Object.values(links).map(item => (
                 <a
-                  key={item.name}
+                  key={item.label}
                   href={item.href}
                   className={cx(
                     isCurrentPage(item)
@@ -105,7 +104,7 @@ const Navbar = ({
                   )}
                   aria-current={isCurrentPage(item) ? 'page' : undefined}
                 >
-                  {item.name}
+                  {item.label}
                 </a>
               ))}
             </div>
