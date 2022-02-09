@@ -1,11 +1,11 @@
-import CompareArrows from './assets/compare-arrows.svg';
-import Parca from './assets/logo.svg';
-import ParcaSmall from './assets/logo-small.svg';
-import Checkmark from './assets/checkmark.svg';
-import RedX from './assets/red-x.svg';
-import GitHub from './assets/github.svg';
-import LinkedIn from './assets/linkedin.svg';
-import Twitter from './assets/twitter.svg';
-import ArrowForward from './assets/arrow-forward.svg';
+import {ReactComponent as CompareArrows} from './assets/compare-arrows.svg';
+import {ReactComponent as Parca} from './assets/logo.svg';
+import {ReactComponent as ParcaSmall} from './assets/logo-small.svg';
+import {ReactComponent as Checkmark} from './assets/checkmark.svg';
+import {ReactComponent as RedX} from './assets/red-x.svg';
+import {ReactComponent as GitHub} from './assets/github.svg';
+import {ReactComponent as LinkedIn} from './assets/linkedin.svg';
+import {ReactComponent as Twitter} from './assets/twitter.svg';
+import {ReactComponent as ArrowForward} from './assets/arrow-forward.svg';
 
 export {Parca, ParcaSmall, CompareArrows, Checkmark, RedX, GitHub, LinkedIn, Twitter, ArrowForward};

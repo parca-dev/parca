@@ -1,16 +1,43 @@
 import {QuerySelection} from './ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca/profile';
-import {NextRouter, withRouter} from 'next/router';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
+import {useLocation, useNavigate} from 'react-router-dom';
 
 interface ProfileExplorerProps {
-  router: NextRouter;
   queryClient: QueryServiceClient;
 }
 
-const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Element => {
+const parseParams = (querystring: string) => {
+  // parse query string
+  const params = new URLSearchParams(querystring);
+
+  const obj: any = {};
+
+  // iterate over all keys
+  for (const key of params.keys()) {
+    if (params.getAll(key).length > 1) {
+      obj[key] = params.getAll(key);
+    } else {
+      obj[key] = params.get(key);
+    }
+  }
+
+  return obj;
+};
+
+const convertToQueryParams = params =>
+  Object.keys(params)
+    .map(key => key + '=' + params[key])
+    .join('&');
+
+const transformToObject = params => params.split(',');
+
+const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   /* eslint-disable */
   // Disable eslint due to params being snake case
   const {
@@ -30,10 +57,12 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
     time_b,
     time_selection_b,
     compare_b,
-  } = router.query;
+  } = parseParams(location.search);
   /* eslint-enable */
 
-  const queryParams = Object.fromEntries(Object.entries(router.query));
+  console.log('🚀 ~ file: ProfileExplorer.tsx ~ line 65 ~ labels_a', parseParams(location.search));
+
+  const queryParams = parseParams(location.search);
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -52,17 +81,23 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
     return o;
   };
 
-  const selectProfileA = async (p: ProfileSelection): Promise<boolean> => {
-    return await router.push({
+  const selectProfileA = (p: ProfileSelection) => {
+    return navigate({
       pathname: '/',
-      query: {...queryParams, ...SuffixParams(p.HistoryParams(), '_a')},
+      search: `?${convertToQueryParams({
+        ...queryParams,
+        ...SuffixParams(p.HistoryParams(), '_a'),
+      })}`,
     });
   };
 
-  const selectProfileB = async (p: ProfileSelection): Promise<boolean> => {
-    return await router.push({
+  const selectProfileB = (p: ProfileSelection) => {
+    return navigate({
       pathname: '/',
-      query: {...queryParams, ...SuffixParams(p.HistoryParams(), '_b')},
+      search: `?${convertToQueryParams({
+        ...queryParams,
+        ...SuffixParams(p.HistoryParams(), '_b'),
+      })}`,
     });
   };
 
@@ -75,6 +110,7 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
       merge: (merge_a as string) === 'true',
       timeSelection: time_selection_a as string,
     };
+
     const profile = ProfileSelectionFromParams(
       expression_a as string,
       from_a as string,
@@ -83,12 +119,13 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
       labels_a as string[],
       time_a as string
     );
-    const selectQuery = async (q: QuerySelection): Promise<boolean> => {
-      return await router.push({
+
+    const selectQuery = (q: QuerySelection) => {
+      return navigate({
         pathname: '/',
         // Filtering the _a suffix causes us to reset potential profile
         // selection when running a new query.
-        query: {
+        search: `?${convertToQueryParams({
           ...filterSuffix(queryParams, '_a'),
           ...{
             expression_a: q.expression,
@@ -97,13 +134,22 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
             merge_a: q.merge,
             time_selection_a: q.timeSelection,
           },
-        },
+        })}`,
       });
     };
-    const selectProfile = async (p: ProfileSelection): Promise<boolean> => {
-      return await router.push({
+
+    const selectProfile = (p: ProfileSelection) => {
+      console.log({
+        ...queryParams,
+        ...SuffixParams(p.HistoryParams(), '_a'),
+      });
+
+      return navigate({
         pathname: '/',
-        query: {...queryParams, ...SuffixParams(p.HistoryParams(), '_a')},
+        search: `?${convertToQueryParams({
+          ...queryParams,
+          ...SuffixParams(p.HistoryParams(), '_a'),
+        })}`,
       });
     };
 
@@ -131,9 +177,9 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
         };
       }
 
-      void router.push({
+      void navigate({
         pathname: '/',
-        query: compareQuery,
+        search: `?${convertToQueryParams(compareQuery)}`,
       });
     };
 
@@ -181,12 +227,12 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
     time_b as string
   );
 
-  const selectQueryA = async (q: QuerySelection): Promise<boolean> => {
-    return await router.push({
+  const selectQueryA = (q: QuerySelection) => {
+    return navigate({
       pathname: '/',
       // Filtering the _a suffix causes us to reset potential profile
       // selection when running a new query.
-      query: {
+      search: `?${convertToQueryParams({
         ...filterSuffix(queryParams, '_a'),
         ...{
           compare_a: 'true',
@@ -196,16 +242,16 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
           merge_a: q.merge,
           time_selection_a: q.timeSelection,
         },
-      },
+      })}`,
     });
   };
 
-  const selectQueryB = async (q: QuerySelection): Promise<boolean> => {
-    return await router.push({
+  const selectQueryB = (q: QuerySelection) => {
+    return navigate({
       pathname: '/',
       // Filtering the _b suffix causes us to reset potential profile
       // selection when running a new query.
-      query: {
+      search: `?${convertToQueryParams({
         ...filterSuffix(queryParams, '_b'),
         ...{
           compare_b: 'true',
@@ -215,24 +261,24 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
           merge_b: q.merge,
           time_selection_b: q.timeSelection,
         },
-      },
+      })}`,
     });
   };
 
-  const closeProfile = async (card: string): Promise<boolean> => {
+  const closeProfile = (card: string) => {
     let newQueryParameters = queryParams;
     if (card === 'A') {
       newQueryParameters = swapQueryParameters(queryParams);
     }
 
-    return await router.push({
+    return navigate({
       pathname: '/',
-      query: {
+      search: `?${convertToQueryParams({
         ...filterSuffix(newQueryParameters, '_b'),
         ...{
           compare_a: 'false',
         },
-      },
+      })}`,
     });
   };
 
@@ -252,4 +298,4 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
   );
 };
 
-export default withRouter(ProfileExplorer);
+export default ProfileExplorer;

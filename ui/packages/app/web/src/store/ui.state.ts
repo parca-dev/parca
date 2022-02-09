@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import produce from 'immer';
+import {GetState} from 'zustand';
 
 export type UiState = ReturnType<typeof createSlice>;
 
 export default function createSlice(
-  set,
-  _get
+  set: any,
+  _get: GetState<{[x: string]: {}}>
 ): {
   ui: {
     darkMode: boolean;

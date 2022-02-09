@@ -1,5 +1,5 @@
 import {Menu, Transition} from '@headlessui/react';
-import {Fragment} from 'react';
+import React, {Fragment} from 'react';
 import {ChevronDownIcon} from '@heroicons/react/solid';
 import Button, {ButtonColor} from './Button';
 import cx from 'classnames';
@@ -51,7 +51,7 @@ const Dropdown = ({
   );
 };
 
-const Item = ({children, onSelect}) => {
+const Item = ({children, onSelect}: {children: React.ReactNode; onSelect: () => void}) => {
   return (
     <Menu.Item>
       {({active}) => (

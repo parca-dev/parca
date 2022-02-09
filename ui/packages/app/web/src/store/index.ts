@@ -1,13 +1,13 @@
-import create from 'zustand';
+import create, {GetState, SetState} from 'zustand';
 import createContext from 'zustand/context';
 import {persist} from 'zustand/middleware';
 import createUiState from './ui.state';
 
-let store;
+let store: any;
 
 const whitelistPersist = ['ui'];
 
-const stateSlices = (set, get) => ({
+const stateSlices = (set: SetState<{[x: string]: {}}>, get: GetState<{[x: string]: {}}>) => ({
   ...createUiState(set, get),
   // add more slices
 });

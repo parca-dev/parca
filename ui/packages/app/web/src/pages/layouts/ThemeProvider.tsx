@@ -1,8 +1,9 @@
-import {useStore} from 'store';
-import {selectUi} from 'store/ui.state';
+import {useStore} from '../../store';
+import {selectUi} from '../../store/ui.state';
 import cx from 'classnames';
+import React from 'react';
 
-const ThemeProvider = ({children}) => {
+const ThemeProvider = ({children}: {children: React.ReactNode}) => {
   const {darkMode} = useStore(selectUi);
 
   return (

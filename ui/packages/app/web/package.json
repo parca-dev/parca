@@ -6,11 +6,12 @@
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js src/*",
     "dev": "../../../node_modules/.bin/next dev",
-    "build": "../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
     "clean": "rimraf .next && rimraf out",
     "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
-    "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
-    "storybook": "start-storybook -p 6006"
+    "storybook": "start-storybook -p 6006",
+    "start": "craco start",
+    "build": "craco build",
+    "eject": "craco eject"
   },
   "config": {
     "port": 3000,
@@ -36,11 +37,38 @@
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
     "postcss": "^8.4.5",
+    "react-scripts": "5.0.0",
     "tailwindcss": "^3.0.1",
+    "web-vitals": "^2.1.0",
     "zustand": "^3.5.13"
   },
   "devDependencies": {
+    "@craco/craco": "^6.4.3",
     "@storybook/react": "^6.3.12",
-    "react-dom": "^17.0.2"
+    "@types/d3": "^7.1.0",
+    "@types/lodash.throttle": "^4.1.6",
+    "react-dom": "^17.0.2",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-plugin-prettier": "^2.3.0",
+    "tslint-react": "^5.0.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

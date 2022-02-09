@@ -1,8 +1,7 @@
-import Navbar from 'components/ui/Navbar';
+import Navbar from '../../components/ui/Navbar';
 import Head from 'next/head';
-import {withRouter} from 'next/router';
-import {useStore} from 'store';
-import {selectUi} from 'store/ui.state';
+import {useStore} from '../../store';
+import {selectUi} from '../../store/ui.state';
 
 const Header = () => {
   const {darkMode} = useStore(selectUi);
@@ -10,13 +9,14 @@ const Header = () => {
 
   return (
     <>
-      <Head>
+      {/* Todo: replace with react-helmet */}
+      {/* <Head>
         <title>Parca</title>
         <link rel="icon" href="/favicon.svg" />
-      </Head>
+      </Head> */}
       <Navbar isDarkMode={darkMode} setDarkMode={setDarkMode} />
     </>
   );
 };
 
-export default withRouter(Header);
+export default Header;

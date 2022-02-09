@@ -7,7 +7,7 @@ import cx from 'classnames';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
-  setMatchersString: (string) => void;
+  setMatchersString: (arg: string) => void;
   runQuery: () => void;
   currentQuery: Query;
 }
@@ -128,7 +128,7 @@ const MatchersInput = ({
   const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
 
-  const onChange = (e): void => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
     setMatchersString(newValue);
     resetLastCompleted();
@@ -139,7 +139,7 @@ const MatchersInput = ({
     return value.slice(0, value.length - suggestion.typeahead.length) + suggestion.value;
   };
 
-  const getSuggestion = (index): Suggestion => {
+  const getSuggestion = (index: number): Suggestion => {
     if (index < suggestionSections.labelNames.length) {
       return suggestionSections.labelNames[index];
     }
