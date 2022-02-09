@@ -5,8 +5,6 @@ import createUiState from './ui.state';
 
 let store;
 
-const whitelistPersist = ['ui'];
-
 const stateSlices = (set, get) => ({
   ...createUiState(set, get),
   // add more slices
@@ -24,7 +22,6 @@ export const initializeStore = () => {
   return create(
     persist((set, get) => stateSlices(set, get), {
       name: 'parca',
-      whitelist: whitelistPersist,
     })
   );
 };
