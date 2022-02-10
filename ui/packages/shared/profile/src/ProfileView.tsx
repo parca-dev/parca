@@ -29,8 +29,6 @@ function arrayEquals(a, b): boolean {
   );
 }
 
-const viewButtonClasses = 'w-auto px-8 whitespace-nowrap text-ellipsis';
-
 export const useQuery = (
   client: QueryServiceClient,
   profileSource: ProfileSource
@@ -162,21 +160,27 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                 </div>
                 <Button
                   color="neutral"
-                  className="rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis"
+                  className={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis !shadow-none !ring-0
+                    ${currentView === 'icicle' ? '!bg-[#4f45e4]' : ''} 
+                    `}
                   onClick={() => setCurrentView('icicle')}
                 >
                   Icicle Graph
                 </Button>
                 <Button
                   color="neutral"
-                  className="rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap text-ellipsis"
+                  className={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap text-ellipsis ${
+                    currentView === 'both' ? '!bg-[#4f45e4]' : ''
+                  }`}
                   onClick={() => setCurrentView('both')}
                 >
                   Both
                 </Button>
                 <Button
                   color="neutral"
-                  className="rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis"
+                  className={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis
+                      ${currentView === 'table' ? '!bg-[#4f45e4]' : ''}
+                    `}
                   onClick={() => setCurrentView('table')}
                 >
                   Table

@@ -114,7 +114,7 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
   return (
     <>
       <div className="w-full">
-        <table className="table-auto text-left">
+        <table className="table-auto text-left w-full">
           <thead>
             <tr>
               <th className="text-sm cursor-pointer" onClick={() => requestSort('name')}>
@@ -145,7 +145,7 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
           </thead>
           <tbody>
             {items?.map((report, index) => (
-              <tr key={index} className="hover:[#999999]">
+              <tr key={index} className="hover-[#90c7e0]">
                 <td className="text-sm py-1.5 border-b-[1px] border-[#646464]">
                   {report.meta?.mapping?.file !== '' && [getLastItem(report.meta?.mapping?.file)]}{' '}
                   {report.meta?.pb_function?.name}
