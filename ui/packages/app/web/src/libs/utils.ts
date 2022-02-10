@@ -7,7 +7,3 @@ export const cutToMaxStringLength = (input: string, len: number): string => {
   }
   return `${input.substring(0, len)}...`;
 };
-
-export const capitalizeFirstLetter = (str: string): string => {
-  return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
-};

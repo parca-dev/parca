@@ -243,7 +243,7 @@ const ProfileSelector = ({
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
-    <Card className="min-h-[80vh]">
+    <Card>
       <Card.Header>
         <div className="flex space-x-4">
           {comparing && (
