@@ -97,6 +97,8 @@ func (t *Table) Sync() {
 }
 
 func (t *Table) Insert(rows []Row) error {
+	tx := t.db.begin()
+	defer t.db.commit(tx)
 	defer func() {
 		t.metrics.rowsInserted.Add(float64(len(rows)))
 		t.metrics.rowInsertSize.Observe(float64(len(rows)))
@@ -112,7 +114,7 @@ func (t *Table) Insert(rows []Row) error {
 
 	rowsToInsertPerGranule := t.splitRowsByGranule(rows)
 	for granule, rows := range rowsToInsertPerGranule {
-		p, err := NewPart(t.schema, rows)
+		p, err := NewPart(tx, t.schema, rows)
 		if err != nil {
 			return err
 		}
@@ -139,7 +141,9 @@ func (t *Table) splitGranule(granule *Granule) {
 		return
 	}
 
-	newpart, err := Merge(granule.parts...) // need to merge all parts in a granule before splitting
+	tx := uint64(0) // TODO what is the tx
+
+	newpart, err := Merge(tx, granule.parts...) // need to merge all parts in a granule before splitting
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
@@ -167,10 +171,12 @@ func (t *Table) splitGranule(granule *Granule) {
 func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) error) error {
 	t.RLock()
 	defer t.RUnlock()
+	tx := t.db.begin()
+	defer t.db.commit(tx)
 	var err error
 	t.granuleIterator(func(g *Granule) bool {
 		var r arrow.Record
-		r, err = g.ArrowRecord(pool)
+		r, err = g.ArrowRecord(tx, pool)
 		if err != nil {
 			return false
 		}

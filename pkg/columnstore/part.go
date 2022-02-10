@@ -14,12 +14,17 @@ type Part struct {
 	schema      Schema
 	columns     []Iterable
 	Cardinality int
+
+	// transaction id that this part was indserted under
+	tx uint64
 }
 
-func NewPart(schema Schema, rows []Row) (*Part, error) {
+func NewPart(tx uint64, schema Schema, rows []Row) (*Part, error) {
 	p := &Part{
 		schema:      schema,
 		Cardinality: len(rows),
+
+		tx: tx,
 	}
 	p.columns = make([]Iterable, len(schema.Columns))
 
@@ -89,7 +94,7 @@ func (pi *PartIterator) Err() error {
 }
 
 // Merge merges all parts into a single part
-func Merge(parts ...*Part) (*Part, error) {
+func Merge(tx uint64, parts ...*Part) (*Part, error) {
 
 	rows := SortableRows{}
 	// Convert all the parts into a set of rows
@@ -103,7 +108,7 @@ func Merge(parts ...*Part) (*Part, error) {
 	// Sort the rows
 	sort.Sort(rows)
 
-	return NewPart(parts[0].schema, rows)
+	return NewPart(tx, parts[0].schema, rows)
 }
 
 // SortableRows is a slice of Rows that can be sorted
