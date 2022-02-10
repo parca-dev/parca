@@ -93,7 +93,10 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 			_, appendSpan := s.tracer.Start(ctx, "append-profiles")
 			for _, prof := range profiles {
 				// TODO all of this should be done in the flat profile
-				// extraction in the first place.
+				// extraction in the first place. Also this `__name__` hack is
+				// only here for backward compatibility while we finish up the
+				// columnstore. This can be removed once the migration is
+				// complete and the old storage is removed.
 				labels := make([]columnstore.DynamicColumnValue, 0, len(ls))
 				found := false
 				for _, l := range ls {

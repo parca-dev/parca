@@ -144,6 +144,14 @@ type RegexMatcher struct {
 	regex *regexp.Regexp
 }
 
+func NewRegexMatcher(pattern string) (*RegexMatcher, error) {
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	return &RegexMatcher{regex: regex}, nil
+}
+
 func (m *RegexMatcher) MatchString(s string) bool {
 	return m.regex.MatchString(s)
 }

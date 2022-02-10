@@ -327,6 +327,25 @@ func (e LogicalAndExpression) Eval(r arrow.Record) (*Bitmap, error) {
 	return res, nil
 }
 
+var (
+	ErrInvalidLogicalExpression = errors.New("logical expression must be built of expressions of type boolean")
+)
+
+func (e LogicalAndExpression) DataType(s Schema) (arrow.DataType, error) {
+	for _, expr := range e.expressions {
+		dt, err := expr.DataType(s)
+		if err != nil {
+			return nil, err
+		}
+
+		if dt != arrow.FixedWidthTypes.Boolean {
+			return nil, ErrInvalidLogicalExpression
+		}
+	}
+
+	return arrow.FixedWidthTypes.Boolean, nil
+}
+
 type Operator int
 
 const (

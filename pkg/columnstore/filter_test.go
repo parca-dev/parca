@@ -90,6 +90,21 @@ func TestFilter(t *testing.T) {
 			filterExpr: DynamicColumnRef("labels").Column("label4").Equal(StringLiteral("value4")),
 			rows:       1,
 		},
+		"regexp and == string": {
+			filterExpr: And(
+				DynamicColumnRef("labels").Column("label1").RegexMatch(&RegexMatcher{regex: reg}),
+				DynamicColumnRef("labels").Column("label2").Equal(StringLiteral("value2")),
+			),
+			rows: 3,
+		},
+		"regexp and == string and != string": {
+			filterExpr: And(
+				DynamicColumnRef("labels").Column("label1").RegexMatch(&RegexMatcher{regex: reg}),
+				DynamicColumnRef("labels").Column("label2").Equal(StringLiteral("value2")),
+				DynamicColumnRef("labels").Column("label1").NotEqual(StringLiteral("value3")),
+			),
+			rows: 2,
+		},
 		"regexp simple match": {
 			filterExpr: DynamicColumnRef("labels").Column("label1").RegexMatch(&RegexMatcher{regex: reg}),
 			rows:       3,

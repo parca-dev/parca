@@ -228,14 +228,16 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				sym.Close()
 			})
 	}
-	{
-		ctx, cancel := context.WithCancel(ctx)
-		gr.Add(func() error {
-			return db.Run(ctx)
-		}, func(err error) {
-			level.Debug(logger).Log("msg", "db exiting")
-			cancel()
-		})
+	if flags.Storage == "tsdb" {
+		{
+			ctx, cancel := context.WithCancel(ctx)
+			gr.Add(func() error {
+				return db.Run(ctx)
+			}, func(err error) {
+				level.Debug(logger).Log("msg", "db exiting")
+				cancel()
+			})
+		}
 	}
 	gr.Add(
 		func() error {
