@@ -159,40 +159,37 @@ func (g *Granule) ArrowRecord(pool memory.Allocator) (arrow.Record, error) {
 		case true: // expand the dynamic columns
 			d := c.(*DynamicColumn) // TODO this is gross and we should change this iteration
 			for k, name := range d.dynamicColumns {
-				buildFromIterator(i, i+k, bld, d.data[name].Iterator(p.Cardinality))
+				err := d.def.Type.AppendIteratorToArrow(d.data[name].Iterator(p.Cardinality), bld.Field(i+k))
+				if err != nil {
+					return nil, err
+				}
 			}
 			i += len(d.dynamicColumns)
 		default:
-			buildFromIterator(i, i, bld, c.Iterator(p.Cardinality))
+			col := c.(*StaticColumn)
+			err := col.def.Type.AppendIteratorToArrow(col.data.Iterator(p.Cardinality), bld.Field(i))
+			if err != nil {
+				return nil, err
+			}
 			i++
 		}
 	}
 
-	return bld.NewRecord(), nil
-}
-
-type SimpleIterator interface {
-	Next() bool
-	Value() interface{}
-}
-
-func buildFromIterator(i, j int, bld *array.RecordBuilder, it SimpleIterator) {
-	for it.Next() {
-		switch bld.Schema().Field(i).Type.ID() {
-		case arrow.BinaryTypes.String.ID():
-			if it.Value() == nil {
-				bld.Field(j).(*array.StringBuilder).AppendNull()
-			} else {
-				bld.Field(j).(*array.StringBuilder).Append(it.Value().(string))
-			}
-		case arrow.PrimitiveTypes.Int64.ID():
-			if it.Value() == nil {
-				bld.Field(j).(*array.Int64Builder).AppendNull()
-			} else {
-				bld.Field(j).(*array.Int64Builder).Append(it.Value().(int64))
-			}
+	maxValues := 0
+	for _, c := range bld.Fields() {
+		l := c.Len()
+		if l > maxValues {
+			maxValues = l
 		}
 	}
+
+	for _, c := range bld.Fields() {
+		for i := c.Len(); i < maxValues; i++ {
+			c.AppendNull()
+		}
+	}
+
+	return bld.NewRecord(), nil
 }
 
 // Less implements the btree.Item interface

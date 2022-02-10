@@ -4,7 +4,7 @@ import (
 	"github.com/parca-dev/parca/pkg/columnstore"
 )
 
-func parcaProfilingTableSchema() columnstore.Schema {
+func ParcaProfilingTableSchema() columnstore.Schema {
 	return columnstore.Schema{
 		Columns: []columnstore.ColumnDefinition{{
 			Name:     "sample_type",

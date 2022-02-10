@@ -85,7 +85,9 @@ func (i *ListIterator) Next() bool {
 	i.curIsNull = false
 	enc := i.Enc.Value().(*Plain)
 	it := enc.NonSparseIterator()
-	v, err := i.t.elementType.NewArrayFromIterator(it)
+	listType := i.t
+	t := listType.elementType
+	v, err := t.NewArrayFromIterator(it)
 	if err != nil {
 		i.err = err
 		return false
@@ -121,7 +123,7 @@ func (t *ListType) NewArrowArrayFromIterator(pool memory.Allocator, eit Encoding
 
 func (t *ListType) NewArrayFromIterator(eit EncodingIterator) (interface{}, error) {
 	arr := make([]interface{}, eit.Cardinality())
-	it := &ListIterator{Enc: eit}
+	it := t.NewIterator(eit)
 	i := 0
 	for it.Next() {
 		if it.IsNull() {
@@ -140,12 +142,11 @@ func (t *ListType) NewArrayFromIterator(eit EncodingIterator) (interface{}, erro
 	return arr, nil
 }
 
-func (t *ListType) AppendIteratorToArrow(eit EncodingIterator, builder array.Builder) error {
+func (t *ListType) AppendIteratorToArrow(it EncodingIterator, builder array.Builder) error {
 	lb := builder.(*array.ListBuilder)
 	vb := lb.ValueBuilder()
 
-	length := eit.Cardinality()
-	it := &ListIterator{Enc: eit}
+	length := it.Cardinality()
 	i := 0
 	for it.Next() {
 		if i == length {

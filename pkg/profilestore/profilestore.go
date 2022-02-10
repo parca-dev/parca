@@ -39,7 +39,8 @@ type ProfileStore struct {
 	logger    log.Logger
 	tracer    trace.Tracer
 	metaStore metastore.ProfileMetaStore
-	table     *columnstore.Table
+
+	table *columnstore.Table
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileStore{}
@@ -49,11 +50,8 @@ func NewProfileStore(
 	logger log.Logger,
 	tracer trace.Tracer,
 	metaStore metastore.ProfileMetaStore,
+	table *columnstore.Table,
 ) *ProfileStore {
-	s := columnstore.New(reg)
-	db := s.DB("parca")
-	table := db.Table("stacktraces", parcaProfilingTableSchema(), logger)
-
 	return &ProfileStore{
 		logger:    logger,
 		tracer:    tracer,
