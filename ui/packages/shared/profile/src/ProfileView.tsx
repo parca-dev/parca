@@ -29,6 +29,8 @@ function arrayEquals(a, b): boolean {
   );
 }
 
+const viewButtonClasses = 'w-auto px-8 whitespace-nowrap text-ellipsis';
+
 export const useQuery = (
   client: QueryServiceClient,
   profileSource: ProfileSource
@@ -139,17 +141,7 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
         <Card>
           <Card.Body>
             <div className="flex py-3 w-full">
-              <div className="w-1/2 flex space-x-4">
-                <div>
-                  <Button
-                    color="neutral"
-                    onClick={resetIcicleGraph}
-                    disabled={curPath.length === 0}
-                  >
-                    Reset View
-                  </Button>
-                </div>
-
+              <div className="w-2/5 flex space-x-4">
                 <div>
                   <Button color="neutral" onClick={downloadPProf}>
                     Download pprof
@@ -157,24 +149,34 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                 </div>
               </div>
 
-              <div className="flex min-w-[500px] ml-auto">
+              <div className="flex ml-auto">
+                <div className="mr-3">
+                  <Button
+                    color="neutral"
+                    onClick={resetIcicleGraph}
+                    disabled={curPath.length === 0}
+                    className="whitespace-nowrap text-ellipsis"
+                  >
+                    Reset View
+                  </Button>
+                </div>
                 <Button
                   color="neutral"
-                  className="rounded-tr-none rounded-br-none"
+                  className="rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis"
                   onClick={() => setCurrentView('icicle')}
                 >
                   Icicle Graph
                 </Button>
                 <Button
                   color="neutral"
-                  className="rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0"
+                  className="rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap text-ellipsis"
                   onClick={() => setCurrentView('both')}
                 >
                   Both
                 </Button>
                 <Button
                   color="neutral"
-                  className="rounded-tl-none rounded-bl-none"
+                  className="rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis"
                   onClick={() => setCurrentView('table')}
                 >
                   Table
