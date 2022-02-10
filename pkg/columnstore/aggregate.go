@@ -81,10 +81,6 @@ func (a *HashAggregate) Callback(r arrow.Record) error {
 		colScalars = colScalars[:0]
 
 		for _, arr := range groupByArrays {
-			if arr.IsNull(i) {
-				continue
-			}
-
 			colScalar, err := scalar.GetScalar(arr, i)
 			if err != nil {
 				return err
@@ -149,7 +145,7 @@ func (a *HashAggregate) Callback(r arrow.Record) error {
 }
 
 func appendValue(arr array.Builder, s scalar.Scalar) error {
-	if s == nil {
+	if s == nil || !s.IsValid() {
 		arr.AppendNull()
 		return nil
 	}
