@@ -4,13 +4,15 @@
   "version": "0.8.1",
   "description": "Parca Web Interface",
   "scripts": {
-    "lint": "eslint --ext .ts,.tsx,.js src/*",
+    "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
     "dev": "../../../node_modules/.bin/next dev",
     "build": "../../../node_modules/.bin/next build && ../../../node_modules/.bin/next export -o dist",
     "clean": "rimraf .next && rimraf out",
     "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
     "start": "../../../node_modules/.bin/next start -p ${PORT:=3000}",
-    "storybook": "start-storybook -p 6006"
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook -c ./.storybook/",
+    "chromatic": "chromatic"
   },
   "config": {
     "port": 3000,
@@ -19,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@headlessui/react": "^1.4.3",
     "@parca/client": "^0.8.0",
     "@parca/dynamicsize": "^0.8.0",
     "@parca/functions": "^0.8.0",
@@ -36,11 +39,12 @@
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
     "postcss": "^8.4.5",
-    "tailwindcss": "^3.0.1",
+    "react-datepicker": "^4.6.0",
+    "react-use": "^17.3.2",
     "zustand": "^3.5.13"
   },
   "devDependencies": {
-    "@storybook/react": "^6.3.12",
+    "chromatic": "^6.4.1",
     "react-dom": "^17.0.2"
   }
 }
