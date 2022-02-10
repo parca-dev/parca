@@ -63,7 +63,7 @@ func (d *Distinction) Callback(r arrow.Record) error {
 
 		hash := uint64(0)
 		for j, colScalar := range colScalars {
-			if colScalar == nil {
+			if colScalar == nil || !colScalar.IsValid() {
 				continue
 			}
 

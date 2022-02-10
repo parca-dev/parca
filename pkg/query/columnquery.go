@@ -173,82 +173,90 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 	labelsetToIndex := map[string]int{}
 
 	labelSet := labels.Labels{}
-	err = q.table.Iterator(pool, columnstore.Filter(pool, filterExpr, func(ar arrow.Record) error {
-		defer ar.Release()
 
-		timestampColumnIndex := 0
-		timestampColumnFound := false
-		valueColumnIndex := 0
-		valueColumnFound := false
-		labelColumnIndices := []int{}
+	agg := columnstore.NewHashAggregate(
+		pool,
+		&columnstore.SumAggregation{},
+		columnstore.StaticColumnRef("value").ArrowFieldMatcher(),
+		columnstore.DynamicColumnRef("labels").ArrowFieldMatcher(),
+		columnstore.StaticColumnRef("timestamp").ArrowFieldMatcher(),
+	)
 
-		fields := ar.Schema().Fields()
-		for i, field := range fields {
-			if field.Name == "timestamp" {
-				timestampColumnIndex = i
-				timestampColumnFound = true
-				continue
-			}
-			if field.Name == "value" {
-				valueColumnIndex = i
-				valueColumnFound = true
-				continue
-			}
+	err = q.table.Iterator(pool, columnstore.Filter(pool, filterExpr, agg.Callback))
 
-			if strings.HasPrefix(field.Name, "labels.") {
-				labelColumnIndices = append(labelColumnIndices, i)
-			}
-		}
-
-		if !timestampColumnFound {
-			return ErrTimestampColumnNotFound
-		}
-
-		if !valueColumnFound {
-			return ErrValueColumnNotFound
-		}
-
-		for i := 0; i < int(ar.NumRows()); i++ {
-			labelSet = labelSet[:0]
-			for _, labelColumnIndex := range labelColumnIndices {
-				col := ar.Column(labelColumnIndex).(*array.String)
-				if col.IsNull(i) {
-					continue
-				}
-
-				v := col.Value(i)
-				if v != "" {
-					labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: v})
-				}
-			}
-
-			sort.Sort(labelSet)
-			s := labelSet.String()
-			index, ok := labelsetToIndex[s]
-			if !ok {
-				pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
-				for _, l := range labelSet {
-					pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
-						Name:  l.Name,
-						Value: l.Value,
-					})
-				}
-				res.Series = append(res.Series, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
-				index = len(res.Series) - 1
-				labelsetToIndex[s] = index
-			}
-
-			series := res.Series[index]
-			series.Samples = append(series.Samples, &pb.MetricsSample{
-				Timestamp: timestamppb.New(timestamp.Time(ar.Column(timestampColumnIndex).(*array.Int64).Value(i))),
-				Value:     ar.Column(valueColumnIndex).(*array.Int64).Value(i),
-			})
-		}
-
-		return nil
-	}))
+	ar, err := agg.Aggregate()
 	if err != nil {
 		return nil, err
+	}
+	defer ar.Release()
+
+	timestampColumnIndex := 0
+	timestampColumnFound := false
+	valueColumnIndex := 0
+	valueColumnFound := false
+	labelColumnIndices := []int{}
+
+	fields := ar.Schema().Fields()
+	for i, field := range fields {
+		if field.Name == "timestamp" {
+			timestampColumnIndex = i
+			timestampColumnFound = true
+			continue
+		}
+		if field.Name == "value" {
+			valueColumnIndex = i
+			valueColumnFound = true
+			continue
+		}
+
+		if strings.HasPrefix(field.Name, "labels.") {
+			labelColumnIndices = append(labelColumnIndices, i)
+		}
+	}
+
+	if !timestampColumnFound {
+		return nil, ErrTimestampColumnNotFound
+	}
+
+	if !valueColumnFound {
+		return nil, ErrValueColumnNotFound
+	}
+
+	for i := 0; i < int(ar.NumRows()); i++ {
+		labelSet = labelSet[:0]
+		for _, labelColumnIndex := range labelColumnIndices {
+			col := ar.Column(labelColumnIndex).(*array.String)
+			if col.IsNull(i) {
+				continue
+			}
+
+			v := col.Value(i)
+			if v != "" {
+				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: v})
+			}
+		}
+
+		sort.Sort(labelSet)
+		s := labelSet.String()
+		index, ok := labelsetToIndex[s]
+		if !ok {
+			pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
+			for _, l := range labelSet {
+				pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
+					Name:  l.Name,
+					Value: l.Value,
+				})
+			}
+			res.Series = append(res.Series, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
+			index = len(res.Series) - 1
+			labelsetToIndex[s] = index
+		}
+
+		series := res.Series[index]
+		series.Samples = append(series.Samples, &pb.MetricsSample{
+			Timestamp: timestamppb.New(timestamp.Time(ar.Column(timestampColumnIndex).(*array.Int64).Value(i))),
+			Value:     ar.Column(valueColumnIndex).(*array.Int64).Value(i),
+		})
 	}
 
 	// This is horrible and should be fixed. The data is sorted in the storage, we should not have to sort it here.

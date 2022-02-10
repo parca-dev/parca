@@ -16,6 +16,9 @@ package profilestore
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io/ioutil"
+	"os"
 	"sort"
 
 	"github.com/go-kit/log"
@@ -79,6 +82,10 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 				return nil, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
 			}
 
+			dir := fmt.Sprintf("tmp/%s", ls.String())
+			os.MkdirAll(dir, os.ModePerm)
+			ioutil.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, p.TimeNanos), sample.RawProfile, 0644)
+
 			if err := p.CheckValid(); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
@@ -92,46 +99,7 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 
 			_, appendSpan := s.tracer.Start(ctx, "append-profiles")
 			for _, prof := range profiles {
-				// TODO all of this should be done in the flat profile
-				// extraction in the first place. Also this `__name__` hack is
-				// only here for backward compatibility while we finish up the
-				// columnstore. This can be removed once the migration is
-				// complete and the old storage is removed.
-				labels := make([]columnstore.DynamicColumnValue, 0, len(ls))
-				found := false
-				for _, l := range ls {
-					if l.Name == "__name__" {
-						found = true
-						labels = append(labels, columnstore.DynamicColumnValue{
-							Name:  "__name__",
-							Value: l.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-						})
-						continue
-					}
-					labels = append(labels, columnstore.DynamicColumnValue{
-						Name:  l.Name,
-						Value: l.Value,
-					})
-				}
-				if !found {
-					labels = append(labels, columnstore.DynamicColumnValue{
-						Name:  "__name__",
-						Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-					})
-				}
-
-				rows := make([]*SampleRow, 0, len(prof.FlatSamples))
-				for _, s := range prof.FlatSamples {
-					rows = append(rows, &SampleRow{
-						Stacktrace: metastoreLocationsToSampleStacktrace(s.Location),
-						Value:      s.Value,
-					})
-				}
-
-				level.Debug(s.logger).Log("msg", "writing sample", "label_set", ls.String(), "timestamp", prof.Meta.Timestamp)
-
-				sortSampleRows(rows)
-				err := s.table.Insert(makeRows(prof, labels, rows))
+				err := InsertProfileIntoTable(ctx, s.logger, s.table, ls, prof)
 				if err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to insert profile: %v", err)
 				}
@@ -141,6 +109,49 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 	}
 
 	return &profilestorepb.WriteRawResponse{}, nil
+}
+
+func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table *columnstore.Table, ls labels.Labels, prof *parcaprofile.FlatProfile) error {
+	// TODO all of this should be done in the flat profile
+	// extraction in the first place. Also this `__name__` hack is
+	// only here for backward compatibility while we finish up the
+	// columnstore. This can be removed once the migration is
+	// complete and the old storage is removed.
+	labels := make([]columnstore.DynamicColumnValue, 0, len(ls))
+	found := false
+	for _, l := range ls {
+		if l.Name == "__name__" {
+			found = true
+			labels = append(labels, columnstore.DynamicColumnValue{
+				Name:  "__name__",
+				Value: l.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+			})
+			continue
+		}
+		labels = append(labels, columnstore.DynamicColumnValue{
+			Name:  l.Name,
+			Value: l.Value,
+		})
+	}
+	if !found {
+		labels = append(labels, columnstore.DynamicColumnValue{
+			Name:  "__name__",
+			Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
+		})
+	}
+
+	rows := make([]*SampleRow, 0, len(prof.FlatSamples))
+	for _, s := range prof.FlatSamples {
+		rows = append(rows, &SampleRow{
+			Stacktrace: metastoreLocationsToSampleStacktrace(s.Location),
+			Value:      s.Value,
+		})
+	}
+
+	level.Debug(logger).Log("msg", "writing sample", "label_set", ls.String(), "timestamp", prof.Meta.Timestamp)
+
+	sortSampleRows(rows)
+	return table.Insert(makeRows(prof, labels, rows))
 }
 
 func makeRows(prof *parcaprofile.FlatProfile, labels []columnstore.DynamicColumnValue, rows []*SampleRow) []columnstore.Row {
