@@ -63,6 +63,9 @@ func (s *ColumnStore) DB(name string) *DB {
 		mtx:    &sync.RWMutex{},
 		tables: map[string]*Table{},
 		reg:    prometheus.WrapRegistererWith(prometheus.Labels{"db": name}, s.reg),
+
+		active: map[uint64]uint64{},
+		txmtx:  &sync.RWMutex{},
 	}
 
 	s.dbs[name] = db
