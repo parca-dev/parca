@@ -283,8 +283,8 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
 		return q.singleRequest(ctx, req.GetSingle(), req.GetReportType())
-	//case pb.QueryRequest_MODE_MERGE:
-	//	return q.mergeRequest(ctx, req.GetMerge(), req.GetReportType())
+	case pb.QueryRequest_MODE_MERGE:
+		return q.mergeRequest(ctx, req.GetMerge(), req.GetReportType())
 	//case pb.QueryRequest_MODE_DIFF:
 	//	return q.diffRequest(ctx, req.GetDiff(), req.GetReportType())
 	default:
@@ -388,6 +388,63 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, sel []*labels.Matcher, 
 	}
 	defer ar.Release()
 
+	return arrowRecordToStacktraceSamples(ctx, q.metaStore, ar)
+}
+
+func (q *ColumnQueryAPI) mergeRequest(ctx context.Context, m *pb.MergeProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+	ctx, span := q.tracer.Start(ctx, "mergeRequest")
+	defer span.End()
+
+	p, err := q.selectMerge(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+
+	return q.renderReport(ctx, p, reportType)
+}
+
+func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*profile.StacktraceSamples, error) {
+	ctx, span := q.tracer.Start(ctx, "selectMerge")
+	defer span.End()
+
+	sel, err := parser.ParseMetricSelector(m.Query)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+	}
+
+	start := timestamp.FromTime(m.Start.AsTime())
+	end := timestamp.FromTime(m.End.AsTime())
+
+	labelFilterExpressions, err := matchersToBooleanExpressions(sel)
+	if err != nil {
+		return nil, fmt.Errorf("convert matchers to boolean expressions: %w", err)
+	}
+
+	filterExpr := columnstore.And(
+		columnstore.StaticColumnRef("timestamp").GreaterThan(columnstore.Int64Literal(start)),
+		columnstore.StaticColumnRef("timestamp").LessThan(columnstore.Int64Literal(end)),
+		labelFilterExpressions...,
+	)
+
+	pool := memory.NewGoAllocator()
+	agg := columnstore.NewHashAggregate(
+		pool,
+		&columnstore.SumAggregation{},
+		columnstore.StaticColumnRef("value").ArrowFieldMatcher(),
+		columnstore.StaticColumnRef("stacktrace").ArrowFieldMatcher(),
+	)
+
+	err = q.table.Iterator(pool, columnstore.Filter(pool, filterExpr, agg.Callback))
+	ar, err := agg.Aggregate()
+	if err != nil {
+		return nil, fmt.Errorf("aggregate stacktrace samples: %w", err)
+	}
+	defer ar.Release()
+
+	return arrowRecordToStacktraceSamples(ctx, q.metaStore, ar)
+}
+
+func arrowRecordToStacktraceSamples(ctx context.Context, metaStore metastore.ProfileMetaStore, ar arrow.Record) (*profile.StacktraceSamples, error) {
 	s := ar.Schema()
 	indices := s.FieldIndices("stacktrace")
 	if len(indices) != 1 {
@@ -428,7 +485,7 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, sel []*labels.Matcher, 
 	}
 
 	// Get the full locations for the location UUIDs
-	locationsMap, err := metastore.GetLocationsByIDs(ctx, q.metaStore, locationUUIDs...)
+	locationsMap, err := metastore.GetLocationsByIDs(ctx, metaStore, locationUUIDs...)
 	if err != nil {
 		return nil, fmt.Errorf("get locations by ids: %w", err)
 	}
