@@ -285,8 +285,8 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		return q.singleRequest(ctx, req.GetSingle(), req.GetReportType())
 	case pb.QueryRequest_MODE_MERGE:
 		return q.mergeRequest(ctx, req.GetMerge(), req.GetReportType())
-	//case pb.QueryRequest_MODE_DIFF:
-	//	return q.diffRequest(ctx, req.GetDiff(), req.GetReportType())
+	case pb.QueryRequest_MODE_DIFF:
+		return q.diffRequest(ctx, req.GetDiff(), req.GetReportType())
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
@@ -442,6 +442,58 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 	defer ar.Release()
 
 	return arrowRecordToStacktraceSamples(ctx, q.metaStore, ar)
+}
+
+func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+	ctx, span := q.tracer.Start(ctx, "diffRequest")
+	defer span.End()
+
+	if d == nil {
+		return nil, status.Error(codes.InvalidArgument, "requested diff mode, but did not provide parameters for diff")
+	}
+
+	base, err := q.selectProfileForDiff(ctx, d.A)
+	if err != nil {
+		return nil, err
+	}
+
+	compare, err := q.selectProfileForDiff(ctx, d.B)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.
+	diff := &profile.StacktraceSamples{}
+	stacktraceIndices := map[string]int{}
+	for i, s := range base.Samples {
+		stacktraceIndices[string(profile.MakeStacktraceKey(s))] = i
+	}
+
+	for _, s := range compare.Samples {
+		if i, ok := stacktraceIndices[string(profile.MakeStacktraceKey(s))]; ok {
+			s.DiffValue = s.Value - base.Samples[i].Value
+		}
+		diff.Samples = append(diff.Samples, s)
+	}
+
+	return q.renderReport(ctx, diff, reportType)
+}
+
+func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (*profile.StacktraceSamples, error) {
+	var (
+		p   *profile.StacktraceSamples
+		err error
+	)
+	switch s.Mode {
+	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
+		p, err = q.selectSingle(ctx, s.GetSingle())
+	case pb.ProfileDiffSelection_MODE_MERGE:
+		p, err = q.selectMerge(ctx, s.GetMerge())
+	default:
+		return nil, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
+	}
+
+	return p, err
 }
 
 func arrowRecordToStacktraceSamples(ctx context.Context, metaStore metastore.ProfileMetaStore, ar arrow.Record) (*profile.StacktraceSamples, error) {

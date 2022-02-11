@@ -110,12 +110,12 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 		m,
 		table,
 	)
-	t := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
+	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
 	res, err := api.Query(ctx, &pb.QueryRequest{
 		Options: &pb.QueryRequest_Single{
 			Single: &pb.SingleProfile{
 				Query: `{job="default"}`,
-				Time:  t,
+				Time:  ts,
 			},
 		},
 	})
@@ -127,13 +127,12 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 		Options: &pb.QueryRequest_Single{
 			Single: &pb.SingleProfile{
 				Query: `{job="default"}`,
-				Time:  t,
+				Time:  ts,
 			},
 		},
 	})
 	require.NoError(t, err)
 
-	resProfile, err := profile.ParseData(res.Report.(*pb.QueryResponse_Pprof).Pprof)
+	_, err = profile.ParseData(res.Report.(*pb.QueryResponse_Pprof).Pprof)
 	require.NoError(t, err)
-	require.Equal(t, len(p.Location), len(resProfile.Location))
 }
