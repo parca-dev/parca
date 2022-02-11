@@ -97,8 +97,8 @@ func (t *Table) Sync() {
 }
 
 func (t *Table) Insert(rows []Row) error {
-	tx := t.db.begin()
-	defer t.db.commit(tx)
+	tx, commit := t.db.begin()
+	defer commit()
 	defer func() {
 		t.metrics.rowsInserted.Add(float64(len(rows)))
 		t.metrics.rowInsertSize.Observe(float64(len(rows)))
@@ -171,12 +171,12 @@ func (t *Table) splitGranule(granule *Granule) {
 func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) error) error {
 	t.RLock()
 	defer t.RUnlock()
-	tx := t.db.begin()
-	defer t.db.commit(tx)
+	tx := t.db.beginRead()
+
 	var err error
 	t.granuleIterator(func(g *Granule) bool {
 		var r arrow.Record
-		r, err = g.ArrowRecord(tx, pool)
+		r, err = g.ArrowRecord(tx, t.db, pool)
 		if err != nil {
 			return false
 		}

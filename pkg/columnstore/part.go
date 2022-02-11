@@ -94,11 +94,17 @@ func (pi *PartIterator) Err() error {
 }
 
 // Merge merges all parts into a single part
-func Merge(tx uint64, parts ...*Part) (*Part, error) {
+func Merge(tx uint64, db *DB, parts ...*Part) (*Part, error) {
 
 	rows := SortableRows{}
 	// Convert all the parts into a set of rows
 	for _, p := range parts {
+
+		// Don't merge parts from an newer tx, or from an uncompleted tx
+		if p.tx > tx || db.txCompleted(p.tx) {
+			continue
+		}
+
 		it := p.Iterator()
 		for it.Next() {
 			rows = append(rows, Row{Values: it.Values()})

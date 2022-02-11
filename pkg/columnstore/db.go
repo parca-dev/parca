@@ -1,6 +1,7 @@
 package columnstore
 
 import (
+	"math"
 	"sync"
 	"sync/atomic"
 
@@ -36,7 +37,7 @@ type DB struct {
 	// Databases monotomically increasing transaction id
 	txmtx  *sync.RWMutex
 	tx     uint64
-	active []uint64 // TODO probably not the best choice for active list...
+	active map[uint64]uint64 // TODO probably not the best choice for active list...
 }
 
 func (s *ColumnStore) DB(name string) *DB {
@@ -91,16 +92,30 @@ func (db *DB) Table(name string, schema Schema, logger log.Logger) *Table {
 	return table
 }
 
-// begin is an internal function that Tables call to start a transaction
-func (db *DB) begin() uint64 {
-	tx := atomic.AddUint64(&db.tx, 1)
-	db.txmtx.Lock()
-	db.active = append(db.active, tx)
-	db.txmtx.Unlock()
-	return tx
+// beginRead starts a read transaction
+func (db *DB) beginRead() uint64 {
+	return atomic.AddUint64(&db.tx, 1)
 }
 
-// commit this transaction id
-func (db *DB) commit(tx uint64) {
-	// TODO
+// begin is an internal function that Tables call to start a transaction for writes
+func (db *DB) begin() (uint64, func()) {
+	tx := atomic.AddUint64(&db.tx, 1)
+	db.txmtx.Lock()
+	db.active[tx] = math.MaxUint64
+	db.txmtx.Unlock()
+	return tx, func() {
+		// commit the transaction
+		db.txmtx.Lock()
+		db.active[tx] = atomic.AddUint64(&db.tx, 1)
+		db.txmtx.Unlock()
+	}
+}
+
+// txCompleted returns true if a write transaction has been completed
+func (db *DB) txCompleted(tx uint64) bool {
+	db.txmtx.RLock()
+	defer db.txmtx.RUnlock()
+
+	_, ok := db.active[tx]
+	return ok
 }
