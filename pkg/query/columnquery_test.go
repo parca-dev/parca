@@ -40,7 +40,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		m.Close()
 	})
 
-	dir := "../../tmp/memory/"
+	dir := "./testdata/many/"
 	files, err := ioutil.ReadDir(dir)
 	require.NoError(t, err)
 
