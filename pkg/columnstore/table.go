@@ -143,7 +143,7 @@ func (t *Table) splitGranule(granule *Granule) {
 
 	tx := uint64(0) // TODO what is the tx
 
-	newpart, err := Merge(tx, granule.parts...) // need to merge all parts in a granule before splitting
+	newpart, err := Merge(tx, t.db.txCompleted, granule.parts...) // need to merge all parts in a granule before splitting
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
@@ -176,7 +176,7 @@ func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) er
 	var err error
 	t.granuleIterator(func(g *Granule) bool {
 		var r arrow.Record
-		r, err = g.ArrowRecord(tx, t.db, pool)
+		r, err = g.ArrowRecord(tx, t.db.txCompleted, pool)
 		if err != nil {
 			return false
 		}

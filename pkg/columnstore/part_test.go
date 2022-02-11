@@ -85,7 +85,7 @@ func Test_PartMerge(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	part, err := Merge(0, p, p1, p2, p3)
+	part, err := Merge(0, func(uint64) bool { return true }, p, p1, p2, p3)
 	require.NoError(t, err)
 	require.NotNil(t, part)
 

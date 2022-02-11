@@ -127,12 +127,12 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 }
 
 // ArrowRecord merges all parts in a Granule before returning an ArrowRecord over that part
-func (g *Granule) ArrowRecord(tx uint64, db *DB, pool memory.Allocator) (arrow.Record, error) {
+func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) bool, pool memory.Allocator) (arrow.Record, error) {
 	g.RLock()
 	defer g.RUnlock()
 
 	// Merge the parts
-	p, err := Merge(tx, db, g.parts...)
+	p, err := Merge(tx, txCompleted, g.parts...)
 	if err != nil {
 		return nil, err
 	}
