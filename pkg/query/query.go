@@ -287,9 +287,15 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 }
 
 func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+
+	samples, err := profile.StacktraceSamplesFromFlatProfile(ctx, q.tracer, q.metaStore, p)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to create stacktrace samples")
+	}
+
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
+		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, samples)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}

@@ -16,7 +16,6 @@ package query
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"sort"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -25,50 +24,23 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p profile.InstantFlatProfile) (*pb.Flamegraph, error) {
+func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p *profile.StacktraceSamples) (*pb.Flamegraph, error) {
 	rootNode := &pb.FlamegraphNode{}
 	current := rootNode
 
-	samples := p.Samples()
-
-	sampleUUIDs := make([][]byte, 0, len(samples))
-	for id := range samples {
-		sampleUUIDs = append(sampleUUIDs, []byte(id))
-	}
-
-	sampleMap, err := metaStore.GetStacktraceByIDs(ctx, sampleUUIDs...)
-	if err != nil {
-		return nil, err
-	}
-
-	locationUUIDSeen := map[string]struct{}{}
-	locationUUIDs := [][]byte{}
-	for _, s := range sampleMap {
-		for _, id := range s.GetLocationIds() {
-			if _, seen := locationUUIDSeen[string(id)]; !seen {
-				locationUUIDSeen[string(id)] = struct{}{}
-				locationUUIDs = append(locationUUIDs, id)
-			}
-		}
-	}
-
-	// Get the full locations for the location UUIDs
-	locationsMap, err := metastore.GetLocationsByIDs(ctx, metaStore, locationUUIDs...)
-	if err != nil {
-		return nil, fmt.Errorf("get locations by ids: %w", err)
-	}
+	samples := p.Samples
 
 	var height int32
 
-	for k, s := range samples {
-		locations := sampleMap[k].GetLocationIds()
+	for _, s := range samples {
+		locations := s.Location
 		if int32(len(locations)) > height {
 			height = int32(len(locations))
 		}
 
 		// Reverse walking the location as stacked location are like 3 > 2 > 1 > 0 where 0 is the root.
 		for i := len(locations) - 1; i >= 0; i-- {
-			location := locationsMap[string(locations[i])] // use the fully populated location
+			location := locations[i]
 
 			nodes := locationToTreeNodes(location)
 			for j := len(nodes) - 1; j >= 0; j-- {
@@ -123,7 +95,7 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 			Children:   rootNode.Children,
 		},
 		Total:  rootNode.Cumulative,
-		Unit:   p.ProfileMeta().SampleType.Unit,
+		Unit:   p.Meta.SampleType.Unit,
 		Height: height + 1, // add one for the root
 	}
 

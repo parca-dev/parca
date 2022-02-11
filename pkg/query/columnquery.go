@@ -6,18 +6,22 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/columnstore"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -267,4 +271,176 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 	}
 
 	return res, nil
+}
+
+// Query issues a instant query against the storage
+func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	switch req.Mode {
+	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
+		return q.singleRequest(ctx, req.GetSingle(), req.GetReportType())
+	//case pb.QueryRequest_MODE_MERGE:
+	//	return q.mergeRequest(ctx, req.GetMerge(), req.GetReportType())
+	//case pb.QueryRequest_MODE_DIFF:
+	//	return q.diffRequest(ctx, req.GetDiff(), req.GetReportType())
+	default:
+		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
+	}
+}
+
+func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.StacktraceSamples, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+	switch typ {
+	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
+		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
+		}
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Flamegraph{
+				Flamegraph: fg,
+			},
+		}, nil
+	default:
+		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")
+	}
+}
+
+func (q *ColumnQueryAPI) singleRequest(ctx context.Context, s *pb.SingleProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+	p, err := q.selectSingle(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+
+	return q.renderReport(ctx, p, reportType)
+}
+
+func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (*profile.StacktraceSamples, error) {
+	sel, err := parser.ParseMetricSelector(s.Query)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+	}
+
+	t := s.Time.AsTime()
+	p, err := q.findSingle(ctx, sel, t)
+	if err != nil {
+		level.Error(q.logger).Log("msg", "failed to find single profile", "err", err)
+		return nil, status.Error(codes.Internal, "failed to search profile")
+	}
+
+	if p == nil {
+		return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
+	}
+
+	return p, nil
+}
+
+func (q *ColumnQueryAPI) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Time) (*profile.StacktraceSamples, error) {
+	requestedTime := timestamp.FromTime(t)
+
+	ctx, span := q.tracer.Start(ctx, "findSingle")
+	for i, m := range sel {
+		span.SetAttributes(attribute.String(fmt.Sprintf("matcher-%d", i), m.String()))
+	}
+	span.SetAttributes(attribute.Int64("time", t.Unix()))
+	defer span.End()
+
+	labelFilterExpressions, err := matchersToBooleanExpressions(sel)
+	if err != nil {
+		return nil, fmt.Errorf("convert matchers to boolean expressions: %w", err)
+	}
+
+	filterExpr := columnstore.And(
+		columnstore.StaticColumnRef("timestamp").Equal(columnstore.Int64Literal(requestedTime)),
+		labelFilterExpressions[0],
+		labelFilterExpressions[1:]...,
+	)
+
+	pool := memory.NewGoAllocator()
+	agg := columnstore.NewHashAggregate(
+		pool,
+		&columnstore.SumAggregation{},
+		columnstore.StaticColumnRef("value").ArrowFieldMatcher(),
+		columnstore.StaticColumnRef("stacktrace").ArrowFieldMatcher(),
+	)
+
+	err = q.table.Iterator(pool, columnstore.Filter(pool, filterExpr, agg.Callback))
+	ar, err := agg.Aggregate()
+	if err != nil {
+		return nil, fmt.Errorf("aggregate stacktrace samples: %w", err)
+	}
+	defer ar.Release()
+
+	s := ar.Schema()
+	indices := s.FieldIndices("stacktrace")
+	if len(indices) != 1 {
+		return nil, errors.New("expected exactly one stacktrace column")
+	}
+	stacktraceColumn := ar.Column(indices[0]).(*array.List)
+	stacktraceValues := stacktraceColumn.ListValues().(*array.FixedSizeBinary)
+	stacktraceOffsets := stacktraceColumn.Offsets()[1:]
+
+	indices = s.FieldIndices("value")
+	if len(indices) != 1 {
+		return nil, errors.New("expected exactly one value column")
+	}
+	valueColumn := ar.Column(indices[0]).(*array.Int64)
+
+	locationUUIDSeen := map[string]struct{}{}
+	locationUUIDs := [][]byte{}
+	rows := int(ar.NumRows())
+	samples := make([]sample, rows)
+	pos := 0
+	for i := 0; i < rows; i++ {
+		s := sample{
+			value: valueColumn.Value(i),
+		}
+
+		for j := pos; j < int(stacktraceOffsets[i]); j++ {
+			locID := stacktraceValues.Value(j)
+			s.locationIDs = append(s.locationIDs, locID)
+
+			if _, ok := locationUUIDSeen[string(locID)]; !ok {
+				locationUUIDSeen[string(locID)] = struct{}{}
+				locationUUIDs = append(locationUUIDs, locID)
+			}
+		}
+
+		samples[i] = s
+		pos = int(stacktraceOffsets[i])
+	}
+
+	// Get the full locations for the location UUIDs
+	locationsMap, err := metastore.GetLocationsByIDs(ctx, q.metaStore, locationUUIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("get locations by ids: %w", err)
+	}
+
+	stackSamples := make([]*profile.Sample, 0, len(samples))
+	for _, s := range samples {
+		stackSample := &profile.Sample{
+			Value:    s.value,
+			Location: make([]*metastore.Location, 0, len(s.locationIDs)),
+		}
+
+		// LocationIDs are stored in the opposite order than the flamegraph
+		// builder expects, so we need to iterate over them in reverse.
+		for i := len(s.locationIDs) - 1; i >= 0; i-- {
+			locID := s.locationIDs[i]
+			stackSample.Location = append(stackSample.Location, locationsMap[string(locID)])
+		}
+
+		stackSamples = append(stackSamples, stackSample)
+	}
+
+	return &profile.StacktraceSamples{
+		Samples: stackSamples,
+	}, nil
+}
+
+type sample struct {
+	locationIDs [][]byte
+	value       int64
 }

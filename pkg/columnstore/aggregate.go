@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"errors"
+	"fmt"
 	"hash/maphash"
 
 	"github.com/apache/arrow/go/v7/arrow"
@@ -203,7 +204,7 @@ func (a *HashAggregate) Aggregate() (arrow.Record, error) {
 
 	aggregateArray, err := a.aggregationFunction.Aggregate(a.pool, arrs)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("aggregate batched arrays: %w", err)
 	}
 
 	aggregateField := arrow.Field{Name: a.columnToAggregate.Name, Type: aggregateArray.DataType()}
@@ -217,12 +218,17 @@ func (a *HashAggregate) Aggregate() (arrow.Record, error) {
 
 type SumAggregation struct{}
 
+var (
+	ErrUnsupportedSumType = errors.New("unsupported type for sum aggregation, expected int64")
+)
+
 func (a *SumAggregation) Aggregate(pool memory.Allocator, arrs []arrow.Array) (arrow.Array, error) {
-	switch arrs[0].DataType().ID() {
+	typ := arrs[0].DataType().ID()
+	switch typ {
 	case arrow.INT64:
 		return sumInt64arrays(pool, arrs), nil
 	default:
-		return nil, errors.New("unsupported type")
+		return nil, fmt.Errorf("sum array of %s: %w", typ, ErrUnsupportedSumType)
 	}
 }
 

@@ -179,7 +179,10 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	fg, err := GenerateFlamegraphFlat(ctx, tracer, l, fp)
+	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, fp)
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, l, samples)
 	require.NoError(t, err)
 
 	require.True(t, proto.Equal(&pb.Flamegraph{Height: 5, Total: 6, Root: &pb.FlamegraphRootNode{
@@ -250,6 +253,7 @@ func TestGenerateFlamegraphFromFlatProfile(t *testing.T) {
 
 func testGenerateFlamegraphFromFlatProfile(t *testing.T, l metastore.ProfileMetaStore) *pb.Flamegraph {
 	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	f, err := os.Open("../storage/testdata/profile1.pb.gz")
 	require.NoError(t, err)
@@ -260,7 +264,10 @@ func testGenerateFlamegraphFromFlatProfile(t *testing.T, l metastore.ProfileMeta
 	flatProfile, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphFlat(ctx, trace.NewNoopTracerProvider().Tracer(""), l, flatProfile)
+	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, flatProfile)
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, l, samples)
 	require.NoError(t, err)
 
 	return fg
@@ -305,7 +312,10 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	fp, err := parcaprofile.FlatProfileFromPprof(ctx, logger, store, p, 0)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)
+	ssamples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, store, fp)
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, ssamples)
 	require.NoError(t, err)
 
 	require.Equal(t, &pb.Flamegraph{
@@ -440,7 +450,10 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	fp, err := parcaprofile.FlatProfileFromPprof(ctx, logger, store, p, 0)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)
+	ssamples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, store, fp)
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, ssamples)
 	require.NoError(t, err)
 
 	expected := &pb.Flamegraph{
