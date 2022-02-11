@@ -110,14 +110,30 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 		m,
 		table,
 	)
+	t := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
 	res, err := api.Query(ctx, &pb.QueryRequest{
 		Options: &pb.QueryRequest_Single{
 			Single: &pb.SingleProfile{
 				Query: `{job="default"}`,
-				Time:  timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds())),
+				Time:  t,
 			},
 		},
 	})
 	require.NoError(t, err)
 	require.Equal(t, int32(33), res.Report.(*pb.QueryResponse_Flamegraph).Flamegraph.Height)
+
+	res, err = api.Query(ctx, &pb.QueryRequest{
+		ReportType: pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED,
+		Options: &pb.QueryRequest_Single{
+			Single: &pb.SingleProfile{
+				Query: `{job="default"}`,
+				Time:  t,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	resProfile, err := profile.ParseData(res.Report.(*pb.QueryResponse_Pprof).Pprof)
+	require.NoError(t, err)
+	require.Equal(t, len(p.Location), len(resProfile.Location))
 }

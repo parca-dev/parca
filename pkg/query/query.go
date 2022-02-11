@@ -305,7 +305,7 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED:
-		pp, err := GenerateFlatPprof(ctx, q.metaStore, p)
+		pp, err := GenerateFlatPprof(ctx, q.metaStore, samples)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}

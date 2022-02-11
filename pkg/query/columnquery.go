@@ -1,6 +1,7 @@
 package query
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -302,6 +303,20 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Stacktrace
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
 			},
+		}, nil
+	case pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED:
+		pp, err := GenerateFlatPprof(ctx, q.metaStore, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+		}
+
+		var buf bytes.Buffer
+		if err := pp.Write(&buf); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")

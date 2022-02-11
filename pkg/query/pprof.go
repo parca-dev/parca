@@ -62,8 +62,8 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 	return a
 }
 
-func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip parcaprofile.InstantProfile) (*profile.Profile, error) {
-	meta := ip.ProfileMeta()
+func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip *parcaprofile.StacktraceSamples) (*profile.Profile, error) {
+	meta := ip.Meta
 
 	mappingByID := map[string]*profile.Mapping{}
 	functionByID := map[string]*profile.Function{}
@@ -77,7 +77,7 @@ func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore
 		Period:        meta.Period,
 	}
 
-	for _, s := range ip.Samples() {
+	for _, s := range ip.Samples {
 		locations := make([]*profile.Location, 0, len(s.Location))
 		for _, l := range s.Location {
 			if loc, ok := locationByID[string(l.ID[:])]; ok {
