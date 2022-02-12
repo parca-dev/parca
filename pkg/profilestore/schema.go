@@ -5,8 +5,8 @@ import (
 )
 
 func ParcaProfilingTableSchema() columnstore.Schema {
-	return columnstore.Schema{
-		Columns: []columnstore.ColumnDefinition{{
+	return columnstore.NewSchema(
+		[]columnstore.ColumnDefinition{{
 			Name:     "sample_type",
 			Type:     columnstore.StringType,
 			Encoding: columnstore.PlainEncoding,
@@ -60,6 +60,6 @@ func ParcaProfilingTableSchema() columnstore.Schema {
 			Type:     columnstore.Int64Type,
 			Encoding: columnstore.PlainEncoding,
 		}},
-		GranuleSize: 8192, // 2^13
-	}
+		8192, // 2^13
+	)
 }
