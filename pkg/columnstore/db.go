@@ -35,8 +35,9 @@ type DB struct {
 	reg    prometheus.Registerer
 
 	// Databases monotomically increasing transaction id
-	txmtx  *sync.RWMutex
-	tx     uint64
+	txmtx *sync.RWMutex
+	tx    uint64
+	// active is the list of active transactions TODO: a gc gorouting should prune this list as parts get merged
 	active map[uint64]uint64 // TODO probably not the best choice for active list...
 }
 
@@ -115,10 +116,14 @@ func (db *DB) begin() (uint64, func()) {
 }
 
 // txCompleted returns true if a write transaction has been completed
-func (db *DB) txCompleted(tx uint64) bool {
+func (db *DB) txCompleted(tx uint64) uint64 {
 	db.txmtx.RLock()
 	defer db.txmtx.RUnlock()
 
-	_, ok := db.active[tx]
-	return ok
+	finaltx, ok := db.active[tx]
+	if !ok {
+		return math.MaxUint64
+	}
+
+	return finaltx
 }
