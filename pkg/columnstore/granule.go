@@ -90,6 +90,8 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 		return []*Granule{g}, nil // do nothing
 	}
 
+	tx := uint64(0) // TODO what is the tx during a split?
+
 	// How many granules we'll need to build
 	count := g.parts[0].Cardinality / n
 
@@ -101,7 +103,7 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 	for it.Next() {
 		rows = append(rows, Row{Values: it.Values()})
 		if len(rows) == n && len(granules) != count-1 { // If we have n rows, and aren't on the last granule, create the n-sized granule
-			p, err := NewPart(g.parts[0].schema, rows)
+			p, err := NewPart(tx, g.parts[0].schema, rows)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
 			}
@@ -112,7 +114,7 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 
 	// Save the remaining Granule
 	if len(rows) != 0 {
-		p, err := NewPart(g.parts[0].schema, rows)
+		p, err := NewPart(tx, g.parts[0].schema, rows)
 		if err != nil {
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
@@ -125,12 +127,12 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 }
 
 // ArrowRecord merges all parts in a Granule before returning an ArrowRecord over that part
-func (g *Granule) ArrowRecord(pool memory.Allocator) (arrow.Record, error) {
+func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool memory.Allocator) (arrow.Record, error) {
 	g.RLock()
 	defer g.RUnlock()
 
 	// Merge the parts
-	p, err := Merge(g.parts...)
+	p, err := Merge(tx, txCompleted, g.parts...)
 	if err != nil {
 		return nil, err
 	}

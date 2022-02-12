@@ -515,3 +515,99 @@ func Benchmark_Table_Insert_10Rows_10Writers(b *testing.B) {
 		wg.Wait()
 	}
 }
+
+func Test_Table_ReadIsolation(t *testing.T) {
+	table := basicTable(t, 2<<12)
+
+	err := table.Insert(
+		[]Row{{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+				},
+				[]UUID{
+					{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
+					{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2},
+				},
+				int64(1),
+				int64(1),
+			},
+		}, {
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+					{Name: "label3", Value: "value3"},
+				},
+				[]UUID{
+					{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
+					{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2},
+				},
+				int64(2),
+				int64(2),
+			},
+		}, {
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "value1"},
+					{Name: "label2", Value: "value2"},
+					{Name: "label4", Value: "value4"},
+				},
+				[]UUID{
+					{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
+					{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2},
+				},
+				int64(3),
+				int64(3),
+			},
+		}},
+	)
+	require.NoError(t, err)
+
+	// Perform a new insert that will have a higher tx id
+	err = table.Insert(
+		[]Row{{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "blarg", Value: "blarg"},
+					{Name: "blah", Value: "blah"},
+				},
+				[]UUID{
+					{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
+					{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2},
+				},
+				int64(1),
+				int64(1),
+			},
+		}},
+	)
+	require.NoError(t, err)
+
+	// Now we cheat and reset our tx so that we can perform a read in the past.
+	prev := table.db.tx
+	table.db.tx = 1
+
+	rows := int64(0)
+	err = table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) error {
+		rows += ar.NumRows()
+		defer ar.Release()
+
+		return nil
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(3), rows)
+
+	// Now set the tx back to what it was, and perform the same read, we should return all 4 rows
+	table.db.tx = prev
+
+	rows = int64(0)
+	err = table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) error {
+		rows += ar.NumRows()
+		defer ar.Release()
+
+		return nil
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(4), rows)
+}

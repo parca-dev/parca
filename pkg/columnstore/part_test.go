@@ -27,7 +27,7 @@ func Test_PartMerge(t *testing.T) {
 		OrderedBy: []string{"labels", "timestamp"},
 	}
 
-	p, err := NewPart(schema, []Row{
+	p, err := NewPart(0, schema, []Row{
 		{
 			Values: []interface{}{
 				[]DynamicColumnValue{
@@ -41,7 +41,7 @@ func Test_PartMerge(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	p1, err := NewPart(schema, []Row{
+	p1, err := NewPart(0, schema, []Row{
 		{
 			Values: []interface{}{
 				[]DynamicColumnValue{
@@ -56,7 +56,7 @@ func Test_PartMerge(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	p2, err := NewPart(schema, []Row{
+	p2, err := NewPart(0, schema, []Row{
 		{
 			Values: []interface{}{
 				[]DynamicColumnValue{
@@ -70,7 +70,7 @@ func Test_PartMerge(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	p3, err := NewPart(schema, []Row{
+	p3, err := NewPart(0, schema, []Row{
 		{
 			Values: []interface{}{
 				[]DynamicColumnValue{
@@ -85,7 +85,7 @@ func Test_PartMerge(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	part, err := Merge(p, p1, p2, p3)
+	part, err := Merge(0, func(uint64) uint64 { return 0 }, p, p1, p2, p3)
 	require.NoError(t, err)
 	require.NotNil(t, part)
 

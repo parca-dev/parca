@@ -109,10 +109,12 @@ func (t *Table) Insert(rows []Row) error {
 
 	t.RLock()
 	defer t.RUnlock()
+	tx, commit := t.db.begin()
+	defer commit()
 
 	rowsToInsertPerGranule := t.splitRowsByGranule(rows)
 	for granule, rows := range rowsToInsertPerGranule {
-		p, err := NewPart(t.schema, rows)
+		p, err := NewPart(tx, t.schema, rows)
 		if err != nil {
 			return err
 		}
@@ -139,7 +141,15 @@ func (t *Table) splitGranule(granule *Granule) {
 		return
 	}
 
-	newpart, err := Merge(granule.parts...) // need to merge all parts in a granule before splitting
+	// NOTE: since splitGranule is currently a stop-the-world operation, and we have an exclusive write lock on the table,
+	// we know that any future accesses to these parts will have a higher transaction than the tx value we obtain here.
+	// So we can overwrite the tx value with our new one. This approach will stop working when splits/merges are a concurrent operation
+	// and will require moving to a model that duplicates the table index. At this time that's an early optimization, so we're going with this approach until
+	// such a time that stop the world becomes untenable.
+	tx, commit := t.db.begin()
+	defer commit()
+
+	newpart, err := Merge(tx, t.db.txCompleted, granule.parts...) // need to merge all parts in a granule before splitting
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
@@ -167,10 +177,12 @@ func (t *Table) splitGranule(granule *Granule) {
 func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) error) error {
 	t.RLock()
 	defer t.RUnlock()
+	tx := t.db.beginRead()
+
 	var err error
 	t.granuleIterator(func(g *Granule) bool {
 		var r arrow.Record
-		r, err = g.ArrowRecord(pool)
+		r, err = g.ArrowRecord(tx, t.db.txCompleted, pool)
 		if err != nil {
 			return false
 		}
