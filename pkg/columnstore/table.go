@@ -97,8 +97,6 @@ func (t *Table) Sync() {
 }
 
 func (t *Table) Insert(rows []Row) error {
-	tx, commit := t.db.begin()
-	defer commit()
 	defer func() {
 		t.metrics.rowsInserted.Add(float64(len(rows)))
 		t.metrics.rowInsertSize.Observe(float64(len(rows)))
@@ -111,6 +109,8 @@ func (t *Table) Insert(rows []Row) error {
 
 	t.RLock()
 	defer t.RUnlock()
+	tx, commit := t.db.begin()
+	defer commit()
 
 	rowsToInsertPerGranule := t.splitRowsByGranule(rows)
 	for granule, rows := range rowsToInsertPerGranule {
@@ -141,7 +141,13 @@ func (t *Table) splitGranule(granule *Granule) {
 		return
 	}
 
-	tx := uint64(0) // TODO what is the tx
+	// NOTE: since splitGranule is currently a stop-the-world operation, and we have an exclusive write lock on the table,
+	// we know that any future accesses to these parts will have a higher transaction than the tx value we obtain here.
+	// So we can overwrite the tx value with our new one. This approach will stop working when splits/merges are a concurrent operation
+	// and will require moving to a model that duplicates the table index. At this time that's an early optimization, so we're going with this approach until
+	// such a time that stop the world becomes untenable.
+	tx, commit := t.db.begin()
+	defer commit()
 
 	newpart, err := Merge(tx, t.db.txCompleted, granule.parts...) // need to merge all parts in a granule before splitting
 	if err != nil {
