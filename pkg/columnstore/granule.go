@@ -16,8 +16,9 @@ type Granule struct {
 
 	// least is the row that exists within the Granule that is the least.
 	// This is used for quick insertion into the btree, without requiring an iterator
-	least Row
-	parts []*Part
+	least  Row
+	parts  []*Part
+	schema *Schema
 
 	granulesCreated prometheus.Counter
 
@@ -25,10 +26,11 @@ type Granule struct {
 	pruned bool
 }
 
-func NewGranule(granulesCreated prometheus.Counter, parts ...*Part) *Granule {
+func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Part) *Granule {
 	g := &Granule{
 		granulesCreated: granulesCreated,
 		parts:           parts,
+		schema:          schema,
 	}
 
 	// Find the least column
@@ -40,7 +42,7 @@ func NewGranule(granulesCreated prometheus.Counter, parts ...*Part) *Granule {
 			case 0:
 				g.least = r
 			default:
-				if r.Less(g.least) {
+				if r.Less(g.least, schema.ordered) {
 					g.least = r
 				}
 			}
@@ -60,7 +62,7 @@ func (g *Granule) AddPart(p *Part) {
 
 	if it.Next() {
 		r := Row{Values: it.Values()}
-		if r.Less(g.least) {
+		if r.Less(g.least, g.schema.ordered) {
 			g.least = r
 		}
 		return
@@ -103,24 +105,24 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 	for it.Next() {
 		rows = append(rows, Row{Values: it.Values()})
 		if len(rows) == n && len(granules) != count-1 { // If we have n rows, and aren't on the last granule, create the n-sized granule
-			p, err := NewPart(tx, g.parts[0].schema, rows)
+			p, err := NewPart(tx, g.schema, rows)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
 			}
-			granules = append(granules, NewGranule(g.granulesCreated, p))
+			granules = append(granules, NewGranule(g.granulesCreated, g.schema, p))
 			rows = make([]Row, 0, n)
 		}
 	}
 
 	// Save the remaining Granule
 	if len(rows) != 0 {
-		p, err := NewPart(tx, g.parts[0].schema, rows)
+		p, err := NewPart(tx, g.schema, rows)
 		if err != nil {
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
 			}
 		}
-		granules = append(granules, NewGranule(g.granulesCreated, p))
+		granules = append(granules, NewGranule(g.granulesCreated, g.schema, p))
 	}
 
 	return granules, nil
@@ -132,7 +134,7 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 	defer g.RUnlock()
 
 	// Merge the parts
-	p, err := Merge(tx, txCompleted, g.parts...)
+	p, err := Merge(tx, txCompleted, g.schema, g.parts...)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +143,7 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 	cols := make([]int, len(p.columns))
 	names := make([][]string, len(p.columns))
 	for i, c := range p.columns {
-		if p.schema.Columns[i].Dynamic {
+		if g.schema.Columns[i].Dynamic {
 			cols[i] = len(c.(*DynamicColumn).dynamicColumns)
 			names[i] = make([]string, cols[i])
 			for j, name := range c.(*DynamicColumn).dynamicColumns {
@@ -151,13 +153,13 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 	}
 
 	// Build the record
-	bld := array.NewRecordBuilder(pool, p.schema.ToArrow(names, cols))
+	bld := array.NewRecordBuilder(pool, g.schema.ToArrow(names, cols))
 	defer bld.Release()
 
 	i := 0 // i is the index into our arrow schema
 	for j, c := range p.columns {
 
-		switch p.schema.Columns[j].Dynamic {
+		switch g.schema.Columns[j].Dynamic {
 		case true: // expand the dynamic columns
 			d := c.(*DynamicColumn) // TODO this is gross and we should change this iteration
 			for k, name := range d.dynamicColumns {
@@ -196,5 +198,5 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 
 // Less implements the btree.Item interface
 func (g *Granule) Less(than btree.Item) bool {
-	return g.least.Less(than.(*Granule).least)
+	return g.least.Less(than.(*Granule).least, g.schema.ordered)
 }

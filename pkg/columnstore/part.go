@@ -11,7 +11,6 @@ type Row struct {
 }
 
 type Part struct {
-	schema      Schema
 	columns     []Iterable
 	Cardinality int
 
@@ -19,9 +18,8 @@ type Part struct {
 	tx uint64
 }
 
-func NewPart(tx uint64, schema Schema, rows []Row) (*Part, error) {
+func NewPart(tx uint64, schema *Schema, rows []Row) (*Part, error) {
 	p := &Part{
-		schema:      schema,
 		Cardinality: len(rows),
 
 		tx: tx,
@@ -94,9 +92,12 @@ func (pi *PartIterator) Err() error {
 }
 
 // Merge merges all parts into a single part
-func Merge(tx uint64, txCompleted func(uint64) uint64, parts ...*Part) (*Part, error) {
+func Merge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts ...*Part) (*Part, error) {
 
-	rows := SortableRows{}
+	rows := SortableRows{
+		rows:   []Row{},
+		schema: schema,
+	}
 	// Convert all the parts into a set of rows
 	for _, p := range parts {
 
@@ -107,29 +108,32 @@ func Merge(tx uint64, txCompleted func(uint64) uint64, parts ...*Part) (*Part, e
 
 		it := p.Iterator()
 		for it.Next() {
-			rows = append(rows, Row{Values: it.Values()})
+			rows.rows = append(rows.rows, Row{Values: it.Values()})
 		}
 	}
 
 	// Sort the rows
 	sort.Sort(rows)
 
-	return NewPart(tx, parts[0].schema, rows)
+	return NewPart(tx, schema, rows.rows)
 }
 
 // SortableRows is a slice of Rows that can be sorted
-type SortableRows []Row
+type SortableRows struct {
+	rows   []Row
+	schema *Schema
+}
 
 // Len implements the sort.Interface interface
-func (s SortableRows) Len() int { return len(s) }
+func (s SortableRows) Len() int { return len(s.rows) }
 
 // Less implements the sort.Interface interface
 func (s SortableRows) Less(i, j int) bool {
-	return s[i].Less(s[j])
+	return s.rows[i].Less(s.rows[j], s.schema.ordered)
 }
 
 // Swap implements the sort.Interface interface
-func (s SortableRows) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s SortableRows) Swap(i, j int) { s.rows[i], s.rows[j] = s.rows[j], s.rows[i] }
 
 // TODO comparison int values are well defined in Go, -1 for less than, 0 for
 // equal, 1 for greater than. We should use that instead of the custom return
@@ -171,11 +175,11 @@ func compare(a, b interface{}) int {
 }
 
 // Less returns true if the row is Less than the given row
-func (r Row) Less(than Row) bool {
+func (r Row) Less(than Row, orderedBy []int) bool {
 	if than.Values == nil { // in the 0 case always return true
 		return true
 	}
-	for k := 0; k < len(r.Values); k++ {
+	for _, k := range orderedBy {
 		vi := r.Values[k]
 		vj := than.Values[k]
 

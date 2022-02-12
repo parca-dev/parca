@@ -13,8 +13,8 @@ import (
 )
 
 func basicTable(t *testing.T, granuleSize int) *Table {
-	schema := Schema{
-		Columns: []ColumnDefinition{{
+	schema := NewSchema(
+		[]ColumnDefinition{{
 			Name:     "labels",
 			Type:     StringType,
 			Encoding: PlainEncoding,
@@ -32,9 +32,10 @@ func basicTable(t *testing.T, granuleSize int) *Table {
 			Type:     Int64Type,
 			Encoding: PlainEncoding,
 		}},
-		OrderedBy:   []string{"labels", "timestamp"},
-		GranuleSize: granuleSize,
-	}
+		granuleSize,
+		"labels",
+		"timestamp",
+	)
 
 	c := New(nil)
 	db := c.DB("test")
@@ -610,4 +611,129 @@ func Test_Table_ReadIsolation(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, int64(4), rows)
+}
+
+func Test_Table_Sorting(t *testing.T) {
+	granuleSize := 2 << 12
+	schema1 := NewSchema(
+		[]ColumnDefinition{{
+			Name:     "labels",
+			Type:     StringType,
+			Encoding: PlainEncoding,
+			Dynamic:  true,
+		}, {
+			Name:     "stacktrace",
+			Type:     List(UUIDType),
+			Encoding: PlainEncoding,
+		}, {
+			Name:     "timestamp",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}, {
+			Name:     "value",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}},
+		granuleSize,
+		"labels",
+		"timestamp",
+	)
+
+	schema2 := NewSchema(
+		[]ColumnDefinition{{
+			Name:     "labels",
+			Type:     StringType,
+			Encoding: PlainEncoding,
+			Dynamic:  true,
+		}, {
+			Name:     "stacktrace",
+			Type:     List(UUIDType),
+			Encoding: PlainEncoding,
+		}, {
+			Name:     "timestamp",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}, {
+			Name:     "value",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}},
+		granuleSize,
+		"timestamp",
+		"labels",
+	)
+
+	c := New(nil)
+	db := c.DB("test")
+	table1 := db.Table("test1", schema1, log.NewNopLogger())
+	table2 := db.Table("test2", schema2, log.NewNopLogger())
+
+	tables := []*Table{
+		table1,
+		table2,
+	}
+
+	for _, table := range tables {
+
+		err := table.Insert(
+			[]Row{{
+				Values: []interface{}{
+					[]DynamicColumnValue{
+						{Name: "label1", Value: "value1"},
+						{Name: "label2", Value: "value2"},
+					},
+					[]UUID{
+						{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
+						{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2},
+					},
+					int64(3),
+					int64(3),
+				},
+			}, {
+				Values: []interface{}{
+					[]DynamicColumnValue{
+						{Name: "label1", Value: "value1"},
+						{Name: "label2", Value: "value2"},
+						{Name: "label3", Value: "value3"},
+					},
+					[]UUID{
+						{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
+						{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2},
+					},
+					int64(2),
+					int64(2),
+				},
+			}, {
+				Values: []interface{}{
+					[]DynamicColumnValue{
+						{Name: "label1", Value: "value1"},
+						{Name: "label2", Value: "value2"},
+						{Name: "label4", Value: "value4"},
+					},
+					[]UUID{
+						{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
+						{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2},
+					},
+					int64(1),
+					int64(1),
+				},
+			}},
+		)
+		require.NoError(t, err)
+	}
+
+	for i, table := range tables {
+		err := table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) error {
+			switch i {
+			case 0:
+				require.Equal(t, "[3 2 1]", fmt.Sprintf("%v", ar.Column(6)))
+			case 1:
+				require.Equal(t, "[1 2 3]", fmt.Sprintf("%v", ar.Column(6)))
+			}
+			defer ar.Release()
+
+			return nil
+		})
+		require.NoError(t, err)
+	}
 }

@@ -136,6 +136,39 @@ type Schema struct {
 	Columns     []ColumnDefinition
 	OrderedBy   []string
 	GranuleSize int
+
+	// ordered are the indicies to the Columns array that are to be ordered. If OrderedBy is empty this will contain all indicies of Columns
+	ordered []int
+}
+
+// NewSchema returns a new schema
+func NewSchema(cols []ColumnDefinition, granuleSize int, orderedBy ...string) Schema {
+	s := Schema{
+		Columns:     cols,
+		GranuleSize: granuleSize,
+		OrderedBy:   orderedBy,
+
+		ordered: []int{},
+	}
+
+	// initialize the ordered indicies
+	switch len(orderedBy) {
+	case 0: // if no ordering is provided, use all columns in the order provided
+		for i := range cols {
+			s.ordered = append(s.ordered, i)
+		}
+	default:
+		for _, row := range orderedBy {
+			for i, col := range cols {
+				// If the column matches the ordering, add it to the ordered index
+				if col.Name == row {
+					s.ordered = append(s.ordered, i)
+				}
+			}
+		}
+	}
+
+	return s
 }
 
 func (s Schema) ColumnDefinition(name string) (ColumnDefinition, bool) {

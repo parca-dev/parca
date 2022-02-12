@@ -82,7 +82,7 @@ func newTable(
 		return float64(t.index.Len())
 	})
 
-	g := NewGranule(t.metrics.granulesCreated, []*Part{}...)
+	g := NewGranule(t.metrics.granulesCreated, &t.schema, []*Part{}...)
 	t.index.ReplaceOrInsert(g)
 
 	return t
@@ -114,7 +114,7 @@ func (t *Table) Insert(rows []Row) error {
 
 	rowsToInsertPerGranule := t.splitRowsByGranule(rows)
 	for granule, rows := range rowsToInsertPerGranule {
-		p, err := NewPart(tx, t.schema, rows)
+		p, err := NewPart(tx, &t.schema, rows)
 		if err != nil {
 			return err
 		}
@@ -149,7 +149,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	tx, commit := t.db.begin()
 	defer commit()
 
-	newpart, err := Merge(tx, t.db.txCompleted, granule.parts...) // need to merge all parts in a granule before splitting
+	newpart, err := Merge(tx, t.db.txCompleted, &t.schema, granule.parts...) // need to merge all parts in a granule before splitting
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
@@ -218,7 +218,7 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 		defer g.RUnlock()
 
 		for ; j < len(rows); j++ {
-			if rows[j].Less(g.least) {
+			if rows[j].Less(g.least, t.schema.ordered) {
 				if prev != nil {
 					rowsByGranule[prev] = append(rowsByGranule[prev], rows[j])
 					continue
