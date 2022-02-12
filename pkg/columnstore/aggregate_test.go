@@ -9,7 +9,6 @@ import (
 )
 
 func TestAggregate(t *testing.T) {
-	t.Skip()
 	table := basicTable(t, 2^12)
 
 	err := table.Insert(
