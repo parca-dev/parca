@@ -8,14 +8,14 @@
 }
 
 .iciclegraph-table .desc {
-  transform: rotate(180deg);
+  transform: rotate(0);
 }
 .iciclegraph-table .desc svg path {
   fill: #fff;
 }
 
 .iciclegraph-table .asc {
-  transform: rotate(0);
+  transform: rotate(180deg);
 }
 .iciclegraph-table .asc svg path {
   fill: #fff;

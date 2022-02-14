@@ -20,8 +20,8 @@ import (
 	"sort"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -116,12 +116,16 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 		current = rootNode
 	}
 
-	flamegraph := &pb.Flamegraph{Root: &pb.FlamegraphRootNode{}}
-	flamegraph.Total = rootNode.Cumulative
-	flamegraph.Height = height + 1 // add one for the root
-	flamegraph.Root.Cumulative = rootNode.Cumulative
-	flamegraph.Root.Diff = rootNode.Diff
-	flamegraph.Root.Children = rootNode.Children
+	flamegraph := &pb.Flamegraph{
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: rootNode.Cumulative,
+			Diff:       rootNode.Diff,
+			Children:   rootNode.Children,
+		},
+		Total:  rootNode.Cumulative,
+		Unit:   p.ProfileMeta().SampleType.Unit,
+		Height: height + 1, // add one for the root
+	}
 
 	return aggregateByFunction(flamegraph), nil
 }

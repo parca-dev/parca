@@ -6,7 +6,7 @@ docker_prune_settings(num_builds=5)
 docker_build(
     'parca.io/parca/parca:dev', '.',
     dockerfile='Dockerfile.go.dev',
-    only=['./cmd', './pkg', './proto', './gen', './go.mod', './go.sum', 'parca.yaml'],
+    only=['./cmd', './pkg', './proto', './gen', './internal', './go.mod', './go.sum', 'parca.yaml'],
 )
 
 ## All-in-one
@@ -30,12 +30,3 @@ docker_build(
 )
 k8s_yaml('deploy/tilt/parca-ui-deployment.yaml')
 k8s_resource('parca-ui', port_forwards=3000)
-
-## Parca Agent
-
-docker_build(
-    'parca.io/parca/parca-agent:dev', './tmp/parca-agent',
-    dockerfile='./tmp/parca-agent/Dockerfile.dev',
-)
-k8s_yaml('deploy/tilt/parca-agent-daemonSet.yaml')
-k8s_resource('parca-agent', port_forwards=[7071])

@@ -1,6 +1,7 @@
 {
   "name": "@parca/template",
-  "version": "0.0.0",
+  "private": true,
+  "version": "0.8.2",
   "description": "Frontend App Template",
   "scripts": {
     "dev": "../../../node_modules/.bin/next dev",
@@ -17,7 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@parca/functions": "0.0.0"
+    "@parca/functions": "^0.8.2"
   },
   "devDependencies": {
     "@storybook/react": "^6.3.12"

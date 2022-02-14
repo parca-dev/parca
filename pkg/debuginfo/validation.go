@@ -23,7 +23,7 @@ import (
 // Valid is the ValidRule
 var Valid = ValidRule{}
 
-// ValidRule is a validation rule for the Config. It implementes the validation.Rule interface
+// ValidRule is a validation rule for the Config. It implements the validation.Rule interface
 type ValidRule struct{}
 
 // Validate returns an error if the config is not valid

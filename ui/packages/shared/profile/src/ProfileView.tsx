@@ -111,6 +111,10 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
         error: ServiceError | null,
         responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null
       ) => {
+        if (error != null) {
+          console.error('Error while querying', error);
+          return;
+        }
         if (responseMessage !== null) {
           const bytes = responseMessage.getPprof();
           const blob = new Blob([bytes], {type: 'application/octet-stream'});
@@ -124,7 +128,7 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
     );
   };
 
-  const resetIcicleGraph = (e: React.MouseEvent<HTMLElement>) => {
+  const resetIcicleGraph = (_: React.MouseEvent<HTMLElement>) => {
     setCurPath([]);
   };
 
@@ -154,7 +158,7 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                     color="neutral"
                     onClick={resetIcicleGraph}
                     disabled={curPath.length === 0}
-                    className="whitespace-nowrap text-ellipsis"
+                    additionalClasses="whitespace-nowrap text-ellipsis"
                   >
                     Reset View
                   </Button>
@@ -162,8 +166,8 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
 
                 <Button
                   color="neutral"
-                  className={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons
-                      ${currentView === 'table' ? '!bg-[#4f45e4]' : ''}
+                  additionalClasses={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons
+                    ${currentView === 'table' ? '!bg-[#4f45e4]' : ''} 
                     `}
                   onClick={() => setCurrentView('table')}
                 >
@@ -172,7 +176,7 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
 
                 <Button
                   color="neutral"
-                  className={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons .no-outline-on-buttons text-ellipsis ${
+                  additionalClasses={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons .no-outline-on-buttons text-ellipsis ${
                     currentView === 'both' ? '!bg-[#4f45e4]' : ''
                   }`}
                   onClick={() => setCurrentView('both')}
@@ -182,8 +186,8 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
 
                 <Button
                   color="neutral"
-                  className={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons
-                    ${currentView === 'icicle' ? '!bg-[#4f45e4]' : ''} 
+                  additionalClasses={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons
+                      ${currentView === 'icicle' ? '!bg-[#4f45e4]' : ''}
                     `}
                   onClick={() => setCurrentView('icicle')}
                 >

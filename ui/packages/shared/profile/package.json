@@ -1,11 +1,11 @@
 {
   "name": "@parca/profile",
-  "version": "0.0.0",
+  "version": "0.8.2",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@parca/client": "0.0.0",
-    "@parca/parser": "0.0.0",
-    "@parca/dynamicsize": "0.0.0",
+    "@parca/client": "^0.8.0",
+    "@parca/dynamicsize": "^0.8.0",
+    "@parca/parser": "^0.8.0",
     "d3-scale": "^4.0.2"
   },
   "main": "src/index.tsx",
@@ -14,5 +14,9 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

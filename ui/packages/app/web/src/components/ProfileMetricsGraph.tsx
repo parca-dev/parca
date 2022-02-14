@@ -10,6 +10,7 @@ import {
   ServiceError,
 } from '@parca/client';
 import {Timestamp} from 'google-protobuf/google/protobuf/timestamp_pb';
+import {DateTimeRange} from './ui/DateTimeRangePicker/utils';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -18,7 +19,7 @@ interface ProfileMetricsGraphProps {
   from: number;
   to: number;
   select: (source: ProfileSelection) => void;
-  setTimeRange: (from: number, to: number) => void;
+  setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (key: string, value: string) => void;
 }
 

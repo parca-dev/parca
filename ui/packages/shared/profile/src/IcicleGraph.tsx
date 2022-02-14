@@ -281,6 +281,7 @@ const FlamegraphNodeTooltipTableRows = ({
 function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
   const domRect = contextElement.getBoundingClientRect();
   return () =>
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     ({
       width: 0,
       height: 0,
@@ -293,6 +294,7 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
 
 const virtualElement = {
   getBoundingClientRect: () =>
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     ({
       width: 0,
       height: 0,

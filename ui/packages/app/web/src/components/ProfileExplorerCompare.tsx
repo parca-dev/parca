@@ -14,6 +14,7 @@ interface ProfileExplorerCompareProps {
   selectQueryB: (query: QuerySelection) => void;
   selectProfileA: (source: ProfileSelection) => void;
   selectProfileB: (source: ProfileSelection) => void;
+  closeProfile: (card: string) => void;
 }
 
 const ProfileExplorerCompare = ({
@@ -26,7 +27,16 @@ const ProfileExplorerCompare = ({
   selectQueryB,
   selectProfileA,
   selectProfileB,
+  closeProfile,
 }: ProfileExplorerCompareProps): JSX.Element => {
+  const closeProfileA = () => {
+    closeProfile('A');
+  };
+
+  const closeProfileB = () => {
+    closeProfile('B');
+  };
+
   return (
     <>
       <div className="grid grid-cols-2">
@@ -37,6 +47,7 @@ const ProfileExplorerCompare = ({
             profileSelection={profileA}
             selectProfile={selectProfileA}
             selectQuery={selectQueryA}
+            closeProfile={closeProfileA}
             enforcedProfileName={''}
             comparing={true}
             onCompareProfile={() => {}}
@@ -49,6 +60,7 @@ const ProfileExplorerCompare = ({
             profileSelection={profileB}
             selectProfile={selectProfileB}
             selectQuery={selectQueryB}
+            closeProfile={closeProfileB}
             enforcedProfileName={Query.parse(queryA.expression).profileName()}
             comparing={true}
             onCompareProfile={() => {}}

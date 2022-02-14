@@ -1,4 +1,4 @@
-FROM node:17.3.0-alpine3.14 AS ui-deps
+FROM node:17.4.0-alpine3.14 AS ui-deps
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ COPY ui/packages/app/web/package.json ./packages/app/web/package.json
 COPY ui/package.json ui/yarn.lock ./
 RUN yarn workspace @parca/web install --frozen-lockfile
 
-FROM node:17.3.0-alpine3.14 AS ui-builder
+FROM node:17.4.0-alpine3.14 AS ui-builder
 
 WORKDIR /app
 

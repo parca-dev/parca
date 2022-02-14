@@ -1,4 +1,9 @@
 <p align="center">
+  <a href="#contributors-" target="_blank">
+    <img src="https://img.shields.io/github/all-contributors/parca-dev/parca?style=flat" alt="contributors">
+  </a>
+</p>
+<p align="center">
   <img src="ui/packages/shared/icons/src/assets/logo.svg" alt="Parca: Continuous profiling for analysis of CPU, memory usage over time, and down to the line number." height="75">
 </p>
 
@@ -75,3 +80,52 @@ Parca was originally developed by [Polar Signals](https://polarsignals.com/). Re
 
 Check out our [Contributing Guide](CONTRIBUTING.md) to get started!
 It explains how compile Parca, run it with Tilt as container in Kubernetes and send a Pull Request.
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://brancz.com/"><img src="https://avatars.githubusercontent.com/u/4546722?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Frederic Branczyk</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=brancz" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=brancz" title="Documentation">📖</a> <a href="#infra-brancz" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://github.com/thorfour"><img src="https://avatars.githubusercontent.com/u/8681572?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Thor</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=thorfour" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=thorfour" title="Documentation">📖</a> <a href="#infra-thorfour" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://matthiasloibl.com/"><img src="https://avatars.githubusercontent.com/u/872251?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Matthias Loibl</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=metalmatze" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=metalmatze" title="Documentation">📖</a> <a href="#infra-metalmatze" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://kakkoyun.me/"><img src="https://avatars.githubusercontent.com/u/536449?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kemal Akkoyun</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=kakkoyun" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=kakkoyun" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/Sylfrena"><img src="https://avatars.githubusercontent.com/u/35404119?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sumera Priyadarsini</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=Sylfrena" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=Sylfrena" title="Documentation">📖</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/jessicalins"><img src="https://avatars.githubusercontent.com/u/6627121?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jéssica Lins </b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=jessicalins" title="Documentation">📖</a></td>
+    <td align="center"><a href="http://moiji-mobile.com/"><img src="https://avatars.githubusercontent.com/u/390178?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Holger Freyther</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=zecke" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/s-urbaniak"><img src="https://avatars.githubusercontent.com/u/375856?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sergiusz Urbaniak</b></sub></a><br /><a href="#infra-s-urbaniak" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://pawel.krupa.net.pl/"><img src="https://avatars.githubusercontent.com/u/3531758?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Paweł Krupa</b></sub></a><br /><a href="#infra-paulfantom" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://yeya24.github.io/"><img src="https://avatars.githubusercontent.com/u/25150124?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ben Ye</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=yeya24" title="Code">💻</a> <a href="#infra-yeya24" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/fpuc"><img src="https://avatars.githubusercontent.com/u/1822814?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Felix</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=fpuc" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=fpuc" title="Documentation">📖</a> <a href="#infra-fpuc" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://cbrgm.net/"><img src="https://avatars.githubusercontent.com/u/24737434?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Christian Bargmann</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=cbrgm" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/yomete"><img src="https://avatars.githubusercontent.com/u/9016992?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Yomi Eluwande</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=yomete" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=yomete" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://responsively.app/"><img src="https://avatars.githubusercontent.com/u/1283424?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Manoj Vivek</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=manojVivek" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=manojVivek" title="Documentation">📖</a></td>
+    <td align="center"><a href="http://thepolishamerican.com/"><img src="https://avatars.githubusercontent.com/u/14791956?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Monica Wojciechowska</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=monicawoj" title="Code">💻</a> <a href="https://github.com/parca-dev/parca/commits?author=monicawoj" title="Documentation">📖</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/mrueg"><img src="https://avatars.githubusercontent.com/u/489370?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Manuel Rüger</b></sub></a><br /><a href="#infra-mrueg" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://github.com/avinashupadhya99"><img src="https://avatars.githubusercontent.com/u/52544819?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Avinash Upadhyaya K R</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=avinashupadhya99" title="Code">💻</a></td>
+    <td align="center"><a href="https://bandism.net/"><img src="https://avatars.githubusercontent.com/u/22633385?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ikko Ashimine</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=eltociear" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

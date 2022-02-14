@@ -12,6 +12,7 @@ else
 	COMMIT := $(shell echo $(GITHUB_SHA) | cut -c1-8)
 endif
 VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags 2>/dev/null || echo '$(BRANCH)$(COMMIT)'))
+ALL_ARCH ?= amd64 arm arm64
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
 .PHONY: build
@@ -74,17 +75,23 @@ proto/vendor:
 	mkdir -p proto/google/pprof
 	curl https://raw.githubusercontent.com/google/pprof/master/proto/profile.proto > proto/google/pprof/profile.proto
 
+.PHONY: container-dev
+container-dev:
+       buildah build-using-dockerfile --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
+
 .PHONY: container
 container:
-	buildah build-using-dockerfile --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
+	for arch in $(ALL_ARCH); do \
+	buildah build-using-dockerfile --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) --build-arg ARCH=$$arch --arch $$arch --timestamp 0 --manifest $(OUT_DOCKER):$(VERSION); \
+	done
 
 .PHONY: push-container
 push-container:
-	buildah push $(OUT_DOCKER):$(VERSION)
+	buildah manifest push --all $(OUT_DOCKER):$(VERSION) docker://$(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-quay-container
 push-quay-container:
-	buildah push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
+	buildah manifest push --all $(OUT_DOCKER):$(VERSION) docker://quay.io/parca/parca:$(VERSION)
 
 .PHONY: deploy/manifests
 deploy/manifests:

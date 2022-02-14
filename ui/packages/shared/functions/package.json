@@ -1,6 +1,6 @@
 {
   "name": "@parca/functions",
-  "version": "0.0.0",
+  "version": "0.8.2",
   "description": "Templated shared functions",
   "main": "src/index.ts",
   "scripts": {
@@ -8,5 +8,9 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

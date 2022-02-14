@@ -4,7 +4,12 @@ export const capitalize = (a: string): string =>
     .map(p => p[0].toUpperCase() + p.substr(1).toLocaleLowerCase())
     .join(' ');
 
-const unitsInTime = [
+interface Units {
+  value: number;
+  symbol: string;
+}
+
+const unitsInTime: Units[] = [
   {value: 1, symbol: 'ns'},
   {value: 1e3, symbol: 'µs'},
   {value: 1e6, symbol: 'ms'},
@@ -12,7 +17,7 @@ const unitsInTime = [
   {value: 6 * 1e10, symbol: 'm'},
 ];
 
-const unitsInBytes = [
+const unitsInBytes: Units[] = [
   {value: 1, symbol: 'Bytes'},
   {value: 1e3, symbol: 'kB'},
   {value: 1e6, symbol: 'MB'},
@@ -22,7 +27,7 @@ const unitsInBytes = [
   {value: 1e18, symbol: 'EB'},
 ];
 
-const unitsInCount = [
+const unitsInCount: Units[] = [
   {value: 1, symbol: ''},
   {value: 1e3, symbol: 'k'},
   {value: 1e6, symbol: 'M'},
@@ -40,7 +45,7 @@ const knownValueFormatters = {
 
 export const valueFormatter = (num: number, unit: string, digits: number): string => {
   const absoluteNum = Math.abs(num);
-  const format = knownValueFormatters[unit];
+  const format: Units[] = knownValueFormatters[unit];
 
   if (format === undefined || format === null) {
     return num.toString();
@@ -53,5 +58,5 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
       break;
     }
   }
-  return (num / format[i].value).toFixed(digits).replace(rx, '$1') + format[i].symbol;
+  return `${(num / format[i].value).toFixed(digits).replace(rx, '$1')}${format[i].symbol}`;
 };

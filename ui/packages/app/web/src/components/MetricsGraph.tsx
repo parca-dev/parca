@@ -13,6 +13,7 @@ import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/cli
 import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
 import {valueFormatter} from '@parca/functions';
+import {DateTimeRange} from './ui/DateTimeRangePicker/utils';
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb.AsObject[];
@@ -21,7 +22,7 @@ interface RawMetricsGraphProps {
   profile: SingleProfileSelection | null;
   onSampleClick: (timestamp: number, value: number, labels: Label.AsObject[]) => void;
   onLabelClick: (labelName: string, labelValue: string) => void;
-  setTimeRange: (from: number, to: number) => void;
+  setTimeRange: (range: DateTimeRange) => void;
   width?: number;
 }
 
@@ -413,9 +414,9 @@ export const RawMetricsGraph = ({
     const secondTime = xScale.invert(pos[0]).valueOf();
 
     if (firstTime > secondTime) {
-      setTimeRange(secondTime, firstTime);
+      setTimeRange(DateTimeRange.fromAbsoluteDates(secondTime, firstTime));
     } else {
-      setTimeRange(firstTime, secondTime);
+      setTimeRange(DateTimeRange.fromAbsoluteDates(firstTime, secondTime));
     }
     setRelPos(-1);
 

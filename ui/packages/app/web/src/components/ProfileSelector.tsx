@@ -1,7 +1,6 @@
 import {QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse} from '@parca/client';
 import {Query} from '@parca/parser';
-import {ProfileSelection, timeFormatShort} from '@parca/profile';
-import moment from 'moment';
+import {ProfileSelection} from '@parca/profile';
 import React, {useEffect, useState} from 'react';
 import ProfileMetricsGraph from '../components/ProfileMetricsGraph';
 import MatchersInput from './MatchersInput';
@@ -10,12 +9,10 @@ import CompareButton from './CompareButton';
 import Button from './ui/Button';
 import ButtonGroup from './ui/ButtonGroup';
 import Card from './ui/Card';
+import CloseIcon from './ui/CloseIcon';
 import Select, {SelectElement} from './ui/Select';
-
-interface TimeSelection {
-  from: number | null;
-  to: number | null;
-}
+import DateTimeRangePicker from './ui/DateTimeRangePicker';
+import {DateTimeRange} from './ui/DateTimeRangePicker/utils';
 
 export interface QuerySelection {
   expression: string;
@@ -30,6 +27,7 @@ interface ProfileSelectorProps {
   querySelection: QuerySelection;
   selectProfile: (source: ProfileSelection) => void;
   selectQuery: (query: QuerySelection) => void;
+  closeProfile: () => void;
   enforcedProfileName: string;
   profileSelection: ProfileSelection | null;
   comparing: boolean;
@@ -75,6 +73,14 @@ const wellKnownProfiles = {
   block_total_delay_nanoseconds: {
     name: 'Block Contention Time Total',
     help: 'Time delayed stack traces caused by blocking on synchronization primitives.',
+  },
+  fgprof_samples_count: {
+    name: 'Fgprof Samples Total',
+    help: 'CPU profile samples observed regardless of their current On/Off CPU scheduling status',
+  },
+  fgprof_time_nanoseconds: {
+    name: 'Fgprof Samples Time Total',
+    help: 'CPU profile measured regardless of their current On/Off CPU scheduling status in nanoseconds',
   },
   goroutine_total_goroutine_count: {
     name: 'Goroutine Created Total',
@@ -144,6 +150,7 @@ const ProfileSelector = ({
   querySelection,
   selectProfile,
   selectQuery,
+  closeProfile,
   enforcedProfileName,
   profileSelection,
   comparing,
@@ -154,16 +161,15 @@ const ProfileSelector = ({
     (error === undefined || error == null) && response !== undefined && response != null
       ? response.labelValuesList
       : [];
+
   const profileLabels = profileNames.map(name => ({
     key: name,
     element: profileSelectElement(name),
   }));
 
-  const [exactTimeSelection, setExactTimeSelection] = useState<TimeSelection>({
-    from: null,
-    to: null,
-  });
-  const [timeSelection, setTimeSelection] = useState('');
+  const [timeRangeSelection, setTimeRangeSelection] = useState(
+    DateTimeRange.fromRangeKey(querySelection.timeSelection)
+  );
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
 
   useEffect(() => {
@@ -189,106 +195,13 @@ const ProfileSelector = ({
     enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(queryExpressionString);
   const selectedProfileName = query.profileName();
 
-  const currentFromTimeSelection = (): number => {
-    if (exactTimeSelection.from != null) {
-      return exactTimeSelection.from;
-    }
-    return !isNaN(querySelection.from) ? querySelection.from : moment().utc().valueOf();
-  };
-
-  const currentToTimeSelection = (): number => {
-    if (exactTimeSelection.to != null) {
-      return exactTimeSelection.to;
-    }
-    return !isNaN(querySelection.from) ? querySelection.to : moment().utc().valueOf();
-  };
-
-  const timeSelections = [
-    {
-      key: 'lasthour',
-      label: 'Last hour',
-      time: (): number[] => [
-        moment().utc().subtract(1, 'hour').valueOf(),
-        moment().utc().valueOf(),
-      ],
-      relative: true,
-    },
-    {
-      key: 'lastday',
-      label: 'Last day',
-      time: (): number[] => [moment().utc().subtract(1, 'day').valueOf(), moment().utc().valueOf()],
-      relative: true,
-    },
-    {
-      key: 'last3days',
-      label: 'Last 3 days',
-      time: (): number[] => [
-        moment().utc().subtract(3, 'days').valueOf(),
-        moment().utc().valueOf(),
-      ],
-      relative: true,
-    },
-    {
-      key: 'last7days',
-      label: 'Last 7 days',
-      time: (): number[] => [
-        moment().utc().subtract(7, 'days').valueOf(),
-        moment().utc().valueOf(),
-      ],
-      relative: true,
-    },
-    {
-      key: 'last14days',
-      label: 'Last 14 days',
-      time: (): number[] => [
-        moment().utc().subtract(14, 'days').valueOf(),
-        moment().utc().valueOf(),
-      ],
-      relative: true,
-    },
-    {
-      key: 'custom',
-      label: (
-        <a>
-          {moment(currentFromTimeSelection()).utc().format(timeFormatShort)} &rArr;{' '}
-          {moment(currentToTimeSelection()).utc().format(timeFormatShort)}
-        </a>
-      ),
-      time: (): number[] => [
-        moment(currentFromTimeSelection()).utc().valueOf(),
-        moment(currentToTimeSelection()).utc().valueOf(),
-      ],
-      relative: false,
-    },
-  ];
-  const timePresets = timeSelections
-    .filter(selection => selection.relative)
-    .map(selection => ({
-      key: selection.key,
-      element: {active: <>{selection.label}</>, expanded: <>{selection.label}</>},
-    }));
-
-  const timeSelectionByKey = (key: string): number => timeSelections.findIndex(e => e.key === key);
-
-  const currentTimeSelection = (): string => {
-    if (timeSelection !== '') {
-      return timeSelection;
-    }
-    if (querySelection.timeSelection !== undefined) {
-      return querySelection.timeSelection;
-    }
-    return 'lasthour';
-  };
-
   const setNewQueryExpression = (expr: string, merge: boolean): void => {
-    const ts = timeSelectionByKey(currentTimeSelection());
-    const [from, to] = timeSelections[ts].time();
     selectQuery({
       expression: expr,
-      from: from,
-      to: to,
+      from: timeRangeSelection.getFromMs(),
+      to: timeRangeSelection.getToMs(),
       merge: merge,
-      timeSelection: timeSelections[ts].key,
+      timeSelection: timeRangeSelection.getRangeKey(),
     });
   };
 
@@ -312,14 +225,6 @@ const ProfileSelector = ({
     setQueryExpressionString(newExpressionString);
   };
 
-  const setTimeRange = (from: number, to: number): void => {
-    setTimeSelection('custom');
-    setExactTimeSelection({
-      from: from,
-      to: to,
-    });
-  };
-
   const setProfileName = (profileName: string): void => {
     const [newQuery, changed] = query.setProfileName(profileName);
     if (changed) {
@@ -338,92 +243,94 @@ const ProfileSelector = ({
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
-    <>
-      <Card>
-        <Card.Header>
-          <div className="flex space-x-4">
-            <Select
-              items={profileLabels}
-              selectedKey={selectedProfileName}
-              onSelection={setProfileName}
-              placeholder="Select profile..."
-            />
-            <MatchersInput
-              queryClient={queryClient}
-              setMatchersString={setMatchersString}
-              runQuery={setQueryExpression}
-              currentQuery={query}
-            />
-            <Select
-              items={timePresets}
-              selectedKey={currentTimeSelection()}
-              onSelection={key => setTimeSelection(key ?? '')}
-            />
-            {searchDisabled ? (
-              <div>
-                <Button disabled={true}>Search</Button>
-              </div>
-            ) : (
-              <>
-                <ButtonGroup style={{marginRight: 5}}>
-                  <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
-                  {!comparing && (
-                    <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
-                  )}
-                </ButtonGroup>
-                <div>
-                  <Button
-                    onClick={(e: React.MouseEvent<HTMLElement>) => {
-                      e.preventDefault();
-                      setQueryExpression();
-                    }}
-                  >
-                    Search
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </Card.Header>
-        {!querySelection.merge && (
-          <Card.Body>
-            {querySelection.expression !== undefined &&
-            querySelection.expression.length > 0 &&
-            querySelection.from !== undefined &&
-            querySelection.to !== undefined &&
-            (profileSelection == null || profileSelection.Type() !== 'merge') ? (
-              <ProfileMetricsGraph
-                queryClient={queryClient}
-                queryExpression={querySelection.expression}
-                from={querySelection.from}
-                to={querySelection.to}
-                select={selectProfile}
-                profile={profileSelection}
-                setTimeRange={(from: number, to: number) => {
-                  setTimeRange(from, to);
-                  selectQuery({
-                    expression: queryExpressionString,
-                    from: from,
-                    to: to,
-                    merge: false,
-                    timeSelection: 'custom',
-                  });
-                }}
-                addLabelMatcher={addLabelMatcher}
-              />
-            ) : (
-              <>
-                {(profileSelection == null || profileSelection.Type() !== 'merge') && (
-                  <div className="my-20 text-center">
-                    <p>Run a query, and the result will be displayed here.</p>
-                  </div>
+    <Card>
+      <Card.Header>
+        <div className="flex space-x-4">
+          {comparing && (
+            <button type="button" onClick={() => closeProfile()}>
+              <CloseIcon />
+            </button>
+          )}
+          <Select
+            items={profileLabels}
+            selectedKey={selectedProfileName}
+            onSelection={setProfileName}
+            placeholder="Select profile..."
+          />
+          <MatchersInput
+            queryClient={queryClient}
+            setMatchersString={setMatchersString}
+            runQuery={setQueryExpression}
+            currentQuery={query}
+          />
+          <DateTimeRangePicker
+            onRangeSelection={setTimeRangeSelection}
+            range={timeRangeSelection}
+          />
+          {searchDisabled ? (
+            <div>
+              <Button disabled={true}>Search</Button>
+            </div>
+          ) : (
+            <>
+              <ButtonGroup style={{marginRight: 5}}>
+                <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
+                {!comparing && (
+                  <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
                 )}
-              </>
-            )}
-          </Card.Body>
-        )}
-      </Card>
-    </>
+              </ButtonGroup>
+              <div>
+                <Button
+                  onClick={(e: React.MouseEvent<HTMLElement>) => {
+                    e.preventDefault();
+                    setQueryExpression();
+                  }}
+                >
+                  Search
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </Card.Header>
+      {!querySelection.merge && (
+        <Card.Body>
+          {querySelection.expression !== undefined &&
+          querySelection.expression.length > 0 &&
+          querySelection.from !== undefined &&
+          querySelection.to !== undefined &&
+          (profileSelection == null || profileSelection.Type() !== 'merge') ? (
+            <ProfileMetricsGraph
+              queryClient={queryClient}
+              queryExpression={querySelection.expression}
+              from={querySelection.from}
+              to={querySelection.to}
+              select={selectProfile}
+              profile={profileSelection}
+              setTimeRange={(range: DateTimeRange) => {
+                setTimeRangeSelection(range);
+                selectQuery({
+                  expression: queryExpressionString,
+                  from: range.getFromMs(),
+                  to: range.getToMs(),
+                  merge: false,
+                  timeSelection: range.getRangeKey(),
+                });
+              }}
+              addLabelMatcher={addLabelMatcher}
+            />
+          ) : (
+            <>
+              {(profileSelection == null || profileSelection.Type() !== 'merge') && (
+                <div className="my-20 text-center">
+                  <p>Run a query, and the result will be displayed here.</p>
+                </div>
+              )}
+            </>
+          )}
+        </Card.Body>
+      )}
+    </Card>
   );
 };
 

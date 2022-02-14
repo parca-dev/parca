@@ -1,6 +1,6 @@
 {
   "name": "@parca/parser",
-  "version": "0.0.0",
+  "version": "0.8.0",
   "description": "JavaScript parser implementation for the continuous profiling language",
   "main": "src/index.ts",
   "scripts": {
@@ -11,5 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "nearley": "^2.20.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

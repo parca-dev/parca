@@ -29,7 +29,7 @@ function getLastItem(thePath: string | undefined): string {
 
 const useSortableData = (
   response: QueryResponse | null,
-  config = {key: 'flat', direction: 'asc'}
+  config = {key: 'flat', direction: 'desc'}
 ) => {
   const [sortConfig, setSortConfig] = React.useState<{key: string; direction: string} | null>(
     config
@@ -108,6 +108,9 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
   if (error != null) {
     return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
   }
+
+  const total = response?.toObject().top?.listList.length;
+  if (total === 0) return <>Profile has no samples</>;
 
   const getClassNamesFor = name => {
     if (!sortConfig) {

@@ -23,6 +23,14 @@ updates:
     # Check the npm registry for updates every day (weekdays)
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "@parca/profile"
+      - dependency-name: "@parca/client"
+      - dependency-name: "@parca/dynamicsize"
+      - dependency-name: "@parca/functions"
+      - dependency-name: "@parca/icons"
+      - dependency-name: "@parca/parser"
+
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"
