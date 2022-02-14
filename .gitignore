@@ -4,6 +4,7 @@ out/
 node_modules
 
 dist/
+build/
 tmp/
 *.sqlite
 

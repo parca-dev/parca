@@ -17,6 +17,7 @@
     "port": 3000,
     "path": "/"
   },
+  "homepage": "PATH_PREFIX_VAR",
   "author": "",
   "license": "ISC",
   "dependencies": {

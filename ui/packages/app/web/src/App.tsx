@@ -10,12 +10,28 @@ import Header from './pages/layouts/Header';
 import ThemeProvider from './pages/layouts/ThemeProvider';
 import HomePage from './pages/index';
 
+declare global {
+  interface Window {
+    PATH_PREFIX: string;
+  }
+}
+
+function getBasename() {
+  if (!window.PATH_PREFIX) {
+    return '/';
+  }
+  if (window.PATH_PREFIX.startsWith('{{')) {
+    return '/';
+  }
+  return window.PATH_PREFIX;
+}
+
 const App = () => {
   const createStore = useCreateStore();
 
   return (
     <StoreProvider createStore={createStore}>
-      <BrowserRouter>
+      <BrowserRouter basename={getBasename()}>
         <ThemeProvider>
           <Header />
           <div className="px-3">
