@@ -216,13 +216,17 @@ func (a *HashAggregate) Aggregate() (arrow.Record, error) {
 	), nil
 }
 
-type SumAggregation struct{}
+type Int64SumAggregation struct{}
 
 var (
 	ErrUnsupportedSumType = errors.New("unsupported type for sum aggregation, expected int64")
 )
 
-func (a *SumAggregation) Aggregate(pool memory.Allocator, arrs []arrow.Array) (arrow.Array, error) {
+func (a *Int64SumAggregation) Aggregate(pool memory.Allocator, arrs []arrow.Array) (arrow.Array, error) {
+	if len(arrs) == 0 {
+		return array.NewInt64Builder(pool).NewArray(), nil
+	}
+
 	typ := arrs[0].DataType().ID()
 	switch typ {
 	case arrow.INT64:

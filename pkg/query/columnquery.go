@@ -181,7 +181,7 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 
 	agg := columnstore.NewHashAggregate(
 		pool,
-		&columnstore.SumAggregation{},
+		&columnstore.Int64SumAggregation{},
 		columnstore.StaticColumnRef("value").ArrowFieldMatcher(),
 		columnstore.DynamicColumnRef("labels").ArrowFieldMatcher(),
 		columnstore.StaticColumnRef("timestamp").ArrowFieldMatcher(),
@@ -376,7 +376,7 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, sel []*labels.Matcher, 
 	pool := memory.NewGoAllocator()
 	agg := columnstore.NewHashAggregate(
 		pool,
-		&columnstore.SumAggregation{},
+		&columnstore.Int64SumAggregation{},
 		columnstore.StaticColumnRef("value").ArrowFieldMatcher(),
 		columnstore.StaticColumnRef("stacktrace").ArrowFieldMatcher(),
 	)
@@ -429,7 +429,7 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 	pool := memory.NewGoAllocator()
 	agg := columnstore.NewHashAggregate(
 		pool,
-		&columnstore.SumAggregation{},
+		&columnstore.Int64SumAggregation{},
 		columnstore.StaticColumnRef("value").ArrowFieldMatcher(),
 		columnstore.StaticColumnRef("stacktrace").ArrowFieldMatcher(),
 	)
