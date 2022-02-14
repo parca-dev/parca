@@ -226,22 +226,27 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 			return fmt.Errorf("failed to read ui file %s: %w", path, err)
 		}
 
-		tmpl, err := template.New(path).Parse(string(b))
+		if strings.HasSuffix(path, ".html") {
 
-		if err != nil {
-			return fmt.Errorf("failed to parse ui file %s: %w", path, err)
-		}
+			tmpl, err := template.New(path).Parse(string(b))
 
-		var outputBuffer bytes.Buffer
+			if err != nil {
+				return fmt.Errorf("failed to parse ui file %s: %w", path, err)
+			}
 
-		err = tmpl.Execute(&outputBuffer, struct {
-			Version string
-		}{
-			s.version,
-		})
+			var outputBuffer bytes.Buffer
 
-		if err != nil {
-			return fmt.Errorf("failed to execute ui file %s: %w", path, err)
+			err = tmpl.Execute(&outputBuffer, struct {
+				Version string
+			}{
+				s.version,
+			})
+
+			if err != nil {
+				return fmt.Errorf("failed to execute ui file %s: %w", path, err)
+			}
+
+			b = outputBuffer.Bytes()
 		}
 
 		fi, err := d.Info()
@@ -249,8 +254,6 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 		if err != nil {
 			return fmt.Errorf("failed to receive file info %s: %w", path, err)
 		}
-
-		outputBytes := outputBuffer.Bytes()
 
 		paths := []string{fmt.Sprintf("/%s", path)}
 
@@ -260,7 +263,7 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 
 		for _, path := range paths {
 			uiHandler.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-				http.ServeContent(w, r, d.Name(), fi.ModTime(), bytes.NewReader(outputBytes))
+				http.ServeContent(w, r, d.Name(), fi.ModTime(), bytes.NewReader(b))
 			})
 		}
 
