@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import cx from 'classnames';
 
 import {CalcWidth} from '@parca/dynamicsize';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
@@ -9,6 +8,8 @@ import Card from '../../../app/web/src/components/ui/Card';
 import Button from '@parca/web/src/components/ui/Button';
 import TopTable from './TopTable';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
+
+import './ProfileView.styles.css';
 
 interface ProfileViewProps {
   queryClient: QueryServiceClient;
@@ -158,43 +159,40 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                     Reset View
                   </Button>
                 </div>
+
                 <Button
                   color="neutral"
-                  className={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis !shadow-none !ring-0
-                    ${currentView === 'icicle' ? '!bg-[#4f45e4]' : ''} 
-                    `}
-                  onClick={() => setCurrentView('icicle')}
-                >
-                  Icicle Graph
-                </Button>
-                <Button
-                  color="neutral"
-                  className={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap text-ellipsis ${
-                    currentView === 'both' ? '!bg-[#4f45e4]' : ''
-                  }`}
-                  onClick={() => setCurrentView('both')}
-                >
-                  Both
-                </Button>
-                <Button
-                  color="neutral"
-                  className={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis
+                  className={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons
                       ${currentView === 'table' ? '!bg-[#4f45e4]' : ''}
                     `}
                   onClick={() => setCurrentView('table')}
                 >
                   Table
                 </Button>
+
+                <Button
+                  color="neutral"
+                  className={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons .no-outline-on-buttons text-ellipsis ${
+                    currentView === 'both' ? '!bg-[#4f45e4]' : ''
+                  }`}
+                  onClick={() => setCurrentView('both')}
+                >
+                  Both
+                </Button>
+
+                <Button
+                  color="neutral"
+                  className={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons
+                    ${currentView === 'icicle' ? '!bg-[#4f45e4]' : ''} 
+                    `}
+                  onClick={() => setCurrentView('icicle')}
+                >
+                  Icicle Graph
+                </Button>
               </div>
             </div>
 
             <div className="flex space-x-4">
-              {currentView === 'table' && (
-                <div className="w-full">
-                  <TopTable queryClient={queryClient} profileSource={profileSource} />
-                </div>
-              )}
-
               {currentView === 'icicle' && (
                 <div className="w-full">
                   <CalcWidth throttle={300} delay={2000}>
@@ -204,6 +202,12 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                       graph={response.getFlamegraph()?.toObject()}
                     />
                   </CalcWidth>
+                </div>
+              )}
+
+              {currentView === 'table' && (
+                <div className="w-full">
+                  <TopTable queryClient={queryClient} profileSource={profileSource} />
                 </div>
               )}
 

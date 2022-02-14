@@ -4,6 +4,8 @@ import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@pa
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 import {Arrow} from '@parca/icons';
 
+import './TopTable.styles.css';
+
 interface ProfileViewProps {
   queryClient: QueryServiceClient;
   profileSource: ProfileSource;
@@ -25,7 +27,10 @@ function getLastItem(thePath: string | undefined): string {
   return thePath.substring(index + 1);
 }
 
-const useSortableData = (response: QueryResponse | null, config = null) => {
+const useSortableData = (
+  response: QueryResponse | null,
+  config = {key: 'flat', direction: 'asc'}
+) => {
   const [sortConfig, setSortConfig] = React.useState<{key: string; direction: string} | null>(
     config
   );
@@ -44,10 +49,10 @@ const useSortableData = (response: QueryResponse | null, config = null) => {
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
+          return sortConfig.direction === 'asc' ? -1 : 1;
         }
         if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
+          return sortConfig.direction === 'asc' ? 1 : -1;
         }
         return 0;
       });
@@ -56,9 +61,9 @@ const useSortableData = (response: QueryResponse | null, config = null) => {
   }, [items, sortConfig]);
 
   const requestSort = key => {
-    let direction = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
+    let direction = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
     }
     setSortConfig({key, direction});
   };
@@ -114,30 +119,33 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
   return (
     <>
       <div className="w-full">
-        <table className="table-auto text-left w-full">
+        <table className="iciclegraph-table table-auto text-left w-full">
           <thead>
             <tr>
-              <th className="text-sm cursor-pointer" onClick={() => requestSort('name')}>
+              <th
+                className="text-sm cursor-pointer bg-[#ffffff0d] pt-2 pb-2 pl-2"
+                onClick={() => requestSort('name')}
+              >
                 Name
-                <span>
+                <span className={`inline-block	align-middle ml-2 ${getClassNamesFor('name')}`}>
                   <Arrow />
                 </span>
               </th>
               <th
-                className="min-w-[150px] max-w-[150px] text-left text-sm cursor-pointer"
+                className="min-w-[150px] max-w-[150px] text-right text-sm cursor-pointer bg-[#ffffff0d] pt-2 pb-2"
                 onClick={() => requestSort('flat')}
               >
                 Flat
-                <span>
+                <span className={`inline-block	align-middle ml-2 ${getClassNamesFor('flat')}`}>
                   <Arrow />
                 </span>
               </th>
               <th
-                className="min-w-[150px] max-w-[150px] text-left text-sm cursor-pointer"
+                className="min-w-[150px] max-w-[150px] text-right text-sm cursor-pointer bg-[#ffffff0d] pt-2 pb-2 pr-2"
                 onClick={() => requestSort('cumulative')}
               >
                 Cumulative
-                <span>
+                <span className={`inline-block	align-middle ml-2 ${getClassNamesFor('cumulative')}`}>
                   <Arrow />
                 </span>
               </th>
@@ -146,12 +154,14 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
           <tbody>
             {items?.map((report, index) => (
               <tr key={index} className="hover-[#90c7e0]">
-                <td className="text-sm py-1.5 border-b-[1px] border-[#646464]">
+                <td className="text-sm py-1.5 border-b-[1px] border-[#646464] pl-2">
                   {report.meta?.mapping?.file !== '' && [getLastItem(report.meta?.mapping?.file)]}{' '}
                   {report.meta?.pb_function?.name}
                 </td>
-                <td className="text-sm py-1.5 border-b-[1px] border-[#646464]">{report.flat}</td>
-                <td className="text-sm py-1.5 border-b-[1px] border-[#646464]">
+                <td className="text-sm min-w-[150px] max-w-[150px] py-1.5 border-b-[1px] border-[#646464] text-right">
+                  {report.flat}
+                </td>
+                <td className="text-sm min-w-[150px] max-w-[150px] py-1.5 border-b-[1px] border-[#646464] text-right pr-2">
                   {report.cumulative}
                 </td>
               </tr>
