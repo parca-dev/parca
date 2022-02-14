@@ -9,6 +9,7 @@ import './style/sidenav.css';
 import Header from './pages/layouts/Header';
 import ThemeProvider from './pages/layouts/ThemeProvider';
 import HomePage from './pages/index';
+import Component404 from './pages/layouts/Component404';
 
 declare global {
   interface Window {
@@ -37,6 +38,7 @@ const App = () => {
           <div className="px-3">
             <Routes>
               <Route path="/" element={<HomePage />}></Route>
+              <Route path="*" element={<Component404 />} />
             </Routes>
           </div>
         </ThemeProvider>
