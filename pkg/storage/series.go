@@ -20,16 +20,15 @@ import (
 	"math"
 	"sync"
 
-	"github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
-var (
-	ErrOutOfOrderSample = errors.New("out of order sample")
-)
+var ErrOutOfOrderSample = errors.New("out of order sample")
 
 type MemSeries struct {
 	id   uint64

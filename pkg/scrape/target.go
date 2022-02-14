@@ -24,11 +24,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/parca-dev/parca/pkg/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+
+	"github.com/parca-dev/parca/pkg/config"
 )
 
 // TargetHealth describes the health state of a target.
@@ -134,7 +135,7 @@ func (t *Target) Clone() *Target {
 	)
 }
 
-// SetDiscoveredLabels sets new DiscoveredLabels
+// SetDiscoveredLabels sets new DiscoveredLabels.
 func (t *Target) SetDiscoveredLabels(l labels.Labels) {
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
@@ -202,7 +203,7 @@ func (t *Target) Health() TargetHealth {
 	return t.health
 }
 
-// ForProfiles
+// LabelsByProfiles returns the labels for a given ProfilingConfig.
 func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.Labels {
 	res := []labels.Labels{}
 	add := func(profileType string, cfgs ...config.PprofProfilingConfig) {
@@ -222,7 +223,6 @@ func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.La
 	}
 
 	return res
-
 }
 
 // Targets is a sortable list of targets.

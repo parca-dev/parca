@@ -24,7 +24,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
@@ -35,6 +34,7 @@ import (
 
 	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage"
 )
@@ -415,10 +415,10 @@ func Test_Query_Simple(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	//out, err := proto.Marshal(resp)
-	//require.NoError(t, err)
-	//err = ioutil.WriteFile("../../ui/packages/shared/profile/src/testdata/fg-simple.pb", out, 0644)
-	//require.NoError(t, err)
+	// out, err := proto.Marshal(resp)
+	// require.NoError(t, err)
+	// err = ioutil.WriteFile("../../ui/packages/shared/profile/src/testdata/fg-simple.pb", out, 0644)
+	// require.NoError(t, err)
 }
 
 func Test_Query_Diff(t *testing.T) {

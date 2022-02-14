@@ -25,9 +25,10 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
 type sqlMetaStore struct {
@@ -267,27 +268,29 @@ const (
 func buildLocationsByIDsQuery(ids []uuid.UUID) string {
 	idLen := 36 // each serialized uuid is this length
 
-	totalLen :=
-		// Add the start of the query.
-		len(locsByIDsQueryStart) +
-			// The max value is known, and invididual string can be larger than it.
-			len(ids)*idLen +
-			// len(ids)-1 commas, and a closing bracket is len(ids), plus two quotes per id.
-			3*len(ids)
+	var totalLen int
+	// Add the start of the query.
+	totalLen += len(locsByIDsQueryStart)
+	// The max value is known, and individual string can be larger than it.
+	totalLen += len(ids) * idLen
+	// len(ids)-1 commas, and a closing bracket is len(ids), plus two quotes per id.
+	totalLen += 3 * len(ids)
+
 	query := make([]byte, totalLen)
 	copy(query, locsByIDsQueryStart)
 
 	lastIndex := len(ids) - 1
 	for i := range ids {
-		offset :=
-			// Add the start of the query.
-			len(locsByIDsQueryStart) - 1 +
-				// The max value is known, and invididual string can be larger than it.
-				i*idLen +
-				// len(ids)-1 commas, and a closing bracket is len(ids) plus 2 quotes surrounding each id.
-				3*i
+		var offset int
+		// Add the start of the query.
+		offset += len(locsByIDsQueryStart) - 1
+		// The max value is known, and individual string can be larger than it.
+		offset += i * idLen
+		// len(ids)-1 commas, and a closing bracket is len(ids) plus 2 quotes surrounding each id.
+		offset += 3 * i
+
 		query[offset+1] = quote
-		encodeId(query, offset+2, ids[i])
+		encodeID(query, offset+2, ids[i])
 		query[offset+38] = quote
 		if i < lastIndex {
 			query[offset+39] = comma
@@ -416,41 +419,41 @@ func (s *sqlMetaStore) GetLinesByLocationIDs(ctx context.Context, ids ...[]byte)
 	retrievedLocationLines := make(map[string][]*pb.Line, len(ids))
 	for rows.Next() {
 		var (
-			lId        string
-			fId        string
-			locationId uuid.UUID
-			functionId uuid.UUID
+			lID        string
+			fID        string
+			locationID uuid.UUID
+			functionID uuid.UUID
 			line       int64
 		)
 		l := &pb.Line{}
 		err := rows.Scan(
-			&lId, &l.Line, &fId,
+			&lID, &l.Line, &fID,
 		)
 		if err != nil {
 			return nil, nil, fmt.Errorf("scan row:%w", err)
 		}
 
-		locationId, err = uuid.Parse(lId)
+		locationID, err = uuid.Parse(lID)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse function ID: %w", err)
 		}
 
-		functionId, err = uuid.Parse(fId)
+		functionID, err = uuid.Parse(fID)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse function ID: %w", err)
 		}
 
-		if _, found := retrievedLocationLines[string(locationId[:])]; !found {
-			retrievedLocationLines[string(locationId[:])] = []*pb.Line{}
+		if _, found := retrievedLocationLines[string(locationID[:])]; !found {
+			retrievedLocationLines[string(locationID[:])] = []*pb.Line{}
 		}
-		retrievedLocationLines[string(locationId[:])] = append(retrievedLocationLines[string(locationId[:])], &pb.Line{
-			FunctionId: functionId[:],
+		retrievedLocationLines[string(locationID[:])] = append(retrievedLocationLines[string(locationID[:])], &pb.Line{
+			FunctionId: functionID[:],
 			Line:       line,
 		})
 
-		if _, seen := functionIDsSeen[string(functionId[:])]; !seen {
-			functionIDs = append(functionIDs, functionId[:])
-			functionIDsSeen[string(functionId[:])] = struct{}{}
+		if _, seen := functionIDsSeen[string(functionID[:])]; !seen {
+			functionIDs = append(functionIDs, functionID[:])
+			functionIDsSeen[string(functionID[:])] = struct{}{}
 		}
 	}
 	err = rows.Err()
@@ -479,29 +482,29 @@ const (
 func buildLinesByLocationIDsQuery(ids []uuid.UUID) string {
 	idLen := 36 // Any uuid has this length as a string
 
-	totalLen :=
-		// Add the start of the query.
-		len(linesByLocationsIDsQueryStart) +
-			// The max value is known, and invididual string can be larger than it.
-			len(ids)*idLen +
-			// len(ids)-1 commas, and a closing bracket is len(ids) plus 2 quotes surrounding each id.
-			3*len(ids)
+	var totalLen int
+	// Add the start of the query.
+	totalLen += len(linesByLocationsIDsQueryStart)
+	// The max value is known, and invididual string can be larger than it.
+	totalLen += len(ids) * idLen
+	// len(ids)-1 commas, and a closing bracket is len(ids) plus 2 quotes surrounding each id.
+	totalLen += 3 * len(ids)
 
 	query := make([]byte, totalLen)
 	copy(query, linesByLocationsIDsQueryStart)
 
 	lastIndex := len(ids) - 1
 	for i := range ids {
-		offset :=
-			// Add the start of the query.
-			len(linesByLocationsIDsQueryStart) - 1 +
-				// The max value is known, and invididual string can be larger than it.
-				i*idLen +
-				// len(ids)-1 commas, and a closing bracket is len(ids) plus 2 quotes surrounding each id.
-				3*i
+		var offset int
+		// Add the start of the query.
+		offset += len(linesByLocationsIDsQueryStart) - 1
+		// The max value is known, and individual string can be larger than it.
+		offset += i * idLen
+		// len(ids)-1 commas, and a closing bracket is len(ids) plus 2 quotes surrounding each id.
+		offset += 3 * i
 
 		query[offset+1] = quote
-		encodeId(query, offset+2, ids[i])
+		encodeID(query, offset+2, ids[i])
 		query[offset+38] = quote
 		if i < lastIndex {
 			query[offset+39] = comma
@@ -512,7 +515,7 @@ func buildLinesByLocationIDsQuery(ids []uuid.UUID) string {
 	return unsafeString(query)
 }
 
-func encodeId(dst []byte, offset int, uuid uuid.UUID) {
+func encodeID(dst []byte, offset int, uuid uuid.UUID) {
 	hex.Encode(dst[offset:], uuid[:4])
 	dst[offset+8] = '-'
 	hex.Encode(dst[offset+9:offset+13], uuid[4:6])
@@ -578,17 +581,15 @@ func (s *sqlMetaStore) GetFunctionsByIDs(ctx context.Context, ids ...[]byte) (ma
 
 	retrievedFunctions := make(map[string]*pb.Function, len(ids))
 	for rows.Next() {
-		var (
-			fId string
-		)
+		var fIDString string
 		f := &pb.Function{}
 		err := rows.Scan(
-			&fId, &f.Name, &f.SystemName, &f.Filename, &f.StartLine,
+			&fIDString, &f.Name, &f.SystemName, &f.Filename, &f.StartLine,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("scan row: %w", err)
 		}
-		fID, err := uuid.Parse(fId)
+		fID, err := uuid.Parse(fIDString)
 		if err != nil {
 			return nil, fmt.Errorf("parse function ID: %w", err)
 		}
@@ -795,9 +796,7 @@ func (s *sqlMetaStore) GetSymbolizableLocations(ctx context.Context) ([]*pb.Loca
 }
 
 func (s *sqlMetaStore) GetFunctionByKey(ctx context.Context, fkey *pb.Function) (*pb.Function, error) {
-	var (
-		id string
-	)
+	var id string
 
 	k := MakeSQLFunctionKey(fkey)
 

@@ -26,12 +26,6 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/profilestore"
-	"github.com/parca-dev/parca/pkg/storage"
-	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
@@ -41,7 +35,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
+	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profilestore"
+	"github.com/parca-dev/parca/pkg/storage"
+	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 func TestSymbolizer(t *testing.T) {
