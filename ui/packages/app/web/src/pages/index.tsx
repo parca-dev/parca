@@ -9,7 +9,9 @@ interface ProfilesProps {
 }
 
 const Profiles = (_: ProfilesProps): JSX.Element => {
-  const queryClient = new QueryServiceClient(apiEndpoint === undefined ? '' : apiEndpoint);
+  const queryClient = new QueryServiceClient(
+    apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`
+  );
   return <ProfileExplorer queryClient={queryClient} />;
 };
 
