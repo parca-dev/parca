@@ -93,7 +93,6 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 
 	logOpts := []grpc_logging.Option{
 		grpc_logging.WithDecider(func(_ string, err error) grpc_logging.Decision {
-
 			runtimeLevel := grpc_logging.DefaultServerCodeToLevel(status.Code(err))
 			for _, lvl := range MapAllowedLevels[logLevel] {
 				if string(runtimeLevel) == strings.ToLower(lvl) {
@@ -167,7 +166,6 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	}
 
 	uiHandler, err := s.uiHandler(uiFS)
-
 	if err != nil {
 		return fmt.Errorf("failed to walk ui filesystem: %w", err)
 	}
@@ -221,15 +219,12 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 		}
 
 		b, err := fs.ReadFile(uiFS, path)
-
 		if err != nil {
 			return fmt.Errorf("failed to read ui file %s: %w", path, err)
 		}
 
 		if strings.HasSuffix(path, ".html") {
-
 			tmpl, err := template.New(path).Parse(string(b))
-
 			if err != nil {
 				return fmt.Errorf("failed to parse ui file %s: %w", path, err)
 			}
@@ -250,7 +245,6 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 		}
 
 		fi, err := d.Info()
-
 		if err != nil {
 			return fmt.Errorf("failed to receive file info %s: %w", path, err)
 		}
@@ -269,7 +263,6 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -286,10 +279,12 @@ func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowed
 	for _, o := range allowedCORSOrigins {
 		origins[o] = struct{}{}
 	}
-	wrappedGrpc := grpcweb.WrapServer(grpcServer, grpcweb.WithOriginFunc(func(origin string) bool {
-		_, found := origins[origin]
-		return found || allowAll
-	}))
+	wrappedGrpc := grpcweb.WrapServer(grpcServer,
+		grpcweb.WithAllowNonRootResource(true),
+		grpcweb.WithOriginFunc(func(origin string) bool {
+			_, found := origins[origin]
+			return found || allowAll
+		}))
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(r *http.Request, origin string) bool {
