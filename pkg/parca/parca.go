@@ -63,7 +63,7 @@ type Flags struct {
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
 	OTLPAddress        string   `help:"OpenTelemetry collector address to send traces to."`
 	Version            bool     `help:"Show application version."`
-	PathPrefix         string   `default:"/" help:"Path prefix for the UI"`
+	PathPrefix         string   `default:"" help:"Path prefix for the UI"`
 
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
