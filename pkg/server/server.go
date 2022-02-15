@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/felixge/fgprof"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -127,24 +128,24 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	)
 
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	mux := runtime.NewServeMux()
+
+	grpcWebMux := runtime.NewServeMux()
 	for _, r := range registerables {
-		if err := r.Register(ctx, srv, mux, port, opts); err != nil {
+		if err := r.Register(ctx, srv, grpcWebMux, port, opts); err != nil {
 			return err
 		}
 	}
 	reflection.Register(srv)
 	grpc_health.RegisterHealthServer(srv, s.grpcProbe.HealthServer())
 
-	err := mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	internalMux := chi.NewRouter()
+	internalMux.Mount("/api", grpcWebMux)
+
+	internalMux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		promhttp.HandlerFor(s.reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})
-	if err != nil {
-		return fmt.Errorf("failed to register metrics handler: %w", err)
-	}
-
 	// Add the pprof handler to profile Parca
-	err = mux.HandlePath(http.MethodGet, "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	internalMux.HandleFunc("/debug/pprof/*", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/debug/pprof/profile" {
 			pprof.Profile(w, r)
 			return
@@ -155,9 +156,6 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		}
 		pprof.Index(w, r)
 	})
-	if err != nil {
-		return fmt.Errorf("failed to register pprof handlers: %w", err)
-	}
 
 	// Strip the subpath
 	uiFS, err := fs.Sub(ui.FS, "packages/app/web/dist")
@@ -174,7 +172,7 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		Addr: port,
 		Handler: grpcHandlerFunc(
 			srv,
-			fallbackNotFound(mux, uiHandler),
+			fallbackNotFound(internalMux, uiHandler),
 			allowedCORSOrigins,
 		),
 		ReadTimeout:  5 * time.Second, // TODO make config option

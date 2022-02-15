@@ -39,7 +39,9 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
 };
 
 const TargetsPage = (_: TargetsPageProps): JSX.Element => {
-  const scrapeClient = new ScrapeServiceClient(apiEndpoint === undefined ? '' : apiEndpoint);
+  const scrapeClient = new ScrapeServiceClient(
+    apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`
+  );
   const {response: targetsResponse} = useTargets(scrapeClient);
   const getKeyValuePairFromArray = (key: string, value: {targetsList}) => {
     return {[key]: value.targetsList};
