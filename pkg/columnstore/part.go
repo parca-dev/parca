@@ -1,9 +1,10 @@
 package columnstore
 
 import (
+	"container/heap"
+	"fmt"
 	"math"
 	"reflect"
-	"sort"
 )
 
 type Row struct {
@@ -46,6 +47,14 @@ func (w *SimpleRowWriter) WriteTo(appenders []Appender) (int, error) {
 
 	return len(w.rows), nil
 }
+
+func NewEmptyPart(tx uint64, colDefs []ColumnDefinition) (*Part, error) {
+	return NewPart(tx, colDefs, &emptyRowWriter{})
+}
+
+type emptyRowWriter struct{}
+
+func (w *emptyRowWriter) WriteTo(appenders []Appender) (int, error) { return 0, nil }
 
 func NewPart(tx uint64, colDefs []ColumnDefinition, w RowWriter) (*Part, error) {
 	p := &Part{
@@ -133,46 +142,123 @@ func Merge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts ...
 }
 
 func merge(tx uint64, schema *Schema, its []*PartIterator) (*Part, error) {
-	rows := SortableRows{
-		rows:   []Row{},
-		schema: schema,
-	}
-
+	partsWithData := make([]*PartIterator, 0, len(its))
 	for _, it := range its {
-		for it.Next() {
-			rows.rows = append(rows.rows, Row{Values: it.Values()})
+		if it.Next() {
+			partsWithData = append(partsWithData, it)
+			continue
 		}
 		if it.Err() != nil {
-			return nil, it.Err()
+			return nil, fmt.Errorf("start part iterators: %w", it.Err())
 		}
 	}
 
-	// Sort the rows
-	sort.Sort(rows)
+	if len(partsWithData) == 0 {
+		return NewEmptyPart(tx, schema.Columns)
+	}
 
-	return NewPart(tx, schema.Columns, NewSimpleRowWriter(rows.rows))
+	return NewPart(tx, schema.Columns, &streamingRowWriter{
+		it: newMultiPartIterator(schema, partsWithData),
+	})
 }
 
-// SortableRows is a slice of Rows that can be sorted
-type SortableRows struct {
-	rows   []Row
-	schema *Schema
+type streamingRowWriter struct {
+	it *multiPartIterator
 }
 
-// Len implements the sort.Interface interface
-func (s SortableRows) Len() int { return len(s.rows) }
+func (w *streamingRowWriter) WriteTo(appenders []Appender) (int, error) {
+	var err error
 
-// Less implements the sort.Interface interface
-func (s SortableRows) Less(i, j int) bool {
-	return s.rows[i].Less(s.rows[j], s.schema.ordered)
+	i := 0
+	for w.it.Next() {
+		for j, v := range w.it.Values() {
+			err = appenders[j].AppendAt(i, v)
+			if err != nil {
+				return i, fmt.Errorf("append value at index %d: %w", i, err)
+			}
+		}
+		i++
+	}
+
+	return i, w.it.Err()
 }
 
-// Swap implements the sort.Interface interface
-func (s SortableRows) Swap(i, j int) { s.rows[i], s.rows[j] = s.rows[j], s.rows[i] }
+type multiPartIterator struct {
+	schema  *Schema
+	parts   []*PartIterator
+	cur     [][]interface{}
+	err     error
+	started bool
+}
 
-// TODO comparison int values are well defined in Go, -1 for less than, 0 for
-// equal, 1 for greater than. We should use that instead of the custom return
-// values.
+func newMultiPartIterator(schema *Schema, parts []*PartIterator) *multiPartIterator {
+	it := &multiPartIterator{
+		schema: schema,
+		parts:  parts,
+		cur:    make([][]interface{}, len(parts)),
+	}
+
+	for i, p := range parts {
+		it.cur[i] = p.Values()
+	}
+
+	heap.Init(it)
+	return it
+}
+
+func (m *multiPartIterator) Next() bool {
+	if !m.started {
+		m.started = true
+		return true
+	}
+
+	next := m.parts[0].Next()
+	if !next {
+		if m.parts[0].Err() != nil {
+			m.err = m.parts[0].Err()
+			return false
+		}
+		heap.Pop(m)
+		if len(m.parts) == 0 {
+			return false
+		}
+		return true
+	}
+	m.cur[0] = m.parts[0].Values()
+	heap.Fix(m, 0)
+	return true
+}
+
+func (m *multiPartIterator) Err() error {
+	return m.err
+}
+
+func (m *multiPartIterator) Values() []interface{} {
+	return m.cur[0]
+}
+
+func (m *multiPartIterator) Len() int { return len(m.parts) }
+
+func (m *multiPartIterator) Less(i, j int) bool {
+	return valuesLess(m.cur[i], m.cur[j], m.schema.ordered)
+}
+
+func (m *multiPartIterator) Swap(i, j int) {
+	m.parts[i], m.parts[j] = m.parts[j], m.parts[i]
+	m.cur[i], m.cur[j] = m.cur[j], m.cur[i]
+}
+
+func (m *multiPartIterator) Pop() interface{} {
+	n := len(m.parts)
+	m.parts = m.parts[0 : n-1]
+	m.cur = m.cur[0 : n-1]
+	return nil
+}
+
+func (m *multiPartIterator) Push(v interface{}) {
+	panic("not implemented")
+}
+
 func compare(a, b interface{}) int {
 	switch a.(type) {
 	case string:
@@ -209,14 +295,14 @@ func compare(a, b interface{}) int {
 	}
 }
 
-// Less returns true if the row is Less than the given row
-func (r Row) Less(than Row, orderedBy []int) bool {
-	if than.Values == nil { // in the 0 case always return true
+// valuesLess returns true if the row is Less than the given row
+func valuesLess(a, b []interface{}, orderedBy []int) bool {
+	if b == nil { // in the 0 case always return true
 		return true
 	}
 	for _, k := range orderedBy {
-		vi := r.Values[k]
-		vj := than.Values[k]
+		vi := a[k]
+		vj := b[k]
 
 		switch vi.(type) {
 		case []DynamicColumnValue:

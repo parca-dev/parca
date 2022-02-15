@@ -1,6 +1,8 @@
 package columnstore
 
 import (
+	"fmt"
+
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/apache/arrow/go/v7/arrow/memory"
@@ -48,7 +50,12 @@ func (a *ListAppender) AppendAt(index int, v interface{}) error {
 		return err
 	}
 
-	return a.enc.AppendAt(index, enc)
+	err := a.enc.AppendAt(index, enc)
+	if err != nil {
+		return fmt.Errorf("append list at %d: %v", index, err)
+	}
+
+	return nil
 }
 
 func (a *ListAppender) AppendValuesAt(index int, vs interface{}) error {

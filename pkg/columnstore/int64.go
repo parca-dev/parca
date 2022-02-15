@@ -1,6 +1,8 @@
 package columnstore
 
 import (
+	"fmt"
+
 	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 )
@@ -28,7 +30,11 @@ func (a *Int64Appender) AppendInt64ValuesAt(index int, vs []int64) error {
 }
 
 func (a *Int64Appender) AppendInt64At(index int, v int64) error {
-	return a.enc.AppendAt(index, v)
+	err := a.enc.AppendAt(index, v)
+	if err != nil {
+		return fmt.Errorf("append int64 at %d: %w", index, err)
+	}
+	return nil
 }
 
 type Int64Iterator struct {

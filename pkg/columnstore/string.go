@@ -1,6 +1,7 @@
 package columnstore
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/apache/arrow/go/v7/arrow/array"
@@ -29,7 +30,11 @@ func (a *StringAppender) AppendStringValuesAt(index int, vs []string) error {
 }
 
 func (a *StringAppender) AppendStringAt(index int, v string) error {
-	return a.enc.AppendAt(index, v)
+	err := a.enc.AppendAt(index, v)
+	if err != nil {
+		return fmt.Errorf("append string at %d: %w", index, err)
+	}
+	return nil
 }
 
 type StringIterator struct {

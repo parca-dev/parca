@@ -689,7 +689,12 @@ func Test_Table_Sorting(t *testing.T) {
 					int64(3),
 					int64(3),
 				},
-			}, {
+			}},
+		)
+		require.NoError(t, err)
+
+		err = table.Insert(
+			[]Row{{
 				Values: []interface{}{
 					[]DynamicColumnValue{
 						{Name: "label1", Value: "value1"},
@@ -703,7 +708,12 @@ func Test_Table_Sorting(t *testing.T) {
 					int64(2),
 					int64(2),
 				},
-			}, {
+			}},
+		)
+		require.NoError(t, err)
+
+		err = table.Insert(
+			[]Row{{
 				Values: []interface{}{
 					[]DynamicColumnValue{
 						{Name: "label1", Value: "value1"},

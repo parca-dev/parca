@@ -1,6 +1,7 @@
 package columnstore
 
 import (
+	"fmt"
 	"sort"
 )
 
@@ -24,11 +25,17 @@ func NewAppendOnceColumn(def ColumnDefinition) (Iterable, Appender, error) {
 	if def.Dynamic {
 		c := NewDynamicColumn(def)
 		app, err := c.Appender()
+		if err != nil {
+			return nil, nil, fmt.Errorf("new dynamic column: %w", err)
+		}
 		return c, app, err
 	}
 
 	c := NewStaticColumn(def)
 	app, err := c.Appender()
+	if err != nil {
+		return nil, nil, fmt.Errorf("new static column: %w", err)
+	}
 	return c, app, err
 }
 
@@ -115,7 +122,10 @@ func (a *DynamicAppender) DynamicAppendAt(index int, v []DynamicColumnValue) err
 	}
 
 	for _, d := range v {
-		a.column.def.Type.NewAppender(a.column.data[d.Name]).AppendAt(index, d.Value)
+		err := a.column.def.Type.NewAppender(a.column.data[d.Name]).AppendAt(index, d.Value)
+		if err != nil {
+			return fmt.Errorf("append dynamic value at %d: %w", index, err)
+		}
 	}
 
 	return nil

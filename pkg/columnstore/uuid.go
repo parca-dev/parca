@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
@@ -38,7 +39,12 @@ func (a *UUIDAppender) AppendUUIDValuesAt(index int, vs []UUID) error {
 }
 
 func (a *UUIDAppender) AppendUUIDAt(index int, v UUID) error {
-	return a.enc.AppendAt(index, v)
+	err := a.enc.AppendAt(index, v)
+	if err != nil {
+		return fmt.Errorf("append uuid at %d: %w", index, err)
+	}
+
+	return nil
 }
 
 type UUIDIterator struct {

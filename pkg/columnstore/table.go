@@ -218,7 +218,7 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 		defer g.RUnlock()
 
 		for ; j < len(rows); j++ {
-			if rows[j].Less(g.least, t.schema.ordered) {
+			if valuesLess(rows[j].Values, g.least.Values, t.schema.ordered) {
 				if prev != nil {
 					rowsByGranule[prev] = append(rowsByGranule[prev], rows[j])
 					continue

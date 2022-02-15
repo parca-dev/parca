@@ -42,8 +42,12 @@ func BenchmarkPartMerge(b *testing.B) {
 
 	rowNum := 0
 	for _, labelDir := range dirs {
+		if labelDir.Name() == "README.md" {
+			continue
+		}
+
 		ls, err := parser.ParseMetric(labelDir.Name())
-		require.NoError(b, err)
+		require.NoError(b, err, "failed to parse label %s", labelDir.Name())
 
 		files, err := ioutil.ReadDir(path.Join(dir, labelDir.Name()))
 		require.NoError(b, err)
@@ -64,11 +68,11 @@ func BenchmarkPartMerge(b *testing.B) {
 		}
 	}
 
-	require.Equal(b, 7940, rowNum)
+	require.Equal(b, 4187, rowNum)
 	require.Equal(b, 1, table.index.Len())
 
 	g := table.index.Min().(*Granule)
-	require.Equal(b, 76, len(g.parts))
+	require.Equal(b, 146, len(g.parts))
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -77,7 +81,8 @@ func BenchmarkPartMerge(b *testing.B) {
 			its = append(its, p.Iterator())
 		}
 
-		_, err := merge(0, &schema, its)
+		p, err := merge(0, &schema, its)
 		require.NoError(b, err)
+		require.Equal(b, rowNum, p.Cardinality)
 	}
 }

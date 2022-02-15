@@ -71,12 +71,16 @@ func (c *Plain) String() string {
 	return s
 }
 
+var (
+	ErrOutOfOrderInsert = errors.New("cannot insert out of order")
+)
+
 func (c *Plain) AppendAt(index int, v interface{}) error {
 	if index < 0 {
 		return errors.New("index out of range")
 	}
 	if index < len(c.values) {
-		return errors.New("cannot insert out of order")
+		return fmt.Errorf("inserting at index %d, but already have %d values: %w", index, len(c.values), ErrOutOfOrderInsert)
 	}
 
 	if index > len(c.values) {
