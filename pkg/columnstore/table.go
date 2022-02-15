@@ -114,7 +114,7 @@ func (t *Table) Insert(rows []Row) error {
 
 	rowsToInsertPerGranule := t.splitRowsByGranule(rows)
 	for granule, rows := range rowsToInsertPerGranule {
-		p, err := NewPart(tx, &t.schema, rows)
+		p, err := NewPart(tx, t.schema.Columns, NewSimpleRowWriter(rows))
 		if err != nil {
 			return err
 		}

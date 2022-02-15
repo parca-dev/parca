@@ -13,7 +13,6 @@ import (
 	"github.com/parca-dev/parca/pkg/columnstore"
 	"github.com/parca-dev/parca/pkg/metastore"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
@@ -29,7 +28,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table("stacktraces", profilestore.ParcaProfilingTableSchema(), logger)
+	table := colDB.Table("stacktraces", columnstore.ParcaProfilingTableSchema(), logger)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
@@ -51,7 +50,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		require.NoError(t, err)
 		profiles, err := parcaprofile.FlatProfilesFromPprof(ctx, logger, m, p)
 		require.NoError(t, err)
-		err = profilestore.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		_, err = columnstore.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
 			Name:  "job",
 			Value: "default",
 		}}, profiles[0])
@@ -81,7 +80,7 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table("stacktraces", profilestore.ParcaProfilingTableSchema(), logger)
+	table := colDB.Table("stacktraces", columnstore.ParcaProfilingTableSchema(), logger)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
@@ -98,7 +97,8 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	require.NoError(t, err)
 	profiles, err := parcaprofile.FlatProfilesFromPprof(ctx, logger, m, p)
 	require.NoError(t, err)
-	err = profilestore.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+	require.Equal(t, 4, len(profiles))
+	_, err = columnstore.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
 		Name:  "job",
 		Value: "default",
 	}}, profiles[0])

@@ -18,28 +18,52 @@ type Part struct {
 	tx uint64
 }
 
-func NewPart(tx uint64, schema *Schema, rows []Row) (*Part, error) {
-	p := &Part{
-		Cardinality: len(rows),
+type RowWriter interface {
+	WriteTo(appenders []Appender) (int, error)
+}
 
+func NewSimpleRowWriter(rows []Row) *SimpleRowWriter {
+	return &SimpleRowWriter{
+		rows: rows,
+	}
+}
+
+type SimpleRowWriter struct {
+	rows []Row
+}
+
+func (w *SimpleRowWriter) WriteTo(appenders []Appender) (int, error) {
+	var err error
+
+	for i, row := range w.rows {
+		for j, v := range row.Values {
+			err = appenders[j].AppendAt(i, v)
+			if err != nil {
+				return i, err
+			}
+		}
+	}
+
+	return len(w.rows), nil
+}
+
+func NewPart(tx uint64, colDefs []ColumnDefinition, w RowWriter) (*Part, error) {
+	p := &Part{
 		tx: tx,
 	}
-	p.columns = make([]Iterable, len(schema.Columns))
+	p.columns = make([]Iterable, len(colDefs))
+	appenders := make([]Appender, len(colDefs))
 
 	var err error
-	for i, c := range schema.Columns {
-		p.columns[i], err = NewImmutableColumn(c, func(app Appender) error {
-			for j := range rows {
-				err := app.AppendAt(j, rows[j].Values[i])
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		})
+	for i, c := range colDefs {
+		p.columns[i], appenders[i], err = NewAppendOnceColumn(c)
 		if err != nil {
 			return nil, err
 		}
+	}
+	p.Cardinality, err = w.WriteTo(appenders)
+	if err != nil {
+		return nil, err
 	}
 
 	return p, nil
@@ -93,29 +117,40 @@ func (pi *PartIterator) Err() error {
 
 // Merge merges all parts into a single part
 func Merge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts ...*Part) (*Part, error) {
+	its := make([]*PartIterator, 0, len(parts))
 
-	rows := SortableRows{
-		rows:   []Row{},
-		schema: schema,
-	}
 	// Convert all the parts into a set of rows
 	for _, p := range parts {
-
 		// Don't merge parts from an newer tx, or from an uncompleted tx, or a completed tx that finished after this tx started
 		if p.tx > tx || txCompleted(p.tx) > tx {
 			continue
 		}
 
-		it := p.Iterator()
+		its = append(its, p.Iterator())
+	}
+
+	return merge(tx, schema, its)
+}
+
+func merge(tx uint64, schema *Schema, its []*PartIterator) (*Part, error) {
+	rows := SortableRows{
+		rows:   []Row{},
+		schema: schema,
+	}
+
+	for _, it := range its {
 		for it.Next() {
 			rows.rows = append(rows.rows, Row{Values: it.Values()})
+		}
+		if it.Err() != nil {
+			return nil, it.Err()
 		}
 	}
 
 	// Sort the rows
 	sort.Sort(rows)
 
-	return NewPart(tx, schema, rows.rows)
+	return NewPart(tx, schema.Columns, NewSimpleRowWriter(rows.rows))
 }
 
 // SortableRows is a slice of Rows that can be sorted

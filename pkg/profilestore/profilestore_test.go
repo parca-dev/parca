@@ -21,13 +21,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func makeSampleRow(value int64, locationIds []uuid.UUID) *SampleRow {
+func makeSampleRow(value int64, locationIds []uuid.UUID) *columnstore.SampleRow {
 	stacktrace := make([]columnstore.UUID, 0, len(locationIds))
 	for _, locationId := range locationIds {
 		stacktrace = append(stacktrace, columnstore.UUID(locationId))
 	}
 
-	s := &SampleRow{
+	s := &columnstore.SampleRow{
 		Value:      value,
 		Stacktrace: stacktrace,
 	}
@@ -38,10 +38,10 @@ func makeSampleRow(value int64, locationIds []uuid.UUID) *SampleRow {
 func Test_SortSampleRows_EdgeCases(t *testing.T) {
 
 	tests := map[string]struct {
-		samples []*SampleRow
+		samples []*columnstore.SampleRow
 	}{
 		"empty first": {
-			samples: []*SampleRow{
+			samples: []*columnstore.SampleRow{
 				makeSampleRow(1, []uuid.UUID{}),
 				makeSampleRow(1, []uuid.UUID{
 					uuid.MustParse("00000000-0000-0000-0000-000000000002"),
@@ -52,7 +52,7 @@ func Test_SortSampleRows_EdgeCases(t *testing.T) {
 			},
 		},
 		"empty second": {
-			samples: []*SampleRow{
+			samples: []*columnstore.SampleRow{
 				makeSampleRow(1, []uuid.UUID{
 					uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -67,10 +67,10 @@ func Test_SortSampleRows_EdgeCases(t *testing.T) {
 	t.Parallel()
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			sortSampleRows(test.samples)
+			columnstore.SortSampleRows(test.samples)
 
 			require.Equal(t,
-				[]*SampleRow{
+				[]*columnstore.SampleRow{
 					makeSampleRow(1, []uuid.UUID{}),
 					makeSampleRow(1, []uuid.UUID{
 						uuid.MustParse("00000000-0000-0000-0000-000000000002"),
@@ -86,7 +86,7 @@ func Test_SortSampleRows_EdgeCases(t *testing.T) {
 }
 
 func TestSortSampleRows(t *testing.T) {
-	samples := []*SampleRow{
+	samples := []*columnstore.SampleRow{
 		makeSampleRow(1, []uuid.UUID{
 			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
@@ -103,10 +103,10 @@ func TestSortSampleRows(t *testing.T) {
 		}),
 	}
 
-	sortSampleRows(samples)
+	columnstore.SortSampleRows(samples)
 
 	require.Equal(t,
-		[]*SampleRow{
+		[]*columnstore.SampleRow{
 			makeSampleRow(1, []uuid.UUID{
 				uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				uuid.MustParse("00000000-0000-0000-0000-000000000003"),

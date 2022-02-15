@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"sort"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -44,6 +43,13 @@ type ProfileColumnStore struct {
 	metaStore metastore.ProfileMetaStore
 
 	table *columnstore.Table
+
+	// When the debug-value-log is enabled, every profile is first written to
+	// tmp/<labels>/<timestamp>.pb.gz before it's parsed and written to the
+	// columnstore. This is primarily for debugging purposes as well as
+	// reproducing situations in tests. This has huge overhead, do not enable
+	// unless you know what you're doing.
+	debugValueLog bool
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
@@ -54,12 +60,14 @@ func NewProfileColumnStore(
 	tracer trace.Tracer,
 	metaStore metastore.ProfileMetaStore,
 	table *columnstore.Table,
+	debugValueLog bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{
-		logger:    logger,
-		tracer:    tracer,
-		metaStore: metaStore,
-		table:     table,
+		logger:        logger,
+		tracer:        tracer,
+		metaStore:     metaStore,
+		table:         table,
+		debugValueLog: debugValueLog,
 	}
 }
 
@@ -82,9 +90,18 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 				return nil, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
 			}
 
-			dir := fmt.Sprintf("tmp/%s", ls.String())
-			os.MkdirAll(dir, os.ModePerm)
-			ioutil.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, p.TimeNanos), sample.RawProfile, 0644)
+			if s.debugValueLog {
+				dir := fmt.Sprintf("tmp/%s", ls.String())
+				err := os.MkdirAll(dir, os.ModePerm)
+				if err != nil {
+					level.Error(s.logger).Log("msg", "failed to create debug-value-log directory", "err", err)
+				} else {
+					err := ioutil.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, p.TimeNanos), sample.RawProfile, 0644)
+					if err != nil {
+						level.Error(s.logger).Log("msg", "failed to write debug-value-log", "err", err)
+					}
+				}
+			}
 
 			if err := p.CheckValid(); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
@@ -99,7 +116,7 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 
 			_, appendSpan := s.tracer.Start(ctx, "append-profiles")
 			for _, prof := range profiles {
-				err := InsertProfileIntoTable(ctx, s.logger, s.table, ls, prof)
+				_, err := columnstore.InsertProfileIntoTable(ctx, s.logger, s.table, ls, prof)
 				if err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to insert profile: %v", err)
 				}
@@ -109,98 +126,4 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 	}
 
 	return &profilestorepb.WriteRawResponse{}, nil
-}
-
-func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table *columnstore.Table, ls labels.Labels, prof *parcaprofile.FlatProfile) error {
-	// TODO all of this should be done in the flat profile
-	// extraction in the first place. Also this `__name__` hack is
-	// only here for backward compatibility while we finish up the
-	// columnstore. This can be removed once the migration is
-	// complete and the old storage is removed.
-	labels := make([]columnstore.DynamicColumnValue, 0, len(ls))
-	found := false
-	for _, l := range ls {
-		if l.Name == "__name__" {
-			found = true
-			labels = append(labels, columnstore.DynamicColumnValue{
-				Name:  "__name__",
-				Value: l.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-			})
-			continue
-		}
-		labels = append(labels, columnstore.DynamicColumnValue{
-			Name:  l.Name,
-			Value: l.Value,
-		})
-	}
-	if !found {
-		labels = append(labels, columnstore.DynamicColumnValue{
-			Name:  "__name__",
-			Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-		})
-	}
-
-	rows := make([]*SampleRow, 0, len(prof.FlatSamples))
-	for _, s := range prof.FlatSamples {
-		rows = append(rows, &SampleRow{
-			Stacktrace: metastoreLocationsToSampleStacktrace(s.Location),
-			Value:      s.Value,
-		})
-	}
-
-	level.Debug(logger).Log("msg", "writing sample", "label_set", ls.String(), "timestamp", prof.Meta.Timestamp)
-
-	sortSampleRows(rows)
-	return table.Insert(makeRows(prof, labels, rows))
-}
-
-func makeRows(prof *parcaprofile.FlatProfile, labels []columnstore.DynamicColumnValue, rows []*SampleRow) []columnstore.Row {
-	res := make([]columnstore.Row, len(rows))
-	for i, r := range rows {
-		res[i] = columnstore.Row{
-			Values: []interface{}{
-				prof.Meta.SampleType.Type,
-				prof.Meta.SampleType.Unit,
-				prof.Meta.PeriodType.Type,
-				prof.Meta.PeriodType.Unit,
-				labels,
-				r.Stacktrace,
-				prof.Meta.Timestamp,
-				prof.Meta.Duration,
-				prof.Meta.Period,
-				r.Value,
-			},
-		}
-	}
-
-	return res
-}
-
-func metastoreLocationsToSampleStacktrace(locs []*metastore.Location) []columnstore.UUID {
-	length := len(locs) - 1
-	stacktrace := make([]columnstore.UUID, length+1)
-	for i := range locs {
-		cUUID := columnstore.UUID(locs[length-i].ID)
-		stacktrace[i] = cUUID
-	}
-
-	return stacktrace
-}
-
-type SampleRow struct {
-	// Array of Location IDs.
-	Stacktrace []columnstore.UUID
-
-	PprofStringLabels  map[string]string
-	PprofNumLabels     map[string]int64
-	PprofNumLabelUnits map[string]string
-
-	Value int64
-}
-
-func sortSampleRows(samples []*SampleRow) {
-	sort.Slice(samples, func(i, j int) bool {
-		// TODO need to take labels into account
-		return columnstore.UUIDsLess(samples[i].Stacktrace, samples[j].Stacktrace)
-	})
 }

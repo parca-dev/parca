@@ -60,7 +60,7 @@ func TestAggregate(t *testing.T) {
 	pool := memory.NewGoAllocator()
 	agg := NewHashAggregate(
 		pool,
-		&SumAggregation{},
+		&Int64SumAggregation{},
 		StaticColumnRef("value").ArrowFieldMatcher(),
 		DynamicColumnRef("labels").Column("label2").ArrowFieldMatcher(),
 	)

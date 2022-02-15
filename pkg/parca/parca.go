@@ -68,7 +68,8 @@ type Flags struct {
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
 
-	Storage string `default:"tsdb" enum:"columnstore,tsdb" help:"Storage type to use."`
+	Storage              string `default:"tsdb" enum:"columnstore,tsdb" help:"Storage type to use."`
+	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -166,7 +167,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	if flags.Storage == "columnstore" {
 		col := columnstore.New(reg)
 		colDB := col.DB("parca")
-		table := colDB.Table("stacktraces", profilestore.ParcaProfilingTableSchema(), logger)
+		table := colDB.Table("stacktraces", columnstore.ParcaProfilingTableSchema(), logger)
 
 		s = profilestore.NewProfileColumnStore(
 			reg,
@@ -174,6 +175,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			tracerProvider.Tracer("profilestore"),
 			mStr,
 			table,
+			flags.StorageDebugValueLog,
 		)
 		q = query.NewColumnQueryAPI(
 			logger,

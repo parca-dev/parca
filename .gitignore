@@ -8,3 +8,5 @@ tmp/
 *.sqlite
 
 TODO.md
+
+pkg/columnstore/testdata/merge-bench

@@ -20,24 +20,16 @@ type Iterable interface {
 	Iterator(maxIterations int) Iterator
 }
 
-func NewImmutableColumn(def ColumnDefinition, appendFunc func(app Appender) error) (Iterable, error) {
+func NewAppendOnceColumn(def ColumnDefinition) (Iterable, Appender, error) {
 	if def.Dynamic {
 		c := NewDynamicColumn(def)
 		app, err := c.Appender()
-		if err != nil {
-			return nil, err
-		}
-		err = appendFunc(app)
-		return c, err
+		return c, app, err
 	}
 
 	c := NewStaticColumn(def)
 	app, err := c.Appender()
-	if err != nil {
-		return nil, err
-	}
-	err = appendFunc(app)
-	return c, err
+	return c, app, err
 }
 
 type StaticColumn struct {

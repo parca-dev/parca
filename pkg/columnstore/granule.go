@@ -105,7 +105,7 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 	for it.Next() {
 		rows = append(rows, Row{Values: it.Values()})
 		if len(rows) == n && len(granules) != count-1 { // If we have n rows, and aren't on the last granule, create the n-sized granule
-			p, err := NewPart(tx, g.schema, rows)
+			p, err := NewPart(tx, g.schema.Columns, NewSimpleRowWriter(rows))
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
 			}
@@ -116,7 +116,7 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 
 	// Save the remaining Granule
 	if len(rows) != 0 {
-		p, err := NewPart(tx, g.schema, rows)
+		p, err := NewPart(tx, g.schema.Columns, NewSimpleRowWriter(rows))
 		if err != nil {
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
