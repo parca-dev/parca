@@ -267,7 +267,7 @@ const ProfileSelector = ({
     {
       key: 'custom',
       label: (
-        <a>
+        <a href="">
           {moment(currentFromTimeSelection()).utc().format(timeFormatShort)} &rArr;{' '}
           {moment(currentToTimeSelection()).utc().format(timeFormatShort)}
         </a>

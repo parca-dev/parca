@@ -26,7 +26,7 @@ COPY go.mod go.sum /app/
 RUN go mod download -modcacherw
 
 COPY ./ui/ui.go ./ui/ui.go
-COPY --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
+COPY --from=ui-builder /app/packages/app/web/build ./ui/packages/app/web/build
 
 COPY ./cmd /app/cmd
 COPY ./pkg /app/pkg

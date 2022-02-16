@@ -21,8 +21,7 @@ build: ui go/bin
 .PHONY: clean
 clean:
 	rm -rf bin
-	rm -rf ui/packages/app/web/dist
-	rm -rf ui/packages/app/web/.next
+	rm -rf ui/packages/app/web/build
 
 .PHONY: go/deps
 go/deps:
@@ -51,11 +50,11 @@ check-license:
 go/test:
 	 go test -v `go list ./...`
 
-UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/dist/*" -not -path "./ui/packages/app/web/.next/*")
-ui/packages/app/web/dist: $(UI_FILES)
+UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
+ui/packages/app/web/build: $(UI_FILES)
 	cd ui && yarn install && yarn workspace @parca/web build
 
-ui: ui/packages/app/web/dist
+ui: ui/packages/app/web/build
 
 .PHONY: proto/lint
 proto/lint:
