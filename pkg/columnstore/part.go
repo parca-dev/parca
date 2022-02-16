@@ -3,8 +3,6 @@ package columnstore
 import (
 	"container/heap"
 	"fmt"
-	"math"
-	"reflect"
 )
 
 type Row struct {
@@ -240,7 +238,7 @@ func (m *multiPartIterator) Values() []interface{} {
 func (m *multiPartIterator) Len() int { return len(m.parts) }
 
 func (m *multiPartIterator) Less(i, j int) bool {
-	return valuesLess(m.cur[i], m.cur[j], m.schema.ordered)
+	return m.schema.RowLessThan(m.cur[i], m.cur[j])
 }
 
 func (m *multiPartIterator) Swap(i, j int) {
@@ -257,90 +255,4 @@ func (m *multiPartIterator) Pop() interface{} {
 
 func (m *multiPartIterator) Push(v interface{}) {
 	panic("not implemented")
-}
-
-func compare(a, b interface{}) int {
-	switch a.(type) {
-	case string:
-		switch {
-		case a.(string) < b.(string):
-			return -1
-		case a.(string) > b.(string):
-			return 1
-		default:
-			return 0
-		}
-	case uint64:
-		switch {
-		case a.(uint64) < b.(uint64):
-			return -1
-		case a.(uint64) > b.(uint64):
-			return 1
-		default:
-			return 0
-		}
-	case int64:
-		switch {
-		case a.(int64) < b.(int64):
-			return -1
-		case a.(int64) > b.(int64):
-			return 1
-		default:
-			return 0
-		}
-	case UUID:
-		return CompareUUID(a.(UUID), b.(UUID))
-	default:
-		panic("unsupported compare for type " + reflect.TypeOf(a).String())
-	}
-}
-
-// valuesLess returns true if the row is Less than the given row
-func valuesLess(a, b []interface{}, orderedBy []int) bool {
-	if b == nil { // in the 0 case always return true
-		return true
-	}
-	for _, k := range orderedBy {
-		vi := a[k]
-		vj := b[k]
-
-		switch vi.(type) {
-		case []DynamicColumnValue:
-
-			dci := vi.([]DynamicColumnValue)
-			dcj := vj.([]DynamicColumnValue)
-			end := int(math.Min(float64(len(dci)), float64(len(dcj))))
-			for l := 0; l < end; l++ {
-				switch {
-				case dci[l].Name < dcj[l].Name:
-					return true
-				case dci[l].Name < dcj[l].Name:
-					return false
-				case compare(dci[l].Value, dcj[l].Value) == -1:
-					return true
-				case compare(dci[l].Value, dcj[l].Value) == 1:
-					return false
-				}
-			}
-
-			// The dynamic columns are equal unless their lengths aren't the same
-			switch {
-			case len(dci) < len(dcj):
-				return true
-			case len(dci) > len(dcj):
-				return false
-			}
-		case []UUID:
-			return UUIDsLess(vi.([]UUID), vj.([]UUID))
-		default:
-			switch compare(vi, vj) {
-			case -1:
-				return true
-			case 1:
-				return false
-			}
-		}
-	}
-
-	return false
 }

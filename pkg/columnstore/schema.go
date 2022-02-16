@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
@@ -16,6 +17,10 @@ type DataType interface {
 	NewArrayFromIterator(EncodingIterator) (interface{}, error)
 	AppendIteratorToArrow(EncodingIterator, array.Builder) error
 	ArrowDataType() arrow.DataType
+	Less(interface{}, interface{}) bool
+	ListLess(interface{}, interface{}) bool
+	Equal(interface{}, interface{}) bool
+	ListEqual(interface{}, interface{}) bool
 }
 
 type PrimitiveType int
@@ -112,6 +117,115 @@ func (t PrimitiveType) ArrowDataType() arrow.DataType {
 		return &arrow.Int64Type{}
 	case UUIDType:
 		return UUIDFixedSizeBinaryType
+	default:
+		panic("unsupported data type")
+	}
+}
+
+func (t PrimitiveType) Less(a, b interface{}) bool {
+	switch t {
+	case StringType:
+		return a.(string) < b.(string)
+	case Int64Type:
+		return a.(int64) < b.(int64)
+	case UUIDType:
+		return CompareUUID(a.(UUID), b.(UUID)) == -1
+	default:
+		panic("unsupported data type")
+	}
+}
+
+func (t PrimitiveType) ListLess(a, b interface{}) bool {
+	switch t {
+	case UUIDType:
+		uuids1 := a.([]UUID)
+		uuids2 := b.([]UUID)
+		uuids1Len := len(uuids1)
+		uuids2Len := len(uuids2)
+
+		k := 0
+		for {
+			switch {
+			case k == uuids1Len && k == uuids2Len:
+				// This means we've looked at all the elements and they've all been equal.
+				return false
+			case k >= uuids1Len && k <= uuids2Len:
+				// This means the UUIDs are identical up until this point, but uuids1 is ending, and shorter slices are "smaller" than longer ones.
+				return true
+			case k <= uuids1Len && k >= uuids2Len:
+				// This means the UUIDs are identical up until this point, but uuids2 is ending, and shorter slices are "lower" than longer ones.
+				return false
+			case CompareUUID(uuids1[k], uuids2[k]) == -1:
+				return true
+			case CompareUUID(uuids1[k], uuids2[k]) == 1:
+				return false
+			default:
+				// This means the slices of UUIDs are identical up until this point. So advance to the next.
+				k++
+			}
+		}
+	default:
+		panic("unsupported data type")
+	}
+}
+
+func (t PrimitiveType) Equal(a, b interface{}) bool {
+	switch t {
+	case StringType:
+		return a.(string) == b.(string)
+	case Int64Type:
+		return a.(int64) == b.(int64)
+	case UUIDType:
+		return CompareUUID(a.(UUID), b.(UUID)) == 0
+	default:
+		panic("unsupported data type")
+	}
+}
+
+func (t PrimitiveType) ListEqual(a, b interface{}) bool {
+	switch t {
+	case StringType:
+		as := a.([]string)
+		bs := b.([]string)
+		if len(as) != len(bs) {
+			return false
+		}
+
+		for i := range as {
+			if as[i] != bs[i] {
+				return false
+			}
+		}
+
+		return true
+	case Int64Type:
+		as := a.([]int64)
+		bs := b.([]int64)
+		if len(as) != len(bs) {
+			return false
+		}
+
+		for i := range as {
+			if as[i] != bs[i] {
+				return false
+			}
+		}
+
+		return true
+	case UUIDType:
+		as := a.([]UUID)
+		bs := b.([]UUID)
+		if len(as) != len(bs) {
+			return false
+		}
+
+		for i := range as {
+			if CompareUUID(as[i], bs[i]) != 0 {
+				return false
+			}
+		}
+
+		return true
 	default:
 		panic("unsupported data type")
 	}
@@ -222,4 +336,46 @@ func (s Schema) ToArrow(dynamicColNames [][]string, dynamicColCounts []int) *arr
 	}
 
 	return arrow.NewSchema(fields, nil)
+}
+
+// RowLessThan returns true if the first row is less than the second row.
+func (s Schema) RowLessThan(a, b []interface{}) bool {
+	if b == nil { // in the 0 case always return true
+		return true
+	}
+
+	for _, k := range s.ordered {
+		vi := a[k]
+		vj := b[k]
+		less := s.Columns[k].Type.Less
+		equal := s.Columns[k].Type.Equal
+		if s.Columns[k].Dynamic {
+			dci := vi.([]DynamicColumnValue)
+			dcj := vj.([]DynamicColumnValue)
+			end := int(math.Min(float64(len(dci)), float64(len(dcj))))
+			for l := 0; l < end; l++ {
+				if dci[l].Name != dcj[l].Name {
+					return dci[l].Name < dcj[l].Name
+				}
+
+				if !equal(dci[l].Value, dcj[l].Value) {
+					return less(dci[l].Value, dcj[l].Value)
+				}
+			}
+
+			// The dynamic columns are equal unless their lengths aren't the same
+			switch {
+			case len(dci) < len(dcj):
+				return true
+			case len(dci) > len(dcj):
+				return false
+			}
+
+			return false
+		}
+
+		return less(vi, vj)
+	}
+
+	return false
 }

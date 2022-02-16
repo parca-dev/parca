@@ -66,7 +66,7 @@ func TestUUIDsLess(t *testing.T) {
 	t.Parallel()
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			require.Equal(t, test.expected, UUIDsLess(test.a, test.b))
+			require.Equal(t, test.expected, UUIDType.ListLess(test.a, test.b))
 		})
 	}
 }

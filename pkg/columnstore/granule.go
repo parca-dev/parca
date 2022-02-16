@@ -42,7 +42,7 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 			case 0:
 				g.least = r
 			default:
-				if valuesLess(r.Values, g.least.Values, schema.ordered) {
+				if schema.RowLessThan(r.Values, g.least.Values) {
 					g.least = r
 				}
 			}
@@ -62,7 +62,7 @@ func (g *Granule) AddPart(p *Part) {
 
 	if it.Next() {
 		r := Row{Values: it.Values()}
-		if valuesLess(r.Values, g.least.Values, g.schema.ordered) {
+		if g.schema.RowLessThan(r.Values, g.least.Values) {
 			g.least = r
 		}
 		return
@@ -198,5 +198,5 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 
 // Less implements the btree.Item interface
 func (g *Granule) Less(than btree.Item) bool {
-	return valuesLess(g.least.Values, than.(*Granule).least.Values, g.schema.ordered)
+	return g.schema.RowLessThan(g.least.Values, than.(*Granule).least.Values)
 }

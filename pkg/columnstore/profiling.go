@@ -161,6 +161,6 @@ type SampleRow struct {
 func SortSampleRows(samples []*SampleRow) {
 	sort.Slice(samples, func(i, j int) bool {
 		// TODO need to take labels into account
-		return UUIDsLess(samples[i].Stacktrace, samples[j].Stacktrace)
+		return UUIDType.ListLess(samples[i].Stacktrace, samples[j].Stacktrace)
 	})
 }

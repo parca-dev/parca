@@ -38,6 +38,22 @@ func (t *ListType) String() string {
 	return "list<" + t.elementType.String() + ">"
 }
 
+func (t *ListType) Less(a, b interface{}) bool {
+	return t.elementType.ListLess(a, b)
+}
+
+func (t *ListType) Equal(a, b interface{}) bool {
+	return t.elementType.ListEqual(a, b)
+}
+
+func (t *ListType) ListLess(a, b interface{}) bool {
+	panic("not implemented")
+}
+
+func (t *ListType) ListEqual(a, b interface{}) bool {
+	panic("not implemented")
+}
+
 type ListAppender struct {
 	enc Encoding
 	t   *ListType

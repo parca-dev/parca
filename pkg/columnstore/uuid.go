@@ -161,30 +161,3 @@ func UUIDArrayScalarNotEqual(left *array.FixedSizeBinary, right UUID) (*Bitmap, 
 
 	return res, nil
 }
-
-func UUIDsLess(uuids1, uuids2 []UUID) bool {
-	uuids1Len := len(uuids1)
-	uuids2Len := len(uuids2)
-
-	k := 0
-	for {
-		switch {
-		case k == uuids1Len && k == uuids2Len:
-			// This means we've looked at all the elements and they've all been equal.
-			return false
-		case k >= uuids1Len && k <= uuids2Len:
-			// This means the UUIDs are identical up until this point, but uuids1 is ending, and shorter slices are "smaller" than longer ones.
-			return true
-		case k <= uuids1Len && k >= uuids2Len:
-			// This means the UUIDs are identical up until this point, but uuids2 is ending, and shorter slices are "lower" than longer ones.
-			return false
-		case CompareUUID(uuids1[k], uuids2[k]) == -1:
-			return true
-		case CompareUUID(uuids1[k], uuids2[k]) == 1:
-			return false
-		default:
-			// This means the slices of UUIDs are identical up until this point. So advance to the next.
-			k++
-		}
-	}
-}
