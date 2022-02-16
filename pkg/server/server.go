@@ -221,7 +221,8 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 			return fmt.Errorf("failed to read ui file %s: %w", path, err)
 		}
 
-		if strings.HasSuffix(path, ".html") {
+		if strings.Contains(path, "_app-") {
+
 			tmpl, err := template.New(path).Parse(string(b))
 			if err != nil {
 				return fmt.Errorf("failed to parse ui file %s: %w", path, err)
