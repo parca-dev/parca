@@ -179,7 +179,15 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo, flags.UpstreamDebuginfodServer)
+	httpDebugInfoClient, err := debuginfo.NewHttpDebugInfoClient(flags.UpstreamDebuginfodServer)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize debug info http client", "err", err)
+		return err
+	}
+
+	debuginfodClientCache := debuginfo.NewObjectStorageDebugInfodClientCache(ctx, logger, httpDebugInfoClient)
+
+	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo, debuginfodClientCache)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err

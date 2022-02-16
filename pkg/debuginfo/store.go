@@ -73,13 +73,11 @@ type Store struct {
 }
 
 // NewStore returns a new debug info store
-func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, debuginfodUrl string) (*Store, error) {
+func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, debuginfodClientCache *ObjectStorageDebugInfodClientCache) (*Store, error) {
 	cfg, err := yaml.Marshal(config.Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("marshal content of object storage configuration: %w", err)
 	}
-
-	debuginfodClientCache := NewObjectStorageDebugInfodClientCache(NewHttpDebugInfoClient(debuginfodUrl))
 
 	bucket, err := client.NewBucket(logger, cfg, nil, "parca")
 	if err != nil {
@@ -236,9 +234,12 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 
 		if s.bucket.IsObjNotFoundErr(err) {
 			level.Debug(s.logger).Log("msg", "object not found in parca object storage", "object", buildID, "err", err)
-			//return "", ErrDebugInfoNotFound
-			//if publicDebuginfodBuildIDExists()
+
 			r, err = s.debuginfodClientCache.GetDebugInfo(buildID)
+			if err != nil {
+				return "", fmt.Errorf("get object files from debuginfod storage: %w", err)
+			}
+
 		}
 		if err != nil {
 			return "", fmt.Errorf("get object from object storage: %w", err)
