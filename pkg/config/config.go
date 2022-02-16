@@ -190,7 +190,7 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	if unmarshalled.ProfilingConfig == nil {
+	if unmarshalled.ProfilingConfig == nil || unmarshalled.ProfilingConfig.PprofConfig == nil {
 		unmarshalled.ProfilingConfig = defaults.ProfilingConfig
 	} else {
 		// Merge unmarshalled config with defaults

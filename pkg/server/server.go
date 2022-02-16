@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/felixge/fgprof"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -93,7 +94,6 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 
 	logOpts := []grpc_logging.Option{
 		grpc_logging.WithDecider(func(_ string, err error) grpc_logging.Decision {
-
 			runtimeLevel := grpc_logging.DefaultServerCodeToLevel(status.Code(err))
 			for _, lvl := range MapAllowedLevels[logLevel] {
 				if string(runtimeLevel) == strings.ToLower(lvl) {
@@ -128,24 +128,24 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	)
 
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	mux := runtime.NewServeMux()
+
+	grpcWebMux := runtime.NewServeMux()
 	for _, r := range registerables {
-		if err := r.Register(ctx, srv, mux, port, opts); err != nil {
+		if err := r.Register(ctx, srv, grpcWebMux, port, opts); err != nil {
 			return err
 		}
 	}
 	reflection.Register(srv)
 	grpc_health.RegisterHealthServer(srv, s.grpcProbe.HealthServer())
 
-	err := mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	internalMux := chi.NewRouter()
+	internalMux.Mount("/api", grpcWebMux)
+
+	internalMux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		promhttp.HandlerFor(s.reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})
-	if err != nil {
-		return fmt.Errorf("failed to register metrics handler: %w", err)
-	}
-
 	// Add the pprof handler to profile Parca
-	err = mux.HandlePath(http.MethodGet, "/debug/pprof/*", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	internalMux.HandleFunc("/debug/pprof/*", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/debug/pprof/profile" {
 			pprof.Profile(w, r)
 			return
@@ -156,9 +156,6 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		}
 		pprof.Index(w, r)
 	})
-	if err != nil {
-		return fmt.Errorf("failed to register pprof handlers: %w", err)
-	}
 
 	// Strip the subpath
 	uiFS, err := fs.Sub(ui.FS, "packages/app/web/dist")
@@ -167,7 +164,6 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	}
 
 	uiHandler, err := s.uiHandler(uiFS)
-
 	if err != nil {
 		return fmt.Errorf("failed to walk ui filesystem: %w", err)
 	}
@@ -176,7 +172,7 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 		Addr: port,
 		Handler: grpcHandlerFunc(
 			srv,
-			fallbackNotFound(mux, uiHandler),
+			fallbackNotFound(internalMux, uiHandler),
 			allowedCORSOrigins,
 		),
 		ReadTimeout:  5 * time.Second, // TODO make config option
@@ -221,7 +217,6 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 		}
 
 		b, err := fs.ReadFile(uiFS, path)
-
 		if err != nil {
 			return fmt.Errorf("failed to read ui file %s: %w", path, err)
 		}
@@ -229,7 +224,6 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 		if strings.Contains(path, "_app-") {
 
 			tmpl, err := template.New(path).Parse(string(b))
-
 			if err != nil {
 				return fmt.Errorf("failed to parse ui file %s: %w", path, err)
 			}
@@ -250,7 +244,6 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 		}
 
 		fi, err := d.Info()
-
 		if err != nil {
 			return fmt.Errorf("failed to receive file info %s: %w", path, err)
 		}
@@ -261,6 +254,10 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 			paths = append(paths, "/")
 		}
 
+		if paths[0] == "/targets/index.html" {
+			paths = append(paths, "/targets")
+		}
+
 		for _, path := range paths {
 			uiHandler.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 				http.ServeContent(w, r, d.Name(), fi.ModTime(), bytes.NewReader(b))
@@ -269,7 +266,6 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -286,10 +282,12 @@ func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowed
 	for _, o := range allowedCORSOrigins {
 		origins[o] = struct{}{}
 	}
-	wrappedGrpc := grpcweb.WrapServer(grpcServer, grpcweb.WithOriginFunc(func(origin string) bool {
-		_, found := origins[origin]
-		return found || allowAll
-	}))
+	wrappedGrpc := grpcweb.WrapServer(grpcServer,
+		grpcweb.WithAllowNonRootResource(true),
+		grpcweb.WithOriginFunc(func(origin string) bool {
+			_, found := origins[origin]
+			return found || allowAll
+		}))
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(r *http.Request, origin string) bool {
