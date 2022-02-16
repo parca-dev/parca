@@ -94,5 +94,6 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 		List:     list,
 		Reported: int32(len(list)),
 		Total:    int32(len(list)),
+		Unit:     p.ProfileMeta().SampleType.Unit,
 	}, nil
 }

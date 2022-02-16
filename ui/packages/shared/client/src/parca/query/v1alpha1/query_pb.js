@@ -2760,7 +2760,8 @@ proto.parca.query.v1alpha1.Top.toObject = function(includeInstance, msg) {
     listList: jspb.Message.toObjectList(msg.getListList(),
     proto.parca.query.v1alpha1.TopNode.toObject, includeInstance),
     reported: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    total: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    total: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    unit: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -2810,6 +2811,10 @@ proto.parca.query.v1alpha1.Top.deserializeBinaryFromReader = function(msg, reade
       var value = /** @type {number} */ (reader.readInt32());
       msg.setTotal(value);
       break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setUnit(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2858,6 +2863,13 @@ proto.parca.query.v1alpha1.Top.serializeBinaryToWriter = function(message, write
   if (f !== 0) {
     writer.writeInt32(
       3,
+      f
+    );
+  }
+  f = message.getUnit();
+  if (f.length > 0) {
+    writer.writeString(
+      4,
       f
     );
   }
@@ -2935,6 +2947,24 @@ proto.parca.query.v1alpha1.Top.prototype.getTotal = function() {
  */
 proto.parca.query.v1alpha1.Top.prototype.setTotal = function(value) {
   return jspb.Message.setProto3IntField(this, 3, value);
+};
+
+
+/**
+ * optional string unit = 4;
+ * @return {string}
+ */
+proto.parca.query.v1alpha1.Top.prototype.getUnit = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.parca.query.v1alpha1.Top} returns this
+ */
+proto.parca.query.v1alpha1.Top.prototype.setUnit = function(value) {
+  return jspb.Message.setProto3StringField(this, 4, value);
 };
 
 

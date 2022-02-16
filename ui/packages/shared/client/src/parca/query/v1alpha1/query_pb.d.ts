@@ -341,6 +341,9 @@ export class Top extends jspb.Message {
   getTotal(): number;
   setTotal(value: number): void;
 
+  getUnit(): string;
+  setUnit(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Top.AsObject;
   static toObject(includeInstance: boolean, msg: Top): Top.AsObject;
@@ -356,6 +359,7 @@ export namespace Top {
     listList: Array<TopNode.AsObject>,
     reported: number,
     total: number,
+    unit: string,
   }
 }
 

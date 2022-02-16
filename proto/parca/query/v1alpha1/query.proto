@@ -215,6 +215,9 @@ message Top {
 
     // total is the number of lines that exist in the report
     int32 total = 3;
+
+    // unit is the unit represented by top table
+    string unit = 4;
 }
 
 // TopNode is a node entry in a top list

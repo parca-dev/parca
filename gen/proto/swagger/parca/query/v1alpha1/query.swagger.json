@@ -913,6 +913,10 @@
           "type": "integer",
           "format": "int32",
           "title": "total is the number of lines that exist in the report"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by top table"
         }
       },
       "title": "Top is the top report type"
