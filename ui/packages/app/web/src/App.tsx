@@ -1,4 +1,4 @@
-import {BrowserRouter, Link, Navigate, Route, Routes} from 'react-router-dom';
+import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {StoreProvider, useCreateStore} from './store';
 
 import 'tailwindcss/tailwind.css';
@@ -39,7 +39,7 @@ const App = () => {
           <Header />
           <div className="px-3">
             <Routes>
-              <Route path="/" element={<HomePage />}></Route>
+              <Route path="/" element={<HomePage />} />
               {isDevMode() && (
                 <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
               )}
