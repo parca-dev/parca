@@ -3,42 +3,20 @@ import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
-import {useLocation, useNavigate} from 'react-router-dom';
+
+type NavigateFunction = (path: string, queryParams: any) => void;
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
+  queryParams: any;
+  navigateTo: NavigateFunction;
 }
 
-const transformToArray = params => params.split(',');
-
-const parseParams = (querystring: string) => {
-  const params = new URLSearchParams(querystring);
-
-  const obj: any = {};
-  for (const key of params.keys()) {
-    if (params.getAll(key).length > 1) {
-      obj[key] = params.getAll(key);
-    } else {
-      if (params.get(key).includes(',')) {
-        obj[key] = transformToArray(params.get(key));
-      } else {
-        obj[key] = params.get(key);
-      }
-    }
-  }
-
-  return obj;
-};
-
-const convertToQueryParams = params =>
-  Object.keys(params)
-    .map(key => key + '=' + params[key])
-    .join('&');
-
-const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
-  const location = useLocation();
-  const navigate = useNavigate();
-
+const ProfileExplorer = ({
+  queryClient,
+  queryParams,
+  navigateTo,
+}: ProfileExplorerProps): JSX.Element => {
   /* eslint-disable */
   // Disable eslint due to params being snake case
   const {
@@ -58,10 +36,8 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
     time_b,
     time_selection_b,
     compare_b,
-  } = parseParams(location.search);
+  } = queryParams;
   /* eslint-enable */
-
-  const queryParams = parseParams(location.search);
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -81,22 +57,16 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
   };
 
   const selectProfileA = (p: ProfileSelection) => {
-    return navigate({
-      pathname: '/',
-      search: `?${convertToQueryParams({
-        ...queryParams,
-        ...SuffixParams(p.HistoryParams(), '_a'),
-      })}`,
+    return navigateTo('/', {
+      ...queryParams,
+      ...SuffixParams(p.HistoryParams(), '_a'),
     });
   };
 
   const selectProfileB = (p: ProfileSelection) => {
-    return navigate({
-      pathname: '/',
-      search: `?${convertToQueryParams({
-        ...queryParams,
-        ...SuffixParams(p.HistoryParams(), '_b'),
-      })}`,
+    return navigateTo('/', {
+      ...queryParams,
+      ...SuffixParams(p.HistoryParams(), '_b'),
     });
   };
 
@@ -120,11 +90,11 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
     );
 
     const selectQuery = (q: QuerySelection) => {
-      return navigate({
-        pathname: '/',
+      return navigateTo(
+        '/',
         // Filtering the _a suffix causes us to reset potential profile
         // selection when running a new query.
-        search: `?${convertToQueryParams({
+        {
           ...filterSuffix(queryParams, '_a'),
           ...{
             expression_a: q.expression,
@@ -133,8 +103,8 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
             merge_a: q.merge,
             time_selection_a: q.timeSelection,
           },
-        })}`,
-      });
+        }
+      );
     };
 
     const selectProfile = (p: ProfileSelection) => {
@@ -143,12 +113,9 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
         ...SuffixParams(p.HistoryParams(), '_a'),
       });
 
-      return navigate({
-        pathname: '/',
-        search: `?${convertToQueryParams({
-          ...queryParams,
-          ...SuffixParams(p.HistoryParams(), '_a'),
-        })}`,
+      return navigateTo('/', {
+        ...queryParams,
+        ...SuffixParams(p.HistoryParams(), '_a'),
       });
     };
 
@@ -176,10 +143,7 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
         };
       }
 
-      void navigate({
-        pathname: '/',
-        search: `?${convertToQueryParams(compareQuery)}`,
-      });
+      void navigateTo('/', compareQuery);
     };
 
     return (
@@ -227,11 +191,11 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
   );
 
   const selectQueryA = (q: QuerySelection) => {
-    return navigate({
-      pathname: '/',
+    return navigateTo(
+      '/',
       // Filtering the _a suffix causes us to reset potential profile
       // selection when running a new query.
-      search: `?${convertToQueryParams({
+      {
         ...filterSuffix(queryParams, '_a'),
         ...{
           compare_a: 'true',
@@ -241,16 +205,16 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
           merge_a: q.merge,
           time_selection_a: q.timeSelection,
         },
-      })}`,
-    });
+      }
+    );
   };
 
   const selectQueryB = (q: QuerySelection) => {
-    return navigate({
-      pathname: '/',
+    return navigateTo(
+      '/',
       // Filtering the _b suffix causes us to reset potential profile
       // selection when running a new query.
-      search: `?${convertToQueryParams({
+      {
         ...filterSuffix(queryParams, '_b'),
         ...{
           compare_b: 'true',
@@ -260,8 +224,8 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
           merge_b: q.merge,
           time_selection_b: q.timeSelection,
         },
-      })}`,
-    });
+      }
+    );
   };
 
   const closeProfile = (card: string) => {
@@ -270,14 +234,11 @@ const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
       newQueryParameters = swapQueryParameters(queryParams);
     }
 
-    return navigate({
-      pathname: '/',
-      search: `?${convertToQueryParams({
-        ...filterSuffix(newQueryParameters, '_b'),
-        ...{
-          compare_a: 'false',
-        },
-      })}`,
+    return navigateTo('/', {
+      ...filterSuffix(newQueryParameters, '_b'),
+      ...{
+        compare_a: 'false',
+      },
     });
   };
 
