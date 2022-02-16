@@ -40,47 +40,53 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 		return nil, fmt.Errorf("get locations by ids: %w", err)
 	}
 
-	functionMap := map[string]*pb.TopNode{}
+	// Iterate over all samples and their locations.
+	// Calculate the cumulative value of all locations of all samples.
+	// In the end return a *pb.TopNode for each location including all the metadata we have.
+	locationsTopNodes := map[string]*pb.TopNode{}
 	for sampleUUID, sample := range samples {
-		s := sampleMap[sampleUUID]
-
-		location := locationsMap[string(s.GetLocationIds()[0])]
-
-		meta := &pb.TopNodeMeta{
-			Mapping: location.Mapping,
-			Location: &metastorev1alpha1.Location{
-				Id:        []byte(location.ID.String()),
-				Address:   location.Address,
-				MappingId: location.Mapping.GetId(),
-				IsFolded:  location.IsFolded,
-			},
-		}
-		if len(location.Lines) > 0 {
-			// TODO: Return or merge multiple lines for samples
-			meta.Function = location.Lines[0].Function
-			meta.Line = &metastorev1alpha1.Line{
-				FunctionId: meta.GetFunction().GetId(),
-				Line:       location.Lines[0].Line,
-			}
-		}
-
-		if sample.Value  == 0 {
+		// If values are zero we can simply ignore the samples.
+		// They wouldn't show up on their own in the table anyway.
+		if sample.Value == 0 {
 			continue
 		}
 
-		if f, exists:= functionMap[meta.Function.Name]; exists {
-			f.Flat += sample.Value
-		} else {
-			functionMap[meta.Function.Name] = &pb.TopNode{
-				Meta: meta,
-				Cumulative: 0,
-				Flat: sample.Value,
+		s := sampleMap[sampleUUID]
+		for i, id := range s.GetLocationIds() {
+			location := locationsMap[string(id)]
+			if node, found := locationsTopNodes[string(id)]; found {
+				node.Cumulative += sample.Value
+			} else {
+				node := &pb.TopNode{
+					Cumulative: sample.Value,
+					Meta: &pb.TopNodeMeta{
+						Mapping: location.Mapping,
+						Location: &metastorev1alpha1.Location{
+							Id:        []byte(location.ID.String()),
+							Address:   location.Address,
+							MappingId: location.Mapping.GetId(),
+							IsFolded:  location.IsFolded,
+						},
+					},
+				}
+				if len(location.Lines) > 0 {
+					// TODO: Return or merge multiple lines for samples
+					node.Meta.Function = location.Lines[0].Function
+					node.Meta.Line = &metastorev1alpha1.Line{
+						FunctionId: location.Lines[0].Function.GetId(),
+						Line:       location.Lines[0].Line,
+					}
+				}
+				if i == 0 {
+					node.Flat = sample.Value
+				}
+				locationsTopNodes[string(id)] = node
 			}
 		}
 	}
 
-	list := make([]*pb.TopNode, 0, len(functionMap))
-	for _, f := range functionMap {
+	list := make([]*pb.TopNode, 0, len(locationsTopNodes))
+	for _, f := range locationsTopNodes {
 		list = append(list, f)
 	}
 

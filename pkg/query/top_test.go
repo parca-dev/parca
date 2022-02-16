@@ -7,11 +7,12 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/metastore"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/parca-dev/parca/pkg/metastore"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestGenerateTopTable(t *testing.T) {
@@ -38,14 +39,15 @@ func TestGenerateTopTable(t *testing.T) {
 	res, err := GenerateTopTable(ctx, l, p)
 	require.NoError(t, err)
 
-	require.Equal(t, int32(4650), res.Total)
-	require.Equal(t, int32(4650), res.Reported)
-	require.Len(t, res.List, 4650)
+	require.Equal(t, int32(1886), res.Total)
+	require.Equal(t, int32(1886), res.Reported)
+	require.Len(t, res.List, 1886)
 
 	found := false
 	for _, node := range res.GetList() {
-		if node.GetMeta().GetFunction().GetName() == "encoding/json.Unmarshal" && node.GetFlat() == 14897 {
-			require.Equal(t, int64(14897), node.GetCumulative()) // TODO: This need to be fixed
+		if node.GetMeta().GetFunction().GetName() == "encoding/json.Unmarshal" &&
+			node.GetMeta().GetLocation().GetAddress() == 7578336 {
+			require.Equal(t, int64(1251322), node.GetCumulative())
 			require.Equal(t, int64(14897), node.GetFlat())
 
 			require.Equal(t, uint64(7578336), node.GetMeta().GetLocation().GetAddress())

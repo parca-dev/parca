@@ -19,10 +19,11 @@ import (
 	"fmt"
 	"sort"
 
+	"go.opentelemetry.io/otel/trace"
+
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/profile"
-	"go.opentelemetry.io/otel/trace"
 )
 
 func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p profile.InstantFlatProfile) (*pb.Flamegraph, error) {
