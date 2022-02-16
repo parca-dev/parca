@@ -17,6 +17,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 

@@ -18,9 +18,10 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
 func TestMappingKeyBytes(t *testing.T) {
@@ -423,7 +424,7 @@ func LocationStoreTest(t *testing.T, s ProfileMetaStore) {
 	requireEqualLocation(t, l1, res)
 }
 
-func requireEqualLocation(t *testing.T, expected *Location, compared *Location) {
+func requireEqualLocation(t *testing.T, expected, compared *Location) {
 	require.Equal(t, expected.ID, compared.ID)
 	require.Equal(t, expected.Address, compared.Address)
 	require.Equal(t, expected.IsFolded, compared.IsFolded)
@@ -460,10 +461,10 @@ func metaStoreTest(t *testing.T, s ProfileMetaStore) {
 		Address: uint64(42),
 		Mapping: m,
 	}
-	locId, err := s.CreateLocation(ctx, l)
+	locID, err := s.CreateLocation(ctx, l)
 	require.NoError(t, err)
 
-	l.ID, err = uuid.FromBytes(locId)
+	l.ID, err = uuid.FromBytes(locID)
 	require.NoError(t, err)
 
 	m1 := &pb.Mapping{

@@ -55,7 +55,7 @@ func testChunk(t *testing.T, c Chunk) {
 	require.NoError(t, err)
 
 	exp := make([]int64, 0, 300)
-	var v = int64(1243535)
+	v := int64(1243535)
 
 	for i := 0; i < 300; i++ {
 		if i%2 == 0 {
@@ -159,9 +159,9 @@ func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 		data = make([]int64, 0, b.N)
 	)
 	for i := 0; i < b.N; i++ {
-		//v = rand.Int63n(1_000_000) // random
+		// v = rand.Int63n(1_000_000) // random
 		v += int64(100) // increasing
-		//v = 100 // same
+		// v = 100 // same
 		data = append(data, v)
 	}
 
@@ -214,7 +214,6 @@ func benchmarkIterator(b *testing.B, newChunk func() Chunk) {
 // benchstat ./pkg/storage/benchmark/appender-same.txt ./pkg/storage/benchmark/appender-increasing.txt ./pkg/storage/benchmark/appender-random.txt
 
 func BenchmarkAppenders(b *testing.B) {
-
 	for _, c := range []struct {
 		name     string
 		newChunk func() Chunk
@@ -247,9 +246,9 @@ func benchmarkAppender(b *testing.B, newChunk func() Chunk) {
 		data = make([]int64, 0, b.N)
 	)
 	for i := 0; i < b.N; i++ {
-		//v = rand.Int63n(1_000_000) // random
+		// v = rand.Int63n(1_000_000) // random
 		v += int64(100) // increasing
-		//v = 100 // same
+		// v = 100 // same
 		data = append(data, v)
 	}
 

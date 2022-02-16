@@ -33,7 +33,7 @@ import (
 
 var ErrLocationFailedBefore = errors.New("failed to symbolize location, attempts are exhausted")
 
-type dwarfLiner struct {
+type DwarfLiner struct {
 	logger    log.Logger
 	demangler *demangle.Demangler
 
@@ -48,7 +48,7 @@ type dwarfLiner struct {
 	failed           map[uint64]struct{}
 }
 
-func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold int, m *pb.Mapping, path string) (*dwarfLiner, error) {
+func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold int, m *pb.Mapping, path string) (*DwarfLiner, error) {
 	// TODO(kakkoyun): Handle offset, start and limit for dynamically linked libraries.
 	//f, err := s.bu.Open(file, m.Start, m.Limit, m.Offset)
 	//if err != nil {
@@ -65,7 +65,7 @@ func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold in
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}
 
-	return &dwarfLiner{
+	return &DwarfLiner{
 		logger:    logger,
 		demangler: demangler,
 
@@ -82,7 +82,7 @@ func DWARF(logger log.Logger, demangler *demangle.Demangler, attemptThreshold in
 	}, nil
 }
 
-func (dl *dwarfLiner) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
+func (dl *DwarfLiner) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
 	if _, ok := dl.lineEntries[cu.Offset]; ok {
 		// Already created.
 		return nil
@@ -157,7 +157,7 @@ outer:
 	return nil
 }
 
-func (dl *dwarfLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
+func (dl *DwarfLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
 	// Check if we already attempt to symbolize this location and failed.
 	if _, failedBefore := dl.failed[addr]; failedBefore {
 		level.Debug(dl.logger).Log("msg", "location already had been attempted to be symbolized and failed, skipping")
@@ -183,7 +183,7 @@ func (dl *dwarfLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, er
 	return lines, nil
 }
 
-func (dl *dwarfLiner) handleError(addr uint64, err error) error {
+func (dl *DwarfLiner) handleError(addr uint64, err error) error {
 	if prev, ok := dl.attempts[addr]; ok {
 		prev++
 		if prev >= dl.attemptThreshold {
@@ -199,7 +199,7 @@ func (dl *dwarfLiner) handleError(addr uint64, err error) error {
 	return err
 }
 
-func (dl *dwarfLiner) sourceLines(addr uint64) ([]metastore.LocationLine, error) {
+func (dl *DwarfLiner) sourceLines(addr uint64) ([]metastore.LocationLine, error) {
 	// The reader is positioned at byte offset 0 in the DWARF “info” section.
 	er := dl.data.Reader()
 	cu, err := er.SeekPC(addr)
@@ -261,7 +261,7 @@ func (dl *dwarfLiner) sourceLines(addr uint64) ([]metastore.LocationLine, error)
 
 func findLineInfo(entries []dwarf.LineEntry, rg [][2]uint64) (string, int64) {
 	file := "?"
-	var line int64 = 0
+	var line int64
 	i := sort.Search(len(entries), func(i int) bool {
 		return entries[i].Address >= rg[0][0]
 	})

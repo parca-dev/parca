@@ -71,7 +71,7 @@ var MapAllowedLevels = map[string][]string{
 	"WARN":  {"WARN", "ERROR"},
 }
 
-// Server is a wrapper around the http.Server
+// Server is a wrapper around the http.Server.
 type Server struct {
 	http.Server
 	grpcProbe *prober.GRPCProbe
@@ -87,7 +87,7 @@ func NewServer(reg *prometheus.Registry, version string) *Server {
 	}
 }
 
-// ListenAndServe starts the http grpc gateway server
+// ListenAndServe starts the http grpc gateway server.
 func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port string, allowedCORSOrigins []string, registerables ...Registerable) error {
 	level.Info(logger).Log("msg", "starting server", "addr", port)
 	logLevel := "ERROR"
@@ -193,7 +193,7 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	return s.Server.ListenAndServe()
 }
 
-// Shutdown the server
+// Shutdown the server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.grpcProbe.NotReady(nil)
 	return s.Server.Shutdown(ctx)
@@ -222,7 +222,6 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 		}
 
 		if strings.Contains(path, "_app-") {
-
 			tmpl, err := template.New(path).Parse(string(b))
 			if err != nil {
 				return fmt.Errorf("failed to parse ui file %s: %w", path, err)

@@ -15,6 +15,7 @@ package metastore
 
 import (
 	"encoding/binary"
+
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 

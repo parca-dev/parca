@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/parca-dev/parca/pkg/profile"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 var (
@@ -268,7 +269,7 @@ func NewMergeProfile(a, b profile.InstantProfile) (profile.InstantProfile, error
 	}, nil
 }
 
-func equalValueType(a profile.ValueType, b profile.ValueType) bool {
+func equalValueType(a, b profile.ValueType) bool {
 	return a.Type == b.Type && a.Unit == b.Unit
 }
 

@@ -23,7 +23,6 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/parca-dev/parca/pkg/debuginfo"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
@@ -31,6 +30,8 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v2"
+
+	"github.com/parca-dev/parca/pkg/debuginfo"
 )
 
 const (
@@ -38,17 +39,17 @@ const (
 	pprofBlockTotal        string = "block_total"
 	pprofGoroutineTotal    string = "goroutine_total"
 	pprofMutexTotal        string = "mutex_total"
-	pprofProcessCpu        string = "process_cpu"
+	pprofProcessCPU        string = "process_cpu"
 	pprofThreadcreateTotal string = "threadcreate_total"
 )
 
-// Config holds all the configuration information for Parca
+// Config holds all the configuration information for Parca.
 type Config struct {
 	DebugInfo     *debuginfo.Config `yaml:"debug_info"`
 	ScrapeConfigs []*ScrapeConfig   `yaml:"scrape_configs,omitempty"`
 }
 
-// Validate returns an error if the config is not valid
+// Validate returns an error if the config is not valid.
 func (c *Config) Validate() error {
 	return validation.ValidateStruct(c,
 		validation.Field(&c.DebugInfo, validation.Required, debuginfo.Valid),
@@ -83,7 +84,7 @@ func DefaultScrapeConfig() ScrapeConfig {
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/mutex",
 				},
-				pprofProcessCpu: &PprofProfilingConfig{
+				pprofProcessCPU: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Delta:   true,
 					Path:    "/debug/pprof/profile",
@@ -244,9 +245,9 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if c.ScrapeTimeout == 0 {
 		c.ScrapeTimeout = c.ScrapeInterval
 	}
-	if cfg, ok := c.ProfilingConfig.PprofConfig[pprofProcessCpu]; ok {
+	if cfg, ok := c.ProfilingConfig.PprofConfig[pprofProcessCPU]; ok {
 		if *cfg.Enabled && c.ScrapeTimeout < model.Duration(time.Second*2) {
-			return fmt.Errorf("%v scrape_timeout must be at least 2 seconds in %v", pprofProcessCpu, c.JobName)
+			return fmt.Errorf("%v scrape_timeout must be at least 2 seconds in %v", pprofProcessCPU, c.JobName)
 		}
 	}
 

@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
+
 	"github.com/parca-dev/parca/pkg/metastore"
 )
 
@@ -73,7 +74,7 @@ func (fp *FlatProfile) Samples() map[string]*Sample {
 	return fp.FlatSamples
 }
 
-func ProfileMetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {
+func MetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {
 	return InstantProfileMeta{
 		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
 		Duration:   p.DurationNanos,

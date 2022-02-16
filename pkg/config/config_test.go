@@ -17,11 +17,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
+
+	"github.com/parca-dev/parca/pkg/debuginfo"
 )
 
 func TestLoad(t *testing.T) {
@@ -101,15 +102,14 @@ scrape_configs:
 				}}},
 			},
 			{
-				JobName:        "empty-profiling-config",
-				ScrapeInterval: model.Duration(10 * time.Second),
-				ScrapeTimeout:  model.Duration(10 * time.Second),
-				Scheme:         "http",
+				JobName:         "empty-profiling-config",
+				ScrapeInterval:  model.Duration(10 * time.Second),
+				ScrapeTimeout:   model.Duration(10 * time.Second),
+				Scheme:          "http",
 				ProfilingConfig: DefaultScrapeConfig().ProfilingConfig,
 			},
-        },
+		},
 	}
-
 	c, err := Load(complexYAML)
 	require.NoError(t, err)
 	require.Len(t, c.ScrapeConfigs, 2)
@@ -117,49 +117,37 @@ scrape_configs:
 }
 
 func Test_Config_Validation(t *testing.T) {
-
-	tests := map[string]struct {
-		cfg Config
-	}{
-		"nil debug": {
-			Config{
-				DebugInfo: nil,
+	tests := map[string]Config{
+		"nilDebug": {
+			DebugInfo: nil,
+		},
+		"nilBucket": {
+			DebugInfo: &debuginfo.Config{
+				Bucket: nil,
 			},
 		},
-		"nil bucket": {
-			Config{
-				DebugInfo: &debuginfo.Config{
-					Bucket: nil,
-				},
-			},
-		},
-		"empty type": {
-			Config{
-				DebugInfo: &debuginfo.Config{
-					Bucket: &client.BucketConfig{
-						Config: struct {
-							Directory string
-						}{
-							Directory: "./tmp",
-						},
+		"emptyType": {
+			DebugInfo: &debuginfo.Config{
+				Bucket: &client.BucketConfig{
+					Config: struct {
+						Directory string
+					}{
+						Directory: "./tmp",
 					},
 				},
 			},
 		},
-		"empty config": {
-			Config{
-				DebugInfo: &debuginfo.Config{
-					Bucket: &client.BucketConfig{
-						Type: client.FILESYSTEM,
-					},
+		"emptyConfig": {
+			DebugInfo: &debuginfo.Config{
+				Bucket: &client.BucketConfig{
+					Type: client.FILESYSTEM,
 				},
 			},
 		},
 	}
-
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			require.Error(t, test.cfg.Validate())
+			require.Error(t, test.Validate())
 		})
 	}
 }
