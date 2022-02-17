@@ -90,10 +90,60 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 		list = append(list, f)
 	}
 
-	return &pb.Top{
+	top := &pb.Top{
 		List:     list,
 		Reported: int32(len(list)),
 		Total:    int32(len(list)),
 		Unit:     p.ProfileMeta().SampleType.Unit,
-	}, nil
+	}
+
+	return aggregateTopByFunction(top), nil
+}
+
+func aggregateTopByFunction(top *pb.Top) *pb.Top {
+	// TODO: Maybe nest by mappingID?
+	aggregatesAddresses := map[uint64]*pb.TopNode{}
+	aggregatesFunctions := map[string]*pb.TopNode{}
+
+	for _, n := range top.GetList() {
+		if n.GetMeta() == nil {
+			// Ignore nodes without metadata.
+			continue
+		}
+		if n.Meta.GetFunction() == nil {
+			// If there is no function we aggregate by address.
+			addr := n.Meta.GetLocation().GetAddress()
+			if aggregateNode, exists := aggregatesAddresses[addr]; exists {
+				aggregateNode.Cumulative += n.Cumulative
+				aggregateNode.Flat += n.Flat
+			} else {
+				aggregatesAddresses[addr] = n
+			}
+			continue
+		}
+		// Finally, if there's a function name we aggregated by their name.
+		name := n.Meta.Function.GetName()
+		if aggregateNode, exists := aggregatesFunctions[name]; exists {
+			aggregateNode.Cumulative += n.Cumulative
+			aggregateNode.Flat += n.Flat
+		} else {
+			aggregatesFunctions[name] = n
+		}
+
+	}
+
+	list := make([]*pb.TopNode, 0, len(aggregatesAddresses)+len(aggregatesFunctions))
+	for _, n := range aggregatesAddresses {
+		list = append(list, n)
+	}
+	for _, n := range aggregatesFunctions {
+		list = append(list, n)
+	}
+
+	return &pb.Top{
+		List:     list,
+		Reported: top.GetReported(),
+		Total:    top.GetTotal(),
+		Unit:     top.GetUnit(),
+	}
 }

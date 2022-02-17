@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
+	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
@@ -71,4 +73,199 @@ func TestGenerateTopTable(t *testing.T) {
 		}
 	}
 	require.Truef(t, found, "expected to find the specific function")
+}
+
+func TestAggregateTopByFunction(t *testing.T) {
+	uuid1 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+	uuid2 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}
+	uuid3 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}
+
+	testcases := []struct {
+		name   string
+		input  *pb.Top
+		output *pb.Top
+	}{{
+		name: "Empty",
+		input: &pb.Top{
+			List: []*pb.TopNode{},
+		},
+		output: &pb.Top{
+			List: []*pb.TopNode{},
+		},
+	}, {
+		name: "NoMeta",
+		input: &pb.Top{
+			List: []*pb.TopNode{
+				{Meta: nil, Cumulative: 1, Flat: 1},
+				{Meta: nil, Cumulative: 2, Flat: 2},
+			},
+		},
+		output: &pb.Top{
+			List: []*pb.TopNode{},
+		},
+	}, {
+		name: "UniqueAddress",
+		input: &pb.Top{
+			List: []*pb.TopNode{
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+			},
+		},
+		output: &pb.Top{
+			List: []*pb.TopNode{
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+			},
+		},
+	}, {
+		name: "UniqueFunction",
+		input: &pb.Top{
+			List: []*pb.TopNode{
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
+						Function: &metastorev1alpha1.Function{Id: uuid3, Name: "func3"},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+			},
+		},
+		output: &pb.Top{
+			List: []*pb.TopNode{
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
+						Function: &metastorev1alpha1.Function{Id: uuid3, Name: "func3"},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+			},
+		},
+	}, {
+		name: "AggregateAddress",
+		input: &pb.Top{
+			List: []*pb.TopNode{
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+			},
+		},
+		output: &pb.Top{
+			List: []*pb.TopNode{
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+					},
+					Cumulative: 2,
+					Flat:       2,
+				},
+			},
+		},
+	}, {
+		name: "AggregateFunction",
+		input: &pb.Top{
+			List: []*pb.TopNode{
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+					},
+					Cumulative: 1,
+					Flat:       1,
+				},
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+					},
+					Cumulative: 2,
+					Flat:       2,
+				},
+			},
+		},
+		output: &pb.Top{
+			List: []*pb.TopNode{
+				{
+					Meta: &pb.TopNodeMeta{
+						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+					},
+					Cumulative: 3,
+					Flat:       3,
+				},
+			},
+		},
+	}}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.output, aggregateTopByFunction(tc.input))
+		})
+	}
 }
