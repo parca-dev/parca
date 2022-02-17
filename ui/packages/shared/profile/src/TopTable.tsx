@@ -1,10 +1,11 @@
 import React, {useEffect, useState} from 'react';
+
 import {ProfileSource} from './ProfileSource';
 import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
+import {getLastItem, valueFormatter} from '@parca/functions';
 
 import './TopTable.styles.css';
-import {valueFormatter} from '@parca/functions';
 
 interface ProfileViewProps {
   queryClient: QueryServiceClient;
@@ -30,17 +31,6 @@ const Arrow = ({direction}: {direction: string | undefined}) => {
     </svg>
   );
 };
-
-// TODO: Refactor the getLastItem from IcicleGraph.tsx
-function getLastItem(thePath: string | undefined): string {
-  if (thePath === undefined) {
-    return '';
-  }
-  const index = thePath.lastIndexOf('/');
-  if (index === -1) return thePath;
-
-  return thePath.substring(index + 1);
-}
 
 const useSortableData = (
   response: QueryResponse | null,

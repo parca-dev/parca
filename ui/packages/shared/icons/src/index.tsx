@@ -7,17 +7,5 @@ import GitHub from './assets/github.svg';
 import LinkedIn from './assets/linkedin.svg';
 import Twitter from './assets/twitter.svg';
 import ArrowForward from './assets/arrow-forward.svg';
-import Arrow from './assets/arrow.svg';
 
-export {
-  Parca,
-  ParcaSmall,
-  CompareArrows,
-  Checkmark,
-  RedX,
-  GitHub,
-  LinkedIn,
-  Twitter,
-  ArrowForward,
-  Arrow,
-};
+export {Parca, ParcaSmall, CompareArrows, Checkmark, RedX, GitHub, LinkedIn, Twitter, ArrowForward};

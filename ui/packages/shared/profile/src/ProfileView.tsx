@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {useRouter} from 'next/router';
 
 import {CalcWidth} from '@parca/dynamicsize';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
@@ -55,9 +56,11 @@ export const useQuery = (
 };
 
 export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX.Element => {
+  const router = useRouter();
+  const currentViewFromURL = router.query.currentProfileView as string;
   const [curPath, setCurPath] = useState<string[]>([]);
   const {response, error} = useQuery(queryClient, profileSource);
-  const [currentView, setCurrentView] = useState<string>('icicle');
+  const [currentView, setCurrentView] = useState<string | undefined>(currentViewFromURL);
 
   if (error != null) {
     return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
@@ -138,6 +141,16 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
     }
   };
 
+  const queryParams = router.query;
+
+  const switchProfileView = (view: string) => {
+    setCurrentView(view);
+    router.push({
+      pathname: '/',
+      query: {...queryParams, ...{currentProfileView: view}},
+    });
+  };
+
   return (
     <>
       <div className="py-3">
@@ -167,7 +180,7 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                 <Button
                   color={`${currentView === 'table' ? 'primary' : 'neutral'}`}
                   additionalClasses={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons`}
-                  onClick={() => setCurrentView('table')}
+                  onClick={() => switchProfileView('table')}
                 >
                   Table
                 </Button>
@@ -175,7 +188,7 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                 <Button
                   color={`${currentView === 'both' ? 'primary' : 'neutral'}`}
                   additionalClasses={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons no-outline-on-buttons text-ellipsis`}
-                  onClick={() => setCurrentView('both')}
+                  onClick={() => switchProfileView('both')}
                 >
                   Both
                 </Button>
@@ -183,7 +196,7 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                 <Button
                   color={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
                   additionalClasses={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons`}
-                  onClick={() => setCurrentView('icicle')}
+                  onClick={() => switchProfileView('icicle')}
                 >
                   Icicle Graph
                 </Button>

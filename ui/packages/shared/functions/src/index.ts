@@ -60,3 +60,12 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
   }
   return `${(num / format[i].value).toFixed(digits).replace(rx, '$1')}${format[i].symbol}`;
 };
+
+export const getLastItem = (thePath: string | undefined) => {
+  if (!thePath) return;
+
+  const index = thePath.lastIndexOf('/');
+  if (index === -1) return thePath;
+
+  return thePath.substring(index + 1);
+};

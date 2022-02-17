@@ -4,7 +4,7 @@ import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {usePopper} from 'react-popper';
-import {valueFormatter} from '@parca/functions';
+import {getLastItem, valueFormatter} from '@parca/functions';
 
 const RowHeight = 20;
 
@@ -106,14 +106,6 @@ function diffColor(diff: number, cumulative: number): string {
   return color;
 }
 
-function getLastItem(thePath: string): string {
-  const index = thePath.lastIndexOf('/');
-  if (index === -1) return thePath;
-
-  return thePath.substring(index + 1);
-}
-
-// TODO(yomete): Expect meta to be passed and work on that to be able to be used by Top
 export function nodeLabel(node: FlamegraphNode.AsObject): string {
   if (node.meta === undefined) return '<unknown>';
   const mapping = `${
