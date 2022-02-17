@@ -165,30 +165,24 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
                 </div>
 
                 <Button
-                  color="neutral"
-                  additionalClasses={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons
-                    ${currentView === 'table' ? '!bg-[#4f45e4]' : ''} 
-                    `}
+                  color={`${currentView === 'table' ? 'primary' : 'neutral'}`}
+                  additionalClasses={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons`}
                   onClick={() => setCurrentView('table')}
                 >
                   Table
                 </Button>
 
                 <Button
-                  color="neutral"
-                  additionalClasses={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons .no-outline-on-buttons text-ellipsis ${
-                    currentView === 'both' ? '!bg-[#4f45e4]' : ''
-                  }`}
+                  color={`${currentView === 'both' ? 'primary' : 'neutral'}`}
+                  additionalClasses={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons no-outline-on-buttons text-ellipsis`}
                   onClick={() => setCurrentView('both')}
                 >
                   Both
                 </Button>
 
                 <Button
-                  color="neutral"
-                  additionalClasses={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons
-                      ${currentView === 'icicle' ? '!bg-[#4f45e4]' : ''}
-                    `}
+                  color={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
+                  additionalClasses={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons`}
                   onClick={() => setCurrentView('icicle')}
                 >
                   Icicle Graph

@@ -2,9 +2,9 @@ import React, {useEffect, useState} from 'react';
 import {ProfileSource} from './ProfileSource';
 import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
-import {Arrow} from '@parca/icons';
 
 import './TopTable.styles.css';
+import {valueFormatter} from '@parca/functions';
 
 interface ProfileViewProps {
   queryClient: QueryServiceClient;
@@ -15,6 +15,21 @@ export interface IQueryResult {
   response: QueryResponse | null;
   error: ServiceError | null;
 }
+
+const Arrow = ({direction}: {direction: string | undefined}) => {
+  return (
+    <svg
+      className={`${direction !== undefined ? 'fill-[#161616] dark:fill-[#ffffff]' : ''}`}
+      fill="#777d87"
+      height="10"
+      viewBox="0 0 11 10"
+      width="11"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path clip-rule="evenodd" d="m.573997 0 5.000003 10 5-10h-9.999847z" fill-rule="evenodd" />
+    </svg>
+  );
+};
 
 // TODO: Refactor the getLastItem from IcicleGraph.tsx
 function getLastItem(thePath: string | undefined): string {
@@ -29,7 +44,7 @@ function getLastItem(thePath: string | undefined): string {
 
 const useSortableData = (
   response: QueryResponse | null,
-  config = {key: 'flat', direction: 'desc'}
+  config = {key: 'cumulative', direction: 'desc'}
 ) => {
   const [sortConfig, setSortConfig] = React.useState<{key: string; direction: string} | null>(
     config
@@ -61,9 +76,9 @@ const useSortableData = (
   }, [items, sortConfig]);
 
   const requestSort = key => {
-    let direction = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    let direction = 'desc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
     }
     setSortConfig({key, direction});
   };
@@ -105,6 +120,8 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
   const {response, error} = useQuery(queryClient, profileSource);
   const {items, requestSort, sortConfig} = useSortableData(response);
 
+  const unit = response?.toObject().top?.unit as string;
+
   if (error != null) {
     return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
   }
@@ -122,50 +139,52 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
   return (
     <>
       <div className="w-full">
-        <table className="iciclegraph-table table-auto text-left w-full">
-          <thead>
+        <table className="iciclegraph-table table-auto text-left w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th
-                className="text-sm cursor-pointer bg-[#ffffff0d] pt-2 pb-2 pl-2"
+                className="text-sm cursor-pointer pt-2 pb-2 pl-2"
                 onClick={() => requestSort('name')}
               >
                 Name
-                <span className={`inline-block	align-middle ml-2 ${getClassNamesFor('name')}`}>
-                  <Arrow />
+                <span className={`inline-block align-middle ml-2 ${getClassNamesFor('name')}`}>
+                  <Arrow direction={getClassNamesFor('name')} />
                 </span>
               </th>
               <th
-                className="min-w-[150px] max-w-[150px] text-right text-sm cursor-pointer bg-[#ffffff0d] pt-2 pb-2"
+                className="text-left text-sm cursor-pointer pt-2 pb-2"
                 onClick={() => requestSort('flat')}
               >
                 Flat
-                <span className={`inline-block	align-middle ml-2 ${getClassNamesFor('flat')}`}>
-                  <Arrow />
+                <span className={`inline-block align-middle ml-2 ${getClassNamesFor('flat')}`}>
+                  <Arrow direction={getClassNamesFor('flat')} />
                 </span>
               </th>
               <th
-                className="min-w-[150px] max-w-[150px] text-right text-sm cursor-pointer bg-[#ffffff0d] pt-2 pb-2 pr-2"
+                className="text-right text-sm cursor-pointer pt-2 pb-2 pr-2"
                 onClick={() => requestSort('cumulative')}
               >
                 Cumulative
-                <span className={`inline-block	align-middle ml-2 ${getClassNamesFor('cumulative')}`}>
-                  <Arrow />
+                <span
+                  className={`inline-block align-middle ml-2 ${getClassNamesFor('cumulative')}`}
+                >
+                  <Arrow direction={getClassNamesFor('cumulative')} />
                 </span>
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
             {items?.map((report, index) => (
-              <tr key={index} className="hover-[#90c7e0]">
-                <td className="text-sm py-1.5 border-b-[1px] border-[#646464] pl-2">
+              <tr key={index} className="hover:bg-[#62626212] dark:hover:bg-[#ffffff12]">
+                <td className="text-xs py-1.5 pl-2 min-w-[150px] max-w-[450px]">
                   {report.meta?.mapping?.file !== '' && [getLastItem(report.meta?.mapping?.file)]}{' '}
                   {report.meta?.pb_function?.name}
                 </td>
-                <td className="text-sm min-w-[150px] max-w-[150px] py-1.5 border-b-[1px] border-[#646464] text-right">
-                  {report.flat}
+                <td className="text-xs min-w-[150px] max-w-[150px] py-1.5text-right">
+                  {valueFormatter(report.flat, unit, 2)}
                 </td>
-                <td className="text-sm min-w-[150px] max-w-[150px] py-1.5 border-b-[1px] border-[#646464] text-right pr-2">
-                  {report.cumulative}
+                <td className="text-xs min-w-[150px] max-w-[150px] py-1.5 text-right pr-2">
+                  {valueFormatter(report.cumulative, unit, 2)}
                 </td>
               </tr>
             ))}

@@ -48,6 +48,7 @@ const Button = ({
         disabled ? 'opacity-50 pointer-events-none' : '',
         BUTTON_COLORS[color].bg,
         BUTTON_COLORS[color].text,
+        /* eslint-disable @typescript-eslint/restrict-template-expressions */
         `cursor-pointer group relative w-full flex ${BUTTON_COLORS[color].padding} ${BUTTON_COLORS[color].border} text-sm ${BUTTON_COLORS[color].fontWeight} rounded-md text-whitefocus:outline-none focus:ring-2 focus:ring-offset-2 ${BUTTON_COLORS[color].hover} ${additionalClasses}`
       )}
       disabled={disabled}

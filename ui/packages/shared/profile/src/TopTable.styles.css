@@ -1,22 +1,7 @@
-.iciclegraph-table tr th,
-.iciclegraph-table tr:nth-child(2n) td {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.iciclegraph-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
-
 .iciclegraph-table .desc {
   transform: rotate(0);
-}
-.iciclegraph-table .desc svg path {
-  fill: #fff;
 }
 
 .iciclegraph-table .asc {
   transform: rotate(180deg);
-}
-.iciclegraph-table .asc svg path {
-  fill: #fff;
 }
