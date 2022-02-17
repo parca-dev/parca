@@ -87,7 +87,7 @@ func NewServer(reg *prometheus.Registry, version string) *Server {
 }
 
 // ListenAndServe starts the http grpc gateway server
-func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port string, allowedCORSOrigins []string, registerables ...Registerable) error {
+func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port string, allowedCORSOrigins []string, pathPrefix string, registerables ...Registerable) error {
 	level.Info(logger).Log("msg", "starting server", "addr", port)
 	logLevel := "ERROR"
 
@@ -161,12 +161,12 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	}
 
 	// Strip the subpath
-	uiFS, err := fs.Sub(ui.FS, "packages/app/web/dist")
+	uiFS, err := fs.Sub(ui.FS, "packages/app/web/build")
 	if err != nil {
 		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
 	}
 
-	uiHandler, err := s.uiHandler(uiFS)
+	uiHandler, err := s.uiHandler(uiFS, pathPrefix)
 
 	if err != nil {
 		return fmt.Errorf("failed to walk ui filesystem: %w", err)
@@ -208,7 +208,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // There is currently no way to go between `http.FileServer(http.FS(uiFS))` and execute
 // templates. Taking an FS registering paths and executing templates seems to be the best option
 // for now.
-func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
+func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error) {
 	uiHandler := http.ServeMux{}
 
 	err := fs.WalkDir(uiFS, ".", func(path string, d fs.DirEntry, err error) error {
@@ -216,7 +216,7 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 			return err
 		}
 
-		if d.IsDir() {
+		if d.IsDir() || strings.HasSuffix(d.Name(), ".map") {
 			return nil
 		}
 
@@ -226,41 +226,46 @@ func (s *Server) uiHandler(uiFS fs.FS) (*http.ServeMux, error) {
 			return fmt.Errorf("failed to read ui file %s: %w", path, err)
 		}
 
-		tmpl, err := template.New(path).Parse(string(b))
+		if strings.HasSuffix(path, ".html") {
 
-		if err != nil {
-			return fmt.Errorf("failed to parse ui file %s: %w", path, err)
-		}
+			tmpl, err := template.New(path).Parse(strings.Replace(string(b), "/PATH_PREFIX_VAR", "{{.PathPrefix}}", -1))
 
-		var outputBuffer bytes.Buffer
+			if err != nil {
+				return fmt.Errorf("failed to parse ui file %s: %w", path, err)
+			}
 
-		err = tmpl.Execute(&outputBuffer, struct {
-			Version string
-		}{
-			s.version,
-		})
+			var outputBuffer bytes.Buffer
 
-		if err != nil {
-			return fmt.Errorf("failed to execute ui file %s: %w", path, err)
+			err = tmpl.Execute(&outputBuffer, struct {
+				Version    string
+				PathPrefix string
+			}{
+				s.version,
+				pathPrefix,
+			})
+
+			if err != nil {
+				return fmt.Errorf("failed to execute ui file %s: %w", path, err)
+			}
+
+			b = outputBuffer.Bytes()
 		}
 
 		fi, err := d.Info()
-
 		if err != nil {
 			return fmt.Errorf("failed to receive file info %s: %w", path, err)
 		}
 
-		outputBytes := outputBuffer.Bytes()
 
 		paths := []string{fmt.Sprintf("/%s", path)}
 
 		if paths[0] == "/index.html" {
-			paths = append(paths, "/")
+			paths = append(paths, "/", "/*")
 		}
 
 		for _, path := range paths {
-			uiHandler.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-				http.ServeContent(w, r, d.Name(), fi.ModTime(), bytes.NewReader(outputBytes))
+			uiHandler.HandleFunc(pathPrefix+path, func(w http.ResponseWriter, r *http.Request) {
+				http.ServeContent(w, r, d.Name(), fi.ModTime(), bytes.NewReader(b))
 			})
 		}
 

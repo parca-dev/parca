@@ -23,5 +23,4 @@ README.md
 out
 *.log
 coverage
-/packages/app/template/
 /packages/app/web/node_modules

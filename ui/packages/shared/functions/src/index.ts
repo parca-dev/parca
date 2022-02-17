@@ -55,3 +55,7 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
   }
   return (num / format[i].value).toFixed(digits).replace(rx, '$1') + format[i].symbol;
 };
+
+export const isDevMode = () => {
+  return process.env.NODE_ENV === 'development';
+};
