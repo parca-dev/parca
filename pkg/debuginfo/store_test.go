@@ -47,28 +47,32 @@ func TestStore(t *testing.T) {
 	sym, err := symbol.NewSymbolizer(logger)
 	require.NoError(t, err)
 
-	httpDebugInfoClient, err := NewHttpDebugInfoClient("https://debuginfod.systemtap.org")
+	//cfg := config.Config{}
+	cfg := &Config{
+		Bucket: &client.BucketConfig{
+			Type: client.FILESYSTEM,
+			Config: filesystem.Config{
+				Directory: dir,
+			},
+		},
+		Cache: &CacheConfig{
+			Type: FILESYSTEM,
+			Config: &FilesystemCacheConfig{
+				Directory: cacheDir,
+			},
+		},
+	}
+
+	httpDebugInfoClient, err := NewHttpDebugInfoClient(logger, "https://debuginfod.systemtap.org")
 	require.NoError(t, err)
 
-	debuginfodClientCache := NewObjectStorageDebugInfodClientCache(context.Background(), logger, httpDebugInfoClient)
+	debuginfodClientCache, err := NewObjectStorageDebugInfodClientCache(logger, cfg, httpDebugInfoClient)
+	require.NoError(t, err)
 
 	s, err := NewStore(
 		logger,
 		sym,
-		&Config{
-			Bucket: &client.BucketConfig{
-				Type: client.FILESYSTEM,
-				Config: filesystem.Config{
-					Directory: dir,
-				},
-			},
-			Cache: &CacheConfig{
-				Type: FILESYSTEM,
-				Config: &FilesystemCacheConfig{
-					Directory: cacheDir,
-				},
-			},
-		},
+		cfg,
 		debuginfodClientCache,
 	)
 	require.NoError(t, err)

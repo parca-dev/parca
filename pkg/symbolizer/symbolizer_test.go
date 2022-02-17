@@ -411,23 +411,32 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileM
 	sym, err := symbol.NewSymbolizer(logger)
 	require.NoError(t, err)
 
+	cfg := &debuginfo.Config{
+		Bucket: &client.BucketConfig{
+			Type: client.FILESYSTEM,
+			Config: filesystem.Config{
+				Directory: "testdata/",
+			},
+		},
+		Cache: &debuginfo.CacheConfig{
+			Type: debuginfo.FILESYSTEM,
+			Config: &debuginfo.FilesystemCacheConfig{
+				Directory: cacheDir,
+			},
+		},
+	}
+
+	httpDebugInfoClient, err := debuginfo.NewHttpDebugInfoClient(logger, "https://debuginfod.systemtap.org")
+	require.NoError(t, err)
+
+	debuginfodClientCache, err := debuginfo.NewObjectStorageDebugInfodClientCache(logger, cfg, httpDebugInfoClient)
+	require.NoError(t, err)
+
 	dbgStr, err := debuginfo.NewStore(
 		logger,
 		sym,
-		&debuginfo.Config{
-			Bucket: &client.BucketConfig{
-				Type: client.FILESYSTEM,
-				Config: filesystem.Config{
-					Directory: "testdata/",
-				},
-			},
-			Cache: &debuginfo.CacheConfig{
-				Type: debuginfo.FILESYSTEM,
-				Config: &debuginfo.FilesystemCacheConfig{
-					Directory: cacheDir,
-				},
-			},
-		})
+		cfg,
+		debuginfodClientCache)
 	require.NoError(t, err)
 
 	mStr := metastore.NewBadgerMetastore(

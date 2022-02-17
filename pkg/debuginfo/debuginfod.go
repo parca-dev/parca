@@ -14,70 +14,108 @@
 package debuginfo
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/thanos-io/thanos/pkg/objstore"
+	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"golang.org/x/net/context"
+	"gopkg.in/yaml.v2"
 )
 
 type DebugInfodClient interface {
-	GetDebugInfo(buildid string) (io.ReadCloser, error)
+	GetDebugInfo(ctx context.Context, buildid string) (io.ReadCloser, error)
 }
 
-type HttpDebuginfodClient struct {
+type HttpDebugInfodClient struct {
+	logger         log.Logger
 	UpstreamServer *url.URL
 }
 type ObjectStorageDebugInfodClientCache struct {
-	ctx    context.Context
 	logger log.Logger
 	client DebugInfodClient
 	bucket objstore.Bucket
 }
 
-func NewHttpDebugInfoClient(serverUrl string) (*HttpDebuginfodClient, error) {
+func NewHttpDebugInfoClient(logger log.Logger, serverUrl string) (*HttpDebugInfodClient, error) {
 	parsedUrl, err := url.Parse(serverUrl)
 	if err != nil {
 		return nil, err
 	}
-	return &HttpDebuginfodClient{UpstreamServer: parsedUrl}, nil
+	return &HttpDebugInfodClient{
+		logger:         logger,
+		UpstreamServer: parsedUrl,
+	}, nil
 }
 
-func NewObjectStorageDebugInfodClientCache(ctx context.Context, logger log.Logger, h *HttpDebuginfodClient) *ObjectStorageDebugInfodClientCache {
+func NewObjectStorageDebugInfodClientCache(logger log.Logger, config *Config, h DebugInfodClient) (*ObjectStorageDebugInfodClientCache, error) {
+	cfg, err := yaml.Marshal(config.Bucket)
+	if err != nil {
+		return nil, fmt.Errorf("marshal content of debuginfod object storage configuration: %w", err)
+	}
+
+	bucket, err := client.NewBucket(logger, cfg, nil, "parca")
+	if err != nil {
+		return nil, fmt.Errorf("instantiate debuginfod object storage: %w", err)
+	}
 	return &ObjectStorageDebugInfodClientCache{
-		ctx:    ctx,
 		logger: logger,
 		client: h,
-	}
+		bucket: bucket,
+	}, nil
 }
 
-func (c *ObjectStorageDebugInfodClientCache) GetDebugInfo(buildId string) (io.ReadCloser, error) {
-	debugInfo, err := c.client.GetDebugInfo(buildId)
+func (c *ObjectStorageDebugInfodClientCache) GetDebugInfo(ctx context.Context, buildId string) (io.ReadCloser, error) {
+	path := buildId + "/debuginfod-cache/debuginfo"
+
+	if exists, _ := c.bucket.Exists(ctx, path); exists {
+		debuginfoFile, err := c.bucket.Get(ctx, path)
+		if err != nil {
+			level.Debug(c.logger).Log("msg", "object file present in debuginfod cache", "build_id", buildId)
+			level.Error(c.logger).Log("msg", "failed to download from debuginfod cache", "err", err)
+			return nil, err
+		}
+		return debuginfoFile, nil
+	}
+
+	debugInfo, err := c.client.GetDebugInfo(ctx, buildId)
 	if err != nil {
 		return nil, ErrDebugInfoNotFound
 	}
 
-	path := buildId + "/debuginfo"
-
-	err = c.bucket.Upload(c.ctx, path, debugInfo)
+	err = c.bucket.Upload(ctx, path, debugInfo)
 	if err != nil {
 		level.Error(c.logger).Log("msg", "failed to upload to debuginfod cache", "err", err)
 		return nil, err
 	}
-	return debugInfo, nil
+	debugInfoReader, err := c.bucket.Get(ctx, path)
+	if err != nil {
+		level.Error(c.logger).Log("msg", "failed to download from debuginfod cache", "err", err)
+		return nil, err
+	}
+
+	return debugInfoReader, nil
 }
 
-func (c *HttpDebuginfodClient) GetDebugInfo(buildID string) (io.ReadCloser, error) {
+func (c *HttpDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
 	buildIdUrl := *c.UpstreamServer
 	buildIdUrl.Path = path.Join(buildIdUrl.Path, buildID, "debuginfo")
 
-	resp, err := http.Get(buildIdUrl.String())
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Millisecond)
+	defer cancel()
+
+	req, _ := http.NewRequestWithContext(ctx, "GET", buildIdUrl.String(), nil)
+
+	client := http.DefaultClient
+	resp, err := client.Do(req)
 	if err != nil {
-		//level.Debug(logger).Log("msg", "object not found in public server", "object", buildID, "err", err)
+		level.Debug(c.logger).Log("msg", "object not found in public server", "object", buildID, "err", err)
 		return nil, ErrDebugInfoNotFound
 	}
 
