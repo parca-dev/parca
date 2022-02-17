@@ -72,8 +72,7 @@ type Flags struct {
 
 	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
 
-	UpstreamDebuginfodServer string `default:"https://debuginfod.systemtap.org" help:"Upstream private/public server for debuginfod files. Defaults to https://debuginfod.systemtap.org
-	."`
+	UpstreamDebuginfodServer string `default:"https://debuginfod.systemtap.org" help:"Upstream private/public server for debuginfod files. Defaults to https://debuginfod.systemtap.org."`
 	//TODO: change this to a url type
 }
 
