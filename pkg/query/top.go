@@ -101,48 +101,71 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 }
 
 func aggregateTopByFunction(top *pb.Top) *pb.Top {
-	// TODO: Maybe nest by mappingID?
-	aggregatesAddresses := map[uint64]*pb.TopNode{}
-	aggregatesFunctions := map[string]*pb.TopNode{}
+	aggregatesAddresses := map[string]map[uint64]*pb.TopNode{}
+	aggregatesFunctions := map[string]map[string]*pb.TopNode{}
 
 	for _, n := range top.GetList() {
 		if n.GetMeta() == nil {
 			// Ignore nodes without metadata.
 			continue
 		}
+
+		var mappingID []byte
+		if n.Meta.GetMapping() != nil {
+			mappingID = n.Meta.Mapping.GetId()
+		}
+
+		// Initialize maps for given mappingID
+		mapping := string(mappingID)
+		if aggregatesAddresses[mapping] == nil {
+			aggregatesAddresses[mapping] = map[uint64]*pb.TopNode{}
+			aggregatesFunctions[mapping] = map[string]*pb.TopNode{}
+		}
+
 		if n.Meta.GetFunction() == nil {
 			// If there is no function we aggregate by address.
 			addr := n.Meta.GetLocation().GetAddress()
-			if aggregateNode, exists := aggregatesAddresses[addr]; exists {
+			if aggregateNode, exists := aggregatesAddresses[mapping][addr]; exists {
 				aggregateNode.Cumulative += n.Cumulative
 				aggregateNode.Flat += n.Flat
 			} else {
-				aggregatesAddresses[addr] = n
+				aggregatesAddresses[mapping][addr] = n
 			}
 			continue
 		}
 		// Finally, if there's a function name we aggregated by their name.
 		name := n.Meta.Function.GetName()
-		if aggregateNode, exists := aggregatesFunctions[name]; exists {
+		if aggregateNode, exists := aggregatesFunctions[mapping][name]; exists {
 			aggregateNode.Cumulative += n.Cumulative
 			aggregateNode.Flat += n.Flat
 		} else {
-			aggregatesFunctions[name] = n
+			aggregatesFunctions[mapping][name] = n
 		}
-
 	}
 
-	list := make([]*pb.TopNode, 0, len(aggregatesAddresses)+len(aggregatesFunctions))
-	for _, n := range aggregatesAddresses {
-		list = append(list, n)
+	var count uint64
+	for _, addrs := range aggregatesAddresses {
+		count += uint64(len(addrs))
 	}
-	for _, n := range aggregatesFunctions {
-		list = append(list, n)
+	for _, funcs := range aggregatesFunctions {
+		count += uint64(len(funcs))
+	}
+
+	list := make([]*pb.TopNode, 0, count)
+	for _, addrs := range aggregatesAddresses {
+		for _, n := range addrs {
+			list = append(list, n)
+		}
+	}
+	for _, funcs := range aggregatesFunctions {
+		for _, n := range funcs {
+			list = append(list, n)
+		}
 	}
 
 	return &pb.Top{
 		List:     list,
-		Reported: top.GetReported(),
+		Reported: int32(len(list)),
 		Total:    top.GetTotal(),
 		Unit:     top.GetUnit(),
 	}

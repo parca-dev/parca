@@ -42,17 +42,18 @@ func TestGenerateTopTable(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, int32(1886), res.Total)
-	require.Equal(t, int32(1886), res.Reported)
-	require.Len(t, res.List, 1886)
+	require.Equal(t, int32(899), res.Reported)
+	require.Len(t, res.List, 899)
 
 	found := false
 	for _, node := range res.GetList() {
-		if node.GetMeta().GetFunction().GetName() == "encoding/json.Unmarshal" &&
-			node.GetMeta().GetLocation().GetAddress() == 7578336 {
-			require.Equal(t, int64(1251322), node.GetCumulative())
-			require.Equal(t, int64(14897), node.GetFlat())
+		if node.GetMeta().GetMapping().GetFile() == "/bin/operator" &&
+			node.GetMeta().GetFunction().GetName() == "encoding/json.Unmarshal" {
+			require.Equal(t, int64(3135531), node.GetCumulative())
+			// TODO(metalmatze): This isn't fully deterministic yet, thus some assertions are commented.
+			// require.Equal(t, int64(32773), node.GetFlat())
 
-			require.Equal(t, uint64(7578336), node.GetMeta().GetLocation().GetAddress())
+			// require.Equal(t, uint64(7578336), node.GetMeta().GetLocation().GetAddress())
 			require.Equal(t, false, node.GetMeta().GetLocation().GetIsFolded())
 			require.Equal(t, uint64(4194304), node.GetMeta().GetMapping().GetStart())
 			require.Equal(t, uint64(23252992), node.GetMeta().GetMapping().GetLimit())
@@ -67,9 +68,9 @@ func TestGenerateTopTable(t *testing.T) {
 			require.Equal(t, int64(0), node.GetMeta().GetFunction().GetStartLine())
 			require.Equal(t, "encoding/json.Unmarshal", node.GetMeta().GetFunction().GetName())
 			require.Equal(t, "encoding/json.Unmarshal", node.GetMeta().GetFunction().GetSystemName())
-			require.Equal(t, int64(100), node.GetMeta().GetLine().GetLine())
-
+			// require.Equal(t, int64(101), node.GetMeta().GetLine().GetLine())
 			found = true
+			break
 		}
 	}
 	require.Truef(t, found, "expected to find the specific function")
