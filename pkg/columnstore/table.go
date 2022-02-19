@@ -156,7 +156,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	}
 	granule.parts = []*Part{newpart}
 
-	granules, err := granule.split(t.schema.granuleSize / 2) // TODO magic numbers
+	granules, err := granule.split(tx, t.schema.granuleSize/2) // TODO magic numbers
 	if err != nil {
 		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}

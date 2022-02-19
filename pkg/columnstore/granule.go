@@ -87,12 +87,10 @@ func (g *Granule) cardinality() int {
 // split a granule into n sized granules. With the last granule containing the remainder.
 // Returns the granules in order.
 // This assumes the Granule has had it's parts merged into a single part
-func (g *Granule) split(n int) ([]*Granule, error) {
+func (g *Granule) split(tx uint64, n int) ([]*Granule, error) {
 	if len(g.parts) > 1 {
 		return []*Granule{g}, nil // do nothing
 	}
-
-	tx := uint64(0) // TODO what is the tx during a split?
 
 	// How many granules we'll need to build
 	count := g.parts[0].Cardinality / n
