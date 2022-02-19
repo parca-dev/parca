@@ -349,7 +349,8 @@ func (s Schema) RowLessThan(a, b []interface{}) bool {
 		vj := b[k]
 		less := s.columns[k].Type.Less
 		equal := s.columns[k].Type.Equal
-		if s.columns[k].Dynamic {
+		switch s.columns[k].Dynamic {
+		case true:
 			dci := vi.([]DynamicColumnValue)
 			dcj := vj.([]DynamicColumnValue)
 			end := int(math.Min(float64(len(dci)), float64(len(dcj))))
@@ -370,11 +371,11 @@ func (s Schema) RowLessThan(a, b []interface{}) bool {
 			case len(dci) > len(dcj):
 				return false
 			}
-
-			return false
+		default:
+			if !equal(vi, vj) {
+				return less(vi, vj)
+			}
 		}
-
-		return less(vi, vj)
 	}
 
 	return false
