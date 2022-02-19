@@ -812,11 +812,11 @@ func Test_Granule_Less(t *testing.T) {
 		least: Row{
 			Values: []interface{}{
 				[]DynamicColumnValue{
-					{Name: "label1", Value: "96c1760b-f162-4de6-8559-442701c2bb43"},
+					{Name: "label1", Value: "06e32507-cda3-49db-8093-53a8a4c8da76"},
 					{Name: "label2", Value: "value2"},
 				},
+				int64(6375179957311426905),
 				int64(0),
-				int64(3403336116086076564),
 			},
 		},
 	}
@@ -825,11 +825,11 @@ func Test_Granule_Less(t *testing.T) {
 		least: Row{
 			Values: []interface{}{
 				[]DynamicColumnValue{
-					{Name: "label1", Value: "b62bcfd2-53e7-49a4-ba29-acb0cb9286f0"},
+					{Name: "label1", Value: "06e32507-cda3-49db-8093-53a8a4c8da76"},
 					{Name: "label2", Value: "value2"},
 				},
+				int64(8825936717838690748),
 				int64(0),
-				int64(4521089338578308515),
 			},
 		},
 	}
