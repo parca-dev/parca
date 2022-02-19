@@ -483,7 +483,7 @@ func benchmarkTableInserts(b *testing.B, rows, iterations, writers int) {
 			Encoding: PlainEncoding,
 		}},
 		OrderedBy:   []string{"labels", "timestamp"},
-		GranuleSize: 2 << 20, // TODO NO splits
+		GranuleSize: 2 << 13,
 	}
 
 	c := New(nil)
