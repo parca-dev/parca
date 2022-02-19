@@ -48,6 +48,7 @@ func newTable(
 		db:     db,
 		schema: schema,
 		index:  btree.New(2), // TODO make the degree a setting
+		logger: logger,
 		metrics: &tableMetrics{
 			granulesCreated: promauto.With(reg).NewCounter(prometheus.CounterOpts{
 				Name: "granules_created",
