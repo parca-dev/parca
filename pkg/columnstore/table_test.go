@@ -498,8 +498,8 @@ func benchmarkTableInserts(b *testing.B, rows, iterations, writers int) {
 						{Name: "label1", Value: id},
 						{Name: "label2", Value: "value2"},
 					},
-					int64(i),
 					rand.Int63(),
+					int64(i),
 				},
 			})
 		}
