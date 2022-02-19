@@ -467,8 +467,8 @@ func Benchmark_Table_Insert_100Row_100Iter_100Writers(b *testing.B) {
 }
 
 func benchmarkTableInserts(b *testing.B, rows, iterations, writers int) {
-	schema := Schema{
-		Columns: []ColumnDefinition{{
+	schema := NewSchema(
+		[]ColumnDefinition{{
 			Name:     "labels",
 			Type:     StringType,
 			Encoding: PlainEncoding,
@@ -482,9 +482,10 @@ func benchmarkTableInserts(b *testing.B, rows, iterations, writers int) {
 			Type:     Int64Type,
 			Encoding: PlainEncoding,
 		}},
-		OrderedBy:   []string{"labels", "timestamp"},
-		GranuleSize: 2 << 13,
-	}
+		2<<13,
+		"labels",
+		"timestamp",
+	)
 
 	c := New(nil)
 	db := c.DB("test")
@@ -787,8 +788,8 @@ func Test_Table_Sorting(t *testing.T) {
 
 func Test_Granule_Less(t *testing.T) {
 
-	schema := &Schema{
-		Columns: []ColumnDefinition{{
+	schema := NewSchema(
+		[]ColumnDefinition{{
 			Name:     "labels",
 			Type:     StringType,
 			Encoding: PlainEncoding,
@@ -802,11 +803,12 @@ func Test_Granule_Less(t *testing.T) {
 			Type:     Int64Type,
 			Encoding: PlainEncoding,
 		}},
-		OrderedBy:   []string{"labels", "timestamp"},
-		GranuleSize: 2 << 13,
-	}
+		2<<13,
+		"labels",
+		"timestamp",
+	)
 	g := &Granule{
-		schema: schema,
+		schema: &schema,
 		least: Row{
 			Values: []interface{}{
 				[]DynamicColumnValue{
@@ -819,7 +821,7 @@ func Test_Granule_Less(t *testing.T) {
 		},
 	}
 	g1 := &Granule{
-		schema: schema,
+		schema: &schema,
 		least: Row{
 			Values: []interface{}{
 				[]DynamicColumnValue{
