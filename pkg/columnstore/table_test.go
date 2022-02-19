@@ -9,6 +9,7 @@ import (
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/go-kit/log"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -457,7 +458,15 @@ func Test_Table_Concurrency(t *testing.T) {
 	require.Equal(t, int64(n*inserts*rows), totalrows)
 }
 
-func Benchmark_Table_Insert_10Rows_10Writers(b *testing.B) {
+func Benchmark_Table_Insert_10Rows_10Iter_10Writers(b *testing.B) {
+	benchmarkTableInserts(b, 10, 10, 10)
+}
+
+func Benchmark_Table_Insert_100Row_100Iter_100Writers(b *testing.B) {
+	benchmarkTableInserts(b, 100, 100, 100)
+}
+
+func benchmarkTableInserts(b *testing.B, rows, iterations, writers int) {
 	schema := Schema{
 		Columns: []ColumnDefinition{{
 			Name:     "labels",
@@ -474,22 +483,21 @@ func Benchmark_Table_Insert_10Rows_10Writers(b *testing.B) {
 			Encoding: PlainEncoding,
 		}},
 		OrderedBy:   []string{"labels", "timestamp"},
-		GranuleSize: 2 << 13,
+		GranuleSize: 2 << 20, // TODO NO splits
 	}
 
 	c := New(nil)
 	db := c.DB("test")
-	table := db.Table("test", schema, log.NewNopLogger())
-	generateRows := func(n int) []Row {
+	generateRows := func(id string, n int) []Row {
 		rows := make([]Row, 0, n)
 		for i := 0; i < n; i++ {
 			rows = append(rows, Row{
 				Values: []interface{}{
 					[]DynamicColumnValue{ // TODO would be nice to not have all the same column
-						{Name: "label1", Value: "value1"},
+						{Name: "label1", Value: id},
 						{Name: "label2", Value: "value2"},
 					},
-					rand.Int63(),
+					int64(i),
 					rand.Int63(),
 				},
 			})
@@ -497,23 +505,49 @@ func Benchmark_Table_Insert_10Rows_10Writers(b *testing.B) {
 		return rows
 	}
 
+	// Pre-generate all rows we're inserting
+	inserts := make(map[string][]Row, writers)
+	for i := 0; i < writers; i++ {
+		id := uuid.New().String()
+		inserts[id] = generateRows(id, rows*iterations)
+	}
+
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
+
+		// Create table for test
+		table := db.Table(uuid.New().String(), schema, log.NewNopLogger())
+
 		// Spawn n workers that will insert values into the table
-		n := 10
 		wg := &sync.WaitGroup{}
-		for i := 0; i < n; i++ {
+		for id := range inserts {
 			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				r := generateRows(10)
-				if err := table.Insert(r); err != nil {
-					fmt.Println("Received error on insert: ", err)
+			go func(id string, tbl *Table, w *sync.WaitGroup) {
+				defer w.Done()
+				for i := 0; i < iterations; i++ {
+					if err := tbl.Insert(inserts[id][i : i+rows]); err != nil {
+						fmt.Println("Received error on insert: ", err)
+					}
 				}
-			}()
+			}(id, table, wg)
 		}
 		wg.Wait()
+
+		b.StopTimer()
+
+		// Calculate the number of entries in database
+		totalrows := int64(0)
+		err := table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) error {
+			totalrows += ar.NumRows()
+			defer ar.Release()
+
+			return nil
+		})
+		require.NoError(b, err)
+		require.Equal(b, int64(rows*iterations*writers), totalrows)
+
+		b.StartTimer()
 	}
 }
 
