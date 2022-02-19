@@ -105,7 +105,7 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 	for it.Next() {
 		rows = append(rows, Row{Values: it.Values()})
 		if len(rows) == n && len(granules) != count-1 { // If we have n rows, and aren't on the last granule, create the n-sized granule
-			p, err := NewPart(tx, g.schema.Columns, NewSimpleRowWriter(rows))
+			p, err := NewPart(tx, g.schema.columns, NewSimpleRowWriter(rows))
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
 			}
@@ -116,7 +116,7 @@ func (g *Granule) split(n int) ([]*Granule, error) {
 
 	// Save the remaining Granule
 	if len(rows) != 0 {
-		p, err := NewPart(tx, g.schema.Columns, NewSimpleRowWriter(rows))
+		p, err := NewPart(tx, g.schema.columns, NewSimpleRowWriter(rows))
 		if err != nil {
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new part: %w", err)
@@ -143,7 +143,7 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 	cols := make([]int, len(p.columns))
 	names := make([][]string, len(p.columns))
 	for i, c := range p.columns {
-		if g.schema.Columns[i].Dynamic {
+		if g.schema.columns[i].Dynamic {
 			cols[i] = len(c.(*DynamicColumn).dynamicColumns)
 			names[i] = make([]string, cols[i])
 			for j, name := range c.(*DynamicColumn).dynamicColumns {
@@ -159,7 +159,7 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 	i := 0 // i is the index into our arrow schema
 	for j, c := range p.columns {
 
-		switch g.schema.Columns[j].Dynamic {
+		switch g.schema.columns[j].Dynamic {
 		case true: // expand the dynamic columns
 			d := c.(*DynamicColumn) // TODO this is gross and we should change this iteration
 			for k, name := range d.dynamicColumns {

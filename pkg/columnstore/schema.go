@@ -247,9 +247,9 @@ func (d ColumnDefinition) String() string {
 }
 
 type Schema struct {
-	Columns     []ColumnDefinition
-	OrderedBy   []string
-	GranuleSize int
+	columns     []ColumnDefinition
+	orderedBy   []string
+	granuleSize int
 
 	// ordered are the indicies to the Columns array that are to be ordered. If OrderedBy is empty this will contain all indicies of Columns
 	ordered []int
@@ -258,9 +258,9 @@ type Schema struct {
 // NewSchema returns a new schema
 func NewSchema(cols []ColumnDefinition, granuleSize int, orderedBy ...string) Schema {
 	s := Schema{
-		Columns:     cols,
-		GranuleSize: granuleSize,
-		OrderedBy:   orderedBy,
+		columns:     cols,
+		granuleSize: granuleSize,
+		orderedBy:   orderedBy,
 
 		ordered: []int{},
 	}
@@ -286,7 +286,7 @@ func NewSchema(cols []ColumnDefinition, granuleSize int, orderedBy ...string) Sc
 }
 
 func (s Schema) ColumnDefinition(name string) (ColumnDefinition, bool) {
-	for _, c := range s.Columns {
+	for _, c := range s.columns {
 		if !c.Dynamic && c.Name == name {
 			return c, true
 		}
@@ -295,28 +295,28 @@ func (s Schema) ColumnDefinition(name string) (ColumnDefinition, bool) {
 }
 
 func (s Schema) Equals(other Schema) bool {
-	if len(s.Columns) != len(other.Columns) {
+	if len(s.columns) != len(other.columns) {
 		return false
 	}
-	for i, c := range s.Columns {
-		if c != other.Columns[i] {
+	for i, c := range s.columns {
+		if c != other.columns[i] {
 			return false
 		}
 	}
 
-	for i, c := range s.OrderedBy {
-		if c != other.OrderedBy[i] {
+	for i, c := range s.orderedBy {
+		if c != other.orderedBy[i] {
 			return false
 		}
 	}
 
-	return s.GranuleSize == other.GranuleSize
+	return s.granuleSize == other.granuleSize
 }
 
 // ToArrow returns the schema in arrow schema format
 func (s Schema) ToArrow(dynamicColNames [][]string, dynamicColCounts []int) *arrow.Schema {
-	fields := make([]arrow.Field, 0, len(s.Columns))
-	for i, c := range s.Columns {
+	fields := make([]arrow.Field, 0, len(s.columns))
+	for i, c := range s.columns {
 
 		switch c.Dynamic {
 		case true: // split out the dynamic columns into multiple arrow cols
@@ -347,9 +347,9 @@ func (s Schema) RowLessThan(a, b []interface{}) bool {
 	for _, k := range s.ordered {
 		vi := a[k]
 		vj := b[k]
-		less := s.Columns[k].Type.Less
-		equal := s.Columns[k].Type.Equal
-		if s.Columns[k].Dynamic {
+		less := s.columns[k].Type.Less
+		equal := s.columns[k].Type.Equal
+		if s.columns[k].Dynamic {
 			dci := vi.([]DynamicColumnValue)
 			dcj := vj.([]DynamicColumnValue)
 			end := int(math.Min(float64(len(dci)), float64(len(dcj))))

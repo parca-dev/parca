@@ -152,10 +152,10 @@ func merge(tx uint64, schema *Schema, its []*PartIterator) (*Part, error) {
 	}
 
 	if len(partsWithData) == 0 {
-		return NewEmptyPart(tx, schema.Columns)
+		return NewEmptyPart(tx, schema.columns)
 	}
 
-	return NewPart(tx, schema.Columns, &streamingRowWriter{
+	return NewPart(tx, schema.columns, &streamingRowWriter{
 		it: newMultiPartIterator(schema, partsWithData),
 	})
 }

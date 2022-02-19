@@ -114,13 +114,13 @@ func (t *Table) Insert(rows []Row) error {
 
 	rowsToInsertPerGranule := t.splitRowsByGranule(rows)
 	for granule, rows := range rowsToInsertPerGranule {
-		p, err := NewPart(tx, t.schema.Columns, NewSimpleRowWriter(rows))
+		p, err := NewPart(tx, t.schema.columns, NewSimpleRowWriter(rows))
 		if err != nil {
 			return err
 		}
 
 		granule.AddPart(p)
-		if granule.Cardinality() >= t.schema.GranuleSize {
+		if granule.Cardinality() >= t.schema.granuleSize {
 			t.Add(1)
 			go t.splitGranule(granule) // TODO there may be a better way to schedule this
 		}
@@ -137,7 +137,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	defer granule.Unlock()
 
 	// Recheck to ensure the granule still needs to be split
-	if granule.pruned || granule.cardinality() < t.schema.GranuleSize {
+	if granule.pruned || granule.cardinality() < t.schema.granuleSize {
 		return
 	}
 
@@ -155,7 +155,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	}
 	granule.parts = []*Part{newpart}
 
-	granules, err := granule.split(t.schema.GranuleSize / 2) // TODO magic numbers
+	granules, err := granule.split(t.schema.granuleSize / 2) // TODO magic numbers
 	if err != nil {
 		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}
@@ -169,7 +169,9 @@ func (t *Table) splitGranule(granule *Granule) {
 	granule.pruned = true
 
 	for _, g := range granules {
-		t.index.ReplaceOrInsert(g)
+		if dupe := t.index.ReplaceOrInsert(g); dupe != nil {
+			level.Error(t.logger).Log("duplicate insert performed")
+		}
 	}
 }
 
