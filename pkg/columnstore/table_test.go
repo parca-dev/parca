@@ -536,6 +536,9 @@ func benchmarkTableInserts(b *testing.B, rows, iterations, writers int) {
 
 		b.StopTimer()
 
+		// Wait for all compaction routines to complete
+		table.Sync()
+
 		// Calculate the number of entries in database
 		totalrows := int64(0)
 		err := table.Iterator(memory.NewGoAllocator(), func(ar arrow.Record) error {
