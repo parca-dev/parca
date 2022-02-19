@@ -784,3 +784,53 @@ func Test_Table_Sorting(t *testing.T) {
 		require.NoError(t, err)
 	}
 }
+
+func Test_Granule_Less(t *testing.T) {
+
+	schema := &Schema{
+		Columns: []ColumnDefinition{{
+			Name:     "labels",
+			Type:     StringType,
+			Encoding: PlainEncoding,
+			Dynamic:  true,
+		}, {
+			Name:     "timestamp",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}, {
+			Name:     "value",
+			Type:     Int64Type,
+			Encoding: PlainEncoding,
+		}},
+		OrderedBy:   []string{"labels", "timestamp"},
+		GranuleSize: 2 << 13,
+	}
+	g := &Granule{
+		schema: schema,
+		least: Row{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "96c1760b-f162-4de6-8559-442701c2bb43"},
+					{Name: "label2", Value: "value2"},
+				},
+				int64(0),
+				int64(3403336116086076564),
+			},
+		},
+	}
+	g1 := &Granule{
+		schema: schema,
+		least: Row{
+			Values: []interface{}{
+				[]DynamicColumnValue{
+					{Name: "label1", Value: "b62bcfd2-53e7-49a4-ba29-acb0cb9286f0"},
+					{Name: "label2", Value: "value2"},
+				},
+				int64(0),
+				int64(4521089338578308515),
+			},
+		},
+	}
+
+	require.NotEqual(t, g.Less(g1), g1.Less(g))
+}
