@@ -2,7 +2,6 @@ package columnstore
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
@@ -23,8 +22,7 @@ type Table struct {
 	schema Schema
 	index  *btree.BTree
 
-	sync.RWMutex
-	sync.WaitGroup
+	work chan *Granule
 }
 
 type tableMetrics struct {
@@ -49,6 +47,7 @@ func newTable(
 		schema: schema,
 		index:  btree.New(2), // TODO make the degree a setting
 		logger: logger,
+		work:   make(chan *Granule, 1024), // TODO buffer?
 		metrics: &tableMetrics{
 			granulesCreated: promauto.With(reg).NewCounter(prometheus.CounterOpts{
 				Name: "granules_created",
@@ -78,8 +77,6 @@ func newTable(
 		Name: "index_size",
 		Help: "Number of granules in the table index currently.",
 	}, func() float64 {
-		t.RLock()
-		defer t.RUnlock()
 		return float64(t.index.Len())
 	})
 
@@ -94,7 +91,6 @@ func newTable(
 // safe to rely on if you control all writers. In the future we may need to add a way to
 // block new writes as well.
 func (t *Table) Sync() {
-	t.Wait()
 }
 
 func (t *Table) Insert(rows []Row) error {
@@ -108,8 +104,6 @@ func (t *Table) Insert(rows []Row) error {
 		return nil
 	}
 
-	t.RLock()
-	defer t.RUnlock()
 	tx, commit := t.db.begin()
 	defer commit()
 
@@ -122,8 +116,7 @@ func (t *Table) Insert(rows []Row) error {
 
 		granule.AddPart(p)
 		if granule.Cardinality() >= t.schema.granuleSize {
-			t.Add(1)
-			go t.splitGranule(granule) // TODO there may be a better way to schedule this
+			t.work <- granule
 		}
 	}
 
@@ -131,9 +124,6 @@ func (t *Table) Insert(rows []Row) error {
 }
 
 func (t *Table) splitGranule(granule *Granule) {
-	defer t.Done()
-	t.Lock()
-	defer t.Unlock()
 	granule.Lock()
 	defer granule.Unlock()
 
@@ -178,8 +168,6 @@ func (t *Table) splitGranule(granule *Granule) {
 
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
 func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) error) error {
-	t.RLock()
-	defer t.RUnlock()
 	tx := t.db.beginRead()
 
 	var err error
@@ -244,4 +232,11 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 	}
 
 	return rowsByGranule
+}
+
+// compactor is the background routine responsible for compacting and splitting granules. Only one compactor should ever be running at a time.
+func (t *Table) compactor() {
+	for granule := range t.work {
+		t.splitGranule(granule)
+	}
 }
