@@ -123,6 +123,7 @@ func (t *Table) Insert(rows []Row) error {
 		}
 
 		granule.AddPart(p)
+		// TODO if granule was pruned, copy writes to new granules
 		if granule.Cardinality(tx, t.db.txCompleted) >= t.schema.granuleSize {
 			t.work <- granule
 		}
