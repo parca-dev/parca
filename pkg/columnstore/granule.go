@@ -69,16 +69,19 @@ func (g *Granule) AddPart(p *Part) {
 	}
 }
 
-func (g *Granule) Cardinality() int {
+func (g *Granule) Cardinality(tx uint64, txCompleted func(uint64) uint64) int {
 	g.RLock()
 	defer g.RUnlock()
 
-	return g.cardinality()
+	return g.cardinality(tx, txCompleted)
 }
 
-func (g *Granule) cardinality() int {
+func (g *Granule) cardinality(tx uint64, txCompleted func(uint64) uint64) int {
 	res := 0
 	for _, p := range g.parts {
+		if p.tx > tx || txCompleted(p.tx) > tx {
+			continue
+		}
 		res += p.Cardinality
 	}
 	return res

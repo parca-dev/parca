@@ -123,7 +123,7 @@ func (t *Table) Insert(rows []Row) error {
 		}
 
 		granule.AddPart(p)
-		if granule.Cardinality() >= t.schema.granuleSize {
+		if granule.Cardinality(tx, t.db.txCompleted) >= t.schema.granuleSize {
 			t.work <- granule
 		}
 	}
@@ -136,7 +136,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	defer granule.Unlock()
 
 	// Recheck to ensure the granule still needs to be split
-	if granule.pruned || granule.cardinality() < t.schema.granuleSize {
+	if granule.pruned {
 		return
 	}
 
@@ -151,15 +151,12 @@ func (t *Table) splitGranule(granule *Granule) {
 	}
 	g := NewGranule(t.metrics.granulesCreated, &t.schema, newpart)
 
-	// Splitting of a granule that has no commited parts; abort
-	if g.cardinality() == 0 {
-		return
-	}
-
-	granules, err := granule.split(tx, t.schema.granuleSize/2) // TODO magic numbers
+	granules, err := g.split(tx, t.schema.granuleSize/2) // TODO magic numbers
 	if err != nil {
 		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}
+
+	fmt.Println("New granules: ", len(granules))
 
 	// TODO add remaining parts onto new granules
 	index := t.index.Clone()
@@ -178,6 +175,8 @@ func (t *Table) splitGranule(granule *Granule) {
 			level.Error(t.logger).Log("duplicate insert performed")
 		}
 	}
+
+	fmt.Println("New Index: ", index.Len())
 
 	// Point to the new index
 	atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&t.index)), unsafe.Pointer(index))
