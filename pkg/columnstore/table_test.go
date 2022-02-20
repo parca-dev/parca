@@ -538,6 +538,7 @@ func benchmarkTableInserts(b *testing.B, rows, iterations, writers int) {
 		b.StopTimer()
 
 		// Wait for all compaction routines to complete
+		close(table.work)
 		table.Sync()
 
 		// Calculate the number of entries in database

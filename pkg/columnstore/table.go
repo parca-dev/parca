@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"unsafe"
 
@@ -25,6 +26,7 @@ type Table struct {
 	index  *btree.BTree
 
 	work chan *Granule
+	sync.WaitGroup
 }
 
 type tableMetrics struct {
@@ -85,6 +87,9 @@ func newTable(
 	g := NewGranule(t.metrics.granulesCreated, &t.schema, []*Part{}...)
 	t.index.ReplaceOrInsert(g)
 
+	t.Add(1)
+	go t.compactor()
+
 	return t
 }
 
@@ -93,6 +98,7 @@ func newTable(
 // safe to rely on if you control all writers. In the future we may need to add a way to
 // block new writes as well.
 func (t *Table) Sync() {
+	t.Wait()
 }
 
 func (t *Table) Insert(rows []Row) error {
@@ -254,6 +260,7 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 
 // compactor is the background routine responsible for compacting and splitting granules. Only one compactor should ever be running at a time.
 func (t *Table) compactor() {
+	defer t.Done()
 	for granule := range t.work {
 		t.splitGranule(granule)
 	}
