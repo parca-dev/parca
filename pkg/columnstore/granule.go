@@ -68,12 +68,12 @@ func (g *Granule) AddPart(p *Part) {
 		if g.schema.RowLessThan(r.Values, g.least.Values) {
 			g.least = r
 		}
-		return
-	}
 
-	// If the granule was pruned, copy part to new granule
-	if g.pruned {
-		addPartToGranule(g.newGranules, p)
+		// If the granule was pruned, copy part to new granule
+		if g.pruned {
+			addPartToGranule(g.newGranules, p)
+		}
+		return
 	}
 }
 
