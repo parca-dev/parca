@@ -67,6 +67,11 @@ func (g *Granule) AddPart(p *Part) {
 		}
 		return
 	}
+
+	// If the granule was pruned, copy part to new granule
+	if g.pruned {
+		// TODO
+	}
 }
 
 func (g *Granule) Cardinality(tx uint64, txCompleted func(uint64) uint64) int {
