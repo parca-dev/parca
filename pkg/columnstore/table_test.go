@@ -259,6 +259,7 @@ func Test_Table_GranuleSplit(t *testing.T) {
 	}
 
 	// Wait for the index to be updated by the asynchronous granule split.
+	close(table.work)
 	table.Sync()
 
 	table.Iterator(memory.NewGoAllocator(), func(r arrow.Record) error {
@@ -371,6 +372,7 @@ func Test_Table_InsertLowest(t *testing.T) {
 	}
 
 	// Wait for the index to be updated by the asynchronous granule split.
+	close(table.work)
 	table.Sync()
 
 	require.Equal(t, 2, table.index.Len())
