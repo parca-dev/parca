@@ -156,8 +156,6 @@ func (t *Table) splitGranule(granule *Granule) {
 		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}
 
-	fmt.Println("New granules: ", len(granules))
-
 	// TODO add remaining parts onto new granules
 	index := t.index.Clone()
 
@@ -175,8 +173,6 @@ func (t *Table) splitGranule(granule *Granule) {
 			level.Error(t.logger).Log("duplicate insert performed")
 		}
 	}
-
-	fmt.Println("New Index: ", index.Len())
 
 	// Point to the new index
 	atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&t.index)), unsafe.Pointer(index))
