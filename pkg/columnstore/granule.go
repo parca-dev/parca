@@ -73,8 +73,7 @@ func (g *Granule) AddPart(p *Part) {
 
 	// If the granule was pruned, copy part to new granule
 	if g.pruned {
-		// TODO arbitrarily add to the first one, need to find the one it belongs in
-		g.newGranules[0].AddPart(p) // TODO Deadlock?
+		addPartToGranule(g.newGranules, p)
 	}
 }
 

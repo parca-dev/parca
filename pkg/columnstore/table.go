@@ -155,9 +155,9 @@ func (t *Table) splitGranule(granule *Granule) {
 		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}
 
-	// TODO add remaining parts onto new granules
+	// add remaining parts onto new granules
 	for _, p := range remain {
-		granules[0].AddPart(p) // TODO arbitrarily add remainder to first granule
+		addPartToGranule(granules, p)
 	}
 	index := t.index.Clone()
 
@@ -260,5 +260,26 @@ func (t *Table) compactor() {
 	defer t.Done()
 	for granule := range t.work {
 		t.splitGranule(granule)
+	}
+}
+
+// addPartToGranule finds the corresponding granule it belongs to in a sorted list of Granules
+func addPartToGranule(granules []*Granule, p *Part) {
+	it := p.Iterator()
+	if it.Next() {
+		row := it.Values()
+		var prev *Granule
+		for _, g := range granules {
+			if g.schema.RowLessThan(row, g.least.Values) {
+				if prev != nil {
+					prev.AddPart(p)
+					return
+				}
+			}
+			prev = g
+		}
+
+		// Save part to prev
+		prev.AddPart(p)
 	}
 }
