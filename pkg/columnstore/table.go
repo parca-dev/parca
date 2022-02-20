@@ -144,8 +144,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	tx, commit := t.db.begin()
 	defer commit()
 
-	// TODO filter merge parts that can't be merged
-	newpart, err := Merge(tx, t.db.txCompleted, &t.schema, granule.parts...) // need to merge all parts in a granule before splitting
+	newpart, remain, err := FilterMerge(tx, t.db.txCompleted, &t.schema, granule.parts...) // need to merge all parts in a granule before splitting
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
@@ -157,6 +156,9 @@ func (t *Table) splitGranule(granule *Granule) {
 	}
 
 	// TODO add remaining parts onto new granules
+	for _, p := range remain {
+		granules[0].AddPart(p) // TODO arbitrarily add remainder to first granule
+	}
 	index := t.index.Clone()
 
 	deleted := index.Delete(granule)
@@ -166,7 +168,7 @@ func (t *Table) splitGranule(granule *Granule) {
 
 	// mark this granule as having been pruned
 	granule.pruned = true
-	// TODO add new granules to old granule
+	granule.newGranules = granules
 
 	for _, g := range granules {
 		if dupe := index.ReplaceOrInsert(g); dupe != nil {

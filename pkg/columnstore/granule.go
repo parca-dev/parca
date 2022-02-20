@@ -24,6 +24,9 @@ type Granule struct {
 
 	// pruned indicates if this Granule is longer found in the index
 	pruned bool
+
+	// newGranules are the granules that were created after a split
+	newGranules []*Granule
 }
 
 func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Part) *Granule {
@@ -70,7 +73,8 @@ func (g *Granule) AddPart(p *Part) {
 
 	// If the granule was pruned, copy part to new granule
 	if g.pruned {
-		// TODO
+		// TODO arbitrarily add to the first one, need to find the one it belongs in
+		g.newGranules[0].AddPart(p) // TODO Deadlock?
 	}
 }
 
