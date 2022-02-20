@@ -2,6 +2,8 @@ package columnstore
 
 import (
 	"fmt"
+	"sync/atomic"
+	"unsafe"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
@@ -77,7 +79,7 @@ func newTable(
 		Name: "index_size",
 		Help: "Number of granules in the table index currently.",
 	}, func() float64 {
-		return float64(t.index.Len())
+		return float64(t.Index().Len())
 	})
 
 	g := NewGranule(t.metrics.granulesCreated, &t.schema, []*Part{}...)
@@ -132,38 +134,47 @@ func (t *Table) splitGranule(granule *Granule) {
 		return
 	}
 
-	// NOTE: since splitGranule is currently a stop-the-world operation, and we have an exclusive write lock on the table,
-	// we know that any future accesses to these parts will have a higher transaction than the tx value we obtain here.
-	// So we can overwrite the tx value with our new one. This approach will stop working when splits/merges are a concurrent operation
-	// and will require moving to a model that duplicates the table index. At this time that's an early optimization, so we're going with this approach until
-	// such a time that stop the world becomes untenable.
+	// Obtain a new tx for this compaction
 	tx, commit := t.db.begin()
 	defer commit()
 
+	// TODO filter merge parts that can't be merged
 	newpart, err := Merge(tx, t.db.txCompleted, &t.schema, granule.parts...) // need to merge all parts in a granule before splitting
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
-	granule.parts = []*Part{newpart}
+	g := NewGranule(t.metrics.granulesCreated, &t.schema, newpart)
+
+	// Splitting of a granule that has no commited parts; abort
+	if g.cardinality() == 0 {
+		return
+	}
 
 	granules, err := granule.split(tx, t.schema.granuleSize/2) // TODO magic numbers
 	if err != nil {
 		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}
 
-	deleted := t.index.Delete(granule)
+	// TODO add remaining parts onto new granules
+	index := t.index.Clone()
+
+	deleted := index.Delete(granule)
 	if deleted == nil {
 		level.Error(t.logger).Log("msg", "failed to delete granule during split")
 	}
 
 	// mark this granule as having been pruned
 	granule.pruned = true
+	// TODO add new granules to old granule
 
 	for _, g := range granules {
-		if dupe := t.index.ReplaceOrInsert(g); dupe != nil {
+		if dupe := index.ReplaceOrInsert(g); dupe != nil {
 			level.Error(t.logger).Log("duplicate insert performed")
 		}
 	}
+
+	// Point to the new index
+	atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&t.index)), unsafe.Pointer(index))
 }
 
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
@@ -184,8 +195,14 @@ func (t *Table) Iterator(pool memory.Allocator, iterator func(r arrow.Record) er
 	return err
 }
 
+// Index provides atomic access to the table index
+func (t *Table) Index() *btree.BTree {
+	ptr := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&t.index)))
+	return (*btree.BTree)(ptr)
+}
+
 func (t *Table) granuleIterator(iterator func(g *Granule) bool) {
-	t.index.Ascend(func(i btree.Item) bool {
+	t.Index().Ascend(func(i btree.Item) bool {
 		g := i.(*Granule)
 		return iterator(g)
 	})
@@ -195,15 +212,16 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 	rowsByGranule := map[*Granule][]Row{}
 
 	// Special case: if there is only one granule, insert parts into it until full.
-	if t.index.Len() == 1 {
-		rowsByGranule[t.index.Min().(*Granule)] = rows
+	index := t.Index()
+	if index.Len() == 1 {
+		rowsByGranule[index.Min().(*Granule)] = rows
 		return rowsByGranule
 	}
 
 	// TODO: we might be able to do ascend less than or ascend greater than here?
 	j := 0
 	var prev *Granule
-	t.index.Ascend(func(i btree.Item) bool {
+	index.Ascend(func(i btree.Item) bool {
 		g := i.(*Granule)
 		g.RLock()
 		defer g.RUnlock()
