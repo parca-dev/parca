@@ -101,25 +101,32 @@ func TestAggregateTopByFunction(t *testing.T) {
 	}{{
 		name: "Empty",
 		input: &pb.Top{
-			List: []*pb.TopNode{},
+			Total: 0,
+			List:  []*pb.TopNode{},
 		},
 		output: &pb.Top{
-			List: []*pb.TopNode{},
+			Total:    0,
+			Reported: 0,
+			List:     []*pb.TopNode{},
 		},
 	}, {
 		name: "NoMeta",
 		input: &pb.Top{
+			Total: 2,
 			List: []*pb.TopNode{
 				{Meta: nil, Cumulative: 1, Flat: 1},
 				{Meta: nil, Cumulative: 2, Flat: 2},
 			},
 		},
 		output: &pb.Top{
-			List: []*pb.TopNode{},
+			Total:    2,
+			Reported: 0,
+			List:     []*pb.TopNode{},
 		},
 	}, {
 		name: "UniqueAddress",
 		input: &pb.Top{
+			Total: 2,
 			List: []*pb.TopNode{
 				{
 					Meta: &pb.TopNodeMeta{
@@ -140,6 +147,8 @@ func TestAggregateTopByFunction(t *testing.T) {
 			},
 		},
 		output: &pb.Top{
+			Total:    2,
+			Reported: 2,
 			List: []*pb.TopNode{
 				{
 					Meta: &pb.TopNodeMeta{
@@ -162,6 +171,7 @@ func TestAggregateTopByFunction(t *testing.T) {
 	}, {
 		name: "UniqueFunction",
 		input: &pb.Top{
+			Total: 2,
 			List: []*pb.TopNode{
 				{
 					Meta: &pb.TopNodeMeta{
@@ -184,6 +194,8 @@ func TestAggregateTopByFunction(t *testing.T) {
 			},
 		},
 		output: &pb.Top{
+			Total:    2,
+			Reported: 2,
 			List: []*pb.TopNode{
 				{
 					Meta: &pb.TopNodeMeta{
@@ -208,6 +220,7 @@ func TestAggregateTopByFunction(t *testing.T) {
 	}, {
 		name: "AggregateAddress",
 		input: &pb.Top{
+			Total: 2,
 			List: []*pb.TopNode{
 				{
 					Meta: &pb.TopNodeMeta{
@@ -228,6 +241,8 @@ func TestAggregateTopByFunction(t *testing.T) {
 			},
 		},
 		output: &pb.Top{
+			Total:    2,
+			Reported: 1,
 			List: []*pb.TopNode{
 				{
 					Meta: &pb.TopNodeMeta{
@@ -242,6 +257,7 @@ func TestAggregateTopByFunction(t *testing.T) {
 	}, {
 		name: "AggregateFunction",
 		input: &pb.Top{
+			Total: 2,
 			List: []*pb.TopNode{
 				{
 					Meta: &pb.TopNodeMeta{
@@ -264,6 +280,8 @@ func TestAggregateTopByFunction(t *testing.T) {
 			},
 		},
 		output: &pb.Top{
+			Total:    2,
+			Reported: 1,
 			List: []*pb.TopNode{
 				{
 					Meta: &pb.TopNodeMeta{
