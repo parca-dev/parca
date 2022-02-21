@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/goburrow/cache"
+
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 

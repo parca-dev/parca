@@ -185,6 +185,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "maxbrunet",
+      "name": "Maxime Brunet",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32458727?v=4",
+      "profile": "https://maxbru.net",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,

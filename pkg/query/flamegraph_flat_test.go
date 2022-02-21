@@ -21,14 +21,15 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
-	metapb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
+
+	metapb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestGenerateFlamegraphFlat(t *testing.T) {

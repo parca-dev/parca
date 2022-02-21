@@ -21,13 +21,14 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/common-nighthawk/go-figure"
 	"github.com/go-kit/log/level"
-	"github.com/parca-dev/parca/pkg/parca"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/parca-dev/parca/pkg/parca"
 )
 
 var (
-	version string = "dev"
-	commit  string = "dev"
+	version = "dev"
+	commit  = "dev"
 )
 
 func main() {
@@ -54,7 +55,6 @@ func main() {
 	registry := prometheus.NewRegistry()
 
 	err := parca.Run(ctx, logger, registry, flags, version)
-
 	if err != nil {
 		level.Error(logger).Log("msg", "Program exited with error", "err", err)
 		os.Exit(1)

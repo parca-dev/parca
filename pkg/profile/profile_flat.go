@@ -59,7 +59,7 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 	}
 
 	return &FlatProfile{
-		Meta:        ProfileMetaFromPprof(p, sampleIndex),
+		Meta:        MetaFromPprof(p, sampleIndex),
 		FlatSamples: pfn.samples,
 	}, nil
 }

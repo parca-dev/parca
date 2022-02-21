@@ -19,11 +19,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestHead_MaxTime(t *testing.T) {

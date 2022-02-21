@@ -19,10 +19,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/trace"
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // We need to import the SQLite driver.
+
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
 var _ ProfileMetaStore = &OnDiskSQLiteMetaStore{}

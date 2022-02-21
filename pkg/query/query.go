@@ -24,11 +24,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -37,6 +32,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/storage"
 )
 
 var (
@@ -45,7 +46,7 @@ var (
 )
 
 // Query is the read api interface for parca
-// It implements the proto/query/query.proto APIServer interface
+// It implements the proto/query/query.proto APIServer interface.
 type Query struct {
 	pb.UnimplementedQueryServiceServer
 
@@ -69,7 +70,7 @@ func New(
 	}
 }
 
-// QueryRange issues a range query against the storage
+// QueryRange issues a range query against the storage.
 func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.QueryRangeResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -161,7 +162,7 @@ func (q *Query) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.
 	return res, nil
 }
 
-// Query issues a instant query against the storage
+// Query issues a instant query against the storage.
 func (q *Query) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -393,12 +394,12 @@ func (q *Query) merge(ctx context.Context, sel []*labels.Matcher, start, end tim
 	return storage.MergeSeriesSetProfiles(ctx, q.tracer, set)
 }
 
-// Series issues a series request against the storage
+// Series issues a series request against the storage.
 func (q *Query) Series(ctx context.Context, req *pb.SeriesRequest) (*pb.SeriesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
-// Labels issues a labels request against the storage
+// Labels issues a labels request against the storage.
 func (q *Query) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
 	matcherSets, err := parseMatchers(req.Match)
 	if err != nil {
@@ -461,7 +462,7 @@ func (q *Query) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsRe
 	}, nil
 }
 
-// Values issues a values request against the storage
+// Values issues a values request against the storage.
 func (q *Query) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResponse, error) {
 	name := req.LabelName
 

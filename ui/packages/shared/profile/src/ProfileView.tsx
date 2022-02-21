@@ -126,14 +126,14 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
           link.href = window.URL.createObjectURL(blob);
           link.download = 'profile.pb.gz';
           link.click();
+        } else {
+          console.error(error);
         }
       }
     );
   };
 
-  const resetIcicleGraph = (_: React.MouseEvent<HTMLElement>) => {
-    setCurPath([]);
-  };
+  const resetIcicleGraph = () => setCurPath([]);
 
   const setNewCurPath = (path: string[]) => {
     if (!arrayEquals(curPath, path)) {

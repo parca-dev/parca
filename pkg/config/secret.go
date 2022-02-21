@@ -27,7 +27,7 @@ func (s Secret) MarshalYAML() (interface{}, error) {
 	return nil, nil
 }
 
-//UnmarshalYAML implements the yaml.Unmarshaler interface for Secrets.
+// UnmarshalYAML implements the yaml.Unmarshaler interface for Secrets.
 func (s *Secret) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type plain Secret
 	return unmarshal((*plain)(s))

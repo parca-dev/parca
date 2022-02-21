@@ -20,15 +20,15 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 
+	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 )
 
-// NewManager is the Manager constructor
+// NewManager is the Manager constructor.
 func NewManager(logger log.Logger, reg prometheus.Registerer, store profilepb.ProfileStoreServiceServer, scrapeConfigs []*config.ScrapeConfig) *Manager {
 	if logger == nil {
 		logger = log.NewNopLogger()
@@ -143,7 +143,7 @@ type Manager struct {
 	targetScrapeSampleOutOfBounds prometheus.Counter
 }
 
-// Run stars the manager with a set of scrape configs
+// Run stars the manager with a set of scrape configs.
 func (m *Manager) Run(tsets <-chan map[string][]*targetgroup.Group) error {
 	go m.reloader()
 	for {
@@ -215,7 +215,6 @@ func (m *Manager) reload() {
 			sp.Sync(groups)
 			wg.Done()
 		}(sp, groups)
-
 	}
 	m.mtxScrape.Unlock()
 	wg.Wait()
@@ -246,7 +245,6 @@ func (m *Manager) TargetsAll() map[string][]*Target {
 	targets := make(map[string][]*Target, len(m.scrapePools))
 	for tset, sp := range m.scrapePools {
 		targets[tset] = append(sp.ActiveTargets(), sp.DroppedTargets()...)
-
 	}
 	return targets
 }

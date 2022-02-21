@@ -291,19 +291,6 @@ export const RawMetricsGraph = ({
   },
   []);
 
-  const extentsX = series.map(function (s) {
-    return d3.extent(s.values, function (d) {
-      return d[0];
-    });
-  });
-
-  const minX = d3.min(extentsX, function (d) {
-    return d[0];
-  });
-  const maxX = d3.max(extentsX, function (d) {
-    return d[1];
-  });
-
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
       return d[1];
@@ -320,7 +307,7 @@ export const RawMetricsGraph = ({
   /* Scale */
   const xScale = d3
     .scaleUtc()
-    .domain([minX, maxX])
+    .domain([from, to])
     .range([0, width - margin - marginRight]);
 
   const yScale = d3

@@ -17,9 +17,10 @@ import (
 	"context"
 	"sync"
 
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/protobuf/proto"
+
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
 type metaStoreCache struct {
@@ -42,23 +43,23 @@ type metaStoreCache struct {
 }
 
 type metrics struct {
-	locationIdHits    prometheus.Counter
-	locationIdMisses  prometheus.Counter
+	locationIDHits    prometheus.Counter
+	locationIDMisses  prometheus.Counter
 	locationKeyHits   prometheus.Counter
 	locationKeyMisses prometheus.Counter
 
-	mappingIdHits    prometheus.Counter
-	mappingIdMisses  prometheus.Counter
+	mappingIDHits    prometheus.Counter
+	mappingIDMisses  prometheus.Counter
 	mappingKeyHits   prometheus.Counter
 	mappingKeyMisses prometheus.Counter
 
-	functionIdHits    prometheus.Counter
-	functionIdMisses  prometheus.Counter
+	functionIDHits    prometheus.Counter
+	functionIDMisses  prometheus.Counter
 	functionKeyHits   prometheus.Counter
 	functionKeyMisses prometheus.Counter
 
-	locationLinesIdHits   prometheus.Counter
-	locationLinesIdMisses prometheus.Counter
+	locationLinesIDHits   prometheus.Counter
+	locationLinesIDMisses prometheus.Counter
 }
 
 func newMetaStoreCacheMetrics(reg prometheus.Registerer) *metrics {
@@ -92,23 +93,23 @@ func newMetaStoreCacheMetrics(reg prometheus.Registerer) *metrics {
 	)
 
 	m := &metrics{
-		locationIdHits:    idHits.WithLabelValues("location"),
-		locationIdMisses:  idMisses.WithLabelValues("location"),
+		locationIDHits:    idHits.WithLabelValues("location"),
+		locationIDMisses:  idMisses.WithLabelValues("location"),
 		locationKeyHits:   keyHits.WithLabelValues("location"),
 		locationKeyMisses: keyMisses.WithLabelValues("location"),
 
-		mappingIdHits:    idHits.WithLabelValues("mapping"),
-		mappingIdMisses:  idMisses.WithLabelValues("mapping"),
+		mappingIDHits:    idHits.WithLabelValues("mapping"),
+		mappingIDMisses:  idMisses.WithLabelValues("mapping"),
 		mappingKeyHits:   keyHits.WithLabelValues("mapping"),
 		mappingKeyMisses: keyMisses.WithLabelValues("mapping"),
 
-		functionIdHits:    idHits.WithLabelValues("function"),
-		functionIdMisses:  idMisses.WithLabelValues("function"),
+		functionIDHits:    idHits.WithLabelValues("function"),
+		functionIDMisses:  idMisses.WithLabelValues("function"),
 		functionKeyHits:   keyHits.WithLabelValues("function"),
 		functionKeyMisses: keyMisses.WithLabelValues("function"),
 
-		locationLinesIdHits:   idHits.WithLabelValues("location_lines"),
-		locationLinesIdMisses: idMisses.WithLabelValues("location_lines"),
+		locationLinesIDHits:   idHits.WithLabelValues("location_lines"),
+		locationLinesIDMisses: idMisses.WithLabelValues("location_lines"),
 	}
 
 	if reg != nil {
@@ -180,11 +181,11 @@ func (c *metaStoreCache) getLocationByID(ctx context.Context, id []byte) (*pb.Lo
 
 	l, found := c.locationsByID[string(id)]
 	if !found {
-		c.metrics.locationIdHits.Inc()
+		c.metrics.locationIDHits.Inc()
 		return nil, false, nil
 	}
 
-	c.metrics.locationIdHits.Inc()
+	c.metrics.locationIDHits.Inc()
 	return proto.Clone(l).(*pb.Location), found, nil
 }
 
@@ -257,11 +258,11 @@ func (c *metaStoreCache) getMappingByID(ctx context.Context, id []byte) (*pb.Map
 
 	m, found := c.mappingsByID[string(id)]
 	if !found {
-		c.metrics.mappingIdHits.Inc()
+		c.metrics.mappingIDHits.Inc()
 		return nil, false, nil
 	}
 
-	c.metrics.mappingIdHits.Inc()
+	c.metrics.mappingIDHits.Inc()
 	return proto.Clone(m).(*pb.Mapping), found, nil
 }
 
@@ -350,11 +351,11 @@ func (c *metaStoreCache) getFunctionByID(ctx context.Context, functionID []byte)
 
 	f, found := c.functionsByID[string(functionID)]
 	if !found {
-		c.metrics.functionIdMisses.Inc()
+		c.metrics.functionIDMisses.Inc()
 		return nil, false, nil
 	}
 
-	c.metrics.functionIdHits.Inc()
+	c.metrics.functionIDHits.Inc()
 	return proto.Clone(f).(*pb.Function), found, nil
 }
 
@@ -404,7 +405,7 @@ func (c *metaStoreCache) getLocationLinesByID(ctx context.Context, locationID []
 
 	ll, found := c.locationLinesByID[string(locationID)]
 	if !found {
-		c.metrics.locationLinesIdMisses.Inc()
+		c.metrics.locationLinesIDMisses.Inc()
 		return nil, false, nil
 	}
 
@@ -413,6 +414,6 @@ func (c *metaStoreCache) getLocationLinesByID(ctx context.Context, locationID []
 		v[i] = proto.Clone(l).(*pb.Line)
 	}
 
-	c.metrics.locationLinesIdHits.Inc()
+	c.metrics.locationLinesIDHits.Inc()
 	return v, true, nil
 }

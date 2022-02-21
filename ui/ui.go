@@ -16,6 +16,7 @@ package ui
 import "embed"
 
 //go:embed packages/app/web/dist
+//go:embed packages/app/web/dist/targets
 //go:embed packages/app/web/dist/_next
 //go:embed packages/app/web/dist/_next/static/chunks/pages/*.js
 //go:embed packages/app/web/dist/_next/static/*/*.js

@@ -21,10 +21,11 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/parca-dev/parca/pkg/metastore"
 )
 
 func TestProfileFlatNormalizer(t *testing.T) {

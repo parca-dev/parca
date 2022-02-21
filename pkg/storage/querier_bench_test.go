@@ -18,10 +18,11 @@ import (
 	"fmt"
 	"testing"
 
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 // Make entries ~50B in size, to emulate real-world high cardinality.

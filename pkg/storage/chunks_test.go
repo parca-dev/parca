@@ -16,8 +16,9 @@ package storage
 import (
 	"testing"
 
-	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
 func TestMultiChunks(t *testing.T) {

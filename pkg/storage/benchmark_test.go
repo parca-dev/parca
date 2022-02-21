@@ -28,14 +28,15 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/metastore"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/parca-dev/parca/pkg/metastore"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/storage"
 )
 
 func loadProfiles(b *testing.B, amount int) ([]*profile.Profile, error) {
@@ -165,9 +166,9 @@ func BenchmarkIterator(b *testing.B) {
 		require.NoError(b, err)
 	}
 
-	//1614253659535 - 130th sample
-	//1614255868920 - 400th sample
-	//1614262838920 - 1250th sample
+	// 1614253659535 - 130th sample
+	// 1614255868920 - 400th sample
+	// 1614262838920 - 1250th sample
 
 	var q storage.Querier
 	if b.N == 1 {

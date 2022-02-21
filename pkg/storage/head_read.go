@@ -22,9 +22,7 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 )
 
-var (
-	ErrNotFound = errors.New("not found")
-)
+var ErrNotFound = errors.New("not found")
 
 // IndexReader provides reading access of serialized index data.
 type IndexReader interface {

@@ -22,8 +22,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/dgraph-io/sroar"
-	"github.com/parca-dev/parca/pkg/storage/index"
 	"github.com/prometheus/prometheus/model/labels"
+
+	"github.com/parca-dev/parca/pkg/storage/index"
 )
 
 // Bitmap used by func isRegexMetaCharacter to check whether a character needs to be escaped.
@@ -92,7 +93,6 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 					bitmap.And(bm)
 				}
 			} else { // l="a"
-
 				// Non-Not matcher, use normal postingsForMatcher.
 				bm, err := postingsForMatcher(ix, m)
 				if err != nil {
@@ -132,7 +132,7 @@ func PostingsForMatchers(ix IndexReader, ms ...*labels.Matcher) (*sroar.Bitmap, 
 	}
 
 	// If there's nothing to subtract from, add in everything and remove the noBitmap later.
-	//if bitmap.IsEmpty() && !noBitmap.IsEmpty() {
+	// if bitmap.IsEmpty() && !noBitmap.IsEmpty() {
 	if bitmap.GetCardinality() == 0 && noBitmap.GetCardinality() != 0 {
 		allPostings, err := ix.Postings(index.AllPostingsKey())
 		if err != nil {
