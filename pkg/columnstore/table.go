@@ -157,17 +157,13 @@ func (t *Table) splitGranule(granule *Granule) {
 	for _, p := range remain {
 		addPartToGranule(granules, p)
 	}
-	curIndex := t.Index() // TODO(THOR): I believe there's a race condition here, where we clone the current index, and after we clone it, another compaction routine swaps a new index.
+	curIndex := t.Index()
 	index := curIndex.Clone()
 
 	deleted := index.Delete(granule)
 	if deleted == nil {
 		level.Error(t.logger).Log("msg", "failed to delete granule during split")
 	}
-
-	// mark this granule as having been pruned
-	granule.pruned = true
-	granule.newGranules = granules
 
 	for _, g := range granules {
 		if dupe := index.ReplaceOrInsert(g); dupe != nil {
@@ -176,7 +172,11 @@ func (t *Table) splitGranule(granule *Granule) {
 	}
 
 	// Point to the new index
-	atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&curIndex)), unsafe.Pointer(index))
+	if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&curIndex)), unsafe.Pointer(curIndex), unsafe.Pointer(index)) {
+		// mark this granule as having been pruned
+		granule.pruned = true
+		granule.newGranules = granules
+	}
 }
 
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
