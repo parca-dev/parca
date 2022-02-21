@@ -315,7 +315,8 @@ export namespace QueryRequest {
 
   export interface ReportTypeMap {
     REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: 0;
-    REPORT_TYPE_PPROF_UNSPECIFIED: 1;
+    REPORT_TYPE_PPROF: 1;
+    REPORT_TYPE_TOP: 2;
   }
 
   export const ReportType: ReportTypeMap;
@@ -325,6 +326,110 @@ export namespace QueryRequest {
     DIFF = 2,
     MERGE = 3,
     SINGLE = 4,
+  }
+}
+
+export class Top extends jspb.Message {
+  clearListList(): void;
+  getListList(): Array<TopNode>;
+  setListList(value: Array<TopNode>): void;
+  addList(value?: TopNode, index?: number): TopNode;
+
+  getReported(): number;
+  setReported(value: number): void;
+
+  getTotal(): number;
+  setTotal(value: number): void;
+
+  getUnit(): string;
+  setUnit(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Top.AsObject;
+  static toObject(includeInstance: boolean, msg: Top): Top.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Top, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Top;
+  static deserializeBinaryFromReader(message: Top, reader: jspb.BinaryReader): Top;
+}
+
+export namespace Top {
+  export type AsObject = {
+    listList: Array<TopNode.AsObject>,
+    reported: number,
+    total: number,
+    unit: string,
+  }
+}
+
+export class TopNode extends jspb.Message {
+  hasMeta(): boolean;
+  clearMeta(): void;
+  getMeta(): TopNodeMeta | undefined;
+  setMeta(value?: TopNodeMeta): void;
+
+  getCumulative(): number;
+  setCumulative(value: number): void;
+
+  getFlat(): number;
+  setFlat(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TopNode.AsObject;
+  static toObject(includeInstance: boolean, msg: TopNode): TopNode.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: TopNode, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TopNode;
+  static deserializeBinaryFromReader(message: TopNode, reader: jspb.BinaryReader): TopNode;
+}
+
+export namespace TopNode {
+  export type AsObject = {
+    meta?: TopNodeMeta.AsObject,
+    cumulative: number,
+    flat: number,
+  }
+}
+
+export class TopNodeMeta extends jspb.Message {
+  hasLocation(): boolean;
+  clearLocation(): void;
+  getLocation(): parca_metastore_v1alpha1_metastore_pb.Location | undefined;
+  setLocation(value?: parca_metastore_v1alpha1_metastore_pb.Location): void;
+
+  hasMapping(): boolean;
+  clearMapping(): void;
+  getMapping(): parca_metastore_v1alpha1_metastore_pb.Mapping | undefined;
+  setMapping(value?: parca_metastore_v1alpha1_metastore_pb.Mapping): void;
+
+  hasFunction(): boolean;
+  clearFunction(): void;
+  getFunction(): parca_metastore_v1alpha1_metastore_pb.Function | undefined;
+  setFunction(value?: parca_metastore_v1alpha1_metastore_pb.Function): void;
+
+  hasLine(): boolean;
+  clearLine(): void;
+  getLine(): parca_metastore_v1alpha1_metastore_pb.Line | undefined;
+  setLine(value?: parca_metastore_v1alpha1_metastore_pb.Line): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TopNodeMeta.AsObject;
+  static toObject(includeInstance: boolean, msg: TopNodeMeta): TopNodeMeta.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: TopNodeMeta, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TopNodeMeta;
+  static deserializeBinaryFromReader(message: TopNodeMeta, reader: jspb.BinaryReader): TopNodeMeta;
+}
+
+export namespace TopNodeMeta {
+  export type AsObject = {
+    location?: parca_metastore_v1alpha1_metastore_pb.Location.AsObject,
+    mapping?: parca_metastore_v1alpha1_metastore_pb.Mapping.AsObject,
+    pb_function?: parca_metastore_v1alpha1_metastore_pb.Function.AsObject,
+    line?: parca_metastore_v1alpha1_metastore_pb.Line.AsObject,
   }
 }
 
@@ -481,6 +586,11 @@ export class QueryResponse extends jspb.Message {
   getPprof_asB64(): string;
   setPprof(value: Uint8Array | string): void;
 
+  hasTop(): boolean;
+  clearTop(): void;
+  getTop(): Top | undefined;
+  setTop(value?: Top): void;
+
   getReportCase(): QueryResponse.ReportCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QueryResponse.AsObject;
@@ -496,12 +606,14 @@ export namespace QueryResponse {
   export type AsObject = {
     flamegraph?: Flamegraph.AsObject,
     pprof: Uint8Array | string,
+    top?: Top.AsObject,
   }
 
   export enum ReportCase {
     REPORT_NOT_SET = 0,
     FLAMEGRAPH = 5,
     PPROF = 6,
+    TOP = 7,
   }
 }
 

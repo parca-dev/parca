@@ -1,0 +1,7 @@
+.iciclegraph-table .desc {
+  transform: rotate(0);
+}
+
+.iciclegraph-table .asc {
+  transform: rotate(180deg);
+}

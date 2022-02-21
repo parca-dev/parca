@@ -99,6 +99,7 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
             to_a: q.to.toString(),
             merge_a: q.merge,
             time_selection_a: q.timeSelection,
+            currentProfileView: 'icicle',
           },
         },
       });
@@ -133,6 +134,13 @@ const ProfileExplorer = ({router, queryClient}: ProfileExplorerProps): JSX.Eleme
           ...compareQuery,
         };
       }
+
+      compareQuery = {
+        ...compareQuery,
+        ...{
+          currentProfileView: 'icicle',
+        },
+      };
 
       void router.push({
         pathname: '/',
