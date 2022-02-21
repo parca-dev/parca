@@ -69,6 +69,7 @@ const Navbar = ({
                           'px-3 py-2 rounded-md text-sm font-medium'
                         )}
                         aria-current={isCurrentPage(item) ? 'page' : undefined}
+                        rel="noreferrer"
                       >
                         {item.label}
                       </a>

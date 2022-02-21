@@ -31,6 +31,7 @@ const getRowContentByHeader = ({
             className="text-sm text-gray-900 text-bold dark:text-gray-200"
             href={url}
             target="_blank"
+            rel="noreferrer"
           >
             {url}
           </a>

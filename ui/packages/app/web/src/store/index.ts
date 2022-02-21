@@ -1,4 +1,4 @@
-import create, {GetState, SetState} from 'zustand';
+import create from 'zustand';
 import createContext from 'zustand/context';
 import {persist} from 'zustand/middleware';
 import createUiState from './ui.state';
