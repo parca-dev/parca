@@ -1,12 +1,6 @@
 package list
 
-import (
-	"sync"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func Test_SingleList(t *testing.T) {
 	l := &List{}
 
@@ -50,3 +44,4 @@ func Test_List_Concurrent(t *testing.T) {
 
 	require.Equal(t, 45*10, total)
 }
+*/

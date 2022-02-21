@@ -3,12 +3,14 @@ package list
 import (
 	"sync/atomic"
 	"unsafe"
+
+	"github.com/parca-dev/parca/pkg/columnstore"
 )
 
 // Node is a Part that is a part of a linked-list
 type Node struct {
 	next unsafe.Pointer
-	part int
+	part *columnstore.Part
 }
 
 type List Node
@@ -25,7 +27,7 @@ func (l *List) Prepend(node *Node) {
 }
 
 // Iterate accesses every node in the list
-func (l *List) Iterate(iterate func(int) bool) {
+func (l *List) Iterate(iterate func(*columnstore.Part) bool) {
 	next := atomic.LoadPointer(&l.next)
 	for {
 		node := (*Node)(next)
