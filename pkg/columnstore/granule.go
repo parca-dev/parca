@@ -103,7 +103,6 @@ func (g *Granule) cardinality(tx uint64, txCompleted func(uint64) uint64) int {
 // Returns the granules in order.
 // This assumes the Granule has had it's parts merged into a single part
 func (g *Granule) split(tx uint64, n int) ([]*Granule, error) {
-	// TODO we're going to split the first part in the granule, we need to handle any parts that remain in the granule
 
 	// How many granules we'll need to build
 	count := 0
