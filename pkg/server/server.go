@@ -87,7 +87,7 @@ func NewServer(reg *prometheus.Registry, version string) *Server {
 	}
 }
 
-// ListenAndServe starts the http grpc gateway server
+// ListenAndServe starts the http grpc gateway server.
 func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port string, allowedCORSOrigins []string, pathPrefix string, registerables ...Registerable) error {
 	level.Info(logger).Log("msg", "starting server", "addr", port)
 	logLevel := "ERROR"
@@ -164,7 +164,6 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	}
 
 	uiHandler, err := s.uiHandler(uiFS, pathPrefix)
-
 	if err != nil {
 		return fmt.Errorf("failed to walk ui filesystem: %w", err)
 	}
@@ -223,9 +222,7 @@ func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error
 		}
 
 		if strings.HasSuffix(path, ".html") {
-
 			tmpl, err := template.New(path).Parse(strings.Replace(string(b), "/PATH_PREFIX_VAR", "{{.PathPrefix}}", -1))
-
 			if err != nil {
 				return fmt.Errorf("failed to parse ui file %s: %w", path, err)
 			}
