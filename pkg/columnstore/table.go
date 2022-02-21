@@ -151,6 +151,13 @@ func (t *Table) splitGranule(granule *Granule) {
 		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}
 
+	// TODO(THOR): we can't just slap remain on here,because the granule may have grown by now
+	// TODO(THOR): We're going to need to comapre and swap the parts list
+	/*
+		How do we split a granule that is currentl adding parts?
+	*/
+	// TODO(THOR):
+
 	// add remaining parts onto new granules
 	for _, p := range remain {
 		addPartToGranule(granules, p)
