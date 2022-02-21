@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
@@ -18,14 +19,14 @@ type Granule struct {
 	parts *List
 
 	// card is the raw commited, and uncommited cardinality of the granule. It is used as a suggestion for potential compaction
-	card int
+	card uint64
 
 	schema *Schema
 
 	granulesCreated prometheus.Counter
 
 	// pruned indicates if this Granule is longer found in the index
-	pruned bool
+	pruned uint64
 
 	// newGranules are the granules that were created after a split
 	newGranules []*Granule
@@ -40,7 +41,7 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 
 	// Find the least column
 	for i, p := range parts {
-		g.card += p.Cardinality
+		g.card += uint64(p.Cardinality)
 		g.parts.Prepend(p)
 		it := p.Iterator()
 		if it.Next() { // Since we assume a part is sorted, we need only to look at the first row in each Part
@@ -61,25 +62,25 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 }
 
 // AddPart returns the new cardinality of the Granule
-func (g *Granule) AddPart(p *Part) int {
+func (g *Granule) AddPart(p *Part) uint64 {
 
 	g.parts.Prepend(p)
-	g.card += p.Cardinality
+	newcard := atomic.AddUint64(&g.card, uint64(p.Cardinality))
 	it := p.Iterator()
 
 	if it.Next() {
 		r := Row{Values: it.Values()}
-		if g.schema.RowLessThan(r.Values, g.least.Values) {
+		if g.schema.RowLessThan(r.Values, g.least.Values) { // TODO load g.least ptr
 			g.least = r // TODO atomic set the least pointer
 		}
 
 		// If the granule was pruned, copy part to new granule
-		if g.pruned { // TODO protect pruned access (atomic load)
+		if atomic.LoadUint64(&g.pruned) != 0 {
 			addPartToGranule(g.newGranules, p)
 		}
 	}
 
-	return g.card
+	return newcard
 }
 
 func (g *Granule) Cardinality(tx uint64, txCompleted func(uint64) uint64) int {
@@ -102,18 +103,20 @@ func (g *Granule) cardinality(tx uint64, txCompleted func(uint64) uint64) int {
 // Returns the granules in order.
 // This assumes the Granule has had it's parts merged into a single part
 func (g *Granule) split(tx uint64, n int) ([]*Granule, error) {
-	// TODO how do we split a Granule that we can't lock?
-	if len(g.parts) > 1 {
-		return []*Granule{g}, nil // do nothing
-	}
+	// TODO we're going to split the first part in the granule, we need to handle any parts that remain in the granule
 
 	// How many granules we'll need to build
-	count := g.parts[0].Cardinality / n
+	count := 0
+	var it *PartIterator
+	g.parts.Iterate(func(p *Part) bool {
+		count = p.Cardinality / n
+		it = p.Iterator()
+		return false
+	})
 
 	// Build all the new granules
 	granules := make([]*Granule, 0, count)
 
-	it := g.parts[0].Iterator()
 	rows := make([]Row, 0, n)
 	for it.Next() {
 		rows = append(rows, Row{Values: it.Values()})
