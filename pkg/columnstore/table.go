@@ -117,7 +117,7 @@ func (t *Table) Insert(rows []Row) error {
 			return err
 		}
 
-		if granule.AddPart(p) >= t.schema.granuleSize {
+		if granule.AddPart(p) >= uint64(t.schema.granuleSize) {
 			t.Add(1)
 			go t.compact(granule)
 		}
@@ -129,7 +129,7 @@ func (t *Table) Insert(rows []Row) error {
 func (t *Table) splitGranule(granule *Granule) {
 
 	// Recheck to ensure the granule still needs to be split
-	if granule.pruned { // TODO atomic load pruned
+	if atomic.LoadUint64(&granule.pruned) != 0 {
 		return
 	}
 
@@ -172,8 +172,8 @@ func (t *Table) splitGranule(granule *Granule) {
 	// Point to the new index
 	if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&curIndex)), unsafe.Pointer(curIndex), unsafe.Pointer(index)) {
 		// mark this granule as having been pruned
-		granule.pruned = true
-		granule.newGranules = granules
+		atomic.AddUint64(&granule.pruned, 1)
+		granule.newGranules = granules // TODO this should be an atomic list too I think?
 	}
 }
 

@@ -123,7 +123,7 @@ func (pi *PartIterator) Err() error {
 }
 
 // FilterMerge merges all parts into a single part, returning any that can't be merged
-func FilterMerge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts *List) (*Part, []*Part, error) {
+func FilterMerge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts *PartList) (*Part, []*Part, error) {
 	its := []*PartIterator{}
 
 	remaining := []*Part{}
@@ -149,7 +149,7 @@ func FilterMerge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, par
 }
 
 // Merge merges all parts into a single part
-func Merge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts *List) (*Part, error) {
+func Merge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts *PartList) (*Part, error) {
 	its := []*PartIterator{}
 
 	// Convert all the parts into a set of rows

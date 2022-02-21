@@ -16,7 +16,7 @@ type Granule struct {
 	// least is the row that exists within the Granule that is the least.
 	// This is used for quick insertion into the btree, without requiring an iterator
 	least Row
-	parts *List
+	parts *PartList
 
 	// card is the raw commited, and uncommited cardinality of the granule. It is used as a suggestion for potential compaction
 	card uint64
@@ -35,7 +35,7 @@ type Granule struct {
 func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Part) *Granule {
 	g := &Granule{
 		granulesCreated: granulesCreated,
-		parts:           &List{},
+		parts:           &PartList{},
 		schema:          schema,
 	}
 

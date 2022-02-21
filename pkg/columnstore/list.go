@@ -11,13 +11,13 @@ type Node struct {
 	part *Part
 }
 
-type List struct {
+type PartList struct {
 	next  unsafe.Pointer
 	total uint64
 }
 
 // Prepend a node onto the front of the list
-func (l *List) Prepend(part *Part) {
+func (l *PartList) Prepend(part *Part) {
 	node := &Node{
 		part: part,
 	}
@@ -32,7 +32,7 @@ func (l *List) Prepend(part *Part) {
 }
 
 // Iterate accesses every node in the list
-func (l *List) Iterate(iterate func(*Part) bool) {
+func (l *PartList) Iterate(iterate func(*Part) bool) {
 	next := atomic.LoadPointer(&l.next)
 	for {
 		node := (*Node)(next)
