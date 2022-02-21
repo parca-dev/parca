@@ -123,21 +123,22 @@ func (pi *PartIterator) Err() error {
 }
 
 // FilterMerge merges all parts into a single part, returning any that can't be merged
-func FilterMerge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts ...*Part) (*Part, []*Part, error) {
-	its := make([]*PartIterator, 0, len(parts))
+func FilterMerge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts *List) (*Part, []*Part, error) {
+	its := []*PartIterator{}
 
 	remaining := []*Part{}
 
 	// Convert all the parts into a set of rows
-	for _, p := range parts {
+	parts.Iterate(func(p *Part) bool {
 		// Don't merge parts from an newer tx, or from an uncompleted tx, or a completed tx that finished after this tx started
 		if p.tx > tx || txCompleted(p.tx) > tx {
 			remaining = append(remaining, p)
-			continue
+			return true
 		}
 
 		its = append(its, p.Iterator())
-	}
+		return true
+	})
 
 	p, err := merge(tx, schema, its)
 	if err != nil {
@@ -148,18 +149,19 @@ func FilterMerge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, par
 }
 
 // Merge merges all parts into a single part
-func Merge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts ...*Part) (*Part, error) {
-	its := make([]*PartIterator, 0, len(parts))
+func Merge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts *List) (*Part, error) {
+	its := []*PartIterator{}
 
 	// Convert all the parts into a set of rows
-	for _, p := range parts {
+	parts.Iterate(func(p *Part) bool {
 		// Don't merge parts from an newer tx, or from an uncompleted tx, or a completed tx that finished after this tx started
 		if p.tx > tx || txCompleted(p.tx) > tx {
-			continue
+			return true
 		}
 
 		its = append(its, p.Iterator())
-	}
+		return true
+	})
 
 	return merge(tx, schema, its)
 }

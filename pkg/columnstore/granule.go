@@ -2,7 +2,6 @@ package columnstore
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
@@ -12,12 +11,11 @@ import (
 )
 
 type Granule struct {
-	sync.RWMutex
 
 	// least is the row that exists within the Granule that is the least.
 	// This is used for quick insertion into the btree, without requiring an iterator
 	least Row
-	parts []*Part
+	parts *List
 
 	// card is the raw commited, and uncommited cardinality of the granule. It is used as a suggestion for potential compaction
 	card int
@@ -36,13 +34,14 @@ type Granule struct {
 func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Part) *Granule {
 	g := &Granule{
 		granulesCreated: granulesCreated,
-		parts:           parts,
+		parts:           &List{},
 		schema:          schema,
 	}
 
 	// Find the least column
 	for i, p := range parts {
 		g.card += p.Cardinality
+		g.parts.Prepend(p)
 		it := p.Iterator()
 		if it.Next() { // Since we assume a part is sorted, we need only to look at the first row in each Part
 			r := Row{Values: it.Values()}
@@ -63,21 +62,19 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 
 // AddPart returns the new cardinality of the Granule
 func (g *Granule) AddPart(p *Part) int {
-	g.Lock()
-	defer g.Unlock()
 
-	g.parts = append(g.parts, p)
+	g.parts.Prepend(p)
 	g.card += p.Cardinality
 	it := p.Iterator()
 
 	if it.Next() {
 		r := Row{Values: it.Values()}
 		if g.schema.RowLessThan(r.Values, g.least.Values) {
-			g.least = r
+			g.least = r // TODO atomic set the least pointer
 		}
 
 		// If the granule was pruned, copy part to new granule
-		if g.pruned {
+		if g.pruned { // TODO protect pruned access (atomic load)
 			addPartToGranule(g.newGranules, p)
 		}
 	}
@@ -86,20 +83,18 @@ func (g *Granule) AddPart(p *Part) int {
 }
 
 func (g *Granule) Cardinality(tx uint64, txCompleted func(uint64) uint64) int {
-	g.RLock()
-	defer g.RUnlock()
-
 	return g.cardinality(tx, txCompleted)
 }
 
 func (g *Granule) cardinality(tx uint64, txCompleted func(uint64) uint64) int {
 	res := 0
-	for _, p := range g.parts {
+	g.parts.Iterate(func(p *Part) bool {
 		if p.tx > tx || txCompleted(p.tx) > tx {
-			continue
+			return true
 		}
 		res += p.Cardinality
-	}
+		return true
+	})
 	return res
 }
 
@@ -107,6 +102,7 @@ func (g *Granule) cardinality(tx uint64, txCompleted func(uint64) uint64) int {
 // Returns the granules in order.
 // This assumes the Granule has had it's parts merged into a single part
 func (g *Granule) split(tx uint64, n int) ([]*Granule, error) {
+	// TODO how do we split a Granule that we can't lock?
 	if len(g.parts) > 1 {
 		return []*Granule{g}, nil // do nothing
 	}
@@ -147,11 +143,9 @@ func (g *Granule) split(tx uint64, n int) ([]*Granule, error) {
 
 // ArrowRecord merges all parts in a Granule before returning an ArrowRecord over that part
 func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool memory.Allocator) (arrow.Record, error) {
-	g.RLock()
-	defer g.RUnlock()
 
 	// Merge the parts
-	p, err := Merge(tx, txCompleted, g.schema, g.parts...)
+	p, err := Merge(tx, txCompleted, g.schema, g.parts)
 	if err != nil {
 		return nil, err
 	}
