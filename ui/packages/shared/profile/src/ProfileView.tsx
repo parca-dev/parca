@@ -1,20 +1,23 @@
 import React, {useEffect, useState} from 'react';
-import {useRouter} from 'next/router';
-
 import {CalcWidth} from '@parca/dynamicsize';
-import ProfileIcicleGraph from './ProfileIcicleGraph';
-import {ProfileSource} from './ProfileSource';
+import {parseParams} from '@parca/functions';
 import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
-import Card from '../../../app/web/src/components/ui/Card';
 import Button from '@parca/web/src/components/ui/Button';
-import TopTable from './TopTable';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 
+import ProfileIcicleGraph from './ProfileIcicleGraph';
+import {ProfileSource} from './ProfileSource';
+import Card from '../../../app/web/src/components/ui/Card';
+import TopTable from './TopTable';
+
 import './ProfileView.styles.css';
+
+type NavigateFunction = (path: string, queryParams: any) => void;
 
 interface ProfileViewProps {
   queryClient: QueryServiceClient;
   profileSource: ProfileSource;
+  navigateTo?: NavigateFunction;
 }
 
 export interface IQueryResult {
@@ -55,9 +58,13 @@ export const useQuery = (
   return result;
 };
 
-export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX.Element => {
-  const router = useRouter();
-  const currentViewFromURL = router.query.currentProfileView as string;
+export const ProfileView = ({
+  queryClient,
+  profileSource,
+  navigateTo,
+}: ProfileViewProps): JSX.Element => {
+  const router = parseParams(window.location.search);
+  const currentViewFromURL = router.currentProfileView as string;
   const [curPath, setCurPath] = useState<string[]>([]);
   const {response, error} = useQuery(queryClient, profileSource);
   const [currentView, setCurrentView] = useState<string | undefined>(currentViewFromURL);
@@ -141,14 +148,12 @@ export const ProfileView = ({queryClient, profileSource}: ProfileViewProps): JSX
     }
   };
 
-  const queryParams = router.query;
-
   const switchProfileView = (view: string) => {
+    if (!navigateTo) return;
+
     setCurrentView(view);
-    router.push({
-      pathname: '/',
-      query: {...queryParams, ...{currentProfileView: view}},
-    });
+
+    navigateTo('/', {...router, ...{currentProfileView: view}});
   };
 
   return (

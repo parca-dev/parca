@@ -153,3 +153,29 @@ export const getLastItem = (thePath: string | undefined) => {
 
   return thePath.substring(index + 1);
 };
+
+const transformToArray = params => params.split(',');
+
+export const parseParams = (querystring: string) => {
+  const params = new URLSearchParams(querystring);
+
+  const obj: any = {};
+  for (const key of params.keys()) {
+    if (params.getAll(key).length > 1) {
+      obj[key] = params.getAll(key);
+    } else {
+      if (params.get(key).includes(',')) {
+        obj[key] = transformToArray(params.get(key));
+      } else {
+        obj[key] = params.get(key);
+      }
+    }
+  }
+
+  return obj;
+};
+
+export const convertToQueryParams = params =>
+  Object.keys(params)
+    .map(key => key + '=' + params[key])
+    .join('&');

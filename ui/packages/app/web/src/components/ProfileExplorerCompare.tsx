@@ -1,7 +1,9 @@
-import ProfileSelector, {QuerySelection} from './ProfileSelector';
 import {ProfileDiffSource, ProfileSelection, ProfileView} from '@parca/profile';
 import {Query} from '@parca/parser';
 import {QueryServiceClient} from '@parca/client';
+
+import {NavigateFunction} from './ProfileExplorer';
+import ProfileSelector, {QuerySelection} from './ProfileSelector';
 
 interface ProfileExplorerCompareProps {
   queryClient: QueryServiceClient;
@@ -15,6 +17,8 @@ interface ProfileExplorerCompareProps {
   selectProfileA: (source: ProfileSelection) => void;
   selectProfileB: (source: ProfileSelection) => void;
   closeProfile: (card: string) => void;
+
+  navigateTo: NavigateFunction;
 }
 
 const ProfileExplorerCompare = ({
@@ -28,6 +32,7 @@ const ProfileExplorerCompare = ({
   selectProfileA,
   selectProfileB,
   closeProfile,
+  navigateTo,
 }: ProfileExplorerCompareProps): JSX.Element => {
   const closeProfileA = () => {
     closeProfile('A');
@@ -70,6 +75,7 @@ const ProfileExplorerCompare = ({
       <div className="grid grid-cols-1">
         {profileA != null && profileB != null ? (
           <ProfileView
+            navigateTo={navigateTo}
             queryClient={queryClient}
             profileSource={
               new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())

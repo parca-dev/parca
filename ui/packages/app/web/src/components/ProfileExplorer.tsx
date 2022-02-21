@@ -4,7 +4,7 @@ import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
 
-type NavigateFunction = (path: string, queryParams: any) => void;
+export type NavigateFunction = (path: string, queryParams: any) => void;
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -109,11 +109,6 @@ const ProfileExplorer = ({
     };
 
     const selectProfile = (p: ProfileSelection) => {
-      console.log({
-        ...queryParams,
-        ...SuffixParams(p.HistoryParams(), '_a'),
-      });
-
       return navigateTo('/', {
         ...queryParams,
         ...SuffixParams(p.HistoryParams(), '_a'),
@@ -162,6 +157,7 @@ const ProfileExplorer = ({
         selectQuery={selectQuery}
         selectProfile={selectProfile}
         compareProfile={compareProfile}
+        navigateTo={navigateTo}
       />
     );
   }
@@ -262,6 +258,7 @@ const ProfileExplorer = ({
       selectProfileA={selectProfileA}
       selectProfileB={selectProfileB}
       closeProfile={closeProfile}
+      navigateTo={navigateTo}
     />
   );
 };

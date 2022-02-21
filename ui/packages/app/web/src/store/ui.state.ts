@@ -20,7 +20,7 @@ export default function createSlice(
     // actions
     setDarkMode: (mode: boolean) => {
       set(
-        produce<UiState>(state => {
+        produce((state: any) => {
           state.ui.darkMode = mode;
         })
       );
