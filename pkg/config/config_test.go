@@ -17,11 +17,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/thanos/pkg/objstore/client"
+
+	"github.com/parca-dev/parca/pkg/debuginfo"
 )
 
 func TestLoad(t *testing.T) {
@@ -50,105 +51,103 @@ scrape_configs:
         fgprof:
           enabled: true
           path: /debug/fgprof
+  - job_name: 'empty-profiling-config'
+    profiling_config: {}
 `
 
 	expected := &Config{
-		ScrapeConfigs: []*ScrapeConfig{{
-			JobName:        "conprof",
-			ScrapeInterval: model.Duration(10 * time.Second),
-			ScrapeTimeout:  model.Duration(10 * time.Second),
-			Scheme:         "http",
-			ProfilingConfig: &ProfilingConfig{
-				PprofConfig: PprofConfig{
-					"memory_total": &PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/conprof/debug/pprof/allocs",
-					},
-					"block_total": &PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/block",
-					},
-					"goroutine_total": &PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/goroutine",
-					},
-					"mutex_total": &PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/mutex",
-					},
-					"process_cpu": &PprofProfilingConfig{
-						Enabled: trueValue(),
-						Delta:   true,
-						Path:    "/debug/pprof/profile",
-					},
-					"threadcreate_total": &PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/pprof/threadcreate",
-					},
-					"fgprof": &PprofProfilingConfig{
-						Enabled: trueValue(),
-						Path:    "/debug/fgprof",
+		ScrapeConfigs: []*ScrapeConfig{
+			{
+				JobName:        "conprof",
+				ScrapeInterval: model.Duration(10 * time.Second),
+				ScrapeTimeout:  model.Duration(10 * time.Second),
+				Scheme:         "http",
+				ProfilingConfig: &ProfilingConfig{
+					PprofConfig: PprofConfig{
+						"memory_total": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/conprof/debug/pprof/allocs",
+						},
+						"block_total": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/debug/pprof/block",
+						},
+						"goroutine_total": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/debug/pprof/goroutine",
+						},
+						"mutex_total": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/debug/pprof/mutex",
+						},
+						"process_cpu": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Delta:   true,
+							Path:    "/debug/pprof/profile",
+						},
+						"threadcreate_total": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/debug/pprof/threadcreate",
+						},
+						"fgprof": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/debug/fgprof",
+						},
 					},
 				},
+				ServiceDiscoveryConfigs: discovery.Configs{discovery.StaticConfig{{
+					Targets: []model.LabelSet{{"__address__": "localhost:10902"}},
+					Labels:  nil,
+					Source:  "0",
+				}}},
 			},
-			ServiceDiscoveryConfigs: discovery.Configs{discovery.StaticConfig{{
-				Targets: []model.LabelSet{{"__address__": "localhost:10902"}},
-				Labels:  nil,
-				Source:  "0",
-			}}},
-		}},
+			{
+				JobName:         "empty-profiling-config",
+				ScrapeInterval:  model.Duration(10 * time.Second),
+				ScrapeTimeout:   model.Duration(10 * time.Second),
+				Scheme:          "http",
+				ProfilingConfig: DefaultScrapeConfig().ProfilingConfig,
+			},
+		},
 	}
-
 	c, err := Load(complexYAML)
 	require.NoError(t, err)
-	require.Len(t, c.ScrapeConfigs, 1)
+	require.Len(t, c.ScrapeConfigs, 2)
 	require.Equal(t, expected, c)
 }
 
 func Test_Config_Validation(t *testing.T) {
-
-	tests := map[string]struct {
-		cfg Config
-	}{
-		"nil debug": {
-			Config{
-				DebugInfo: nil,
+	tests := map[string]Config{
+		"nilDebug": {
+			DebugInfo: nil,
+		},
+		"nilBucket": {
+			DebugInfo: &debuginfo.Config{
+				Bucket: nil,
 			},
 		},
-		"nil bucket": {
-			Config{
-				DebugInfo: &debuginfo.Config{
-					Bucket: nil,
-				},
-			},
-		},
-		"empty type": {
-			Config{
-				DebugInfo: &debuginfo.Config{
-					Bucket: &client.BucketConfig{
-						Config: struct {
-							Directory string
-						}{
-							Directory: "./tmp",
-						},
+		"emptyType": {
+			DebugInfo: &debuginfo.Config{
+				Bucket: &client.BucketConfig{
+					Config: struct {
+						Directory string
+					}{
+						Directory: "./tmp",
 					},
 				},
 			},
 		},
-		"empty config": {
-			Config{
-				DebugInfo: &debuginfo.Config{
-					Bucket: &client.BucketConfig{
-						Type: client.FILESYSTEM,
-					},
+		"emptyConfig": {
+			DebugInfo: &debuginfo.Config{
+				Bucket: &client.BucketConfig{
+					Type: client.FILESYSTEM,
 				},
 			},
 		},
 	}
-
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			require.Error(t, test.cfg.Validate())
+			require.Error(t, test.Validate())
 		})
 	}
 }

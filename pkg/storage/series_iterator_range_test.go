@@ -19,10 +19,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/storage/chunkenc"
 )
 
 func TestMemRangeSeries_Iterator(t *testing.T) {

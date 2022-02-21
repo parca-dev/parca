@@ -13,6 +13,7 @@ import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/cli
 import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
 import {valueFormatter} from '@parca/functions';
+import {DateTimeRange} from './ui/DateTimeRangePicker/utils';
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb.AsObject[];
@@ -21,7 +22,7 @@ interface RawMetricsGraphProps {
   profile: SingleProfileSelection | null;
   onSampleClick: (timestamp: number, value: number, labels: Label.AsObject[]) => void;
   onLabelClick: (labelName: string, labelValue: string) => void;
-  setTimeRange: (from: number, to: number) => void;
+  setTimeRange: (range: DateTimeRange) => void;
   width?: number;
 }
 
@@ -290,19 +291,6 @@ export const RawMetricsGraph = ({
   },
   []);
 
-  const extentsX = series.map(function (s) {
-    return d3.extent(s.values, function (d) {
-      return d[0];
-    });
-  });
-
-  const minX = d3.min(extentsX, function (d) {
-    return d[0];
-  });
-  const maxX = d3.max(extentsX, function (d) {
-    return d[1];
-  });
-
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
       return d[1];
@@ -319,8 +307,7 @@ export const RawMetricsGraph = ({
   /* Scale */
   const xScale = d3
     .scaleUtc()
-    // tslint:disable-next-line
-    .domain([minX, maxX])
+    .domain([from, to])
     .range([0, width - margin - marginRight]);
 
   const yScale = d3
@@ -415,9 +402,9 @@ export const RawMetricsGraph = ({
     const secondTime = xScale.invert(pos[0]).valueOf();
 
     if (firstTime > secondTime) {
-      setTimeRange(secondTime, firstTime);
+      setTimeRange(DateTimeRange.fromAbsoluteDates(secondTime, firstTime));
     } else {
-      setTimeRange(firstTime, secondTime);
+      setTimeRange(DateTimeRange.fromAbsoluteDates(firstTime, secondTime));
     }
     setRelPos(-1);
 

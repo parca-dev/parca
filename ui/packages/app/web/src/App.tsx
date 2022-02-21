@@ -9,6 +9,7 @@ import './style/sidenav.css';
 import Header from './pages/layouts/Header';
 import ThemeProvider from './pages/layouts/ThemeProvider';
 import HomePage from './pages/index';
+import TargetsPage from './pages/targets';
 import Component404 from './pages/layouts/Component404';
 import {isDevMode} from '@parca/functions';
 
@@ -40,6 +41,7 @@ const App = () => {
           <div className="px-3">
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/targets" element={<TargetsPage />} />
               {isDevMode() && (
                 <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
               )}

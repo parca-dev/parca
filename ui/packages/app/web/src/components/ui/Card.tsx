@@ -1,9 +1,20 @@
 import React from 'react';
+import cx from 'classnames';
 
-const Card = ({children}: {children: React.ReactNode}) => {
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const Card = ({children, className = ''}: CardProps) => {
   return (
     <div className="mx-auto">
-      <div className="bg-gray dark:bg-gray-700 shadow overflow-hidden sm:rounded-lg flex-1 flex-column">
+      <div
+        className={cx(
+          'g-gray dark:bg-gray-700 shadow overflow-hidden sm:rounded-lg flex-1 flex-column',
+          {[className]: className.length}
+        )}
+      >
         {children}
       </div>
     </div>

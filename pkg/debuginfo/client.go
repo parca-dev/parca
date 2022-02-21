@@ -19,23 +19,24 @@ import (
 	"fmt"
 	"io"
 
-	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"google.golang.org/grpc"
+
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
-type DebugInfoClient struct {
+type Client struct {
 	c debuginfopb.DebugInfoServiceClient
 }
 
-func NewDebugInfoClient(conn *grpc.ClientConn) *DebugInfoClient {
-	return &DebugInfoClient{
+func NewDebugInfoClient(conn *grpc.ClientConn) *Client {
+	return &Client{
 		c: debuginfopb.NewDebugInfoServiceClient(conn),
 	}
 }
 
-func (c *DebugInfoClient) Exists(ctx context.Context, buildId string) (bool, error) {
+func (c *Client) Exists(ctx context.Context, buildID string) (bool, error) {
 	res, err := c.c.Exists(ctx, &debuginfopb.ExistsRequest{
-		BuildId: buildId,
+		BuildId: buildID,
 	})
 	if err != nil {
 		return false, err
@@ -44,7 +45,7 @@ func (c *DebugInfoClient) Exists(ctx context.Context, buildId string) (bool, err
 	return res.Exists, nil
 }
 
-func (c *DebugInfoClient) Upload(ctx context.Context, buildId string, r io.Reader) (uint64, error) {
+func (c *Client) Upload(ctx context.Context, buildID string, r io.Reader) (uint64, error) {
 	stream, err := c.c.Upload(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("initiate upload: %w", err)
@@ -53,7 +54,7 @@ func (c *DebugInfoClient) Upload(ctx context.Context, buildId string, r io.Reade
 	err = stream.Send(&debuginfopb.UploadRequest{
 		Data: &debuginfopb.UploadRequest_Info{
 			Info: &debuginfopb.UploadInfo{
-				BuildId: buildId,
+				BuildId: buildID,
 			},
 		},
 	})
@@ -87,7 +88,7 @@ func (c *DebugInfoClient) Upload(ctx context.Context, buildId string, r io.Reade
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		return 0, fmt.Errorf("close and receive: %w:", err)
+		return 0, fmt.Errorf("close and receive: %w", err)
 	}
 	return res.Size, nil
 }

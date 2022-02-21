@@ -41,12 +41,11 @@ func (s *TreeStack) Peek() *TreeStackEntry {
 func (s *TreeStack) Pop() (*TreeStackEntry, bool) {
 	if s.IsEmpty() {
 		return nil, false
-	} else {
-		index := len(*s) - 1   // Get the index of the top most element.
-		element := (*s)[index] // Index into the slice and obtain the element.
-		*s = (*s)[:index]      // Remove it from the stack by slicing it off.
-		return element, true
 	}
+	index := len(*s) - 1   // Get the index of the top most element.
+	element := (*s)[index] // Index into the slice and obtain the element.
+	*s = (*s)[:index]      // Remove it from the stack by slicing it off.
+	return element, true
 }
 
 func (s *TreeStack) IsEmpty() bool {
@@ -255,15 +254,15 @@ func locationToTreeNodes(location *metastore.Location) []*querypb.FlamegraphNode
 		)
 	}
 
-	var mappingId []byte
+	var mappingID []byte
 	if location.Mapping != nil {
-		mappingId = location.Mapping.Id
+		mappingID = location.Mapping.Id
 	}
 	return []*querypb.FlamegraphNode{{
 		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
 				Id:        location.ID[:],
-				MappingId: mappingId,
+				MappingId: mappingID,
 				Address:   location.Address,
 				IsFolded:  location.IsFolded,
 			},
@@ -315,15 +314,15 @@ func lineToTreeNode(
 	if child != nil {
 		children = []*querypb.FlamegraphNode{child}
 	}
-	var mappingId []byte
+	var mappingID []byte
 	if mapping != nil {
-		mappingId = mapping.Id
+		mappingID = mapping.Id
 	}
 	return &querypb.FlamegraphNode{
 		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
 				Id:        location.ID[:],
-				MappingId: mappingId,
+				MappingId: mappingID,
 				Address:   location.Address,
 				IsFolded:  location.IsFolded,
 			},

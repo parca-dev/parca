@@ -1142,7 +1142,6 @@ func (f *File) DWARF() (*dwarf.Data, error) {
 		default:
 			return ""
 		}
-
 	}
 	// sectionData gets the data for s, checks its size, and
 	// applies any applicable relations.
@@ -1196,7 +1195,7 @@ func (f *File) DWARF() (*dwarf.Data, error) {
 
 	// There are many DWARf sections, but these are the ones
 	// the debug/dwarf package started with.
-	var dat = map[string][]byte{"abbrev": nil, "info": nil, "str": nil, "line": nil, "ranges": nil}
+	dat := map[string][]byte{"abbrev": nil, "info": nil, "str": nil, "line": nil, "ranges": nil}
 	for i, s := range f.Sections {
 		suffix := dwarfSuffix(s)
 		if suffix == "" {

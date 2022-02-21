@@ -20,13 +20,13 @@ import (
 	"github.com/thanos-io/thanos/pkg/objstore/client"
 )
 
-// Valid is the ValidRule
+// Valid is the ValidRule.
 var Valid = ValidRule{}
 
-// ValidRule is a validation rule for the Config. It implementes the validation.Rule interface
+// ValidRule is a validation rule for the Config. It implements the validation.Rule interface.
 type ValidRule struct{}
 
-// Validate returns an error if the config is not valid
+// Validate returns an error if the config is not valid.
 func (v ValidRule) Validate(value interface{}) error {
 	c, ok := value.(*Config)
 	if !ok {
@@ -41,7 +41,7 @@ var BucketValid = BucketRule{}
 
 type BucketRule struct{}
 
-// Validate the bucket config
+// Validate the bucket config.
 func (r BucketRule) Validate(value interface{}) error {
 	b, ok := value.(*client.BucketConfig)
 	if !ok {

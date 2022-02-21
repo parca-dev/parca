@@ -16,14 +16,15 @@ package scrape
 import (
 	"context"
 
-	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/prometheus/prometheus/model/labels"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 )
 
-// Targets implements the Targets RCP
+// Targets implements the Targets RCP.
 func (m *Manager) Targets(ctx context.Context, req *pb.TargetsRequest) (*pb.TargetsResponse, error) {
 	var targets map[string][]*Target
 	switch req.State {
@@ -45,7 +46,6 @@ func (m *Manager) Targets(ctx context.Context, req *pb.TargetsRequest) (*pb.Targ
 	for k, ts := range targets {
 		tgts := make([]*pb.Target, 0, len(ts))
 		for _, t := range ts {
-
 			lastError := ""
 			lerr := t.LastError()
 			if lerr != nil {
@@ -70,7 +70,7 @@ func (m *Manager) Targets(ctx context.Context, req *pb.TargetsRequest) (*pb.Targ
 	return resp, nil
 }
 
-// ProtoLabelsFromLabels converts labels.Labels into a proto label set
+// ProtoLabelsFromLabels converts labels.Labels into a proto label set.
 func ProtoLabelsFromLabels(l labels.Labels) *profilepb.LabelSet {
 	ls := &profilepb.LabelSet{
 		Labels: make([]*profilepb.Label, 0, len(l)),
@@ -85,7 +85,7 @@ func ProtoLabelsFromLabels(l labels.Labels) *profilepb.LabelSet {
 	return ls
 }
 
-// HealthProto converts a target health string into a Target_Health proto
+// HealthProto converts a target health string into a Target_Health proto.
 func HealthProto(s TargetHealth) pb.Target_Health {
 	switch s {
 	case HealthGood:

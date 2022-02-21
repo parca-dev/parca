@@ -20,29 +20,30 @@ import (
 	"fmt"
 
 	"github.com/go-kit/log"
+
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 )
 
-type goLiner struct {
+type GoLiner struct {
 	logger log.Logger
 
 	symtab *gosym.Table
 }
 
-func Go(logger log.Logger, path string) (*goLiner, error) {
+func Go(logger log.Logger, path string) (*GoLiner, error) {
 	tab, err := gosymtab(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
 
-	return &goLiner{
+	return &GoLiner{
 		logger: logger,
 		symtab: tab,
 	}, nil
 }
 
-func (gl *goLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
+func (gl *GoLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
 	defer func() {
 		// PCToLine panics with "invalid memory address or nil pointer dereference",
 		//	- when it refers to an address that doesn't actually exist.
@@ -100,7 +101,7 @@ func gosymtab(path string) (*gosym.Table, error) {
 		symtab, _ = sec.Data()
 	}
 
-	var text uint64 = 0
+	var text uint64
 	if sec := objFile.Section(".text"); sec != nil {
 		text = sec.Addr
 	}

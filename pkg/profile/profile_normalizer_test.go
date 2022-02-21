@@ -16,8 +16,9 @@ package profile
 import (
 	"testing"
 
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/metastore"
 )
 
 func TestMakeStacktraceKey(t *testing.T) {

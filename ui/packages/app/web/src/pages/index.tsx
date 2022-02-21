@@ -43,7 +43,10 @@ const Profiles = () => {
 
   const queryParams = parseParams(location.search);
 
-  const queryClient = new QueryServiceClient(apiEndpoint === undefined ? '' : apiEndpoint);
+  const queryClient = new QueryServiceClient(
+    apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`
+  );
+
   return (
     <ProfileExplorer queryClient={queryClient} queryParams={queryParams} navigateTo={navigateTo} />
   );

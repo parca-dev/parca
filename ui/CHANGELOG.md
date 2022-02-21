@@ -3,6 +3,47 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.9.0](https://github.com/parca-dev/parca/compare/ui-v0.8.3...ui-v0.9.0) (2022-02-16)
+
+### Bug Fixes
+
+- **config:** Fix panic on empty profiling_config ([a8fda85](https://github.com/parca-dev/parca/commit/a8fda85deac77cbddbe7570ddb5af41d57ff2256))
+- **grafana:** Fix datasource template ([aac133d](https://github.com/parca-dev/parca/commit/aac133dc090616032b810259d94d3f2f6d04941a))
+
+### Features
+
+- custom Pill component ([12fbb29](https://github.com/parca-dev/parca/commit/12fbb29d0c65e60e8c506cbc988367966d8534fb))
+
+## [0.8.2](https://github.com/parca-dev/parca/compare/ui-v0.8.1...ui-v0.8.2) (2022-02-14)
+
+## [0.8.1](https://github.com/parca-dev/parca/compare/ui-v0.8.0...ui-v0.8.1) (2022-02-09)
+
+# [0.8.0](https://github.com/parca-dev/parca/compare/ui-v0.7.13...ui-v0.8.0) (2022-01-31)
+
+## 0.7.13 (2022-01-25)
+
+## [0.8.3](https://github.com/parca-dev/parca/compare/ui-v0.8.2...ui-v0.8.3) (2022-02-15)
+
+# [0.8.0](https://github.com/parca-dev/parca/compare/ui-v0.7.13...ui-v0.8.0) (2022-01-31)
+
+## 0.7.13 (2022-01-25)
+
+**Note:** Version bump only for package ui
+
+## [0.8.2](https://github.com/parca-dev/parca/compare/ui-v0.8.1...ui-v0.8.2) (2022-02-14)
+
+# [0.8.0](https://github.com/parca-dev/parca/compare/ui-v0.7.13...ui-v0.8.0) (2022-01-31)
+
+## 0.7.13 (2022-01-25)
+
+**Note:** Version bump only for package ui
+
+## [0.8.1](https://github.com/parca-dev/parca/compare/ui-v0.8.0...ui-v0.8.1) (2022-02-09)
+
+## 0.7.13 (2022-01-25)
+
+**Note:** Version bump only for package ui
+
 # [0.8.0](https://github.com/parca-dev/parca/compare/ui-v0.7.13...ui-v0.8.0) (2022-01-31)
 
 ### Features

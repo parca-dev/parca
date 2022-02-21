@@ -14,4 +14,3 @@ scrape_configs:
     scrape_timeout: "2s"
     static_configs:
       - targets: [ '127.0.0.1:7070' ]
-      

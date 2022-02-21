@@ -17,8 +17,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestScaledInstantProfile(t *testing.T) {

@@ -152,7 +152,7 @@ func (tcs timestampChunks) indexRange(mint, maxt int64) (int, int) {
 		// The result should be [n:n] for the chunk indexes, resulting in querying no chunks,
 		// n being the length of the chunks.
 		if tc.maxTime < mint && i == len(tcs)-1 {
-			start = i + 1 //TODO: Can this panic for the caller?
+			start = i + 1 // TODO: Can this panic for the caller?
 			break
 		}
 		if tc.minTime <= mint {

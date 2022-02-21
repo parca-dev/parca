@@ -18,9 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestMemRootSeries_Iterator(t *testing.T) {

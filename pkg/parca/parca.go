@@ -26,9 +26,6 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/symbol"
-	"github.com/parca-dev/parca/pkg/symbolizer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/otel"
@@ -47,11 +44,14 @@ import (
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/storage"
+	"github.com/parca-dev/parca/pkg/symbol"
+	"github.com/parca-dev/parca/pkg/symbolizer"
 )
 
 const symbolizationInterval = 10 * time.Second
@@ -74,7 +74,7 @@ type Flags struct {
 	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
 }
 
-// Run the parca server
+// Run the parca server.
 func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags *Flags, version string) error {
 	tracerProvider := trace.NewNoopTracerProvider()
 	if flags.OTLPAddress != "" {
@@ -111,7 +111,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
 			reg,
 			// Produces high cardinality traces - uncomment locally if needed.
-			//tracerProvider.Tracer("inmemory-sqlite"),
+			// tracerProvider.Tracer("inmemory-sqlite"),
 			trace.NewNoopTracerProvider().Tracer("inmemory-sqlite"),
 		)
 		if err != nil {

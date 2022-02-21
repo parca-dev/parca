@@ -22,11 +22,12 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/go-kit/log"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 )
 
 func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {

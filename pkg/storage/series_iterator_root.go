@@ -16,9 +16,10 @@ package storage
 import (
 	"fmt"
 
+	"github.com/prometheus/prometheus/model/labels"
+
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage/chunkenc"
-	"github.com/prometheus/prometheus/model/labels"
 )
 
 // MemRootSeries is an iterator that only queries the cumulative values for the root of each series.
