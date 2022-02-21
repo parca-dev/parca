@@ -25,7 +25,6 @@ type Table struct {
 	schema Schema
 	index  *btree.BTree
 
-	work chan *Granule
 	sync.WaitGroup
 }
 
@@ -51,7 +50,6 @@ func newTable(
 		schema: schema,
 		index:  btree.New(2), // TODO make the degree a setting
 		logger: logger,
-		work:   make(chan *Granule, 1024), // TODO buffer?
 		metrics: &tableMetrics{
 			granulesCreated: promauto.With(reg).NewCounter(prometheus.CounterOpts{
 				Name: "granules_created",
@@ -87,9 +85,6 @@ func newTable(
 	g := NewGranule(t.metrics.granulesCreated, &t.schema, []*Part{}...)
 	t.index.ReplaceOrInsert(g)
 
-	t.Add(1)
-	go t.compactor()
-
 	return t
 }
 
@@ -123,7 +118,8 @@ func (t *Table) Insert(rows []Row) error {
 		}
 
 		if granule.AddPart(p) >= t.schema.granuleSize {
-			t.work <- granule
+			t.Add(1)
+			go t.compact(granule)
 		}
 	}
 
@@ -158,7 +154,8 @@ func (t *Table) splitGranule(granule *Granule) {
 	for _, p := range remain {
 		addPartToGranule(granules, p)
 	}
-	index := t.index.Clone()
+	curIndex := t.Index()
+	index := curIndex.Clone()
 
 	deleted := index.Delete(granule)
 	if deleted == nil {
@@ -176,7 +173,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	}
 
 	// Point to the new index
-	atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&t.index)), unsafe.Pointer(index))
+	atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&curIndex)), unsafe.Pointer(index))
 }
 
 // Iterator iterates in order over all granules in the table. It stops iterating when the iterator function returns false.
@@ -254,12 +251,10 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 	return rowsByGranule
 }
 
-// compactor is the background routine responsible for compacting and splitting granules. Only one compactor should ever be running at a time.
-func (t *Table) compactor() {
+// compact will compact a Granule; should be performed as a background go routine
+func (t *Table) compact(g *Granule) {
 	defer t.Done()
-	for granule := range t.work {
-		t.splitGranule(granule)
-	}
+	t.splitGranule(g)
 }
 
 // addPartToGranule finds the corresponding granule it belongs to in a sorted list of Granules
