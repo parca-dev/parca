@@ -11,7 +11,10 @@ type Node struct {
 	part *Part
 }
 
-type List Node
+type List struct {
+	next  unsafe.Pointer
+	total uint64
+}
 
 // Prepend a node onto the front of the list
 func (l *List) Prepend(part *Part) {
@@ -22,6 +25,7 @@ func (l *List) Prepend(part *Part) {
 		next := atomic.LoadPointer(&l.next)
 		node.next = next
 		if atomic.CompareAndSwapPointer(&l.next, next, (unsafe.Pointer)(node)) {
+			atomic.AddUint64(&l.total, 1)
 			return
 		}
 	}
