@@ -143,6 +143,9 @@ func (t *Table) splitGranule(granule *Granule) {
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
+	if newpart.Cardinality == 0 { // It's possible to have a Granule marked for compaction but all the parts in it aren't completed tx's yet
+		return
+	}
 	g := NewGranule(t.metrics.granulesCreated, &t.schema, newpart)
 
 	granules, err := g.split(tx, t.schema.granuleSize/2) // TODO magic numbers
