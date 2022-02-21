@@ -127,11 +127,9 @@ func (t *Table) Insert(rows []Row) error {
 }
 
 func (t *Table) splitGranule(granule *Granule) {
-	granule.Lock()
-	defer granule.Unlock()
 
 	// Recheck to ensure the granule still needs to be split
-	if granule.pruned {
+	if granule.pruned { // TODO atomic load pruned
 		return
 	}
 
@@ -139,7 +137,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	tx, commit := t.db.begin()
 	defer commit()
 
-	newpart, remain, err := FilterMerge(tx, t.db.txCompleted, &t.schema, granule.parts...) // need to merge all parts in a granule before splitting
+	newpart, remain, err := FilterMerge(tx, t.db.txCompleted, &t.schema, granule.parts) // need to merge all parts in a granule before splitting
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
@@ -225,8 +223,6 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 	var prev *Granule
 	index.Ascend(func(i btree.Item) bool {
 		g := i.(*Granule)
-		g.RLock()
-		defer g.RUnlock()
 
 		for ; j < len(rows); j++ {
 			if t.schema.RowLessThan(rows[j].Values, g.least.Values) {
