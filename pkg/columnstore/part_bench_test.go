@@ -72,14 +72,15 @@ func BenchmarkPartMerge(b *testing.B) {
 	require.Equal(b, 1, table.index.Len())
 
 	g := table.index.Min().(*Granule)
-	require.Equal(b, 146, len(g.parts))
+	require.Equal(b, 146, g.parts.total)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		its := make([]*PartIterator, 0, len(g.parts))
-		for _, p := range g.parts {
+		its := make([]*PartIterator, 0, g.parts.total)
+		g.parts.Iterate(func(p *Part) bool {
 			its = append(its, p.Iterator())
-		}
+			return true
+		})
 
 		p, err := merge(0, &schema, its)
 		require.NoError(b, err)

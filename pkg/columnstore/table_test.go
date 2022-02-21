@@ -150,7 +150,7 @@ func TestTable(t *testing.T) {
 
 	// One granule with 3 parts
 	require.Equal(t, 1, table.index.Len())
-	require.Equal(t, 3, len(table.index.Min().(*Granule).parts))
+	require.Equal(t, uint64(3), table.index.Min().(*Granule).parts.total)
 	require.Equal(t, 5, table.index.Min().(*Granule).Cardinality(math.MaxUint64, table.db.txCompleted))
 	require.Equal(t, []interface{}{
 		[]DynamicColumnValue{
