@@ -299,7 +299,7 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 				Flamegraph: fg,
 			},
 		}, nil
-	case pb.QueryRequest_REPORT_TYPE_PPROF_UNSPECIFIED:
+	case pb.QueryRequest_REPORT_TYPE_PPROF:
 		pp, err := GenerateFlatPprof(ctx, q.metaStore, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
@@ -312,6 +312,14 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 
 		return &pb.QueryResponse{
 			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
+		}, nil
+	case pb.QueryRequest_REPORT_TYPE_TOP:
+		top, err := GenerateTopTable(ctx, q.metaStore, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate top table: %v", err.Error())
+		}
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Top{Top: top},
 		}, nil
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")

@@ -145,3 +145,11 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
 export const isDevMode = () => {
   return process.env.NODE_ENV === 'development';
 };
+export const getLastItem = (thePath: string | undefined) => {
+  if (!thePath) return;
+
+  const index = thePath.lastIndexOf('/');
+  if (index === -1) return thePath;
+
+  return thePath.substring(index + 1);
+};

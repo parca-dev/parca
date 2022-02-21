@@ -102,6 +102,7 @@ const ProfileExplorer = ({
             to_a: q.to.toString(),
             merge_a: q.merge,
             time_selection_a: q.timeSelection,
+            currentProfileView: 'icicle',
           },
         }
       );
@@ -142,6 +143,13 @@ const ProfileExplorer = ({
           ...compareQuery,
         };
       }
+
+      compareQuery = {
+        ...compareQuery,
+        ...{
+          currentProfileView: 'icicle',
+        },
+      };
 
       void navigateTo('/', compareQuery);
     };
