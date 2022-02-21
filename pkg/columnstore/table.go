@@ -122,8 +122,7 @@ func (t *Table) Insert(rows []Row) error {
 			return err
 		}
 
-		granule.AddPart(p)
-		if granule.Cardinality(tx, t.db.txCompleted) >= t.schema.granuleSize {
+		if granule.AddPart(p) >= t.schema.granuleSize {
 			t.work <- granule
 		}
 	}
