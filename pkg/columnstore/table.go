@@ -157,7 +157,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	for _, p := range remain {
 		addPartToGranule(granules, p)
 	}
-	curIndex := t.Index()
+	curIndex := t.Index() // TODO(THOR): I believe there's a race condition here, where we clone the current index, and after we clone it, another compaction routine swaps a new index.
 	index := curIndex.Clone()
 
 	deleted := index.Delete(granule)
