@@ -19,8 +19,8 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
   });
 
   return (
-    <Popover className="relative">
-      <div ref={containerRef} className="relative items-center w-fit">
+    <Popover>
+      <div ref={containerRef} className="items-center w-fit">
         <DateTimeRangePickerTrigger
           range={range}
           isActive={isActive}
