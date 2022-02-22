@@ -2,6 +2,8 @@ import ProfileSelector, {QuerySelection} from './ProfileSelector';
 import {ProfileSelection, ProfileView} from '@parca/profile';
 import {QueryServiceClient} from '@parca/client';
 
+import {NavigateFunction} from './ProfileExplorer';
+
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;
   query: QuerySelection;
@@ -9,6 +11,7 @@ interface ProfileExplorerSingleProps {
   selectProfile: (source: ProfileSelection) => void;
   profile: ProfileSelection | null;
   compareProfile: () => void;
+  navigateTo: NavigateFunction;
 }
 
 const ProfileExplorerSingle = ({
@@ -18,6 +21,7 @@ const ProfileExplorerSingle = ({
   selectProfile,
   profile,
   compareProfile,
+  navigateTo,
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
     <>
@@ -39,7 +43,11 @@ const ProfileExplorerSingle = ({
       <div className="grid grid-cols-1">
         <div>
           {profile != null ? (
-            <ProfileView queryClient={queryClient} profileSource={profile.ProfileSource()} />
+            <ProfileView
+              queryClient={queryClient}
+              profileSource={profile.ProfileSource()}
+              navigateTo={navigateTo}
+            />
           ) : (
             <></>
           )}

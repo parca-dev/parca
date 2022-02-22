@@ -1,7 +1,8 @@
 import {useState} from 'react';
 import DatePicker from 'react-datepicker';
+
 import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../utils';
-import Button from 'components/ui/Button';
+import Button from '../../../Button';
 
 import 'react-datepicker/dist/react-datepicker.css';
 

@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import produce from 'immer';
 
 export type UiState = ReturnType<typeof createSlice>;
 
 export default function createSlice(
-  set,
-  _get
+  set: any,
+  _get: any
 ): {
   ui: {
     darkMode: boolean;
@@ -19,7 +20,7 @@ export default function createSlice(
     // actions
     setDarkMode: (mode: boolean) => {
       set(
-        produce<UiState>(state => {
+        produce((state: any) => {
           state.ui.darkMode = mode;
         })
       );

@@ -1,18 +1,30 @@
 import {QueryServiceClient} from '@parca/client';
-import ProfileExplorer from 'components/ProfileExplorer';
-import {NextRouter, withRouter} from 'next/router';
+import {useLocation, useNavigate} from 'react-router-dom';
+import ProfileExplorer from '../components/ProfileExplorer';
+import {parseParams, convertToQueryParams} from '@parca/functions';
 
-const apiEndpoint = process.env.NEXT_PUBLIC_API_ENDPOINT;
+const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 
-interface ProfilesProps {
-  router: NextRouter;
-}
+const Profiles = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-const Profiles = (_: ProfilesProps): JSX.Element => {
+  const navigateTo = (path: string, queryParams: any) => {
+    navigate({
+      pathname: path,
+      search: `?${convertToQueryParams(queryParams)}`,
+    });
+  };
+
+  const queryParams = parseParams(location.search);
+
   const queryClient = new QueryServiceClient(
     apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`
   );
-  return <ProfileExplorer queryClient={queryClient} />;
+
+  return (
+    <ProfileExplorer queryClient={queryClient} queryParams={queryParams} navigateTo={navigateTo} />
+  );
 };
 
-export default withRouter(Profiles);
+export default Profiles;

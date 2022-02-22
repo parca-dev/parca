@@ -15,5 +15,4 @@ dist
 node_modules
 out
 testdata/
-ui/packages/app/template/
 ui/packages/app/web/node_modules

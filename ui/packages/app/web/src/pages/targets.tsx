@@ -1,18 +1,13 @@
 import React, {useState, useEffect} from 'react';
 import {TargetsRequest, TargetsResponse, ScrapeServiceClient, ServiceError} from '@parca/client';
-import {NextRouter, withRouter} from 'next/router';
 import TargetsTable from '../components/Targets/TargetsTable';
-
-const apiEndpoint = process.env.NEXT_PUBLIC_API_ENDPOINT;
-
-interface TargetsPageProps {
-  router: NextRouter;
-}
 
 export interface ITargetsResult {
   response: TargetsResponse.AsObject | null;
   error: ServiceError | null;
 }
+
+const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 
 export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
   const [result, setResult] = useState<ITargetsResult>({
@@ -38,7 +33,7 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
   return result;
 };
 
-const TargetsPage = (_: TargetsPageProps): JSX.Element => {
+const TargetsPage = (): JSX.Element => {
   const scrapeClient = new ScrapeServiceClient(
     apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`
   );
@@ -74,4 +69,4 @@ const TargetsPage = (_: TargetsPageProps): JSX.Element => {
   );
 };
 
-export default withRouter(TargetsPage);
+export default TargetsPage;

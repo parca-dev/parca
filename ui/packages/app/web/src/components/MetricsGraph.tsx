@@ -231,7 +231,7 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
 
   useEffect(() => {
-    const handleShiftDown = event => {
+    const handleShiftDown = (event: {keyCode: number}) => {
       if (event.keyCode === 16) {
         setFreezeTooltip(true);
       }
@@ -244,7 +244,7 @@ export const RawMetricsGraph = ({
   }, []);
 
   useEffect(() => {
-    const handleShiftUp = event => {
+    const handleShiftUp = (event: {keyCode: number}) => {
       if (event.keyCode === 16) {
         setFreezeTooltip(false);
       }
@@ -312,6 +312,7 @@ export const RawMetricsGraph = ({
 
   const yScale = d3
     .scaleLinear()
+    // tslint:disable-next-line
     .domain([minY, maxY])
     .range([height - margin, 0]);
 
@@ -355,7 +356,7 @@ export const RawMetricsGraph = ({
 
   const highlighted = getClosest();
 
-  const onMouseDown = (e): void => {
+  const onMouseDown = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
     // only left mouse button
     if (e.button !== 0) {
       return;
@@ -381,7 +382,7 @@ export const RawMetricsGraph = ({
     }
   };
 
-  const onMouseUp = (e): void => {
+  const onMouseUp = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
     setDragging(false);
 
     if (relPos === -1) {
@@ -528,7 +529,7 @@ export const RawMetricsGraph = ({
                   <MetricsSeries
                     data={s}
                     line={l}
-                    color={color(i)}
+                    color={color(i.toString())}
                     strokeWidth={
                       hovering && highlighted != null && i === highlighted.seriesIndex
                         ? lineStrokeHover
@@ -544,13 +545,13 @@ export const RawMetricsGraph = ({
               <g
                 className="circle-group"
                 ref={metricPointRef}
-                style={{fill: color(highlighted.seriesIndex)}}
+                style={{fill: color(highlighted.seriesIndex.toString())}}
               >
                 <MetricsCircle cx={highlighted.x} cy={highlighted.y} />
               </g>
             )}
             {selected != null && (
-              <g className="circle-group" style={{fill: color(selected.seriesIndex)}}>
+              <g className="circle-group" style={{fill: color(selected.seriesIndex.toString())}}>
                 <MetricsCircle cx={selected.x} cy={selected.y} radius={5} />
               </g>
             )}

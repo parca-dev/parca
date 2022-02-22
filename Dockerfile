@@ -44,7 +44,7 @@ COPY --chown=nobody:nogroup ./internal ./internal
 COPY --chown=nobody:nogroup ./gen ./gen
 COPY --chown=nobody:nogroup ./proto ./proto
 COPY --chown=nobody:nogroup ./ui/ui.go ./ui/ui.go
-COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/dist ./ui/packages/app/web/dist
+COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/build ./ui/packages/app/web/build
 RUN go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -trimpath -o parca ./cmd/parca
 RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 # Predicatable path for copying over to final image

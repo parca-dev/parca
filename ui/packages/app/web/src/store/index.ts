@@ -3,9 +3,9 @@ import createContext from 'zustand/context';
 import {persist} from 'zustand/middleware';
 import createUiState from './ui.state';
 
-let store;
+let store: any;
 
-const stateSlices = (set, get) => ({
+const stateSlices = (set: any, get: any) => ({
   ...createUiState(set, get),
   // add more slices
 });

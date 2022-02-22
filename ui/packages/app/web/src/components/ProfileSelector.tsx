@@ -39,6 +39,13 @@ export interface ILabelValuesResult {
   error: ServiceError | null;
 }
 
+interface WellKnownProfiles {
+  [key: string]: {
+    name: string;
+    help: string;
+  };
+}
+
 export const useLabelValues = (
   client: QueryServiceClient,
   labelName: string
@@ -65,7 +72,7 @@ export const useLabelValues = (
   return result;
 };
 
-const wellKnownProfiles = {
+const wellKnownProfiles: WellKnownProfiles = {
   block_total_contentions_count: {
     name: 'Block Contentions Total',
     help: 'Stack traces that led to blocking on synchronization primitives.',

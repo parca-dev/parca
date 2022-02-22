@@ -21,7 +21,7 @@ const Card = ({children, className = ''}: CardProps) => {
   );
 };
 
-const Header = ({children}) => {
+const Header = ({children}: {children: React.ReactNode}) => {
   return (
     <div
       className="bg-gray-200 dark:bg-gray-800 px-4 py-4 sm:px-6"
@@ -32,7 +32,7 @@ const Header = ({children}) => {
   );
 };
 
-const Body = ({children}) => {
+const Body = ({children}: {children: React.ReactNode}) => {
   return <div className="p-4">{children}</div>;
 };
 

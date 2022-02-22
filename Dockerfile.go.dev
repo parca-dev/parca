@@ -10,11 +10,11 @@ COPY go.mod go.sum /app/
 RUN go mod download -modcacherw
 
 # Create a dummy ui package to convience go compiler.
-RUN mkdir -p /app/ui/packages/app/web/dist && \
-    touch /app/ui/packages/app/web/dist/index.html && \
+RUN mkdir -p /app/ui/packages/app/web/build && \
+    touch /app/ui/packages/app/web/build/index.html && \
     echo $'package ui\n \
     import "embed"\n\
-    //go:embed packages/app/web/dist\n\
+    //go:embed packages/app/web/build\n\
     var FS embed.FS\n'\
     > ./ui/ui.go
 

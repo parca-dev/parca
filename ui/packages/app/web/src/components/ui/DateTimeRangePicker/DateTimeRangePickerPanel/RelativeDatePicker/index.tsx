@@ -1,9 +1,10 @@
-import Select, {contructItemsFromArray} from 'components/ui/Select';
 import {useState} from 'react';
-import Input from 'components/ui/Input';
-import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 import {capitalize} from '@parca/functions';
-import Button from 'components/ui/Button';
+
+import Input from '../../../Input';
+import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
+import Button from '../../../Button';
+import Select, {contructItemsFromArray} from '../../../Select';
 
 const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
   return UNITS.map(unit => ({
