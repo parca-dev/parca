@@ -70,7 +70,7 @@ func (l *PartList) Iterate(iterate func(*Part) bool) {
 		if node == nil {
 			return
 		}
-		if !iterate(node.part) {
+		if node.part != nil && !iterate(node.part) { // if the part == nil then this is a sentinel node, and we can skip it
 			return
 		}
 		next = atomic.LoadPointer(&node.next)
