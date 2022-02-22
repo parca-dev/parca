@@ -22,6 +22,7 @@ import (
 	"os"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -426,10 +427,10 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileM
 		},
 	}
 
-	httpDebugInfoClient, err := debuginfo.NewHttpDebugInfoClient(logger, "https://debuginfod.systemtap.org")
+	httpDebugInfodClient, err := debuginfo.NewHttpDebugInfoClient(logger, "https://debuginfod.systemtap.org", 4*time.Millisecond)
 	require.NoError(t, err)
 
-	debuginfodClientCache, err := debuginfo.NewObjectStorageDebugInfodClientCache(logger, cfg, httpDebugInfoClient)
+	debuginfodClientCache, err := debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg, httpDebugInfodClient)
 	require.NoError(t, err)
 
 	dbgStr, err := debuginfo.NewStore(

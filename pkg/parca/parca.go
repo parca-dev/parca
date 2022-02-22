@@ -72,8 +72,8 @@ type Flags struct {
 
 	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
 
-	UpstreamDebuginfodServer string `default:"https://debuginfod.systemtap.org" help:"Upstream private/public server for debuginfod files. Defaults to https://debuginfod.systemtap.org."`
-	//TODO: change this to a url type
+	UpstreamDebuginfodServer     string        `default:"https://debuginfod.systemtap.org" help:"Upstream private/public server for debuginfod files. Defaults to https://debuginfod.systemtap.org."`
+	DebugInfodHTTPRequestTimeout time.Duration `default:"2ms" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 2ms"`
 }
 
 // Run the parca server.
@@ -178,13 +178,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	httpDebugInfoClient, err := debuginfo.NewHttpDebugInfoClient(logger, flags.UpstreamDebuginfodServer)
+	httpDebugInfoClient, err := debuginfo.NewHttpDebugInfoClient(logger, flags.UpstreamDebuginfodServer, flags.DebugInfodHTTPRequestTimeout)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
 		return err
 	}
 
-	debugInfodClientCache, err := debuginfo.NewObjectStorageDebugInfodClientCache(logger, cfg.DebugInfo, httpDebugInfoClient)
+	debugInfodClientCache, err := debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg.DebugInfo, httpDebugInfoClient)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debuginfod client cache", "err", err)
 		return err

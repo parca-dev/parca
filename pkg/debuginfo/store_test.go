@@ -22,6 +22,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
@@ -63,10 +64,10 @@ func TestStore(t *testing.T) {
 		},
 	}
 
-	httpDebugInfoClient, err := NewHttpDebugInfoClient(logger, "https://debuginfod.systemtap.org")
+	httpDebugInfodClient, err := NewHttpDebugInfoClient(logger, "https://debuginfod.systemtap.org", 4*time.Millisecond)
 	require.NoError(t, err)
 
-	debuginfodClientCache, err := NewObjectStorageDebugInfodClientCache(logger, cfg, httpDebugInfoClient)
+	debuginfodClientCache, err := NewDebugInfodClientWithObjectStorageCache(logger, cfg, httpDebugInfodClient)
 	require.NoError(t, err)
 
 	s, err := NewStore(

@@ -72,8 +72,8 @@ type Store struct {
 	symbolizer *symbol.Symbolizer
 }
 
-// NewStore returns a new debug info store
-func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, debuginfodClientCache DebugInfodClient) (*Store, error) {
+// NewStore returns a new debug info store.
+func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, debuginfodClient DebugInfodClient) (*Store, error) {
 	cfg, err := yaml.Marshal(config.Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("marshal content of object storage configuration: %w", err)
@@ -95,7 +95,7 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 	}
 
 	return &Store{
-		debuginfodClientCache: debuginfodClientCache,
+		debuginfodClientCache: debuginfodClient,
 		logger:                log.With(logger, "component", "debuginfo"),
 		bucket:                bucket,
 		cacheDir:              cache.Directory,
@@ -239,7 +239,7 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 			if err != nil {
 				return "", fmt.Errorf("get object files from debuginfod storage: %w", err)
 			}
-
+			defer r.Close()
 		}
 		if err != nil {
 			return "", fmt.Errorf("get object from object storage: %w", err)

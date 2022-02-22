@@ -54,13 +54,6 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 
-	/*err := debuginfo.fetchObjectFileFromPublicServers("0535451f10caaab5a8469fd010f5342801a95217")
-
-	if err != nil {
-		level.Error(logger).Log("msg", "Program exited with error", "err", err)
-		os.Exit(1)
-	}*/
-
 	err := parca.Run(ctx, logger, registry, flags, version)
 	if err != nil {
 		level.Error(logger).Log("msg", "Program exited with error", "err", err)
