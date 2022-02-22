@@ -72,6 +72,9 @@ type Flags struct {
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 
 	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
+
+	UpstreamDebuginfodServer     string        `default:"https://debuginfod.systemtap.org" help:"Upstream private/public server for debuginfod files. Defaults to https://debuginfod.systemtap.org."`
+	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 }
 
 // Run the parca server.
@@ -176,7 +179,19 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo)
+	httpDebugInfoClient, err := debuginfo.NewHTTPDebugInfodClient(logger, flags.UpstreamDebuginfodServer, flags.DebugInfodHTTPRequestTimeout)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
+		return err
+	}
+
+	debugInfodClientCache, err := debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg.DebugInfo, httpDebugInfoClient)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize debuginfod client cache", "err", err)
+		return err
+	}
+
+	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo, debugInfodClientCache)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err

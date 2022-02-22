@@ -22,6 +22,7 @@ import (
 	"os"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -411,23 +412,32 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileM
 	sym, err := symbol.NewSymbolizer(logger)
 	require.NoError(t, err)
 
+	cfg := &debuginfo.Config{
+		Bucket: &client.BucketConfig{
+			Type: client.FILESYSTEM,
+			Config: filesystem.Config{
+				Directory: "testdata/",
+			},
+		},
+		Cache: &debuginfo.CacheConfig{
+			Type: debuginfo.FILESYSTEM,
+			Config: &debuginfo.FilesystemCacheConfig{
+				Directory: cacheDir,
+			},
+		},
+	}
+
+	httpDebugInfodClient, err := debuginfo.NewHTTPDebugInfodClient(logger, "https://debuginfod.systemtap.org", 5*time.Minute)
+	require.NoError(t, err)
+
+	debuginfodClientCache, err := debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg, httpDebugInfodClient)
+	require.NoError(t, err)
+
 	dbgStr, err := debuginfo.NewStore(
 		logger,
 		sym,
-		&debuginfo.Config{
-			Bucket: &client.BucketConfig{
-				Type: client.FILESYSTEM,
-				Config: filesystem.Config{
-					Directory: "testdata/",
-				},
-			},
-			Cache: &debuginfo.CacheConfig{
-				Type: debuginfo.FILESYSTEM,
-				Config: &debuginfo.FilesystemCacheConfig{
-					Directory: cacheDir,
-				},
-			},
-		})
+		cfg,
+		debuginfodClientCache)
 	require.NoError(t, err)
 
 	mStr := metastore.NewBadgerMetastore(
