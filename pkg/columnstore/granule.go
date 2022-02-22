@@ -64,7 +64,7 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 // AddPart returns the new cardinality of the Granule
 func (g *Granule) AddPart(p *Part) uint64 {
 
-	g.parts.Prepend(p)
+	node := g.parts.Prepend(p)
 	newcard := atomic.AddUint64(&g.card, uint64(p.Cardinality))
 	it := p.Iterator()
 
@@ -74,8 +74,8 @@ func (g *Granule) AddPart(p *Part) uint64 {
 			g.least = r // TODO atomic set the least pointer
 		}
 
-		// If the granule was pruned, copy part to new granule
-		if atomic.LoadUint64(&g.pruned) != 0 {
+		// If the prepend returned that we're adding to the compacted list; then we need to propogate the Part to the new granules
+		if node.sentinel == Compacted {
 			addPartToGranule(g.newGranules, p)
 		}
 	}

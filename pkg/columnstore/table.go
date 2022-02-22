@@ -137,7 +137,10 @@ func (t *Table) splitGranule(granule *Granule) {
 	tx, commit := t.db.begin()
 	defer commit()
 
-	newpart, remain, err := FilterMerge(tx, t.db.txCompleted, &t.schema, granule.parts) // need to merge all parts in a granule before splitting
+	// Start compaction by adding sentinel node to parts list
+	parts := granule.parts.Sentinel(Compacting)
+
+	newpart, remain, err := FilterMerge(tx, t.db.txCompleted, &t.schema, parts) // need to merge all parts in a granule before splitting
 	if err != nil {
 		level.Error(t.logger).Log("msg", "failed to merge parts", "error", err)
 	}
@@ -151,17 +154,23 @@ func (t *Table) splitGranule(granule *Granule) {
 		level.Error(t.logger).Log("msg", "granule split failed after add part", "error", err)
 	}
 
-	// TODO(THOR): we can't just slap remain on here,because the granule may have grown by now
-	// TODO(THOR): We're going to need to comapre and swap the parts list
-	/*
-		How do we split a granule that is currentl adding parts?
-	*/
-	// TODO(THOR):
-
 	// add remaining parts onto new granules
 	for _, p := range remain {
 		addPartToGranule(granules, p)
 	}
+
+	// set the newGranules pointer, so new writes will propogate into these new granules
+	granule.newGranules = granules
+
+	// Mark compaction complete in the granule; this will cause new writes to start using the newGranules pointer
+	parts = granule.parts.Sentinel(Compacted)
+
+	// Now we need to copy any new parts that happened while we were compacting
+	parts.Iterate(func(p *Part) bool {
+		addPartToGranule(granules, p)
+		return true
+	})
+
 	curIndex := t.Index()
 	index := curIndex.Clone()
 
@@ -180,7 +189,10 @@ func (t *Table) splitGranule(granule *Granule) {
 	if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&curIndex)), unsafe.Pointer(curIndex), unsafe.Pointer(index)) {
 		// mark this granule as having been pruned
 		atomic.AddUint64(&granule.pruned, 1)
-		granule.newGranules = granules // TODO this should be an atomic list too I think?
+
+	} else {
+		// TODO we either need to rety some of this operation if a swap fails, or we need to use the tx for sentinels?
+		panic("failed to swap index")
 	}
 }
 

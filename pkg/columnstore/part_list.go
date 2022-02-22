@@ -26,8 +26,8 @@ type PartList struct {
 	total uint64
 }
 
-// Sentinel adds a new sentinel node to the list
-func (l *PartList) Sentinel(s SentinelType) {
+// Sentinel adds a new sentinel node to the list, and returns the sub list starting from that sentinel
+func (l *PartList) Sentinel(s SentinelType) *PartList {
 	node := &Node{
 		sentinel: s,
 	}
@@ -35,8 +35,11 @@ func (l *PartList) Sentinel(s SentinelType) {
 		next := atomic.LoadPointer(&l.next)
 		node.next = next
 		if atomic.CompareAndSwapPointer(&l.next, next, (unsafe.Pointer)(node)) {
-			atomic.AddUint64(&l.total, 1)
-			return
+			size := atomic.AddUint64(&l.total, 1) // TODO should we add sentinels to the total?
+			return &PartList{
+				next:  next,
+				total: size, // TODO I'm not sure this is even correct to do
+			}
 		}
 	}
 }
