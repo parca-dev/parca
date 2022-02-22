@@ -2,8 +2,7 @@ run:
   deadline: 5m
   skip-dirs:
     - internal/go
-    - internal/pprof
-    -
+
 linters:
   enable:
     - depguard

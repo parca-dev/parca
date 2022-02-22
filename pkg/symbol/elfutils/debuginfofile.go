@@ -2,6 +2,7 @@ package elfutils
 
 import (
 	"debug/dwarf"
+	"debug/elf"
 	"errors"
 	"fmt"
 	"io"
@@ -15,8 +16,6 @@ import (
 )
 
 type debugInfoFile struct {
-	*objFile
-
 	demangler *demangle.Demangler
 
 	debugData           *dwarf.Data
@@ -27,12 +26,7 @@ type debugInfoFile struct {
 
 // NewDebugInfoFile creates a new DebugInfoFile.
 func NewDebugInfoFile(path string, m *pb.Mapping, demangler *demangle.Demangler) (*debugInfoFile, error) {
-	objFile, err := Open(path, m.Start, m.Limit, m.Offset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open objFile: %w", err)
-	}
-
-	f, err := elfOpen(path)
+	f, err := elf.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open elf: %w", err)
 	}
@@ -44,7 +38,6 @@ func NewDebugInfoFile(path string, m *pb.Mapping, demangler *demangle.Demangler)
 	}
 
 	return &debugInfoFile{
-		objFile:   objFile,
 		demangler: demangler,
 
 		debugData:           debugData,
@@ -55,14 +48,12 @@ func NewDebugInfoFile(path string, m *pb.Mapping, demangler *demangle.Demangler)
 }
 
 func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, error) {
-	f.baseOnce.Do(func() { f.baseErr = f.computeBase(addr) })
-	if f.baseErr != nil {
-		return nil, f.baseErr
-	}
+	// TODO(kakkoyun):
+	// Understand the difference between nm and addr2line implementation differences.
 
 	// The reader is positioned at byte offset 0 in the DWARF “info” section.
 	er := f.debugData.Reader()
-	cu, err := er.SeekPC(addr)
+	cu, err := er.SeekPC(addr) // TODO(kakkoyun): Use f.base: addr - f.base or f.base + addr
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +68,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 	lines := []metastore.LocationLine{}
 	var tr *godwarf.Tree
 	for _, t := range f.subprograms[cu.Offset] {
-		if t.ContainsPC(addr) {
+		if t.ContainsPC(addr) { // TODO(kakkoyun): Use f.base: addr - f.base or f.base + addr
 			tr = t
 			break
 		}
@@ -97,7 +88,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 	})
 
 	// If pc is 0 then all inlined calls will be returned.
-	for _, ch := range reader.InlineStack(tr, addr) {
+	for _, ch := range reader.InlineStack(tr, addr) { // TODO(kakkoyun): Use f.base: addr - f.base or f.base + addr
 		var name string
 		if ch.Tag == dwarf.TagSubprogram {
 			name = tr.Entry.Val(dwarf.AttrName).(string)
