@@ -130,7 +130,7 @@ func (t *Table) Insert(rows []Row) error {
 func (t *Table) splitGranule(granule *Granule) {
 
 	// Recheck to ensure the granule still needs to be split
-	if atomic.CompareAndSwapUint64(&granule.pruned, 0, 1) {
+	if !atomic.CompareAndSwapUint64(&granule.pruned, 0, 1) {
 		return
 	}
 
