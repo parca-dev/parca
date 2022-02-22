@@ -178,7 +178,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	httpDebugInfoClient, err := debuginfo.NewHttpDebugInfoClient(logger, flags.UpstreamDebuginfodServer, flags.DebugInfodHTTPRequestTimeout)
+	httpDebugInfoClient, err := debuginfo.NewHTTPDebugInfodClient(logger, flags.UpstreamDebuginfodServer, flags.DebugInfodHTTPRequestTimeout)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
 		return err

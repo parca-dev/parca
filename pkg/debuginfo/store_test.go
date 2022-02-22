@@ -48,7 +48,7 @@ func TestStore(t *testing.T) {
 	sym, err := symbol.NewSymbolizer(logger)
 	require.NoError(t, err)
 
-	//cfg := config.Config{}
+	// cfg := config.Config{}
 	cfg := &Config{
 		Bucket: &client.BucketConfig{
 			Type: client.FILESYSTEM,
@@ -64,7 +64,7 @@ func TestStore(t *testing.T) {
 		},
 	}
 
-	httpDebugInfodClient, err := NewHttpDebugInfoClient(logger, "https://debuginfod.systemtap.org", 4*time.Millisecond)
+	httpDebugInfodClient, err := NewHTTPDebugInfodClient(logger, "https://debuginfod.systemtap.org", 4*time.Millisecond)
 	require.NoError(t, err)
 
 	debuginfodClientCache, err := NewDebugInfodClientWithObjectStorageCache(logger, cfg, httpDebugInfodClient)

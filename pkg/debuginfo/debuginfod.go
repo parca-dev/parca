@@ -33,25 +33,26 @@ type DebugInfodClient interface {
 	GetDebugInfo(ctx context.Context, buildid string) (io.ReadCloser, error)
 }
 
-type HttpDebugInfodClient struct {
+type HTTPDebugInfodClient struct {
 	logger          log.Logger
 	UpstreamServer  *url.URL
 	timeoutDuration time.Duration
 }
+
 type DebugInfodClientObjectStorageCache struct {
 	logger log.Logger
 	client DebugInfodClient
 	bucket objstore.Bucket
 }
 
-func NewHttpDebugInfoClient(logger log.Logger, serverUrl string, timeoutDuration time.Duration) (*HttpDebugInfodClient, error) {
-	parsedUrl, err := url.Parse(serverUrl)
+func NewHTTPDebugInfodClient(logger log.Logger, serverURL string, timeoutDuration time.Duration) (*HTTPDebugInfodClient, error) {
+	parsedURL, err := url.Parse(serverURL)
 	if err != nil {
 		return nil, err
 	}
-	return &HttpDebugInfodClient{
+	return &HTTPDebugInfodClient{
 		logger:          logger,
-		UpstreamServer:  parsedUrl,
+		UpstreamServer:  parsedURL,
 		timeoutDuration: timeoutDuration,
 	}, nil
 }
@@ -73,18 +74,18 @@ func NewDebugInfodClientWithObjectStorageCache(logger log.Logger, config *Config
 	}, nil
 }
 
-func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, buildId string) (io.ReadCloser, error) {
-	path := buildId + "/debuginfod-cache/debuginfo"
+func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
+	path := buildID + "/debuginfod-cache/debuginfo"
 
 	if exists, _ := c.bucket.Exists(ctx, path); exists {
 		debuginfoFile, err := c.bucket.Get(ctx, path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to download object file from debuginfod cache: build_id: %v: %w", buildId, err)
+			return nil, fmt.Errorf("failed to download object file from debuginfod cache: build_id: %v: %w", buildID, err)
 		}
 		return debuginfoFile, nil
 	}
 
-	debugInfo, err := c.client.GetDebugInfo(ctx, buildId)
+	debugInfo, err := c.client.GetDebugInfo(ctx, buildID)
 	if err != nil {
 		return nil, ErrDebugInfoNotFound
 	}
@@ -96,20 +97,20 @@ func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, b
 
 	debugInfoReader, err := c.bucket.Get(ctx, path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to download object file from debuginfod cache: build_id: %v: %w", buildId, err)
+		return nil, fmt.Errorf("failed to download object file from debuginfod cache: build_id: %v: %w", buildID, err)
 	}
 
 	return debugInfoReader, nil
 }
 
-func (c *HttpDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
-	buildIdUrl := *c.UpstreamServer
-	buildIdUrl.Path = path.Join(buildIdUrl.Path, buildID, "debuginfo")
+func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
+	buildIDURL := *c.UpstreamServer
+	buildIDURL.Path = path.Join(buildIDURL.Path, buildID, "debuginfo")
 
 	ctx, cancel := context.WithTimeout(ctx, c.timeoutDuration)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", buildIdUrl.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", buildIDURL.String(), nil)
 	if err != nil {
 		level.Debug(c.logger).Log("msg", "failed to create new HTTP request", "err", err)
 		return nil, err

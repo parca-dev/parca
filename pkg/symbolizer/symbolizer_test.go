@@ -427,7 +427,7 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileM
 		},
 	}
 
-	httpDebugInfodClient, err := debuginfo.NewHttpDebugInfoClient(logger, "https://debuginfod.systemtap.org", 4*time.Millisecond)
+	httpDebugInfodClient, err := debuginfo.NewHTTPDebugInfodClient(logger, "https://debuginfod.systemtap.org", 4*time.Millisecond)
 	require.NoError(t, err)
 
 	debuginfodClientCache, err := debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg, httpDebugInfodClient)
