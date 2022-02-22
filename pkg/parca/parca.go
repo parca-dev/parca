@@ -73,7 +73,7 @@ type Flags struct {
 	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
 
 	UpstreamDebuginfodServer     string        `default:"https://debuginfod.systemtap.org" help:"Upstream private/public server for debuginfod files. Defaults to https://debuginfod.systemtap.org."`
-	DebugInfodHTTPRequestTimeout time.Duration `default:"2ms" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 2ms"`
+	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 }
 
 // Run the parca server.
