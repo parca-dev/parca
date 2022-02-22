@@ -26,6 +26,7 @@ type Table struct {
 	index  *btree.BTree
 
 	sync.WaitGroup
+	sync.Mutex
 }
 
 type tableMetrics struct {
@@ -129,7 +130,7 @@ func (t *Table) Insert(rows []Row) error {
 func (t *Table) splitGranule(granule *Granule) {
 
 	// Recheck to ensure the granule still needs to be split
-	if atomic.LoadUint64(&granule.pruned) != 0 {
+	if atomic.CompareAndSwapUint64(&granule.pruned, 0, 1) {
 		return
 	}
 
@@ -172,7 +173,9 @@ func (t *Table) splitGranule(granule *Granule) {
 	})
 
 	curIndex := t.Index()
+	t.Lock()
 	index := curIndex.Clone() // TODO(THOR): we can't clone concurrently
+	t.Unlock()
 
 	deleted := index.Delete(granule)
 	if deleted == nil {
@@ -186,11 +189,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	}
 
 	// Point to the new index
-	if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&curIndex)), unsafe.Pointer(curIndex), unsafe.Pointer(index)) {
-		// mark this granule as having been pruned
-		atomic.AddUint64(&granule.pruned, 1)
-
-	} else {
+	if !atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&curIndex)), unsafe.Pointer(curIndex), unsafe.Pointer(index)) {
 		// TODO we either need to rety some of this operation if a swap fails, or we need to use the tx for sentinels?
 		panic("failed to swap index")
 	}
