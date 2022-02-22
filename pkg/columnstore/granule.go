@@ -70,6 +70,7 @@ func (g *Granule) AddPart(p *Part) uint64 {
 
 	if it.Next() {
 		r := Row{Values: it.Values()}
+		//least := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&g.least))) // TODO least isn't a pointer
 		if g.schema.RowLessThan(r.Values, g.least.Values) { // TODO load g.least ptr
 			g.least = r // TODO atomic set the least pointer
 		}
