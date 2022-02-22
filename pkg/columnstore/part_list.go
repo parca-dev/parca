@@ -52,7 +52,7 @@ func (l *PartList) Prepend(part *Part) *Node {
 	for { // continue until a successful compare and swap occurs
 		next := atomic.LoadPointer(&l.next)
 		node.next = next
-		if (*Node)(next).sentinel == Compacted { // This list is apart of a compacted granule, propogate the compacted value so each subsequent Prepend can return the correct value
+		if next != nil && (*Node)(next).sentinel == Compacted { // This list is apart of a compacted granule, propogate the compacted value so each subsequent Prepend can return the correct value
 			node.sentinel = Compacted
 		}
 		if atomic.CompareAndSwapPointer(&l.next, next, (unsafe.Pointer)(node)) {
