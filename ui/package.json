@@ -65,7 +65,7 @@
     "eslint-config-react-app": "^7.0.0",
     "eslint-config-standard-with-typescript": "^21.0.1",
     "eslint-plugin-import": "^2.25.3",
-    "eslint-plugin-jest": "^25.3.4",
+    "eslint-plugin-jest": "^26.1.1",
     "eslint-plugin-jest-dom": "^4.0.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.0.0",
