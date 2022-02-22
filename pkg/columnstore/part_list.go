@@ -76,3 +76,21 @@ func (l *PartList) Iterate(iterate func(*Part) bool) {
 		next = atomic.LoadPointer(&node.next)
 	}
 }
+
+// IterateSublist accesses every node in the list until it hits the next sentinel node
+func (l *PartList) IterateSublist(iterate func(*Part) bool) {
+	next := atomic.LoadPointer(&l.next)
+	for {
+		node := (*Node)(next)
+		if node == nil {
+			return
+		}
+		if node.part == nil { // if the part == nil then this is a sentinel node then we're done
+			return
+		}
+		if !iterate(node.part) {
+			return
+		}
+		next = atomic.LoadPointer(&node.next)
+	}
+}
