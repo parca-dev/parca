@@ -810,7 +810,7 @@ func Test_Granule_Less(t *testing.T) {
 	)
 	g := &Granule{
 		schema: &schema,
-		least: Row{
+		least: &Row{
 			Values: []interface{}{
 				[]DynamicColumnValue{
 					{Name: "label1", Value: "06e32507-cda3-49db-8093-53a8a4c8da76"},
@@ -823,7 +823,7 @@ func Test_Granule_Less(t *testing.T) {
 	}
 	g1 := &Granule{
 		schema: &schema,
-		least: Row{
+		least: &Row{
 			Values: []interface{}{
 				[]DynamicColumnValue{
 					{Name: "label1", Value: "06e32507-cda3-49db-8093-53a8a4c8da76"},

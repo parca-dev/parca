@@ -3,6 +3,7 @@ package columnstore
 import (
 	"fmt"
 	"sync/atomic"
+	"unsafe"
 
 	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/array"
@@ -15,7 +16,7 @@ type Granule struct {
 
 	// least is the row that exists within the Granule that is the least.
 	// This is used for quick insertion into the btree, without requiring an iterator
-	least Row
+	least *Row
 	parts *PartList
 
 	// card is the raw commited, and uncommited cardinality of the granule. It is used as a suggestion for potential compaction
@@ -45,7 +46,7 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 		g.parts.Prepend(p)
 		it := p.Iterator()
 		if it.Next() { // Since we assume a part is sorted, we need only to look at the first row in each Part
-			r := Row{Values: it.Values()}
+			r := &Row{Values: it.Values()}
 			switch i {
 			case 0:
 				g.least = r
@@ -69,10 +70,16 @@ func (g *Granule) AddPart(p *Part) uint64 {
 	it := p.Iterator()
 
 	if it.Next() {
-		r := Row{Values: it.Values()}
-		//least := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&g.least))) // TODO least isn't a pointer
-		if g.schema.RowLessThan(r.Values, g.least.Values) { // TODO load g.least ptr
-			g.least = r // TODO atomic set the least pointer
+		for {
+			r := &Row{Values: it.Values()}
+			least := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&g.least)))
+			if least == nil || g.schema.RowLessThan(r.Values, (*Row)(least).Values) {
+				if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&g.least)), least, unsafe.Pointer(r)) {
+					break
+				}
+			} else {
+				break
+			}
 		}
 
 		// If the prepend returned that we're adding to the compacted list; then we need to propogate the Part to the new granules
@@ -212,5 +219,10 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 
 // Less implements the btree.Item interface
 func (g *Granule) Less(than btree.Item) bool {
-	return g.schema.RowLessThan(g.least.Values, than.(*Granule).least.Values)
+	return g.schema.RowLessThan(g.Least().Values, than.(*Granule).Least().Values)
+}
+
+// Least returns the least row in a Granule
+func (g *Granule) Least() *Row {
+	return (*Row)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&g.least))))
 }

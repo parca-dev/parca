@@ -172,7 +172,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	})
 
 	curIndex := t.Index()
-	index := curIndex.Clone()
+	index := curIndex.Clone() // TODO(THOR): we can't clone concurrently
 
 	deleted := index.Delete(granule)
 	if deleted == nil {
@@ -244,7 +244,7 @@ func (t *Table) splitRowsByGranule(rows []Row) map[*Granule][]Row {
 		g := i.(*Granule)
 
 		for ; j < len(rows); j++ {
-			if t.schema.RowLessThan(rows[j].Values, g.least.Values) {
+			if t.schema.RowLessThan(rows[j].Values, g.Least().Values) {
 				if prev != nil {
 					rowsByGranule[prev] = append(rowsByGranule[prev], rows[j])
 					continue
@@ -282,7 +282,7 @@ func addPartToGranule(granules []*Granule, p *Part) {
 		row := it.Values()
 		var prev *Granule
 		for _, g := range granules {
-			if g.schema.RowLessThan(row, g.least.Values) {
+			if g.schema.RowLessThan(row, g.Least().Values) {
 				if prev != nil {
 					prev.AddPart(p)
 					return
