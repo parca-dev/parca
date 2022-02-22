@@ -189,7 +189,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	}
 
 	// Point to the new index
-	if !atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&curIndex)), unsafe.Pointer(curIndex), unsafe.Pointer(index)) {
+	if !atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&t.index)), unsafe.Pointer(t.index), unsafe.Pointer(index)) {
 		// TODO we either need to rety some of this operation if a swap fails, or we need to use the tx for sentinels?
 		panic("failed to swap index")
 	}
