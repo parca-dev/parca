@@ -52,6 +52,7 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err e
 		}
 	}()
 
+	// TODO(kakkoyun): Do we need to consider the base address for any part of Go binaries?
 	file, line, fn := gl.symtab.PCToLine(addr)
 	name := "?"
 	if fn != nil {
@@ -61,7 +62,8 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err e
 		line = 0
 	}
 
-	// TODO(kakkoyun): Find a way to symbolize inline functions.
+	// TODO(kakkoyun): These lines miss the inline functions.
+	// - Find a way to symbolize inline functions.
 	lines = append(lines, metastore.LocationLine{
 		Line: int64(line),
 		Function: &pb.Function{
