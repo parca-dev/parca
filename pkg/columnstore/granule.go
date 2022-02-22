@@ -53,6 +53,7 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 	return g
 }
 
+// AddPart adds a Part to the Granule.
 func (g *Granule) AddPart(p *Part) {
 	g.Lock()
 	defer g.Unlock()
@@ -69,6 +70,7 @@ func (g *Granule) AddPart(p *Part) {
 	}
 }
 
+// Cardinality returns the sum of all part's cardinality.
 func (g *Granule) Cardinality() int {
 	g.RLock()
 	defer g.RUnlock()
@@ -86,7 +88,7 @@ func (g *Granule) cardinality() int {
 
 // split a granule into n sized granules. With the last granule containing the remainder.
 // Returns the granules in order.
-// This assumes the Granule has had it's parts merged into a single part
+// This assumes the Granule has had its parts merged into a single part.
 func (g *Granule) split(tx uint64, n int) ([]*Granule, error) {
 	if len(g.parts) > 1 {
 		return []*Granule{g}, nil // do nothing
@@ -156,7 +158,6 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 
 	i := 0 // i is the index into our arrow schema
 	for j, c := range p.columns {
-
 		switch g.schema.columns[j].Dynamic {
 		case true: // expand the dynamic columns
 			d := c.(*DynamicColumn) // TODO this is gross and we should change this iteration
@@ -194,7 +195,7 @@ func (g *Granule) ArrowRecord(tx uint64, txCompleted func(uint64) uint64, pool m
 	return bld.NewRecord(), nil
 }
 
-// Less implements the btree.Item interface
+// Less implements the btree.Item interface.
 func (g *Granule) Less(than btree.Item) bool {
 	return g.schema.RowLessThan(g.least.Values, than.(*Granule).least.Values)
 }

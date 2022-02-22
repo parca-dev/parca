@@ -9,11 +9,13 @@ type Row struct {
 	Values []interface{}
 }
 
+// Part is a sub set of a Granule? TODO: How do they relate?
 type Part struct {
 	columns     []Iterable
 	Cardinality int
 
-	// transaction id that this part was indserted under
+	// transaction id that this part was inserted under.
+	// TODO: Rename to insertTX?
 	tx uint64
 }
 
@@ -50,6 +52,7 @@ func NewEmptyPart(tx uint64, colDefs []ColumnDefinition) (*Part, error) {
 	return NewPart(tx, colDefs, &emptyRowWriter{})
 }
 
+// emptyRowWriter is mostly used for testing?
 type emptyRowWriter struct{}
 
 func (w *emptyRowWriter) WriteTo(appenders []Appender) (int, error) { return 0, nil }

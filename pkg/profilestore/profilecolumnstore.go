@@ -23,13 +23,14 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
-	"github.com/parca-dev/parca/pkg/columnstore"
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/parca-dev/parca/pkg/columnstore"
+	"github.com/parca-dev/parca/pkg/metastore"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
@@ -96,7 +97,7 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 				if err != nil {
 					level.Error(s.logger).Log("msg", "failed to create debug-value-log directory", "err", err)
 				} else {
-					err := ioutil.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, p.TimeNanos), sample.RawProfile, 0644)
+					err := ioutil.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, p.TimeNanos), sample.RawProfile, 0o644)
 					if err != nil {
 						level.Error(s.logger).Log("msg", "failed to write debug-value-log", "err", err)
 					}

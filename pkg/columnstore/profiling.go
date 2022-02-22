@@ -6,10 +6,13 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/prometheus/prometheus/model/labels"
+
 	"github.com/parca-dev/parca/pkg/metastore"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
-	"github.com/prometheus/prometheus/model/labels"
 )
+
+// TODO: Move this in a separate package for clean separation of concerns.
 
 func ParcaProfilingTableSchema() Schema {
 	return NewSchema(

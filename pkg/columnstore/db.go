@@ -52,7 +52,7 @@ func (s *ColumnStore) DB(name string) *DB {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
-	// Need to double check that in the mean time a database with the same name
+	// Need to double-check that in the meantime a database with the same name
 	// wasn't concurrently created.
 	db, ok = s.dbs[name]
 	if ok {
@@ -66,7 +66,7 @@ func (s *ColumnStore) DB(name string) *DB {
 		reg:    prometheus.WrapRegistererWith(prometheus.Labels{"db": name}, s.reg),
 
 		active: map[uint64]uint64{},
-		txmtx:  &sync.RWMutex{},
+		txmtx:  &sync.RWMutex{}, // TODO: Rename to something less cryptic or add a comment
 	}
 
 	s.dbs[name] = db
@@ -101,14 +101,15 @@ func (db *DB) beginRead() uint64 {
 	return atomic.AddUint64(&db.tx, 1)
 }
 
-// begin is an internal function that Tables call to start a transaction for writes
+// begin is an internal function that Tables call to start a transaction for writes.
+// Call the returned function to commit the transaction.
 func (db *DB) begin() (uint64, func()) {
 	tx := atomic.AddUint64(&db.tx, 1)
 	db.txmtx.Lock()
 	db.active[tx] = math.MaxUint64
 	db.txmtx.Unlock()
 	return tx, func() {
-		// commit the transaction
+		// commit the transaction by setting the current transaction tx as end value.
 		db.txmtx.Lock()
 		db.active[tx] = atomic.AddUint64(&db.tx, 1)
 		db.txmtx.Unlock()
