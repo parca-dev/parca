@@ -2,6 +2,7 @@ package columnstore
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"sync"
 	"testing"
@@ -150,7 +151,7 @@ func TestTable(t *testing.T) {
 	// One granule with 3 parts
 	require.Equal(t, 1, table.index.Len())
 	require.Equal(t, 3, len(table.index.Min().(*Granule).parts))
-	require.Equal(t, 5, table.index.Min().(*Granule).Cardinality())
+	require.Equal(t, 5, table.index.Min().(*Granule).Cardinality(math.MaxUint64, table.db.txCompleted))
 	require.Equal(t, []interface{}{
 		[]DynamicColumnValue{
 			{Name: "label1", Value: "value1"},
@@ -268,8 +269,8 @@ func Test_Table_GranuleSplit(t *testing.T) {
 	})
 
 	require.Equal(t, 2, table.index.Len())
-	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality())
-	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality())
+	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality(math.MaxUint64, table.db.txCompleted))
+	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality(math.MaxUint64, table.db.txCompleted))
 }
 
 /*
@@ -374,8 +375,8 @@ func Test_Table_InsertLowest(t *testing.T) {
 	table.Sync()
 
 	require.Equal(t, 2, table.index.Len())
-	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality()) // [10,11]
-	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality()) // [12,13,14]
+	require.Equal(t, 2, table.index.Min().(*Granule).Cardinality(math.MaxUint64, table.db.txCompleted)) // [10,11]
+	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality(math.MaxUint64, table.db.txCompleted)) // [12,13,14]
 
 	// Insert a new column that is the lowest column yet; expect it to be added to the minimum column
 	err = table.Insert([]Row{
@@ -398,8 +399,8 @@ func Test_Table_InsertLowest(t *testing.T) {
 	}
 
 	require.Equal(t, 2, table.index.Len())
-	require.Equal(t, 3, table.index.Min().(*Granule).Cardinality()) // [1,10,11]
-	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality()) // [12,13,14]
+	require.Equal(t, 3, table.index.Min().(*Granule).Cardinality(math.MaxUint64, table.db.txCompleted)) // [1,10,11]
+	require.Equal(t, 3, table.index.Max().(*Granule).Cardinality(math.MaxUint64, table.db.txCompleted)) // [12,13,14]
 }
 
 // This test issues concurrent writes to the database, and expects all of them to be recorded successfully.

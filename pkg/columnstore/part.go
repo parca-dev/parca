@@ -122,6 +122,31 @@ func (pi *PartIterator) Err() error {
 	return nil
 }
 
+// FilterMerge merges all parts into a single part, returning any that can't be merged
+func FilterMerge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts ...*Part) (*Part, []*Part, error) {
+	its := make([]*PartIterator, 0, len(parts))
+
+	remaining := []*Part{}
+
+	// Convert all the parts into a set of rows
+	for _, p := range parts {
+		// Don't merge parts from an newer tx, or from an uncompleted tx, or a completed tx that finished after this tx started
+		if p.tx > tx || txCompleted(p.tx) > tx {
+			remaining = append(remaining, p)
+			continue
+		}
+
+		its = append(its, p.Iterator())
+	}
+
+	p, err := merge(tx, schema, its)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return p, remaining, nil
+}
+
 // Merge merges all parts into a single part
 func Merge(tx uint64, txCompleted func(uint64) uint64, schema *Schema, parts ...*Part) (*Part, error) {
 	its := make([]*PartIterator, 0, len(parts))

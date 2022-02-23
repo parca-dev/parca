@@ -16,14 +16,21 @@ type Granule struct {
 
 	// least is the row that exists within the Granule that is the least.
 	// This is used for quick insertion into the btree, without requiring an iterator
-	least  Row
-	parts  []*Part
+	least Row
+	parts []*Part
+
+	// card is the raw commited, and uncommited cardinality of the granule. It is used as a suggestion for potential compaction
+	card int
+
 	schema *Schema
 
 	granulesCreated prometheus.Counter
 
 	// pruned indicates if this Granule is longer found in the index
 	pruned bool
+
+	// newGranules are the granules that were created after a split
+	newGranules []*Granule
 }
 
 func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Part) *Granule {
@@ -35,6 +42,7 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 
 	// Find the least column
 	for i, p := range parts {
+		g.card += p.Cardinality
 		it := p.Iterator()
 		if it.Next() { // Since we assume a part is sorted, we need only to look at the first row in each Part
 			r := Row{Values: it.Values()}
@@ -53,11 +61,13 @@ func NewGranule(granulesCreated prometheus.Counter, schema *Schema, parts ...*Pa
 	return g
 }
 
-func (g *Granule) AddPart(p *Part) {
+// AddPart returns the new cardinality of the Granule
+func (g *Granule) AddPart(p *Part) int {
 	g.Lock()
 	defer g.Unlock()
 
 	g.parts = append(g.parts, p)
+	g.card += p.Cardinality
 	it := p.Iterator()
 
 	if it.Next() {
@@ -65,20 +75,29 @@ func (g *Granule) AddPart(p *Part) {
 		if g.schema.RowLessThan(r.Values, g.least.Values) {
 			g.least = r
 		}
-		return
+
+		// If the granule was pruned, copy part to new granule
+		if g.pruned {
+			addPartToGranule(g.newGranules, p)
+		}
 	}
+
+	return g.card
 }
 
-func (g *Granule) Cardinality() int {
+func (g *Granule) Cardinality(tx uint64, txCompleted func(uint64) uint64) int {
 	g.RLock()
 	defer g.RUnlock()
 
-	return g.cardinality()
+	return g.cardinality(tx, txCompleted)
 }
 
-func (g *Granule) cardinality() int {
+func (g *Granule) cardinality(tx uint64, txCompleted func(uint64) uint64) int {
 	res := 0
 	for _, p := range g.parts {
+		if p.tx > tx || txCompleted(p.tx) > tx {
+			continue
+		}
 		res += p.Cardinality
 	}
 	return res
