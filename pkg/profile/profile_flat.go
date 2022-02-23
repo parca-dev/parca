@@ -33,7 +33,9 @@ func FlatProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.Profil
 		if err != nil {
 			return nil, err
 		}
-		fps = append(fps, fp)
+		if fp != nil {
+			fps = append(fps, fp)
+		}
 	}
 	return fps, nil
 }
@@ -50,12 +52,26 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 	}
 
 	for _, s := range p.Sample {
-		if !isZeroSample(s) {
-			_, _, err := pfn.mapSample(ctx, s, sampleIndex)
-			if err != nil {
-				return nil, err
-			}
+		if isZeroSample(s) {
+			continue
 		}
+
+		// TODO: This is semantically incorrect, it is valid to have no
+		// locations in pprof. This needs to be fixed once we remove the
+		// stacktrace UUIDs since location IDs are going to be saved directly
+		// in the columnstore.
+		if len(s.Location) == 0 {
+			continue
+		}
+
+		_, _, err := pfn.mapSample(ctx, s, sampleIndex)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(pfn.samples) == 0 {
+		return nil, nil
 	}
 
 	return &FlatProfile{
