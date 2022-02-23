@@ -172,26 +172,27 @@ func (t *Table) splitGranule(granule *Granule) {
 		return true
 	})
 
-	curIndex := t.Index()
-	t.Lock()
-	index := curIndex.Clone() // TODO(THOR): we can't clone concurrently
-	t.Unlock()
+	for {
+		curIndex := t.Index()
+		t.Lock()
+		index := curIndex.Clone() // TODO(THOR): we can't clone concurrently
+		t.Unlock()
 
-	deleted := index.Delete(granule)
-	if deleted == nil {
-		level.Error(t.logger).Log("msg", "failed to delete granule during split")
-	}
-
-	for _, g := range granules {
-		if dupe := index.ReplaceOrInsert(g); dupe != nil {
-			level.Error(t.logger).Log("duplicate insert performed")
+		deleted := index.Delete(granule)
+		if deleted == nil {
+			level.Error(t.logger).Log("msg", "failed to delete granule during split")
 		}
-	}
 
-	// Point to the new index
-	if !atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&t.index)), unsafe.Pointer(t.index), unsafe.Pointer(index)) {
-		// TODO we either need to rety some of this operation if a swap fails, or we need to use the tx for sentinels?
-		panic("failed to swap index")
+		for _, g := range granules {
+			if dupe := index.ReplaceOrInsert(g); dupe != nil {
+				level.Error(t.logger).Log("duplicate insert performed")
+			}
+		}
+
+		// Point to the new index
+		if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&t.index)), unsafe.Pointer(t.index), unsafe.Pointer(index)) {
+			return
+		}
 	}
 }
 
