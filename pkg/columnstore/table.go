@@ -167,7 +167,7 @@ func (t *Table) splitGranule(granule *Granule) {
 	parts = granule.parts.Sentinel(Compacted)
 
 	// Now we need to copy any new parts that happened while we were compacting
-	parts.IterateSublist(func(p *Part) bool { // TODO  this is a stupid API; the sublist returned from Sentinel should auto know when to stop
+	parts.Iterate(func(p *Part) bool { // TODO  this is a stupid API; the sublist returned from Sentinel should auto know when to stop
 		addPartToGranule(granules, p)
 		return true
 	})
