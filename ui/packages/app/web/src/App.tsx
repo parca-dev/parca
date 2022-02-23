@@ -1,6 +1,5 @@
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {PersistGate} from 'redux-persist/integration/react';
-import {persistStore} from 'redux-persist';
 import store from './store';
 import 'tailwindcss/tailwind.css';
 import './style/file-input.css';
@@ -32,11 +31,11 @@ function getBasename() {
   return window.PATH_PREFIX;
 }
 
-const App = () => {
-  let persistor = persistStore(store);
+const {store: reduxStore, persistor} = store();
 
+const App = () => {
   return (
-    <Provider store={store}>
+    <Provider store={reduxStore}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter basename={getBasename()}>
           <ThemeProvider>

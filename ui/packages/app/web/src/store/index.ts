@@ -2,6 +2,7 @@ import {configureStore, combineReducers} from '@reduxjs/toolkit';
 import uiReducer from './slices/uiSlice';
 import storage from 'redux-persist/lib/storage';
 import {persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER} from 'redux-persist';
+import {persistStore} from 'redux-persist';
 
 const rootReducer = combineReducers({
   ui: uiReducer,
@@ -31,4 +32,9 @@ const store = configureStore({
     }),
 });
 
-export default store;
+const defaultExports = () => {
+  let persistor = persistStore(store);
+  return {store, persistor};
+};
+
+export default defaultExports;
