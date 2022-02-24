@@ -1,15 +1,13 @@
 # Parca UI
 
-This is a [Next.js](https://nextjs.org/) project that utilizes
-the [static HTML export feature](https://nextjs.org/docs/advanced-features/static-html-export)
-of [Next.js](https://nextjs.org/)
+This is a [Create React App](https://create-react-app.dev/) project that utilizes [Craco](https://github.com/gsoft-inc/craco) to modify and customize the app without 'ejecting'.
 
 ## Development
 
-The Next.js app requires an environment variable for the API endpoint so as to talk to the Parca backend. Create a file named `.env.local` in `packages/app/web/` to add the environment variable for the API endpoint.
+The React app requires an environment variable for the API endpoint so as to talk to the Parca backend. Create a file named `.env.local` in `packages/app/web/` to add the environment variable for the API endpoint.
 
 ```
-NEXT_PUBLIC_API_ENDPOINT=http://localhost:7070
+REACT_APP_PUBLIC_API_ENDPOINT=http://localhost:7070
 ```
 
 Then, start the Parca backend by running the command below. The `--cors-allowed-origins='*'` flag allows for enabling CORS headers on Parca.
@@ -20,7 +18,7 @@ Then, start the Parca backend by running the command below. The `--cors-allowed-
 
 Now the Parca backend will be running and available at `localhost:7070`.
 
-Finally, run the development server for the Next.js app:
+Finally, run the development server for the React app:
 
 ```shell
 yarn workspace @parca/web dev
@@ -34,30 +32,19 @@ You can start editing the UI by modifying any of the components in the `ui/packa
 
 To build the UI, you can use `Makefile` at the root of the project to run the following commands.
 
-Run the following command to generate static files:
+Run the following command to generate a production build of the React app:
 
 ```shell
-make ui # yarn install && yarn export
+make ui # yarn install && yarn build
 ```
 
-We use [Next.js](https://nextjs.org/) static HTML export and embed artifacts into the final binary distribution.
-See https://pkg.go.dev/embed
-for further details.
+We embed the artifacts (the production build and its static assets) into the final binary distribution.
+See https://pkg.go.dev/embed for further details.
 
 Run following to build the `parca` binary with embedded assets.
 
 ```shell
 make build
-```
-
-### Generate Static files
-
-Run following to generate static assets separately:
-
-```shell
-npm run export
-# or
-yarn export
 ```
 
 ### Development workflow
