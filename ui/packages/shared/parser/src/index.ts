@@ -165,6 +165,7 @@ export class Query {
     const prevLabelNameStates = column.states.filter(
       e => e.rule.name === 'labelName' && e.isComplete
     );
+
     if (
       successfulParse &&
       prevLabelNameStates.length > 0 &&
@@ -195,7 +196,7 @@ export class Query {
 
         // Find the high level concept that we can complete.
         // For an ident type, those can be: profileName, labelName.
-        const types = ['profileName', 'labelName'];
+        const types = ['profileName', 'labelName', 'labelValue'];
 
         if (nextSymbol.type !== undefined && nextSymbol.type === 'ident') {
           const found = state.wantedBy.filter(e => types.includes(e.rule.name));
