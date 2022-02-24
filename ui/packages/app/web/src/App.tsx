@@ -1,6 +1,6 @@
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
-import {StoreProvider, useCreateStore} from './store';
-
+import {PersistGate} from 'redux-persist/integration/react';
+import store from './store';
 import 'tailwindcss/tailwind.css';
 import './style/file-input.css';
 import './style/metrics.css';
@@ -12,6 +12,7 @@ import HomePage from './pages/index';
 import TargetsPage from './pages/targets';
 import Component404 from './pages/layouts/Component404';
 import {isDevMode} from '@parca/functions';
+import {Provider} from 'react-redux';
 
 declare global {
   interface Window {
@@ -30,27 +31,29 @@ function getBasename() {
   return window.PATH_PREFIX;
 }
 
-const App = () => {
-  const createStore = useCreateStore();
+const {store: reduxStore, persistor} = store();
 
+const App = () => {
   return (
-    <StoreProvider createStore={createStore}>
-      <BrowserRouter basename={getBasename()}>
-        <ThemeProvider>
-          <Header />
-          <div className="px-3">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/targets" element={<TargetsPage />} />
-              {isDevMode() && (
-                <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
-              )}
-              <Route path="*" element={<Component404 />} />
-            </Routes>
-          </div>
-        </ThemeProvider>
-      </BrowserRouter>
-    </StoreProvider>
+    <Provider store={reduxStore}>
+      <PersistGate loading={null} persistor={persistor}>
+        <BrowserRouter basename={getBasename()}>
+          <ThemeProvider>
+            <Header />
+            <div className="px-3">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/targets" element={<TargetsPage />} />
+                {isDevMode() && (
+                  <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
+                )}
+                <Route path="*" element={<Component404 />} />
+              </Routes>
+            </div>
+          </ThemeProvider>
+        </BrowserRouter>
+      </PersistGate>
+    </Provider>
   );
 };
 

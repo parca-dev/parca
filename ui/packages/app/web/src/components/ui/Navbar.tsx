@@ -10,13 +10,7 @@ const links = {
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
 
-const Navbar = ({
-  isDarkMode,
-  setDarkMode,
-}: {
-  isDarkMode: boolean;
-  setDarkMode: (mode: boolean) => void;
-}) => {
+const Navbar = () => {
   const getPageByHref = (href: string = '/'): {name: string; href: string; external: boolean} =>
     links[href] ?? links['/'];
   const currentPage = getPageByHref(window.location.pathname);
@@ -86,7 +80,7 @@ const Navbar = ({
                 </a>
               </div>
               <div className="text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                <DarkModeToggle isDarkMode={isDarkMode} setDarkMode={setDarkMode} />
+                <DarkModeToggle />
               </div>
             </div>
           </div>

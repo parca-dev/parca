@@ -1,39 +1,40 @@
-import create from 'zustand';
-import createContext from 'zustand/context';
-import {persist} from 'zustand/middleware';
-import createUiState from './ui.state';
+import {configureStore, combineReducers} from '@reduxjs/toolkit';
+import uiReducer from './slices/uiSlice';
+import storage from 'redux-persist/lib/storage';
+import {persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER} from 'redux-persist';
+import {persistStore} from 'redux-persist';
 
-let store: any;
-
-const stateSlices = (set: any, get: any) => ({
-  ...createUiState(set, get),
-  // add more slices
+const rootReducer = combineReducers({
+  ui: uiReducer,
 });
 
-type AppState = ReturnType<typeof stateSlices>;
+// Infer the `RootState` and `AppDispatch` types from the store itself
+export type RootState = ReturnType<typeof rootReducer>;
+// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
+export type AppDispatch = typeof store.dispatch;
 
-const zustandContext = createContext<AppState>();
-
-export const StoreProvider = zustandContext.Provider;
-
-export const useStore = zustandContext.useStore;
-
-export const initializeStore = () => {
-  return create(
-    persist((set, get) => stateSlices(set, get), {
-      name: 'parca',
-    })
-  );
+const persistConfig = {
+  key: 'root',
+  version: 1,
+  storage,
 };
 
-export function useCreateStore() {
-  // For SSR & SSG, always use a new store.
-  if (typeof window === 'undefined') {
-    return () => initializeStore();
-  }
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-  // For CSR, always re-use same store.
-  store = store ?? initializeStore();
+const store = configureStore({
+  reducer: persistedReducer,
+  devTools: process.env.NODE_ENV !== 'production',
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
+});
 
-  return () => store;
-}
+const defaultExports = () => {
+  let persistor = persistStore(store);
+  return {store, persistor};
+};
+
+export default defaultExports;

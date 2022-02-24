@@ -1,12 +1,10 @@
 import {MoonIcon, SunIcon} from '@heroicons/react/solid';
+import {useAppSelector, useAppDispatch} from '../../store/hooks';
+import {selectDarkMode, setDarkMode} from '../../store/slices/uiSlice';
 
-const DarkModeToggle = ({
-  isDarkMode,
-  setDarkMode,
-}: {
-  isDarkMode: boolean;
-  setDarkMode: (mode: boolean) => void;
-}) => {
+const DarkModeToggle = () => {
+  const dispatch = useAppDispatch();
+  const isDarkMode = useAppSelector(selectDarkMode);
   const Icon = isDarkMode ? MoonIcon : SunIcon;
   return (
     <button
@@ -14,7 +12,11 @@ const DarkModeToggle = ({
       className="p-1 cursor-pointer rounded-full flex align-center items-center"
       onClick={() => {}}
     >
-      <Icon onClick={() => setDarkMode(!isDarkMode)} className="w-5 h-5" aria-hidden="true" />
+      <Icon
+        onClick={() => dispatch(setDarkMode(!isDarkMode))}
+        className="w-5 h-5"
+        aria-hidden="true"
+      />
     </button>
   );
 };
