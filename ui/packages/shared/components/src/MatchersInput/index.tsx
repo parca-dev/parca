@@ -1,9 +1,18 @@
 import React, {Fragment, useState, useEffect} from 'react';
 import {Transition} from '@headlessui/react';
 import {Query} from '@parca/parser';
-import {LabelsResponse, LabelsRequest, QueryServiceClient, ServiceError} from '@parca/client';
+import {
+  LabelsResponse,
+  LabelsRequest,
+  QueryServiceClient,
+  ServiceError,
+  ValuesRequest,
+  ValuesResponse,
+} from '@parca/client';
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
+
+import {useLabelValues} from './ProfileSelector';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
@@ -14,6 +23,10 @@ interface MatchersInputProps {
 
 export interface ILabelNamesResult {
   response: LabelsResponse.AsObject | null;
+  error: ServiceError | null;
+}
+export interface ILabelValuesResult {
+  response: ValuesResponse.AsObject | null;
   error: ServiceError | null;
 }
 
@@ -55,10 +68,12 @@ class Suggestion {
 class Suggestions {
   literals: Suggestion[];
   labelNames: Suggestion[];
+  labelValues: Suggestion[];
 
   constructor() {
     this.literals = [];
     this.labelNames = [];
+    this.labelValues = [];
   }
 }
 
@@ -74,11 +89,31 @@ const MatchersInput = ({
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
+  const [labelValuesResponse, setLabelValuesResponse] = useState(null);
   const {styles, attributes} = usePopper(inputRef, popperElement, {
     placement: 'bottom-start',
   });
 
   const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
+
+  const getLabelNameValues = (labelName: string) => {
+    if (labelValuesResponse !== null) return;
+
+    const req = new ValuesRequest();
+    req.setLabelName(labelName);
+
+    let result;
+
+    queryClient.values(
+      req,
+      (error: ServiceError | null, responseMessage: ValuesResponse | null) => {
+        result = responseMessage == null ? null : responseMessage.toObject().labelValuesList;
+
+        setLabelValuesResponse(result);
+      }
+    );
+  };
+
   const labelNames =
     (labelNamesError === undefined || labelNamesError == null) &&
     labelNamesResponse !== undefined &&
@@ -86,8 +121,17 @@ const MatchersInput = ({
       ? labelNamesResponse.labelNamesList.filter(e => e !== '__name__')
       : [];
 
+  const labelValues =
+    labelValuesResponse !== undefined && labelValuesResponse != null ? labelValuesResponse : [];
+
   const value = currentQuery.matchersString();
   const suggestionSections = new Suggestions();
+
+  if (inputRef && inputRef.value && lastCompleted.type === 'literal') {
+    const labelName = inputRef.value.replace(lastCompleted.value, '');
+    getLabelNameValues(labelName);
+  }
+
   Query.suggest(`{${value}`).forEach(function (s) {
     // Skip suggestions that we just completed. This really only works,
     // because we know the language is not repetitive. For a language that
@@ -109,6 +153,7 @@ const MatchersInput = ({
     if (s.type === 'labelName') {
       const inputValue = s.typeahead.trim().toLowerCase();
       const inputLength = inputValue.length;
+
       const matches = labelNames.filter(function (label) {
         return label.toLowerCase().slice(0, inputLength) === inputValue;
       });
@@ -121,9 +166,28 @@ const MatchersInput = ({
         })
       );
     }
+    if (s.type === 'labelValue') {
+      const inputValue = s.typeahead.trim().toLowerCase();
+      const inputLength = inputValue.length;
+
+      const matches = labelValues.filter(function (label) {
+        return label.toLowerCase().slice(0, inputLength) === inputValue;
+      });
+
+      matches.forEach(m =>
+        suggestionSections.labelValues.push({
+          type: s.type,
+          typeahead: s.typeahead,
+          value: m,
+        })
+      );
+    }
   });
+
   const suggestionsLength =
-    suggestionSections.literals.length + suggestionSections.labelNames.length;
+    suggestionSections.literals.length +
+    suggestionSections.labelNames.length +
+    suggestionSections.labelValues.length;
 
   const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
@@ -148,6 +212,7 @@ const MatchersInput = ({
 
   const highlightNext = (): void => {
     const nextIndex = highlightedSuggestionIndex + 1;
+
     if (nextIndex === suggestionsLength) {
       resetHighlight();
       return;
@@ -185,17 +250,20 @@ const MatchersInput = ({
     // If there is a highlighted suggestion and enter is hit, we complete
     // with the highlighted suggestion.
     if (highlightedSuggestionIndex >= 0 && event.key === 'Enter') {
+      setLabelValuesResponse(null);
       applyHighlightedSuggestion();
     }
 
     // If no suggestions is highlighted and we hit enter, we run the query,
     // and hide suggestions until another actions enables them again.
     if (highlightedSuggestionIndex === -1 && event.key === 'Enter') {
+      setLabelValuesResponse(null);
       setShowSuggest(false);
       runQuery();
       return;
     }
 
+    setLabelValuesResponse(null);
     setShowSuggest(true);
   };
 
@@ -236,6 +304,8 @@ const MatchersInput = ({
     setFocusedInput(false);
     resetHighlight();
   };
+
+  console.log(suggestionSections);
 
   return (
     <>
@@ -295,6 +365,23 @@ const MatchersInput = ({
                     setHighlightedSuggestionIndex(i + suggestionSections.labelNames.length)
                   }
                   onClick={() => applySuggestion(i + suggestionSections.labelNames.length)}
+                  onMouseOut={() => resetHighlight()}
+                >
+                  {l.value}
+                </div>
+              ))}
+              {suggestionSections.labelValues.map((l, i) => (
+                <div
+                  key={i}
+                  className={cx(
+                    highlightedSuggestionIndex === i + suggestionSections.labelValues.length &&
+                      'text-white bg-indigo-600',
+                    'cursor-default select-none relative py-2 pl-3 pr-9'
+                  )}
+                  onMouseOver={() =>
+                    setHighlightedSuggestionIndex(i + suggestionSections.labelValues.length)
+                  }
+                  onClick={() => applySuggestion(i + suggestionSections.labelValues.length)}
                   onMouseOut={() => resetHighlight()}
                 >
                   {l.value}
