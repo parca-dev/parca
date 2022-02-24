@@ -17,7 +17,7 @@ require (
 	github.com/go-kit/log v0.2.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
-	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd
+	github.com/google/pprof v0.0.0-20220218203455-0368bd9e19a7
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-20201002093600-73cf2ae9d891
@@ -25,7 +25,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/ianlancetaylor/demangle v0.0.0-20211126204342-3ad08eb09c01
+	github.com/ianlancetaylor/demangle v0.0.0-20220203202831-b7f99f1dbc96
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/oklog/run v1.1.0
 	github.com/prometheus/client_golang v1.12.1
@@ -35,12 +35,13 @@ require (
 	github.com/thanos-io/thanos v0.24.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.29.0
 	go.opentelemetry.io/otel v1.4.1
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.4.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.4.1
 	go.opentelemetry.io/otel/sdk v1.4.1
 	go.opentelemetry.io/otel/trace v1.4.1
 	go.uber.org/atomic v1.9.0
 	golang.org/x/net v0.0.0-20220105145211-5b0dc2dfae98
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5
 	google.golang.org/grpc v1.44.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
