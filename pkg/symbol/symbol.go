@@ -115,21 +115,17 @@ func (s *Symbolizer) Close() error {
 }
 
 func (s *Symbolizer) newLiner(m *pb.Mapping, path string) (liner, error) {
+	logger := log.With(s.logger, "file", path, "buildid", m.BuildId)
 	hasDWARF, err := elfutils.HasDWARF(path)
 	if err != nil {
-		level.Debug(s.logger).Log(
-			"msg", "failed to determine if binary has DWARF info",
-			"file", path,
-			"err", err,
-		)
+		level.Debug(logger).Log("msg", "failed to determine if binary has DWARF info", "err", err)
 	}
 	if hasDWARF {
-		level.Debug(s.logger).Log("msg", "using DWARF liner to resolve symbols", "file", path)
+		level.Debug(logger).Log("msg", "using DWARF liner to resolve symbols")
 		lnr, err := addr2line.DWARF(s.logger, path, m, s.demangler, s.attemptThreshold)
 		if err != nil {
-			level.Error(s.logger).Log(
+			level.Error(logger).Log(
 				"msg", "failed to open object file",
-				"file", path,
 				"start", m.Start,
 				"limit", m.Limit,
 				"offset", m.Offset,
@@ -144,26 +140,18 @@ func (s *Symbolizer) newLiner(m *pb.Mapping, path string) (liner, error) {
 	// Keep that section and other identifying sections in the debug information file.
 	isGo, err := elfutils.IsSymbolizableGoObjFile(path)
 	if err != nil {
-		level.Debug(s.logger).Log(
-			"msg", "failed to determine if binary is a Go binary",
-			"file", path,
-			"err", err,
-		)
+		level.Debug(s.logger).Log("msg", "failed to determine if binary is a Go binary", "err", err)
 	}
 	if isGo {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
-		level.Debug(s.logger).Log("msg", "symbolizing a Go binary", "file", path)
+		level.Debug(s.logger).Log("msg", "symbolizing a Go binary", "file")
 		lnr, err := addr2line.Go(s.logger, path)
 		if err == nil {
-			level.Debug(s.logger).Log("msg", "using go liner to resolve symbols", "file", path)
+			level.Debug(s.logger).Log("msg", "using go liner to resolve symbols", "file")
 			return lnr, nil
 		}
-		level.Error(s.logger).Log(
-			"msg", "failed to create go liner, falling back to binary liner",
-			"file", path,
-			"err", err,
-		)
+		level.Error(s.logger).Log("msg", "failed to create go liner, falling back to binary liner", "err", err)
 	}
 
 	return nil, errors.New("cannot create a liner from given object file")
