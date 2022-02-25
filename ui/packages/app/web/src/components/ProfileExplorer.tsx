@@ -12,6 +12,11 @@ interface ProfileExplorerProps {
   navigateTo: NavigateFunction;
 }
 
+const getExpressionAsAString = (expression: string | []) => {
+  const x = Array.isArray(expression) ? expression.join() : expression;
+  return x;
+};
+
 const ProfileExplorer = ({
   queryClient,
   queryParams,
@@ -34,13 +39,12 @@ const ProfileExplorer = ({
     compare_b,
   } = queryParams;
 
-  const expression_a: string = Array.isArray(queryParams.expression_a)
-    ? queryParams.expression_a.join()
-    : queryParams.expression_a;
+  const expression_a = getExpressionAsAString(queryParams.expression_a);
 
-  const expression_b = Array.isArray(queryParams.expression_b)
-    ? queryParams.expression_b.join()
-    : queryParams.expression_b;
+  const expression_b = getExpressionAsAString(queryParams.expression_b);
+
+  if (queryParams && queryParams.expression_a) queryParams.expression_a = expression_a;
+  if (queryParams && queryParams.expression_b) queryParams.expression_b = expression_b;
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -60,6 +64,8 @@ const ProfileExplorer = ({
   };
 
   const selectProfileA = (p: ProfileSelection) => {
+    queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
+    queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), '_a'),
@@ -67,6 +73,8 @@ const ProfileExplorer = ({
   };
 
   const selectProfileB = (p: ProfileSelection) => {
+    queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
+    queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), '_b'),
@@ -112,6 +120,7 @@ const ProfileExplorer = ({
     };
 
     const selectProfile = (p: ProfileSelection) => {
+      queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
       return navigateTo('/', {
         ...queryParams,
         ...SuffixParams(p.HistoryParams(), '_a'),
@@ -207,6 +216,7 @@ const ProfileExplorer = ({
         ...{
           compare_a: 'true',
           expression_a: encodeURIComponent(q.expression),
+          expression_b: encodeURIComponent(expression_b),
           from_a: q.from.toString(),
           to_a: q.to.toString(),
           merge_a: q.merge,
@@ -226,6 +236,7 @@ const ProfileExplorer = ({
         ...{
           compare_b: 'true',
           expression_b: encodeURIComponent(q.expression),
+          expression_a: encodeURIComponent(expression_a),
           from_b: q.from.toString(),
           to_b: q.to.toString(),
           merge_b: q.merge,
