@@ -85,10 +85,6 @@ scrape_configs:
 							Delta:   true,
 							Path:    "/debug/pprof/profile",
 						},
-						"threadcreate_total": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Path:    "/debug/pprof/threadcreate",
-						},
 						"fgprof": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/debug/fgprof",
