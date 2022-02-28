@@ -1,3 +1,5 @@
+import format from 'date-fns/format';
+
 export const capitalize = (a: string): string =>
   a
     .split(' ')
@@ -96,6 +98,15 @@ export const formatDuration = (timeObject: TimeObject, to?: number): string => {
   }
 
   return values.join(' ');
+};
+
+export const formatDate = (date: number | Date, timeFormat: string): string => {
+  if (typeof date === 'number') {
+    date = new Date(date);
+  }
+
+  const ISOString = date.toISOString().slice(0, -1);
+  return format(new Date(ISOString), timeFormat);
 };
 
 const unitsInBytes = {

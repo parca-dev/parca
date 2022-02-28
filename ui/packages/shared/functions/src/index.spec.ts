@@ -1,4 +1,11 @@
-import {capitalize, valueFormatter, convertTime, formatDuration, TimeUnits} from './index';
+import {
+  capitalize,
+  valueFormatter,
+  convertTime,
+  formatDuration,
+  formatDate,
+  TimeUnits,
+} from './index';
 
 describe('capitalize', () => {
   it('capitalizes each word in a string', () => {
@@ -68,5 +75,13 @@ describe('formatDuration', () => {
       formatDuration({nanos: currentNanos - durationInNanos})
     );
     expect(formatDuration({seconds, nanos}, currentNanos)).toBe('19ms');
+  });
+});
+
+describe('formatDate', () => {
+  it('formats date to given time format', () => {
+    expect(
+      formatDate(new Date('2019-01-01T00:00:00Z'), "'Date:' dd/MM/yyyy 'Time:' hh:mm:s'")
+    ).toBe('Date: 01/01/2019 Time: 12:00:0');
   });
 });
