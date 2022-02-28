@@ -1,3 +1,5 @@
+import {convertLocalToUTCDate} from '@parca/functions';
+
 export const UNITS = {
   MINUTE: 'minute',
   HOUR: 'hour',
@@ -149,7 +151,7 @@ export const formatDateStringForUI: (dateString: DateUnion) => string = dateStri
     }
     return `${value} ${unit}${value > 1 ? 's' : ''} ago`;
   }
-  return (dateString.value as Date).toLocaleDateString('en-GB', {
+  return convertLocalToUTCDate(dateString.value as Date).toLocaleDateString('en-GB', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
