@@ -1,8 +1,8 @@
 import {useState} from 'react';
-import DatePicker from 'react-datepicker';
 
 import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../utils';
 import Button from '../../../Button';
+import {UTCDateTimePicker} from '../../../DateTimePicker';
 
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -10,16 +10,6 @@ interface AbsoluteDatePickerProps {
   range: DateTimeRange;
   onChange?: (from: AbsoluteDate, to: AbsoluteDate) => void;
 }
-
-const ReactDateTimePicker = ({selected, onChange}) => (
-  <DatePicker
-    selected={selected}
-    onChange={onChange}
-    showTimeInput
-    dateFormat="MMMM d, yyyy h:mm aa"
-    className="text-sm w-48 p-2 rounded-md  bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
-  />
-);
 
 const AbsoluteDatePicker = ({range, onChange = () => null}: AbsoluteDatePickerProps) => {
   const [from, setFrom] = useState<Date>(
@@ -38,13 +28,13 @@ const AbsoluteDatePicker = ({range, onChange = () => null}: AbsoluteDatePickerPr
           <div className="mb-2">
             <span className="uppercase text-xs">From:</span>
           </div>
-          <ReactDateTimePicker selected={from} onChange={date => setFrom(date)} />
+          <UTCDateTimePicker selected={from} onChange={date => setFrom(date)} />
         </div>
         <div className="mb-1">
           <div className="mb-2">
             <span className="uppercase text-xs">To:</span>
           </div>
-          <ReactDateTimePicker selected={to} onChange={date => setTo(date)} />
+          <UTCDateTimePicker selected={to} onChange={date => setTo(date)} />
         </div>
       </div>
       <div className="w-32 mx-auto mt-4">
@@ -56,6 +46,9 @@ const AbsoluteDatePicker = ({range, onChange = () => null}: AbsoluteDatePickerPr
           Apply
         </Button>
       </div>
+      <p className="text-gray-500 text-xs italic text-center m-4">
+        Note: All date and time values are in UTC.
+      </p>
     </div>
   );
 };

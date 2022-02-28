@@ -28,7 +28,12 @@ const MergeButton = ({disabled, onClick}: {disabled: boolean; onClick: () => voi
         Merge
       </Button>
       {mergeHover && (
-        <div ref={setMergePopperElement} style={styles.popper} {...attributes.popper}>
+        <div
+          ref={setMergePopperElement}
+          style={styles.popper}
+          {...attributes.popper}
+          className="z-50"
+        >
           <div className="flex">
             <div className="relative mx-2">
               <svg className="text-black h-1 w-full left-0" x="0px" y="0px" viewBox="0 0 255 127.5">

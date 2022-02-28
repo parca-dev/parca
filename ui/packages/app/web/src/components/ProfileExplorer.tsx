@@ -12,15 +12,17 @@ interface ProfileExplorerProps {
   navigateTo: NavigateFunction;
 }
 
+const getExpressionAsAString = (expression: string | []) => {
+  const x = Array.isArray(expression) ? expression.join() : expression;
+  return x;
+};
+
 const ProfileExplorer = ({
   queryClient,
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  /* eslint-disable */
-  // Disable eslint due to params being snake case
   const {
-    expression_a,
     from_a,
     to_a,
     merge_a,
@@ -28,7 +30,6 @@ const ProfileExplorer = ({
     time_a,
     time_selection_a,
     compare_a,
-    expression_b,
     from_b,
     to_b,
     merge_b,
@@ -37,7 +38,13 @@ const ProfileExplorer = ({
     time_selection_b,
     compare_b,
   } = queryParams;
-  /* eslint-enable */
+
+  const expression_a = getExpressionAsAString(queryParams.expression_a);
+
+  const expression_b = getExpressionAsAString(queryParams.expression_b);
+
+  if (queryParams && queryParams.expression_a) queryParams.expression_a = expression_a;
+  if (queryParams && queryParams.expression_b) queryParams.expression_b = expression_b;
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -57,6 +64,8 @@ const ProfileExplorer = ({
   };
 
   const selectProfileA = (p: ProfileSelection) => {
+    queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
+    queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), '_a'),
@@ -64,6 +73,8 @@ const ProfileExplorer = ({
   };
 
   const selectProfileB = (p: ProfileSelection) => {
+    queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
+    queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), '_b'),
@@ -97,7 +108,7 @@ const ProfileExplorer = ({
         {
           ...filterSuffix(queryParams, '_a'),
           ...{
-            expression_a: q.expression,
+            expression_a: encodeURIComponent(q.expression),
             from_a: q.from.toString(),
             to_a: q.to.toString(),
             merge_a: q.merge,
@@ -109,6 +120,7 @@ const ProfileExplorer = ({
     };
 
     const selectProfile = (p: ProfileSelection) => {
+      queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
       return navigateTo('/', {
         ...queryParams,
         ...SuffixParams(p.HistoryParams(), '_a'),
@@ -118,14 +130,14 @@ const ProfileExplorer = ({
     const compareProfile = (): void => {
       let compareQuery = {
         compare_a: 'true',
-        expression_a: query.expression,
+        expression_a: encodeURIComponent(query.expression),
         from_a: query.from.toString(),
         to_a: query.to.toString(),
         merge_a: query.merge,
         time_selection_a: query.timeSelection,
 
         compare_b: 'true',
-        expression_b: query.expression,
+        expression_b: encodeURIComponent(query.expression),
         from_b: query.from.toString(),
         to_b: query.to.toString(),
         merge_b: query.merge,
@@ -203,7 +215,8 @@ const ProfileExplorer = ({
         ...filterSuffix(queryParams, '_a'),
         ...{
           compare_a: 'true',
-          expression_a: q.expression,
+          expression_a: encodeURIComponent(q.expression),
+          expression_b: encodeURIComponent(expression_b),
           from_a: q.from.toString(),
           to_a: q.to.toString(),
           merge_a: q.merge,
@@ -222,7 +235,8 @@ const ProfileExplorer = ({
         ...filterSuffix(queryParams, '_b'),
         ...{
           compare_b: 'true',
-          expression_b: q.expression,
+          expression_b: encodeURIComponent(q.expression),
+          expression_a: encodeURIComponent(expression_a),
           from_b: q.from.toString(),
           to_b: q.to.toString(),
           merge_b: q.merge,

@@ -256,6 +256,7 @@ const MatchersInput = ({
           ref={setPopperElement}
           style={{...styles.popper, marginLeft: 0}}
           {...attributes.popper}
+          className="z-50"
         >
           <Transition
             show={focusedInput && showSuggest}
