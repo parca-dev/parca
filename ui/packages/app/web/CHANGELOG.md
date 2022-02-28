@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.10.0](https://github.com/parca-dev/parca/compare/ui-v0.9.3...ui-v0.10.0) (2022-02-28)
+
+### Features
+
+- initialize redux toolkit, use for dark mode setting ([478b6dd](https://github.com/parca-dev/parca/commit/478b6ddc6c14e695272cef01cc24fb79b7b1b8e9))
+
+## [0.9.2](https://github.com/parca-dev/parca/compare/ui-v0.9.1...ui-v0.9.2) (2022-02-22)
+
 ## [0.9.3](https://github.com/parca-dev/parca/compare/ui-v0.8.0...ui-v0.9.3) (2022-02-23)
 
 **Note:** Version bump only for package @parca/web
