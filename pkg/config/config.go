@@ -35,12 +35,11 @@ import (
 )
 
 const (
-	pprofMemoryTotal       string = "memory_total"
-	pprofBlockTotal        string = "block_total"
-	pprofGoroutineTotal    string = "goroutine_total"
-	pprofMutexTotal        string = "mutex_total"
-	pprofProcessCPU        string = "process_cpu"
-	pprofThreadcreateTotal string = "threadcreate_total"
+	pprofMemoryTotal    string = "memory_total"
+	pprofBlockTotal     string = "block_total"
+	pprofGoroutineTotal string = "goroutine_total"
+	pprofMutexTotal     string = "mutex_total"
+	pprofProcessCPU     string = "process_cpu"
 )
 
 // Config holds all the configuration information for Parca.
@@ -88,10 +87,6 @@ func DefaultScrapeConfig() ScrapeConfig {
 					Enabled: trueValue(),
 					Delta:   true,
 					Path:    "/debug/pprof/profile",
-				},
-				pprofThreadcreateTotal: &PprofProfilingConfig{
-					Enabled: trueValue(),
-					Path:    "/debug/pprof/threadcreate",
 				},
 			},
 		},
