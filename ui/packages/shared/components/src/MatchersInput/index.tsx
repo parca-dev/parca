@@ -100,8 +100,6 @@ const MatchersInput = ({
   const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
 
   const getLabelNameValues = (labelName: string) => {
-    if (labelValuesResponse !== null) return;
-
     const req = new ValuesRequest();
     req.setLabelName(labelName);
 
