@@ -85,6 +85,21 @@ This is roughly what the contribution workflow should look like:
 
 Thank you for your contributions!
 
+## Sending a bug fix
+
+Let's say you want to send a bug fix for `v0.8.x`. The workflow is as follow:
+```bash
+git checkout release-0.8
+git checkout --branch my-fix
+# start working on your fixes
+git add .
+git commit -m "Fix xyz"
+git push origin my-fix
+```
+
+Then open your Pull Request and make sure to select `release-0.8` as the base to send your changes on to.
+That way we can include them in the next patch release.
+Eventually, we are merging the `release-0.8` back into `main`, so that all your bug fixes are in newer versions too.
 
 # Commit Guidelines
 
@@ -105,8 +120,14 @@ Fixes #38
 
 The first line is the subject and should be no longer than 70 characters, the second line is always blank, and other lines should be wrapped at 80 characters. This allows the message to be easier to read on GitHub as well as in various git tools.
 
+## Code Formatting Guidelines
 
-# UI Project - Code Formatting Guidelines
+### Go
+
+The Go code is formatted using [gofumpt](https://github.com/mvdan/gofumpt), a stricter `go fmt`, and more linting is done using [golangci-lint](https://golangci-lint.run/).
+To check your newly written Go code you can run `make go/lint` which will tell you all the things needing to fix. If you forget to run it locally our CI will run it too and add comments on your PR.
+
+### UI
 
 We use [Prettier](https://prettier.io/docs/en/options.html) for code formatting the files in the UI project. The following are the configuration overrides over Prettier's defaults:
 
