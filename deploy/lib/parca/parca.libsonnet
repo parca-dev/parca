@@ -258,7 +258,6 @@ function(params) {
             }],
             nodeSelector: {
               'kubernetes.io/os': 'linux',
-              'kubernetes.io/arch': 'amd64',
             },
           },
         },
