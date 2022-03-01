@@ -114,6 +114,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/avinashupadhya99"><img src="https://avatars.githubusercontent.com/u/52544819?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Avinash Upadhyaya K R</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=avinashupadhya99" title="Code">💻</a></td>
     <td align="center"><a href="https://bandism.net/"><img src="https://avatars.githubusercontent.com/u/22633385?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ikko Ashimine</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=eltociear" title="Code">💻</a></td>
     <td align="center"><a href="https://maxbru.net"><img src="https://avatars.githubusercontent.com/u/32458727?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Maxime Brunet</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=maxbrunet" title="Code">💻</a></td>
+    <td align="center"><a href="https://www.diru.tech/"><img src="https://avatars.githubusercontent.com/u/39561007?v=4?s=100" width="100px;" alt=""/><br /><sub><b>rohit</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=me-diru" title="Code">💻</a></td>
   </tr>
 </table>
 

@@ -194,6 +194,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "me-diru",
+      "name": "rohit",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39561007?v=4",
+      "profile": "https://www.diru.tech/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
