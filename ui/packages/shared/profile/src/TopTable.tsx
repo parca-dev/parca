@@ -1,7 +1,13 @@
 import React, {useEffect, useState} from 'react';
 
 import {ProfileSource} from './ProfileSource';
-import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
+import {
+  QueryRequest,
+  QueryResponse,
+  QueryServiceClient,
+  ServiceError,
+  TopNodeMeta,
+} from '@parca/client';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 import {getLastItem, valueFormatter} from '@parca/functions';
 
@@ -106,6 +112,26 @@ export const useQuery = (
   return result;
 };
 
+export const RowLabel = (meta: TopNodeMeta.AsObject | undefined): string => {
+  if (meta === undefined) return '<unknown>';
+  const mapping = `${
+    meta?.mapping?.file !== undefined && meta?.mapping?.file !== ''
+      ? `[${getLastItem(meta.mapping.file)}]`
+      : ''
+  }`;
+  if (meta.pb_function?.name !== undefined && meta.pb_function?.name !== '')
+    return `${mapping} ${meta.pb_function.name}`;
+
+  const address = `${
+    meta.location?.address !== undefined && meta.location?.address !== 0
+      ? `0x${meta.location.address.toString(16)}`
+      : ''
+  }`;
+  const fallback = `${mapping} ${address}`;
+
+  return fallback === '' ? '<unknown>' : fallback;
+};
+
 export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.Element => {
   const {response, error} = useQuery(queryClient, profileSource);
   const {items, requestSort, sortConfig} = useSortableData(response);
@@ -167,8 +193,7 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
             {items?.map((report, index) => (
               <tr key={index} className="hover:bg-[#62626212] dark:hover:bg-[#ffffff12]">
                 <td className="text-xs py-1.5 pl-2 min-w-[150px] max-w-[450px]">
-                  {report.meta?.mapping?.file !== '' && [getLastItem(report.meta?.mapping?.file)]}{' '}
-                  {report.meta?.pb_function?.name}
+                  {RowLabel(report.meta)}
                 </td>
                 <td className="text-xs min-w-[150px] max-w-[150px] py-1.5text-right">
                   {valueFormatter(report.flat, unit, 2)}
