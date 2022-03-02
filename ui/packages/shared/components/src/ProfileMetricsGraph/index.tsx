@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import moment from 'moment';
-import MetricsGraph from './MetricsGraph';
+import MetricsGraph from '../MetricsGraph';
 import {ProfileSelection, SingleProfileSelection} from '@parca/profile';
 import {
   QueryRangeRequest,

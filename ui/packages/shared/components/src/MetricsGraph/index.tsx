@@ -1,12 +1,12 @@
 import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
 import moment from 'moment';
-import MetricsSeries from './metrics/MetricsSeries';
-import MetricsCircle from './metrics/MetricsCircle';
+import MetricsSeries from '../MetricsSeries';
+import MetricsCircle from '../MetricsCircle';
 import {pointer} from 'd3-selection';
-import {formatForTimespan} from '../libs/time';
+import {formatForTimespan} from '@parca/functions/time';
 import {SingleProfileSelection, timeFormat} from '@parca/profile';
-import {cutToMaxStringLength} from '../libs/utils';
+import {cutToMaxStringLength} from '@parca/functions/string';
 import throttle from 'lodash.throttle';
 import {CalcWidth} from '@parca/dynamicsize';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';

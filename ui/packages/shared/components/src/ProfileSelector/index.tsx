@@ -2,12 +2,12 @@ import {QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse} from '@
 import {Query} from '@parca/parser';
 import {ProfileSelection} from '@parca/profile';
 import React, {useEffect, useState} from 'react';
-import ProfileMetricsGraph from '../components/ProfileMetricsGraph';
-import MatchersInput from './MatchersInput';
-import MergeButton from './MergeButton';
-import CompareButton from './CompareButton';
-import Card from './ui/Card';
-import CloseIcon from './ui/CloseIcon';
+import ProfileMetricsGraph from '../ProfileMetricsGraph';
+import MatchersInput from '../MatchersInput';
+import MergeButton from '../../../../app/web/src/components/MergeButton';
+import CompareButton from '../../../../app/web/src/components/CompareButton';
+import Card from '../../../../app/web/src/components/ui/Card';
+import CloseIcon from '../../../../app/web/src/components/ui/CloseIcon';
 import {
   DateTimeRangePicker,
   DateTimeRange,

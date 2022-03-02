@@ -2,8 +2,8 @@ import {ProfileDiffSource, ProfileSelection, ProfileView} from '@parca/profile';
 import {Query} from '@parca/parser';
 import {QueryServiceClient} from '@parca/client';
 
-import {NavigateFunction} from './ProfileExplorer';
-import ProfileSelector, {QuerySelection} from './ProfileSelector';
+import {NavigateFunction} from '.';
+import ProfileSelector, {QuerySelection} from '../ProfileSelector';
 
 interface ProfileExplorerCompareProps {
   queryClient: QueryServiceClient;

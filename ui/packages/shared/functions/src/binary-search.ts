@@ -1,4 +1,4 @@
-export default function binarySearchClosest(sortedArray: number[], seekElement: number): number {
+export function binarySearchClosest(sortedArray: number[], seekElement: number): number {
   if (sortedArray.length === 1) {
     return 0;
   }
