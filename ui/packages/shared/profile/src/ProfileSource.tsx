@@ -1,5 +1,5 @@
 import React from 'react';
-import moment from 'moment';
+import {formatDate} from '@parca/functions';
 import {Query} from '@parca/parser';
 import {
   Label,
@@ -25,8 +25,8 @@ export interface ProfileSelection {
   Type: () => string;
 }
 
-export const timeFormat = 'MMM D, [at] h:mm:s a [(UTC)]';
-export const timeFormatShort = 'MMM D, h:mma';
+export const timeFormat = "MMM d, 'at' h:mm:s a '(UTC)'";
+export const timeFormatShort = 'MMM d, h:mma';
 
 export function ParamsString(params: {[key: string]: string}): string {
   return Object.keys(params)
@@ -157,7 +157,7 @@ export class SingleProfileSource implements ProfileSource {
 
     const singleProfile = new SingleProfile();
     const ts = new Timestamp();
-    ts.fromDate(moment(this.time).toDate());
+    ts.fromDate(new Date(this.time));
     singleProfile.setTime(ts);
     singleProfile.setQuery(this.query());
     sel.setSingle(singleProfile);
@@ -170,7 +170,7 @@ export class SingleProfileSource implements ProfileSource {
     req.setMode(QueryRequest.Mode.MODE_SINGLE_UNSPECIFIED);
     const singleQueryRequest = new SingleProfile();
     const ts = new Timestamp();
-    ts.fromDate(moment(this.time).toDate());
+    ts.fromDate(new Date(this.time));
     singleQueryRequest.setTime(ts);
     singleQueryRequest.setQuery(this.query());
     req.setSingle(singleQueryRequest);
@@ -201,7 +201,7 @@ export class SingleProfileSource implements ProfileSource {
               </button>
             ))}
         </p>
-        <p>{moment(this.time).utc().format(timeFormat)}</p>
+        <p>{formatDate(this.time, timeFormat)}</p>
       </>
     );
   }
@@ -215,7 +215,7 @@ export class SingleProfileSource implements ProfileSource {
   toString(): string {
     return `single profile of type ${this.profileName()} with labels ${this.stringLabels().join(
       ', '
-    )} collected at ${moment(this.time).utc().format(timeFormat)}`;
+    )} collected at ${formatDate(this.time, timeFormat)}`;
   }
 }
 
@@ -275,11 +275,11 @@ export class MergedProfileSource implements ProfileSource {
     const mergeProfile = new MergeProfile();
 
     const startTs = new Timestamp();
-    startTs.fromDate(moment(this.from).toDate());
+    startTs.fromDate(new Date(this.from));
     mergeProfile.setStart(startTs);
 
     const endTs = new Timestamp();
-    endTs.fromDate(moment(this.to).toDate());
+    endTs.fromDate(new Date(this.to));
     mergeProfile.setEnd(endTs);
 
     mergeProfile.setQuery(this.query);
@@ -296,11 +296,11 @@ export class MergedProfileSource implements ProfileSource {
     const mergeQueryRequest = new MergeProfile();
 
     const startTs = new Timestamp();
-    startTs.fromDate(moment(this.from).toDate());
+    startTs.fromDate(new Date(this.from));
     mergeQueryRequest.setStart(startTs);
 
     const endTs = new Timestamp();
-    endTs.fromDate(moment(this.to).toDate());
+    endTs.fromDate(new Date(this.to));
     mergeQueryRequest.setEnd(endTs);
 
     mergeQueryRequest.setQuery(this.query);
@@ -313,15 +313,16 @@ export class MergedProfileSource implements ProfileSource {
   Describe(): JSX.Element {
     return (
       <a>
-        Merge of "{this.query}" from {moment(this.from).utc().format(timeFormat)} to{' '}
-        {moment(this.to).utc().format(timeFormat)}
+        Merge of "{this.query}" from {formatDate(this.from, timeFormat)} to{' '}
+        {formatDate(this.to, timeFormat)}
       </a>
     );
   }
 
   toString(): string {
-    return `merged profiles of query "${this.query}" from ${moment(this.from)
-      .utc()
-      .format(timeFormat)} to ${moment(this.to).utc().format(timeFormat)}`;
+    return `merged profiles of query "${this.query}" from ${formatDate(
+      this.from,
+      timeFormat
+    )} to ${formatDate(this.to, timeFormat)}`;
   }
 }

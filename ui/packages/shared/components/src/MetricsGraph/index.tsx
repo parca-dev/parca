@@ -1,6 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
-import moment from 'moment';
 import MetricsSeries from '../MetricsSeries';
 import MetricsCircle from '../MetricsCircle';
 import {pointer} from 'd3-selection';
@@ -12,7 +11,7 @@ import {CalcWidth} from '@parca/dynamicsize';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
 import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
-import {valueFormatter} from '@parca/functions';
+import {valueFormatter, formatDate} from '@parca/functions';
 import {DateTimeRange} from '@parca/components';
 
 interface RawMetricsGraphProps {
@@ -177,9 +176,7 @@ export const MetricsTooltip = ({
                       </tr>
                       <tr>
                         <td className="w-1/4">At</td>
-                        <td className="w-3/4">
-                          {moment(highlighted.timestamp).utc().format(timeFormat)}
-                        </td>
+                        <td className="w-3/4">{formatDate(highlighted.timestamp, timeFormat)}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -571,7 +568,7 @@ export const RawMetricsGraph = ({
                 >
                   <line y2={6} stroke="currentColor" />
                   <text fill="currentColor" dy=".71em" y={9}>
-                    {moment(d).utc().format(formatForTimespan(from, to))}
+                    {formatDate(d, formatForTimespan(from, to))}
                   </text>
                 </g>
               ))}

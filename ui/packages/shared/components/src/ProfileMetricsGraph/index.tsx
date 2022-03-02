@@ -1,5 +1,4 @@
 import React, {useState, useEffect} from 'react';
-import moment from 'moment';
 import MetricsGraph from '../MetricsGraph';
 import {ProfileSelection, SingleProfileSelection} from '@parca/profile';
 import {
@@ -50,11 +49,11 @@ export const useQueryRange = (
     req.setQuery(queryExpression);
 
     const startTimestamp = new Timestamp();
-    startTimestamp.fromDate(moment(start).toDate());
+    startTimestamp.fromDate(new Date(start));
     req.setStart(startTimestamp);
 
     const endTimestamp = new Timestamp();
-    endTimestamp.fromDate(moment(end).toDate());
+    endTimestamp.fromDate(new Date(end));
     req.setEnd(endTimestamp);
 
     client.queryRange(

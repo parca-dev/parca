@@ -1,15 +1,15 @@
-import moment from 'moment';
+import intervalToDuration from 'date-fns/intervalToDuration';
 
 export const formatForTimespan = (from: number, to: number): string => {
-  const duration = moment.duration(moment(to).diff(from));
-  if (duration <= moment.duration(61, 'minutes')) {
+  const duration = intervalToDuration({start: from, end: to});
+  if (duration <= {minutes: 61}) {
     return 'H:mm';
   }
-  if (duration <= moment.duration(13, 'hours')) {
+  if (duration <= {hours: 13}) {
     return 'H';
   }
-  if (duration <= moment.duration(25, 'hours')) {
+  if (duration <= {hours: 25}) {
     return 'H:mm D/M';
   }
-  return 'D/M';
+  return 'd/M';
 };
