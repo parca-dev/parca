@@ -1,0 +1,28 @@
+name: buf-push
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - proto/**
+      - buf.gen.yaml
+      - buf.work.yaml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: bufbuild/buf-setup-action@v0.6.0
+      - uses: bufbuild/buf-lint-action@v1
+        with:
+          input: 'proto'
+      - uses: bufbuild/buf-breaking-action@v1
+        with:
+          input: 'proto'
+          # The 'main' branch of the GitHub repository that defines the module.
+          against: 'https://github.com/${GITHUB_REPOSITORY}.git#branch=main,ref=HEAD~1,subdir=proto'
+      - uses: bufbuild/buf-push-action@v1
+        with:
+          input: 'proto'
+          buf_token: ${{ secrets.BUF_TOKEN }}
