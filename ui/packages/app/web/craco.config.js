@@ -21,7 +21,6 @@ module.exports = {
 
         match.loader.include = include.concat(packages);
       }
-      //const {isFound: tsLoaderFound, match: tsLoaderMatch} = getLoader(webpackConfig, loaderByName('babel-loader'));
       return webpackConfig;
     },
   },
