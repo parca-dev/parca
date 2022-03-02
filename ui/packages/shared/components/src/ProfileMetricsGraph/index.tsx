@@ -25,6 +25,7 @@ interface ProfileMetricsGraphProps {
 
 export interface IQueryRangeResult {
   response: QueryRangeResponse.AsObject | null;
+  isLoading: boolean;
   error: ServiceError | null;
 }
 
@@ -36,10 +37,15 @@ export const useQueryRange = (
 ): IQueryRangeResult => {
   const [result, setResult] = useState<IQueryRangeResult>({
     response: null,
+    isLoading: false,
     error: null,
   });
 
   useEffect(() => {
+    setResult({
+      ...result,
+      isLoading: true,
+    });
     const req = new QueryRangeRequest();
     req.setQuery(queryExpression);
 
@@ -58,6 +64,7 @@ export const useQueryRange = (
 
         setResult({
           response: res,
+          isLoading: false,
           error: error,
         });
       }
@@ -77,20 +84,23 @@ const ProfileMetricsGraph = ({
   setTimeRange,
   addLabelMatcher,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const {response, error} = useQueryRange(queryClient, queryExpression, from, to);
+  const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
+  const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
 
-  if (error != null) {
-    return (
-      <div
-        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-        role="alert"
-      >
-        <strong className="font-bold">Error! </strong>
-        <span className="block sm:inline">{error.message}</span>
-      </div>
-    );
-  }
-  if (response == null) {
+  useEffect(() => {
+    let showLoaderTimeout;
+    if (isLoading && !isLoaderVisible) {
+      // if the request takes longer than half a second, show the loading icon
+      showLoaderTimeout = setTimeout(() => {
+        setIsLoaderVisible(true);
+      }, 500);
+    } else {
+      setIsLoaderVisible(false);
+    }
+    return () => clearTimeout(showLoaderTimeout);
+  }, [isLoading]);
+
+  if (isLoaderVisible) {
     return (
       <div
         style={{
@@ -126,36 +136,51 @@ const ProfileMetricsGraph = ({
     );
   }
 
-  const series = response.seriesList;
-  if (series == null || series.length === 0) {
+  if (error) {
     return (
-      <div className="grid grid-cols-1">
-        <div className="py-20 flex justify-center">
-          <p className="m-0">No data found. Try a different query.</p>
-        </div>
+      <div
+        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        role="alert"
+      >
+        <strong className="font-bold">Error! </strong>
+        <span className="block sm:inline">{error.message}</span>
       </div>
     );
   }
 
-  const handleSampleClick = (timestamp: number, value: number, labels: Label.AsObject[]): void => {
-    select(new SingleProfileSelection(labels, timestamp));
-  };
+  const series = response?.seriesList;
+  if (series && series?.length > 0) {
+    const handleSampleClick = (
+      timestamp: number,
+      value: number,
+      labels: Label.AsObject[]
+    ): void => {
+      select(new SingleProfileSelection(labels, timestamp));
+    };
 
+    return (
+      <div
+        className="dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500"
+        style={{borderWidth: 1}}
+      >
+        <MetricsGraph
+          data={series}
+          from={from}
+          to={to}
+          profile={profile as SingleProfileSelection}
+          setTimeRange={setTimeRange}
+          onSampleClick={handleSampleClick}
+          onLabelClick={addLabelMatcher}
+          width={0}
+        />
+      </div>
+    );
+  }
   return (
-    <div
-      className="dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500"
-      style={{borderWidth: 1}}
-    >
-      <MetricsGraph
-        data={series}
-        from={from}
-        to={to}
-        profile={profile as SingleProfileSelection}
-        setTimeRange={setTimeRange}
-        onSampleClick={handleSampleClick}
-        onLabelClick={addLabelMatcher}
-        width={0}
-      />
+    <div className="grid grid-cols-1">
+      <div className="py-20 flex justify-center">
+        <p className="m-0">No data found. Try a different query.</p>
+      </div>
     </div>
   );
 };
