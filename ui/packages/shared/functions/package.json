@@ -1,6 +1,6 @@
 {
   "name": "@parca/functions",
-  "version": "0.10.3",
+  "version": "0.11.0",
   "description": "Templated shared functions",
   "main": "src/index.ts",
   "scripts": {
