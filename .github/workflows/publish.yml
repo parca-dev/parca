@@ -39,10 +39,6 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: Bootstrap lerna
-        working-directory: ui
-        run: yarn bootstrap
-
       - name: Bump versions and publish packages
         working-directory: ui
         run: yarn publish:ci
