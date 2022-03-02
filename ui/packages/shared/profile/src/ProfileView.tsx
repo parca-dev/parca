@@ -21,6 +21,7 @@ interface ProfileViewProps {
 }
 
 export interface IQueryResult {
+  isLoading: boolean;
   response: QueryResponse | null;
   error: ServiceError | null;
 }
@@ -39,16 +40,22 @@ export const useQuery = (
   profileSource: ProfileSource
 ): IQueryResult => {
   const [result, setResult] = useState<IQueryResult>({
+    isLoading: false,
     response: null,
     error: null,
   });
 
   useEffect(() => {
+    setResult({
+      ...result,
+      isLoading: true,
+    });
     const req = profileSource.QueryRequest();
     req.setReportType(QueryRequest.ReportType.REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED);
 
     client.query(req, (error: ServiceError | null, responseMessage: QueryResponse | null) => {
       setResult({
+        isLoading: false,
         response: responseMessage,
         error: error,
       });
@@ -66,14 +73,24 @@ export const ProfileView = ({
   const router = parseParams(window.location.search);
   const currentViewFromURL = router.currentProfileView as string;
   const [curPath, setCurPath] = useState<string[]>([]);
-  const {response, error} = useQuery(queryClient, profileSource);
+  const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
+  const {isLoading, response, error} = useQuery(queryClient, profileSource);
   const [currentView, setCurrentView] = useState<string | undefined>(currentViewFromURL);
 
-  if (error != null) {
-    return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
-  }
+  useEffect(() => {
+    let showLoaderTimeout;
+    if (isLoading && !isLoaderVisible) {
+      // if the request takes longer than half a second, show the loading icon
+      showLoaderTimeout = setTimeout(() => {
+        setIsLoaderVisible(true);
+      }, 500);
+    } else {
+      setIsLoaderVisible(false);
+    }
+    return () => clearTimeout(showLoaderTimeout);
+  }, [isLoading]);
 
-  if (response == null) {
+  if (isLoaderVisible) {
     return (
       <div
         style={{
@@ -107,6 +124,10 @@ export const ProfileView = ({
         <span>Loading...</span>
       </div>
     );
+  }
+
+  if (error) {
+    return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
   }
 
   const downloadPProf = (e: React.MouseEvent<HTMLElement>) => {
@@ -215,7 +236,7 @@ export const ProfileView = ({
                     <ProfileIcicleGraph
                       curPath={curPath}
                       setNewCurPath={setNewCurPath}
-                      graph={response.getFlamegraph()?.toObject()}
+                      graph={response?.getFlamegraph()?.toObject()}
                     />
                   </CalcWidth>
                 </div>
@@ -238,7 +259,7 @@ export const ProfileView = ({
                       <ProfileIcicleGraph
                         curPath={curPath}
                         setNewCurPath={setNewCurPath}
-                        graph={response.getFlamegraph()?.toObject()}
+                        graph={response?.getFlamegraph()?.toObject()}
                       />
                     </CalcWidth>
                   </div>

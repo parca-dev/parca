@@ -37,15 +37,14 @@ export const useQueryRange = (
 ): IQueryRangeResult => {
   const [result, setResult] = useState<IQueryRangeResult>({
     response: null,
-    isLoading: true,
+    isLoading: false,
     error: null,
   });
 
   useEffect(() => {
     setResult({
+      ...result,
       isLoading: true,
-      error: null,
-      response: null,
     });
     const req = new QueryRangeRequest();
     req.setQuery(queryExpression);
@@ -86,8 +85,22 @@ const ProfileMetricsGraph = ({
   addLabelMatcher,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
+  const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    let showLoaderTimeout;
+    if (isLoading && !isLoaderVisible) {
+      // if the request takes longer than half a second, show the loading icon
+      showLoaderTimeout = setTimeout(() => {
+        setIsLoaderVisible(true);
+      }, 500);
+    } else {
+      setIsLoaderVisible(false);
+    }
+    return () => clearTimeout(showLoaderTimeout);
+  }, [isLoading]);
+
+  if (isLoaderVisible) {
     return (
       <div
         style={{
@@ -135,45 +148,41 @@ const ProfileMetricsGraph = ({
     );
   }
 
-  if (response) {
-    const series = response.seriesList;
-    if (series?.length > 0) {
-      const handleSampleClick = (
-        timestamp: number,
-        value: number,
-        labels: Label.AsObject[]
-      ): void => {
-        select(new SingleProfileSelection(labels, timestamp));
-      };
+  const series = response?.seriesList;
+  if (series && series?.length > 0) {
+    const handleSampleClick = (
+      timestamp: number,
+      value: number,
+      labels: Label.AsObject[]
+    ): void => {
+      select(new SingleProfileSelection(labels, timestamp));
+    };
 
-      return (
-        <div
-          className="dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500"
-          style={{borderWidth: 1}}
-        >
-          <MetricsGraph
-            data={series}
-            from={from}
-            to={to}
-            profile={profile as SingleProfileSelection}
-            setTimeRange={setTimeRange}
-            onSampleClick={handleSampleClick}
-            onLabelClick={addLabelMatcher}
-            width={0}
-          />
-        </div>
-      );
-    }
     return (
-      <div className="grid grid-cols-1">
-        <div className="py-20 flex justify-center">
-          <p className="m-0">No data found. Try a different query.</p>
-        </div>
+      <div
+        className="dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500"
+        style={{borderWidth: 1}}
+      >
+        <MetricsGraph
+          data={series}
+          from={from}
+          to={to}
+          profile={profile as SingleProfileSelection}
+          setTimeRange={setTimeRange}
+          onSampleClick={handleSampleClick}
+          onLabelClick={addLabelMatcher}
+          width={0}
+        />
       </div>
     );
   }
-
-  throw new Error('Check output of useQueryRange hook - hook did not return response nor error');
+  return (
+    <div className="grid grid-cols-1">
+      <div className="py-20 flex justify-center">
+        <p className="m-0">No data found. Try a different query.</p>
+      </div>
+    </div>
+  );
 };
 
 export default ProfileMetricsGraph;
