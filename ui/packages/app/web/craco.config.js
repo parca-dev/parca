@@ -3,6 +3,7 @@ const {getLoader, loaderByName} = require('@craco/craco');
 
 const packages = [];
 packages.push(path.join(__dirname, '../../shared/client'));
+packages.push(path.join(__dirname, '../../shared/components'));
 packages.push(path.join(__dirname, '../../shared/dynamicsize'));
 packages.push(path.join(__dirname, '../../shared/functions'));
 packages.push(path.join(__dirname, '../../shared/icons'));
@@ -20,6 +21,7 @@ module.exports = {
 
         match.loader.include = include.concat(packages);
       }
+      //const {isFound: tsLoaderFound, match: tsLoaderMatch} = getLoader(webpackConfig, loaderByName('babel-loader'));
       return webpackConfig;
     },
   },

@@ -17,8 +17,6 @@
     "packages/shared/*"
   ],
   "dependencies": {
-    "@headlessui/react": "^1.4.2",
-    "@heroicons/react": "^1.0.5",
     "@improbable-eng/grpc-web": "^0.15.0",
     "@improbable-eng/grpc-web-node-http-transport": "^0.15.0",
     "@types/google-protobuf": "^3.15.5",

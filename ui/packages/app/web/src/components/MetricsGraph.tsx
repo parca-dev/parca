@@ -13,7 +13,7 @@ import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/cli
 import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
 import {valueFormatter} from '@parca/functions';
-import {DateTimeRange} from './ui/DateTimeRangePicker/utils';
+import {DateTimeRange} from '@parca/components';
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb.AsObject[];

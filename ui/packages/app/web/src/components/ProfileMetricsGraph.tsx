@@ -10,7 +10,7 @@ import {
   ServiceError,
 } from '@parca/client';
 import {Timestamp} from 'google-protobuf/google/protobuf/timestamp_pb';
-import {DateTimeRange} from './ui/DateTimeRangePicker/utils';
+import {DateTimeRange} from '@parca/components';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;

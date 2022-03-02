@@ -6,13 +6,16 @@ import ProfileMetricsGraph from '../components/ProfileMetricsGraph';
 import MatchersInput from './MatchersInput';
 import MergeButton from './MergeButton';
 import CompareButton from './CompareButton';
-import Button from './ui/Button';
-import ButtonGroup from './ui/ButtonGroup';
 import Card from './ui/Card';
 import CloseIcon from './ui/CloseIcon';
-import Select, {SelectElement} from './ui/Select';
-import DateTimeRangePicker from './ui/DateTimeRangePicker';
-import {DateTimeRange} from './ui/DateTimeRangePicker/utils';
+import {
+  DateTimeRangePicker,
+  DateTimeRange,
+  Select,
+  Button,
+  ButtonGroup,
+  SelectElement,
+} from '@parca/components';
 
 export interface QuerySelection {
   expression: string;

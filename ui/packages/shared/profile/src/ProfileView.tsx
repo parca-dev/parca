@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {CalcWidth} from '@parca/dynamicsize';
 import {parseParams} from '@parca/functions';
 import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
-import Button from '@parca/web/src/components/ui/Button';
+import {Button} from '@parca/components';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
