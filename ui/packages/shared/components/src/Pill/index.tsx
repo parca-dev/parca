@@ -27,14 +27,14 @@ const VARIANTS = {
   },
 };
 
-export type Variant = keyof typeof VARIANTS;
+export type PillVariant = keyof typeof VARIANTS;
 
 const Pill = ({
   variant = 'primary',
   children,
   ...props
 }: {
-  variant?: Variant;
+  variant?: PillVariant;
   children: React.ReactNode;
 } & JSX.IntrinsicElements['span']) => (
   <span

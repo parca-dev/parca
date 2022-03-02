@@ -1,4 +1,4 @@
-import {QuerySelection} from './ProfileSelector';
+import {QuerySelection} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca/profile';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';

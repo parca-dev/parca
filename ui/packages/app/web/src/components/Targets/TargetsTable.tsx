@@ -1,9 +1,9 @@
 import React from 'react';
 import {Target} from '@parca/client';
-import Pill from '../ui/Pill';
 import LabelsCell from './LabelsCell';
 import LastScrapeCell from './LastScrapeCell';
 import {getHealthStatus} from './utils';
+import {Pill} from '@parca/components';
 
 enum TargetsTableHeader {
   url = 'URL',

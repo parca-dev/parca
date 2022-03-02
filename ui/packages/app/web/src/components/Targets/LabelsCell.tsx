@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {ChevronDoubleDownIcon, ChevronDoubleUpIcon} from '@heroicons/react/solid';
-import Pill, {Variant} from '../ui/Pill';
+import {Pill, PillVariant} from '@parca/components';
 
 const LabelsCell = ({key, labels, discoveredLabels}) => {
   const [areDiscoveredLabelsVisible, setAreDiscoveredLabelsVisible] = useState<boolean>(false);
@@ -17,7 +17,7 @@ const LabelsCell = ({key, labels, discoveredLabels}) => {
               <div className="pb-1 pr-1">
                 <Pill
                   key={item.name}
-                  variant={'info' as Variant}
+                  variant={'info' as PillVariant}
                 >{`${item.name}="${item.value}"`}</Pill>
               </div>
             );

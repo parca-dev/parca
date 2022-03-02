@@ -1,7 +1,7 @@
 import {QueryServiceClient} from '@parca/client';
 import {useLocation, useNavigate} from 'react-router-dom';
-import ProfileExplorer from '../components/ProfileExplorer';
 import {parseParams, convertToQueryParams} from '@parca/functions';
+import {ProfileExplorer} from '@parca/components';
 
 const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 

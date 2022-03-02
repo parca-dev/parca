@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {usePopper} from 'react-popper';
-import Button from './ui/Button';
+import {Button} from '@parca/components';
 
 const MergeButton = ({disabled, onClick}: {disabled: boolean; onClick: () => void}) => {
   const [mergeHover, setMergeHover] = useState<boolean>(false);

@@ -50,3 +50,4 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
 };
 
 export default DateTimeRangePicker;
+export {DateTimeRange};

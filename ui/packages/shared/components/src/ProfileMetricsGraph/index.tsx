@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import moment from 'moment';
-import MetricsGraph from './MetricsGraph';
+import MetricsGraph from '../MetricsGraph';
 import {ProfileSelection, SingleProfileSelection} from '@parca/profile';
 import {
   QueryRangeRequest,
@@ -10,7 +10,7 @@ import {
   ServiceError,
 } from '@parca/client';
 import {Timestamp} from 'google-protobuf/google/protobuf/timestamp_pb';
-import {DateTimeRange} from './ui/DateTimeRangePicker/utils';
+import {DateTimeRange} from '@parca/components';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;

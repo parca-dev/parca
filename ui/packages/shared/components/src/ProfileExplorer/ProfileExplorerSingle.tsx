@@ -1,8 +1,8 @@
-import ProfileSelector, {QuerySelection} from './ProfileSelector';
+import ProfileSelector, {QuerySelection} from '../ProfileSelector';
 import {ProfileSelection, ProfileView} from '@parca/profile';
 import {QueryServiceClient} from '@parca/client';
 
-import {NavigateFunction} from './ProfileExplorer';
+import {NavigateFunction} from '../ProfileExplorer';
 
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;

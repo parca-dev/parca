@@ -1,7 +1,7 @@
 import {Menu, Transition} from '@headlessui/react';
 import React, {Fragment} from 'react';
 import {ChevronDownIcon} from '@heroicons/react/solid';
-import Button, {ButtonColor} from './Button';
+import Button, {ButtonColor} from '../Button';
 import cx from 'classnames';
 
 const Dropdown = ({
