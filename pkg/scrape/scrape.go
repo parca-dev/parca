@@ -461,6 +461,12 @@ mainLoop:
 
 			tl := sl.target.Labels()
 			tl = append(tl, labels.Label{Name: "__name__", Value: profileType})
+			for _, l := range sl.externalLabels {
+				tl = append(tl, labels.Label{
+					Name:  l.Name,
+					Value: l.Value,
+				})
+			}
 			// Must ensure label-set is sorted
 			sort.Sort(tl)
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
@@ -469,12 +475,6 @@ mainLoop:
 				Labels: []*profilepb.Label{},
 			}
 			for _, l := range tl {
-				protolbls.Labels = append(protolbls.Labels, &profilepb.Label{
-					Name:  l.Name,
-					Value: l.Value,
-				})
-			}
-			for _, l := range sl.externalLabels {
 				protolbls.Labels = append(protolbls.Labels, &profilepb.Label{
 					Name:  l.Name,
 					Value: l.Value,
