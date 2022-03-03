@@ -37,9 +37,10 @@ format: go/fmt check-license
 
 .PHONY: go/fmt
 go/fmt:
+	gofumpt -l -w .
 	go fmt `go list ./...`
 
-go/lint:
+go/lint: check-license
 	golangci-lint run
 
 .PHONY: check-license

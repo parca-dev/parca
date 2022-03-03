@@ -54,7 +54,6 @@ spec:
         - mountPath: /var/parca
           name: parca-config
       nodeSelector:
-        kubernetes.io/arch: amd64
         kubernetes.io/os: linux
       securityContext:
         fsGroup: 65534

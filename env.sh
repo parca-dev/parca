@@ -9,3 +9,7 @@ curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/instal
 
 CTLPTL_VERSION="0.5.0"
 curl -fsSL https://github.com/tilt-dev/ctlptl/releases/download/v$CTLPTL_VERSION/ctlptl.$CTLPTL_VERSION.linux.x86_64.tar.gz | sudo tar -xzv -C /usr/local/bin ctlptl
+
+go install github.com/campoy/embedmd@latest
+
+go install mvdan.cc/gofumpt@latest
