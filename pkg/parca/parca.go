@@ -59,11 +59,14 @@ import (
 	"github.com/parca-dev/parca/pkg/symbolizer"
 )
 
-const symbolizationInterval = 10 * time.Second
+const (
+	symbolizationInterval = 10 * time.Second
+	flagModeScraperOnly   = "scraper-only"
+)
 
 type Flags struct {
 	ConfigPath         string   `default:"parca.yaml" help:"Path to config file."`
-	Mode               string   `default:"all" enum:"all,scraper" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
+	Mode               string   `default:"all" enum:"all,scraper-only" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
 	LogLevel           string   `default:"info" enum:"error,warn,info,debug" help:"log level."`
 	Port               string   `default:":7070" help:"Port string for server"`
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
@@ -120,7 +123,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	if flags.Mode == "scraper" {
+	if flags.Mode == flagModeScraperOnly {
 		return runScraper(ctx, logger, reg, tracerProvider, flags, version, cfg)
 	}
 
