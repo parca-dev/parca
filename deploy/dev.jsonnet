@@ -16,6 +16,8 @@ function(agentVersion='v0.4.1')
     logLevel: 'debug',
     configPath: '/parca.yaml',
     corsAllowedOrigins: '*',
+    debugInfodUpstreamServers: ['https://debuginfod.systemtap.org'],
+    // debugInfodHTTPRequestTimeout: '5m',
   });
 
   local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({

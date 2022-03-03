@@ -82,7 +82,7 @@ type Flags struct {
 
 	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
 
-	UpstreamDebuginfodServer     string        `default:"https://debuginfod.systemtap.org" help:"Upstream private/public server for debuginfod files. Defaults to https://debuginfod.systemtap.org."`
+	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.systemtap.org" help:"Upstream private/public servers for debuginfod files. Defaults to https://debuginfod.systemtap.org. It is an ordered list of servers to try."`
 	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 
 	StoreAddress       string `kong:"help='gRPC address to send profiles and symbols to.'"`
@@ -198,19 +198,22 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	httpDebugInfoClient, err := debuginfo.NewHTTPDebugInfodClient(logger, flags.UpstreamDebuginfodServer, flags.DebugInfodHTTPRequestTimeout)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
-		return err
+	var debugInfodClient debuginfo.DebugInfodClient = debuginfo.NopDebugInfodClient{}
+	if len(flags.DebugInfodUpstreamServers) > 0 {
+		httpDebugInfoClient, err := debuginfo.NewHTTPDebugInfodClient(logger, flags.DebugInfodUpstreamServers, flags.DebugInfodHTTPRequestTimeout)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
+			return err
+		}
+
+		debugInfodClient, err = debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg.DebugInfo, httpDebugInfoClient)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to initialize debuginfod client cache", "err", err)
+			return err
+		}
 	}
 
-	debugInfodClientCache, err := debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg.DebugInfo, httpDebugInfoClient)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize debuginfod client cache", "err", err)
-		return err
-	}
-
-	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo, debugInfodClientCache)
+	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo, debugInfodClient)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err

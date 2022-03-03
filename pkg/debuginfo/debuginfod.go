@@ -14,6 +14,7 @@
 package debuginfo
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -33,40 +34,57 @@ type DebugInfodClient interface {
 	GetDebugInfo(ctx context.Context, buildid string) (io.ReadCloser, error)
 }
 
+type NopDebugInfodClient struct{}
+
+func (NopDebugInfodClient) GetDebugInfo(context.Context, string) (io.ReadCloser, error) {
+	return io.NopCloser(bytes.NewReader(nil)), nil
+}
+
 type HTTPDebugInfodClient struct {
 	logger          log.Logger
-	UpstreamServer  *url.URL
+	UpstreamServers []*url.URL
 	timeoutDuration time.Duration
 }
 
 type DebugInfodClientObjectStorageCache struct {
 	logger log.Logger
+
 	client DebugInfodClient
 	bucket objstore.Bucket
 }
 
-func NewHTTPDebugInfodClient(logger log.Logger, serverURL string, timeoutDuration time.Duration) (*HTTPDebugInfodClient, error) {
-	parsedURL, err := url.Parse(serverURL)
-	if err != nil {
-		return nil, err
+func NewHTTPDebugInfodClient(logger log.Logger, serverURLs []string, timeoutDuration time.Duration) (*HTTPDebugInfodClient, error) {
+	logger = log.With(logger, "component", "debuginfod")
+	parsedURLs := make([]*url.URL, 0, len(serverURLs))
+	for _, serverURL := range serverURLs {
+		u, err := url.Parse(serverURL)
+		if err != nil {
+			return nil, err
+		}
+
+		if u.Scheme != "http" && u.Scheme != "https" {
+			return nil, fmt.Errorf("unsupported scheme %q", u.Scheme)
+		}
 	}
 	return &HTTPDebugInfodClient{
 		logger:          logger,
-		UpstreamServer:  parsedURL,
+		UpstreamServers: parsedURLs,
 		timeoutDuration: timeoutDuration,
 	}, nil
 }
 
-func NewDebugInfodClientWithObjectStorageCache(logger log.Logger, config *Config, h DebugInfodClient) (*DebugInfodClientObjectStorageCache, error) {
+func NewDebugInfodClientWithObjectStorageCache(logger log.Logger, config *Config, h DebugInfodClient) (DebugInfodClient, error) {
+	logger = log.With(logger, "component", "debuginfod")
 	cfg, err := yaml.Marshal(config.Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("marshal content of debuginfod object storage configuration: %w", err)
 	}
 
-	bucket, err := client.NewBucket(logger, cfg, nil, "parca")
+	bucket, err := client.NewBucket(logger, cfg, nil, "parca/debuginfod")
 	if err != nil {
 		return nil, fmt.Errorf("instantiate debuginfod object storage: %w", err)
 	}
+
 	return &DebugInfodClientObjectStorageCache{
 		logger: logger,
 		client: h,
@@ -74,50 +92,72 @@ func NewDebugInfodClientWithObjectStorageCache(logger log.Logger, config *Config
 	}, nil
 }
 
+type closer func() error
+
+func (f closer) Close() error { return f() }
+
+type readCloser struct {
+	io.Reader
+	closer
+}
+
 func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
-	path := "/debuginfod-cache/" + buildID + "/debuginfo"
-
-	if exists, _ := c.bucket.Exists(ctx, path); exists {
-		debuginfoFile, err := c.bucket.Get(ctx, path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to download object file from debuginfod cache: build_id: %v: %w", buildID, err)
-		}
-		return debuginfoFile, nil
-	}
-
 	debugInfo, err := c.client.GetDebugInfo(ctx, buildID)
 	if err != nil {
 		return nil, ErrDebugInfoNotFound
 	}
 
-	err = c.bucket.Upload(ctx, path, debugInfo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upload to debuginfod cache: %w", err)
-	}
+	r, w := io.Pipe()
+	go func() {
+		defer w.Close()
+		defer debugInfo.Close()
 
-	debugInfoReader, err := c.bucket.Get(ctx, path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to download object file from debuginfod cache: build_id: %v: %w", buildID, err)
-	}
+		if err := c.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
+			level.Error(c.logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err)
+		}
+	}()
 
-	return debugInfoReader, nil
+	return readCloser{
+		Reader: io.TeeReader(debugInfo, w),
+		closer: closer(func() error {
+			defer debugInfo.Close()
+
+			if err := w.Close(); err != nil {
+				return err
+			}
+			return nil
+		}),
+	}, nil
 }
 
 func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
-	buildIDURL := *c.UpstreamServer
-	buildIDURL.Path = path.Join(buildIDURL.Path, buildID, "debuginfo")
+	for _, u := range c.UpstreamServers {
+		serverURL := *u
+		rc, err := c.request(ctx, serverURL, buildID)
+		if err == nil {
+			return rc, nil
+		}
+		level.Warn(c.logger).Log(
+			"msg", "failed to get debuginfo from upstream server, trying next one (if exists)",
+			"server", serverURL, "err", err,
+		)
+	}
+	return nil, ErrDebugInfoNotFound
+}
+
+func (c *HTTPDebugInfodClient) request(ctx context.Context, serverURL url.URL, buildID string) (io.ReadCloser, error) {
+	serverURL.Path = path.Join(serverURL.Path, buildID, "debuginfo")
 
 	ctx, cancel := context.WithTimeout(ctx, c.timeoutDuration)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", buildIDURL.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", serverURL.String(), nil)
 	if err != nil {
 		level.Debug(c.logger).Log("msg", "failed to create new HTTP request", "err", err)
 		return nil, err
 	}
 
-	client := http.DefaultClient
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		level.Debug(c.logger).Log("msg", "object not found in public server", "object", buildID, "err", err)
 		return nil, ErrDebugInfoNotFound

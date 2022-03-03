@@ -22,7 +22,6 @@ import (
 	"net"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
@@ -48,7 +47,6 @@ func TestStore(t *testing.T) {
 	sym, err := symbol.NewSymbolizer(logger)
 	require.NoError(t, err)
 
-	// cfg := config.Config{}
 	cfg := &Config{
 		Bucket: &client.BucketConfig{
 			Type: client.FILESYSTEM,
@@ -64,17 +62,11 @@ func TestStore(t *testing.T) {
 		},
 	}
 
-	httpDebugInfodClient, err := NewHTTPDebugInfodClient(logger, "https://debuginfod.systemtap.org", 4*time.Millisecond)
-	require.NoError(t, err)
-
-	debuginfodClientCache, err := NewDebugInfodClientWithObjectStorageCache(logger, cfg, httpDebugInfodClient)
-	require.NoError(t, err)
-
 	s, err := NewStore(
 		logger,
 		sym,
 		cfg,
-		debuginfodClientCache,
+		NopDebugInfodClient{},
 	)
 	require.NoError(t, err)
 

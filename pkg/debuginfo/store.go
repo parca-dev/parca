@@ -63,13 +63,14 @@ type CacheConfig struct {
 type Store struct {
 	debuginfopb.UnimplementedDebugInfoServiceServer
 
-	debuginfodClientCache DebugInfodClient
+	logger log.Logger
 
 	bucket objstore.Bucket
-	logger log.Logger
 
 	cacheDir   string
 	symbolizer *symbol.Symbolizer
+
+	debuginfodClient DebugInfodClient
 }
 
 // NewStore returns a new debug info store.
@@ -79,7 +80,7 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 		return nil, fmt.Errorf("marshal content of object storage configuration: %w", err)
 	}
 
-	bucket, err := client.NewBucket(logger, cfg, nil, "parca")
+	bucket, err := client.NewBucket(logger, cfg, nil, "parca/store")
 	if err != nil {
 		return nil, fmt.Errorf("instantiate object storage: %w", err)
 	}
@@ -95,11 +96,11 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 	}
 
 	return &Store{
-		debuginfodClientCache: debuginfodClient,
-		logger:                log.With(logger, "component", "debuginfo"),
-		bucket:                bucket,
-		cacheDir:              cache.Directory,
-		symbolizer:            symbolizer,
+		logger:           log.With(logger, "component", "debuginfo"),
+		bucket:           bucket,
+		cacheDir:         cache.Directory,
+		symbolizer:       symbolizer,
+		debuginfodClient: debuginfodClient,
 	}, nil
 }
 
@@ -142,10 +143,8 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	path := req.BuildId
-
 	found := false
-	err = s.bucket.Iter(ctx, path, func(_ string) error {
+	err = s.bucket.Iter(ctx, req.BuildId, func(_ string) error {
 		// We just need any debug files to be present.
 		found = true
 		return nil
@@ -172,10 +171,9 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	if err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
-	path := buildID + "/debuginfo"
 
 	r := &UploadReader{stream: stream}
-	err = s.bucket.Upload(stream.Context(), path, r)
+	err = s.bucket.Upload(stream.Context(), objectPath(buildID), r)
 	if err != nil {
 		msg := "failed to upload"
 		level.Error(s.logger).Log("msg", msg, "err", err)
@@ -207,6 +205,8 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
+	// TODO(kakkoyun): Shall we double-check build ID of the fetched object?
+
 	liner, err := s.symbolizer.NewLiner(m, localObjPath)
 	if err != nil {
 		const msg = "failed to create liner"
@@ -227,45 +227,65 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 }
 
 func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {
-	mappingPath := path.Join(s.cacheDir, buildID, "debuginfo")
+	localObjectFilePath := path.Join(s.cacheDir, buildID, "debuginfo")
 	// Check if it's already cached locally; if not download.
-	if _, err := os.Stat(mappingPath); os.IsNotExist(err) {
-		r, err := s.bucket.Get(ctx, path.Join(buildID, "debuginfo"))
-
-		if s.bucket.IsObjNotFoundErr(err) {
-			level.Debug(s.logger).Log("msg", "object not found in parca object storage", "object", buildID, "err", err)
-
-			r, err = s.debuginfodClientCache.GetDebugInfo(ctx, buildID)
-			if err != nil {
-				return "", fmt.Errorf("get object files from debuginfod storage: %w", err)
+	if _, err := os.Stat(localObjectFilePath); os.IsNotExist(err) {
+		// Download the debuginfo file from the bucket.
+		r, err := s.bucket.Get(ctx, objectPath(buildID))
+		if err != nil {
+			if s.bucket.IsObjNotFoundErr(err) {
+				level.Debug(s.logger).Log("msg", "object not found in object storage", "object", buildID, "err", err)
+				// Try downloading the debuginfo file from the debuginfod server.
+				r, err = s.debuginfodClient.GetDebugInfo(ctx, buildID)
+				if err != nil {
+					return "", fmt.Errorf("get object files from debuginfod server: %w", err)
+				}
+				defer r.Close()
+				level.Info(s.logger).Log("msg", "object downloaded from debuginfod server", "object", buildID)
 			}
-			defer r.Close()
-		}
-		if err != nil {
-			return "", fmt.Errorf("get object from object storage: %w", err)
-		}
-		tmpfile, err := ioutil.TempFile("", "symbol-download")
-		if err != nil {
-			return "", fmt.Errorf("create temp file: %w", err)
-		}
-		defer os.Remove(tmpfile.Name())
-
-		_, err = io.Copy(tmpfile, r)
-		if err != nil {
-			return "", fmt.Errorf("copy object storage file to local temp file: %w", err)
-		}
-		if err := tmpfile.Close(); err != nil {
-			return "", fmt.Errorf("close tempfile to write object file: %w", err)
+			level.Warn(s.logger).Log(
+				"msg", "failed to fetch object from object storage",
+				"object", buildID, "err", err,
+			)
 		}
 
-		err = os.MkdirAll(path.Join(s.cacheDir, buildID), 0o700)
-		if err != nil {
-			return "", fmt.Errorf("create object file directory: %w", err)
-		}
-		// Need to use rename to make the "creation" atomic.
-		if err := os.Rename(tmpfile.Name(), mappingPath); err != nil {
-			return "", fmt.Errorf("atomically move downloaded object file: %w", err)
+		// Cache the file locally.
+		if err := cache(localObjectFilePath, r); err != nil {
+			return "", fmt.Errorf("failed to fetch object: %w", err)
 		}
 	}
-	return mappingPath, nil
+	return localObjectFilePath, nil
+}
+
+func cache(localPath string, r io.ReadCloser) error {
+	tmpfile, err := ioutil.TempFile("", "symbol-download")
+	if err != nil {
+		return fmt.Errorf("create temp file: %w", err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	written, err := io.Copy(tmpfile, r)
+	if err != nil {
+		return fmt.Errorf("copy object storage file to local temp file: %w", err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		return fmt.Errorf("close tempfile to write object file: %w", err)
+	}
+	if written == 0 {
+		return fmt.Errorf("got empty object from object storage: %w", err)
+	}
+
+	err = os.MkdirAll(path.Dir(localPath), 0o700)
+	if err != nil {
+		return fmt.Errorf("create object file directory: %w", err)
+	}
+	// Need to use rename to make the "creation" atomic.
+	if err := os.Rename(tmpfile.Name(), localPath); err != nil {
+		return fmt.Errorf("atomically move downloaded object file: %w", err)
+	}
+	return nil
+}
+
+func objectPath(buildID string) string {
+	return path.Join(buildID, "debuginfo")
 }
