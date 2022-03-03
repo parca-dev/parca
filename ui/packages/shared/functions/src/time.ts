@@ -9,7 +9,7 @@ export const formatForTimespan = (from: number, to: number): string => {
     return 'H';
   }
   if (duration <= {hours: 25}) {
-    return 'H:mm D/M';
+    return 'H:mm d/M';
   }
   return 'd/M';
 };
