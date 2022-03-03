@@ -22,6 +22,7 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
+	"github.com/prometheus/prometheus/model/labels"
 
 	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
@@ -29,7 +30,13 @@ import (
 )
 
 // NewManager is the Manager constructor.
-func NewManager(logger log.Logger, reg prometheus.Registerer, store profilepb.ProfileStoreServiceServer, scrapeConfigs []*config.ScrapeConfig) *Manager {
+func NewManager(
+	logger log.Logger,
+	reg prometheus.Registerer,
+	store profilepb.ProfileStoreServiceServer,
+	scrapeConfigs []*config.ScrapeConfig,
+	externalLabels labels.Labels,
+) *Manager {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -41,6 +48,8 @@ func NewManager(logger log.Logger, reg prometheus.Registerer, store profilepb.Pr
 		scrapePools:   make(map[string]*scrapePool),
 		graceShut:     make(chan struct{}),
 		triggerReload: make(chan struct{}, 1),
+
+		externalLabels: externalLabels,
 
 		targetIntervalLength: prometheus.NewSummaryVec(
 			prometheus.SummaryOpts{
@@ -126,6 +135,8 @@ type Manager struct {
 	store     profilepb.ProfileStoreServiceServer
 	graceShut chan struct{}
 
+	externalLabels labels.Labels
+
 	mtxScrape     sync.Mutex // Guards the fields below.
 	scrapeConfigs map[string]*config.ScrapeConfig
 	scrapePools   map[string]*scrapePool
@@ -194,7 +205,7 @@ func (m *Manager) reload() {
 				level.Error(m.logger).Log("msg", "error reloading target set", "err", "invalid config id:"+setName)
 				return
 			}
-			sp = newScrapePool(scrapeConfig, m.store, log.With(m.logger, "scrape_pool", setName), &scrapePoolMetrics{
+			sp = newScrapePool(scrapeConfig, m.store, log.With(m.logger, "scrape_pool", setName), m.externalLabels, &scrapePoolMetrics{
 				targetIntervalLength:          m.targetIntervalLength,
 				targetReloadIntervalLength:    m.targetReloadIntervalLength,
 				targetSyncIntervalLength:      m.targetSyncIntervalLength,

@@ -31,6 +31,7 @@ import (
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -85,11 +86,12 @@ type Flags struct {
 	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.systemtap.org" help:"Upstream private/public servers for debuginfod files. Defaults to https://debuginfod.systemtap.org. It is an ordered list of servers to try."`
 	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 
-	StoreAddress       string `kong:"help='gRPC address to send profiles and symbols to.'"`
-	BearerToken        string `kong:"help='Bearer token to authenticate with store.'"`
-	BearerTokenFile    string `kong:"help='File to read bearer token from to authenticate with store.'"`
-	Insecure           bool   `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
-	InsecureSkipVerify bool   `kong:"help='Skip TLS certificate verification.'"`
+	StoreAddress       string            `kong:"help='gRPC address to send profiles and symbols to.'"`
+	BearerToken        string            `kong:"help='Bearer token to authenticate with store.'"`
+	BearerTokenFile    string            `kong:"help='File to read bearer token from to authenticate with store.'"`
+	Insecure           bool              `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
+	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
+	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
 }
 
 // Run the parca server.
@@ -182,7 +184,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	m := scrape.NewManager(logger, reg, s, cfg.ScrapeConfigs)
+	m := scrape.NewManager(logger, reg, s, cfg.ScrapeConfigs, labels.Labels{})
 	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {
 		level.Error(logger).Log("msg", "failed to apply scrape configs", "err", err)
 		return err
@@ -380,7 +382,12 @@ func runScraper(
 		return err
 	}
 
-	m := scrape.NewManager(logger, reg, store, cfg.ScrapeConfigs)
+	externalLabels := labels.Labels{}
+	for name, value := range flags.ExternalLabel {
+		externalLabels = append(externalLabels, labels.Label{Name: name, Value: value})
+	}
+
+	m := scrape.NewManager(logger, reg, store, cfg.ScrapeConfigs, externalLabels)
 	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {
 		level.Error(logger).Log("msg", "failed to apply scrape configs", "err", err)
 		return err
