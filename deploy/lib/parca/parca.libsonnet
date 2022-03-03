@@ -32,6 +32,9 @@ local defaults = {
   serviceMonitor: false,
   storageRetentionTime: '',
 
+  debugInfodUpstreamServers: ['https://debuginfod.systemtap.org'],
+  debugInfodHTTPRequestTimeout: '5m',
+
   commonLabels:: {
     'app.kubernetes.io/name': 'parca',
     'app.kubernetes.io/instance': defaults.name,
@@ -210,7 +213,11 @@ function(params) {
         (if prc.config.corsAllowedOrigins == '' then []
          else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]) +
         (if prc.config.storageRetentionTime == '' then []
-         else ['--storage-tsdb-retention-time=' + prc.config.storageRetentionTime]),
+         else ['--storage-tsdb-retention-time=' + prc.config.storageRetentionTime]) +
+        (if std.length(prc.config.debugInfodUpstreamServers) == 0 then []
+         else ['--debug-infod-upstream-servers=' + std.join(',', prc.config.debugInfodUpstreamServers)]) +
+        (if prc.config.debugInfodHTTPRequestTimeout == '' then []
+         else ['--debug-infod-http-request-timeout=' + prc.config.debugInfodHTTPRequestTimeout]),
       ports: [
         { name: port.name, containerPort: port.port }
         for port in prc.service.spec.ports
