@@ -72,7 +72,48 @@ Now Parca is running locally and its web UI is available on http://localhost:707
 By default Parca is scraping it's own pprof endpoints and you should see profiles show up over time. 
 The scrape configuration can be changed in the `parca.yaml` in the root of the repository. 
 
-### Credits
+### Configuration
+
+Flags:
+
+[embedmd]:# (tmp/help.txt)
+```txt
+Usage: parca
+
+Flags:
+  -h, --help                   Show context-sensitive help.
+      --config-path="parca.yaml"
+                               Path to config file.
+      --log-level="info"       log level.
+      --port=":7070"           Port string for server
+      --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
+                               Allowed CORS origins.
+      --otlp-address=STRING    OpenTelemetry collector address to send traces
+                               to.
+      --version                Show application version.
+      --path-prefix=""         Path prefix for the UI
+      --storage-tsdb-retention-time=6h
+                               How long to retain samples in storage.
+      --symbolizer-demangle-mode="simple"
+                               Mode to demangle C++ symbols. Default mode is
+                               simplified: no parameters, no templates, no
+                               return type
+      --symbolizer-number-of-tries=3
+                               Number of tries to attempt to symbolize an
+                               unsybolized location
+      --metastore="badgerinmemory"
+                               Which metastore implementation to use
+      --debug-infod-upstream-servers=https://debuginfod.systemtap.org,...
+                               Upstream private/public servers for debuginfod
+                               files. Defaults to
+                               https://debuginfod.systemtap.org. It is an
+                               ordered list of servers to try.
+      --debug-infod-http-request-timeout=5m
+                               Timeout duration for HTTP request to upstream
+                               debuginfod server. Defaults to 5m
+```
+
+## Credits
 
 Parca was originally developed by [Polar Signals](https://polarsignals.com/). Read the announcement blog post: https://www.polarsignals.com/blog/posts/2021/10/08/introducing-parca-we-got-funded/
 

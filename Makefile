@@ -37,9 +37,10 @@ format: go/fmt check-license
 
 .PHONY: go/fmt
 go/fmt:
+	gofumpt -l -w .
 	go fmt `go list ./...`
 
-go/lint:
+go/lint: check-license
 	golangci-lint run
 
 .PHONY: check-license
@@ -108,3 +109,9 @@ dev/up: deploy/manifests
 .PHONY: dev/down
 dev/down:
 	source ./scripts/local-dev.sh && down
+
+tmp/help.txt: go/bin
+	bin/parca --help > $@
+
+README.md: tmp/help.txt
+	embedmd -w README.md
