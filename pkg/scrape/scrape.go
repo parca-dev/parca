@@ -69,7 +69,13 @@ type scrapePoolMetrics struct {
 	targetScrapeSampleOutOfBounds prometheus.Counter
 }
 
-func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreServiceServer, logger log.Logger, metrics *scrapePoolMetrics) *scrapePool {
+func newScrapePool(
+	cfg *config.ScrapeConfig,
+	store profilepb.ProfileStoreServiceServer,
+	logger log.Logger,
+	externalLabels labels.Labels,
+	metrics *scrapePoolMetrics,
+) *scrapePool {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -99,6 +105,7 @@ func newScrapePool(cfg *config.ScrapeConfig, store profilepb.ProfileStoreService
 			t,
 			s,
 			log.With(logger, "target", t),
+			externalLabels,
 			sp.metrics.targetIntervalLength,
 			buffers,
 			store,
@@ -352,6 +359,7 @@ type scrapeLoop struct {
 	l              log.Logger
 	intervalLength *prometheus.SummaryVec
 	lastScrapeSize int
+	externalLabels labels.Labels
 
 	buffers *pool.Pool
 
@@ -366,6 +374,7 @@ func newScrapeLoop(ctx context.Context,
 	t *Target,
 	sc scraper,
 	l log.Logger,
+	externalLabels labels.Labels,
 	targetIntervalLength *prometheus.SummaryVec,
 	buffers *pool.Pool,
 	store profilepb.ProfileStoreServiceServer,
@@ -383,6 +392,7 @@ func newScrapeLoop(ctx context.Context,
 		store:          store,
 		stopped:        make(chan struct{}),
 		l:              l,
+		externalLabels: externalLabels,
 		intervalLength: targetIntervalLength,
 		ctx:            ctx,
 	}
@@ -459,6 +469,12 @@ mainLoop:
 				Labels: []*profilepb.Label{},
 			}
 			for _, l := range tl {
+				protolbls.Labels = append(protolbls.Labels, &profilepb.Label{
+					Name:  l.Name,
+					Value: l.Value,
+				})
+			}
+			for _, l := range sl.externalLabels {
 				protolbls.Labels = append(protolbls.Labels, &profilepb.Label{
 					Name:  l.Name,
 					Value: l.Value,
