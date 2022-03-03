@@ -1,6 +1,11 @@
 CMD_DOCKER ?= docker
 CMD_GIT ?= git
 SHELL := /bin/bash
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
 ifeq ($(GITHUB_BRANCH_NAME),)
 	BRANCH := $(shell git rev-parse --abbrev-ref HEAD)-
 else
@@ -35,10 +40,19 @@ go/bin: go/deps
 .PHONY: format
 format: go/fmt check-license
 
+gofumpt:
+ifeq (, $(shell which gofumpt))
+	go install mvdan.cc/gofumpt@v0.3.0
+GOFUMPT=$(GOBIN)/gofumpt
+else
+GOFUMPT=$(shell which gofumpt)
+endif
+
+# Rather than running this over and over we recommend running gofumpt on save with your editor.
+# Check https://github.com/mvdan/gofumpt#installation for instructions.
 .PHONY: go/fmt
-go/fmt:
-	gofumpt -l -w .
-	go fmt `go list ./...`
+go/fmt: gofumpt
+	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto | grep -v internal/go)
 
 go/lint: check-license
 	golangci-lint run
