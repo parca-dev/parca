@@ -15,15 +15,18 @@ package parca
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
@@ -36,6 +39,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
@@ -54,10 +59,14 @@ import (
 	"github.com/parca-dev/parca/pkg/symbolizer"
 )
 
-const symbolizationInterval = 10 * time.Second
+const (
+	symbolizationInterval = 10 * time.Second
+	flagModeScraperOnly   = "scraper-only"
+)
 
 type Flags struct {
 	ConfigPath         string   `default:"parca.yaml" help:"Path to config file."`
+	Mode               string   `default:"all" enum:"all,scraper-only" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
 	LogLevel           string   `default:"info" enum:"error,warn,info,debug" help:"log level."`
 	Port               string   `default:":7070" help:"Port string for server"`
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
@@ -75,6 +84,12 @@ type Flags struct {
 
 	UpstreamDebuginfodServer     string        `default:"https://debuginfod.systemtap.org" help:"Upstream private/public server for debuginfod files. Defaults to https://debuginfod.systemtap.org."`
 	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
+
+	StoreAddress       string `kong:"help='gRPC address to send profiles and symbols to.'"`
+	BearerToken        string `kong:"help='Bearer token to authenticate with store.'"`
+	BearerTokenFile    string `kong:"help='File to read bearer token from to authenticate with store.'"`
+	Insecure           bool   `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
+	InsecureSkipVerify bool   `kong:"help='Skip TLS certificate verification.'"`
 }
 
 // Run the parca server.
@@ -106,6 +121,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	if err := cfg.Validate(); err != nil {
 		level.Error(logger).Log("msg", "parsed config invalid", "err", err, "path", flags.ConfigPath)
 		return err
+	}
+
+	if flags.Mode == flagModeScraperOnly {
+		return runScraper(ctx, logger, reg, tracerProvider, flags, version, cfg)
 	}
 
 	var mStr metastore.ProfileMetaStore
@@ -281,7 +300,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			level.Debug(logger).Log("msg", "server shutting down")
 			err := parcaserver.Shutdown(ctx)
 			if err != nil && !errors.Is(err, context.Canceled) {
-				level.Error(logger).Log("msg", "error shuttiing down server", "err", err)
+				level.Error(logger).Log("msg", "error shutting down server", "err", err)
 			}
 		},
 	)
@@ -293,6 +312,151 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	return nil
+}
+
+func runScraper(
+	ctx context.Context,
+	logger log.Logger,
+	reg *prometheus.Registry,
+	tracer trace.TracerProvider,
+	flags *Flags,
+	version string,
+	cfg config.Config,
+) error {
+	if flags.StoreAddress == "" {
+		return fmt.Errorf("parca scraper mode needs to have a --store-address")
+	}
+
+	metrics := grpc_prometheus.NewClientMetrics()
+	metrics.EnableClientHandlingTimeHistogram()
+	reg.MustRegister(metrics)
+
+	opts := []grpc.DialOption{
+		grpc.WithUnaryInterceptor(
+			metrics.UnaryClientInterceptor(),
+		),
+	}
+	if flags.Insecure {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	} else {
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			InsecureSkipVerify: flags.InsecureSkipVerify,
+		})))
+	}
+
+	if flags.BearerToken != "" {
+		opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{
+			token:    flags.BearerToken,
+			insecure: flags.Insecure,
+		}))
+	}
+
+	if flags.BearerTokenFile != "" {
+		b, err := ioutil.ReadFile(flags.BearerTokenFile)
+		if err != nil {
+			return fmt.Errorf("failed to read bearer token from file: %w", err)
+		}
+		opts = append(opts, grpc.WithPerRPCCredentials(&perRequestBearerToken{
+			token:    strings.TrimSpace(string(b)),
+			insecure: flags.Insecure,
+		}))
+	}
+
+	conn, err := grpc.Dial(flags.StoreAddress, opts...)
+	if err != nil {
+		return fmt.Errorf("failed to create gRPC connection: %w", err)
+	}
+
+	store := profilestore.NewGRPCForwarder(conn, logger)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	discoveryManager := discovery.NewManager(ctx, logger)
+	if err := discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs)); err != nil {
+		level.Error(logger).Log("msg", "failed to apply discovery configs", "err", err)
+		return err
+	}
+
+	m := scrape.NewManager(logger, reg, store, cfg.ScrapeConfigs)
+	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {
+		level.Error(logger).Log("msg", "failed to apply scrape configs", "err", err)
+		return err
+	}
+
+	var gr run.Group
+	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
+	gr.Add(
+		func() error {
+			return discoveryManager.Run()
+		},
+		func(_ error) {
+			level.Debug(logger).Log("msg", "discovery manager exiting")
+			cancel()
+		},
+	)
+	gr.Add(
+		func() error {
+			return m.Run(discoveryManager.SyncCh())
+		},
+		func(_ error) {
+			level.Debug(logger).Log("msg", "scrape manager exiting")
+			m.Stop()
+		},
+	)
+
+	parcaserver := server.NewServer(reg, version)
+	gr.Add(
+		func() error {
+			return parcaserver.ListenAndServe(
+				ctx,
+				logger,
+				flags.Port,
+				flags.CORSAllowedOrigins,
+				flags.PathPrefix,
+				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
+					scrapepb.RegisterScrapeServiceServer(srv, m)
+					if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+						return err
+					}
+					return nil
+				}),
+			)
+		},
+		func(_ error) {
+			ctx, cancel := context.WithTimeout(ctx, 30*time.Second) // TODO make this a graceful shutdown config setting
+			defer cancel()
+
+			level.Debug(logger).Log("msg", "server shutting down")
+			err := parcaserver.Shutdown(ctx)
+			if err != nil && !errors.Is(err, context.Canceled) {
+				level.Error(logger).Log("msg", "error shutting down server", "err", err)
+			}
+		},
+	)
+
+	level.Info(logger).Log("msg", "running Parca in scrape mode", "version", version)
+	if err := gr.Run(); err != nil {
+		if _, ok := err.(run.SignalError); ok {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+type perRequestBearerToken struct {
+	token    string
+	insecure bool
+}
+
+func (t *perRequestBearerToken) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	return map[string]string{
+		"authorization": "Bearer " + t.token,
+	}, nil
+}
+
+func (t *perRequestBearerToken) RequireTransportSecurity() bool {
+	return !t.insecure
 }
 
 func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Configs {
