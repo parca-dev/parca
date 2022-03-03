@@ -127,5 +127,13 @@ dev/down:
 tmp/help.txt: go/bin
 	bin/parca --help > $@
 
-README.md: tmp/help.txt
-	embedmd -w README.md
+embedmd:
+ifeq (, $(shell which embedmd))
+	go install github.com/campoy/embedmd@latest
+EMBEDMD=$(GOBIN)/embedmd
+else
+EMBEDMD=$(shell which embedmd)
+endif
+
+README.md: embedmd tmp/help.txt
+	$(EMBEDMD) -w README.md
