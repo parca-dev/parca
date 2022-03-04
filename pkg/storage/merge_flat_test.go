@@ -40,7 +40,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	s1 := parcaprofile.MakeSample(2, []uuid.UUID{uuid2, uuid1})
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 
-	p1 := &parcaprofile.FlatProfile{
+	p1 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -56,7 +56,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	s2 := parcaprofile.MakeSample(1, []uuid.UUID{uuid3, uuid1})
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
-	p2 := &parcaprofile.FlatProfile{
+	p2 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -108,7 +108,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
-	p1 := &parcaprofile.FlatProfile{
+	p1 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -127,7 +127,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	s5 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
 	k5 := uuid.MustParse("00000000-0000-0000-0000-0000000000e5")
 
-	p2 := &parcaprofile.FlatProfile{
+	p2 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -196,7 +196,7 @@ func TestMergeFlatProfile(t *testing.T) {
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 	k5 := uuid.MustParse("00000000-0000-0000-0000-0000000000e5")
 
-	p1 := &parcaprofile.FlatProfile{
+	p1 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -219,7 +219,7 @@ func TestMergeFlatProfile(t *testing.T) {
 	k6 := uuid.MustParse("00000000-0000-0000-0000-0000000000e6")
 	k7 := uuid.MustParse("00000000-0000-0000-0000-0000000000e7")
 
-	p2 := &parcaprofile.FlatProfile{
+	p2 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},

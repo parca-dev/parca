@@ -41,7 +41,7 @@ func TestHead_MaxTime(t *testing.T) {
 	k := profile.MakeStacktraceKey(s)
 
 	for i := int64(1); i < 500; i++ {
-		require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+		require.NoError(t, app.AppendFlat(ctx, &profile.Profile{
 			Meta:        profile.InstantProfileMeta{Timestamp: i},
 			FlatSamples: map[string]*profile.Sample{string(k): s},
 		}))
@@ -141,7 +141,7 @@ func TestHead_Truncate(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := int64(1); i <= 500; i++ {
-			require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+			require.NoError(t, app.AppendFlat(ctx, &profile.Profile{
 				Meta:        profile.InstantProfileMeta{Timestamp: i},
 				FlatSamples: map[string]*profile.Sample{string(k): s},
 			}))
@@ -152,7 +152,7 @@ func TestHead_Truncate(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := int64(100); i < 768; i++ {
-			require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+			require.NoError(t, app.AppendFlat(ctx, &profile.Profile{
 				Meta:        profile.InstantProfileMeta{Timestamp: i},
 				FlatSamples: map[string]*profile.Sample{string(k): s},
 			}))

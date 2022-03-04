@@ -57,7 +57,7 @@ func TestMemSeries(t *testing.T) {
 	k11 := uuid.MustParse("00000000-0000-0000-0000-000000000e11")
 	k12 := uuid.MustParse("00000000-0000-0000-0000-000000000e12")
 
-	fp1 := &profile.FlatProfile{
+	fp1 := &profile.Profile{
 		Meta: profile.InstantProfileMeta{
 			PeriodType: profile.ValueType{},
 			SampleType: profile.ValueType{},
@@ -79,7 +79,7 @@ func TestMemSeries(t *testing.T) {
 	require.Equal(t, chunkenc.FromValuesXOR(2), s.samples[string(k12[:])][0])
 
 	s2 := profile.MakeSample(3, []uuid.UUID{uuid2, uuid1})
-	fp2 := &profile.FlatProfile{
+	fp2 := &profile.Profile{
 		Meta: profile.InstantProfileMeta{
 			PeriodType: profile.ValueType{},
 			SampleType: profile.ValueType{},
@@ -103,7 +103,7 @@ func TestMemSeries(t *testing.T) {
 	s3 := profile.MakeSample(4, []uuid.UUID{uuid3, uuid1})
 	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 
-	fp3 := &profile.FlatProfile{
+	fp3 := &profile.Profile{
 		Meta: profile.InstantProfileMeta{
 			PeriodType: profile.ValueType{},
 			SampleType: profile.ValueType{},
@@ -128,7 +128,7 @@ func TestMemSeries(t *testing.T) {
 	s4 := profile.MakeSample(6, []uuid.UUID{uuid5, uuid2, uuid1})
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
-	fp4 := &profile.FlatProfile{
+	fp4 := &profile.Profile{
 		Meta: profile.InstantProfileMeta{
 			PeriodType: profile.ValueType{},
 			SampleType: profile.ValueType{},
@@ -152,7 +152,7 @@ func TestMemSeries(t *testing.T) {
 
 	// Merging another profileTree onto the existing one with one new Location
 	s5 := profile.MakeSample(7, []uuid.UUID{uuid2, uuid1})
-	fp5 := &profile.FlatProfile{
+	fp5 := &profile.Profile{
 		Meta: profile.InstantProfileMeta{
 			PeriodType: profile.ValueType{},
 			SampleType: profile.ValueType{},
@@ -202,7 +202,7 @@ func TestMemSeriesMany(t *testing.T) {
 		s1.Value = int64(i)
 		s2.Value = int64(2 * i)
 
-		err = app.AppendFlat(ctx, &profile.FlatProfile{
+		err = app.AppendFlat(ctx, &profile.Profile{
 			Meta: profile.InstantProfileMeta{
 				Timestamp: int64(i),
 				Duration:  snano,
@@ -265,7 +265,7 @@ func TestMemSeries_truncateChunksBefore(t *testing.T) {
 			require.NoError(t, err)
 
 			for i := int64(1); i <= 500; i++ {
-				require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+				require.NoError(t, app.AppendFlat(ctx, &profile.Profile{
 					Meta: profile.InstantProfileMeta{Timestamp: i},
 				}))
 			}
@@ -301,7 +301,7 @@ func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
 	k1 := profile.MakeStacktraceKey(s1)
 
 	for i := int64(1); i < 500; i++ {
-		require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+		require.NoError(t, app.AppendFlat(ctx, &profile.Profile{
 			Meta: profile.InstantProfileMeta{Timestamp: i},
 			FlatSamples: map[string]*profile.Sample{
 				string(k1): s1,
@@ -322,7 +322,7 @@ func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
 
 	// Test for appending working correctly after truncating.
 	for i := int64(500); i < 1_000; i++ {
-		require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+		require.NoError(t, app.AppendFlat(ctx, &profile.Profile{
 			Meta: profile.InstantProfileMeta{Timestamp: i},
 			FlatSamples: map[string]*profile.Sample{
 				string(k1): s1,
@@ -340,7 +340,7 @@ func TestMemSeries_truncateFlatChunksBeforeConcurrent(t *testing.T) {
 
 	// Append more profiles after truncating all chunks.
 	for i := int64(1_100); i < 1_234; i++ {
-		require.NoError(t, app.AppendFlat(ctx, &profile.FlatProfile{
+		require.NoError(t, app.AppendFlat(ctx, &profile.Profile{
 			Meta: profile.InstantProfileMeta{Timestamp: i},
 			FlatSamples: map[string]*profile.Sample{
 				string(k1): s1,
@@ -366,7 +366,7 @@ func BenchmarkMemSeries_truncateChunksBefore(b *testing.B) {
 	})
 	sampleKey := profile.MakeStacktraceKey(sample)
 
-	p := &profile.FlatProfile{
+	p := &profile.Profile{
 		Meta: profile.InstantProfileMeta{},
 		FlatSamples: map[string]*profile.Sample{
 			string(sampleKey): sample,

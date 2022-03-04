@@ -169,7 +169,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	stacktraceID2, err := l.CreateStacktrace(ctx, k2, &metapb.Sample{LocationIds: [][]byte{l4.ID[:], l3.ID[:], l2.ID[:], l1.ID[:]}})
 	require.NoError(t, err)
 
-	fp := &parcaprofile.FlatProfile{
+	fp := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{},
 		FlatSamples: map[string]*parcaprofile.Sample{
 			string(stacktraceID0[:]): s0,

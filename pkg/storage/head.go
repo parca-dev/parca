@@ -241,7 +241,7 @@ type initAppender struct {
 	head *Head
 }
 
-func (a *initAppender) AppendFlat(ctx context.Context, p *profile.FlatProfile) error {
+func (a *initAppender) AppendFlat(ctx context.Context, p *profile.Profile) error {
 	if a.app != nil {
 		return a.app.AppendFlat(ctx, p)
 	}

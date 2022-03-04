@@ -154,7 +154,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	})
 	key := parcaprofile.MakeStacktraceKey(sample)
 
-	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.FlatProfile{
+	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.Profile{
 		FlatSamples: map[string]*parcaprofile.Sample{
 			string(key): sample,
 		},

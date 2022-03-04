@@ -25,8 +25,8 @@ import (
 )
 
 // FlatProfilesFromPprof extracts a Profile from each sample index included in the pprof profile.
-func FlatProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) ([]*FlatProfile, error) {
-	fps := make([]*FlatProfile, 0, len(p.SampleType))
+func FlatProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) ([]*Profile, error) {
+	fps := make([]*Profile, 0, len(p.SampleType))
 
 	for i := range p.SampleType {
 		fp, err := FlatProfileFromPprof(ctx, l, s, p, i)
@@ -40,7 +40,7 @@ func FlatProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.Profil
 	return fps, nil
 }
 
-func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*FlatProfile, error) {
+func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*Profile, error) {
 	pfn := &profileFlatNormalizer{
 		logger:    logger,
 		metaStore: metaStore,
@@ -74,7 +74,7 @@ func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore meta
 		return nil, nil
 	}
 
-	return &FlatProfile{
+	return &Profile{
 		Meta:        MetaFromPprof(p, sampleIndex),
 		FlatSamples: pfn.samples,
 	}, nil
