@@ -24,7 +24,7 @@ Install the following dependencies (Instructions are linked for each dependency)
 Fork and clone the [parca](https://github.com/parca-dev/parca) repository on GitHub to your machine.
 
 ```
-$ git clone git@github.com:parca-dev/parca.git
+$ git clone git@github.com:<your-github-username>/parca.git
 
 ```
 
@@ -48,6 +48,8 @@ To profile all containers using Kubernetes, the parca-server can be run alongsid
 
 ```
 $ cd parca
+
+$ make dev/setup
 
 $ make dev/up
 
