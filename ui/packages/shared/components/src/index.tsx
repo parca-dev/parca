@@ -13,6 +13,7 @@ import ProfileSelector from './ProfileSelector';
 import Select from './Select';
 import type {SelectElement} from './Select';
 import Tab from './Tab';
+import EmptyState from './EmptyState';
 
 export type {PillVariant, SelectElement};
 
@@ -32,4 +33,5 @@ export {
   ProfileSelector,
   Select,
   Tab,
+  EmptyState,
 };
