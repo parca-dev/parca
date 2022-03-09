@@ -10,6 +10,9 @@ module.exports = {
       maxWidth: {
         '1/2': '50%',
       },
+      minWidth: theme => ({
+        ...theme('spacing'),
+      }),
     },
   },
   variants: {},

@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {TargetsRequest, TargetsResponse, ScrapeServiceClient, ServiceError} from '@parca/client';
+import {EmptyState} from '@parca/components';
 import TargetsTable from '../components/Targets/TargetsTable';
 
 export interface ITargetsResult {
@@ -51,18 +52,35 @@ const TargetsPage = (): JSX.Element => {
     <div className="flex flex-col">
       <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-          <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            {targetNamespaces?.map(namespace => {
-              const name = Object.keys(namespace)[0];
-              const targets = namespace[name];
-              return (
-                <div key={name} className="p-2 border-b-2">
-                  <div>{name}</div>
-                  <TargetsTable targets={targets} />
-                </div>
-              );
-            })}
-          </div>
+          <EmptyState
+            isEmpty={targetNamespaces?.length <= 0}
+            title="No targets available"
+            body={
+              <p>
+                For additional information see the{' '}
+                <a
+                  className="text-blue-500"
+                  href="https://www.parca.dev/docs/parca-agent-design#target-discovery"
+                >
+                  Target Discovery
+                </a>{' '}
+                documentation
+              </p>
+            }
+          >
+            <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+              {targetNamespaces?.map(namespace => {
+                const name = Object.keys(namespace)[0];
+                const targets = namespace[name];
+                return (
+                  <div key={name} className="p-2 border-b-2">
+                    <div>{name}</div>
+                    <TargetsTable targets={targets} />
+                  </div>
+                );
+              })}
+            </div>
+          </EmptyState>
         </div>
       </div>
     </div>
