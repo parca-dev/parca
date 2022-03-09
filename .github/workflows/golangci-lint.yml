@@ -9,6 +9,7 @@ on:
     paths:
       - '**.go'
   pull_request:
+
 jobs:
   golangci:
     name: lint

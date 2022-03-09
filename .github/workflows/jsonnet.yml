@@ -4,10 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-      - jsonnet/**
+      - 'jsonnet/**'
   pull_request:
     branches: [ main ]
-      - jsonnet/**
+    paths:
+      - 'jsonnet/**'
 
 jobs:
   build:
