@@ -45,7 +45,7 @@ const Select = ({
       <Listbox value={selectedKey} onChange={onSelection}>
         {({open}) => (
           <>
-            <div>
+            <div className="min-w-fit">
               <Listbox.Button
                 className={cx(
                   width !== undefined ? `w-${width}` : '',
