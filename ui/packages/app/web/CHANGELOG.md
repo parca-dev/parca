@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.12.0](https://github.com/parca-dev/parca/compare/ui-v0.11.2...ui-v0.12.0) (2022-03-09)
+
+### Features
+
+- empty state container for targets page ([d151f16](https://github.com/parca-dev/parca/commit/d151f16ff316c1f4de4d8f68877a3dbe3136b79e))
+
 ## [0.11.2](https://github.com/parca-dev/parca/compare/ui-v0.11.1...ui-v0.11.2) (2022-03-03)
 
 **Note:** Version bump only for package @parca/web
