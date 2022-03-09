@@ -21,7 +21,7 @@ ALL_ARCH ?= amd64 arm arm64
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
 .PHONY: build
-build: ui go/bin
+build: ui/build go/bin
 
 .PHONY: clean
 clean:
@@ -66,10 +66,10 @@ go/test:
 	 go test -v `go list ./...`
 
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
-ui/packages/app/web/build: $(UI_FILES)
-	cd ui && yarn install && yarn workspace @parca/web build
 
-ui: ui/packages/app/web/build
+.PHONY: ui/build
+ui/build: $(UI_FILES)
+	cd ui && yarn install && yarn workspace @parca/web build
 
 .PHONY: proto/lint
 proto/lint:
@@ -125,6 +125,7 @@ dev/down:
 	source ./scripts/local-dev.sh && down
 
 tmp/help.txt: go/bin
+	mkdir -p tmp
 	bin/parca --help > $@
 
 embedmd:

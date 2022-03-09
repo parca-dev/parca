@@ -13,7 +13,7 @@ require (
 	github.com/gin-gonic/gin v1.7.7 // indirect
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.0
-	github.com/go-delve/delve v1.8.1
+	github.com/go-delve/delve v1.8.2
 	github.com/go-kit/log v0.2.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
@@ -32,7 +32,7 @@ require (
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v1.8.2-0.20211217191541-41f1a8125e66
 	github.com/stretchr/testify v1.7.0
-	github.com/thanos-io/thanos v0.24.0
+	github.com/thanos-io/thanos v0.25.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.29.0
 	go.opentelemetry.io/otel v1.4.1
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.4.1
@@ -49,7 +49,7 @@ require (
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/klog/v2 v2.40.1 // indirect
-	modernc.org/sqlite v1.14.7
+	modernc.org/sqlite v1.14.8
 	nhooyr.io/websocket v1.8.7 // indirect
 )
 

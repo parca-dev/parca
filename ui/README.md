@@ -35,7 +35,7 @@ To build the UI, you can use `Makefile` at the root of the project to run the fo
 Run the following command to generate a production build of the React app:
 
 ```shell
-make ui # yarn install && yarn build
+make ui/build # yarn install && yarn build
 ```
 
 We embed the artifacts (the production build and its static assets) into the final binary distribution.
