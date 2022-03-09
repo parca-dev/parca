@@ -26,6 +26,9 @@ jobs:
         with:
           go-version: ^1.17
 
+      - name: Build UI
+        run: make ui
+
       - name: Docs check
         run: |
           make README.md
