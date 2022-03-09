@@ -28,11 +28,6 @@ export interface ILabelValuesResult {
   error: ServiceError | null;
 }
 
-const pasteSplit = data => {
-  const separators = [',', ';', '\\(', '\\)', '\\*', '/', ':', '\\?', '\n', '\r'];
-  return data.split(new RegExp(separators.join('|'))).map(d => d.trim());
-};
-
 const addQuoteMarks = (labelValue: string) => {
   // eslint-disable-next-line no-useless-escape
   return `\"${labelValue}\"`;
@@ -91,16 +86,16 @@ const MatchersInput = ({
   runQuery,
   currentQuery,
 }: MatchersInputProps): JSX.Element => {
-  const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
+  const [inputRef, setInputRef] = useState<string>('');
   const [divInputRef, setDivInputRef] = useState<HTMLDivElement | null>(null);
-  const [currentInputValue, setCurrentInputValue] = useState<any>(null);
+  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<Array<any> | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [showSuggest, setShowSuggest] = useState(true);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const [labelValuesResponse, setLabelValuesResponse] = useState<string[] | null>(null);
-  const {styles, attributes} = usePopper(inputRef, popperElement, {
+  const {styles, attributes} = usePopper(divInputRef, popperElement, {
     placement: 'bottom-start',
   });
 
@@ -190,13 +185,22 @@ const MatchersInput = ({
     suggestionSections.labelNames.length +
     suggestionSections.labelValues.length;
 
+  const getLabelsFromMatchers = matchers => {
+    return matchers.map(matcher => matcher.key + matcher.matcherType + matcher.value);
+  };
+
+  useEffect(() => {
+    setCurrentLabelsCollection(getLabelsFromMatchers(currentQuery.matchers));
+  }, []);
+
   const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
-    console.log('🚀 ~ file: MatchersInput.tsx ~ line 198 ~ onChange ~ newValue', newValue);
+    setInputRef(e.target.value);
     setMatchersString(newValue);
+
     resetLastCompleted();
     resetHighlight();
   };
@@ -244,7 +248,6 @@ const MatchersInput = ({
 
     if (suggestion.type === 'labelValue') {
       suggestion.value = addQuoteMarks(suggestion.value);
-      inputRef.value = '';
     }
 
     const newValue = complete(suggestion);
@@ -258,13 +261,27 @@ const MatchersInput = ({
     setMatchersString(newValue);
 
     if (suggestion.type === 'labelValue') {
-      setCurrentInputValue(newValue.split(','));
+      setCurrentLabelsCollection(newValue.split(','));
+
+      setInputRef('');
+      focus();
+      return;
     }
 
-    if (inputRef !== null) {
-      inputRef.value = newValue;
-      inputRef.focus();
+    if (lastCompleted.type === 'labelValue' && suggestion.type === 'literal') {
+      setInputRef('');
+      focus();
+      return;
     }
+
+    if (currentLabelsCollection !== null) {
+      setInputRef(newValue.substring(newValue.lastIndexOf(',') + 1));
+      focus();
+      return;
+    }
+
+    setInputRef(newValue);
+    focus();
   };
 
   const applyHighlightedSuggestion = (): void => {
@@ -318,6 +335,22 @@ const MatchersInput = ({
     if (event.key === 'ArrowDown') {
       highlightNext();
     }
+
+    if (event.key === ',') {
+      const values = inputRef.split(',');
+      if (currentLabelsCollection === null) {
+        setCurrentLabelsCollection(values);
+      } else {
+        setCurrentLabelsCollection((oldArray: Array<any>) => [...oldArray, values]);
+      }
+      setInputRef('');
+    }
+
+    if (event.key === 'Backspace' && !inputRef) {
+      if (currentLabelsCollection === null) return;
+
+      removeLabel(currentLabelsCollection.length - 1);
+    }
   };
 
   const focus = (): void => {
@@ -329,21 +362,35 @@ const MatchersInput = ({
     resetHighlight();
   };
 
+  const removeLabel = i => {
+    if (currentLabelsCollection === null) return;
+
+    const newLabels = [...currentLabelsCollection];
+    newLabels.splice(i, 1);
+    setCurrentLabelsCollection(newLabels);
+  };
+
   return (
     <>
       <div
         ref={setDivInputRef}
         className="w-full flex items-center text-sm border-gray-300 dark:border-gray-600 border-b"
       >
-        <ul>{currentInputValue && currentInputValue.map((value, i) => <li>{value}</li>)}</ul>
+        <ul className="flex space-x-2">
+          {currentLabelsCollection &&
+            currentLabelsCollection.map((value, i) => (
+              <li key={i} className="bg-indigo-600 w-fit p-1 text-gray-100 dark-gray-900">
+                {value}
+              </li>
+            ))}
+        </ul>
 
         <input
-          ref={setInputRef}
           type="text"
           className="bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm outline-none"
           placeholder="filter profiles..."
           onChange={onChange}
-          value={value}
+          value={inputRef}
           onBlur={unfocus}
           onFocus={focus}
           onKeyPress={handleKeyPress}
@@ -366,7 +413,7 @@ const MatchersInput = ({
             leaveTo="opacity-0"
           >
             <div
-              style={{width: inputRef?.offsetWidth}}
+              style={{width: divInputRef?.offsetWidth}}
               className="absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
             >
               {suggestionSections.labelNames.map((l, i) => (
