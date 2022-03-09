@@ -20,7 +20,7 @@ jobs:
           go-version: ^1.16
       - uses: actions/checkout@v3
       - name: Build UI
-        run: make ui
+        run: make ui/build
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3.1.0
         with:

@@ -28,7 +28,7 @@ jobs:
           go-version: 1.16
 
       - name: Build UI
-        run: make ui
+        run: make ui/build
 
       - name: Validate
         uses: goreleaser/goreleaser-action@v2
@@ -55,7 +55,7 @@ jobs:
           go-version: 1.16
 
       - name: Build UI
-        run: make ui
+        run: make ui/build
 
       - name: Format
         run: make format

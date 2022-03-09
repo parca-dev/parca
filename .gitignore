@@ -8,4 +8,6 @@ build/
 tmp/
 *.sqlite
 
+ui/packages/app/web/build
+
 TODO.md
