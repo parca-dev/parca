@@ -28,6 +28,11 @@ export interface ILabelValuesResult {
   error: ServiceError | null;
 }
 
+const pasteSplit = data => {
+  const separators = [',', ';', '\\(', '\\)', '\\*', '/', ':', '\\?', '\n', '\r'];
+  return data.split(new RegExp(separators.join('|'))).map(d => d.trim());
+};
+
 const addQuoteMarks = (labelValue: string) => {
   // eslint-disable-next-line no-useless-escape
   return `\"${labelValue}\"`;
@@ -87,6 +92,8 @@ const MatchersInput = ({
   currentQuery,
 }: MatchersInputProps): JSX.Element => {
   const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
+  const [divInputRef, setDivInputRef] = useState<HTMLDivElement | null>(null);
+  const [currentInputValue, setCurrentInputValue] = useState<any>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [showSuggest, setShowSuggest] = useState(true);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
@@ -188,6 +195,7 @@ const MatchersInput = ({
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
+    console.log('🚀 ~ file: MatchersInput.tsx ~ line 198 ~ onChange ~ newValue', newValue);
     setMatchersString(newValue);
     resetLastCompleted();
     resetHighlight();
@@ -236,6 +244,7 @@ const MatchersInput = ({
 
     if (suggestion.type === 'labelValue') {
       suggestion.value = addQuoteMarks(suggestion.value);
+      inputRef.value = '';
     }
 
     const newValue = complete(suggestion);
@@ -247,6 +256,11 @@ const MatchersInput = ({
 
     setLastCompleted(suggestion);
     setMatchersString(newValue);
+
+    if (suggestion.type === 'labelValue') {
+      setCurrentInputValue(newValue.split(','));
+    }
+
     if (inputRef !== null) {
       inputRef.value = newValue;
       inputRef.focus();
@@ -317,18 +331,26 @@ const MatchersInput = ({
 
   return (
     <>
-      <input
-        ref={setInputRef}
-        type="text"
-        className="bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm border-gray-300 dark:border-gray-600 border-b outline-none"
-        placeholder="filter profiles..."
-        onChange={onChange}
-        value={value}
-        onBlur={unfocus}
-        onFocus={focus}
-        onKeyPress={handleKeyPress}
-        onKeyDown={handleKeyDown}
-      />
+      <div
+        ref={setDivInputRef}
+        className="w-full flex items-center text-sm border-gray-300 dark:border-gray-600 border-b"
+      >
+        <ul>{currentInputValue && currentInputValue.map((value, i) => <li>{value}</li>)}</ul>
+
+        <input
+          ref={setInputRef}
+          type="text"
+          className="bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm outline-none"
+          placeholder="filter profiles..."
+          onChange={onChange}
+          value={value}
+          onBlur={unfocus}
+          onFocus={focus}
+          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
+        />
+      </div>
+
       {suggestionsLength > 0 && (
         <div
           ref={setPopperElement}
