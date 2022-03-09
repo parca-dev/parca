@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: goreleaser
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: manifests
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
 
       - name: Publish Netlify
         uses: netlify/actions/build@master
@@ -98,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build container
         run: make container
