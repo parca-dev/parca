@@ -195,7 +195,7 @@ export class Query {
         }
 
         // Find the high level concept that we can complete.
-        // For an ident type, those can be: profileName, labelName.
+        // For an ident type, those can be: profileName, labelName or labelValue.
         const types = ['profileName', 'labelName', 'labelValue'];
 
         if (nextSymbol.type !== undefined && nextSymbol.type === 'ident') {

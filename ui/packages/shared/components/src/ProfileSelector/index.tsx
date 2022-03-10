@@ -247,7 +247,7 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header>
+      <Card.Header className={cx(comparing === true && 'overflow-x-scroll')}>
         <div className="flex space-x-4">
           {comparing && (
             <button type="button" onClick={() => closeProfile()}>

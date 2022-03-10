@@ -186,21 +186,40 @@ const MatchersInput = ({
     suggestionSections.labelValues.length;
 
   const getLabelsFromMatchers = matchers => {
-    return matchers.map(matcher => matcher.key + matcher.matcherType + matcher.value);
+    return matchers
+      .filter(matcher => matcher.key !== '__name__')
+      .map(matcher => matcher.key + matcher.matcherType + addQuoteMarks(matcher.value));
+  };
+
+  const getLabelsFromMatcherString = (matcherString: string) => {
+    return matcherString
+      .replaceAll('}', '')
+      .replaceAll('{', '')
+      .split(',')
+      .filter(matcher => matcher !== '');
   };
 
   useEffect(() => {
-    setCurrentLabelsCollection(getLabelsFromMatchers(currentQuery.matchers));
-  }, []);
+    if (currentQuery.inputMatcherString === undefined && currentQuery.matchers.length === 0) return;
+
+    if (currentQuery.inputMatcherString.length > 0) {
+      setCurrentLabelsCollection(getLabelsFromMatcherString(currentQuery.inputMatcherString));
+    } else if (currentQuery.matchers.length > 0) {
+      setCurrentLabelsCollection(getLabelsFromMatchers(currentQuery.matchers));
+    }
+  }, [currentQuery]);
 
   const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
-    setInputRef(e.target.value);
-    setMatchersString(newValue);
-
+    setInputRef(newValue);
+    if (currentLabelsCollection === null || currentLabelsCollection?.length === 0) {
+      setMatchersString(newValue);
+    } else {
+      setMatchersString(currentLabelsCollection?.join(',') + ',' + newValue);
+    }
     resetLastCompleted();
     resetHighlight();
   };
@@ -261,7 +280,16 @@ const MatchersInput = ({
     setMatchersString(newValue);
 
     if (suggestion.type === 'labelValue') {
-      setCurrentLabelsCollection(newValue.split(','));
+      const values = newValue.split(',');
+
+      if (currentLabelsCollection === null) {
+        setCurrentLabelsCollection(values);
+      } else {
+        setCurrentLabelsCollection((oldValues: Array<any>) => [
+          ...oldValues,
+          values[values.length - 1],
+        ]);
+      }
 
       setInputRef('');
       focus();
@@ -286,6 +314,20 @@ const MatchersInput = ({
 
   const applyHighlightedSuggestion = (): void => {
     applySuggestion(highlightedSuggestionIndex);
+  };
+
+  const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === ',') {
+      const values = inputRef.replaceAll(',', '');
+
+      if (currentLabelsCollection === null) {
+        setCurrentLabelsCollection([values]);
+      } else {
+        setCurrentLabelsCollection((oldValues: Array<any>) => [...oldValues, values]);
+      }
+
+      setInputRef('');
+    }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -336,16 +378,6 @@ const MatchersInput = ({
       highlightNext();
     }
 
-    if (event.key === ',') {
-      const values = inputRef.split(',');
-      if (currentLabelsCollection === null) {
-        setCurrentLabelsCollection(values);
-      } else {
-        setCurrentLabelsCollection((oldArray: Array<any>) => [...oldArray, values]);
-      }
-      setInputRef('');
-    }
-
     if (event.key === 'Backspace' && !inputRef) {
       if (currentLabelsCollection === null) return;
 
@@ -368,6 +400,9 @@ const MatchersInput = ({
     const newLabels = [...currentLabelsCollection];
     newLabels.splice(i, 1);
     setCurrentLabelsCollection(newLabels);
+
+    const newLabelsAsAString = newLabels.join(',');
+    setMatchersString(newLabelsAsAString);
   };
 
   return (
@@ -379,7 +414,7 @@ const MatchersInput = ({
         <ul className="flex space-x-2">
           {currentLabelsCollection &&
             currentLabelsCollection.map((value, i) => (
-              <li key={i} className="bg-indigo-600 w-fit p-1 text-gray-100 dark-gray-900">
+              <li key={i} className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900">
                 {value}
               </li>
             ))}
@@ -395,6 +430,7 @@ const MatchersInput = ({
           onFocus={focus}
           onKeyPress={handleKeyPress}
           onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
         />
       </div>
 
