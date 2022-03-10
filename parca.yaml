@@ -13,22 +13,4 @@ scrape_configs:
     scrape_interval: "3s"
     scrape_timeout: "2s"
     static_configs:
-      - targets: ["127.0.0.1:7070", "127.0.0.1:6000", "127.0.0.1:8080"]
-        labels:
-          service: "somemadeupservice"
-
-  - job_name: "node"
-    scrape_interval: "3s"
-    scrape_timeout: "2s"
-    static_configs:
-      - targets: ["127.0.0.1:6000"]
-        labels:
-          service: "nodeservice"
-
-  - job_name: "go"
-    scrape_interval: "3s"
-    scrape_timeout: "2s"
-    static_configs:
-      - targets: ["127.0.0.1:8080"]
-        labels:
-          service: "goservice"
+      - targets: [ "127.0.0.1:7070" ]

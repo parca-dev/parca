@@ -8,6 +8,7 @@ import MergeButton from '../../../../app/web/src/components/MergeButton';
 import CompareButton from '../../../../app/web/src/components/CompareButton';
 import Card from '../../../../app/web/src/components/ui/Card';
 import CloseIcon from '../../../../app/web/src/components/ui/CloseIcon';
+import cx from 'classnames';
 import {
   DateTimeRangePicker,
   DateTimeRange,
@@ -254,7 +255,7 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header>
+      <Card.Header className={cx(comparing === true && 'overflow-x-scroll')}>
         <div className="flex space-x-4">
           {comparing && (
             <button type="button" onClick={() => closeProfile()}>
