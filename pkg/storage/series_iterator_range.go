@@ -217,7 +217,7 @@ func (it *MemRangeSeriesIterator) Next() bool {
 }
 
 func (it *MemRangeSeriesIterator) At() profile.InstantProfile {
-	return &MemSeriesInstantFlatProfile{
+	return &MemSeriesInstantProfile{
 		PeriodType: it.s.periodType,
 		SampleType: it.s.sampleType,
 
@@ -232,7 +232,7 @@ func (it *MemRangeSeriesIterator) Err() error {
 	return it.err
 }
 
-type MemSeriesInstantFlatProfile struct {
+type MemSeriesInstantProfile struct {
 	PeriodType profile.ValueType
 	SampleType profile.ValueType
 
@@ -243,7 +243,7 @@ type MemSeriesInstantFlatProfile struct {
 	sampleIterators map[string]*MultiChunksIterator
 }
 
-func (m MemSeriesInstantFlatProfile) ProfileMeta() profile.InstantProfileMeta {
+func (m MemSeriesInstantProfile) ProfileMeta() profile.InstantProfileMeta {
 	return profile.InstantProfileMeta{
 		PeriodType: m.PeriodType,
 		SampleType: m.SampleType,
@@ -253,7 +253,7 @@ func (m MemSeriesInstantFlatProfile) ProfileMeta() profile.InstantProfileMeta {
 	}
 }
 
-func (m MemSeriesInstantFlatProfile) Samples() map[string]*profile.Sample {
+func (m MemSeriesInstantProfile) Samples() map[string]*profile.Sample {
 	samples := make(map[string]*profile.Sample, len(m.sampleIterators))
 	for k, it := range m.sampleIterators {
 		samples[k] = &profile.Sample{

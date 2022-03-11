@@ -121,7 +121,7 @@ func BenchmarkAppends(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		p := profiles[i%len(profiles)]
-		pprof, err := parcaprofile.FlatProfileFromPprof(ctx, logger, l, p, 0)
+		pprof, err := parcaprofile.ProfileFromPprof(ctx, logger, l, p, 0)
 		require.NoError(b, err)
 		err = app.AppendFlat(ctx, pprof)
 		require.NoError(b, err)
@@ -160,7 +160,7 @@ func BenchmarkIterator(b *testing.B) {
 	require.NoError(b, err)
 	for i := 0; i < b.N; i++ {
 		pprof := profiles[i%len(profiles)]
-		p, err := parcaprofile.FlatProfileFromPprof(ctx, logger, l, pprof, 0)
+		p, err := parcaprofile.ProfileFromPprof(ctx, logger, l, pprof, 0)
 		require.NoError(b, err)
 		err = app.AppendFlat(ctx, p)
 		require.NoError(b, err)

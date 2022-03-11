@@ -32,7 +32,7 @@ import (
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-func TestMergeFlatProfileSimple(t *testing.T) {
+func TestMergeProfileSimple(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -92,7 +92,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	}, merged[string(k2[:])])
 }
 
-func TestMergeFlatProfileDeep(t *testing.T) {
+func TestMergeProfileDeep(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -176,7 +176,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	}, merged[string(k5[:])])
 }
 
-func TestMergeFlatProfile(t *testing.T) {
+func TestMergeProfile(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -297,7 +297,7 @@ func TestMergeSingleFlat(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
 	m, err := MergeProfiles(prof)
@@ -324,7 +324,7 @@ func TestMergeManyFlat(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
 	num := 1000
@@ -335,7 +335,7 @@ func TestMergeManyFlat(t *testing.T) {
 
 	m, err := MergeProfiles(profiles...)
 	require.NoError(t, err)
-	parcaprofile.CopyInstantFlatProfile(m)
+	parcaprofile.CopyInstantProfile(m)
 }
 
 func BenchmarkFlatMerge(b *testing.B) {
@@ -361,16 +361,16 @@ func BenchmarkFlatMerge(b *testing.B) {
 		l.Close()
 	})
 	require.NoError(b, err)
-	profile1, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile1, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(b, err)
-	profile2, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profile2, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 	require.NoError(b, err)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	m, err := MergeProfiles(profile1, profile2)
 	require.NoError(b, err)
-	parcaprofile.CopyInstantFlatProfile(m)
+	parcaprofile.CopyInstantProfile(m)
 }
 
 func BenchmarkMergeFlatMany(b *testing.B) {
@@ -398,7 +398,7 @@ func BenchmarkMergeFlatMany(b *testing.B) {
 				l.Close()
 			}()
 
-			prof, err := parcaprofile.FlatProfileFromPprof(ctx, logger, l, p, 0)
+			prof, err := parcaprofile.ProfileFromPprof(ctx, logger, l, p, 0)
 			require.NoError(b, err)
 
 			profiles := make([]parcaprofile.InstantProfile, 0, n)
@@ -411,7 +411,7 @@ func BenchmarkMergeFlatMany(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				m, err := MergeProfiles(profiles...)
 				require.NoError(b, err)
-				parcaprofile.CopyInstantFlatProfile(m)
+				parcaprofile.CopyInstantProfile(m)
 			}
 		})
 	}

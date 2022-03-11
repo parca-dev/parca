@@ -24,23 +24,23 @@ import (
 	"github.com/parca-dev/parca/pkg/metastore"
 )
 
-// FlatProfilesFromPprof extracts a Profile from each sample index included in the pprof profile.
-func FlatProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) ([]*Profile, error) {
-	fps := make([]*Profile, 0, len(p.SampleType))
+// ProfilesFromPprof extracts a Profile from each sample index included in the pprof profile.
+func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) ([]*Profile, error) {
+	ps := make([]*Profile, 0, len(p.SampleType))
 
 	for i := range p.SampleType {
-		fp, err := FlatProfileFromPprof(ctx, l, s, p, i)
+		p, err := ProfileFromPprof(ctx, l, s, p, i)
 		if err != nil {
 			return nil, err
 		}
-		if fp != nil {
-			fps = append(fps, fp)
+		if p != nil {
+			ps = append(ps, p)
 		}
 	}
-	return fps, nil
+	return ps, nil
 }
 
-func FlatProfileFromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*Profile, error) {
+func ProfileFromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*Profile, error) {
 	pfn := &profileFlatNormalizer{
 		logger:    logger,
 		metaStore: metaStore,

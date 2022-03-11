@@ -30,7 +30,7 @@ import (
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-func TestDiffFlatProfileSimple(t *testing.T) {
+func TestDiffProfileSimple(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -84,7 +84,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	}, diffed[string(k2[:])])
 }
 
-func TestDiffFlatProfileDeep(t *testing.T) {
+func TestDiffProfileDeep(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -183,9 +183,9 @@ func BenchmarkFlatDiff(b *testing.B) {
 	b.Cleanup(func() {
 		l.Close()
 	})
-	profile1, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile1, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(b, err)
-	profile2, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profile2, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 	require.NoError(b, err)
 
 	b.Run("simple", func(b *testing.B) {
@@ -195,7 +195,7 @@ func BenchmarkFlatDiff(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			d, err := NewDiffProfile(profile1, profile2)
 			require.NoError(b, err)
-			parcaprofile.CopyInstantFlatProfile(d)
+			parcaprofile.CopyInstantProfile(d)
 		}
 	})
 }
