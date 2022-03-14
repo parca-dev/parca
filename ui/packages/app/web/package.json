@@ -42,7 +42,6 @@
     "d3-scale-chromatic": "^3.0.0",
     "d3-selection": "^3.0.0",
     "d3-shape": "^3.0.1",
-    "google-protobuf": "^3.19.0",
     "immer": "^9.0.6",
     "isomorphic-unfetch": "^3.1.0",
     "lodash.debounce": "^4.0.8",
