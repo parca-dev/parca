@@ -1,5 +1,5 @@
-# this image is what node:16.6.1-alpine3.14 is on August 12 2021
-FROM docker.io/library/node@sha256:456ff86826c47703a7d9b1cbd04b80038e57b86efa4516931148151b379ba035 AS ui-deps
+# this image is what node:17.7.1-alpine3.15 is on March 14 2021
+FROM docker.io/library/node@sha256:10ef59da5b5ccdbaff99a81df1bcccb0500723633ce406efed6f1fb74adc8568 AS ui-deps
 
 WORKDIR /app
 
@@ -9,8 +9,8 @@ COPY ui/package.json ui/yarn.lock ./
 RUN yarn workspace @parca/web install --frozen-lockfile
 
 # Rebuild the source code only when needed
-# this image is what node:16.6.1-alpine3.14 is on August 12 2021
-FROM docker.io/library/node@sha256:456ff86826c47703a7d9b1cbd04b80038e57b86efa4516931148151b379ba035 AS ui-builder
+# this image is what node:17.7.1-alpine3.15 is on March 14 2021
+FROM docker.io/library/node@sha256:10ef59da5b5ccdbaff99a81df1bcccb0500723633ce406efed6f1fb74adc8568 AS ui-builder
 
 ENV NODE_ENV production
 ENV CIRCLE_NODE_TOTAL 1
@@ -21,8 +21,8 @@ COPY ./ui .
 COPY --from=ui-deps /app/node_modules ./node_modules
 RUN yarn workspace @parca/web build
 
-# this image is what docker.io/golang:1.16.7-alpine3.14 on August 12 2021
-FROM docker.io/golang@sha256:7e31a85c5b182e446c9e0e6fba57c522902f281a6a5a6cbd25afa17ac48a6b85 as builder
+# this image is what docker.io/golang:1.17.8-alpine3.15 on March 14 2021
+FROM docker.io/golang@sha256:e2e68a9cdd5da82458652fdac3908a3a270686b38039f2829855398e2e06019d as builder
 RUN mkdir /.cache && chown nobody:nogroup /.cache && touch -t 202101010000.00 /.cache
 
 ARG VERSION
@@ -50,8 +50,8 @@ RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 # Predicatable path for copying over to final image
 RUN if [ "$(go env GOHOSTARCH)" != "$(go env GOARCH)" ]; then mv "$(go env GOPATH)/bin/$(go env GOOS)_$(go env GOARCH)/grpc-health-probe" "$(go env GOPATH)/bin/grpc-health-probe"; fi
 
-# this image is what docker.io/alpine:3.14.1 on August 13 2021
-FROM docker.io/alpine@sha256:be9bdc0ef8e96dbc428dc189b31e2e3b05523d96d12ed627c37aa2936653258c
+# this image is what docker.io/alpine:3.15.0 on March 14 2021
+FROM docker.io/alpine@sha256:e7d88de73db3d3fd9b2d63aa7f447a10fd0220b7cbf39803c803f2af9ba256b3
 
 USER nobody
 
