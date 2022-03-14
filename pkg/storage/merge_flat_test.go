@@ -352,10 +352,11 @@ func BenchmarkFlatMerge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	l, err := metastore.NewInMemorySQLiteProfileMetaStore(
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
-		"treemerge",
+		trace.NewNoopTracerProvider().Tracer("treemerge"),
+		metastore.NewRandomUUIDGenerator(),
 	)
 	b.Cleanup(func() {
 		l.Close()

@@ -81,7 +81,7 @@ type Flags struct {
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 
-	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"sqliteinmemory,badgerinmemory"`
+	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"badgerinmemory"`
 
 	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.systemtap.org" help:"Upstream private/public servers for debuginfod files. Defaults to https://debuginfod.systemtap.org. It is an ordered list of servers to try."`
 	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
@@ -131,18 +131,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	var mStr metastore.ProfileMetaStore
 	switch flags.Metastore {
-	case "sqliteinmemory":
-		mStr, err = metastore.NewInMemorySQLiteProfileMetaStore(
-			reg,
-			// Produces high cardinality traces - uncomment locally if needed.
-			// tracerProvider.Tracer("inmemory-sqlite"),
-			trace.NewNoopTracerProvider().Tracer("inmemory-sqlite"),
-		)
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to initialize metadata store", "err", err)
-			return err
-		}
-		defer mStr.Close()
 	case "badgerinmemory":
 		mStr = metastore.NewBadgerMetastore(
 			logger,
