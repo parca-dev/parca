@@ -1,5 +1,6 @@
 import Button from './Button';
 import ButtonGroup from './ButtonGroup';
+import Card from './Card';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
 import DateTimePicker from './DateTimePicker';
 import Dropdown from './Dropdown';
@@ -20,6 +21,7 @@ export type {PillVariant, SelectElement};
 export {
   Button,
   ButtonGroup,
+  Card,
   DateTimePicker,
   DateTimeRange,
   DateTimeRangePicker,

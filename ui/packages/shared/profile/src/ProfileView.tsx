@@ -7,7 +7,7 @@ import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
-import Card from '../../../app/web/src/components/ui/Card';
+import {Card} from '@parca/components';
 import TopTable from './TopTable';
 
 import './ProfileView.styles.css';

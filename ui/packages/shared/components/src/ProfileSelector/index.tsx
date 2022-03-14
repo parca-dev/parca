@@ -4,18 +4,11 @@ import {ProfileSelection} from '@parca/profile';
 import React, {useEffect, useState} from 'react';
 import ProfileMetricsGraph from '../ProfileMetricsGraph';
 import MatchersInput from '../MatchersInput';
-import MergeButton from '../../../../app/web/src/components/MergeButton';
-import CompareButton from '../../../../app/web/src/components/CompareButton';
-import Card from '../../../../app/web/src/components/ui/Card';
-import CloseIcon from '../../../../app/web/src/components/ui/CloseIcon';
-import {
-  DateTimeRangePicker,
-  DateTimeRange,
-  Select,
-  Button,
-  ButtonGroup,
-  SelectElement,
-} from '@parca/components';
+import MergeButton from './MergeButton';
+import CompareButton from './CompareButton';
+import Card from '../Card';
+import {DateTimeRangePicker, DateTimeRange, Select, Button, ButtonGroup, SelectElement} from '../';
+import {CloseIcon} from '@parca/icons';
 
 export interface QuerySelection {
   expression: string;

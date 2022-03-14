@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {usePopper} from 'react-popper';
-import {Button} from '@parca/components';
+import {Button} from '../';
 
 const CompareButton = ({disabled, onClick}: {disabled: boolean; onClick: () => void}) => {
   const [compareHover, setCompareHover] = useState<boolean>(false);
