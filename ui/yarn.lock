@@ -1711,10 +1711,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@koa/cors@^3.0.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@koa/cors/-/cors-3.1.0.tgz#618bb073438cfdbd3ebd0e648a76e33b84f3a3b2"
-  integrity sha512-7ulRC1da/rBa6kj6P4g2aJfnET3z8Uf3SWu60cjbtxTA5g8lxRdX/Bd2P92EagGwwAhANeNw8T8if99rJliR6Q==
+"@koa/cors@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@koa/cors/-/cors-3.2.0.tgz#7fb65fbeb7dd841c3edf645efbfa2524dc72916a"
+  integrity sha512-bMjKGAJW2lg2jm7StqedeL/TMra0zl5VMtRyzl+WKbopj3AZEvy+FE8zeWvl1x3pofuU4a7ICuwIK/nr5/PEHg==
   dependencies:
     vary "^1.1.2"
 
@@ -13215,7 +13215,7 @@ klona@^2.0.4, klona@^2.0.5:
   resolved "https://registry.yarnpkg.com/klona/-/klona-2.0.5.tgz#d166574d90076395d9963aa7a928fabb8d76afbc"
   integrity sha512-pJiBpiXMbt7dkzXe8Ghj/u4FfXOOa98fPW+bihOJ4SjnoijweJrNThJfd3ifXpXhREjpoF2mZVH1GfS9LV3kHQ==
 
-koa-bodyparser@^4.2.1:
+koa-bodyparser@^4.3.0:
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/koa-bodyparser/-/koa-bodyparser-4.3.0.tgz#274c778555ff48fa221ee7f36a9fbdbace22759a"
   integrity sha512-uyV8G29KAGwZc4q/0WUAjH+Tsmuv9ImfBUF2oZVyZtaeo0husInagyn/JH85xMSxM0hEk/mbCII5ubLDuqW/Rw==
@@ -13563,23 +13563,23 @@ loader-utils@^3.2.0:
   integrity sha512-HVl9ZqccQihZ7JM85dco1MvO9G+ONvxoGa9rkhzFsneGLKSUg1gJf9bWzhRhcvm2qChhWpebQhP44qxjKIUCaQ==
 
 local-web-server@^5.1.1:
-  version "5.1.1"
-  resolved "https://registry.yarnpkg.com/local-web-server/-/local-web-server-5.1.1.tgz#4e3075c22f2d1777dfa0442e765fd601acbca473"
-  integrity sha512-jVl0U/PjV/Xprs2aoMfg5kvndSimR2LnGf/ixQLYFIlC8RtLgTANKB6Sc2xAKjWoAek6yP5CDh6IuykGbM4uPw==
+  version "5.2.0"
+  resolved "https://registry.yarnpkg.com/local-web-server/-/local-web-server-5.2.0.tgz#de332096aacadc4e0ca106b1ba03659d8a1ab7a7"
+  integrity sha512-Sfp6SSCWAKeWNJ8+29yru93bSTjiRtYJRucler2gQJpE/tH5HGwYhGA2S4pqpqg2JCy0iSV6lLS5s7vkIvSzqw==
   dependencies:
     current-module-paths "^1.1.0"
-    lws "^4.1.0"
+    lws "^4.1.1"
     lws-basic-auth "^2.0.0"
     lws-blacklist "^3.0.0"
-    lws-body-parser "^2.0.0"
+    lws-body-parser "^3.0.0"
     lws-compress "^3.1.0"
     lws-conditional-get "^2.0.0"
-    lws-cors "^3.0.0"
+    lws-cors "^4.1.1"
     lws-index "^3.1.0"
     lws-json "^2.0.0"
     lws-log "^2.0.0"
     lws-mime "^2.0.0"
-    lws-range "^3.0.0"
+    lws-range "^4.0.1"
     lws-request-monitor "^2.0.0"
     lws-rewrite "^3.1.1"
     lws-spa "^4.1.0"
@@ -13782,12 +13782,12 @@ lws-blacklist@^3.0.0:
     array-back "^4.0.1"
     path-to-regexp "^6.1.0"
 
-lws-body-parser@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/lws-body-parser/-/lws-body-parser-2.0.0.tgz#f30bcd2aa4c5abd602c65b867fefb6434fb9e057"
-  integrity sha512-QFDzln3sSdKWL9fVNWy2+ZmrKy/XaYRO0/FFB0MBrDCsNnzepeCD4I7rOOfyuphLn42yR8XUpWdcJ3Ii5aauRA==
+lws-body-parser@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/lws-body-parser/-/lws-body-parser-3.0.0.tgz#0f6be7c593e8bab26ddcfb2a35b34789fca7a8b0"
+  integrity sha512-led36Um61ppeQoMTG7yvphn+NQPMbzuFuGUYD09eEx1UT7e8bsaLw1gkBZB9vAIkeTlXRbXjPmOqlm26eUzhfg==
   dependencies:
-    koa-bodyparser "^4.2.1"
+    koa-bodyparser "^4.3.0"
 
 lws-compress@^3.1.0:
   version "3.1.0"
@@ -13804,12 +13804,12 @@ lws-conditional-get@^2.0.0:
     koa-conditional-get "^2.0.0"
     koa-etag "^3.0.0"
 
-lws-cors@^3.0.0:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/lws-cors/-/lws-cors-3.1.1.tgz#8bd20f3cad6134226cc6df6c65bbe41de034d5e6"
-  integrity sha512-JMqRHdZ8wS17LB9MbHZvOAiDE/2MD3TSODvEAmNkIPEvutKq1Z6wfuFbfiNjAQRGyImUfiUM99vJOFHmLCg2cw==
+lws-cors@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/lws-cors/-/lws-cors-4.1.1.tgz#c35d9ce6b26d5cbad231f354962d72d831c6238b"
+  integrity sha512-W2EOcru7VdXqYLshJWjvZopmwHDQa70GtBRvDMwywftmYi1TpE9FtqmN9zkWQc2WXgFHe6nNgiWmGHtrnl9yRQ==
   dependencies:
-    "@koa/cors" "^3.0.0"
+    "@koa/cors" "^3.2.0"
 
 lws-index@^3.1.0:
   version "3.1.0"
@@ -13838,10 +13838,10 @@ lws-mime@^2.0.0:
   resolved "https://registry.yarnpkg.com/lws-mime/-/lws-mime-2.0.0.tgz#59bf7ab0b7f68118bfc6b6ada806cfcd203af8d9"
   integrity sha512-mfrAgRQ5+hkQ7LJ6EAgwnUeymNeYxwLXZY3UQ6C2hSTr7BqMSzm9k5O0C8wWP2dzdhChzITYKwzWbUnAYVBwtA==
 
-lws-range@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/lws-range/-/lws-range-3.0.0.tgz#25b92111c2a8123912893fe9adcf9615247cf138"
-  integrity sha512-7ZhA/LqQnKjolKBo/2BFj9DyDDXcJGY3v05TwYRD0qDGrxW4vuatEjluC3SV7ZO/k4PxDLdxuk+RCgL5t3ThtQ==
+lws-range@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/lws-range/-/lws-range-4.0.1.tgz#93b9c5946685ee75866eeb98dcf9f06994f1ef65"
+  integrity sha512-rUkHpsRv5Ixr+8/E4cDCz6jUi6En6hnEaDZhPb0a1GU1vasOHhGcW0qilkgf0dtS0xDJzdKixdfcCW40ankIeQ==
   dependencies:
     koa-range "^0.3.0"
 
@@ -13877,7 +13877,7 @@ lws-static@^3.1.0:
   dependencies:
     koa-static "^5.0.0"
 
-lws@^4.1.0:
+lws@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/lws/-/lws-4.1.1.tgz#1f09f53d446f88ddfb00d63acf459563b544b11a"
   integrity sha512-x4PbfhQaoPkCncSNa39ZblHVUJa/BHzRXhdiNSRI7C6XHW0++tr5ELBDQLVtYH0b+e+eXHxnPq6DrkzUoqQn4g==
