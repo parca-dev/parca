@@ -7,5 +7,17 @@ import {ReactComponent as GitHub} from './assets/github.svg';
 import {ReactComponent as LinkedIn} from './assets/linkedin.svg';
 import {ReactComponent as Twitter} from './assets/twitter.svg';
 import {ReactComponent as ArrowForward} from './assets/arrow-forward.svg';
+import CloseIcon from './CloseIcon';
 
-export {Parca, ParcaSmall, CompareArrows, Checkmark, RedX, GitHub, LinkedIn, Twitter, ArrowForward};
+export {
+  Parca,
+  ParcaSmall,
+  CloseIcon,
+  CompareArrows,
+  Checkmark,
+  RedX,
+  GitHub,
+  LinkedIn,
+  Twitter,
+  ArrowForward,
+};
