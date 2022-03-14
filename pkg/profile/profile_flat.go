@@ -29,7 +29,7 @@ func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMet
 	ps := make([]*Profile, 0, len(p.SampleType))
 
 	for i := range p.SampleType {
-		p, err := ProfileFromPprof(ctx, l, s, p, i)
+		p, err := FromPprof(ctx, l, s, p, i)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMet
 	return ps, nil
 }
 
-func ProfileFromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*Profile, error) {
+func FromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*Profile, error) {
 	pfn := &profileFlatNormalizer{
 		logger:    logger,
 		metaStore: metaStore,

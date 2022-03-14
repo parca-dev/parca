@@ -297,7 +297,7 @@ func TestMergeSingleFlat(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
 	m, err := MergeProfiles(prof)
@@ -324,7 +324,7 @@ func TestMergeManyFlat(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
 	num := 1000
@@ -361,9 +361,9 @@ func BenchmarkFlatMerge(b *testing.B) {
 		l.Close()
 	})
 	require.NoError(b, err)
-	profile1, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(b, err)
-	profile2, err := parcaprofile.ProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profile2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 	require.NoError(b, err)
 
 	b.ReportAllocs()
@@ -398,7 +398,7 @@ func BenchmarkMergeFlatMany(b *testing.B) {
 				l.Close()
 			}()
 
-			prof, err := parcaprofile.ProfileFromPprof(ctx, logger, l, p, 0)
+			prof, err := parcaprofile.FromPprof(ctx, logger, l, p, 0)
 			require.NoError(b, err)
 
 			profiles := make([]parcaprofile.InstantProfile, 0, n)

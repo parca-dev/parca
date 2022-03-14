@@ -45,7 +45,7 @@ func TestProfileFlatNormalizer(t *testing.T) {
 		l.Close()
 	})
 
-	p, err := ProfileFromPprof(context.Background(), log.NewNopLogger(), l, p1, 0)
+	p, err := FromPprof(context.Background(), log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 
 	require.Equal(t, InstantProfileMeta{
