@@ -7190,9 +7190,9 @@ chownr@^2.0.0:
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
 
 chromatic@^6.4.1:
-  version "6.5.1"
-  resolved "https://registry.yarnpkg.com/chromatic/-/chromatic-6.5.1.tgz#9efd2d19b4a9596ba4ea66f622823f4533df05b3"
-  integrity sha512-TASnx9apJAokwpnTZvmLzd0+xDMkByEa4i89rrP27cqriI0aLqvGt/ckocGOk6UrVBn/e2pdwPeTLtkGMxCQHQ==
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/chromatic/-/chromatic-6.5.2.tgz#45bf8e53f1c3a6abf93632d1d43e3f03d5762137"
+  integrity sha512-TiAJAF2we4BUflKEfiXs2CiBFvW6yNWkiXKIuBtlSLl2fj1cuueXlV5dYVVoyMDfzTX5JdEn/Bd5CVlpKCeY6A==
 
 chrome-trace-event@^1.0.2:
   version "1.0.3"
