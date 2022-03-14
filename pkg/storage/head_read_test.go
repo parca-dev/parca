@@ -51,7 +51,7 @@ func TestHeadIndexReader_LabelValues(t *testing.T) {
 			{Name: "tens", Value: fmt.Sprintf("value%d", i/10)},
 		})
 		require.NoError(t, err)
-		err = app.AppendFlat(ctx, &profile.FlatProfile{
+		err = app.AppendFlat(ctx, &profile.Profile{
 			Meta: profile.InstantProfileMeta{
 				Timestamp: int64(100 + i),
 			},

@@ -132,7 +132,7 @@ func (it *MemRootSeriesIterator) Next() bool {
 }
 
 func (it *MemRootSeriesIterator) At() profile.InstantProfile {
-	return &profile.FlatProfile{
+	return &profile.Profile{
 		Meta: profile.InstantProfileMeta{
 			Timestamp:  it.timestampsIterator.At(),
 			PeriodType: it.s.periodType,

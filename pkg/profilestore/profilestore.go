@@ -82,7 +82,7 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 			}
 
 			convertCtx, convertSpan := s.tracer.Start(ctx, "profile-from-pprof")
-			profiles, err := parcaprofile.FlatProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
+			profiles, err := parcaprofile.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p)
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "failed to normalize pprof: %v", err)
 			}

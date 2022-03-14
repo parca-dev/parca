@@ -33,7 +33,7 @@ func TestMemRootSeries_Iterator(t *testing.T) {
 
 	var i int64
 	for i = 1; i < 500; i++ {
-		p := &profile.FlatProfile{
+		p := &profile.Profile{
 			Meta: profile.InstantProfileMeta{
 				Timestamp: i,
 				Duration:  time.Second.Nanoseconds(),

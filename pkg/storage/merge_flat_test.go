@@ -32,7 +32,7 @@ import (
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-func TestMergeFlatProfileSimple(t *testing.T) {
+func TestMergeProfileSimple(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -40,7 +40,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	s1 := parcaprofile.MakeSample(2, []uuid.UUID{uuid2, uuid1})
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 
-	p1 := &parcaprofile.FlatProfile{
+	p1 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -56,7 +56,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	s2 := parcaprofile.MakeSample(1, []uuid.UUID{uuid3, uuid1})
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
-	p2 := &parcaprofile.FlatProfile{
+	p2 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -92,7 +92,7 @@ func TestMergeFlatProfileSimple(t *testing.T) {
 	}, merged[string(k2[:])])
 }
 
-func TestMergeFlatProfileDeep(t *testing.T) {
+func TestMergeProfileDeep(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -108,7 +108,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
-	p1 := &parcaprofile.FlatProfile{
+	p1 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -127,7 +127,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	s5 := parcaprofile.MakeSample(3, []uuid.UUID{uuid3, uuid2, uuid2})
 	k5 := uuid.MustParse("00000000-0000-0000-0000-0000000000e5")
 
-	p2 := &parcaprofile.FlatProfile{
+	p2 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -176,7 +176,7 @@ func TestMergeFlatProfileDeep(t *testing.T) {
 	}, merged[string(k5[:])])
 }
 
-func TestMergeFlatProfile(t *testing.T) {
+func TestMergeProfile(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -196,7 +196,7 @@ func TestMergeFlatProfile(t *testing.T) {
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 	k5 := uuid.MustParse("00000000-0000-0000-0000-0000000000e5")
 
-	p1 := &parcaprofile.FlatProfile{
+	p1 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -219,7 +219,7 @@ func TestMergeFlatProfile(t *testing.T) {
 	k6 := uuid.MustParse("00000000-0000-0000-0000-0000000000e6")
 	k7 := uuid.MustParse("00000000-0000-0000-0000-0000000000e7")
 
-	p2 := &parcaprofile.FlatProfile{
+	p2 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -297,7 +297,7 @@ func TestMergeSingleFlat(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
 	m, err := MergeProfiles(prof)
@@ -324,7 +324,7 @@ func TestMergeManyFlat(t *testing.T) {
 		l.Close()
 	})
 	require.NoError(t, err)
-	prof, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p, 0)
 	require.NoError(t, err)
 
 	num := 1000
@@ -335,7 +335,7 @@ func TestMergeManyFlat(t *testing.T) {
 
 	m, err := MergeProfiles(profiles...)
 	require.NoError(t, err)
-	parcaprofile.CopyInstantFlatProfile(m)
+	parcaprofile.CopyInstantProfile(m)
 }
 
 func BenchmarkFlatMerge(b *testing.B) {
@@ -362,16 +362,16 @@ func BenchmarkFlatMerge(b *testing.B) {
 		l.Close()
 	})
 	require.NoError(b, err)
-	profile1, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(b, err)
-	profile2, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profile2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 	require.NoError(b, err)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	m, err := MergeProfiles(profile1, profile2)
 	require.NoError(b, err)
-	parcaprofile.CopyInstantFlatProfile(m)
+	parcaprofile.CopyInstantProfile(m)
 }
 
 func BenchmarkMergeFlatMany(b *testing.B) {
@@ -399,7 +399,7 @@ func BenchmarkMergeFlatMany(b *testing.B) {
 				l.Close()
 			}()
 
-			prof, err := parcaprofile.FlatProfileFromPprof(ctx, logger, l, p, 0)
+			prof, err := parcaprofile.FromPprof(ctx, logger, l, p, 0)
 			require.NoError(b, err)
 
 			profiles := make([]parcaprofile.InstantProfile, 0, n)
@@ -412,7 +412,7 @@ func BenchmarkMergeFlatMany(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				m, err := MergeProfiles(profiles...)
 				require.NoError(b, err)
-				parcaprofile.CopyInstantFlatProfile(m)
+				parcaprofile.CopyInstantProfile(m)
 			}
 		})
 	}

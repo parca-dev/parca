@@ -51,7 +51,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	t.Cleanup(func() {
 		l.Close()
 	})
-	p, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 	res, err := GenerateFlatPprof(ctx, l, p)
 	require.NoError(t, err)
@@ -154,7 +154,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	})
 	key := parcaprofile.MakeStacktraceKey(sample)
 
-	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.FlatProfile{
+	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.Profile{
 		FlatSamples: map[string]*parcaprofile.Sample{
 			string(key): sample,
 		},

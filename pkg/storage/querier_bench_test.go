@@ -41,7 +41,7 @@ func BenchmarkHeadQuerier_Select(b *testing.B) {
 	for i := 1; i <= numSeries; i++ {
 		app, err := h.Appender(ctx, labels.FromStrings("foo", "bar", "s", fmt.Sprintf("%d%s", i, postingsBenchSuffix)))
 		require.NoError(b, err)
-		err = app.AppendFlat(ctx, &parcaprofile.FlatProfile{
+		err = app.AppendFlat(ctx, &parcaprofile.Profile{
 			Meta: parcaprofile.InstantProfileMeta{
 				Timestamp: int64(i),
 			},

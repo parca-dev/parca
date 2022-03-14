@@ -43,7 +43,7 @@ func TestScaledInstantProfile(t *testing.T) {
 	k2 := profile.MakeStacktraceKey(s2)
 	k3 := profile.MakeStacktraceKey(s3)
 
-	p := &profile.FlatProfile{
+	p := &profile.Profile{
 		FlatSamples: map[string]*profile.Sample{
 			string(k1): s1,
 			string(k2): s2,
@@ -66,7 +66,7 @@ func TestScaledInstantProfile(t *testing.T) {
 func TestSliceProfileSeriesIterator(t *testing.T) {
 	it := &SliceProfileSeriesIterator{
 		i:       -1,
-		samples: []profile.InstantProfile{&profile.FlatProfile{}},
+		samples: []profile.InstantProfile{&profile.Profile{}},
 	}
 
 	require.True(t, it.Next())

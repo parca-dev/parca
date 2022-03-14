@@ -44,8 +44,8 @@ type ValueType struct {
 	Unit string
 }
 
-func CopyInstantFlatProfile(p InstantProfile) *FlatProfile {
-	return &FlatProfile{
+func CopyInstantProfile(p InstantProfile) *Profile {
+	return &Profile{
 		Meta:        p.ProfileMeta(),
 		FlatSamples: p.Samples(),
 	}
@@ -56,21 +56,16 @@ type InstantProfile interface {
 	Samples() map[string]*Sample
 }
 
-type InstantFlatProfile interface {
-	ProfileMeta() InstantProfileMeta
-	Samples() map[string]*Sample
-}
-
-type FlatProfile struct {
+type Profile struct {
 	Meta        InstantProfileMeta
 	FlatSamples map[string]*Sample
 }
 
-func (fp *FlatProfile) ProfileMeta() InstantProfileMeta {
+func (fp *Profile) ProfileMeta() InstantProfileMeta {
 	return fp.Meta
 }
 
-func (fp *FlatProfile) Samples() map[string]*Sample {
+func (fp *Profile) Samples() map[string]*Sample {
 	return fp.FlatSamples
 }
 

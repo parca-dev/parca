@@ -40,7 +40,7 @@ func TestMemRangeSeries_Iterator(t *testing.T) {
 
 	for i := 1; i <= 500; i++ {
 		s1.Value = int64(i)
-		p := &profile.FlatProfile{
+		p := &profile.Profile{
 			Meta: profile.InstantProfileMeta{
 				Timestamp: int64(i),
 				Duration:  time.Second.Nanoseconds(),

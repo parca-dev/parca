@@ -30,7 +30,7 @@ import (
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-func TestDiffFlatProfileSimple(t *testing.T) {
+func TestDiffProfileSimple(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -38,7 +38,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	s1 := parcaprofile.MakeSample(3, []uuid.UUID{uuid2, uuid1})
 	k1 := uuid.MustParse("00000000-0000-0000-0000-0000000000e1")
 
-	p1 := &parcaprofile.FlatProfile{
+	p1 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -54,7 +54,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	s2 := parcaprofile.MakeSample(1, []uuid.UUID{uuid3, uuid1})
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 
-	p2 := &parcaprofile.FlatProfile{
+	p2 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -84,7 +84,7 @@ func TestDiffFlatProfileSimple(t *testing.T) {
 	}, diffed[string(k2[:])])
 }
 
-func TestDiffFlatProfileDeep(t *testing.T) {
+func TestDiffProfileDeep(t *testing.T) {
 	uuid1 := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
@@ -100,7 +100,7 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 	k2 := uuid.MustParse("00000000-0000-0000-0000-0000000000e2")
 	k3 := uuid.MustParse("00000000-0000-0000-0000-0000000000e3")
 
-	p1 := &parcaprofile.FlatProfile{
+	p1 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -121,7 +121,7 @@ func TestDiffFlatProfileDeep(t *testing.T) {
 
 	k4 := uuid.MustParse("00000000-0000-0000-0000-0000000000e4")
 
-	p2 := &parcaprofile.FlatProfile{
+	p2 := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			PeriodType: parcaprofile.ValueType{Type: "cpu", Unit: "cycles"},
 			SampleType: parcaprofile.ValueType{Type: "numSamples", Unit: "count"},
@@ -183,9 +183,9 @@ func BenchmarkFlatDiff(b *testing.B) {
 	b.Cleanup(func() {
 		l.Close()
 	})
-	profile1, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(b, err)
-	profile2, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profile2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p2, 0)
 	require.NoError(b, err)
 
 	b.Run("simple", func(b *testing.B) {
@@ -195,7 +195,7 @@ func BenchmarkFlatDiff(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			d, err := NewDiffProfile(profile1, profile2)
 			require.NoError(b, err)
-			parcaprofile.CopyInstantFlatProfile(d)
+			parcaprofile.CopyInstantProfile(d)
 		}
 	})
 }

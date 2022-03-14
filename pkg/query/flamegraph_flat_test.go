@@ -169,7 +169,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	stacktraceID2, err := l.CreateStacktrace(ctx, k2, &metapb.Sample{LocationIds: [][]byte{l4.ID[:], l3.ID[:], l2.ID[:], l1.ID[:]}})
 	require.NoError(t, err)
 
-	fp := &parcaprofile.FlatProfile{
+	fp := &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{},
 		FlatSamples: map[string]*parcaprofile.Sample{
 			string(stacktraceID0[:]): s0,
@@ -232,7 +232,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	}}, fg))
 }
 
-func TestGenerateFlamegraphFromFlatProfile(t *testing.T) {
+func TestGenerateFlamegraphFromProfile(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 
@@ -246,10 +246,10 @@ func TestGenerateFlamegraphFromFlatProfile(t *testing.T) {
 		l.Close()
 	})
 
-	testGenerateFlamegraphFromFlatProfile(t, l)
+	testGenerateFlamegraphFromProfile(t, l)
 }
 
-func testGenerateFlamegraphFromFlatProfile(t *testing.T, l metastore.ProfileMetaStore) *pb.Flamegraph {
+func testGenerateFlamegraphFromProfile(t *testing.T, l metastore.ProfileMetaStore) *pb.Flamegraph {
 	ctx := context.Background()
 
 	f, err := os.Open("../storage/testdata/profile1.pb.gz")
@@ -258,10 +258,10 @@ func testGenerateFlamegraphFromFlatProfile(t *testing.T, l metastore.ProfileMeta
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	flatProfile, err := parcaprofile.FlatProfileFromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphFlat(ctx, trace.NewNoopTracerProvider().Tracer(""), l, flatProfile)
+	fg, err := GenerateFlamegraphFlat(ctx, trace.NewNoopTracerProvider().Tracer(""), l, profile)
 	require.NoError(t, err)
 
 	return fg
@@ -303,7 +303,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 		Function:   functions,
 	}
 
-	fp, err := parcaprofile.FlatProfileFromPprof(ctx, logger, store, p, 0)
+	fp, err := parcaprofile.FromPprof(ctx, logger, store, p, 0)
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)
@@ -438,7 +438,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 		Function:   functions,
 	}
 
-	fp, err := parcaprofile.FlatProfileFromPprof(ctx, logger, store, p, 0)
+	fp, err := parcaprofile.FromPprof(ctx, logger, store, p, 0)
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)

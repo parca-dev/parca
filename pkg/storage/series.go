@@ -135,7 +135,7 @@ type MemSeriesAppender struct {
 
 const samplesPerChunk = 120
 
-func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *profile.FlatProfile) error {
+func (a *MemSeriesAppender) AppendFlat(ctx context.Context, p *profile.Profile) error {
 	ctx, span := a.s.tracer.Start(ctx, "AppendFlat")
 	defer span.End()
 

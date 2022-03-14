@@ -87,7 +87,7 @@ func MergeSeriesSetProfiles(ctx context.Context, tracer trace.Tracer, set Series
 				for it.Next() {
 					// Have to copy as profile pointer is not stable for more than the
 					// current iteration.
-					profileCh <- profile.CopyInstantFlatProfile(it.At())
+					profileCh <- profile.CopyInstantProfile(it.At())
 					i++
 				}
 				profileSpan.End()
@@ -210,7 +210,7 @@ func MergeProfilesConcurrent(
 						return err
 					}
 
-					resCh <- profile.CopyInstantFlatProfile(m)
+					resCh <- profile.CopyInstantProfile(m)
 				}
 			}
 		})
