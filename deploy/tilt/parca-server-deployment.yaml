@@ -29,6 +29,8 @@ spec:
         - --config-path=/parca.yaml
         - --log-level=debug
         - --cors-allowed-origins=*
+        - --debug-infod-upstream-servers=https://debuginfod.systemtap.org
+        - --debug-infod-http-request-timeout=5m
         image: parca.io/parca/parca:dev
         livenessProbe:
           exec:
