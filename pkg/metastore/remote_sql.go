@@ -15,8 +15,11 @@ package metastore
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
@@ -27,8 +30,20 @@ type RemoteMetaStore struct {
 	*sqlMetaStore
 }
 
-func NewRemoteProfileMetaStore(addr string) (*RemoteMetaStore, error) {
-	panic("implement me")
+// NewRemoteMetaStore creates a sql metastore with given remote database connection.
+func NewRemoteMetaStore(reg prometheus.Registerer, db *sql.DB) (*RemoteMetaStore, error) {
+	remoteDB := &RemoteMetaStore{
+		sqlMetaStore: &sqlMetaStore{
+			db:    db,
+			cache: newMetaStoreCache(reg),
+		},
+	}
+
+	if err := remoteDB.migrate(); err != nil {
+		return nil, fmt.Errorf("migrations failed: %w", err)
+	}
+
+	return remoteDB, nil
 }
 
 func (r RemoteMetaStore) GetStacktraceByKey(ctx context.Context, key []byte) (uuid.UUID, error) {
