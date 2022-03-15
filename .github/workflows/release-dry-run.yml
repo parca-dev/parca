@@ -24,7 +24,7 @@ permissions:
   contents: write
 
 jobs:
-   goreleaser:
+  goreleaser:
     name: Goreleaser Dry Run
     runs-on: ubuntu-latest
     env:
