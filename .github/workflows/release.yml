@@ -11,6 +11,8 @@ permissions:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_EXPERIMENTAL: "enabled"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -25,13 +27,15 @@ jobs:
       - name: Build UI
         run: make ui/build
 
-      # TODO(kakkoyun): Disabled until fixing the authentication issue.
-      #      - name: Login to Github Container Registry
-      #        uses: docker/login-action@v1
-      #        with:
-      #          registry: ghcr.io
-      #          username: ${{ github.actor }}
-      #          password: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # GITHUB_TOKEN
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }} # actor
+          password: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # GITHUB_TOKEN
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
@@ -44,7 +48,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   manifests:
-    name: Manifests generate and release
+    name: Generate and release Kubernetes Manifests
     runs-on: ubuntu-latest
     needs: goreleaser
     steps:
@@ -92,21 +96,3 @@ jobs:
       - name: Publish Vercel
         run: |
           curl -X POST "https://api.vercel.com/v1/integrations/deploy/${{ secrets.VERCEL_WEBHOOK }}"
-
-  container:
-    name: Container build and push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
-
-      - name: Build container
-        run: make container
-
-      - name: Login to registry
-        run: |
-          echo "${{ secrets.PERSONAL_ACCESS_TOKEN }}" | buildah login -u parca-dev --password-stdin ghcr.io
-
-      - name: Push container
-        run: |
-          make push-container

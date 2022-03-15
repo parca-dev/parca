@@ -1,8 +1,9 @@
 # Designed to only used by Tilt to iterate faster on the API.
-FROM golang:1.17.8-alpine AS builder
+FROM golang:1.17.8-alpine3.15 AS builder
 
 WORKDIR /app
 
+RUN apk update && apk add --no-cache build-base
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 
@@ -26,7 +27,7 @@ COPY ./gen /app/gen
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -o parca ./cmd/parca
 
-FROM golang:1.17.8-alpine
+FROM golang:1.17.8-alpine3.15
 
 COPY --from=builder /go/bin/dlv /
 COPY --from=builder /go/bin/grpc-health-probe /

@@ -1,4 +1,4 @@
-name: Publish
+name: Publish UI Components
 
 on:
   pull_request:
