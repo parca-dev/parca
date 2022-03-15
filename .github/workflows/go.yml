@@ -28,9 +28,6 @@ jobs:
       - name: Build UI
         run: make ui/build
 
-      - name: Format
-        run: make format
-
       - name: Test
         run: make go/test
 

@@ -50,9 +50,15 @@ jobs:
           version: latest
           args: check
 
+      - name: Set Tag
+        run: |
+          echo "goreleaser_current_tag=`git describe --match 'v*' --tags`" >> $GITHUB_ENV
+
       - name: Dry Run
         uses: goreleaser/goreleaser-action@v2
         with:
           distribution: goreleaser
           version: latest
           args: release --rm-dist --skip-validate --skip-publish
+        env:
+          GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
