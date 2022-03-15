@@ -90,7 +90,7 @@ proto/vendor:
 
 .PHONY: container-dev
 container-dev:
-       buildah build-using-dockerfile --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
+    podman build --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:
@@ -98,11 +98,11 @@ container:
 
 .PHONY: push-container
 push-container:
-	buildah manifest push --all $(OUT_DOCKER):$(VERSION) docker://$(OUT_DOCKER):$(VERSION)
+	podman push $(OUT_DOCKER):$(VERSION) $(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-quay-container
 push-quay-container:
-	buildah manifest push --all $(OUT_DOCKER):$(VERSION) docker://quay.io/parca/parca:$(VERSION)
+	podman push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
 
 .PHONY: deploy/manifests
 deploy/manifests:

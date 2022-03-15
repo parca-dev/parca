@@ -42,7 +42,7 @@ for i in "${!ARCHS[@]}"; do
     DOCKER_NODE_ALPINE_SHA=${DOCKER_NODE_ALPINE_SHAS[$i]}
     DOCKER_ALPINE_SHA=${DOCKER_ALPINE_SHAS[$i]}
     echo "Building manifest for $MANIFEST with arch \"$ARCH\""
-    buildah build-using-dockerfile \
+    podman build \
         --build-arg VERSION="$VERSION" \
         --build-arg COMMIT="$COMMIT" \
         --build-arg GOLANG_BUILDER_BASE="$DOCKER_GOLANG_ALPINE_SHA" \
