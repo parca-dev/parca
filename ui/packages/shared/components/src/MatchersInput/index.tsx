@@ -23,9 +23,16 @@ export interface ILabelNamesResult {
   response: LabelsResponse.AsObject | null;
   error: ServiceError | null;
 }
+
 export interface ILabelValuesResult {
   response: ValuesResponse.AsObject | null;
   error: ServiceError | null;
+}
+
+enum Labels {
+  labelName = 'labelName',
+  labelValue = 'labelValue',
+  literal = 'literal',
 }
 
 const addQuoteMarks = (labelValue: string) => {
@@ -139,14 +146,14 @@ const MatchersInput = ({
     // Need to figure out if any literal suggestions make sense, but a
     // closing bracket doesn't in the guided query experience because all
     // we have the user do is type the matchers.
-    if (s.type === 'literal' && s.value !== '}') {
+    if (s.type === Labels.literal && s.value !== '}') {
       suggestionSections.literals.push({
         type: s.type,
         typeahead: '',
         value: s.value,
       });
     }
-    if (s.type === 'labelName') {
+    if (s.type === Labels.labelName) {
       const inputValue = s.typeahead.trim().toLowerCase();
       const inputLength = inputValue.length;
 
@@ -162,7 +169,7 @@ const MatchersInput = ({
         })
       );
     }
-    if (s.type === 'labelValue') {
+    if (s.type === Labels.labelValue) {
       const inputValue = s.typeahead.trim().toLowerCase();
       const inputLength = inputValue.length;
 
@@ -265,21 +272,21 @@ const MatchersInput = ({
   const applySuggestion = (suggestionIndex: number): void => {
     let suggestion = getSuggestion(suggestionIndex);
 
-    if (suggestion.type === 'labelValue') {
+    if (suggestion.type === Labels.labelValue) {
       suggestion.value = addQuoteMarks(suggestion.value);
     }
 
     const newValue = complete(suggestion);
     resetHighlight();
 
-    if (suggestion.type === 'labelName') {
+    if (suggestion.type === Labels.labelName) {
       getLabelNameValues(suggestion.value);
     }
 
     setLastCompleted(suggestion);
     setMatchersString(newValue);
 
-    if (suggestion.type === 'labelValue') {
+    if (suggestion.type === Labels.labelValue) {
       const values = newValue.split(',');
 
       if (currentLabelsCollection === null) {
@@ -296,7 +303,7 @@ const MatchersInput = ({
       return;
     }
 
-    if (lastCompleted.type === 'labelValue' && suggestion.type === 'literal') {
+    if (lastCompleted.type === Labels.labelValue && suggestion.type === Labels.literal) {
       setInputRef('');
       focus();
       return;
@@ -335,13 +342,13 @@ const MatchersInput = ({
     // with the highlighted suggestion.
     if (highlightedSuggestionIndex >= 0 && event.key === 'Enter') {
       applyHighlightedSuggestion();
-      if (lastCompleted.type === 'labelValue') setLabelValuesResponse(null);
+      if (lastCompleted.type === Labels.labelValue) setLabelValuesResponse(null);
     }
 
     // If no suggestions is highlighted and we hit enter, we run the query,
     // and hide suggestions until another actions enables them again.
     if (highlightedSuggestionIndex === -1 && event.key === 'Enter') {
-      if (lastCompleted.type === 'labelValue') setLabelValuesResponse(null);
+      if (lastCompleted.type === Labels.labelValue) setLabelValuesResponse(null);
       setShowSuggest(false);
       runQuery();
       return;
