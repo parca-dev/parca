@@ -5,17 +5,39 @@ builds:
   - main: ./cmd/parca/
     id: "parca"
     binary: parca
+    # https://goreleaser.com/customization/build/#reproducible-builds
+    mod_timestamp: '{{ .CommitTimestamp }}'
     env:
       - CGO_ENABLED=0
     goos:
       - linux
       - windows
       - darwin
+    goarch:
+      - amd64
+      - arm64
+      - '386'
+      - arm
+    goarm:
+      - '6'
+      - '7'
     flags:
       - -trimpath
       - -v
     ldflags:
+      # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
       - -X main.version={{.Version}} -X main.commit={{.Commit}}
+    ignore:
+      - goos: darwin
+        goarch: '386'
+      - goos: windows
+        goarch: arm
+        goarm: '6'
+      - goos: windows
+        goarch: arm
+        goarm: '7'
+      - goos: windows
+        goarch: '386'
 archives:
   - replacements:
       darwin: Darwin
@@ -30,6 +52,8 @@ checksum:
   name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ incpatch .Tag }}-next"
+source:
+  enabled: true
 release:
   prerelease: auto
   # Defaults to empty.
@@ -51,13 +75,126 @@ changelog:
       - '^docs:'
       - '^test:'
 
-# Disabled until fixing the authentication issue with ghcr.
+# It's still not possible to use docker (buildx) for reproducible builds.
+# And Goreleaser only supports podman with pro version, (https://goreleaser.com/customization/docker/#podman)
+# for full build pipeline transparency, we don't want to use pro version for Parca.
+
 #dockers:
-#  - id: parca
-#    goos: linux
-#    goarch: amd64
+#  # https://goreleaser.com/customization/docker/
+#  - id: amd64
+#    use: buildx
+#    image_templates:
+#      - parca-dev/{{ .ProjectName }}:{{ .Version }}-amd64
+#      - parca-dev/{{ .ProjectName }}:latest-amd64
 #    dockerfile: Dockerfile.release
 #    extra_files:
-#    - parca.yaml
+#      - parca.yaml
+#    build_flag_templates:
+#      - --platform=linux/amd64
+#      - --label=org.opencontainers.image.title={{ .ProjectName }}
+#      - --label=org.opencontainers.image.description={{ .ProjectName }}
+#      - --label=org.opencontainers.image.url=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.source=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.created={{.CommitDate}}
+#      - --label=org.opencontainers.image.version={{ .Version }}
+#      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+#      - --label=org.opencontainers.image.licenses=Apache-2.0
+#
+#  - id: arm64
+#    use: buildx
 #    image_templates:
-#    - ghcr.io/parca-dev/parca:{{ .Tag }}
+#      - parca-dev/{{ .ProjectName }}:{{ .Version }}-arm64v8
+#      - parca-dev/{{ .ProjectName }}:latest-arm64v8
+#    goarch: arm64
+#    dockerfile: Dockerfile.release
+#    extra_files:
+#      - parca.yaml
+#    build_flag_templates:
+#      - --platform=linux/arm64/v8
+#      - --label=org.opencontainers.image.title={{ .ProjectName }}
+#      - --label=org.opencontainers.image.description={{ .ProjectName }}
+#      - --label=org.opencontainers.image.url=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.source=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.version={{ .Version }}
+#      - --label=org.opencontainers.image.created={{.CommitDate}}
+#      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+#      - --label=org.opencontainers.image.licenses=Apache-2.0
+#
+#  - id: armv6
+#    use: buildx
+#    image_templates:
+#      - parca-dev/{{ .ProjectName }}:{{ .Version }}-armv6
+#      - parca-dev/{{ .ProjectName }}:latest-armv6
+#    goarch: arm
+#    goarm: 6
+#    dockerfile: Dockerfile.release
+#    extra_files:
+#      - parca.yaml
+#    build_flag_templates:
+#      - --platform=linux/arm64/v8
+#      - --label=org.opencontainers.image.title={{ .ProjectName }}
+#      - --label=org.opencontainers.image.description={{ .ProjectName }}
+#      - --label=org.opencontainers.image.url=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.source=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.version={{ .Version }}
+#      - --label=org.opencontainers.image.created={{.CommitDate}}
+#      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+#      - --label=org.opencontainers.image.licenses=Apache-2.0
+#
+#  - id: armv7
+#    use: buildx
+#    image_templates:
+#      - parca-dev/{{ .ProjectName }}:{{ .Version }}-armv7
+#      - parca-dev/{{ .ProjectName }}:latest-armv7
+#    goarch: arm
+#    goarm: 7
+#    dockerfile: Dockerfile.release
+#    extra_files:
+#      - parca.yaml
+#    build_flag_templates:
+#      - --platform=linux/arm64/v8
+#      - --label=org.opencontainers.image.title={{ .ProjectName }}
+#      - --label=org.opencontainers.image.description={{ .ProjectName }}
+#      - --label=org.opencontainers.image.url=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.source=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.version={{ .Version }}
+#      - --label=org.opencontainers.image.created={{.CommitDate}}
+#      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+#      - --label=org.opencontainers.image.licenses=Apache-2.0
+#
+#  - id: 386
+#    use: buildx
+#    image_templates:
+#      - parca-dev/{{ .ProjectName }}:{{ .Version }}-i386
+#      - parca-dev/{{ .ProjectName }}:latest-i386
+#    goarch: 386
+#    dockerfile: Dockerfile.release
+#    extra_files:
+#      - parca.yaml
+#    build_flag_templates:
+#      - --platform=linux/386
+#      - --label=org.opencontainers.image.title={{ .ProjectName }}
+#      - --label=org.opencontainers.image.description={{ .ProjectName }}
+#      - --label=org.opencontainers.image.url=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.source=https://github.com/parca-dev/{{ .ProjectName }}
+#      - --label=org.opencontainers.image.version={{ .Version }}
+#      - --label=org.opencontainers.image.created={{.CommitDate}}
+#      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+#      - --label=org.opencontainers.image.licenses=Apache-2.0
+#
+#docker_manifests:
+#  - name_template: ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}
+#    image_templates:
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}-x86_64
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}-arm64v8
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}-i386
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}-armv6
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}-armv7
+#
+#  - name_template: ghcr.io/parca-dev/{{ .ProjectName }}:latest
+#    image_templates:
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}-x86_64
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}-arm64v8
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:{{ .Version }}-i386
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:latest-armv6
+#      - ghcr.io/parca-dev/{{ .ProjectName }}:latest-armv7
