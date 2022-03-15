@@ -138,19 +138,13 @@ func newCache(cacheCfg []byte) (*FilesystemCacheConfig, error) {
 }
 
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
-	err := validateID(req.BuildId)
-	if err != nil {
+	if err := validateID(req.BuildId); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	found := false
-	err = s.bucket.Iter(ctx, req.BuildId, func(_ string) error {
-		// We just need any debug files to be present.
-		found = true
-		return nil
-	})
+	found, err := s.find(ctx, req.BuildId)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &debuginfopb.ExistsResponse{
@@ -167,14 +161,22 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	buildID := req.GetInfo().BuildId
-	err = validateID(buildID)
-	if err != nil {
+	if err = validateID(buildID); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	r := &UploadReader{stream: stream}
-	err = s.bucket.Upload(stream.Context(), objectPath(buildID), r)
+	ctx := stream.Context()
+	found, err := s.find(ctx, buildID)
 	if err != nil {
+		return err
+	}
+
+	if found {
+		return status.Error(codes.AlreadyExists, "debuginfo already exists")
+	}
+
+	r := &UploadReader{stream: stream}
+	if err := s.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
 		msg := "failed to upload"
 		level.Error(s.logger).Log("msg", msg, "err", err)
 		return status.Errorf(codes.Unknown, msg)
@@ -196,6 +198,20 @@ func validateID(id string) error {
 	}
 
 	return nil
+}
+
+func (s *Store) find(ctx context.Context, key string) (bool, error) {
+	found := false
+	err := s.bucket.Iter(ctx, key, func(_ string) error {
+		// We just need any debug files to be present, so if a file under the directory for the build ID exists,
+		// it's found: <buildid>/debuginfo
+		found = true
+		return nil
+	})
+	if err != nil {
+		return false, status.Error(codes.Internal, err.Error())
+	}
+	return found, nil
 }
 
 func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*metastore.Location) (map[*metastore.Location][]metastore.LocationLine, error) {
