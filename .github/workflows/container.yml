@@ -3,12 +3,26 @@ name: Container
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - Dockerfile*
+      - .dockerignore
+      - ui/**
   pull_request:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - Dockerfile*
+      - .dockerignore
+      - ui/**
 
 jobs:
   build:
-    name: Container build and push
+    name: Container build and push (when merged)
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory

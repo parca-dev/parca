@@ -1,8 +1,8 @@
-name: Publish
+name: Publish UI Components
 
 on:
   pull_request:
-    types: [closed]
+    types: [ closed ]
     branches: [ main ]
 
 jobs:
