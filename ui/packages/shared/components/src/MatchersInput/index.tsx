@@ -34,13 +34,6 @@ interface Matchers {
   value: string;
 }
 
-const addQuoteMarks = (labelValue: string) => {
-  // eslint-disable-next-line no-useless-escape
-  return `\"${labelValue}\"`;
-};
-
-const labelNameValueRe = /(^([a-z])\w+)(=|!=|=~|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
-
 export interface ILabelValuesResult {
   response: ValuesResponse.AsObject | null;
   error: ServiceError | null;
@@ -51,6 +44,8 @@ enum Labels {
   labelValue = 'labelValue',
   literal = 'literal',
 }
+
+const labelNameValueRe = /(^([a-z])\w+)(=|!=|=~|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
 
 const addQuoteMarks = (labelValue: string) => {
   // eslint-disable-next-line no-useless-escape
