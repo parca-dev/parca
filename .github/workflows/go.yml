@@ -15,36 +15,7 @@ on:
       - 'go.sum'
 
 jobs:
-  goreleaser:
-    name: Goreleaser Dry
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.16
-
-      - name: Build UI
-        run: make ui/build
-
-      - name: Validate
-        uses: goreleaser/goreleaser-action@v2
-        with:
-          distribution: goreleaser
-          version: latest
-          args: check
-
-      - name: Dry Run
-        uses: goreleaser/goreleaser-action@v2
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --rm-dist --skip-validate --skip-publish
-
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -56,9 +27,6 @@ jobs:
 
       - name: Build UI
         run: make ui/build
-
-      - name: Format
-        run: make format
 
       - name: Test
         run: make go/test
