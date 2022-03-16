@@ -17,7 +17,6 @@ else
 	COMMIT := $(shell echo $(GITHUB_SHA) | cut -c1-8)
 endif
 VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags 2>/dev/null || echo '$(BRANCH)$(COMMIT)'))
-ALL_ARCH ?= amd64 arm arm64
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
 .PHONY: build
@@ -91,21 +90,19 @@ proto/vendor:
 
 .PHONY: container-dev
 container-dev:
-       buildah build-using-dockerfile --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
+    podman build --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:
-	for arch in $(ALL_ARCH); do \
-	buildah build-using-dockerfile --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) --build-arg ARCH=$$arch --arch $$arch --timestamp 0 --manifest $(OUT_DOCKER):$(VERSION); \
-	done
+	 ./scripts/make-containers.sh $(VERSION) $(COMMIT) $(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-container
 push-container:
-	buildah manifest push --all $(OUT_DOCKER):$(VERSION) docker://$(OUT_DOCKER):$(VERSION)
+	podman push $(OUT_DOCKER):$(VERSION) $(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-quay-container
 push-quay-container:
-	buildah manifest push --all $(OUT_DOCKER):$(VERSION) docker://quay.io/parca/parca:$(VERSION)
+	podman push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
 
 .PHONY: deploy/manifests
 deploy/manifests:
