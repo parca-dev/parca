@@ -23,6 +23,23 @@ export interface ILabelNamesResult {
   response: LabelsResponse.AsObject | null;
   error: ServiceError | null;
 }
+export interface ILabelValuesResult {
+  response: ValuesResponse.AsObject | null;
+  error: ServiceError | null;
+}
+
+interface Matchers {
+  key: string;
+  matcherType: string;
+  value: string;
+}
+
+const addQuoteMarks = (labelValue: string) => {
+  // eslint-disable-next-line no-useless-escape
+  return `\"${labelValue}\"`;
+};
+
+const labelNameValueRe = /(^([a-z])\w+)(=|!=|=~|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
 
 export interface ILabelValuesResult {
   response: ValuesResponse.AsObject | null;
@@ -95,7 +112,10 @@ const MatchersInput = ({
 }: MatchersInputProps): JSX.Element => {
   const [inputRef, setInputRef] = useState<string>('');
   const [divInputRef, setDivInputRef] = useState<HTMLDivElement | null>(null);
-  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<Array<any> | null>(null);
+  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<Array<string> | null>(
+    null
+  );
+  const [localMatchers, setLocalMatchers] = useState<Array<Matchers> | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [showSuggest, setShowSuggest] = useState(true);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
@@ -198,23 +218,15 @@ const MatchersInput = ({
       .map(matcher => matcher.key + matcher.matcherType + addQuoteMarks(matcher.value));
   };
 
-  const getLabelsFromMatcherString = (matcherString: string) => {
-    return matcherString
-      .replaceAll('}', '')
-      .replaceAll('{', '')
-      .split(',')
-      .filter(matcher => matcher !== '');
-  };
-
   useEffect(() => {
-    if (currentQuery.inputMatcherString === undefined && currentQuery.matchers.length === 0) return;
+    const matchers = currentQuery.matchers.filter(matcher => matcher.key !== '__name__');
 
-    if (currentQuery.inputMatcherString.length > 0) {
-      setCurrentLabelsCollection(getLabelsFromMatcherString(currentQuery.inputMatcherString));
-    } else if (currentQuery.matchers.length > 0) {
-      setCurrentLabelsCollection(getLabelsFromMatchers(currentQuery.matchers));
+    if (matchers.length > 0) {
+      setCurrentLabelsCollection(getLabelsFromMatchers(matchers));
+    } else {
+      if (localMatchers !== null) setCurrentLabelsCollection(getLabelsFromMatchers(localMatchers));
     }
-  }, []);
+  }, [currentQuery.matchers]);
 
   const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
@@ -222,11 +234,6 @@ const MatchersInput = ({
   const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
     setInputRef(newValue);
-    if (currentLabelsCollection === null || currentLabelsCollection?.length === 0) {
-      setMatchersString(newValue);
-    } else {
-      setMatchersString(currentLabelsCollection?.join(',') + ',' + newValue);
-    }
     resetLastCompleted();
     resetHighlight();
   };
@@ -289,10 +296,13 @@ const MatchersInput = ({
     if (suggestion.type === Labels.labelValue) {
       const values = newValue.split(',');
 
-      if (currentLabelsCollection === null) {
+      if (
+        currentLabelsCollection === null ||
+        (currentLabelsCollection && currentLabelsCollection.length === 0)
+      ) {
         setCurrentLabelsCollection(values);
       } else {
-        setCurrentLabelsCollection((oldValues: Array<any>) => [
+        setCurrentLabelsCollection((oldValues: Array<string>) => [
           ...oldValues,
           values[values.length - 1],
         ]);
@@ -324,13 +334,29 @@ const MatchersInput = ({
   };
 
   const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === ',') {
-      const values = inputRef.replaceAll(',', '');
+    const values = inputRef.replaceAll(',', '');
 
+    if (labelNameValueRe.test(inputRef)) {
+      if (currentLabelsCollection === null) {
+        setMatchersString(inputRef);
+      } else {
+        setMatchersString(currentLabelsCollection?.join(',') + ',' + values);
+      }
+      setInputRef('');
+    }
+
+    if (event.key === ',') {
+      if (inputRef.length === 0) event.preventDefault();
+
+      const values = inputRef.replaceAll(',', '');
       if (currentLabelsCollection === null) {
         setCurrentLabelsCollection([values]);
       } else {
-        setCurrentLabelsCollection((oldValues: Array<any>) => [...oldValues, values]);
+        setCurrentLabelsCollection((oldValues: Array<string>) => {
+          if (!labelNameValueRe.test(inputRef)) return oldValues;
+          return [...oldValues, values];
+        });
+        setMatchersString(currentLabelsCollection?.join(',') + ',' + values);
       }
 
       setInputRef('');
@@ -343,12 +369,19 @@ const MatchersInput = ({
     if (highlightedSuggestionIndex >= 0 && event.key === 'Enter') {
       applyHighlightedSuggestion();
       if (lastCompleted.type === Labels.labelValue) setLabelValuesResponse(null);
+
+      const matchers = currentQuery.matchers.filter(matcher => matcher.key !== '__name__');
+      setLocalMatchers(prevState => {
+        if (inputRef.length > 0) return prevState;
+        if (matchers.length === 0) return prevState;
+        return matchers;
+      });
     }
 
     // If no suggestions is highlighted and we hit enter, we run the query,
     // and hide suggestions until another actions enables them again.
     if (highlightedSuggestionIndex === -1 && event.key === 'Enter') {
-      if (lastCompleted.type === Labels.labelValue) setLabelValuesResponse(null);
+      if (lastCompleted.type === 'labelValue') setLabelValuesResponse(null);
       setShowSuggest(false);
       runQuery();
       return;
@@ -358,6 +391,13 @@ const MatchersInput = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === 'Backspace' && !inputRef) {
+      if (currentLabelsCollection === null) return;
+
+      removeLabel(currentLabelsCollection.length - 1);
+      removeLocalMatcher();
+    }
+
     // Don't need to handle any key interactions if no suggestions there.
     if (suggestionsLength === 0) {
       return;
@@ -401,15 +441,23 @@ const MatchersInput = ({
     resetHighlight();
   };
 
-  const removeLabel = i => {
+  const removeLabel = label => {
     if (currentLabelsCollection === null) return;
 
     const newLabels = [...currentLabelsCollection];
-    newLabels.splice(i, 1);
+    newLabels.splice(label, 1);
     setCurrentLabelsCollection(newLabels);
 
     const newLabelsAsAString = newLabels.join(',');
     setMatchersString(newLabelsAsAString);
+  };
+
+  const removeLocalMatcher = () => {
+    if (localMatchers === null) return;
+
+    const newMatchers = [...localMatchers];
+    newMatchers.splice(localMatchers.length - 1, 1);
+    setLocalMatchers(newMatchers);
   };
 
   return (
