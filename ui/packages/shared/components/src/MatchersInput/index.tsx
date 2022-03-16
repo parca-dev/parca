@@ -214,7 +214,7 @@ const MatchersInput = ({
     } else if (currentQuery.matchers.length > 0) {
       setCurrentLabelsCollection(getLabelsFromMatchers(currentQuery.matchers));
     }
-  }, []);
+  }, [currentQuery]);
 
   const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
