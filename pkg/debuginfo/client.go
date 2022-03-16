@@ -16,13 +16,18 @@ package debuginfo
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
+
+var ErrDebugInfoAlreadyExists = errors.New("debug info already exists")
 
 type Client struct {
 	c debuginfopb.DebugInfoServiceClient
@@ -59,6 +64,11 @@ func (c *Client) Upload(ctx context.Context, buildID string, r io.Reader) (uint6
 		},
 	})
 	if err != nil {
+		if sts, ok := status.FromError(err); ok {
+			if sts.Code() == codes.AlreadyExists {
+				return 0, ErrDebugInfoAlreadyExists
+			}
+		}
 		return 0, fmt.Errorf("send upload info: %w", err)
 	}
 
