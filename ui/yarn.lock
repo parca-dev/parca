@@ -2399,9 +2399,9 @@
     loader-utils "2.0.0"
 
 "@mdx-js/loader@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@mdx-js/loader/-/loader-2.0.0.tgz#4ff3278d341e7a15ecf87c4623a8ecd533cb3dbc"
-  integrity sha512-gPuzQQ19K9OUkgRVMUMRu8lYXgJPwSQaHcc6olvRxbdUMms4mtn6so3v4v8J+f58bAk0R98IzBbkvBenAOZu7g==
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@mdx-js/loader/-/loader-2.1.0.tgz#cbcc234c9607fa2d1dd46ffb0234560e6662f080"
+  integrity sha512-r2CqhmBELQUoUxiWDh8SnlD7QTRNULgXE26gmmlD/uE0HWM7CG8iw6F3ZfvVr5p9y2z4MHWsOHbaJEuNCa8i3Q==
   dependencies:
     "@mdx-js/mdx" "^2.0.0"
     source-map "^0.7.0"
