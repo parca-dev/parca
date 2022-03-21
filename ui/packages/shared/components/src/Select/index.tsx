@@ -45,17 +45,17 @@ const Select = ({
       <Listbox value={selectedKey} onChange={onSelection}>
         {({open}) => (
           <>
-            <div>
+            <div className="min-w-fit">
               <Listbox.Button
                 className={cx(
                   width !== undefined ? `w-${width}` : '',
-                  'relative bg-gray-50 dark:bg-gray-900 border-t border-r border-b border-l dark:border-gray-600 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-sm',
+                  'relative bg-gray-50 dark:bg-gray-900 border-t border-r border-b border-l dark:border-gray-600 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-sm w-[270px]',
                   {[className]: className.length > 0}
                 )}
               >
                 <span className="flex items-center">
                   {/* SLOT */}
-                  <span className="ml-3 block">
+                  <span className="ml-3 block overflow-x-hidden text-ellipsis">
                     {selection?.key !== '' ? selection.element.active : placeholder}
                   </span>
                 </span>

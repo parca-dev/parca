@@ -1,5 +1,5 @@
-import {QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse} from '@parca/client';
 import {Query} from '@parca/parser';
+import {QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse} from '@parca/client';
 import {ProfileSelection} from '@parca/profile';
 import React, {useEffect, useState} from 'react';
 import ProfileMetricsGraph from '../ProfileMetricsGraph';
@@ -9,6 +9,7 @@ import CompareButton from './CompareButton';
 import Card from '../Card';
 import {DateTimeRangePicker, DateTimeRange, Select, Button, ButtonGroup, SelectElement} from '../';
 import {CloseIcon} from '@parca/icons';
+import cx from 'classnames';
 
 export interface QuerySelection {
   expression: string;
@@ -247,7 +248,7 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header>
+      <Card.Header className={cx(comparing === true && 'overflow-x-scroll')}>
         <div className="flex space-x-4">
           {comparing && (
             <button type="button" onClick={() => closeProfile()}>
