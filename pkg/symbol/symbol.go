@@ -140,18 +140,30 @@ func (s *Symbolizer) newLiner(m *pb.Mapping, path string) (liner, error) {
 	// Keep that section and other identifying sections in the debug information file.
 	isGo, err := elfutils.IsSymbolizableGoObjFile(path)
 	if err != nil {
-		level.Debug(s.logger).Log("msg", "failed to determine if binary is a Go binary", "err", err)
+		level.Debug(logger).Log("msg", "failed to determine if binary is a Go binary", "err", err)
 	}
 	if isGo {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
-		level.Debug(s.logger).Log("msg", "symbolizing a Go binary", "file")
 		lnr, err := addr2line.Go(s.logger, path)
 		if err == nil {
-			level.Debug(s.logger).Log("msg", "using go liner to resolve symbols", "file")
+			level.Debug(logger).Log("msg", "using go liner to resolve symbols")
 			return lnr, nil
 		}
-		level.Error(s.logger).Log("msg", "failed to create go liner, falling back to binary liner", "err", err)
+		level.Error(logger).Log("msg", "failed to create go liner, falling back to symtab liner", "err", err)
+	}
+
+	hasSymbols, err := elfutils.HasSymbols(path)
+	if err != nil {
+		level.Debug(logger).Log("msg", "failed to determine if binary has symbols", "err", err)
+	}
+	if hasSymbols {
+		lnr, err := addr2line.Symbols(logger, path)
+		if err == nil {
+			level.Debug(logger).Log("msg", "using symtab liner to resolve symbols")
+			return lnr, nil
+		}
+		level.Error(logger).Log("msg", "failed to create symtab liner", "err", err)
 	}
 
 	return nil, errors.New("cannot create a liner from given object file")
