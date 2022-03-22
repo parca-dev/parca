@@ -215,9 +215,11 @@ func (s *Store) find(ctx context.Context, key string) (bool, error) {
 }
 
 func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*metastore.Location) (map[*metastore.Location][]metastore.LocationLine, error) {
+	logger := log.With(s.logger, "object", m.BuildId)
+
 	localObjPath, err := s.fetchObjectFile(ctx, m.BuildId)
 	if err != nil {
-		level.Debug(s.logger).Log("msg", "failed to fetch object", "object", m.BuildId, "err", err)
+		level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
@@ -226,7 +228,7 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 	liner, err := s.symbolizer.NewLiner(m, localObjPath)
 	if err != nil {
 		const msg = "failed to create liner"
-		level.Debug(s.logger).Log("msg", msg, "object", m.BuildId, "err", err)
+		level.Debug(logger).Log("msg", msg, "err", err)
 		return nil, fmt.Errorf(msg+": %w", err)
 	}
 
@@ -234,7 +236,7 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 	for _, loc := range locations {
 		lines, err := liner.PCToLines(loc.Address)
 		if err != nil {
-			level.Debug(s.logger).Log("msg", "failed to extract source lines", "object", m.BuildId, "err", err)
+			level.Debug(logger).Log("msg", "failed to extract source lines", "err", err)
 			continue
 		}
 		locationLines[loc] = append(locationLines[loc], lines...)
@@ -243,6 +245,8 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 }
 
 func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {
+	logger := log.With(s.logger, "object", buildID)
+
 	localObjectFilePath := path.Join(s.cacheDir, buildID, "debuginfo")
 	// Check if it's already cached locally; if not download.
 	if _, err := os.Stat(localObjectFilePath); os.IsNotExist(err) {
@@ -250,18 +254,18 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 		r, err := s.bucket.Get(ctx, objectPath(buildID))
 		if err != nil {
 			if s.bucket.IsObjNotFoundErr(err) {
-				level.Debug(s.logger).Log("msg", "object not found in object storage", "object", buildID, "err", err)
+				level.Debug(logger).Log("msg", "object not found in object storage", "err", err)
 				// Try downloading the debuginfo file from the debuginfod server.
 				r, err = s.debuginfodClient.GetDebugInfo(ctx, buildID)
 				if err != nil {
 					return "", fmt.Errorf("get object files from debuginfod server: %w", err)
 				}
 				defer r.Close()
-				level.Info(s.logger).Log("msg", "object downloaded from debuginfod server", "object", buildID)
+				level.Info(logger).Log("msg", "object downloaded from debuginfod server")
 			}
-			level.Warn(s.logger).Log(
+			level.Warn(logger).Log(
 				"msg", "failed to fetch object from object storage",
-				"object", buildID, "err", err,
+				"err", err,
 			)
 		}
 

@@ -122,7 +122,7 @@ func (s *Symbolizer) newLiner(m *pb.Mapping, path string) (liner, error) {
 	}
 	if hasDWARF {
 		level.Debug(logger).Log("msg", "using DWARF liner to resolve symbols")
-		lnr, err := addr2line.DWARF(s.logger, path, m, s.demangler, s.attemptThreshold)
+		lnr, err := addr2line.DWARF(logger, path, s.demangler, s.attemptThreshold)
 		if err != nil {
 			level.Error(logger).Log(
 				"msg", "failed to open object file",

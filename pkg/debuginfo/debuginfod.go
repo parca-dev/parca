@@ -102,6 +102,7 @@ type readCloser struct {
 }
 
 func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
+	logger := log.With(c.logger, "buildid", buildID)
 	debugInfo, err := c.client.GetDebugInfo(ctx, buildID)
 	if err != nil {
 		return nil, ErrDebugInfoNotFound
@@ -113,7 +114,7 @@ func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, b
 		defer debugInfo.Close()
 
 		if err := c.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
-			level.Error(c.logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err)
+			level.Error(logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err)
 		}
 	}()
 
@@ -131,13 +132,14 @@ func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, b
 }
 
 func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
+	logger := log.With(c.logger, "buildid", buildID)
 	for _, u := range c.UpstreamServers {
 		serverURL := *u
 		rc, err := c.request(ctx, serverURL, buildID)
 		if err == nil {
 			return rc, nil
 		}
-		level.Warn(c.logger).Log(
+		level.Warn(logger).Log(
 			"msg", "failed to get debuginfo from upstream server, trying next one (if exists)",
 			"server", serverURL, "err", err,
 		)
@@ -146,6 +148,8 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 }
 
 func (c *HTTPDebugInfodClient) request(ctx context.Context, serverURL url.URL, buildID string) (io.ReadCloser, error) {
+	logger := log.With(c.logger, "buildid", buildID)
+
 	serverURL.Path = path.Join(serverURL.Path, buildID, "debuginfo")
 
 	ctx, cancel := context.WithTimeout(ctx, c.timeoutDuration)
@@ -153,13 +157,13 @@ func (c *HTTPDebugInfodClient) request(ctx context.Context, serverURL url.URL, b
 
 	req, err := http.NewRequestWithContext(ctx, "GET", serverURL.String(), nil)
 	if err != nil {
-		level.Debug(c.logger).Log("msg", "failed to create new HTTP request", "err", err)
+		level.Debug(logger).Log("msg", "failed to create new HTTP request", "err", err)
 		return nil, err
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		level.Debug(c.logger).Log("msg", "object not found in public server", "object", buildID, "err", err)
+		level.Debug(logger).Log("msg", "object not found in public server", "object", buildID, "err", err)
 		return nil, ErrDebugInfoNotFound
 	}
 

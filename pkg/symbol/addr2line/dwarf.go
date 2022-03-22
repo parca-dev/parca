@@ -20,7 +20,6 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -39,14 +38,14 @@ type DwarfLiner struct {
 }
 
 // DWARF is a symbolizer that uses DWARF debug info to symbolize addresses.
-func DWARF(logger log.Logger, path string, m *pb.Mapping, demangler *demangle.Demangler, attemptThreshold int) (*DwarfLiner, error) {
-	dbgFile, err := elfutils.NewDebugInfoFile(path, m, demangler)
+func DWARF(logger log.Logger, path string, demangler *demangle.Demangler, attemptThreshold int) (*DwarfLiner, error) {
+	dbgFile, err := elfutils.NewDebugInfoFile(path, demangler)
 	if err != nil {
 		return nil, err
 	}
 
 	return &DwarfLiner{
-		logger:  logger,
+		logger:  log.With(logger, "component", "dwarfliner", "file", path),
 		dbgFile: dbgFile,
 
 		attemptThreshold: attemptThreshold,
@@ -82,6 +81,7 @@ func (dl *DwarfLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, er
 }
 
 func (dl *DwarfLiner) handleError(addr uint64, err error) error {
+	level.Debug(dl.logger).Log("msg", "failed to symbolize location", "addr", addr, "err", err)
 	if prev, ok := dl.attempts[addr]; ok {
 		prev++
 		if prev >= dl.attemptThreshold {
