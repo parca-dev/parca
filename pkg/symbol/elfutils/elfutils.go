@@ -120,3 +120,19 @@ func IsSymbolizableGoObjFile(path string) (bool, error) {
 
 	return false, errors.New("failed to detect .gopclntab section or section has no bits")
 }
+
+// HasSymbols reports whether the specified executable or library file contains symbols (both.symtab and .dynsym).
+func HasSymbols(filePath string) (bool, error) {
+	ef, err := elf.Open(filePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to open elf: %w", err)
+	}
+	defer ef.Close()
+
+	for _, section := range ef.Sections {
+		if section.Type == elf.SHT_SYMTAB || section.Type == elf.SHT_DYNSYM {
+			return true, nil
+		}
+	}
+	return false, nil
+}
