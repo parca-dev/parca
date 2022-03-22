@@ -179,7 +179,8 @@ func Test_QueryRange_Limited(t *testing.T) {
 	end := time.Now().UTC()
 	start := end.Add(-15 * time.Minute)
 
-	limit := rand.Intn(numSeries)
+	// Avoid setting the limit to 0.
+	limit := rand.Intn(numSeries-1) + 1
 	resp, err := q.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: "allocs",
 		Start: timestamppb.New(start),
