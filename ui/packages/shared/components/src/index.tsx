@@ -1,4 +1,4 @@
-import Button from './Button';
+import Button, {ButtonColor} from './Button';
 import ButtonGroup from './ButtonGroup';
 import Card from './Card';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
@@ -16,7 +16,7 @@ import type {SelectElement} from './Select';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
 
-export type {PillVariant, SelectElement};
+export type {ButtonColor, PillVariant, SelectElement};
 
 export {
   Button,
