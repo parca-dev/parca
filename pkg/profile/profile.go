@@ -14,12 +14,15 @@
 package profile
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
 
 	"github.com/parca-dev/parca/pkg/metastore"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type InstantProfileMeta struct {
@@ -54,6 +57,58 @@ func CopyInstantProfile(p InstantProfile) *Profile {
 type InstantProfile interface {
 	ProfileMeta() InstantProfileMeta
 	Samples() map[string]*Sample
+}
+
+type StacktraceSamples struct {
+	Meta    InstantProfileMeta
+	Samples []*Sample
+}
+
+func StacktraceSamplesFromFlatProfile(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p InstantProfile) (*StacktraceSamples, error) {
+	samples := p.Samples()
+
+	sampleUUIDs := make([][]byte, 0, len(samples))
+	for id := range samples {
+		sampleUUIDs = append(sampleUUIDs, []byte(id))
+	}
+
+	sampleMap, err := metaStore.GetStacktraceByIDs(ctx, sampleUUIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	locationUUIDSeen := map[string]struct{}{}
+	locationUUIDs := [][]byte{}
+	for _, s := range sampleMap {
+		for _, id := range s.GetLocationIds() {
+			if _, seen := locationUUIDSeen[string(id)]; !seen {
+				locationUUIDSeen[string(id)] = struct{}{}
+				locationUUIDs = append(locationUUIDs, id)
+			}
+		}
+	}
+
+	// Get the full locations for the location UUIDs
+	locationsMap, err := metastore.GetLocationsByIDs(ctx, metaStore, locationUUIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("get locations by ids: %w", err)
+	}
+
+	ssamples := make([]*Sample, 0, len(samples))
+	for k, s := range samples {
+		locationIDs := sampleMap[k].GetLocationIds()
+		s.Location = make([]*metastore.Location, 0, len(locationIDs))
+		for _, id := range locationIDs {
+			s.Location = append(s.Location, locationsMap[string(id)])
+		}
+
+		ssamples = append(ssamples, s)
+	}
+
+	return &StacktraceSamples{
+		Meta:    p.ProfileMeta(),
+		Samples: ssamples,
+	}, nil
 }
 
 type Profile struct {

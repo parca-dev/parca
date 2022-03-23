@@ -25,8 +25,8 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
-	"github.com/thanos-io/thanos/pkg/objstore/client"
-	"github.com/thanos-io/thanos/pkg/objstore/filesystem"
+	"github.com/brancz/objstore/client"
+	"github.com/brancz/objstore/filesystem"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 

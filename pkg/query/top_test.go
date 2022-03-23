@@ -32,6 +32,7 @@ import (
 
 func TestGenerateTopTable(t *testing.T) {
 	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
@@ -51,7 +52,10 @@ func TestGenerateTopTable(t *testing.T) {
 	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
 	require.NoError(t, err)
 
-	res, err := GenerateTopTable(ctx, l, p)
+	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, p)
+	require.NoError(t, err)
+
+	res, err := GenerateTopTable(ctx, l, samples)
 	require.NoError(t, err)
 
 	require.Equal(t, int32(1886), res.Total)

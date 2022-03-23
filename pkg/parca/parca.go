@@ -24,11 +24,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
@@ -44,20 +49,19 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v2"
 
-	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/parcaparquet"
 	"github.com/parca-dev/parca/pkg/profilestore"
-	"github.com/parca-dev/parca/pkg/query"
+	queryservice "github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbolizer"
+	"github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/arcticdb/query"
 )
 
 const (
@@ -77,6 +81,9 @@ type Flags struct {
 
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
+
+	Storage              string `default:"tsdb" enum:"columnstore,tsdb" help:"Storage type to use."`
+	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -143,26 +150,59 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	db := storage.OpenDB(
-		reg,
-		tracerProvider.Tracer("db"),
-		&storage.DBOptions{
-			Retention:            flags.StorageTSDBRetentionTime,
-			HeadExpensiveMetrics: flags.StorageTSDBExpensiveMetrics,
-		},
+	var (
+		db *storage.DB
+		s  profilestorepb.ProfileStoreServiceServer
+		q  querypb.QueryServiceServer
 	)
-	s := profilestore.NewProfileStore(
-		logger,
-		tracerProvider.Tracer("profilestore"),
-		db,
-		mStr,
-	)
-	q := query.New(
-		logger,
-		tracerProvider.Tracer("query-service"),
-		db,
-		mStr,
-	)
+
+	if flags.Storage == "tsdb" {
+		db = storage.OpenDB(
+			reg,
+			tracerProvider.Tracer("db"),
+			&storage.DBOptions{
+				Retention:            flags.StorageTSDBRetentionTime,
+				HeadExpensiveMetrics: flags.StorageTSDBExpensiveMetrics,
+			},
+		)
+
+		s = profilestore.NewProfileStore(
+			logger,
+			tracerProvider.Tracer("profilestore"),
+			db,
+			mStr,
+		)
+		q = queryservice.New(
+			logger,
+			tracerProvider.Tracer("query-service"),
+			db,
+			mStr,
+		)
+	}
+
+	if flags.Storage == "columnstore" {
+		col := columnstore.New(reg)
+		colDB := col.DB("parca")
+		table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcaparquet.Schema(), 8196), logger)
+
+		s = profilestore.NewProfileColumnStore(
+			logger,
+			tracerProvider.Tracer("profilestore"),
+			mStr,
+			table,
+			flags.StorageDebugValueLog,
+		)
+		q = queryservice.NewColumnQueryAPI(
+			logger,
+			tracerProvider.Tracer("query-service"),
+			mStr,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+		)
+	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -224,14 +264,16 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				sym.Close()
 			})
 	}
-	{
-		ctx, cancel := context.WithCancel(ctx)
-		gr.Add(func() error {
-			return db.Run(ctx)
-		}, func(err error) {
-			level.Debug(logger).Log("msg", "db exiting")
-			cancel()
-		})
+	if flags.Storage == "tsdb" {
+		{
+			ctx, cancel := context.WithCancel(ctx)
+			gr.Add(func() error {
+				return db.Run(ctx)
+			}, func(err error) {
+				level.Debug(logger).Log("msg", "db exiting")
+				cancel()
+			})
+		}
 	}
 	gr.Add(
 		func() error {

@@ -22,10 +22,10 @@ import (
 	"path"
 	"time"
 
+	"github.com/brancz/objstore"
+	"github.com/brancz/objstore/client"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/thanos-io/thanos/pkg/objstore"
-	"github.com/thanos-io/thanos/pkg/objstore/client"
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
 )
