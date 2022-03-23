@@ -63,6 +63,8 @@ type ChunkPool interface {
 	GetDelta() chunkenc.Chunk
 	GetRLE() chunkenc.Chunk
 	GetTimestamp() *timestampChunk
+	// TODO: unexported-return: exported method GetTimestamp returns unexported type *storage.timestampChunk,
+	// which can be annoying to use (revive)
 }
 
 type HeadOptions struct {

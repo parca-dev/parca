@@ -36,3 +36,9 @@ linters-settings:
     extra-rules: true
   misspell:
     locale: US
+  revive:
+    rules:
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unexported-return
+      - name: unexported-return
+        severity: warning
+        disabled: true

@@ -13,3 +13,5 @@ curl -fsSL https://github.com/tilt-dev/ctlptl/releases/download/v$CTLPTL_VERSION
 go install github.com/campoy/embedmd@latest
 
 go install mvdan.cc/gofumpt@latest
+
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.45.0
