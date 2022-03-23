@@ -37,7 +37,7 @@ type DebugInfodClient interface {
 type NopDebugInfodClient struct{}
 
 func (NopDebugInfodClient) GetDebugInfo(context.Context, string) (io.ReadCloser, error) {
-	return io.NopCloser(bytes.NewReader(nil)), ErrDebugInfoNotFound
+	return io.NopCloser(bytes.NewReader(nil)), errDebugInfoNotFound
 }
 
 type HTTPDebugInfodClient struct {
@@ -105,7 +105,7 @@ func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, b
 	logger := log.With(c.logger, "buildid", buildID)
 	debugInfo, err := c.client.GetDebugInfo(ctx, buildID)
 	if err != nil {
-		return nil, ErrDebugInfoNotFound
+		return nil, errDebugInfoNotFound
 	}
 
 	r, w := io.Pipe()
@@ -144,7 +144,7 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 			"server", serverURL, "err", err,
 		)
 	}
-	return nil, ErrDebugInfoNotFound
+	return nil, errDebugInfoNotFound
 }
 
 func (c *HTTPDebugInfodClient) request(ctx context.Context, serverURL url.URL, buildID string) (io.ReadCloser, error) {
@@ -164,7 +164,7 @@ func (c *HTTPDebugInfodClient) request(ctx context.Context, serverURL url.URL, b
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		level.Debug(logger).Log("msg", "object not found in public server", "object", buildID, "err", err)
-		return nil, ErrDebugInfoNotFound
+		return nil, errDebugInfoNotFound
 	}
 
 	return resp.Body, nil

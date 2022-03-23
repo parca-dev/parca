@@ -39,7 +39,7 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-var ErrDebugInfoNotFound = errors.New("debug info not found")
+var errDebugInfoNotFound = errors.New("debug info not found")
 
 type CacheProvider string
 
@@ -224,11 +224,21 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 	localObjPath, err := s.fetchObjectFile(ctx, m.BuildId)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
-		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
+		// It's ok if we don't have the symbols for given BuildID, it happens too often.
+		if errors.Is(err, errDebugInfoNotFound) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("failed to fetch: %w", err)
 	}
 
 	locationLines, err := s.symbolizer.Symbolize(ctx, m, locations, localObjPath)
 	if err != nil {
+		if errors.Is(err, symbol.ErrLinerCreationFailedBefore) {
+			level.Debug(logger).Log("msg", "failed to symbolize before", "err", err)
+			return nil, nil
+		}
+
 		return nil, fmt.Errorf("failed to symbolize locations for mapping: %w", err)
 	}
 	return locationLines, nil
@@ -296,7 +306,7 @@ func cache(localPath string, r io.ReadCloser) error {
 		return fmt.Errorf("close tempfile to write debug info file: %w", err)
 	}
 	if written == 0 {
-		return fmt.Errorf("received empty debug info: %w", ErrDebugInfoNotFound)
+		return fmt.Errorf("received empty debug info: %w", errDebugInfoNotFound)
 	}
 
 	err = os.MkdirAll(path.Dir(localPath), 0o700)
