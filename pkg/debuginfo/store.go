@@ -36,6 +36,7 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol"
+	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
 var ErrDebugInfoNotFound = errors.New("debug info not found")
@@ -164,6 +165,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
 	ctx := stream.Context()
 	found, err := s.find(ctx, buildID)
 	if err != nil {
@@ -171,6 +173,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	if found {
+		level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
 		return status.Error(codes.AlreadyExists, "debuginfo already exists")
 	}
 
@@ -180,6 +183,8 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		level.Error(s.logger).Log("msg", msg, "err", err)
 		return status.Errorf(codes.Unknown, msg)
 	}
+
+	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
 
 	return stream.SendAndClose(&debuginfopb.UploadResponse{
 		BuildId: buildID,
@@ -257,6 +262,22 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 			return "", fmt.Errorf("failed to fetch debug info file: %w", err)
 		}
 	}
+
+	if hasDWARF, err := elfutils.HasDWARF(localObjectFilePath); err == nil && !hasDWARF {
+		level.Debug(logger).Log("msg", "trying to find a better version of the debug information file")
+		r, err := s.debuginfodClient.GetDebugInfo(ctx, buildID)
+		if err != nil {
+			level.Debug(logger).Log("msg", "failed to find a better version of the debug information file", "err", err)
+			return localObjectFilePath, nil
+		}
+		defer r.Close()
+
+		if err := cache(localObjectFilePath, r); err != nil {
+			level.Debug(logger).Log("msg", "failed to cache the better debug information file", "err", err)
+			return localObjectFilePath, nil
+		}
+	}
+
 	return localObjectFilePath, nil
 }
 

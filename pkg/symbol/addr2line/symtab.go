@@ -50,7 +50,7 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, 
 		return sym.Value <= addr && addr < sym.Value+sym.Size
 	})
 	if i >= len(lnr.symbols) {
-		level.Debug(lnr.logger).Log("msg", "failed to find symbol for address ", "addr", addr)
+		level.Debug(lnr.logger).Log("msg", "failed to find symbol for address", "addr", addr)
 		return nil, ErrSymbolNotFound
 	}
 
