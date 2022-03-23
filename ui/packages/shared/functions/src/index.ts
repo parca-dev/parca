@@ -136,6 +136,13 @@ const knownValueFormatters = {
 };
 
 export const valueFormatter = (num: number, unit: string, digits: number): string => {
+  // TODO: remove this after the columnstore backend is the main storage
+  // backend. This is a temporary fix while the columnstore backend does not
+  // return the correct unit.
+  if (unit === undefined || unit === '') {
+    return num.toFixed(digits);
+  }
+
   const absoluteNum = Math.abs(num);
   const format: Unit[] = Object.values(knownValueFormatters[unit]);
 
