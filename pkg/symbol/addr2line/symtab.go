@@ -15,6 +15,7 @@
 package addr2line
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -51,7 +52,7 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, 
 	})
 	if i >= len(lnr.symbols) {
 		level.Debug(lnr.logger).Log("msg", "failed to find symbol for address", "addr", addr)
-		return nil, ErrSymbolNotFound
+		return nil, errors.New("failed to find symbol for address")
 	}
 
 	var (
