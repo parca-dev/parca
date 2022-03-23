@@ -46,15 +46,10 @@ spec:
         resources: {}
         securityContext:
           privileged: true
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /tmp
           name: tmp
-        - mountPath: /host/root
-          name: root
-          readOnly: true
-        - mountPath: /host/proc
-          name: proc
-          readOnly: true
         - mountPath: /run
           name: run
         - mountPath: /lib/modules
@@ -78,12 +73,6 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp
-      - hostPath:
-          path: /
-        name: root
-      - hostPath:
-          path: /proc
-        name: proc
       - hostPath:
           path: /run
         name: run

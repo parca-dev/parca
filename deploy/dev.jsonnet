@@ -30,6 +30,7 @@ function(agentVersion='v0.4.1')
     insecure: true,
     insecureSkipVerify: true,
     tempDir: 'tmp',
+    //    podLabelSelector: 'app.kubernetes.io/name in (parca-agent, parca, demo-c)',
   });
 
   // Only for development purposes. Parca actually serves its UI itself.
