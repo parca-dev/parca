@@ -16,49 +16,64 @@ package profilestore
 import (
 	"bytes"
 	"context"
-	"sort"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
+	"github.com/polarsignals/arcticdb"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/timestamp"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
-	"github.com/parca-dev/parca/pkg/storage"
 )
 
-type ProfileStore struct {
+type ProfileColumnStore struct {
 	profilestorepb.UnimplementedProfileStoreServiceServer
 
 	logger    log.Logger
 	tracer    trace.Tracer
-	app       storage.Appendable
 	metaStore metastore.ProfileMetaStore
+
+	table *arcticdb.Table
+
+	// When the debug-value-log is enabled, every profile is first written to
+	// tmp/<labels>/<timestamp>.pb.gz before it's parsed and written to the
+	// columnstore. This is primarily for debugging purposes as well as
+	// reproducing situations in tests. This has huge overhead, do not enable
+	// unless you know what you're doing.
+	debugValueLog bool
 }
 
-var _ profilestorepb.ProfileStoreServiceServer = &ProfileStore{}
+var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
 
-func NewProfileStore(
+func NewProfileColumnStore(
 	logger log.Logger,
 	tracer trace.Tracer,
-	app storage.Appendable,
 	metaStore metastore.ProfileMetaStore,
-) *ProfileStore {
-	return &ProfileStore{
-		logger:    logger,
-		tracer:    tracer,
-		app:       app,
-		metaStore: metaStore,
+	table *arcticdb.Table,
+	debugValueLog bool,
+) *ProfileColumnStore {
+	return &ProfileColumnStore{
+		logger:        logger,
+		tracer:        tracer,
+		metaStore:     metaStore,
+		table:         table,
+		debugValueLog: debugValueLog,
 	}
 }
 
-func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
+func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
 	ctx, span := s.tracer.Start(ctx, "write-raw")
 	defer span.End()
 
@@ -81,6 +96,19 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 				return nil, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
 			}
 
+			if s.debugValueLog {
+				dir := fmt.Sprintf("tmp/%s", ls.String())
+				err := os.MkdirAll(dir, os.ModePerm)
+				if err != nil {
+					level.Error(s.logger).Log("msg", "failed to create debug-value-log directory", "err", err)
+				} else {
+					err := ioutil.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, timestamp.FromTime(time.Now())), sample.RawProfile, 0o644)
+					if err != nil {
+						level.Error(s.logger).Log("msg", "failed to write debug-value-log", "err", err)
+					}
+				}
+			}
+
 			if err := p.CheckValid(); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
@@ -92,36 +120,11 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 			}
 			convertSpan.End()
 
-			appendCtx, appendSpan := s.tracer.Start(ctx, "append-profiles")
+			_, appendSpan := s.tracer.Start(ctx, "append-profiles")
 			for _, prof := range profiles {
-				profLabelset := ls.Copy()
-				found := false
-				for i, label := range profLabelset {
-					if label.Name == "__name__" {
-						found = true
-						profLabelset[i] = labels.Label{
-							Name:  "__name__",
-							Value: label.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-						}
-					}
-				}
-				if !found {
-					profLabelset = append(profLabelset, labels.Label{
-						Name:  "__name__",
-						Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-					})
-				}
-				sort.Sort(profLabelset)
-
-				level.Debug(s.logger).Log("msg", "writing sample", "label_set", profLabelset.String(), "timestamp", prof.Meta.Timestamp)
-
-				app, err := s.app.Appender(appendCtx, profLabelset)
+				_, err := parcacol.InsertProfileIntoTable(ctx, s.logger, s.table, ls, prof)
 				if err != nil {
-					return nil, err
-				}
-
-				if err := app.AppendFlat(appendCtx, prof); err != nil {
-					return nil, status.Errorf(codes.Internal, "failed to append sample: %v", err)
+					return nil, status.Errorf(codes.Internal, "failed to insert profile: %v", err)
 				}
 			}
 			appendSpan.End()

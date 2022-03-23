@@ -81,48 +81,60 @@ Flags:
 Usage: parca
 
 Flags:
-  -h, --help                    Show context-sensitive help.
+  -h, --help                       Show context-sensitive help.
       --config-path="parca.yaml"
-                                Path to config file.
-      --mode="all"              Scraper only runs a scraper that sends to a
-                                remote gRPC endpoint. All runs all components.
-      --log-level="info"        log level.
-      --port=":7070"            Port string for server
+                                   Path to config file.
+      --mode="all"                 Scraper only runs a scraper that sends to a
+                                   remote gRPC endpoint. All runs all
+                                   components.
+      --log-level="info"           log level.
+      --port=":7070"               Port string for server
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
-                                Allowed CORS origins.
-      --otlp-address=STRING     OpenTelemetry collector address to send traces
-                                to.
-      --version                 Show application version.
-      --path-prefix=""          Path prefix for the UI
+                                   Allowed CORS origins.
+      --otlp-address=STRING        OpenTelemetry collector address to send
+                                   traces to.
+      --version                    Show application version.
+      --path-prefix=""             Path prefix for the UI
       --storage-tsdb-retention-time=6h
-                                How long to retain samples in storage.
+                                   How long to retain samples in storage.
+      --storage="tsdb"             Storage type to use.
+      --storage-debug-value-log    Log every value written to the database into
+                                   a separate file. This is only for debugging
+                                   purposes to produce data to replay situations
+                                   in tests.
+      --storage-granule-size=8196
+                                   Granule size for storage.
+      --storage-active-memory=536870912
+                                   Amount of memory to use for active storage.
+                                   Defaults to 512MB.
       --symbolizer-demangle-mode="simple"
-                                Mode to demangle C++ symbols. Default mode is
-                                simplified: no parameters, no templates, no
-                                return type
+                                   Mode to demangle C++ symbols. Default mode is
+                                   simplified: no parameters, no templates, no
+                                   return type
       --symbolizer-number-of-tries=3
-                                Number of tries to attempt to symbolize an
-                                unsybolized location
+                                   Number of tries to attempt to symbolize an
+                                   unsybolized location
       --metastore="badgerinmemory"
-                                Which metastore implementation to use
+                                   Which metastore implementation to use
       --debug-infod-upstream-servers=https://debuginfod.elfutils.org,...
-                                Upstream debuginfod servers. Defaults to
-                                https://debuginfod.elfutils.org. It is an
-                                ordered list of servers to try. Learn more at
-                                https://sourceware.org/elfutils/Debuginfod.html
+                                   Upstream debuginfod servers. Defaults to
+                                   https://debuginfod.elfutils.org. It is an
+                                   ordered list of servers to try. Learn more at
+                                   https://sourceware.org/elfutils/Debuginfod.html
       --debug-infod-http-request-timeout=5m
-                                Timeout duration for HTTP request to upstream
-                                debuginfod server. Defaults to 5m
-      --store-address=STRING    gRPC address to send profiles and symbols to.
-      --bearer-token=STRING     Bearer token to authenticate with store.
+                                   Timeout duration for HTTP request to upstream
+                                   debuginfod server. Defaults to 5m
+      --store-address=STRING       gRPC address to send profiles and symbols to.
+      --bearer-token=STRING        Bearer token to authenticate with store.
       --bearer-token-file=STRING
-                                File to read bearer token from to authenticate
-                                with store.
-      --insecure                Send gRPC requests via plaintext instead of TLS.
-      --insecure-skip-verify    Skip TLS certificate verification.
+                                   File to read bearer token from to
+                                   authenticate with store.
+      --insecure                   Send gRPC requests via plaintext instead of
+                                   TLS.
+      --insecure-skip-verify       Skip TLS certificate verification.
       --external-label=KEY=VALUE;...
-                                Label(s) to attach to all profiles in
-                                scraper-only mode.
+                                   Label(s) to attach to all profiles in
+                                   scraper-only mode.
 ```
 
 ## Credits

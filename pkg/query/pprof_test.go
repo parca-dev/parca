@@ -35,6 +35,7 @@ import (
 
 func TestGenerateFlatPprof(t *testing.T) {
 	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	f, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
@@ -45,7 +46,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	l := metastore.NewBadgerMetastore(
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		tracer,
 		metastore.NewRandomUUIDGenerator(),
 	)
 	t.Cleanup(func() {
@@ -53,7 +54,11 @@ func TestGenerateFlatPprof(t *testing.T) {
 	})
 	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
 	require.NoError(t, err)
-	res, err := GenerateFlatPprof(ctx, l, p)
+
+	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, p)
+	require.NoError(t, err)
+
+	res, err := GenerateFlatPprof(ctx, l, samples)
 	require.NoError(t, err)
 
 	require.Equal(t, &profile.ValueType{Type: "space", Unit: "bytes"}, res.PeriodType)
@@ -152,12 +157,9 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 		l2.ID,
 		l1.ID,
 	})
-	key := parcaprofile.MakeStacktraceKey(sample)
 
-	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.Profile{
-		FlatSamples: map[string]*parcaprofile.Sample{
-			string(key): sample,
-		},
+	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.StacktraceSamples{
+		Samples: []*parcaprofile.Sample{sample},
 	})
 	require.NoError(t, err)
 

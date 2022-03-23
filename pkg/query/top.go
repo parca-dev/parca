@@ -15,60 +15,30 @@ package query
 
 import (
 	"context"
-	"fmt"
 	"sort"
+
+	"github.com/google/uuid"
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/profile"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore, p profile.InstantProfile) (*pb.Top, error) {
-	samples := p.Samples()
-
-	sampleUUIDs := make([][]byte, 0, len(samples))
-	for id := range samples {
-		sampleUUIDs = append(sampleUUIDs, []byte(id))
-	}
-
-	sampleMap, err := metaStore.GetStacktraceByIDs(ctx, sampleUUIDs...)
-	if err != nil {
-		return nil, err
-	}
-
-	locationUUIDSeen := map[string]struct{}{}
-	locationUUIDs := [][]byte{}
-	for _, s := range sampleMap {
-		for _, id := range s.GetLocationIds() {
-			if _, seen := locationUUIDSeen[string(id)]; !seen {
-				locationUUIDSeen[string(id)] = struct{}{}
-				locationUUIDs = append(locationUUIDs, id)
-			}
-		}
-	}
-
-	// Get the full locations for the location UUIDs
-	locationsMap, err := metastore.GetLocationsByIDs(ctx, metaStore, locationUUIDs...)
-	if err != nil {
-		return nil, fmt.Errorf("get locations by ids: %w", err)
-	}
-
+func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore, p *parcaprofile.StacktraceSamples) (*pb.Top, error) {
 	// Iterate over all samples and their locations.
 	// Calculate the cumulative value of all locations of all samples.
 	// In the end return a *pb.TopNode for each location including all the metadata we have.
-	locationsTopNodes := map[string]*pb.TopNode{}
-	for sampleUUID, sample := range samples {
+	locationsTopNodes := map[uuid.UUID]*pb.TopNode{}
+	for _, sample := range p.Samples {
 		// If values are zero we can simply ignore the samples.
 		// They wouldn't show up on their own in the table anyway.
 		if sample.Value == 0 {
 			continue
 		}
 
-		s := sampleMap[sampleUUID]
-		for i, id := range s.GetLocationIds() {
-			location := locationsMap[string(id)]
-			if node, found := locationsTopNodes[string(id)]; found {
+		for i, location := range sample.Location {
+			if node, found := locationsTopNodes[location.ID]; found {
 				node.Cumulative += sample.Value
 				node.Diff += sample.DiffValue
 			} else {
@@ -97,7 +67,7 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 					node.Flat = sample.Value
 					node.Diff = sample.DiffValue
 				}
-				locationsTopNodes[string(id)] = node
+				locationsTopNodes[location.ID] = node
 			}
 		}
 	}
@@ -111,7 +81,7 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 		List:     list,
 		Reported: int32(len(list)),
 		Total:    int32(len(list)),
-		Unit:     p.ProfileMeta().SampleType.Unit,
+		Unit:     p.Meta.SampleType.Unit,
 	}
 
 	return aggregateTopByFunction(top), nil
