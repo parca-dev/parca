@@ -31,7 +31,8 @@ import (
 )
 
 type Symbolizer struct {
-	logger    log.Logger
+	logger log.Logger
+
 	metaStore metastore.ProfileMetaStore
 	debugInfo *debuginfo.Store
 }
@@ -87,12 +88,13 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*metastore.Locat
 		level.Debug(s.logger).Log("msg", "storage symbolization request started", "buildid", buildID)
 		symbolizedLocations, err := s.debugInfo.Symbolize(ctx, mapping, mappingLocations[buildID]...)
 		if err != nil {
+			// TODO(kakkoyun): Do not bubble up the errors.
 			// It's ok if we don't have the symbols for given BuildID, it happens too often.
 			if errors.Is(err, debuginfo.ErrDebugInfoNotFound) {
 				level.Debug(s.logger).Log("msg", "failed to find the debug info in storage", "buildid", buildID)
 				continue
 			}
-			if errors.Is(err, symbol.ErrLinerFailedBefore) {
+			if errors.Is(err, symbol.ErrLinerCreationFailedBefore) {
 				level.Debug(s.logger).Log("msg", "failed to symbolize before", "buildid", buildID)
 			}
 			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
@@ -102,7 +104,6 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*metastore.Locat
 
 		for loc, lines := range symbolizedLocations {
 			loc.Lines = lines
-
 			// Only creates lines for given location.
 			if err := s.metaStore.Symbolize(ctx, loc); err != nil {
 				result = multierror.Append(result, fmt.Errorf("failed to update location %d: %w", loc.ID, err))

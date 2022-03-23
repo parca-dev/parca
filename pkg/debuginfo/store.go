@@ -63,14 +63,13 @@ type CacheConfig struct {
 type Store struct {
 	debuginfopb.UnimplementedDebugInfoServiceServer
 
-	logger log.Logger
+	logger   log.Logger
+	cacheDir string
 
-	bucket objstore.Bucket
-
-	cacheDir   string
-	symbolizer *symbol.Symbolizer
-
+	bucket           objstore.Bucket
 	debuginfodClient DebugInfodClient
+
+	symbolizer *symbol.Symbolizer
 }
 
 // NewStore returns a new debug info store.
@@ -215,7 +214,7 @@ func (s *Store) find(ctx context.Context, key string) (bool, error) {
 }
 
 func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*metastore.Location) (map[*metastore.Location][]metastore.LocationLine, error) {
-	logger := log.With(s.logger, "object", m.BuildId)
+	logger := log.With(s.logger, "buildid", m.BuildId)
 
 	localObjPath, err := s.fetchObjectFile(ctx, m.BuildId)
 	if err != nil {
@@ -223,29 +222,15 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 		return nil, fmt.Errorf("failed to symbolize mapping: %w", err)
 	}
 
-	// TODO(kakkoyun): Shall we double-check build ID of the fetched object?
-
-	liner, err := s.symbolizer.NewLiner(m, localObjPath)
+	locationLines, err := s.symbolizer.Symbolize(ctx, m, locations, localObjPath)
 	if err != nil {
-		const msg = "failed to create liner"
-		level.Debug(logger).Log("msg", msg, "err", err)
-		return nil, fmt.Errorf(msg+": %w", err)
-	}
-
-	locationLines := map[*metastore.Location][]metastore.LocationLine{}
-	for _, loc := range locations {
-		lines, err := liner.PCToLines(loc.Address)
-		if err != nil {
-			level.Debug(logger).Log("msg", "failed to extract source lines", "err", err)
-			continue
-		}
-		locationLines[loc] = append(locationLines[loc], lines...)
+		return nil, fmt.Errorf("failed to symbolize locations for mapping: %w", err)
 	}
 	return locationLines, nil
 }
 
 func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {
-	logger := log.With(s.logger, "object", buildID)
+	logger := log.With(s.logger, "buildid", buildID)
 
 	localObjectFilePath := path.Join(s.cacheDir, buildID, "debuginfo")
 	// Check if it's already cached locally; if not download.
@@ -253,32 +238,30 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 		// Download the debuginfo file from the bucket.
 		r, err := s.bucket.Get(ctx, objectPath(buildID))
 		if err != nil {
-			if s.bucket.IsObjNotFoundErr(err) {
-				level.Debug(logger).Log("msg", "object not found in object storage", "err", err)
-				// Try downloading the debuginfo file from the debuginfod server.
-				r, err = s.debuginfodClient.GetDebugInfo(ctx, buildID)
-				if err != nil {
-					return "", fmt.Errorf("get object files from debuginfod server: %w", err)
-				}
-				defer r.Close()
-				level.Info(logger).Log("msg", "object downloaded from debuginfod server")
+			if !s.bucket.IsObjNotFoundErr(err) {
+				level.Warn(logger).Log("msg", "failed to fetch object from object storage", "err", err)
 			}
-			level.Warn(logger).Log(
-				"msg", "failed to fetch object from object storage",
-				"err", err,
-			)
+
+			level.Debug(logger).Log("msg", "attempting to download from debuginfod servers")
+			// Try downloading the debuginfo file from the debuginfod server.
+			r, err = s.debuginfodClient.GetDebugInfo(ctx, buildID)
+			if err != nil {
+				return "", fmt.Errorf("download debug info from object store and debuginfod server: %w", err)
+			}
+			defer r.Close()
+			level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
 		}
 
 		// Cache the file locally.
 		if err := cache(localObjectFilePath, r); err != nil {
-			return "", fmt.Errorf("failed to fetch object: %w", err)
+			return "", fmt.Errorf("failed to fetch debug info file: %w", err)
 		}
 	}
 	return localObjectFilePath, nil
 }
 
 func cache(localPath string, r io.ReadCloser) error {
-	tmpfile, err := ioutil.TempFile("", "symbol-download")
+	tmpfile, err := ioutil.TempFile("", "symbol-download-*")
 	if err != nil {
 		return fmt.Errorf("create temp file: %w", err)
 	}
@@ -286,22 +269,22 @@ func cache(localPath string, r io.ReadCloser) error {
 
 	written, err := io.Copy(tmpfile, r)
 	if err != nil {
-		return fmt.Errorf("copy object storage file to local temp file: %w", err)
+		return fmt.Errorf("copy debug info file to local temp file: %w", err)
 	}
 	if err := tmpfile.Close(); err != nil {
-		return fmt.Errorf("close tempfile to write object file: %w", err)
+		return fmt.Errorf("close tempfile to write debug info file: %w", err)
 	}
 	if written == 0 {
-		return fmt.Errorf("got empty object from object storage: %w", err)
+		return fmt.Errorf("received empty debug info: %w", ErrDebugInfoNotFound)
 	}
 
 	err = os.MkdirAll(path.Dir(localPath), 0o700)
 	if err != nil {
-		return fmt.Errorf("create object file directory: %w", err)
+		return fmt.Errorf("create debug info file directory: %w", err)
 	}
 	// Need to use rename to make the "creation" atomic.
 	if err := os.Rename(tmpfile.Name(), localPath); err != nil {
-		return fmt.Errorf("atomically move downloaded object file: %w", err)
+		return fmt.Errorf("atomically move downloaded debug info file: %w", err)
 	}
 	return nil
 }

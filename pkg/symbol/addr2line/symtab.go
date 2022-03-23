@@ -19,6 +19,7 @@ import (
 	"sort"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/internal/go/debug/elf"
@@ -38,33 +39,32 @@ func Symbols(logger log.Logger, path string) (*SymtabLiner, error) {
 	}
 
 	return &SymtabLiner{
-		logger:  logger,
+		logger:  log.With(logger, "liner", "symtab"),
 		symbols: symbols,
 	}, nil
 }
 
 func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
-	var (
-		file = "?"
-		name = "?"
-		line int64 // 0
-	)
 	i := sort.Search(len(lnr.symbols), func(i int) bool {
 		sym := lnr.symbols[i]
 		return sym.Value <= addr && addr < sym.Value+sym.Size
 	})
 	if i >= len(lnr.symbols) {
-		return nil, fmt.Errorf("failed to find symbol for address %d", addr)
+		level.Debug(lnr.logger).Log("msg", "failed to find symbol for address ", "addr", addr)
+		return nil, ErrSymbolNotFound
 	}
 
+	var (
+		file = "?"
+		line int64 // 0
+	)
 	lines = append(lines, metastore.LocationLine{
 		Line: line,
 		Function: &pb.Function{
-			Name:     name,
+			Name:     lnr.symbols[i].Name,
 			Filename: file,
 		},
 	})
-
 	return lines, nil
 }
 

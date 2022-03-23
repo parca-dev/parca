@@ -37,7 +37,7 @@ type DebugInfodClient interface {
 type NopDebugInfodClient struct{}
 
 func (NopDebugInfodClient) GetDebugInfo(context.Context, string) (io.ReadCloser, error) {
-	return io.NopCloser(bytes.NewReader(nil)), nil
+	return io.NopCloser(bytes.NewReader(nil)), ErrDebugInfoNotFound
 }
 
 type HTTPDebugInfodClient struct {

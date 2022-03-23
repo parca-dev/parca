@@ -14,8 +14,8 @@
 package addr2line
 
 import (
-	"errors"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -25,74 +25,37 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-var ErrLocationFailedBefore = errors.New("failed to symbolize location, attempts are exhausted")
-
 type DwarfLiner struct {
 	logger log.Logger
 
 	dbgFile elfutils.DebugInfoFile
-
-	attemptThreshold int
-	attempts         map[uint64]int
-	failed           map[uint64]struct{}
 }
 
 // DWARF is a symbolizer that uses DWARF debug info to symbolize addresses.
-func DWARF(logger log.Logger, path string, demangler *demangle.Demangler, attemptThreshold int) (*DwarfLiner, error) {
+func DWARF(logger log.Logger, path string, demangler *demangle.Demangler) (*DwarfLiner, error) {
 	dbgFile, err := elfutils.NewDebugInfoFile(path, demangler)
 	if err != nil {
 		return nil, err
 	}
 
 	return &DwarfLiner{
-		logger:  log.With(logger, "component", "dwarfliner", "file", path),
+		logger:  log.With(logger, "liner", "dwarf", "file", path),
 		dbgFile: dbgFile,
-
-		attemptThreshold: attemptThreshold,
-		attempts:         map[uint64]int{},
-		failed:           map[uint64]struct{}{},
 	}, nil
 }
 
 func (dl *DwarfLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
-	// Check if we already attempt to symbolize this location and failed.
-	if _, failedBefore := dl.failed[addr]; failedBefore {
-		level.Debug(dl.logger).Log("msg", "location already had been attempted to be symbolized and failed, skipping")
-		return nil, ErrLocationFailedBefore
-	}
-
 	defer func() {
 		if r := recover(); r != nil {
-			err = dl.handleError(addr, fmt.Errorf("recovering from panic in DWARF binary add2line: %v", r))
+			fmt.Println("recovered stack stares:\n", string(debug.Stack()))
+			err = fmt.Errorf("recovering from panic in DWARF add2line: %v", r)
 		}
 	}()
 
 	lines, err = dl.dbgFile.SourceLines(addr)
 	if err != nil {
-		return nil, dl.handleError(addr, err)
+		level.Debug(dl.logger).Log("msg", "failed to symbolize location", "addr", addr, "err", err)
+		return nil, err
 	}
-	if len(lines) == 0 {
-		dl.failed[addr] = struct{}{}
-		delete(dl.attempts, addr)
-		return nil, errors.New("could not find any frames for given address")
-	}
-
 	return lines, nil
-}
-
-func (dl *DwarfLiner) handleError(addr uint64, err error) error {
-	level.Debug(dl.logger).Log("msg", "failed to symbolize location", "addr", addr, "err", err)
-	if prev, ok := dl.attempts[addr]; ok {
-		prev++
-		if prev >= dl.attemptThreshold {
-			dl.failed[addr] = struct{}{}
-			delete(dl.attempts, addr)
-		} else {
-			dl.attempts[addr] = prev
-		}
-		return err
-	}
-	// First failed attempt
-	dl.attempts[addr] = 1
-	return err
 }
