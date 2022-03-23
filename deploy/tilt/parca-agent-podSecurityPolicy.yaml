@@ -13,11 +13,8 @@ spec:
   allowedCapabilities:
   - '*'
   allowedHostPaths:
-  - pathPrefix: /proc
   - pathPrefix: /sys
-  - pathPrefix: /
-  - pathPrefix: /lib
-  - pathPrefix: /etc
+  - pathPrefix: /lib/modules
   fsGroup:
     rule: RunAsAny
   hostIPC: true
