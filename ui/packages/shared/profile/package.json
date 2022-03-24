@@ -1,9 +1,9 @@
 {
   "name": "@parca/profile",
-  "version": "0.12.3",
+  "version": "0.12.5",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@parca/client": "^0.12.2",
+    "@parca/client": "^0.12.5",
     "@parca/dynamicsize": "^0.12.0",
     "@parca/parser": "^0.12.3",
     "d3-scale": "^4.0.2"
