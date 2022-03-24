@@ -63,6 +63,10 @@
         "buildId": {
           "type": "string",
           "title": "build_id is a unique identifier for the debug data"
+        },
+        "hash": {
+          "type": "string",
+          "title": "hash is the hash of the debug information file"
         }
       },
       "title": "UploadInfo contains the build_id and other metadata for the debug data"

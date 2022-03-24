@@ -17,6 +17,9 @@ message ExistsRequest {
 
   // build_id is a unique identifier for the debug data
   string build_id = 1;
+
+  // hash is the hash of the debug information file
+  string hash = 2;
 }
 
 // ExistsResponse returns whether the given build_id has debug info
@@ -31,10 +34,10 @@ message UploadRequest {
 
   // data contains either the upload info metadata or the debug info
   oneof data {
-      
+
       // info is the metadata for the debug info
       UploadInfo info = 1;
-    
+
       // chunk_data is the raw bytes of the debug info
       bytes chunk_data = 2;
     }
@@ -45,6 +48,9 @@ message UploadInfo {
 
   // build_id is a unique identifier for the debug data
   string build_id = 1;
+
+  // hash is the hash of the debug information file
+  string hash = 2;
 }
 
 // UploadResponse returns the build_id and the size of the uploaded debug info
