@@ -126,7 +126,7 @@ func (s *sqlMetaStore) GetLocationByKey(ctx context.Context, lkey *Location) (*p
 					  AND is_folded=?
 					  AND lines=?
 					  AND mapping_id=? `,
-				int64(k.NormalizedAddress), k.IsFolded, k.Lines, k.MappingID,
+				int64(k.Address), k.IsFolded, k.Lines, k.MappingID,
 			).Scan(&id, &address)
 		} else {
 			err = s.db.QueryRowContext(ctx,
@@ -136,7 +136,7 @@ func (s *sqlMetaStore) GetLocationByKey(ctx context.Context, lkey *Location) (*p
 					  AND mapping_id IS NULL
 					  AND is_folded=?
 					  AND lines=?`,
-				int64(k.NormalizedAddress), k.IsFolded, k.Lines,
+				int64(k.Address), k.IsFolded, k.Lines,
 			).Scan(&id, &address)
 		}
 		if err != nil {
@@ -643,7 +643,7 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *Location) ([]byte,
 		defer stmt.Close()
 
 		f = func() error {
-			_, err = stmt.ExecContext(ctx, id.String(), int64(l.Address), l.IsFolded, mID.String(), int64(k.NormalizedAddress), k.Lines)
+			_, err = stmt.ExecContext(ctx, id.String(), int64(l.Address), l.IsFolded, mID.String(), int64(k.Address), k.Lines)
 			return err
 		}
 	} else {
@@ -656,7 +656,7 @@ func (s *sqlMetaStore) CreateLocation(ctx context.Context, l *Location) ([]byte,
 		defer stmt.Close()
 
 		f = func() error {
-			_, err = stmt.ExecContext(ctx, id.String(), int64(l.Address), l.IsFolded, int64(k.NormalizedAddress), k.Lines)
+			_, err = stmt.ExecContext(ctx, id.String(), int64(l.Address), l.IsFolded, int64(k.Address), k.Lines)
 			return err
 		}
 	}

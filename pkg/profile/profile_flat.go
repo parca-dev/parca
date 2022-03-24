@@ -25,11 +25,11 @@ import (
 )
 
 // ProfilesFromPprof extracts a Profile from each sample index included in the pprof profile.
-func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile) ([]*Profile, error) {
+func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMetaStore, p *profile.Profile, normalized bool) ([]*Profile, error) {
 	ps := make([]*Profile, 0, len(p.SampleType))
 
 	for i := range p.SampleType {
-		p, err := FromPprof(ctx, l, s, p, i)
+		p, err := FromPprof(ctx, l, s, p, i, normalized)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func ProfilesFromPprof(ctx context.Context, l log.Logger, s metastore.ProfileMet
 	return ps, nil
 }
 
-func FromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int) (*Profile, error) {
+func FromPprof(ctx context.Context, logger log.Logger, metaStore metastore.ProfileMetaStore, p *profile.Profile, sampleIndex int, normalized bool) (*Profile, error) {
 	pfn := &profileFlatNormalizer{
 		logger:    logger,
 		metaStore: metaStore,
@@ -64,7 +64,7 @@ func FromPprof(ctx context.Context, logger log.Logger, metaStore metastore.Profi
 			continue
 		}
 
-		_, _, err := pfn.mapSample(ctx, s, sampleIndex)
+		_, _, err := pfn.mapSample(ctx, s, sampleIndex, normalized)
 		if err != nil {
 			return nil, err
 		}
@@ -100,7 +100,7 @@ type profileFlatNormalizer struct {
 	mappingsByID  map[uint64]mapInfo
 }
 
-func (pn *profileFlatNormalizer) mapSample(ctx context.Context, src *profile.Sample, sampleIndex int) (*Sample, bool, error) {
+func (pn *profileFlatNormalizer) mapSample(ctx context.Context, src *profile.Sample, sampleIndex int, normalized bool) (*Sample, bool, error) {
 	var err error
 
 	s := &Sample{
@@ -110,7 +110,7 @@ func (pn *profileFlatNormalizer) mapSample(ctx context.Context, src *profile.Sam
 		NumUnit:  make(map[string][]string, len(src.NumLabel)),
 	}
 	for i, l := range src.Location {
-		s.Location[i], err = pn.mapLocation(ctx, l)
+		s.Location[i], err = pn.mapLocation(ctx, l, normalized)
 		if err != nil {
 			return nil, false, err
 		}
@@ -177,7 +177,7 @@ func (pn *profileFlatNormalizer) mapSample(ctx context.Context, src *profile.Sam
 	return s, true, nil
 }
 
-func (pn *profileFlatNormalizer) mapLocation(ctx context.Context, src *profile.Location) (*metastore.Location, error) {
+func (pn *profileFlatNormalizer) mapLocation(ctx context.Context, src *profile.Location, normalized bool) (*metastore.Location, error) {
 	var err error
 
 	if src == nil {
@@ -192,9 +192,17 @@ func (pn *profileFlatNormalizer) mapLocation(ctx context.Context, src *profile.L
 	if err != nil {
 		return nil, err
 	}
+
+	var addr uint64
+	if !normalized {
+		addr = uint64(int64(src.Address) + mi.offset)
+	} else {
+		addr = src.Address
+	}
+
 	l := &metastore.Location{
 		Mapping:  mi.m,
-		Address:  uint64(int64(src.Address) + mi.offset),
+		Address:  addr,
 		Lines:    make([]metastore.LocationLine, len(src.Line)),
 		IsFolded: src.IsFolded,
 	}
@@ -250,7 +258,14 @@ func (pn *profileFlatNormalizer) mapMapping(ctx context.Context, src *profile.Ma
 		return mapInfo{}, err
 	}
 	if m != nil {
-		mi := mapInfo{m, int64(m.Start) - int64(src.Start)}
+		// NOTICE: We only store a single version of a mapping.
+		// Which means the m.Start actually correct for a single process.
+		// For a multi-process shared library, this will always be wrong.
+		// And storing the mapping for each process will be very expensive.
+		// Which is why the client sending the profiling data can choose to normalize the addresses for each process.
+		// In a future iteration of the wire format, the computed base address for each mapping should be included
+		// to prevent this dilemma or forcing the client to be smart in one direction or the other.
+		mi := mapInfo{m, int64(src.Start) - int64(m.Start)}
 		pn.mappingsByID[src.ID] = mi
 		return mi, nil
 	}

@@ -84,7 +84,7 @@ proto/generate:
 
 .PHONY: proto/vendor
 proto/vendor:
-	buf mod update
+	cd proto && buf mod update
 	mkdir -p proto/google/pprof
 	curl https://raw.githubusercontent.com/google/pprof/master/proto/profile.proto > proto/google/pprof/profile.proto
 

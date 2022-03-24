@@ -70,20 +70,18 @@ func MakeSQLFunctionKey(f *pb.Function) FunctionKey {
 }
 
 type LocationKey struct {
-	NormalizedAddress uint64
-	MappingID         uuid.UUID
-	Lines             string
-	IsFolded          bool
+	Address   uint64
+	MappingID uuid.UUID
+	Lines     string
+	IsFolded  bool
 }
 
 func MakeSQLLocationKey(l *Location) LocationKey {
 	key := LocationKey{
-		NormalizedAddress: l.Address,
-		IsFolded:          l.IsFolded,
+		Address:  l.Address,
+		IsFolded: l.IsFolded,
 	}
 	if l.Mapping != nil {
-		// Normalizes address to handle address space randomization.
-		key.NormalizedAddress -= l.Mapping.Start
 		mUUID, err := uuid.FromBytes(l.Mapping.Id)
 		if err != nil {
 			panic(err)
@@ -91,12 +89,12 @@ func MakeSQLLocationKey(l *Location) LocationKey {
 		key.MappingID = mUUID
 	}
 
-	// If the normalized address is 0, then the functions attached to the
+	// If the address is 0, then the functions attached to the
 	// location are not from a native binary, but instead from a dynamic
 	// runtime/language eg. ruby or python. In those cases we have no better
 	// uniqueness factor than the actual functions, and since there is no
 	// address there is no potential for asynchronously symbolizing.
-	if key.NormalizedAddress == 0 {
+	if key.Address == 0 {
 		lines := make([]string, len(l.Lines)*2)
 		for i, line := range l.Lines {
 			if line.Function != nil {

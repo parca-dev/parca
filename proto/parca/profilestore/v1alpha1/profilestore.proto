@@ -20,10 +20,13 @@ service ProfileStoreService {
 message WriteRawRequest{
 
     // tenant is the given tenant to store the pprof profile under
-    string                    tenant  = 1;
+    string                    tenant = 1;
 
     // series is a set raw pprof profiles and accompanying labels
     repeated RawProfileSeries series = 2;
+
+    // normalized is a flag indicating if the addresses in the profile is normalized for position independent code
+    bool                      normalized = 3;
 }
 
 // WriteRawResponse is the empty response
@@ -43,15 +46,15 @@ message RawProfileSeries {
 message Label {
 
     // name is the label name
-    string name  = 1;
-    
+    string name = 1;
+
     // value is the value for the label name
     string value = 2;
 }
 
 // LabelSet is a group of labels
 message LabelSet {
-    
+
     // labels are the grouping of labels
     repeated Label labels = 1;
 }

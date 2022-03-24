@@ -196,7 +196,8 @@ proto.parca.profilestore.v1alpha1.WriteRawRequest.toObject = function(includeIns
   var f, obj = {
     tenant: jspb.Message.getFieldWithDefault(msg, 1, ""),
     seriesList: jspb.Message.toObjectList(msg.getSeriesList(),
-    proto.parca.profilestore.v1alpha1.RawProfileSeries.toObject, includeInstance)
+    proto.parca.profilestore.v1alpha1.RawProfileSeries.toObject, includeInstance),
+    normalized: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
   };
 
   if (includeInstance) {
@@ -242,6 +243,10 @@ proto.parca.profilestore.v1alpha1.WriteRawRequest.deserializeBinaryFromReader = 
       reader.readMessage(value,proto.parca.profilestore.v1alpha1.RawProfileSeries.deserializeBinaryFromReader);
       msg.addSeries(value);
       break;
+    case 3:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setNormalized(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -284,6 +289,13 @@ proto.parca.profilestore.v1alpha1.WriteRawRequest.serializeBinaryToWriter = func
       2,
       f,
       proto.parca.profilestore.v1alpha1.RawProfileSeries.serializeBinaryToWriter
+    );
+  }
+  f = message.getNormalized();
+  if (f) {
+    writer.writeBool(
+      3,
+      f
     );
   }
 };
@@ -342,6 +354,24 @@ proto.parca.profilestore.v1alpha1.WriteRawRequest.prototype.addSeries = function
  */
 proto.parca.profilestore.v1alpha1.WriteRawRequest.prototype.clearSeriesList = function() {
   return this.setSeriesList([]);
+};
+
+
+/**
+ * optional bool normalized = 3;
+ * @return {boolean}
+ */
+proto.parca.profilestore.v1alpha1.WriteRawRequest.prototype.getNormalized = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 3, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.parca.profilestore.v1alpha1.WriteRawRequest} returns this
+ */
+proto.parca.profilestore.v1alpha1.WriteRawRequest.prototype.setNormalized = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 3, value);
 };
 
 

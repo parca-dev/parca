@@ -187,9 +187,6 @@ func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
 			"msg", "failed to open object file",
 			"file", path,
 			"buildid", m.BuildId,
-			"start", m.Start,
-			"limit", m.Limit,
-			"offset", m.Offset,
 			"err", err,
 		)
 		s.linerCreationFailed[h] = struct{}{}

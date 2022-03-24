@@ -27,14 +27,8 @@ const (
 )
 
 func MakeLocationKey(l *Location) []byte {
-	normalizedAddress := l.Address
-	if l.Mapping != nil {
-		// Normalizes address to handle address space randomization.
-		normalizedAddress -= l.Mapping.Start
-	}
-
 	linesLength := 0
-	if normalizedAddress == 0 {
+	if l.Address == 0 {
 		// Each line is a 16 byte Function ID + 8 byte line number
 		linesLength = len(l.Lines) * (16 + 8)
 	}
@@ -44,7 +38,7 @@ func MakeLocationKey(l *Location) []byte {
 		len(locationsKeyPrefix)+
 			// MappingID is 16 bytes
 			16+
-			// NormalizedAddress is 8 bytes
+			// Address is 8 bytes
 			8+
 			// IsFolded is encoded as 8 bytes
 			8+
@@ -54,7 +48,7 @@ func MakeLocationKey(l *Location) []byte {
 	if l.Mapping != nil {
 		copy(buf[len(locationsKeyPrefix):], l.Mapping.Id)
 	}
-	binary.BigEndian.PutUint64(buf[len(locationsKeyPrefix)+16:], normalizedAddress)
+	binary.BigEndian.PutUint64(buf[len(locationsKeyPrefix)+16:], l.Address)
 	if l.IsFolded {
 		// If IsFolded is false this means automatically that these 8 bytes are
 		// 0. This works out well as the key is byte aligned to the nearest 8
@@ -62,12 +56,12 @@ func MakeLocationKey(l *Location) []byte {
 		binary.BigEndian.PutUint64(buf[len(locationsKeyPrefix)+8+16:], 1)
 	}
 
-	// If the normalized address is 0, then the functions attached to the
+	// If the address is 0, then the functions attached to the
 	// location are not from a native binary, but instead from a dynamic
 	// runtime/language eg. ruby or python. In those cases we have no better
 	// uniqueness factor than the actual functions, and since there is no
 	// address there is no potential for asynchronously symbolizing.
-	if normalizedAddress == 0 {
+	if l.Address == 0 {
 		for i, line := range l.Lines {
 			copy(buf[len(locationsKeyPrefix)+16+8+8+24*i:], line.Function.Id)
 			binary.BigEndian.PutUint64(buf[len(locationsKeyPrefix)+16+8+8+24*i+8:], uint64(line.Line))
@@ -110,7 +104,7 @@ func MakeMappingKey(m *pb.Mapping) []byte {
 		// treated as the same mapping during merging.
 	}
 
-	buf := make([]byte, len(mappingKeyPrefix)+len(buildIDOrFile)+16)
+	buf := make([]byte, len(mappingKeyPrefix)+16+len(buildIDOrFile))
 	copy(buf, mappingKeyPrefix)
 	binary.BigEndian.PutUint64(buf[len(mappingKeyPrefix):], size)
 	binary.BigEndian.PutUint64(buf[len(mappingKeyPrefix)+8:], m.Offset)
