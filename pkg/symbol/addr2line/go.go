@@ -17,6 +17,7 @@ import (
 	"debug/gosym"
 	"errors"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/go-kit/log"
 
@@ -38,7 +39,7 @@ func Go(logger log.Logger, path string) (*GoLiner, error) {
 	}
 
 	return &GoLiner{
-		logger: logger,
+		logger: log.With(logger, "liner", "go"),
 		symtab: tab,
 	}, nil
 }
@@ -48,18 +49,16 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err e
 		// PCToLine panics with "invalid memory address or nil pointer dereference",
 		//	- when it refers to an address that doesn't actually exist.
 		if r := recover(); r != nil {
-			err = fmt.Errorf("recovering from panic in go binary add2line: %v", r)
+			fmt.Println("recovered stack stares:\n", string(debug.Stack()))
+			err = fmt.Errorf("recovering from panic in Go add2line: %v", r)
 		}
 	}()
 
+	name := "?"
 	// TODO(kakkoyun): Do we need to consider the base address for any part of Go binaries?
 	file, line, fn := gl.symtab.PCToLine(addr)
-	name := "?"
 	if fn != nil {
 		name = fn.Name
-	} else {
-		file = "?"
-		line = 0
 	}
 
 	// TODO(kakkoyun): These lines miss the inline functions.
@@ -71,7 +70,6 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err e
 			Filename: file,
 		},
 	})
-
 	return lines, nil
 }
 

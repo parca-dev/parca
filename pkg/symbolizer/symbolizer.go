@@ -15,7 +15,6 @@ package symbolizer
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -27,11 +26,11 @@ import (
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/runutil"
-	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 type Symbolizer struct {
-	logger    log.Logger
+	logger log.Logger
+
 	metaStore metastore.ProfileMetaStore
 	debugInfo *debuginfo.Store
 }
@@ -57,7 +56,7 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, locations)
 		if err != nil {
-			level.Error(s.logger).Log("msg", "symbolization attempt failed", "err", err)
+			level.Error(s.logger).Log("msg", "symbolization attempt finished with errors", "err", err)
 		}
 		return nil
 	})
@@ -84,25 +83,17 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*metastore.Locat
 
 	var result *multierror.Error
 	for buildID, mapping := range mappings {
-		level.Debug(s.logger).Log("msg", "storage symbolization request started", "buildid", buildID)
+		logger := log.With(s.logger, "buildid", buildID)
+		level.Debug(logger).Log("msg", "storage symbolization request started")
 		symbolizedLocations, err := s.debugInfo.Symbolize(ctx, mapping, mappingLocations[buildID]...)
 		if err != nil {
-			// It's ok if we don't have the symbols for given BuildID, it happens too often.
-			if errors.Is(err, debuginfo.ErrDebugInfoNotFound) {
-				level.Debug(s.logger).Log("msg", "failed to find the debug info in storage", "buildid", buildID)
-				continue
-			}
-			if errors.Is(err, symbol.ErrLinerFailedBefore) {
-				level.Debug(s.logger).Log("msg", "failed to symbolize before", "buildid", buildID)
-			}
 			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
 			continue
 		}
-		level.Debug(s.logger).Log("msg", "storage symbolization request done", "buildid", buildID)
+		level.Debug(logger).Log("msg", "storage symbolization request done")
 
 		for loc, lines := range symbolizedLocations {
 			loc.Lines = lines
-
 			// Only creates lines for given location.
 			if err := s.metaStore.Symbolize(ctx, loc); err != nil {
 				result = multierror.Append(result, fmt.Errorf("failed to update location %d: %w", loc.ID, err))

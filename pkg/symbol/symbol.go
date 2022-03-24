@@ -14,6 +14,7 @@
 package symbol
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -32,17 +33,20 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-var ErrLinerFailedBefore = errors.New("failed to initialize liner")
+var ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
 
 type Symbolizer struct {
 	logger    log.Logger
 	demangler *demangle.Demangler
 
-	cache     cache.Cache
-	cacheOpts []cache.Option
+	cacheOpts  []cache.Option
+	linerCache cache.Cache
 
-	failed           map[string]struct{}
-	attemptThreshold int
+	attemptThreshold    int
+	linerCreationFailed map[string]struct{}
+
+	symbolizationAttempts map[string]map[uint64]int
+	symbolizationFailed   map[string]map[uint64]struct{}
 }
 
 type liner interface {
@@ -69,18 +73,97 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 			cache.WithExpireAfterAccess(defaultCacheItemTTL),
 		},
 
-		failed:           map[string]struct{}{},
 		attemptThreshold: defaultAttemptThreshold,
+
+		linerCreationFailed: map[string]struct{}{},
+
+		symbolizationAttempts: map[string]map[uint64]int{},
+		symbolizationFailed:   map[string]map[uint64]struct{}{},
 	}
 	for _, opt := range opts {
 		opt(sym)
 	}
-	sym.cache = cache.New(sym.cacheOpts...)
+	sym.linerCache = cache.New(sym.cacheOpts...)
 
 	return sym, nil
 }
 
-func (s *Symbolizer) NewLiner(m *pb.Mapping, path string) (liner, error) {
+// Symbolize attempts to symbolize the given locations using the given debug information file.
+func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*metastore.Location, debugInfoFile string) (map[*metastore.Location][]metastore.LocationLine, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	logger := log.With(s.logger, "buildid", m.BuildId)
+
+	liner, err := s.liner(m, debugInfoFile)
+	if err != nil {
+		const msg = "failed to create liner"
+		level.Debug(logger).Log("msg", msg, "err", err)
+		return nil, fmt.Errorf(msg+": %w", err)
+	}
+
+	// Generate a hash key to use for error tracking.
+	key, err := hash(debugInfoFile)
+	if err != nil {
+		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
+		key = m.BuildId
+	}
+
+	locationLines := map[*metastore.Location][]metastore.LocationLine{}
+	for _, loc := range locations {
+		locationLines[loc] = append(locationLines[loc], s.pcToLines(liner, m.BuildId, key, loc.Address)...)
+	}
+	return locationLines, nil
+}
+
+// pcToLines returns the line number of the given PC while keeping the track of symbolization attempts and failures.
+func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []metastore.LocationLine {
+	logger := log.With(s.logger, "addr", addr, "buildid", buildID)
+	// Check if we already attempt to symbolize this location and failed.
+	if _, failedBefore := s.symbolizationFailed[key][addr]; failedBefore {
+		level.Debug(logger).Log("msg", "location already had been attempted to be symbolized and failed, skipping")
+		return nil
+	}
+	// Where the magic happens.
+	lines, err := liner.PCToLines(addr)
+	if err != nil {
+		// Error bookkeeping.
+		if prev, ok := s.symbolizationAttempts[key][addr]; ok {
+			prev++
+			if prev >= s.attemptThreshold {
+				if _, ok := s.symbolizationFailed[key]; ok {
+					s.symbolizationFailed[key][addr] = struct{}{}
+				} else {
+					s.symbolizationFailed[key] = map[uint64]struct{}{addr: {}}
+				}
+				delete(s.symbolizationAttempts[key], addr)
+			} else {
+				s.symbolizationAttempts[key][addr] = prev
+			}
+			return nil
+		}
+		// First failed attempt.
+		s.symbolizationAttempts[key] = map[uint64]int{addr: 1}
+		level.Debug(logger).Log("msg", "failed to extract source lines", "err", err)
+		return nil
+	}
+	if len(lines) == 0 {
+		s.symbolizationFailed[key][addr] = struct{}{}
+		delete(s.symbolizationAttempts[key], addr)
+		level.Debug(logger).Log("msg", "could not find any lines for given address")
+	}
+	return lines
+}
+
+func (s *Symbolizer) Close() error {
+	return s.linerCache.Close()
+}
+
+// liner creates a new liner for the given mapping and object file path and caches it.
+func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
 	h, err := hash(path)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
@@ -88,49 +171,48 @@ func (s *Symbolizer) NewLiner(m *pb.Mapping, path string) (liner, error) {
 	}
 
 	// Check if we already attempt to build a liner for this path.
-	if _, failedBefore := s.failed[h]; failedBefore {
+	if _, failedBefore := s.linerCreationFailed[h]; failedBefore {
 		level.Debug(s.logger).Log("msg", "already failed to create liner for this debug info file, skipping")
-		return nil, ErrLinerFailedBefore
+		return nil, ErrLinerCreationFailedBefore
 	}
 
-	if val, ok := s.cache.GetIfPresent(h); ok {
+	if val, ok := s.linerCache.GetIfPresent(h); ok {
 		level.Debug(s.logger).Log("msg", "using cached liner to resolve symbols", "file", path)
 		return val.(liner), nil
 	}
 
-	lnr, err := s.newLiner(m, path)
+	lnr, err := s.newLiner(m.BuildId, path)
 	if err != nil {
-		s.failed[h] = struct{}{}
-		s.cache.Invalidate(h)
+		level.Error(s.logger).Log(
+			"msg", "failed to open object file",
+			"file", path,
+			"buildid", m.BuildId,
+			"start", m.Start,
+			"limit", m.Limit,
+			"offset", m.Offset,
+			"err", err,
+		)
+		s.linerCreationFailed[h] = struct{}{}
+		s.linerCache.Invalidate(h)
 		return nil, err
 	}
 
 	level.Debug(s.logger).Log("msg", "liner cached", "file", path)
-	s.cache.Put(h, lnr)
+	s.linerCache.Put(h, lnr)
 	return lnr, nil
 }
 
-func (s *Symbolizer) Close() error {
-	return s.cache.Close()
-}
-
-func (s *Symbolizer) newLiner(m *pb.Mapping, path string) (liner, error) {
-	logger := log.With(s.logger, "file", path, "buildid", m.BuildId)
+// newLiner creates a new liner for the given mapping and object file path.
+func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
+	logger := log.With(s.logger, "file", path, "buildid", buildID)
 	hasDWARF, err := elfutils.HasDWARF(path)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary has DWARF info", "err", err)
 	}
 	if hasDWARF {
 		level.Debug(logger).Log("msg", "using DWARF liner to resolve symbols")
-		lnr, err := addr2line.DWARF(logger, path, s.demangler, s.attemptThreshold)
+		lnr, err := addr2line.DWARF(logger, path, s.demangler)
 		if err != nil {
-			level.Error(logger).Log(
-				"msg", "failed to open object file",
-				"start", m.Start,
-				"limit", m.Limit,
-				"offset", m.Offset,
-				"err", err,
-			)
 			return nil, err
 		}
 		return lnr, nil
@@ -145,7 +227,7 @@ func (s *Symbolizer) newLiner(m *pb.Mapping, path string) (liner, error) {
 	if isGo {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
-		lnr, err := addr2line.Go(s.logger, path)
+		lnr, err := addr2line.Go(logger, path)
 		if err == nil {
 			level.Debug(logger).Log("msg", "using go liner to resolve symbols")
 			return lnr, nil
@@ -153,6 +235,7 @@ func (s *Symbolizer) newLiner(m *pb.Mapping, path string) (liner, error) {
 		level.Error(logger).Log("msg", "failed to create go liner, falling back to symtab liner", "err", err)
 	}
 
+	// As a last resort, use the symtab liner which utilizes .symtab section and .dynsym section.
 	hasSymbols, err := elfutils.HasSymbols(path)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary has symbols", "err", err)

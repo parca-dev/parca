@@ -202,8 +202,10 @@ outer:
 }
 
 func findLineInfo(entries []dwarf.LineEntry, rg [][2]uint64) (string, int64) {
-	file := "?"
-	var line int64 // 0
+	var (
+		file = "?"
+		line int64 // 0
+	)
 	i := sort.Search(len(entries), func(i int) bool {
 		return entries[i].Address >= rg[0][0]
 	})
@@ -222,10 +224,12 @@ func findLineInfo(entries []dwarf.LineEntry, rg [][2]uint64) (string, int64) {
 }
 
 func getFunctionName(entry *dwarf.Entry) string {
-	var name string
-	for _, field := range entry.Field {
-		if field.Attr == dwarf.AttrName {
-			name = field.Val.(string)
+	name := "?"
+	if entry != nil {
+		for _, field := range entry.Field {
+			if field.Attr == dwarf.AttrName {
+				name = field.Val.(string)
+			}
 		}
 	}
 	return name
