@@ -17,7 +17,7 @@ import (
 	"errors"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/thanos-io/thanos/pkg/objstore/client"
+	"github.com/thanos-io/objstore/client"
 )
 
 // Valid is the ValidRule.
