@@ -39,9 +39,10 @@ func NewDebugInfoClient(conn *grpc.ClientConn) *Client {
 	}
 }
 
-func (c *Client) Exists(ctx context.Context, buildID string) (bool, error) {
+func (c *Client) Exists(ctx context.Context, buildID, hash string) (bool, error) {
 	res, err := c.c.Exists(ctx, &debuginfopb.ExistsRequest{
 		BuildId: buildID,
+		Hash:    hash,
 	})
 	if err != nil {
 		return false, err
@@ -50,7 +51,7 @@ func (c *Client) Exists(ctx context.Context, buildID string) (bool, error) {
 	return res.Exists, nil
 }
 
-func (c *Client) Upload(ctx context.Context, buildID string, r io.Reader) (uint64, error) {
+func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) (uint64, error) {
 	stream, err := c.c.Upload(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("initiate upload: %w", err)
@@ -60,6 +61,7 @@ func (c *Client) Upload(ctx context.Context, buildID string, r io.Reader) (uint6
 		Data: &debuginfopb.UploadRequest_Info{
 			Info: &debuginfopb.UploadInfo{
 				BuildId: buildID,
+				Hash:    hash,
 			},
 		},
 	})
