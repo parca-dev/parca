@@ -20,7 +20,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/require"
-	"github.com/thanos-io/thanos/pkg/objstore/client"
+	"github.com/thanos-io/objstore/client"
 
 	"github.com/parca-dev/parca/pkg/debuginfo"
 )

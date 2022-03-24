@@ -3,6 +3,7 @@ module github.com/parca-dev/parca
 go 1.16
 
 require (
+	github.com/OneOfOne/xxhash v1.2.6 // indirect
 	github.com/alecthomas/kong v0.5.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cespare/xxhash/v2 v2.1.2
@@ -14,6 +15,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.0
 	github.com/go-delve/delve v1.8.2
+	github.com/go-kit/kit v0.12.0 // indirect
 	github.com/go-kit/log v0.2.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
@@ -24,6 +26,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20201207153454-9f6bf00c00a7
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
+	github.com/hashicorp/go-msgpack v0.5.5 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/ianlancetaylor/demangle v0.0.0-20220203202831-b7f99f1dbc96
 	github.com/improbable-eng/grpc-web v0.15.0
@@ -32,7 +35,7 @@ require (
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v1.8.2-0.20211217191541-41f1a8125e66
 	github.com/stretchr/testify v1.7.1
-	github.com/thanos-io/thanos v0.25.1
+	github.com/thanos-io/objstore v0.0.0-20220324101945-f2f24637ce2e
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.30.0
 	go.opentelemetry.io/otel v1.5.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.5.0
