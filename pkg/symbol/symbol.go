@@ -17,16 +17,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"time"
 
-	"github.com/cespare/xxhash/v2"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/goburrow/cache"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	"github.com/parca-dev/parca/pkg/file"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
@@ -106,7 +104,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*
 	}
 
 	// Generate a hash key to use for error tracking.
-	key, err := hash(debugInfoFile)
+	key, err := file.Hash(debugInfoFile)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
 		key = m.BuildId
@@ -164,7 +162,7 @@ func (s *Symbolizer) Close() error {
 
 // liner creates a new liner for the given mapping and object file path and caches it.
 func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
-	h, err := hash(path)
+	h, err := file.Hash(path)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
 		h = path
@@ -247,18 +245,4 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 	}
 
 	return nil, errors.New("cannot create a liner from given object file")
-}
-
-func hash(path string) (string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return "", fmt.Errorf("failed to open file: %w", err)
-	}
-	defer f.Close()
-
-	h := xxhash.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", fmt.Errorf("failed to hash debug info file: %w", err)
-	}
-	return string(h.Sum(nil)), nil
 }

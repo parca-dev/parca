@@ -34,6 +34,7 @@ import (
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	"github.com/parca-dev/parca/pkg/file"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -138,13 +139,33 @@ func newCache(cacheCfg []byte) (*FilesystemCacheConfig, error) {
 }
 
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
-	if err := validateID(req.BuildId); err != nil {
+	buildID := req.BuildId
+	if err := validateID(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	found, err := s.find(ctx, req.BuildId)
+	found, err := s.find(ctx, buildID)
 	if err != nil {
 		return nil, err
+	}
+
+	if found && req.Hash != "" {
+		dbgFile, err := s.fetchObjectFile(ctx, buildID)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		h, err := file.Hash(dbgFile)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		// It is not an exact version of what we have so, let the client try to upload it.
+		if h != req.Hash {
+			return &debuginfopb.ExistsResponse{
+				Exists: false,
+			}, nil
+		}
 	}
 
 	return &debuginfopb.ExistsResponse{
@@ -173,10 +194,36 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	if found {
-		level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
-		return status.Error(codes.AlreadyExists, "debuginfo already exists")
+		objFile, err := s.fetchObjectFile(ctx, buildID)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		if req.GetInfo().Hash != "" {
+			h, err := file.Hash(objFile)
+			if err != nil {
+				return status.Error(codes.Internal, err.Error())
+			}
+
+			if h == req.GetInfo().Hash {
+				level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
+				return status.Error(codes.AlreadyExists, "debuginfo already exists")
+			}
+		}
+
+		hasDWARF, err := elfutils.HasDWARF(objFile)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+		if hasDWARF {
+			// We probably have the best version.
+			level.Debug(s.logger).Log("msg", "debug info with DWARF already exists", "buildid", buildID)
+			return status.Error(codes.AlreadyExists, "debuginfo already exists")
+		}
 	}
 
+	// At this point we know that we still have a better version of the debug information file,
+	// so let the client upload it.
 	r := &UploadReader{stream: stream}
 	if err := s.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
 		msg := "failed to upload"
@@ -185,7 +232,6 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
-
 	return stream.SendAndClose(&debuginfopb.UploadResponse{
 		BuildId: buildID,
 		Size:    r.size,
@@ -219,20 +265,35 @@ func (s *Store) find(ctx context.Context, key string) (bool, error) {
 }
 
 func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*metastore.Location) (map[*metastore.Location][]metastore.LocationLine, error) {
-	logger := log.With(s.logger, "buildid", m.BuildId)
+	buildID := m.BuildId
+	logger := log.With(s.logger, "buildid", buildID)
 
-	localObjPath, err := s.fetchObjectFile(ctx, m.BuildId)
+	objFile, err := s.fetchObjectFile(ctx, buildID)
 	if err != nil {
-		level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
 		// It's ok if we don't have the symbols for given BuildID, it happens too often.
+		level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
 		if errors.Is(err, errDebugInfoNotFound) {
-			return nil, nil
+			level.Debug(logger).Log("msg", "attempting to download from debuginfod servers")
+			// Try downloading the debuginfo file from the debuginfod server.
+			r, err := s.debuginfodClient.GetDebugInfo(ctx, buildID)
+			if err != nil {
+				level.Debug(logger).Log("msg", "failed to download debuginfo from debuginfod", "err", err)
+				return nil, nil
+			}
+			defer r.Close()
+			level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
+
+			// Cache the file locally.
+			if err := cache(objFile, r); err != nil {
+				level.Debug(logger).Log("msg", "failed to cache debuginfo", "err", err)
+				return nil, nil
+			}
 		}
 
 		return nil, fmt.Errorf("failed to fetch: %w", err)
 	}
 
-	locationLines, err := s.symbolizer.Symbolize(ctx, m, locations, localObjPath)
+	locationLines, err := s.symbolizer.Symbolize(ctx, m, locations, objFile)
 	if err != nil {
 		if errors.Is(err, symbol.ErrLinerCreationFailedBefore) {
 			level.Debug(logger).Log("msg", "failed to symbolize before", "err", err)
@@ -247,48 +308,26 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {
 	logger := log.With(s.logger, "buildid", buildID)
 
-	localObjectFilePath := path.Join(s.cacheDir, buildID, "debuginfo")
+	objFile := path.Join(s.cacheDir, buildID, "debuginfo")
 	// Check if it's already cached locally; if not download.
-	if _, err := os.Stat(localObjectFilePath); os.IsNotExist(err) {
+	if _, err := os.Stat(objFile); os.IsNotExist(err) {
 		// Download the debuginfo file from the bucket.
 		r, err := s.bucket.Get(ctx, objectPath(buildID))
 		if err != nil {
-			if !s.bucket.IsObjNotFoundErr(err) {
-				level.Warn(logger).Log("msg", "failed to fetch object from object storage", "err", err)
+			if s.bucket.IsObjNotFoundErr(err) {
+				level.Debug(logger).Log("msg", "failed to fetch object from object storage", "err", err)
+				return "", errDebugInfoNotFound
 			}
-
-			level.Debug(logger).Log("msg", "attempting to download from debuginfod servers")
-			// Try downloading the debuginfo file from the debuginfod server.
-			r, err = s.debuginfodClient.GetDebugInfo(ctx, buildID)
-			if err != nil {
-				return "", fmt.Errorf("download debug info from object store and debuginfod server: %w", err)
-			}
-			defer r.Close()
-			level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
+			return "", fmt.Errorf("failed to fetch object: %w", err)
 		}
 
 		// Cache the file locally.
-		if err := cache(localObjectFilePath, r); err != nil {
+		if err := cache(objFile, r); err != nil {
 			return "", fmt.Errorf("failed to fetch debug info file: %w", err)
 		}
 	}
 
-	if hasDWARF, err := elfutils.HasDWARF(localObjectFilePath); err == nil && !hasDWARF {
-		level.Debug(logger).Log("msg", "trying to find a better version of the debug information file")
-		r, err := s.debuginfodClient.GetDebugInfo(ctx, buildID)
-		if err != nil {
-			level.Debug(logger).Log("msg", "failed to find a better version of the debug information file", "err", err)
-			return localObjectFilePath, nil
-		}
-		defer r.Close()
-
-		if err := cache(localObjectFilePath, r); err != nil {
-			level.Debug(logger).Log("msg", "failed to cache the better debug information file", "err", err)
-			return localObjectFilePath, nil
-		}
-	}
-
-	return localObjectFilePath, nil
+	return objFile, nil
 }
 
 func cache(localPath string, r io.ReadCloser) error {

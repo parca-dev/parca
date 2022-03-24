@@ -7,6 +7,9 @@ export class ExistsRequest extends jspb.Message {
   getBuildId(): string;
   setBuildId(value: string): void;
 
+  getHash(): string;
+  setHash(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExistsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ExistsRequest): ExistsRequest.AsObject;
@@ -20,6 +23,7 @@ export class ExistsRequest extends jspb.Message {
 export namespace ExistsRequest {
   export type AsObject = {
     buildId: string,
+    hash: string,
   }
 }
 
@@ -84,6 +88,9 @@ export class UploadInfo extends jspb.Message {
   getBuildId(): string;
   setBuildId(value: string): void;
 
+  getHash(): string;
+  setHash(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UploadInfo.AsObject;
   static toObject(includeInstance: boolean, msg: UploadInfo): UploadInfo.AsObject;
@@ -97,6 +104,7 @@ export class UploadInfo extends jspb.Message {
 export namespace UploadInfo {
   export type AsObject = {
     buildId: string,
+    hash: string,
   }
 }
 

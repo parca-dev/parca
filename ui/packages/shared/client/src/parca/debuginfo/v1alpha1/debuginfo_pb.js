@@ -164,7 +164,8 @@ proto.parca.debuginfo.v1alpha1.ExistsRequest.prototype.toObject = function(opt_i
  */
 proto.parca.debuginfo.v1alpha1.ExistsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    buildId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    buildId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    hash: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -205,6 +206,10 @@ proto.parca.debuginfo.v1alpha1.ExistsRequest.deserializeBinaryFromReader = funct
       var value = /** @type {string} */ (reader.readString());
       msg.setBuildId(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setHash(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -241,6 +246,13 @@ proto.parca.debuginfo.v1alpha1.ExistsRequest.serializeBinaryToWriter = function(
       f
     );
   }
+  f = message.getHash();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -259,6 +271,24 @@ proto.parca.debuginfo.v1alpha1.ExistsRequest.prototype.getBuildId = function() {
  */
 proto.parca.debuginfo.v1alpha1.ExistsRequest.prototype.setBuildId = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string hash = 2;
+ * @return {string}
+ */
+proto.parca.debuginfo.v1alpha1.ExistsRequest.prototype.getHash = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.parca.debuginfo.v1alpha1.ExistsRequest} returns this
+ */
+proto.parca.debuginfo.v1alpha1.ExistsRequest.prototype.setHash = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -673,7 +703,8 @@ proto.parca.debuginfo.v1alpha1.UploadInfo.prototype.toObject = function(opt_incl
  */
 proto.parca.debuginfo.v1alpha1.UploadInfo.toObject = function(includeInstance, msg) {
   var f, obj = {
-    buildId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    buildId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    hash: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -714,6 +745,10 @@ proto.parca.debuginfo.v1alpha1.UploadInfo.deserializeBinaryFromReader = function
       var value = /** @type {string} */ (reader.readString());
       msg.setBuildId(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setHash(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -750,6 +785,13 @@ proto.parca.debuginfo.v1alpha1.UploadInfo.serializeBinaryToWriter = function(mes
       f
     );
   }
+  f = message.getHash();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -768,6 +810,24 @@ proto.parca.debuginfo.v1alpha1.UploadInfo.prototype.getBuildId = function() {
  */
 proto.parca.debuginfo.v1alpha1.UploadInfo.prototype.setBuildId = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string hash = 2;
+ * @return {string}
+ */
+proto.parca.debuginfo.v1alpha1.UploadInfo.prototype.getHash = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.parca.debuginfo.v1alpha1.UploadInfo} returns this
+ */
+proto.parca.debuginfo.v1alpha1.UploadInfo.prototype.setHash = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
