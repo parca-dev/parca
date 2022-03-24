@@ -30,7 +30,7 @@ func MakeLocationKey(l *Location) []byte {
 	normalizedAddress := l.Address
 	if l.Mapping != nil {
 		// Normalizes address to handle address space randomization.
-		normalizedAddress -= l.Mapping.Start
+		normalizedAddress -= l.Mapping.Start // TODO(kakkoyun): !!
 	}
 
 	linesLength := 0
@@ -110,11 +110,12 @@ func MakeMappingKey(m *pb.Mapping) []byte {
 		// treated as the same mapping during merging.
 	}
 
-	buf := make([]byte, len(mappingKeyPrefix)+len(buildIDOrFile)+16)
+	buf := make([]byte, len(mappingKeyPrefix)+24+len(buildIDOrFile))
 	copy(buf, mappingKeyPrefix)
 	binary.BigEndian.PutUint64(buf[len(mappingKeyPrefix):], size)
-	binary.BigEndian.PutUint64(buf[len(mappingKeyPrefix)+8:], m.Offset)
-	copy(buf[len(mappingKeyPrefix)+16:], buildIDOrFile)
+	binary.BigEndian.PutUint64(buf[len(mappingKeyPrefix)+8:], m.Start)
+	binary.BigEndian.PutUint64(buf[len(mappingKeyPrefix)+16:], m.Offset)
+	copy(buf[len(mappingKeyPrefix)+24:], buildIDOrFile)
 
 	return buf
 }

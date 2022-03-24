@@ -194,7 +194,7 @@ func (pn *profileFlatNormalizer) mapLocation(ctx context.Context, src *profile.L
 	}
 	l := &metastore.Location{
 		Mapping:  mi.m,
-		Address:  uint64(int64(src.Address) + mi.offset),
+		Address:  uint64(int64(src.Address) + mi.offset), // TODO(kakkoyun): !!
 		Lines:    make([]metastore.LocationLine, len(src.Line)),
 		IsFolded: src.IsFolded,
 	}
@@ -250,7 +250,7 @@ func (pn *profileFlatNormalizer) mapMapping(ctx context.Context, src *profile.Ma
 		return mapInfo{}, err
 	}
 	if m != nil {
-		mi := mapInfo{m, int64(m.Start) - int64(src.Start)}
+		mi := mapInfo{m, int64(m.Start) - int64(src.Start)} // TODO(kakkoyun): !!
 		pn.mappingsByID[src.ID] = mi
 		return mi, nil
 	}

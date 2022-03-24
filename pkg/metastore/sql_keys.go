@@ -23,8 +23,8 @@ import (
 )
 
 type MappingKey struct {
-	Size, Offset  uint64
-	BuildIDOrFile string
+	Start, Size, Offset uint64
+	BuildIDOrFile       string
 }
 
 func MakeSQLMappingKey(m *pb.Mapping) MappingKey {
@@ -36,6 +36,7 @@ func MakeSQLMappingKey(m *pb.Mapping) MappingKey {
 	size = size + mapsizeRounding - 1
 	size = size - (size % mapsizeRounding)
 	key := MappingKey{
+		Start:  m.Start,
 		Size:   size,
 		Offset: m.Offset,
 	}
@@ -83,7 +84,7 @@ func MakeSQLLocationKey(l *Location) LocationKey {
 	}
 	if l.Mapping != nil {
 		// Normalizes address to handle address space randomization.
-		key.NormalizedAddress -= l.Mapping.Start
+		key.NormalizedAddress -= l.Mapping.Start // TODO(kakkoyun): !!
 		mUUID, err := uuid.FromBytes(l.Mapping.Id)
 		if err != nil {
 			panic(err)

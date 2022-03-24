@@ -31,7 +31,7 @@ func TestMappingKeyBytes(t *testing.T) {
 		Offset: 2,
 	}
 
-	require.Equal(t, MakeMappingKey(m), []byte{
+	require.Equal(t, []byte{
 		0x76,
 		0x31,
 		0x2f,
@@ -66,8 +66,16 @@ func TestMappingKeyBytes(t *testing.T) {
 		0x0,
 		0x0,
 		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
 		0x2,
-	})
+	}, MakeMappingKey(m))
 
 	m = &pb.Mapping{
 		Start:  0,
@@ -76,7 +84,7 @@ func TestMappingKeyBytes(t *testing.T) {
 		File:   "a",
 	}
 
-	require.Equal(t, MakeMappingKey(m), []byte{
+	require.Equal(t, []byte{
 		0x76,
 		0x31,
 		0x2f,
@@ -111,9 +119,17 @@ func TestMappingKeyBytes(t *testing.T) {
 		0x0,
 		0x0,
 		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
 		0x2,
 		0x61,
-	})
+	}, MakeMappingKey(m))
 }
 
 func TestFunctionKeyBytes(t *testing.T) {
