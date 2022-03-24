@@ -24,17 +24,16 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
+	"github.com/polarsignals/arcticdb"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	columnstore "github.com/polarsignals/arcticdb"
-
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -45,7 +44,7 @@ type ProfileColumnStore struct {
 	tracer    trace.Tracer
 	metaStore metastore.ProfileMetaStore
 
-	table *columnstore.Table
+	table *arcticdb.Table
 
 	// When the debug-value-log is enabled, every profile is first written to
 	// tmp/<labels>/<timestamp>.pb.gz before it's parsed and written to the
@@ -61,7 +60,7 @@ func NewProfileColumnStore(
 	logger log.Logger,
 	tracer trace.Tracer,
 	metaStore metastore.ProfileMetaStore,
-	table *columnstore.Table,
+	table *arcticdb.Table,
 	debugValueLog bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{

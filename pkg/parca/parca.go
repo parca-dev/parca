@@ -30,10 +30,8 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
+	"github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/arcticdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
@@ -49,6 +47,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v2"
 
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
@@ -60,8 +62,6 @@ import (
 	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbolizer"
-	"github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
 )
 
 const (
@@ -181,9 +181,9 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	if flags.Storage == "columnstore" {
-		col := columnstore.New(reg)
+		col := arcticdb.New(reg)
 		colDB := col.DB("parca")
-		table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcaparquet.Schema(), 8196), logger)
+		table := colDB.Table("stacktraces", arcticdb.NewTableConfig(parcaparquet.Schema(), 8196), logger)
 
 		s = profilestore.NewProfileColumnStore(
 			logger,

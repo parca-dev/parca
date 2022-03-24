@@ -7,11 +7,12 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/uuid"
+	"github.com/polarsignals/arcticdb/dynparquet"
+	"github.com/prometheus/prometheus/model/labels"
+
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcaparquet"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
-	"github.com/polarsignals/arcticdb/dynparquet"
-	"github.com/prometheus/prometheus/model/labels"
 )
 
 type Table interface {
