@@ -262,6 +262,9 @@ func (pn *profileFlatNormalizer) mapMapping(ctx context.Context, src *profile.Ma
 		// Which means the m.Start actually correct for a single process.
 		// For a multi-process shared library, this will always be wrong.
 		// And storing the mapping for each process will be very expensive.
+		// Which is why the client sending the profiling data can choose to normalize the addresses for each process.
+		// In a future iteration of the wire format, the computed base address for each mapping should be included
+		// to prevent this dilemma or forcing the client to be smart in one direction or the other.
 		mi := mapInfo{m, int64(src.Start) - int64(m.Start)}
 		pn.mappingsByID[src.ID] = mi
 		return mi, nil
