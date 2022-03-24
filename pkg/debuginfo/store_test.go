@@ -98,7 +98,7 @@ func TestStore(t *testing.T) {
 	for i := 0; i < 1024; i++ {
 		b.Write([]byte("c"))
 	}
-	size, err := c.Upload(context.Background(), "abcd", b)
+	size, err := c.Upload(context.Background(), "abcd", "", b)
 	require.NoError(t, err)
 	require.Equal(t, uint64(3072), size)
 
@@ -119,7 +119,7 @@ func TestStore(t *testing.T) {
 		require.Equal(t, []byte("c")[0], content[i+2048])
 	}
 
-	exists, err := c.Exists(context.Background(), "abcd")
+	exists, err := c.Exists(context.Background(), "abcd", "")
 	require.NoError(t, err)
 	require.True(t, exists)
 }
