@@ -51,7 +51,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	t.Cleanup(func() {
 		l.Close()
 	})
-	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
 	require.NoError(t, err)
 	res, err := GenerateFlatPprof(ctx, l, p)
 	require.NoError(t, err)

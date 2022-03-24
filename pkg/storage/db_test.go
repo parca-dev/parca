@@ -53,7 +53,7 @@ func TestDB(t *testing.T) {
 	p, err := profile.Parse(b)
 	require.NoError(t, err)
 
-	prof1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p, 0, false)
 	require.NoError(t, err)
 	require.NoError(t, app1.AppendFlat(ctx, prof1))
 
@@ -66,7 +66,7 @@ func TestDB(t *testing.T) {
 	p, err = profile.Parse(b)
 	require.NoError(t, err)
 
-	prof2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p, 0)
+	prof2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p, 0, false)
 	require.NoError(t, err)
 	require.NoError(t, app2.AppendFlat(ctx, prof2))
 

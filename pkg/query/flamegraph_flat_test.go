@@ -258,7 +258,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastore.ProfileMetaStor
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	profile, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, trace.NewNoopTracerProvider().Tracer(""), l, profile)
@@ -303,7 +303,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 		Function:   functions,
 	}
 
-	fp, err := parcaprofile.FromPprof(ctx, logger, store, p, 0)
+	fp, err := parcaprofile.FromPprof(ctx, logger, store, p, 0, false)
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)
@@ -438,7 +438,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 		Function:   functions,
 	}
 
-	fp, err := parcaprofile.FromPprof(ctx, logger, store, p, 0)
+	fp, err := parcaprofile.FromPprof(ctx, logger, store, p, 0, false)
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, store, fp)

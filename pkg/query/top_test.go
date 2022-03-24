@@ -48,7 +48,7 @@ func TestGenerateTopTable(t *testing.T) {
 	t.Cleanup(func() {
 		l.Close()
 	})
-	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
 	require.NoError(t, err)
 
 	res, err := GenerateTopTable(ctx, l, p)

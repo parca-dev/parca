@@ -183,9 +183,9 @@ func BenchmarkFlatDiff(b *testing.B) {
 	b.Cleanup(func() {
 		l.Close()
 	})
-	profile1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0)
+	profile1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
 	require.NoError(b, err)
-	profile2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p2, 0)
+	profile2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p2, 0, false)
 	require.NoError(b, err)
 
 	b.Run("simple", func(b *testing.B) {

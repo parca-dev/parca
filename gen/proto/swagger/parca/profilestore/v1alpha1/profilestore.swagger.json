@@ -149,6 +149,10 @@
             "$ref": "#/definitions/v1alpha1RawProfileSeries"
           },
           "title": "series is a set raw pprof profiles and accompanying labels"
+        },
+        "normalized": {
+          "type": "boolean",
+          "title": "normalized is a flag indicating if the addresses in the profile is normalized for position independent code"
         }
       },
       "title": "WriteRawRequest writes a pprof profile for a given tenant"

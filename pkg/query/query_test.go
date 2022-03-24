@@ -98,7 +98,7 @@ func Test_QueryRange_Valid(t *testing.T) {
 	// Overwrite the profile's timestamp to be within the last 5min.
 	p.TimeNanos = time.Now().UnixNano()
 
-	prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p, 0)
+	prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p, 0, false)
 	require.NoError(t, err)
 	err = app.AppendFlat(ctx, prof)
 	require.NoError(t, err)
@@ -169,7 +169,7 @@ func Test_QueryRange_Limited(t *testing.T) {
 		// Overwrite the profile's timestamp to be within the last 5min.
 		p.TimeNanos = time.Now().UTC().UnixNano()
 
-		prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p, 0)
+		prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p, 0, false)
 		require.NoError(t, err)
 		err = app.AppendFlat(ctx, prof)
 		require.NoError(t, err)
@@ -226,7 +226,7 @@ func Test_QueryRange_Ranged(t *testing.T) {
 
 	for i := 0; i < 500; i++ {
 		p.TimeNanos = start.Add(time.Duration(i) * time.Second).UnixNano()
-		pprof, err := parcaprofile.FromPprof(ctx, logger, s, p, 0)
+		pprof, err := parcaprofile.FromPprof(ctx, logger, s, p, 0, false)
 		require.NoError(t, err)
 		err = app.AppendFlat(ctx, pprof)
 		require.NoError(t, err)
@@ -399,7 +399,7 @@ func Test_Query_Simple(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0, false)
 	require.NoError(t, err)
 	err = app.AppendFlat(ctx, prof)
 	require.NoError(t, err)
@@ -464,7 +464,7 @@ func Test_Query_Diff(t *testing.T) {
 	t1 := (time.Now().UnixNano() / 1000000) * 1000000
 	p1.TimeNanos = t1
 
-	prof1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	prof1, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0, false)
 	require.NoError(t, err)
 	err = app.AppendFlat(ctx, prof1)
 	require.NoError(t, err)
@@ -474,7 +474,7 @@ func Test_Query_Diff(t *testing.T) {
 	t2 := (time.Now().UnixNano() / 1000000) * 1000000
 	p2.TimeNanos = t2
 
-	prof2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p2, 0)
+	prof2, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p2, 0, false)
 	require.NoError(t, err)
 	err = app.AppendFlat(ctx, prof2)
 	require.NoError(t, err)
@@ -530,7 +530,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, f.Close())
 
-	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0, false)
 	require.NoError(b, err)
 
 	for k := 0.; k <= 10; k++ {
@@ -598,7 +598,7 @@ func Test_Query_Merge(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0, false)
 	require.NoError(t, err)
 
 	for k := 0.; k <= 10; k++ {
@@ -706,7 +706,7 @@ func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
 
 		p1.TimeNanos = t1
 
-		prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0)
+		prof, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0, false)
 		require.NoError(t, err)
 		err = app.AppendFlat(ctx, prof)
 		require.NoError(t, err)

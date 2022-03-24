@@ -13,6 +13,9 @@ export class WriteRawRequest extends jspb.Message {
   setSeriesList(value: Array<RawProfileSeries>): void;
   addSeries(value?: RawProfileSeries, index?: number): RawProfileSeries;
 
+  getNormalized(): boolean;
+  setNormalized(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WriteRawRequest.AsObject;
   static toObject(includeInstance: boolean, msg: WriteRawRequest): WriteRawRequest.AsObject;
@@ -27,6 +30,7 @@ export namespace WriteRawRequest {
   export type AsObject = {
     tenant: string,
     seriesList: Array<RawProfileSeries.AsObject>,
+    normalized: boolean,
   }
 }
 
