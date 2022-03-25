@@ -273,12 +273,27 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 		// It's ok if we don't have the symbols for given BuildID, it happens too often.
 		level.Warn(logger).Log("msg", "failed to fetch object", "err", err)
 
+		// Let's try to find a debug file from debuginfod servers.
 		objFile, err = s.fetchDebuginfodFile(ctx, buildID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch: %w", err)
 		}
 	}
 
+	// Let's make sure we have the best version of the debug file.
+	hasDWARF, err := elfutils.HasDWARF(objFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check for DWARF: %w", err)
+	}
+	if !hasDWARF {
+		objFile, err = s.fetchDebuginfodFile(ctx, buildID)
+		if err != nil {
+			level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+		}
+	}
+
+	// At this point we have the best version of the debug information file that we could find.
+	// Let's symbolize it.
 	locationLines, err := s.symbolizer.Symbolize(ctx, m, locations, objFile)
 	if err != nil {
 		if errors.Is(err, symbol.ErrLinerCreationFailedBefore) {
