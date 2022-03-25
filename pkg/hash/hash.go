@@ -12,9 +12,10 @@
 // limitations under the License.
 //
 
-package file
+package hash
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -22,8 +23,8 @@ import (
 	"github.com/cespare/xxhash/v2"
 )
 
-// Hash returns the hash of the file.
-func Hash(path string) (string, error) {
+// File returns the hash of the file.
+func File(path string) (string, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to open file: %w", err)
@@ -34,5 +35,5 @@ func Hash(path string) (string, error) {
 	if _, err := io.Copy(h, f); err != nil {
 		return "", fmt.Errorf("failed to hash debug info file: %w", err)
 	}
-	return string(h.Sum(nil)), nil
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
