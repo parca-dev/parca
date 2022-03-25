@@ -105,11 +105,11 @@ Flags:
                                 unsybolized location
       --metastore="badgerinmemory"
                                 Which metastore implementation to use
-      --debug-infod-upstream-servers=https://debuginfod.systemtap.org,...
-                                Upstream private/public servers for debuginfod
-                                files. Defaults to
-                                https://debuginfod.systemtap.org. It is an
-                                ordered list of servers to try.
+      --debug-infod-upstream-servers=https://debuginfod.elfutils.org,...
+                                Upstream debuginfod servers. Defaults to
+                                https://debuginfod.elfutils.org. It is an
+                                ordered list of servers to try. Learn more at
+                                https://sourceware.org/elfutils/Debuginfod.html
       --debug-infod-http-request-timeout=5m
                                 Timeout duration for HTTP request to upstream
                                 debuginfod server. Defaults to 5m
