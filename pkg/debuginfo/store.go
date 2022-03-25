@@ -271,26 +271,12 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 	objFile, err := s.fetchObjectFile(ctx, buildID)
 	if err != nil {
 		// It's ok if we don't have the symbols for given BuildID, it happens too often.
-		level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
-		if errors.Is(err, errDebugInfoNotFound) {
-			level.Debug(logger).Log("msg", "attempting to download from debuginfod servers")
-			// Try downloading the debuginfo file from the debuginfod server.
-			r, err := s.debuginfodClient.GetDebugInfo(ctx, buildID)
-			if err != nil {
-				level.Debug(logger).Log("msg", "failed to download debuginfo from debuginfod", "err", err)
-				return nil, nil
-			}
-			defer r.Close()
-			level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
+		level.Warn(logger).Log("msg", "failed to fetch object", "err", err)
 
-			// Cache the file locally.
-			if err := cache(objFile, r); err != nil {
-				level.Debug(logger).Log("msg", "failed to cache debuginfo", "err", err)
-				return nil, nil
-			}
+		objFile, err = s.fetchDebuginfodFile(ctx, buildID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch: %w", err)
 		}
-
-		return nil, fmt.Errorf("failed to fetch: %w", err)
 	}
 
 	locationLines, err := s.symbolizer.Symbolize(ctx, m, locations, objFile)
@@ -308,7 +294,7 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {
 	logger := log.With(s.logger, "buildid", buildID)
 
-	objFile := path.Join(s.cacheDir, buildID, "debuginfo")
+	objFile := s.localCachePath(buildID)
 	// Check if it's already cached locally; if not download.
 	if _, err := os.Stat(objFile); os.IsNotExist(err) {
 		// Download the debuginfo file from the bucket.
@@ -328,6 +314,33 @@ func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, er
 	}
 
 	return objFile, nil
+}
+
+func (s *Store) fetchDebuginfodFile(ctx context.Context, buildID string) (string, error) {
+	logger := log.With(s.logger, "buildid", buildID)
+	level.Debug(logger).Log("msg", "attempting to download from debuginfod servers")
+
+	objFile := s.localCachePath(buildID)
+	// Try downloading the debuginfo file from the debuginfod server.
+	r, err := s.debuginfodClient.GetDebugInfo(ctx, buildID)
+	if err != nil {
+		level.Debug(logger).Log("msg", "failed to download debuginfo from debuginfod", "err", err)
+		return "", fmt.Errorf("failed to fetch from debuginfod: %w", err)
+	}
+	defer r.Close()
+	level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
+
+	// Cache the file locally.
+	if err := cache(objFile, r); err != nil {
+		level.Debug(logger).Log("msg", "failed to cache debuginfo", "err", err)
+		return "", fmt.Errorf("failed to fetch from debuginfod: %w", err)
+	}
+
+	return objFile, nil
+}
+
+func (s *Store) localCachePath(buildID string) string {
+	return path.Join(s.cacheDir, buildID, "debuginfo")
 }
 
 func cache(localPath string, r io.ReadCloser) error {

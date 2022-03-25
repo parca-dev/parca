@@ -83,7 +83,7 @@ type Flags struct {
 
 	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"badgerinmemory"`
 
-	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.systemtap.org" help:"Upstream private/public servers for debuginfod files. Defaults to https://debuginfod.systemtap.org. It is an ordered list of servers to try."`
+	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 
 	StoreAddress       string            `kong:"help='gRPC address to send profiles and symbols to.'"`

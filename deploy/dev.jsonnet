@@ -16,7 +16,7 @@ function(agentVersion='v0.4.1')
     logLevel: 'debug',
     configPath: '/parca.yaml',
     corsAllowedOrigins: '*',
-    debugInfodUpstreamServers: ['https://debuginfod.systemtap.org'],
+    debugInfodUpstreamServers: ["https://debuginfod.elfutils.org"],
     // debugInfodHTTPRequestTimeout: '5m',
   });
 
