@@ -286,9 +286,11 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 		return nil, fmt.Errorf("failed to check for DWARF: %w", err)
 	}
 	if !hasDWARF {
-		objFile, err = s.fetchDebuginfodFile(ctx, buildID)
+		dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
 		if err != nil {
 			level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+		} else {
+			objFile = dbgFile
 		}
 	}
 
