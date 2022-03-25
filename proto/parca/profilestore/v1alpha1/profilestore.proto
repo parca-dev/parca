@@ -20,7 +20,7 @@ service ProfileStoreService {
 message WriteRawRequest{
 
     // tenant is the given tenant to store the pprof profile under
-    string                    tenant = 1;
+    string                    tenant  = 1 [deprecated=true];
 
     // series is a set raw pprof profiles and accompanying labels
     repeated RawProfileSeries series = 2;
