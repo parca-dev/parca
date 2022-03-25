@@ -34,7 +34,7 @@ import (
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/file"
+	"github.com/parca-dev/parca/pkg/hash"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -155,7 +155,7 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		h, err := file.Hash(dbgFile)
+		h, err := hash.File(dbgFile)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -200,7 +200,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		}
 
 		if req.GetInfo().Hash != "" {
-			h, err := file.Hash(objFile)
+			h, err := hash.File(objFile)
 			if err != nil {
 				return status.Error(codes.Internal, err.Error())
 			}

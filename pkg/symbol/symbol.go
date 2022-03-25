@@ -24,7 +24,7 @@ import (
 	"github.com/goburrow/cache"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/file"
+	"github.com/parca-dev/parca/pkg/hash"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
@@ -104,7 +104,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*
 	}
 
 	// Generate a hash key to use for error tracking.
-	key, err := file.Hash(debugInfoFile)
+	key, err := hash.File(debugInfoFile)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
 		key = m.BuildId
@@ -162,7 +162,7 @@ func (s *Symbolizer) Close() error {
 
 // liner creates a new liner for the given mapping and object file path and caches it.
 func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
-	h, err := file.Hash(path)
+	h, err := hash.File(path)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
 		h = path
