@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/uuid"
 	"github.com/polarsignals/arcticdb/dynparquet"
 	"github.com/prometheus/prometheus/model/labels"
 
@@ -97,10 +96,10 @@ func flatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet
 	return buf, nil
 }
 
-func extractLocationIDs(locs []*metastore.Location) []uuid.UUID {
-	res := make([]uuid.UUID, 0, len(locs))
+func extractLocationIDs(locs []*metastore.Location) []byte {
+	b := make([]byte, 0, len(locs)*16) // UUID are 16 bytes thus multiply by 16
 	for i := len(locs) - 1; i >= 0; i-- {
-		res = append(res, locs[i].ID)
+		b = append(b, locs[i].ID[:]...)
 	}
-	return res
+	return b
 }
