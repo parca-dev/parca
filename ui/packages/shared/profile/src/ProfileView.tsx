@@ -2,12 +2,11 @@ import React, {useEffect, useState} from 'react';
 import {CalcWidth} from '@parca/dynamicsize';
 import {parseParams} from '@parca/functions';
 import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
-import {Button} from '@parca/components';
+import {Button, Card, useGrpcMetadata} from '@parca/components';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
-import {Card} from '@parca/components';
 import TopTable from './TopTable';
 
 import './ProfileView.styles.css';
@@ -44,6 +43,7 @@ export const useQuery = (
     response: null,
     error: null,
   });
+  const metadata = useGrpcMetadata();
 
   useEffect(() => {
     setResult({
@@ -53,13 +53,17 @@ export const useQuery = (
     const req = profileSource.QueryRequest();
     req.setReportType(QueryRequest.ReportType.REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED);
 
-    client.query(req, (error: ServiceError | null, responseMessage: QueryResponse | null) => {
-      setResult({
-        isLoading: false,
-        response: responseMessage,
-        error: error,
-      });
-    });
+    client.query(
+      req,
+      metadata,
+      (error: ServiceError | null, responseMessage: QueryResponse | null) => {
+        setResult({
+          isLoading: false,
+          response: responseMessage,
+          error: error,
+        });
+      }
+    );
   }, [client, profileSource]);
 
   return result;
@@ -76,6 +80,7 @@ export const ProfileView = ({
   const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
   const {isLoading, response, error} = useQuery(queryClient, profileSource);
   const [currentView, setCurrentView] = useState<string | undefined>(currentViewFromURL);
+  const grpcMetadata = useGrpcMetadata();
 
   useEffect(() => {
     let showLoaderTimeout;
@@ -138,6 +143,7 @@ export const ProfileView = ({
 
     queryClient.query(
       req,
+      grpcMetadata,
       (
         error: ServiceError | null,
         responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null
