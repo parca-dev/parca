@@ -53,6 +53,7 @@ type DebugInfodClientObjectStorageCache struct {
 	bucket objstore.Bucket
 }
 
+// NewHTTPDebugInfodClient returns a new HTTP debug info client.
 func NewHTTPDebugInfodClient(logger log.Logger, serverURLs []string, timeoutDuration time.Duration) (*HTTPDebugInfodClient, error) {
 	logger = log.With(logger, "component", "debuginfod")
 	parsedURLs := make([]*url.URL, 0, len(serverURLs))
@@ -73,6 +74,7 @@ func NewHTTPDebugInfodClient(logger log.Logger, serverURLs []string, timeoutDura
 	}, nil
 }
 
+// NewDebugInfodClientWithObjectStorageCache creates a new DebugInfodClient that caches the debug information in the object storage.
 func NewDebugInfodClientWithObjectStorageCache(logger log.Logger, config *Config, h DebugInfodClient) (DebugInfodClient, error) {
 	logger = log.With(logger, "component", "debuginfod")
 	cfg, err := yaml.Marshal(config.Bucket)
@@ -101,11 +103,12 @@ type readCloser struct {
 	closer
 }
 
+// GetDebugInfo returns debug info for given buildid while caching it in object storage.
 func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
 	logger := log.With(c.logger, "buildid", buildID)
 	debugInfo, err := c.client.GetDebugInfo(ctx, buildID)
 	if err != nil {
-		return nil, errDebugInfoNotFound
+		return nil, err
 	}
 
 	r, w := io.Pipe()
@@ -131,41 +134,66 @@ func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, b
 	}, nil
 }
 
+// GetDebugInfo returns debug information file for given buildID by downloading it from upstream servers.
 func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
 	logger := log.With(c.logger, "buildid", buildID)
+
+	// e.g:
+	//"https://debuginfod.elfutils.org/"
+	//"https://debuginfod.systemtap.org/"
+	//"https://debuginfod.opensuse.org/"
+	//"https://debuginfod.s.voidlinux.org/"
+	//"https://debuginfod.debian.net/"
+	//"https://debuginfod.fedoraproject.org/"
+	//"https://debuginfod.altlinux.org/"
+	//"https://debuginfod.archlinux.org/"
+	//"https://debuginfod.centos.org/"
 	for _, u := range c.UpstreamServers {
+		ctx, cancel := context.WithTimeout(ctx, c.timeoutDuration)
+		defer cancel()
+
 		serverURL := *u
 		rc, err := c.request(ctx, serverURL, buildID)
-		if err == nil {
-			return rc, nil
+		if err != nil {
+			level.Warn(logger).Log(
+				"msg", "failed to download debug info file from upstream debuginfod server, trying next one (if exists)",
+				"server", serverURL, "err", err,
+			)
+			continue
 		}
-		level.Warn(logger).Log(
-			"msg", "failed to get debuginfo from upstream server, trying next one (if exists)",
-			"server", serverURL, "err", err,
-		)
+		return rc, nil
 	}
 	return nil, errDebugInfoNotFound
 }
 
-func (c *HTTPDebugInfodClient) request(ctx context.Context, serverURL url.URL, buildID string) (io.ReadCloser, error) {
-	logger := log.With(c.logger, "buildid", buildID)
+func (c *HTTPDebugInfodClient) request(ctx context.Context, u url.URL, buildID string) (io.ReadCloser, error) {
+	// https://www.mankier.com/8/debuginfod#Webapi
+	// Endpoint: /buildid/BUILDID/debuginfo
+	// If the given buildid is known to the server,
+	// this request will result in a binary object that contains the customary .*debug_* sections.
+	u.Path = path.Join(u.Path, "buildid", buildID, "debuginfo")
 
-	serverURL.Path = path.Join(serverURL.Path, buildID, "debuginfo")
-
-	ctx, cancel := context.WithTimeout(ctx, c.timeoutDuration)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", serverURL.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
-		level.Debug(logger).Log("msg", "failed to create new HTTP request", "err", err)
-		return nil, err
+		return nil, fmt.Errorf("create request: %w", err)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		level.Debug(logger).Log("msg", "object not found in public server", "object", buildID, "err", err)
-		return nil, errDebugInfoNotFound
+		return nil, fmt.Errorf("request failed: %w", err)
 	}
 
-	return resp.Body, nil
+	switch resp.StatusCode / 100 {
+	case 2:
+		return resp.Body, nil
+	case 4:
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, errDebugInfoNotFound
+		}
+		return nil, fmt.Errorf("client error: %s", resp.Status)
+	case 5:
+		return nil, fmt.Errorf("server error: %s", resp.Status)
+	default:
+		return nil, fmt.Errorf("unexpected status code: %s", resp.Status)
+	}
 }
