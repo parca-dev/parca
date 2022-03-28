@@ -54,7 +54,7 @@ import (
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/parcaparquet"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	queryservice "github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/scrape"
@@ -183,7 +183,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	if flags.Storage == "columnstore" {
 		col := arcticdb.New(reg)
 		colDB := col.DB("parca")
-		table := colDB.Table("stacktraces", arcticdb.NewTableConfig(parcaparquet.Schema(), 8196), logger)
+		table := colDB.Table("stacktraces", arcticdb.NewTableConfig(parcacol.Schema(), 8196), logger)
 
 		s = profilestore.NewProfileColumnStore(
 			logger,

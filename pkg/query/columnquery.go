@@ -27,6 +27,7 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -388,11 +389,11 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, sel []*labels.Matcher, 
 			return nil
 		})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("execute query: %w", err)
 	}
 	defer ar.Release()
 
-	return arrowRecordToStacktraceSamples(ctx, q.metaStore, ar)
+	return parcacol.ArrowRecordToStacktraceSamples(ctx, q.metaStore, ar, "sum(value)")
 }
 
 func (q *ColumnQueryAPI) mergeRequest(ctx context.Context, m *pb.MergeProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -447,7 +448,7 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 	}
 	defer ar.Release()
 
-	return arrowRecordToStacktraceSamples(ctx, q.metaStore, ar)
+	return parcacol.ArrowRecordToStacktraceSamples(ctx, q.metaStore, ar, "sum(value)")
 }
 
 func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -500,81 +501,4 @@ func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.Profile
 	}
 
 	return p, err
-}
-
-func arrowRecordToStacktraceSamples(ctx context.Context, metaStore metastore.ProfileMetaStore, ar arrow.Record) (*profile.StacktraceSamples, error) {
-	// sample is an intermediate representation used before
-	// we actually have the profile.Sample assembled from the metastore.
-	type sample struct {
-		locationIDs [][]byte
-		value       int64
-	}
-
-	schema := ar.Schema()
-	indices := schema.FieldIndices("stacktrace")
-	if len(indices) != 1 {
-		return nil, fmt.Errorf("expected exactly one stacktrace column, got %d", len(indices))
-	}
-	stacktraceColumn := ar.Column(indices[0]).(*array.String)
-
-	indices = schema.FieldIndices("sum(value)")
-	if len(indices) != 1 {
-		return nil, fmt.Errorf("expected exactly one value column, got %d", len(indices))
-	}
-	valueColumn := ar.Column(indices[0]).(*array.Int64)
-
-	locationUUIDSeen := map[string]struct{}{}
-	locationUUIDs := [][]byte{}
-	rows := int(ar.NumRows())
-	samples := make([]sample, rows)
-	for i := 0; i < rows; i++ {
-		s := sample{
-			value: valueColumn.Value(i),
-		}
-
-		uuids := stacktraceColumn.Value(i)
-		if len(uuids)%16 != 0 {
-			return nil, fmt.Errorf("expected stacktrace uuids to be multiple of 16 bytes")
-		}
-
-		// We split the uuids into 16 byte pieces which are exactly one uuid.
-		for i := 0; i < len(uuids); i += 16 {
-			u := []byte(uuids[i : i+16])
-			s.locationIDs = append(s.locationIDs, u)
-
-			if _, seen := locationUUIDSeen[string(u)]; !seen {
-				locationUUIDSeen[string(u)] = struct{}{}
-				locationUUIDs = append(locationUUIDs, u)
-			}
-		}
-
-		samples[i] = s
-	}
-
-	// Get the full locations for the location UUIDs
-	locationsMap, err := metastore.GetLocationsByIDs(ctx, metaStore, locationUUIDs...)
-	if err != nil {
-		return nil, fmt.Errorf("get locations by ids: %w", err)
-	}
-
-	stackSamples := make([]*profile.Sample, 0, len(samples))
-	for _, s := range samples {
-		stackSample := &profile.Sample{
-			Value:    s.value,
-			Location: make([]*metastore.Location, 0, len(s.locationIDs)),
-		}
-
-		// LocationIDs are stored in the opposite order than the flamegraph
-		// builder expects, so we need to iterate over them in reverse.
-		for i := len(s.locationIDs) - 1; i >= 0; i-- {
-			locID := s.locationIDs[i]
-			stackSample.Location = append(stackSample.Location, locationsMap[string(locID)])
-		}
-
-		stackSamples = append(stackSamples, stackSample)
-	}
-
-	return &profile.StacktraceSamples{
-		Samples: stackSamples,
-	}, nil
 }

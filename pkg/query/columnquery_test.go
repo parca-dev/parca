@@ -22,7 +22,6 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	"github.com/parca-dev/parca/pkg/parcaparquet"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -33,7 +32,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcaparquet.Schema(), 8196), logger)
+	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
@@ -90,7 +89,7 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcaparquet.Schema(), 8196), logger)
+	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,

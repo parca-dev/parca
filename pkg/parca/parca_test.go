@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -31,19 +32,21 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	"github.com/parca-dev/parca/pkg/parcaparquet"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	queryservice "github.com/parca-dev/parca/pkg/query"
+	"github.com/polarsignals/arcticdb"
 	columnstore "github.com/polarsignals/arcticdb"
 	"github.com/polarsignals/arcticdb/query"
 )
@@ -117,12 +120,7 @@ func Benchmark_Parca_WriteRaw(b *testing.B) {
 	<-done
 }
 
-func TestReplay(t *testing.T) {
-	// This test is only meant to be run manually to replay a debug log to try
-	// to reproduce an issue. It requires debug log output from the Parca
-	// server to be available at "../../tmp/".
-	t.Skip()
-
+func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServiceServer, *arcticdb.Table, *semgroup.Group, func()) {
 	dir := "../../tmp/"
 	files, err := ioutil.ReadDir(dir)
 	require.NoError(t, err)
@@ -138,7 +136,7 @@ func TestReplay(t *testing.T) {
 		if file.IsDir() {
 			matchers, err := parser.ParseMetricSelector(file.Name())
 			if err != nil {
-				t.Logf("failed to parse label-set %s: %v", file.Name(), err)
+				t.Errorf("failed to parse label-set %s: %v", file.Name(), err)
 				continue
 			}
 
@@ -173,22 +171,18 @@ func TestReplay(t *testing.T) {
 		return samples[i].Timestamp < samples[j].Timestamp
 	})
 
-	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcaparquet.Schema(), 8196), logger)
+	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
 		tracer,
 		metastore.NewRandomUUIDGenerator(),
 	)
-	t.Cleanup(func() {
-		m.Close()
-	})
 
 	api := queryservice.NewColumnQueryAPI(
 		logger,
@@ -202,7 +196,7 @@ func TestReplay(t *testing.T) {
 	)
 
 	const maxWorkers = 8
-	s := semgroup.NewGroup(context.Background(), maxWorkers)
+	s := semgroup.NewGroup(ctx, maxWorkers)
 	for _, sample := range samples {
 		s.Go(func() error {
 			fileContent, err := ioutil.ReadFile(sample.FilePath)
@@ -229,6 +223,21 @@ func TestReplay(t *testing.T) {
 		})
 	}
 
+	return api, table, s, func() {
+		m.Close()
+	}
+}
+
+func TestReplay(t *testing.T) {
+	// This test is only meant to be run manually to replay a debug log to try
+	// to reproduce an issue. It requires debug log output from the Parca
+	// server to be available at "../../tmp/".
+	t.Skip()
+
+	ctx := context.Background()
+	api, table, s, cleanup := replayDebugLog(ctx, t)
+	t.Cleanup(cleanup)
+
 	go func() {
 		for {
 			time.Sleep(time.Second)
@@ -247,4 +256,86 @@ func TestReplay(t *testing.T) {
 
 	require.NoError(t, s.Wait())
 	table.Sync()
+}
+
+func BenchmarkValuesAPI(b *testing.B) {
+	ctx := context.Background()
+	api, table, s, cleanup := replayDebugLog(ctx, b)
+	b.Cleanup(cleanup)
+	require.NoError(b, s.Wait())
+	table.Sync()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := api.Values(ctx, &querypb.ValuesRequest{
+			LabelName: "__name__",
+		})
+		require.NoError(b, err)
+	}
+}
+
+func TestConsistency(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col := columnstore.New(reg)
+	colDB := col.DB("parca")
+	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
+	m := metastore.NewBadgerMetastore(
+		logger,
+		reg,
+		tracer,
+		metastore.NewRandomUUIDGenerator(),
+	)
+
+	f, err := os.Open("../query/testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+	p1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	for _, s := range p1.Sample {
+		s.Label = nil
+		s.NumLabel = nil
+		s.NumUnit = nil
+	}
+
+	p1 = p1.Compact()
+
+	p, err := parcaprofile.FromPprof(ctx, logger, m, p1, 0, false)
+	require.NoError(t, err)
+
+	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{}}, p)
+	require.NoError(t, err)
+
+	table.Sync()
+
+	api := queryservice.NewColumnQueryAPI(
+		logger,
+		tracer,
+		m,
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+		),
+		"stacktraces",
+	)
+
+	ts := timestamppb.New(timestamp.Time(p1.TimeNanos / time.Millisecond.Nanoseconds()))
+	res, err := api.Query(ctx, &querypb.QueryRequest{
+		ReportType: querypb.QueryRequest_REPORT_TYPE_PPROF,
+		Options: &querypb.QueryRequest_Single{
+			Single: &querypb.SingleProfile{
+				Query: `{__name__="alloc_objects_count"}`,
+				Time:  ts,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	resProf, err := profile.ParseData(res.Report.(*querypb.QueryResponse_Pprof).Pprof)
+	require.NoError(t, err)
+
+	require.Equal(t, len(p1.Sample), len(resProf.Sample))
 }

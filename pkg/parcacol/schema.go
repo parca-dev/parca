@@ -1,4 +1,4 @@
-package parcaparquet
+package parcacol
 
 import (
 	"github.com/polarsignals/arcticdb/dynparquet"
