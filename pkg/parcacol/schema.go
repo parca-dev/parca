@@ -6,17 +6,19 @@ import (
 )
 
 const (
-	schemaName       = "parca"
-	columnSampleType = "sample_type"
-	columnSampleUnit = "sample_unit"
-	columnPeriodType = "period_type"
-	columnPeriodUnit = "period_unit"
-	columnLabels     = "labels"
-	columnStacktrace = "stacktrace"
-	columnTimestamp  = "timestamp"
-	columnDuration   = "duration"
-	columnPeriod     = "period"
-	columnValue      = "value"
+	schemaName           = "parca"
+	columnSampleType     = "sample_type"
+	columnSampleUnit     = "sample_unit"
+	columnPeriodType     = "period_type"
+	columnPeriodUnit     = "period_unit"
+	columnPprofLabels    = "pprof_labels"
+	columnPprofNumLabels = "pprof_num_labels"
+	columnLabels         = "labels"
+	columnStacktrace     = "stacktrace"
+	columnTimestamp      = "timestamp"
+	columnDuration       = "duration"
+	columnPeriod         = "period"
+	columnValue          = "value"
 )
 
 func Schema() *dynparquet.Schema {
@@ -38,6 +40,14 @@ func Schema() *dynparquet.Schema {
 			Name:          columnPeriodUnit,
 			StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
 			Dynamic:       false,
+		}, {
+			Name:          columnPprofLabels,
+			StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
+			Dynamic:       true,
+		}, {
+			Name:          columnPprofNumLabels,
+			StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
+			Dynamic:       true,
 		}, {
 			Name:          columnLabels,
 			StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
@@ -68,6 +78,8 @@ func Schema() *dynparquet.Schema {
 			dynparquet.Ascending(columnSampleUnit),
 			dynparquet.Ascending(columnPeriodType),
 			dynparquet.Ascending(columnPeriodUnit),
+			dynparquet.NullsFirst(dynparquet.Ascending(columnPprofLabels)),
+			dynparquet.NullsFirst(dynparquet.Ascending(columnPprofNumLabels)),
 			dynparquet.NullsFirst(dynparquet.Ascending(columnLabels)),
 			dynparquet.NullsFirst(dynparquet.Ascending(columnStacktrace)),
 			dynparquet.Ascending(columnTimestamp),

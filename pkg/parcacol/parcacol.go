@@ -3,6 +3,7 @@ package parcacol
 import (
 	"context"
 	"sort"
+	"strconv"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -59,17 +60,41 @@ func FlatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet
 
 	rows := make(Samples, 0, len(prof.FlatSamples))
 	for _, s := range prof.FlatSamples {
+		pprofLabels := labels.Labels{}
+		for name, values := range s.Label {
+			if len(values) > 1 {
+				panic("don't expect more than 1 value per pprof label")
+			}
+			pprofLabels = append(pprofLabels, labels.Label{
+				Name:  name,
+				Value: values[0],
+			})
+		}
+
+		pprofNumLabels := labels.Labels{}
+		for name, values := range s.NumLabel {
+			if len(values) > 1 {
+				panic("don't expect more than 1 value per pprof num label")
+			}
+			pprofNumLabels = append(pprofNumLabels, labels.Label{
+				Name:  name,
+				Value: strconv.FormatInt(values[0], 10),
+			})
+		}
+
 		rows = append(rows, Sample{
-			SampleType: prof.Meta.SampleType.Type,
-			SampleUnit: prof.Meta.SampleType.Unit,
-			PeriodType: prof.Meta.PeriodType.Type,
-			PeriodUnit: prof.Meta.PeriodType.Unit,
-			Labels:     lbls,
-			Stacktrace: extractLocationIDs(s.Location),
-			Timestamp:  prof.Meta.Timestamp,
-			Duration:   prof.Meta.Duration,
-			Period:     prof.Meta.Period,
-			Value:      s.Value,
+			SampleType:     prof.Meta.SampleType.Type,
+			SampleUnit:     prof.Meta.SampleType.Unit,
+			PeriodType:     prof.Meta.PeriodType.Type,
+			PeriodUnit:     prof.Meta.PeriodType.Unit,
+			PprofLabels:    pprofLabels,
+			PprofNumLabels: pprofNumLabels,
+			Labels:         lbls,
+			Stacktrace:     extractLocationIDs(s.Location),
+			Timestamp:      prof.Meta.Timestamp,
+			Duration:       prof.Meta.Duration,
+			Period:         prof.Meta.Period,
+			Value:          s.Value,
 		})
 	}
 
