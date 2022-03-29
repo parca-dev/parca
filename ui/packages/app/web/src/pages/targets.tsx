@@ -1,5 +1,11 @@
-import React, {useState, useEffect} from 'react';
-import {TargetsRequest, TargetsResponse, ScrapeServiceClient, ServiceError} from '@parca/client';
+import React, {useEffect, useState} from 'react';
+import {
+  ScrapeServiceClient,
+  ServiceError,
+  Target,
+  TargetsRequest,
+  TargetsResponse,
+} from '@parca/client';
 import {EmptyState} from '@parca/components';
 import TargetsTable from '../components/Targets/TargetsTable';
 
@@ -71,10 +77,14 @@ const TargetsPage = (): JSX.Element => {
             <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
               {targetNamespaces?.map(namespace => {
                 const name = Object.keys(namespace)[0];
-                const targets = namespace[name];
+                const targets = namespace[name].sort((a: Target.AsObject, b: Target.AsObject) => {
+                  return a.url.localeCompare(b.url);
+                });
                 return (
-                  <div key={name} className="p-2 border-b-2">
-                    <div>{name}</div>
+                  <div key={name} className="my-2 p-2 border-b-2">
+                    <div className="my-2">
+                      <span className="font-semibold text-xl">{name}</span>
+                    </div>
                     <TargetsTable targets={targets} />
                   </div>
                 );
