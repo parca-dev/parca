@@ -87,6 +87,7 @@ const RelativeDatePicker = ({range, onChange = () => null}: RelativeDatePickerPr
             type="number"
             className="w-16 mr-2 text-sm"
             value={value}
+            min={0}
             onChange={e => setValue(parseInt(e.target.value, 10))}
           />
           <Select
