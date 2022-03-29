@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/parcaparquet"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -20,7 +19,7 @@ type Table interface {
 }
 
 func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table Table, ls labels.Labels, prof *parcaprofile.Profile) (int, error) {
-	buf, err := flatProfileToBuffer(logger, ls, table.Schema(), prof)
+	buf, err := FlatProfileToBuffer(logger, ls, table.Schema(), prof)
 	if err != nil {
 		return 0, err
 	}
@@ -28,7 +27,7 @@ func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table Table,
 	return len(prof.FlatSamples), table.Insert(buf)
 }
 
-func flatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet.Schema, prof *parcaprofile.Profile) (*dynparquet.Buffer, error) {
+func FlatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet.Schema, prof *parcaprofile.Profile) (*dynparquet.Buffer, error) {
 	// TODO all of this should be done in the flat profile
 	// extraction in the first place. Also this `__name__` hack is
 	// only here for backward compatibility while we finish up the
@@ -58,9 +57,9 @@ func flatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet
 	}
 	sort.Sort(lbls)
 
-	rows := make(parcaparquet.Samples, 0, len(prof.FlatSamples))
+	rows := make(Samples, 0, len(prof.FlatSamples))
 	for _, s := range prof.FlatSamples {
-		rows = append(rows, parcaparquet.Sample{
+		rows = append(rows, Sample{
 			SampleType: prof.Meta.SampleType.Type,
 			SampleUnit: prof.Meta.SampleType.Unit,
 			PeriodType: prof.Meta.PeriodType.Type,
