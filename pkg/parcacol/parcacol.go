@@ -97,9 +97,11 @@ func flatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet
 }
 
 func extractLocationIDs(locs []*metastore.Location) []byte {
-	b := make([]byte, 0, len(locs)*16) // UUID are 16 bytes thus multiply by 16
+	b := make([]byte, len(locs)*16) // UUID are 16 bytes thus multiply by 16
+	index := 0
 	for i := len(locs) - 1; i >= 0; i-- {
-		b = append(b, locs[i].ID[:]...)
+		copy(b[index:index+16], locs[i].ID[:])
+		index += 16
 	}
 	return b
 }
