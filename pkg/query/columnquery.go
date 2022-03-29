@@ -13,10 +13,6 @@ import (
 	"github.com/apache/arrow/go/v7/arrow/array"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/polarsignals/arcticdb/query"
 	"github.com/polarsignals/arcticdb/query/logicalplan"
 	"github.com/prometheus/prometheus/model/labels"
@@ -27,10 +23,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
-// ColumnQuery is the read api interface for parca
-// It implements the proto/query/query.proto APIServer interface
+// ColumnQueryAPI is the read api interface for parca
+// It implements the proto/query/query.proto APIServer interface.
 type ColumnQueryAPI struct {
 	pb.UnimplementedQueryServiceServer
 
@@ -57,14 +58,14 @@ func NewColumnQueryAPI(
 	}
 }
 
-// Labels issues a labels request against the storage
+// Labels issues a labels request against the storage.
 func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
 	return &pb.LabelsResponse{
 		LabelNames: nil,
 	}, nil
 }
 
-// Values issues a values request against the storage
+// Values issues a values request against the storage.
 func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResponse, error) {
 	name := req.LabelName
 	vals := []string{}
@@ -140,7 +141,7 @@ var (
 	ErrValueColumnNotFound     = errors.New("value column not found")
 )
 
-// QueryRange issues a range query against the storage
+// QueryRange issues a range query against the storage.
 func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.QueryRangeResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -266,7 +267,7 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 	return res, nil
 }
 
-// Query issues a instant query against the storage
+// Query issues a instant query against the storage.
 func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -502,16 +503,21 @@ func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.Profile
 }
 
 func arrowRecordToStacktraceSamples(ctx context.Context, metaStore metastore.ProfileMetaStore, ar arrow.Record) (*profile.StacktraceSamples, error) {
-	s := ar.Schema()
-	indices := s.FieldIndices("stacktrace")
+	// sample is an intermediate representation used before
+	// we actually have the profile.Sample assembled from the metastore.
+	type sample struct {
+		locationIDs [][]byte
+		value       int64
+	}
+
+	schema := ar.Schema()
+	indices := schema.FieldIndices("stacktrace")
 	if len(indices) != 1 {
 		return nil, fmt.Errorf("expected exactly one stacktrace column, got %d", len(indices))
 	}
-	stacktraceColumn := ar.Column(indices[0]).(*array.List)
-	stacktraceValues := stacktraceColumn.ListValues().(*array.FixedSizeBinary)
-	stacktraceOffsets := stacktraceColumn.Offsets()[1:]
+	stacktraceColumn := ar.Column(indices[0]).(*array.String)
 
-	indices = s.FieldIndices("sum(value)")
+	indices = schema.FieldIndices("sum(value)")
 	if len(indices) != 1 {
 		return nil, fmt.Errorf("expected exactly one value column, got %d", len(indices))
 	}
@@ -521,24 +527,28 @@ func arrowRecordToStacktraceSamples(ctx context.Context, metaStore metastore.Pro
 	locationUUIDs := [][]byte{}
 	rows := int(ar.NumRows())
 	samples := make([]sample, rows)
-	pos := 0
 	for i := 0; i < rows; i++ {
 		s := sample{
 			value: valueColumn.Value(i),
 		}
 
-		for j := pos; j < int(stacktraceOffsets[i]); j++ {
-			locID := stacktraceValues.Value(j)
-			s.locationIDs = append(s.locationIDs, locID)
+		uuids := stacktraceColumn.Value(i)
+		if len(uuids)%16 != 0 {
+			return nil, fmt.Errorf("expected stacktrace uuids to be multiple of 16 bytes")
+		}
 
-			if _, ok := locationUUIDSeen[string(locID)]; !ok {
-				locationUUIDSeen[string(locID)] = struct{}{}
-				locationUUIDs = append(locationUUIDs, locID)
+		// We split the uuids into 16 byte pieces which are exactly one uuid.
+		for i := 0; i < len(uuids); i += 16 {
+			u := []byte(uuids[i : i+16])
+			s.locationIDs = append(s.locationIDs, u)
+
+			if _, seen := locationUUIDSeen[string(u)]; !seen {
+				locationUUIDSeen[string(u)] = struct{}{}
+				locationUUIDs = append(locationUUIDs, u)
 			}
 		}
 
 		samples[i] = s
-		pos = int(stacktraceOffsets[i])
 	}
 
 	// Get the full locations for the location UUIDs
@@ -567,9 +577,4 @@ func arrowRecordToStacktraceSamples(ctx context.Context, metaStore metastore.Pro
 	return &profile.StacktraceSamples{
 		Samples: stackSamples,
 	}, nil
-}
-
-type sample struct {
-	locationIDs [][]byte
-	value       int64
 }

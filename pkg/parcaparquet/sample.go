@@ -3,7 +3,6 @@ package parcaparquet
 import (
 	"sort"
 
-	"github.com/google/uuid"
 	"github.com/polarsignals/arcticdb/dynparquet"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/segmentio/parquet-go"
@@ -15,7 +14,7 @@ type Sample struct {
 	PeriodType string
 	PeriodUnit string
 	Labels     labels.Labels
-	Stacktrace []uuid.UUID
+	Stacktrace []byte
 	Timestamp  int64
 	Duration   int64
 	Period     int64
@@ -71,7 +70,7 @@ func (s Sample) ToParquetRow(row parquet.Row, labelNames []string) parquet.Row {
 	labelLen := len(s.Labels)
 
 	if row == nil {
-		row = make([]parquet.Value, 0, nameNumber+len(s.Stacktrace)+8)
+		row = make([]parquet.Value, 0, nameNumber+9)
 	}
 
 	row = append(row, parquet.ValueOf(s.Duration).Level(0, 0, 0))
@@ -100,13 +99,7 @@ func (s Sample) ToParquetRow(row parquet.Row, labelNames []string) parquet.Row {
 	row = append(row, parquet.ValueOf(s.PeriodUnit).Level(0, 0, nameNumber+3))
 	row = append(row, parquet.ValueOf(s.SampleType).Level(0, 0, nameNumber+4))
 	row = append(row, parquet.ValueOf(s.SampleUnit).Level(0, 0, nameNumber+5))
-	for i, location := range s.Stacktrace {
-		if i == 0 {
-			row = append(row, parquet.ValueOf(location).Level(0, 1, nameNumber+6))
-			continue
-		}
-		row = append(row, parquet.ValueOf(location).Level(1, 1, nameNumber+6))
-	}
+	row = append(row, parquet.ValueOf(s.Stacktrace).Level(0, 0, nameNumber+6))
 	row = append(row, parquet.ValueOf(s.Timestamp).Level(0, 0, nameNumber+7))
 	row = append(row, parquet.ValueOf(s.Value).Level(0, 0, nameNumber+8))
 

@@ -10,11 +10,6 @@ import (
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/parcacol"
-	"github.com/parca-dev/parca/pkg/parcaparquet"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	columnstore "github.com/polarsignals/arcticdb"
 	"github.com/polarsignals/arcticdb/query"
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,6 +18,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/parcaparquet"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestColumnQueryAPIQueryRange(t *testing.T) {
