@@ -12,7 +12,7 @@ export const GrpcMetadataProvider = ({
   value?: grpc.Metadata;
 }) => {
   return (
-    <GrpcMetadataContext.Provider value={value || EMPTY_METADATA}>
+    <GrpcMetadataContext.Provider value={value ?? EMPTY_METADATA}>
       {children}
     </GrpcMetadataContext.Provider>
   );
@@ -20,7 +20,7 @@ export const GrpcMetadataProvider = ({
 
 export const useGrpcMetadata = () => {
   const context = React.useContext(GrpcMetadataContext);
-  if (!context) {
+  if (context == null) {
     return EMPTY_METADATA;
   }
   return context;
