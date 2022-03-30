@@ -469,7 +469,7 @@ const MatchersInput = ({
         <ul className="flex space-x-2">
           {currentLabelsCollection &&
             currentLabelsCollection.map((value, i) => (
-              <li key={i} className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900">
+              <li key={i} className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900 rounded-md">
                 {value}
               </li>
             ))}
