@@ -520,7 +520,7 @@ export const RawMetricsGraph = ({
             )}
           </g>
           <g transform={`translate(${margin}, ${margin})`}>
-            <g className="lines">
+            <g className="lines fill-transparent">
               {series.map((s, i) => (
                 <g key={i} className="line">
                   <MetricsSeries
