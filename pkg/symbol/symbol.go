@@ -149,7 +149,11 @@ func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []
 		return nil
 	}
 	if len(lines) == 0 {
-		s.symbolizationFailed[key][addr] = struct{}{}
+		if _, ok := s.symbolizationFailed[key]; ok {
+			s.symbolizationFailed[key][addr] = struct{}{}
+		} else {
+			s.symbolizationFailed[key] = map[uint64]struct{}{addr: {}}
+		}
 		delete(s.symbolizationAttempts[key], addr)
 		level.Debug(logger).Log("msg", "could not find any lines for given address")
 	}

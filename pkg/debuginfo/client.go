@@ -100,6 +100,11 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
+		if sts, ok := status.FromError(err); ok {
+			if sts.Code() == codes.AlreadyExists {
+				return 0, ErrDebugInfoAlreadyExists
+			}
+		}
 		return 0, fmt.Errorf("close and receive: %w", err)
 	}
 	return res.Size, nil
