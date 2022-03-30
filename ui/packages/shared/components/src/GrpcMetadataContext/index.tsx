@@ -1,14 +1,14 @@
 import {grpc} from '@improbable-eng/grpc-web';
-import React from 'react';
+import {createContext, ReactNode, useContext} from 'react';
 
 const EMPTY_METADATA = new grpc.Metadata();
-const GrpcMetadataContext = React.createContext<grpc.Metadata>(EMPTY_METADATA);
+const GrpcMetadataContext = createContext<grpc.Metadata>(EMPTY_METADATA);
 
 export const GrpcMetadataProvider = ({
   children,
   value,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   value?: grpc.Metadata;
 }) => {
   return (
@@ -19,7 +19,7 @@ export const GrpcMetadataProvider = ({
 };
 
 export const useGrpcMetadata = () => {
-  const context = React.useContext(GrpcMetadataContext);
+  const context = useContext(GrpcMetadataContext);
   if (context == null) {
     return EMPTY_METADATA;
   }
