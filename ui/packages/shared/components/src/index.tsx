@@ -4,6 +4,7 @@ import Card from './Card';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
 import DateTimePicker from './DateTimePicker';
 import Dropdown from './Dropdown';
+import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './GrpcMetadataContext';
 import Input from './Input';
 import MatchersInput from './MatchersInput';
 import MetricsGraph from './MetricsGraph';
@@ -26,6 +27,8 @@ export {
   DateTimeRange,
   DateTimeRangePicker,
   Dropdown,
+  GrpcMetadataContext,
+  GrpcMetadataProvider,
   Input,
   MatchersInput,
   MetricsGraph,
@@ -36,4 +39,5 @@ export {
   Select,
   Tab,
   EmptyState,
+  useGrpcMetadata,
 };

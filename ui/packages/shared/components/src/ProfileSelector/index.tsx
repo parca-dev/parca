@@ -7,7 +7,15 @@ import MatchersInput from '../MatchersInput';
 import MergeButton from './MergeButton';
 import CompareButton from './CompareButton';
 import Card from '../Card';
-import {DateTimeRangePicker, DateTimeRange, Select, Button, ButtonGroup, SelectElement} from '../';
+import {
+  DateTimeRangePicker,
+  DateTimeRange,
+  Select,
+  Button,
+  ButtonGroup,
+  SelectElement,
+  useGrpcMetadata,
+} from '../';
 import {CloseIcon} from '@parca/icons';
 import cx from 'classnames';
 
@@ -51,19 +59,23 @@ export const useLabelValues = (
     response: null,
     error: null,
   });
+  const metadata = useGrpcMetadata();
 
   useEffect(() => {
     const req = new ValuesRequest();
     req.setLabelName(labelName);
+    client.values(
+      req,
+      metadata,
+      (error: ServiceError | null, responseMessage: ValuesResponse | null) => {
+        const res = responseMessage == null ? null : responseMessage.toObject();
 
-    client.values(req, (error: ServiceError | null, responseMessage: ValuesResponse | null) => {
-      const res = responseMessage == null ? null : responseMessage.toObject();
-
-      setResult({
-        response: res,
-        error: error,
-      });
-    });
+        setResult({
+          response: res,
+          error: error,
+        });
+      }
+    );
   }, [client, labelName]);
 
   return result;

@@ -1,6 +1,4 @@
 import React, {useEffect, useState} from 'react';
-
-import {ProfileSource} from './ProfileSource';
 import {
   QueryRequest,
   QueryResponse,
@@ -10,7 +8,9 @@ import {
 } from '@parca/client';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 import {getLastItem, valueFormatter} from '@parca/functions';
+import {useGrpcMetadata} from '@parca/components';
 
+import {ProfileSource} from './ProfileSource';
 import './TopTable.styles.css';
 
 interface ProfileViewProps {
@@ -90,6 +90,7 @@ export const useQuery = (
     response: null,
     error: null,
   });
+  const metadata = useGrpcMetadata();
 
   useEffect(() => {
     const req = profileSource.QueryRequest();
@@ -97,6 +98,7 @@ export const useQuery = (
 
     client.query(
       req,
+      metadata,
       (
         error: ServiceError | null,
         responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null

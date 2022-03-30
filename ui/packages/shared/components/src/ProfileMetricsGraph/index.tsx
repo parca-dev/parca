@@ -9,7 +9,7 @@ import {
   ServiceError,
 } from '@parca/client';
 import {Timestamp} from 'google-protobuf/google/protobuf/timestamp_pb';
-import {DateTimeRange} from '@parca/components';
+import {DateTimeRange, useGrpcMetadata} from '../';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -39,6 +39,7 @@ export const useQueryRange = (
     isLoading: false,
     error: null,
   });
+  const metadata = useGrpcMetadata();
 
   useEffect(() => {
     setResult({
@@ -58,6 +59,7 @@ export const useQueryRange = (
 
     client.queryRange(
       req,
+      metadata,
       (error: ServiceError | null, responseMessage: QueryRangeResponse | null) => {
         const res = responseMessage == null ? null : responseMessage.toObject();
 

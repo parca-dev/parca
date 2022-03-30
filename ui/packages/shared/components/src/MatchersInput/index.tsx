@@ -11,6 +11,7 @@ import {
 } from '@parca/client';
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
+import {useGrpcMetadata} from '../GrpcMetadataContext';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
@@ -57,10 +58,12 @@ export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => 
     response: null,
     error: null,
   });
+  const metadata = useGrpcMetadata();
 
   useEffect(() => {
     client.labels(
       new LabelsRequest(),
+      metadata,
       (error: ServiceError | null, responseMessage: LabelsResponse | null) => {
         const res = responseMessage == null ? null : responseMessage.toObject();
 
@@ -120,6 +123,7 @@ const MatchersInput = ({
   const {styles, attributes} = usePopper(divInputRef, popperElement, {
     placement: 'bottom-start',
   });
+  const grpcMetadata = useGrpcMetadata();
 
   const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
 
@@ -129,6 +133,7 @@ const MatchersInput = ({
 
     queryClient.values(
       req,
+      grpcMetadata,
       (error: ServiceError | null, responseMessage: ValuesResponse | null) => {
         setLabelValuesResponse(
           responseMessage == null ? null : responseMessage.toObject().labelValuesList
