@@ -22,8 +22,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/arrow/go/v8/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	columnstore "github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/arcticdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
@@ -35,6 +38,7 @@ import (
 	profilestore "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/storage"
 )
@@ -514,59 +518,66 @@ func Test_Query_Diff(t *testing.T) {
 }
 
 func Benchmark_Query_Merge(b *testing.B) {
-	ctx := context.Background()
-	s := metastore.NewBadgerMetastore(
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
-		metastore.NewRandomUUIDGenerator(),
-	)
-	b.Cleanup(func() {
-		s.Close()
-	})
-	f, err := os.Open("../storage/testdata/profile1.pb.gz")
-	require.NoError(b, err)
-	p1, err := profile.Parse(f)
-	require.NoError(b, err)
-	require.NoError(b, f.Close())
-
-	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), s, p1, 0, false)
-	require.NoError(b, err)
-
-	for k := 0.; k <= 10; k++ {
+	for k := 0.; k <= 7; k++ {
 		n := int(math.Pow(2, k))
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				b.StopTimer()
-				ctx := context.Background()
-				db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
-				q := New(
-					log.NewNopLogger(),
-					trace.NewNoopTracerProvider().Tracer(""),
-					db,
-					s,
-				)
+			ctx := context.Background()
+			logger := log.NewNopLogger()
+			reg := prometheus.NewRegistry()
+			tracer := trace.NewNoopTracerProvider().Tracer("")
+			col := columnstore.New(reg)
+			colDB := col.DB("parca")
+			table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
+			m := metastore.NewBadgerMetastore(
+				logger,
+				reg,
+				tracer,
+				metastore.NewRandomUUIDGenerator(),
+			)
 
-				app, err := db.Appender(ctx, labels.Labels{
-					labels.Label{
-						Name:  "__name__",
-						Value: "allocs",
-					},
-				})
+			f, err := os.Open("../query/testdata/alloc_objects.pb.gz")
+			require.NoError(b, err)
+			p1, err := profile.Parse(f)
+			require.NoError(b, err)
+			require.NoError(b, f.Close())
 
+			for _, s := range p1.Sample {
+				s.Label = nil
+				s.NumLabel = nil
+				s.NumUnit = nil
+			}
+
+			p1 = p1.Compact()
+
+			p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), m, p1, 0, false)
+			require.NoError(b, err)
+
+			for j := 0; j < n; j++ {
+				p.Meta.Timestamp = int64(j + 1)
+				_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{}, p)
 				require.NoError(b, err)
-				for j := 0; j < n; j++ {
-					p.Meta.Timestamp = int64(j + 1)
-					err = app.AppendFlat(ctx, p)
-					require.NoError(b, err)
-				}
-				b.StartTimer()
+			}
 
-				_, err = q.Query(ctx, &pb.QueryRequest{
+			table.Sync()
+
+			api := NewColumnQueryAPI(
+				logger,
+				tracer,
+				m,
+				query.NewEngine(
+					memory.NewGoAllocator(),
+					colDB.TableProvider(),
+				),
+				"stacktraces",
+			)
+			b.ResetTimer()
+
+			for i := 0; i < b.N; i++ {
+				_, err = api.Query(ctx, &pb.QueryRequest{
 					Mode: pb.QueryRequest_MODE_MERGE,
 					Options: &pb.QueryRequest_Merge{
 						Merge: &pb.MergeProfile{
-							Query: "allocs",
+							Query: `{__name__="alloc_objects_count"}`,
 							Start: timestamppb.New(time.Unix(0, 0)),
 							End:   timestamppb.New(time.Unix(0, int64(time.Millisecond)*int64(n+1))),
 						},

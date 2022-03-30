@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v7/arrow/memory"
+	"github.com/apache/arrow/go/v8/arrow/memory"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/fatih/semgroup"
 	"github.com/go-kit/log"
