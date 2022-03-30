@@ -117,13 +117,13 @@ func (s Sample) ToParquetRow(row parquet.Row, labelNames, pprofLabelNames, pprof
 	row = append(row, parquet.ValueOf(s.Duration).Level(0, 0, 0))
 
 	// Labels
-
 	i, j := 0, 0
 	for i < labelNamesLen {
 		columnIndex := i + 1
 
 		if labelNames[i] == s.Labels[j].Name {
-			row = append(row, parquet.ValueOf(s.Labels[j].Value).Level(0, 1, columnIndex))
+			value := parquet.ValueOf(s.Labels[j].Value).Level(0, 1, columnIndex)
+			row = append(row, value)
 			i++
 			j++
 
@@ -140,14 +140,21 @@ func (s Sample) ToParquetRow(row parquet.Row, labelNames, pprofLabelNames, pprof
 		}
 	}
 
-	// pprofLabels
+	// We add these columns at their index with the initial padding of the size of dynamic columns.
+	row = append(row, parquet.ValueOf(s.Period).Level(0, 0, labelNamesLen+1))
+	row = append(row, parquet.ValueOf(s.PeriodType).Level(0, 0, labelNamesLen+2))
+	row = append(row, parquet.ValueOf(s.PeriodUnit).Level(0, 0, labelNamesLen+3))
 
+	// pprofLabels
 	i, j = 0, 0
 	for i < pprofLabelsNamesLen {
-		columnIndex := labelNamesLen + i + 1 // add the previous labelName column index on top
+		// add the previous labelName column index on top
+		// duration, period, period_type, period_unit are index 4 on top
+		columnIndex := labelNamesLen + i + 4
 
 		if pprofLabelNames[i] == s.PprofLabels[j].Name {
-			row = append(row, parquet.ValueOf(s.PprofLabels[j].Value).Level(0, 1, columnIndex))
+			value := parquet.ValueOf(s.PprofLabels[j].Value).Level(0, 1, columnIndex)
+			row = append(row, value)
 			i++
 			j++
 
@@ -165,14 +172,15 @@ func (s Sample) ToParquetRow(row parquet.Row, labelNames, pprofLabelNames, pprof
 	}
 
 	// pprofNumLabels
-
 	i, j = 0, 0
 	for i < pprofNumLabelsNamesLen {
 		// add the previous labelNames and pprofLabelsNames column index on top
-		columnIndex := labelNamesLen + pprofLabelsNamesLen + i + 1
+		// duration, period, period_type, period_unit are index 4 on top
+		columnIndex := labelNamesLen + pprofLabelsNamesLen + i + 4
 
 		if pprofNumLabelNames[i] == s.PprofNumLabels[j].Name {
-			row = append(row, parquet.ValueOf(s.PprofNumLabels[j].Value).Level(0, 1, columnIndex))
+			value := parquet.ValueOf(s.PprofNumLabels[j].Value).Level(0, 1, columnIndex)
+			row = append(row, value)
 			i++
 			j++
 
@@ -189,10 +197,8 @@ func (s Sample) ToParquetRow(row parquet.Row, labelNames, pprofLabelNames, pprof
 		}
 	}
 
-	// We add these columns at their index with the initial padding of the size of dynamic columns.
-	row = append(row, parquet.ValueOf(s.Period).Level(0, 0, dynamicNum+1))
-	row = append(row, parquet.ValueOf(s.PeriodType).Level(0, 0, dynamicNum+2))
-	row = append(row, parquet.ValueOf(s.PeriodUnit).Level(0, 0, dynamicNum+3))
+	// the indexes start at dynamicNum which is the sum of all dynamic columns.
+	// on top of that start with the 4 for: duration, period, period_type, period_unit
 	row = append(row, parquet.ValueOf(s.SampleType).Level(0, 0, dynamicNum+4))
 	row = append(row, parquet.ValueOf(s.SampleUnit).Level(0, 0, dynamicNum+5))
 	row = append(row, parquet.ValueOf(s.Stacktrace).Level(0, 0, dynamicNum+6))

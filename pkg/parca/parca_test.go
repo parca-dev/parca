@@ -300,7 +300,7 @@ func TestConsistency(t *testing.T) {
 	p, err := parcaprofile.FromPprof(ctx, logger, m, p1, 0, false)
 	require.NoError(t, err)
 
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{}}, p)
+	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{}, p)
 	require.NoError(t, err)
 
 	table.Sync()
