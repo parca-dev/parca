@@ -66,10 +66,8 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 		},
 	})
 	if err != nil {
-		if sts, ok := status.FromError(err); ok {
-			if sts.Code() == codes.AlreadyExists {
-				return 0, ErrDebugInfoAlreadyExists
-			}
+		if err := sentinelError(err); err != nil {
+			return 0, err
 		}
 		return 0, fmt.Errorf("send upload info: %w", err)
 	}
@@ -92,6 +90,16 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 				ChunkData: buffer[:n],
 			},
 		})
+		if err == io.EOF {
+			// When the stream is closed, the server will send an EOF.
+			// To get the correct error code, we need the status.
+			// So receive the message and check the status.
+			err = stream.RecvMsg(nil)
+			if err := sentinelError(err); err != nil {
+				return 0, err
+			}
+			return 0, fmt.Errorf("send chunk: %w", err)
+		}
 		if err != nil {
 			return 0, fmt.Errorf("send next chunk (%d bytes sent so far): %w", bytesSent, err)
 		}
@@ -100,12 +108,19 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		if sts, ok := status.FromError(err); ok {
-			if sts.Code() == codes.AlreadyExists {
-				return 0, ErrDebugInfoAlreadyExists
-			}
+		if err := sentinelError(err); err != nil {
+			return 0, err
 		}
 		return 0, fmt.Errorf("close and receive: %w", err)
 	}
 	return res.Size, nil
+}
+
+func sentinelError(err error) error {
+	if sts, ok := status.FromError(err); ok {
+		if sts.Code() == codes.AlreadyExists {
+			return ErrDebugInfoAlreadyExists
+		}
+	}
+	return nil
 }
