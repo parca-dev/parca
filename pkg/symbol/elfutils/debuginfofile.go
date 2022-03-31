@@ -93,7 +93,10 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 		return lines, nil
 	}
 
-	name := tr.Entry.Val(dwarf.AttrName).(string)
+	name, ok := tr.Entry.Val(dwarf.AttrName).(string)
+	if !ok {
+		name = ""
+	}
 	file, line := findLineInfo(f.lineEntries[cu.Offset], tr.Ranges)
 	lines = append(lines, metastore.LocationLine{
 		Line: line,
