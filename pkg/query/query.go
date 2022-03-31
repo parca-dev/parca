@@ -294,6 +294,7 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
+		fg = stripEmptyNodes(fg)
 		return &pb.QueryResponse{
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
@@ -324,6 +325,22 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")
 	}
+}
+
+// stripEmptyNodes iterates over all root children and only adds points to the children to the
+// nodes that actually have a non-zero cumulative value to the returned root children.
+// It's more a fix/hack than anything.
+// In the best case we don't even create the empty nodes to begin with when querying the storage.
+func stripEmptyNodes(fg *pb.Flamegraph) *pb.Flamegraph {
+	// Iterate over all root children and remove the once that have cumulative value == 0
+	children := make([]*pb.FlamegraphNode, 0, len(fg.Root.Children))
+	for _, child := range fg.Root.Children {
+		if child.Cumulative != 0 {
+			children = append(children, child)
+		}
+	}
+	fg.Root.Children = children
+	return fg
 }
 
 func (q *Query) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Time) (profile.InstantProfile, error) {

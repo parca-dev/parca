@@ -720,3 +720,33 @@ func Test_QueryRange_MultipleLabels_NoMatch(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(resp.GetSeries()))
 }
+
+func Test_stripEmptyNodes(t *testing.T) {
+	original := &pb.Flamegraph{
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: 7,
+			Children: []*pb.FlamegraphNode{
+				{Cumulative: 0},
+				{Cumulative: 1},
+				{Cumulative: 0},
+				{Cumulative: 2},
+				{Cumulative: 0},
+				{Cumulative: 4},
+				{Cumulative: 0},
+				{Cumulative: 0},
+			},
+		},
+	}
+	expected := &pb.Flamegraph{
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: 7,
+			Children: []*pb.FlamegraphNode{
+				{Cumulative: 1},
+				{Cumulative: 2},
+				{Cumulative: 4},
+			},
+		},
+	}
+
+	require.Equal(t, expected, stripEmptyNodes(original))
+}
