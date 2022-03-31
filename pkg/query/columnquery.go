@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/arrow/go/v7/arrow"
-	"github.com/apache/arrow/go/v7/arrow/array"
+	"github.com/apache/arrow/go/v8/arrow"
+	"github.com/apache/arrow/go/v8/arrow/array"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/polarsignals/arcticdb/query"
@@ -80,16 +80,16 @@ func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb
 			}
 
 			col := ar.Column(0)
-			stringCol, ok := col.(*array.String)
+			stringCol, ok := col.(*array.Binary)
 			if !ok {
 				return fmt.Errorf("expected string column, got %T", col)
 			}
 
 			for i := 0; i < stringCol.Len(); i++ {
 				val := stringCol.Value(i)
-				if _, ok := seen[val]; !ok {
-					vals = append(vals, val)
-					seen[val] = struct{}{}
+				if _, ok := seen[string(val)]; !ok {
+					vals = append(vals, string(val))
+					seen[string(val)] = struct{}{}
 				}
 			}
 
@@ -224,14 +224,14 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 	for i := 0; i < int(ar.NumRows()); i++ {
 		labelSet = labelSet[:0]
 		for _, labelColumnIndex := range labelColumnIndices {
-			col := ar.Column(labelColumnIndex).(*array.String)
+			col := ar.Column(labelColumnIndex).(*array.Binary)
 			if col.IsNull(i) {
 				continue
 			}
 
 			v := col.Value(i)
-			if v != "" {
-				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: v})
+			if len(v) > 0 {
+				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: string(v)})
 			}
 		}
 

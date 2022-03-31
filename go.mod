@@ -1,11 +1,11 @@
 module github.com/parca-dev/parca
 
-go 1.17
+go 1.18
 
 require (
 	github.com/OneOfOne/xxhash v1.2.6 // indirect
 	github.com/alecthomas/kong v0.5.0
-	github.com/apache/arrow/go/v7 v7.0.0
+	github.com/apache/arrow/go/v8 v8.0.0-20220330100019-c515a6924f60
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -36,7 +36,7 @@ require (
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v1.8.2-0.20220315145411-881111fec433
-	github.com/segmentio/parquet-go v0.0.0-20220322172350-8ae6314927b3
+	github.com/segmentio/parquet-go v0.0.0-20220330180547-542d8f0815f1
 	github.com/stretchr/testify v1.7.1
 	github.com/thanos-io/objstore v0.0.0-20220324101945-f2f24637ce2e
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.30.0
@@ -75,7 +75,7 @@ require (
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible // indirect
-	github.com/andybalholm/brotli v1.0.3 // indirect
+	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/armon/go-metrics v0.3.9 // indirect
 	github.com/aws/aws-sdk-go v1.43.10 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.16.0 // indirect
@@ -126,7 +126,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/flatbuffers v2.0.0+incompatible // indirect
+	github.com/google/flatbuffers v2.0.5+incompatible // indirect
 	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
@@ -170,7 +170,7 @@ require (
 	github.com/ncw/swift v1.0.53 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
-	github.com/pierrec/lz4/v4 v4.1.9 // indirect
+	github.com/pierrec/lz4/v4 v4.1.12 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
@@ -188,7 +188,7 @@ require (
 	go.opentelemetry.io/proto/otlp v0.12.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
-	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57 // indirect
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a // indirect
 	golang.org/x/sys v0.0.0-20220222172238-00053529121e // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
@@ -214,3 +214,5 @@ require (
 replace go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v0.24.0
 
 replace github.com/polarsignals/arcticdb => ../../polarsignals/arcticdb
+
+replace github.com/apache/arrow/go/v8 => github.com/brancz/arrow/go/v8 v8.0.0-20220331075317-4a90e3994fc9

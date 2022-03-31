@@ -24,7 +24,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/apache/arrow/go/v7/arrow/memory"
+	"github.com/apache/arrow/go/v8/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"

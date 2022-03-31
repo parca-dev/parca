@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/arrow/go/v7/arrow"
-	"github.com/apache/arrow/go/v7/arrow/array"
+	"github.com/apache/arrow/go/v8/arrow"
+	"github.com/apache/arrow/go/v8/arrow/array"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -28,7 +28,7 @@ func ArrowRecordToStacktraceSamples(
 	if len(indices) != 1 {
 		return nil, fmt.Errorf("expected exactly one stacktrace column, got %d", len(indices))
 	}
-	stacktraceColumn := ar.Column(indices[0]).(*array.String)
+	stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
 
 	indices = schema.FieldIndices("sum(value)")
 	if len(indices) != 1 {
