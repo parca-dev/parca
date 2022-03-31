@@ -81,11 +81,11 @@ func Schema() *dynparquet.Schema {
 			dynparquet.Ascending(columnSampleUnit),
 			dynparquet.Ascending(columnPeriodType),
 			dynparquet.Ascending(columnPeriodUnit),
-			dynparquet.NullsFirst(dynparquet.Ascending(columnPprofLabels)),
-			dynparquet.NullsFirst(dynparquet.Ascending(columnPprofNumLabels)),
 			dynparquet.NullsFirst(dynparquet.Ascending(columnLabels)),
 			dynparquet.NullsFirst(dynparquet.Ascending(columnStacktrace)),
 			dynparquet.Ascending(columnTimestamp),
+			dynparquet.NullsFirst(dynparquet.Ascending(columnPprofLabels)),
+			dynparquet.NullsFirst(dynparquet.Ascending(columnPprofNumLabels)),
 		},
 	)
 }
