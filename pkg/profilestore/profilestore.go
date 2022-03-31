@@ -21,6 +21,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
@@ -65,6 +66,10 @@ func (s *ProfileStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawR
 	for _, series := range r.Series {
 		ls := make(labels.Labels, 0, len(series.Labels.Labels))
 		for _, l := range series.Labels.Labels {
+			if err := model.LabelName(l.Name).IsValid(); !err {
+				return nil, status.Errorf(codes.InvalidArgument, "invalid label name: %v", l.Name)
+			}
+
 			ls = append(ls, labels.Label{
 				Name:  l.Name,
 				Value: l.Value,
