@@ -38,8 +38,16 @@ func TestFlatProfileToBuffer(t *testing.T) {
 	}, buf.DynamicColumns())
 
 	// Add pprof labels to the test sample.
-	s[0].PprofNumLabels = labels.Labels{{Name: "bytes", Value: "32"}}
+	s[0].PprofNumLabels = map[string]int64{"bytes": 32}
 
 	buf, err = s.ToBuffer(Schema())
 	require.NoError(t, err)
+	require.Equal(t,
+		map[string][]string{
+			columnLabels:         {"__name__"},
+			columnPprofLabels:    {},
+			columnPprofNumLabels: {"bytes"},
+		},
+		buf.DynamicColumns(),
+	)
 }

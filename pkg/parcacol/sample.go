@@ -9,18 +9,20 @@ import (
 	"github.com/segmentio/parquet-go"
 )
 
+// Sample is a decomposed pprof Sample that will be appended to columnar storage.
+// All fields are columns that are sorted by their name in the schema too.
 type Sample struct {
-	SampleType     string
-	SampleUnit     string
+	Duration       int64
+	Labels         labels.Labels
+	Period         int64
 	PeriodType     string
 	PeriodUnit     string
-	PprofLabels    labels.Labels
-	PprofNumLabels labels.Labels
-	Labels         labels.Labels
+	PprofLabels    map[string]string
+	PprofNumLabels map[string]int64
+	SampleType     string
+	SampleUnit     string
 	Stacktrace     []byte
 	Timestamp      int64
-	Duration       int64
-	Period         int64
 	Value          int64
 }
 
@@ -74,10 +76,10 @@ func (s Samples) pprofLabelsNames() []string {
 	seen := map[string]struct{}{}
 
 	for _, sample := range s {
-		for _, label := range sample.PprofLabels {
-			if _, ok := seen[label.Name]; !ok {
-				names = append(names, label.Name)
-				seen[label.Name] = struct{}{}
+		for name := range sample.PprofLabels {
+			if _, ok := seen[name]; !ok {
+				names = append(names, name)
+				seen[name] = struct{}{}
 			}
 		}
 	}
@@ -91,10 +93,10 @@ func (s Samples) pprofNumLabelsNames() []string {
 	seen := map[string]struct{}{}
 
 	for _, sample := range s {
-		for _, label := range sample.PprofNumLabels {
-			if _, ok := seen[label.Name]; !ok {
-				names = append(names, label.Name)
-				seen[label.Name] = struct{}{}
+		for name := range sample.PprofNumLabels {
+			if _, ok := seen[name]; !ok {
+				names = append(names, name)
+				seen[name] = struct{}{}
 			}
 		}
 	}
@@ -164,51 +166,23 @@ func (s Sample) ToParquetRow(schema *dynparquet.Schema, row parquet.Row, labelNa
 				}
 			}
 		case columnPprofLabels:
-			i, j := 0, 0
-			pprofLabelsNamesLen := len(pprofLabelNames)
-			for i < pprofLabelsNamesLen {
-				if pprofLabelNames[i] == s.PprofLabels[j].Name {
-					value := parquet.ValueOf(s.PprofLabels[j].Value).Level(0, 1, columnIndex)
-					row = append(row, value)
+			for _, name := range pprofLabelNames {
+				if value, ok := s.PprofLabels[name]; ok {
+					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
 					columnIndex++
-					i++
-					j++
-
-					if j >= len(s.PprofLabels) {
-						for ; i < pprofLabelsNamesLen; i++ {
-							row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-						}
-						break
-					}
 				} else {
-					// If nothing matches we add a NULL to the column
 					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
 					columnIndex++
-					i++
 				}
 			}
 		case columnPprofNumLabels:
-			i, j := 0, 0
-			pprofNumLabelsNamesLen := len(pprofNumLabelNames)
-			for i < pprofNumLabelsNamesLen {
-				if pprofNumLabelNames[i] == s.PprofNumLabels[j].Name {
-					value := parquet.ValueOf(s.PprofNumLabels[j].Value).Level(0, 1, columnIndex)
-					row = append(row, value)
+			for _, name := range pprofNumLabelNames {
+				if value, ok := s.PprofNumLabels[name]; ok {
+					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
 					columnIndex++
-					i++
-					j++
-
-					if j >= len(s.PprofNumLabels) {
-						for ; i < pprofNumLabelsNamesLen; i++ {
-							row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-						}
-						break
-					}
 				} else {
-					// If nothing matches we add a NULL to the column
 					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
 					columnIndex++
-					i++
 				}
 			}
 		default:

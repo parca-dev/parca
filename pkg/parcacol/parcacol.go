@@ -3,7 +3,6 @@ package parcacol
 import (
 	"context"
 	"sort"
-	"strconv"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -60,26 +59,19 @@ func FlatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet
 
 	rows := make(Samples, 0, len(prof.FlatSamples))
 	for _, s := range prof.FlatSamples {
-		pprofLabels := labels.Labels{}
+		pprofLabels := make(map[string]string, len(s.Label))
 		for name, values := range s.Label {
-			if len(values) > 1 {
-				panic("don't expect more than 1 value per pprof label")
+			if len(values) != 1 {
+				panic("expected exactly one value per pprof label")
 			}
-			pprofLabels = append(pprofLabels, labels.Label{
-				Name:  name,
-				Value: values[0],
-			})
+			pprofLabels[name] = values[0]
 		}
-
-		pprofNumLabels := labels.Labels{}
+		pprofNumLabels := make(map[string]int64, len(s.NumLabel))
 		for name, values := range s.NumLabel {
-			if len(values) > 1 {
-				panic("don't expect more than 1 value per pprof num label")
+			if len(values) != 1 {
+				panic("expected exactly one value per pprof num label")
 			}
-			pprofNumLabels = append(pprofNumLabels, labels.Label{
-				Name:  name,
-				Value: strconv.FormatInt(values[0], 10),
-			})
+			pprofNumLabels[name] = values[0]
 		}
 
 		rows = append(rows, Sample{

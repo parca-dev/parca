@@ -25,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v7/arrow"
 	"github.com/apache/arrow/go/v7/arrow/memory"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/fatih/semgroup"
@@ -34,14 +33,15 @@ import (
 	"github.com/polarsignals/arcticdb"
 	columnstore "github.com/polarsignals/arcticdb"
 	"github.com/polarsignals/arcticdb/query"
-	"github.com/polarsignals/arcticdb/query/logicalplan"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -304,34 +304,30 @@ func TestConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	table.Sync()
-
-	q := query.NewEngine(
-		memory.DefaultAllocator,
-		colDB.TableProvider(),
+	api := queryservice.NewColumnQueryAPI(
+		logger,
+		tracer,
+		m,
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+		),
+		"stacktraces",
 	)
 
-	var ar arrow.Record
-	err = q.ScanTable("stacktraces").
-		Filter(logicalplan.And(
-			logicalplan.Col("timestamp").Eq(logicalplan.Literal(p1.TimeNanos/time.Millisecond.Nanoseconds())),
-			logicalplan.Col("labels.__name__").Eq(logicalplan.Literal("alloc_objects_count")),
-		)).
-		Aggregate(
-			logicalplan.Sum(logicalplan.Col("value")),
-			logicalplan.Col("stacktrace"),
-		).
-		Execute(func(r arrow.Record) error {
-			r.Retain()
-			ar = r
-			return nil
-		})
-	require.NoError(t, err)
-	defer ar.Release()
-
-	st, err := parcacol.ArrowRecordToStacktraceSamples(ctx, m, ar, "sum(value)")
+	ts := timestamppb.New(timestamp.Time(p1.TimeNanos / time.Millisecond.Nanoseconds()))
+	res, err := api.Query(ctx, &querypb.QueryRequest{
+		ReportType: querypb.QueryRequest_REPORT_TYPE_PPROF,
+		Options: &querypb.QueryRequest_Single{
+			Single: &querypb.SingleProfile{
+				Query: `{__name__="alloc_objects_count"}`,
+				Time:  ts,
+			},
+		},
+	})
 	require.NoError(t, err)
 
-	resProf, err := queryservice.GenerateFlatPprof(ctx, m, st)
+	resProf, err := profile.ParseData(res.Report.(*querypb.QueryResponse_Pprof).Pprof)
 	require.NoError(t, err)
 
 	require.Equal(t, len(p1.Sample), len(resProf.Sample))

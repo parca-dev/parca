@@ -52,7 +52,7 @@ func Schema() *dynparquet.Schema {
 				Dynamic:       true,
 			}, {
 				Name:          columnPprofNumLabels,
-				StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
+				StorageLayout: parquet.Optional(parquet.Int(64)),
 				Dynamic:       true,
 			}, {
 				Name:          columnSampleType,
