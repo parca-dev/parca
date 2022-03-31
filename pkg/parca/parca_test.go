@@ -30,6 +30,9 @@ import (
 	"github.com/fatih/semgroup"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/polarsignals/arcticdb"
+	columnstore "github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/arcticdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
@@ -46,9 +49,6 @@ import (
 	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	queryservice "github.com/parca-dev/parca/pkg/query"
-	"github.com/polarsignals/arcticdb"
-	columnstore "github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
 )
 
 func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {
@@ -295,22 +295,15 @@ func TestConsistency(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
-	for _, s := range p1.Sample {
-		s.Label = nil
-		s.NumLabel = nil
-		s.NumUnit = nil
-	}
-
 	p1 = p1.Compact()
 
 	p, err := parcaprofile.FromPprof(ctx, logger, m, p1, 0, false)
 	require.NoError(t, err)
 
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{}}, p)
+	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{}, p)
 	require.NoError(t, err)
 
 	table.Sync()
-
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,

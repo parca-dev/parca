@@ -59,17 +59,34 @@ func FlatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet
 
 	rows := make(Samples, 0, len(prof.FlatSamples))
 	for _, s := range prof.FlatSamples {
+		pprofLabels := make(map[string]string, len(s.Label))
+		for name, values := range s.Label {
+			if len(values) != 1 {
+				panic("expected exactly one value per pprof label")
+			}
+			pprofLabels[name] = values[0]
+		}
+		pprofNumLabels := make(map[string]int64, len(s.NumLabel))
+		for name, values := range s.NumLabel {
+			if len(values) != 1 {
+				panic("expected exactly one value per pprof num label")
+			}
+			pprofNumLabels[name] = values[0]
+		}
+
 		rows = append(rows, Sample{
-			SampleType: prof.Meta.SampleType.Type,
-			SampleUnit: prof.Meta.SampleType.Unit,
-			PeriodType: prof.Meta.PeriodType.Type,
-			PeriodUnit: prof.Meta.PeriodType.Unit,
-			Labels:     lbls,
-			Stacktrace: extractLocationIDs(s.Location),
-			Timestamp:  prof.Meta.Timestamp,
-			Duration:   prof.Meta.Duration,
-			Period:     prof.Meta.Period,
-			Value:      s.Value,
+			SampleType:     prof.Meta.SampleType.Type,
+			SampleUnit:     prof.Meta.SampleType.Unit,
+			PeriodType:     prof.Meta.PeriodType.Type,
+			PeriodUnit:     prof.Meta.PeriodType.Unit,
+			PprofLabels:    pprofLabels,
+			PprofNumLabels: pprofNumLabels,
+			Labels:         lbls,
+			Stacktrace:     extractLocationIDs(s.Location),
+			Timestamp:      prof.Meta.Timestamp,
+			Duration:       prof.Meta.Duration,
+			Period:         prof.Meta.Period,
+			Value:          s.Value,
 		})
 	}
 
