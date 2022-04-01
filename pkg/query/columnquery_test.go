@@ -149,3 +149,104 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	_, err = profile.ParseData(res.Report.(*pb.QueryResponse_Pprof).Pprof)
 	require.NoError(t, err)
 }
+
+func TestColumnQueryAPILabelNames(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col := columnstore.New(reg)
+	colDB := col.DB("parca")
+	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
+	m := metastore.NewBadgerMetastore(
+		logger,
+		reg,
+		tracer,
+		metastore.NewRandomUUIDGenerator(),
+	)
+	t.Cleanup(func() {
+		m.Close()
+	})
+
+	fileContent, err := ioutil.ReadFile("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(bytes.NewBuffer(fileContent))
+	require.NoError(t, err)
+	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
+	require.NoError(t, err)
+	require.Equal(t, 4, len(profiles))
+	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		Name:  "job",
+		Value: "default",
+	}}, profiles[0])
+	require.NoError(t, err)
+
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		m,
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+		),
+		"stacktraces",
+	)
+	res, err := api.Labels(ctx, &pb.LabelsRequest{})
+	require.NoError(t, err)
+
+	require.Equal(t, []string{
+		"__name__",
+		"job",
+	}, res.LabelNames)
+}
+
+func TestColumnQueryAPILabelValues(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col := columnstore.New(reg)
+	colDB := col.DB("parca")
+	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
+	m := metastore.NewBadgerMetastore(
+		logger,
+		reg,
+		tracer,
+		metastore.NewRandomUUIDGenerator(),
+	)
+	t.Cleanup(func() {
+		m.Close()
+	})
+
+	fileContent, err := ioutil.ReadFile("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(bytes.NewBuffer(fileContent))
+	require.NoError(t, err)
+	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
+	require.NoError(t, err)
+	require.Equal(t, 4, len(profiles))
+	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		Name:  "job",
+		Value: "default",
+	}}, profiles[0])
+	require.NoError(t, err)
+
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		m,
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+		),
+		"stacktraces",
+	)
+	res, err := api.Values(ctx, &pb.ValuesRequest{
+		LabelName: "job",
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, []string{
+		"default",
+	}, res.LabelValues)
+}

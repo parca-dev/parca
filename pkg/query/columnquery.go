@@ -31,6 +31,11 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
+type Engine interface {
+	ScanTable(name string) query.Builder
+	ScanSchema(name string) query.Builder
+}
+
 // ColumnQueryAPI is the read api interface for parca
 // It implements the proto/query/query.proto APIServer interface.
 type ColumnQueryAPI struct {
@@ -38,7 +43,7 @@ type ColumnQueryAPI struct {
 
 	logger    log.Logger
 	tracer    trace.Tracer
-	engine    *query.Engine
+	engine    Engine
 	tableName string
 	metaStore metastore.ProfileMetaStore
 }
@@ -47,7 +52,7 @@ func NewColumnQueryAPI(
 	logger log.Logger,
 	tracer trace.Tracer,
 	metaStore metastore.ProfileMetaStore,
-	engine *query.Engine,
+	engine Engine,
 	tableName string,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
@@ -61,8 +66,41 @@ func NewColumnQueryAPI(
 
 // Labels issues a labels request against the storage.
 func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
+	vals := []string{}
+	seen := map[string]struct{}{}
+
+	err := q.engine.ScanSchema(q.tableName).
+		Distinct(logicalplan.Col("name")).
+		Filter(logicalplan.Col("name").RegexMatch("^labels\\..+$")).
+		Execute(func(ar arrow.Record) error {
+			if ar.NumCols() != 1 {
+				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
+			}
+
+			col := ar.Column(0)
+			stringCol, ok := col.(*array.String)
+			if !ok {
+				return fmt.Errorf("expected string column, got %T", col)
+			}
+
+			for i := 0; i < stringCol.Len(); i++ {
+				val := stringCol.Value(i)
+				if _, ok := seen[val]; !ok {
+					vals = append(vals, strings.TrimPrefix(val, "labels."))
+					seen[val] = struct{}{}
+				}
+			}
+
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Strings(vals)
+
 	return &pb.LabelsResponse{
-		LabelNames: nil,
+		LabelNames: vals,
 	}, nil
 }
 
