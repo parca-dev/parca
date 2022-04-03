@@ -16,6 +16,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -175,6 +176,11 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 			list = append(list, n)
 		}
 	}
+
+	// Sort the list by meta location address, ascending
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].Meta.Location.Address < list[j].Meta.Location.Address
+	})
 
 	return &pb.Top{
 		List:     list,
