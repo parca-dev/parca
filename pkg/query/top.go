@@ -69,9 +69,11 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 			location := locationsMap[string(id)]
 			if node, found := locationsTopNodes[string(id)]; found {
 				node.Cumulative += sample.Value
+				node.Diff += sample.DiffValue
 			} else {
 				node := &pb.TopNode{
 					Cumulative: sample.Value,
+					Diff:       sample.DiffValue,
 					Meta: &pb.TopNodeMeta{
 						Mapping: location.Mapping,
 						Location: &metastorev1alpha1.Location{
@@ -92,6 +94,7 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 				}
 				if i == 0 {
 					node.Flat = sample.Value
+					node.Diff = sample.DiffValue
 				}
 				locationsTopNodes[string(id)] = node
 			}

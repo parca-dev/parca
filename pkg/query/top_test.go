@@ -89,6 +89,50 @@ func TestGenerateTopTable(t *testing.T) {
 	require.Truef(t, found, "expected to find the specific function")
 }
 
+func TestGenerateDiffTopTable(t *testing.T) {
+	ctx := context.Background()
+
+	f, err := os.Open("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+	p1, err := profile.Parse(f)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	l := metastore.NewBadgerMetastore(
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		metastore.NewRandomUUIDGenerator(),
+	)
+	t.Cleanup(func() {
+		l.Close()
+	})
+
+	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
+	require.NoError(t, err)
+
+	// The highest unique sample value is 31024846
+	// which we use for testing with a unique sample
+	const testValue = 31024846
+
+	for _, sample := range p.FlatSamples {
+		if sample.Value == testValue {
+			sample.DiffValue = -testValue
+		}
+	}
+
+	res, err := GenerateTopTable(ctx, l, p)
+	require.NoError(t, err)
+
+	var found bool
+	for _, node := range res.List {
+		if node.Diff == -testValue {
+			found = true
+		}
+	}
+	require.Truef(t, found, "Expected to find our test diff value in top nodes")
+}
+
 func TestAggregateTopByFunction(t *testing.T) {
 	uuid1 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
 	uuid2 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}
