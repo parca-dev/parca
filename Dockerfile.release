@@ -6,7 +6,7 @@ RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
 # Predicatable path for copying over to final image
 RUN if [ "$(go env GOHOSTARCH)" != "$(go env GOARCH)" ]; then mv "$(go env GOPATH)/bin/$(go env GOOS)_$(go env GOARCH)/grpc-health-probe" "$(go env GOPATH)/bin/grpc-health-probe"; fi
 
-FROM alpine:3.15.2
+FROM alpine:3.15.3
 
 USER nobody
 
