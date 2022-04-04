@@ -2473,9 +2473,9 @@
     glob-to-regexp "^0.3.0"
 
 "@next/bundle-analyzer@^12.0.3":
-  version "12.1.0"
-  resolved "https://registry.yarnpkg.com/@next/bundle-analyzer/-/bundle-analyzer-12.1.0.tgz#9f6d6cda2a26220c936805be407243e22790f4b7"
-  integrity sha512-pOtWRWaKQXff8A80Ex3E67EH8XuERHxBPn8cQgKzfhRKQwoTEareHe2nWJO1uXTQm6m7ZRhmhb4+uwp+UvmITQ==
+  version "12.1.4"
+  resolved "https://registry.yarnpkg.com/@next/bundle-analyzer/-/bundle-analyzer-12.1.4.tgz#22afb920b769a54a8da118af0786df0a1f4fca47"
+  integrity sha512-Xw3gxBTOAS5bcayUl2hDYeCbAFIR+7poiGW4Wi/KGcsjgVRetKBS6akZ1AZsz36CUOdCxajKO45B6CeAaKtcqA==
   dependencies:
     webpack-bundle-analyzer "4.3.0"
 
