@@ -375,6 +375,9 @@ export class TopNode extends jspb.Message {
   getFlat(): number;
   setFlat(value: number): void;
 
+  getDiff(): number;
+  setDiff(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TopNode.AsObject;
   static toObject(includeInstance: boolean, msg: TopNode): TopNode.AsObject;
@@ -390,6 +393,7 @@ export namespace TopNode {
     meta?: TopNodeMeta.AsObject,
     cumulative: number,
     flat: number,
+    diff: number,
   }
 }
 
