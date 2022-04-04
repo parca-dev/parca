@@ -35,7 +35,7 @@
     "@reduxjs/toolkit": "^1.7.2",
     "@svgr/webpack": "^6.2.0",
     "@testing-library/jest-dom": "^5.15.0",
-    "@testing-library/react": "^12.1.2",
+    "@testing-library/react": "^13.0.0",
     "autoprefixer": "^10.3.7",
     "d3": "^7.3.0",
     "d3-axis": "^3.0.0",
