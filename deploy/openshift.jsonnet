@@ -23,7 +23,6 @@ function(version='v0.0.3-alpha.2')
   });
 
   {
-    'parca-agent-namespace': ns,
     'parca-server-namespace': ns,
   } + {
     ['parca-server-' + name]: parca[name]
