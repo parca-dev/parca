@@ -84,6 +84,8 @@ type Flags struct {
 
 	Storage              string `default:"tsdb" enum:"columnstore,tsdb" help:"Storage type to use."`
 	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
+	StorageGranuleSize   int    `default:"8196" help:"Granule size for storage."`
+	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -183,7 +185,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	if flags.Storage == "columnstore" {
 		col := arcticdb.New(reg)
 		colDB := col.DB("parca")
-		table := colDB.Table("stacktraces", arcticdb.NewTableConfig(parcacol.Schema(), 8196), logger)
+		table := colDB.Table("stacktraces", arcticdb.NewTableConfig(
+			parcacol.Schema(),
+			flags.StorageGranuleSize,
+			flags.StorageActiveMemory,
+		), logger)
 
 		s = profilestore.NewProfileColumnStore(
 			logger,

@@ -176,7 +176,15 @@ func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServi
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
+	table := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(
+			parcacol.Schema(),
+			8196,
+			64*1024*1024,
+		),
+		logger,
+	)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
@@ -281,7 +289,15 @@ func TestConsistency(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.Schema(), 8196), logger)
+	table := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(
+			parcacol.Schema(),
+			8196,
+			64*1024*1024,
+		),
+		logger,
+	)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
