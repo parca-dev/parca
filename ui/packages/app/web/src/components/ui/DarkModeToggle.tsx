@@ -1,6 +1,5 @@
 import {MoonIcon, SunIcon} from '@heroicons/react/solid';
-import {useAppSelector, useAppDispatch} from '../../store/hooks';
-import {selectDarkMode, setDarkMode} from '../../store/slices/uiSlice';
+import {useAppSelector, useAppDispatch, setDarkMode, selectDarkMode} from '@parca/store';
 
 const DarkModeToggle = () => {
   const dispatch = useAppDispatch();

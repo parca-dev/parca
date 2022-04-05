@@ -1,4 +1,5 @@
 import {configureStore, combineReducers} from '@reduxjs/toolkit';
+import profileReducer from './slices/profileSlice';
 import uiReducer from './slices/uiSlice';
 import storage from 'redux-persist/lib/storage';
 import {persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER} from 'redux-persist';
@@ -6,6 +7,7 @@ import {persistStore} from 'redux-persist';
 
 const rootReducer = combineReducers({
   ui: uiReducer,
+  profile: profileReducer,
 });
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

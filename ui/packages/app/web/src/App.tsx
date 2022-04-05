@@ -1,6 +1,6 @@
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {PersistGate} from 'redux-persist/integration/react';
-import store from './store';
+import {store} from '@parca/store';
 import 'tailwindcss/tailwind.css';
 import './style/file-input.css';
 import './style/metrics.css';

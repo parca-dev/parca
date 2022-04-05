@@ -17,6 +17,7 @@ interface ProfileViewProps {
   queryClient: QueryServiceClient;
   profileSource: ProfileSource;
   navigateTo?: NavigateFunction;
+  compare?: boolean;
 }
 
 export interface IQueryResult {
