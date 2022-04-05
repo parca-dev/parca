@@ -30,6 +30,8 @@ local defaults = {
   port: 7070,
 
   serviceMonitor: false,
+  livenessProbe: true,
+  readinessProbe: true,
   storageRetentionTime: '',
 
   debugInfodUpstreamServers: ['https://debuginfod.systemtap.org'],
@@ -63,6 +65,8 @@ function(params) {
   assert std.isNumber(prc.config.replicas) && prc.config.replicas >= 0 : 'parca replicas has to be number >= 0',
   assert std.isObject(prc.config.resources),
   assert std.isBoolean(prc.config.serviceMonitor),
+  assert std.isBoolean(prc.config.livenessProbe),
+  assert std.isBoolean(prc.config.readinessProbe),
 
   service: {
     apiVersion: 'v1',
@@ -224,13 +228,13 @@ function(params) {
       volumeMounts: [{ name: 'parca-config', mountPath: '/var/parca' }],
       resources: if prc.config.resources != {} then prc.config.resources else {},
       terminationMessagePolicy: 'FallbackToLogsOnError',
-      livenessProbe: {
+      livenessProbe: if prc.config.livenessProbe == true then {
         initialDelaySeconds: 5,
         exec: {
           command: ['/grpc-health-probe', '-v', '-addr=:' + prc.config.port],
         },
       },
-      readinessProbe: {
+      readinessProbe: if prc.config.readinessProbe == true then {
         initialDelaySeconds: 10,
         exec: {
           command: ['/grpc-health-probe', '-v', '-addr=:' + prc.config.port],

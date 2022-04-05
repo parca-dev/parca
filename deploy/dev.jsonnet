@@ -16,6 +16,9 @@ function(agentVersion='v0.4.1')
     logLevel: 'debug',
     configPath: '/parca.yaml',
     corsAllowedOrigins: '*',
+    // Disabled in dev mode to be able to attach a debugger to container
+    livenessProbe: false,
+    readinessProbe: false,
     debugInfodUpstreamServers: ['https://debuginfod.elfutils.org'],
     // debugInfodHTTPRequestTimeout: '5m',
   });
