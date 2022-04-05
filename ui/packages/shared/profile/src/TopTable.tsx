@@ -9,6 +9,7 @@ import {
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import {useGrpcMetadata} from '@parca/components';
+import {useAppSelector, selectCompareMode} from '@parca/store';
 
 import {ProfileSource} from './ProfileSource';
 import './TopTable.styles.css';
@@ -138,6 +139,8 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
   const {response, error} = useQuery(queryClient, profileSource);
   const {items, requestSort, sortConfig} = useSortableData(response);
 
+  const compareMode = useAppSelector(selectCompareMode);
+
   const unit = response?.toObject().top?.unit as string;
 
   if (error != null) {
@@ -157,7 +160,7 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
   return (
     <>
       <div className="w-full">
-        <table className="iciclegraph-table table-auto text-left w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <table className="iciclegraph-table table-fixed text-left w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th
@@ -170,7 +173,7 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
                 </span>
               </th>
               <th
-                className="text-left text-sm cursor-pointer pt-2 pb-2"
+                className="text-right text-sm cursor-pointer pt-2 pb-2 w-[150px]"
                 onClick={() => requestSort('flat')}
               >
                 Flat
@@ -179,7 +182,7 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
                 </span>
               </th>
               <th
-                className="text-right text-sm cursor-pointer pt-2 pb-2 pr-2"
+                className="text-right text-sm cursor-pointer pt-2 pb-2 pr-2 w-[150px]"
                 onClick={() => requestSort('cumulative')}
               >
                 Cumulative
@@ -189,32 +192,34 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
                   <Arrow direction={getClassNamesFor('cumulative')} />
                 </span>
               </th>
-              <th
-                className="text-right text-sm cursor-pointer pt-2 pb-2 pr-2"
-                onClick={() => requestSort('diff')}
-              >
-                Diff
-                <span className={`inline-block align-middle ml-2 ${getClassNamesFor('diff')}`}>
-                  <Arrow direction={getClassNamesFor('diff')} />
-                </span>
-              </th>
+              {compareMode && (
+                <th
+                  className="text-right text-sm cursor-pointer pt-2 pb-2 pr-2 w-[150px]"
+                  onClick={() => requestSort('diff')}
+                >
+                  Diff
+                  <span className={`inline-block align-middle ml-2 ${getClassNamesFor('diff')}`}>
+                    <Arrow direction={getClassNamesFor('diff')} />
+                  </span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
             {items?.map((report, index) => (
               <tr key={index} className="hover:bg-[#62626212] dark:hover:bg-[#ffffff12]">
-                <td className="text-xs py-1.5 pl-2 min-w-[150px] max-w-[450px]">
-                  {RowLabel(report.meta)}
-                </td>
-                <td className="text-xs min-w-[150px] max-w-[150px] py-1.5 text-right">
+                <td className="text-xs py-1.5 pl-2">{RowLabel(report.meta)}</td>
+                <td className="text-xs py-1.5 text-right">
                   {valueFormatter(report.flat, unit, 2)}
                 </td>
-                <td className="text-xs min-w-[150px] max-w-[150px] py-1.5 text-right pr-2">
+                <td className="text-xs py-1.5 text-right pr-2">
                   {valueFormatter(report.cumulative, unit, 2)}
                 </td>
-                <td className="text-xs min-w-[150px] max-w-[150px] py-1.5 text-right pr-2">
-                  {valueFormatter(report.diff, unit, 2)}
-                </td>
+                {compareMode && (
+                  <td className="text-xs py-1.5 text-right pr-2">
+                    {valueFormatter(report.diff, unit, 2)}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

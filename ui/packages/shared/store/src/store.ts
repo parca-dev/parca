@@ -10,6 +10,8 @@ const rootReducer = combineReducers({
   profile: profileReducer,
 });
 
+const slicesToPersist = ['ui'];
+
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof rootReducer>;
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
@@ -19,6 +21,7 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage,
+  whitelist: slicesToPersist,
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

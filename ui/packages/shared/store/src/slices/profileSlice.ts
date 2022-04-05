@@ -12,7 +12,7 @@ const initialState: ProfileState = {
 };
 
 export const profileSlice = createSlice({
-  name: 'ui',
+  name: 'profile',
   initialState,
   reducers: {
     // Use the PayloadAction type to declare the contents of `action.payload`

@@ -236,7 +236,7 @@ export const ProfileView = ({
               </div>
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 justify-between">
               {currentView === 'icicle' && (
                 <div className="w-full">
                   <CalcWidth throttle={300} delay={2000}>
