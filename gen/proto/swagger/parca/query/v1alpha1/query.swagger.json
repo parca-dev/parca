@@ -937,6 +937,11 @@
           "type": "string",
           "format": "int64",
           "title": "flat is the flat value of the node"
+        },
+        "diff": {
+          "type": "string",
+          "format": "int64",
+          "title": "diff is the diff value between two profiles"
         }
       },
       "title": "TopNode is a node entry in a top list"

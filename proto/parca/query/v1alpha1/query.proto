@@ -231,6 +231,9 @@ message TopNode {
 
     // flat is the flat value of the node
     int64 flat = 3;
+
+    // diff is the diff value between two profiles
+    int64 diff = 4;
 }
 
 // TopNodeMeta is the metadata for a given node

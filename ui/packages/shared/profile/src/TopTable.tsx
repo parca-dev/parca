@@ -189,6 +189,15 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
                   <Arrow direction={getClassNamesFor('cumulative')} />
                 </span>
               </th>
+              <th
+                className="text-right text-sm cursor-pointer pt-2 pb-2 pr-2"
+                onClick={() => requestSort('diff')}
+              >
+                Diff
+                <span className={`inline-block align-middle ml-2 ${getClassNamesFor('diff')}`}>
+                  <Arrow direction={getClassNamesFor('diff')} />
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
@@ -197,11 +206,14 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
                 <td className="text-xs py-1.5 pl-2 min-w-[150px] max-w-[450px]">
                   {RowLabel(report.meta)}
                 </td>
-                <td className="text-xs min-w-[150px] max-w-[150px] py-1.5text-right">
+                <td className="text-xs min-w-[150px] max-w-[150px] py-1.5 text-right">
                   {valueFormatter(report.flat, unit, 2)}
                 </td>
                 <td className="text-xs min-w-[150px] max-w-[150px] py-1.5 text-right pr-2">
                   {valueFormatter(report.cumulative, unit, 2)}
+                </td>
+                <td className="text-xs min-w-[150px] max-w-[150px] py-1.5 text-right pr-2">
+                  {valueFormatter(report.diff, unit, 2)}
                 </td>
               </tr>
             ))}

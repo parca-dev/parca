@@ -3002,7 +3002,8 @@ proto.parca.query.v1alpha1.TopNode.toObject = function(includeInstance, msg) {
   var f, obj = {
     meta: (f = msg.getMeta()) && proto.parca.query.v1alpha1.TopNodeMeta.toObject(includeInstance, f),
     cumulative: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    flat: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    flat: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    diff: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -3052,6 +3053,10 @@ proto.parca.query.v1alpha1.TopNode.deserializeBinaryFromReader = function(msg, r
       var value = /** @type {number} */ (reader.readInt64());
       msg.setFlat(value);
       break;
+    case 4:
+      var value = /** @type {number} */ (reader.readInt64());
+      msg.setDiff(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3100,6 +3105,13 @@ proto.parca.query.v1alpha1.TopNode.serializeBinaryToWriter = function(message, w
   if (f !== 0) {
     writer.writeInt64(
       3,
+      f
+    );
+  }
+  f = message.getDiff();
+  if (f !== 0) {
+    writer.writeInt64(
+      4,
       f
     );
   }
@@ -3176,6 +3188,24 @@ proto.parca.query.v1alpha1.TopNode.prototype.getFlat = function() {
  */
 proto.parca.query.v1alpha1.TopNode.prototype.setFlat = function(value) {
   return jspb.Message.setProto3IntField(this, 3, value);
+};
+
+
+/**
+ * optional int64 diff = 4;
+ * @return {number}
+ */
+proto.parca.query.v1alpha1.TopNode.prototype.getDiff = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.parca.query.v1alpha1.TopNode} returns this
+ */
+proto.parca.query.v1alpha1.TopNode.prototype.setDiff = function(value) {
+  return jspb.Message.setProto3IntField(this, 4, value);
 };
 
 
