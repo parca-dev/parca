@@ -177,9 +177,15 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 		}
 	}
 
-	// Sort the list by meta location address, ascending
+	// Sort the list
 	sort.Slice(list, func(i, j int) bool {
-		return list[i].Meta.Location.Address < list[j].Meta.Location.Address
+		// If flat value is equal, sort by address, ascending
+		if list[i].Flat == list[j].Flat {
+			return list[i].Meta.Location.Address < list[j].Meta.Location.Address
+		}
+
+		// Sort by flat value, descending
+		return list[i].Flat > list[j].Flat
 	})
 
 	return &pb.Top{
