@@ -48,7 +48,7 @@ func Symbols(logger log.Logger, path string) (*SymtabLiner, error) {
 func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
 	i := sort.Search(len(lnr.symbols), func(i int) bool {
 		sym := lnr.symbols[i]
-		return sym.Value <= addr && addr < sym.Value+sym.Size
+		return sym.Value >= addr
 	})
 	if i >= len(lnr.symbols) {
 		level.Debug(lnr.logger).Log("msg", "failed to find symbol for address", "addr", addr)
