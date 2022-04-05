@@ -420,6 +420,8 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, sel []*labels.Matcher, 
 		Aggregate(
 			logicalplan.Sum(logicalplan.Col("value")),
 			logicalplan.Col("stacktrace"),
+			logicalplan.DynCol("pprof_labels"),
+			logicalplan.DynCol("pprof_num_labels"),
 		).
 		Execute(func(r arrow.Record) error {
 			r.Retain()
