@@ -32,24 +32,12 @@ spec:
         - --debug-infod-upstream-servers=https://debuginfod.elfutils.org
         - --debug-infod-http-request-timeout=5m
         image: parca.io/parca/parca:dev
-        livenessProbe:
-          exec:
-            command:
-            - /grpc-health-probe
-            - -v
-            - -addr=:7070
-          initialDelaySeconds: 5
+        livenessProbe: null
         name: parca
         ports:
         - containerPort: 7070
           name: http
-        readinessProbe:
-          exec:
-            command:
-            - /grpc-health-probe
-            - -v
-            - -addr=:7070
-          initialDelaySeconds: 10
+        readinessProbe: null
         resources: {}
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:

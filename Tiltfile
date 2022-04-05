@@ -12,11 +12,11 @@ docker_build(
 ## All-in-one
 # docker_build('parca.io/parca/parca:dev', '.',
 #     dockerfile='Dockerfile.dev',
-#     only=['./cmd', './pkg', './proto', './gen', './ui', './go.mod', './go.sum', 'parca.yaml'],
-# )
+#     only=['./cmd', './pkg', './proto', './gen', './internal', './ui', './go.mod', './go.sum', 'parca.yaml'],
+)
 
 k8s_yaml('deploy/tilt/parca-server-deployment.yaml')
-k8s_resource('parca', port_forwards=[7070, 40000])
+k8s_resource('parca', port_forwards=[7070])
 
 ## UI
 docker_build(
