@@ -1,5 +1,4 @@
-import {useAppSelector} from '../../store/hooks';
-import {selectDarkMode} from '../../store/slices/uiSlice';
+import {useAppSelector, selectDarkMode} from '@parca/store';
 import cx from 'classnames';
 import React from 'react';
 

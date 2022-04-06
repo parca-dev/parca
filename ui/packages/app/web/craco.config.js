@@ -9,6 +9,7 @@ packages.push(path.join(__dirname, '../../shared/functions'));
 packages.push(path.join(__dirname, '../../shared/icons'));
 packages.push(path.join(__dirname, '../../shared/parser'));
 packages.push(path.join(__dirname, '../../shared/profile'));
+packages.push(path.join(__dirname, '../../shared/store'));
 
 module.exports = {
   webpack: {

@@ -3,6 +3,7 @@ import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
+import {useAppSelector, useAppDispatch, setCompare, selectCompareMode} from '@parca/store';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -22,6 +23,9 @@ const ProfileExplorer = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
+  const dispatch = useAppDispatch();
+  const compareMode = useAppSelector(selectCompareMode);
+
   const {
     from_a,
     to_a,
@@ -45,6 +49,12 @@ const ProfileExplorer = ({
 
   if (queryParams && queryParams.expression_a) queryParams.expression_a = expression_a;
   if (queryParams && queryParams.expression_b) queryParams.expression_b = expression_b;
+
+  if (compare_a === 'true' && compare_b === 'true') {
+    dispatch(setCompare(true));
+  } else {
+    dispatch(setCompare(false));
+  }
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -158,6 +168,7 @@ const ProfileExplorer = ({
         },
       };
 
+      dispatch(setCompare(!compareMode));
       void navigateTo('/', compareQuery);
     };
 
@@ -251,6 +262,8 @@ const ProfileExplorer = ({
     if (card === 'A') {
       newQueryParameters = swapQueryParameters(queryParams);
     }
+
+    dispatch(setCompare(!compareMode));
 
     return navigateTo('/', {
       ...filterSuffix(newQueryParameters, '_b'),
