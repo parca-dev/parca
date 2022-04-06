@@ -157,6 +157,14 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
     return sortConfig.key === name ? sortConfig.direction : undefined;
   };
 
+  const addPlusSign = (num: string) => {
+    if (num.charAt(0) === '0' || num.charAt(0) === '-') {
+      return num;
+    }
+
+    return `+${num}`;
+  };
+
   return (
     <>
       <div className="w-full">
@@ -217,7 +225,7 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
                 </td>
                 {compareMode && (
                   <td className="text-xs py-1.5 text-right pr-2">
-                    {valueFormatter(report.diff, unit, 2)}
+                    {addPlusSign(valueFormatter(report.diff, unit, 2))}
                   </td>
                 )}
               </tr>
