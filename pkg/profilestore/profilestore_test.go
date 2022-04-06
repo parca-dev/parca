@@ -14,7 +14,6 @@
 package profilestore
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -50,24 +49,16 @@ func Test_LabelName_Invalid(t *testing.T) {
 		mStr,
 	)
 
-	buf := bytes.NewBuffer(nil)
 	ctx := context.Background()
 
-	// labelset with invalid label name
-	labelSet := profilestorepb.LabelSet{
-		Labels: []*profilestorepb.Label{{
-			Name:  "n1:n",
-			Value: "v1",
-		}},
-	}
-
-	samples := []*profilestorepb.RawSample{{RawProfile: buf.Bytes()}}
-
 	req := &profilestorepb.WriteRawRequest{
-		Tenant: "",
 		Series: []*profilestorepb.RawProfileSeries{{
-			Labels:  &labelSet,
-			Samples: samples,
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{{
+					Name:  "n0:n",
+					Value: "v0",
+				}},
+			},
 		}},
 	}
 
