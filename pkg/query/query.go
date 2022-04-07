@@ -288,9 +288,14 @@ func (q *Query) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelec
 }
 
 func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+	samples, err := profile.StacktraceSamplesFromFlatProfile(ctx, q.tracer, q.metaStore, p)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to create stacktrace samples")
+	}
+
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
+		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, samples)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
@@ -301,7 +306,7 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
-		pp, err := GenerateFlatPprof(ctx, q.metaStore, p)
+		pp, err := GenerateFlatPprof(ctx, q.metaStore, samples)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
@@ -315,7 +320,7 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
-		top, err := GenerateTopTable(ctx, q.metaStore, p)
+		top, err := GenerateTopTable(ctx, q.metaStore, samples)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate top table: %v", err.Error())
 		}
