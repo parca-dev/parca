@@ -47,8 +47,8 @@ func NewDemangler(mode string, force bool) *Demangler {
 	}
 }
 
-// Demangle updates the function names in a profile with demangled C++
-// names, simplified according to demanglerMode. If force is set,
+// Demangle updates the function names in a profile demangling C++ and
+// Rust names, simplified according to demanglerMode. If force is set,
 // overwrite any names that appear already demangled.
 // A modified version of pprof demangler.
 func (d *Demangler) Demangle(fn *pb.Function) *pb.Function {
