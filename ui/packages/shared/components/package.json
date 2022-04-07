@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.12.14",
+  "version": "0.12.15",
   "description": "A component library for Parca",
   "main": "src/index.tsx",
   "scripts": {
@@ -11,7 +11,7 @@
     "@heroicons/react": "^1.0.5",
     "@parca/client": "^0.12.12",
     "@parca/dynamicsize": "^0.12.0",
-    "@parca/functions": "^0.12.0",
+    "@parca/functions": "^0.12.15",
     "@parca/icons": "^0.12.2",
     "@parca/parser": "^0.12.3",
     "@parca/profile": "^0.12.14",
