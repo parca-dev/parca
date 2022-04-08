@@ -98,7 +98,7 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 			}
 
 			if s.debugValueLog {
-				dir := fmt.Sprintf("tmp/%s", base64.StdEncoding.EncodeToString([]byte(ls.String())))
+				dir := fmt.Sprintf("tmp/%s", base64.URLEncoding.EncodeToString([]byte(ls.String())))
 				err := os.MkdirAll(dir, os.ModePerm)
 				if err != nil {
 					level.Error(s.logger).Log("msg", "failed to create debug-value-log directory", "err", err)
