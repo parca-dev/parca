@@ -3190,15 +3190,15 @@
     ts-dedent "^2.0.0"
 
 "@storybook/addon-outline@^6.4.15":
-  version "6.4.20"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-outline/-/addon-outline-6.4.20.tgz#1dfd9db03bcf39884533dc45953563ae12a523a3"
-  integrity sha512-c/wcoBPySUyjjNP6seaAPbUyGn2oGSLGa6cujbV7yoC3726VM5M15b0ZtWDDJTelO8Hx4D2sPvCAGUl7qvShjg==
+  version "6.4.21"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-outline/-/addon-outline-6.4.21.tgz#d08cf233ad4a4960ec826de8628750bb8653a16a"
+  integrity sha512-ADVnl3dOKkzdv32qkS63Fm37keellV98RrNbGDmE4xMiu55/srn/LfklTHRdbUwpKvVxf/44EQ0HXSNJBuWeDg==
   dependencies:
-    "@storybook/addons" "6.4.20"
-    "@storybook/api" "6.4.20"
-    "@storybook/client-logger" "6.4.20"
-    "@storybook/components" "6.4.20"
-    "@storybook/core-events" "6.4.20"
+    "@storybook/addons" "6.4.21"
+    "@storybook/api" "6.4.21"
+    "@storybook/client-logger" "6.4.21"
+    "@storybook/components" "6.4.21"
+    "@storybook/core-events" "6.4.21"
     "@storybook/csf" "0.0.2--canary.87bc651.0"
     core-js "^3.8.2"
     global "^4.4.0"
