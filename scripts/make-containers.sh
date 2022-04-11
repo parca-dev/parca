@@ -5,6 +5,7 @@ VERSION="$1"
 COMMIT="$2"
 MANIFEST="$3"
 ARCHS=('amd64' 'arm64' 'armv6' 'armv7' '386')
+NPROC=$(nproc --all)
 
 # SHA order is respectively ('amd64' 'arm64' 'armv6' 'armv7' '386')
 # this image is what docker.io/golang:1.18.0-alpine3.15 on April 7 2022
@@ -51,5 +52,6 @@ for i in "${!ARCHS[@]}"; do
         --build-arg ARCH="$ARCH" \
         --arch "$ARCH" \
         --timestamp 0 \
+        --jobs "$NPROC" \
         --manifest "$MANIFEST" .; \
 done
