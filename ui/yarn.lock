@@ -3623,9 +3623,9 @@
     webpack-virtual-modules "^0.2.2"
 
 "@storybook/builder-webpack5@^6.4.15":
-  version "6.4.19"
-  resolved "https://registry.yarnpkg.com/@storybook/builder-webpack5/-/builder-webpack5-6.4.19.tgz#f9d3cf6e7f7769ec2eba11e226e662e4116da659"
-  integrity sha512-AWM4YMN1gPaf7jfntqZTCGpIQ1tF6YRU1JtczPG4ox28rTaO6NMfOBi9aRhBre/59pPOh9bF6u2gu/MIHmRW+w==
+  version "6.4.21"
+  resolved "https://registry.yarnpkg.com/@storybook/builder-webpack5/-/builder-webpack5-6.4.21.tgz#d601676083a263a1f03847b12fe2ad1ecd3865bb"
+  integrity sha512-pUD8+wL2LN1iFHAcpDo0E7lXkL5E6pCqmKmUbkgs1bPgvY0n9gyvDK46H70P/HWu+PGXKMXI/gofsF5ub1NaRQ==
   dependencies:
     "@babel/core" "^7.12.10"
     "@babel/plugin-proposal-class-properties" "^7.12.1"
@@ -3647,21 +3647,21 @@
     "@babel/preset-env" "^7.12.11"
     "@babel/preset-react" "^7.12.10"
     "@babel/preset-typescript" "^7.12.7"
-    "@storybook/addons" "6.4.19"
-    "@storybook/api" "6.4.19"
-    "@storybook/channel-postmessage" "6.4.19"
-    "@storybook/channels" "6.4.19"
-    "@storybook/client-api" "6.4.19"
-    "@storybook/client-logger" "6.4.19"
-    "@storybook/components" "6.4.19"
-    "@storybook/core-common" "6.4.19"
-    "@storybook/core-events" "6.4.19"
-    "@storybook/node-logger" "6.4.19"
-    "@storybook/preview-web" "6.4.19"
-    "@storybook/router" "6.4.19"
+    "@storybook/addons" "6.4.21"
+    "@storybook/api" "6.4.21"
+    "@storybook/channel-postmessage" "6.4.21"
+    "@storybook/channels" "6.4.21"
+    "@storybook/client-api" "6.4.21"
+    "@storybook/client-logger" "6.4.21"
+    "@storybook/components" "6.4.21"
+    "@storybook/core-common" "6.4.21"
+    "@storybook/core-events" "6.4.21"
+    "@storybook/node-logger" "6.4.21"
+    "@storybook/preview-web" "6.4.21"
+    "@storybook/router" "6.4.21"
     "@storybook/semver" "^7.3.2"
-    "@storybook/store" "6.4.19"
-    "@storybook/theming" "6.4.19"
+    "@storybook/store" "6.4.21"
+    "@storybook/theming" "6.4.21"
     "@types/node" "^14.0.10"
     babel-loader "^8.0.0"
     babel-plugin-macros "^3.0.1"
@@ -18711,6 +18711,14 @@ react-dom@^17.0.2:
     object-assign "^4.1.1"
     scheduler "^0.20.2"
 
+react-dom@^18.0.0:
+  version "18.0.0"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.0.0.tgz#26b88534f8f1dbb80853e1eabe752f24100d8023"
+  integrity sha512-XqX7uzmFo0pUceWFCt7Gff6IyIMzFUn7QMZrbrQfGxtaxXZIcGQzoNpRLE3fQLnS4XzLLPMZX2T9TRcSrasicw==
+  dependencies:
+    loose-envify "^1.1.0"
+    scheduler "^0.21.0"
+
 react-draggable@^4.4.3:
   version "4.4.4"
   resolved "https://registry.yarnpkg.com/react-draggable/-/react-draggable-4.4.4.tgz#5b26d9996be63d32d285a426f41055de87e59b2f"
@@ -19757,6 +19765,13 @@ scheduler@^0.20.2:
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
+
+scheduler@^0.21.0:
+  version "0.21.0"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.21.0.tgz#6fd2532ff5a6d877b6edb12f00d8ab7e8f308820"
+  integrity sha512-1r87x5fz9MXqswA2ERLo0EbOAU74DpIUO090gIasYTqlVoJeMcl+Z1Rg7WHz+qtPujhS/hGIt9kxZOYBV3faRQ==
+  dependencies:
+    loose-envify "^1.1.0"
 
 schema-utils@2.7.0:
   version "2.7.0"
