@@ -35,7 +35,7 @@ jobs:
         run: make build
 
       - name: Archive generatated artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: parca-bin
           if-no-files-found: error
