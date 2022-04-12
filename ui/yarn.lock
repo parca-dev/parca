@@ -6160,6 +6160,16 @@
   resolved "https://registry.yarnpkg.com/@types/range-parser/-/range-parser-1.2.4.tgz#cd667bcfdd025213aafb7ca5915a932590acdcdc"
   integrity sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==
 
+"@types/react-datepicker@^4.4.0":
+  version "4.4.0"
+  resolved "https://registry.yarnpkg.com/@types/react-datepicker/-/react-datepicker-4.4.0.tgz#0072e18536ad305fd57786f9b6f9e499eed2b475"
+  integrity sha512-wzmevaO51rLFwSZd5HSqBU0aAvZlRRkj6QhHqj0jfRDSKnN3y5IKXyhgxPS8R0LOWOtjdpirI1DBryjnIp/7gA==
+  dependencies:
+    "@popperjs/core" "^2.9.2"
+    "@types/react" "*"
+    date-fns "^2.0.1"
+    react-popper "^2.2.5"
+
 "@types/react-dom@*", "@types/react-dom@^18.0.0":
   version "18.0.0"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.0.0.tgz#b13f8d098e4b0c45df4f1ed123833143b0c71141"
@@ -9762,7 +9772,7 @@ data-urls@^2.0.0:
     whatwg-mimetype "^2.3.0"
     whatwg-url "^8.0.0"
 
-date-fns@^2.24.0, date-fns@^2.28.0:
+date-fns@^2.0.1, date-fns@^2.24.0, date-fns@^2.28.0:
   version "2.28.0"
   resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-2.28.0.tgz#9570d656f5fc13143e50c975a3b6bbeb46cd08b2"
   integrity sha512-8d35hViGYx/QH0icHYCeLmsLmMUheMmTyV9Fcm6gvNwdw31yXXH+O85sOBJ+OLnLQMKZowvpKb6FgMIQjcpvQw==
