@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.12.17",
+  "version": "0.12.19",
   "description": "A component library for Parca",
   "main": "src/index.tsx",
   "scripts": {
@@ -15,11 +15,11 @@
     "@parca/icons": "^0.12.2",
     "@parca/parser": "^0.12.3",
     "@parca/profile": "^0.12.14",
+    "@types/react-datepicker": "^4.4.0",
     "classnames": "^2.3.1",
     "google-protobuf": "^3.19.0",
     "react-datepicker": "^4.6.0",
-    "react-use": "^17.3.2",
-    "@types/react-datepicker": "^4.4.0"
+    "react-use": "^17.3.2"
   },
   "devDependencies": {
     "react": "^17.0.2",
