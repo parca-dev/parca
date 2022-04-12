@@ -4,403 +4,373 @@ package parca.query.v1alpha1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
-import "parca/profilestore/v1alpha1/profilestore.proto";
 import "parca/metastore/v1alpha1/metastore.proto";
+import "parca/profilestore/v1alpha1/profilestore.proto";
 
 // QueryService is the service that provides APIs to retrieve and inspect profiles
 service QueryService {
+  // QueryRange performs a profile query over a time range
+  rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
+    option (google.api.http) = {
+      get: "/profiles/query_range"
+    };
+  }
 
-    // QueryRange performs a profile query over a time range
-    rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
-        option (google.api.http) = {
-            get: "/profiles/query_range"
-        };
-    }
+  // Query performs a profile query
+  rpc Query(QueryRequest) returns (QueryResponse) {
+    option (google.api.http) = {
+      get: "/profiles/query"
+    };
+  }
 
-    // Query performs a profile query
-    rpc Query(QueryRequest) returns (QueryResponse) {
-        option (google.api.http) = {
-            get: "/profiles/query"
-        };
-    }
+  // Series is unimplemented
+  rpc Series(SeriesRequest) returns (SeriesResponse) {
+    option (google.api.http) = {
+      get: "/profiles/series"
+    };
+  }
 
-    // Series is unimplemented
-    rpc Series(SeriesRequest) returns (SeriesResponse) {
-        option (google.api.http) = {
-            get: "/profiles/series"
-        };
-    }
+  // Labels returns the set of label names against a given matching string and time frame
+  rpc Labels(LabelsRequest) returns (LabelsResponse) {
+    option (google.api.http) = {
+      get: "/profiles/labels"
+    };
+  }
 
-    // Labels returns the set of label names against a given matching string and time frame
-    rpc Labels(LabelsRequest) returns (LabelsResponse) {
-        option (google.api.http) = {
-            get: "/profiles/labels"
-        };
-    }
-
-    // Values returns the set of values that match a given label and time frame
-    rpc Values(ValuesRequest) returns (ValuesResponse) {
-        option (google.api.http) = {
-            get: "/profiles/labels/{label_name}/values"
-        };
-    }
+  // Values returns the set of values that match a given label and time frame
+  rpc Values(ValuesRequest) returns (ValuesResponse) {
+    option (google.api.http) = {
+      get: "/profiles/labels/{label_name}/values"
+    };
+  }
 }
 
 // QueryRangeRequest is the request for a set of profiles matching a query over a time window
-message QueryRangeRequest{
+message QueryRangeRequest {
+  // query is the query string to match profiles against
+  string query = 1;
 
-    // query is the query string to match profiles against
-    string query = 1;
+  // start is the start of the query time window
+  google.protobuf.Timestamp start = 2;
 
-    // start is the start of the query time window
-    google.protobuf.Timestamp start = 2;
+  // end is the end of the query time window
+  google.protobuf.Timestamp end = 3;
 
-    // end is the end of the query time window
-    google.protobuf.Timestamp end   = 3;
-
-    // limit is the max number of profiles to include in the response
-    uint32 limit                    = 4;
+  // limit is the max number of profiles to include in the response
+  uint32 limit = 4;
 }
 
-// QueryRangeResponse is the set of matching profile values 
-message QueryRangeResponse{
-
-    // series is the set of metrics series that satisfy the query range request
-    repeated MetricsSeries series = 1;
+// QueryRangeResponse is the set of matching profile values
+message QueryRangeResponse {
+  // series is the set of metrics series that satisfy the query range request
+  repeated MetricsSeries series = 1;
 }
 
 // MetricsSeries is a set of labels and corresponding sample values
 message MetricsSeries {
+  // labelset is the set of key value pairs
+  parca.profilestore.v1alpha1.LabelSet labelset = 1;
 
-    // labelset is the set of key value pairs
-    parca.profilestore.v1alpha1.LabelSet labelset = 1;
+  // samples is the set of top-level cumulative values of the corresponding profiles
+  repeated MetricsSample samples = 2;
 
-    // samples is the set of top-level cumulative values of the corresponding profiles
-    repeated MetricsSample samples = 2;
+  // period_type is the value type of profile period
+  ValueType period_type = 3;
 
-    // period_type is the value type of profile period
-    ValueType period_type = 3;
-
-    // sample_type is the value type of profile sample
-    ValueType sample_type = 4;
+  // sample_type is the value type of profile sample
+  ValueType sample_type = 4;
 }
 
 // MetricsSample is a cumulative value and timestamp of a profile
 message MetricsSample {
+  // timestamp is the time the profile was ingested
+  google.protobuf.Timestamp timestamp = 1;
 
-    // timestamp is the time the profile was ingested
-    google.protobuf.Timestamp timestamp = 1;
-
-    // value is the cumulative value for the profile
-    int64 value = 2;
+  // value is the cumulative value for the profile
+  int64 value = 2;
 }
 
 // MergeProfile contains parameters for a merge request
 message MergeProfile {
+  // query is the query string to match profiles for merge
+  string query = 1;
 
-    // query is the query string to match profiles for merge
-    string query = 1;
+  // start is the beginning of the evaluation time window
+  google.protobuf.Timestamp start = 2;
 
-    // start is the beginning of the evaluation time window
-    google.protobuf.Timestamp start = 2;
-
-    // end is the end of the evaluation time window
-    google.protobuf.Timestamp end   = 3;
+  // end is the end of the evaluation time window
+  google.protobuf.Timestamp end = 3;
 }
 
 // SingleProfile contains parameters for a single profile query request
 message SingleProfile {
+  // time is the point in time to perform the profile request
+  google.protobuf.Timestamp time = 1;
 
-    // time is the point in time to perform the profile request
-    google.protobuf.Timestamp time  = 1;
-
-    // query is the query string to retrieve the profile
-    string query = 2;
+  // query is the query string to retrieve the profile
+  string query = 2;
 }
 
 // DiffProfile contains parameters for a profile diff request
 message DiffProfile {
+  // a is the first profile to diff
+  ProfileDiffSelection a = 1;
 
-    // a is the first profile to diff
-    ProfileDiffSelection a = 1;
-
-    // b is the second profile to diff
-    ProfileDiffSelection b = 2;
+  // b is the second profile to diff
+  ProfileDiffSelection b = 2;
 }
 
 // ProfileDiffSelection contains the parameters of a diff selection
 message ProfileDiffSelection {
+  // Mode specifies the type of diff
+  enum Mode {
+    // MODE_SINGLE_UNSPECIFIED default unspecified
+    MODE_SINGLE_UNSPECIFIED = 0;
 
-    // Mode specifies the type of diff
-    enum Mode {
+    // MODE_MERGE merge profile
+    MODE_MERGE = 1;
+  }
 
-        // MODE_SINGLE_UNSPECIFIED default unspecified
-        MODE_SINGLE_UNSPECIFIED = 0;
+  // mode is the selection of the diff mode
+  Mode mode = 1;
 
-        // MODE_MERGE merge profile
-        MODE_MERGE  = 1;
-    }
+  // options are the available options for a diff selection
+  oneof options {
+    // merge contains options for a merge request
+    MergeProfile merge = 2;
 
-    // mode is the selection of the diff mode
-    Mode mode = 1;
-
-    // options are the available options for a diff selection
-    oneof options {
-
-        // merge contains options for a merge request
-        MergeProfile  merge  = 2;
-
-        // single contains options for a single profile request
-        SingleProfile single = 3;
-    }
+    // single contains options for a single profile request
+    SingleProfile single = 3;
+  }
 }
 
 // QueryRequest is a request for a profile query
-message QueryRequest{
+message QueryRequest {
+  // Mode is the type of query request
+  enum Mode {
+    // MODE_SINGLE_UNSPECIFIED query unspecified
+    MODE_SINGLE_UNSPECIFIED = 0;
 
-    // Mode is the type of query request
-    enum Mode {
+    // MODE_DIFF is a diff query
+    MODE_DIFF = 1;
 
-        // MODE_SINGLE_UNSPECIFIED query unspecified
-        MODE_SINGLE_UNSPECIFIED = 0;
+    // MODE_MERGE is a merge query
+    MODE_MERGE = 2;
+  }
 
-        // MODE_DIFF is a diff query
-        MODE_DIFF   = 1;
+  // mode indicates the type of query performed
+  Mode mode = 1;
 
-        // MODE_MERGE is a merge query
-        MODE_MERGE  = 2;
-    }
+  // options are the options corresponding to the mode
+  oneof options {
+    // diff contains the diff query options
+    DiffProfile diff = 2;
 
-    // mode indicates the type of query performed
-    Mode mode = 1;
+    // merge contains the merge query options
+    MergeProfile merge = 3;
 
-    // options are the options corresponding to the mode
-    oneof options {
+    // single contains the single query options
+    SingleProfile single = 4;
+  }
 
-        // diff contains the diff query options
-        DiffProfile   diff   = 2;
+  // ReportType is the type of report to return
+  enum ReportType {
+    // REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
+    REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
 
-        // merge contains the merge query options
-        MergeProfile  merge  = 3;
+    // REPORT_TYPE_PPROF unspecified
+    REPORT_TYPE_PPROF = 1;
 
-        // single contains the single query options
-        SingleProfile single = 4;
-    }
+    // REPORT_TYPE_TOP unspecified
+    REPORT_TYPE_TOP = 2;
+  }
 
-    // ReportType is the type of report to return
-    enum ReportType {
-
-        // REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
-        REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
-
-        // REPORT_TYPE_PPROF unspecified
-        REPORT_TYPE_PPROF = 1;
-
-        // REPORT_TYPE_TOP unspecified
-        REPORT_TYPE_TOP = 2;
-    }
-
-    // report_type is the type of report to return
-    ReportType report_type = 5;
+  // report_type is the type of report to return
+  ReportType report_type = 5;
 }
 
 // Top is the top report type
 message Top {
+  // list are the list of ordered elements of the table
+  repeated TopNode list = 1;
 
-    // list are the list of ordered elements of the table
-    repeated TopNode list = 1;
+  // reported is the number of lines reported
+  int32 reported = 2;
 
-    // reported is the number of lines reported
-    int32 reported = 2;
+  // total is the number of lines that exist in the report
+  int32 total = 3;
 
-    // total is the number of lines that exist in the report
-    int32 total = 3;
-
-    // unit is the unit represented by top table
-    string unit = 4;
+  // unit is the unit represented by top table
+  string unit = 4;
 }
 
 // TopNode is a node entry in a top list
 message TopNode {
+  // meta is the metadata about the node
+  TopNodeMeta meta = 1;
 
-    // meta is the metadata about the node
-    TopNodeMeta meta = 1;
+  // cumulative is the cumulative value of the node
+  int64 cumulative = 2;
 
-    // cumulative is the cumulative value of the node
-    int64 cumulative = 2;
+  // flat is the flat value of the node
+  int64 flat = 3;
 
-    // flat is the flat value of the node
-    int64 flat = 3;
-
-    // diff is the diff value between two profiles
-    int64 diff = 4;
+  // diff is the diff value between two profiles
+  int64 diff = 4;
 }
 
 // TopNodeMeta is the metadata for a given node
 message TopNodeMeta {
+  // location is the location for the code
+  parca.metastore.v1alpha1.Location location = 1;
 
-    // location is the location for the code
-    parca.metastore.v1alpha1.Location location = 1;
+  // mapping is the mapping into code
+  parca.metastore.v1alpha1.Mapping mapping = 2;
 
-    // mapping is the mapping into code
-    parca.metastore.v1alpha1.Mapping mapping = 2;
+  // function is the function information
+  parca.metastore.v1alpha1.Function function = 3;
 
-    // function is the function information
-    parca.metastore.v1alpha1.Function function = 3;
-
-    // line is the line location
-    parca.metastore.v1alpha1.Line line = 4;
+  // line is the line location
+  parca.metastore.v1alpha1.Line line = 4;
 }
 
 // Flamegraph is the flame graph report type
 message Flamegraph {
+  // root is the root of the flame graph
+  FlamegraphRootNode root = 1;
 
-    // root is the root of the flame graph
-    FlamegraphRootNode root = 1;
+  // total is the total weight of the flame graph
+  int64 total = 2;
 
-    // total is the total weight of the flame graph
-    int64 total = 2;
+  // unit is the unit represented by the flame graph
+  string unit = 3;
 
-    // unit is the unit represented by the flame graph
-    string unit = 3;
-
-    // height is the max height of the graph
-    int32 height = 4;
+  // height is the max height of the graph
+  int32 height = 4;
 }
 
 // FlamegraphRootNode is a root node of a flame graph
 message FlamegraphRootNode {
+  // cumulative is the cumulative value of the graph
+  int64 cumulative = 1;
 
-    // cumulative is the cumulative value of the graph
-    int64 cumulative = 1;
+  // diff is the diff
+  int64 diff = 2;
 
-    // diff is the diff
-    int64 diff = 2;
-
-    // children are the list of the children of the root node
-    repeated FlamegraphNode children = 3;
+  // children are the list of the children of the root node
+  repeated FlamegraphNode children = 3;
 }
 
 // FlamegraphNode represents a node in the graph
 message FlamegraphNode {
+  // meta is the metadata about the node
+  FlamegraphNodeMeta meta = 1;
 
-    // meta is the metadata about the node
-    FlamegraphNodeMeta meta = 1;
+  // cumulative is the cumulative value of the node
+  int64 cumulative = 2;
 
-    // cumulative is the cumulative value of the node
-    int64 cumulative = 2;
+  // diff is the diff
+  int64 diff = 3;
 
-    // diff is the diff
-    int64 diff = 3;
-
-    // children are the child nodes
-    repeated FlamegraphNode children = 4;
+  // children are the child nodes
+  repeated FlamegraphNode children = 4;
 }
 
 // FlamegraphNodeMeta is the metadata for a given node
 message FlamegraphNodeMeta {
+  // location is the location for the code
+  parca.metastore.v1alpha1.Location location = 1;
 
-    // location is the location for the code
-    parca.metastore.v1alpha1.Location location = 1;
+  // mapping is the mapping into code
+  parca.metastore.v1alpha1.Mapping mapping = 2;
 
-    // mapping is the mapping into code
-    parca.metastore.v1alpha1.Mapping mapping = 2;
+  // function is the function information
+  parca.metastore.v1alpha1.Function function = 3;
 
-    // function is the function information
-    parca.metastore.v1alpha1.Function function = 3;
-
-    // line is the line location
-    parca.metastore.v1alpha1.Line line = 4;
+  // line is the line location
+  parca.metastore.v1alpha1.Line line = 4;
 }
 
 // QueryResponse is the returned report for the given query
-message QueryResponse{
+message QueryResponse {
+  // report is the generated report
+  oneof report {
+    // flamegraph is a flamegraph representation of the report
+    Flamegraph flamegraph = 5;
 
-    // report is the generated report
-    oneof report {
+    // pprof is a pprof profile as compressed bytes
+    bytes pprof = 6;
 
-        // flamegraph is a flamegraph representation of the report
-        Flamegraph flamegraph = 5;
-
-        // pprof is a pprof profile as compressed bytes
-        bytes pprof = 6;
-
-        // top is a top list representation of the report
-        Top top = 7;
-    }
+    // top is a top list representation of the report
+    Top top = 7;
+  }
 }
 
 // SeriesRequest is unimplemented
-message SeriesRequest{
+message SeriesRequest {
+  // match ...
+  repeated string match = 1;
 
-    // match ...
-    repeated string match           = 1;
+  // start ...
+  google.protobuf.Timestamp start = 2;
 
-    // start ...
-    google.protobuf.Timestamp start = 2;
-
-    // end ...
-    google.protobuf.Timestamp end   = 3;
+  // end ...
+  google.protobuf.Timestamp end = 3;
 }
 
 // SeriesResponse is unimplemented
-message SeriesResponse{}
+message SeriesResponse {}
 
 // LabelsRequest are the request values for labels
-message LabelsRequest{
+message LabelsRequest {
+  // match are the set of matching strings
+  repeated string match = 1;
 
-    // match are the set of matching strings
-    repeated string match           = 1;
+  // start is the start of the time window to perform the query
+  google.protobuf.Timestamp start = 2;
 
-    // start is the start of the time window to perform the query
-    google.protobuf.Timestamp start = 2;
-
-    // end is the end of the time window to perform the query
-    google.protobuf.Timestamp end   = 3;
+  // end is the end of the time window to perform the query
+  google.protobuf.Timestamp end = 3;
 }
 
 // LabelsResponse is the set of matching label names
-message LabelsResponse{
+message LabelsResponse {
+  /// label_names are the set of matching label names
+  repeated string label_names = 1;
 
-    /// label_names are the set of matching label names
-    repeated string label_names = 1;
-
-    // warnings is unimplemented
-    repeated string warnings    = 2;
+  // warnings is unimplemented
+  repeated string warnings = 2;
 }
 
 // ValuesRequest are the request values for a values request
-message ValuesRequest{
+message ValuesRequest {
+  // label_name is the label name to match values against
+  string label_name = 1;
 
-    // label_name is the label name to match values against
-    string                    label_name = 1;
+  // match are the set of matching strings to match values against
+  repeated string match = 2;
 
-    // match are the set of matching strings to match values against
-    repeated string           match      = 2;
+  // start is the start of the time window to perform the query
+  google.protobuf.Timestamp start = 3;
 
-    // start is the start of the time window to perform the query
-    google.protobuf.Timestamp start      = 3;
-
-    // end is the end of the time window to perform the query
-    google.protobuf.Timestamp end        = 4;
+  // end is the end of the time window to perform the query
+  google.protobuf.Timestamp end = 4;
 }
 
 // ValuesResponse are the set of matching values
-message ValuesResponse{
+message ValuesResponse {
+  // label_values are the set of matching label values
+  repeated string label_values = 1;
 
-    // label_values are the set of matching label values
-    repeated string label_values = 1;
-
-    // warnings is unimplemented
-    repeated string warnings     = 2;
+  // warnings is unimplemented
+  repeated string warnings = 2;
 }
 
 // ValueType represents a value, including its type and unit
-message ValueType{
+message ValueType {
+  // type is the type of the value
+  string type = 1;
 
-    // type is the type of the value
-    string type = 1;
-
-    // unit is the unit of the value
-    string unit = 2;
+  // unit is the unit of the value
+  string unit = 2;
 }

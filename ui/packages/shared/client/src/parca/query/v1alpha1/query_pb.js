@@ -13,22 +13,16 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = (function() {
-  if (this) { return this; }
-  if (typeof window !== 'undefined') { return window; }
-  if (typeof global !== 'undefined') { return global; }
-  if (typeof self !== 'undefined') { return self; }
-  return Function('return this')();
-}.call(null));
+var global = (function() { return this || window || global || self || Function('return this')(); }).call(null);
 
 var google_api_annotations_pb = require('../../../google/api/annotations_pb.js');
 goog.object.extend(proto, google_api_annotations_pb);
 var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
-var parca_profilestore_v1alpha1_profilestore_pb = require('../../../parca/profilestore/v1alpha1/profilestore_pb.js');
-goog.object.extend(proto, parca_profilestore_v1alpha1_profilestore_pb);
 var parca_metastore_v1alpha1_metastore_pb = require('../../../parca/metastore/v1alpha1/metastore_pb.js');
 goog.object.extend(proto, parca_metastore_v1alpha1_metastore_pb);
+var parca_profilestore_v1alpha1_profilestore_pb = require('../../../parca/profilestore/v1alpha1/profilestore_pb.js');
+goog.object.extend(proto, parca_profilestore_v1alpha1_profilestore_pb);
 goog.exportSymbol('proto.parca.query.v1alpha1.DiffProfile', null, global);
 goog.exportSymbol('proto.parca.query.v1alpha1.Flamegraph', null, global);
 goog.exportSymbol('proto.parca.query.v1alpha1.FlamegraphNode', null, global);

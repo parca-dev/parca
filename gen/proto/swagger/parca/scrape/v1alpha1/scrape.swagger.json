@@ -37,7 +37,7 @@
         "parameters": [
           {
             "name": "state",
-            "description": "state is the state of targets to returns.\n\n - STATE_ANY_UNSPECIFIED: STATE_ANY_UNSPECIFIED unspecified\n - STATE_ACTIVE: STATE_ACTIVE target active state\n - STATE_DROPPED: STATE_DROPPED target dropped state",
+            "description": "state is the state of targets to returns\n\n - STATE_ANY_UNSPECIFIED: STATE_ANY_UNSPECIFIED unspecified\n - STATE_ACTIVE: STATE_ACTIVE target active state\n - STATE_DROPPED: STATE_DROPPED target dropped state",
             "in": "query",
             "required": false,
             "type": "string",
@@ -95,14 +95,11 @@
     "protobufAny": {
       "type": "object",
       "properties": {
-        "typeUrl": {
+        "@type": {
           "type": "string"
-        },
-        "value": {
-          "type": "string",
-          "format": "byte"
         }
-      }
+      },
+      "additionalProperties": {}
     },
     "rpcStatus": {
       "type": "object",

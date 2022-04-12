@@ -4,12 +4,15 @@ on:
   push:
     branches: [ main ]
     paths:
-      - '**.go'
       - 'go.mod'
       - 'go.sum'
       - Dockerfile*
       - .dockerignore
       - ui/**
+      - cmd/**
+      - pkg/**
+      - internal/**
+      - gen/**
   pull_request:
     branches: [ main ]
     paths:
@@ -19,6 +22,10 @@ on:
       - Dockerfile*
       - .dockerignore
       - ui/**
+      - cmd/**
+      - pkg/**
+      - internal/**
+      - gen/**
 
 permissions:
   contents: write
@@ -43,8 +50,17 @@ jobs:
         with:
           go-version: ^1.16
 
+      - name: Set up environment
+        run: | 
+          ./env.sh
+          ./env-proto.sh
+          ./env-jsonnet.sh
+
       - name: Build UI
         run: make ui/build
+
+      - name: Format
+        run: make format && git diff --exit-code
 
       - name: Validate
         uses: goreleaser/goreleaser-action@v2

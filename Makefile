@@ -37,7 +37,7 @@ go/bin: go/deps
 	go build -o bin/ ./cmd/parca
 
 .PHONY: format
-format: go/fmt check-license
+format: go/fmt proto/format check-license
 
 gofumpt:
 ifeq (, $(shell which gofumpt))
@@ -70,21 +70,32 @@ UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -no
 ui/build: $(UI_FILES)
 	cd ui && yarn install && yarn workspace @parca/web build
 
+.PHONY: proto/all
+proto/all: proto/vendor proto/format proto/lint proto/generate
+
 .PHONY: proto/lint
 proto/lint:
 	# docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf lint
 	buf lint
+
+.PHONY: proto/format
+proto/format:
+	# docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf format
+	buf format -w
 
 .PHONY: proto/generate
 proto/generate:
 	yarn install
 	# Generate just the annotations and http protos.
 	buf generate buf.build/googleapis/googleapis --path google/api/annotations.proto --path google/api/http.proto
+	# docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf generate
 	buf generate
 
 .PHONY: proto/vendor
-proto/vendor:
+proto/vendor: proto/google/pprof/profile.proto
 	cd proto && buf mod update
+
+proto/google/pprof/profile.proto:
 	mkdir -p proto/google/pprof
 	curl https://raw.githubusercontent.com/google/pprof/master/proto/profile.proto > proto/google/pprof/profile.proto
 
@@ -111,6 +122,7 @@ deploy/manifests:
 .PHONY: dev/setup
 dev/setup:
 	./env.sh
+	./env-local-test.sh
 	./env-jsonnet.sh
 
 .PHONY: dev/up

@@ -37,7 +37,7 @@
         "parameters": [
           {
             "name": "match",
-            "description": "match are the set of matching strings.",
+            "description": "match are the set of matching strings",
             "in": "query",
             "required": false,
             "type": "array",
@@ -48,7 +48,7 @@
           },
           {
             "name": "start",
-            "description": "start is the start of the time window to perform the query.",
+            "description": "start is the start of the time window to perform the query",
             "in": "query",
             "required": false,
             "type": "string",
@@ -56,7 +56,7 @@
           },
           {
             "name": "end",
-            "description": "end is the end of the time window to perform the query.",
+            "description": "end is the end of the time window to perform the query",
             "in": "query",
             "required": false,
             "type": "string",
@@ -96,7 +96,7 @@
           },
           {
             "name": "match",
-            "description": "match are the set of matching strings to match values against.",
+            "description": "match are the set of matching strings to match values against",
             "in": "query",
             "required": false,
             "type": "array",
@@ -107,7 +107,7 @@
           },
           {
             "name": "start",
-            "description": "start is the start of the time window to perform the query.",
+            "description": "start is the start of the time window to perform the query",
             "in": "query",
             "required": false,
             "type": "string",
@@ -115,7 +115,7 @@
           },
           {
             "name": "end",
-            "description": "end is the end of the time window to perform the query.",
+            "description": "end is the end of the time window to perform the query",
             "in": "query",
             "required": false,
             "type": "string",
@@ -148,7 +148,7 @@
         "parameters": [
           {
             "name": "mode",
-            "description": "mode indicates the type of query performed.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED query unspecified\n - MODE_DIFF: MODE_DIFF is a diff query\n - MODE_MERGE: MODE_MERGE is a merge query",
+            "description": "mode indicates the type of query performed\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED query unspecified\n - MODE_DIFF: MODE_DIFF is a diff query\n - MODE_MERGE: MODE_MERGE is a merge query",
             "in": "query",
             "required": false,
             "type": "string",
@@ -161,7 +161,7 @@
           },
           {
             "name": "diff.a.mode",
-            "description": "mode is the selection of the diff mode.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
+            "description": "mode is the selection of the diff mode\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
             "in": "query",
             "required": false,
             "type": "string",
@@ -173,14 +173,14 @@
           },
           {
             "name": "diff.a.merge.query",
-            "description": "query is the query string to match profiles for merge.",
+            "description": "query is the query string to match profiles for merge",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "diff.a.merge.start",
-            "description": "start is the beginning of the evaluation time window.",
+            "description": "start is the beginning of the evaluation time window",
             "in": "query",
             "required": false,
             "type": "string",
@@ -188,7 +188,7 @@
           },
           {
             "name": "diff.a.merge.end",
-            "description": "end is the end of the evaluation time window.",
+            "description": "end is the end of the evaluation time window",
             "in": "query",
             "required": false,
             "type": "string",
@@ -196,7 +196,7 @@
           },
           {
             "name": "diff.a.single.time",
-            "description": "time is the point in time to perform the profile request.",
+            "description": "time is the point in time to perform the profile request",
             "in": "query",
             "required": false,
             "type": "string",
@@ -204,14 +204,14 @@
           },
           {
             "name": "diff.a.single.query",
-            "description": "query is the query string to retrieve the profile.",
+            "description": "query is the query string to retrieve the profile",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "diff.b.mode",
-            "description": "mode is the selection of the diff mode.\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
+            "description": "mode is the selection of the diff mode\n\n - MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
             "in": "query",
             "required": false,
             "type": "string",
@@ -223,14 +223,14 @@
           },
           {
             "name": "diff.b.merge.query",
-            "description": "query is the query string to match profiles for merge.",
+            "description": "query is the query string to match profiles for merge",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "diff.b.merge.start",
-            "description": "start is the beginning of the evaluation time window.",
+            "description": "start is the beginning of the evaluation time window",
             "in": "query",
             "required": false,
             "type": "string",
@@ -238,7 +238,7 @@
           },
           {
             "name": "diff.b.merge.end",
-            "description": "end is the end of the evaluation time window.",
+            "description": "end is the end of the evaluation time window",
             "in": "query",
             "required": false,
             "type": "string",
@@ -246,7 +246,7 @@
           },
           {
             "name": "diff.b.single.time",
-            "description": "time is the point in time to perform the profile request.",
+            "description": "time is the point in time to perform the profile request",
             "in": "query",
             "required": false,
             "type": "string",
@@ -254,21 +254,21 @@
           },
           {
             "name": "diff.b.single.query",
-            "description": "query is the query string to retrieve the profile.",
+            "description": "query is the query string to retrieve the profile",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "merge.query",
-            "description": "query is the query string to match profiles for merge.",
+            "description": "query is the query string to match profiles for merge",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "merge.start",
-            "description": "start is the beginning of the evaluation time window.",
+            "description": "start is the beginning of the evaluation time window",
             "in": "query",
             "required": false,
             "type": "string",
@@ -276,7 +276,7 @@
           },
           {
             "name": "merge.end",
-            "description": "end is the end of the evaluation time window.",
+            "description": "end is the end of the evaluation time window",
             "in": "query",
             "required": false,
             "type": "string",
@@ -284,7 +284,7 @@
           },
           {
             "name": "single.time",
-            "description": "time is the point in time to perform the profile request.",
+            "description": "time is the point in time to perform the profile request",
             "in": "query",
             "required": false,
             "type": "string",
@@ -292,14 +292,14 @@
           },
           {
             "name": "single.query",
-            "description": "query is the query string to retrieve the profile.",
+            "description": "query is the query string to retrieve the profile",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return.\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
             "in": "query",
             "required": false,
             "type": "string",
@@ -337,14 +337,14 @@
         "parameters": [
           {
             "name": "query",
-            "description": "query is the query string to match profiles against.",
+            "description": "query is the query string to match profiles against",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "start",
-            "description": "start is the start of the query time window.",
+            "description": "start is the start of the query time window",
             "in": "query",
             "required": false,
             "type": "string",
@@ -352,7 +352,7 @@
           },
           {
             "name": "end",
-            "description": "end is the end of the query time window.",
+            "description": "end is the end of the query time window",
             "in": "query",
             "required": false,
             "type": "string",
@@ -360,7 +360,7 @@
           },
           {
             "name": "limit",
-            "description": "limit is the max number of profiles to include in the response.",
+            "description": "limit is the max number of profiles to include in the response",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -437,6 +437,50 @@
       "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
       "title": "ReportType is the type of report to return"
     },
+    "metastorev1alpha1Function": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "byte",
+          "description": "id is the unique identifier for the function."
+        },
+        "startLine": {
+          "type": "string",
+          "format": "int64",
+          "description": "start_line is the line number in the source file of the first line of the function."
+        },
+        "name": {
+          "type": "string",
+          "description": "name is the name of the function."
+        },
+        "systemName": {
+          "type": "string",
+          "description": "system_name describes the name of the function, as identified by the\nsystem. For instance, it can be a C++ mangled name."
+        },
+        "filename": {
+          "type": "string",
+          "description": "filename is the name of the source file of the function."
+        }
+      },
+      "description": "Function describes metadata of a source code function."
+    },
+    "metastorev1alpha1Line": {
+      "type": "object",
+      "properties": {
+        "functionId": {
+          "type": "string",
+          "format": "byte",
+          "description": "function_id is the ID of the function."
+        },
+        "line": {
+          "type": "string",
+          "format": "int64",
+          "description": "line is the line number in the source file of the referenced function."
+        }
+      },
+      "description": "Line describes a source code function and its line number."
+    },
     "metastorev1alpha1Location": {
       "type": "object",
       "properties": {
@@ -462,6 +506,56 @@
       },
       "description": "Location describes a single location of a stack traces."
     },
+    "metastorev1alpha1Mapping": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "byte",
+          "description": "id is the unique identifier for the mapping."
+        },
+        "start": {
+          "type": "string",
+          "format": "uint64",
+          "description": "start is the start address of the mapping."
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64",
+          "description": "limit is the length of the address space of the mapping."
+        },
+        "offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "offset is the offset of the mapping."
+        },
+        "file": {
+          "type": "string",
+          "description": "file is the name of the file associated with the mapping."
+        },
+        "buildId": {
+          "type": "string",
+          "description": "build_id is the build ID of the mapping."
+        },
+        "hasFunctions": {
+          "type": "boolean",
+          "description": "has_functions indicates whether the mapping has associated functions."
+        },
+        "hasFilenames": {
+          "type": "boolean",
+          "description": "has_filenames indicates whether the mapping has associated filenames."
+        },
+        "hasLineNumbers": {
+          "type": "boolean",
+          "description": "has_line_numbers indicates whether the mapping has associated line numbers."
+        },
+        "hasInlineFrames": {
+          "type": "boolean",
+          "description": "has_inline_frames indicates whether the mapping has associated inline frames."
+        }
+      },
+      "description": "Mapping describes a memory mapping."
+    },
     "profilestorev1alpha1Label": {
       "type": "object",
       "properties": {
@@ -479,14 +573,25 @@
     "protobufAny": {
       "type": "object",
       "properties": {
-        "typeUrl": {
+        "@type": {
           "type": "string"
-        },
-        "value": {
-          "type": "string",
-          "format": "byte"
         }
-      }
+      },
+      "additionalProperties": {}
+    },
+    "queryv1alpha1ValueType": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "title": "type is the type of the value"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit of the value"
+        }
+      },
+      "title": "ValueType represents a value, including its type and unit"
     },
     "rpcStatus": {
       "type": "object",
@@ -579,15 +684,15 @@
           "title": "location is the location for the code"
         },
         "mapping": {
-          "$ref": "#/definitions/v1alpha1Mapping",
+          "$ref": "#/definitions/metastorev1alpha1Mapping",
           "title": "mapping is the mapping into code"
         },
         "function": {
-          "$ref": "#/definitions/v1alpha1Function",
+          "$ref": "#/definitions/metastorev1alpha1Function",
           "title": "function is the function information"
         },
         "line": {
-          "$ref": "#/definitions/v1alpha1Line",
+          "$ref": "#/definitions/metastorev1alpha1Line",
           "title": "line is the line location"
         }
       },
@@ -615,34 +720,6 @@
         }
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
-    },
-    "v1alpha1Function": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "byte",
-          "description": "id is the unique identifier for the function."
-        },
-        "startLine": {
-          "type": "string",
-          "format": "int64",
-          "description": "start_line is the line number in the source file of the first line of the function."
-        },
-        "name": {
-          "type": "string",
-          "description": "name is the name of the function."
-        },
-        "systemName": {
-          "type": "string",
-          "description": "system_name describes the name of the function, as identified by the\nsystem. For instance, it can be a C++ mangled name."
-        },
-        "filename": {
-          "type": "string",
-          "description": "filename is the name of the source file of the function."
-        }
-      },
-      "description": "Function describes metadata of a source code function."
     },
     "v1alpha1LabelSet": {
       "type": "object",
@@ -676,72 +753,6 @@
         }
       },
       "title": "LabelsResponse is the set of matching label names"
-    },
-    "v1alpha1Line": {
-      "type": "object",
-      "properties": {
-        "functionId": {
-          "type": "string",
-          "format": "byte",
-          "description": "function_id is the ID of the function."
-        },
-        "line": {
-          "type": "string",
-          "format": "int64",
-          "description": "line is the line number in the source file of the referenced function."
-        }
-      },
-      "description": "Line describes a source code function and its line number."
-    },
-    "v1alpha1Mapping": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "byte",
-          "description": "id is the unique identifier for the mapping."
-        },
-        "start": {
-          "type": "string",
-          "format": "uint64",
-          "description": "start is the start address of the mapping."
-        },
-        "limit": {
-          "type": "string",
-          "format": "uint64",
-          "description": "limit is the length of the address space of the mapping."
-        },
-        "offset": {
-          "type": "string",
-          "format": "uint64",
-          "description": "offset is the offset of the mapping."
-        },
-        "file": {
-          "type": "string",
-          "description": "file is the name of the file associated with the mapping."
-        },
-        "buildId": {
-          "type": "string",
-          "description": "build_id is the build ID of the mapping."
-        },
-        "hasFunctions": {
-          "type": "boolean",
-          "description": "has_functions indicates whether the mapping has associated functions."
-        },
-        "hasFilenames": {
-          "type": "boolean",
-          "description": "has_filenames indicates whether the mapping has associated filenames."
-        },
-        "hasLineNumbers": {
-          "type": "boolean",
-          "description": "has_line_numbers indicates whether the mapping has associated line numbers."
-        },
-        "hasInlineFrames": {
-          "type": "boolean",
-          "description": "has_inline_frames indicates whether the mapping has associated inline frames."
-        }
-      },
-      "description": "Mapping describes a memory mapping."
     },
     "v1alpha1MergeProfile": {
       "type": "object",
@@ -794,11 +805,11 @@
           "title": "samples is the set of top-level cumulative values of the corresponding profiles"
         },
         "periodType": {
-          "$ref": "#/definitions/v1alpha1ValueType",
+          "$ref": "#/definitions/queryv1alpha1ValueType",
           "title": "period_type is the value type of profile period"
         },
         "sampleType": {
-          "$ref": "#/definitions/v1alpha1ValueType",
+          "$ref": "#/definitions/queryv1alpha1ValueType",
           "title": "sample_type is the value type of profile sample"
         }
       },
@@ -954,33 +965,19 @@
           "title": "location is the location for the code"
         },
         "mapping": {
-          "$ref": "#/definitions/v1alpha1Mapping",
+          "$ref": "#/definitions/metastorev1alpha1Mapping",
           "title": "mapping is the mapping into code"
         },
         "function": {
-          "$ref": "#/definitions/v1alpha1Function",
+          "$ref": "#/definitions/metastorev1alpha1Function",
           "title": "function is the function information"
         },
         "line": {
-          "$ref": "#/definitions/v1alpha1Line",
+          "$ref": "#/definitions/metastorev1alpha1Line",
           "title": "line is the line location"
         }
       },
       "title": "TopNodeMeta is the metadata for a given node"
-    },
-    "v1alpha1ValueType": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string",
-          "title": "type is the type of the value"
-        },
-        "unit": {
-          "type": "string",
-          "title": "unit is the unit of the value"
-        }
-      },
-      "title": "ValueType represents a value, including its type and unit"
     },
     "v1alpha1ValuesResponse": {
       "type": "object",

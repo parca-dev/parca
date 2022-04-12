@@ -1,14 +1,12 @@
-name: Protobuf
+name: proto-gen
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - proto/**
   pull_request:
-    branches: [ main ]
     paths:
+      - .github/workflows/proto-gen.yaml
       - proto/**
+      - buf.gen.yaml
+      - buf.work.yaml
 
 jobs:
   build:
@@ -19,13 +17,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: ^1.16
+          go-version: ^1.18
 
+#      - uses: bufbuild/buf-setup-action@v1.3.1
+#        with:
+#          version: 1.3.1
       - name: Set up environment
         run: ./env-proto.sh
 
-      - name: Lint
-        run: make proto/lint
-
       - name: Generate
-        run: make proto/generate && git diff --exit-code
+        run:
+          make proto/generate && git diff --exit-code

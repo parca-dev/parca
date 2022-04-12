@@ -4,7 +4,6 @@ package parca.debuginfo.v1alpha1;
 
 // DebugInfoService is a service that allows storage of debug info
 service DebugInfoService {
-
   // Exists returns true if the given build_id has debug info uploaded for it.
   rpc Exists(ExistsRequest) returns (ExistsResponse) {}
 
@@ -14,7 +13,6 @@ service DebugInfoService {
 
 // ExistsRequest request to determine if debug info exists for a given build_id
 message ExistsRequest {
-
   // build_id is a unique identifier for the debug data
   string build_id = 1;
 
@@ -24,28 +22,24 @@ message ExistsRequest {
 
 // ExistsResponse returns whether the given build_id has debug info
 message ExistsResponse {
-
   // exists indicates if there is debug data present for the given build_id
   bool exists = 1;
 }
 
 // UploadRequest upload debug info
 message UploadRequest {
-
   // data contains either the upload info metadata or the debug info
   oneof data {
+    // info is the metadata for the debug info
+    UploadInfo info = 1;
 
-      // info is the metadata for the debug info
-      UploadInfo info = 1;
-
-      // chunk_data is the raw bytes of the debug info
-      bytes chunk_data = 2;
-    }
+    // chunk_data is the raw bytes of the debug info
+    bytes chunk_data = 2;
+  }
 }
 
 // UploadInfo contains the build_id and other metadata for the debug data
 message UploadInfo {
-
   // build_id is a unique identifier for the debug data
   string build_id = 1;
 
@@ -55,7 +49,6 @@ message UploadInfo {
 
 // UploadResponse returns the build_id and the size of the uploaded debug info
 message UploadResponse {
-
   // build_id is a unique identifier for the debug data
   string build_id = 1;
 
