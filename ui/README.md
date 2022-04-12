@@ -49,7 +49,7 @@ make build
 
 ### Development workflow
 
-> Before make sure all the tools you need are installed. The Linux users can simply run `//env.sh`.
+> Before make sure all the tools you need are installed. The Linux users can simply run `make dev/setup`.
 
 You can set up a cluster and all else you need by simply running:
 

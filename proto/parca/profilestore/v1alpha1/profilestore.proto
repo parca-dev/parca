@@ -6,62 +6,56 @@ import "google/api/annotations.proto";
 
 // ProfileStoreService is the service the accepts pprof writes
 service ProfileStoreService {
-
-    // WriteRaw accepts a raw set of bytes of a pprof file
-    rpc WriteRaw(WriteRawRequest) returns (WriteRawResponse) {
-        option (google.api.http) = {
-            post: "/profiles/writeraw"
-            body: "*"
-        };
-    }
+  // WriteRaw accepts a raw set of bytes of a pprof file
+  rpc WriteRaw(WriteRawRequest) returns (WriteRawResponse) {
+    option (google.api.http) = {
+      post: "/profiles/writeraw"
+      body: "*"
+    };
+  }
 }
 
 // WriteRawRequest writes a pprof profile for a given tenant
-message WriteRawRequest{
+message WriteRawRequest {
+  // tenant is the given tenant to store the pprof profile under
+  string tenant = 1 [deprecated = true];
 
-    // tenant is the given tenant to store the pprof profile under
-    string                    tenant  = 1 [deprecated=true];
+  // series is a set raw pprof profiles and accompanying labels
+  repeated RawProfileSeries series = 2;
 
-    // series is a set raw pprof profiles and accompanying labels
-    repeated RawProfileSeries series = 2;
-
-    // normalized is a flag indicating if the addresses in the profile is normalized for position independent code
-    bool                      normalized = 3;
+  // normalized is a flag indicating if the addresses in the profile is normalized for position independent code
+  bool normalized = 3;
 }
 
 // WriteRawResponse is the empty response
-message WriteRawResponse{}
+message WriteRawResponse {}
 
 // RawProfileSeries represents the pprof profile and its associated labels
 message RawProfileSeries {
+  // LabelSet is the key value pairs to identify the corresponding profile
+  LabelSet labels = 1;
 
-    // LabelSet is the key value pairs to identify the corresponding profile
-    LabelSet           labels = 1;
-
-    // samples are the set of profile bytes
-    repeated RawSample samples = 2;
+  // samples are the set of profile bytes
+  repeated RawSample samples = 2;
 }
 
 // Label is a key value pair of identifiers
 message Label {
+  // name is the label name
+  string name = 1;
 
-    // name is the label name
-    string name = 1;
-
-    // value is the value for the label name
-    string value = 2;
+  // value is the value for the label name
+  string value = 2;
 }
 
 // LabelSet is a group of labels
 message LabelSet {
-
-    // labels are the grouping of labels
-    repeated Label labels = 1;
+  // labels are the grouping of labels
+  repeated Label labels = 1;
 }
 
 // RawSample is the set of bytes that correspond to a pprof profile
 message RawSample {
-
-    // raw_profile is the set of bytes of the pprof profile
-    bytes raw_profile = 1;
+  // raw_profile is the set of bytes of the pprof profile
+  bytes raw_profile = 1;
 }

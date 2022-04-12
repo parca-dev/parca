@@ -4,115 +4,115 @@ package parca.metastore.v1alpha1;
 
 // Sample is a stack trace with optional labels.
 message Sample {
-    // location_ids are locations that define the stack trace.
-    repeated bytes location_ids = 1;
-    // labels are extra labels for a stack trace.
-    map<string, SampleLabel> labels = 2;
-    // num_labels are the num of labels.
-    map<string, SampleNumLabel> num_labels = 3;
-    // num_units are the units for the labels.
-    map<string, SampleNumUnit> num_units = 4;
+  // location_ids are locations that define the stack trace.
+  repeated bytes location_ids = 1;
+  // labels are extra labels for a stack trace.
+  map<string, SampleLabel> labels = 2;
+  // num_labels are the num of labels.
+  map<string, SampleNumLabel> num_labels = 3;
+  // num_units are the units for the labels.
+  map<string, SampleNumUnit> num_units = 4;
 }
 
 // SampleLabel are the labels added to a Sample.
 message SampleLabel {
-    // labels for a label in a Sample.
-    repeated string labels = 1;
+  // labels for a label in a Sample.
+  repeated string labels = 1;
 }
 
 // SampleNumLabel are the num of labels of a Sample.
 message SampleNumLabel {
-    // num_labels are the num_label of a Sample.
-    repeated int64 num_labels = 1;
+  // num_labels are the num_label of a Sample.
+  repeated int64 num_labels = 1;
 }
 
 // SampleNumUnit are the num units of a Sample.
 message SampleNumUnit {
-    // units of a labels of a Sample.
-    repeated string units = 1;
+  // units of a labels of a Sample.
+  repeated string units = 1;
 }
 
 // Location describes a single location of a stack traces.
 message Location {
-    // id is the unique identifier for the location.
-    bytes id = 1;
+  // id is the unique identifier for the location.
+  bytes id = 1;
 
-    // address is the memory address of the location if present.
-    uint64 address = 2;
+  // address is the memory address of the location if present.
+  uint64 address = 2;
 
-    // mapping_id is the unique identifier for the mapping associated with the location.
-    bytes mapping_id = 4;
+  // mapping_id is the unique identifier for the mapping associated with the location.
+  bytes mapping_id = 4;
 
-    // is_folded indicates whether the location is folded into the previous location.
-    bool is_folded = 5;
+  // is_folded indicates whether the location is folded into the previous location.
+  bool is_folded = 5;
 }
 
 // LocationLines describes a set of lines of a location.
 message LocationLines {
-    // id is the unique identifier for the location.
-    bytes id = 1;
+  // id is the unique identifier for the location.
+  bytes id = 1;
 
-    // Lines is the list of lines associated with the location.
-    repeated Line lines = 2;
+  // Lines is the list of lines associated with the location.
+  repeated Line lines = 2;
 }
 
 // Line describes a source code function and its line number.
 message Line {
-    // function_id is the ID of the function.
-    bytes function_id = 1;
+  // function_id is the ID of the function.
+  bytes function_id = 1;
 
-    // line is the line number in the source file of the referenced function.
-    int64 line = 2;
+  // line is the line number in the source file of the referenced function.
+  int64 line = 2;
 }
 
 // Function describes metadata of a source code function.
 message Function {
-    // id is the unique identifier for the function.
-    bytes id = 1;
+  // id is the unique identifier for the function.
+  bytes id = 1;
 
-    // start_line is the line number in the source file of the first line of the function.
-    int64 start_line = 2;
+  // start_line is the line number in the source file of the first line of the function.
+  int64 start_line = 2;
 
-    // name is the name of the function.
-    string name = 3;
+  // name is the name of the function.
+  string name = 3;
 
-    // system_name describes the name of the function, as identified by the
-    // system. For instance, it can be a C++ mangled name.
-    string system_name = 4;
+  // system_name describes the name of the function, as identified by the
+  // system. For instance, it can be a C++ mangled name.
+  string system_name = 4;
 
-    // filename is the name of the source file of the function.
-    string filename = 5;
+  // filename is the name of the source file of the function.
+  string filename = 5;
 }
 
 // Mapping describes a memory mapping.
 message Mapping {
-    // id is the unique identifier for the mapping.
-    bytes id = 1;
+  // id is the unique identifier for the mapping.
+  bytes id = 1;
 
-    // start is the start address of the mapping.
-    uint64 start = 2;
+  // start is the start address of the mapping.
+  uint64 start = 2;
 
-    // limit is the length of the address space of the mapping.
-    uint64 limit = 3;
+  // limit is the length of the address space of the mapping.
+  uint64 limit = 3;
 
-    // offset is the offset of the mapping.
-    uint64 offset = 4;
+  // offset is the offset of the mapping.
+  uint64 offset = 4;
 
-    // file is the name of the file associated with the mapping.
-    string file = 5;
+  // file is the name of the file associated with the mapping.
+  string file = 5;
 
-    // build_id is the build ID of the mapping.
-    string build_id = 6;
+  // build_id is the build ID of the mapping.
+  string build_id = 6;
 
-    // has_functions indicates whether the mapping has associated functions.
-    bool has_functions = 7;
+  // has_functions indicates whether the mapping has associated functions.
+  bool has_functions = 7;
 
-    // has_filenames indicates whether the mapping has associated filenames.
-    bool has_filenames = 8;
+  // has_filenames indicates whether the mapping has associated filenames.
+  bool has_filenames = 8;
 
-    // has_line_numbers indicates whether the mapping has associated line numbers.
-    bool has_line_numbers = 9;
+  // has_line_numbers indicates whether the mapping has associated line numbers.
+  bool has_line_numbers = 9;
 
-    // has_inline_frames indicates whether the mapping has associated inline frames.
-    bool has_inline_frames = 10;
+  // has_inline_frames indicates whether the mapping has associated inline frames.
+  bool has_inline_frames = 10;
 }

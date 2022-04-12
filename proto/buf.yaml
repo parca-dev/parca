@@ -7,3 +7,5 @@ lint:
   use:
     - DEFAULT
     - COMMENTS
+  ignore:
+    - google/pprof/profile.proto

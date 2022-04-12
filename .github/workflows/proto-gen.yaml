@@ -1,0 +1,28 @@
+name: proto-gen
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/proto-gen.yaml
+      - proto/**
+      - buf.gen.yaml
+      - buf.work.yaml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ^1.18
+
+      - uses: bufbuild/buf-setup-action@v1.3.1
+        with:
+          version: 1.3.1
+
+      - name: Generate
+        run:
+          make proto/generate && git diff --exit-code

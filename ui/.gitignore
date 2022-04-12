@@ -39,4 +39,4 @@ yarn-error.log*
 # yarn
 .yarn
 
-packages/shared/client/src/google
+packages/shared/client/src/google/pprof

@@ -1,2 +1,2 @@
-proto/go/google
-proto/swagger/google
+proto/go/google/pprof
+proto/swagger/google/pprof

@@ -7,13 +7,13 @@ on:
     paths:
       - '**.go'
       - .golangci.yml
-      - .github/workflows/golangci-lint.yml
+      - .github/workflows/go-lint.yml
   pull_request:
     branches: [ main ]
     paths:
       - '**.go'
       - .golangci.yml
-      - .github/workflows/golangci-lint.yml
+      - .github/workflows/go-lint.yml
 
 jobs:
   lint:
@@ -29,7 +29,7 @@ jobs:
         run: make ui/build
 
       - name: Format
-        run: make format && git diff --exit-code
+        run: make go/fmt && git diff --exit-code
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3.1.0

@@ -4,8 +4,8 @@
 import * as jspb from "google-protobuf";
 import * as google_api_annotations_pb from "../../../google/api/annotations_pb";
 import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
-import * as parca_profilestore_v1alpha1_profilestore_pb from "../../../parca/profilestore/v1alpha1/profilestore_pb";
 import * as parca_metastore_v1alpha1_metastore_pb from "../../../parca/metastore/v1alpha1/metastore_pb";
+import * as parca_profilestore_v1alpha1_profilestore_pb from "../../../parca/profilestore/v1alpha1/profilestore_pb";
 
 export class QueryRangeRequest extends jspb.Message {
   getQuery(): string;

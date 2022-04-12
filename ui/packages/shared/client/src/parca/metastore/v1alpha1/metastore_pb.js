@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = (function() {
-  if (this) { return this; }
-  if (typeof window !== 'undefined') { return window; }
-  if (typeof global !== 'undefined') { return global; }
-  if (typeof self !== 'undefined') { return self; }
-  return Function('return this')();
-}.call(null));
+var global = (function() { return this || window || global || self || Function('return this')(); }).call(null);
 
 goog.exportSymbol('proto.parca.metastore.v1alpha1.Function', null, global);
 goog.exportSymbol('proto.parca.metastore.v1alpha1.Line', null, global);
