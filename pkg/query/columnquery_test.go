@@ -45,7 +45,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table(
+	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
@@ -54,6 +54,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		),
 		logger,
 	)
+	require.NoError(t, err)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
@@ -110,7 +111,7 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table(
+	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
@@ -119,6 +120,7 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 		),
 		logger,
 	)
+	require.NoError(t, err)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
@@ -186,7 +188,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table(
+	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
@@ -195,6 +197,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		),
 		logger,
 	)
+	require.NoError(t, err)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,
@@ -244,7 +247,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col := columnstore.New(reg)
 	colDB := col.DB("parca")
-	table := colDB.Table(
+	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
@@ -253,6 +256,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		),
 		logger,
 	)
+	require.NoError(t, err)
 	m := metastore.NewBadgerMetastore(
 		logger,
 		reg,

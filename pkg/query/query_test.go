@@ -527,7 +527,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			tracer := trace.NewNoopTracerProvider().Tracer("")
 			col := columnstore.New(reg)
 			colDB := col.DB("parca")
-			table := colDB.Table(
+			table, err := colDB.Table(
 				"stacktraces",
 				columnstore.NewTableConfig(
 					parcacol.Schema(),
@@ -536,6 +536,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				),
 				logger,
 			)
+			require.NoError(b, err)
 			m := metastore.NewBadgerMetastore(
 				logger,
 				reg,
