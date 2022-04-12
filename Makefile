@@ -84,8 +84,7 @@ proto/format:
 	buf format -w
 
 .PHONY: proto/generate
-proto/generate:
-	yarn install
+proto/generate: proto/vendor
 	# Generate just the annotations and http protos.
 	buf generate buf.build/googleapis/googleapis --path google/api/annotations.proto --path google/api/http.proto
 	# docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf generate
