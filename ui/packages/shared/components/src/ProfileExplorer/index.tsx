@@ -4,6 +4,8 @@ import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
 import {useAppSelector, useAppDispatch, setCompare, selectCompareMode} from '@parca/store';
+import {Provider} from 'react-redux';
+import {store} from '@parca/store';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -18,7 +20,7 @@ const getExpressionAsAString = (expression: string | []) => {
   return x;
 };
 
-const ProfileExplorer = ({
+const ProfileExplorerApp = ({
   queryClient,
   queryParams,
   navigateTo,
@@ -287,6 +289,24 @@ const ProfileExplorer = ({
       closeProfile={closeProfile}
       navigateTo={navigateTo}
     />
+  );
+};
+
+const ProfileExplorer = ({
+  queryClient,
+  queryParams,
+  navigateTo,
+}: ProfileExplorerProps): JSX.Element => {
+  const {store: reduxStore} = store();
+
+  return (
+    <Provider store={reduxStore}>
+      <ProfileExplorerApp
+        queryClient={queryClient}
+        queryParams={queryParams}
+        navigateTo={navigateTo}
+      />
+    </Provider>
   );
 };
 
