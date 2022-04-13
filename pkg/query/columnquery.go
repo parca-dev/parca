@@ -524,16 +524,26 @@ func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, rep
 
 	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.
 	diff := &profile.StacktraceSamples{}
-	stacktraceIndices := map[string]int{}
-	for i, s := range base.Samples {
-		stacktraceIndices[string(profile.MakeStacktraceKey(s))] = i
+
+	for i := range compare.Samples {
+		diff.Samples = append(diff.Samples, &profile.Sample{
+			Location:  compare.Samples[i].Location,
+			Value:     compare.Samples[i].Value,
+			DiffValue: compare.Samples[i].Value,
+			Label:     compare.Samples[i].Label,
+			NumLabel:  compare.Samples[i].NumLabel,
+			NumUnit:   compare.Samples[i].NumUnit,
+		})
 	}
 
-	for _, s := range compare.Samples {
-		if i, ok := stacktraceIndices[string(profile.MakeStacktraceKey(s))]; ok {
-			s.DiffValue = s.Value - base.Samples[i].Value
-		}
-		diff.Samples = append(diff.Samples, s)
+	for i := range base.Samples {
+		diff.Samples = append(diff.Samples, &profile.Sample{
+			Location:  base.Samples[i].Location,
+			DiffValue: -base.Samples[i].Value,
+			Label:     base.Samples[i].Label,
+			NumLabel:  base.Samples[i].NumLabel,
+			NumUnit:   base.Samples[i].NumUnit,
+		})
 	}
 
 	return q.renderReport(ctx, diff, reportType)
