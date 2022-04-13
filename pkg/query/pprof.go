@@ -149,6 +149,10 @@ func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore
 			locations = append(locations, pl)
 		}
 
+		if s.Value == 0 && s.DiffValue != 0 {
+			s.Value = s.DiffValue
+		}
+
 		p.Sample = append(p.Sample, &profile.Sample{
 			Value:    []int64{s.Value},
 			Location: locations,

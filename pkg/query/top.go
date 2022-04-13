@@ -14,6 +14,7 @@
 package query
 
 import (
+	"bytes"
 	"context"
 	"sort"
 
@@ -31,12 +32,6 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 	// In the end return a *pb.TopNode for each location including all the metadata we have.
 	locationsTopNodes := map[uuid.UUID]*pb.TopNode{}
 	for _, sample := range p.Samples {
-		// If values are zero we can simply ignore the samples.
-		// They wouldn't show up on their own in the table anyway.
-		if sample.Value == 0 {
-			continue
-		}
-
 		for i, location := range sample.Location {
 			if node, found := locationsTopNodes[location.ID]; found {
 				node.Cumulative += sample.Value
@@ -89,7 +84,7 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 
 func aggregateTopByFunction(top *pb.Top) *pb.Top {
 	aggregatesAddresses := map[string]map[uint64]*pb.TopNode{}
-	aggregatesFunctions := map[string]map[string]*pb.TopNode{}
+	aggregatesFunctions := map[string]*pb.TopNode{}
 
 	for _, n := range top.GetList() {
 		if n.GetMeta() == nil {
@@ -106,7 +101,6 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 		mapping := string(mappingID)
 		if aggregatesAddresses[mapping] == nil {
 			aggregatesAddresses[mapping] = map[uint64]*pb.TopNode{}
-			aggregatesFunctions[mapping] = map[string]*pb.TopNode{}
 		}
 
 		if n.Meta.GetFunction() == nil {
@@ -114,19 +108,25 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 			addr := n.Meta.GetLocation().GetAddress()
 			if aggregateNode, exists := aggregatesAddresses[mapping][addr]; exists {
 				aggregateNode.Cumulative += n.Cumulative
+				aggregateNode.Diff += n.Diff
 				aggregateNode.Flat += n.Flat
 			} else {
 				aggregatesAddresses[mapping][addr] = n
 			}
 			continue
 		}
-		// Finally, if there's a function name we aggregated by their name.
+		// Finally, if there's a function name we aggregate by their name.
 		name := n.Meta.Function.GetName()
-		if aggregateNode, exists := aggregatesFunctions[mapping][name]; exists {
+		if aggregateNode, exists := aggregatesFunctions[name]; exists {
 			aggregateNode.Cumulative += n.Cumulative
+			aggregateNode.Diff += n.Diff
 			aggregateNode.Flat += n.Flat
+			if aggregateNode.Meta.Mapping != nil && n.Meta.Mapping != nil && !bytes.Equal(aggregateNode.Meta.Mapping.Id, n.Meta.Mapping.Id) {
+				aggregateNode.Meta.Mapping = &metastorev1alpha1.Mapping{}
+			}
+			aggregateNode.Meta.Line = nil
 		} else {
-			aggregatesFunctions[mapping][name] = n
+			aggregatesFunctions[name] = n
 		}
 	}
 
@@ -134,9 +134,7 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 	for _, addrs := range aggregatesAddresses {
 		count += uint64(len(addrs))
 	}
-	for _, funcs := range aggregatesFunctions {
-		count += uint64(len(funcs))
-	}
+	count += uint64(len(aggregatesFunctions))
 
 	list := make([]*pb.TopNode, 0, count)
 	for _, addrs := range aggregatesAddresses {
@@ -144,10 +142,8 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 			list = append(list, n)
 		}
 	}
-	for _, funcs := range aggregatesFunctions {
-		for _, n := range funcs {
-			list = append(list, n)
-		}
+	for _, n := range aggregatesFunctions {
+		list = append(list, n)
 	}
 
 	// Sort the list
