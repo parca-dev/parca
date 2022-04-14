@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/alecthomas/kong v0.5.0
-	github.com/apache/arrow/go/v8 v8.0.0-20220330100019-c515a6924f60
+	github.com/apache/arrow/go/v8 v8.0.0-20220414050214-b61fb727fcc9
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -29,7 +29,7 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20220203202831-b7f99f1dbc96
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/arcticdb v0.0.0-20220412150431-7befbdd820b1
+	github.com/polarsignals/arcticdb v0.0.0-20220414073735-d7659459ec4a
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.33.0
 	github.com/prometheus/prometheus v1.8.2-0.20220315145411-881111fec433
@@ -208,7 +208,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v0.24.0
-
-replace github.com/apache/arrow/go/v8 => github.com/brancz/arrow/go/v8 v8.0.0-20220331075317-4a90e3994fc9
