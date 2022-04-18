@@ -2492,9 +2492,9 @@
     glob "7.1.7"
 
 "@next/mdx@^12.0.3":
-  version "12.1.4"
-  resolved "https://registry.yarnpkg.com/@next/mdx/-/mdx-12.1.4.tgz#06a73b9d97b2a26c17e2f9e11974a7138e53d1a6"
-  integrity sha512-AECT8+2j9bhjiF5WIA8xIfBF5Otf5uUFydIP3tf53qz+PNzlhnQvMd1zLsAIZ7+Wvj4WgnPes1Lxl8CHri20WQ==
+  version "12.1.5"
+  resolved "https://registry.yarnpkg.com/@next/mdx/-/mdx-12.1.5.tgz#302fbf195b406d32423f6a0317771d3b27f88e8e"
+  integrity sha512-3R8J/3jKz4bCAOWDKVhxXoUETy3eqC+zaNlgwLK7LAid3UZjioVZ+jxIJmopd1auqjpev7doKeRE2p8YG55QLg==
 
 "@next/swc-android-arm-eabi@12.1.4":
   version "12.1.4"
