@@ -256,7 +256,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastore.ProfileMetaStor
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	f, err := os.Open("../storage/testdata/profile1.pb.gz")
+	f, err := os.Open("./testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
 	require.NoError(t, err)
