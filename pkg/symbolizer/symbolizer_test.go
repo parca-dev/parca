@@ -26,6 +26,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
+	"github.com/polarsignals/arcticdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
@@ -39,8 +40,8 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profilestore"
-	"github.com/parca-dev/parca/pkg/storage"
 	"github.com/parca-dev/parca/pkg/symbol"
 )
 
@@ -401,13 +402,27 @@ func ingest(t *testing.T, conn *grpc.ClientConn, path string) error {
 func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileMetaStore) {
 	t.Helper()
 
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col := arcticdb.New(reg)
+	colDB := col.DB("parca")
+	table, err := colDB.Table(
+		"stacktraces",
+		arcticdb.NewTableConfig(
+			parcacol.Schema(),
+			8196,
+			64*1024*1024,
+		),
+		logger,
+	)
+
 	cacheDir, err := ioutil.TempDir("", "parca-test-cache-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		os.RemoveAll(cacheDir)
 	})
 
-	logger := log.NewNopLogger()
 	sym, err := symbol.NewSymbolizer(logger)
 	require.NoError(t, err)
 
@@ -443,12 +458,12 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, metastore.ProfileM
 		mStr.Close()
 	})
 
-	db := storage.OpenDB(prometheus.NewRegistry(), trace.NewNoopTracerProvider().Tracer(""), nil)
-	pStr := profilestore.NewProfileStore(
-		log.NewNopLogger(),
-		trace.NewNoopTracerProvider().Tracer(""),
-		db,
+	pStr := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
 		mStr,
+		table,
+		false,
 	)
 
 	lis, err := net.Listen("tcp", ":0")
