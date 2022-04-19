@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -55,7 +56,7 @@ func TestGenerateTopTable(t *testing.T) {
 	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, p)
 	require.NoError(t, err)
 
-	res, err := GenerateTopTable(ctx, l, samples)
+	res, err := GenerateTopTable(ctx, samples)
 	require.NoError(t, err)
 
 	require.Equal(t, int32(1886), res.Total)
@@ -91,6 +92,67 @@ func TestGenerateTopTable(t *testing.T) {
 		}
 	}
 	require.Truef(t, found, "expected to find the specific function")
+}
+
+func TestGenerateTopTableAggregateFlat(t *testing.T) {
+	top, err := GenerateTopTable(context.Background(), &parcaprofile.StacktraceSamples{
+		Samples: []*parcaprofile.Sample{
+			{
+				Location: []*metastore.Location{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Address: 0x1,
+					},
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						Address: 0x2,
+					},
+				},
+				Value: 1,
+			},
+			{
+				Location: []*metastore.Location{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Address: 0x1,
+					},
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Address: 0x3,
+					},
+				},
+				Value: 1,
+			},
+			{
+				Location: []*metastore.Location{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Address: 0x1,
+					},
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+						Address: 0x4,
+					},
+				},
+				Value: 1,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, 4, len(top.List))
+	require.Equal(t, uint64(0x1), top.List[0].Meta.Location.Address)
+	require.Equal(t, int64(3), top.List[0].Cumulative)
+	require.Equal(t, int64(3), top.List[0].Flat)
+	require.Equal(t, uint64(0x2), top.List[1].Meta.Location.Address)
+	require.Equal(t, int64(1), top.List[1].Cumulative)
+	require.Equal(t, int64(0), top.List[1].Flat)
+	require.Equal(t, uint64(0x3), top.List[2].Meta.Location.Address)
+	require.Equal(t, int64(1), top.List[2].Cumulative)
+	require.Equal(t, int64(0), top.List[2].Flat)
+	require.Equal(t, uint64(0x4), top.List[3].Meta.Location.Address)
+	require.Equal(t, int64(1), top.List[3].Cumulative)
+	require.Equal(t, int64(0), top.List[3].Flat)
 }
 
 func TestGenerateDiffTopTable(t *testing.T) {
@@ -129,7 +191,7 @@ func TestGenerateDiffTopTable(t *testing.T) {
 	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, p)
 	require.NoError(t, err)
 
-	res, err := GenerateTopTable(ctx, l, samples)
+	res, err := GenerateTopTable(ctx, samples)
 	require.NoError(t, err)
 
 	var found bool

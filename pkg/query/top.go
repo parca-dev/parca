@@ -22,11 +22,10 @@ import (
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore, p *parcaprofile.StacktraceSamples) (*pb.Top, error) {
+func GenerateTopTable(ctx context.Context, p *parcaprofile.StacktraceSamples) (*pb.Top, error) {
 	// Iterate over all samples and their locations.
 	// Calculate the cumulative value of all locations of all samples.
 	// In the end return a *pb.TopNode for each location including all the metadata we have.
@@ -36,6 +35,10 @@ func GenerateTopTable(ctx context.Context, metaStore metastore.ProfileMetaStore,
 			if node, found := locationsTopNodes[location.ID]; found {
 				node.Cumulative += sample.Value
 				node.Diff += sample.DiffValue
+
+				if i == 0 {
+					node.Flat += sample.Value
+				}
 			} else {
 				node := &pb.TopNode{
 					Cumulative: sample.Value,
