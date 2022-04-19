@@ -320,7 +320,7 @@ func (q *Query) renderReport(ctx context.Context, p profile.InstantProfile, typ 
 			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
-		top, err := GenerateTopTable(ctx, q.metaStore, samples)
+		top, err := GenerateTopTable(ctx, samples)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate top table: %v", err.Error())
 		}

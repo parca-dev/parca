@@ -364,7 +364,7 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Stacktrace
 			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
-		top, err := GenerateTopTable(ctx, q.metaStore, p)
+		top, err := GenerateTopTable(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
