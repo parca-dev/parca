@@ -1,3 +1,5 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 module.exports = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,6 +11,7 @@ module.exports = {
     extend: {
       fontFamily: {
         robotoMono: ['Roboto Mono', 'monospace'],
+        sans: ['Poppins', ...defaultTheme.fontFamily.sans],
       },
       maxWidth: {
         '1/2': '50%',
