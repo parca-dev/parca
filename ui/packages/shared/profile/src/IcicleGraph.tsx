@@ -6,7 +6,7 @@ import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {usePopper} from 'react-popper';
 import {getLastItem, valueFormatter} from '@parca/functions';
 
-const RowHeight = 20;
+const RowHeight = 26;
 
 const icicleRectStyles = {
   cursor: 'pointer',
@@ -65,7 +65,7 @@ function IcicleRect({
       />
       {width > 5 && (
         <svg width={width - 5} height={height}>
-          <text x={5} y={13} style={{fontSize: '12px'}}>
+          <text x={5} y={15} style={{fontSize: '12px'}}>
             {name}
           </text>
         </svg>
@@ -98,10 +98,10 @@ function diffColor(diff: number, cumulative: number): string {
     Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
   const color =
     diff === 0
-      ? '#90c7e0'
+      ? '#B3BAE1'
       : diff > 0
-      ? `rgba(221, 46, 69, ${diffTransparency})`
-      : `rgba(59, 165, 93, ${diffTransparency})`;
+      ? `rgba(254, 153, 187, ${diffTransparency})`
+      : `rgba(164, 214, 153, ${diffTransparency})`;
 
   return color;
 }
@@ -521,7 +521,13 @@ export default function IcicleGraph({graph, width, setCurPath, curPath}: IcicleG
         hoveringNode={hoveringNode}
         contextElement={svg.current}
       />
-      <svg width={width} height={height} onMouseMove={onMouseMove} ref={svg}>
+      <svg
+        className="font-robotoMono"
+        width={width}
+        height={height}
+        onMouseMove={onMouseMove}
+        ref={svg}
+      >
         <g ref={ref}>
           <MemoizedIcicleGraphRootNode
             node={graph.root}

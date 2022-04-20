@@ -7,6 +7,9 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        robotoMono: ['Roboto Mono', 'monospace'],
+      },
       maxWidth: {
         '1/2': '50%',
       },
