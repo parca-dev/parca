@@ -35,11 +35,11 @@ import (
 )
 
 const (
-	pprofMemoryTotal    string = "memory_total"
-	pprofBlockTotal     string = "block_total"
-	pprofGoroutineTotal string = "goroutine_total"
-	pprofMutexTotal     string = "mutex_total"
-	pprofProcessCPU     string = "process_cpu"
+	pprofMemory     string = "memory"
+	pprofBlock      string = "block"
+	pprofGoroutine  string = "goroutine"
+	pprofMutex      string = "mutex"
+	pprofProcessCPU string = "process_cpu"
 )
 
 // Config holds all the configuration information for Parca.
@@ -67,19 +67,19 @@ func DefaultScrapeConfig() ScrapeConfig {
 		Scheme:         "http",
 		ProfilingConfig: &ProfilingConfig{
 			PprofConfig: PprofConfig{
-				pprofMemoryTotal: &PprofProfilingConfig{
+				pprofMemory: &PprofProfilingConfig{
 					Enabled: trueValue(),
-					Path:    "/debug/pprof/heap",
+					Path:    "/debug/pprof/allocs",
 				},
-				pprofBlockTotal: &PprofProfilingConfig{
+				pprofBlock: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/block",
 				},
-				pprofGoroutineTotal: &PprofProfilingConfig{
+				pprofGoroutine: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/goroutine",
 				},
-				pprofMutexTotal: &PprofProfilingConfig{
+				pprofMutex: &PprofProfilingConfig{
 					Enabled: trueValue(),
 					Path:    "/debug/pprof/mutex",
 				},
@@ -234,7 +234,7 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	// Validate the scrape and timeout internal configuration. When /debug/pprof/profile scraping
 	// is enabled we need to make sure there is enough time to complete the scrape.
 	if c.ScrapeTimeout > c.ScrapeInterval {
-		return fmt.Errorf("scrape timeout must be smaller or equal to inverval for: %v", c.JobName)
+		return fmt.Errorf("scrape timeout must be larger or equal to inverval for: %v", c.JobName)
 	}
 
 	if c.ScrapeTimeout == 0 {

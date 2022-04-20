@@ -1,27 +1,24 @@
-import {grpc} from '@improbable-eng/grpc-web';
+import {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 import {createContext, ReactNode, useContext} from 'react';
 
-const EMPTY_METADATA = new grpc.Metadata();
-const GrpcMetadataContext = createContext<grpc.Metadata>(EMPTY_METADATA);
+const GrpcMetadataContext = createContext<RpcMetadata>({});
 
 export const GrpcMetadataProvider = ({
   children,
   value,
 }: {
   children: ReactNode;
-  value?: grpc.Metadata;
+  value?: RpcMetadata;
 }) => {
   return (
-    <GrpcMetadataContext.Provider value={value ?? EMPTY_METADATA}>
-      {children}
-    </GrpcMetadataContext.Provider>
+    <GrpcMetadataContext.Provider value={value ?? {}}>{children}</GrpcMetadataContext.Provider>
   );
 };
 
 export const useGrpcMetadata = () => {
   const context = useContext(GrpcMetadataContext);
   if (context == null) {
-    return EMPTY_METADATA;
+    return {};
   }
   return context;
 };

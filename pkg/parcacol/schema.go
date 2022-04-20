@@ -19,86 +19,92 @@ import (
 )
 
 const (
-	schemaName = "parca"
+	SchemaName = "parca"
 	// The columns are sorted by their name in the schema too.
-	columnDuration       = "duration"
-	columnLabels         = "labels"
-	columnPeriod         = "period"
-	columnPeriodType     = "period_type"
-	columnPeriodUnit     = "period_unit"
-	columnPprofLabels    = "pprof_labels"
-	columnPprofNumLabels = "pprof_num_labels"
-	columnSampleType     = "sample_type"
-	columnSampleUnit     = "sample_unit"
-	columnStacktrace     = "stacktrace"
-	columnTimestamp      = "timestamp"
-	columnValue          = "value"
+	ColumnDuration       = "duration"
+	ColumnLabels         = "labels"
+	ColumnName           = "name"
+	ColumnPeriod         = "period"
+	ColumnPeriodType     = "period_type"
+	ColumnPeriodUnit     = "period_unit"
+	ColumnPprofLabels    = "pprof_labels"
+	ColumnPprofNumLabels = "pprof_num_labels"
+	ColumnSampleType     = "sample_type"
+	ColumnSampleUnit     = "sample_unit"
+	ColumnStacktrace     = "stacktrace"
+	ColumnTimestamp      = "timestamp"
+	ColumnValue          = "value"
 )
 
 func Schema() *dynparquet.Schema {
 	return dynparquet.NewSchema(
-		schemaName,
+		SchemaName,
 		[]dynparquet.ColumnDefinition{
 			{
-				Name:          columnDuration,
+				Name:          ColumnDuration,
 				StorageLayout: parquet.Int(64),
 				Dynamic:       false,
 			}, {
-				Name:          columnLabels,
+				Name:          ColumnLabels,
 				StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
 				Dynamic:       true,
 			}, {
-				Name:          columnPeriod,
+				Name:          ColumnName,
+				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
+				Dynamic:       false,
+			}, {
+				Name:          ColumnPeriod,
 				StorageLayout: parquet.Int(64),
 				Dynamic:       false,
 			}, {
-				Name:          columnPeriodType,
+				Name:          ColumnPeriodType,
 				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
 				Dynamic:       false,
 			}, {
-				Name:          columnPeriodUnit,
+				Name:          ColumnPeriodUnit,
 				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
 				Dynamic:       false,
 			}, {
-				Name:          columnPprofLabels,
+				Name:          ColumnPprofLabels,
 				StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
 				Dynamic:       true,
 			}, {
-				Name:          columnPprofNumLabels,
+				Name:          ColumnPprofNumLabels,
 				StorageLayout: parquet.Optional(parquet.Int(64)),
 				Dynamic:       true,
 			}, {
-				Name:          columnSampleType,
+				Name:          ColumnSampleType,
 				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
 				Dynamic:       false,
 			}, {
-				Name:          columnSampleUnit,
+				Name:          ColumnSampleUnit,
 				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
 				Dynamic:       false,
 			}, {
-				Name:          columnStacktrace,
+				Name:          ColumnStacktrace,
 				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
 				Dynamic:       false,
 			}, {
-				Name:          columnTimestamp,
+				Name:          ColumnTimestamp,
 				StorageLayout: parquet.Int(64),
 				Dynamic:       false,
 			}, {
-				Name:          columnValue,
+				Name:          ColumnValue,
 				StorageLayout: parquet.Int(64),
 				Dynamic:       false,
 			},
 		},
 		[]dynparquet.SortingColumn{
-			dynparquet.Ascending(columnSampleType),
-			dynparquet.Ascending(columnSampleUnit),
-			dynparquet.Ascending(columnPeriodType),
-			dynparquet.Ascending(columnPeriodUnit),
-			dynparquet.NullsFirst(dynparquet.Ascending(columnLabels)),
-			dynparquet.NullsFirst(dynparquet.Ascending(columnStacktrace)),
-			dynparquet.Ascending(columnTimestamp),
-			dynparquet.NullsFirst(dynparquet.Ascending(columnPprofLabels)),
-			dynparquet.NullsFirst(dynparquet.Ascending(columnPprofNumLabels)),
+			dynparquet.Ascending(ColumnName),
+			dynparquet.Ascending(ColumnSampleType),
+			dynparquet.Ascending(ColumnSampleUnit),
+			dynparquet.Ascending(ColumnPeriodType),
+			dynparquet.Ascending(ColumnPeriodUnit),
+			dynparquet.NullsFirst(dynparquet.Ascending(ColumnLabels)),
+			dynparquet.NullsFirst(dynparquet.Ascending(ColumnStacktrace)),
+			dynparquet.Ascending(ColumnTimestamp),
+			dynparquet.NullsFirst(dynparquet.Ascending(ColumnPprofLabels)),
+			dynparquet.NullsFirst(dynparquet.Ascending(ColumnPprofNumLabels)),
 		},
 	)
 }

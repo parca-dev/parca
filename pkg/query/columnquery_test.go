@@ -31,6 +31,7 @@ import (
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -82,6 +83,9 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
 		require.NoError(t, err)
 		_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+			Name:  "__name__",
+			Value: "memory",
+		}, {
 			Name:  "job",
 			Value: "default",
 		}}, profiles[0])
@@ -99,13 +103,13 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		"stacktraces",
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
-		Query: `{job="default"}`,
+		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 		Start: timestamppb.New(timestamp.Time(0)),
 		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
 	})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(res.Series))
-	require.Equal(t, 2, len(res.Series[0].Labelset.Labels))
+	require.Equal(t, 1, len(res.Series[0].Labelset.Labels))
 	require.Equal(t, 10, len(res.Series[0].Samples))
 }
 
@@ -147,6 +151,9 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 4, len(profiles))
 	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		Name:  "__name__",
+		Value: "memory",
+	}, {
 		Name:  "job",
 		Value: "default",
 	}}, profiles[0])
@@ -166,7 +173,7 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	res, err := api.Query(ctx, &pb.QueryRequest{
 		Options: &pb.QueryRequest_Single{
 			Single: &pb.SingleProfile{
-				Query: `{job="default"}`,
+				Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 				Time:  ts,
 			},
 		},
@@ -178,7 +185,7 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 		ReportType: pb.QueryRequest_REPORT_TYPE_PPROF,
 		Options: &pb.QueryRequest_Single{
 			Single: &pb.SingleProfile{
-				Query: `{job="default"}`,
+				Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 				Time:  ts,
 			},
 		},
@@ -187,6 +194,76 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 
 	_, err = profile.ParseData(res.Report.(*pb.QueryResponse_Pprof).Pprof)
 	require.NoError(t, err)
+}
+
+func TestColumnQueryAPIQueryFgprof(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
+	table, err := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(
+			parcacol.Schema(),
+		),
+		logger,
+	)
+	require.NoError(t, err)
+	m := metastore.NewBadgerMetastore(
+		logger,
+		reg,
+		tracer,
+		metastore.NewRandomUUIDGenerator(),
+	)
+	t.Cleanup(func() {
+		m.Close()
+	})
+
+	fileContent, err := ioutil.ReadFile("testdata/fgprof.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(bytes.NewBuffer(fileContent))
+	require.NoError(t, err)
+	p.TimeNanos = time.Now().UnixNano()
+	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(profiles))
+	for _, profile := range profiles {
+		_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+			Name:  "__name__",
+			Value: "fgprof",
+		}, {
+			Name:  "job",
+			Value: "default",
+		}}, profile)
+		require.NoError(t, err)
+	}
+
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		m,
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+		),
+		"stacktraces",
+	)
+	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
+		Query: `fgprof:samples:count::`,
+		Start: timestamppb.New(timestamp.Time(0)),
+		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res.Series))
+	require.Equal(t, 1, len(res.Series[0].Labelset.Labels))
+	require.Equal(t, 1, len(res.Series[0].Samples))
 }
 
 func TestColumnQueryAPIQueryDiff(t *testing.T) {
@@ -257,11 +334,22 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		Name:  "__name__",
+		Value: "memory",
+	}, {
 		Name:  "job",
 		Value: "default",
 	}}, &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			Timestamp: 1,
+			SampleType: parcaprofile.ValueType{
+				Type: "alloc_objects",
+				Unit: "count",
+			},
+			PeriodType: parcaprofile.ValueType{
+				Type: "space",
+				Unit: "bytes",
+			},
 		},
 		FlatSamples: map[string]*parcaprofile.Sample{
 			"a": {
@@ -272,11 +360,22 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	})
 	require.NoError(t, err)
 	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		Name:  "__name__",
+		Value: "memory",
+	}, {
 		Name:  "job",
 		Value: "default",
 	}}, &parcaprofile.Profile{
 		Meta: parcaprofile.InstantProfileMeta{
 			Timestamp: 2,
+			SampleType: parcaprofile.ValueType{
+				Type: "alloc_objects",
+				Unit: "count",
+			},
+			PeriodType: parcaprofile.ValueType{
+				Type: "space",
+				Unit: "bytes",
+			},
 		},
 		FlatSamples: map[string]*parcaprofile.Sample{
 			"b": {
@@ -306,7 +405,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
 					Options: &pb.ProfileDiffSelection_Single{
 						Single: &pb.SingleProfile{
-							Query: `{job="default"}`,
+							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 							Time:  timestamppb.New(timestamp.Time(1)),
 						},
 					},
@@ -315,7 +414,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
 					Options: &pb.ProfileDiffSelection_Single{
 						Single: &pb.SingleProfile{
-							Query: `{job="default"}`,
+							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 							Time:  timestamppb.New(timestamp.Time(2)),
 						},
 					},
@@ -340,7 +439,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
 					Options: &pb.ProfileDiffSelection_Single{
 						Single: &pb.SingleProfile{
-							Query: `{job="default"}`,
+							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 							Time:  timestamppb.New(timestamp.Time(1)),
 						},
 					},
@@ -349,7 +448,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
 					Options: &pb.ProfileDiffSelection_Single{
 						Single: &pb.SingleProfile{
-							Query: `{job="default"}`,
+							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 							Time:  timestamppb.New(timestamp.Time(2)),
 						},
 					},
@@ -373,7 +472,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
 					Options: &pb.ProfileDiffSelection_Single{
 						Single: &pb.SingleProfile{
-							Query: `{job="default"}`,
+							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 							Time:  timestamppb.New(timestamp.Time(1)),
 						},
 					},
@@ -382,7 +481,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
 					Options: &pb.ProfileDiffSelection_Single{
 						Single: &pb.SingleProfile{
-							Query: `{job="default"}`,
+							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 							Time:  timestamppb.New(timestamp.Time(2)),
 						},
 					},
@@ -397,6 +496,77 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.Equal(t, 2, len(resProf.Sample))
 	require.Equal(t, []int64{2}, resProf.Sample[0].Value)
 	require.Equal(t, []int64{-1}, resProf.Sample[1].Value)
+}
+
+func TestColumnQueryAPITypes(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
+	table, err := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(
+			parcacol.Schema(),
+		),
+		logger,
+	)
+	require.NoError(t, err)
+	m := metastore.NewBadgerMetastore(
+		logger,
+		reg,
+		tracer,
+		metastore.NewRandomUUIDGenerator(),
+	)
+	t.Cleanup(func() {
+		m.Close()
+	})
+
+	fileContent, err := ioutil.ReadFile("testdata/alloc_space_delta.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(bytes.NewBuffer(fileContent))
+	require.NoError(t, err)
+	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
+	require.NoError(t, err)
+	require.Equal(t, 4, len(profiles))
+	for _, prof := range profiles {
+		_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+			Name:  "__name__",
+			Value: "memory",
+		}, {
+			Name:  "job",
+			Value: "default",
+		}}, prof)
+		require.NoError(t, err)
+	}
+
+	table.Sync()
+
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		m,
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+		),
+		"stacktraces",
+	)
+	res, err := api.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
+	require.NoError(t, err)
+
+	require.True(t, proto.Equal(&pb.ProfileTypesResponse{Types: []*pb.ProfileType{
+		{Name: "memory", SampleType: "alloc_objects", SampleUnit: "count", PeriodType: "space", PeriodUnit: "bytes", Delta: true},
+		{Name: "memory", SampleType: "alloc_space", SampleUnit: "bytes", PeriodType: "space", PeriodUnit: "bytes", Delta: true},
+		{Name: "memory", SampleType: "inuse_objects", SampleUnit: "count", PeriodType: "space", PeriodUnit: "bytes", Delta: true},
+		{Name: "memory", SampleType: "inuse_space", SampleUnit: "bytes", PeriodType: "space", PeriodUnit: "bytes", Delta: true},
+	}}, res))
 }
 
 func TestColumnQueryAPILabelNames(t *testing.T) {
@@ -437,6 +607,9 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 4, len(profiles))
 	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		Name:  "__name__",
+		Value: "memory",
+	}, {
 		Name:  "job",
 		Value: "default",
 	}}, profiles[0])
@@ -456,7 +629,6 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, []string{
-		"__name__",
 		"job",
 	}, res.LabelNames)
 }
@@ -499,6 +671,9 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 4, len(profiles))
 	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		Name:  "__name__",
+		Value: "memory",
+	}, {
 		Name:  "job",
 		Value: "default",
 	}}, profiles[0])

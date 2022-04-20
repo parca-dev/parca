@@ -1265,8 +1265,8 @@ github.com/pkg/profile v1.2.1/go.mod h1:hJw3o1OdXxsrSjjVksARp5W95eeEaEfptyVZyv6J
 github.com/pkg/sftp v1.10.1/go.mod h1:lYOWFsE0bwd1+KfKJaKeuokY15vzFx25BLbzYYoAxZI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/arcticdb v0.0.0-20220425115945-dc05b0cea952 h1:TuVlGfva8NhvCBn0brw6C6GtDzPEGsGRpzmSeS9x96s=
-github.com/polarsignals/arcticdb v0.0.0-20220425115945-dc05b0cea952/go.mod h1:tRx4W1cWlwJ9Cbba6vB5XsRDpDRQtXk1j2rXsyKT/mc=
+github.com/polarsignals/arcticdb v0.0.0-20220428085204-3fca71a931b1 h1:CFIbW9UsAOm9vSw3n+U31hXjac//4RDBEXydIkXptoo=
+github.com/polarsignals/arcticdb v0.0.0-20220428085204-3fca71a931b1/go.mod h1:tRx4W1cWlwJ9Cbba6vB5XsRDpDRQtXk1j2rXsyKT/mc=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/pquerna/cachecontrol v0.0.0-20171018203845-0dec1b30a021/go.mod h1:prYjPmNq4d1NPVmpShWobRqXY3q7Vp+80DqgxxUrUIA=

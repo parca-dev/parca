@@ -45,7 +45,7 @@ scrape_configs:
       - targets: [ 'localhost:10902' ]
     profiling_config:
       pprof_config:
-        memory_total:
+        memory:
           enabled: true
           path: /conprof/debug/pprof/allocs
         fgprof:
@@ -64,19 +64,19 @@ scrape_configs:
 				Scheme:         "http",
 				ProfilingConfig: &ProfilingConfig{
 					PprofConfig: PprofConfig{
-						"memory_total": &PprofProfilingConfig{
+						"memory": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/conprof/debug/pprof/allocs",
 						},
-						"block_total": &PprofProfilingConfig{
+						"block": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/debug/pprof/block",
 						},
-						"goroutine_total": &PprofProfilingConfig{
+						"goroutine": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/debug/pprof/goroutine",
 						},
-						"mutex_total": &PprofProfilingConfig{
+						"mutex": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/debug/pprof/mutex",
 						},

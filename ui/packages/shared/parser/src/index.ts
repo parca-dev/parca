@@ -52,28 +52,75 @@ function isProfileNameMatcher(m: Matcher): boolean {
   return m.key === '__name__' && m.matcherType === MatcherType.MatchEqual;
 }
 
+export class ProfileType {
+  profileName: string;
+  sampleType: string;
+  sampleUnit: string;
+  periodType: string;
+  periodUnit: string;
+  delta: boolean;
+
+  constructor(
+    profileName: string,
+    sampleType: string,
+    sampleUnit: string,
+    periodType: string,
+    periodUnit: string,
+    delta: boolean
+  ) {
+    this.profileName = profileName;
+    this.sampleType = sampleType;
+    this.sampleUnit = sampleUnit;
+    this.periodType = periodType;
+    this.periodUnit = periodUnit;
+    this.delta = delta;
+  }
+
+  static fromString(profileType: string): ProfileType {
+    const str = profileType.toString();
+    const parts = str.split(':');
+    if (parts.length !== 5 && parts.length !== 6) {
+      throw new Error('Invalid profile type: ' + str);
+    }
+    return new ProfileType(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5] === 'delta');
+  }
+
+  toString(): string {
+    if (
+      this.profileName === '' &&
+      this.sampleType === '' &&
+      this.sampleUnit === '' &&
+      this.periodType === '' &&
+      this.periodUnit === ''
+    ) {
+      return '';
+    }
+    return `${this.profileName}:${this.sampleType}:${this.sampleUnit}:${this.periodType}:${
+      this.periodUnit
+    }${this.delta ? ':delta' : ''}`;
+  }
+}
+
 export class Query {
+  profType: ProfileType;
   matchers: Matcher[];
   inputMatcherString: string;
 
-  constructor(matchers: Matcher[], inputMatcherString: string) {
+  constructor(profileType: ProfileType, matchers: Matcher[], inputMatcherString: string) {
+    this.profType = profileType;
     this.matchers = matchers;
     this.inputMatcherString = inputMatcherString;
   }
 
   static fromAst(ast: any): Query {
     if (ast === undefined || ast == null) {
-      return new Query([], '');
+      return new Query(new ProfileType('', '', '', '', '', false), [], '');
     }
 
-    const profileNameMatchers =
-      ast.profileName?.text !== undefined
-        ? [new Matcher('__name__', MatcherType.MatchEqual, ast.profileName.value)]
-        : [];
     const matchers = ast.matchers.map(
       e => new Matcher(e.key.value, matcherTypeFromString(e.matcherType.value), e.value.value)
     );
-    return new Query(profileNameMatchers.concat(matchers), '');
+    return new Query(ProfileType.fromString(ast.profileName.value), matchers, '');
   }
 
   static parse(input: string): Query {
@@ -108,12 +155,13 @@ export class Query {
       ).data;
       const rest = input.slice(column.lexerState.col - 2);
       return new Query(
-        [new Matcher('__name__', MatcherType.MatchEqual, data.profileName.value)],
+        ProfileType.fromString(data.profileName),
+        [],
         rest.length > 0 ? rest : input
       );
     }
 
-    return new Query([], input);
+    return new Query(new ProfileType('', '', '', '', '', false), [], '');
   }
 
   static tryParse(
@@ -267,28 +315,33 @@ export class Query {
     if (this.matchers.find(e => e.key === key) != null) {
       return [
         new Query(
+          this.profType,
           this.matchers.map(e => (e.key === key ? matcher : e)),
           ''
         ),
         true,
       ];
     }
-    return [new Query(this.matchers.concat([matcher]), ''), true];
+    return [new Query(this.profType, this.matchers.concat([matcher]), ''), true];
   }
 
   setProfileName(name: string): [Query, boolean] {
+    const profileType = ProfileType.fromString(name);
     if (this.inputMatcherString !== undefined && this.inputMatcherString.length > 0) {
-      return [
-        new Query([new Matcher('__name__', MatcherType.MatchEqual, name)], this.inputMatcherString),
-        true,
-      ];
+      return [new Query(profileType, this.matchers, this.inputMatcherString), true];
     }
-    return this.setMatcher('__name__', name);
+    if (this.profType === profileType) {
+      return [this, false];
+    }
+    return [new Query(profileType, this.matchers, this.inputMatcherString), true];
   }
 
   profileName(): string {
-    const matcher = this.matchers.find(isProfileNameMatcher);
-    return matcher != null ? matcher.value : '';
+    return this.profType.toString();
+  }
+
+  profileType(): ProfileType {
+    return this.profType;
   }
 
   nonProfileNameMatchers(): Matcher[] {

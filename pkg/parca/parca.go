@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	goruntime "runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -78,6 +79,9 @@ type Flags struct {
 	Version            bool     `help:"Show application version."`
 	PathPrefix         string   `default:"" help:"Path prefix for the UI"`
 
+	MutexProfileFraction int `default:"0" help:"Fraction of mutex profile samples to collect."`
+	BlockProfileRate     int `default:"0" help:"Sample rate for block profile."`
+
 	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
 	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
 
@@ -104,6 +108,9 @@ type Flags struct {
 
 // Run the parca server.
 func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags *Flags, version string) error {
+	goruntime.SetBlockProfileRate(flags.BlockProfileRate)
+	goruntime.SetMutexProfileFraction(flags.MutexProfileFraction)
+
 	tracerProvider := trace.NewNoopTracerProvider()
 	if flags.OTLPAddress != "" {
 		var closer func()

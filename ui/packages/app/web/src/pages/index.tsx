@@ -1,3 +1,4 @@
+import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import {QueryServiceClient} from '@parca/client';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {parseParams, convertToQueryParams} from '@parca/functions';
@@ -19,7 +20,9 @@ const Profiles = () => {
   const queryParams = parseParams(location.search);
 
   const queryClient = new QueryServiceClient(
-    apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`
+    new GrpcWebFetchTransport({
+      baseUrl: apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`,
+    })
   );
 
   return (

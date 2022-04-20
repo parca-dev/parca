@@ -1,20 +1,16 @@
 import React, {useEffect, useState} from 'react';
-import {
-  ScrapeServiceClient,
-  ServiceError,
-  Target,
-  TargetsRequest,
-  TargetsResponse,
-} from '@parca/client';
+import {ScrapeServiceClient, Target, TargetsResponse, TargetsRequest_State} from '@parca/client';
+import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {EmptyState} from '@parca/components';
 import TargetsTable from '../components/Targets/TargetsTable';
-
-export interface ITargetsResult {
-  response: TargetsResponse.AsObject | null;
-  error: ServiceError | null;
-}
+import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 
 const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
+
+export interface ITargetsResult {
+  response: TargetsResponse | null;
+  error: RpcError | null;
+}
 
 export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
   const [result, setResult] = useState<ITargetsResult>({
@@ -23,35 +19,38 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
   });
 
   useEffect(() => {
-    client.targets(
-      new TargetsRequest(),
-      (error: ServiceError | null, responseMessage: TargetsResponse | null) => {
-        const res = responseMessage == null ? null : responseMessage.toObject();
+    const call = client.targets({
+      state: TargetsRequest_State.ANY_UNSPECIFIED,
+    });
 
-        setResult({
-          response: res,
-          error: error,
-        });
-      }
-    );
-    /* eslint-disable react-hooks/exhaustive-deps */
-  }, []);
+    call.response
+      .then(response => setResult({response, error: null}))
+      .catch(error => setResult({error, response: null}));
+  }, [client]);
 
   return result;
 };
 
+const scrapeClient = new ScrapeServiceClient(
+  new GrpcWebFetchTransport({
+    baseUrl: apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`,
+  })
+);
+
 const TargetsPage = (): JSX.Element => {
-  const scrapeClient = new ScrapeServiceClient(
-    apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`
-  );
-  const {response: targetsResponse} = useTargets(scrapeClient);
-  const getKeyValuePairFromArray = (key: string, value: {targetsList}) => {
-    return {[key]: value.targetsList};
+  const {response: targetsResponse, error} = useTargets(scrapeClient);
+
+  if (error !== null) {
+    return <div>Error</div>;
+  }
+
+  const getKeyValuePairFromArray = (key: string, value: {targets}) => {
+    return {[key]: value.targets};
   };
 
-  const {targetsMap} = targetsResponse ?? {};
-  const targetNamespaces = targetsMap?.map(item =>
-    getKeyValuePairFromArray(item[0], item[1] as {targetsList})
+  const {targets} = targetsResponse ?? {};
+  const targetNamespaces = Object.entries(targets ?? {}).map(item =>
+    getKeyValuePairFromArray(item[0], item[1] as {targets})
   );
 
   return (
@@ -77,7 +76,7 @@ const TargetsPage = (): JSX.Element => {
             <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
               {targetNamespaces?.map(namespace => {
                 const name = Object.keys(namespace)[0];
-                const targets = namespace[name].sort((a: Target.AsObject, b: Target.AsObject) => {
+                const targets = namespace[name].sort((a: Target, b: Target) => {
                   return a.url.localeCompare(b.url);
                 });
                 return (

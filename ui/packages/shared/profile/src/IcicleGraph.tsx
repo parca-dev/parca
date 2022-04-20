@@ -76,7 +76,7 @@ function IcicleRect({
 }
 
 interface IcicleGraphNodesProps {
-  data: FlamegraphNode.AsObject[];
+  data: FlamegraphNode[];
   x: number;
   y: number;
   total: number;
@@ -84,22 +84,20 @@ interface IcicleGraphNodesProps {
   level: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
-  setHoveringNode: (
-    node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined
-  ) => void;
+  setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
   path: string[];
   xScale: (value: number) => number;
 }
 
-export function nodeLabel(node: FlamegraphNode.AsObject): string {
+export function nodeLabel(node: FlamegraphNode): string {
   if (node.meta === undefined) return '<unknown>';
   const mapping = `${
     node.meta?.mapping?.file !== undefined && node.meta?.mapping?.file !== ''
       ? '[' + getLastItem(node.meta.mapping.file) + '] '
       : ''
   }`;
-  if (node.meta.pb_function?.name !== undefined && node.meta.pb_function?.name !== '')
-    return mapping + node.meta.pb_function.name;
+  if (node.meta.function?.name !== undefined && node.meta.function?.name !== '')
+    return mapping + node.meta.function.name;
 
   const address = `${
     node.meta.location?.address !== undefined && node.meta.location?.address !== 0
@@ -154,23 +152,25 @@ export function IcicleGraphNodes({
   return (
     <g transform={`translate(${x}, ${y})`}>
       {nodes.map((d, i) => {
-        const start = nodes.slice(0, i).reduce((sum, d) => sum + d.cumulative, 0);
+        const cumulative = parseFloat(d.cumulative);
+        const diff = parseFloat(d.diff);
+        const start = nodes.slice(0, i).reduce((sum, d) => sum + parseFloat(d.cumulative), 0);
 
         const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);
         const width =
           nextCurPath.length > 0 || (nextCurPath.length === 0 && curPath.length === 1)
             ? totalWidth
-            : xScale(d.cumulative);
+            : xScale(cumulative);
 
         if (width <= 1) {
           return <></>;
         }
 
-        const key = `${level}-${i}`;
         const name = nodeLabel(d);
+        const key = `${level}-${i}`;
         const nextPath = path.concat([name]);
 
-        const color = diffColor(d.diff === undefined ? 0 : d.diff, d.cumulative, isDarkMode);
+        const color = diffColor(diff, cumulative, isDarkMode);
 
         const onClick = () => {
           setCurPath(nextPath);
@@ -179,7 +179,7 @@ export function IcicleGraphNodes({
         const xStart = xScale(start);
         const newXScale =
           nextCurPath.length === 0 && curPath.length === 1
-            ? scaleLinear().domain([0, d.cumulative]).range([0, totalWidth])
+            ? scaleLinear().domain([0, cumulative]).range([0, totalWidth])
             : xScale;
 
         const onMouseEnter = () => setHoveringNode(d);
@@ -203,7 +203,7 @@ export function IcicleGraphNodes({
             {data !== undefined && data.length > 0 && (
               <IcicleGraphNodes
                 key={`node-${key}`}
-                data={d.childrenList}
+                data={d.children}
                 x={xStart}
                 y={RowHeight}
                 xScale={newXScale}
@@ -230,14 +230,14 @@ interface FlamegraphTooltipProps {
   y: number;
   unit: string;
   total: number;
-  hoveringNode: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined;
+  hoveringNode: FlamegraphNode | FlamegraphRootNode | undefined;
   contextElement: Element | null;
 }
 
 const FlamegraphNodeTooltipTableRows = ({
   hoveringNode,
 }: {
-  hoveringNode: FlamegraphNode.AsObject;
+  hoveringNode: FlamegraphNode;
 }): JSX.Element => {
   if (hoveringNode.meta === undefined) return <></>;
 
@@ -345,20 +345,21 @@ export const FlamegraphTooltip = ({
 
   if (hoveringNode === undefined || hoveringNode == null) return <></>;
 
-  const diff = hoveringNode.diff === undefined ? 0 : hoveringNode.diff;
-  const prevValue = hoveringNode.cumulative - diff;
+  const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
+  const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
+  const prevValue = hoveringNodeCumulative - diff;
   const diffRatio = Math.abs(diff) > 0 ? diff / prevValue : 0;
   const diffSign = diff > 0 ? '+' : '';
   const diffValueText = diffSign + valueFormatter(diff, unit, 1);
   const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
-  const hoveringFlamegraphNode = hoveringNode as FlamegraphNode.AsObject;
+  const hoveringFlamegraphNode = hoveringNode as FlamegraphNode;
   const metaRows =
     hoveringFlamegraphNode.meta === undefined ? (
       <></>
     ) : (
-      <FlamegraphNodeTooltipTableRows hoveringNode={hoveringNode as FlamegraphNode.AsObject} />
+      <FlamegraphNodeTooltipTableRows hoveringNode={hoveringNode as FlamegraphNode} />
     );
 
   return (
@@ -376,13 +377,13 @@ export const FlamegraphTooltip = ({
                     <p>root</p>
                   ) : (
                     <>
-                      {hoveringFlamegraphNode.meta.pb_function !== undefined &&
-                      hoveringFlamegraphNode.meta.pb_function.name !== '' ? (
-                        <p>{hoveringFlamegraphNode.meta.pb_function.name}</p>
+                      {hoveringFlamegraphNode.meta.function !== undefined &&
+                      hoveringFlamegraphNode.meta.function.name !== '' ? (
+                        <p>{hoveringFlamegraphNode.meta.function.name}</p>
                       ) : (
                         <>
                           {hoveringFlamegraphNode.meta.location !== undefined &&
-                          hoveringFlamegraphNode.meta.location.address !== 0 ? (
+                          parseInt(hoveringFlamegraphNode.meta.location.address, 10) !== 0 ? (
                             <p>
                               {'0x' + hoveringFlamegraphNode.meta.location.address.toString(16)}
                             </p>
@@ -400,8 +401,8 @@ export const FlamegraphTooltip = ({
                       <tr>
                         <td className="w-1/5">Cumulative</td>
                         <td className="w-4/5">
-                          {valueFormatter(hoveringNode.cumulative, unit, 2)} (
-                          {((hoveringNode.cumulative * 100) / total).toFixed(2)}%)
+                          {valueFormatter(hoveringNodeCumulative, unit, 2)} (
+                          {((hoveringNodeCumulative * 100) / total).toFixed(2)}%)
                         </td>
                       </tr>
                       {hoveringNode.diff !== undefined && diff !== 0 && (
@@ -424,15 +425,13 @@ export const FlamegraphTooltip = ({
 };
 
 interface IcicleGraphRootNodeProps {
-  node: FlamegraphRootNode.AsObject;
+  node: FlamegraphRootNode;
   xScale: (value: number) => number;
   total: number;
   totalWidth: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
-  setHoveringNode: (
-    node: FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined
-  ) => void;
+  setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
 }
 
 export function IcicleGraphRootNode({
@@ -446,7 +445,9 @@ export function IcicleGraphRootNode({
 }: IcicleGraphRootNodeProps) {
   const isDarkMode = useAppSelector(selectDarkMode);
 
-  const color = diffColor(node.diff === undefined ? 0 : node.diff, node.cumulative, isDarkMode);
+  const cumulative = parseFloat(node.cumulative);
+  const diff = parseFloat(node.diff);
+  const color = diffColor(diff, cumulative, isDarkMode);
 
   const onClick = () => setCurPath([]);
   const onMouseEnter = () => setHoveringNode(node);
@@ -468,7 +469,7 @@ export function IcicleGraphRootNode({
         curPath={curPath}
       />
       <MemoizedIcicleGraphNodes
-        data={node.childrenList}
+        data={node.children}
         x={0}
         y={RowHeight}
         xScale={xScale}
@@ -487,15 +488,22 @@ export function IcicleGraphRootNode({
 const MemoizedIcicleGraphRootNode = React.memo(IcicleGraphRootNode);
 
 interface IcicleGraphProps {
-  graph: Flamegraph.AsObject;
+  graph: Flamegraph;
+  sampleUnit: string;
   width?: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
 }
 
-export default function IcicleGraph({graph, width, setCurPath, curPath}: IcicleGraphProps) {
+export default function IcicleGraph({
+  graph,
+  width,
+  setCurPath,
+  curPath,
+  sampleUnit,
+}: IcicleGraphProps) {
   const [hoveringNode, setHoveringNode] = useState<
-    FlamegraphNode.AsObject | FlamegraphRootNode.AsObject | undefined
+    FlamegraphNode | FlamegraphRootNode | undefined
   >();
   const [pos, setPos] = useState([0, 0]);
   const [height, setHeight] = useState(0);
@@ -518,13 +526,14 @@ export default function IcicleGraph({graph, width, setCurPath, curPath}: IcicleG
     throttledSetPos([rel[0], rel[1]]);
   };
 
-  const xScale = scaleLinear().domain([0, graph.total]).range([0, width]);
+  const total = parseFloat(graph.total);
+  const xScale = scaleLinear().domain([0, total]).range([0, width]);
 
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
       <FlamegraphTooltip
-        unit={graph.unit}
-        total={graph.total}
+        unit={sampleUnit}
+        total={total}
         x={pos[0]}
         y={pos[1]}
         hoveringNode={hoveringNode}
@@ -544,7 +553,7 @@ export default function IcicleGraph({graph, width, setCurPath, curPath}: IcicleG
             curPath={curPath}
             setCurPath={setCurPath}
             xScale={xScale}
-            total={graph.total}
+            total={total}
             totalWidth={width}
           />
         </g>

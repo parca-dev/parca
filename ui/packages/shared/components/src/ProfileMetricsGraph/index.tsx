@@ -1,15 +1,10 @@
 import React, {useState, useEffect} from 'react';
 import MetricsGraph from '../MetricsGraph';
 import {ProfileSelection, SingleProfileSelection} from '@parca/profile';
-import {
-  QueryRangeRequest,
-  QueryRangeResponse,
-  Label,
-  QueryServiceClient,
-  ServiceError,
-} from '@parca/client';
-import {Timestamp} from 'google-protobuf/google/protobuf/timestamp_pb';
+import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/client';
+import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {DateTimeRange, useGrpcMetadata} from '../';
+import {Query} from '@parca/parser';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -23,9 +18,9 @@ interface ProfileMetricsGraphProps {
 }
 
 export interface IQueryRangeResult {
-  response: QueryRangeResponse.AsObject | null;
+  response: QueryRangeResponse | null;
   isLoading: boolean;
-  error: ServiceError | null;
+  error: RpcError | null;
 }
 
 export const useQueryRange = (
@@ -46,31 +41,21 @@ export const useQueryRange = (
       ...result,
       isLoading: true,
     });
-    const req = new QueryRangeRequest();
-    req.setQuery(queryExpression);
 
-    const startTimestamp = new Timestamp();
-    startTimestamp.fromDate(new Date(start));
-    req.setStart(startTimestamp);
-
-    const endTimestamp = new Timestamp();
-    endTimestamp.fromDate(new Date(end));
-    req.setEnd(endTimestamp);
-
-    client.queryRange(
-      req,
-      metadata,
-      (error: ServiceError | null, responseMessage: QueryRangeResponse | null) => {
-        const res = responseMessage == null ? null : responseMessage.toObject();
-
-        setResult({
-          response: res,
-          isLoading: false,
-          error: error,
-        });
-      }
+    const call = client.queryRange(
+      {
+        query: queryExpression,
+        start: Timestamp.fromDate(new Date(start)),
+        end: Timestamp.fromDate(new Date(end)),
+        limit: 0,
+      },
+      metadata
     );
-  }, [client, queryExpression, start, end]);
+
+    call.response
+      .then(response => setResult({response: response, isLoading: false, error: null}))
+      .catch(error => setResult({error: error, isLoading: false, response: null}));
+  }, [client, queryExpression, start, end, metadata]);
 
   return result;
 };
@@ -99,7 +84,7 @@ const ProfileMetricsGraph = ({
       setIsLoaderVisible(false);
     }
     return () => clearTimeout(showLoaderTimeout);
-  }, [isLoading]);
+  }, [isLoading, isLoaderVisible]);
 
   if (isLoaderVisible) {
     return (
@@ -137,7 +122,7 @@ const ProfileMetricsGraph = ({
     );
   }
 
-  if (error) {
+  if (error !== null) {
     return (
       <div
         className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
@@ -149,14 +134,12 @@ const ProfileMetricsGraph = ({
     );
   }
 
-  const series = response?.seriesList;
-  if (series && series?.length > 0) {
-    const handleSampleClick = (
-      timestamp: number,
-      value: number,
-      labels: Label.AsObject[]
-    ): void => {
-      select(new SingleProfileSelection(labels, timestamp));
+  const series = response?.series;
+  if (series !== null && series !== undefined && series?.length > 0) {
+    const handleSampleClick = (timestamp: number, value: number, labels: Label[]): void => {
+      select(
+        new SingleProfileSelection(Query.parse(queryExpression).profileName(), labels, timestamp)
+      );
     };
 
     return (
@@ -173,6 +156,7 @@ const ProfileMetricsGraph = ({
           onSampleClick={handleSampleClick}
           onLabelClick={addLabelMatcher}
           width={0}
+          sampleUnit={Query.parse(queryExpression).profileType().sampleUnit}
         />
       </div>
     );

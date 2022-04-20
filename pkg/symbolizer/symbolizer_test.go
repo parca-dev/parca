@@ -390,7 +390,7 @@ func ingest(t *testing.T, conn *grpc.ClientConn, path string) error {
 	wc := profilestorepb.NewProfileStoreServiceClient(conn)
 	_, err = wc.WriteRaw(context.Background(), &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
-			Labels: &profilestorepb.LabelSet{Labels: []*profilestorepb.Label{}},
+			Labels: &profilestorepb.LabelSet{Labels: []*profilestorepb.Label{{Name: "__name__", Value: "process_cpu"}}},
 			Samples: []*profilestorepb.RawSample{{
 				RawProfile: buf.Bytes(),
 			}},

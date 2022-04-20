@@ -11,6 +11,11 @@ debug_info:
 scrape_configs:
   - job_name: "default"
     scrape_interval: "3s"
-    scrape_timeout: "2s"
     static_configs:
       - targets: [ '127.0.0.1:7070' ]
+    profiling_config:
+      pprof_config:
+        fgprof:
+          enabled: true
+          path: /debug/pprof/fgprof
+          delta: true

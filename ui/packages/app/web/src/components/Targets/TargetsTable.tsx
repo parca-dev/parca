@@ -40,8 +40,8 @@ const getRowContentByHeader = ({
     }
     case TargetsTableHeader.labels: {
       const {
-        labels: {labelsList: labels},
-        discoveredLabels: {labelsList: discoveredLabels},
+        labels: {labels},
+        discoveredLabels: {labels: discoveredLabels},
       } = target;
       return <LabelsCell labels={labels} discoveredLabels={discoveredLabels} key={key} />;
     }
@@ -77,7 +77,7 @@ const getRowContentByHeader = ({
   }
 };
 
-const TargetsTable = ({targets}: {targets: Target.AsObject[]}) => {
+const TargetsTable = ({targets}: {targets: Target[]}) => {
   const headers = Object.keys(TargetsTableHeader) as Array<keyof typeof TargetsTableHeader>;
 
   return (
@@ -96,7 +96,7 @@ const TargetsTable = ({targets}: {targets: Target.AsObject[]}) => {
         </tr>
       </thead>
       <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
-        {targets.map((target: Target.AsObject) => {
+        {targets.map((target: Target) => {
           return (
             <tr key={target.url}>
               {headers.map((header: string) => {

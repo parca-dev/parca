@@ -1,83 +1,79 @@
-import {MatcherType, Matcher, Query} from './index';
+import {MatcherType, Matcher, Query, ProfileType} from './index';
 
 test('QueryParseEmpty', () => {
-  expect(Query.parse('')).toMatchObject(new Query([], ''));
+  expect(Query.parse('')).toMatchObject(
+    new Query(new ProfileType('', '', '', '', '', false), [], '')
+  );
 });
 
 test('QueryParseProfile', () => {
-  expect(Query.parse('heap')).toMatchObject(
-    new Query([new Matcher('__name__', MatcherType.MatchEqual, 'heap')], '')
+  expect(Query.parse('memory:alloc_objects:count:space:bytes:delta')).toMatchObject(
+    new Query(new ProfileType('memory', 'alloc_objects', 'count', 'space', 'bytes', true), [], '')
   );
 });
 
 test('QueryParseWithMatcher', () => {
-  expect(Query.parse('heap{instance="abc"}')).toMatchObject(
+  expect(Query.parse('memory:inuse_objects:count:space:bytes{instance="abc"}')).toMatchObject(
     new Query(
-      [
-        new Matcher('__name__', MatcherType.MatchEqual, 'heap'),
-        new Matcher('instance', MatcherType.MatchEqual, 'abc'),
-      ],
+      new ProfileType('memory', 'inuse_objects', 'count', 'space', 'bytes', false),
+      [new Matcher('instance', MatcherType.MatchEqual, 'abc')],
       ''
     )
   );
 });
 
 test('Query.toString', () => {
-  expect(Query.parse('heap{instance="abc"}').toString()).toBe('heap{instance="abc"}');
-  expect(Query.parse('{i}').toString()).toBe('{i}');
+  expect(Query.parse('memory:inuse_objects:count:space:bytes{instance="abc"}').toString()).toBe(
+    'memory:inuse_objects:count:space:bytes{instance="abc"}'
+  );
 });
 
 test('Partial Parsing ProfileName and rest', () => {
   [
     {
-      input: 'threadcreate{instance="abc",a',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta{instance="abc",a',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: 'instance="abc",a',
     },
     {
-      input: 'threadcreate{instance="abc",',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta{instance="abc",',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: 'instance="abc",',
     },
     {
-      input: 'threadcreate{instance="ab',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta{instance="ab',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: 'instance="ab',
     },
     {
-      input: 'threadcreate{instance="',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta{instance="',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: 'instance="',
     },
     {
-      input: 'threadcreate{instance=a',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta{instance=a',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: 'instance=a',
     },
     {
-      input: 'threadcreate{=a',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta{=a',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: '=a',
     },
     {
-      input: 'threadcreate{a',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta{a',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: 'a',
     },
     {
-      input: 'threadcreate{',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta{',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: '',
     },
     {
-      input: 'threadcreate',
-      expectedProfileName: 'threadcreate',
+      input: 'memory:alloc_objects:count:space:bytes:delta',
+      expectedProfileName: 'memory:alloc_objects:count:space:bytes:delta',
       expectedMatcherString: '',
-    },
-    {
-      input: '{job=}',
-      expectedProfileName: '',
-      expectedMatcherString: 'job=',
     },
   ].forEach(function (test) {
     const q = Query.parse(test.input);

@@ -30,6 +30,13 @@ service QueryService {
     };
   }
 
+  // ProfileTypes returns the list of available profile types.
+  rpc ProfileTypes(ProfileTypesRequest) returns (ProfileTypesResponse) {
+    option (google.api.http) = {
+      get: "/profiles/types"
+    };
+  }
+
   // Labels returns the set of label names against a given matching string and time frame
   rpc Labels(LabelsRequest) returns (LabelsResponse) {
     option (google.api.http) = {
@@ -43,6 +50,31 @@ service QueryService {
       get: "/profiles/labels/{label_name}/values"
     };
   }
+}
+
+// ProfileTypesRequest is the request to retrieve the list of available profile types.
+message ProfileTypesRequest {}
+
+// ProfileTypesResponse is the response to retrieve the list of available profile types.
+message ProfileTypesResponse {
+  // types is the list of available profile types.
+  repeated ProfileType types = 1;
+}
+
+// ProfileType is the type of a profile as well as the units the profile type is available in.
+message ProfileType {
+  // name is the name of the profile type.
+  string name = 1;
+  // sample_type is the type of the samples in the profile.
+  string sample_type = 2;
+  // sample_unit is the unit of the samples in the profile.
+  string sample_unit = 3;
+  // period_type is the type of the periods in the profile.
+  string period_type = 4;
+  // period_unit is the unit of the periods in the profile.
+  string period_unit = 5;
+  // delta describes whether the profile is a delta profile.
+  bool delta = 6;
 }
 
 // QueryRangeRequest is the request for a set of profiles matching a query over a time window

@@ -1,27 +1,21 @@
 import React, {useEffect, useState} from 'react';
-import {
-  QueryRequest,
-  QueryResponse,
-  QueryServiceClient,
-  ServiceError,
-  TopNodeMeta,
-} from '@parca/client';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 import {getLastItem, valueFormatter} from '@parca/functions';
-import {useGrpcMetadata} from '@parca/components';
 import {useAppSelector, selectCompareMode} from '@parca/store';
-
+import {
+  QueryResponse,
+  QueryServiceClient,
+  QueryRequest_ReportType,
+  TopNodeMeta,
+} from '@parca/client';
 import {ProfileSource} from './ProfileSource';
+import {useQuery} from './useQuery';
 import './TopTable.styles.css';
 
 interface ProfileViewProps {
   queryClient: QueryServiceClient;
   profileSource: ProfileSource;
-}
-
-export interface IQueryResult {
-  response: QueryResponse | null;
-  error: ServiceError | null;
+  sampleUnit: string;
 }
 
 const Arrow = ({direction}: {direction: string | undefined}) => {
@@ -47,11 +41,12 @@ const useSortableData = (
     config
   );
 
-  const rawTableReport = response?.toObject().top?.listList;
+  const rawTableReport =
+    response !== null && response.report.oneofKind === 'top' ? response.report.top.list : [];
 
-  const items = rawTableReport?.map(node => ({
+  const items = rawTableReport.map(node => ({
     ...node,
-    name: node.meta?.pb_function?.name,
+    name: node.meta?.function?.name,
   }));
 
   const sortedItems = React.useMemo(() => {
@@ -83,71 +78,43 @@ const useSortableData = (
   return {items: sortedItems, requestSort, sortConfig};
 };
 
-export const useQuery = (
-  client: QueryServiceClient,
-  profileSource: ProfileSource
-): IQueryResult => {
-  const [result, setResult] = useState<IQueryResult>({
-    response: null,
-    error: null,
-  });
-  const metadata = useGrpcMetadata();
-
-  useEffect(() => {
-    const req = profileSource.QueryRequest();
-    req.setReportType(QueryRequest.ReportType.REPORT_TYPE_TOP);
-
-    client.query(
-      req,
-      metadata,
-      (
-        error: ServiceError | null,
-        responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null
-      ) => {
-        setResult({
-          response: responseMessage,
-          error: error,
-        });
-      }
-    );
-  }, [client, profileSource]);
-
-  return result;
-};
-
-export const RowLabel = (meta: TopNodeMeta.AsObject | undefined): string => {
+export const RowLabel = (meta: TopNodeMeta | undefined): string => {
   if (meta === undefined) return '<unknown>';
   const mapping = `${
     meta?.mapping?.file !== undefined && meta?.mapping?.file !== ''
       ? `[${getLastItem(meta.mapping.file)}]`
       : ''
   }`;
-  if (meta.pb_function?.name !== undefined && meta.pb_function?.name !== '')
-    return `${mapping} ${meta.pb_function.name}`;
+  if (meta.function?.name !== undefined && meta.function?.name !== '')
+    return `${mapping} ${meta.function.name}`;
 
+  const addr = parseInt(meta.location?.address ?? '0', 10);
   const address = `${
-    meta.location?.address !== undefined && meta.location?.address !== 0
-      ? `0x${meta.location.address.toString(16)}`
-      : ''
+    meta.location?.address !== undefined && addr !== 0 ? `0x${addr.toString(16)}` : ''
   }`;
   const fallback = `${mapping} ${address}`;
 
   return fallback === '' ? '<unknown>' : fallback;
 };
 
-export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.Element => {
-  const {response, error} = useQuery(queryClient, profileSource);
+export const TopTable = ({
+  queryClient,
+  profileSource,
+  sampleUnit,
+}: ProfileViewProps): JSX.Element => {
+  const {response, error} = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP);
   const {items, requestSort, sortConfig} = useSortableData(response);
 
   const compareMode = useAppSelector(selectCompareMode);
 
-  const unit = response?.toObject().top?.unit as string;
+  const unit = sampleUnit;
 
   if (error != null) {
     return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
   }
 
-  const total = response?.toObject().top?.listList.length;
+  const total =
+    response !== null && response.report.oneofKind === 'top' ? response.report.top.list.length : 0;
   if (total === 0) return <>Profile has no samples</>;
 
   const getClassNamesFor = name => {
