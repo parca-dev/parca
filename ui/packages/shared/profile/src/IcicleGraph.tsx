@@ -5,6 +5,7 @@ import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {usePopper} from 'react-popper';
 import {getLastItem, valueFormatter} from '@parca/functions';
+import {useAppSelector, selectDarkMode} from '@parca/store';
 
 const RowHeight = 26;
 
@@ -90,22 +91,6 @@ interface IcicleGraphNodesProps {
   xScale: (value: number) => number;
 }
 
-function diffColor(diff: number, cumulative: number): string {
-  const prevValue = cumulative - diff;
-  const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0;
-
-  const diffTransparency =
-    Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
-  const color =
-    diff === 0
-      ? '#B3BAE1'
-      : diff > 0
-      ? `rgba(254, 153, 187, ${diffTransparency})`
-      : `rgba(164, 214, 153, ${diffTransparency})`;
-
-  return color;
-}
-
 export function nodeLabel(node: FlamegraphNode.AsObject): string {
   if (node.meta === undefined) return '<unknown>';
   const mapping = `${
@@ -126,6 +111,26 @@ export function nodeLabel(node: FlamegraphNode.AsObject): string {
   return fallback === '' ? '<unknown>' : fallback;
 }
 
+function diffColor(diff: number, cumulative: number, isDarkMode: boolean): string {
+  const prevValue = cumulative - diff;
+  const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0;
+
+  const diffTransparency =
+    Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
+
+  const newSpanColor = isDarkMode ? '#B3BAE1' : '#929FEB';
+  const increasedSpanColor = isDarkMode
+    ? `rgba(255, 177, 204, ${diffTransparency})`
+    : `rgba(254, 153, 187, ${diffTransparency})`;
+  const reducedSpanColor = isDarkMode
+    ? `rgba(103, 158, 92, ${diffTransparency})`
+    : `rgba(164, 214, 153, ${diffTransparency})`;
+
+  const color = diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
+
+  return color;
+}
+
 export function IcicleGraphNodes({
   data,
   x,
@@ -139,6 +144,8 @@ export function IcicleGraphNodes({
   setCurPath,
   curPath,
 }: IcicleGraphNodesProps) {
+  const isDarkMode = useAppSelector(selectDarkMode);
+
   const nodes =
     curPath.length === 0 ? data : data.filter(d => d != null && curPath[0] === nodeLabel(d));
 
@@ -163,7 +170,7 @@ export function IcicleGraphNodes({
         const name = nodeLabel(d);
         const nextPath = path.concat([name]);
 
-        const color = diffColor(d.diff === undefined ? 0 : d.diff, d.cumulative);
+        const color = diffColor(d.diff === undefined ? 0 : d.diff, d.cumulative, isDarkMode);
 
         const onClick = () => {
           setCurPath(nextPath);
@@ -437,7 +444,9 @@ export function IcicleGraphRootNode({
   setCurPath,
   curPath,
 }: IcicleGraphRootNodeProps) {
-  const color = diffColor(node.diff === undefined ? 0 : node.diff, node.cumulative);
+  const isDarkMode = useAppSelector(selectDarkMode);
+
+  const color = diffColor(node.diff === undefined ? 0 : node.diff, node.cumulative, isDarkMode);
 
   const onClick = () => setCurPath([]);
   const onMouseEnter = () => setHoveringNode(node);
