@@ -80,7 +80,6 @@ func NewColumnQueryAPI(
 // Labels issues a labels request against the storage.
 func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
 	vals := []string{}
-	seen := map[string]struct{}{}
 
 	err := q.engine.ScanSchema(q.tableName).
 		Distinct(logicalplan.Col("name")).
@@ -98,10 +97,7 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 
 			for i := 0; i < stringCol.Len(); i++ {
 				val := stringCol.Value(i)
-				if _, ok := seen[val]; !ok {
-					vals = append(vals, strings.TrimPrefix(val, "labels."))
-					seen[val] = struct{}{}
-				}
+				vals = append(vals, strings.TrimPrefix(val, "labels."))
 			}
 
 			return nil
@@ -121,7 +117,6 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResponse, error) {
 	name := req.LabelName
 	vals := []string{}
-	seen := map[string]struct{}{}
 
 	err := q.engine.ScanTable(q.tableName).
 		Distinct(logicalplan.Col("labels." + name)).
@@ -138,10 +133,7 @@ func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb
 
 			for i := 0; i < stringCol.Len(); i++ {
 				val := stringCol.Value(i)
-				if _, ok := seen[string(val)]; !ok {
-					vals = append(vals, string(val))
-					seen[string(val)] = struct{}{}
-				}
+				vals = append(vals, string(val))
 			}
 
 			return nil
