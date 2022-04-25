@@ -174,14 +174,17 @@ func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServi
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(reg)
-	colDB := col.DB("parca")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
-			8196,
-			64*1024*1024,
 		),
 		logger,
 	)
@@ -288,14 +291,17 @@ func TestConsistency(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(reg)
-	colDB := col.DB("parca")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
-			8196,
-			64*1024*1024,
 		),
 		logger,
 	)
