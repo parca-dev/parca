@@ -167,7 +167,7 @@ export const TopTable = ({queryClient, profileSource}: ProfileViewProps): JSX.El
 
   return (
     <>
-      <div className="w-full">
+      <div className="w-full font-robotoMono">
         <table className="iciclegraph-table table-fixed text-left w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
