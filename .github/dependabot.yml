@@ -30,7 +30,7 @@ updates:
       - dependency-name: "@parca/functions"
       - dependency-name: "@parca/icons"
       - dependency-name: "@parca/parser"
-
+      - dependency-name: "@parca/store"
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"
