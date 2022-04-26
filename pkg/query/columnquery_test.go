@@ -45,14 +45,17 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(reg)
-	colDB := col.DB("parca")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
-			8196,
-			64*1024*1024,
 		),
 		logger,
 	)
@@ -111,14 +114,17 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(reg)
-	colDB := col.DB("parca")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
-			8196,
-			64*1024*1024,
 		),
 		logger,
 	)
@@ -188,14 +194,17 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(reg)
-	colDB := col.DB("parca")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
-			8196,
-			64*1024*1024,
 		),
 		logger,
 	)
@@ -395,14 +404,17 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(reg)
-	colDB := col.DB("parca")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
-			8196,
-			64*1024*1024,
 		),
 		logger,
 	)
@@ -454,14 +466,17 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(reg)
-	colDB := col.DB("parca")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
 		columnstore.NewTableConfig(
 			parcacol.Schema(),
-			8196,
-			64*1024*1024,
 		),
 		logger,
 	)

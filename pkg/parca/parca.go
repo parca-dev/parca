@@ -183,12 +183,18 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	if flags.Storage == "columnstore" {
-		col := arcticdb.New(reg)
-		colDB := col.DB("parca")
-		table, err := colDB.Table("stacktraces", arcticdb.NewTableConfig(
-			parcacol.Schema(),
+		col := arcticdb.New(
+			reg,
 			flags.StorageGranuleSize,
 			flags.StorageActiveMemory,
+		)
+		colDB, err := col.DB("parca")
+		if err != nil {
+			level.Error(logger).Log("msg", "create database", "err", err)
+			return err
+		}
+		table, err := colDB.Table("stacktraces", arcticdb.NewTableConfig(
+			parcacol.Schema(),
 		), logger)
 		if err != nil {
 			level.Error(logger).Log("msg", "create table", "err", err)
