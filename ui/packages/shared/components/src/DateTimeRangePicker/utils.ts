@@ -114,7 +114,10 @@ export class DateTimeRange {
     return `absolute:${this.getFromDateStringKey()}-${this.getToDateStringKey()}`;
   }
 
-  static fromRangeKey(rangeKey: string) {
+  static fromRangeKey(rangeKey: string | undefined) {
+    if (rangeKey === undefined) {
+      return new DateTimeRange();
+    }
     try {
       const [rangeType, rangeValueKey] = rangeKey.split(':');
       if (rangeType === 'relative') {
