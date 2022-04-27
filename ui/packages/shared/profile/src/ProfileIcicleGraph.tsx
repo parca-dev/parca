@@ -1,4 +1,5 @@
 import IcicleGraph from './IcicleGraph';
+import DiffLegend from './components/DiffLegend';
 import {Flamegraph} from '@parca/client';
 
 interface ProfileIcicleGraphProps {
@@ -21,13 +22,16 @@ const ProfileIcicleGraph = ({
   if (parseFloat(total) === 0) return <>Profile has no samples</>;
 
   return (
-    <IcicleGraph
-      width={width}
-      graph={graph}
-      curPath={curPath}
-      setCurPath={setNewCurPath}
-      sampleUnit={sampleUnit}
-    />
+    <>
+      <DiffLegend />
+      <IcicleGraph
+        width={width}
+        graph={graph}
+        curPath={curPath}
+        setCurPath={setNewCurPath}
+        sampleUnit={sampleUnit}
+      />
+    </>
   );
 };
 

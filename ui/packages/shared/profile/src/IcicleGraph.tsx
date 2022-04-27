@@ -4,20 +4,49 @@ import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {usePopper} from 'react-popper';
-import {getLastItem, valueFormatter} from '@parca/functions';
+import {getLastItem, valueFormatter, diffColor} from '@parca/functions';
 import {useAppSelector, selectDarkMode} from '@parca/store';
 
-const RowHeight = 26;
+interface IcicleGraphProps {
+  graph: Flamegraph;
+  sampleUnit: string;
+  width?: number;
+  curPath: string[];
+  setCurPath: (path: string[]) => void;
+}
 
-const icicleRectStyles = {
-  cursor: 'pointer',
-  transition: 'opacity .15s linear',
-};
-const fadedIcicleRectStyles = {
-  cursor: 'pointer',
-  transition: 'opacity .15s linear',
-  opacity: '0.5',
-};
+interface IcicleGraphNodesProps {
+  data: FlamegraphNode[];
+  x: number;
+  y: number;
+  total: number;
+  totalWidth: number;
+  level: number;
+  curPath: string[];
+  setCurPath: (path: string[]) => void;
+  setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
+  path: string[];
+  xScale: (value: number) => number;
+}
+
+interface FlamegraphTooltipProps {
+  x: number;
+  y: number;
+  unit: string;
+  total: number;
+  hoveringNode: FlamegraphNode | FlamegraphRootNode | undefined;
+  contextElement: Element | null;
+}
+
+interface IcicleGraphRootNodeProps {
+  node: FlamegraphRootNode;
+  xScale: (value: number) => number;
+  total: number;
+  totalWidth: number;
+  curPath: string[];
+  setCurPath: (path: string[]) => void;
+  setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
+}
 
 interface IcicleRectProps {
   x: number;
@@ -31,6 +60,18 @@ interface IcicleRectProps {
   onClick: (e: MouseEvent) => void;
   curPath: string[];
 }
+
+const RowHeight = 26;
+
+const icicleRectStyles = {
+  cursor: 'pointer',
+  transition: 'opacity .15s linear',
+};
+const fadedIcicleRectStyles = {
+  cursor: 'pointer',
+  transition: 'opacity .15s linear',
+  opacity: '0.5',
+};
 
 function IcicleRect({
   x,
@@ -75,20 +116,6 @@ function IcicleRect({
   );
 }
 
-interface IcicleGraphNodesProps {
-  data: FlamegraphNode[];
-  x: number;
-  y: number;
-  total: number;
-  totalWidth: number;
-  level: number;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
-  setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
-  path: string[];
-  xScale: (value: number) => number;
-}
-
 export function nodeLabel(node: FlamegraphNode): string {
   if (node.meta === undefined) return '<unknown>';
   const mapping = `${
@@ -107,26 +134,6 @@ export function nodeLabel(node: FlamegraphNode): string {
   const fallback = `${mapping}${address}`;
 
   return fallback === '' ? '<unknown>' : fallback;
-}
-
-function diffColor(diff: number, cumulative: number, isDarkMode: boolean): string {
-  const prevValue = cumulative - diff;
-  const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0;
-
-  const diffTransparency =
-    Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
-
-  const newSpanColor = isDarkMode ? '#B3BAE1' : '#929FEB';
-  const increasedSpanColor = isDarkMode
-    ? `rgba(255, 177, 204, ${diffTransparency})`
-    : `rgba(254, 153, 187, ${diffTransparency})`;
-  const reducedSpanColor = isDarkMode
-    ? `rgba(103, 158, 92, ${diffTransparency})`
-    : `rgba(164, 214, 153, ${diffTransparency})`;
-
-  const color = diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
-
-  return color;
 }
 
 export function IcicleGraphNodes({
@@ -224,15 +231,6 @@ export function IcicleGraphNodes({
 }
 
 const MemoizedIcicleGraphNodes = React.memo(IcicleGraphNodes);
-
-interface FlamegraphTooltipProps {
-  x: number;
-  y: number;
-  unit: string;
-  total: number;
-  hoveringNode: FlamegraphNode | FlamegraphRootNode | undefined;
-  contextElement: Element | null;
-}
 
 const FlamegraphNodeTooltipTableRows = ({
   hoveringNode,
@@ -424,16 +422,6 @@ export const FlamegraphTooltip = ({
   );
 };
 
-interface IcicleGraphRootNodeProps {
-  node: FlamegraphRootNode;
-  xScale: (value: number) => number;
-  total: number;
-  totalWidth: number;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
-  setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
-}
-
 export function IcicleGraphRootNode({
   node,
   xScale,
@@ -486,14 +474,6 @@ export function IcicleGraphRootNode({
 }
 
 const MemoizedIcicleGraphRootNode = React.memo(IcicleGraphRootNode);
-
-interface IcicleGraphProps {
-  graph: Flamegraph;
-  sampleUnit: string;
-  width?: number;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
-}
 
 export default function IcicleGraph({
   graph,
