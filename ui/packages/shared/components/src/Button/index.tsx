@@ -1,6 +1,6 @@
 import cx from 'classnames';
 
-const BUTTON_COLORS = {
+const BUTTON_VARIANT = {
   primary: {
     text: 'text-gray-100 dark-gray-900 justify-center',
     bg: 'bg-indigo-600',
@@ -27,18 +27,18 @@ const BUTTON_COLORS = {
   },
 };
 
-export type ButtonColor = keyof typeof BUTTON_COLORS;
+export type ButtonVariant = keyof typeof BUTTON_VARIANT;
 
 const Button = ({
   disabled = false,
-  color = 'primary',
+  variant = 'primary',
   children,
-  additionalClasses,
+  className = '',
   ...props
 }: {
   disabled?: boolean;
-  color?: ButtonColor;
-  additionalClasses?: string;
+  variant?: ButtonVariant;
+  className?: string;
   children: React.ReactNode;
 } & JSX.IntrinsicElements['button']) => {
   return (
@@ -46,10 +46,9 @@ const Button = ({
       type="button"
       className={cx(
         disabled ? 'opacity-50 pointer-events-none' : '',
-        BUTTON_COLORS[color].bg,
-        BUTTON_COLORS[color].text,
-        /* eslint-disable @typescript-eslint/restrict-template-expressions */
-        `cursor-pointer group relative w-full flex ${BUTTON_COLORS[color].padding} ${BUTTON_COLORS[color].border} text-sm ${BUTTON_COLORS[color].fontWeight} rounded-md text-whitefocus:outline-none focus:ring-2 focus:ring-offset-2 ${BUTTON_COLORS[color].hover} ${additionalClasses}`
+        ...Object.values(BUTTON_VARIANT[variant]),
+        'cursor-pointer group relative w-full flex $ text-sm rounded-md text-whitefocus:outline-none focus:ring-2 focus:ring-offset-2',
+        className
       )}
       disabled={disabled}
       {...props}

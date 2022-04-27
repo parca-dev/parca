@@ -204,7 +204,7 @@ export const ProfileView = ({
                     color="neutral"
                     onClick={resetIcicleGraph}
                     disabled={curPath.length === 0}
-                    additionalClasses="whitespace-nowrap text-ellipsis"
+                    className="whitespace-nowrap text-ellipsis"
                   >
                     Reset View
                   </Button>
@@ -212,7 +212,7 @@ export const ProfileView = ({
 
                 <Button
                   color={`${currentView === 'table' ? 'primary' : 'neutral'}`}
-                  additionalClasses={`rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons`}
+                  className="rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
                   onClick={() => switchProfileView('table')}
                 >
                   Table
@@ -220,7 +220,7 @@ export const ProfileView = ({
 
                 <Button
                   color={`${currentView === 'both' ? 'primary' : 'neutral'}`}
-                  additionalClasses={`rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons no-outline-on-buttons text-ellipsis`}
+                  className="rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons no-outline-on-buttons text-ellipsis"
                   onClick={() => switchProfileView('both')}
                 >
                   Both
@@ -228,7 +228,7 @@ export const ProfileView = ({
 
                 <Button
                   color={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
-                  additionalClasses={`rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons`}
+                  className="rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
                   onClick={() => switchProfileView('icicle')}
                 >
                   Icicle Graph
