@@ -19,7 +19,7 @@ const ProfileIcicleGraph = ({
   setNewCurPath,
   sampleUnit,
 }: ProfileIcicleGraphProps) => {
-    const compareMode = useAppSelector(selectCompareMode);
+  const compareMode = useAppSelector(selectCompareMode);
 
   if (graph === undefined) return <div>no data...</div>;
   const total = graph.total;
@@ -27,7 +27,7 @@ const ProfileIcicleGraph = ({
 
   return (
     <>
-      <DiffLegend />
+      {compareMode && <DiffLegend />}
       <IcicleGraph
         width={width}
         graph={graph}
