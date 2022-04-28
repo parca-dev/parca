@@ -1,18 +1,19 @@
 import React from 'react';
 import {formatDate} from '@parca/functions';
-import {Query} from '@parca/parser';
+import {Query, ProfileType} from '@parca/parser';
 import {
   Label,
   QueryRequest,
+  QueryRequest_Mode,
+  QueryRequest_ReportType,
   ProfileDiffSelection,
-  SingleProfile,
-  MergeProfile,
-  DiffProfile,
+  ProfileDiffSelection_Mode,
+  Timestamp,
 } from '@parca/client';
-import {Timestamp} from 'google-protobuf/google/protobuf/timestamp_pb';
 
 export interface ProfileSource {
   QueryRequest: () => QueryRequest;
+  ProfileType: () => ProfileType;
   DiffSelection: () => ProfileDiffSelection;
   Describe: () => JSX.Element;
   toString: () => string;
@@ -42,8 +43,8 @@ export function SuffixParams(params: {[key: string]: any}, suffix: string): {[ke
   );
 }
 
-export function ParseLabels(labels: string[]): Label.AsObject[] {
-  return labels.map(function (labelString): Label.AsObject {
+export function ParseLabels(labels: string[]): Label[] {
+  return labels.map(function (labelString): Label {
     const parts = labelString.split('=', 2);
     return {name: parts[0], value: parts[1]};
   });
@@ -55,6 +56,7 @@ export function ProfileSelectionFromParams(
   to: string | undefined,
   merge: string | undefined,
   labels: string[] | undefined,
+  profileName: string | undefined,
   time: string | undefined
 ): ProfileSelection | null {
   if (
@@ -66,28 +68,30 @@ export function ProfileSelectionFromParams(
   ) {
     return new MergedProfileSelection(parseInt(from), parseInt(to), expression);
   }
-  if (labels !== undefined && time !== undefined) {
-    return new SingleProfileSelection(ParseLabels(labels), parseInt(time));
+  if (labels !== undefined && time !== undefined && profileName !== undefined) {
+    return new SingleProfileSelection(profileName, ParseLabels(labels), parseInt(time));
   }
   return null;
 }
 
 export class SingleProfileSelection implements ProfileSelection {
-  labels: Label.AsObject[];
+  profileName: string;
+  labels: Label[];
   time: number;
 
-  constructor(labels: Label.AsObject[], time: number) {
+  constructor(profileName: string, labels: Label[], time: number) {
+    this.profileName = profileName;
     this.labels = labels;
     this.time = time;
   }
 
   ProfileName(): string {
-    const label = this.labels.find(e => e.name === '__name__');
-    return label !== undefined ? label.value : '';
+    return this.profileName;
   }
 
   HistoryParams(): {[key: string]: any} {
     return {
+      profile_name: this.profileName,
       labels: this.labels.map(label => `${label.name}=${label.value}`),
       time: this.time,
     };
@@ -98,7 +102,7 @@ export class SingleProfileSelection implements ProfileSelection {
   }
 
   ProfileSource(): ProfileSource {
-    return new SingleProfileSource(this.labels, this.time);
+    return new SingleProfileSource(this.profileName, this.labels, this.time);
   }
 }
 
@@ -136,50 +140,58 @@ export class MergedProfileSelection implements ProfileSelection {
 }
 
 export class SingleProfileSource implements ProfileSource {
-  labels: Label.AsObject[];
+  profName: string;
+  labels: Label[];
   time: number;
 
-  constructor(labels: Label.AsObject[], time: number) {
+  constructor(profileName: string, labels: Label[], time: number) {
+    this.profName = profileName;
     this.labels = labels;
     this.time = time;
   }
 
   query(): string {
-    const seriesQuery = this.labels.reduce(function (agg: string, label: Label.AsObject) {
-      return agg + `${label.name}="${label.value}",`;
-    }, '{');
+    const seriesQuery =
+      this.profName +
+      this.labels.reduce(function (agg: string, label: Label) {
+        return agg + `${label.name}="${label.value}",`;
+      }, '{');
     return seriesQuery + '}';
   }
 
   DiffSelection(): ProfileDiffSelection {
-    const sel = new ProfileDiffSelection();
-    sel.setMode(ProfileDiffSelection.Mode.MODE_SINGLE_UNSPECIFIED);
-
-    const singleProfile = new SingleProfile();
-    const ts = new Timestamp();
-    ts.fromDate(new Date(this.time));
-    singleProfile.setTime(ts);
-    singleProfile.setQuery(this.query());
-    sel.setSingle(singleProfile);
-
-    return sel;
+    return {
+      options: {
+        oneofKind: 'single',
+        single: {
+          time: Timestamp.fromDate(new Date(this.time)),
+          query: this.query(),
+        },
+      },
+      mode: ProfileDiffSelection_Mode.SINGLE_UNSPECIFIED,
+    };
   }
 
   QueryRequest(): QueryRequest {
-    const req = new QueryRequest();
-    req.setMode(QueryRequest.Mode.MODE_SINGLE_UNSPECIFIED);
-    const singleQueryRequest = new SingleProfile();
-    const ts = new Timestamp();
-    ts.fromDate(new Date(this.time));
-    singleQueryRequest.setTime(ts);
-    singleQueryRequest.setQuery(this.query());
-    req.setSingle(singleQueryRequest);
-    return req;
+    return {
+      options: {
+        oneofKind: 'single',
+        single: {
+          time: Timestamp.fromDate(new Date(this.time)),
+          query: this.query(),
+        },
+      },
+      reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
+      mode: QueryRequest_Mode.SINGLE_UNSPECIFIED,
+    };
+  }
+
+  ProfileType(): ProfileType {
+    return ProfileType.fromString(this.profName);
   }
 
   profileName(): string {
-    const label = this.labels.find(e => e.name === '__name__');
-    return label !== undefined ? label.value : '';
+    return this.profName;
   }
 
   Describe(): JSX.Element {
@@ -208,8 +220,8 @@ export class SingleProfileSource implements ProfileSource {
 
   stringLabels(): string[] {
     return this.labels
-      .filter((label: Label.AsObject) => label.name !== '__name__')
-      .map((label: Label.AsObject) => `${label.name}=${label.value}`);
+      .filter((label: Label) => label.name !== '__name__')
+      .map((label: Label) => `${label.name}=${label.value}`);
   }
 
   toString(): string {
@@ -229,19 +241,25 @@ export class ProfileDiffSource implements ProfileSource {
   }
 
   DiffSelection(): ProfileDiffSelection {
-    return new ProfileDiffSelection();
+    throw new Error('Method not implemented.');
   }
 
   QueryRequest(): QueryRequest {
-    const req = new QueryRequest();
-    req.setMode(QueryRequest.Mode.MODE_DIFF);
-    const diffQueryRequest = new DiffProfile();
+    return {
+      options: {
+        oneofKind: 'diff',
+        diff: {
+          a: this.a.DiffSelection(),
+          b: this.b.DiffSelection(),
+        },
+      },
+      reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
+      mode: QueryRequest_Mode.DIFF,
+    };
+  }
 
-    diffQueryRequest.setA(this.a.DiffSelection());
-    diffQueryRequest.setB(this.b.DiffSelection());
-
-    req.setDiff(diffQueryRequest);
-    return req;
+  ProfileType(): ProfileType {
+    return this.a.ProfileType();
   }
 
   Describe(): JSX.Element {
@@ -269,45 +287,36 @@ export class MergedProfileSource implements ProfileSource {
   }
 
   DiffSelection(): ProfileDiffSelection {
-    const sel = new ProfileDiffSelection();
-    sel.setMode(ProfileDiffSelection.Mode.MODE_MERGE);
-
-    const mergeProfile = new MergeProfile();
-
-    const startTs = new Timestamp();
-    startTs.fromDate(new Date(this.from));
-    mergeProfile.setStart(startTs);
-
-    const endTs = new Timestamp();
-    endTs.fromDate(new Date(this.to));
-    mergeProfile.setEnd(endTs);
-
-    mergeProfile.setQuery(this.query);
-
-    sel.setMerge(mergeProfile);
-
-    return sel;
+    return {
+      options: {
+        oneofKind: 'merge',
+        merge: {
+          start: Timestamp.fromDate(new Date(this.from)),
+          end: Timestamp.fromDate(new Date(this.to)),
+          query: this.query,
+        },
+      },
+      mode: ProfileDiffSelection_Mode.MERGE,
+    };
   }
 
   QueryRequest(): QueryRequest {
-    const req = new QueryRequest();
-    req.setMode(QueryRequest.Mode.MODE_MERGE);
+    return {
+      options: {
+        oneofKind: 'merge',
+        merge: {
+          start: Timestamp.fromDate(new Date(this.from)),
+          end: Timestamp.fromDate(new Date(this.to)),
+          query: this.query,
+        },
+      },
+      reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
+      mode: QueryRequest_Mode.MERGE,
+    };
+  }
 
-    const mergeQueryRequest = new MergeProfile();
-
-    const startTs = new Timestamp();
-    startTs.fromDate(new Date(this.from));
-    mergeQueryRequest.setStart(startTs);
-
-    const endTs = new Timestamp();
-    endTs.fromDate(new Date(this.to));
-    mergeQueryRequest.setEnd(endTs);
-
-    mergeQueryRequest.setQuery(this.query);
-
-    req.setMerge(mergeQueryRequest);
-
-    return req;
+  ProfileType(): ProfileType {
+    return ProfileType.fromString(Query.parse(this.query).profileName());
   }
 
   Describe(): JSX.Element {

@@ -95,6 +95,9 @@ Flags:
                                    traces to.
       --version                    Show application version.
       --path-prefix=""             Path prefix for the UI
+      --mutex-profile-fraction=0
+                                   Fraction of mutex profile samples to collect.
+      --block-profile-rate=0       Sample rate for block profile.
       --storage-tsdb-retention-time=6h
                                    How long to retain samples in storage.
       --storage="tsdb"             Storage type to use.

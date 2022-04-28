@@ -32,6 +32,7 @@ const ProfileExplorerApp = ({
     from_a,
     to_a,
     merge_a,
+    profile_name_a,
     labels_a,
     time_a,
     time_selection_a,
@@ -39,6 +40,7 @@ const ProfileExplorerApp = ({
     from_b,
     to_b,
     merge_b,
+    profile_name_b,
     labels_b,
     time_b,
     time_selection_b,
@@ -100,6 +102,7 @@ const ProfileExplorerApp = ({
       from: parseInt(from_a as string),
       to: parseInt(to_a as string),
       merge: (merge_a as string) === 'true',
+      profile_name: profile_name_a as string,
       timeSelection: time_selection_a as string,
     };
 
@@ -109,6 +112,7 @@ const ProfileExplorerApp = ({
       to_a as string,
       merge_a as string,
       labels_a as string[],
+      profile_name_a as string,
       time_a as string
     );
 
@@ -147,6 +151,7 @@ const ProfileExplorerApp = ({
         to_a: query.to.toString(),
         merge_a: query.merge,
         time_selection_a: query.timeSelection,
+        profile_name_a: query.profile_name,
 
         compare_b: 'true',
         expression_b: encodeURIComponent(query.expression),
@@ -154,6 +159,7 @@ const ProfileExplorerApp = ({
         to_b: query.to.toString(),
         merge_b: query.merge,
         time_selection_b: query.timeSelection,
+        profile_name_b: query.profile_name,
       };
 
       if (profile != null) {
@@ -193,6 +199,7 @@ const ProfileExplorerApp = ({
     to: parseInt(to_a as string),
     merge: (merge_a as string) === 'true',
     timeSelection: time_selection_a as string,
+    profile_name: profile_name_a as string,
   };
   const queryB = {
     expression: expression_b as string,
@@ -200,6 +207,7 @@ const ProfileExplorerApp = ({
     to: parseInt(to_b as string),
     merge: (merge_b as string) === 'true',
     timeSelection: time_selection_b as string,
+    profile_name: profile_name_b as string,
   };
 
   const profileA = ProfileSelectionFromParams(
@@ -208,6 +216,7 @@ const ProfileExplorerApp = ({
     to_a as string,
     merge_a as string,
     labels_a as string[],
+    profile_name_a as string,
     time_a as string
   );
   const profileB = ProfileSelectionFromParams(
@@ -216,6 +225,7 @@ const ProfileExplorerApp = ({
     to_b as string,
     merge_b as string,
     labels_b as string[],
+    profile_name_b as string,
     time_b as string
   );
 

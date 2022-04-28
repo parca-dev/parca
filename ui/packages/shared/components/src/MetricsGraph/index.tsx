@@ -15,19 +15,20 @@ import {valueFormatter, formatDate} from '@parca/functions';
 import {DateTimeRange} from '@parca/components';
 
 interface RawMetricsGraphProps {
-  data: MetricsSeriesPb.AsObject[];
+  data: MetricsSeriesPb[];
   from: number;
   to: number;
   profile: SingleProfileSelection | null;
-  onSampleClick: (timestamp: number, value: number, labels: Label.AsObject[]) => void;
+  onSampleClick: (timestamp: number, value: number, labels: Label[]) => void;
   onLabelClick: (labelName: string, labelValue: string) => void;
   setTimeRange: (range: DateTimeRange) => void;
+  sampleUnit: string;
   width?: number;
 }
 
 interface HighlightedSeries {
   seriesIndex: number;
-  labels: Label.AsObject[];
+  labels: Label[];
   timestamp: number;
   value: number;
   x: number;
@@ -35,7 +36,7 @@ interface HighlightedSeries {
 }
 
 interface Series {
-  metric: Label.AsObject[];
+  metric: Label[];
   values: number[][];
 }
 
@@ -47,6 +48,7 @@ const MetricsGraph = ({
   onSampleClick,
   onLabelClick,
   setTimeRange,
+  sampleUnit,
 }: RawMetricsGraphProps): JSX.Element => (
   <CalcWidth throttle={300} delay={2000}>
     <RawMetricsGraph
@@ -57,6 +59,7 @@ const MetricsGraph = ({
       onSampleClick={onSampleClick}
       onLabelClick={onLabelClick}
       setTimeRange={setTimeRange}
+      sampleUnit={sampleUnit}
     />
   </CalcWidth>
 );
@@ -148,11 +151,8 @@ export const MetricsTooltip = ({
     }
   }, [x, y, contextElement, update]);
 
-  const nameLabel: Label.AsObject | undefined = highlighted?.labels.find(
-    e => e.name === '__name__'
-  );
-  const highlightedNameLabel: Label.AsObject =
-    nameLabel !== undefined ? nameLabel : {name: '', value: ''};
+  const nameLabel: Label | undefined = highlighted?.labels.find(e => e.name === '__name__');
+  const highlightedNameLabel: Label = nameLabel !== undefined ? nameLabel : {name: '', value: ''};
 
   return (
     <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-10">
@@ -183,8 +183,8 @@ export const MetricsTooltip = ({
                 </span>
                 <span className="block text-gray-500 my-2">
                   {highlighted.labels
-                    .filter((label: Label.AsObject) => label.name !== '__name__')
-                    .map(function (label: Label.AsObject) {
+                    .filter((label: Label) => label.name !== '__name__')
+                    .map(function (label: Label) {
                       return (
                         <button
                           key={label.name}
@@ -218,6 +218,7 @@ export const RawMetricsGraph = ({
   onLabelClick,
   setTimeRange,
   width,
+  sampleUnit,
 }: RawMetricsGraphProps): JSX.Element => {
   const graph = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -262,31 +263,22 @@ export const RawMetricsGraph = ({
   const height = Math.min(width / 2.5, 400);
   const margin = 50;
   const marginRight = 20;
-  const sampleUnit = data[0].sampleType !== undefined ? data[0].sampleType.unit : '';
 
-  const series: Series[] = data.reduce<Series[]>(function (
-    agg: Series[],
-    s: MetricsSeriesPb.AsObject
-  ) {
+  const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb) {
     if (s.labelset !== undefined) {
       agg.push({
-        metric: s.labelset.labelsList,
-        values: s.samplesList.reduce<number[][]>(function (
-          agg: number[][],
-          d: MetricsSample.AsObject
-        ) {
+        metric: s.labelset.labels,
+        values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.value !== undefined) {
             const t = (d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6;
-            agg.push([t, d.value]);
+            agg.push([t, parseFloat(d.value)]);
           }
           return agg;
-        },
-        []),
+        }, []),
       });
     }
     return agg;
-  },
-  []);
+  }, []);
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {

@@ -1,5 +1,6 @@
 import {Query} from '@parca/parser';
-import {QueryServiceClient, ServiceError, ValuesRequest, ValuesResponse} from '@parca/client';
+import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
+import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {ProfileSelection} from '@parca/profile';
 import React, {useEffect, useState} from 'react';
 import ProfileMetricsGraph from '../ProfileMetricsGraph';
@@ -39,11 +40,6 @@ interface ProfileSelectorProps {
   onCompareProfile: () => void;
 }
 
-export interface ILabelValuesResult {
-  response: ValuesResponse.AsObject | null;
-  error: ServiceError | null;
-}
-
 interface WellKnownProfiles {
   [key: string]: {
     name: string;
@@ -51,96 +47,91 @@ interface WellKnownProfiles {
   };
 }
 
-export const useLabelValues = (
-  client: QueryServiceClient,
-  labelName: string
-): ILabelValuesResult => {
-  const [result, setResult] = useState<ILabelValuesResult>({
-    response: null,
-    error: null,
-  });
+export interface IProfileTypesResult {
+  response?: ProfileTypesResponse;
+  error?: RpcError;
+}
+
+export const useProfileTypes = (client: QueryServiceClient): IProfileTypesResult => {
+  const [result, setResult] = useState<IProfileTypesResult>({});
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
-    const req = new ValuesRequest();
-    req.setLabelName(labelName);
-    client.values(
-      req,
-      metadata,
-      (error: ServiceError | null, responseMessage: ValuesResponse | null) => {
-        const res = responseMessage == null ? null : responseMessage.toObject();
-
-        setResult({
-          response: res,
-          error: error,
-        });
-      }
-    );
-  }, [client, labelName]);
+    const call = client.profileTypes({}, metadata);
+    call.response
+      .then(response => setResult({response: response}))
+      .catch(error => setResult({error: error}));
+  }, [client, metadata]);
 
   return result;
 };
 
 const wellKnownProfiles: WellKnownProfiles = {
-  block_total_contentions_count: {
+  'block:contentions:count:contentions:count': {
     name: 'Block Contentions Total',
     help: 'Stack traces that led to blocking on synchronization primitives.',
   },
-  block_total_delay_nanoseconds: {
+  'block:delay:nanoseconds:contentions:count': {
     name: 'Block Contention Time Total',
     help: 'Time delayed stack traces caused by blocking on synchronization primitives.',
   },
-  fgprof_samples_count: {
+  // Unfortunately, fgprof does not set the period type and unit.
+  'fgprof:samples:count::': {
     name: 'Fgprof Samples Total',
     help: 'CPU profile samples observed regardless of their current On/Off CPU scheduling status',
   },
-  fgprof_time_nanoseconds: {
+  // Unfortunately, fgprof does not set the period type and unit.
+  'fgprof:time:nanoseconds::': {
     name: 'Fgprof Samples Time Total',
     help: 'CPU profile measured regardless of their current On/Off CPU scheduling status in nanoseconds',
   },
-  goroutine_total_goroutine_count: {
+  'goroutine:goroutine:count:goroutine:count': {
     name: 'Goroutine Created Total',
-    help: 'Stack traces of all current goroutines.',
+    help: 'Stack traces that created all current goroutines.',
   },
-  memory_total_alloc_objects_count: {
+  'memory:alloc_objects:count:space:bytes': {
     name: 'Memory Allocated Objects Total',
     help: 'A sampling of all past memory allocations by objects.',
   },
-  memory_total_alloc_space_bytes: {
+  'memory:alloc_space:bytes:space:bytes': {
     name: 'Memory Allocated Bytes Total',
     help: 'A sampling of all past memory allocations in bytes.',
   },
-  memory_total_inuse_objects_count: {
+  'memory:alloc_objects:count:space:bytes:delta': {
+    name: 'Memory Allocated Objects Delta',
+    help: 'A sampling of all memory allocations during the observation by objects.',
+  },
+  'memory:alloc_space:bytes:space:bytes:delta': {
+    name: 'Memory Allocated Bytes Delta',
+    help: 'A sampling of all memory allocations during the observation in bytes.',
+  },
+  'memory:inuse_objects:count:space:bytes': {
     name: 'Memory In-Use Objects',
     help: 'A sampling of memory allocations of live objects by objects.',
   },
-  memory_total_inuse_space_bytes: {
+  'memory:inuse_space:bytes:space:bytes': {
     name: 'Memory In-Use Bytes',
     help: 'A sampling of memory allocations of live objects by bytes.',
   },
-  mutex_total_contentions_count: {
+  'mutex:contentions:count:contentions:count': {
     name: 'Mutex Contentions Total',
     help: 'Stack traces of holders of contended mutexes.',
   },
-  mutex_total_delay_nanoseconds: {
+  'mutex:delay:nanoseconds:contentions:count': {
     name: 'Mutex Contention Time Total',
     help: 'Time delayed stack traces caused by contended mutexes.',
   },
-  process_cpu_cpu_nanoseconds: {
+  'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta': {
     name: 'Process CPU Nanoseconds',
     help: 'CPU profile measured by the process itself in nanoseconds.',
   },
-  process_cpu_samples_count: {
+  'process_cpu:samples:count:cpu:nanoseconds:delta': {
     name: 'Process CPU Samples',
     help: 'CPU profile samples observed by the process itself.',
   },
-  parca_agent_cpu_samples_count: {
+  'parca_agent_cpu:samples:count:cpu:cycles': {
     name: 'CPU Samples',
     help: 'CPU profile samples observed by Parca Agent.',
-  },
-  threadcreate_total_threadcreate_count: {
-    name: 'Threads Created Total',
-    help: 'Stack traces that led to the creation of new OS threads.',
   },
 };
 
@@ -172,10 +163,15 @@ const ProfileSelector = ({
   comparing,
   onCompareProfile,
 }: ProfileSelectorProps): JSX.Element => {
-  const {response, error} = useLabelValues(queryClient, '__name__');
+  const {response, error} = useProfileTypes(queryClient);
   const profileNames =
     (error === undefined || error == null) && response !== undefined && response != null
-      ? response.labelValuesList
+      ? response.types.map(
+          type =>
+            `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${
+              type.periodUnit
+            }${type.delta ? ':delta' : ''}`
+        )
       : [];
 
   const profileLabels = profileNames.map(name => ({
@@ -244,7 +240,8 @@ const ProfileSelector = ({
   const setProfileName = (profileName: string): void => {
     const [newQuery, changed] = query.setProfileName(profileName);
     if (changed) {
-      setQueryExpressionString(newQuery.toString());
+      const q = newQuery.toString();
+      setQueryExpressionString(q);
     }
   };
 

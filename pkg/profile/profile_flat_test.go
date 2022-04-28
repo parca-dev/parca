@@ -29,7 +29,7 @@ import (
 )
 
 func TestProfileFlatNormalizer(t *testing.T) {
-	f, err := os.Open("../storage/testdata/profile1.pb.gz")
+	f, err := os.Open("../query/testdata/profile1.pb.gz")
 	require.NoError(t, err)
 	p1, err := profile.Parse(f)
 	require.NoError(t, err)

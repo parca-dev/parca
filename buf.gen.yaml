@@ -21,8 +21,11 @@ plugins:
     opt:
       - import_style=commonjs,binary
 
-  - remote: buf.build/altipla/plugins/typescript:v2.3.0-5
+  - remote: buf.build/timostamm/plugins/protobuf-ts:v2.2.2-1
     out: ui/packages/shared/client/src
+    opt:
+      - long_type_string
+      - generate_dependencies
 
   - remote: buf.build/grpc-ecosystem/plugins/grpc-gateway:v2.10.0-1
     out: gen/proto/go

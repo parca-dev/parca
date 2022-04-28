@@ -1,4 +1,4 @@
-// Generated automatically by nearley, version 2.19.7
+// Generated automatically by nearley, version 2.20.1
 // http://github.com/Hardmath123/nearley
 (function () {
   function id(x) {
@@ -7,11 +7,11 @@
 
   const moo = require('moo');
 
-  const lexer = moo.states({
+  let lexer = moo.states({
     main: {
       strstart: {match: '"', push: 'lit'},
       space: {match: /\s+/, lineBreaks: true},
-      ident: /(?:[a-zA-Z_:][a-zA-Z0-9_:]*)/,
+      ident: /(?:[a-zA-Z_:][a-zA-Z0-9_:.]*)/,
       matcherType: ['=', '!=', '=~', '!~'],
       '{': '{',
       '}': '}',
@@ -24,16 +24,16 @@
   });
 
   function extractMatchers(d) {
-    const matchers = [d[2]];
+    let matchers = [d[2]];
 
-    for (const i in d[3]) {
+    for (let i in d[3]) {
       matchers.push(d[3][i][3]);
     }
 
     return matchers;
   }
 
-  const grammar = {
+  var grammar = {
     Lexer: lexer,
     ParserRules: [
       {

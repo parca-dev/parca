@@ -1,12 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import {CalcWidth} from '@parca/dynamicsize';
 import {parseParams} from '@parca/functions';
-import {QueryRequest, QueryResponse, QueryServiceClient, ServiceError} from '@parca/client';
+import {QueryServiceClient, QueryResponse, QueryRequest_ReportType} from '@parca/client';
+import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {Button, Card, useGrpcMetadata} from '@parca/components';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
+import {useQuery} from './useQuery';
 import TopTable from './TopTable';
 
 import './ProfileView.styles.css';
@@ -20,12 +22,6 @@ interface ProfileViewProps {
   compare?: boolean;
 }
 
-export interface IQueryResult {
-  isLoading: boolean;
-  response: QueryResponse | null;
-  error: ServiceError | null;
-}
-
 function arrayEquals(a, b): boolean {
   return (
     Array.isArray(a) &&
@@ -34,41 +30,6 @@ function arrayEquals(a, b): boolean {
     a.every((val, index) => val === b[index])
   );
 }
-
-export const useQuery = (
-  client: QueryServiceClient,
-  profileSource: ProfileSource
-): IQueryResult => {
-  const [result, setResult] = useState<IQueryResult>({
-    isLoading: false,
-    response: null,
-    error: null,
-  });
-  const metadata = useGrpcMetadata();
-
-  useEffect(() => {
-    setResult({
-      ...result,
-      isLoading: true,
-    });
-    const req = profileSource.QueryRequest();
-    req.setReportType(QueryRequest.ReportType.REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED);
-
-    client.query(
-      req,
-      metadata,
-      (error: ServiceError | null, responseMessage: QueryResponse | null) => {
-        setResult({
-          isLoading: false,
-          response: responseMessage,
-          error: error,
-        });
-      }
-    );
-  }, [client, profileSource]);
-
-  return result;
-};
 
 export const ProfileView = ({
   queryClient,
@@ -79,7 +40,11 @@ export const ProfileView = ({
   const currentViewFromURL = router.currentProfileView as string;
   const [curPath, setCurPath] = useState<string[]>([]);
   const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
-  const {isLoading, response, error} = useQuery(queryClient, profileSource);
+  const {isLoading, response, error} = useQuery(
+    queryClient,
+    profileSource,
+    QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED
+  );
   const [currentView, setCurrentView] = useState<string | undefined>(currentViewFromURL);
   const grpcMetadata = useGrpcMetadata();
 
@@ -94,7 +59,7 @@ export const ProfileView = ({
       setIsLoaderVisible(false);
     }
     return () => clearTimeout(showLoaderTimeout);
-  }, [isLoading]);
+  }, [isLoading, isLoaderVisible]);
 
   if (isLoaderVisible) {
     return (
@@ -132,40 +97,35 @@ export const ProfileView = ({
     );
   }
 
-  if (error) {
+  if (error !== null) {
     return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
   }
 
   const downloadPProf = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
 
-    const req = profileSource.QueryRequest();
-    req.setReportType(QueryRequest.ReportType.REPORT_TYPE_PPROF);
+    const req = {
+      ...profileSource.QueryRequest(),
+      reportType: QueryRequest_ReportType.PPROF,
+    };
 
-    queryClient.query(
-      req,
-      grpcMetadata,
-      (
-        error: ServiceError | null,
-        responseMessage: parca_query_v1alpha1_query_pb.QueryResponse | null
-      ) => {
-        if (error != null) {
-          console.error('Error while querying', error);
+    queryClient
+      .query(req, grpcMetadata)
+      .response.then(response => {
+        if (response.report.oneofKind !== 'pprof') {
+          console.log('Expected pprof report, got:', response.report.oneofKind);
           return;
         }
-        if (responseMessage !== null) {
-          const bytes = responseMessage.getPprof();
-          const blob = new Blob([bytes], {type: 'application/octet-stream'});
+        const blob = new Blob([response.report.pprof], {type: 'application/octet-stream'});
 
-          const link = document.createElement('a');
-          link.href = window.URL.createObjectURL(blob);
-          link.download = 'profile.pb.gz';
-          link.click();
-        } else {
-          console.error(error);
-        }
-      }
-    );
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = 'profile.pb.gz';
+        link.click();
+      })
+      .catch(error => {
+        console.error('Error while querying', error);
+      });
   };
 
   const resetIcicleGraph = () => setCurPath([]);
@@ -177,12 +137,14 @@ export const ProfileView = ({
   };
 
   const switchProfileView = (view: string) => {
-    if (!navigateTo) return;
+    if (navigateTo === undefined) return;
 
     setCurrentView(view);
 
     navigateTo('/', {...router, ...{currentProfileView: view}});
   };
+
+  const sampleUnit = profileSource.ProfileType().sampleUnit;
 
   return (
     <>
@@ -237,28 +199,39 @@ export const ProfileView = ({
             </div>
 
             <div className="flex space-x-4 justify-between">
-              {currentView === 'icicle' && (
-                <div className="w-full">
-                  <CalcWidth throttle={300} delay={2000}>
-                    <ProfileIcicleGraph
-                      curPath={curPath}
-                      setNewCurPath={setNewCurPath}
-                      graph={response?.getFlamegraph()?.toObject()}
-                    />
-                  </CalcWidth>
-                </div>
-              )}
+              {currentView === 'icicle' &&
+                response !== null &&
+                response.report.oneofKind === 'flamegraph' && (
+                  <div className="w-full">
+                    <CalcWidth throttle={300} delay={2000}>
+                      <ProfileIcicleGraph
+                        curPath={curPath}
+                        setNewCurPath={setNewCurPath}
+                        graph={response.report.flamegraph}
+                        sampleUnit={sampleUnit}
+                      />
+                    </CalcWidth>
+                  </div>
+                )}
 
               {currentView === 'table' && (
                 <div className="w-full">
-                  <TopTable queryClient={queryClient} profileSource={profileSource} />
+                  <TopTable
+                    queryClient={queryClient}
+                    profileSource={profileSource}
+                    sampleUnit={sampleUnit}
+                  />
                 </div>
               )}
 
               {currentView === 'both' && (
                 <>
                   <div className="w-1/2">
-                    <TopTable queryClient={queryClient} profileSource={profileSource} />
+                    <TopTable
+                      queryClient={queryClient}
+                      profileSource={profileSource}
+                      sampleUnit={sampleUnit}
+                    />
                   </div>
 
                   <div className="w-1/2">
@@ -266,7 +239,12 @@ export const ProfileView = ({
                       <ProfileIcicleGraph
                         curPath={curPath}
                         setNewCurPath={setNewCurPath}
-                        graph={response?.getFlamegraph()?.toObject()}
+                        graph={
+                          response?.report.oneofKind === 'flamegraph'
+                            ? response.report.flamegraph
+                            : undefined
+                        }
+                        sampleUnit={sampleUnit}
                       />
                     </CalcWidth>
                   </div>

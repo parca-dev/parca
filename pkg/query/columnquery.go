@@ -25,7 +25,6 @@ import (
 	"github.com/apache/arrow/go/v8/arrow"
 	"github.com/apache/arrow/go/v8/arrow/array"
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/polarsignals/arcticdb/query"
 	"github.com/polarsignals/arcticdb/query/logicalplan"
 	"github.com/prometheus/prometheus/model/labels"
@@ -185,30 +184,78 @@ var (
 	ErrValueColumnNotFound     = errors.New("value column not found")
 )
 
-// QueryRange issues a range query against the storage.
-func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.QueryRangeResponse, error) {
-	if err := req.Validate(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	sel, err := parser.ParseMetricSelector(req.Query)
+func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
+	parsedSelector, err := parser.ParseMetricSelector(query)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
 
-	start := timestamp.FromTime(req.Start.AsTime())
-	end := timestamp.FromTime(req.End.AsTime())
+	sel := make([]*labels.Matcher, 0, len(parsedSelector)-1)
+	var nameLabel *labels.Matcher
+	for _, matcher := range parsedSelector {
+		if matcher.Name == "__name__" {
+			nameLabel = matcher
+		} else {
+			sel = append(sel, matcher)
+		}
+	}
+	if nameLabel == nil {
+		return nil, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
+	}
+
+	parts := strings.Split(nameLabel.Value, ":")
+	if len(parts) != 5 && len(parts) != 6 {
+		return nil, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
+	}
+	name, sampleType, sampleUnit, periodType, periodUnit, delta := parts[0], parts[1], parts[2], parts[3], parts[4], false
+	if len(parts) == 6 && parts[5] == "delta" {
+		delta = true
+	}
 
 	labelFilterExpressions, err := matchersToBooleanExpressions(sel)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "failed to build query")
 	}
 
-	filterExpr := logicalplan.And(
+	exprs := append([]logicalplan.Expr{
+		logicalplan.Col("name").Eq(logicalplan.Literal(name)),
+		logicalplan.Col("sample_type").Eq(logicalplan.Literal(sampleType)),
+		logicalplan.Col("sample_unit").Eq(logicalplan.Literal(sampleUnit)),
+		logicalplan.Col("period_type").Eq(logicalplan.Literal(periodType)),
+		logicalplan.Col("period_unit").Eq(logicalplan.Literal(periodUnit)),
+	}, labelFilterExpressions...)
+
+	deltaPlan := logicalplan.Col("duration").Eq(logicalplan.Literal(0))
+	if delta {
+		deltaPlan = logicalplan.Col("duration").NotEq(logicalplan.Literal(0))
+	}
+
+	exprs = append(exprs, deltaPlan)
+
+	return exprs, nil
+}
+
+// QueryRange issues a range query against the storage.
+func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.QueryRangeResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	selectorExprs, err := queryToFilterExprs(req.Query)
+	if err != nil {
+		return nil, err
+	}
+
+	start := timestamp.FromTime(req.Start.AsTime())
+	end := timestamp.FromTime(req.End.AsTime())
+
+	exprs := append(
+		selectorExprs,
 		logicalplan.Col("timestamp").GT(logicalplan.Literal(start)),
 		logicalplan.Col("timestamp").LT(logicalplan.Literal(end)),
-		labelFilterExpressions...,
 	)
+
+	filterExpr := logicalplan.And(exprs...)
 
 	res := &pb.QueryRangeResponse{}
 	labelsetToIndex := map[string]int{}
@@ -311,6 +358,121 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 	return res, nil
 }
 
+// Types returns the available types of profiles.
+func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesRequest) (*pb.ProfileTypesResponse, error) {
+	res := &pb.ProfileTypesResponse{}
+
+	seen := map[string]struct{}{}
+
+	err := q.engine.ScanTable(q.tableName).
+		Distinct(
+			logicalplan.Col(parcacol.ColumnName),
+			logicalplan.Col(parcacol.ColumnSampleType),
+			logicalplan.Col(parcacol.ColumnSampleUnit),
+			logicalplan.Col(parcacol.ColumnPeriodType),
+			logicalplan.Col(parcacol.ColumnPeriodUnit),
+			logicalplan.Col(parcacol.ColumnDuration).GT(logicalplan.Literal(0)),
+		).
+		Execute(func(ar arrow.Record) error {
+			if ar.NumCols() != 6 {
+				return fmt.Errorf("expected 6 column, got %d", ar.NumCols())
+			}
+
+			nameColumn, err := binaryFieldFromRecord(ar, parcacol.ColumnName)
+			if err != nil {
+				return err
+			}
+
+			sampleTypeColumn, err := binaryFieldFromRecord(ar, parcacol.ColumnSampleType)
+			if err != nil {
+				return err
+			}
+
+			sampleUnitColumn, err := binaryFieldFromRecord(ar, parcacol.ColumnSampleUnit)
+			if err != nil {
+				return err
+			}
+
+			periodTypeColumn, err := binaryFieldFromRecord(ar, parcacol.ColumnPeriodType)
+			if err != nil {
+				return err
+			}
+
+			periodUnitColumn, err := binaryFieldFromRecord(ar, parcacol.ColumnPeriodUnit)
+			if err != nil {
+				return err
+			}
+
+			deltaColumn, err := booleanFieldFromRecord(ar, "duration > 0")
+			if err != nil {
+				return err
+			}
+
+			for i := 0; i < int(ar.NumRows()); i++ {
+				name := string(nameColumn.Value(i))
+				sampleType := string(sampleTypeColumn.Value(i))
+				sampleUnit := string(sampleUnitColumn.Value(i))
+				periodType := string(periodTypeColumn.Value(i))
+				periodUnit := string(periodUnitColumn.Value(i))
+				delta := deltaColumn.Value(i)
+
+				key := fmt.Sprintf("%s:%s:%s:%s:%s", name, sampleType, sampleUnit, periodType, periodUnit)
+				if delta {
+					key = fmt.Sprintf("%s:delta", key)
+				}
+
+				if _, ok := seen[key]; ok {
+					continue
+				}
+				seen[key] = struct{}{}
+
+				res.Types = append(res.Types, &pb.ProfileType{
+					Name:       name,
+					SampleType: sampleType,
+					SampleUnit: sampleUnit,
+					PeriodType: periodType,
+					PeriodUnit: periodUnit,
+					Delta:      delta,
+				})
+			}
+
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func binaryFieldFromRecord(ar arrow.Record, name string) (*array.Binary, error) {
+	indices := ar.Schema().FieldIndices(name)
+	if len(indices) != 1 {
+		return nil, fmt.Errorf("expected 1 column named %q, got %d", name, len(indices))
+	}
+
+	col, ok := ar.Column(indices[0]).(*array.Binary)
+	if !ok {
+		return nil, fmt.Errorf("expected column %q to be a binary column, got %T", name, ar.Column(indices[0]))
+	}
+
+	return col, nil
+}
+
+func booleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error) {
+	indices := ar.Schema().FieldIndices(name)
+	if len(indices) != 1 {
+		return nil, fmt.Errorf("expected 1 column named %q, got %d", name, len(indices))
+	}
+
+	col, ok := ar.Column(indices[0]).(*array.Boolean)
+	if !ok {
+		return nil, fmt.Errorf("expected column %q to be a boolean column, got %T", name, ar.Column(indices[0]))
+	}
+
+	return col, nil
+}
+
 // Query issues a instant query against the storage.
 func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
@@ -379,16 +541,10 @@ func (q *ColumnQueryAPI) singleRequest(ctx context.Context, s *pb.SingleProfile,
 }
 
 func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (*profile.StacktraceSamples, error) {
-	sel, err := parser.ParseMetricSelector(s.Query)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
-	}
-
 	t := s.Time.AsTime()
-	p, err := q.findSingle(ctx, sel, t)
+	p, err := q.findSingle(ctx, s.Query, t)
 	if err != nil {
-		level.Error(q.logger).Log("msg", "failed to find single profile", "err", err)
-		return nil, status.Errorf(codes.Internal, "failed to search profile: %v", err.Error())
+		return nil, err
 	}
 
 	if p == nil {
@@ -398,25 +554,24 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) 
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) findSingle(ctx context.Context, sel []*labels.Matcher, t time.Time) (*profile.StacktraceSamples, error) {
+func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Time) (*profile.StacktraceSamples, error) {
 	requestedTime := timestamp.FromTime(t)
 
 	ctx, span := q.tracer.Start(ctx, "findSingle")
-	for i, m := range sel {
-		span.SetAttributes(attribute.String(fmt.Sprintf("matcher-%d", i), m.String()))
-	}
+	span.SetAttributes(attribute.String("query", query))
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
 	defer span.End()
 
-	labelFilterExpressions, err := matchersToBooleanExpressions(sel)
+	selectorExprs, err := queryToFilterExprs(query)
 	if err != nil {
-		return nil, fmt.Errorf("convert matchers to boolean expressions: %w", err)
+		return nil, err
 	}
 
 	filterExpr := logicalplan.And(
-		logicalplan.Col("timestamp").Eq(logicalplan.Literal(requestedTime)),
-		labelFilterExpressions[0],
-		labelFilterExpressions[1:]...,
+		append(
+			selectorExprs,
+			logicalplan.Col("timestamp").Eq(logicalplan.Literal(requestedTime)),
+		)...,
 	)
 
 	var ar arrow.Record
@@ -457,23 +612,20 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 	ctx, span := q.tracer.Start(ctx, "selectMerge")
 	defer span.End()
 
-	sel, err := parser.ParseMetricSelector(m.Query)
+	selectorExprs, err := queryToFilterExprs(m.Query)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+		return nil, err
 	}
 
 	start := timestamp.FromTime(m.Start.AsTime())
 	end := timestamp.FromTime(m.End.AsTime())
 
-	labelFilterExpressions, err := matchersToBooleanExpressions(sel)
-	if err != nil {
-		return nil, fmt.Errorf("convert matchers to boolean expressions: %w", err)
-	}
-
 	filterExpr := logicalplan.And(
-		logicalplan.Col("timestamp").GT(logicalplan.Literal(start)),
-		logicalplan.Col("timestamp").LT(logicalplan.Literal(end)),
-		labelFilterExpressions...,
+		append(
+			selectorExprs,
+			logicalplan.Col("timestamp").GT(logicalplan.Literal(start)),
+			logicalplan.Col("timestamp").LT(logicalplan.Literal(end)),
+		)...,
 	)
 
 	var ar arrow.Record

@@ -21,23 +21,18 @@ interface MatchersInputProps {
 }
 
 export interface ILabelNamesResult {
-  response: LabelsResponse.AsObject | null;
-  error: ServiceError | null;
+  response?: LabelsResponse;
+  error?: ServiceError;
 }
 export interface ILabelValuesResult {
-  response: ValuesResponse.AsObject | null;
-  error: ServiceError | null;
+  response?: ValuesResponse;
+  error?: ServiceError;
 }
 
 interface Matchers {
   key: string;
   matcherType: string;
   value: string;
-}
-
-export interface ILabelValuesResult {
-  response: ValuesResponse.AsObject | null;
-  error: ServiceError | null;
 }
 
 enum Labels {
@@ -54,26 +49,16 @@ const addQuoteMarks = (labelValue: string) => {
 };
 
 export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => {
-  const [result, setResult] = useState<ILabelNamesResult>({
-    response: null,
-    error: null,
-  });
+  const [result, setResult] = useState<ILabelNamesResult>({});
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
-    client.labels(
-      new LabelsRequest(),
-      metadata,
-      (error: ServiceError | null, responseMessage: LabelsResponse | null) => {
-        const res = responseMessage == null ? null : responseMessage.toObject();
+    const call = client.labels({match: []}, metadata);
 
-        setResult({
-          response: res,
-          error: error,
-        });
-      }
-    );
-  }, [client]);
+    call.response
+      .then(response => setResult({response: response}))
+      .catch(error => setResult({error: error}));
+  }, [client, metadata]);
 
   return result;
 };
@@ -128,25 +113,18 @@ const MatchersInput = ({
   const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
 
   const getLabelNameValues = (labelName: string) => {
-    const req = new ValuesRequest();
-    req.setLabelName(labelName);
+    const call = queryClient.values({labelName: labelName, match: []}, grpcMetadata);
 
-    queryClient.values(
-      req,
-      grpcMetadata,
-      (error: ServiceError | null, responseMessage: ValuesResponse | null) => {
-        setLabelValuesResponse(
-          responseMessage == null ? null : responseMessage.toObject().labelValuesList
-        );
-      }
-    );
+    call.response
+      .then(response => setLabelValuesResponse(response.labelValues))
+      .catch(() => setLabelValuesResponse(null));
   };
 
   const labelNames =
     (labelNamesError === undefined || labelNamesError == null) &&
     labelNamesResponse !== undefined &&
     labelNamesResponse != null
-      ? labelNamesResponse.labelNamesList.filter(e => e !== '__name__')
+      ? labelNamesResponse.labelNames.filter(e => e !== '__name__')
       : [];
 
   const labelValues =
@@ -469,7 +447,10 @@ const MatchersInput = ({
         <ul className="flex space-x-2">
           {currentLabelsCollection &&
             currentLabelsCollection.map((value, i) => (
-              <li key={i} className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900 rounded-md">
+              <li
+                key={i}
+                className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900 rounded-md"
+              >
                 {value}
               </li>
             ))}

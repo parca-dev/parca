@@ -15,6 +15,7 @@ package parcacol
 
 import (
 	"context"
+	"errors"
 	"sort"
 
 	"github.com/go-kit/log"
@@ -32,6 +33,10 @@ type Table interface {
 }
 
 func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table Table, ls labels.Labels, prof *parcaprofile.Profile) (int, error) {
+	if prof.Meta.Timestamp == 0 {
+		return 0, errors.New("timestamp must not be zero")
+	}
+
 	buf, err := FlatProfileToBuffer(logger, ls, table.Schema(), prof)
 	if err != nil {
 		return 0, err
@@ -41,35 +46,22 @@ func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table Table,
 	return len(prof.FlatSamples), err
 }
 
-func FlatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet.Schema, prof *parcaprofile.Profile) (*dynparquet.Buffer, error) {
-	// TODO all of this should be done in the flat profile
-	// extraction in the first place. Also this `__name__` hack is
-	// only here for backward compatibility while we finish up the
-	// columnstore. This can be removed once the migration is
-	// complete and the old storage is removed.
-	lbls := make(labels.Labels, 0, len(ls)+1)
-	found := false
-	for _, l := range ls {
+var ErrMissingNameLabel = errors.New("missing __name__ label")
+
+func FlatProfileToBuffer(logger log.Logger, inLs labels.Labels, schema *dynparquet.Schema, prof *parcaprofile.Profile) (*dynparquet.Buffer, error) {
+	ls := make(labels.Labels, 0, len(inLs))
+	name := ""
+	for _, l := range inLs {
 		if l.Name == "__name__" {
-			found = true
-			lbls = append(lbls, labels.Label{
-				Name:  "__name__",
-				Value: l.Value + "_" + prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-			})
-			continue
+			name = l.Value
+		} else {
+			ls = append(ls, l)
 		}
-		lbls = append(lbls, labels.Label{
-			Name:  l.Name,
-			Value: l.Value,
-		})
 	}
-	if !found {
-		lbls = append(lbls, labels.Label{
-			Name:  "__name__",
-			Value: prof.Meta.SampleType.Type + "_" + prof.Meta.SampleType.Unit,
-		})
+	if name == "" {
+		return nil, ErrMissingNameLabel
 	}
-	sort.Sort(lbls)
+	sort.Sort(ls)
 
 	rows := make(Samples, 0, len(prof.FlatSamples))
 	for _, s := range prof.FlatSamples {
@@ -89,13 +81,14 @@ func FlatProfileToBuffer(logger log.Logger, ls labels.Labels, schema *dynparquet
 		}
 
 		rows = append(rows, Sample{
+			Name:           name,
 			SampleType:     prof.Meta.SampleType.Type,
 			SampleUnit:     prof.Meta.SampleType.Unit,
 			PeriodType:     prof.Meta.PeriodType.Type,
 			PeriodUnit:     prof.Meta.PeriodType.Unit,
 			PprofLabels:    pprofLabels,
 			PprofNumLabels: pprofNumLabels,
-			Labels:         lbls,
+			Labels:         ls,
 			Stacktrace:     extractLocationIDs(s.Location),
 			Timestamp:      prof.Meta.Timestamp,
 			Duration:       prof.Meta.Duration,

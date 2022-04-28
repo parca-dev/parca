@@ -324,7 +324,10 @@ func TestConsistency(t *testing.T) {
 	p, err := parcaprofile.FromPprof(ctx, logger, m, p1, 0, false)
 	require.NoError(t, err)
 
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{}, p)
+	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+		Name:  "__name__",
+		Value: "memory",
+	}}, p)
 	require.NoError(t, err)
 
 	table.Sync()
@@ -344,7 +347,7 @@ func TestConsistency(t *testing.T) {
 		ReportType: querypb.QueryRequest_REPORT_TYPE_PPROF,
 		Options: &querypb.QueryRequest_Single{
 			Single: &querypb.SingleProfile{
-				Query: `{__name__="alloc_objects_count"}`,
+				Query: `memory:alloc_objects:count:space:bytes`,
 				Time:  ts,
 			},
 		},
