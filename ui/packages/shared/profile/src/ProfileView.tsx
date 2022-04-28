@@ -173,7 +173,7 @@ export const ProfileView = ({
                 </div>
 
                 <Button
-                  color={`${currentView === 'table' ? 'primary' : 'neutral'}`}
+                  variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
                   className="rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
                   onClick={() => switchProfileView('table')}
                 >
@@ -181,7 +181,7 @@ export const ProfileView = ({
                 </Button>
 
                 <Button
-                  color={`${currentView === 'both' ? 'primary' : 'neutral'}`}
+                  variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
                   className="rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons no-outline-on-buttons text-ellipsis"
                   onClick={() => switchProfileView('both')}
                 >
@@ -189,7 +189,7 @@ export const ProfileView = ({
                 </Button>
 
                 <Button
-                  color={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
+                  variant={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
                   className="rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
                   onClick={() => switchProfileView('icicle')}
                 >
