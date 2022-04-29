@@ -13,9 +13,15 @@ scrape_configs:
     scrape_interval: "3s"
     static_configs:
       - targets: [ '127.0.0.1:7070' ]
-    profiling_config:
-      pprof_config:
-        fgprof:
-          enabled: true
-          path: /debug/pprof/fgprof
-          delta: true
+
+    # Custom scrape endpoints can be added like just like the example below.
+    # The profile name will be `fgprof`, and it will be scraped from the given
+    # path and since it is a delta profile, a query parameter
+    # ?seconds=<scrape-interval> will be added.
+    #
+    # profiling_config:
+    #   pprof_config:
+    #     fgprof:
+    #       enabled: true
+    #       path: /debug/pprof/fgprof
+    #       delta: true
