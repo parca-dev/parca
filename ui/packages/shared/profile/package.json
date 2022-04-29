@@ -3,7 +3,7 @@
   "version": "0.12.26",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@parca/client": "^0.12.26",
+    "@parca/client": "^0.12.27",
     "@parca/dynamicsize": "^0.12.0",
     "@parca/parser": "^0.12.26",
     "d3-scale": "^4.0.2"

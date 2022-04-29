@@ -2788,6 +2788,45 @@
     "@opencensus/core" "^0.0.8"
     uuid "^3.2.1"
 
+"@parca/client@^0.12.27":
+  version "0.12.27"
+  resolved "https://registry.yarnpkg.com/@parca/client/-/client-0.12.27.tgz#910020ea7752a9daa638b266d13c02f4c7e15474"
+  integrity sha512-haribw6Ty7vfrympy3vyPSIPQzOZZD71PB6h+53r0CJj77B1SEIlyKu0C8KMWnKHuWjQPsDWwvbtZopafoTV7A==
+  dependencies:
+    "@improbable-eng/grpc-web" "^0.15.0"
+    "@improbable-eng/grpc-web-node-http-transport" "^0.15.0"
+    google-protobuf "^3.19.0"
+
+"@parca/components@^0.12.27":
+  version "0.12.27"
+  resolved "https://registry.yarnpkg.com/@parca/components/-/components-0.12.27.tgz#d1efb301d6e66cdc229d1b12583f84abc27a6838"
+  integrity sha512-fNURo0erOLJIqsFoMGuOL+vo9DDJZBSGZkBWixNXOHhtaFIYgAtZxIYDplzrF72kR0Nwl+WkwlbMW3qJcWeI4A==
+  dependencies:
+    "@headlessui/react" "^1.4.3"
+    "@heroicons/react" "^1.0.5"
+    "@parca/client" "^0.12.27"
+    "@parca/dynamicsize" "^0.12.0"
+    "@parca/functions" "^0.12.15"
+    "@parca/icons" "^0.12.2"
+    "@parca/parser" "^0.12.26"
+    "@parca/profile" "^0.12.27"
+    "@parca/store" "^0.12.14"
+    "@types/react-datepicker" "^4.4.0"
+    classnames "^2.3.1"
+    google-protobuf "^3.19.0"
+    react-datepicker "^4.6.0"
+    react-use "^17.3.2"
+
+"@parca/profile@^0.12.27":
+  version "0.12.27"
+  resolved "https://registry.yarnpkg.com/@parca/profile/-/profile-0.12.27.tgz#c96e2fc977b3ce81cd1df12971e637b31a7fdb53"
+  integrity sha512-DD7UwIzqNu0SsB86T8U28ijYS7B6pjF2mSsabXFXhgMsmXZb3uk4jooCD1s+w5Kj6IRNo+v9Rhbn3VJMlJfg2g==
+  dependencies:
+    "@parca/client" "^0.12.27"
+    "@parca/dynamicsize" "^0.12.0"
+    "@parca/parser" "^0.12.26"
+    d3-scale "^4.0.2"
+
 "@pm2/agent@~2.0.0":
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@pm2/agent/-/agent-2.0.1.tgz#0edffc54cd8ee2b12f90136264e7880f3f78c79d"
