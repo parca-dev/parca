@@ -21,19 +21,19 @@ import (
 const (
 	SchemaName = "parca"
 	// The columns are sorted by their name in the schema too.
-	ColumnDuration       = "duration"
-	ColumnLabels         = "labels"
-	ColumnName           = "name"
-	ColumnPeriod         = "period"
-	ColumnPeriodType     = "period_type"
-	ColumnPeriodUnit     = "period_unit"
-	ColumnPprofLabels    = "pprof_labels"
-	ColumnPprofNumLabels = "pprof_num_labels"
-	ColumnSampleType     = "sample_type"
-	ColumnSampleUnit     = "sample_unit"
-	ColumnStacktrace     = "stacktrace"
-	ColumnTimestamp      = "timestamp"
-	ColumnValue          = "value"
+	ColumnDuration         = "duration"
+	ColumnLabels           = "labels"
+	ColumnName             = "name"
+	ColumnPeriod           = "period"
+	ColumnPeriodType       = "period_type"
+	ColumnPeriodUnit       = "period_unit"
+	ColumnProfileLabels    = "profile_labels"
+	ColumnProfileNumLabels = "profile_num_labels"
+	ColumnSampleType       = "sample_type"
+	ColumnSampleUnit       = "sample_unit"
+	ColumnStacktrace       = "stacktrace"
+	ColumnTimestamp        = "timestamp"
+	ColumnValue            = "value"
 )
 
 func Schema() *dynparquet.Schema {
@@ -65,11 +65,11 @@ func Schema() *dynparquet.Schema {
 				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
 				Dynamic:       false,
 			}, {
-				Name:          ColumnPprofLabels,
+				Name:          ColumnProfileLabels,
 				StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
 				Dynamic:       true,
 			}, {
-				Name:          ColumnPprofNumLabels,
+				Name:          ColumnProfileNumLabels,
 				StorageLayout: parquet.Optional(parquet.Int(64)),
 				Dynamic:       true,
 			}, {
@@ -103,8 +103,8 @@ func Schema() *dynparquet.Schema {
 			dynparquet.NullsFirst(dynparquet.Ascending(ColumnLabels)),
 			dynparquet.NullsFirst(dynparquet.Ascending(ColumnStacktrace)),
 			dynparquet.Ascending(ColumnTimestamp),
-			dynparquet.NullsFirst(dynparquet.Ascending(ColumnPprofLabels)),
-			dynparquet.NullsFirst(dynparquet.Ascending(ColumnPprofNumLabels)),
+			dynparquet.NullsFirst(dynparquet.Ascending(ColumnProfileLabels)),
+			dynparquet.NullsFirst(dynparquet.Ascending(ColumnProfileNumLabels)),
 		},
 	)
 }

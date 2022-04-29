@@ -48,9 +48,9 @@ func (s Samples) ToBuffer(schema *dynparquet.Schema) (*dynparquet.Buffer, error)
 	pprofNumLabels := s.pprofNumLabelsNames()
 
 	pb, err := schema.NewBuffer(map[string][]string{
-		ColumnLabels:         names,
-		ColumnPprofLabels:    pprofLabels,
-		ColumnPprofNumLabels: pprofNumLabels,
+		ColumnLabels:           names,
+		ColumnProfileLabels:    pprofLabels,
+		ColumnProfileNumLabels: pprofNumLabels,
 	})
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (s Sample) ToParquetRow(schema *dynparquet.Schema, row parquet.Row, labelNa
 					i++
 				}
 			}
-		case ColumnPprofLabels:
+		case ColumnProfileLabels:
 			for _, name := range pprofLabelNames {
 				if value, ok := s.PprofLabels[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
@@ -192,7 +192,7 @@ func (s Sample) ToParquetRow(schema *dynparquet.Schema, row parquet.Row, labelNa
 					columnIndex++
 				}
 			}
-		case ColumnPprofNumLabels:
+		case ColumnProfileNumLabels:
 			for _, name := range pprofNumLabelNames {
 				if value, ok := s.PprofNumLabels[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))

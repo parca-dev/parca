@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/pprof"
 	"sort"
 	"strings"
 	"time"
@@ -153,8 +154,8 @@ func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb
 	}, nil
 }
 
-func matcherToBooleanExpression(matcher *labels.Matcher) (logicalplan.Expr, error) {
-	ref := logicalplan.Col("labels." + matcher.Name)
+func matcherToBooleanExpression(dynColName string, matcher *labels.Matcher) (logicalplan.Expr, error) {
+	ref := logicalplan.Col(dynColName + "." + matcher.Name)
 	switch matcher.Type {
 	case labels.MatchEqual:
 		return ref.Eq(logicalplan.Literal(matcher.Value)), nil
@@ -169,11 +170,11 @@ func matcherToBooleanExpression(matcher *labels.Matcher) (logicalplan.Expr, erro
 	}
 }
 
-func matchersToBooleanExpressions(matchers []*labels.Matcher) ([]logicalplan.Expr, error) {
+func matchersToBooleanExpressions(dynColName string, matchers []*labels.Matcher) ([]logicalplan.Expr, error) {
 	exprs := make([]logicalplan.Expr, 0, len(matchers))
 
 	for _, matcher := range matchers {
-		expr, err := matcherToBooleanExpression(matcher)
+		expr, err := matcherToBooleanExpression(dynColName, matcher)
 		if err != nil {
 			return nil, err
 		}
@@ -182,6 +183,14 @@ func matchersToBooleanExpressions(matchers []*labels.Matcher) ([]logicalplan.Exp
 	}
 
 	return exprs, nil
+}
+
+func labelMatchersToBooleanExpressions(matchers []*labels.Matcher) ([]logicalplan.Expr, error) {
+	return matchersToBooleanExpressions("labels", matchers)
+}
+
+func profileLabelMatchersToBooleanExpressions(matchers []*labels.Matcher) ([]logicalplan.Expr, error) {
+	return matchersToBooleanExpressions("profile_labels", matchers)
 }
 
 var (
@@ -195,13 +204,22 @@ func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
 		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
 
-	sel := make([]*labels.Matcher, 0, len(parsedSelector)-1)
+	profSel := []*labels.Matcher{}
+	sel := []*labels.Matcher{}
 	var nameLabel *labels.Matcher
 	for _, matcher := range parsedSelector {
 		if matcher.Name == "__name__" {
 			nameLabel = matcher
 		} else {
-			sel = append(sel, matcher)
+			if strings.HasPrefix(matcher.Name, "profile_label_") {
+				profSel = append(profSel, &labels.Matcher{
+					Name:  strings.TrimPrefix(matcher.Name, "profile_label_"),
+					Type:  matcher.Type,
+					Value: matcher.Value,
+				})
+			} else {
+				sel = append(sel, matcher)
+			}
 		}
 	}
 	if nameLabel == nil {
@@ -217,7 +235,12 @@ func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
 		delta = true
 	}
 
-	labelFilterExpressions, err := matchersToBooleanExpressions(sel)
+	labelFilterExpressions, err := labelMatchersToBooleanExpressions(sel)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "failed to build query")
+	}
+
+	profileLabelFilterExpressions, err := profileLabelMatchersToBooleanExpressions(profSel)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "failed to build query")
 	}
@@ -228,7 +251,9 @@ func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
 		logicalplan.Col("sample_unit").Eq(logicalplan.Literal(sampleUnit)),
 		logicalplan.Col("period_type").Eq(logicalplan.Literal(periodType)),
 		logicalplan.Col("period_unit").Eq(logicalplan.Literal(periodUnit)),
-	}, labelFilterExpressions...)
+	})
+	exprs = append(exprs, labelFilterExpressions...)
+	exprs = append(exprs, profileLabelFilterExpressions...)
 
 	deltaPlan := logicalplan.Col("duration").Eq(logicalplan.Literal(0))
 	if delta {
@@ -480,6 +505,17 @@ func booleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error
 
 // Query issues a instant query against the storage.
 func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
+	var (
+		res *pb.QueryResponse
+		err error
+	)
+	pprof.Do(ctx, pprof.Labels("grpcmethod", "Query"), func(ctx context.Context) {
+		res, err = q.query(ctx, req)
+	})
+	return res, err
+}
+
+func (q *ColumnQueryAPI) query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -579,6 +615,8 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 		)...,
 	)
 
+	fmt.Println(selectorExprs)
+
 	var ar arrow.Record
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -590,6 +628,7 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 		).
 		Execute(func(r arrow.Record) error {
 			r.Retain()
+			fmt.Println(r)
 			ar = r
 			return nil
 		})

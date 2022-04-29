@@ -16,16 +16,19 @@ package query
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"testing"
 	"time"
 
+	"github.com/apache/arrow/go/v8/arrow"
 	"github.com/apache/arrow/go/v8/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/google/uuid"
 	columnstore "github.com/polarsignals/arcticdb"
 	"github.com/polarsignals/arcticdb/query"
+	"github.com/polarsignals/arcticdb/query/logicalplan"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
@@ -194,6 +197,97 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 
 	_, err = profile.ParseData(res.Report.(*pb.QueryResponse_Pprof).Pprof)
 	require.NoError(t, err)
+}
+
+func TestColumnQueryAPIQueryPprofLabels(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
+	table, err := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(
+			parcacol.Schema(),
+		),
+		logger,
+	)
+	require.NoError(t, err)
+	m := metastore.NewBadgerMetastore(
+		logger,
+		reg,
+		tracer,
+		metastore.NewRandomUUIDGenerator(),
+	)
+	t.Cleanup(func() {
+		m.Close()
+	})
+
+	fileContent, err := ioutil.ReadFile("testdata/cpu_labels.pb.gz")
+	require.NoError(t, err)
+	p, err := profile.Parse(bytes.NewBuffer(fileContent))
+	require.NoError(t, err)
+	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(profiles))
+	for _, profile := range profiles {
+		_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+			Name:  "__name__",
+			Value: "process_cpu",
+		}, {
+			Name:  "job",
+			Value: "default",
+		}}, profile)
+		require.NoError(t, err)
+	}
+
+	engine := query.NewEngine(
+		memory.DefaultAllocator,
+		colDB.TableProvider(),
+	)
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		m,
+		engine,
+		"stacktraces",
+	)
+
+	err = engine.ScanTable("stacktraces").
+		Project(
+			logicalplan.Col("sample_unit"),
+			logicalplan.Col("profile_labels.grpcmethod"),
+			logicalplan.Col("timestamp"),
+			logicalplan.Col("value"),
+		).
+		Filter(
+			logicalplan.And(
+				logicalplan.Col("profile_labels.grpcmethod").Eq(logicalplan.Literal("Query")),
+			),
+		).
+		Execute(func(r arrow.Record) error {
+			fmt.Println(r)
+			return nil
+		})
+	require.NoError(t, err)
+
+	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
+	res, err := api.Query(ctx, &pb.QueryRequest{
+		Options: &pb.QueryRequest_Single{
+			Single: &pb.SingleProfile{
+				Query: `process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{profile_label_grpcmethod="Query"}`,
+				Time:  ts,
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, int32(15), res.Report.(*pb.QueryResponse_Flamegraph).Flamegraph.Height)
 }
 
 func TestColumnQueryAPIQueryFgprof(t *testing.T) {
