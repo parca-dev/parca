@@ -7,12 +7,11 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/*"
   },
   "dependencies": {
-    "@improbable-eng/grpc-web": "^0.15.0",
-    "@improbable-eng/grpc-web-node-http-transport": "^0.15.0",
-    "google-protobuf": "^3.19.0"
+    "@protobuf-ts/runtime": "^2.5.0",
+    "@protobuf-ts/runtime-rpc": "^2.5.0"
   },
   "devDependencies": {
-    "@types/google-protobuf": "^3.15.5"
+    "globby": "^13.1.1"
   },
   "keywords": [],
   "author": "",

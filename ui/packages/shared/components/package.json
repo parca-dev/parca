@@ -7,6 +7,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/*"
   },
   "dependencies": {
+    "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
     "@parca/client": "^0.12.27",
@@ -18,7 +19,6 @@
     "@parca/store": "^0.12.14",
     "@types/react-datepicker": "^4.4.0",
     "classnames": "^2.3.1",
-    "google-protobuf": "^3.19.0",
     "react-datepicker": "^4.6.0",
     "react-use": "^17.3.2"
   },

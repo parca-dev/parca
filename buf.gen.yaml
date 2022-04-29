@@ -16,11 +16,6 @@ plugins:
     opt:
       - paths=source_relative,features=marshal+unmarshal+size+pool+grpc
 
-  - remote: buf.build/protocolbuffers/plugins/js:v3.20.0-1
-    out: ui/packages/shared/client/src
-    opt:
-      - import_style=commonjs,binary
-
   - remote: buf.build/timostamm/plugins/protobuf-ts:v2.2.2-1
     out: ui/packages/shared/client/src
     opt:
