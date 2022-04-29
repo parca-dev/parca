@@ -129,7 +129,7 @@ const wellKnownProfiles: WellKnownProfiles = {
     name: 'Process CPU Samples',
     help: 'CPU profile samples observed by the process itself.',
   },
-  'parca_agent_cpu:samples:count:cpu:cycles': {
+  'parca_agent_cpu:samples:count:cpu:nanoseconds': {
     name: 'CPU Samples',
     help: 'CPU profile samples observed by Parca Agent.',
   },
