@@ -57,7 +57,7 @@ export const useProfileTypes = (client: QueryServiceClient): IProfileTypesResult
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
-    const call = client.profileTypes({}, metadata);
+    const call = client.profileTypes({}, {meta: metadata});
     call.response
       .then(response => setResult({response: response}))
       .catch(error => setResult({error: error}));

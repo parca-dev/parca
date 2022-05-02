@@ -49,7 +49,7 @@ export const useQueryRange = (
         end: Timestamp.fromDate(new Date(end)),
         limit: 0,
       },
-      metadata
+      {meta: metadata}
     );
 
     call.response

@@ -46,7 +46,7 @@ export const ProfileView = ({
     QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED
   );
   const [currentView, setCurrentView] = useState<string | undefined>(currentViewFromURL);
-  const grpcMetadata = useGrpcMetadata();
+  const metadata = useGrpcMetadata();
 
   useEffect(() => {
     let showLoaderTimeout;
@@ -110,7 +110,7 @@ export const ProfileView = ({
     };
 
     queryClient
-      .query(req, grpcMetadata)
+      .query(req, {meta: metadata})
       .response.then(response => {
         if (response.report.oneofKind !== 'pprof') {
           console.log('Expected pprof report, got:', response.report.oneofKind);
