@@ -228,6 +228,18 @@ export function convertLocalToUTCDate(date: Date) {
   );
 }
 
+export const getNewSpanColor = (isDarkMode: boolean) => (isDarkMode ? '#B3BAE1' : '#929FEB');
+export const getIncreasedSpanColor = (transparency: number, isDarkMode: boolean) => {
+  return isDarkMode
+    ? `rgba(255, 177, 204, ${transparency})`
+    : `rgba(254, 153, 187, ${transparency})`;
+};
+export const getReducedSpanColor = (transparency: number, isDarkMode: boolean) => {
+  return isDarkMode
+    ? `rgba(103, 158, 92, ${transparency})`
+    : `rgba(164, 214, 153, ${transparency})`;
+};
+
 export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean): string => {
   const prevValue = cumulative - diff;
   const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0;
@@ -235,13 +247,9 @@ export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean)
   const diffTransparency =
     Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
 
-  const newSpanColor = isDarkMode ? '#B3BAE1' : '#929FEB';
-  const increasedSpanColor = isDarkMode
-    ? `rgba(255, 177, 204, ${diffTransparency})`
-    : `rgba(254, 153, 187, ${diffTransparency})`;
-  const reducedSpanColor = isDarkMode
-    ? `rgba(103, 158, 92, ${diffTransparency})`
-    : `rgba(164, 214, 153, ${diffTransparency})`;
+  const newSpanColor = getNewSpanColor(isDarkMode);
+  const increasedSpanColor = getIncreasedSpanColor(diffTransparency, isDarkMode);
+  const reducedSpanColor = getReducedSpanColor(diffTransparency, isDarkMode);
 
   const color = diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
 

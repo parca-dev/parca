@@ -1,6 +1,7 @@
 import {Fragment, useState} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {useAppSelector, selectDarkMode} from '@parca/store';
+import {getNewSpanColor, getIncreasedSpanColor, getReducedSpanColor} from '@parca/functions';
 import {usePopper} from 'react-popper';
 
 const transparencyValues = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100];
@@ -13,18 +14,6 @@ const DiffLegendBar = ({
   onMouseLeave: () => void;
 }) => {
   const isDarkMode = useAppSelector(selectDarkMode);
-
-  const newSpanColor = isDarkMode ? '#B3BAE1' : '#929FEB';
-  const getIncreasedSpanColor = (transparency: number) => {
-    return isDarkMode
-      ? `rgba(255, 177, 204, ${transparency})`
-      : `rgba(254, 153, 187, ${transparency})`;
-  };
-  const getReducedSpanColor = (transparency: number) => {
-    return isDarkMode
-      ? `rgba(103, 158, 92, ${transparency})`
-      : `rgba(164, 214, 153, ${transparency})`;
-  };
 
   return (
     <div className="flex items-center m-2">
@@ -40,10 +29,10 @@ const DiffLegendBar = ({
             style={{
               backgroundColor:
                 absoluteValue === 0
-                  ? newSpanColor
+                  ? getNewSpanColor(isDarkMode)
                   : valueAsPercentage > 0
-                  ? getIncreasedSpanColor(absoluteValue)
-                  : getReducedSpanColor(absoluteValue),
+                  ? getIncreasedSpanColor(absoluteValue, isDarkMode)
+                  : getReducedSpanColor(absoluteValue, isDarkMode),
             }}
           ></div>
         );
@@ -72,9 +61,9 @@ const DiffLegend = () => {
   return (
     <div className="mt-1 mb-2">
       <div ref={setReferenceElement} className="flex items-center justify-center">
-        <span>Good</span>
+        <span>Better</span>
         <DiffLegendBar onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
-        <span>Bad</span>
+        <span>Worse</span>
       </div>
       <Popover className="relative">
         {() => (
@@ -93,8 +82,9 @@ const DiffLegend = () => {
                 <div className="p-4 bg-gray-50 dark:bg-gray-800">
                   <div className="flex items-center justify-center"></div>
                   <span className="block text-sm text-gray-500 dark:text-gray-50">
-                    This is a differential icicle graph, where the purple means unchanged, and the
-                    darker the red, the worse it got, and the darker the green, the better it got.
+                    This is a differential icicle graph, where a purple-colored node means
+                    unchanged, and the darker the red, the worse the node got, and the darker the
+                    green, the better the node got.
                   </span>
                 </div>
               </div>
