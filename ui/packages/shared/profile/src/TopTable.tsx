@@ -46,6 +46,9 @@ const useSortableData = (
 
   const items = rawTableReport.map(node => ({
     ...node,
+    diff: Number(node.diff),
+    cumulative: Number(node.cumulative),
+    flat: Number(node.flat),
     name: node.meta?.function?.name,
   }));
 
