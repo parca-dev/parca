@@ -31,7 +31,7 @@ export const useQuery = (
     const req = profileSource.QueryRequest();
     req.reportType = reportType;
 
-    const call = client.query(req, metadata);
+    const call = client.query(req, {meta: metadata});
 
     call.response
       .then(response => setResult({response: response, error: null, isLoading: false}))

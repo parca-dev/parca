@@ -53,7 +53,7 @@ export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => 
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
-    const call = client.labels({match: []}, metadata);
+    const call = client.labels({match: []}, {meta: metadata});
 
     call.response
       .then(response => setResult({response: response}))
@@ -108,12 +108,12 @@ const MatchersInput = ({
   const {styles, attributes} = usePopper(divInputRef, popperElement, {
     placement: 'bottom-start',
   });
-  const grpcMetadata = useGrpcMetadata();
+  const metadata = useGrpcMetadata();
 
   const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
 
   const getLabelNameValues = (labelName: string) => {
-    const call = queryClient.values({labelName: labelName, match: []}, grpcMetadata);
+    const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
 
     call.response
       .then(response => setLabelValuesResponse(response.labelValues))
