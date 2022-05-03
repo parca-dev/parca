@@ -149,11 +149,17 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 	//"https://debuginfod.archlinux.org/"
 	//"https://debuginfod.centos.org/"
 	for _, u := range c.UpstreamServers {
-		ctx, cancel := context.WithTimeout(ctx, c.timeoutDuration)
-		defer cancel()
-
 		serverURL := *u
-		rc, err := c.request(ctx, serverURL, buildID)
+		rc, err := func(serverURL url.URL) (io.ReadCloser, error) {
+			ctx, cancel := context.WithTimeout(ctx, c.timeoutDuration)
+			defer cancel()
+
+			rc, err := c.request(ctx, serverURL, buildID)
+			if err != nil {
+				return nil, err
+			}
+			return rc, nil
+		}(serverURL)
 		if err != nil {
 			level.Warn(logger).Log(
 				"msg", "failed to download debug info file from upstream debuginfod server, trying next one (if exists)",
@@ -161,7 +167,9 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 			)
 			continue
 		}
-		return rc, nil
+		if rc != nil {
+			return rc, nil
+		}
 	}
 	return nil, errDebugInfoNotFound
 }

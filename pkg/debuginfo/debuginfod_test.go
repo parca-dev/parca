@@ -15,8 +15,10 @@
 package debuginfo
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
@@ -25,6 +27,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
+	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 )
@@ -48,7 +51,7 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 		{
 			name: "success",
 			fields: fields{
-				timeoutDuration: time.Minute,
+				timeoutDuration: 30 * time.Second,
 			},
 			args: args{
 				u: url.URL{
@@ -61,13 +64,18 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+
 			c := &HTTPDebugInfodClient{
 				logger:          log.NewNopLogger(),
 				timeoutDuration: tt.fields.timeoutDuration,
 			}
-			r, err := c.request(context.TODO(), tt.args.u, tt.args.buildID)
+			ctx, cancel := context.WithTimeout(context.Background(), tt.fields.timeoutDuration)
+			t.Cleanup(cancel)
+
+			r, err := c.request(ctx, tt.args.u, tt.args.buildID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("request() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -75,6 +83,9 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 			t.Cleanup(func() {
 				r.Close()
 			})
+
+			g := goldie.New(t)
+			g.Assert(t, fmt.Sprintf("TestHTTPDebugInfodClient_request_%d", i), recorder.Body.Bytes())
 
 			tmpfile, err := ioutil.TempFile("", "debuginfod-download-*")
 			require.NoError(t, err)
