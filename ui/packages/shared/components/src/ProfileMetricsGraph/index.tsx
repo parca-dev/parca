@@ -84,7 +84,7 @@ const ProfileMetricsGraph = ({
       setIsLoaderVisible(false);
     }
     return () => clearTimeout(showLoaderTimeout);
-  }, [isLoading, isLoaderVisible]);
+  }, [isLoading]);
 
   if (isLoaderVisible) {
     return (

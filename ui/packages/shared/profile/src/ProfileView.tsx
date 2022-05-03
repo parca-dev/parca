@@ -59,7 +59,7 @@ export const ProfileView = ({
       setIsLoaderVisible(false);
     }
     return () => clearTimeout(showLoaderTimeout);
-  }, [isLoading, isLoaderVisible]);
+  }, [isLoading]);
 
   if (isLoaderVisible) {
     return (
