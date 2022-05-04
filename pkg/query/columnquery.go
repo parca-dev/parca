@@ -78,7 +78,7 @@ func NewColumnQueryAPI(
 
 // Labels issues a labels request against the storage.
 func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
-	vals := []string{}
+	seen := map[string]struct{}{}
 
 	err := q.engine.ScanSchema(q.tableName).
 		Distinct(logicalplan.Col("name")).
@@ -96,13 +96,18 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 
 			for i := 0; i < stringCol.Len(); i++ {
 				val := stringCol.Value(i)
-				vals = append(vals, strings.TrimPrefix(val, "labels."))
+				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
 			}
 
 			return nil
 		})
 	if err != nil {
 		return nil, err
+	}
+
+	vals := make([]string, 0, len(seen))
+	for val := range seen {
+		vals = append(vals, val)
 	}
 
 	sort.Strings(vals)
