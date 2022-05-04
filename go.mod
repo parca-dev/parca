@@ -35,7 +35,7 @@ require (
 	github.com/segmentio/parquet-go v0.0.0-20220421002521-93f8e5ed3407
 	github.com/stretchr/testify v1.7.1
 	github.com/thanos-io/objstore v0.0.0-20220324101945-f2f24637ce2e
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.31.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.32.0
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.7.0
 	go.opentelemetry.io/otel/sdk v1.7.0
