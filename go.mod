@@ -9,6 +9,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/dgraph-io/badger/v3 v3.2103.2
+	github.com/dnaeon/go-vcr v1.2.0
 	github.com/fatih/semgroup v1.2.0
 	github.com/felixge/fgprof v0.9.2
 	github.com/go-chi/chi/v5 v5.0.7

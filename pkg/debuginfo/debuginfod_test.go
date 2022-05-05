@@ -17,6 +17,7 @@ package debuginfo
 import (
 	"io"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -24,12 +25,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 )
 
 func TestHTTPDebugInfodClient_request(t *testing.T) {
+	r, err := recorder.New("testdata/fixtures")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		t.Log(r.Stop())
+	})
+
 	type fields struct {
 		UpstreamServers []*url.URL
 		timeoutDuration time.Duration
@@ -48,7 +58,7 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 		{
 			name: "success",
 			fields: fields{
-				timeoutDuration: time.Minute,
+				timeoutDuration: 30 * time.Second,
 			},
 			args: args{
 				u: url.URL{
@@ -66,8 +76,16 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 			c := &HTTPDebugInfodClient{
 				logger:          log.NewNopLogger(),
 				timeoutDuration: tt.fields.timeoutDuration,
+				client: &http.Client{
+					// Recorder transport passed, so the recorded data from testdata/fixtures will ber passed.
+					// Use make go/test-clean to remove the recorded data.
+					Transport: r,
+				},
 			}
-			r, err := c.request(context.TODO(), tt.args.u, tt.args.buildID)
+			ctx, cancel := context.WithTimeout(context.Background(), tt.fields.timeoutDuration)
+			t.Cleanup(cancel)
+
+			r, err := c.request(ctx, tt.args.u, tt.args.buildID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("request() error = %v, wantErr %v", err, tt.wantErr)
 				return

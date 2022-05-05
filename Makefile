@@ -64,6 +64,13 @@ check-license:
 go/test:
 	 go test -v `go list ./...`
 
+VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
+
+.PHONY: go/test-clean
+go/test-clean:
+	rm -f $(VCR_FILES)
+
+
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
 
 .PHONY: ui/build
