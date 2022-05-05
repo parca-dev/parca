@@ -41,7 +41,9 @@ func (NopDebugInfodClient) GetDebugInfo(context.Context, string) (io.ReadCloser,
 }
 
 type HTTPDebugInfodClient struct {
-	logger          log.Logger
+	logger log.Logger
+	client *http.Client
+
 	UpstreamServers []*url.URL
 	timeoutDuration time.Duration
 }
@@ -71,6 +73,7 @@ func NewHTTPDebugInfodClient(logger log.Logger, serverURLs []string, timeoutDura
 		logger:          logger,
 		UpstreamServers: parsedURLs,
 		timeoutDuration: timeoutDuration,
+		client:          http.DefaultClient,
 	}, nil
 }
 
@@ -186,7 +189,7 @@ func (c *HTTPDebugInfodClient) request(ctx context.Context, u url.URL, buildID s
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}

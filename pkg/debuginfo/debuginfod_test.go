@@ -15,10 +15,9 @@
 package debuginfo
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http/httptest"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -26,13 +25,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/go-kit/log"
-	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 )
 
 func TestHTTPDebugInfodClient_request(t *testing.T) {
+	r, err := recorder.New("testdata/fixtures")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		t.Log(r.Stop())
+	})
+
 	type fields struct {
 		UpstreamServers []*url.URL
 		timeoutDuration time.Duration
@@ -64,13 +71,16 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for i, tt := range tests {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			recorder := httptest.NewRecorder()
-
 			c := &HTTPDebugInfodClient{
 				logger:          log.NewNopLogger(),
 				timeoutDuration: tt.fields.timeoutDuration,
+				client: &http.Client{
+					// Recorder transport passed, so the recorded data from testdata/fixtures will ber passed.
+					// Use make go/test-clean to remove the recorded data.
+					Transport: r,
+				},
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), tt.fields.timeoutDuration)
 			t.Cleanup(cancel)
@@ -83,9 +93,6 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 			t.Cleanup(func() {
 				r.Close()
 			})
-
-			g := goldie.New(t)
-			g.Assert(t, fmt.Sprintf("TestHTTPDebugInfodClient_request_%d", i), recorder.Body.Bytes())
 
 			tmpfile, err := ioutil.TempFile("", "debuginfod-download-*")
 			require.NoError(t, err)
