@@ -212,6 +212,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "javierhonduco",
+      "name": "Javier Honduvilla Coto",
+      "avatar_url": "https://avatars.githubusercontent.com/u/959128?v=4",
+      "profile": "http://hondu.co",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
