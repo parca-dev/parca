@@ -1,6 +1,6 @@
 {
   "name": "@parca/store",
-  "version": "0.12.14",
+  "version": "0.12.35",
   "description": "State management for Parca UI",
   "main": "src/index.tsx",
   "scripts": {

@@ -1,11 +1,11 @@
 {
   "name": "@parca/profile",
-  "version": "0.12.34",
+  "version": "0.12.35",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@parca/client": "^0.12.30",
-    "@parca/dynamicsize": "^0.12.0",
-    "@parca/parser": "^0.12.26",
+    "@parca/client": "^0.12.35",
+    "@parca/dynamicsize": "^0.12.35",
+    "@parca/parser": "^0.12.35",
     "d3-scale": "^4.0.2"
   },
   "main": "src/index.tsx",
