@@ -8,12 +8,14 @@ import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './Grpc
 import Input from './Input';
 import MatchersInput from './MatchersInput';
 import MetricsGraph from './MetricsGraph';
+import ParcaThemeContext, {ParcaThemeProvider, useParcaTheme} from './ParcaThemeContext';
 import Pill, {PillVariant} from './Pill';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileMetricsGraph from './ProfileMetricsGraph';
 import ProfileSelector from './ProfileSelector';
 import Select from './Select';
 import type {SelectElement} from './Select';
+import Spinner from './Spinner';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
 
@@ -32,12 +34,16 @@ export {
   Input,
   MatchersInput,
   MetricsGraph,
+  ParcaThemeContext,
+  ParcaThemeProvider,
   Pill,
   ProfileExplorer,
   ProfileMetricsGraph,
   ProfileSelector,
   Select,
+  Spinner,
   Tab,
   EmptyState,
   useGrpcMetadata,
+  useParcaTheme,
 };
