@@ -14,6 +14,7 @@ import ProfileMetricsGraph from './ProfileMetricsGraph';
 import ProfileSelector from './ProfileSelector';
 import Select from './Select';
 import type {SelectElement} from './Select';
+import Spinner from './Spinner';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
 
@@ -37,6 +38,7 @@ export {
   ProfileMetricsGraph,
   ProfileSelector,
   Select,
+  Spinner,
   Tab,
   EmptyState,
   useGrpcMetadata,
