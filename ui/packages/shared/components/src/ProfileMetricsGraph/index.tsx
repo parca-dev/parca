@@ -5,6 +5,7 @@ import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/c
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {DateTimeRange, Spinner, useGrpcMetadata} from '../';
 import {Query} from '@parca/parser';
+import {useParcaTheme} from '../ParcaThemeContext';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -72,6 +73,7 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
+  const {loader} = useParcaTheme();
 
   useEffect(() => {
     let showLoaderTimeout;
@@ -87,7 +89,7 @@ const ProfileMetricsGraph = ({
   }, [isLoading]);
 
   if (isLoaderVisible) {
-    return <Spinner />;
+    return <>{loader}</>;
   }
 
   if (error !== null) {

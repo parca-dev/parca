@@ -3,7 +3,7 @@ import {CalcWidth} from '@parca/dynamicsize';
 import {parseParams} from '@parca/functions';
 import {QueryServiceClient, QueryResponse, QueryRequest_ReportType} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {Button, Card, Spinner, useGrpcMetadata} from '@parca/components';
+import {Button, Card, Spinner, useGrpcMetadata, useParcaTheme} from '@parca/components';
 import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
@@ -47,6 +47,7 @@ export const ProfileView = ({
   );
   const [currentView, setCurrentView] = useState<string | undefined>(currentViewFromURL);
   const metadata = useGrpcMetadata();
+  const {loader} = useParcaTheme();
 
   useEffect(() => {
     let showLoaderTimeout;
@@ -62,7 +63,7 @@ export const ProfileView = ({
   }, [isLoading]);
 
   if (isLoaderVisible) {
-    return <Spinner />;
+    return <>{loader}</>;
   }
 
   if (error !== null) {

@@ -8,6 +8,7 @@ import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './Grpc
 import Input from './Input';
 import MatchersInput from './MatchersInput';
 import MetricsGraph from './MetricsGraph';
+import ParcaThemeContext, {ParcaThemeProvider, useParcaTheme} from './ParcaThemeContext';
 import Pill, {PillVariant} from './Pill';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileMetricsGraph from './ProfileMetricsGraph';
@@ -33,6 +34,8 @@ export {
   Input,
   MatchersInput,
   MetricsGraph,
+  ParcaThemeContext,
+  ParcaThemeProvider,
   Pill,
   ProfileExplorer,
   ProfileMetricsGraph,
@@ -42,4 +45,5 @@ export {
   Tab,
   EmptyState,
   useGrpcMetadata,
+  useParcaTheme,
 };
