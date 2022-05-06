@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/apache/arrow/go/v8/arrow"
@@ -78,6 +79,7 @@ func NewColumnQueryAPI(
 
 // Labels issues a labels request against the storage.
 func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
+	mtx := &sync.RWMutex{}
 	seen := map[string]struct{}{}
 
 	err := q.engine.ScanSchema(q.tableName).
@@ -96,7 +98,16 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 
 			for i := 0; i < stringCol.Len(); i++ {
 				val := stringCol.Value(i)
-				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
+				val = strings.TrimPrefix(val, "labels.")
+				mtx.RLock()
+				if _, exists := seen[val]; exists {
+					mtx.RUnlock()
+					continue
+				}
+				mtx.RUnlock()
+				mtx.Lock()
+				seen[val] = struct{}{}
+				mtx.Unlock()
 			}
 
 			return nil
@@ -120,6 +131,8 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 // Values issues a values request against the storage.
 func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResponse, error) {
 	name := req.LabelName
+
+	mtx := &sync.RWMutex{}
 	seen := map[string]struct{}{}
 
 	err := q.engine.ScanTable(q.tableName).
@@ -136,8 +149,16 @@ func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb
 			}
 
 			for i := 0; i < stringCol.Len(); i++ {
-				val := stringCol.Value(i)
-				seen[string(val)] = struct{}{}
+				val := string(stringCol.Value(i))
+				mtx.RLock()
+				if _, exists := seen[val]; exists {
+					mtx.RUnlock()
+					continue
+				}
+				mtx.RUnlock()
+				mtx.Lock()
+				seen[val] = struct{}{}
+				mtx.Unlock()
 			}
 
 			return nil
@@ -371,6 +392,7 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesRequest) (*pb.ProfileTypesResponse, error) {
 	res := &pb.ProfileTypesResponse{}
 
+	mtx := &sync.RWMutex{}
 	seen := map[string]struct{}{}
 
 	err := q.engine.ScanTable(q.tableName).
@@ -430,10 +452,15 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 					key = fmt.Sprintf("%s:delta", key)
 				}
 
+				mtx.RLock()
 				if _, ok := seen[key]; ok {
+					mtx.RUnlock()
 					continue
 				}
+				mtx.RUnlock()
+				mtx.Lock()
 				seen[key] = struct{}{}
+				mtx.Unlock()
 
 				res.Types = append(res.Types, &pb.ProfileType{
 					Name:       name,
