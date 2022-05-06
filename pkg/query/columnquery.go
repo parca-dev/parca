@@ -120,7 +120,7 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 // Values issues a values request against the storage.
 func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResponse, error) {
 	name := req.LabelName
-	vals := []string{}
+	seen := map[string]struct{}{}
 
 	err := q.engine.ScanTable(q.tableName).
 		Distinct(logicalplan.Col("labels." + name)).
@@ -137,7 +137,7 @@ func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb
 
 			for i := 0; i < stringCol.Len(); i++ {
 				val := stringCol.Value(i)
-				vals = append(vals, string(val))
+				seen[string(val)] = struct{}{}
 			}
 
 			return nil
@@ -146,6 +146,10 @@ func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb
 		return nil, err
 	}
 
+	vals := make([]string, 0, len(seen))
+	for v := range seen {
+		vals = append(vals, v)
+	}
 	sort.Strings(vals)
 
 	return &pb.ValuesResponse{
@@ -363,7 +367,7 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 	return res, nil
 }
 
-// Types returns the available types of profiles.
+// ProfileTypes returns the available types of profiles.
 func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesRequest) (*pb.ProfileTypesResponse, error) {
 	res := &pb.ProfileTypesResponse{}
 
