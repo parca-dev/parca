@@ -170,6 +170,7 @@ type ServiceDiscoveryConfig struct {
 
 type ProfilingConfig struct {
 	PprofConfig PprofConfig `yaml:"pprof_config,omitempty"`
+	PprofPrefix string      `yaml:"path_prefix,omitempty"`
 }
 
 type PprofConfig map[string]*PprofProfilingConfig
@@ -202,6 +203,13 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			if unmarshalled.ProfilingConfig.PprofConfig[pt].Path == "" {
 				unmarshalled.ProfilingConfig.PprofConfig[pt].Path = pc.Path
 			}
+		}
+	}
+
+	// If path prefix is specified, add to PprofConfig path
+	if unmarshalled.ProfilingConfig.PprofPrefix != "" {
+		for pt := range unmarshalled.ProfilingConfig.PprofConfig {
+			unmarshalled.ProfilingConfig.PprofConfig[pt].Path = unmarshalled.ProfilingConfig.PprofPrefix + unmarshalled.ProfilingConfig.PprofConfig[pt].Path
 		}
 	}
 
