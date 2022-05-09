@@ -39,7 +39,7 @@ func TestLoadComplex(t *testing.T) {
 	// TODO: Make even more complex if necessary
 	complexYAML := `
 scrape_configs:
-  - job_name: 'conprof'
+  - job_name: 'parca'
     scrape_interval: 10s
     static_configs:
       - targets: [ 'localhost:10902' ]
@@ -47,7 +47,7 @@ scrape_configs:
       pprof_config:
         memory:
           enabled: true
-          path: /conprof/debug/pprof/allocs
+          path: /parca/debug/pprof/allocs
         fgprof:
           enabled: true
           path: /debug/fgprof
@@ -58,7 +58,7 @@ scrape_configs:
 	expected := &Config{
 		ScrapeConfigs: []*ScrapeConfig{
 			{
-				JobName:        "conprof",
+				JobName:        "parca",
 				ScrapeInterval: model.Duration(10 * time.Second),
 				ScrapeTimeout:  model.Duration(10 * time.Second),
 				Scheme:         "http",
@@ -66,7 +66,7 @@ scrape_configs:
 					PprofConfig: PprofConfig{
 						"memory": &PprofProfilingConfig{
 							Enabled: trueValue(),
-							Path:    "/conprof/debug/pprof/allocs",
+							Path:    "/parca/debug/pprof/allocs",
 						},
 						"block": &PprofProfilingConfig{
 							Enabled: trueValue(),
@@ -115,7 +115,7 @@ scrape_configs:
 func TestLoadPrefixConfig(t *testing.T) {
 	prefixYAML := `
 scrape_configs:
-  - job_name: 'conprof'
+  - job_name: 'parca'
     scrape_interval: 10s
     static_configs:
       - targets: [ 'localhost:10902' ]
@@ -124,7 +124,7 @@ scrape_configs:
       pprof_config:
         memory:
           enabled: true
-          path: /conprof/debug/pprof/allocs
+          path: /parca/debug/pprof/allocs
         fgprof:
           enabled: true
           path: /debug/fgprof
@@ -135,7 +135,7 @@ scrape_configs:
 	expected := &Config{
 		ScrapeConfigs: []*ScrapeConfig{
 			{
-				JobName:        "conprof",
+				JobName:        "parca",
 				ScrapeInterval: model.Duration(10 * time.Second),
 				ScrapeTimeout:  model.Duration(10 * time.Second),
 				Scheme:         "http",
@@ -144,7 +144,7 @@ scrape_configs:
 					PprofConfig: PprofConfig{
 						"memory": &PprofProfilingConfig{
 							Enabled: trueValue(),
-							Path:    "/test/prefix/conprof/debug/pprof/allocs",
+							Path:    "/test/prefix/parca/debug/pprof/allocs",
 						},
 						"block": &PprofProfilingConfig{
 							Enabled: trueValue(),
