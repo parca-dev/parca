@@ -27,13 +27,15 @@ DOCKER_NODE_ALPINE_SHAS=(
 )
 
 # SHA order is respectively ('amd64' 'arm64' 'armv6' 'armv7' '386')
-# this image is what docker.io/alpine:3.15.0 on March 14 2021
+# this image is what docker.io/alpine:3.15.4 on May 11 2022.
+# Here is how to obtain the digests:
+# for r in amd64 arm64v8 arm32v6 arm32v7 i386; do docker pull $r/alpine:3.15.4 | grep Digest; done
 DOCKER_ALPINE_SHAS=(
-    'docker.io/alpine@sha256:e7d88de73db3d3fd9b2d63aa7f447a10fd0220b7cbf39803c803f2af9ba256b3'
-    'docker.io/alpine@sha256:c74f1b1166784193ea6c8f9440263b9be6cae07dfe35e32a5df7a31358ac2060'
-    'docker.io/alpine@sha256:e047bc2af17934d38c5a7fa9f46d443f1de3a7675546402592ef805cfa929f9d'
-    'docker.io/alpine@sha256:8483ecd016885d8dba70426fda133c30466f661bb041490d525658f1aac73822'
-    'docker.io/alpine@sha256:2689e157117d2da668ad4699549e55eba1ceb79cb7862368b30919f0488213f4'
+    'docker.io/alpine@sha256:a777c9c66ba177ccfea23f2a216ff6721e78a662cd17019488c417135299cd89'
+    'docker.io/alpine@sha256:f3bec467166fd0e38f83ff32fb82447f5e89b5abd13264a04454c75e11f1cdc6'
+    'docker.io/alpine@sha256:70dc0b1a6029d999b9bba6b9d8793e077a16c938f5883397944f3bd01f8cd48a'
+    'docker.io/alpine@sha256:dc18010aabc13ce121123c7bb0f4dcb6879ce22b4f7c65669a2c634b5ceecafb'
+    'docker.io/alpine@sha256:51103b3f2993cbc1b45ff9d941b5d461484002792e02aa29580ec5282de719d4'
 )
 
 for i in "${!ARCHS[@]}"; do
