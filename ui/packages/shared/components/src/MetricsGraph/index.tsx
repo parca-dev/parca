@@ -13,6 +13,7 @@ import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
 import {valueFormatter, formatDate} from '@parca/functions';
 import {DateTimeRange} from '@parca/components';
+import useIsShiftDown from '../hooks/useIsShiftDown';
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb[];
@@ -225,34 +226,8 @@ export const RawMetricsGraph = ({
   const [hovering, setHovering] = useState(false);
   const [relPos, setRelPos] = useState(-1);
   const [pos, setPos] = useState([0, 0]);
-  const [freezeTooltip, setFreezeTooltip] = useState(false);
+  const isShiftDown = useIsShiftDown();
   const metricPointRef = useRef(null);
-
-  useEffect(() => {
-    const handleShiftDown = (event: {keyCode: number}) => {
-      if (event.keyCode === 16) {
-        setFreezeTooltip(true);
-      }
-    };
-    window.addEventListener('keydown', handleShiftDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleShiftDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleShiftUp = (event: {keyCode: number}) => {
-      if (event.keyCode === 16) {
-        setFreezeTooltip(false);
-      }
-    };
-    window.addEventListener('keyup', handleShiftUp);
-
-    return () => {
-      window.removeEventListener('keyup', handleShiftUp);
-    };
-  }, []);
 
   const time: number = parseFloat(profile?.HistoryParams().time);
 
@@ -412,7 +387,7 @@ export const RawMetricsGraph = ({
     const yCoordinate = rel[1];
     const yCoordinateWithoutMargin = yCoordinate - margin;
 
-    if (!freezeTooltip) {
+    if (!isShiftDown) {
       throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
     }
   };
