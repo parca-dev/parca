@@ -232,15 +232,66 @@ export function IcicleGraphNodes({
 
 const MemoizedIcicleGraphNodes = React.memo(IcicleGraphNodes);
 
+interface SourceURL {
+  filename: string;
+  line: string;
+}
+
+const getGithubURLFromNode = (node: FlamegraphNode): SourceURL | null => {
+  if (
+    node?.meta?.function?.name == null ||
+    !(node.meta.function.name.startsWith('github.com') as boolean) ||
+    node?.meta?.line?.line == null ||
+    !(parseInt(node.meta.line.line, 10) > 0)
+  ) {
+    if (node?.children?.length === 0) {
+      return null;
+    }
+    console.log('Getting from children', node?.children[0]);
+    return getGithubURLFromNode(node?.children[0]);
+  }
+
+  console.log('Getting from node', node);
+
+  // TODO consider the versioning.
+  let filename = `https://${node.meta.function.name.split('pkg/')[0] ?? ''}tree/main/pkg/${
+    node.meta.function.filename.split('pkg/')[1] ?? ''
+  }`;
+
+  return {
+    filename,
+    line: node?.meta?.line?.line,
+  };
+};
+
 const FlamegraphNodeTooltipTableRows = ({
   hoveringNode,
 }: {
   hoveringNode: FlamegraphNode;
 }): JSX.Element => {
+  useEffect(() => {
+    if (hoveringNode === undefined) {
+      return;
+    }
+    console.log('hoveringNode', hoveringNode);
+    const githubURL = getGithubURLFromNode(hoveringNode);
+
+    console.log('githubURL', githubURL);
+  }, [hoveringNode]);
+
   if (hoveringNode.meta === undefined) return <></>;
+  const githubURL = getGithubURLFromNode(hoveringNode);
+  console.log(`${githubURL.filename}${githubURL?.line != null ? `#L${githubURL?.line}` : ''}`);
 
   return (
     <>
+      {githubURL?.filename != null ? (
+        <a href={`${githubURL?.filename}${githubURL?.line != null ? `#L${githubURL?.line}` : ''}`}>
+          Open Github
+        </a>
+      ) : (
+        <p>No Github URl</p>
+      )}
       {hoveringNode.meta.pb_function?.filename !== undefined &&
         hoveringNode.meta.pb_function?.filename !== '' && (
           <tr>
