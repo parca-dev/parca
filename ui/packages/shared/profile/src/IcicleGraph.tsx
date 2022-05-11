@@ -6,6 +6,7 @@ import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {usePopper} from 'react-popper';
 import {getLastItem, valueFormatter, diffColor} from '@parca/functions';
 import {useAppSelector, selectDarkMode} from '@parca/store';
+import {useIsShiftDown} from '@parca/components';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -281,7 +282,6 @@ const FlamegraphNodeTooltipTableRows = ({
 
   if (hoveringNode.meta === undefined) return <></>;
   const githubURL = getGithubURLFromNode(hoveringNode);
-  console.log(`${githubURL.filename}${githubURL?.line != null ? `#L${githubURL?.line}` : ''}`);
 
   return (
     <>
@@ -540,6 +540,10 @@ export default function IcicleGraph({
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
+  const [hovering, setHovering] = useState(false);
+  const isShiftDown = useIsShiftDown();
+
+  const margin = 10;
 
   useEffect(() => {
     if (ref.current != null) {
@@ -550,11 +554,19 @@ export default function IcicleGraph({
   if (graph.root === undefined || width === undefined) return <></>;
 
   const throttledSetPos = throttle(setPos, 20);
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
+
+  const onMouseMove = (e: React.MouseEvent<SVGGElement | HTMLDivElement>): void => {
     // X/Y coordinate array relative to svg
     const rel = pointer(e);
 
-    throttledSetPos([rel[0], rel[1]]);
+    const xCoordinate = rel[0];
+    const xCoordinateWithoutMargin = xCoordinate - margin;
+    const yCoordinate = rel[1];
+    const yCoordinateWithoutMargin = yCoordinate - margin;
+
+    if (!isShiftDown) {
+      throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
+    }
   };
 
   const total = parseFloat(graph.total);
@@ -562,22 +574,47 @@ export default function IcicleGraph({
 
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
-      <FlamegraphTooltip
-        unit={sampleUnit}
-        total={total}
-        x={pos[0]}
-        y={pos[1]}
-        hoveringNode={hoveringNode}
-        contextElement={svg.current}
-      />
-      <svg
-        className="font-robotoMono"
-        width={width}
-        height={height}
+      {hovering && pos[0] !== 0 && pos[1] !== 0 && (
+        <div
+          onMouseMove={onMouseMove}
+          onMouseEnter={() => setHovering(true)}
+          onMouseLeave={() => setHovering(false)}
+        >
+          <FlamegraphTooltip
+            unit={sampleUnit}
+            total={total}
+            x={pos[0] + margin}
+            y={pos[1] + margin}
+            hoveringNode={hoveringNode}
+            contextElement={svg.current}
+          />
+        </div>
+      )}
+
+      {/* <div
         onMouseMove={onMouseMove}
-        ref={svg}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
       >
-        <g ref={ref}>
+        <FlamegraphTooltip
+          unit={sampleUnit}
+          total={total}
+          x={pos[0] + margin}
+          y={pos[1] + margin}
+          hoveringNode={hoveringNode}
+          contextElement={svg.current}
+        />
+      </div> */}
+
+      <svg className="font-robotoMono" width={width} height={height} ref={svg}>
+        <g
+          onMouseMove={onMouseMove}
+          onMouseEnter={() => {
+            setHovering(true);
+          }}
+          onMouseLeave={() => setHovering(false)}
+          ref={ref}
+        >
           <MemoizedIcicleGraphRootNode
             node={graph.root}
             setHoveringNode={setHoveringNode}

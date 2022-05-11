@@ -18,6 +18,7 @@ import type {SelectElement} from './Select';
 import Spinner from './Spinner';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
+import useIsShiftDown from './hooks/useIsShiftDown';
 
 export type {ButtonColor, PillVariant, SelectElement};
 
@@ -46,4 +47,5 @@ export {
   EmptyState,
   useGrpcMetadata,
   useParcaTheme,
+  useIsShiftDown,
 };

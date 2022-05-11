@@ -459,9 +459,8 @@ export const RawMetricsGraph = ({
       )}
       <div
         ref={graph}
-        onMouseEnter={function () {
+        onMouseEnter={() => {
           setHovering(true);
-          setFreezeTooltip(false);
         }}
         onMouseLeave={() => setHovering(false)}
       >
