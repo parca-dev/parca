@@ -32,6 +32,6 @@ jobs:
         run: make go/fmt && git diff --exit-code
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.1.0
+        uses: golangci/golangci-lint-action@v3.2.0
         with:
           version: v1.45.2
