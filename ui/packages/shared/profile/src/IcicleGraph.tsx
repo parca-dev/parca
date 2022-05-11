@@ -270,15 +270,17 @@ const FlamegraphNodeTooltipTableRows = ({
 }: {
   hoveringNode: FlamegraphNode;
 }): JSX.Element => {
-  useEffect(() => {
-    if (hoveringNode === undefined) {
-      return;
-    }
-    console.log('hoveringNode', hoveringNode);
-    const githubURL = getGithubURLFromNode(hoveringNode);
+  const isShiftDown = useIsShiftDown();
 
-    console.log('githubURL', githubURL);
-  }, [hoveringNode]);
+  useEffect(() => {
+    const githubURL = getGithubURLFromNode(hoveringNode);
+    if (isShiftDown) {
+      window.open(
+        `${githubURL?.filename}${githubURL?.line != null ? `#L${githubURL?.line}` : ''}`,
+        '_blank'
+      );
+    }
+  }, [isShiftDown, hoveringNode]);
 
   if (hoveringNode.meta === undefined) return <></>;
   const githubURL = getGithubURLFromNode(hoveringNode);
