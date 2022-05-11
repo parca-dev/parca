@@ -1,5 +1,6 @@
 import {Flamegraph} from '@parca/client';
 import {useAppSelector, selectCompareMode} from '@parca/store';
+import {getDebugInfoSourceCode} from '@parca/functions';
 
 import DiffLegend from './components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
@@ -27,6 +28,13 @@ const ProfileIcicleGraph = ({
 
   return (
     <>
+      <button
+        onClick={() => {
+          getDebugInfoSourceCode('02c66c637105cd4016513abc4c8e79d14bcc5d87');
+        }}
+      >
+        get source code
+      </button>
       {compareMode && <DiffLegend />}
       <IcicleGraph
         width={width}

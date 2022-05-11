@@ -255,3 +255,18 @@ export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean)
 
   return color;
 };
+
+export const getDebugInfoSourceCode = async (buildId: string) => {
+  const res = await fetch(
+    `http://debuginfod.elfutils.org/buildid/${buildId}/source/usr/include/stdio.h`,
+
+    {
+      mode: 'no-cors',
+      headers: {
+        'Accept-Encoding': 'text',
+      },
+    }
+  );
+  const code = await res;
+  console.log(code);
+};
