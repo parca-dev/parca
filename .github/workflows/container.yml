@@ -24,6 +24,12 @@ jobs:
   build:
     name: Container build and push (when merged)
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
+
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
@@ -44,6 +50,10 @@ jobs:
       - name: Check images created
         run: podman images | grep 'ghcr.io/parca-dev/parca'
 
+      - name: Install cosign
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: sigstore/cosign-installer@v2.3.0
+
       - name: Login to registry
         if: ${{ github.event_name != 'pull_request' }}
         run: |
@@ -52,6 +62,9 @@ jobs:
 
       - name: Push container
         if: ${{ github.event_name != 'pull_request' }}
+        env:
+          COSIGN_EXPERIMENTAL: true
         run: |
           make push-container
-          make push-quay-container
+          make sign-container
+          make push-signed-quay-container
