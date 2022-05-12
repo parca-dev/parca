@@ -7,13 +7,13 @@ MANIFEST="$3"
 ARCHS=('amd64' 'arm64' 'armv6' 'armv7' '386')
 
 # SHA order is respectively ('amd64' 'arm64' 'armv6' 'armv7' '386')
-# this image is what docker.io/golang:1.18.0-alpine3.15 on April 7 2022
+# this image is what docker.io/golang:1.18.2-alpine3.15 on May 12 2022
 DOCKER_GOLANG_ALPINE_SHAS=(
-    'docker.io/golang@sha256:7473adb02bd430045c938f61e2c2177ff62b28968579dfed99085a0960f76f5d'
-    'docker.io/golang@sha256:fe66e641602dfb60f5c746b57bde60fcafce94b44f2bc2ca2bdc1e3711b24911'
-    'docker.io/golang@sha256:674352693f4ce096d73fa32d81642ff004c3363caa43fbda13f30e60c564fd9d'
-    'docker.io/golang@sha256:1661ccca6a506959ff7ceee79ac0278785c71403de8cb03b5ad1672f466ab769'
-    'docker.io/golang@sha256:f65787ec108a90d8af2017a8685ae94f70205b24122fc5863f117d78c235e72f'
+    'docker.io/golang@sha256:3765360960a954c24b215518a41b0bf8e9e2fe3bd142b6f782fa56f8e00b8d21'
+    'docker.io/golang@sha256:394c1e739574aac2b389c628d0a199316164c3ed9d821c06ebe4ad3f133ed1f9'
+    'docker.io/golang@sha256:7110d5a775fc9007262b612dff9df2e77948b84ece26b0e358c948e89c20adfc'
+    'docker.io/golang@sha256:a1f7892284636a97476f7683b33df2a8b5f7c2e6387d397560ee76da2ca046f0'
+    'docker.io/golang@sha256:825a5233f6134b2da81bf0bd6d5deedb340a8f122799c31a32615bdfa7afd44a'
 )
 
 # SHA order is respectively ('amd64' 'arm64' 'armv6' 'armv7' '386')
