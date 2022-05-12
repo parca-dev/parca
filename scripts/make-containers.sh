@@ -27,7 +27,7 @@ DOCKER_NODE_ALPINE_SHAS=(
 )
 
 # SHA order is respectively ('amd64' 'arm64' 'armv6' 'armv7' '386')
-# this image is what docker.io/alpine:3.15.4 on May 11 2022.
+# this image is what docker.io/alpine:3.15.4 on May 12 2021
 # Here is how to obtain the digests:
 # for r in amd64 arm64v8 arm32v6 arm32v7 i386; do docker pull $r/alpine:3.15.4 | grep Digest; done
 DOCKER_ALPINE_SHAS=(
