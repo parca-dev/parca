@@ -126,7 +126,7 @@ push-quay-container:
 	podman push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
 
 .PHONY: push-signed-quay-container
-sign-quay-container:
+push-signed-quay-container:
 	cosign copy $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
 
 .PHONY: deploy/manifests
