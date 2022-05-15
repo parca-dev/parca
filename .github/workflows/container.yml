@@ -54,13 +54,17 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         uses: sigstore/cosign-installer@v2.3.0
 
+      - name: Install crane
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: imjasonh/setup-crane@v0.1
+
       - name: Login to registry
         if: ${{ github.event_name != 'pull_request' }}
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u parca-dev --password-stdin ghcr.io
           echo "${{ secrets.QUAY_PASSWORD }}" | podman login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
 
-      - name: Push container
+      - name: Push and sign container
         if: ${{ github.event_name != 'pull_request' }}
         env:
           COSIGN_EXPERIMENTAL: true
