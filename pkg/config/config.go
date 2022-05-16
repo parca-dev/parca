@@ -137,7 +137,7 @@ func LoadFile(filename string) (*Config, error) {
 // ScrapeConfig configures a scraping unit for conprof.
 type ScrapeConfig struct {
 	// Name of the section in the config
-	JobName string `yaml:"job_name,omitempty"`
+	JobName string `yaml:"job_name"`
 	// A set of query parameters with which the target is scraped.
 	Params url.Values `yaml:"params,omitempty"`
 	// How frequently to scrape the targets of this scrape config.
