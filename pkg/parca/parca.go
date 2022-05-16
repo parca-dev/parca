@@ -46,7 +46,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
@@ -123,15 +122,9 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		defer closer()
 	}
 
-	cfgContent, err := ioutil.ReadFile(flags.ConfigPath)
+	cfg, err := config.LoadFile(flags.ConfigPath)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to read config", "path", flags.ConfigPath)
-		return err
-	}
-
-	cfg := config.Config{}
-	if err := yaml.Unmarshal(cfgContent, &cfg); err != nil {
-		level.Error(logger).Log("msg", "failed to parse config", "err", err, "path", flags.ConfigPath)
 		return err
 	}
 
@@ -335,7 +328,7 @@ func runScraper(
 	tracer trace.TracerProvider,
 	flags *Flags,
 	version string,
-	cfg config.Config,
+	cfg *config.Config,
 ) error {
 	if flags.StoreAddress == "" {
 		return fmt.Errorf("parca scraper mode needs to have a --store-address")
