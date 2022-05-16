@@ -62,7 +62,7 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u parca-dev --password-stdin ghcr.io
-          echo "${{ secrets.QUAY_PASSWORD }}" | podman login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
+          echo "${{ secrets.QUAY_PASSWORD }}" | docker login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
 
       - name: Push and sign container
         if: ${{ github.event_name != 'pull_request' }}
