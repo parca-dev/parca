@@ -109,7 +109,7 @@ proto/google/pprof/profile.proto:
 
 .PHONY: container-dev
 container-dev:
-    podman build --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
+	podman build --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:
