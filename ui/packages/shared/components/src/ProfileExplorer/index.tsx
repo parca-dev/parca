@@ -6,6 +6,7 @@ import {QueryServiceClient} from '@parca/client';
 import {useAppSelector, useAppDispatch, setCompare, selectCompareMode} from '@parca/store';
 import {Provider} from 'react-redux';
 import {store} from '@parca/store';
+import {DateTimeRange} from '../DateTimeRangePicker';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -20,6 +21,15 @@ const getExpressionAsAString = (expression: string | []) => {
   return x;
 };
 
+const sanitizeDateRange = (time_selection_a: any, from_a: any, to_a: any) => {
+  const range = DateTimeRange.fromRangeKey(time_selection_a);
+  if (from_a == null && to_a == null) {
+    from_a = range.getFromMs();
+    to_a = range.getToMs();
+  }
+  return {time_selection_a: range.getRangeKey(), from_a, to_a};
+};
+
 const ProfileExplorerApp = ({
   queryClient,
   queryParams,
@@ -28,7 +38,7 @@ const ProfileExplorerApp = ({
   const dispatch = useAppDispatch();
   const compareMode = useAppSelector(selectCompareMode);
 
-  const {
+  let {
     from_a,
     to_a,
     merge_a,
@@ -46,6 +56,11 @@ const ProfileExplorerApp = ({
     time_selection_b,
     compare_b,
   } = queryParams;
+
+  const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
+  time_selection_a = sanitizedRange.time_selection_a;
+  from_a = sanitizedRange.from_a;
+  to_a = sanitizedRange.to_a;
 
   const expression_a = getExpressionAsAString(queryParams.expression_a);
 
