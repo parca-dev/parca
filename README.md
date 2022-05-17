@@ -187,6 +187,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tr>
     <td align="center"><a href="http://importhuman.github.io"><img src="https://avatars.githubusercontent.com/u/69148722?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ujjwal Goyal</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=importhuman" title="Documentation">📖</a></td>
     <td align="center"><a href="http://marselester.com"><img src="https://avatars.githubusercontent.com/u/823099?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Marsel Mavletkulov</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=marselester" title="Code">💻</a></td>
+    <td align="center"><a href="http://bit.ly/2XvWly1"><img src="https://avatars.githubusercontent.com/u/24803604?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kautilya Tripathi</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=knrt10" title="Code">💻</a></td>
   </tr>
 </table>
 
