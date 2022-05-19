@@ -26,6 +26,7 @@ import (
 	"github.com/apache/arrow/go/v8/arrow"
 	"github.com/apache/arrow/go/v8/arrow/array"
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/polarsignals/arcticdb/query"
 	"github.com/polarsignals/arcticdb/query/logicalplan"
 	"github.com/prometheus/prometheus/model/labels"
@@ -509,9 +510,14 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		res *pb.QueryResponse
 		err error
 	)
-	pprof.Do(ctx, pprof.Labels("grpcmethod", "Query"), func(ctx context.Context) {
+
+	traceID := trace.SpanContextFromContext(ctx).TraceID().String()
+	level.Info(q.logger).Log("msg", "query", "trace_ID", traceID)
+
+	pprof.Do(ctx, pprof.Labels("trace_id", traceID), func(ctx context.Context) {
 		res, err = q.query(ctx, req)
 	})
+
 	return res, err
 }
 
@@ -615,8 +621,6 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 		)...,
 	)
 
-	fmt.Println(selectorExprs)
-
 	var ar arrow.Record
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -628,7 +632,6 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 		).
 		Execute(func(r arrow.Record) error {
 			r.Retain()
-			fmt.Println(r)
 			ar = r
 			return nil
 		})
