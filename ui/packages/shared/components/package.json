@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.12.35",
+  "version": "0.12.38",
   "description": "A component library for Parca",
   "main": "src/index.tsx",
   "scripts": {
@@ -14,7 +14,7 @@
     "@parca/functions": "^0.12.35",
     "@parca/icons": "^0.12.35",
     "@parca/parser": "^0.12.35",
-    "@parca/profile": "^0.12.35",
+    "@parca/profile": "^0.12.36",
     "@parca/store": "^0.12.35",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@types/react-datepicker": "^4.4.0",

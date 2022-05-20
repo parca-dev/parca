@@ -221,6 +221,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "marselester",
+      "name": "Marsel Mavletkulov",
+      "avatar_url": "https://avatars.githubusercontent.com/u/823099?v=4",
+      "profile": "http://marselester.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "knrt10",
+      "name": "Kautilya Tripathi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24803604?v=4",
+      "profile": "http://bit.ly/2XvWly1",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,

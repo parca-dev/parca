@@ -22,7 +22,8 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: ^1.18
+          go-version: '1.18'
+          check-latest: true
       - uses: actions/checkout@v3
 
       - name: Build UI
@@ -32,6 +33,6 @@ jobs:
         run: make go/fmt && git diff --exit-code
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.1.0
+        uses: golangci/golangci-lint-action@v3.2.0
         with:
           version: v1.45.2

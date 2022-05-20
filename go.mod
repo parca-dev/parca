@@ -9,12 +9,13 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/dgraph-io/badger/v3 v3.2103.2
+	github.com/dnaeon/go-vcr v1.2.0
 	github.com/fatih/semgroup v1.2.0
 	github.com/felixge/fgprof v0.9.2
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.1
 	github.com/go-delve/delve v1.8.3
-	github.com/go-kit/log v0.2.0
+	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
 	github.com/google/pprof v0.0.0-20220218203455-0368bd9e19a7
@@ -29,7 +30,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/oklog/run v1.1.0
 	github.com/polarsignals/arcticdb v0.0.0-20220428085204-3fca71a931b1
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.34.0
 	github.com/prometheus/prometheus v1.8.2-0.20220315145411-881111fec433
 	github.com/segmentio/parquet-go v0.0.0-20220421002521-93f8e5ed3407
@@ -42,7 +43,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.7.0
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	google.golang.org/genproto v0.0.0-20220317150908-0efb43f6373e
-	google.golang.org/grpc v1.46.0
+	google.golang.org/grpc v1.46.2
 	google.golang.org/protobuf v1.28.0
 	gopkg.in/yaml.v2 v2.4.0
 )

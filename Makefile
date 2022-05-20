@@ -64,6 +64,13 @@ check-license:
 go/test:
 	 go test -v `go list ./...`
 
+VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
+
+.PHONY: go/test-clean
+go/test-clean:
+	rm -f $(VCR_FILES)
+
+
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
 
 .PHONY: ui/build
@@ -104,15 +111,24 @@ container-dev:
 
 .PHONY: container
 container:
-	 ./scripts/make-containers.sh $(VERSION) $(COMMIT) $(OUT_DOCKER):$(VERSION)
+	./scripts/make-containers.sh $(VERSION) $(COMMIT) $(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-container
 push-container:
-	podman push $(OUT_DOCKER):$(VERSION) $(OUT_DOCKER):$(VERSION)
+	podman manifest push --all $(OUT_DOCKER):$(VERSION) docker://$(OUT_DOCKER):$(VERSION)
+
+.PHONY: sign-container
+sign-container:
+	crane digest $(OUT_DOCKER):$(VERSION)
+	cosign sign --force -a GIT_HASH=$(COMMIT) -a GIT_VERSION=$(VERSION) $(OUT_DOCKER)@$(shell crane digest $(OUT_DOCKER):$(VERSION))
 
 .PHONY: push-quay-container
 push-quay-container:
-	podman push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
+	podman manifest push --all $(OUT_DOCKER):$(VERSION) docker://quay.io/parca/parca:$(VERSION)
+
+.PHONY: push-signed-quay-container
+push-signed-quay-container:
+	cosign copy $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
 
 .PHONY: deploy/manifests
 deploy/manifests:

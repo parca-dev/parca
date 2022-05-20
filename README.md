@@ -16,7 +16,7 @@
 
 ## Features
 
-* [**eBPF Profiler**](https://www.parca.dev/docs/parca-agent/): A single profiler, using eBPF, automatically discovering targets from Kubernetes or systemd across the entire infrastructure with very low overhead. Supports C, C++, Rust, Go, and more!
+* [**eBPF Profiler**](https://www.parca.dev/docs/parca-agent): A single profiler, using eBPF, automatically discovering targets from Kubernetes or systemd across the entire infrastructure with very low overhead. Supports C, C++, Rust, Go, and more!
 * **[Open Standards](https://www.parca.dev/docs/concepts/#pprof)**: Both producing pprof formatted profiles with the eBPF based profiler, and ingesting any pprof formatted profiles allowing for wide language adoption and interoperability with existing tooling.
 
 * [**Optimized Storage & Querying**](https://www.parca.dev/docs/storage/): Efficiently storing profiling data while retaining raw data and allowing slicing and dicing of data through a label-based search. Aggregate profiling data infrastructure wide, view single profiles in time or compare on any dimension.
@@ -187,6 +187,8 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tr>
     <td align="center"><a href="http://importhuman.github.io"><img src="https://avatars.githubusercontent.com/u/69148722?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ujjwal Goyal</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=importhuman" title="Documentation">📖</a></td>
     <td align="center"><a href="http://hondu.co"><img src="https://avatars.githubusercontent.com/u/959128?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Javier Honduvilla Coto</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=javierhonduco" title="Code">💻</a></td>
+    <td align="center"><a href="http://marselester.com"><img src="https://avatars.githubusercontent.com/u/823099?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Marsel Mavletkulov</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=marselester" title="Code">💻</a></td>
+    <td align="center"><a href="http://bit.ly/2XvWly1"><img src="https://avatars.githubusercontent.com/u/24803604?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kautilya Tripathi</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=knrt10" title="Code">💻</a></td>
   </tr>
 </table>
 
