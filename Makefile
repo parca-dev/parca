@@ -111,11 +111,11 @@ container-dev:
 
 .PHONY: container
 container:
-	 ./scripts/make-containers.sh $(VERSION) $(COMMIT) $(OUT_DOCKER):$(VERSION)
+	./scripts/make-containers.sh $(VERSION) $(COMMIT) $(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-container
 push-container:
-	podman push $(OUT_DOCKER):$(VERSION) $(OUT_DOCKER):$(VERSION)
+	podman manifest push --all $(OUT_DOCKER):$(VERSION) docker://$(OUT_DOCKER):$(VERSION)
 
 .PHONY: sign-container
 sign-container:
@@ -124,7 +124,7 @@ sign-container:
 
 .PHONY: push-quay-container
 push-quay-container:
-	podman push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
+	podman manifest push --all $(OUT_DOCKER):$(VERSION) docker://quay.io/parca/parca:$(VERSION)
 
 .PHONY: push-signed-quay-container
 push-signed-quay-container:
