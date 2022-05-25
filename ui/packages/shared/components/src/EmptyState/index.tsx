@@ -28,7 +28,7 @@ const EmptyState = ({title, icon, body, isEmpty, children}: EmptyStateProps): JS
       <p className="flex items-center justify-center text-xl p-4 text-gray-500">
         {title ?? 'No data available'}
       </p>
-      {body && (
+      {Boolean(body) && (
         <div className="flex items-center justify-center p-1 text-gray-500 text-sm">{body}</div>
       )}
     </div>
