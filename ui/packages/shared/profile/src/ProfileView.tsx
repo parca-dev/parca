@@ -1,10 +1,7 @@
 import React, {useEffect, useState} from 'react';
-import {CalcWidth} from '@parca/dynamicsize';
 import {parseParams} from '@parca/functions';
-import {QueryServiceClient, QueryResponse, QueryRequest_ReportType} from '@parca/client';
-import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {Button, Card, Spinner, useGrpcMetadata, useParcaTheme} from '@parca/components';
-import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
+import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
+import {Button, Card, useGrpcMetadata, useParcaTheme} from '@parca/components';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
@@ -172,14 +169,12 @@ export const ProfileView = ({
                 response !== null &&
                 response.report.oneofKind === 'flamegraph' && (
                   <div className="w-full">
-                    <CalcWidth throttle={300} delay={2000}>
-                      <ProfileIcicleGraph
-                        curPath={curPath}
-                        setNewCurPath={setNewCurPath}
-                        graph={response.report.flamegraph}
-                        sampleUnit={sampleUnit}
-                      />
-                    </CalcWidth>
+                    <ProfileIcicleGraph
+                      curPath={curPath}
+                      setNewCurPath={setNewCurPath}
+                      graph={response.report.flamegraph}
+                      sampleUnit={sampleUnit}
+                    />
                   </div>
                 )}
 
@@ -204,18 +199,16 @@ export const ProfileView = ({
                   </div>
 
                   <div className="w-1/2">
-                    <CalcWidth throttle={300} delay={2000}>
-                      <ProfileIcicleGraph
-                        curPath={curPath}
-                        setNewCurPath={setNewCurPath}
-                        graph={
-                          response?.report.oneofKind === 'flamegraph'
-                            ? response.report.flamegraph
-                            : undefined
-                        }
-                        sampleUnit={sampleUnit}
-                      />
-                    </CalcWidth>
+                    <ProfileIcicleGraph
+                      curPath={curPath}
+                      setNewCurPath={setNewCurPath}
+                      graph={
+                        response?.report.oneofKind === 'flamegraph'
+                          ? response.report.flamegraph
+                          : undefined
+                      }
+                      sampleUnit={sampleUnit}
+                    />
                   </div>
                 </>
               )}
