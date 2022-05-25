@@ -29,11 +29,11 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20220203202831-b7f99f1dbc96
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/arcticdb v0.0.0-20220428085204-3fca71a931b1
+	github.com/polarsignals/arcticdb v0.0.0-20220527133324-4e2f5c4b210e
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.34.0
 	github.com/prometheus/prometheus v1.8.2-0.20220315145411-881111fec433
-	github.com/segmentio/parquet-go v0.0.0-20220421002521-93f8e5ed3407
+	github.com/segmentio/parquet-go v0.0.0-20220527005452-bf1e4db66515
 	github.com/stretchr/testify v1.7.1
 	github.com/thanos-io/objstore v0.0.0-20220324101945-f2f24637ce2e
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.32.0
@@ -144,7 +144,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.15.1 // indirect
+	github.com/klauspost/compress v1.15.2 // indirect
 	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/kolo/xmlrpc v0.0.0-20201022064351-38db28db192b // indirect
 	github.com/linode/linodego v1.3.0 // indirect
@@ -177,7 +177,7 @@ require (
 	github.com/rs/cors v1.8.0 // indirect
 	github.com/rs/xid v1.2.1 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.9 // indirect
-	github.com/segmentio/encoding v0.3.3 // indirect
+	github.com/segmentio/encoding v0.3.5 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.34 // indirect
