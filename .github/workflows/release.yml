@@ -22,7 +22,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: ^1.16
+          go-version: '1.18'
+          check-latest: true
 
       - name: Build UI
         run: make ui/build
@@ -57,7 +58,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: ^1.16
+          go-version: '1.18'
+          check-latest: true
 
       - name: Set up Jsonnet
         run: ./env-jsonnet.sh
@@ -100,7 +102,19 @@ jobs:
   container:
     name: Build and release container images
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
+
     steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v2.3.0
+
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.1
+
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
 
@@ -110,6 +124,13 @@ jobs:
       - name: Login to registry
         run: |
           echo "${{ secrets.PERSONAL_ACCESS_TOKEN }}" | podman login -u parca-dev --password-stdin ghcr.io
+
       - name: Push container
         run: |
           make push-container
+
+      - name: Sign container
+        env:
+          COSIGN_EXPERIMENTAL: true
+        run: |
+          make sign-container

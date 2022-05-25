@@ -24,9 +24,12 @@ const DateTimeRangePickerTrigger = ({
             {'!justify-center, bg-gray-100 dark:bg-gray-800': isActive}
           )}
         >
-          {isActive && range.from.isRelative()
-            ? `${formatDateStringForUI(range.from)} → ${formatDateStringForUI(range.to)}`
-            : range.getRangeStringForUI()}
+          <span className="w-[147px] text-ellipsis overflow-hidden whitespace-nowrap">
+            {isActive && range.from.isRelative()
+              ? `${formatDateStringForUI(range.from)} → ${formatDateStringForUI(range.to)}`
+              : range.getRangeStringForUI()}
+          </span>
+
           <span className="px-2 cursor-pointer">{!isActive ? '▼' : '▲'}</span>
         </div>
       </Popover.Button>
