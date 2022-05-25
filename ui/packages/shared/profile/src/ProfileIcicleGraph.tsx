@@ -1,6 +1,6 @@
 import {Flamegraph} from '@parca/client';
 import {useAppSelector, selectCompareMode} from '@parca/store';
-import {useContainerDimensions} from '../../dynamicsize/src';
+import {useContainerDimensions} from '@parca/dynamicsize';
 
 import DiffLegend from './components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
