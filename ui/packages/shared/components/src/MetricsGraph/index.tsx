@@ -7,12 +7,12 @@ import {formatForTimespan} from '@parca/functions/time';
 import {SingleProfileSelection, timeFormat} from '@parca/profile';
 import {cutToMaxStringLength} from '@parca/functions/string';
 import throttle from 'lodash.throttle';
-import {CalcWidth} from '@parca/dynamicsize';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
 import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
 import {valueFormatter, formatDate} from '@parca/functions';
 import {DateTimeRange} from '@parca/components';
+import {useContainerDimensions} from '@parca/dynamicsize';
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb[];
@@ -49,20 +49,26 @@ const MetricsGraph = ({
   onLabelClick,
   setTimeRange,
   sampleUnit,
-}: RawMetricsGraphProps): JSX.Element => (
-  <CalcWidth throttle={300} delay={2000}>
-    <RawMetricsGraph
-      data={data}
-      from={from}
-      to={to}
-      profile={profile}
-      onSampleClick={onSampleClick}
-      onLabelClick={onLabelClick}
-      setTimeRange={setTimeRange}
-      sampleUnit={sampleUnit}
-    />
-  </CalcWidth>
-);
+}: RawMetricsGraphProps): JSX.Element => {
+  const {ref, dimensions} = useContainerDimensions();
+
+  return (
+    <div ref={ref}>
+      <RawMetricsGraph
+        data={data}
+        from={from}
+        to={to}
+        profile={profile}
+        onSampleClick={onSampleClick}
+        onLabelClick={onLabelClick}
+        setTimeRange={setTimeRange}
+        sampleUnit={sampleUnit}
+        width={dimensions?.width}
+      />
+    </div>
+  );
+};
+
 export default MetricsGraph;
 
 export const parseValue = (value: string): number | null => {

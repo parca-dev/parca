@@ -1,5 +1,6 @@
 import {Flamegraph} from '@parca/client';
 import {useAppSelector, selectCompareMode} from '@parca/store';
+import {useContainerDimensions} from '../../dynamicsize/src';
 
 import DiffLegend from './components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
@@ -13,7 +14,6 @@ interface ProfileIcicleGraphProps {
 }
 
 const ProfileIcicleGraph = ({
-  width,
   graph,
   curPath,
   setNewCurPath,
@@ -25,16 +25,20 @@ const ProfileIcicleGraph = ({
   const total = graph.total;
   if (parseFloat(total) === 0) return <>Profile has no samples</>;
 
+  const {ref, dimensions} = useContainerDimensions();
+
   return (
     <>
       {compareMode && <DiffLegend />}
-      <IcicleGraph
-        width={width}
-        graph={graph}
-        curPath={curPath}
-        setCurPath={setNewCurPath}
-        sampleUnit={sampleUnit}
-      />
+      <div ref={ref}>
+        <IcicleGraph
+          width={dimensions?.width}
+          graph={graph}
+          curPath={curPath}
+          setCurPath={setNewCurPath}
+          sampleUnit={sampleUnit}
+        />
+      </div>
     </>
   );
 };
