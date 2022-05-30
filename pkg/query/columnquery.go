@@ -83,7 +83,7 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 	err := q.engine.ScanSchema(q.tableName).
 		Distinct(logicalplan.Col("name")).
 		Filter(logicalplan.Col("name").RegexMatch("^labels\\..+$")).
-		Execute(func(ar arrow.Record) error {
+		Execute(ctx, func(ar arrow.Record) error {
 			if ar.NumCols() != 1 {
 				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
 			}
@@ -123,8 +123,8 @@ func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb
 	vals := []string{}
 
 	err := q.engine.ScanTable(q.tableName).
-		Distinct(logicalplan.Col("labels." + name)).
-		Execute(func(ar arrow.Record) error {
+		Distinct(logicalplan.Col("labels."+name)).
+		Execute(ctx, func(ar arrow.Record) error {
 			if ar.NumCols() != 1 {
 				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
 			}
@@ -275,7 +275,7 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 			logicalplan.DynCol("labels"),
 			logicalplan.Col("timestamp"),
 		).
-		Execute(func(r arrow.Record) error {
+		Execute(ctx, func(r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil
@@ -378,7 +378,7 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 			logicalplan.Col(parcacol.ColumnPeriodUnit),
 			logicalplan.Col(parcacol.ColumnDuration).GT(logicalplan.Literal(0)),
 		).
-		Execute(func(ar arrow.Record) error {
+		Execute(ctx, func(ar arrow.Record) error {
 			if ar.NumCols() != 6 {
 				return fmt.Errorf("expected 6 column, got %d", ar.NumCols())
 			}
@@ -588,7 +588,7 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 			logicalplan.DynCol("pprof_labels"),
 			logicalplan.DynCol("pprof_num_labels"),
 		).
-		Execute(func(r arrow.Record) error {
+		Execute(ctx, func(r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil
@@ -640,7 +640,7 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 			logicalplan.Sum(logicalplan.Col("value")),
 			logicalplan.Col("stacktrace"),
 		).
-		Execute(func(r arrow.Record) error {
+		Execute(ctx, func(r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil

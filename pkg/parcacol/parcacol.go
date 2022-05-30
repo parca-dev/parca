@@ -29,7 +29,7 @@ import (
 
 type Table interface {
 	Schema() *dynparquet.Schema
-	InsertBuffer(buf *dynparquet.Buffer) (tx uint64, err error)
+	InsertBuffer(context.Context, *dynparquet.Buffer) (tx uint64, err error)
 }
 
 func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table Table, ls labels.Labels, prof *parcaprofile.Profile) (int, error) {
@@ -42,7 +42,7 @@ func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table Table,
 		return 0, err
 	}
 
-	_, err = table.InsertBuffer(buf)
+	_, err = table.InsertBuffer(ctx, buf)
 	return len(prof.FlatSamples), err
 }
 
