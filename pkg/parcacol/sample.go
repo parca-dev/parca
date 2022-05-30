@@ -40,7 +40,7 @@ type Sample struct {
 	Value          int64
 }
 
-type Samples []Sample
+type Samples []*Sample
 
 func (s Samples) ToBuffer(schema *dynparquet.Schema) (*dynparquet.Buffer, error) {
 	names := s.SampleLabelNames()

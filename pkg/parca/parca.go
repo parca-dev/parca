@@ -64,8 +64,9 @@ import (
 )
 
 const (
-	symbolizationInterval = 10 * time.Second
-	flagModeScraperOnly   = "scraper-only"
+	symbolizationInterval   = 10 * time.Second
+	flagModeScraperOnly     = "scraper-only"
+	metaStoreBadgerInMemory = "badgerinmemory"
 )
 
 type Flags struct {
@@ -139,15 +140,16 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	var mStr metastore.ProfileMetaStore
 	switch flags.Metastore {
-	case "badgerinmemory":
+	case metaStoreBadgerInMemory:
 		mStr = metastore.NewBadgerMetastore(
 			logger,
 			reg,
-			tracerProvider.Tracer("badgerinmemory"),
+			tracerProvider.Tracer(metaStoreBadgerInMemory),
 			metastore.NewRandomUUIDGenerator(),
 		)
 	default:
-		level.Error(logger).Log("msg", "unknown metastore implementation", "chosen", flags.Metastore)
+		err := fmt.Errorf("unknown metastore implementation: %s", flags.Metastore)
+		level.Error(logger).Log("msg", "failed to initialize metastore", "err", err)
 		return err
 	}
 
