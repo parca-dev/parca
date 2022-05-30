@@ -3087,24 +3087,24 @@
   integrity sha512-92FRmppjjqz29VMJ2dn+xdyXZBrMlE42AV6Kq6BwjWV7CNUW1hs2FtxSNLQE+gJhaZ6AAmYuO9y8dshhcBl7vA==
 
 "@protobuf-ts/grpcweb-transport@^2.5.0":
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.5.0.tgz#a571862f763aa59cd0d184d9f0f9fa6f0b0d920a"
-  integrity sha512-8NRvhcwkKyLFrV9j6C3aYtlCLvRvlCgQ0957i63NUgvteZQCP0BGwbTVEQT2n43Wh3xO/Xhb+G1nFe04S3RYSA==
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.6.0.tgz#d818e20306fa399ca2ed3753365a5f068b510792"
+  integrity sha512-i4jjWSEFsc6WwzKUZfgvNoYwDAxBe9N7lNRCn/XJy+yN9EEy5871InbNvMN/YVo80mj4xYdrM1lc3vEEbpigeQ==
   dependencies:
-    "@protobuf-ts/runtime" "^2.5.0"
-    "@protobuf-ts/runtime-rpc" "^2.5.0"
+    "@protobuf-ts/runtime" "^2.6.0"
+    "@protobuf-ts/runtime-rpc" "^2.6.0"
 
-"@protobuf-ts/runtime-rpc@^2.5.0":
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime-rpc/-/runtime-rpc-2.5.0.tgz#6c05c99c4b21dd7fbf1fe8398cec0515fc91f6a4"
-  integrity sha512-zO5W1/66Ok68muvmjG0+ucTWTfzhCUurnqyspqcWGF9DDgGKSmrtR8V1MRV051UoTonOxm7NZZvM6VTbBv9DcA==
+"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.6.0":
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime-rpc/-/runtime-rpc-2.6.0.tgz#66fbcf6d9b0ad0d5b892d86ef4e1fbd17516a26e"
+  integrity sha512-PUAUUI4NJgg/3i0mfyxzrBsIs+V3/B+ybG2sDSf6mZhPYRZkUFBQqmnaFGx3UHOAU0JORqAIFC1dac6bUjaauw==
   dependencies:
-    "@protobuf-ts/runtime" "^2.5.0"
+    "@protobuf-ts/runtime" "^2.6.0"
 
-"@protobuf-ts/runtime@^2.5.0":
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.5.0.tgz#5264efa9b509cb1f6d9ccad7cbb3182430149cbe"
-  integrity sha512-ClfuZQ3iPVABJ0CXLGI044eox1PtmrIbbXZaHYczdFJjaxxn8U7vnwb1dPBM9JZ2I6H1VLZu8A9Z5nRv7zydsg==
+"@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.6.0":
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.6.0.tgz#d823470768383c0657cdc87a745c19af5ef63550"
+  integrity sha512-ZXQxypattRL87U9Ki+unh2en+REp8m+VZDTCHHHt1gqTZpjbUn2zzELkSEmli+4WKWPEZRExIhzfAUz0xRskJQ==
 
 "@reduxjs/toolkit@^1.7.2":
   version "1.8.2"
