@@ -341,13 +341,8 @@ func TestConsistency(t *testing.T) {
 
 	p1 = p1.Compact()
 
-	p, err := parcaprofile.FromPprof(ctx, logger, m, p1, 0, false)
-	require.NoError(t, err)
-
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
-		Name:  "__name__",
-		Value: "memory",
-	}}, p)
+	ingester := parcacol.NewIngester(logger, m, table)
+	err = ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p1, false)
 	require.NoError(t, err)
 
 	table.Sync()

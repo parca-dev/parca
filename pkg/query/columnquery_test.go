@@ -38,7 +38,6 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestColumnQueryAPIQueryRange(t *testing.T) {
@@ -75,20 +74,21 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	files, err := ioutil.ReadDir(dir)
 	require.NoError(t, err)
 
+	ingester := parcacol.NewIngester(logger, m, table)
+
 	for _, f := range files {
 		fileContent, err := ioutil.ReadFile(dir + f.Name())
 		require.NoError(t, err)
 		p, err := profile.Parse(bytes.NewBuffer(fileContent))
 		require.NoError(t, err)
-		profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
-		require.NoError(t, err)
-		_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+
+		err = ingester.Ingest(ctx, labels.Labels{{
 			Name:  "__name__",
 			Value: "memory",
 		}, {
 			Name:  "job",
 			Value: "default",
-		}}, profiles[0])
+		}}, p, false)
 		require.NoError(t, err)
 	}
 
@@ -147,16 +147,15 @@ func TestColumnQueryAPIQuery(t *testing.T) {
 	require.NoError(t, err)
 	p, err := profile.Parse(bytes.NewBuffer(fileContent))
 	require.NoError(t, err)
-	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
-	require.NoError(t, err)
-	require.Equal(t, 4, len(profiles))
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+
+	ingester := parcacol.NewIngester(logger, m, table)
+	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "memory",
 	}, {
 		Name:  "job",
 		Value: "default",
-	}}, profiles[0])
+	}}, p, false)
 	require.NoError(t, err)
 
 	api := NewColumnQueryAPI(
@@ -231,19 +230,16 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	p, err := profile.Parse(bytes.NewBuffer(fileContent))
 	require.NoError(t, err)
 	p.TimeNanos = time.Now().UnixNano()
-	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
+
+	ingester := parcacol.NewIngester(logger, m, table)
+	err = ingester.Ingest(ctx, labels.Labels{{
+		Name:  "__name__",
+		Value: "fgprof",
+	}, {
+		Name:  "job",
+		Value: "default",
+	}}, p, false)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(profiles))
-	for _, profile := range profiles {
-		_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
-			Name:  "__name__",
-			Value: "fgprof",
-		}, {
-			Name:  "job",
-			Value: "default",
-		}}, profile)
-		require.NoError(t, err)
-	}
 
 	api := NewColumnQueryAPI(
 		logger,
@@ -328,62 +324,60 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	loc1.ID, err = uuid.FromBytes(id1)
 	require.NoError(t, err)
 
+	stk1 := parcacol.MakeStacktraceKey(&parcacol.SampleNormalizer{
+		Location: []*metastore.Location{loc1},
+	})
+	st1, err := m.CreateStacktrace(ctx, stk1, &metastorepb.Sample{
+		LocationIds: [][]byte{id1},
+	})
+	require.NoError(t, err)
+
 	id2, err := m.CreateLocation(ctx, loc2)
 	require.NoError(t, err)
 	loc2.ID, err = uuid.FromBytes(id2)
 	require.NoError(t, err)
 
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
-		Name:  "__name__",
-		Value: "memory",
-	}, {
-		Name:  "job",
-		Value: "default",
-	}}, &parcaprofile.Profile{
-		Meta: parcaprofile.InstantProfileMeta{
-			Timestamp: 1,
-			SampleType: parcaprofile.ValueType{
-				Type: "alloc_objects",
-				Unit: "count",
-			},
-			PeriodType: parcaprofile.ValueType{
-				Type: "space",
-				Unit: "bytes",
-			},
-		},
-		FlatSamples: map[string]*parcaprofile.Sample{
-			"a": {
-				Location: []*metastore.Location{loc1},
-				Value:    1,
-			},
-		},
+	stk2 := parcacol.MakeStacktraceKey(&parcacol.SampleNormalizer{
+		Location: []*metastore.Location{loc2},
+	})
+	st2, err := m.CreateStacktrace(ctx, stk2, &metastorepb.Sample{
+		LocationIds: [][]byte{id2},
 	})
 	require.NoError(t, err)
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
-		Name:  "__name__",
-		Value: "memory",
-	}, {
-		Name:  "job",
-		Value: "default",
-	}}, &parcaprofile.Profile{
-		Meta: parcaprofile.InstantProfileMeta{
-			Timestamp: 2,
-			SampleType: parcaprofile.ValueType{
-				Type: "alloc_objects",
-				Unit: "count",
-			},
-			PeriodType: parcaprofile.ValueType{
-				Type: "space",
-				Unit: "bytes",
-			},
-		},
-		FlatSamples: map[string]*parcaprofile.Sample{
-			"b": {
-				Location: []*metastore.Location{loc2},
-				Value:    2,
-			},
-		},
-	})
+
+	ingester := parcacol.NewIngester(logger, m, table)
+
+	err = ingester.IngestSamples(ctx, parcacol.Samples{{
+		Name:       "memory",
+		Labels:     labels.Labels{{Name: "job", Value: "default"}},
+		SampleType: "alloc_objects",
+		SampleUnit: "count",
+		PeriodType: "space",
+		PeriodUnit: "bytes",
+
+		Timestamp:  1,
+		Stacktrace: st1[:],
+		Value:      1,
+	}})
+	require.NoError(t, err)
+
+	err = ingester.IngestSamples(ctx, parcacol.Samples{{
+		Name:       "memory",
+		Labels:     labels.Labels{{Name: "job", Value: "default"}},
+		SampleType: "alloc_objects",
+		SampleUnit: "count",
+		PeriodType: "space",
+		PeriodUnit: "bytes",
+
+		Timestamp:  2,
+		Stacktrace: st2[:],
+		Value:      2,
+	}})
+	require.NoError(t, err)
+
+	_, err = m.GetStacktraceByIDs(ctx, st1[:])
+	require.NoError(t, err)
+	_, err = m.GetStacktraceByIDs(ctx, st2[:])
 	require.NoError(t, err)
 
 	api := NewColumnQueryAPI(
@@ -532,19 +526,16 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	require.NoError(t, err)
 	p, err := profile.Parse(bytes.NewBuffer(fileContent))
 	require.NoError(t, err)
-	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
+
+	ingester := parcacol.NewIngester(logger, m, table)
+	err = ingester.Ingest(ctx, labels.Labels{{
+		Name:  "__name__",
+		Value: "memory",
+	}, {
+		Name:  "job",
+		Value: "default",
+	}}, p, false)
 	require.NoError(t, err)
-	require.Equal(t, 4, len(profiles))
-	for _, prof := range profiles {
-		_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
-			Name:  "__name__",
-			Value: "memory",
-		}, {
-			Name:  "job",
-			Value: "default",
-		}}, prof)
-		require.NoError(t, err)
-	}
 
 	table.Sync()
 
@@ -603,17 +594,15 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	require.NoError(t, err)
 	p, err := profile.Parse(bytes.NewBuffer(fileContent))
 	require.NoError(t, err)
-	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
-	require.NoError(t, err)
-	require.Equal(t, 4, len(profiles))
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+
+	ingester := parcacol.NewIngester(logger, m, table)
+	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "memory",
 	}, {
 		Name:  "job",
 		Value: "default",
-	}}, profiles[0])
-	require.NoError(t, err)
+	}}, p, false)
 
 	api := NewColumnQueryAPI(
 		logger,
@@ -667,17 +656,15 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	require.NoError(t, err)
 	p, err := profile.Parse(bytes.NewBuffer(fileContent))
 	require.NoError(t, err)
-	profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
-	require.NoError(t, err)
-	require.Equal(t, 4, len(profiles))
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
+
+	ingester := parcacol.NewIngester(logger, m, table)
+	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "memory",
 	}, {
 		Name:  "job",
 		Value: "default",
-	}}, profiles[0])
-	require.NoError(t, err)
+	}}, p, false)
 
 	api := NewColumnQueryAPI(
 		logger,
