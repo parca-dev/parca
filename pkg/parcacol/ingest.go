@@ -110,27 +110,35 @@ func (ing Ingester) Ingest(ctx context.Context, inLs labels.Labels, p *profile.P
 			}
 		}
 
-		buffer, err := samples.ToBuffer(Schema())
-		if err != nil {
-			return fmt.Errorf("failed to convert samples to buffer: %w", err)
-		}
-
-		buffer.Sort()
-
-		// This is necessary because sorting a buffer makes concurrent reading not
-		// safe as the internal pages are cyclically sorted at read time. Cloning
-		// executes the cyclic sort once and makes the resulting buffer safe for
-		// concurrent reading as it no longer has to perform the cyclic sorting at
-		// read time. This should probably be improved in the parquet library.
-		buffer, err = buffer.Clone()
-		if err != nil {
+		if err := ing.IngestSamples(ctx, samples); err != nil {
 			return err
 		}
+	}
 
-		_, err = ing.table.InsertBuffer(ctx, buffer)
-		if err != nil {
-			return fmt.Errorf("failed to insert buffer: %w", err)
-		}
+	return nil
+}
+
+func (ing Ingester) IngestSamples(ctx context.Context, samples Samples) error {
+	buffer, err := samples.ToBuffer(Schema())
+	if err != nil {
+		return fmt.Errorf("failed to convert samples to buffer: %w", err)
+	}
+
+	buffer.Sort()
+
+	// This is necessary because sorting a buffer makes concurrent reading not
+	// safe as the internal pages are cyclically sorted at read time. Cloning
+	// executes the cyclic sort once and makes the resulting buffer safe for
+	// concurrent reading as it no longer has to perform the cyclic sorting at
+	// read time. This should probably be improved in the parquet library.
+	buffer, err = buffer.Clone()
+	if err != nil {
+		return err
+	}
+
+	_, err = ing.table.InsertBuffer(ctx, buffer)
+	if err != nil {
+		return fmt.Errorf("failed to insert buffer: %w", err)
 	}
 
 	return nil
@@ -174,7 +182,7 @@ type sampleMeta struct {
 }
 
 func (pn *profileNormalizer) mapSample(ctx context.Context, s *profile.Sample, meta sampleMeta, index int, normalized bool) (*Sample, bool, error) {
-	sn := &sampleNormalizer{
+	sn := &SampleNormalizer{
 		Location: make([]*metastore.Location, len(s.Location)),
 		Label:    make(map[string]string, len(s.Label)),
 		NumLabel: make(map[string]int64, len(s.NumLabel)),
@@ -211,7 +219,7 @@ func (pn *profileNormalizer) mapSample(ctx context.Context, s *profile.Sample, m
 	// Check memoization table. Must be done on the remapped location to
 	// account for the remapped mapping. Add current values to the
 	// existing sample.
-	k := makeStacktraceKey(sn)
+	k := MakeStacktraceKey(sn)
 
 	stacktraceUUID, err := pn.metaStore.GetStacktraceByKey(ctx, k)
 	if err != nil && err != metastore.ErrStacktraceNotFound {
@@ -272,7 +280,7 @@ func (pn *profileNormalizer) mapSample(ctx context.Context, s *profile.Sample, m
 	return pn.samples[string(stacktraceUUID[:])], true, nil
 }
 
-type sampleNormalizer struct {
+type SampleNormalizer struct {
 	Location []*metastore.Location
 	Label    map[string]string
 	NumLabel map[string]int64
@@ -441,10 +449,10 @@ func (pn *profileNormalizer) mapFunction(ctx context.Context, src *profile.Funct
 	return f, nil
 }
 
-type stacktraceKey []byte
+type StacktraceKey []byte
 
-// makeStacktraceKey generates stacktraceKey to be used as a key for maps.
-func makeStacktraceKey(sample *sampleNormalizer) stacktraceKey {
+// MakeStacktraceKey generates StacktraceKey to be used as a key for maps.
+func MakeStacktraceKey(sample *SampleNormalizer) StacktraceKey {
 	numLocations := len(sample.Location)
 	if numLocations == 0 {
 		return []byte{}
@@ -453,40 +461,25 @@ func makeStacktraceKey(sample *sampleNormalizer) stacktraceKey {
 	locationLength := (16 * numLocations) + (numLocations - 1)
 
 	labelsLength := 0
-	// TODO
-	//labelName := make([]string, 0, len(sample.Label))
-	//for l, vs := range sample.Label {
-	//	labelName = append(labelName, l)
-	//
-	//	labelsLength += len(l) + 2 // +2 for the quotes
-	//	for _, v := range vs {
-	//		labelsLength += len(v) + 2 // +2 for the quotes
-	//	}
-	//	labelsLength += len(vs) - 1 // spaces
-	//	labelsLength += 2           // square brackets
-	//}
-	//sort.Strings(labelName)
+	labelNames := make([]string, 0, len(sample.Label))
+	for k, v := range sample.Label {
+		labelNames = append(labelNames, k)
+		labelsLength += len(k) + len(v) + 4 + 1 // 4 for quotes, 1 for colon
+	}
+	sort.Strings(labelNames)
 
 	numLabelsLength := 0
-	// TODO
-	//numLabelNames := make([]string, 0, len(sample.NumLabel))
-	//for l, int64s := range sample.NumLabel {
-	//	numLabelNames = append(numLabelNames, l)
-	//
-	//	numLabelsLength += len(l) + 2      // +2 for the quotes
-	//	numLabelsLength += 2               // square brackets
-	//	numLabelsLength += 8 * len(int64s) // 8*8=64bit
-	//
-	//	if len(sample.NumUnit[l]) > 0 {
-	//		for i := range int64s {
-	//			numLabelsLength += len(sample.NumUnit[l][i]) + 2 // numUnit string +2 for quotes
-	//		}
-	//
-	//		numLabelsLength += 2               // square brackets
-	//		numLabelsLength += len(int64s) - 1 // spaces
-	//	}
-	//}
-	//sort.Strings(numLabelNames)
+	numLabelsNames := make([]string, 0, len(sample.NumLabel))
+	for k := range sample.NumLabel {
+		numLabelsNames = append(numLabelsNames, k)
+		numLabelsLength += len(k) + 2                 // key + 2 quotes
+		numLabelsLength += 2                          // colon + curly brace
+		numLabelsLength += len(sample.NumUnit[k]) + 2 // unit + 2 quotes
+		numLabelsLength += 1                          // colon
+		numLabelsLength += 8                          // 64bit
+		numLabelsLength += 1                          // curly brace
+	}
+	sort.Strings(numLabelsNames)
 
 	length := locationLength + labelsLength + numLabelsLength
 	key := make([]byte, 0, length)
@@ -498,58 +491,35 @@ func makeStacktraceKey(sample *sampleNormalizer) stacktraceKey {
 		}
 	}
 
-	// TODO
-	//for i := 0; i < len(sample.Label); i++ {
-	//	l := labelName[i]
-	//	vs := sample.Label[l]
-	//	key = append(key, '"')
-	//	key = append(key, l...)
-	//	key = append(key, '"')
-	//
-	//	key = append(key, '[')
-	//	for i, v := range vs {
-	//		key = append(key, '"')
-	//		key = append(key, v...)
-	//		key = append(key, '"')
-	//		if i != len(vs)-1 {
-	//			key = append(key, ' ')
-	//		}
-	//	}
-	//	key = append(key, ']')
-	//}
+	for i := 0; i < len(sample.Label); i++ {
+		l := labelNames[i]
+		v := sample.Label[l]
+		key = append(key, '"')
+		key = append(key, l...)
+		key = append(key, '"')
+		key = append(key, ':')
+		key = append(key, '"')
+		key = append(key, v...)
+		key = append(key, '"')
+	}
 
-	// TODO
-	//for i := 0; i < len(sample.NumLabel); i++ {
-	//	l := numLabelNames[i]
-	//	int64s := sample.NumLabel[l]
-	//
-	//	key = append(key, '"')
-	//	key = append(key, l...)
-	//	key = append(key, '"')
-	//
-	//	key = append(key, '[')
-	//	for _, v := range int64s {
-	//		// Writing int64 to pre-allocated key by shifting per byte
-	//		for shift := 56; shift >= 0; shift -= 8 {
-	//			key = append(key, byte(v>>shift))
-	//		}
-	//	}
-	//	key = append(key, ']')
-	//
-	//	key = append(key, '[')
-	//	for i := range int64s {
-	//		if len(sample.NumUnit[l]) > 0 {
-	//			s := sample.NumUnit[l][i]
-	//			key = append(key, '"')
-	//			key = append(key, s...)
-	//			key = append(key, '"')
-	//			if i != len(int64s)-1 {
-	//				key = append(key, ' ')
-	//			}
-	//		}
-	//	}
-	//	key = append(key, ']')
-	//}
+	for i := 0; i < len(sample.NumLabel); i++ {
+		l := numLabelsNames[i]
+		v := sample.NumLabel[l]
+		key = append(key, '"')
+		key = append(key, l...)
+		key = append(key, '"')
+		key = append(key, ':')
+		key = append(key, '{')
+		key = append(key, '"')
+		key = append(key, sample.NumUnit[l]...)
+		key = append(key, '"')
+		key = append(key, ':')
+		for shift := 56; shift >= 0; shift -= 8 {
+			key = append(key, byte(v>>shift))
+		}
+		key = append(key, '}')
+	}
 
 	return key
 }
