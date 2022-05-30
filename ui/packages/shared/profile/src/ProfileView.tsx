@@ -199,16 +199,14 @@ export const ProfileView = ({
                   </div>
 
                   <div className="w-1/2">
-                    <ProfileIcicleGraph
-                      curPath={curPath}
-                      setNewCurPath={setNewCurPath}
-                      graph={
-                        response?.report.oneofKind === 'flamegraph'
-                          ? response.report.flamegraph
-                          : undefined
-                      }
-                      sampleUnit={sampleUnit}
-                    />
+                    {response !== null && response.report.oneofKind === 'flamegraph' && (
+                      <ProfileIcicleGraph
+                        curPath={curPath}
+                        setNewCurPath={setNewCurPath}
+                        graph={response.report.flamegraph}
+                        sampleUnit={sampleUnit}
+                      />
+                    )}
                   </div>
                 </>
               )}
