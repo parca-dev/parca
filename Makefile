@@ -63,6 +63,7 @@ check-license:
 .PHONY: go/test
 go/test:
 	 go test -v `go list ./...`
+	 go test -run=. -bench=. -benchtime=1x `go list ./...` # run benchmark with one iteration to make sure they work
 
 VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
 
