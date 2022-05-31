@@ -48,6 +48,21 @@ func NewIngester(logger log.Logger, metaStore metastore.ProfileMetaStore, table 
 var ErrMissingNameLabel = errors.New("missing __name__ label")
 
 func (ing Ingester) Ingest(ctx context.Context, inLs labels.Labels, p *profile.Profile, normalized bool) error {
+	samples, err := ing.ConvertPProf(ctx, inLs, p, normalized)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range samples {
+		if err := ing.IngestSamples(ctx, s); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ing Ingester) ConvertPProf(ctx context.Context, inLs labels.Labels, p *profile.Profile, normalized bool) ([]Samples, error) {
 	// We need to extract the name from the labels into a separate column.
 	// The labels are the same excluding the __name__.
 	var name string
@@ -60,10 +75,11 @@ func (ing Ingester) Ingest(ctx context.Context, inLs labels.Labels, p *profile.P
 		}
 	}
 	if name == "" {
-		return ErrMissingNameLabel
+		return nil, ErrMissingNameLabel
 	}
 	sort.Sort(ls)
 
+	samples := make([]Samples, 0, len(p.SampleType))
 	for i := range p.SampleType {
 		pn := &profileNormalizer{
 			logger:    ing.logger,
@@ -76,7 +92,7 @@ func (ing Ingester) Ingest(ctx context.Context, inLs labels.Labels, p *profile.P
 		}
 
 		if p.TimeNanos == 0 {
-			return errors.New("timestamp must not be zero")
+			return nil, errors.New("timestamp must not be zero")
 		}
 		if len(p.Sample) == 0 {
 			// Ignore profiles with no samples
@@ -96,11 +112,12 @@ func (ing Ingester) Ingest(ctx context.Context, inLs labels.Labels, p *profile.P
 			Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
 		}
 
-		samples := make(Samples, 0, len(p.Sample))
+		// All samples for this sample type
+		typeSamples := make(Samples, 0, len(p.Sample))
 		for _, s := range p.Sample {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil, ctx.Err()
 			default:
 				if isZeroSample(s) {
 					continue
@@ -116,19 +133,16 @@ func (ing Ingester) Ingest(ctx context.Context, inLs labels.Labels, p *profile.P
 
 				sample, _, err := pn.mapSample(ctx, s, meta, i, normalized)
 				if err != nil {
-					return err
+					return nil, err
 				}
 
-				samples = append(samples, sample)
+				typeSamples = append(typeSamples, sample)
 			}
 		}
-
-		if err := ing.IngestSamples(ctx, samples); err != nil {
-			return err
-		}
+		samples = append(samples, typeSamples)
 	}
 
-	return nil
+	return samples, nil
 }
 
 func (ing Ingester) IngestSamples(ctx context.Context, samples Samples) error {
