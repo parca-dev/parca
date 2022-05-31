@@ -67,7 +67,7 @@
     "eslint-plugin-standard": "^5.0.0",
     "fs-extra": "^10.0.0",
     "globby": "^13.1.1",
-    "husky": "^7.0.4",
+    "husky": "^8.0.1",
     "identity-obj-proxy": "^3.0.0",
     "internal-ip": "^7.0.0",
     "jest": "^27.4.7",
