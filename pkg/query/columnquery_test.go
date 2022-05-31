@@ -603,6 +603,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		Name:  "job",
 		Value: "default",
 	}}, p, false)
+	require.NoError(t, err)
 
 	api := NewColumnQueryAPI(
 		logger,
@@ -665,6 +666,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		Name:  "job",
 		Value: "default",
 	}}, p, false)
+	require.NoError(t, err)
 
 	api := NewColumnQueryAPI(
 		logger,
