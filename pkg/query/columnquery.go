@@ -674,6 +674,7 @@ func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, rep
 	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.
 	diff := &profile.StacktraceSamples{}
 
+	// TODO: Use parcacol.Sample for comparing these
 	for i := range compare.Samples {
 		diff.Samples = append(diff.Samples, &profile.Sample{
 			Location:  compare.Samples[i].Location,

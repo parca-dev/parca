@@ -3,3 +3,7 @@ debug_info:
     type: "FILESYSTEM"
     config:
       directory: "./tmp"
+  cache:
+    type: "FILESYSTEM"
+    config:
+      directory: "./tmp"
