@@ -10215,9 +10215,9 @@ eslint-plugin-jest@^25.3.0:
     "@typescript-eslint/experimental-utils" "^5.0.0"
 
 eslint-plugin-jest@^26.1.1:
-  version "26.2.2"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-jest/-/eslint-plugin-jest-26.2.2.tgz#74e000544259f1ef0462a609a3fc9e5da3768f6c"
-  integrity sha512-etSFZ8VIFX470aA6kTqDPhIq7YWe0tjBcboFNV3WeiC18PJ/AVonGhuTwlmuz2fBkH8FJHA7JQ4k7GsQIj1Gew==
+  version "26.4.6"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-jest/-/eslint-plugin-jest-26.4.6.tgz#9d8184c1ecf077722a20cc236c7e14f4e263606f"
+  integrity sha512-R3mq1IepnhtsukHQsWxdyKra3OVwYB+N4k8i45ndqSfr8p9KZV6G+EIUt1Z7hzAh4KlsbXG+nCTlNeGFLFLNvA==
   dependencies:
     "@typescript-eslint/utils" "^5.10.0"
 
