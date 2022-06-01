@@ -1,5 +1,7 @@
 import format from 'date-fns/format';
 
+export const SEARCH_STRING_COLOR = '#e39c9c';
+
 export const capitalize = (a: string): string =>
   a
     .split(' ')
@@ -254,4 +256,12 @@ export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean)
   const color = diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
 
   return color;
+};
+
+export const isSearchMatch = (currentSearchString: string | undefined, name: string) => {
+  return (
+    currentSearchString !== undefined &&
+    currentSearchString !== '' &&
+    name.includes(currentSearchString)
+  );
 };

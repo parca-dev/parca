@@ -4,7 +4,7 @@ import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {FlamegraphTooltip} from '@parca/components';
-import {getLastItem, diffColor} from '@parca/functions';
+import {getLastItem, diffColor, isSearchMatch, SEARCH_STRING_COLOR} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 
 interface IcicleGraphProps {
@@ -80,11 +80,6 @@ function IcicleRect({
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
 
-  const isSearchMatch =
-    currentSearchString !== undefined &&
-    currentSearchString !== '' &&
-    name.includes(currentSearchString);
-
   return (
     <g
       transform={`translate(${x + 1}, ${y + 1})`}
@@ -99,7 +94,7 @@ function IcicleRect({
         width={width - 1}
         height={height - 1}
         style={{
-          fill: isSearchMatch ? '#e39c9c' : color,
+          fill: isSearchMatch(currentSearchString, name) ? SEARCH_STRING_COLOR : color,
         }}
       />
       {width > 5 && (
