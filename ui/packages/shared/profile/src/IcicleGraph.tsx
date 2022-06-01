@@ -94,7 +94,13 @@ function IcicleRect({
         width={width - 1}
         height={height - 1}
         style={{
-          fill: isSearchMatch(currentSearchString, name) ? SEARCH_STRING_COLOR : color,
+          opacity:
+            currentSearchString !== undefined &&
+            currentSearchString !== '' &&
+            !isSearchMatch(currentSearchString, name)
+              ? 0.5
+              : 1,
+          fill: color,
         }}
       />
       {width > 5 && (

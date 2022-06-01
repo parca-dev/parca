@@ -191,9 +191,12 @@ export const TopTable = ({
                   key={index}
                   className="hover:bg-[#62626212] dark:hover:bg-[#ffffff12]"
                   style={{
-                    backgroundColor: isSearchMatch(currentSearchString, name)
-                      ? SEARCH_STRING_COLOR
-                      : '',
+                    opacity:
+                      currentSearchString !== undefined &&
+                      currentSearchString !== '' &&
+                      !isSearchMatch(currentSearchString, name)
+                        ? 0.5
+                        : 1,
                   }}
                 >
                   <td className="text-xs py-1.5 pl-2">{name}</td>
