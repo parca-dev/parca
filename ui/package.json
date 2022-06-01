@@ -72,7 +72,7 @@
     "internal-ip": "^7.0.0",
     "jest": "^27.4.7",
     "jest-runtime": "^28.0.2",
-    "lerna": "^4.0.0",
+    "lerna": "^5.0.0",
     "lint-staged": "^12.1.7",
     "local-web-server": "^5.1.1",
     "next-transpile-modules": "^9.0.0",
