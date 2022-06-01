@@ -11,7 +11,6 @@ on:
       - ui/**
       - cmd/**
       - pkg/**
-      - internal/**
       - gen/**
   pull_request:
     branches: [ main ]
@@ -24,7 +23,6 @@ on:
       - ui/**
       - cmd/**
       - pkg/**
-      - internal/**
       - gen/**
 
 permissions:
