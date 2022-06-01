@@ -6,13 +6,13 @@ docker_prune_settings(num_builds=5)
 docker_build(
     'parca.io/parca/parca:dev', '.',
     dockerfile='Dockerfile.go.dev',
-    only=['./cmd', './pkg', './proto', './gen', './internal', './go.mod', './go.sum', 'parca.yaml'],
+    only=['./cmd', './pkg', './proto', './gen', './go.mod', './go.sum', 'parca.yaml'],
 )
 
 ## All-in-one
 # docker_build('parca.io/parca/parca:dev', '.',
 #     dockerfile='Dockerfile.dev',
-#     only=['./cmd', './pkg', './proto', './gen', './internal', './ui', './go.mod', './go.sum', 'parca.yaml'],
+#     only=['./cmd', './pkg', './proto', './gen', './ui', './go.mod', './go.sum', 'parca.yaml'],
 # )
 
 k8s_yaml('deploy/tilt/parca-server-deployment.yaml')

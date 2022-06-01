@@ -21,7 +21,6 @@ RUN mkdir -p /app/ui/packages/app/web/build && \
 
 COPY ./cmd /app/cmd
 COPY ./pkg /app/pkg
-COPY ./internal /app/internal
 COPY ./proto /app/proto
 COPY ./gen /app/gen
 

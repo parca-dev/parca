@@ -15,13 +15,13 @@
 package addr2line
 
 import (
+	"debug/elf"
 	"testing"
 
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/internal/go/debug/elf"
 	"github.com/parca-dev/parca/pkg/metastore"
 )
 

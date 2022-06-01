@@ -51,7 +51,7 @@ endif
 # Check https://github.com/mvdan/gofumpt#installation for instructions.
 .PHONY: go/fmt
 go/fmt: gofumpt
-	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto | grep -v internal/go)
+	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto)
 
 go/lint: check-license
 	golangci-lint run
@@ -63,7 +63,7 @@ check-license:
 .PHONY: go/test
 go/test:
 	go test -v `go list ./...`
-	mkdir -m 777 tmp/
+	mkdir -pm 777 tmp/
 	go test -run=. -bench=. -benchtime=1x `go list ./...` # run benchmark with one iteration to make sure they work
 
 VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
