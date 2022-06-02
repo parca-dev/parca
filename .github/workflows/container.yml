@@ -41,8 +41,8 @@ jobs:
       # To build multi-arch images, see also: https://github.com/redhat-actions/buildah-build#multi-arch-builds
       - name: Install qemu dependency
         run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-user-static
+          sudo apt-get update -y
+          sudo apt-get install -y binfmt-support qemu-user-static
 
       - name: Build container
         run: make container
