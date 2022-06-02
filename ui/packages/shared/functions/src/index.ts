@@ -259,9 +259,7 @@ export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean)
 };
 
 export const isSearchMatch = (currentSearchString: string | undefined, name: string) => {
-  return (
-    currentSearchString !== undefined &&
-    currentSearchString !== '' &&
-    name.includes(currentSearchString)
-  );
+  if (!currentSearchString) return;
+
+  return name.includes(currentSearchString);
 };
