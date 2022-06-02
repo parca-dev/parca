@@ -9,7 +9,7 @@ WORKDIR /app
 COPY ui/packages/shared ./packages/shared
 COPY ui/packages/app/web/package.json ./packages/app/web/package.json
 COPY ui/package.json ui/yarn.lock ./
-RUN yarn workspace @parca/web install --frozen-lockfile
+RUN yarn workspace @parca/web install --frozen-lockfile --network-timeout 100000
 
 # Rebuild the source code only when needed
 FROM ${NODE_BUILDER_BASE} AS ui-builder
