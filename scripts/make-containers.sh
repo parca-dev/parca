@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set +x
+set +eox pipefail
 
 VERSION="$1"
 COMMIT="$2"
