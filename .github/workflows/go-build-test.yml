@@ -15,30 +15,150 @@ on:
       - 'go.sum'
 
 jobs:
-  build-and-test:
+  build-and-test-multi-arch:
     runs-on: ubuntu-latest
+    name: Build on ${{ matrix.arch }}
+    # Run steps on a matrix of 2 arch.
+    strategy:
+      matrix:
+        arch:
+          - x64
+          # Names as per arch/ubuntu docker images.
+          - arm64v8
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.18'
+        check-latest: true
 
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.18'
-          check-latest: true
+    - name: Build UI
+      if: ${{ matrix.arch == 'x64' }}
+      run: |
+        make ui/build
 
-      - name: Build UI
-        run: make ui/build
+    - name: Test
+      if: ${{ matrix.arch == 'x64' }}
+      run: |
+        make go/test
 
-      - name: Test
-        run: make go/test
+    - name: Build
+      if: ${{ matrix.arch == 'x64' }}
+      run: |
+        make build
 
-      - name: Build
-        run: make build
+    - name: Archive generatated artifacts
+      if: ${{ matrix.arch == 'x64' }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: parca-bin
+        if-no-files-found: error
+        path: |
+          bin
 
-      - name: Archive generatated artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: parca-bin
-          if-no-files-found: error
-          path: |
-            bin
+    - name: 'Run ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'x64' }}
+      run: |
+        # Install yarn packages initially on AMD machine so that it can be mounted as volume
+        # on platform specific docker container. This will save time as `yarn install` takes a lot of time
+        # on ARM container running using QEMU.
+        cd ui && yarn install && cd -
+        export RUNNER_ALLOW_RUNASROOT="1"
+
+        # Install QEMU and it's dependencies.
+        sudo apt-get install qemu binfmt-support qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+        # Run platform specific based ubuntu image. Run it as a daemon in the background.
+        # Sleep the container for 1 day so that it keeps running until
+        # other steps are completed and the steps below can use the same container.
+        ARCH=${{ matrix.arch }}
+        # Ubuntu image name are different from arch image. So using this different variable.
+        IMAGE=${{ matrix.arch }}
+        if [ "$ARCH" == "arm64v8" ]; then
+          ARCH="arm64"
+        fi &&\
+        docker run --name ${{ matrix.arch}}_ubuntu -d --platform linux/$ARCH -v `pwd`:/parca $IMAGE/ubuntu /bin/bash -c \
+        'uname -m &&\
+        sleep 1d'
+
+    - name: 'Install packages on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'x64' }}
+      run: |
+        # Install necessary packages on the ${{ matrix.arch}}_ubuntu container which will be used
+        # by below steps.
+        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
+        '# Update the container packages.
+        apt-get update -y -q &&\
+        apt-get upgrade -y -q &&\
+        apt-get install -y -q wget make git file build-essential'
+
+    - name: 'Setup Go on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'x64' }}
+      run: |
+        export RUNNER_ALLOW_RUNASROOT="1"
+        # Install Golang, which will be used to build the code.
+        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
+        'ARCH=${{ matrix.arch }} && \
+        if [ "$ARCH" == "arm64v8" ]; then
+          ARCH="arm64"
+        fi &&\
+        wget https://dl.google.com/go/go1.18.2.linux-$ARCH.tar.gz &&\
+        tar -C /usr/local/ -xzf go1.18.2.linux-$ARCH.tar.gz &&\
+        export PATH=$PATH:/usr/local/go/bin && \
+        go version'
+
+    - name: 'Setup yarn on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'x64' }}
+      run: |
+        export RUNNER_ALLOW_RUNASROOT="1"
+        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
+        '# Install LTS version of node.
+        ARCH=${{ matrix.arch }} &&\
+        if [ "$ARCH" == "arm64v8" ]; then
+          ARCH="arm64"
+        fi
+        cd /tmp && wget https://nodejs.org/dist/v16.15.0/node-v16.15.0-linux-$ARCH.tar.gz &&\
+        tar -xf node-v16.15.0-linux-$ARCH.tar.gz &&\
+        mv node-v16.15.0-linux-$ARCH/bin/* /usr/local/bin/ &&\
+        mv node-v16.15.0-linux-$ARCH/lib/node_modules/ /usr/local/lib/ &&\
+        cd - &&\
+        node -v && npm -v &&\
+
+        # Install yarn globally.
+        npm install -g yarn &&\
+        yarn --version'
+
+    - name: 'Build UI on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'x64' }}
+      run: |
+        # No need to run `yarn install` again. `node_modules` folder is already
+        # present on the machine using docker volume. This saves a lot of time.
+        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
+        'cd parca/ui &&\
+        yarn workspace @parca/web build'
+
+    - name: 'Test on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'x64' }}
+      run: |
+        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
+        '# Run Go Tests. This is a very slow operation on ARM container.
+        export PATH=$PATH:/usr/local/go/bin &&\
+        cd parca &&\
+        go test -buildvcs=false -v ./...'
+
+    - name: 'Build on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'x64' }}
+      run: |
+        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
+        '# Remove the existing binary created by amd64 machine.
+        export PATH=$PATH:/usr/local/go/bin &&\
+        cd parca &&\
+        rm -rf ./bin &&\
+
+        # Build the code.
+        go mod tidy && mkdir -p ./bin && go build -buildvcs=false -o bin/ ./cmd/parca &&\
+
+        # Check whether parca binary exist or not.
+        [ -f ./bin/parca ] && echo 'File Exists' && exit 0'
