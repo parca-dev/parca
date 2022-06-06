@@ -18,6 +18,10 @@ else
 endif
 VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags 2>/dev/null || echo '$(BRANCH)$(COMMIT)'))
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
+HAVE_AVX2 := $(shell grep avx2 /proc/cpuinfo)
+ifneq ($(.SHELLSTATUS),0)
+	GO_BUILD_TAGS := -tags purego
+endif
 
 .PHONY: build
 build: ui/build go/bin
@@ -34,7 +38,7 @@ go/deps:
 .PHONY: go/bin
 go/bin: go/deps
 	mkdir -p ./bin
-	go build -o bin/ ./cmd/parca
+	go build $(GO_BUILD_TAGS) -o bin/ ./cmd/parca
 
 .PHONY: format
 format: go/fmt proto/format check-license
