@@ -1,5 +1,6 @@
-import Button, {ButtonColor} from './Button';
+import Button from './Button';
 import ButtonGroup from './ButtonGroup';
+import Callgraph from './Callgraph';
 import Card from './Card';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
 import DateTimePicker from './DateTimePicker';
@@ -13,17 +14,19 @@ import Pill, {PillVariant} from './Pill';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileMetricsGraph from './ProfileMetricsGraph';
 import ProfileSelector from './ProfileSelector';
+import ResponsiveSvg from './ResponsiveSvg';
 import Select from './Select';
 import type {SelectElement} from './Select';
 import Spinner from './Spinner';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
 
-export type {ButtonColor, PillVariant, SelectElement};
+export type {PillVariant, SelectElement};
 
 export {
   Button,
   ButtonGroup,
+  Callgraph,
   Card,
   DateTimePicker,
   DateTimeRange,
@@ -40,6 +43,7 @@ export {
   ProfileExplorer,
   ProfileMetricsGraph,
   ProfileSelector,
+  ResponsiveSvg,
   Select,
   Spinner,
   Tab,

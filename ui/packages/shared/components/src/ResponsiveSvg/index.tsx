@@ -1,8 +1,8 @@
-import {Children, ReactChild} from 'react';
+import {useEffect, useState, Children, ReactNode} from 'react';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 interface Props {
-  children: ReactChild;
+  children: ReactNode;
   [x: string]: any;
 }
 
@@ -18,11 +18,18 @@ const addPropsToChildren = (children, props): any => {
   return Children.map(children, addProps);
 };
 
-export const ResponsiveSvg = (props: Props) => {
+const ResponsiveSvg = (props: Props) => {
   const {children} = props;
   const {ref, dimensions} = useContainerDimensions();
-  const {width, height} = dimensions ?? {width: 0, height: 0};
+  const {width} = dimensions ?? {width: 0};
+  const [height, setHeight] = useState(0);
   const childrenWithDimensions = addPropsToChildren(children, {width, height});
+
+  useEffect(() => {
+    if (ref.current != null) {
+      setHeight(ref?.current.getBoundingClientRect().height);
+    }
+  }, [width]);
 
   return (
     <div ref={ref} className="w-full">
@@ -32,3 +39,5 @@ export const ResponsiveSvg = (props: Props) => {
     </div>
   );
 };
+
+export default ResponsiveSvg;
