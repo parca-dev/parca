@@ -1,4 +1,4 @@
-import {ResponsiveSvg} from '../ResponsiveSvg';
+import ResponsiveSvg from '../ResponsiveSvg';
 import {parsePos, getPathDataFromPos} from './utils';
 
 interface Props {
