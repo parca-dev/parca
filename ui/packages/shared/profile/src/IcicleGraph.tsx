@@ -325,8 +325,9 @@ export default function IcicleGraph({
       />
       <svg
         className="font-robotoMono"
+        width={width}
+        height={height}
         onMouseMove={onMouseMove}
-        viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="xMinYMid"
         ref={svg}
       >
