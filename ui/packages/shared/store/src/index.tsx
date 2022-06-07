@@ -1,7 +1,12 @@
 import store from './store';
 import {useAppDispatch, useAppSelector} from './hooks';
 import {selectDarkMode, setDarkMode} from './slices/uiSlice';
-import {selectCompareMode, setCompare} from './slices/profileSlice';
+import {
+  selectCompareMode,
+  setCompare,
+  selectSearchNodeString,
+  setSearchNodeString,
+} from './slices/profileSlice';
 
 export {
   store,
@@ -11,4 +16,6 @@ export {
   setCompare,
   selectDarkMode,
   setDarkMode,
+  selectSearchNodeString,
+  setSearchNodeString,
 };

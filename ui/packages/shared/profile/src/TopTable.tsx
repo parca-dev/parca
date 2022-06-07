@@ -1,7 +1,6 @@
-import React, {useEffect, useState} from 'react';
-import * as parca_query_v1alpha1_query_pb from '@parca/client/src/parca/query/v1alpha1/query_pb';
-import {getLastItem, valueFormatter} from '@parca/functions';
-import {useAppSelector, selectCompareMode} from '@parca/store';
+import React from 'react';
+import {getLastItem, valueFormatter, isSearchMatch, SEARCH_STRING_COLOR} from '@parca/functions';
+import {useAppSelector, selectCompareMode, selectSearchNodeString} from '@parca/store';
 import {
   QueryResponse,
   QueryServiceClient,
@@ -107,6 +106,7 @@ export const TopTable = ({
 }: ProfileViewProps): JSX.Element => {
   const {response, error} = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP);
   const {items, requestSort, sortConfig} = useSortableData(response);
+  const currentSearchString = useAppSelector(selectSearchNodeString);
 
   const compareMode = useAppSelector(selectCompareMode);
 
@@ -184,22 +184,36 @@ export const TopTable = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
-            {items?.map((report, index) => (
-              <tr key={index} className="hover:bg-[#62626212] dark:hover:bg-[#ffffff12]">
-                <td className="text-xs py-1.5 pl-2">{RowLabel(report.meta)}</td>
-                <td className="text-xs py-1.5 text-right">
-                  {valueFormatter(report.flat, unit, 2)}
-                </td>
-                <td className="text-xs py-1.5 text-right pr-2">
-                  {valueFormatter(report.cumulative, unit, 2)}
-                </td>
-                {compareMode && (
-                  <td className="text-xs py-1.5 text-right pr-2">
-                    {addPlusSign(valueFormatter(report.diff, unit, 2))}
+            {items?.map((report, index) => {
+              const name = RowLabel(report.meta);
+              return (
+                <tr
+                  key={index}
+                  className="hover:bg-[#62626212] dark:hover:bg-[#ffffff12]"
+                  style={{
+                    opacity:
+                      currentSearchString !== undefined &&
+                      currentSearchString !== '' &&
+                      !isSearchMatch(currentSearchString, name)
+                        ? 0.5
+                        : 1,
+                  }}
+                >
+                  <td className="text-xs py-1.5 pl-2">{name}</td>
+                  <td className="text-xs py-1.5 text-right">
+                    {valueFormatter(report.flat, unit, 2)}
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td className="text-xs py-1.5 text-right pr-2">
+                    {valueFormatter(report.cumulative, unit, 2)}
+                  </td>
+                  {compareMode && (
+                    <td className="text-xs py-1.5 text-right pr-2">
+                      {addPlusSign(valueFormatter(report.diff, unit, 2))}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
