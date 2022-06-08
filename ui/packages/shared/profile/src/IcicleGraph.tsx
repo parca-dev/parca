@@ -6,6 +6,7 @@ import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {FlamegraphTooltip} from '@parca/components';
 import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
+import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -144,6 +145,7 @@ export function IcicleGraphNodes({
   curPath,
 }: IcicleGraphNodesProps) {
   const isDarkMode = useAppSelector(selectDarkMode);
+  const isShiftDown = useIsShiftDown();
 
   const nodes =
     curPath.length === 0 ? data : data.filter(d => d != null && curPath[0] === nodeLabel(d));
@@ -183,8 +185,16 @@ export function IcicleGraphNodes({
             ? scaleLinear().domain([0, cumulative]).range([0, totalWidth])
             : xScale;
 
-        const onMouseEnter = () => setHoveringNode(d);
-        const onMouseLeave = () => setHoveringNode(undefined);
+        const onMouseEnter = () => {
+          if (isShiftDown) return;
+
+          setHoveringNode(d);
+        };
+        const onMouseLeave = () => {
+          if (isShiftDown) return;
+
+          setHoveringNode(undefined);
+        };
 
         return (
           <React.Fragment>
@@ -236,14 +246,24 @@ export function IcicleGraphRootNode({
   curPath,
 }: IcicleGraphRootNodeProps) {
   const isDarkMode = useAppSelector(selectDarkMode);
+  const isShiftDown = useIsShiftDown();
 
   const cumulative = parseFloat(node.cumulative);
   const diff = parseFloat(node.diff);
   const color = diffColor(diff, cumulative, isDarkMode);
 
   const onClick = () => setCurPath([]);
-  const onMouseEnter = () => setHoveringNode(node);
-  const onMouseLeave = () => setHoveringNode(undefined);
+  const onMouseEnter = () => {
+    if (isShiftDown) return;
+
+    setHoveringNode(node);
+  };
+  const onMouseLeave = () => {
+    if (isShiftDown) return;
+
+    setHoveringNode(undefined);
+  };
+
   const path = [];
 
   return (
