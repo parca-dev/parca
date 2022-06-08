@@ -2,6 +2,7 @@ import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';
+import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 
 interface FlamegraphTooltipProps {
   x: number;
@@ -113,9 +114,12 @@ const FlamegraphTooltip = ({
   });
 
   const update = popperProps.update;
+  const isShiftDown = useIsShiftDown();
 
   useEffect(() => {
     if (contextElement != null) {
+      if (isShiftDown) return;
+
       virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y);
       update?.();
     }

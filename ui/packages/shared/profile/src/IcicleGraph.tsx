@@ -4,7 +4,7 @@ import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {FlamegraphTooltip} from '@parca/components';
-import {getLastItem, diffColor, isSearchMatch, SEARCH_STRING_COLOR} from '@parca/functions';
+import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 
 interface IcicleGraphProps {
