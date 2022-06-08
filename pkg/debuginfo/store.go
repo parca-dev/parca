@@ -96,6 +96,8 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 		return nil, fmt.Errorf("instantiate cache: %w", err)
 	}
 
+	setMetadataLogger(logger)
+
 	return &Store{
 		logger:           log.With(logger, "component", "debuginfo"),
 		bucket:           bucket,
@@ -182,12 +184,30 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	buildID := req.GetInfo().BuildId
+
 	if err = validateID(buildID); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
 	ctx := stream.Context()
+
+	result, err := fetchMetadataState(ctx, s.bucket, buildID)
+	if err == nil {
+		level.Debug(s.logger).Log("msg", "fetchMetadataState", "result", result)
+
+		switch result {
+		case metadataStateEmpty:
+			// Not created yet.
+		case metadataStateUploaded:
+			// The debug info was fully uploaded.
+		case metadataStateUploading:
+			return status.Error(codes.AlreadyExists, "debuginfo already exists, being uploaded right now")
+		}
+	} else {
+		level.Error(s.logger).Log("msg", "fetchMetadataState failed with", "err", err)
+	}
+
 	found, err := s.find(ctx, buildID)
 	if err != nil {
 		return err
@@ -222,6 +242,11 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		}
 	}
 
+	err = metadataUpdate(ctx, s.bucket, buildID, metadataStateUploading)
+	if err != nil {
+		level.Error(s.logger).Log("msg", "metadataUpdate failed with", "err", err)
+	}
+
 	// At this point we know that we still have a better version of the debug information file,
 	// so let the client upload it.
 	r := &UploadReader{stream: stream}
@@ -231,6 +256,10 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Errorf(codes.Unknown, msg)
 	}
 
+	err = metadataUpdate(ctx, s.bucket, buildID, metadataStateUploaded)
+	if err != nil {
+		level.Error(s.logger).Log("msg", "metadataUpdate failed with", "err", err)
+	}
 	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
 	return stream.SendAndClose(&debuginfopb.UploadResponse{
 		BuildId: buildID,
