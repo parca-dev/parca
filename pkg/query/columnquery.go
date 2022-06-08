@@ -195,10 +195,10 @@ func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
 		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
 
-	sel := make([]*labels.Matcher, 0, len(parsedSelector)-1)
+	sel := make([]*labels.Matcher, 0, len(parsedSelector))
 	var nameLabel *labels.Matcher
 	for _, matcher := range parsedSelector {
-		if matcher.Name == "__name__" {
+		if matcher.Name == labels.MetricName {
 			nameLabel = matcher
 		} else {
 			sel = append(sel, matcher)
