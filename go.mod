@@ -29,13 +29,13 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20220203202831-b7f99f1dbc96
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/arcticdb v0.0.0-20220527133324-4e2f5c4b210e
+	github.com/polarsignals/arcticdb v0.0.0-20220607075621-19ee11509854
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.34.0
 	github.com/prometheus/prometheus v1.8.2-0.20220315145411-881111fec433
 	github.com/segmentio/parquet-go v0.0.0-20220527005452-bf1e4db66515
 	github.com/stretchr/testify v1.7.2
-	github.com/thanos-io/objstore v0.0.0-20220324101945-f2f24637ce2e
+	github.com/thanos-io/objstore v0.0.0-20220324141029-c4f11442aa33
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.32.0
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.7.0
@@ -165,6 +165,7 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/ncw/swift v1.0.53 // indirect
+	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
