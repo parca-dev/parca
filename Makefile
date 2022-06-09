@@ -1,6 +1,6 @@
 CMD_DOCKER ?= docker
 CMD_GIT ?= git
-SHELL := /bin/bash
+SHELL := /usr/bin/env bash
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
 else
