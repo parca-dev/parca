@@ -230,6 +230,27 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
+	reloaders := []config.ComponentReloader{
+		{
+			Name: "scrape_sd",
+			Reloader: func(cfg *config.Config) error {
+				return discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs))
+			},
+		},
+		{
+			Name: "scrape",
+			Reloader: func(cfg *config.Config) error {
+				return m.ApplyConfig(cfg.ScrapeConfigs)
+			},
+		},
+	}
+
+	cfgReloader, err := config.NewConfigReloader(logger, reg, flags.ConfigPath, reloaders)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to instantiate config reloader", "err", err)
+		return err
+	}
+
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 	{
@@ -261,6 +282,15 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		func(_ error) {
 			level.Debug(logger).Log("msg", "scrape manager exiting")
 			m.Stop()
+		},
+	)
+	gr.Add(
+		func() error {
+			return cfgReloader.Run(ctx)
+		},
+		func(_ error) {
+			level.Debug(logger).Log("msg", "config file reloader exiting")
+			cancel()
 		},
 	)
 	parcaserver := server.NewServer(reg, version)
@@ -393,6 +423,27 @@ func runScraper(
 		return err
 	}
 
+	reloaders := []config.ComponentReloader{
+		{
+			Name: "scrape_sd",
+			Reloader: func(cfg *config.Config) error {
+				return discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs))
+			},
+		},
+		{
+			Name: "scrape",
+			Reloader: func(cfg *config.Config) error {
+				return m.ApplyConfig(cfg.ScrapeConfigs)
+			},
+		},
+	}
+
+	cfgReloader, err := config.NewConfigReloader(logger, reg, flags.ConfigPath, reloaders)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to instantiate config reloader", "err", err)
+		return err
+	}
+
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 	gr.Add(
@@ -411,6 +462,15 @@ func runScraper(
 		func(_ error) {
 			level.Debug(logger).Log("msg", "scrape manager exiting")
 			m.Stop()
+		},
+	)
+	gr.Add(
+		func() error {
+			return cfgReloader.Run(ctx)
+		},
+		func(_ error) {
+			level.Debug(logger).Log("msg", "config file reloader exiting")
+			cancel()
 		},
 	)
 
