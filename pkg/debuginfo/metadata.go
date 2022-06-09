@@ -34,8 +34,7 @@ var (
 type metadataState int64
 
 const (
-	// There was an unexpected error. The error will be filled in the return
-	// value
+	// There was an unexpected error. The error will be filled in the return value.
 	metadataStateError metadataState = iota
 	// There's no debug info metadata. This could mean that an older version
 	// uploaded the debug info files, but there's no record of the metadata, yet.
@@ -46,19 +45,43 @@ const (
 	metadataStateUploaded
 )
 
-func (m metadataState) String() string {
-	d := map[metadataState]string{
-		metadataStateError:     "METADATA_STATE_ERROR",
-		metadataStateEmpty:     "METADATA_STATE_EMTPY",
-		metadataStateUploading: "METADATA_STATE_UPLOADING",
-		metadataStateUploaded:  "METADATA_STATE_UPLOADED",
-	}
+var mdStateStr = map[metadataState]string{
+	metadataStateError:     "METADATA_STATE_ERROR",
+	metadataStateEmpty:     "METADATA_STATE_EMPTY",
+	metadataStateUploading: "METADATA_STATE_UPLOADING",
+	metadataStateUploaded:  "METADATA_STATE_UPLOADED",
+}
 
-	val, ok := d[m]
+var strMdState = map[string]metadataState{
+	"METADATA_STATE_ERROR":     metadataStateError,
+	"METADATA_STATE_EMPTY":     metadataStateEmpty,
+	"METADATA_STATE_UPLOADING": metadataStateUploading,
+	"METADATA_STATE_UPLOADED":  metadataStateUploaded,
+}
+
+func (m metadataState) String() string {
+	val, ok := mdStateStr[m]
 	if !ok {
 		return "<not found>"
 	}
 	return val
+}
+
+func (m metadataState) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(mdStateStr[m])
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
+
+func (m *metadataState) UnmarshalJSON(b []byte) error {
+	var s string
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return err
+	}
+	*m = strMdState[s]
+	return nil
 }
 
 type metadataManager struct {
@@ -144,7 +167,6 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 		if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), newData); err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
@@ -156,7 +178,10 @@ func (m *metadataManager) fetch(ctx context.Context, buildID string) (metadataSt
 	}
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
+	_, err = buf.ReadFrom(r)
+	if err != nil {
+		return metadataStateError, err
+	}
 
 	metaData := &metadata{}
 	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {

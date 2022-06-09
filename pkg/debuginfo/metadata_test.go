@@ -15,8 +15,10 @@ package debuginfo
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/go-kit/log"
@@ -75,4 +77,77 @@ func TestMetadata(t *testing.T) {
 	state, err = store.metadataManager.fetch(context.Background(), "fake-build-id")
 	require.NoError(t, err)
 	require.Equal(t, metadataStateUploading, state)
+}
+
+func TestMetadata_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		m       metadata
+		want    string
+		wantErr bool
+	}{
+		{
+			m:    metadata{State: metadataStateEmpty},
+			want: `{"state":"METADATA_STATE_EMPTY","started_upload_at":0,"finished_upload_at":0}`,
+		},
+		{
+			m:    metadata{State: metadataStateError},
+			want: `{"state":"METADATA_STATE_ERROR","started_upload_at":0,"finished_upload_at":0}`,
+		},
+		{
+			m:    metadata{State: metadataStateUploading},
+			want: `{"state":"METADATA_STATE_UPLOADING","started_upload_at":0,"finished_upload_at":0}`,
+		},
+		{
+			m:    metadata{State: metadataStateUploaded},
+			want: `{"state":"METADATA_STATE_UPLOADED","started_upload_at":0,"finished_upload_at":0}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.m.State.String(), func(t *testing.T) {
+			got, err := json.Marshal(tt.m)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			gotStr := string(got)
+			if !reflect.DeepEqual(gotStr, tt.want) {
+				t.Errorf("MarshalJSON() got = %v, want %v", gotStr, tt.want)
+			}
+		})
+	}
+}
+
+func TestMetadata_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		b       []byte
+		want    metadata
+		wantErr bool
+	}{
+		{
+			b:    []byte(`{"state":"METADATA_STATE_EMPTY","started_upload_at":0,"finished_upload_at":0}`),
+			want: metadata{State: metadataStateEmpty},
+		},
+		{
+			b:    []byte(`{"state":"METADATA_STATE_ERROR","started_upload_at":0,"finished_upload_at":0}`),
+			want: metadata{State: metadataStateError},
+		},
+		{
+			b:    []byte(`{"state":"METADATA_STATE_UPLOADING","started_upload_at":0,"finished_upload_at":0}`),
+			want: metadata{State: metadataStateUploading},
+		},
+		{
+			b:    []byte(`{"state":"METADATA_STATE_UPLOADED","started_upload_at":0,"finished_upload_at":0}`),
+			want: metadata{State: metadataStateUploaded},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := metadata{}
+
+			if err := json.Unmarshal(tt.b, &res); (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
