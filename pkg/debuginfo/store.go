@@ -71,7 +71,8 @@ type Store struct {
 	bucket           objstore.Bucket
 	debuginfodClient DebugInfodClient
 
-	symbolizer *symbol.Symbolizer
+	symbolizer      *symbol.Symbolizer
+	metadataManager *metadataManager
 }
 
 // NewStore returns a new debug info store.
@@ -96,14 +97,13 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 		return nil, fmt.Errorf("instantiate cache: %w", err)
 	}
 
-	setMetadataLogger(logger)
-
 	return &Store{
 		logger:           log.With(logger, "component", "debuginfo"),
 		bucket:           bucket,
 		cacheDir:         cache.Directory,
 		symbolizer:       symbolizer,
 		debuginfodClient: debuginfodClient,
+		metadataManager:  newMetadataManager(logger, bucket),
 	}, nil
 }
 
@@ -192,7 +192,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
 	ctx := stream.Context()
 
-	result, err := fetchMetadataState(ctx, s.bucket, buildID)
+	result, err := s.metadataManager.fetch(ctx, buildID)
 	if err == nil {
 		level.Debug(s.logger).Log("msg", "fetchMetadataState", "result", result)
 
@@ -205,7 +205,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 			return status.Error(codes.AlreadyExists, "debuginfo already exists, being uploaded right now")
 		}
 	} else {
-		level.Error(s.logger).Log("msg", "fetchMetadataState failed with", "err", err)
+		level.Error(s.logger).Log("msg", "fetchMetadataState failed", "err", err)
 	}
 
 	found, err := s.find(ctx, buildID)
@@ -242,8 +242,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		}
 	}
 
-	err = metadataUpdate(ctx, s.bucket, buildID, metadataStateUploading)
-	if err != nil {
+	if err := s.metadataManager.update(ctx, buildID, metadataStateUploading); err != nil {
 		level.Error(s.logger).Log("msg", "metadataUpdate failed with", "err", err)
 	}
 
@@ -256,8 +255,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Errorf(codes.Unknown, msg)
 	}
 
-	err = metadataUpdate(ctx, s.bucket, buildID, metadataStateUploaded)
-	if err != nil {
+	if err := s.metadataManager.update(ctx, buildID, metadataStateUploaded); err != nil {
 		level.Error(s.logger).Log("msg", "metadataUpdate failed with", "err", err)
 	}
 	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)

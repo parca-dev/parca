@@ -20,10 +20,11 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
 	"github.com/thanos-io/objstore/filesystem"
+
+	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 func TestMetadata(t *testing.T) {
@@ -63,16 +64,15 @@ func TestMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test that the initial state should be empty.
-	setMetadataLogger(logger)
-	state, err := fetchMetadataState(context.Background(), store.bucket, "fake-build-id")
+	state, err := store.metadataManager.fetch(context.Background(), "fake-build-id")
 	require.NoError(t, err)
 	require.Equal(t, metadataStateEmpty, state)
 
 	// Updating the state should be written to blob storage.
-	err = metadataUpdate(context.Background(), store.bucket, "fake-build-id", metadataStateUploading)
+	err = store.metadataManager.update(context.Background(), "fake-build-id", metadataStateUploading)
 	require.NoError(t, err)
 
-	state, err = fetchMetadataState(context.Background(), store.bucket, "fake-build-id")
+	state, err = store.metadataManager.fetch(context.Background(), "fake-build-id")
 	require.NoError(t, err)
 	require.Equal(t, metadataStateUploading, state)
 }
