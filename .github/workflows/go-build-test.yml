@@ -43,6 +43,11 @@ jobs:
       run: |
         make go/test
 
+    - name: Benchmark
+      if: ${{ matrix.arch == 'x64' }}
+      run: |
+        make go/bench
+
     - name: Build
       if: ${{ matrix.arch == 'x64' }}
       run: |
