@@ -52,7 +52,7 @@ jobs:
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}
-        uses: sigstore/cosign-installer@v2.3.0
+        uses: sigstore/cosign-installer@v2.4.0
 
       - name: Install crane
         if: ${{ github.event_name != 'pull_request' }}

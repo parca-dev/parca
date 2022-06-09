@@ -110,7 +110,7 @@ jobs:
 
     steps:
       - name: Install cosign
-        uses: sigstore/cosign-installer@v2.3.0
+        uses: sigstore/cosign-installer@v2.4.0
 
       - name: Install crane
         uses: imjasonh/setup-crane@v0.1
