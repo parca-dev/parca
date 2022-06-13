@@ -212,7 +212,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		}
 
 		hasDWARF, err := elfutils.HasDWARF(objFile)
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			return status.Error(codes.Internal, err.Error())
 		}
 		if hasDWARF {
