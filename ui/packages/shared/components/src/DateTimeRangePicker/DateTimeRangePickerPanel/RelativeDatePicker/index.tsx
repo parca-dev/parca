@@ -20,6 +20,11 @@ interface RelativeDatePickerProps {
 
 const quickPresetRanges = [
   {
+    title: 'Last 15 min',
+    unit: UNITS.MINUTE,
+    value: 15,
+  },
+  {
     title: 'Last 1 hour',
     unit: UNITS.HOUR,
     value: 1,
@@ -44,19 +49,14 @@ const quickPresetRanges = [
     unit: UNITS.DAY,
     value: 1,
   },
-  {
-    title: 'Last 3 days',
-    unit: UNITS.DAY,
-    value: 3,
-  },
 ];
 
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
 
 const RelativeDatePicker = ({range, onChange = () => null}: RelativeDatePickerProps) => {
   const date = range.from as RelativeDate;
-  const [unit, setUnit] = useState<UNIT_TYPE>(date.isRelative() ? date.unit : UNITS.HOUR);
-  const [value, setValue] = useState<number>(date.isRelative() ? date.value : 1);
+  const [unit, setUnit] = useState<UNIT_TYPE>(date.isRelative() ? date.unit : UNITS.MINUTE);
+  const [value, setValue] = useState<number>(date.isRelative() ? date.value : 15);
   return (
     <div className="p-4 w-[300px]">
       <div className="pb-2">
