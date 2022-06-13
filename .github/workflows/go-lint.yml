@@ -26,8 +26,8 @@ jobs:
           check-latest: true
       - uses: actions/checkout@v3
 
-      - name: Build UI
-        run: make ui/build
+      - name: Build
+        run: make build
 
       - name: Format
         run: make go/fmt && git diff --exit-code

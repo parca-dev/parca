@@ -1,6 +1,7 @@
 *.log
 *_test.go
 .next
+.git
 /.github
 /.idea
 /bin
@@ -11,7 +12,6 @@ Dockerfile*
 Makefile
 README.md
 coverage
-dist
 node_modules
 out
 testdata/

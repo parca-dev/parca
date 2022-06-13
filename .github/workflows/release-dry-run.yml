@@ -1,4 +1,4 @@
-name: Goreleaser (Dry Run)
+name: Release (Dry Run)
 
 on:
   push:
@@ -6,31 +6,29 @@ on:
     paths:
       - 'go.mod'
       - 'go.sum'
-      - Dockerfile*
-      - .dockerignore
       - ui/**
       - cmd/**
       - pkg/**
       - gen/**
+      - .github/workflows/release-dry-run.yml
   pull_request:
     branches: [ main ]
     paths:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
-      - Dockerfile*
-      - .dockerignore
       - ui/**
       - cmd/**
       - pkg/**
       - gen/**
+      - .github/workflows/release-dry-run.yml
 
 permissions:
   contents: write
 
 jobs:
   goreleaser:
-    name: Goreleaser Dry Run
+    name: Release (Dry Run)
     runs-on: ubuntu-latest
     env:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
@@ -39,9 +37,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
 
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -52,14 +47,6 @@ jobs:
       - name: Set up environment
         run: |
           ./env.sh
-          ./env-proto.sh
-          ./env-jsonnet.sh
-
-      - name: Build UI
-        run: make ui/build
-
-      - name: Format
-        run: make format && git diff --exit-code
 
       - name: Validate
         uses: goreleaser/goreleaser-action@v3

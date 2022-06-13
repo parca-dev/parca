@@ -1,6 +1,7 @@
 before:
   hooks:
     - go mod tidy
+    - make ui/build
 builds:
   - main: ./cmd/parca/
     id: "parca"
@@ -22,6 +23,9 @@ builds:
     ldflags:
       # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
       - -X main.version={{.Version}} -X main.commit={{.Commit}}
+    targets:
+      - go_first_class
+      - go_118_first_class
 archives:
   - replacements:
       darwin: Darwin
@@ -69,7 +73,7 @@ changelog:
 #    image_templates:
 #      - parca-dev/{{ .ProjectName }}:{{ .Version }}-amd64
 #      - parca-dev/{{ .ProjectName }}:latest-amd64
-#    dockerfile: Dockerfile.release
+#    dockerfile: Dockerfile
 #    extra_files:
 #      - parca.yaml
 #    build_flag_templates:
@@ -89,7 +93,7 @@ changelog:
 #      - parca-dev/{{ .ProjectName }}:{{ .Version }}-arm64v8
 #      - parca-dev/{{ .ProjectName }}:latest-arm64v8
 #    goarch: arm64
-#    dockerfile: Dockerfile.release
+#    dockerfile: Dockerfile
 #    extra_files:
 #      - parca.yaml
 #    build_flag_templates:

@@ -10,6 +10,7 @@ on:
       - Dockerfile*
       - .dockerignore
       - ui/**
+      - .github/workflows/container.yml
   pull_request:
     branches: [ main ]
     paths:
@@ -19,11 +20,50 @@ on:
       - Dockerfile*
       - .dockerignore
       - ui/**
+      - .github/workflows/container.yml
 
 jobs:
-  build:
+  build-binary:
+    name: Build binary (Goreleaser)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+          check-latest: true
+
+      - name: Set up environment
+        run: |
+          ./env.sh
+
+      - name: Validate
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          distribution: goreleaser
+          version: latest
+          args: check
+
+      - name: Set Tag
+        run: |
+          echo "goreleaser_current_tag=`git describe --match 'v*' --tags`" >> $GITHUB_ENV
+
+      - name: Dry Run
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          distribution: goreleaser
+          version: latest
+          args: build --rm-dist --skip-validate --snapshot
+        env:
+          GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
+
+  build-container:
     name: Container build and push (when merged)
     runs-on: ubuntu-latest
+    needs: build-binary
 
     permissions:
       id-token: write
@@ -39,7 +79,7 @@ jobs:
         run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       # To build multi-arch images, see also: https://github.com/redhat-actions/buildah-build#multi-arch-builds
-      - name: Install qemu dependency
+      - name: Install QEMU dependency
         run: |
           sudo apt-get update -y
           sudo apt-get install -y binfmt-support qemu-user-static

@@ -109,11 +109,12 @@ proto/google/pprof/profile.proto:
 
 .PHONY: container-dev
 container-dev:
-	podman build --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
+	#docker build -t parca-dev/parca-agent:dev --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
+	podman build --timestamp 0 --layers --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:
-	./scripts/make-containers.sh $(VERSION) $(COMMIT) $(OUT_DOCKER):$(VERSION)
+	./scripts/make-containers.sh $(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-container
 push-container:
@@ -150,7 +151,7 @@ dev/up: deploy/manifests
 dev/down:
 	source ./scripts/local-dev.sh && down
 
-tmp/help.txt: go/bin
+tmp/help.txt: build
 	mkdir -p tmp
 	bin/parca --help > $@
 
