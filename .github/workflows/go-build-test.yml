@@ -7,17 +7,19 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
+      - .github/workflows/go-build-test.yml
   pull_request:
     branches: [ main ]
     paths:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
+      - .github/workflows/go-build-test.yml
 
 jobs:
   build-and-test-multi-arch:
     runs-on: ubuntu-latest
-    name: Build on ${{ matrix.arch }}
+    name: Test on ${{ matrix.arch }}
     # Run steps on a matrix of 2 arch.
     strategy:
       matrix:
@@ -27,28 +29,31 @@ jobs:
           - arm64v8
     steps:
     - uses: actions/checkout@v3
+
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
         go-version: '1.18'
         check-latest: true
+        cache: true
 
-    - name: Build UI
-      if: ${{ matrix.arch == 'x64' }}
-      run: |
-        make ui/build
-
-    - name: Test
-      if: ${{ matrix.arch == 'x64' }}
-      run: |
-        make go/test
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 14.x
+        cache: 'yarn'
 
     - name: Build
       if: ${{ matrix.arch == 'x64' }}
       run: |
         make build
 
-    - name: Archive generatated artifacts
+    - name: Test
+      if: ${{ matrix.arch == 'x64' }}
+      run: |
+        make go/test
+
+    - name: Archive generated artifacts
       if: ${{ matrix.arch == 'x64' }}
       uses: actions/upload-artifact@v3
       with:
@@ -60,12 +65,6 @@ jobs:
     - name: 'Run ${{ matrix.arch }}'
       if: ${{ matrix.arch != 'x64' }}
       run: |
-        # Install yarn packages initially on AMD machine so that it can be mounted as volume
-        # on platform specific docker container. This will save time as `yarn install` takes a lot of time
-        # on ARM container running using QEMU.
-        cd ui && yarn install && cd -
-        export RUNNER_ALLOW_RUNASROOT="1"
-
         # Install QEMU and it's dependencies.
         sudo apt-get install qemu binfmt-support qemu-user-static
         docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
@@ -109,36 +108,6 @@ jobs:
         export PATH=$PATH:/usr/local/go/bin && \
         go version'
 
-    - name: 'Setup yarn on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'x64' }}
-      run: |
-        export RUNNER_ALLOW_RUNASROOT="1"
-        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
-        '# Install LTS version of node.
-        ARCH=${{ matrix.arch }} &&\
-        if [ "$ARCH" == "arm64v8" ]; then
-          ARCH="arm64"
-        fi
-        cd /tmp && wget https://nodejs.org/dist/v16.15.0/node-v16.15.0-linux-$ARCH.tar.gz &&\
-        tar -xf node-v16.15.0-linux-$ARCH.tar.gz &&\
-        mv node-v16.15.0-linux-$ARCH/bin/* /usr/local/bin/ &&\
-        mv node-v16.15.0-linux-$ARCH/lib/node_modules/ /usr/local/lib/ &&\
-        cd - &&\
-        node -v && npm -v &&\
-
-        # Install yarn globally.
-        npm install -g yarn &&\
-        yarn --version'
-
-    - name: 'Build UI on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'x64' }}
-      run: |
-        # No need to run `yarn install` again. `node_modules` folder is already
-        # present on the machine using docker volume. This saves a lot of time.
-        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
-        'cd parca/ui &&\
-        yarn workspace @parca/web build'
-
     - name: 'Test on ${{ matrix.arch }}'
       if: ${{ matrix.arch != 'x64' }}
       run: |
@@ -146,19 +115,6 @@ jobs:
         '# Run Go Tests. This is a very slow operation on ARM container.
         export PATH=$PATH:/usr/local/go/bin &&\
         cd parca &&\
+        mkdir -p ui/packages/app/web/build && \
+        touch ui/packages/app/web/build/index.html && \
         go test -buildvcs=false -v ./...'
-
-    - name: 'Build on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'x64' }}
-      run: |
-        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
-        '# Remove the existing binary created by amd64 machine.
-        export PATH=$PATH:/usr/local/go/bin &&\
-        cd parca &&\
-        rm -rf ./bin &&\
-
-        # Build the code.
-        go mod tidy && mkdir -p ./bin && go build -buildvcs=false -o bin/ ./cmd/parca &&\
-
-        # Check whether parca binary exist or not.
-        [ -f ./bin/parca ] && echo 'File Exists' && exit 0'

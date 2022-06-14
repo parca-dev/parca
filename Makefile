@@ -72,12 +72,10 @@ VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
 go/test-clean:
 	rm -f $(VCR_FILES)
 
-
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
-
 .PHONY: ui/build
 ui/build: $(UI_FILES)
-	cd ui && yarn install && yarn workspace @parca/web build
+	cd ui && yarn --prefer-offline && yarn workspace @parca/web build
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate
@@ -109,11 +107,12 @@ proto/google/pprof/profile.proto:
 
 .PHONY: container-dev
 container-dev:
-	podman build --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
+	docker build -t parca-dev/parca-agent:dev --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
+	#podman build --timestamp 0 --layers --build-arg=GOLANG_BASE=golang:1.18.3-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:
-	./scripts/make-containers.sh $(VERSION) $(COMMIT) $(OUT_DOCKER):$(VERSION)
+	./scripts/make-containers.sh $(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-container
 push-container:
@@ -150,7 +149,7 @@ dev/up: deploy/manifests
 dev/down:
 	source ./scripts/local-dev.sh && down
 
-tmp/help.txt: go/bin
+tmp/help.txt: build
 	mkdir -p tmp
 	bin/parca --help > $@
 
