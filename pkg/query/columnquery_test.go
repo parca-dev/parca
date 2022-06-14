@@ -31,6 +31,8 @@ import (
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -85,7 +87,10 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 		Start: timestamppb.New(timestamp.Time(0)),
 		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
 	})
-	require.ErrorIs(t, err, ErrTimestampColumnNotFound)
+	require.ErrorIs(t, err, status.Error(
+		codes.NotFound,
+		"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
+	))
 }
 
 func TestColumnQueryAPIQueryRange(t *testing.T) {
