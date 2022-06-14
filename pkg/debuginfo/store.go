@@ -15,6 +15,7 @@ package debuginfo
 
 import (
 	"context"
+	"debug/elf"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -212,8 +213,16 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		}
 
 		hasDWARF, err := elfutils.HasDWARF(objFile)
-		if err != nil {
-			return status.Error(codes.Internal, err.Error())
+		if err != nil && !errors.Is(err, io.EOF) {
+			var fe *elf.FormatError
+			if errors.As(err, &fe) {
+				// Ignore bad magic number if all zero
+				if !strings.Contains(fe.Error(), "bad magic number '[0 0 0 0]'") {
+					return status.Error(codes.Internal, err.Error())
+				}
+			} else {
+				return status.Error(codes.Internal, err.Error())
+			}
 		}
 		if hasDWARF {
 			// We probably have the best version.

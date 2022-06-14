@@ -6,12 +6,13 @@ metadata:
   labels:
     prometheus: k8s
     role: alert-rules
+    pyrra.dev/team: parca
 spec:
   target: '95'
   window: 4w
   indicator:
     latency:
       success:
-        metric: grpc_server_handling_seconds_bucket{grpc_service="parca.profilestore.v1alpha1.ProfileStoreService",grpc_method="WriteRaw",le="0.1"}
+        metric: grpc_server_handling_seconds_bucket{grpc_service="parca.profilestore.v1alpha1.ProfileStoreService",grpc_method="WriteRaw",le="1"}
       total:
         metric: grpc_server_handling_seconds_count{grpc_service="parca.profilestore.v1alpha1.ProfileStoreService",grpc_method="WriteRaw"}

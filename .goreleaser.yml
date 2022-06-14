@@ -1,6 +1,7 @@
 before:
   hooks:
     - go mod tidy
+    - make ui/build
 builds:
   - main: ./cmd/parca/
     id: "parca"
@@ -11,7 +12,6 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
       - darwin
     goarch:
       - amd64
@@ -69,7 +69,7 @@ changelog:
 #    image_templates:
 #      - parca-dev/{{ .ProjectName }}:{{ .Version }}-amd64
 #      - parca-dev/{{ .ProjectName }}:latest-amd64
-#    dockerfile: Dockerfile.release
+#    dockerfile: Dockerfile
 #    extra_files:
 #      - parca.yaml
 #    build_flag_templates:
@@ -89,7 +89,7 @@ changelog:
 #      - parca-dev/{{ .ProjectName }}:{{ .Version }}-arm64v8
 #      - parca-dev/{{ .ProjectName }}:latest-arm64v8
 #    goarch: arm64
-#    dockerfile: Dockerfile.release
+#    dockerfile: Dockerfile
 #    extra_files:
 #      - parca.yaml
 #    build_flag_templates:
