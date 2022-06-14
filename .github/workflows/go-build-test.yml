@@ -37,7 +37,7 @@ jobs:
         check-latest: true
         cache: true
 
-    - name: Use Node.js 14.x
+    - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
         node-version: 14.x

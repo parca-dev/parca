@@ -72,9 +72,7 @@ VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
 go/test-clean:
 	rm -f $(VCR_FILES)
 
-
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
-
 .PHONY: ui/build
 ui/build: $(UI_FILES)
 	cd ui && yarn --prefer-offline && yarn workspace @parca/web build
@@ -109,8 +107,8 @@ proto/google/pprof/profile.proto:
 
 .PHONY: container-dev
 container-dev:
-	#docker build -t parca-dev/parca-agent:dev --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
-	podman build --timestamp 0 --layers --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
+	docker build -t parca-dev/parca-agent:dev --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
+	#podman build --timestamp 0 --layers --build-arg=GOLANG_BASE=golang:1.18.3-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:
