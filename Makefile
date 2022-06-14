@@ -77,7 +77,7 @@ UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -no
 
 .PHONY: ui/build
 ui/build: $(UI_FILES)
-	cd ui && yarn install && yarn workspace @parca/web build
+	cd ui && yarn --prefer-offline && yarn workspace @parca/web build
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate

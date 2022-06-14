@@ -19,7 +19,7 @@ on:
 jobs:
   build-and-test-multi-arch:
     runs-on: ubuntu-latest
-    name: Build on ${{ matrix.arch }}
+    name: Test on ${{ matrix.arch }}
     # Run steps on a matrix of 2 arch.
     strategy:
       matrix:
@@ -29,11 +29,19 @@ jobs:
           - arm64v8
     steps:
     - uses: actions/checkout@v3
+
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
         go-version: '1.18'
         check-latest: true
+        cache: true
+
+    - name: Use Node.js 14.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 14.x
+        cache: 'yarn'
 
     - name: Build
       if: ${{ matrix.arch == 'x64' }}
@@ -107,4 +115,6 @@ jobs:
         '# Run Go Tests. This is a very slow operation on ARM container.
         export PATH=$PATH:/usr/local/go/bin &&\
         cd parca &&\
+        mkdir -p ui/packages/app/web/build && \
+        touch ui/packages/app/web/build/index.html && \
         go test -buildvcs=false -v ./...'
