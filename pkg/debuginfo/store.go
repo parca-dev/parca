@@ -72,7 +72,8 @@ type Store struct {
 	bucket           objstore.Bucket
 	debuginfodClient DebugInfodClient
 
-	symbolizer *symbol.Symbolizer
+	symbolizer      *symbol.Symbolizer
+	metadataManager *metadataManager
 }
 
 // NewStore returns a new debug info store.
@@ -103,6 +104,7 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 		cacheDir:         cache.Directory,
 		symbolizer:       symbolizer,
 		debuginfodClient: debuginfodClient,
+		metadataManager:  newMetadataManager(logger, bucket),
 	}, nil
 }
 
@@ -188,7 +190,24 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
+
 	ctx := stream.Context()
+	if result, err := s.metadataManager.fetch(ctx, buildID); err == nil {
+		level.Debug(s.logger).Log("msg", "fetching metadata state", "result", result)
+
+		switch result {
+		case metadataStateEmpty:
+			// Not created yet.
+		case metadataStateUploaded:
+			// The debug info was fully uploaded.
+			fallthrough
+		case metadataStateUploading:
+			return status.Error(codes.AlreadyExists, "debuginfo already exists, being uploaded right now")
+		}
+	} else {
+		level.Error(s.logger).Log("msg", "failed to fetch metadata state", "err", err)
+	}
+
 	found, err := s.find(ctx, buildID)
 	if err != nil {
 		return err
@@ -231,6 +250,10 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		}
 	}
 
+	if err := s.metadataManager.update(ctx, buildID, metadataStateUploading); err != nil {
+		level.Error(s.logger).Log("msg", "failed to update metadata", "err", err)
+	}
+
 	// At this point we know that we still have a better version of the debug information file,
 	// so let the client upload it.
 	r := &UploadReader{stream: stream}
@@ -240,6 +263,9 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Errorf(codes.Unknown, msg)
 	}
 
+	if err := s.metadataManager.update(ctx, buildID, metadataStateUploaded); err != nil {
+		level.Error(s.logger).Log("msg", "failed to update metadata", "err", err)
+	}
 	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
 	return stream.SendAndClose(&debuginfopb.UploadResponse{
 		BuildId: buildID,
