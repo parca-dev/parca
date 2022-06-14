@@ -27,15 +27,15 @@ import (
 )
 
 var (
-	ErrDebugInfoMetadataShouldExist            = errors.New("debug info metadata should exist")
-	ErrDebugInfoMetadataExpectedStateUploading = errors.New("debug info metadata state should be uploading")
+	ErrMetadataShouldExist            = errors.New("debug info metadata should exist")
+	ErrMetadataExpectedStateUploading = errors.New("debug info metadata state should be uploading")
+	ErrMetadataUnknownState           = errors.New("debug info metadata state is unknown")
 )
 
 type metadataState int64
 
 const (
-	// There was an unexpected error. The error will be filled in the return value.
-	metadataStateError metadataState = iota
+	metadataStateUnknown metadataState = iota
 	// There's no debug info metadata. This could mean that an older version
 	// uploaded the debug info files, but there's no record of the metadata, yet.
 	metadataStateEmpty
@@ -46,14 +46,14 @@ const (
 )
 
 var mdStateStr = map[metadataState]string{
-	metadataStateError:     "METADATA_STATE_ERROR",
+	metadataStateUnknown:   "METADATA_STATE_UNKNOWN",
 	metadataStateEmpty:     "METADATA_STATE_EMPTY",
 	metadataStateUploading: "METADATA_STATE_UPLOADING",
 	metadataStateUploaded:  "METADATA_STATE_UPLOADED",
 }
 
 var strMdState = map[string]metadataState{
-	"METADATA_STATE_ERROR":     metadataStateError,
+	"METADATA_STATE_UNKNOWN":   metadataStateUnknown,
 	"METADATA_STATE_EMPTY":     metadataStateEmpty,
 	"METADATA_STATE_UPLOADING": metadataStateUploading,
 	"METADATA_STATE_UPLOADED":  metadataStateUploaded,
@@ -101,7 +101,7 @@ type metadata struct {
 }
 
 func (m *metadataManager) update(ctx context.Context, buildID string, state metadataState) error {
-	level.Debug(m.logger).Log("msg", "Attempting state update to", "state", state)
+	level.Debug(m.logger).Log("msg", "attempting state update to", "state", state)
 
 	switch state {
 	case metadataStateUploading:
@@ -109,12 +109,12 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 		// The metadata file should not exist yet. Not erroring here because there's
 		// room for a race condition.
 		if err == nil {
-			level.Info(m.logger).Log("msg", "There should not be a metadata file")
+			level.Info(m.logger).Log("msg", "there should not be a metadata file")
 			return nil
 		}
 
 		if !m.bucket.IsObjNotFoundErr(err) {
-			level.Error(m.logger).Log("msg", "Expected IsObjNotFoundErr but got", "err", err)
+			level.Error(m.logger).Log("msg", "unexpected error", "err", err)
 			return err
 		}
 
@@ -125,15 +125,15 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 		}, "", "\t")
 		r := bytes.NewReader(metadataBytes)
 		if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), r); err != nil {
-			level.Error(m.logger).Log("msg", "Creating the metadata file failed", "err", err)
+			level.Error(m.logger).Log("msg", "failed to create metadata file", "err", err)
 			return err
 		}
 
 	case metadataStateUploaded:
 		r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 		if err != nil {
-			level.Error(m.logger).Log("msg", "Expected metadata file", "err", err)
-			return ErrDebugInfoMetadataShouldExist
+			level.Error(m.logger).Log("msg", "expected metadata file", "err", err)
+			return ErrMetadataShouldExist
 		}
 		buf := new(bytes.Buffer)
 		_, err = buf.ReadFrom(r)
@@ -145,7 +145,7 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 		metaData := &metadata{}
 
 		if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
-			level.Error(m.logger).Log("msg", "Parsing JSON metadata failed", "err", err)
+			level.Error(m.logger).Log("msg", "parsing JSON metadata failed", "err", err)
 			return err
 		}
 
@@ -155,7 +155,7 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 		}
 
 		if metaData.State != metadataStateUploading {
-			return ErrDebugInfoMetadataExpectedStateUploading
+			return ErrMetadataExpectedStateUploading
 		}
 
 		metaData.State = metadataStateUploaded
@@ -180,12 +180,12 @@ func (m *metadataManager) fetch(ctx context.Context, buildID string) (metadataSt
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(r)
 	if err != nil {
-		return metadataStateError, err
+		return metadataStateUnknown, err
 	}
 
 	metaData := &metadata{}
 	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
-		return metadataStateError, err
+		return metadataStateUnknown, err
 	}
 	return metaData.State, nil
 }

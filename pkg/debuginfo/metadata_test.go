@@ -86,12 +86,12 @@ func TestMetadata_MarshalJSON(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			m:    metadata{State: metadataStateEmpty},
-			want: `{"state":"METADATA_STATE_EMPTY","started_upload_at":0,"finished_upload_at":0}`,
+			m:    metadata{State: metadataStateUnknown},
+			want: `{"state":"METADATA_STATE_UNKNOWN","started_upload_at":0,"finished_upload_at":0}`,
 		},
 		{
-			m:    metadata{State: metadataStateError},
-			want: `{"state":"METADATA_STATE_ERROR","started_upload_at":0,"finished_upload_at":0}`,
+			m:    metadata{State: metadataStateEmpty},
+			want: `{"state":"METADATA_STATE_EMPTY","started_upload_at":0,"finished_upload_at":0}`,
 		},
 		{
 			m:    metadata{State: metadataStateUploading},
@@ -125,12 +125,12 @@ func TestMetadata_UnmarshalJSON(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			b:    []byte(`{"state":"METADATA_STATE_EMPTY","started_upload_at":0,"finished_upload_at":0}`),
-			want: metadata{State: metadataStateEmpty},
+			b:    []byte(`{"state":"METADATA_STATE_UNKNOWN","started_upload_at":0,"finished_upload_at":0}`),
+			want: metadata{State: metadataStateUnknown},
 		},
 		{
-			b:    []byte(`{"state":"METADATA_STATE_ERROR","started_upload_at":0,"finished_upload_at":0}`),
-			want: metadata{State: metadataStateError},
+			b:    []byte(`{"state":"METADATA_STATE_EMPTY","started_upload_at":0,"finished_upload_at":0}`),
+			want: metadata{State: metadataStateEmpty},
 		},
 		{
 			b:    []byte(`{"state":"METADATA_STATE_UPLOADING","started_upload_at":0,"finished_upload_at":0}`),
