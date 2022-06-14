@@ -24,6 +24,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -152,23 +153,37 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		return nil, err
 	}
 
-	if found && req.Hash != "" {
-		dbgFile, err := s.fetchObjectFile(ctx, buildID)
+	if found {
+		var exists bool
+		metadataFile, err := s.metadataManager.fetch(ctx, buildID)
 		if err != nil {
+			if errors.Is(err, ErrMetadataNotFound) {
+				return &debuginfopb.ExistsResponse{
+					Exists: false,
+				}, nil
+			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		h, err := hash.File(dbgFile)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+		switch metadataFile.State {
+		case metadataStateUploaded:
+			if req.Hash != "" {
+				// It is not an exact version of what we have so, let the client try to upload it.
+				exists = metadataFile.Hash == req.Hash
+			} else {
+				exists = true
+			}
+		case metadataStateUploading:
+			if isStale(metadataFile) {
+				exists = false
+			}
+		case metadataStateCorrupted:
+			exists = false
 		}
 
-		// It is not an exact version of what we have so, let the client try to upload it.
-		if h != req.Hash {
-			return &debuginfopb.ExistsResponse{
-				Exists: false,
-			}, nil
-		}
+		return &debuginfopb.ExistsResponse{
+			Exists: exists,
+		}, nil
 	}
 
 	return &debuginfopb.ExistsResponse{
@@ -192,20 +207,27 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
 
 	ctx := stream.Context()
-	if result, err := s.metadataManager.fetch(ctx, buildID); err == nil {
-		level.Debug(s.logger).Log("msg", "fetching metadata state", "result", result)
+	metadataFile, err := s.metadataManager.fetch(ctx, buildID)
+	if err == nil {
+		level.Debug(s.logger).Log("msg", "fetching metadata state", "result", metadataFile)
 
-		switch result {
-		case metadataStateEmpty:
-			// Not created yet.
+		switch metadataFile.State {
+		case metadataStateCorrupted:
+			// Corrupted. Re-upload.
 		case metadataStateUploaded:
 			// The debug info was fully uploaded.
-			fallthrough
+			return status.Error(codes.AlreadyExists, "debuginfo already exists")
 		case metadataStateUploading:
-			return status.Error(codes.AlreadyExists, "debuginfo already exists, being uploaded right now")
+			if !isStale(metadataFile) {
+				return status.Error(codes.AlreadyExists, "debuginfo already exists, being uploaded right now")
+			}
+		default:
+			return status.Error(codes.Internal, "unknown metadata state")
 		}
 	} else {
-		level.Error(s.logger).Log("msg", "failed to fetch metadata state", "err", err)
+		if !errors.Is(err, ErrMetadataNotFound) {
+			level.Error(s.logger).Log("msg", "failed to fetch metadata state", "err", err)
+		}
 	}
 
 	found, err := s.find(ctx, buildID)
@@ -213,16 +235,23 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return err
 	}
 
+	var objFileHash string
 	if found {
-		objFile, err := s.fetchObjectFile(ctx, buildID)
-		if err != nil {
-			return status.Error(codes.Internal, err.Error())
-		}
-
+		var objFile string
 		if req.GetInfo().Hash != "" {
-			h, err := hash.File(objFile)
-			if err != nil {
-				return status.Error(codes.Internal, err.Error())
+			var h string
+			if metadataFile != nil && metadataFile.Hash != "" {
+				h = metadataFile.Hash
+			} else {
+				objFile, err = s.fetchObjectFile(ctx, buildID)
+				if err != nil {
+					return status.Error(codes.Internal, err.Error())
+				}
+
+				h, err = hash.File(objFile)
+				if err != nil {
+					return status.Error(codes.Internal, err.Error())
+				}
 			}
 
 			if h == req.GetInfo().Hash {
@@ -231,30 +260,33 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 			}
 		}
 
-		hasDWARF, err := elfutils.HasDWARF(objFile)
-		if err != nil && !errors.Is(err, io.EOF) {
-			var fe *elf.FormatError
-			if errors.As(err, &fe) {
-				// Ignore bad magic number if all zero
-				if !strings.Contains(fe.Error(), "bad magic number '[0 0 0 0]'") {
-					return status.Error(codes.Internal, err.Error())
-				}
-			} else {
+		if objFile == "" {
+			objFile, err = s.fetchObjectFile(ctx, buildID)
+			if err != nil {
 				return status.Error(codes.Internal, err.Error())
 			}
 		}
-		if hasDWARF {
-			// We probably have the best version.
-			level.Debug(s.logger).Log("msg", "debug info with DWARF already exists", "buildid", buildID)
-			return status.Error(codes.AlreadyExists, "debuginfo already exists")
+
+		shouldUpload, err := check(objFile)
+		if err != nil {
+			// Mark file as corrupted, and let the client try to upload it again.
+			err := s.metadataManager.update(ctx, buildID, objFileHash, metadataStateCorrupted)
+			if err != nil {
+				err = fmt.Errorf("failed to update metadata with %s: %w", metadataStateCorrupted, err)
+			}
+			return status.Error(codes.Internal, err.Error())
+		}
+		if !shouldUpload {
+			return status.Error(codes.Aborted, "debuginfo already exists")
 		}
 	}
 
-	if err := s.metadataManager.update(ctx, buildID, metadataStateUploading); err != nil {
-		level.Error(s.logger).Log("msg", "failed to update metadata", "err", err)
+	if err := s.metadataManager.update(ctx, buildID, objFileHash, metadataStateUploading); err != nil {
+		err := fmt.Errorf("failed to update metadata with %s: %w", metadataStateUploading, err)
+		return status.Error(codes.Internal, err.Error())
 	}
 
-	// At this point we know that we still have a better version of the debug information file,
+	// At this point we know that we received a better version of the debug information file,
 	// so let the client upload it.
 	r := &UploadReader{stream: stream}
 	if err := s.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
@@ -263,14 +295,40 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Errorf(codes.Unknown, msg)
 	}
 
-	if err := s.metadataManager.update(ctx, buildID, metadataStateUploaded); err != nil {
-		level.Error(s.logger).Log("msg", "failed to update metadata", "err", err)
+	if err := s.metadataManager.update(ctx, buildID, objFileHash, metadataStateUploaded); err != nil {
+		err := fmt.Errorf("failed to update metadata with %s: %w", metadataStateUploaded, err)
+		return status.Error(codes.Internal, err.Error())
 	}
+
 	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
 	return stream.SendAndClose(&debuginfopb.UploadResponse{
 		BuildId: buildID,
 		Size:    r.size,
 	})
+}
+
+func isStale(metadataFile *metadata) bool {
+	return time.Now().Add(-15 * time.Minute).After(time.Unix(metadataFile.UploadStartedAt, 0))
+}
+
+// check returns true if the incoming object file should be uploaded.
+func check(objFile string) (bool, error) {
+	hasDWARF, err := elfutils.HasDWARF(objFile)
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			// Failed to read the file, better for client to upload a new version.
+			return true, nil
+		}
+		var fe *elf.FormatError
+		if errors.As(err, &fe) {
+			if strings.Contains(fe.Error(), "bad magic number") {
+				// The file is not an ELF file or corrupted, better for client to upload a new version.
+				return true, nil
+			}
+		}
+		return false, err
+	}
+	return !hasDWARF, nil
 }
 
 func validateID(id string) error {

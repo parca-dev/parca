@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"path"
 	"time"
 
@@ -27,36 +28,37 @@ import (
 )
 
 var (
-	ErrMetadataShouldExist            = errors.New("debug info metadata should exist")
-	ErrMetadataExpectedStateUploading = errors.New("debug info metadata state should be uploading")
-	ErrMetadataUnknownState           = errors.New("debug info metadata state is unknown")
+	ErrMetadataShouldExist     = errors.New("debug info metadata should exist")
+	ErrMetadataUnexpectedState = errors.New("debug info metadata state is unexpected")
+	// There's no debug info metadata. This could mean that an older version
+	// uploaded the debug info files, but there's no record of the metadata, yet.
+	ErrMetadataNotFound = errors.New("debug info metadata not found")
 )
 
 type metadataState int64
 
 const (
 	metadataStateUnknown metadataState = iota
-	// There's no debug info metadata. This could mean that an older version
-	// uploaded the debug info files, but there's no record of the metadata, yet.
-	metadataStateEmpty
 	// The debug info file is being uploaded.
 	metadataStateUploading
 	// The debug info file is fully uploaded.
 	metadataStateUploaded
+	// The debug info file is being corrupted.
+	metadataStateCorrupted
 )
 
 var mdStateStr = map[metadataState]string{
 	metadataStateUnknown:   "METADATA_STATE_UNKNOWN",
-	metadataStateEmpty:     "METADATA_STATE_EMPTY",
 	metadataStateUploading: "METADATA_STATE_UPLOADING",
 	metadataStateUploaded:  "METADATA_STATE_UPLOADED",
+	metadataStateCorrupted: "METADATA_STATE_CORRUPTED",
 }
 
 var strMdState = map[string]metadataState{
 	"METADATA_STATE_UNKNOWN":   metadataStateUnknown,
-	"METADATA_STATE_EMPTY":     metadataStateEmpty,
 	"METADATA_STATE_UPLOADING": metadataStateUploading,
 	"METADATA_STATE_UPLOADED":  metadataStateUploaded,
+	"METADATA_STATE_CORRUPTED": metadataStateCorrupted,
 }
 
 func (m metadataState) String() string {
@@ -96,14 +98,22 @@ func newMetadataManager(logger log.Logger, bucket objstore.Bucket) *metadataMana
 
 type metadata struct {
 	State            metadataState `json:"state"`
-	StartedUploadAt  int64         `json:"started_upload_at"`
-	FinishedUploadAt int64         `json:"finished_upload_at"`
+	Hash             string        `json:"hash"`
+	UploadStartedAt  int64         `json:"upload_started_at"`
+	UploadFinishedAt int64         `json:"upload_finished_at"`
 }
 
-func (m *metadataManager) update(ctx context.Context, buildID string, state metadataState) error {
+func (m *metadataManager) update(ctx context.Context, buildID, hash string, state metadataState) error {
 	level.Debug(m.logger).Log("msg", "attempting state update to", "state", state)
 
 	switch state {
+	case metadataStateCorrupted:
+		if err := m.write(ctx, buildID, &metadata{
+			State: metadataStateCorrupted,
+		}); err != nil {
+			return fmt.Errorf("failed to write metadata: %w", err)
+		}
+
 	case metadataStateUploading:
 		_, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 		// The metadata file should not exist yet. Not erroring here because there's
@@ -118,15 +128,12 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 			return err
 		}
 
-		// Let's write the metadata.
-		metadataBytes, _ := json.MarshalIndent(&metadata{
+		if err := m.write(ctx, buildID, &metadata{
 			State:           metadataStateUploading,
-			StartedUploadAt: time.Now().Unix(),
-		}, "", "\t")
-		r := bytes.NewReader(metadataBytes)
-		if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), r); err != nil {
-			level.Error(m.logger).Log("msg", "failed to create metadata file", "err", err)
-			return err
+			Hash:            hash,
+			UploadStartedAt: time.Now().Unix(),
+		}); err != nil {
+			return fmt.Errorf("failed to write metadata: %w", err)
 		}
 
 	case metadataStateUploaded:
@@ -138,14 +145,11 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 		buf := new(bytes.Buffer)
 		_, err = buf.ReadFrom(r)
 		if err != nil {
-			level.Error(m.logger).Log("msg", "ReadFrom failed", "err", err)
 			return err
 		}
 
 		metaData := &metadata{}
-
 		if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
-			level.Error(m.logger).Log("msg", "parsing JSON metadata failed", "err", err)
 			return err
 		}
 
@@ -155,11 +159,11 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 		}
 
 		if metaData.State != metadataStateUploading {
-			return ErrMetadataExpectedStateUploading
+			return ErrMetadataUnexpectedState
 		}
 
 		metaData.State = metadataStateUploaded
-		metaData.FinishedUploadAt = time.Now().Unix()
+		metaData.UploadFinishedAt = time.Now().Unix()
 
 		metadataBytes, _ := json.MarshalIndent(&metaData, "", "\t")
 		newData := bytes.NewReader(metadataBytes)
@@ -167,27 +171,42 @@ func (m *metadataManager) update(ctx context.Context, buildID string, state meta
 		if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), newData); err != nil {
 			return err
 		}
+	default:
+		return ErrMetadataUnexpectedState
 	}
 	return nil
 }
 
-func (m *metadataManager) fetch(ctx context.Context, buildID string) (metadataState, error) {
+func (m *metadataManager) fetch(ctx context.Context, buildID string) (*metadata, error) {
 	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	if err != nil {
-		return metadataStateEmpty, nil
+		if m.bucket.IsObjNotFoundErr(err) {
+			return nil, ErrMetadataNotFound
+		}
+		return nil, err
 	}
 
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(r)
 	if err != nil {
-		return metadataStateUnknown, err
+		return nil, err
 	}
 
 	metaData := &metadata{}
 	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
-		return metadataStateUnknown, err
+		return nil, err
 	}
-	return metaData.State, nil
+	return metaData, nil
+}
+
+func (m *metadataManager) write(ctx context.Context, buildID string, md *metadata) error {
+	metadataBytes, _ := json.MarshalIndent(md, "", "\t")
+	r := bytes.NewReader(metadataBytes)
+	if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), r); err != nil {
+		level.Error(m.logger).Log("msg", "failed to create metadata file", "err", err)
+		return err
+	}
+	return nil
 }
 
 func metadataObjectPath(buildID string) string {

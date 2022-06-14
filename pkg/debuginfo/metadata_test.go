@@ -66,17 +66,16 @@ func TestMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test that the initial state should be empty.
-	state, err := store.metadataManager.fetch(context.Background(), "fake-build-id")
-	require.NoError(t, err)
-	require.Equal(t, metadataStateEmpty, state)
+	_, err = store.metadataManager.fetch(context.Background(), "fake-build-id")
+	require.ErrorIs(t, err, ErrMetadataNotFound)
 
 	// Updating the state should be written to blob storage.
-	err = store.metadataManager.update(context.Background(), "fake-build-id", metadataStateUploading)
+	err = store.metadataManager.update(context.Background(), "fake-build-id", "", metadataStateUploading)
 	require.NoError(t, err)
 
-	state, err = store.metadataManager.fetch(context.Background(), "fake-build-id")
+	md, err := store.metadataManager.fetch(context.Background(), "fake-build-id")
 	require.NoError(t, err)
-	require.Equal(t, metadataStateUploading, state)
+	require.Equal(t, metadataStateUploading, md.State)
 }
 
 func TestMetadata_MarshalJSON(t *testing.T) {
@@ -87,19 +86,19 @@ func TestMetadata_MarshalJSON(t *testing.T) {
 	}{
 		{
 			m:    metadata{State: metadataStateUnknown},
-			want: `{"state":"METADATA_STATE_UNKNOWN","started_upload_at":0,"finished_upload_at":0}`,
-		},
-		{
-			m:    metadata{State: metadataStateEmpty},
-			want: `{"state":"METADATA_STATE_EMPTY","started_upload_at":0,"finished_upload_at":0}`,
+			want: `{"state":"METADATA_STATE_UNKNOWN","hash":"","upload_started_at":0,"upload_finished_at":0}`,
 		},
 		{
 			m:    metadata{State: metadataStateUploading},
-			want: `{"state":"METADATA_STATE_UPLOADING","started_upload_at":0,"finished_upload_at":0}`,
+			want: `{"state":"METADATA_STATE_UPLOADING","hash":"","upload_started_at":0,"upload_finished_at":0}`,
 		},
 		{
 			m:    metadata{State: metadataStateUploaded},
-			want: `{"state":"METADATA_STATE_UPLOADED","started_upload_at":0,"finished_upload_at":0}`,
+			want: `{"state":"METADATA_STATE_UPLOADED","hash":"","upload_started_at":0,"upload_finished_at":0}`,
+		},
+		{
+			m:    metadata{State: metadataStateCorrupted},
+			want: `{"state":"METADATA_STATE_CORRUPTED","hash":"","upload_started_at":0,"upload_finished_at":0}`,
 		},
 	}
 	for _, tt := range tests {
@@ -125,20 +124,20 @@ func TestMetadata_UnmarshalJSON(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			b:    []byte(`{"state":"METADATA_STATE_UNKNOWN","started_upload_at":0,"finished_upload_at":0}`),
+			b:    []byte(`{"state":"METADATA_STATE_UNKNOWN","hash":"","upload_started_at":0,"upload_finished_at":0}`),
 			want: metadata{State: metadataStateUnknown},
 		},
 		{
-			b:    []byte(`{"state":"METADATA_STATE_EMPTY","started_upload_at":0,"finished_upload_at":0}`),
-			want: metadata{State: metadataStateEmpty},
-		},
-		{
-			b:    []byte(`{"state":"METADATA_STATE_UPLOADING","started_upload_at":0,"finished_upload_at":0}`),
+			b:    []byte(`{"state":"METADATA_STATE_UPLOADING","hash":"","upload_started_at":0,"upload_finished_at":0}`),
 			want: metadata{State: metadataStateUploading},
 		},
 		{
-			b:    []byte(`{"state":"METADATA_STATE_UPLOADED","started_upload_at":0,"finished_upload_at":0}`),
+			b:    []byte(`{"state":"METADATA_STATE_UPLOADED","hash":"","upload_started_at":0,"upload_finished_at":0}`),
 			want: metadata{State: metadataStateUploaded},
+		},
+		{
+			b:    []byte(`{"state":"METADATA_STATE_CORRUPTED","hash":"","upload_started_at":0,"upload_finished_at":0}`),
+			want: metadata{State: metadataStateCorrupted},
 		},
 	}
 	for _, tt := range tests {
