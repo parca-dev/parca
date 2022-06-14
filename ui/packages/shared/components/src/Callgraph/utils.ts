@@ -37,3 +37,7 @@ export const getPathDataFromPos = (linkPos: string, startPos: string, endPos: st
 // we can just filter these out for the sake of drawing our curves
 
 // so show have M${p1}C${p2}${p3}${p4}...${p5}${p6}${p7}...
+
+// cum_value of node is sum of incoming links
+// flat_value is what resources that were consumed by that particular node
+// link value is sum of cum_values of target nodes

@@ -2,5 +2,8 @@
   "devDependencies": {
     "all-contributors-cli": "^6.20.0",
     "ts-protoc-gen": "^0.15.0"
+  },
+  "dependencies": {
+    "d3-sankey-circular": "^0.34.0"
   }
 }

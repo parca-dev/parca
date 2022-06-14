@@ -1,5 +1,9 @@
 import ResponsiveSvg from '../ResponsiveSvg';
 import {parsePos, getPathDataFromPos} from './utils';
+import Sankey from './Sankey';
+import testData from './testData.json';
+import testData2 from './testData2.json';
+import {useContainerDimensions} from '@parca/dynamicsize';
 
 interface Props {
   data: any;
@@ -34,47 +38,47 @@ const data = {
   ],
 };
 
-const Content = ({width, height, margin}) => {
-  const {nodes, edges} = data;
-  const transformedNodes = nodes.map(node => ({
-    ...node,
-    x: parsePos(node.pos).x,
-    y: parsePos(node.pos).y,
-  }));
+// const Content = ({width, height, margin}) => {
+//   const {nodes, edges} = data;
+//   const transformedNodes = nodes.map(node => ({
+//     ...node,
+//     x: parsePos(node.pos).x,
+//     y: parsePos(node.pos).y,
+//   }));
 
-  const transformedLinks = edges.map(edge => {
-    const startPos = nodes[edge.head].pos;
-    const endPos = nodes[edge.tail].pos;
-    return {
-      ...edge,
-      path: getPathDataFromPos(edge.pos, startPos, endPos),
-    };
-  });
+//   const transformedLinks = edges.map(edge => {
+//     const startPos = nodes[edge.head].pos;
+//     const endPos = nodes[edge.tail].pos;
+//     return {
+//       ...edge,
+//       path: getPathDataFromPos(edge.pos, startPos, endPos),
+//     };
+//   });
 
-  if (width && height) {
-    return (
-      width &&
-      height && (
-        <g transform={`translate(${margin}, ${margin})`}>
-          <rect fill="pink" width={width - margin} height={height - margin} />
-          <text transform={`translate(${margin}, ${margin})`}>
-            width: {width}, height: {height}{' '}
-          </text>
+//   if (width && height) {
+//     return (
+//       width &&
+//       height && (
+//         <g transform={`translate(${margin}, ${margin})`}>
+//           <rect fill="pink" width={width - margin} height={height - margin} />
+//           <text transform={`translate(${margin}, ${margin})`}>
+//             width: {width}, height: {height}{' '}
+//           </text>
 
-          {transformedNodes.map(node => {
-            const {x, y} = node;
-            return <rect fill="blue" x={x} y={y} width={20} height={20} />;
-          })}
-          {transformedLinks.map(link => (
-            <path d={link.path} stroke="green" />
-          ))}
-        </g>
-      )
-    );
-  }
+//           {transformedNodes.map(node => {
+//             const {x, y} = node;
+//             return <rect fill="blue" x={x} y={y} width={20} height={20} />;
+//           })}
+//           {transformedLinks.map(link => (
+//             <path d={link.path} stroke="green" />
+//           ))}
+//         </g>
+//       )
+//     );
+//   }
 
-  return <></>;
-};
+//   return <></>;
+// };
 
 const Xaxis = ({xScale, formatValue = (d: any) => d, translateY, tickCount}) => (
   <g
@@ -119,11 +123,11 @@ const Yaxis = ({yScale, formatValue = (d: any) => d, tickCount}) => (
 );
 
 const Callgraph = ({data}: Props): JSX.Element => {
+  const {ref, dimensions} = useContainerDimensions();
   return (
-    <ResponsiveSvg>
-      {/* @ts-ignore */}
-      <Content margin={20} data={data} />
-    </ResponsiveSvg>
+    <div ref={ref}>
+      <Sankey data={testData2} width={dimensions?.width} height={600} />
+    </div>
   );
 };
 
