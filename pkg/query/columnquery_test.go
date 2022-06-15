@@ -31,6 +31,8 @@ import (
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -39,6 +41,57 @@ import (
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
+
+func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col := columnstore.New(
+		reg,
+		8196,
+		64*1024*1024,
+	)
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
+	_, err = colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(
+			parcacol.Schema(),
+		),
+		logger,
+	)
+	require.NoError(t, err)
+	m := metastore.NewBadgerMetastore(
+		logger,
+		reg,
+		tracer,
+		metastore.NewRandomUUIDGenerator(),
+	)
+	t.Cleanup(func() {
+		m.Close()
+	})
+
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		m,
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+		),
+		"stacktraces",
+	)
+	_, err = api.QueryRange(ctx, &pb.QueryRangeRequest{
+		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+		Start: timestamppb.New(timestamp.Time(0)),
+		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
+	})
+	require.ErrorIs(t, err, status.Error(
+		codes.NotFound,
+		"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
+	))
+}
 
 func TestColumnQueryAPIQueryRange(t *testing.T) {
 	ctx := context.Background()

@@ -283,6 +283,12 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 	if err != nil {
 		return nil, err
 	}
+	if ar.NumRows() == 0 {
+		return nil, status.Error(
+			codes.NotFound,
+			"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
+		)
+	}
 
 	timestampColumnIndex := 0
 	timestampColumnFound := false
