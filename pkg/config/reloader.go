@@ -91,6 +91,7 @@ func (r *ConfigReloader) watchFile() {
 		select {
 		case event, ok := <-r.watcher.Events:
 			if !ok {
+				level.Debug(r.logger).Log("msg", "config file watcher events channel closed. exiting goroutine.")
 				return
 			}
 			if event.Op&fsnotify.Write == fsnotify.Write {
@@ -99,6 +100,7 @@ func (r *ConfigReloader) watchFile() {
 			}
 		case err, ok := <-r.watcher.Errors:
 			if !ok {
+				level.Debug(r.logger).Log("msg", "config file watcher errors channel closed. exiting goroutine.")
 				return
 			}
 			level.Error(r.logger).Log("msg", "error encountered while watching config file", "err", err)
