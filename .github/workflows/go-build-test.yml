@@ -53,6 +53,11 @@ jobs:
       run: |
         make go/test
 
+    - name: Benchmark
+      if: ${{ matrix.arch == 'x64' }}
+      run: |
+        make go/bench
+
     - name: Archive generated artifacts
       if: ${{ matrix.arch == 'x64' }}
       uses: actions/upload-artifact@v3
