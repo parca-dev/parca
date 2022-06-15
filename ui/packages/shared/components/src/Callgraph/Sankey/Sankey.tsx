@@ -1,13 +1,11 @@
-import React from 'react';
 import * as d3 from 'd3';
 import sankeyCircular from './sankeyCircular';
-import {sankeyJustify, sankeyLeft, sankeyCenter, sankeyRight} from './align';
+import {sankeyJustify, sankeyLeft, sankeyCenter, sankeyRight} from '../align';
 
 const NODE_WIDTH = 15;
 
 const SankeyNode = node => {
   const {name, x0, x1, y0, y1, color} = node;
-  console.log(x0);
 
   return (
     <>
@@ -74,7 +72,6 @@ const Sankey = ({data, width, height}) => {
 
   const color = d3.interpolateWarm;
   const colorScale = d3.scaleLinear().domain([0, nodes.length]).range([0, 1]);
-  console.log(links);
   const linkWidthScale = d3
     .scaleLinear()
     .domain([0, Math.max(...links.map(link => link.value))])

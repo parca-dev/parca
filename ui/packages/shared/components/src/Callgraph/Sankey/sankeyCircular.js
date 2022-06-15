@@ -312,7 +312,7 @@ export default function (NODE_WIDTH = 24) {
   function computeNodeValues(graph) {
     graph.nodes.forEach(function (node) {
       node.partOfCycle = false;
-      // TO DO - compute proper node values
+      // TODO - compute proper node values
       node.value = Math.max(sum(node.sourceLinks, value), sum(node.targetLinks, value));
       node.sourceLinks.forEach(function (link) {
         if (link.circular) {
@@ -646,6 +646,7 @@ export default function (NODE_WIDTH = 24) {
 
 // Identify circles in the link objects
 function identifyCircles(graph, id, sortNodes) {
+  console.log(graph);
   var circularLinkID = 0;
   if (sortNodes === null) {
     // Building adjacency graph
