@@ -23,10 +23,12 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/rzajac/flexbuf"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
 	"google.golang.org/grpc/codes"
@@ -73,6 +75,8 @@ type Store struct {
 
 	symbolizer      *symbol.Symbolizer
 	metadataManager *metadataManager
+
+	pool sync.Pool
 }
 
 // NewStore returns a new debug info store.
@@ -104,6 +108,11 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 		symbolizer:       symbolizer,
 		debuginfodClient: debuginfodClient,
 		metadataManager:  newMetadataManager(logger, bucket),
+		pool: sync.Pool{
+			New: func() interface{} {
+				return []byte{}
+			},
+		},
 	}, nil
 }
 
@@ -243,7 +252,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		if err := elfutils.ValidateFile(objFile); err != nil {
 			// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
 			if err := s.metadataManager.corrupted(ctx, buildID); err != nil {
-				level.Warn(s.logger).Log("msg", "failed to update metadata for corrupted", "err", err)
+				level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
 			}
 			// Client will retry.
 			return status.Error(codes.Internal, err.Error())
@@ -264,13 +273,31 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Error(codes.Internal, err.Error())
 	}
 
+	//nolint:forcetypeassert
+	b := s.pool.Get().([]byte)
+	buf := flexbuf.With(b)
+	defer func() {
+		// TODO(kakkoyun): Check if this creates any problems with reused buffers.
+		buf.Release()
+		b = b[:0]
+	}()
+
 	// At this point we know that we received a better version of the debug information file,
 	// so let the client upload it.
 	r := &UploadReader{stream: stream}
-	if err := s.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
+	if err := s.bucket.Upload(ctx, objectPath(buildID), io.TeeReader(r, buf)); err != nil {
 		msg := "failed to upload"
 		level.Error(s.logger).Log("msg", msg, "err", err)
 		return status.Errorf(codes.Unknown, msg)
+	}
+
+	if err := elfutils.ValidateReader(buf); err != nil {
+		// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
+		if err := s.metadataManager.corrupted(ctx, buildID); err != nil {
+			err := fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)
+			return status.Error(codes.Internal, err.Error())
+		}
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := s.metadataManager.uploaded(ctx, buildID, objFileHash); err != nil {
