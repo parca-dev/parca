@@ -15,7 +15,6 @@ package debuginfo
 
 import (
 	"context"
-	"debug/elf"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -157,9 +156,7 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		metadataFile, err := s.metadataManager.fetch(ctx, buildID)
 		if err != nil {
 			if errors.Is(err, ErrMetadataNotFound) {
-				return &debuginfopb.ExistsResponse{
-					Exists: false,
-				}, nil
+				return &debuginfopb.ExistsResponse{Exists: false}, nil
 			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -177,10 +174,8 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		case metadataStateCorrupted:
 			exists = false
 		}
-
 		return &debuginfopb.ExistsResponse{Exists: exists}, nil
 	}
-
 	return &debuginfopb.ExistsResponse{Exists: found}, nil
 }
 
@@ -245,17 +240,22 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 			return status.Error(codes.Internal, err.Error())
 		}
 
-		shouldUpload, err := check(objFile)
-		if err != nil {
-			// Mark file as corrupted, and let the client try to upload it again.
-			err := s.metadataManager.corrupted(ctx, buildID)
-			if err != nil {
-				err = fmt.Errorf("failed to update metadata for corrupted: %w", err)
+		if err := elfutils.ValidateFile(objFile); err != nil {
+			// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
+			if err := s.metadataManager.corrupted(ctx, buildID); err != nil {
+				level.Warn(s.logger).Log("msg", "failed to update metadata for corrupted", "err", err)
 			}
+			// Client will retry.
 			return status.Error(codes.Internal, err.Error())
 		}
-		if !shouldUpload {
-			return status.Error(codes.Aborted, "debuginfo already exists")
+
+		// Valid.
+		hasDWARF, err := elfutils.HasDWARF(objFile)
+		if err != nil {
+			level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
+		}
+		if hasDWARF {
+			return status.Error(codes.AlreadyExists, "debuginfo already exists")
 		}
 	}
 
@@ -287,26 +287,6 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 
 func isStale(metadataFile *metadata) bool {
 	return time.Now().Add(-15 * time.Minute).After(time.Unix(metadataFile.UploadStartedAt, 0))
-}
-
-// check returns true if the incoming object file should be uploaded.
-func check(objFile string) (bool, error) {
-	hasDWARF, err := elfutils.HasDWARF(objFile)
-	if err != nil {
-		if errors.Is(err, io.EOF) {
-			// Failed to read the file, better for client to upload a new version.
-			return true, nil
-		}
-		var fe *elf.FormatError
-		if errors.As(err, &fe) {
-			if strings.Contains(fe.Error(), "bad magic number") {
-				// The file is not an ELF file or corrupted, better for client to upload a new version.
-				return true, nil
-			}
-		}
-		return false, err
-	}
-	return !hasDWARF, nil
 }
 
 func validateID(id string) error {
@@ -341,6 +321,7 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Lo
 	buildID := m.BuildId
 	logger := log.With(s.logger, "buildid", buildID)
 
+	var downloadedFromDebugInfod bool
 	objFile, err := s.fetchObjectFile(ctx, buildID)
 	if err != nil {
 		// It's ok if we don't have the symbols for given BuildID, it happens too often.
@@ -351,19 +332,43 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Lo
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch: %w", err)
 		}
+		downloadedFromDebugInfod = true
 	}
 
 	// Let's make sure we have the best version of the debug file.
-	hasDWARF, err := elfutils.HasDWARF(objFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check for DWARF: %w", err)
-	}
-	if !hasDWARF {
-		dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
+	if err := elfutils.ValidateFile(objFile); err != nil {
+		level.Warn(logger).Log("msg", "failed to validate debug information", "err", err)
+		// Mark the file as corrupted, and let the client try to upload it again.
+		err := s.metadataManager.corrupted(ctx, buildID)
 		if err != nil {
-			level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
-		} else {
-			objFile = dbgFile
+			level.Warn(logger).Log(
+				"msg", "failed to mar debug information",
+				"err", fmt.Errorf("failed to update metadata for corrupted: %w", err),
+			)
+		}
+		if !downloadedFromDebugInfod {
+			dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
+			if err != nil {
+				level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+			} else {
+				objFile = dbgFile
+				downloadedFromDebugInfod = true
+			}
+		}
+	}
+	if !downloadedFromDebugInfod {
+		hasDWARF, err := elfutils.HasDWARF(objFile)
+		if err != nil {
+			level.Debug(logger).Log("msg", "failed to check for DWARF", "err", err)
+		}
+		if !hasDWARF {
+			// Try to download a better version from debuginfod servers.
+			dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
+			if err != nil {
+				level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+			} else {
+				objFile = dbgFile
+			}
 		}
 	}
 

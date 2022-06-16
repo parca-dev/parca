@@ -17,6 +17,7 @@ import (
 	"debug/elf"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -139,8 +140,8 @@ func IsGoObjFile(path string) (bool, error) {
 }
 
 // HasSymbols reports whether the specified executable or library file contains symbols (both.symtab and .dynsym).
-func HasSymbols(filePath string) (bool, error) {
-	ef, err := elf.Open(filePath)
+func HasSymbols(path string) (bool, error) {
+	ef, err := elf.Open(path)
 	if err != nil {
 		return false, fmt.Errorf("failed to open elf: %w", err)
 	}
@@ -152,4 +153,34 @@ func HasSymbols(filePath string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// ValidateFile returns true if the given object file is valid.
+func ValidateFile(path string) error {
+	elfFile, err := elf.Open(path)
+	if err != nil {
+		return err
+	}
+	defer elfFile.Close()
+
+	return validate(elfFile)
+}
+
+// ValidateReader returns true if the given object file is valid.
+func ValidateReader(r io.ReaderAt) error {
+	elfFile, err := elf.NewFile(r)
+	if err != nil {
+		return err
+	}
+	defer elfFile.Close()
+
+	return validate(elfFile)
+}
+
+func validate(f *elf.File) error {
+	// TODO(kakkoyun): How can we improve this without allocating too much memory.
+	if len(f.Sections) == 0 {
+		return errors.New("ELF does not have any sections")
+	}
+	return nil
 }
