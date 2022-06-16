@@ -170,22 +170,23 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		switch metadataFile.State {
-		case metadataStateUploaded:
-			if req.Hash != "" {
-				// If it is not an exact version of the source object file what we have so, let the client try to upload it.
-				exists = metadataFile.Hash == req.Hash
-			} else {
-				exists = true
+		if req.Hash != "" && metadataFile.Hash == req.Hash {
+			exists = true
+			if metadataFile.State == metadataStateUploading {
+				exists = !isStale(metadataFile)
 			}
-		case metadataStateUploading:
+			return &debuginfopb.ExistsResponse{Exists: exists}, nil
+		}
+
+		// If it is not an exact version of the source object file what we have so, let the client try to upload it.
+		exists = false
+		if metadataFile.State == metadataStateUploading {
 			exists = !isStale(metadataFile)
-		case metadataStateCorrupted:
-			exists = false
 		}
 		return &debuginfopb.ExistsResponse{Exists: exists}, nil
 	}
-	return &debuginfopb.ExistsResponse{Exists: found}, nil
+
+	return &debuginfopb.ExistsResponse{Exists: false}, nil
 }
 
 func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
