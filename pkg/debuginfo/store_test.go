@@ -16,6 +16,7 @@ package debuginfo
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"io"
 	"io/ioutil"
 	stdlog "log"
@@ -88,6 +89,7 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	defer conn.Close()
 	c := NewDebugInfoClient(conn)
+
 	b := bytes.NewBuffer(nil)
 	for i := 0; i < 1024; i++ {
 		b.Write([]byte("a"))
@@ -99,27 +101,30 @@ func TestStore(t *testing.T) {
 		b.Write([]byte("c"))
 	}
 	size, err := c.Upload(context.Background(), "abcd", "", b)
-	require.NoError(t, err)
-	require.Equal(t, uint64(3072), size)
+	require.Error(t, err)
 
-	obj, err := s.bucket.Get(context.Background(), "abcd/debuginfo")
+	nf, err := os.Open("testdata/validelf_nosections")
+	require.NoError(t, err)
+
+	size, err = c.Upload(context.Background(), hex.EncodeToString([]byte("nosection")), "", nf)
+	require.Error(t, err)
+
+	wf, err := os.Open("testdata/validelf_withsections")
+	require.NoError(t, err)
+
+	size, err = c.Upload(context.Background(), hex.EncodeToString([]byte("section")), "", wf)
+	require.NoError(t, err)
+	require.Equal(t, 7079, int(size))
+
+	obj, err := s.bucket.Get(context.Background(), hex.EncodeToString([]byte("section"))+"/debuginfo")
 	require.NoError(t, err)
 
 	content, err := io.ReadAll(obj)
 	require.NoError(t, err)
-	require.Equal(t, 3072, len(content))
+	require.Equal(t, 7079, len(content))
+	require.Equal(t, []byte{0x7f, 'E', 'L', 'F'}, content[:4])
 
-	for i := 0; i < 1024; i++ {
-		require.Equal(t, []byte("a")[0], content[i])
-	}
-	for i := 0; i < 1024; i++ {
-		require.Equal(t, []byte("b")[0], content[i+1024])
-	}
-	for i := 0; i < 1024; i++ {
-		require.Equal(t, []byte("c")[0], content[i+2048])
-	}
-
-	exists, err := c.Exists(context.Background(), "abcd", "")
+	exists, err := c.Exists(context.Background(), hex.EncodeToString([]byte("section")), "")
 	require.NoError(t, err)
 	require.True(t, exists)
 }
