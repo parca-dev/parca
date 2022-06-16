@@ -36,7 +36,6 @@ import (
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/hash"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -168,27 +167,21 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		switch metadataFile.State {
 		case metadataStateUploaded:
 			if req.Hash != "" {
-				// It is not an exact version of what we have so, let the client try to upload it.
+				// If it is not an exact version of the source object file what we have so, let the client try to upload it.
 				exists = metadataFile.Hash == req.Hash
 			} else {
 				exists = true
 			}
 		case metadataStateUploading:
-			if isStale(metadataFile) {
-				exists = false
-			}
+			exists = !isStale(metadataFile)
 		case metadataStateCorrupted:
 			exists = false
 		}
 
-		return &debuginfopb.ExistsResponse{
-			Exists: exists,
-		}, nil
+		return &debuginfopb.ExistsResponse{Exists: exists}, nil
 	}
 
-	return &debuginfopb.ExistsResponse{
-		Exists: found,
-	}, nil
+	return &debuginfopb.ExistsResponse{Exists: found}, nil
 }
 
 func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
@@ -221,6 +214,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 			if !isStale(metadataFile) {
 				return status.Error(codes.AlreadyExists, "debuginfo already exists, being uploaded right now")
 			}
+			// The debug info upload operation most likely failed.
 		default:
 			return status.Error(codes.Internal, "unknown metadata state")
 		}
@@ -237,42 +231,26 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 
 	var objFileHash string
 	if found {
-		var objFile string
 		if req.GetInfo().Hash != "" {
-			var h string
 			if metadataFile != nil && metadataFile.Hash != "" {
-				h = metadataFile.Hash
-			} else {
-				objFile, err = s.fetchObjectFile(ctx, buildID)
-				if err != nil {
-					return status.Error(codes.Internal, err.Error())
+				if metadataFile.Hash == req.GetInfo().Hash {
+					level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
+					return status.Error(codes.AlreadyExists, "debuginfo already exists")
 				}
-
-				h, err = hash.File(objFile)
-				if err != nil {
-					return status.Error(codes.Internal, err.Error())
-				}
-			}
-
-			if h == req.GetInfo().Hash {
-				level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
-				return status.Error(codes.AlreadyExists, "debuginfo already exists")
 			}
 		}
 
-		if objFile == "" {
-			objFile, err = s.fetchObjectFile(ctx, buildID)
-			if err != nil {
-				return status.Error(codes.Internal, err.Error())
-			}
+		objFile, err := s.fetchObjectFile(ctx, buildID)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		shouldUpload, err := check(objFile)
 		if err != nil {
 			// Mark file as corrupted, and let the client try to upload it again.
-			err := s.metadataManager.update(ctx, buildID, objFileHash, metadataStateCorrupted)
+			err := s.metadataManager.corrupted(ctx, buildID)
 			if err != nil {
-				err = fmt.Errorf("failed to update metadata with %s: %w", metadataStateCorrupted, err)
+				err = fmt.Errorf("failed to update metadata for corrupted: %w", err)
 			}
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -281,8 +259,8 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		}
 	}
 
-	if err := s.metadataManager.update(ctx, buildID, objFileHash, metadataStateUploading); err != nil {
-		err := fmt.Errorf("failed to update metadata with %s: %w", metadataStateUploading, err)
+	if err := s.metadataManager.uploading(ctx, buildID); err != nil {
+		err := fmt.Errorf("failed to update metadata before uploading: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
 
@@ -295,8 +273,8 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Errorf(codes.Unknown, msg)
 	}
 
-	if err := s.metadataManager.update(ctx, buildID, objFileHash, metadataStateUploaded); err != nil {
-		err := fmt.Errorf("failed to update metadata with %s: %w", metadataStateUploaded, err)
+	if err := s.metadataManager.uploaded(ctx, buildID, objFileHash); err != nil {
+		err := fmt.Errorf("failed to update metadata after uploaded: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
 

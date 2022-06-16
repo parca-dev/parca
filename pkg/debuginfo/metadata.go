@@ -103,76 +103,73 @@ type metadata struct {
 	UploadFinishedAt int64         `json:"upload_finished_at"`
 }
 
-func (m *metadataManager) update(ctx context.Context, buildID, hash string, state metadataState) error {
-	level.Debug(m.logger).Log("msg", "attempting state update to", "state", state)
+func (m *metadataManager) corrupted(ctx context.Context, buildID string) error {
+	if err := m.write(ctx, buildID, &metadata{
+		State: metadataStateCorrupted,
+	}); err != nil {
+		return fmt.Errorf("failed to write metadata: %w", err)
+	}
+	return nil
+}
 
-	switch state {
-	case metadataStateCorrupted:
-		if err := m.write(ctx, buildID, &metadata{
-			State: metadataStateCorrupted,
-		}); err != nil {
-			return fmt.Errorf("failed to write metadata: %w", err)
-		}
+func (m *metadataManager) uploading(ctx context.Context, buildID string) error {
+	_, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
+	// The metadata file should not exist yet. Not erroring here because there's
+	// room for a race condition.
+	if err == nil {
+		level.Info(m.logger).Log("msg", "there should not be a metadata file")
+		return nil
+	}
 
-	case metadataStateUploading:
-		_, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
-		// The metadata file should not exist yet. Not erroring here because there's
-		// room for a race condition.
-		if err == nil {
-			level.Info(m.logger).Log("msg", "there should not be a metadata file")
-			return nil
-		}
+	if !m.bucket.IsObjNotFoundErr(err) {
+		level.Error(m.logger).Log("msg", "unexpected error", "err", err)
+		return err
+	}
 
-		if !m.bucket.IsObjNotFoundErr(err) {
-			level.Error(m.logger).Log("msg", "unexpected error", "err", err)
-			return err
-		}
+	if err := m.write(ctx, buildID, &metadata{
+		State:           metadataStateUploading,
+		UploadStartedAt: time.Now().Unix(),
+	}); err != nil {
+		return fmt.Errorf("failed to write metadata: %w", err)
+	}
+	return nil
+}
 
-		if err := m.write(ctx, buildID, &metadata{
-			State:           metadataStateUploading,
-			Hash:            hash,
-			UploadStartedAt: time.Now().Unix(),
-		}); err != nil {
-			return fmt.Errorf("failed to write metadata: %w", err)
-		}
+func (m *metadataManager) uploaded(ctx context.Context, buildID, hash string) error {
+	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
+	if err != nil {
+		level.Error(m.logger).Log("msg", "expected metadata file", "err", err)
+		return ErrMetadataShouldExist
+	}
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(r)
+	if err != nil {
+		return err
+	}
 
-	case metadataStateUploaded:
-		r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
-		if err != nil {
-			level.Error(m.logger).Log("msg", "expected metadata file", "err", err)
-			return ErrMetadataShouldExist
-		}
-		buf := new(bytes.Buffer)
-		_, err = buf.ReadFrom(r)
-		if err != nil {
-			return err
-		}
+	metaData := &metadata{}
+	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
+		return err
+	}
 
-		metaData := &metadata{}
-		if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
-			return err
-		}
+	// There's a small window where a race could happen.
+	if metaData.State == metadataStateUploaded {
+		return nil
+	}
 
-		// There's a small window where a race could happen.
-		if metaData.State == metadataStateUploaded {
-			return nil
-		}
-
-		if metaData.State != metadataStateUploading {
-			return ErrMetadataUnexpectedState
-		}
-
-		metaData.State = metadataStateUploaded
-		metaData.UploadFinishedAt = time.Now().Unix()
-
-		metadataBytes, _ := json.MarshalIndent(&metaData, "", "\t")
-		newData := bytes.NewReader(metadataBytes)
-
-		if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), newData); err != nil {
-			return err
-		}
-	default:
+	if metaData.State != metadataStateUploading {
 		return ErrMetadataUnexpectedState
+	}
+
+	metaData.State = metadataStateUploaded
+	metaData.Hash = hash
+	metaData.UploadFinishedAt = time.Now().Unix()
+
+	metadataBytes, _ := json.MarshalIndent(&metaData, "", "\t")
+	newData := bytes.NewReader(metadataBytes)
+
+	if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), newData); err != nil {
+		return err
 	}
 	return nil
 }

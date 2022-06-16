@@ -43,7 +43,7 @@ message UploadInfo {
   // build_id is a unique identifier for the debug data
   string build_id = 1;
 
-  // hash is the hash of the debug information file
+  // hash is the hash of the source file that debug information extracted from
   string hash = 2;
 }
 

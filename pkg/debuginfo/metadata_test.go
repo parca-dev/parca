@@ -70,7 +70,7 @@ func TestMetadata(t *testing.T) {
 	require.ErrorIs(t, err, ErrMetadataNotFound)
 
 	// Updating the state should be written to blob storage.
-	err = store.metadataManager.update(context.Background(), "fake-build-id", "", metadataStateUploading)
+	err = store.metadataManager.uploading(context.Background(), "fake-build-id")
 	require.NoError(t, err)
 
 	md, err := store.metadataManager.fetch(context.Background(), "fake-build-id")
