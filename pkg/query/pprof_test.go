@@ -23,13 +23,14 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -37,28 +38,24 @@ func TestGenerateFlatPprof(t *testing.T) {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	f, err := os.Open("testdata/alloc_objects.pb.gz")
-	require.NoError(t, err)
-	p1, err := profile.Parse(f)
-	require.NoError(t, err)
-	require.NoError(t, f.Close())
+	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(fileContent))
 
 	l := metastore.NewBadgerMetastore(
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		tracer,
-		metastore.NewRandomUUIDGenerator(),
 	)
-	t.Cleanup(func() {
-		l.Close()
-	})
-	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
+	metastore := metastore.NewInProcessClient(l)
+	normalizer := parcacol.NewNormalizer(metastore)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
 	require.NoError(t, err)
 
-	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, p)
+	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, profiles[0])
 	require.NoError(t, err)
 
-	res, err := GenerateFlatPprof(ctx, l, samples)
+	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
 	require.NoError(t, err)
 
 	require.Equal(t, &profile.ValueType{Type: "space", Unit: "bytes"}, res.PeriodType)
@@ -80,9 +77,9 @@ func TestGenerateFlatPprof(t *testing.T) {
 		HasInlineFrames: false,
 	}}, res.Mapping)
 
-	require.Len(t, res.Function, 974)
-	require.Len(t, res.Location, 1886)
-	require.Len(t, res.Sample, 4650)
+	require.Equal(t, 974, len(res.Function))
+	require.Equal(t, 1886, len(res.Location))
+	require.Equal(t, 4661, len(res.Sample))
 
 	tmpfile, err := ioutil.TempFile("", "pprof")
 	defer os.Remove(tmpfile.Name())
@@ -90,7 +87,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	require.NoError(t, res.Write(tmpfile))
 	require.NoError(t, tmpfile.Close())
 
-	f, err = os.Open(tmpfile.Name())
+	f, err := os.Open(tmpfile.Name())
 	require.NoError(t, err)
 	resProf, err := profile.Parse(f)
 
@@ -113,54 +110,58 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		metastore.NewRandomUUIDGenerator(),
 	)
-	f1 := &pb.Function{
-		Name: "1",
-	}
-	f1.Id, err = l.CreateFunction(ctx, f1)
-	require.NoError(t, err)
+	metastore := metastore.NewInProcessClient(l)
 
-	f2 := &pb.Function{
-		Name: "2",
-	}
-	f2.Id, err = l.CreateFunction(ctx, f2)
+	fres, err := metastore.GetOrCreateFunctions(ctx, &pb.GetOrCreateFunctionsRequest{
+		Functions: []*pb.Function{{
+			Name: "1",
+		}, {
+			Name: "2",
+		}},
+	})
 	require.NoError(t, err)
+	require.Equal(t, 2, len(fres.Functions))
+	f1 := fres.Functions[0]
+	f2 := fres.Functions[1]
 
-	l1 := &metastore.Location{
-		Lines: []metastore.LocationLine{
-			{
-				Function: f1,
+	lres, err := metastore.GetOrCreateLocations(ctx, &pb.GetOrCreateLocationsRequest{
+		Locations: []*pb.Location{{
+			Lines: &pb.LocationLines{
+				Entries: []*pb.Line{{
+					FunctionId: f1.Id,
+				}},
 			},
-		},
-	}
-	l1ID, err := l.CreateLocation(ctx, l1)
-	require.NoError(t, err)
-
-	l1.ID, err = uuid.FromBytes(l1ID)
-	require.NoError(t, err)
-
-	l2 := &metastore.Location{
-		Lines: []metastore.LocationLine{
-			{
-				Function: f2,
+		}, {
+			Lines: &pb.LocationLines{
+				Entries: []*pb.Line{{
+					FunctionId: f2.Id,
+				}},
 			},
-		},
-	}
-	l2ID, err := l.CreateLocation(ctx, l2)
+		}},
+	})
 	require.NoError(t, err)
+	require.Equal(t, 2, len(lres.Locations))
+	l1 := lres.Locations[0]
+	l2 := lres.Locations[1]
 
-	l2.ID, err = uuid.FromBytes(l2ID)
+	sres, err := metastore.GetOrCreateStacktraces(ctx, &pb.GetOrCreateStacktracesRequest{
+		Stacktraces: []*pb.Stacktrace{{
+			LocationIds: []string{l2.Id, l1.Id},
+		}},
+	})
 	require.NoError(t, err)
+	require.Equal(t, 1, len(sres.Stacktraces))
+	s := sres.Stacktraces[0]
 
-	sample := parcaprofile.MakeSample(2, []uuid.UUID{
-		l2.ID,
-		l1.ID,
+	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, &parcaprofile.NormalizedProfile{
+		Samples: []*parcaprofile.NormalizedSample{{
+			StacktraceID: s.Id,
+			Value:        1,
+		}},
 	})
 
-	res, err := GenerateFlatPprof(ctx, l, &parcaprofile.StacktraceSamples{
-		Samples: []*parcaprofile.Sample{sample},
-	})
+	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
 	require.NoError(t, err)
 
 	tmpfile, err := ioutil.TempFile("", "pprof")

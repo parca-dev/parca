@@ -15,6 +15,7 @@ package profilestore
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -24,7 +25,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/pprof/profile"
 	"github.com/polarsignals/arcticdb"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
@@ -33,8 +33,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
@@ -43,7 +44,7 @@ type ProfileColumnStore struct {
 
 	logger    log.Logger
 	tracer    trace.Tracer
-	metaStore metastore.ProfileMetaStore
+	metastore metastorepb.MetastoreServiceClient
 
 	table *arcticdb.Table
 
@@ -60,26 +61,26 @@ var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
 func NewProfileColumnStore(
 	logger log.Logger,
 	tracer trace.Tracer,
-	metaStore metastore.ProfileMetaStore,
+	metastore metastorepb.MetastoreServiceClient,
 	table *arcticdb.Table,
 	debugValueLog bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{
 		logger:        logger,
 		tracer:        tracer,
-		metaStore:     metaStore,
+		metastore:     metastore,
 		table:         table,
 		debugValueLog: debugValueLog,
 	}
 }
 
-func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
+func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
 	ctx, span := s.tracer.Start(ctx, "write-raw")
 	defer span.End()
 
-	ingester := parcacol.NewIngester(s.logger, s.metaStore, s.table)
+	ingester := parcacol.NewIngester(s.logger, parcacol.NewNormalizer(s.metastore), s.table)
 
-	for _, series := range r.Series {
+	for _, series := range req.Series {
 		ls := make(labels.Labels, 0, len(series.Labels.Labels))
 		for _, l := range series.Labels.Labels {
 			if valid := model.LabelName(l.Name).IsValid(); !valid {
@@ -93,8 +94,18 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 		}
 
 		for _, sample := range series.Samples {
-			p, err := profile.Parse(bytes.NewBuffer(sample.RawProfile))
+			r, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
 			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to create gzip reader: %v", err)
+			}
+
+			content, err := ioutil.ReadAll(r)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to decompress profile: %v", err)
+			}
+
+			p := &pprofpb.Profile{}
+			if err := p.UnmarshalVT(content); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
 			}
 
@@ -111,11 +122,7 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 				}
 			}
 
-			if err := p.CheckValid(); err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
-			}
-
-			if err := ingester.Ingest(ctx, ls, p, r.Normalized); err != nil {
+			if err := ingester.Ingest(ctx, ls, p, req.Normalized); err != nil {
 				return nil, status.Errorf(codes.Internal, "failed to ingest profile: %v", err)
 			}
 		}

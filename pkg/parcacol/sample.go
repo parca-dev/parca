@@ -17,35 +17,16 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/polarsignals/arcticdb/dynparquet"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/segmentio/parquet-go"
 )
 
-// Sample is a decomposed pprof Sample that will be appended to columnar storage.
-// All fields are columns that are sorted by their name in the schema too.
-type Sample struct {
-	Duration       int64
-	Labels         labels.Labels
-	Name           string
-	Period         int64
-	PeriodType     string
-	PeriodUnit     string
-	PprofLabels    map[string]string
-	PprofNumLabels map[string]int64
-	SampleType     string
-	SampleUnit     string
-	Stacktrace     []byte
-	Timestamp      int64
-	Value          int64
-}
-
-type Samples []*Sample
-
-func (s Samples) ToBuffer(schema *dynparquet.Schema) (*dynparquet.Buffer, error) {
-	names := s.SampleLabelNames()
-	pprofLabels := s.pprofLabelsNames()
-	pprofNumLabels := s.pprofNumLabelsNames()
+func NormalizedProfileToParquetBuffer(schema *dynparquet.Schema, ls labels.Labels, p *profile.NormalizedProfile) (*dynparquet.Buffer, error) {
+	names := labelNames(ls)
+	pprofLabels := profileLabelNames(p)
+	pprofNumLabels := profileNumLabelNames(p)
 
 	pb, err := schema.NewBuffer(map[string][]string{
 		ColumnLabels:         names,
@@ -57,8 +38,17 @@ func (s Samples) ToBuffer(schema *dynparquet.Schema) (*dynparquet.Buffer, error)
 	}
 
 	var r parquet.Row
-	for _, sample := range s {
-		r = sample.ToParquetRow(schema, r[:0], names, pprofLabels, pprofNumLabels)
+	for _, sample := range p.Samples {
+		r = SampleToParquetRow(
+			schema,
+			r[:0],
+			names,
+			pprofLabels,
+			pprofNumLabels,
+			ls,
+			p.Meta,
+			sample,
+		)
 		_, err := pb.WriteRows([]parquet.Row{r})
 		if err != nil {
 			return nil, err
@@ -68,29 +58,22 @@ func (s Samples) ToBuffer(schema *dynparquet.Schema) (*dynparquet.Buffer, error)
 	return pb, nil
 }
 
-func (s Samples) SampleLabelNames() []string {
+func labelNames(ls labels.Labels) []string {
 	names := []string{}
-	seen := map[string]struct{}{}
 
-	for _, sample := range s {
-		for _, label := range sample.Labels {
-			if _, ok := seen[label.Name]; !ok {
-				names = append(names, label.Name)
-				seen[label.Name] = struct{}{}
-			}
-		}
+	for _, label := range ls {
+		names = append(names, label.Name)
 	}
-	sort.Strings(names)
 
 	return names
 }
 
-func (s Samples) pprofLabelsNames() []string {
+func profileLabelNames(p *profile.NormalizedProfile) []string {
 	names := []string{}
 	seen := map[string]struct{}{}
 
-	for _, sample := range s {
-		for name := range sample.PprofLabels {
+	for _, sample := range p.Samples {
+		for name := range sample.Label {
 			if _, ok := seen[name]; !ok {
 				names = append(names, name)
 				seen[name] = struct{}{}
@@ -102,12 +85,12 @@ func (s Samples) pprofLabelsNames() []string {
 	return names
 }
 
-func (s Samples) pprofNumLabelsNames() []string {
+func profileNumLabelNames(p *profile.NormalizedProfile) []string {
 	names := []string{}
 	seen := map[string]struct{}{}
 
-	for _, sample := range s {
-		for name := range sample.PprofNumLabels {
+	for _, sample := range p.Samples {
+		for name := range sample.NumLabel {
 			if _, ok := seen[name]; !ok {
 				names = append(names, name)
 				seen[name] = struct{}{}
@@ -119,7 +102,14 @@ func (s Samples) pprofNumLabelsNames() []string {
 	return names
 }
 
-func (s Sample) ToParquetRow(schema *dynparquet.Schema, row parquet.Row, labelNames, pprofLabelNames, pprofNumLabelNames []string) parquet.Row {
+func SampleToParquetRow(
+	schema *dynparquet.Schema,
+	row parquet.Row,
+	labelNames, profileLabelNames, profileNumLabelNames []string,
+	ls labels.Labels,
+	meta profile.Meta,
+	s *profile.NormalizedSample,
+) parquet.Row {
 	// schema.Columns() returns a sorted list of all columns.
 	// We match on the column's name to insert the correct values.
 	// We track the columnIndex to insert each column at the correct index.
@@ -127,31 +117,31 @@ func (s Sample) ToParquetRow(schema *dynparquet.Schema, row parquet.Row, labelNa
 	for _, column := range schema.Columns() {
 		switch column.Name {
 		case ColumnDuration:
-			row = append(row, parquet.ValueOf(s.Duration).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(meta.Duration).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnName:
-			row = append(row, parquet.ValueOf(s.Name).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(meta.Name).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnPeriod:
-			row = append(row, parquet.ValueOf(s.Period).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(meta.Period).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnPeriodType:
-			row = append(row, parquet.ValueOf(s.PeriodType).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(meta.PeriodType.Type).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnPeriodUnit:
-			row = append(row, parquet.ValueOf(s.PeriodUnit).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(meta.PeriodType.Unit).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnSampleType:
-			row = append(row, parquet.ValueOf(s.SampleType).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(meta.SampleType.Type).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnSampleUnit:
-			row = append(row, parquet.ValueOf(s.SampleUnit).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(meta.SampleType.Unit).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnStacktrace:
-			row = append(row, parquet.ValueOf(s.Stacktrace).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(s.StacktraceID).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnTimestamp:
-			row = append(row, parquet.ValueOf(s.Timestamp).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(meta.Timestamp).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnValue:
 			row = append(row, parquet.ValueOf(s.Value).Level(0, 0, columnIndex))
@@ -162,14 +152,14 @@ func (s Sample) ToParquetRow(schema *dynparquet.Schema, row parquet.Row, labelNa
 			labelNamesLen := len(labelNames)
 			i, j := 0, 0
 			for i < labelNamesLen {
-				if labelNames[i] == s.Labels[j].Name {
-					value := parquet.ValueOf(s.Labels[j].Value).Level(0, 1, columnIndex)
+				if labelNames[i] == ls[j].Name {
+					value := parquet.ValueOf(ls[j].Value).Level(0, 1, columnIndex)
 					row = append(row, value)
 					columnIndex++
 					i++
 					j++
 
-					if j >= len(s.Labels) {
+					if j >= len(ls) {
 						for ; i < labelNamesLen; i++ {
 							row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
 						}
@@ -183,8 +173,8 @@ func (s Sample) ToParquetRow(schema *dynparquet.Schema, row parquet.Row, labelNa
 				}
 			}
 		case ColumnPprofLabels:
-			for _, name := range pprofLabelNames {
-				if value, ok := s.PprofLabels[name]; ok {
+			for _, name := range profileLabelNames {
+				if value, ok := s.Label[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
 					columnIndex++
 				} else {
@@ -193,8 +183,8 @@ func (s Sample) ToParquetRow(schema *dynparquet.Schema, row parquet.Row, labelNa
 				}
 			}
 		case ColumnPprofNumLabels:
-			for _, name := range pprofNumLabelNames {
-				if value, ok := s.PprofNumLabels[name]; ok {
+			for _, name := range profileNumLabelNames {
+				if value, ok := s.NumLabel[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
 					columnIndex++
 				} else {

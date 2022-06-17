@@ -54,16 +54,12 @@ func Test_LabelName_Invalid(t *testing.T) {
 		logger,
 		reg,
 		tracer,
-		metastore.NewRandomUUIDGenerator(),
 	)
-	t.Cleanup(func() {
-		m.Close()
-	})
 
 	api := NewProfileColumnStore(
 		logger,
 		tracer,
-		m,
+		metastore.NewInProcessClient(m),
 		table,
 		false,
 	)

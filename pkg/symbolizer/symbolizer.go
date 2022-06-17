@@ -16,6 +16,8 @@ package symbolizer
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-kit/log"
@@ -24,37 +26,37 @@ import (
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/runutil"
 )
 
 type Symbolizer struct {
 	logger log.Logger
 
-	metaStore metastore.ProfileMetaStore
+	metastore pb.MetastoreServiceClient
 	debugInfo *debuginfo.Store
 }
 
-func New(logger log.Logger, metaStore metastore.ProfileMetaStore, info *debuginfo.Store) *Symbolizer {
+func New(logger log.Logger, metastore pb.MetastoreServiceClient, info *debuginfo.Store) *Symbolizer {
 	return &Symbolizer{
 		logger:    log.With(logger, "component", "symbolizer"),
-		metaStore: metaStore,
+		metastore: metastore,
 		debugInfo: info,
 	}
 }
 
 func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	return runutil.Repeat(interval, ctx.Done(), func() error {
-		locations, err := metastore.GetSymbolizableLocations(ctx, s.metaStore)
+		lres, err := s.metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 		if err != nil {
 			return err
 		}
-		if len(locations) == 0 {
+		if len(lres.Locations) == 0 {
 			// Nothing to symbolize.
 			return nil
 		}
 
-		err = s.symbolize(ctx, locations)
+		err = s.symbolize(ctx, lres.Locations)
 		if err != nil {
 			level.Error(s.logger).Log("msg", "symbolization attempt finished with errors", "err", err)
 		}
@@ -62,44 +64,125 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	})
 }
 
-func (s *Symbolizer) symbolize(ctx context.Context, locations []*metastore.Location) error {
-	// Aggregate locations per mapping to get prepared for batch request.
-	mappings := map[string]*pb.Mapping{}
-	mappingLocations := map[string][]*metastore.Location{}
+// UnsymbolizableMapping returns true if a mapping points to a binary for which
+// locations can't be symbolized in principle, at least now. Examples are
+// "[vdso]", [vsyscall]" and some others, see the code.
+func UnsymbolizableMapping(m *pb.Mapping) bool {
+	name := filepath.Base(m.File)
+	return strings.HasPrefix(name, "[") || strings.HasPrefix(name, "linux-vdso") || strings.HasPrefix(m.File, "/dev/dri/")
+}
+
+type MappingLocations struct {
+	Mapping   *pb.Mapping
+	Locations []*pb.Location
+
+	// LocationsLines is a list of lines per location.
+	LocationsLines [][]profile.LocationLine
+}
+
+func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) error {
+	mappingsIndex := map[string]int{}
+	mappingIDs := []string{}
 	for _, loc := range locations {
+		if _, ok := mappingsIndex[loc.MappingId]; !ok {
+			mappingIDs = append(mappingIDs, loc.MappingId)
+			mappingsIndex[loc.MappingId] = len(mappingIDs) - 1
+		}
+	}
+
+	mres, err := s.metastore.Mappings(ctx, &pb.MappingsRequest{MappingIds: mappingIDs})
+	if err != nil {
+		return err
+	}
+
+	// Aggregate locations per mapping to get prepared for batch request.
+	locationsByMappings := make([]*MappingLocations, len(mres.Mappings))
+	for i, m := range mres.Mappings {
+		locationsByMappings[i] = &MappingLocations{Mapping: m}
+	}
+
+	for _, loc := range locations {
+		locationsByMapping := locationsByMappings[mappingsIndex[loc.MappingId]]
+		mapping := locationsByMapping.Mapping
 		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
-		if loc.Mapping == nil || len(loc.Mapping.BuildId) == 0 || metastore.UnsymbolizableMapping(loc.Mapping) {
+		if mapping == nil || len(mapping.BuildId) == 0 || UnsymbolizableMapping(mapping) {
 			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
 			continue
 		}
 		// Already symbolized!
-		if len(loc.Lines) > 0 {
+		if loc.Lines != nil && len(loc.Lines.Entries) > 0 {
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
 			continue
 		}
-		mappings[loc.Mapping.BuildId] = loc.Mapping
-		mappingLocations[loc.Mapping.BuildId] = append(mappingLocations[loc.Mapping.BuildId], loc)
+		locationsByMapping.Locations = append(locationsByMapping.Locations, loc)
 	}
 
 	var result *multierror.Error
-	for buildID, mapping := range mappings {
-		logger := log.With(s.logger, "buildid", buildID)
+	for _, locationsByMapping := range locationsByMappings {
+		mapping := locationsByMapping.Mapping
+		locations := locationsByMapping.Locations
+		logger := log.With(s.logger, "buildid", mapping.BuildId)
 		level.Debug(logger).Log("msg", "storage symbolization request started")
-		symbolizedLocations, err := s.debugInfo.Symbolize(ctx, mapping, mappingLocations[buildID]...)
+
+		// Symbolize returns a list of lines per location passed to it.
+		locationsByMapping.LocationsLines, err = s.debugInfo.Symbolize(ctx, mapping, locations)
 		if err != nil {
 			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
 			continue
 		}
 		level.Debug(logger).Log("msg", "storage symbolization request done")
+	}
+	err = result.ErrorOrNil()
+	if err != nil {
+		return err
+	}
 
-		for loc, lines := range symbolizedLocations {
-			loc.Lines = lines
-			// Only creates lines for given location.
-			if err := s.metaStore.Symbolize(ctx, loc); err != nil {
-				result = multierror.Append(result, fmt.Errorf("failed to update location %d: %w", loc.ID, err))
-				continue
+	numFunctions := 0
+	for _, locationsByMapping := range locationsByMappings {
+		for _, locationLines := range locationsByMapping.LocationsLines {
+			numFunctions += len(locationLines)
+		}
+	}
+
+	functions := make([]*pb.Function, numFunctions)
+	i := 0
+	for _, locationsByMapping := range locationsByMappings {
+		for _, locationLines := range locationsByMapping.LocationsLines {
+			for _, line := range locationLines {
+				functions[i] = line.Function
+				i++
 			}
 		}
 	}
-	return result.ErrorOrNil()
+
+	fres, err := s.metastore.GetOrCreateFunctions(ctx, &pb.GetOrCreateFunctionsRequest{Functions: functions})
+	if err != nil {
+		return err
+	}
+
+	i = 0
+	for _, locationsByMapping := range locationsByMappings {
+		for j, locationLines := range locationsByMapping.LocationsLines {
+			lines := make([]*pb.Line, 0, len(locationLines))
+			for _, line := range locationLines {
+				lines = append(lines, &pb.Line{
+					FunctionId: fres.Functions[i].Id,
+					Line:       line.Line,
+				})
+
+				i++
+			}
+			// Update the location with the lines in-place so that in the next
+			// step we can just reuse the same locations as were originally
+			// passed in.
+			locationsByMapping.Locations[j].Lines = &pb.LocationLines{Entries: lines}
+		}
+	}
+
+	// At this point the locations are symbolized in-place and we can send them to the metastore.
+	_, err = s.metastore.CreateLocationLines(ctx, &pb.CreateLocationLinesRequest{
+		Locations: locations,
+	})
+
+	return err
 }

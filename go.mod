@@ -19,7 +19,6 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
 	github.com/google/pprof v0.0.0-20220218203455-0368bd9e19a7
-	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-20201002093600-73cf2ae9d891
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20201207153454-9f6bf00c00a7
@@ -129,6 +128,7 @@ require (
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/gophercloud/gophercloud v0.24.0 // indirect

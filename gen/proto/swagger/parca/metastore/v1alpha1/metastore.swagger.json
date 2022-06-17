@@ -4,6 +4,11 @@
     "title": "parca/metastore/v1alpha1/metastore.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "MetastoreService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -12,6 +17,124 @@
   ],
   "paths": {},
   "definitions": {
+    "metastorev1alpha1Function": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the unique identifier for the function."
+        },
+        "startLine": {
+          "type": "string",
+          "format": "int64",
+          "description": "start_line is the line number in the source file of the first line of the function."
+        },
+        "name": {
+          "type": "string",
+          "description": "name is the name of the function."
+        },
+        "systemName": {
+          "type": "string",
+          "description": "system_name describes the name of the function, as identified by the\nsystem. For instance, it can be a C++ mangled name."
+        },
+        "filename": {
+          "type": "string",
+          "description": "filename is the name of the source file of the function."
+        }
+      },
+      "description": "Function describes metadata of a source code function."
+    },
+    "metastorev1alpha1Line": {
+      "type": "object",
+      "properties": {
+        "functionId": {
+          "type": "string",
+          "description": "function_id is the ID of the function."
+        },
+        "line": {
+          "type": "string",
+          "format": "int64",
+          "description": "line is the line number in the source file of the referenced function."
+        }
+      },
+      "description": "Line describes a source code function and its line number."
+    },
+    "metastorev1alpha1Location": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the unique identifier for the location."
+        },
+        "address": {
+          "type": "string",
+          "format": "uint64",
+          "description": "address is the memory address of the location if present."
+        },
+        "mappingId": {
+          "type": "string",
+          "description": "mapping_id is the unique identifier for the mapping associated with the location."
+        },
+        "isFolded": {
+          "type": "boolean",
+          "description": "is_folded indicates whether the location is folded into the previous location."
+        },
+        "lines": {
+          "$ref": "#/definitions/v1alpha1LocationLines",
+          "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
+        }
+      },
+      "description": "Location describes a single location of a stack traces."
+    },
+    "metastorev1alpha1Mapping": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the unique identifier for the mapping."
+        },
+        "start": {
+          "type": "string",
+          "format": "uint64",
+          "description": "start is the start address of the mapping."
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64",
+          "description": "limit is the length of the address space of the mapping."
+        },
+        "offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "offset in the binary that corresponds to the first mapped address."
+        },
+        "file": {
+          "type": "string",
+          "description": "file is the name of the file associated with the mapping."
+        },
+        "buildId": {
+          "type": "string",
+          "description": "build_id is the build ID of the mapping."
+        },
+        "hasFunctions": {
+          "type": "boolean",
+          "description": "has_functions indicates whether the mapping has associated functions."
+        },
+        "hasFilenames": {
+          "type": "boolean",
+          "description": "has_filenames indicates whether the mapping has associated filenames."
+        },
+        "hasLineNumbers": {
+          "type": "boolean",
+          "description": "has_line_numbers indicates whether the mapping has associated line numbers."
+        },
+        "hasInlineFrames": {
+          "type": "boolean",
+          "description": "has_inline_frames indicates whether the mapping has associated inline frames."
+        }
+      },
+      "description": "Mapping describes a memory mapping."
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -38,6 +161,170 @@
           }
         }
       }
+    },
+    "v1alpha1CreateLocationLinesResponse": {
+      "type": "object",
+      "description": "CreateLocationLinesResponse details about the location lines creation."
+    },
+    "v1alpha1FunctionsResponse": {
+      "type": "object",
+      "properties": {
+        "functions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Function"
+          },
+          "description": "Functions that are known to the backing metastore."
+        }
+      },
+      "description": "FunctionsResponse contains the requested functions."
+    },
+    "v1alpha1GetOrCreateFunctionsResponse": {
+      "type": "object",
+      "properties": {
+        "functions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Function"
+          },
+          "description": "Functions that are known to the backing metastore. If any functions didn't\nexist before the request they have now been persisted and are uniquely\nidentifyable through their key."
+        }
+      },
+      "description": "GetOrCreateFunctionsResponse contains information about functions requested."
+    },
+    "v1alpha1GetOrCreateLocationsResponse": {
+      "type": "object",
+      "properties": {
+        "locations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Location"
+          },
+          "description": "Locations that are known to the backing metastore. If any locations didn't\nexist before the request they have now been persisted and are uniquely\nidentifyable through their key."
+        }
+      },
+      "description": "GetOrCreateLocationsResponse contains information about locations requested."
+    },
+    "v1alpha1GetOrCreateMappingsResponse": {
+      "type": "object",
+      "properties": {
+        "mappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Mapping"
+          },
+          "description": "Mappings that are known to the backing metastore. If any mappings didn't\nexist before the request they have now been persisted and are uniquely\nidentifyable through their key."
+        }
+      },
+      "description": "GetOrCreateMappingsResponse contains information about mappings requested."
+    },
+    "v1alpha1GetOrCreateStacktracesResponse": {
+      "type": "object",
+      "properties": {
+        "stacktraces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1Stacktrace"
+          },
+          "description": "Stacktraces that are known to the backing metastore. If any stacktraces\ndidn't exist before the request they have now been persisted and are\nuniquely identifyable through their key."
+        }
+      },
+      "description": "GetOrCreateStacktracesResponse contains information about locations requested."
+    },
+    "v1alpha1LocationLines": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Line"
+          },
+          "description": "Entries is the list of lines associated with the location."
+        }
+      },
+      "description": "LocationLines describes a set of lines of a location."
+    },
+    "v1alpha1LocationLinesResponse": {
+      "type": "object",
+      "properties": {
+        "locationLines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1LocationLines"
+          },
+          "description": "LocationLines that are known to the backing metastore."
+        }
+      },
+      "description": "LocationLinesResponse contains the requested locations."
+    },
+    "v1alpha1LocationsResponse": {
+      "type": "object",
+      "properties": {
+        "locations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Location"
+          },
+          "description": "Locations that are known to the backing metastore."
+        }
+      },
+      "description": "LocationsResponse contains the requested locations."
+    },
+    "v1alpha1MappingsResponse": {
+      "type": "object",
+      "properties": {
+        "mappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Mapping"
+          },
+          "description": "Mappings that are known to the backing metastore."
+        }
+      },
+      "description": "MappingsResponse contains the requested mappings."
+    },
+    "v1alpha1Stacktrace": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "stacktrace_id references stack trace of the stacktrace."
+        },
+        "locationIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "locations are the locations in the stack trace."
+        }
+      },
+      "description": "Stacktrace is a collection of locations."
+    },
+    "v1alpha1StacktracesResponse": {
+      "type": "object",
+      "properties": {
+        "stacktraces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1Stacktrace"
+          },
+          "description": "Stacktraces that are known to the backing metastore."
+        }
+      },
+      "description": "StacktracesRequest contains the requested stacktraces."
+    },
+    "v1alpha1UnsymbolizedLocationsResponse": {
+      "type": "object",
+      "properties": {
+        "locations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Location"
+          },
+          "description": "Locations that have a mapping and address that should be symbolizable."
+        }
+      },
+      "description": "UnsymbolizedLocationsResponse contains information about the requested\nlocations that should be symbolizable but potentially haven't been\nsymbolized yet."
     }
   }
 }

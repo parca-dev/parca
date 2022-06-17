@@ -15,48 +15,39 @@ package query
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/google/pprof/profile"
-	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
-	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	"github.com/parca-dev/parca/pkg/metastore"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
 func TestGenerateTopTable(t *testing.T) {
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	f, err := os.Open("testdata/alloc_objects.pb.gz")
-	require.NoError(t, err)
-	p1, err := profile.Parse(f)
-	require.NoError(t, err)
-	require.NoError(t, f.Close())
+	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(fileContent))
 
 	l := metastore.NewBadgerMetastore(
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
-		metastore.NewRandomUUIDGenerator(),
 	)
-	t.Cleanup(func() {
-		l.Close()
-	})
-	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
+	metastore := metastore.NewInProcessClient(l)
+	normalizer := parcacol.NewNormalizer(metastore)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
 	require.NoError(t, err)
 
-	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, p)
+	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, profiles[0])
 	require.NoError(t, err)
 
-	res, err := GenerateTopTable(ctx, samples)
+	res, err := GenerateTopTable(ctx, symbolizedProfile)
 	require.NoError(t, err)
 
 	require.Equal(t, int32(1886), res.Total)
@@ -94,324 +85,325 @@ func TestGenerateTopTable(t *testing.T) {
 	require.Truef(t, found, "expected to find the specific function")
 }
 
-func TestGenerateTopTableAggregateFlat(t *testing.T) {
-	top, err := GenerateTopTable(context.Background(), &parcaprofile.StacktraceSamples{
-		Samples: []*parcaprofile.Sample{
-			{
-				Location: []*metastore.Location{
-					{
-						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						Address: 0x1,
-					},
-					{
-						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-						Address: 0x2,
-					},
-				},
-				Value: 1,
-			},
-			{
-				Location: []*metastore.Location{
-					{
-						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						Address: 0x1,
-					},
-					{
-						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-						Address: 0x3,
-					},
-				},
-				Value: 1,
-			},
-			{
-				Location: []*metastore.Location{
-					{
-						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						Address: 0x1,
-					},
-					{
-						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000004"),
-						Address: 0x4,
-					},
-				},
-				Value: 1,
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	require.Equal(t, 4, len(top.List))
-	require.Equal(t, uint64(0x1), top.List[0].Meta.Location.Address)
-	require.Equal(t, int64(3), top.List[0].Cumulative)
-	require.Equal(t, int64(3), top.List[0].Flat)
-	require.Equal(t, uint64(0x2), top.List[1].Meta.Location.Address)
-	require.Equal(t, int64(1), top.List[1].Cumulative)
-	require.Equal(t, int64(0), top.List[1].Flat)
-	require.Equal(t, uint64(0x3), top.List[2].Meta.Location.Address)
-	require.Equal(t, int64(1), top.List[2].Cumulative)
-	require.Equal(t, int64(0), top.List[2].Flat)
-	require.Equal(t, uint64(0x4), top.List[3].Meta.Location.Address)
-	require.Equal(t, int64(1), top.List[3].Cumulative)
-	require.Equal(t, int64(0), top.List[3].Flat)
-}
-
-func TestGenerateDiffTopTable(t *testing.T) {
-	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
-
-	f, err := os.Open("testdata/alloc_objects.pb.gz")
-	require.NoError(t, err)
-	p1, err := profile.Parse(f)
-	require.NoError(t, err)
-	require.NoError(t, f.Close())
-
-	l := metastore.NewBadgerMetastore(
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
-		metastore.NewRandomUUIDGenerator(),
-	)
-	t.Cleanup(func() {
-		l.Close()
-	})
-
-	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
-	require.NoError(t, err)
-
-	// The highest unique sample value is 31024846
-	// which we use for testing with a unique sample
-	const testValue = 31024846
-
-	for _, sample := range p.FlatSamples {
-		if sample.Value == testValue {
-			sample.DiffValue = -testValue
-		}
-	}
-
-	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, p)
-	require.NoError(t, err)
-
-	res, err := GenerateTopTable(ctx, samples)
-	require.NoError(t, err)
-
-	var found bool
-	for _, node := range res.List {
-		if node.Diff == -testValue {
-			found = true
-		}
-	}
-	require.Truef(t, found, "Expected to find our test diff value in top nodes")
-}
-
-func TestAggregateTopByFunction(t *testing.T) {
-	uuid1 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
-	uuid2 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}
-	uuid3 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}
-
-	testcases := []struct {
-		name   string
-		input  *pb.Top
-		output *pb.Top
-	}{{
-		name: "Empty",
-		input: &pb.Top{
-			Total: 0,
-			List:  []*pb.TopNode{},
-		},
-		output: &pb.Top{
-			Total:    0,
-			Reported: 0,
-			List:     []*pb.TopNode{},
-		},
-	}, {
-		name: "NoMeta",
-		input: &pb.Top{
-			Total: 2,
-			List: []*pb.TopNode{
-				{Meta: nil, Cumulative: 1, Flat: 1},
-				{Meta: nil, Cumulative: 2, Flat: 2},
-			},
-		},
-		output: &pb.Top{
-			Total:    2,
-			Reported: 0,
-			List:     []*pb.TopNode{},
-		},
-	}, {
-		name: "UniqueAddress",
-		input: &pb.Top{
-			Total: 2,
-			List: []*pb.TopNode{
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-			},
-		},
-		output: &pb.Top{
-			Total:    2,
-			Reported: 2,
-			List: []*pb.TopNode{
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-			},
-		},
-	}, {
-		name: "UniqueFunction",
-		input: &pb.Top{
-			Total: 2,
-			List: []*pb.TopNode{
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
-						Function: &metastorev1alpha1.Function{Id: uuid3, Name: "func3"},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-			},
-		},
-		output: &pb.Top{
-			Total:    2,
-			Reported: 2,
-			List: []*pb.TopNode{
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
-						Function: &metastorev1alpha1.Function{Id: uuid3, Name: "func3"},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-			},
-		},
-	}, {
-		name: "AggregateAddress",
-		input: &pb.Top{
-			Total: 2,
-			List: []*pb.TopNode{
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-			},
-		},
-		output: &pb.Top{
-			Total:    2,
-			Reported: 1,
-			List: []*pb.TopNode{
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-					},
-					Cumulative: 2,
-					Flat:       2,
-				},
-			},
-		},
-	}, {
-		name: "AggregateFunction",
-		input: &pb.Top{
-			Total: 2,
-			List: []*pb.TopNode{
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
-					},
-					Cumulative: 1,
-					Flat:       1,
-				},
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
-					},
-					Cumulative: 2,
-					Flat:       2,
-				},
-			},
-		},
-		output: &pb.Top{
-			Total:    2,
-			Reported: 1,
-			List: []*pb.TopNode{
-				{
-					Meta: &pb.TopNodeMeta{
-						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
-						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
-						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
-					},
-					Cumulative: 3,
-					Flat:       3,
-				},
-			},
-		},
-	}}
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.output, aggregateTopByFunction(tc.input))
-		})
-	}
-}
+// TODO(brancz)
+//func TestGenerateTopTableAggregateFlat(t *testing.T) {
+//	top, err := GenerateTopTable(context.Background(), &parcaprofile.StacktraceSamples{
+//		Samples: []*parcaprofile.Sample{
+//			{
+//				Location: []*metastore.Location{
+//					{
+//						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+//						Address: 0x1,
+//					},
+//					{
+//						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+//						Address: 0x2,
+//					},
+//				},
+//				Value: 1,
+//			},
+//			{
+//				Location: []*metastore.Location{
+//					{
+//						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+//						Address: 0x1,
+//					},
+//					{
+//						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+//						Address: 0x3,
+//					},
+//				},
+//				Value: 1,
+//			},
+//			{
+//				Location: []*metastore.Location{
+//					{
+//						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+//						Address: 0x1,
+//					},
+//					{
+//						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+//						Address: 0x4,
+//					},
+//				},
+//				Value: 1,
+//			},
+//		},
+//	})
+//	require.NoError(t, err)
+//
+//	require.Equal(t, 4, len(top.List))
+//	require.Equal(t, uint64(0x1), top.List[0].Meta.Location.Address)
+//	require.Equal(t, int64(3), top.List[0].Cumulative)
+//	require.Equal(t, int64(3), top.List[0].Flat)
+//	require.Equal(t, uint64(0x2), top.List[1].Meta.Location.Address)
+//	require.Equal(t, int64(1), top.List[1].Cumulative)
+//	require.Equal(t, int64(0), top.List[1].Flat)
+//	require.Equal(t, uint64(0x3), top.List[2].Meta.Location.Address)
+//	require.Equal(t, int64(1), top.List[2].Cumulative)
+//	require.Equal(t, int64(0), top.List[2].Flat)
+//	require.Equal(t, uint64(0x4), top.List[3].Meta.Location.Address)
+//	require.Equal(t, int64(1), top.List[3].Cumulative)
+//	require.Equal(t, int64(0), top.List[3].Flat)
+//}
+//
+//func TestGenerateDiffTopTable(t *testing.T) {
+//	ctx := context.Background()
+//	tracer := trace.NewNoopTracerProvider().Tracer("")
+//
+//	f, err := os.Open("testdata/alloc_objects.pb.gz")
+//	require.NoError(t, err)
+//	p1, err := profile.Parse(f)
+//	require.NoError(t, err)
+//	require.NoError(t, f.Close())
+//
+//	l := metastore.NewBadgerMetastore(
+//		log.NewNopLogger(),
+//		prometheus.NewRegistry(),
+//		trace.NewNoopTracerProvider().Tracer(""),
+//		metastore.NewRandomUUIDGenerator(),
+//	)
+//	t.Cleanup(func() {
+//		l.Close()
+//	})
+//
+//	p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), l, p1, 0, false)
+//	require.NoError(t, err)
+//
+//	// The highest unique sample value is 31024846
+//	// which we use for testing with a unique sample
+//	const testValue = 31024846
+//
+//	for _, sample := range p.FlatSamples {
+//		if sample.Value == testValue {
+//			sample.DiffValue = -testValue
+//		}
+//	}
+//
+//	samples, err := parcaprofile.StacktraceSamplesFromFlatProfile(ctx, tracer, l, p)
+//	require.NoError(t, err)
+//
+//	res, err := GenerateTopTable(ctx, samples)
+//	require.NoError(t, err)
+//
+//	var found bool
+//	for _, node := range res.List {
+//		if node.Diff == -testValue {
+//			found = true
+//		}
+//	}
+//	require.Truef(t, found, "Expected to find our test diff value in top nodes")
+//}
+//
+//func TestAggregateTopByFunction(t *testing.T) {
+//	uuid1 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+//	uuid2 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}
+//	uuid3 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}
+//
+//	testcases := []struct {
+//		name   string
+//		input  *pb.Top
+//		output *pb.Top
+//	}{{
+//		name: "Empty",
+//		input: &pb.Top{
+//			Total: 0,
+//			List:  []*pb.TopNode{},
+//		},
+//		output: &pb.Top{
+//			Total:    0,
+//			Reported: 0,
+//			List:     []*pb.TopNode{},
+//		},
+//	}, {
+//		name: "NoMeta",
+//		input: &pb.Top{
+//			Total: 2,
+//			List: []*pb.TopNode{
+//				{Meta: nil, Cumulative: 1, Flat: 1},
+//				{Meta: nil, Cumulative: 2, Flat: 2},
+//			},
+//		},
+//		output: &pb.Top{
+//			Total:    2,
+//			Reported: 0,
+//			List:     []*pb.TopNode{},
+//		},
+//	}, {
+//		name: "UniqueAddress",
+//		input: &pb.Top{
+//			Total: 2,
+//			List: []*pb.TopNode{
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//			},
+//		},
+//		output: &pb.Top{
+//			Total:    2,
+//			Reported: 2,
+//			List: []*pb.TopNode{
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//			},
+//		},
+//	}, {
+//		name: "UniqueFunction",
+//		input: &pb.Top{
+//			Total: 2,
+//			List: []*pb.TopNode{
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
+//						Function: &metastorev1alpha1.Function{Id: uuid3, Name: "func3"},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//			},
+//		},
+//		output: &pb.Top{
+//			Total:    2,
+//			Reported: 2,
+//			List: []*pb.TopNode{
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid3, Address: 3},
+//						Function: &metastorev1alpha1.Function{Id: uuid3, Name: "func3"},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//			},
+//		},
+//	}, {
+//		name: "AggregateAddress",
+//		input: &pb.Top{
+//			Total: 2,
+//			List: []*pb.TopNode{
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//			},
+//		},
+//		output: &pb.Top{
+//			Total:    2,
+//			Reported: 1,
+//			List: []*pb.TopNode{
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//					},
+//					Cumulative: 2,
+//					Flat:       2,
+//				},
+//			},
+//		},
+//	}, {
+//		name: "AggregateFunction",
+//		input: &pb.Top{
+//			Total: 2,
+//			List: []*pb.TopNode{
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+//					},
+//					Cumulative: 1,
+//					Flat:       1,
+//				},
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+//					},
+//					Cumulative: 2,
+//					Flat:       2,
+//				},
+//			},
+//		},
+//		output: &pb.Top{
+//			Total:    2,
+//			Reported: 1,
+//			List: []*pb.TopNode{
+//				{
+//					Meta: &pb.TopNodeMeta{
+//						Mapping:  &metastorev1alpha1.Mapping{Id: uuid1},
+//						Location: &metastorev1alpha1.Location{Id: uuid2, Address: 2},
+//						Function: &metastorev1alpha1.Function{Id: uuid2, Name: "func2"},
+//					},
+//					Cumulative: 3,
+//					Flat:       3,
+//				},
+//			},
+//		},
+//	}}
+//	for _, tc := range testcases {
+//		t.Run(tc.name, func(t *testing.T) {
+//			require.Equal(t, tc.output, aggregateTopByFunction(tc.input))
+//		})
+//	}
+//}

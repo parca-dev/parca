@@ -48,6 +48,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
@@ -134,20 +135,21 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return runScraper(ctx, logger, reg, tracerProvider, flags, version, cfg)
 	}
 
-	var mStr metastore.ProfileMetaStore
+	var mStr metastorepb.MetastoreServiceServer
 	switch flags.Metastore {
 	case metaStoreBadgerInMemory:
 		mStr = metastore.NewBadgerMetastore(
 			logger,
 			reg,
 			tracerProvider.Tracer(metaStoreBadgerInMemory),
-			metastore.NewRandomUUIDGenerator(),
 		)
 	default:
 		err := fmt.Errorf("unknown metastore implementation: %s", flags.Metastore)
 		level.Error(logger).Log("msg", "failed to initialize metastore", "err", err)
 		return err
 	}
+
+	metastore := metastore.NewInProcessClient(mStr)
 
 	col := arcticdb.New(
 		reg,
@@ -170,14 +172,14 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	s := profilestore.NewProfileColumnStore(
 		logger,
 		tracerProvider.Tracer("profilestore"),
-		mStr,
+		metastore,
 		table,
 		flags.StorageDebugValueLog,
 	)
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
-		mStr,
+		metastore,
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -233,7 +235,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 	{
-		s := symbolizer.New(logger, mStr, dbgInfo)
+		s := symbolizer.New(logger, metastore, dbgInfo)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
 			func() error {
