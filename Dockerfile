@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.18.2-alpine3.15@sha256:e6b729ae22a2f7b6afcc237f7b9da3a27151ecbdcd109f7ab63a42e52e750262 AS builder
+FROM docker.io/golang:1.18.3-alpine3.15@sha256:f9181168749690bddb6751b004e976bf5d427425e0cfb50522e92c06f761def7 AS builder
 RUN mkdir /.cache && chown nobody:nogroup /.cache && touch -t 202101010000.00 /.cache
 
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.11
