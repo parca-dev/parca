@@ -7,6 +7,8 @@ import {usePopper} from 'react-popper';
 import {getLastItem, valueFormatter, diffColor} from '@parca/functions';
 import {useAppSelector, selectDarkMode} from '@parca/store';
 
+import {hexifyAddress} from './utils';
+
 interface IcicleGraphProps {
   graph: Flamegraph;
   sampleUnit: string;
@@ -128,7 +130,7 @@ export function nodeLabel(node: FlamegraphNode): string {
 
   const address = `${
     node.meta.location?.address !== undefined && node.meta.location?.address !== 0
-      ? '0x' + node.meta.location.address.toString(16)
+      ? (hexifyAddress(node.meta.location.address) as string)
       : ''
   }`;
   const fallback = `${mapping}${address}`;
@@ -262,7 +264,7 @@ const FlamegraphNodeTooltipTableRows = ({
         hoveringNode.meta.location?.address !== 0 && (
           <tr>
             <td className="w-1/5">Address</td>
-            <td className="w-4/5">{' 0x' + hoveringNode.meta.location.address.toString(16)}</td>
+            <td className="w-4/5">{hexifyAddress(hoveringNode.meta.location.address)}</td>
           </tr>
         )}
       {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.file !== '' && (
@@ -382,9 +384,7 @@ export const FlamegraphTooltip = ({
                         <>
                           {hoveringFlamegraphNode.meta.location !== undefined &&
                           parseInt(hoveringFlamegraphNode.meta.location.address, 10) !== 0 ? (
-                            <p>
-                              {'0x' + hoveringFlamegraphNode.meta.location.address.toString(16)}
-                            </p>
+                            <p>{hexifyAddress(hoveringFlamegraphNode.meta.location.address)}</p>
                           ) : (
                             <p>unknown</p>
                           )}
