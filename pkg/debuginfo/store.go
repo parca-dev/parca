@@ -170,7 +170,7 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		if req.Hash != "" && metadataFile.Hash == req.Hash {
+		if metadataFile.Hash == req.Hash {
 			exists = true
 			if metadataFile.State == metadataStateUploading {
 				exists = !isStale(metadataFile)

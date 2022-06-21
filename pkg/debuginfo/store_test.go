@@ -100,19 +100,19 @@ func TestStore(t *testing.T) {
 	for i := 0; i < 1024; i++ {
 		b.Write([]byte("c"))
 	}
-	size, err := c.Upload(context.Background(), "abcd", "", b)
+	_, err = c.Upload(context.Background(), "abcd", "", b)
 	require.Error(t, err)
 
 	nf, err := os.Open("testdata/validelf_nosections")
 	require.NoError(t, err)
 
-	size, err = c.Upload(context.Background(), hex.EncodeToString([]byte("nosection")), "", nf)
+	_, err = c.Upload(context.Background(), hex.EncodeToString([]byte("nosection")), "", nf)
 	require.Error(t, err)
 
 	wf, err := os.Open("testdata/validelf_withsections")
 	require.NoError(t, err)
 
-	size, err = c.Upload(context.Background(), hex.EncodeToString([]byte("section")), "", wf)
+	size, err := c.Upload(context.Background(), hex.EncodeToString([]byte("section")), "", wf)
 	require.NoError(t, err)
 	require.Equal(t, 7079, int(size))
 
