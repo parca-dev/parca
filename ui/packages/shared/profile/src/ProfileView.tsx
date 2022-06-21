@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {parseParams} from '@parca/functions';
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
-import {Button, Card, Input, SearchNodes, useGrpcMetadata, useParcaTheme} from '@parca/components';
+import {Button, Card, SearchNodes, useGrpcMetadata, useParcaTheme} from '@parca/components';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';

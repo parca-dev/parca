@@ -1,5 +1,6 @@
 import {Input} from '@parca/components';
-import {useAppDispatch, setSearchNodeString} from '@parca/store';
+import {store, useAppDispatch, setSearchNodeString} from '@parca/store';
+import {Provider} from 'react-redux';
 
 const SearchNodes = () => {
   const dispatch = useAppDispatch();
@@ -15,4 +16,14 @@ const SearchNodes = () => {
   );
 };
 
-export default SearchNodes;
+const SearchNodesWithProvider = () => {
+  const {store: reduxStore} = store();
+
+  return (
+    <Provider store={reduxStore}>
+      <SearchNodes />
+    </Provider>
+  );
+};
+
+export default SearchNodesWithProvider;
