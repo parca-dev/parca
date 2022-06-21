@@ -9,6 +9,8 @@ import {
 } from '@parca/client';
 import {ProfileSource} from './ProfileSource';
 import {useQuery} from './useQuery';
+import {hexifyAddress} from './utils';
+
 import './TopTable.styles.css';
 
 interface ProfileViewProps {
@@ -90,11 +92,8 @@ export const RowLabel = (meta: TopNodeMeta | undefined): string => {
   if (meta.function?.name !== undefined && meta.function?.name !== '')
     return `${mapping} ${meta.function.name}`;
 
-  const addr = parseInt(meta.location?.address ?? '0', 10);
-  const address = `${
-    meta.location?.address !== undefined && addr !== 0 ? `0x${addr.toString(16)}` : ''
-  }`;
-  const fallback = `${mapping} ${address}`;
+  const address = hexifyAddress(meta.location?.address);
+  const fallback = `${mapping} ${address as string}`;
 
   return fallback === '' ? '<unknown>' : fallback;
 };

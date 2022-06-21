@@ -1,5 +1,6 @@
 import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
+import {hexifyAddress} from '@parca/profile';
 import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';
 
@@ -162,9 +163,7 @@ const FlamegraphTooltip = ({
                         <>
                           {hoveringFlamegraphNode.meta.location !== undefined &&
                           parseInt(hoveringFlamegraphNode.meta.location.address, 10) !== 0 ? (
-                            <p>
-                              {'0x' + hoveringFlamegraphNode.meta.location.address.toString(16)}
-                            </p>
+                            <p>{hexifyAddress(hoveringFlamegraphNode.meta.location.address)}</p>
                           ) : (
                             <p>unknown</p>
                           )}
