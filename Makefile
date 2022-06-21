@@ -19,6 +19,12 @@ endif
 VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags 2>/dev/null || echo '$(BRANCH)$(COMMIT)'))
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
+ENABLE_RACE := no
+
+ifeq ($(ENABLE_RACE), yes)
+	SANITIZERS += -race
+endif
+
 .PHONY: build
 build: ui/build go/bin
 
@@ -34,7 +40,7 @@ go/deps:
 .PHONY: go/bin
 go/bin: go/deps
 	mkdir -p ./bin
-	go build -o bin/ ./cmd/parca
+	go build $(SANITIZERS) -o bin/ ./cmd/parca
 
 .PHONY: format
 format: go/fmt proto/format check-license
@@ -62,12 +68,12 @@ check-license:
 
 .PHONY: go/test
 go/test:
-	go test -v `go list ./...`
+	go test $(SANITIZERS) -v `go list ./...`
 
 .PHONY: go/bench
 go/bench:
 	mkdir -pm 777 tmp/
-	go test -run=. -bench=. -benchtime=1x `go list ./...` # run benchmark with one iteration to make sure they work
+	go test $(SANITIZERS) -run=. -bench=. -benchtime=1x `go list ./...` # run benchmark with one iteration to make sure they work
 
 VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
 
