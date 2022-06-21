@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.13.0](https://github.com/parca-dev/parca/compare/ui-v0.12.38...ui-v0.13.0) (2022-05-30)
+
+### Features
+
+- useContainerDimensions hook for smooth chart resize ([3fe5670](https://github.com/parca-dev/parca/commit/3fe5670cb94e838d83e5cb10d453ee620c2dc3c1))
+
+## [0.12.36](https://github.com/parca-dev/parca/compare/ui-v0.12.35...ui-v0.12.36) (2022-05-06)
+
 ## 0.12.35 (2022-05-05)
 
 **Note:** Version bump only for package @parca/dynamicsize

@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.6](https://github.com/parca-dev/parca/compare/ui-v0.13.5...ui-v0.13.6) (2022-06-14)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.13.4](https://github.com/parca-dev/parca/compare/ui-v0.13.3...ui-v0.13.4) (2022-06-07)
+
+## [0.13.2](https://github.com/parca-dev/parca/compare/ui-v0.13.1...ui-v0.13.2) (2022-05-31)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.13.3](https://github.com/parca-dev/parca/compare/ui-v0.13.2...ui-v0.13.3) (2022-06-07)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.13.1](https://github.com/parca-dev/parca/compare/ui-v0.13.0...ui-v0.13.1) (2022-05-31)
+
+**Note:** Version bump only for package @parca/profile
+
+# [0.13.0](https://github.com/parca-dev/parca/compare/ui-v0.12.38...ui-v0.13.0) (2022-05-30)
+
+### Features
+
+- useContainerDimensions hook for smooth chart resize ([3fe5670](https://github.com/parca-dev/parca/commit/3fe5670cb94e838d83e5cb10d453ee620c2dc3c1))
+
+## [0.12.36](https://github.com/parca-dev/parca/compare/ui-v0.12.35...ui-v0.12.36) (2022-05-06)
+
 ## [0.12.36](https://github.com/parca-dev/parca/compare/ui-v0.12.35...ui-v0.12.36) (2022-05-06)
 
 **Note:** Version bump only for package @parca/profile

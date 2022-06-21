@@ -83,7 +83,7 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 	err := q.engine.ScanSchema(q.tableName).
 		Distinct(logicalplan.Col("name")).
 		Filter(logicalplan.Col("name").RegexMatch("^labels\\..+$")).
-		Execute(func(ar arrow.Record) error {
+		Execute(ctx, func(ar arrow.Record) error {
 			if ar.NumCols() != 1 {
 				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
 			}
@@ -123,8 +123,8 @@ func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb
 	vals := []string{}
 
 	err := q.engine.ScanTable(q.tableName).
-		Distinct(logicalplan.Col("labels." + name)).
-		Execute(func(ar arrow.Record) error {
+		Distinct(logicalplan.Col("labels."+name)).
+		Execute(ctx, func(ar arrow.Record) error {
 			if ar.NumCols() != 1 {
 				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
 			}
@@ -195,10 +195,10 @@ func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
 		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
 
-	sel := make([]*labels.Matcher, 0, len(parsedSelector)-1)
+	sel := make([]*labels.Matcher, 0, len(parsedSelector))
 	var nameLabel *labels.Matcher
 	for _, matcher := range parsedSelector {
-		if matcher.Name == "__name__" {
+		if matcher.Name == labels.MetricName {
 			nameLabel = matcher
 		} else {
 			sel = append(sel, matcher)
@@ -275,13 +275,19 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 			logicalplan.DynCol("labels"),
 			logicalplan.Col("timestamp"),
 		).
-		Execute(func(r arrow.Record) error {
+		Execute(ctx, func(r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil
 		})
 	if err != nil {
 		return nil, err
+	}
+	if ar.NumRows() == 0 {
+		return nil, status.Error(
+			codes.NotFound,
+			"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
+		)
 	}
 
 	timestampColumnIndex := 0
@@ -378,7 +384,7 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 			logicalplan.Col(parcacol.ColumnPeriodUnit),
 			logicalplan.Col(parcacol.ColumnDuration).GT(logicalplan.Literal(0)),
 		).
-		Execute(func(ar arrow.Record) error {
+		Execute(ctx, func(ar arrow.Record) error {
 			if ar.NumCols() != 6 {
 				return fmt.Errorf("expected 6 column, got %d", ar.NumCols())
 			}
@@ -588,7 +594,7 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 			logicalplan.DynCol("pprof_labels"),
 			logicalplan.DynCol("pprof_num_labels"),
 		).
-		Execute(func(r arrow.Record) error {
+		Execute(ctx, func(r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil
@@ -640,7 +646,7 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 			logicalplan.Sum(logicalplan.Col("value")),
 			logicalplan.Col("stacktrace"),
 		).
-		Execute(func(r arrow.Record) error {
+		Execute(ctx, func(r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil
@@ -674,6 +680,7 @@ func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, rep
 	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.
 	diff := &profile.StacktraceSamples{}
 
+	// TODO: Use parcacol.Sample for comparing these
 	for i := range compare.Samples {
 		diff.Samples = append(diff.Samples, &profile.Sample{
 			Location:  compare.Samples[i].Location,

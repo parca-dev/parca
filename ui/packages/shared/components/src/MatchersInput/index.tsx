@@ -1,14 +1,7 @@
 import React, {Fragment, useState, useEffect} from 'react';
 import {Transition} from '@headlessui/react';
 import {Query} from '@parca/parser';
-import {
-  LabelsResponse,
-  LabelsRequest,
-  QueryServiceClient,
-  ServiceError,
-  ValuesRequest,
-  ValuesResponse,
-} from '@parca/client';
+import {LabelsResponse, QueryServiceClient, ValuesResponse} from '@parca/client';
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
 import {useGrpcMetadata} from '../GrpcMetadataContext';
@@ -22,11 +15,11 @@ interface MatchersInputProps {
 
 export interface ILabelNamesResult {
   response?: LabelsResponse;
-  error?: ServiceError;
+  error?: Error;
 }
 export interface ILabelValuesResult {
   response?: ValuesResponse;
-  error?: ServiceError;
+  error?: Error;
 }
 
 interface Matchers {
@@ -41,6 +34,7 @@ enum Labels {
   literal = 'literal',
 }
 
+// eslint-disable-next-line no-useless-escape
 const labelNameValueRe = /(^([a-z])\w+)(=|!=|=~|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
 
 const addQuoteMarks = (labelValue: string) => {
@@ -95,10 +89,8 @@ const MatchersInput = ({
 }: MatchersInputProps): JSX.Element => {
   const [inputRef, setInputRef] = useState<string>('');
   const [divInputRef, setDivInputRef] = useState<HTMLDivElement | null>(null);
-  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<Array<string> | null>(
-    null
-  );
-  const [localMatchers, setLocalMatchers] = useState<Array<Matchers> | null>(null);
+  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<string[] | null>(null);
+  const [localMatchers, setLocalMatchers] = useState<Matchers[] | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [showSuggest, setShowSuggest] = useState(true);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
@@ -193,7 +185,7 @@ const MatchersInput = ({
   const getLabelsFromMatchers = matchers => {
     return matchers
       .filter(matcher => matcher.key !== '__name__')
-      .map(matcher => matcher.key + matcher.matcherType + addQuoteMarks(matcher.value));
+      .map(matcher => `${matcher.key}${matcher.matcherType}${addQuoteMarks(matcher.value)}`);
   };
 
   useEffect(() => {
@@ -204,6 +196,7 @@ const MatchersInput = ({
     } else {
       if (localMatchers !== null) setCurrentLabelsCollection(getLabelsFromMatchers(localMatchers));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuery.matchers]);
 
   const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);
@@ -280,7 +273,7 @@ const MatchersInput = ({
       ) {
         setCurrentLabelsCollection(values);
       } else {
-        setCurrentLabelsCollection((oldValues: Array<string>) => [
+        setCurrentLabelsCollection((oldValues: string[]) => [
           ...oldValues,
           values[values.length - 1],
         ]);
@@ -330,7 +323,7 @@ const MatchersInput = ({
       if (currentLabelsCollection === null) {
         setCurrentLabelsCollection([values]);
       } else {
-        setCurrentLabelsCollection((oldValues: Array<string>) => {
+        setCurrentLabelsCollection((oldValues: string[]) => {
           if (!labelNameValueRe.test(inputRef)) return oldValues;
           return [...oldValues, values];
         });

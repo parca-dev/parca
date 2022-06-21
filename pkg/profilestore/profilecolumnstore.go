@@ -36,7 +36,6 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 type ProfileColumnStore struct {
@@ -78,6 +77,8 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 	ctx, span := s.tracer.Start(ctx, "write-raw")
 	defer span.End()
 
+	ingester := parcacol.NewIngester(s.logger, s.metaStore, s.table)
+
 	for _, series := range r.Series {
 		ls := make(labels.Labels, 0, len(series.Labels.Labels))
 		for _, l := range series.Labels.Labels {
@@ -114,21 +115,9 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
-			convertCtx, convertSpan := s.tracer.Start(ctx, "profile-from-pprof")
-			profiles, err := parcaprofile.ProfilesFromPprof(convertCtx, s.logger, s.metaStore, p, r.Normalized)
-			if err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to normalize pprof: %v", err)
+			if err := ingester.Ingest(ctx, ls, p, r.Normalized); err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to ingest profile: %v", err)
 			}
-			convertSpan.End()
-
-			_, appendSpan := s.tracer.Start(ctx, "append-profiles")
-			for _, prof := range profiles {
-				_, err := parcacol.InsertProfileIntoTable(ctx, s.logger, s.table, ls, prof)
-				if err != nil {
-					return nil, status.Errorf(codes.Internal, "failed to insert profile: %v", err)
-				}
-			}
-			appendSpan.End()
 		}
 	}
 

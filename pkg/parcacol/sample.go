@@ -40,7 +40,7 @@ type Sample struct {
 	Value          int64
 }
 
-type Samples []Sample
+type Samples []*Sample
 
 func (s Samples) ToBuffer(schema *dynparquet.Schema) (*dynparquet.Buffer, error) {
 	names := s.SampleLabelNames()
@@ -59,7 +59,7 @@ func (s Samples) ToBuffer(schema *dynparquet.Schema) (*dynparquet.Buffer, error)
 	var r parquet.Row
 	for _, sample := range s {
 		r = sample.ToParquetRow(schema, r[:0], names, pprofLabels, pprofNumLabels)
-		err := pb.WriteRow(r)
+		_, err := pb.WriteRows([]parquet.Row{r})
 		if err != nil {
 			return nil, err
 		}

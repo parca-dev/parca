@@ -1,6 +1,6 @@
 CMD_DOCKER ?= docker
 CMD_GIT ?= git
-SHELL := /bin/bash
+SHELL := /usr/bin/env bash
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
 else
@@ -51,7 +51,7 @@ endif
 # Check https://github.com/mvdan/gofumpt#installation for instructions.
 .PHONY: go/fmt
 go/fmt: gofumpt
-	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto | grep -v internal/go)
+	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto)
 
 go/lint: check-license
 	golangci-lint run
@@ -62,7 +62,12 @@ check-license:
 
 .PHONY: go/test
 go/test:
-	 go test -v `go list ./...`
+	go test -v `go list ./...`
+
+.PHONY: go/bench
+go/bench:
+	mkdir -pm 777 tmp/
+	go test -run=. -bench=. -benchtime=1x `go list ./...` # run benchmark with one iteration to make sure they work
 
 VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
 
@@ -70,12 +75,10 @@ VCR_FILES ?= $(shell find ./pkg/*/testdata -name "fixtures.yaml")
 go/test-clean:
 	rm -f $(VCR_FILES)
 
-
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
-
 .PHONY: ui/build
 ui/build: $(UI_FILES)
-	cd ui && yarn install && yarn workspace @parca/web build
+	cd ui && yarn --prefer-offline && yarn workspace @parca/web build
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate
@@ -107,15 +110,16 @@ proto/google/pprof/profile.proto:
 
 .PHONY: container-dev
 container-dev:
-    podman build --timestamp 0 --layers --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t $(OUT_DOCKER):$(VERSION) .
+	docker build -t parca-dev/parca-agent:dev --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
+	#podman build --timestamp 0 --layers --build-arg=GOLANG_BASE=golang:1.18.3-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:
-	 ./scripts/make-containers.sh $(VERSION) $(COMMIT) $(OUT_DOCKER):$(VERSION)
+	./scripts/make-containers.sh $(OUT_DOCKER):$(VERSION)
 
 .PHONY: push-container
 push-container:
-	podman push $(OUT_DOCKER):$(VERSION) $(OUT_DOCKER):$(VERSION)
+	podman manifest push --all $(OUT_DOCKER):$(VERSION) docker://$(OUT_DOCKER):$(VERSION)
 
 .PHONY: sign-container
 sign-container:
@@ -124,7 +128,7 @@ sign-container:
 
 .PHONY: push-quay-container
 push-quay-container:
-	podman push $(OUT_DOCKER):$(VERSION) quay.io/parca/parca:$(VERSION)
+	podman manifest push --all $(OUT_DOCKER):$(VERSION) docker://quay.io/parca/parca:$(VERSION)
 
 .PHONY: push-signed-quay-container
 push-signed-quay-container:
@@ -148,7 +152,7 @@ dev/up: deploy/manifests
 dev/down:
 	source ./scripts/local-dev.sh && down
 
-tmp/help.txt: go/bin
+tmp/help.txt: build
 	mkdir -p tmp
 	bin/parca --help > $@
 

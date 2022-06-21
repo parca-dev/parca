@@ -52,12 +52,20 @@ import (
 )
 
 func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {
+	addr := ":7077"
+
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		err := Run(ctx, logger, reg, &Flags{ConfigPath: "testdata/parca.yaml", Port: ":9090"}, "test-version")
+		err := Run(ctx, logger, reg, &Flags{
+			ConfigPath:          "testdata/parca.yaml",
+			Port:                addr,
+			Metastore:           metaStoreBadgerInMemory,
+			StorageGranuleSize:  8 * 1024,
+			StorageActiveMemory: 512 * 1024 * 1024,
+		}, "test-version")
 		if !errors.Is(err, context.Canceled) {
 			require.NoError(b, err)
 		}
@@ -66,14 +74,19 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 	var conn grpc.ClientConnInterface
 	err := backoff.Retry(func() error {
 		var err error
-		conn, err = grpc.Dial(":9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err = grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
+			// b.Logf("failed to connect to parca: %v", err)
 			return err
 		}
 
 		client := pb.NewProfileStoreServiceClient(conn)
 		_, err = client.WriteRaw(ctx, &pb.WriteRawRequest{})
-		return err
+		if err != nil {
+			// b.Logf("failed to connect to write raw profile: %v", err)
+			return err
+		}
+		return nil
 	}, backoff.NewConstantBackOff(time.Second))
 	require.NoError(b, err)
 
@@ -81,7 +94,9 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 	return client, done
 }
 
-func Benchmark_Parca_WriteRaw(b *testing.B) {
+// go test -bench=Benchmark_WriteRaw --count=3 --benchtime=100x -benchmem -memprofile ./pkg/parca/writeraw-memory.pb.gz -cpuprofile ./pkg/parca/writeraw-cpu.pb.gz ./pkg/parca | tee ./pkg/parca/writeraw.txt
+
+func Benchmark_WriteRaw(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -90,7 +105,8 @@ func Benchmark_Parca_WriteRaw(b *testing.B) {
 	f, err := ioutil.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 
-	// Benchamrk section
+	// Benchmark section
+	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := client.WriteRaw(ctx, &pb.WriteRawRequest{
@@ -98,6 +114,10 @@ func Benchmark_Parca_WriteRaw(b *testing.B) {
 				{
 					Labels: &pb.LabelSet{
 						Labels: []*pb.Label{
+							{
+								Name:  labels.MetricName,
+								Value: "allocs",
+							},
 							{
 								Name:  "test",
 								Value: b.Name(),
@@ -321,13 +341,8 @@ func TestConsistency(t *testing.T) {
 
 	p1 = p1.Compact()
 
-	p, err := parcaprofile.FromPprof(ctx, logger, m, p1, 0, false)
-	require.NoError(t, err)
-
-	_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{{
-		Name:  "__name__",
-		Value: "memory",
-	}}, p)
+	ingester := parcacol.NewIngester(logger, m, table)
+	err = ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p1, false)
 	require.NoError(t, err)
 
 	table.Sync()

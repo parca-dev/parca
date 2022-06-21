@@ -35,7 +35,6 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 func Benchmark_Query_Merge(b *testing.B) {
@@ -82,13 +81,19 @@ func Benchmark_Query_Merge(b *testing.B) {
 
 			p1 = p1.Compact()
 
-			p, err := parcaprofile.FromPprof(ctx, log.NewNopLogger(), m, p1, 0, false)
+			ingester := parcacol.NewIngester(logger, m, table)
+
+			typeSamples, err := ingester.ConvertPProf(ctx, labels.Labels{{Name: labels.MetricName, Value: "memory"}}, p1, false)
 			require.NoError(b, err)
 
 			for j := 0; j < n; j++ {
-				p.Meta.Timestamp = int64(j + 1)
-				_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, labels.Labels{}, p)
-				require.NoError(b, err)
+				for _, samples := range typeSamples {
+					for _, s := range samples {
+						s.Timestamp = int64(j + 1)
+					}
+					err = ingester.IngestSamples(ctx, samples)
+					require.NoError(b, err)
+				}
 			}
 
 			table.Sync()
@@ -110,7 +115,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 					Mode: pb.QueryRequest_MODE_MERGE,
 					Options: &pb.QueryRequest_Merge{
 						Merge: &pb.MergeProfile{
-							Query: `{__name__="alloc_objects_count"}`,
+							Query: `{__name__="memory:alloc_objects:count:space:bytes"}`,
 							Start: timestamppb.New(time.Unix(0, 0)),
 							End:   timestamppb.New(time.Unix(0, int64(time.Millisecond)*int64(n+1))),
 						},

@@ -33,8 +33,9 @@ func ArrowRecordToStacktraceSamples(
 	// sample is an intermediate representation used before
 	// we actually have the profile.Sample assembled from the metastore.
 	type sample struct {
-		locationIDs [][]byte
-		value       int64
+		stacktraceID []byte
+		locationIDs  [][]byte
+		value        int64
 	}
 
 	schema := ar.Schema()
@@ -50,38 +51,43 @@ func ArrowRecordToStacktraceSamples(
 	}
 	valueColumn := ar.Column(indices[0]).(*array.Int64)
 
-	locationUUIDSeen := map[string]struct{}{}
-	locationUUIDs := [][]byte{}
 	rows := int(ar.NumRows())
-	samples := make([]sample, rows)
+	samples := make([]*sample, 0, rows)
+	stacktraceUUIDs := make([][]byte, 0, rows)
 	for i := 0; i < rows; i++ {
-		s := sample{
-			value: valueColumn.Value(i),
-		}
+		stacktraceID := stacktraceColumn.Value(i)
+		value := valueColumn.Value(i)
 
-		uuids := stacktraceColumn.Value(i)
-		if len(uuids)%16 != 0 {
-			return nil, fmt.Errorf("expected stacktrace uuids to be multiple of 16 bytes")
-		}
-
-		// We split the uuids into 16 byte pieces which are exactly one uuid.
-		for i := 0; i < len(uuids); i += 16 {
-			u := []byte(uuids[i : i+16])
-			s.locationIDs = append(s.locationIDs, u)
-
-			if _, seen := locationUUIDSeen[string(u)]; !seen {
-				locationUUIDSeen[string(u)] = struct{}{}
-				locationUUIDs = append(locationUUIDs, u)
-			}
-		}
-
-		samples[i] = s
+		stacktraceUUIDs = append(stacktraceUUIDs, stacktraceID)
+		samples = append(samples, &sample{
+			stacktraceID: stacktraceID,
+			value:        value,
+		})
 	}
 
-	// Get the full locations for the location UUIDs
+	stacktraceMap, err := metaStore.GetStacktraceByIDs(ctx, stacktraceUUIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	locationUUIDSeen := map[string]struct{}{}
+	locationUUIDs := [][]byte{}
+	for _, s := range stacktraceMap {
+		for _, id := range s.GetLocationIds() {
+			if _, seen := locationUUIDSeen[string(id)]; !seen {
+				locationUUIDSeen[string(id)] = struct{}{}
+				locationUUIDs = append(locationUUIDs, id)
+			}
+		}
+	}
+
 	locationsMap, err := metastore.GetLocationsByIDs(ctx, metaStore, locationUUIDs...)
 	if err != nil {
-		return nil, fmt.Errorf("get locations by ids: %w", err)
+		return nil, err
+	}
+
+	for _, s := range samples {
+		s.locationIDs = stacktraceMap[string(s.stacktraceID)].LocationIds
 	}
 
 	stackSamples := make([]*profile.Sample, 0, len(samples))
@@ -91,11 +97,8 @@ func ArrowRecordToStacktraceSamples(
 			Location: make([]*metastore.Location, 0, len(s.locationIDs)),
 		}
 
-		// LocationIDs are stored in the opposite order than the flamegraph
-		// builder expects, so we need to iterate over them in reverse.
-		for i := len(s.locationIDs) - 1; i >= 0; i-- {
-			locID := s.locationIDs[i]
-			stackSample.Location = append(stackSample.Location, locationsMap[string(locID)])
+		for _, l := range s.locationIDs {
+			stackSample.Location = append(stackSample.Location, locationsMap[string(l)])
 		}
 
 		stackSamples = append(stackSamples, stackSample)

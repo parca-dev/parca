@@ -64,8 +64,9 @@ import (
 )
 
 const (
-	symbolizationInterval = 10 * time.Second
-	flagModeScraperOnly   = "scraper-only"
+	symbolizationInterval   = 10 * time.Second
+	flagModeScraperOnly     = "scraper-only"
+	metaStoreBadgerInMemory = "badgerinmemory"
 )
 
 type Flags struct {
@@ -81,13 +82,9 @@ type Flags struct {
 	MutexProfileFraction int `default:"0" help:"Fraction of mutex profile samples to collect."`
 	BlockProfileRate     int `default:"0" help:"Sample rate for block profile."`
 
-	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
-	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
-
-	Storage              string `default:"tsdb" enum:"columnstore,tsdb" help:"Storage type to use."`
-	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
-	StorageGranuleSize   int    `default:"8196" help:"Granule size for storage."`
-	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	StorageDebugValueLog bool  `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
+	StorageGranuleSize   int   `default:"8196" help:"Granule size for storage."`
+	StorageActiveMemory  int64 `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -139,15 +136,16 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	var mStr metastore.ProfileMetaStore
 	switch flags.Metastore {
-	case "badgerinmemory":
+	case metaStoreBadgerInMemory:
 		mStr = metastore.NewBadgerMetastore(
 			logger,
 			reg,
-			tracerProvider.Tracer("badgerinmemory"),
+			tracerProvider.Tracer(metaStoreBadgerInMemory),
 			metastore.NewRandomUUIDGenerator(),
 		)
 	default:
-		level.Error(logger).Log("msg", "unknown metastore implementation", "chosen", flags.Metastore)
+		err := fmt.Errorf("unknown metastore implementation: %s", flags.Metastore)
+		level.Error(logger).Log("msg", "failed to initialize metastore", "err", err)
 		return err
 	}
 

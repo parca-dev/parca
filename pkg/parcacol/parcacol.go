@@ -27,11 +27,6 @@ import (
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-type Table interface {
-	Schema() *dynparquet.Schema
-	InsertBuffer(buf *dynparquet.Buffer) (tx uint64, err error)
-}
-
 func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table Table, ls labels.Labels, prof *parcaprofile.Profile) (int, error) {
 	if prof.Meta.Timestamp == 0 {
 		return 0, errors.New("timestamp must not be zero")
@@ -42,11 +37,9 @@ func InsertProfileIntoTable(ctx context.Context, logger log.Logger, table Table,
 		return 0, err
 	}
 
-	_, err = table.InsertBuffer(buf)
+	_, err = table.InsertBuffer(ctx, buf)
 	return len(prof.FlatSamples), err
 }
-
-var ErrMissingNameLabel = errors.New("missing __name__ label")
 
 func FlatProfileToBuffer(logger log.Logger, inLs labels.Labels, schema *dynparquet.Schema, prof *parcaprofile.Profile) (*dynparquet.Buffer, error) {
 	rows, err := FlatProfileToRows(inLs, prof)
@@ -108,7 +101,7 @@ func FlatProfileToRows(inLs labels.Labels, prof *parcaprofile.Profile) (Samples,
 			pprofNumLabels[name] = values[0]
 		}
 
-		rows = append(rows, Sample{
+		rows = append(rows, &Sample{
 			Name:           name,
 			SampleType:     prof.Meta.SampleType.Type,
 			SampleUnit:     prof.Meta.SampleType.Unit,
