@@ -160,6 +160,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 			Value:        1,
 		}},
 	})
+	require.NoError(t, err)
 
 	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
 	require.NoError(t, err)

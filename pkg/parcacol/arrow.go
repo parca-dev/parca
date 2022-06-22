@@ -202,7 +202,6 @@ func getLocationsFromSerializedLocations(
 
 	res := make([]*profile.Location, 0, len(locations))
 	for i, location := range locations {
-
 		var mapping *pb.Mapping
 		if location.MappingId != "" {
 			mapping = mappings[mappingIndex[location.MappingId]]

@@ -27,8 +27,8 @@ func MakeLocationKey(l *pb.Location) string {
 	return MakeLocationKeyWithID(MakeLocationID(l))
 }
 
-// Locations are namespaced by their mapping ID.
-// v1/locations/by-key/<hashed-mapping-key>/<hashed-location-key>
+// Locations are namespaced by their mapping ID
+// `v1/locations/by-key/<hashed-mapping-key>/<hashed-location-key>`.
 const locationsKeyPrefix = "v1/locations/by-key/"
 
 // MakeLocationKeyWithID returns the key to be used to store/lookup a location
@@ -38,7 +38,7 @@ func MakeLocationKeyWithID(locationID string) string {
 }
 
 // Location lines are namespaced by their mapping ID.
-// v1/locations-lines/by-key/<hashed-mapping-key>/<hashed-location-key>
+// `v1/locations-lines/by-key/<hashed-mapping-key>/<hashed-location-key>`.
 const locationLinesKeyPrefix = "v1/location-lines/by-key/"
 
 // MakeLocationLinesKeyWithID returns the key to be used to store/lookup a
@@ -48,7 +48,7 @@ func MakeLocationLinesKeyWithID(locationID string) string {
 }
 
 // Unsymbolized locations are namespaced by their mapping ID.
-// v1/unsymbolized-locations/by-key/<hashed-mapping-key>/<hashed-location-key>
+// `v1/unsymbolized-locations/by-key/<hashed-mapping-key>/<hashed-location-key>`.
 const unsymbolizedLocationLinesKeyPrefix = "v1/unsymbolized-locations/by-key/"
 
 // MakeUnsymbolizedLocationKeyWithID returns the key to be used to store/lookup
@@ -77,13 +77,18 @@ func MakeLocationID(l *pb.Location) string {
 	hash := sha512.New512_256()
 
 	hash.Write([]byte(l.MappingId))
+
+	//nolint:errcheck // ignore error as writing to the hash will cannot error
 	binary.Write(hash, binary.BigEndian, l.Address)
 	if l.IsFolded {
 		// If IsFolded is false this means automatically that these 8 bytes are
 		// 0. This works out well as the key is byte aligned to the nearest 8
 		// bytes that way.
+
+		//nolint:errcheck // ignore error as writing to the hash will cannot error
 		binary.Write(hash, binary.BigEndian, 1)
 	} else {
+		//nolint:errcheck // ignore error as writing to the hash will cannot error
 		binary.Write(hash, binary.BigEndian, 0)
 	}
 
@@ -95,6 +100,8 @@ func MakeLocationID(l *pb.Location) string {
 	if l.Address == 0 && l.Lines != nil {
 		for _, line := range l.Lines.Entries {
 			hash.Write([]byte(line.FunctionId))
+
+			//nolint:errcheck // ignore error as writing to the hash will cannot error
 			binary.Write(hash, binary.BigEndian, line.Line)
 		}
 	}
@@ -114,7 +121,7 @@ func MakeFunctionKey(f *pb.Function) string {
 }
 
 // Functions are namespaced by their filename.
-// v1/functions/by-key/<filename-hash>/<hashed-function-key>
+// `v1/functions/by-key/<filename-hash>/<hashed-function-key>`.
 const functionKeyPrefix = "v1/functions/by-key/"
 
 // MakeFunctionKeyWithID returns the key to be used to store/lookup a function
@@ -133,7 +140,9 @@ func FunctionIDFromKey(key string) string {
 func MakeFunctionID(f *pb.Function) string {
 	hash := sha512.New512_256()
 
+	//nolint:errcheck // ignore error as writing to the hash will cannot error
 	binary.Write(hash, binary.BigEndian, f.StartLine)
+
 	hash.Write([]byte(f.Name))
 	hash.Write([]byte(f.SystemName))
 	hash.Write([]byte(f.Filename))
@@ -155,7 +164,7 @@ func MakeFunctionID(f *pb.Function) string {
 const mapsizeRounding = 0x1000
 
 // Mappings are organized by their key directly.
-// v1/mappings/by-key/<hashed-mapping-key>
+// `v1/mappings/by-key/<hashed-mapping-key>`.
 const mappingKeyPrefix = "v1/mappings/by-key/"
 
 // MakeMappingKey returns the key to be used to store/lookup the mapping in a
@@ -198,7 +207,9 @@ func MakeMappingID(m *pb.Mapping) string {
 		// treated as the same mapping during merging.
 	}
 
+	//nolint:errcheck // ignore error as writing to the hash will cannot error
 	binary.Write(hash, binary.BigEndian, size)
+	//nolint:errcheck // ignore error as writing to the hash will cannot error
 	binary.Write(hash, binary.BigEndian, m.Offset)
 
 	sum := hash.Sum(nil)
@@ -206,7 +217,7 @@ func MakeMappingID(m *pb.Mapping) string {
 }
 
 // Stacktraces are organized prefixed by their root location and then their full key.
-// v1/stacktraces/by-key/<root-location-id>/<hashed-mapping-key>
+// `v1/stacktraces/by-key/<root-location-id>/<hashed-mapping-key>`.
 const stacktraceKeyPrefix = "v1/stacktraces/by-key/"
 
 // MakeStacktraceKey returns the key to be used to store/lookup the mapping in a

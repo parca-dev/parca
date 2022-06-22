@@ -17,10 +17,11 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/polarsignals/arcticdb/dynparquet"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/segmentio/parquet-go"
+
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func NormalizedProfileToParquetBuffer(schema *dynparquet.Schema, ls labels.Labels, p *profile.NormalizedProfile) (*dynparquet.Buffer, error) {

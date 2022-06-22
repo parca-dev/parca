@@ -94,7 +94,6 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 }
 
 func (ing Ingester) IngestProfile(ctx context.Context, ls labels.Labels, p *profile.NormalizedProfile) error {
-
 	buffer, err := NormalizedProfileToParquetBuffer(ing.schema, ls, p)
 	if err != nil {
 		return fmt.Errorf("failed to convert samples to buffer: %w", err)

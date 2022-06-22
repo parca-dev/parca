@@ -258,10 +258,10 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	//TODO(brancz)
-	//testProf := &pprofpb.Profile{}
-	//err = testProf.UnmarshalVT(res.Report.(*pb.QueryResponse_Pprof).Pprof)
-	//require.NoError(t, err)
+	// TODO(brancz)
+	// testProf := &pprofpb.Profile{}
+	// err = testProf.UnmarshalVT(res.Report.(*pb.QueryResponse_Pprof).Pprof)
+	// require.NoError(t, err)
 }
 
 func TestColumnQueryAPIQueryFgprof(t *testing.T) {
