@@ -25,7 +25,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
@@ -46,7 +46,7 @@ type ProfileColumnStore struct {
 	tracer    trace.Tracer
 	metastore metastorepb.MetastoreServiceClient
 
-	table *arcticdb.Table
+	table *frostdb.Table
 
 	// When the debug-value-log is enabled, every profile is first written to
 	// tmp/<labels>/<timestamp>.pb.gz before it's parsed and written to the
@@ -62,7 +62,7 @@ func NewProfileColumnStore(
 	logger log.Logger,
 	tracer trace.Tracer,
 	metastore metastorepb.MetastoreServiceClient,
-	table *arcticdb.Table,
+	table *frostdb.Table,
 	debugValueLog bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{

@@ -14,7 +14,7 @@
 package parcacol
 
 import (
-	"github.com/polarsignals/arcticdb/dynparquet"
+	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/segmentio/parquet-go"
 )
 

@@ -28,11 +28,11 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20220203202831-b7f99f1dbc96
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/arcticdb v0.0.0-20220607075621-19ee11509854
+	github.com/polarsignals/frostdb v0.0.0-20220621110655-ed58d970e806
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.35.0
 	github.com/prometheus/prometheus v1.8.2-0.20220315145411-881111fec433
-	github.com/segmentio/parquet-go v0.0.0-20220527005452-bf1e4db66515
+	github.com/segmentio/parquet-go v0.0.0-20220616233901-edd371b528ff
 	github.com/stretchr/testify v1.7.2
 	github.com/thanos-io/objstore v0.0.0-20220324141029-c4f11442aa33
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.32.0
@@ -147,7 +147,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.15.2 // indirect
+	github.com/klauspost/compress v1.15.5 // indirect
 	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/kolo/xmlrpc v0.0.0-20201022064351-38db28db192b // indirect
 	github.com/linode/linodego v1.3.0 // indirect

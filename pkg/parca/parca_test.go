@@ -30,9 +30,8 @@ import (
 	"github.com/fatih/semgroup"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/polarsignals/arcticdb"
-	columnstore "github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
+	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
@@ -140,7 +139,7 @@ func Benchmark_WriteRaw(b *testing.B) {
 	<-done
 }
 
-func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServiceServer, *arcticdb.Table, *semgroup.Group, func()) {
+func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServiceServer, *frostdb.Table, *semgroup.Group, func()) {
 	dir := "../../tmp/"
 	files, err := ioutil.ReadDir(dir)
 	require.NoError(t, err)
@@ -194,7 +193,7 @@ func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServi
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col := frostdb.New(
 		reg,
 		8196,
 		64*1024*1024,
@@ -203,7 +202,7 @@ func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServi
 	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
+		frostdb.NewTableConfig(
 			parcacol.Schema(),
 		),
 		logger,
@@ -326,7 +325,7 @@ func TestConsistency(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col := frostdb.New(
 		reg,
 		8196,
 		64*1024*1024,
@@ -335,7 +334,7 @@ func TestConsistency(t *testing.T) {
 	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
+		frostdb.NewTableConfig(
 			parcacol.Schema(),
 		),
 		logger,

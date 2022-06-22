@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/polarsignals/arcticdb/dynparquet"
+	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/segmentio/parquet-go"
 

@@ -24,8 +24,8 @@ import (
 
 	"github.com/apache/arrow/go/v8/arrow/memory"
 	"github.com/go-kit/log"
-	columnstore "github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
+	columnstore "github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"

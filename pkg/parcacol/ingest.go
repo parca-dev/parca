@@ -20,7 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/polarsignals/arcticdb/dynparquet"
+	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/prometheus/model/labels"
 
 	pprofproto "github.com/parca-dev/parca/gen/proto/go/google/pprof"
