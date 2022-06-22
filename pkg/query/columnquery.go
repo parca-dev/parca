@@ -189,10 +189,10 @@ var (
 	ErrValueColumnNotFound     = errors.New("value column not found")
 )
 
-func queryToFilterExprs(query string) (string, string, string, string, string, []logicalplan.Expr, error) {
+func queryToFilterExprs(query string) (profile.Meta, []logicalplan.Expr, error) {
 	parsedSelector, err := parser.ParseMetricSelector(query)
 	if err != nil {
-		return "", "", "", "", "", nil, status.Error(codes.InvalidArgument, "failed to parse query")
+		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
 
 	sel := make([]*labels.Matcher, 0, len(parsedSelector))
@@ -205,12 +205,12 @@ func queryToFilterExprs(query string) (string, string, string, string, string, [
 		}
 	}
 	if nameLabel == nil {
-		return "", "", "", "", "", nil, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
+		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
 	}
 
 	parts := strings.Split(nameLabel.Value, ":")
 	if len(parts) != 5 && len(parts) != 6 {
-		return "", "", "", "", "", nil, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
+		return profile.Meta{}, nil, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
 	}
 	name, sampleType, sampleUnit, periodType, periodUnit, delta := parts[0], parts[1], parts[2], parts[3], parts[4], false
 	if len(parts) == 6 && parts[5] == "delta" {
@@ -219,7 +219,7 @@ func queryToFilterExprs(query string) (string, string, string, string, string, [
 
 	labelFilterExpressions, err := matchersToBooleanExpressions(sel)
 	if err != nil {
-		return "", "", "", "", "", nil, status.Error(codes.InvalidArgument, "failed to build query")
+		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "failed to build query")
 	}
 
 	exprs := append([]logicalplan.Expr{
@@ -237,7 +237,11 @@ func queryToFilterExprs(query string) (string, string, string, string, string, [
 
 	exprs = append(exprs, deltaPlan)
 
-	return name, sampleType, sampleUnit, periodType, periodUnit, exprs, nil
+	return profile.Meta{
+		Name:       name,
+		SampleType: profile.ValueType{Type: sampleType, Unit: sampleUnit},
+		PeriodType: profile.ValueType{Type: periodType, Unit: periodUnit},
+	}, exprs, nil
 }
 
 // QueryRange issues a range query against the storage.
@@ -246,7 +250,7 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	_, _, _, _, _, selectorExprs, err := queryToFilterExprs(req.Query)
+	_, selectorExprs, err := queryToFilterExprs(req.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -573,7 +577,7 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
 	defer span.End()
 
-	name, sampleType, sampleUnit, periodType, periodUnit, selectorExprs, err := queryToFilterExprs(query)
+	meta, selectorExprs, err := queryToFilterExprs(query)
 	if err != nil {
 		return nil, err
 	}
@@ -610,9 +614,9 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 		ar,
 		"sum(value)",
 		profile.Meta{
-			Name:       name,
-			SampleType: profile.ValueType{Type: sampleType, Unit: sampleUnit},
-			PeriodType: profile.ValueType{Type: periodType, Unit: periodUnit},
+			Name:       meta.Name,
+			SampleType: meta.SampleType,
+			PeriodType: meta.PeriodType,
 			Timestamp:  requestedTime,
 		},
 	)
@@ -634,7 +638,7 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 	ctx, span := q.tracer.Start(ctx, "selectMerge")
 	defer span.End()
 
-	name, sampleType, sampleUnit, periodType, periodUnit, selectorExprs, err := queryToFilterExprs(m.Query)
+	meta, selectorExprs, err := queryToFilterExprs(m.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -673,9 +677,9 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 		ar,
 		"sum(value)",
 		profile.Meta{
-			Name:       name,
-			SampleType: profile.ValueType{Type: sampleType, Unit: sampleUnit},
-			PeriodType: profile.ValueType{Type: periodType, Unit: periodUnit},
+			Name:       meta.Name,
+			SampleType: meta.SampleType,
+			PeriodType: meta.PeriodType,
 			Timestamp:  start,
 		},
 	)
