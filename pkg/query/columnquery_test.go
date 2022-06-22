@@ -64,7 +64,8 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -132,7 +133,8 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -202,7 +204,8 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -258,10 +261,9 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// TODO(brancz)
-	// testProf := &pprofpb.Profile{}
-	// err = testProf.UnmarshalVT(res.Report.(*pb.QueryResponse_Pprof).Pprof)
-	// require.NoError(t, err)
+	testProf := &pprofpb.Profile{}
+	err = testProf.UnmarshalVT(MustDecompressGzip(t, res.Report.(*pb.QueryResponse_Pprof).Pprof))
+	require.NoError(t, err)
 }
 
 func TestColumnQueryAPIQueryFgprof(t *testing.T) {
@@ -284,7 +286,8 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -349,7 +352,8 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -601,7 +605,8 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -673,7 +678,8 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -734,7 +740,8 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,

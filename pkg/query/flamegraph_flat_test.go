@@ -38,7 +38,8 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastore.NewBadgerMetastore(
+	l := metastore.NewTestMetastore(
+		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
@@ -205,7 +206,8 @@ func TestGenerateFlamegraphFromProfile(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 
-	l := metastore.NewBadgerMetastore(
+	l := metastore.NewTestMetastore(
+		t,
 		log.NewNopLogger(),
 		reg,
 		tracer,
@@ -242,7 +244,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	store := metastore.NewBadgerMetastore(logger, reg, tracer)
+	store := metastore.NewTestMetastore(t, logger, reg, tracer)
 
 	functions := []*pprofprofile.Function{
 		{ID: 1, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -292,7 +294,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	require.Equal(t, &pb.Flamegraph{
 		Total:  1,
 		Height: 4,
-		Unit:   "",
+		Unit:   "bytes",
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: 1,
 			Children: []*pb.FlamegraphNode{{
@@ -384,7 +386,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	store := metastore.NewBadgerMetastore(logger, reg, tracer)
+	store := metastore.NewTestMetastore(t, logger, reg, tracer)
 	metastore := metastore.NewInProcessClient(store)
 
 	functions := []*pprofprofile.Function{

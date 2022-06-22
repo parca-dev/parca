@@ -50,7 +50,8 @@ func Test_LabelName_Invalid(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,

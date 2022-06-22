@@ -139,7 +139,12 @@ func Benchmark_WriteRaw(b *testing.B) {
 	<-done
 }
 
-func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServiceServer, *frostdb.Table, *semgroup.Group, func()) {
+type Testing interface {
+	require.TestingT
+	Helper()
+}
+
+func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer, *frostdb.Table, *semgroup.Group, func()) {
 	dir := "../../tmp/"
 	files, err := ioutil.ReadDir(dir)
 	require.NoError(t, err)
@@ -208,7 +213,8 @@ func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServi
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -340,7 +346,8 @@ func TestConsistency(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,

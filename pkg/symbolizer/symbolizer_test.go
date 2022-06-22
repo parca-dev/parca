@@ -465,7 +465,8 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, pb.MetastoreServic
 		debuginfo.NopDebugInfodClient{})
 	require.NoError(t, err)
 
-	mStr := metastore.NewBadgerMetastore(
+	mStr := metastore.NewTestMetastore(
+		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),

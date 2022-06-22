@@ -42,7 +42,8 @@ func TestGenerateFlatPprof(t *testing.T) {
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
 
-	l := metastore.NewBadgerMetastore(
+	l := metastore.NewTestMetastore(
+		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		tracer,
@@ -106,7 +107,8 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastore.NewBadgerMetastore(
+	l := metastore.NewTestMetastore(
+		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
 		trace.NewNoopTracerProvider().Tracer(""),
