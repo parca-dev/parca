@@ -25,13 +25,13 @@ import (
 	"github.com/go-delve/delve/pkg/dwarf/reader"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
 type DebugInfoFile interface {
 	// SourceLines returns the resolved source lines for a given address.
-	SourceLines(addr uint64) ([]metastore.LocationLine, error)
+	SourceLines(addr uint64) ([]profile.LocationLine, error)
 }
 
 type debugInfoFile struct {
@@ -66,7 +66,7 @@ func NewDebugInfoFile(path string, demangler *demangle.Demangler) (DebugInfoFile
 	}, nil
 }
 
-func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, error) {
+func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error) {
 	// The reader is positioned at byte offset 0 in the DWARF “info” section.
 	er := f.debugData.Reader()
 	cu, err := er.SeekPC(addr)
@@ -81,7 +81,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 		return nil, err
 	}
 
-	lines := []metastore.LocationLine{}
+	lines := []profile.LocationLine{}
 	var tr *godwarf.Tree
 	for _, t := range f.subprograms[cu.Offset] {
 		if t.ContainsPC(addr) {
@@ -98,7 +98,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 		name = ""
 	}
 	file, line := findLineInfo(f.lineEntries[cu.Offset], tr.Ranges)
-	lines = append(lines, metastore.LocationLine{
+	lines = append(lines, profile.LocationLine{
 		Line: line,
 		Function: f.demangler.Demangle(&pb.Function{
 			Name:     name,
@@ -117,7 +117,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 		}
 
 		file, line := findLineInfo(f.lineEntries[cu.Offset], ch.Ranges)
-		lines = append(lines, metastore.LocationLine{
+		lines = append(lines, profile.LocationLine{
 			Line: line,
 			Function: f.demangler.Demangle(&pb.Function{
 				Name:     name,

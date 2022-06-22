@@ -14,13 +14,12 @@
 package query
 
 import (
-	"bytes"
 	"context"
 	"sort"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 type TreeStackEntry struct {
@@ -189,7 +188,7 @@ func mergeChildren(node *querypb.FlamegraphNode, compare, equals func(a, b *quer
 		if equals(current, next) {
 			// Merge children into the first one
 			current.Meta.Line = nil
-			if current.Meta.Mapping != nil && next.Meta.Mapping != nil && !bytes.Equal(current.Meta.Mapping.Id, next.Meta.Mapping.Id) {
+			if current.Meta.Mapping != nil && next.Meta.Mapping != nil && current.Meta.Mapping.Id != next.Meta.Mapping.Id {
 				current.Meta.Mapping = &pb.Mapping{}
 			}
 
@@ -245,7 +244,7 @@ func equalsByName(a, b *querypb.FlamegraphNode) bool {
 // locationToTreeNodes converts a location to its tree nodes, if the location
 // has multiple inlined functions it creates multiple nodes for each inlined
 // function.
-func locationToTreeNodes(location *metastore.Location) []*querypb.FlamegraphNode {
+func locationToTreeNodes(location *profile.Location) []*querypb.FlamegraphNode {
 	if len(location.Lines) > 0 {
 		return linesToTreeNodes(
 			location,
@@ -254,14 +253,14 @@ func locationToTreeNodes(location *metastore.Location) []*querypb.FlamegraphNode
 		)
 	}
 
-	var mappingID []byte
+	var mappingID string
 	if location.Mapping != nil {
 		mappingID = location.Mapping.Id
 	}
 	return []*querypb.FlamegraphNode{{
 		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
-				Id:        location.ID[:],
+				Id:        location.ID,
 				MappingId: mappingID,
 				Address:   location.Address,
 				IsFolded:  location.IsFolded,
@@ -274,9 +273,9 @@ func locationToTreeNodes(location *metastore.Location) []*querypb.FlamegraphNode
 // linesToTreeNodes turns inlined `lines` into a stack of TreeNode items and
 // returns the slice of items in order from outer-most to inner-most.
 func linesToTreeNodes(
-	location *metastore.Location,
+	location *profile.Location,
 	mapping *pb.Mapping,
-	lines []metastore.LocationLine,
+	lines []profile.LocationLine,
 ) []*querypb.FlamegraphNode {
 	if len(lines) == 0 {
 		return nil
@@ -305,23 +304,23 @@ func linesToTreeNodes(
 }
 
 func lineToTreeNode(
-	location *metastore.Location,
+	location *profile.Location,
 	mapping *pb.Mapping,
-	line metastore.LocationLine,
+	line profile.LocationLine,
 	child *querypb.FlamegraphNode,
 ) *querypb.FlamegraphNode {
 	var children []*querypb.FlamegraphNode
 	if child != nil {
 		children = []*querypb.FlamegraphNode{child}
 	}
-	var mappingID []byte
+	var mappingID string
 	if mapping != nil {
 		mappingID = mapping.Id
 	}
 	return &querypb.FlamegraphNode{
 		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
-				Id:        location.ID[:],
+				Id:        location.ID,
 				MappingId: mappingID,
 				Address:   location.Address,
 				IsFolded:  location.IsFolded,
