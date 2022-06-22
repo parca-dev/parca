@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
@@ -418,7 +418,7 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, pb.MetastoreServic
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := arcticdb.New(
+	col := frostdb.New(
 		reg,
 		8196,
 		64*1024*1024,
@@ -427,7 +427,7 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, pb.MetastoreServic
 	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
-		arcticdb.NewTableConfig(
+		frostdb.NewTableConfig(
 			parcacol.Schema(),
 		),
 		logger,

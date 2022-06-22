@@ -31,8 +31,8 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	"github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
+	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
@@ -151,7 +151,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	metastore := metastore.NewInProcessClient(mStr)
 
-	col := arcticdb.New(
+	col := frostdb.New(
 		reg,
 		flags.StorageGranuleSize,
 		flags.StorageActiveMemory,
@@ -161,7 +161,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		level.Error(logger).Log("msg", "failed to load database", "err", err)
 		return err
 	}
-	table, err := colDB.Table("stacktraces", arcticdb.NewTableConfig(
+	table, err := colDB.Table("stacktraces", frostdb.NewTableConfig(
 		parcacol.Schema(),
 	), logger)
 	if err != nil {
