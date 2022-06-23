@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import sankeyCircular from './sankeyCircular';
-import {sankeyJustify, sankeyLeft, sankeyCenter, sankeyRight} from '../align';
+import {sankeyJustify, sankeyLeft, sankeyCenter, sankeyRight} from './align';
 
 const NODE_WIDTH = 15;
 
