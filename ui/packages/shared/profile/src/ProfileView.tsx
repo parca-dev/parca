@@ -1,7 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import {parseParams} from '@parca/functions';
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
-import {Button, Card, useGrpcMetadata, useParcaTheme, Callgraph} from '@parca/components';
+import {
+  Button,
+  Card,
+  SearchNodes,
+  useGrpcMetadata,
+  useParcaTheme,
+  Callgraph,
+} from '@parca/components';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
@@ -124,6 +131,8 @@ export const ProfileView = ({
                     Download pprof
                   </Button>
                 </div>
+
+                <SearchNodes />
               </div>
 
               <div className="flex ml-auto">
@@ -150,7 +159,7 @@ export const ProfileView = ({
 
                 <Button
                   variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
-                  className="rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+                  className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
                   onClick={() => switchProfileView('table')}
                 >
                   Table
@@ -158,7 +167,7 @@ export const ProfileView = ({
 
                 <Button
                   variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
-                  className="rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons no-outline-on-buttons text-ellipsis"
+                  className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons no-outline-on-buttons text-ellipsis"
                   onClick={() => switchProfileView('both')}
                 >
                   Both
@@ -166,7 +175,7 @@ export const ProfileView = ({
 
                 <Button
                   variant={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
-                  className="rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+                  className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
                   onClick={() => switchProfileView('icicle')}
                 >
                   Icicle Graph

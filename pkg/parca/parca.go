@@ -31,8 +31,8 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	"github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
+	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
@@ -48,6 +48,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
@@ -82,13 +83,9 @@ type Flags struct {
 	MutexProfileFraction int `default:"0" help:"Fraction of mutex profile samples to collect."`
 	BlockProfileRate     int `default:"0" help:"Sample rate for block profile."`
 
-	StorageTSDBRetentionTime    time.Duration `default:"6h" help:"How long to retain samples in storage."`
-	StorageTSDBExpensiveMetrics bool          `default:"false" help:"Enable really heavy metrics. Only do this for debugging as the metrics are slowing Parca down by a lot." hidden:"true"`
-
-	Storage              string `default:"tsdb" enum:"columnstore,tsdb" help:"Storage type to use."`
-	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
-	StorageGranuleSize   int    `default:"8196" help:"Granule size for storage."`
-	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	StorageDebugValueLog bool  `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
+	StorageGranuleSize   int   `default:"8196" help:"Granule size for storage."`
+	StorageActiveMemory  int64 `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -138,14 +135,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return runScraper(ctx, logger, reg, tracerProvider, flags, version, cfg)
 	}
 
-	var mStr metastore.ProfileMetaStore
+	var mStr metastorepb.MetastoreServiceServer
 	switch flags.Metastore {
 	case metaStoreBadgerInMemory:
 		mStr = metastore.NewBadgerMetastore(
 			logger,
 			reg,
 			tracerProvider.Tracer(metaStoreBadgerInMemory),
-			metastore.NewRandomUUIDGenerator(),
 		)
 	default:
 		err := fmt.Errorf("unknown metastore implementation: %s", flags.Metastore)
@@ -153,7 +149,9 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	col := arcticdb.New(
+	metastore := metastore.NewInProcessClient(mStr)
+
+	col := frostdb.New(
 		reg,
 		flags.StorageGranuleSize,
 		flags.StorageActiveMemory,
@@ -163,7 +161,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		level.Error(logger).Log("msg", "failed to load database", "err", err)
 		return err
 	}
-	table, err := colDB.Table("stacktraces", arcticdb.NewTableConfig(
+	table, err := colDB.Table("stacktraces", frostdb.NewTableConfig(
 		parcacol.Schema(),
 	), logger)
 	if err != nil {
@@ -174,14 +172,14 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	s := profilestore.NewProfileColumnStore(
 		logger,
 		tracerProvider.Tracer("profilestore"),
-		mStr,
+		metastore,
 		table,
 		flags.StorageDebugValueLog,
 	)
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
-		mStr,
+		metastore,
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -237,7 +235,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 	{
-		s := symbolizer.New(logger, mStr, dbgInfo)
+		s := symbolizer.New(logger, metastore, dbgInfo)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
 			func() error {

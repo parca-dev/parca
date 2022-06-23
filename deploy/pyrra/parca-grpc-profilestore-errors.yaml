@@ -6,6 +6,7 @@ metadata:
   labels:
     prometheus: k8s
     role: alert-rules
+    pyrra.dev/team: parca
 spec:
   target: '99.9'
   window: 4w

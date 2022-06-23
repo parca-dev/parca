@@ -7,12 +7,14 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
+      - .github/workflows/docs.yml
   pull_request:
     branches: [ main ]
     paths:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
+      - .github/workflows/docs.yml
 
 jobs:
   docs:
@@ -21,14 +23,18 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
 
-      - name: Set up Go 1.x
+      - name: Set up Go
         uses: actions/setup-go@v3
         with:
           go-version: '1.18'
           check-latest: true
+          cache: true
 
-      - name: Build UI
-        run: make ui/build
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14.x
+          cache: 'yarn'
 
       - name: Docs check
         run: |

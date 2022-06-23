@@ -10,6 +10,7 @@ on:
       - Dockerfile*
       - .dockerignore
       - ui/**
+      - .github/workflows/container.yml
   pull_request:
     branches: [ main ]
     paths:
@@ -19,9 +20,10 @@ on:
       - Dockerfile*
       - .dockerignore
       - ui/**
+      - .github/workflows/container.yml
 
 jobs:
-  build:
+  build-container:
     name: Container build and push (when merged)
     runs-on: ubuntu-latest
 
@@ -34,15 +36,41 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
 
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+          check-latest: true
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14.x
+          cache: 'yarn'
+
+      - name: Set Tag
+        run: |
+          echo "goreleaser_current_tag=`git describe --match 'v*' --tags`" >> $GITHUB_ENV
+
+      - name: Build binaries
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          distribution: goreleaser
+          version: latest
+          args: build --rm-dist --skip-validate --snapshot
+        env:
+          GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
+
       - name: Get branch name
         shell: bash
         run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       # To build multi-arch images, see also: https://github.com/redhat-actions/buildah-build#multi-arch-builds
-      - name: Install qemu dependency
+      - name: Install QEMU dependency
         run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-user-static
+          sudo apt-get update -y
+          sudo apt-get install -y binfmt-support qemu-user-static
 
       - name: Build container
         run: make container
@@ -52,7 +80,7 @@ jobs:
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}
-        uses: sigstore/cosign-installer@v2.3.0
+        uses: sigstore/cosign-installer@v2.4.0
 
       - name: Install crane
         if: ${{ github.event_name != 'pull_request' }}

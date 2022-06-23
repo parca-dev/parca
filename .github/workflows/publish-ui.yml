@@ -22,7 +22,7 @@ jobs:
       - name: Pull all tags for Lerna semantic release
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}

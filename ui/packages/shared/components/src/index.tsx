@@ -7,6 +7,7 @@ import DateTimePicker from './DateTimePicker';
 import Dropdown from './Dropdown';
 import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './GrpcMetadataContext';
 import Input from './Input';
+import FlamegraphTooltip from './FlamegraphTooltip';
 import MatchersInput from './MatchersInput';
 import MetricsGraph from './MetricsGraph';
 import ParcaThemeContext, {ParcaThemeProvider, useParcaTheme} from './ParcaThemeContext';
@@ -17,6 +18,7 @@ import ProfileSelector from './ProfileSelector';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select from './Select';
 import type {SelectElement} from './Select';
+import SearchNodes from './SearchNodes';
 import Spinner from './Spinner';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
@@ -32,6 +34,7 @@ export {
   DateTimeRange,
   DateTimeRangePicker,
   Dropdown,
+  FlamegraphTooltip,
   GrpcMetadataContext,
   GrpcMetadataProvider,
   Input,
@@ -45,6 +48,7 @@ export {
   ProfileSelector,
   ResponsiveSvg,
   Select,
+  SearchNodes,
   Spinner,
   Tab,
   EmptyState,

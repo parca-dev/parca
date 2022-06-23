@@ -14,32 +14,59 @@
 package profile
 
 import (
-	"context"
-	"fmt"
 	"time"
 
-	"github.com/google/pprof/profile"
-	"github.com/google/uuid"
-	"go.opentelemetry.io/otel/trace"
-
-	"github.com/parca-dev/parca/pkg/metastore"
+	pprofproto "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
-type InstantProfileMeta struct {
-	PeriodType ValueType
-	SampleType ValueType
-	Timestamp  int64
-	Duration   int64
-	Period     int64
+type LocationLine struct {
+	Line     int64
+	Function *pb.Function
 }
 
-type Sample struct {
-	Location  []*metastore.Location
+type Location struct {
+	ID       string
+	Address  uint64
+	IsFolded bool
+	Mapping  *pb.Mapping
+	Lines    []LocationLine
+}
+
+type Label struct {
+	Name  string
+	Value string
+}
+
+type NumLabel struct {
+	Name  string
+	Value int64
+}
+
+type SymbolizedSample struct {
+	Locations []*Location
 	Value     int64
 	DiffValue int64
-	Label     map[string][]string
-	NumLabel  map[string][]int64
-	NumUnit   map[string][]string
+	Label     map[string]string
+	NumLabel  map[string]int64
+}
+
+type NormalizedSample struct {
+	StacktraceID string
+	Value        int64
+	DiffValue    int64
+	Label        map[string]string
+	NumLabel     map[string]int64
+}
+
+type Profile struct {
+	Samples []*SymbolizedSample
+	Meta    Meta
+}
+
+type NormalizedProfile struct {
+	Samples []*NormalizedSample
+	Meta    Meta
 }
 
 type ValueType struct {
@@ -47,127 +74,32 @@ type ValueType struct {
 	Unit string
 }
 
-func CopyInstantProfile(p InstantProfile) *Profile {
-	return &Profile{
-		Meta:        p.ProfileMeta(),
-		FlatSamples: p.Samples(),
-	}
+type Meta struct {
+	Name       string
+	PeriodType ValueType
+	SampleType ValueType
+	Timestamp  int64
+	Duration   int64
+	Period     int64
 }
 
-type InstantProfile interface {
-	ProfileMeta() InstantProfileMeta
-	Samples() map[string]*Sample
-}
-
-type StacktraceSamples struct {
-	Meta    InstantProfileMeta
-	Samples []*Sample
-}
-
-func StacktraceSamplesFromFlatProfile(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p InstantProfile) (*StacktraceSamples, error) {
-	samples := p.Samples()
-
-	sampleUUIDs := make([][]byte, 0, len(samples))
-	for id := range samples {
-		sampleUUIDs = append(sampleUUIDs, []byte(id))
+func MetaFromPprof(p *pprofproto.Profile, name string, sampleIndex int) Meta {
+	periodType := ValueType{}
+	if p.PeriodType != nil {
+		periodType = ValueType{Type: p.StringTable[p.PeriodType.Type], Unit: p.StringTable[p.PeriodType.Unit]}
 	}
 
-	sampleMap, err := metaStore.GetStacktraceByIDs(ctx, sampleUUIDs...)
-	if err != nil {
-		return nil, err
+	sampleType := ValueType{}
+	if p.SampleType != nil {
+		sampleType = ValueType{Type: p.StringTable[p.SampleType[sampleIndex].Type], Unit: p.StringTable[p.SampleType[sampleIndex].Unit]}
 	}
 
-	locationUUIDSeen := map[string]struct{}{}
-	locationUUIDs := [][]byte{}
-	for _, s := range sampleMap {
-		for _, id := range s.GetLocationIds() {
-			if _, seen := locationUUIDSeen[string(id)]; !seen {
-				locationUUIDSeen[string(id)] = struct{}{}
-				locationUUIDs = append(locationUUIDs, id)
-			}
-		}
-	}
-
-	// Get the full locations for the location UUIDs
-	locationsMap, err := metastore.GetLocationsByIDs(ctx, metaStore, locationUUIDs...)
-	if err != nil {
-		return nil, fmt.Errorf("get locations by ids: %w", err)
-	}
-
-	ssamples := make([]*Sample, 0, len(samples))
-	for k, s := range samples {
-		locationIDs := sampleMap[k].GetLocationIds()
-		s.Location = make([]*metastore.Location, 0, len(locationIDs))
-		for _, id := range locationIDs {
-			s.Location = append(s.Location, locationsMap[string(id)])
-		}
-
-		ssamples = append(ssamples, s)
-	}
-
-	return &StacktraceSamples{
-		Meta:    p.ProfileMeta(),
-		Samples: ssamples,
-	}, nil
-}
-
-type Profile struct {
-	Meta        InstantProfileMeta
-	FlatSamples map[string]*Sample
-}
-
-func (fp *Profile) ProfileMeta() InstantProfileMeta {
-	return fp.Meta
-}
-
-func (fp *Profile) Samples() map[string]*Sample {
-	return fp.FlatSamples
-}
-
-func MetaFromPprof(p *profile.Profile, sampleIndex int) InstantProfileMeta {
-	return InstantProfileMeta{
+	return Meta{
+		Name:       name,
 		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
 		Duration:   p.DurationNanos,
 		Period:     p.Period,
-		PeriodType: ValueType{Type: p.PeriodType.Type, Unit: p.PeriodType.Unit},
-		SampleType: ValueType{Type: p.SampleType[sampleIndex].Type, Unit: p.SampleType[sampleIndex].Unit},
+		PeriodType: periodType,
+		SampleType: sampleType,
 	}
-}
-
-type ScaledInstantProfile struct {
-	p     InstantProfile
-	ratio float64
-}
-
-func NewScaledInstantProfile(p InstantProfile, ratio float64) InstantProfile {
-	return &ScaledInstantProfile{
-		p:     p,
-		ratio: ratio,
-	}
-}
-
-func (p *ScaledInstantProfile) ProfileMeta() InstantProfileMeta {
-	return p.p.ProfileMeta()
-}
-
-func (p *ScaledInstantProfile) Samples() map[string]*Sample {
-	samples := p.p.Samples()
-	for _, s := range samples {
-		s.Value = int64(p.ratio * float64(s.Value))
-	}
-	return samples
-}
-
-// MakeSample creates a sample from a stack trace (list of locations) and a
-// value. Mostly meant for testing.
-func MakeSample(value int64, locationIds []uuid.UUID) *Sample {
-	s := &Sample{
-		Value: value,
-	}
-
-	for _, id := range locationIds {
-		s.Location = append(s.Location, &metastore.Location{ID: id})
-	}
-
-	return s
 }

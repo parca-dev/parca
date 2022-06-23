@@ -25,7 +25,7 @@ import (
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/hash"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -48,7 +48,7 @@ type Symbolizer struct {
 }
 
 type liner interface {
-	PCToLines(pc uint64) ([]metastore.LocationLine, error)
+	PCToLines(pc uint64) ([]profile.LocationLine, error)
 }
 
 func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
@@ -86,8 +86,7 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	return sym, nil
 }
 
-// Symbolize attempts to symbolize the given locations using the given debug information file.
-func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*metastore.Location, debugInfoFile string) (map[*metastore.Location][]metastore.LocationLine, error) {
+func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Location, debugInfoFile string) ([][]profile.LocationLine, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -110,15 +109,15 @@ func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*
 		key = m.BuildId
 	}
 
-	locationLines := map[*metastore.Location][]metastore.LocationLine{}
+	locationsLines := make([][]profile.LocationLine, 0, len(locations))
 	for _, loc := range locations {
-		locationLines[loc] = append(locationLines[loc], s.pcToLines(liner, m.BuildId, key, loc.Address)...)
+		locationsLines = append(locationsLines, s.pcToLines(liner, m.BuildId, key, loc.Address))
 	}
-	return locationLines, nil
+	return locationsLines, nil
 }
 
 // pcToLines returns the line number of the given PC while keeping the track of symbolization attempts and failures.
-func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []metastore.LocationLine {
+func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []profile.LocationLine {
 	logger := log.With(s.logger, "addr", addr, "buildid", buildID)
 	// Check if we already attempt to symbolize this location and failed.
 	if _, failedBefore := s.symbolizationFailed[key][addr]; failedBefore {

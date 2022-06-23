@@ -17,21 +17,19 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/apache/arrow/go/v8/arrow/memory"
 	"github.com/go-kit/log"
-	"github.com/google/pprof/profile"
-	columnstore "github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
+	columnstore "github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
@@ -60,38 +58,32 @@ func Benchmark_Query_Merge(b *testing.B) {
 				logger,
 			)
 			require.NoError(b, err)
-			m := metastore.NewBadgerMetastore(
+			m := metastore.NewInProcessClient(metastore.NewTestMetastore(
+				b,
 				logger,
 				reg,
 				tracer,
-				metastore.NewRandomUUIDGenerator(),
-			)
+			))
 
-			f, err := os.Open("../query/testdata/alloc_objects.pb.gz")
+			fileContent := MustReadAllGzip(b, "../query/testdata/alloc_objects.pb.gz")
 			require.NoError(b, err)
-			p1, err := profile.Parse(f)
-			require.NoError(b, err)
-			require.NoError(b, f.Close())
+			p := &pprofpb.Profile{}
+			require.NoError(b, p.UnmarshalVT(fileContent))
 
-			for _, s := range p1.Sample {
+			for _, s := range p.Sample {
 				s.Label = nil
-				s.NumLabel = nil
-				s.NumUnit = nil
 			}
 
-			p1 = p1.Compact()
+			normalizer := parcacol.NewNormalizer(m)
+			ingester := parcacol.NewIngester(logger, normalizer, table)
 
-			ingester := parcacol.NewIngester(logger, m, table)
-
-			typeSamples, err := ingester.ConvertPProf(ctx, labels.Labels{{Name: labels.MetricName, Value: "memory"}}, p1, false)
+			profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
 			require.NoError(b, err)
 
 			for j := 0; j < n; j++ {
-				for _, samples := range typeSamples {
-					for _, s := range samples {
-						s.Timestamp = int64(j + 1)
-					}
-					err = ingester.IngestSamples(ctx, samples)
+				for _, profile := range profiles {
+					profile.Meta.Timestamp = int64(j + 1)
+					err = ingester.IngestProfile(ctx, nil, profile)
 					require.NoError(b, err)
 				}
 			}

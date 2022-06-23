@@ -7,12 +7,14 @@ on:
       - 'deploy/**'
       - '*.jsonnet'
       - '*.libsonnet'
+      - .github/workflows/jsonnet.yml
   pull_request:
     branches: [ main ]
     paths:
       - 'deploy/**'
       - '*.jsonnet'
       - '*.libsonnet'
+      - .github/workflows/jsonnet.yml
 
 jobs:
   build:
@@ -25,6 +27,7 @@ jobs:
         with:
           go-version: '1.18'
           check-latest: true
+          cache: true
 
       - name: Set up Jsonnet
         run: ./env-jsonnet.sh
