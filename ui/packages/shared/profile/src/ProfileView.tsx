@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {parseParams} from '@parca/functions';
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
-import {Button, Card, useGrpcMetadata, useParcaTheme} from '@parca/components';
+import {Button, Card, useGrpcMetadata, useParcaTheme, Callgraph} from '@parca/components';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
@@ -138,6 +138,16 @@ export const ProfileView = ({
                   </Button>
                 </div>
 
+                <div className="mr-3">
+                  <Button
+                    variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
+                    onClick={() => switchProfileView('callgraph')}
+                    className="whitespace-nowrap text-ellipsis"
+                  >
+                    Call Graph
+                  </Button>
+                </div>
+
                 <Button
                   variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
                   className="rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
@@ -175,6 +185,14 @@ export const ProfileView = ({
                       graph={response.report.flamegraph}
                       sampleUnit={sampleUnit}
                     />
+                  </div>
+                )}
+
+              {currentView === 'callgraph' &&
+                response !== null &&
+                response.report.oneofKind === 'flamegraph' && (
+                  <div className="w-full">
+                    <Callgraph data={response.report.flamegraph.root} />
                   </div>
                 )}
 
