@@ -201,7 +201,7 @@ export const ProfileView = ({
                 response !== null &&
                 response.report.oneofKind === 'flamegraph' && (
                   <div className="w-full">
-                    <Callgraph data={response.report.flamegraph.root} />
+                    <Callgraph graph={response.report.flamegraph} sampleUnit={sampleUnit} />
                   </div>
                 )}
 

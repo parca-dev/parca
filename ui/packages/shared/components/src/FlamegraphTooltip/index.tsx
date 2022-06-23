@@ -49,18 +49,18 @@ const FlamegraphNodeTooltipTableRows = ({
 
   return (
     <>
-      {hoveringNode.meta.pb_function?.filename !== undefined &&
-        hoveringNode.meta.pb_function?.filename !== '' && (
+      {hoveringNode.meta.function?.filename !== undefined &&
+        hoveringNode.meta.function?.filename !== '' && (
           <tr>
             <td className="w-1/5">File</td>
             <td className="w-4/5">
-              {hoveringNode.meta.pb_function.filename}
+              {hoveringNode.meta.function.filename}
               {hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== '0'
                 ? ` +${hoveringNode.meta.line.line.toString()}`
                 : `${
-                    hoveringNode.meta.pb_function?.startLine !== undefined &&
-                    hoveringNode.meta.pb_function?.startLine !== 0
-                      ? ` +${hoveringNode.meta.pb_function.startLine.toString()}`
+                    hoveringNode.meta.function?.startLine !== undefined &&
+                    hoveringNode.meta.function?.startLine !== '0'
+                      ? ` +${hoveringNode.meta.function.startLine.toString()}`
                       : ''
                   }`}
             </td>

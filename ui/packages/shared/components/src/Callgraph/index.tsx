@@ -1,30 +1,46 @@
 import {useEffect, useRef, useState} from 'react';
 import * as d3Dag from 'd3-dag';
 import * as d3 from 'd3';
-import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {pointer} from 'd3-selection';
+import {throttle} from 'lodash';
+import {FlamegraphNode, FlamegraphRootNode, Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
+import {FlamegraphTooltip} from '@parca/components';
+
 interface Props {
-  data: FlamegraphRootNode | undefined;
+  graph: Flamegraph;
   width?: number;
   height?: number;
   arrows?: boolean;
+  sampleUnit: string;
 }
 
 const isRootNode = data => !data.meta;
 const getMethodName = data => data.meta.function?.name;
 
 const NODE_RADIUS = 20;
-const ROOT_NODE_WIDTH = 80;
 
 const Callgraph = ({
-  data,
+  graph,
   width: customWidth,
   height: customHeight,
   arrows = true,
+  sampleUnit,
 }: Props): JSX.Element => {
-  if (!data) {
+  const {root, total, unit} = graph;
+  // TODO check if we need to pass in 'sampleUnit' or if this is the same as 'unit' in the graph
+  console.log(unit);
+
+  if (!root) {
     return <div />;
   }
+
+  // Same tooltip implementation as in the Icicle Graph
+  const [hoveringNode, setHoveringNode] = useState<
+    FlamegraphNode | FlamegraphRootNode | undefined
+  >();
+  const [pos, setPos] = useState([0, 0]);
+  const throttledSetPos = throttle(setPos, 20);
 
   const {ref: containerRef, dimensions: originalDimensions} = useContainerDimensions();
   const fullWidth = customWidth ?? originalDimensions?.width;
@@ -33,12 +49,19 @@ const Callgraph = ({
   const defsRef = useRef(null);
   const [dimensions, setDimensions] = useState({width: 0, height: 0});
 
+  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
+    // X/Y coordinate array relative to svg
+    const rel = pointer(e);
+
+    throttledSetPos([rel[0], rel[1]]);
+  };
+
   useEffect(() => {
     if (svgRef.current) {
       const dag = d3Dag
         .dagHierarchy()
         .decycle(true)
-        .children((d: FlamegraphNode) => d.children)(data);
+        .children((d: FlamegraphNode) => d.children)(root);
 
       // When data is a list of links, we will need to use dagConnect instead of dagHierarchy
       //   const dag = d3Dag
@@ -168,11 +191,20 @@ const Callgraph = ({
 
   return (
     <div ref={containerRef}>
+      <FlamegraphTooltip
+        unit={sampleUnit}
+        total={parseFloat(total)}
+        x={pos[0]}
+        y={pos[1]}
+        hoveringNode={hoveringNode}
+        contextElement={svgRef.current}
+      />
       <svg
         ref={svgRef}
         width={fullWidth}
         height={fullHeight}
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+        onMouseMove={onMouseMove}
       >
         <defs ref={defsRef}>
           <marker id="arrow" orient="auto" markerWidth="1" markerHeight="2" refX="0.2" refY="1">
