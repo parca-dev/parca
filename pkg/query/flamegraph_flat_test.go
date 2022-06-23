@@ -35,6 +35,8 @@ import (
 )
 
 func TestGenerateFlamegraphFlat(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	var err error
 
@@ -203,6 +205,8 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 }
 
 func TestGenerateFlamegraphFromProfile(t *testing.T) {
+	t.Parallel()
+
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 
@@ -239,6 +243,8 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServ
 }
 
 func TestGenerateFlamegraphWithInlined(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -381,6 +387,8 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 }
 
 func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()

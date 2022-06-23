@@ -31,6 +31,8 @@ import (
 )
 
 func Test_LabelName_Invalid(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()

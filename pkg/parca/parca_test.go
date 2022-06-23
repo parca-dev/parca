@@ -327,6 +327,8 @@ func MustReadAllGzip(t require.TestingT, filename string) []byte {
 }
 
 func TestConsistency(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()

@@ -35,6 +35,8 @@ import (
 )
 
 func TestGenerateFlatPprof(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
@@ -104,6 +106,8 @@ func TestGenerateFlatPprof(t *testing.T) {
 }
 
 func TestGeneratePprofNilMapping(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	var err error
 

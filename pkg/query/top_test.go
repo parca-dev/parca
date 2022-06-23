@@ -169,6 +169,8 @@ func TestGenerateTopTableAggregateFlat(t *testing.T) {
 }
 
 func TestGenerateDiffTopTable(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	p1 := &pprofpb.Profile{}
@@ -217,6 +219,8 @@ func TestGenerateDiffTopTable(t *testing.T) {
 }
 
 func TestAggregateTopByFunction(t *testing.T) {
+	t.Parallel()
+
 	id1 := "1"
 	id2 := "2"
 	id3 := "3"
