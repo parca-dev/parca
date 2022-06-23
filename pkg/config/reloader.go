@@ -78,10 +78,13 @@ func NewConfigReloader(
 		}),
 	}
 
-	reg.MustRegister(
-		r.configSuccess,
-		r.configSuccessTime,
-	)
+	if err := reg.Register(r.configSuccess); err != nil {
+		return r, fmt.Errorf("unable to register config reloader success metrics: %w", err)
+	}
+
+	if err := reg.Register(r.configSuccessTime); err != nil {
+		return r, fmt.Errorf("unable to register config reloader success time metrics: %w", err)
+	}
 
 	return r, nil
 }
