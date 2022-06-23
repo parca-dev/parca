@@ -33,8 +33,6 @@ func NewNormalizer(metastore pb.MetastoreServiceClient) *Normalizer {
 }
 
 func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
-	// TODO(brancz): validate incoming pprof profile
-
 	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable)
 	if err != nil {
 		return nil, err
