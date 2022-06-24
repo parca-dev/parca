@@ -30,6 +30,7 @@ import (
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
@@ -40,7 +41,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastore.NewTestMetastore(
+	l := metastoretest.NewTestMetastore(
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
@@ -210,7 +211,7 @@ func TestGenerateFlamegraphFromProfile(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 
-	l := metastore.NewTestMetastore(
+	l := metastoretest.NewTestMetastore(
 		t,
 		log.NewNopLogger(),
 		reg,
@@ -250,7 +251,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	store := metastore.NewTestMetastore(t, logger, reg, tracer)
+	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 
 	functions := []*pprofprofile.Function{
 		{ID: 1, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -394,7 +395,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	store := metastore.NewTestMetastore(t, logger, reg, tracer)
+	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 	metastore := metastore.NewInProcessClient(store)
 
 	functions := []*pprofprofile.Function{

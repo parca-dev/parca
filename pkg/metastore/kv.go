@@ -49,17 +49,17 @@ func MakeLocationLinesKeyWithID(locationID string) string {
 
 // Unsymbolized locations are namespaced by their mapping ID.
 // `v1/unsymbolized-locations/by-key/<hashed-mapping-key>/<hashed-location-key>`.
-const unsymbolizedLocationLinesKeyPrefix = "v1/unsymbolized-locations/by-key/"
+const UnsymbolizedLocationLinesKeyPrefix = "v1/unsymbolized-locations/by-key/"
 
 // MakeUnsymbolizedLocationKeyWithID returns the key to be used to store/lookup
 // an unsymbolized location.
 func MakeUnsymbolizedLocationKeyWithID(locationID string) string {
-	return unsymbolizedLocationLinesKeyPrefix + locationID
+	return UnsymbolizedLocationLinesKeyPrefix + locationID
 }
 
 // LocationIDFromUnsymbolizedKey returns the location ID portion of the provided key.
 func LocationIDFromUnsymbolizedKey(key string) string {
-	return key[len(unsymbolizedLocationLinesKeyPrefix):]
+	return key[len(UnsymbolizedLocationLinesKeyPrefix):]
 }
 
 // LocationIDFromKey returns the location ID portion of the provided key.

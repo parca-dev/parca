@@ -67,7 +67,7 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 				},
 				buildID: "d278249792061c6b74d1693ca59513be1def13f2",
 			},
-			want:    `ELF 64-bit LSB shared object, x86-64, version 1 (GNU/Linux), dynamically linked, interpreter \011, BuildID[sha1]=d278249792061c6b74d1693ca59513be1def13f2, for GNU/Linux 3.2.0, with debug_info, not stripped`,
+			want:    `ELF 64-bit LSB shared object, x86-64, version 1 (GNU/Linux), dynamically linked, interpreter , BuildID[sha1]=d278249792061c6b74d1693ca59513be1def13f2, for GNU/Linux 3.2.0, with debug_info, not stripped`,
 			wantErr: false,
 		},
 	}
@@ -112,6 +112,13 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 			require.NoError(t, err)
 
 			got := strings.TrimSpace(strings.Split(string(stdout), ":")[1])
+
+			// For some reason the output of the `file` command is not always
+			// consistent across architectures, and in the amd64 case even
+			// inserts an escaped tab causing the string to contain `\011`. So
+			// we remove the inconsistencies and ten compare output strings.
+			got = strings.ReplaceAll(got, "\t", "")
+			got = strings.ReplaceAll(got, "\\011", "")
 			require.Equal(t, tt.want, got)
 		})
 	}

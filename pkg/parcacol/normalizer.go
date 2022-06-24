@@ -35,12 +35,12 @@ func NewNormalizer(metastore pb.MetastoreServiceClient) *Normalizer {
 func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
 	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("normalize mappings: %w", err)
 	}
 
 	functions, err := n.NormalizeFunctions(ctx, p.Function, p.StringTable)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("normalize functions: %w", err)
 	}
 
 	locations, err := n.NormalizeLocations(
@@ -52,12 +52,12 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 		p.StringTable,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("normalize locations: %w", err)
 	}
 
 	stacktraces, err := n.NormalizeStacktraces(ctx, p.Sample, locations)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("normalize stacktraces: %w", err)
 	}
 
 	profiles := make([]*profile.NormalizedProfile, 0, len(p.SampleType))
