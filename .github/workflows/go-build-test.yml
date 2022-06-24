@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         arch:
-          - x64
+          - amd64
           - arm64
     steps:
     - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
@@ -49,22 +49,22 @@ jobs:
         cache: 'yarn'
 
     - name: Build
-      if: ${{ matrix.arch == 'x64' }}
+      if: ${{ matrix.arch == 'amd64' }}
       run: |
         make build
 
     - name: Test
-      if: ${{ matrix.arch == 'x64' }}
+      if: ${{ matrix.arch == 'amd64' }}
       run: |
         make go/test
 
     - name: Benchmark
-      if: ${{ matrix.arch == 'x64' }}
+      if: ${{ matrix.arch == 'amd64' }}
       run: |
         make go/bench
 
     - name: Archive generated artifacts
-      if: ${{ matrix.arch == 'x64' }}
+      if: ${{ matrix.arch == 'amd64' }}
       uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
       with:
         name: parca-bin
@@ -73,7 +73,7 @@ jobs:
           bin
 
     - name: 'Run ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'x64' }}
+      if: ${{ matrix.arch != 'amd64' }}
       run: |
         # Install QEMU and it's dependencies.
         sudo apt-get install qemu binfmt-support qemu-user-static
@@ -87,7 +87,7 @@ jobs:
         sleep 1d'
 
     - name: 'Install packages on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'x64' }}
+      if: ${{ matrix.arch != 'amd64' }}
       run: |
         # Install necessary packages on the ${{ matrix.arch}}_ubuntu container which will be used
         # by below steps.
@@ -98,7 +98,7 @@ jobs:
         apt-get install -y -q wget make git file build-essential'
 
     - name: 'Setup Go on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'x64' }}
+      if: ${{ matrix.arch != 'amd64' }}
       run: |
         export RUNNER_ALLOW_RUNASROOT="1"
         # Install Golang, which will be used to build the code.
@@ -109,7 +109,7 @@ jobs:
         go version'
 
     - name: 'Test on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'x64' }}
+      if: ${{ matrix.arch != 'amd64' }}
       run: |
         docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
         '# Run Go Tests. This is a very slow operation on ARM container.
