@@ -16,6 +16,12 @@ on:
       - 'go.sum'
       - .github/workflows/go-build-test.yml
 
+env:
+  # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
+  QEMU_VERSION: 7.0.0-7
+  # renovate: datasource=docker depName=docker.io/ubuntu versioning=ubuntu
+  UBUNTU_VERSION: '20.04'
+
 jobs:
   build-and-test-multi-arch:
     runs-on: ubuntu-latest
@@ -25,8 +31,7 @@ jobs:
       matrix:
         arch:
           - x64
-          # Names as per arch/ubuntu docker images.
-          - arm64v8
+          - arm64
     steps:
     - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
@@ -72,18 +77,12 @@ jobs:
       run: |
         # Install QEMU and it's dependencies.
         sudo apt-get install qemu binfmt-support qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        docker run --rm --privileged "docker.io/multiarch/qemu-user-static:${QEMU_VERSION}" --reset -p yes
 
         # Run platform specific based ubuntu image. Run it as a daemon in the background.
         # Sleep the container for 1 day so that it keeps running until
         # other steps are completed and the steps below can use the same container.
-        ARCH=${{ matrix.arch }}
-        # Ubuntu image name are different from arch image. So using this different variable.
-        IMAGE=${{ matrix.arch }}
-        if [ "$ARCH" == "arm64v8" ]; then
-          ARCH="arm64"
-        fi &&\
-        docker run --name ${{ matrix.arch}}_ubuntu -d --platform linux/$ARCH -v `pwd`:/parca $IMAGE/ubuntu /bin/bash -c \
+        docker run --name ${{ matrix.arch }}_ubuntu -d --platform linux/${{ matrix.arch }} -v `pwd`:/parca "docker.io/ubuntu:${UBUNTU_VERSION}" /bin/bash -c \
         'uname -m &&\
         sleep 1d'
 
@@ -104,12 +103,8 @@ jobs:
         export RUNNER_ALLOW_RUNASROOT="1"
         # Install Golang, which will be used to build the code.
         docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
-        'ARCH=${{ matrix.arch }} && \
-        if [ "$ARCH" == "arm64v8" ]; then
-          ARCH="arm64"
-        fi &&\
-        wget https://dl.google.com/go/go1.18.2.linux-$ARCH.tar.gz &&\
-        tar -C /usr/local/ -xzf go1.18.2.linux-$ARCH.tar.gz &&\
+        wget https://dl.google.com/go/go1.18.2.linux-${{ matrix.arch }}.tar.gz &&\
+        tar -C /usr/local/ -xzf go1.18.2.linux-${{ matrix.arch }}.tar.gz &&\
         export PATH=$PATH:/usr/local/go/bin && \
         go version'
 
