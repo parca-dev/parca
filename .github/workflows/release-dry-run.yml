@@ -23,6 +23,10 @@ on:
       - gen/**
       - .github/workflows/release-dry-run.yml
 
+env:
+  # renovate: datasource=go depName=github.com/goreleaser/goreleaser
+  GORELEASER_VERSION: v1.9.2
+
 permissions:
   contents: write
 
@@ -34,21 +38,21 @@ jobs:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
         with:
-          go-version: '1.18'
+          go-version-file: .go-version
           check-latest: true
           cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
         with:
-          node-version: 14.x
+          node-version-file: .node-version
           cache: 'yarn'
 
       - name: Set up environment
@@ -56,10 +60,10 @@ jobs:
           ./env.sh
 
       - name: Validate
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@68acf3b1adf004ac9c2f0a4259e85c5f66e99bef # tag=v3.0.0
         with:
           distribution: goreleaser
-          version: latest
+          version: ${{ env.GORELEASER_VERSION }}
           args: check
 
       - name: Set Tag
@@ -67,10 +71,10 @@ jobs:
           echo "goreleaser_current_tag=`git describe --match 'v*' --tags`" >> $GITHUB_ENV
 
       - name: Dry Run
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@68acf3b1adf004ac9c2f0a4259e85c5f66e99bef # tag=v3.0.0
         with:
           distribution: goreleaser
-          version: latest
+          version: ${{ env.GORELEASER_VERSION }}
           args: release --rm-dist --skip-validate --skip-publish
         env:
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"

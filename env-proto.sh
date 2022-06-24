@@ -3,11 +3,14 @@ set -euo pipefail
 
 BIN_DIR=${BIN_DIR:-/usr/local/bin}
 
-# Substitute VERSION for the current released version.
+# renovate: datasource=github-releases depName=bufbuild/buf
+BUF_VERSION='v1.5.0'
+
 # Substitute BINARY_NAME for "buf", "protoc-gen-buf-breaking", or "protoc-gen-buf-lint".
-VERSION="1.3.1" && \
-BINARY_NAME="buf" && \
-  curl -sSL \
-    "https://github.com/bufbuild/buf/releases/download/v${VERSION}/${BINARY_NAME}-$(uname -s)-$(uname -m)" \
-    -o "${BIN_DIR}/${BINARY_NAME}" && \
-  chmod +x "${BIN_DIR}/${BINARY_NAME}"
+BINARY_NAME="buf"
+
+curl -fsSL \
+  "https://github.com/bufbuild/buf/releases/download/${BUF_VERSION}/${BINARY_NAME}-$(uname -s)-$(uname -m)" \
+  -o "${BIN_DIR}/${BINARY_NAME}"
+
+chmod +x "${BIN_DIR}/${BINARY_NAME}"
