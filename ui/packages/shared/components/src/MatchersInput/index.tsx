@@ -460,6 +460,7 @@ const MatchersInput = ({
           onKeyPress={handleKeyPress}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
+          disabled={currentQuery.profType.profileName === ''}
         />
       </div>
 
