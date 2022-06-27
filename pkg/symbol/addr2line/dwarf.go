@@ -20,7 +20,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
@@ -44,7 +44,7 @@ func DWARF(logger log.Logger, path string, demangler *demangle.Demangler) (*Dwar
 	}, nil
 }
 
-func (dl *DwarfLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
+func (dl *DwarfLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("recovered stack stares:\n", string(debug.Stack()))

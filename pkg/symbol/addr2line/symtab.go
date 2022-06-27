@@ -24,7 +24,7 @@ import (
 	"github.com/go-kit/log/level"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 type SymtabLiner struct {
@@ -45,7 +45,7 @@ func Symbols(logger log.Logger, path string) (*SymtabLiner, error) {
 	}, nil
 }
 
-func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
+func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	i := sort.Search(len(lnr.symbols), func(i int) bool {
 		sym := lnr.symbols[i]
 		return sym.Value >= addr
@@ -59,7 +59,7 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, 
 		file = "?"
 		line int64 // 0
 	)
-	lines = append(lines, metastore.LocationLine{
+	lines = append(lines, profile.LocationLine{
 		Line: line,
 		Function: &pb.Function{
 			Name:     lnr.symbols[i].Name,

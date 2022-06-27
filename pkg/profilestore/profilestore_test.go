@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -31,11 +31,13 @@ import (
 )
 
 func Test_LabelName_Invalid(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := arcticdb.New(
+	col := frostdb.New(
 		reg,
 		8196,
 		64*1024*1024,
@@ -44,26 +46,23 @@ func Test_LabelName_Invalid(t *testing.T) {
 	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
-		arcticdb.NewTableConfig(
+		frostdb.NewTableConfig(
 			parcacol.Schema(),
 		),
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
-		metastore.NewRandomUUIDGenerator(),
 	)
-	t.Cleanup(func() {
-		m.Close()
-	})
 
 	api := NewProfileColumnStore(
 		logger,
 		tracer,
-		m,
+		metastore.NewInProcessClient(m),
 		table,
 		false,
 	)

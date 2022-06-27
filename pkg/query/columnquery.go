@@ -25,8 +25,8 @@ import (
 	"github.com/apache/arrow/go/v8/arrow"
 	"github.com/apache/arrow/go/v8/arrow/array"
 	"github.com/go-kit/log"
-	"github.com/polarsignals/arcticdb/query"
-	"github.com/polarsignals/arcticdb/query/logicalplan"
+	"github.com/polarsignals/frostdb/query"
+	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -36,9 +36,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -57,13 +57,13 @@ type ColumnQueryAPI struct {
 	tracer    trace.Tracer
 	engine    Engine
 	tableName string
-	metaStore metastore.ProfileMetaStore
+	metastore metastorepb.MetastoreServiceClient
 }
 
 func NewColumnQueryAPI(
 	logger log.Logger,
 	tracer trace.Tracer,
-	metaStore metastore.ProfileMetaStore,
+	metastore metastorepb.MetastoreServiceClient,
 	engine Engine,
 	tableName string,
 ) *ColumnQueryAPI {
@@ -72,7 +72,7 @@ func NewColumnQueryAPI(
 		tracer:    tracer,
 		engine:    engine,
 		tableName: tableName,
-		metaStore: metaStore,
+		metastore: metastore,
 	}
 }
 
@@ -189,10 +189,10 @@ var (
 	ErrValueColumnNotFound     = errors.New("value column not found")
 )
 
-func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
+func queryToFilterExprs(query string) (profile.Meta, []logicalplan.Expr, error) {
 	parsedSelector, err := parser.ParseMetricSelector(query)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "failed to parse query")
+		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
 
 	sel := make([]*labels.Matcher, 0, len(parsedSelector))
@@ -205,12 +205,12 @@ func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
 		}
 	}
 	if nameLabel == nil {
-		return nil, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
+		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
 	}
 
 	parts := strings.Split(nameLabel.Value, ":")
 	if len(parts) != 5 && len(parts) != 6 {
-		return nil, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
+		return profile.Meta{}, nil, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
 	}
 	name, sampleType, sampleUnit, periodType, periodUnit, delta := parts[0], parts[1], parts[2], parts[3], parts[4], false
 	if len(parts) == 6 && parts[5] == "delta" {
@@ -219,7 +219,7 @@ func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
 
 	labelFilterExpressions, err := matchersToBooleanExpressions(sel)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "failed to build query")
+		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "failed to build query")
 	}
 
 	exprs := append([]logicalplan.Expr{
@@ -237,7 +237,11 @@ func queryToFilterExprs(query string) ([]logicalplan.Expr, error) {
 
 	exprs = append(exprs, deltaPlan)
 
-	return exprs, nil
+	return profile.Meta{
+		Name:       name,
+		SampleType: profile.ValueType{Type: sampleType, Unit: sampleUnit},
+		PeriodType: profile.ValueType{Type: periodType, Unit: periodUnit},
+	}, exprs, nil
 }
 
 // QueryRange issues a range query against the storage.
@@ -246,7 +250,7 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	selectorExprs, err := queryToFilterExprs(req.Query)
+	_, selectorExprs, err := queryToFilterExprs(req.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -502,10 +506,10 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 }
 
-func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.StacktraceSamples, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, q.metaStore, p)
+		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
@@ -515,7 +519,7 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Stacktrace
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
-		pp, err := GenerateFlatPprof(ctx, q.metaStore, p)
+		pp, err := GenerateFlatPprof(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
@@ -551,7 +555,7 @@ func (q *ColumnQueryAPI) singleRequest(ctx context.Context, s *pb.SingleProfile,
 	return q.renderReport(ctx, p, reportType)
 }
 
-func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (*profile.StacktraceSamples, error) {
+func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (*profile.Profile, error) {
 	t := s.Time.AsTime()
 	p, err := q.findSingle(ctx, s.Query, t)
 	if err != nil {
@@ -565,7 +569,7 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) 
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Time) (*profile.StacktraceSamples, error) {
+func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Time) (*profile.Profile, error) {
 	requestedTime := timestamp.FromTime(t)
 
 	ctx, span := q.tracer.Start(ctx, "findSingle")
@@ -573,7 +577,7 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
 	defer span.End()
 
-	selectorExprs, err := queryToFilterExprs(query)
+	meta, selectorExprs, err := queryToFilterExprs(query)
 	if err != nil {
 		return nil, err
 	}
@@ -604,7 +608,18 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 	}
 	defer ar.Release()
 
-	return parcacol.ArrowRecordToStacktraceSamples(ctx, q.metaStore, ar, "sum(value)")
+	return parcacol.ArrowRecordToStacktraceSamples(
+		ctx,
+		q.metastore,
+		ar,
+		"sum(value)",
+		profile.Meta{
+			Name:       meta.Name,
+			SampleType: meta.SampleType,
+			PeriodType: meta.PeriodType,
+			Timestamp:  requestedTime,
+		},
+	)
 }
 
 func (q *ColumnQueryAPI) mergeRequest(ctx context.Context, m *pb.MergeProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -619,11 +634,11 @@ func (q *ColumnQueryAPI) mergeRequest(ctx context.Context, m *pb.MergeProfile, r
 	return q.renderReport(ctx, p, reportType)
 }
 
-func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*profile.StacktraceSamples, error) {
+func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "selectMerge")
 	defer span.End()
 
-	selectorExprs, err := queryToFilterExprs(m.Query)
+	meta, selectorExprs, err := queryToFilterExprs(m.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -656,7 +671,18 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 	}
 	defer ar.Release()
 
-	return parcacol.ArrowRecordToStacktraceSamples(ctx, q.metaStore, ar, "sum(value)")
+	return parcacol.ArrowRecordToStacktraceSamples(
+		ctx,
+		q.metastore,
+		ar,
+		"sum(value)",
+		profile.Meta{
+			Name:       meta.Name,
+			SampleType: meta.SampleType,
+			PeriodType: meta.PeriodType,
+			Timestamp:  start,
+		},
+	)
 }
 
 func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -669,55 +695,55 @@ func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, rep
 
 	base, err := q.selectProfileForDiff(ctx, d.A)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading base profile: %w", err)
 	}
 
 	compare, err := q.selectProfileForDiff(ctx, d.B)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading compared profile: %w", err)
 	}
 
 	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.
-	diff := &profile.StacktraceSamples{}
+	diff := &profile.Profile{}
 
 	// TODO: Use parcacol.Sample for comparing these
 	for i := range compare.Samples {
-		diff.Samples = append(diff.Samples, &profile.Sample{
-			Location:  compare.Samples[i].Location,
+		diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
+			Locations: compare.Samples[i].Locations,
 			Value:     compare.Samples[i].Value,
 			DiffValue: compare.Samples[i].Value,
 			Label:     compare.Samples[i].Label,
 			NumLabel:  compare.Samples[i].NumLabel,
-			NumUnit:   compare.Samples[i].NumUnit,
 		})
 	}
 
 	for i := range base.Samples {
-		diff.Samples = append(diff.Samples, &profile.Sample{
-			Location:  base.Samples[i].Location,
+		diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
+			Locations: base.Samples[i].Locations,
 			DiffValue: -base.Samples[i].Value,
 			Label:     base.Samples[i].Label,
 			NumLabel:  base.Samples[i].NumLabel,
-			NumUnit:   base.Samples[i].NumUnit,
 		})
 	}
 
 	return q.renderReport(ctx, diff, reportType)
 }
 
-func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (*profile.StacktraceSamples, error) {
-	var (
-		p   *profile.StacktraceSamples
-		err error
-	)
+func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (*profile.Profile, error) {
 	switch s.Mode {
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
-		p, err = q.selectSingle(ctx, s.GetSingle())
+		p, err := q.selectSingle(ctx, s.GetSingle())
+		if err != nil {
+			return nil, fmt.Errorf("selecting single profile: %w", err)
+		}
+		return p, err
 	case pb.ProfileDiffSelection_MODE_MERGE:
-		p, err = q.selectMerge(ctx, s.GetMerge())
+		p, err := q.selectMerge(ctx, s.GetMerge())
+		if err != nil {
+			return nil, fmt.Errorf("selecting merged profile: %w", err)
+		}
+		return p, err
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}
-
-	return p, err
 }

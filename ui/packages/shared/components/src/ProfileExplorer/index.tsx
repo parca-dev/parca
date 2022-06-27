@@ -3,9 +3,8 @@ import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
-import {useAppSelector, useAppDispatch, setCompare, selectCompareMode} from '@parca/store';
+import {useAppSelector, useAppDispatch, setCompare, selectCompareMode, store} from '@parca/store';
 import {Provider} from 'react-redux';
-import {store} from '@parca/store';
 import {DateTimeRange} from '../DateTimeRangePicker';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;

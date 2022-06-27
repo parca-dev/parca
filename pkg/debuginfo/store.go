@@ -36,7 +36,7 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/hash"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
@@ -299,7 +299,9 @@ func (s *Store) find(ctx context.Context, key string) (bool, error) {
 	return found, nil
 }
 
-func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*metastore.Location) (map[*metastore.Location][]metastore.LocationLine, error) {
+// Symbolize fetches the debug info for a given build ID and symbolizes it the
+// given location.
+func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Location) ([][]profile.LocationLine, error) {
 	buildID := m.BuildId
 	logger := log.With(s.logger, "buildid", buildID)
 
@@ -331,7 +333,7 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 
 	// At this point we have the best version of the debug information file that we could find.
 	// Let's symbolize it.
-	locationLines, err := s.symbolizer.Symbolize(ctx, m, locations, objFile)
+	lines, err := s.symbolizer.Symbolize(ctx, m, locations, objFile)
 	if err != nil {
 		if errors.Is(err, symbol.ErrLinerCreationFailedBefore) {
 			level.Debug(logger).Log("msg", "failed to symbolize before", "err", err)
@@ -340,7 +342,7 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations ...*meta
 
 		return nil, fmt.Errorf("failed to symbolize locations for mapping: %w", err)
 	}
-	return locationLines, nil
+	return lines, nil
 }
 
 func (s *Store) fetchObjectFile(ctx context.Context, buildID string) (string, error) {

@@ -14,7 +14,7 @@
 package parca
 
 import (
-	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
 	"io/ioutil"
@@ -30,9 +30,8 @@ import (
 	"github.com/fatih/semgroup"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
-	"github.com/polarsignals/arcticdb"
-	columnstore "github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
+	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
@@ -43,11 +42,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	queryservice "github.com/parca-dev/parca/pkg/query"
 )
 
@@ -140,7 +139,12 @@ func Benchmark_WriteRaw(b *testing.B) {
 	<-done
 }
 
-func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServiceServer, *arcticdb.Table, *semgroup.Group, func()) {
+type Testing interface {
+	require.TestingT
+	Helper()
+}
+
+func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer, *frostdb.Table, *semgroup.Group, func()) {
 	dir := "../../tmp/"
 	files, err := ioutil.ReadDir(dir)
 	require.NoError(t, err)
@@ -194,7 +198,7 @@ func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServi
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col := frostdb.New(
 		reg,
 		8196,
 		64*1024*1024,
@@ -203,23 +207,25 @@ func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServi
 	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
+		frostdb.NewTableConfig(
 			parcacol.Schema(),
 		),
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
-		metastore.NewRandomUUIDGenerator(),
 	)
+
+	metastore := metastore.NewInProcessClient(m)
 
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
-		m,
+		metastore,
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -231,33 +237,35 @@ func replayDebugLog(ctx context.Context, t require.TestingT) (querypb.QueryServi
 	s := semgroup.NewGroup(ctx, maxWorkers)
 	for _, sample := range samples {
 		s.Go(func() error {
-			fileContent, err := ioutil.ReadFile(sample.FilePath)
-			if err != nil {
-				return err
-			}
-			p, err := profile.Parse(bytes.NewBuffer(fileContent))
-			if err != nil {
-				return err
-			}
-			profiles, err := parcaprofile.ProfilesFromPprof(ctx, logger, m, p, false)
+			f, err := os.Open(sample.FilePath)
 			if err != nil {
 				return err
 			}
 
-			for _, profile := range profiles {
-				_, err = parcacol.InsertProfileIntoTable(ctx, logger, table, sample.Labels, profile)
-				if err != nil {
-					return err
-				}
+			r, err := gzip.NewReader(f)
+			if err != nil {
+				return err
 			}
 
-			return nil
+			fileContent, err := ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
+
+			p := &pprofpb.Profile{}
+			if err := p.UnmarshalVT(fileContent); err != nil {
+				return err
+			}
+
+			return parcacol.NewIngester(
+				logger,
+				parcacol.NewNormalizer(metastore),
+				table,
+			).Ingest(ctx, sample.Labels, p, false)
 		})
 	}
 
-	return api, table, s, func() {
-		m.Close()
-	}
+	return api, table, s, func() {}
 }
 
 func TestReplay(t *testing.T) {
@@ -306,12 +314,26 @@ func BenchmarkValuesAPI(b *testing.B) {
 	}
 }
 
+func MustReadAllGzip(t require.TestingT, filename string) []byte {
+	f, err := os.Open(filename)
+	require.NoError(t, err)
+	defer f.Close()
+
+	r, err := gzip.NewReader(f)
+	require.NoError(t, err)
+	content, err := ioutil.ReadAll(r)
+	require.NoError(t, err)
+	return content
+}
+
 func TestConsistency(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col := frostdb.New(
 		reg,
 		8196,
 		64*1024*1024,
@@ -320,36 +342,39 @@ func TestConsistency(t *testing.T) {
 	require.NoError(t, err)
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
+		frostdb.NewTableConfig(
 			parcacol.Schema(),
 		),
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
-		metastore.NewRandomUUIDGenerator(),
 	)
+
+	metastore := metastore.NewInProcessClient(m)
 
 	f, err := os.Open("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
-	p1, err := profile.Parse(f)
+	pprofProf, err := profile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
+	compactedOriginalProfile := pprofProf.Compact()
 
-	p1 = p1.Compact()
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(MustReadAllGzip(t, "../query/testdata/alloc_objects.pb.gz")))
 
-	ingester := parcacol.NewIngester(logger, m, table)
-	err = ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p1, false)
-	require.NoError(t, err)
+	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table)
+	require.NoError(t, ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p, false))
 
 	table.Sync()
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
-		m,
+		metastore,
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -357,7 +382,7 @@ func TestConsistency(t *testing.T) {
 		"stacktraces",
 	)
 
-	ts := timestamppb.New(timestamp.Time(p1.TimeNanos / time.Millisecond.Nanoseconds()))
+	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
 	res, err := api.Query(ctx, &querypb.QueryRequest{
 		ReportType: querypb.QueryRequest_REPORT_TYPE_PPROF,
 		Options: &querypb.QueryRequest_Single{
@@ -372,5 +397,5 @@ func TestConsistency(t *testing.T) {
 	resProf, err := profile.ParseData(res.Report.(*querypb.QueryResponse_Pprof).Pprof)
 	require.NoError(t, err)
 
-	require.Equal(t, len(p1.Sample), len(resProf.Sample))
+	require.Equal(t, len(compactedOriginalProfile.Sample), len(resProf.Sample))
 }
