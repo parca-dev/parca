@@ -111,8 +111,8 @@ jobs:
         docker exec -i ubuntu bash <<EOF
           set -euo pipefail
           GO_VERSION="$(<.go-version)"
-          wget "https://dl.google.com/go/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-          tar -C /usr/local/ -xzf "go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+          wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+          tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
           export PATH="${PATH}:/usr/local/go/bin"
           go version
         EOF
