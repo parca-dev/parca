@@ -88,6 +88,7 @@ jobs:
           --detach \
           --platform='linux/${{ matrix.arch }}' \
           --volume="${PWD}:/parca" \
+          --workdir=/parca \
           "docker.io/ubuntu:${UBUNTU_VERSION}" \
           bash -c 'uname -m && sleep 1d'
 
@@ -123,7 +124,6 @@ jobs:
           set -euo pipefail
           # Run Go Tests. This is a very slow operation on ARM container.
           export PATH="${PATH}:/usr/local/go/bin"
-          cd parca
           mkdir -p ui/packages/app/web/build
           touch ui/packages/app/web/build/index.html
           go test -buildvcs=false -v ./...
