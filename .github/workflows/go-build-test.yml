@@ -110,10 +110,10 @@ jobs:
         # Install Golang, which will be used to build the code.
         docker exec -i ubuntu bash <<EOF
           set -euo pipefail
-          GO_VERSION="$(<.go-version)"
-          wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-          tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-          export PATH="${PATH}:/usr/local/go/bin"
+          GO_VERSION="\$(<.go-version)"
+          wget --directory-prefix=/tmp "https://dl.google.com/go/go\${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+          tar -C /usr/local/ -xzf "/tmp/go\${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+          export PATH="\${PATH}:/usr/local/go/bin"
           go version
         EOF
 
@@ -123,7 +123,7 @@ jobs:
         docker exec -i ubuntu bash <<EOF
           set -euo pipefail
           # Run Go Tests. This is a very slow operation on ARM container.
-          export PATH="${PATH}:/usr/local/go/bin"
+          export PATH="\${PATH}:/usr/local/go/bin"
           mkdir -p ui/packages/app/web/build
           touch ui/packages/app/web/build/index.html
           go test -buildvcs=false -v ./...
