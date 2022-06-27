@@ -60,7 +60,7 @@ const FlamegraphNodeTooltipTableRows = ({
                 : `${
                     hoveringNode.meta.function?.startLine !== undefined &&
                     hoveringNode.meta.function?.startLine !== '0'
-                      ? ` +${hoveringNode.meta.function.startLine.toString()}`
+                      ? ` +${hoveringNode.meta.function.startLine}`
                       : ''
                   }`}
             </td>
