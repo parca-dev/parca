@@ -180,11 +180,11 @@ export const parseParams = (querystring: string) => {
   const params = new URLSearchParams(querystring);
 
   const obj: any = {};
-  for (const key of params.keys()) {
+  for (const key of Array.from(params.keys())) {
     if (params.getAll(key).length > 1) {
       obj[key] = params.getAll(key);
     } else {
-      if (params.get(key).includes(',')) {
+      if (params.get(key)?.includes(',') === true) {
         obj[key] = transformToArray(params.get(key));
       } else {
         obj[key] = params.get(key);
