@@ -21,7 +21,7 @@ export const profileSlice = createSlice({
     setCompare: (state, action: PayloadAction<boolean>) => {
       state.compare = action.payload;
     },
-    setSearchNodeString: (state, action: PayloadAction<string>) => {
+    setSearchNodeString: (state, action: PayloadAction<string | undefined>) => {
       state.searchNodeString = action.payload;
     },
   },
