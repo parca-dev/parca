@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.12](https://github.com/parca-dev/parca/compare/ui-v0.13.11...ui-v0.13.12) (2022-06-27)
+
+### Features
+
+- auto-reload configuration ([#1141](https://github.com/parca-dev/parca/issues/1141)) ([90a799b](https://github.com/parca-dev/parca/commit/90a799b4efc09c54e1a073cc1755bc14ec8dd94e))
+
 ## [0.13.11](https://github.com/parca-dev/parca/compare/ui-v0.13.10...ui-v0.13.11) (2022-06-23)
 
 **Note:** Version bump only for package ui
