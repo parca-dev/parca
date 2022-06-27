@@ -113,16 +113,6 @@ func NewManager(
 	}
 	m.scrapeConfigs = c
 
-	// Cleanup and reload pool if config has changed.
-	for name, sp := range m.scrapePools {
-		if cfg, ok := m.scrapeConfigs[name]; !ok {
-			sp.stop()
-			delete(m.scrapePools, name)
-		} else if !reflect.DeepEqual(sp.config, cfg) {
-			sp.reload(cfg)
-		}
-	}
-
 	return m
 }
 
