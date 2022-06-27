@@ -96,7 +96,7 @@ jobs:
       run: |
         # Install necessary packages on the ubuntu container which will be used
         # by below steps.
-        docker exec -ti ubuntu bash <<EOF
+        docker exec -i ubuntu bash <<EOF
           set -euo pipefail
           apt-get update -y -q
           apt-get install -y -q wget make git file build-essential
@@ -107,7 +107,7 @@ jobs:
       run: |
         export RUNNER_ALLOW_RUNASROOT="1"
         # Install Golang, which will be used to build the code.
-        docker exec -ti ubuntu bash <<EOF
+        docker exec -i ubuntu bash <<EOF
           set -euo pipefail
           wget 'https://dl.google.com/go/go1.18.2.linux-${{ matrix.arch }}.tar.gz'
           tar -C /usr/local/ -xzf 'go1.18.2.linux-${{ matrix.arch }}.tar.gz'
@@ -118,7 +118,7 @@ jobs:
     - name: 'Test on ${{ matrix.arch }}'
       if: ${{ matrix.arch != 'amd64' }}
       run: |
-        docker exec -ti ubuntu bash <<EOF
+        docker exec -i ubuntu bash <<EOF
           set -euo pipefail
           # Run Go Tests. This is a very slow operation on ARM container.
           export PATH="${PATH}:/usr/local/go/bin"
