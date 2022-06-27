@@ -109,8 +109,9 @@ jobs:
         # Install Golang, which will be used to build the code.
         docker exec -i ubuntu bash <<EOF
           set -euo pipefail
-          wget 'https://dl.google.com/go/go1.18.2.linux-${{ matrix.arch }}.tar.gz'
-          tar -C /usr/local/ -xzf 'go1.18.2.linux-${{ matrix.arch }}.tar.gz'
+          GO_VERSION="$(<.go-version)"
+          wget "https://dl.google.com/go/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+          tar -C /usr/local/ -xzf "go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
           export PATH="${PATH}:/usr/local/go/bin"
           go version
         EOF
