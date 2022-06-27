@@ -76,6 +76,7 @@ jobs:
       if: ${{ matrix.arch != 'amd64' }}
       run: |
         # Install QEMU and it's dependencies.
+        sudo apt-get update -y
         sudo apt-get install qemu binfmt-support qemu-user-static
         docker run --rm --privileged "docker.io/multiarch/qemu-user-static:${QEMU_VERSION}" --reset -p yes
 
