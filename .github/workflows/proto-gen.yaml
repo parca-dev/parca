@@ -19,10 +19,11 @@ jobs:
         with:
           go-version: '1.18'
           check-latest: true
+          cache: true
 
-      - uses: bufbuild/buf-setup-action@v1.4.0
+      - uses: bufbuild/buf-setup-action@v1.5.0
         with:
-          version: 1.3.1
+          version: 1.5.0
 
       - name: Generate
         run:

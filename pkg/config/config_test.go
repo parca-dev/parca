@@ -26,6 +26,8 @@ import (
 )
 
 func TestLoad(t *testing.T) {
+	t.Parallel()
+
 	_, err := Load(`scrape_configs:
 - job_name: 'test'
   static_configs:
@@ -36,6 +38,8 @@ func TestLoad(t *testing.T) {
 }
 
 func TestLoadComplex(t *testing.T) {
+	t.Parallel()
+
 	// TODO: Make even more complex if necessary
 	complexYAML := `
 scrape_configs:
@@ -113,6 +117,8 @@ scrape_configs:
 }
 
 func TestLoadPrefixConfig(t *testing.T) {
+	t.Parallel()
+
 	prefixYAML := `
 scrape_configs:
   - job_name: 'parca'
@@ -191,6 +197,8 @@ scrape_configs:
 }
 
 func Test_Config_Validation(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]Config{
 		"nilDebug": {
 			DebugInfo: nil,
@@ -221,6 +229,7 @@ func Test_Config_Validation(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			require.Error(t, test.Validate())
 		})
 	}

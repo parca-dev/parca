@@ -20,14 +20,23 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
           go-version: '1.18'
           check-latest: true
-      - uses: actions/checkout@v3
+          cache: true
 
-      - name: Build UI
-        run: make ui/build
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14.x
+          cache: 'yarn'
+
+      - name: Build
+        run: make build
 
       - name: Format
         run: make go/fmt && git diff --exit-code

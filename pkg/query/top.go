@@ -14,24 +14,21 @@
 package query
 
 import (
-	"bytes"
 	"context"
 	"sort"
-
-	"github.com/google/uuid"
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateTopTable(ctx context.Context, p *parcaprofile.StacktraceSamples) (*pb.Top, error) {
+func GenerateTopTable(ctx context.Context, p *parcaprofile.Profile) (*pb.Top, error) {
 	// Iterate over all samples and their locations.
 	// Calculate the cumulative value of all locations of all samples.
 	// In the end return a *pb.TopNode for each location including all the metadata we have.
-	locationsTopNodes := map[uuid.UUID]*pb.TopNode{}
+	locationsTopNodes := map[string]*pb.TopNode{}
 	for _, sample := range p.Samples {
-		for i, location := range sample.Location {
+		for i, location := range sample.Locations {
 			if node, found := locationsTopNodes[location.ID]; found {
 				node.Cumulative += sample.Value
 				node.Diff += sample.DiffValue
@@ -46,7 +43,7 @@ func GenerateTopTable(ctx context.Context, p *parcaprofile.StacktraceSamples) (*
 					Meta: &pb.TopNodeMeta{
 						Mapping: location.Mapping,
 						Location: &metastorev1alpha1.Location{
-							Id:        []byte(location.ID.String()),
+							Id:        location.ID,
 							Address:   location.Address,
 							MappingId: location.Mapping.GetId(),
 							IsFolded:  location.IsFolded,
@@ -57,7 +54,7 @@ func GenerateTopTable(ctx context.Context, p *parcaprofile.StacktraceSamples) (*
 					// TODO: Return or merge multiple lines for samples
 					node.Meta.Function = location.Lines[0].Function
 					node.Meta.Line = &metastorev1alpha1.Line{
-						FunctionId: location.Lines[0].Function.GetId(),
+						FunctionId: location.Lines[0].Function.Id,
 						Line:       location.Lines[0].Line,
 					}
 				}
@@ -89,15 +86,15 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 	aggregatesAddresses := map[string]map[uint64]*pb.TopNode{}
 	aggregatesFunctions := map[string]*pb.TopNode{}
 
-	for _, n := range top.GetList() {
-		if n.GetMeta() == nil {
+	for _, n := range top.List {
+		if n.Meta == nil {
 			// Ignore nodes without metadata.
 			continue
 		}
 
-		var mappingID []byte
-		if n.Meta.GetMapping() != nil {
-			mappingID = n.Meta.Mapping.GetId()
+		var mappingID string
+		if n.Meta.Mapping != nil {
+			mappingID = n.Meta.Mapping.Id
 		}
 
 		// Initialize maps for given mappingID
@@ -108,7 +105,7 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 
 		if n.Meta.GetFunction() == nil {
 			// If there is no function we aggregate by address.
-			addr := n.Meta.GetLocation().GetAddress()
+			addr := n.Meta.Location.Address
 			if aggregateNode, exists := aggregatesAddresses[mapping][addr]; exists {
 				aggregateNode.Cumulative += n.Cumulative
 				aggregateNode.Diff += n.Diff
@@ -119,12 +116,12 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 			continue
 		}
 		// Finally, if there's a function name we aggregate by their name.
-		name := n.Meta.Function.GetName()
+		name := n.Meta.Function.Name
 		if aggregateNode, exists := aggregatesFunctions[name]; exists {
 			aggregateNode.Cumulative += n.Cumulative
 			aggregateNode.Diff += n.Diff
 			aggregateNode.Flat += n.Flat
-			if aggregateNode.Meta.Mapping != nil && n.Meta.Mapping != nil && !bytes.Equal(aggregateNode.Meta.Mapping.Id, n.Meta.Mapping.Id) {
+			if aggregateNode.Meta.Mapping != nil && n.Meta.Mapping != nil && aggregateNode.Meta.Mapping.Id != n.Meta.Mapping.Id {
 				aggregateNode.Meta.Mapping = &metastorev1alpha1.Mapping{}
 			}
 			aggregateNode.Meta.Line = nil

@@ -4,8 +4,10 @@ import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {FlamegraphTooltip} from '@parca/components';
-import {getLastItem, diffColor, isSearchMatch, SEARCH_STRING_COLOR} from '@parca/functions';
+import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
+
+import {hexifyAddress} from './utils';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -120,11 +122,7 @@ export function nodeLabel(node: FlamegraphNode): string {
   if (node.meta.function?.name !== undefined && node.meta.function?.name !== '')
     return mapping + node.meta.function.name;
 
-  const address = `${
-    node.meta.location?.address !== undefined && node.meta.location?.address !== 0
-      ? '0x' + node.meta.location.address.toString(16)
-      : ''
-  }`;
+  const address = hexifyAddress(node.meta.location?.address);
   const fallback = `${mapping}${address}`;
 
   return fallback === '' ? '<unknown>' : fallback;

@@ -1,11 +1,16 @@
 # Designed to only used by Tilt to iterate faster on the API.
-FROM golang:1.18.3-alpine3.15 AS builder
+FROM docker.io/golang:1.18.3-alpine3.15@sha256:f9181168749690bddb6751b004e976bf5d427425e0cfb50522e92c06f761def7 AS builder
+
+ARG DLV_VERSION=v1.8.2
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.11
 
 WORKDIR /app
 
+# hadolint ignore=DL3018
 RUN apk update && apk add --no-cache build-base
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
-RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
+RUN go install "github.com/go-delve/delve/cmd/dlv@${DLV_VERSION}"
+# hadolint ignore=DL3059
+RUN go install "github.com/grpc-ecosystem/grpc-health-probe@${GRPC_HEALTH_PROBE_VERSION}"
 
 COPY go.mod go.sum /app/
 RUN go mod download -modcacherw
@@ -13,7 +18,7 @@ RUN go mod download -modcacherw
 # Create a dummy ui package to convience go compiler.
 RUN mkdir -p /app/ui/packages/app/web/build && \
     touch /app/ui/packages/app/web/build/index.html && \
-    echo $'package ui\n \
+    printf 'package ui\n \
     import "embed"\n\
     //go:embed packages/app/web/build\n\
     var FS embed.FS\n'\
@@ -24,9 +29,10 @@ COPY ./pkg /app/pkg
 COPY ./proto /app/proto
 COPY ./gen /app/gen
 
+# goreleaser build --single-target
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -o parca ./cmd/parca
 
-FROM golang:1.18.3-alpine3.15
+FROM docker.io/golang:1.18.3-alpine3.15@sha256:f9181168749690bddb6751b004e976bf5d427425e0cfb50522e92c06f761def7
 
 COPY --from=builder /go/bin/dlv /
 COPY --from=builder /go/bin/grpc-health-probe /

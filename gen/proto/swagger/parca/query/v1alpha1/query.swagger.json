@@ -465,7 +465,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "byte",
           "description": "id is the unique identifier for the function."
         },
         "startLine": {
@@ -493,7 +492,6 @@
       "properties": {
         "functionId": {
           "type": "string",
-          "format": "byte",
           "description": "function_id is the ID of the function."
         },
         "line": {
@@ -509,7 +507,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "byte",
           "description": "id is the unique identifier for the location."
         },
         "address": {
@@ -519,12 +516,15 @@
         },
         "mappingId": {
           "type": "string",
-          "format": "byte",
           "description": "mapping_id is the unique identifier for the mapping associated with the location."
         },
         "isFolded": {
           "type": "boolean",
           "description": "is_folded indicates whether the location is folded into the previous location."
+        },
+        "lines": {
+          "$ref": "#/definitions/v1alpha1LocationLines",
+          "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
         }
       },
       "description": "Location describes a single location of a stack traces."
@@ -534,7 +534,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "byte",
           "description": "id is the unique identifier for the mapping."
         },
         "start": {
@@ -550,7 +549,7 @@
         "offset": {
           "type": "string",
           "format": "uint64",
-          "description": "offset is the offset of the mapping."
+          "description": "offset in the binary that corresponds to the first mapped address."
         },
         "file": {
           "type": "string",
@@ -776,6 +775,19 @@
         }
       },
       "title": "LabelsResponse is the set of matching label names"
+    },
+    "v1alpha1LocationLines": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Line"
+          },
+          "description": "Entries is the list of lines associated with the location."
+        }
+      },
+      "description": "LocationLines describes a set of lines of a location."
     },
     "v1alpha1MergeProfile": {
       "type": "object",
