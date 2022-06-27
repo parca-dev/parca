@@ -83,39 +83,47 @@ jobs:
         # Run platform specific based ubuntu image. Run it as a daemon in the background.
         # Sleep the container for 1 day so that it keeps running until
         # other steps are completed and the steps below can use the same container.
-        docker run --name ${{ matrix.arch }}_ubuntu -d --platform linux/${{ matrix.arch }} -v `pwd`:/parca "docker.io/ubuntu:${UBUNTU_VERSION}" /bin/bash -c \
-        'uname -m &&\
-        sleep 1d'
+        docker run \
+          --name=ubuntu \
+          --detach \
+          --platform='linux/${{ matrix.arch }}' \
+          --volume="${PWD}:/parca" \
+          "docker.io/ubuntu:${UBUNTU_VERSION}" \
+          bash -c 'uname -m && sleep 1d'
 
     - name: 'Install packages on ${{ matrix.arch }}'
       if: ${{ matrix.arch != 'amd64' }}
       run: |
-        # Install necessary packages on the ${{ matrix.arch}}_ubuntu container which will be used
+        # Install necessary packages on the ubuntu container which will be used
         # by below steps.
-        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
-        '# Update the container packages.
-        apt-get update -y -q &&\
-        apt-get upgrade -y -q &&\
-        apt-get install -y -q wget make git file build-essential'
+        docker exec -ti ubuntu bash <<EOF
+          set -euo pipefail
+          apt-get update -y -q
+          apt-get install -y -q wget make git file build-essential
+        EOF
 
     - name: 'Setup Go on ${{ matrix.arch }}'
       if: ${{ matrix.arch != 'amd64' }}
       run: |
         export RUNNER_ALLOW_RUNASROOT="1"
         # Install Golang, which will be used to build the code.
-        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
-        wget https://dl.google.com/go/go1.18.2.linux-${{ matrix.arch }}.tar.gz &&\
-        tar -C /usr/local/ -xzf go1.18.2.linux-${{ matrix.arch }}.tar.gz &&\
-        export PATH=$PATH:/usr/local/go/bin && \
-        go version'
+        docker exec -ti ubuntu bash <<EOF
+          set -euo pipefail
+          wget 'https://dl.google.com/go/go1.18.2.linux-${{ matrix.arch }}.tar.gz'
+          tar -C /usr/local/ -xzf 'go1.18.2.linux-${{ matrix.arch }}.tar.gz'
+          export PATH=$PATH:/usr/local/go/bin
+          go version
+        EOF
 
     - name: 'Test on ${{ matrix.arch }}'
       if: ${{ matrix.arch != 'amd64' }}
       run: |
-        docker exec -t ${{ matrix.arch}}_ubuntu /bin/bash -c \
-        '# Run Go Tests. This is a very slow operation on ARM container.
-        export PATH=$PATH:/usr/local/go/bin &&\
-        cd parca &&\
-        mkdir -p ui/packages/app/web/build && \
-        touch ui/packages/app/web/build/index.html && \
-        go test -buildvcs=false -v ./...'
+        docker exec -ti ubuntu bash <<EOF
+          set -euo pipefail
+          # Run Go Tests. This is a very slow operation on ARM container.
+          export PATH="${PATH}:/usr/local/go/bin"
+          cd parca
+          mkdir -p ui/packages/app/web/build
+          touch ui/packages/app/web/build/index.html
+          go test -buildvcs=false -v ./...
+        EOF
