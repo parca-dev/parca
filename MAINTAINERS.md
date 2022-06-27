@@ -13,3 +13,5 @@ Refer to the following maintainers with their focus areas:
 * Matthias Loibl <https://github.com/metalmatze> @metalmatze: Everything related to the Parca server (storage, backend, frontend).
 * Yomi Eluwande <https://github.com/yomete> @yomete: Everything related to frontend (website, design).
 * Kemal Akkoyun <https://github.com/kakkoyun> @kakkoyun: Backend, especially symbolization and debug information related components.
+* Monica Wojciechowski <https://github.com/monicawoj> @monicawoj: Everything related to frontend (website, design).
+* Manoj Vivek <https://github.com/manojVivek> @manojvivek: Everything related to frontend (website, design).

@@ -45,6 +45,8 @@ import (
 )
 
 func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -64,7 +66,8 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -92,7 +95,14 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	))
 }
 
-func MustReadAllGzip(t require.TestingT, filename string) []byte {
+type Testing interface {
+	require.TestingT
+	Helper()
+}
+
+func MustReadAllGzip(t Testing, filename string) []byte {
+	t.Helper()
+
 	f, err := os.Open(filename)
 	require.NoError(t, err)
 	defer f.Close()
@@ -104,7 +114,9 @@ func MustReadAllGzip(t require.TestingT, filename string) []byte {
 	return content
 }
 
-func MustDecompressGzip(t require.TestingT, b []byte) []byte {
+func MustDecompressGzip(t Testing, b []byte) []byte {
+	t.Helper()
+
 	r, err := gzip.NewReader(bytes.NewReader(b))
 	require.NoError(t, err)
 	content, err := ioutil.ReadAll(r)
@@ -113,6 +125,8 @@ func MustDecompressGzip(t require.TestingT, b []byte) []byte {
 }
 
 func TestColumnQueryAPIQueryRange(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -132,7 +146,8 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -183,6 +198,8 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 }
 
 func TestColumnQueryAPIQuerySingle(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -202,7 +219,8 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -258,13 +276,14 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// TODO(brancz)
-	// testProf := &pprofpb.Profile{}
-	// err = testProf.UnmarshalVT(res.Report.(*pb.QueryResponse_Pprof).Pprof)
-	// require.NoError(t, err)
+	testProf := &pprofpb.Profile{}
+	err = testProf.UnmarshalVT(MustDecompressGzip(t, res.Report.(*pb.QueryResponse_Pprof).Pprof))
+	require.NoError(t, err)
 }
 
 func TestColumnQueryAPIQueryFgprof(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -284,7 +303,8 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -330,6 +350,8 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 }
 
 func TestColumnQueryAPIQueryDiff(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -349,7 +371,8 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -582,6 +605,8 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 }
 
 func TestColumnQueryAPITypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -601,7 +626,8 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -654,6 +680,8 @@ func TestColumnQueryAPITypes(t *testing.T) {
 }
 
 func TestColumnQueryAPILabelNames(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -673,7 +701,8 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
@@ -715,6 +744,8 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 }
 
 func TestColumnQueryAPILabelValues(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -734,7 +765,8 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastore.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,

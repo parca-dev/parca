@@ -28,13 +28,13 @@ const AbsoluteDatePicker = ({range, onChange = () => null}: AbsoluteDatePickerPr
           <div className="mb-2">
             <span className="uppercase text-xs">From:</span>
           </div>
-          <UTCDateTimePicker selected={from} onChange={date => setFrom(date)} />
+          <UTCDateTimePicker selected={from} onChange={date => date != null && setFrom(date)} />
         </div>
         <div className="mb-1">
           <div className="mb-2">
             <span className="uppercase text-xs">To:</span>
           </div>
-          <UTCDateTimePicker selected={to} onChange={date => setTo(date)} />
+          <UTCDateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
         </div>
       </div>
       <div className="w-32 mx-auto mt-4">

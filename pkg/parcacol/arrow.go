@@ -84,6 +84,7 @@ func SymbolizeNormalizedProfile(ctx context.Context, m pb.MetastoreServiceClient
 	for i, sample := range p.Samples {
 		samples[i] = &profile.SymbolizedSample{
 			Value:     sample.Value,
+			DiffValue: sample.DiffValue,
 			Locations: stacktraceLocations[i],
 		}
 	}

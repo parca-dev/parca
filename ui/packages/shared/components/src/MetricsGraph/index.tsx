@@ -276,7 +276,7 @@ export const RawMetricsGraph = ({
         metric: s.labelset.labels,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.value !== undefined) {
-            const t = (d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6;
+            const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
             agg.push([t, parseFloat(d.value)]);
           }
           return agg;
@@ -546,7 +546,14 @@ export const RawMetricsGraph = ({
               </g>
             )}
             {selected != null && (
-              <g className="circle-group" style={{fill: color(selected.seriesIndex.toString())}}>
+              <g
+                className="circle-group"
+                style={
+                  selected?.seriesIndex != null
+                    ? {fill: color(selected.seriesIndex.toString())}
+                    : {}
+                }
+              >
                 <MetricsCircle cx={selected.x} cy={selected.y} radius={5} />
               </g>
             )}

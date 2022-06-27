@@ -58,7 +58,8 @@ func Benchmark_Query_Merge(b *testing.B) {
 				logger,
 			)
 			require.NoError(b, err)
-			m := metastore.NewInProcessClient(metastore.NewBadgerMetastore(
+			m := metastore.NewInProcessClient(metastore.NewTestMetastore(
+				b,
 				logger,
 				reg,
 				tracer,

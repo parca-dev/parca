@@ -88,7 +88,7 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 			Children:   rootNode.Children,
 		},
 		Total:  rootNode.Cumulative,
-		Unit:   "",         // TODO(brancz)
+		Unit:   p.Meta.SampleType.Unit,
 		Height: height + 1, // add one for the root
 	}
 

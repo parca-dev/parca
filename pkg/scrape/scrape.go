@@ -180,7 +180,7 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) {
 	for fp, oldLoop := range sp.loops {
 		var (
 			t       = sp.activeTargets[fp]
-			s       = &targetScraper{Target: t, client: sp.client, timeout: timeout}
+			s       = &targetScraper{Target: t, logger: sp.logger, client: sp.client, timeout: timeout}
 			newLoop = sp.newLoop(t, s)
 		)
 		wg.Add(1)
