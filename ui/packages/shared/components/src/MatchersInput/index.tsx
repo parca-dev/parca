@@ -451,7 +451,10 @@ const MatchersInput = ({
 
         <input
           type="text"
-          className="bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm outline-none"
+          className={cx(
+            'bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm outline-none',
+            currentQuery.profType.profileName === '' && 'cursor-not-allowed'
+          )}
           placeholder="filter profiles..."
           onChange={onChange}
           value={inputRef}
