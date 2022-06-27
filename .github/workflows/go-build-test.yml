@@ -106,7 +106,6 @@ jobs:
     - name: 'Setup Go on ${{ matrix.arch }}'
       if: ${{ matrix.arch != 'amd64' }}
       run: |
-        export RUNNER_ALLOW_RUNASROOT="1"
         # Install Golang, which will be used to build the code.
         docker exec -i ubuntu bash <<EOF
           set -euo pipefail
@@ -120,9 +119,9 @@ jobs:
     - name: 'Test on ${{ matrix.arch }}'
       if: ${{ matrix.arch != 'amd64' }}
       run: |
+        # Run Go Tests. This is a very slow operation on ARM container.
         docker exec -i ubuntu bash <<EOF
           set -euo pipefail
-          # Run Go Tests. This is a very slow operation on ARM container.
           export PATH="\${PATH}:/usr/local/go/bin"
           mkdir -p ui/packages/app/web/build
           touch ui/packages/app/web/build/index.html
