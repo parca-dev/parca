@@ -45,9 +45,11 @@ go/bin: go/deps
 .PHONY: format
 format: go/fmt proto/format check-license
 
+# renovate: datasource=go depName=mvdan.cc/gofumpt
+GOFUMPT_VERSION := v0.3.1
 gofumpt:
 ifeq (, $(shell which gofumpt))
-	go install mvdan.cc/gofumpt@v0.3.0
+	go install mvdan.cc/gofumpt@$(GOFUMPT_VERSION)
 GOFUMPT=$(GOBIN)/gofumpt
 else
 GOFUMPT=$(shell which gofumpt)
@@ -116,8 +118,8 @@ proto/google/pprof/profile.proto:
 
 .PHONY: container-dev
 container-dev:
-	docker build -t parca-dev/parca-agent:dev --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
-	#podman build --timestamp 0 --layers --build-arg=GOLANG_BASE=golang:1.18.3-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
+	docker build -t parca-dev/parca-agent:dev -t $(OUT_DOCKER):$(VERSION) .
+	#podman build --timestamp 0 --layers -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:

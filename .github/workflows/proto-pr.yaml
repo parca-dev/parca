@@ -12,27 +12,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
         with:
-          go-version: '1.18'
+          go-version-file: .go-version
           check-latest: true
           cache: true
 
-      - uses: bufbuild/buf-setup-action@v1.5.0
-        with:
-          version: 1.5.0
+      - uses: bufbuild/buf-setup-action@8cc6b77780e6c67b36d921f57c95c75eea4801ba # tag=v1.5.0
 
       - name: Format
         run: buf format --diff --exit-code
 
-      - uses: bufbuild/buf-lint-action@v1
+      - uses: bufbuild/buf-lint-action@15dd9902eef117bd24ff457b8818db21b44d34cb # tag=v1.0.0
         with:
           input: 'proto'
 
-      - uses: bufbuild/buf-breaking-action@v1
+      - uses: bufbuild/buf-breaking-action@133a3d5b9140ea3a9f9ff5194039742c15e8da78 # tag=v1.0.0
         with:
           input: 'proto'
           # The 'main' branch of the GitHub repository that defines the module.

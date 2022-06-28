@@ -15,24 +15,28 @@ on:
       - .golangci.yml
       - .github/workflows/go-lint.yml
 
+env:
+  # renovate: datasource=go depName=github.com/golangci/golangci-lint
+  GOLANGCI_LINT_VERSION: v1.45.2
+
 jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
         with:
-          go-version: '1.18'
+          go-version-file: .go-version
           check-latest: true
           cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
         with:
-          node-version: 14.x
+          node-version-file: .node-version
           cache: 'yarn'
 
       - name: Build
@@ -42,6 +46,6 @@ jobs:
         run: make go/fmt && git diff --exit-code
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.2.0
+        uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # tag=v3.2.0
         with:
-          version: v1.45.2
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
