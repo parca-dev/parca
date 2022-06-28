@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths: 
       - ui/**
+  workflow_dispatch:
 
 jobs:
   publish-ui-components:
