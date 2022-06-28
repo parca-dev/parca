@@ -73,7 +73,7 @@
     "jest": "^27.4.7",
     "jest-runtime": "^28.0.2",
     "lerna": "^5.1.1",
-    "lint-staged": "^12.1.7",
+    "lint-staged": "^13.0.3",
     "local-web-server": "^5.1.1",
     "next-transpile-modules": "^9.0.0",
     "plop": "^3.0.5",
