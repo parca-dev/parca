@@ -1,9 +1,10 @@
 name: Publish UI Components
 
 on:
-  pull_request:
-    types: [ closed ]
+  push:
     branches: [ main ]
+    paths: 
+      - ui/**
 
 jobs:
   publish-ui-components:
@@ -17,7 +18,10 @@ jobs:
           fetch-depth: "0"
 
       - name: Pull all tags for Lerna semantic release
-        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+        run: |
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/* \
+          git fetch origin +refs/heads/main:refs/remotes/origin/main \
+          git checkout main
 
       - name: Set up Node.js
         uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
