@@ -421,7 +421,7 @@ func (m *BadgerMetastore) UnsymbolizedLocations(ctx context.Context, r *pb.Unsym
 		defer it.Close()
 
 		locationKeys := [][]byte{}
-		prefix := []byte(unsymbolizedLocationLinesKeyPrefix)
+		prefix := []byte(UnsymbolizedLocationLinesKeyPrefix)
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			key := MakeLocationKeyWithID(LocationIDFromUnsymbolizedKey(string(it.Item().Key())))
 			locationKeys = append(locationKeys, []byte(key))

@@ -1,4 +1,4 @@
-package metastore
+package metastoretest
 
 import (
 	"github.com/go-kit/log"
@@ -7,11 +7,13 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
 )
 
 type Testing interface {
 	require.TestingT
 	Helper()
+	Name() string
 }
 
 func NewTestMetastore(
@@ -21,7 +23,7 @@ func NewTestMetastore(
 	tracer trace.Tracer,
 ) pb.MetastoreServiceServer {
 	t.Helper()
-	return NewBadgerMetastore(
+	return metastore.NewBadgerMetastore(
 		logger,
 		reg,
 		tracer,

@@ -46,6 +46,7 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	queryservice "github.com/parca-dev/parca/pkg/query"
 )
@@ -142,6 +143,7 @@ func Benchmark_WriteRaw(b *testing.B) {
 type Testing interface {
 	require.TestingT
 	Helper()
+	Name() string
 }
 
 func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer, *frostdb.Table, *semgroup.Group, func()) {
@@ -213,7 +215,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -348,7 +350,7 @@ func TestConsistency(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,

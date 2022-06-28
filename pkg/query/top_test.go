@@ -27,6 +27,7 @@ import (
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -38,7 +39,7 @@ func TestGenerateTopTable(t *testing.T) {
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
 
-	l := metastore.NewTestMetastore(
+	l := metastoretest.NewTestMetastore(
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
@@ -96,7 +97,7 @@ func TestGenerateTopTableAggregateFlat(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	metastore := metastore.NewInProcessClient(metastore.NewTestMetastore(
+	metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -177,7 +178,7 @@ func TestGenerateDiffTopTable(t *testing.T) {
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
 	require.NoError(t, p1.UnmarshalVT(fileContent))
 
-	l := metastore.NewTestMetastore(
+	l := metastoretest.NewTestMetastore(
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),

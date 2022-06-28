@@ -32,6 +32,7 @@ import (
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
@@ -58,7 +59,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				logger,
 			)
 			require.NoError(b, err)
-			m := metastore.NewInProcessClient(metastore.NewTestMetastore(
+			m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
 				b,
 				logger,
 				reg,
