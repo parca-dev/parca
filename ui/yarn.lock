@@ -3221,9 +3221,9 @@
     "@protobuf-ts/runtime" "^2.6.0"
 
 "@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.6.0":
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.6.0.tgz#d823470768383c0657cdc87a745c19af5ef63550"
-  integrity sha512-ZXQxypattRL87U9Ki+unh2en+REp8m+VZDTCHHHt1gqTZpjbUn2zzELkSEmli+4WKWPEZRExIhzfAUz0xRskJQ==
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.7.0.tgz#108252b9935018bd7eb9c0d4a349b8db11e382f7"
+  integrity sha512-CzunTplg81oMkF9MnSYiX2WOdHnAyHKnokZncgOHm5bt8iEfFNnUsMSbsWUus/ulRNIZ9VAVMjutd96vmySQaw==
 
 "@reduxjs/toolkit@^1.7.2":
   version "1.8.2"
