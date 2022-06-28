@@ -1,6 +1,7 @@
-FROM docker.io/golang:1.18.3-alpine3.15@sha256:f9181168749690bddb6751b004e976bf5d427425e0cfb50522e92c06f761def7 AS builder
+FROM docker.io/golang:1.18.3-alpine@sha256:f9181168749690bddb6751b004e976bf5d427425e0cfb50522e92c06f761def7 AS builder
 RUN mkdir /.cache && chown nobody:nogroup /.cache && touch -t 202101010000.00 /.cache
 
+# renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-health-probe
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.11
 
 WORKDIR /app
