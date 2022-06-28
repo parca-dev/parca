@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "nearley": "^2.20.1"
+    "nearley": "2.20.1"
   },
   "publishConfig": {
     "access": "public",

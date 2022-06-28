@@ -11,7 +11,7 @@
     "@protobuf-ts/runtime-rpc": "^2.5.0"
   },
   "devDependencies": {
-    "globby": "^13.1.1"
+    "globby": "13.1.2"
   },
   "keywords": [],
   "author": "",
