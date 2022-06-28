@@ -186,6 +186,9 @@ func getLocationsFromSerializedLocations(
 	functionIndex := map[string]int{}
 	functionIDs := []string{}
 	for _, lines := range lres.LocationLines {
+		if lines == nil {
+			continue
+		}
 		for _, line := range lines.Entries {
 			if _, found := functionIndex[line.FunctionId]; !found {
 				functionIDs = append(functionIDs, line.FunctionId)
@@ -208,13 +211,16 @@ func getLocationsFromSerializedLocations(
 			mapping = mappings[mappingIndex[location.MappingId]]
 		}
 
-		lines := lres.LocationLines[i].Entries
-		symbolizedLines := make([]profile.LocationLine, 0, len(lines))
-		for _, line := range lines {
-			symbolizedLines = append(symbolizedLines, profile.LocationLine{
-				Function: fres.Functions[functionIndex[line.FunctionId]],
-				Line:     line.Line,
-			})
+		symbolizedLines := []profile.LocationLine{}
+		if lres.LocationLines[i] != nil {
+			lines := lres.LocationLines[i].Entries
+			symbolizedLines = make([]profile.LocationLine, 0, len(lines))
+			for _, line := range lines {
+				symbolizedLines = append(symbolizedLines, profile.LocationLine{
+					Function: fres.Functions[functionIndex[line.FunctionId]],
+					Line:     line.Line,
+				})
+			}
 		}
 
 		res = append(res, &profile.Location{
