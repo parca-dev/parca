@@ -90,7 +90,7 @@
     "style-loader": "3.3.1",
     "ts-jest": "27.1.5",
     "ts-node": "10.8.1",
-    "typescript": "4.7.3",
+    "typescript": "4.7.4",
     "webpack": "5.72.1"
   },
   "lint-staged": {
