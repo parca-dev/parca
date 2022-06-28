@@ -22,7 +22,7 @@ jobs:
           check-latest: true
           cache: true
 
-      - uses: bufbuild/buf-setup-action@f6302b8734110a8557ffc49bb1b5ff7fae642400 # tag=v1.5.0
+      - uses: bufbuild/buf-setup-action@8cc6b77780e6c67b36d921f57c95c75eea4801ba # tag=v1.5.0
 
       - name: Format
         run: buf format --diff --exit-code
