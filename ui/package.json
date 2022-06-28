@@ -23,7 +23,7 @@
     "tailwindcss": "3.0.24"
   },
   "devDependencies": {
-    "@mdx-js/loader": "2.1.1",
+    "@mdx-js/loader": "2.1.2",
     "@next/bundle-analyzer": "12.1.6",
     "@next/eslint-plugin-next": "12.1.6",
     "@next/mdx": "12.1.6",
