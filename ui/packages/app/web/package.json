@@ -72,7 +72,7 @@
     "css-loader": "6.7.1",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-import": "2.26.0",
-    "jest": "28.1.0",
+    "jest": "28.1.1",
     "jest-runtime": "28.1.1",
     "pm2": "5.2.0",
     "react-scripts": "5.0.1",
