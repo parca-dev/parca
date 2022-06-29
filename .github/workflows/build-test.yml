@@ -7,14 +7,16 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
-      - .github/workflows/go-build-test.yml
+      - ui/**
+      - .github/workflows/build-test.yml
   pull_request:
     branches: [ main ]
     paths:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
-      - .github/workflows/go-build-test.yml
+      - ui/**
+      - .github/workflows/build-test.yml
 
 env:
   # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
@@ -24,8 +26,8 @@ env:
 
 jobs:
   build-and-test-multi-arch:
-    runs-on: ubuntu-latest
     name: Test on ${{ matrix.arch }}
+    runs-on: ubuntu-latest
     # Run steps on a matrix of 2 arch.
     strategy:
       matrix:
@@ -58,7 +60,7 @@ jobs:
     - name: Test
       if: ${{ matrix.arch == 'amd64' }}
       run: |
-        make go/test
+        make test
 
     - name: Benchmark
       if: ${{ matrix.arch == 'amd64' }}

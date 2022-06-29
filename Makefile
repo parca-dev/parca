@@ -28,6 +28,15 @@ endif
 .PHONY: build
 build: ui/build go/bin
 
+.PHONY: format
+format: go/fmt proto/format
+
+.PHONY: lint
+lint: check-license go/lint proto/lint ui/lint
+
+.PHONY: test
+test: go/test ui/test
+
 .PHONY: clean
 clean:
 	rm -rf bin
@@ -41,9 +50,6 @@ go/deps:
 go/bin: go/deps
 	mkdir -p ./bin
 	go build $(SANITIZERS) -o bin/ ./cmd/parca
-
-.PHONY: format
-format: go/fmt proto/format check-license
 
 # renovate: datasource=go depName=mvdan.cc/gofumpt
 GOFUMPT_VERSION := v0.3.1
@@ -61,7 +67,8 @@ endif
 go/fmt: gofumpt
 	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto)
 
-go/lint: check-license
+.PHONY: go/lint
+go/lint:
 	golangci-lint run
 
 .PHONY: check-license
@@ -87,6 +94,14 @@ UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -no
 .PHONY: ui/build
 ui/build: $(UI_FILES)
 	cd ui && yarn --prefer-offline && yarn workspace @parca/web build
+
+.PHONY: ui/test
+ui/test:
+	cd ui && yarn test
+
+.PHONY: ui/lint
+ui/lint:
+	cd ui && npm run lint
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate
