@@ -199,6 +199,7 @@ const Callgraph = ({
         y={pos[1]}
         hoveringNode={hoveringNode}
         contextElement={contextNode}
+        virtualContextElement={false}
       />
     </div>
   );

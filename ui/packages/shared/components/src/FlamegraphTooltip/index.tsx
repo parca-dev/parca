@@ -12,6 +12,7 @@ interface FlamegraphTooltipProps {
   hoveringNode: FlamegraphNode | FlamegraphRootNode | null | undefined;
   contextElement: Element | null;
   isFixed?: boolean;
+  virtualContextElement?: boolean;
 }
 
 const virtualElement = {
@@ -92,28 +93,33 @@ const FlamegraphTooltip = ({
   hoveringNode,
   contextElement,
   isFixed = false,
+  virtualContextElement = true,
 }: FlamegraphTooltipProps): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
-  const {styles, attributes, ...popperProps} = usePopper(contextElement, popperElement, {
-    placement: 'auto-start',
-    strategy: 'absolute',
-    modifiers: [
-      {
-        name: 'preventOverflow',
-        options: {
-          tether: false,
-          altAxis: true,
+  const {styles, attributes, ...popperProps} = usePopper(
+    virtualContextElement ? virtualElement : contextElement,
+    popperElement,
+    {
+      placement: 'auto-start',
+      strategy: 'absolute',
+      modifiers: [
+        {
+          name: 'preventOverflow',
+          options: {
+            tether: false,
+            altAxis: true,
+          },
         },
-      },
-      {
-        name: 'offset',
-        options: {
-          offset: [30, 30],
+        {
+          name: 'offset',
+          options: {
+            offset: [30, 30],
+          },
         },
-      },
-    ],
-  });
+      ],
+    }
+  );
 
   const update = popperProps.update;
 
