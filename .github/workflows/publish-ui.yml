@@ -20,8 +20,8 @@ jobs:
 
       - name: Pull all tags for Lerna semantic release
         run: |
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/* \
-          git fetch origin +refs/heads/main:refs/remotes/origin/main \
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/* && \
+          git fetch origin +refs/heads/main:refs/remotes/origin/main && \
           git checkout main
 
       - name: Set up Node.js
