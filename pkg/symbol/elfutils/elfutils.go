@@ -177,9 +177,13 @@ func ValidateFile(path string) error {
 // ValidateHeader returns an error if the given object file header is not valid.
 func ValidateHeader(r io.Reader) error {
 	// TODO(kakkoyun): Introduce a pool if this creates too many allocations.
+
+	// Identity reader.
 	buf := bytes.NewBuffer(nil)
 	w := limitio.NewWriter(buf, 16, true)
-	r = io.TeeReader(r, w)
+
+	// NOTICE: The ELF header is 52 or 64 bytes long for 32-bit and 64-bit binaries respectively
+	r = io.TeeReader(io.LimitReader(r, 64), w)
 
 	// We need to read the entire header to determine the class of the file.
 	b, err := io.ReadAll(r)
@@ -228,7 +232,7 @@ func ValidateHeader(r io.Reader) error {
 	switch c {
 	case elf.ELFCLASS32:
 		hdr := new(elf.Header32)
-		if err := binary.Read(r, byteOrder, hdr); err != nil {
+		if err := binary.Read(io.LimitReader(r, 52), byteOrder, hdr); err != nil {
 			return err
 		}
 		if v := elf.Version(hdr.Version); v != fv {
