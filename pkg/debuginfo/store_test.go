@@ -100,19 +100,19 @@ func TestStore(t *testing.T) {
 	for i := 0; i < 1024; i++ {
 		b.Write([]byte("c"))
 	}
-	_, err = c.Upload(context.Background(), "abcd", "", b)
+	_, err = c.Upload(context.Background(), "abcd", "abcd", b)
 	require.Error(t, err)
 
 	nf, err := os.Open("testdata/validelf_nosections")
 	require.NoError(t, err)
 
-	_, err = c.Upload(context.Background(), hex.EncodeToString([]byte("nosection")), "", nf)
+	_, err = c.Upload(context.Background(), hex.EncodeToString([]byte("nosection")), "abcd", nf)
 	require.Error(t, err)
 
 	wf, err := os.Open("testdata/validelf_withsections")
 	require.NoError(t, err)
 
-	size, err := c.Upload(context.Background(), hex.EncodeToString([]byte("section")), "", wf)
+	size, err := c.Upload(context.Background(), hex.EncodeToString([]byte("section")), "abcd", wf)
 	require.NoError(t, err)
 	require.Equal(t, 7079, int(size))
 
@@ -124,7 +124,7 @@ func TestStore(t *testing.T) {
 	require.Equal(t, 7079, len(content))
 	require.Equal(t, []byte{0x7f, 'E', 'L', 'F'}, content[:4])
 
-	exists, err := c.Exists(context.Background(), hex.EncodeToString([]byte("section")), "")
+	exists, err := c.Exists(context.Background(), hex.EncodeToString([]byte("section")), "abcd")
 	require.NoError(t, err)
 	require.True(t, exists)
 }

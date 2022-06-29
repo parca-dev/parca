@@ -159,7 +159,7 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		level.Debug(s.logger).Log("msg", "debug info exists", "exists", exists, "buildid", buildID, "err", err)
 	}()
 
-	if err := validateID(buildID); err != nil {
+	if err := validateInput(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -200,9 +200,12 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Errorf(codes.Unknown, msg)
 	}
 
-	buildID := req.GetInfo().BuildId
-	r := &UploadReader{stream: stream}
-	if err := s.upload(stream.Context(), buildID, req.GetInfo().Hash, r); err != nil {
+	var (
+		buildID = req.GetInfo().BuildId
+		hash    = req.GetInfo().Hash
+		r       = &UploadReader{stream: stream}
+	)
+	if err := s.upload(stream.Context(), buildID, hash, r); err != nil {
 		return fmt.Errorf("failed to upload debug information file: %w", err)
 	}
 
@@ -214,7 +217,13 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 }
 
 func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) error {
-	if err := validateID(buildID); err != nil {
+	if err := validateInput(buildID); err != nil {
+		err = fmt.Errorf("invalid build ID: %w", err)
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if err := validateInput(hash); err != nil {
+		err = fmt.Errorf("invalid hash: %w", err)
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -249,7 +258,6 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		return err
 	}
 
-	var objFileHash string
 	if found {
 		if hash != "" && metadataFile != nil {
 			if metadataFile.Hash == hash {
@@ -315,7 +323,7 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := s.metadataManager.markAsUploaded(ctx, buildID, objFileHash); err != nil {
+	if err := s.metadataManager.markAsUploaded(ctx, buildID, hash); err != nil {
 		err = fmt.Errorf("failed to update metadata after uploaded: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -327,13 +335,13 @@ func isStale(metadataFile *metadata) bool {
 	return time.Now().Add(-15 * time.Minute).After(time.Unix(metadataFile.UploadStartedAt, 0))
 }
 
-func validateID(id string) error {
+func validateInput(id string) error {
 	_, err := hex.DecodeString(id)
 	if err != nil {
-		return fmt.Errorf("failed to validate id: %w", err)
+		return fmt.Errorf("failed to validate input: %w", err)
 	}
 	if len(id) <= 2 {
-		return errors.New("unexpectedly short ID")
+		return errors.New("unexpectedly short input")
 	}
 
 	return nil

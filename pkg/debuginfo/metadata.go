@@ -98,6 +98,7 @@ func newMetadataManager(logger log.Logger, bucket objstore.Bucket) *metadataMana
 
 type metadata struct {
 	State            metadataState `json:"state"`
+	BuildID          string        `json:"build_id"`
 	Hash             string        `json:"hash"`
 	UploadStartedAt  int64         `json:"upload_started_at"`
 	UploadFinishedAt int64         `json:"upload_finished_at"`
@@ -129,6 +130,7 @@ func (m *metadataManager) markAsUploading(ctx context.Context, buildID string) e
 
 	if err := m.write(ctx, buildID, &metadata{
 		State:           metadataStateUploading,
+		BuildID:         buildID,
 		UploadStartedAt: time.Now().Unix(),
 	}); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)
@@ -139,10 +141,6 @@ func (m *metadataManager) markAsUploading(ctx context.Context, buildID string) e
 }
 
 func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash string) error {
-	if buildID == "" || hash == "" {
-		return fmt.Errorf("buildID and hash should not be empty, build id: %s, hash: %s", buildID, hash)
-	}
-
 	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	if err != nil {
 		level.Error(m.logger).Log("msg", "expected metadata file", "err", err)
@@ -164,7 +162,12 @@ func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash stri
 		return nil
 	}
 
+	if metaData.BuildID != buildID {
+		return errors.New("build ids do not match")
+	}
+
 	metaData.State = metadataStateUploaded
+	metaData.BuildID = buildID
 	metaData.Hash = hash
 	metaData.UploadFinishedAt = time.Now().Unix()
 
