@@ -40,6 +40,7 @@ import (
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -66,7 +67,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -146,7 +147,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -219,7 +220,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -234,6 +235,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
 	ingester := parcacol.NewIngester(logger, normalizer, table)
+
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "memory",
@@ -303,7 +305,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -371,7 +373,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -626,7 +628,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -701,7 +703,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,
@@ -765,7 +767,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,

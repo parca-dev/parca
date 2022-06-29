@@ -15,6 +15,7 @@ package metastore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/dgraph-io/badger/v3"
@@ -270,7 +271,13 @@ func (m *BadgerMetastore) LocationLines(ctx context.Context, r *pb.LocationLines
 		for _, locationLineKey := range locationLineKeys {
 			item, err := txn.Get(locationLineKey)
 			if err != nil {
-				return err
+				// If the key doesn't exist it means that the Location is not symbolised yet.
+				if errors.Is(err, badger.ErrKeyNotFound) {
+					res.LocationLines = append(res.LocationLines, nil)
+					continue
+				} else {
+					return err
+				}
 			}
 
 			err = item.Value(func(val []byte) error {
@@ -414,7 +421,7 @@ func (m *BadgerMetastore) UnsymbolizedLocations(ctx context.Context, r *pb.Unsym
 		defer it.Close()
 
 		locationKeys := [][]byte{}
-		prefix := []byte(unsymbolizedLocationLinesKeyPrefix)
+		prefix := []byte(UnsymbolizedLocationLinesKeyPrefix)
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			key := MakeLocationKeyWithID(LocationIDFromUnsymbolizedKey(string(it.Item().Key())))
 			locationKeys = append(locationKeys, []byte(key))

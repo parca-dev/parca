@@ -1,0 +1,133 @@
+name: Go
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - ui/**
+      - .github/workflows/build-test.yml
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - ui/**
+      - .github/workflows/build-test.yml
+
+env:
+  # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
+  QEMU_VERSION: 7.0.0-7
+  # renovate: datasource=docker depName=docker.io/ubuntu versioning=ubuntu
+  UBUNTU_VERSION: '20.04'
+
+jobs:
+  build-and-test-multi-arch:
+    name: Test on ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    # Run steps on a matrix of 2 arch.
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - arm64
+    steps:
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+
+    - name: Set up Go
+      if: ${{ matrix.arch == 'amd64' }}
+      uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
+      with:
+        go-version-file: .go-version
+        check-latest: true
+        cache: true
+
+    - name: Set up Node.js
+      if: ${{ matrix.arch == 'amd64' }}
+      uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
+      with:
+        node-version-file: .node-version
+        cache: 'yarn'
+
+    - name: Build
+      if: ${{ matrix.arch == 'amd64' }}
+      run: |
+        make build
+
+    - name: Test
+      if: ${{ matrix.arch == 'amd64' }}
+      run: |
+        make test
+
+    - name: Benchmark
+      if: ${{ matrix.arch == 'amd64' }}
+      run: |
+        make go/bench
+
+    - name: Archive generated artifacts
+      if: ${{ matrix.arch == 'amd64' }}
+      uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+      with:
+        name: parca-bin
+        if-no-files-found: error
+        path: |
+          bin
+
+    - name: 'Run ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'amd64' }}
+      run: |
+        # Install QEMU and it's dependencies.
+        sudo apt-get update -y
+        sudo apt-get install qemu binfmt-support qemu-user-static
+        docker run --rm --privileged "docker.io/multiarch/qemu-user-static:${QEMU_VERSION}" --reset -p yes
+
+        # Run platform specific based ubuntu image. Run it as a daemon in the background.
+        # Sleep the container for 1 day so that it keeps running until
+        # other steps are completed and the steps below can use the same container.
+        docker run \
+          --name=ubuntu \
+          --detach \
+          --platform='linux/${{ matrix.arch }}' \
+          --volume="${PWD}:/parca" \
+          --workdir=/parca \
+          "docker.io/ubuntu:${UBUNTU_VERSION}" \
+          bash -c 'uname -m && sleep 1d'
+
+    - name: 'Install packages on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'amd64' }}
+      run: |
+        # Install necessary packages on the ubuntu container which will be used
+        # by below steps.
+        docker exec -i ubuntu bash <<EOF
+          set -euo pipefail
+          apt-get update -y -q
+          apt-get install -y -q wget make git file build-essential
+        EOF
+
+    - name: 'Setup Go on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'amd64' }}
+      run: |
+        # Install Golang, which will be used to build the code.
+        docker exec -i ubuntu bash <<EOF
+          set -euo pipefail
+          GO_VERSION="\$(<.go-version)"
+          wget --directory-prefix=/tmp "https://dl.google.com/go/go\${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+          tar -C /usr/local/ -xzf "/tmp/go\${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+          export PATH="\${PATH}:/usr/local/go/bin"
+          go version
+        EOF
+
+    - name: 'Test on ${{ matrix.arch }}'
+      if: ${{ matrix.arch != 'amd64' }}
+      run: |
+        # Run Go Tests. This is a very slow operation on ARM container.
+        docker exec -i ubuntu bash <<EOF
+          set -euo pipefail
+          export PATH="\${PATH}:/usr/local/go/bin"
+          mkdir -p ui/packages/app/web/build
+          touch ui/packages/app/web/build/index.html
+          go test -buildvcs=false -v ./...
+        EOF

@@ -1,9 +1,11 @@
 name: Publish UI Components
 
 on:
-  pull_request:
-    types: [ closed ]
+  push:
     branches: [ main ]
+    paths: 
+      - ui/**
+  workflow_dispatch:
 
 jobs:
   publish-ui-components:
@@ -11,21 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-    strategy:
-      matrix:
-        node-version: [ 14.x ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
         with:
           fetch-depth: "0"
 
       - name: Pull all tags for Lerna semantic release
-        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+        run: |
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/* && \
+          git fetch origin +refs/heads/main:refs/remotes/origin/main && \
+          git checkout main
 
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .node-version
 
       - name: Ensure access
         working-directory: ui

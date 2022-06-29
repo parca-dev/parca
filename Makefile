@@ -28,6 +28,15 @@ endif
 .PHONY: build
 build: ui/build go/bin
 
+.PHONY: format
+format: go/fmt proto/format
+
+.PHONY: lint
+lint: check-license go/lint proto/lint ui/lint
+
+.PHONY: test
+test: go/test ui/test
+
 .PHONY: clean
 clean:
 	rm -rf bin
@@ -42,12 +51,11 @@ go/bin: go/deps
 	mkdir -p ./bin
 	go build $(SANITIZERS) -o bin/ ./cmd/parca
 
-.PHONY: format
-format: go/fmt proto/format check-license
-
+# renovate: datasource=go depName=mvdan.cc/gofumpt
+GOFUMPT_VERSION := v0.3.1
 gofumpt:
 ifeq (, $(shell which gofumpt))
-	go install mvdan.cc/gofumpt@v0.3.0
+	go install mvdan.cc/gofumpt@$(GOFUMPT_VERSION)
 GOFUMPT=$(GOBIN)/gofumpt
 else
 GOFUMPT=$(shell which gofumpt)
@@ -59,7 +67,8 @@ endif
 go/fmt: gofumpt
 	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto)
 
-go/lint: check-license
+.PHONY: go/lint
+go/lint:
 	golangci-lint run
 
 .PHONY: check-license
@@ -85,6 +94,14 @@ UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -no
 .PHONY: ui/build
 ui/build: $(UI_FILES)
 	cd ui && yarn --prefer-offline && yarn workspace @parca/web build
+
+.PHONY: ui/test
+ui/test:
+	cd ui && yarn test
+
+.PHONY: ui/lint
+ui/lint:
+	cd ui && npm run lint
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate
@@ -116,8 +133,8 @@ proto/google/pprof/profile.proto:
 
 .PHONY: container-dev
 container-dev:
-	docker build -t parca-dev/parca-agent:dev --build-arg=GOLANG_BASE=golang:1.18-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
-	#podman build --timestamp 0 --layers --build-arg=GOLANG_BASE=golang:1.18.3-bullseye --build-arg=RUNNER_BASE=debian:bullseye-slim -t $(OUT_DOCKER):$(VERSION) .
+	docker build -t parca-dev/parca-agent:dev -t $(OUT_DOCKER):$(VERSION) .
+	#podman build --timestamp 0 --layers -t $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: container
 container:

@@ -1,4 +1,4 @@
-FROM mhart/alpine-node
+FROM mhart/alpine-node@sha256:c9014e9e5b33f29d47c867ea548edc0235ba71677f40456409a44c278d8a8e01
 WORKDIR /app
 
 COPY package.json yarn.lock ./

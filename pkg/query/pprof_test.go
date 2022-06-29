@@ -30,6 +30,7 @@ import (
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
@@ -44,7 +45,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
 
-	l := metastore.NewTestMetastore(
+	l := metastoretest.NewTestMetastore(
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
@@ -111,7 +112,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastore.NewTestMetastore(
+	l := metastoretest.NewTestMetastore(
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),

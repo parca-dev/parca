@@ -27,6 +27,7 @@ import (
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
@@ -52,7 +53,7 @@ func Test_LabelName_Invalid(t *testing.T) {
 		logger,
 	)
 	require.NoError(t, err)
-	m := metastore.NewTestMetastore(
+	m := metastoretest.NewTestMetastore(
 		t,
 		logger,
 		reg,

@@ -36,6 +36,7 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	"github.com/parca-dev/parca/pkg/symbol"
@@ -465,7 +466,7 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, pb.MetastoreServic
 		debuginfo.NopDebugInfodClient{})
 	require.NoError(t, err)
 
-	mStr := metastore.NewTestMetastore(
+	mStr := metastoretest.NewTestMetastore(
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
