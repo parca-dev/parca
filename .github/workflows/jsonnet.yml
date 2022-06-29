@@ -28,7 +28,6 @@ jobs:
         with:
           go-version-file: .go-version
           check-latest: true
-          cache: true
 
       - name: Set up Jsonnet
         run: ./env-jsonnet.sh
