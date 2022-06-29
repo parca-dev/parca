@@ -14,11 +14,15 @@
 package elfutils
 
 import (
+	"bytes"
 	"debug/elf"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/nanmu42/limitio"
 )
 
 var dwarfSuffix = func(s *elf.Section) string {
@@ -163,24 +167,100 @@ func ValidateFile(path string) error {
 	}
 	defer elfFile.Close()
 
-	return validate(elfFile)
+	// TODO(kakkoyun): How can we improve this without allocating too much memory.
+	if len(elfFile.Sections) == 0 {
+		return errors.New("ELF does not have any sections")
+	}
+	return nil
 }
 
-// ValidateReader returns an error if the given object file is not valid.
-func ValidateReader(r io.ReaderAt) error {
-	elfFile, err := elf.NewFile(r)
+// ValidateHeader returns an error if the given object file header is not valid.
+func ValidateHeader(r io.Reader) error {
+	// TODO(kakkoyun): Introduce a pool if this creates too many allocations.
+	buf := bytes.NewBuffer(nil)
+	w := limitio.NewWriter(buf, 16, true)
+	r = io.TeeReader(r, w)
+
+	// We need to read the entire header to determine the class of the file.
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}
-	defer elfFile.Close()
+	r = bytes.NewReader(b)
 
-	return validate(elfFile)
-}
-
-func validate(f *elf.File) error {
-	// TODO(kakkoyun): How can we improve this without allocating too much memory.
-	if len(f.Sections) == 0 {
-		return errors.New("ELF does not have any sections")
+	var ident [16]byte
+	_, err = buf.Read(ident[:])
+	if err != nil {
+		return err
 	}
+	if ident[0] != '\x7f' || ident[1] != 'E' || ident[2] != 'L' || ident[3] != 'F' {
+		return fmt.Errorf("invalid magic number, %s", ident[0:4])
+	}
+
+	c := elf.Class(ident[elf.EI_CLASS])
+	switch c {
+	case elf.ELFCLASS32:
+	case elf.ELFCLASS64:
+		// ok
+	default:
+		return fmt.Errorf("unknown ELF class, %s", c)
+	}
+
+	var byteOrder binary.ByteOrder
+	d := elf.Data(ident[elf.EI_DATA])
+	switch d {
+	case elf.ELFDATA2LSB:
+		byteOrder = binary.LittleEndian
+	case elf.ELFDATA2MSB:
+		byteOrder = binary.BigEndian
+	default:
+		return fmt.Errorf("unknown ELF data encoding, %s", d)
+	}
+
+	fv := elf.Version(ident[elf.EI_VERSION])
+	if fv != elf.EV_CURRENT {
+		return fmt.Errorf("unknown ELF version, %s", fv)
+	}
+
+	// Read ELF file header.
+	var shoff int64
+	var shnum, shstrndx int
+	switch c {
+	case elf.ELFCLASS32:
+		hdr := new(elf.Header32)
+		if err := binary.Read(r, byteOrder, hdr); err != nil {
+			return err
+		}
+		if v := elf.Version(hdr.Version); v != fv {
+			return fmt.Errorf("invalid ELF version, %s", v)
+		}
+		shoff = int64(hdr.Shoff)
+		shnum = int(hdr.Shnum)
+		shstrndx = int(hdr.Shstrndx)
+	case elf.ELFCLASS64:
+		hdr := new(elf.Header64)
+		if err := binary.Read(r, byteOrder, hdr); err != nil {
+			return err
+		}
+		if v := elf.Version(hdr.Version); v != fv {
+			return fmt.Errorf("invalid ELF version, %s", v)
+		}
+		shoff = int64(hdr.Shoff)
+		shnum = int(hdr.Shnum)
+		shstrndx = int(hdr.Shstrndx)
+	}
+
+	if shoff == 0 && shnum != 0 {
+		return fmt.Errorf("invalid ELF file, shoff is 0 but shnum is %d", shnum)
+	}
+
+	if shnum > 0 && shstrndx >= shnum {
+		return fmt.Errorf("invalid ELF file, shstrndx is %d but shnum is %d", shstrndx, shnum)
+	}
+
+	if shnum <= 0 {
+		return fmt.Errorf("elf file has no sections")
+	}
+
 	return nil
 }

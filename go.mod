@@ -27,12 +27,12 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.3
 	github.com/ianlancetaylor/demangle v0.0.0-20220319035150-800ac71e25c2
 	github.com/improbable-eng/grpc-web v0.15.0
+	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/polarsignals/frostdb v0.0.0-20220627125235-571b4dc57775
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.35.0
 	github.com/prometheus/prometheus v0.36.2
-	github.com/rzajac/flexbuf v0.14.0
 	github.com/segmentio/parquet-go v0.0.0-20220623195409-8b4d4260d8cb
 	github.com/stretchr/testify v1.7.5
 	github.com/thanos-io/objstore v0.0.0-20220324141029-c4f11442aa33

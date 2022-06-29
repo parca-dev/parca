@@ -14,6 +14,7 @@
 package debuginfo
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -28,7 +29,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/rzajac/flexbuf"
+	"github.com/nanmu42/limitio"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
 	"google.golang.org/grpc/codes"
@@ -110,7 +111,7 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 		metadataManager:  newMetadataManager(logger, bucket),
 		pool: sync.Pool{
 			New: func() interface{} {
-				return []byte{}
+				return bytes.NewBuffer(nil)
 			},
 		},
 	}, nil
@@ -271,12 +272,12 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	//nolint:forcetypeassert
-	b := s.pool.Get().([]byte)
-	buf := flexbuf.With(b)
+	b := s.pool.Get().(*bytes.Buffer)
+	// NOTICE: The ELF header is 52 or 64 bytes long for 32-bit and 64-bit binaries respectively.
+	buf := limitio.NewWriter(b, 64, true)
 	defer func() {
-		// TODO(kakkoyun): Check if this creates any problems with reused buffers.
-		buf.Release()
-		b = b[:0]
+		b.Reset()
+		s.pool.Put(b)
 	}()
 
 	// At this point we know that we received a better version of the debug information file,
@@ -288,8 +289,8 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return status.Errorf(codes.Unknown, msg)
 	}
 
-	if err := elfutils.ValidateReader(buf); err != nil {
-		// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
+	if err := elfutils.ValidateHeader(b); err != nil {
+		// Failed to validate. Mark the incoming stream as corrupted, and let the client try to upload it again.
 		if err := s.metadataManager.markAsCorrupted(ctx, buildID); err != nil {
 			err := fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)
 			return status.Error(codes.Internal, err.Error())
