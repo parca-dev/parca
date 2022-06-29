@@ -20,7 +20,6 @@ jobs:
         with:
           go-version-file: .go-version
           check-latest: true
-          cache: true
 
       - uses: bufbuild/buf-setup-action@f6302b8734110a8557ffc49bb1b5ff7fae642400 # tag=v1.6.0
 
