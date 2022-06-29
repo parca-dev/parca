@@ -171,11 +171,7 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		}
 
 		if metadataFile.Hash == req.Hash {
-			exists = true
-			if metadataFile.State == metadataStateUploading {
-				exists = !isStale(metadataFile)
-			}
-			return &debuginfopb.ExistsResponse{Exists: exists}, nil
+			return &debuginfopb.ExistsResponse{Exists: true}, nil
 		}
 
 		// If it is not an exact version of the source object file what we have so, let the client try to upload it.
@@ -237,7 +233,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	var objFileHash string
 	if found {
 		if req.GetInfo().Hash != "" {
-			if metadataFile != nil && metadataFile.Hash != "" {
+			if metadataFile != nil {
 				if metadataFile.Hash == req.GetInfo().Hash {
 					level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
 					return status.Error(codes.AlreadyExists, "debuginfo already exists")
@@ -252,7 +248,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 
 		if err := elfutils.ValidateFile(objFile); err != nil {
 			// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
-			if err := s.metadataManager.corrupted(ctx, buildID); err != nil {
+			if err := s.metadataManager.markAsCorrupted(ctx, buildID); err != nil {
 				level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
 			}
 			// Client will retry.
@@ -269,7 +265,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		}
 	}
 
-	if err := s.metadataManager.uploading(ctx, buildID); err != nil {
+	if err := s.metadataManager.markAsUploading(ctx, buildID); err != nil {
 		err := fmt.Errorf("failed to update metadata before uploading: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -294,14 +290,14 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 
 	if err := elfutils.ValidateReader(buf); err != nil {
 		// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
-		if err := s.metadataManager.corrupted(ctx, buildID); err != nil {
+		if err := s.metadataManager.markAsCorrupted(ctx, buildID); err != nil {
 			err := fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)
 			return status.Error(codes.Internal, err.Error())
 		}
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := s.metadataManager.uploaded(ctx, buildID, objFileHash); err != nil {
+	if err := s.metadataManager.markAsUploaded(ctx, buildID, objFileHash); err != nil {
 		err := fmt.Errorf("failed to update metadata after uploaded: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -367,7 +363,7 @@ func (s *Store) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Lo
 	if err := elfutils.ValidateFile(objFile); err != nil {
 		level.Warn(logger).Log("msg", "failed to validate debug information", "err", err)
 		// Mark the file as corrupted, and let the client try to upload it again.
-		err := s.metadataManager.corrupted(ctx, buildID)
+		err := s.metadataManager.markAsCorrupted(ctx, buildID)
 		if err != nil {
 			level.Warn(logger).Log(
 				"msg", "failed to mar debug information",

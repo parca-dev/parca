@@ -43,7 +43,7 @@ const (
 	metadataStateUploading
 	// The debug info file is fully uploaded.
 	metadataStateUploaded
-	// The debug info file is being corrupted.
+	// The debug info file is corrupted.
 	metadataStateCorrupted
 )
 
@@ -103,7 +103,7 @@ type metadata struct {
 	UploadFinishedAt int64         `json:"upload_finished_at"`
 }
 
-func (m *metadataManager) corrupted(ctx context.Context, buildID string) error {
+func (m *metadataManager) markAsCorrupted(ctx context.Context, buildID string) error {
 	if err := m.write(ctx, buildID, &metadata{
 		State: metadataStateCorrupted,
 	}); err != nil {
@@ -112,7 +112,7 @@ func (m *metadataManager) corrupted(ctx context.Context, buildID string) error {
 	return nil
 }
 
-func (m *metadataManager) uploading(ctx context.Context, buildID string) error {
+func (m *metadataManager) markAsUploading(ctx context.Context, buildID string) error {
 	_, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	// The metadata file should not exist yet. Not erroring here because there's
 	// room for a race condition.
@@ -135,7 +135,7 @@ func (m *metadataManager) uploading(ctx context.Context, buildID string) error {
 	return nil
 }
 
-func (m *metadataManager) uploaded(ctx context.Context, buildID, hash string) error {
+func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash string) error {
 	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	if err != nil {
 		level.Error(m.logger).Log("msg", "expected metadata file", "err", err)

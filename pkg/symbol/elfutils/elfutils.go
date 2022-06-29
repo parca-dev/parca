@@ -155,7 +155,7 @@ func HasSymbols(path string) (bool, error) {
 	return false, nil
 }
 
-// ValidateFile returns true if the given object file is valid.
+// ValidateFile returns an error if the given object file is not valid.
 func ValidateFile(path string) error {
 	elfFile, err := elf.Open(path)
 	if err != nil {
@@ -166,7 +166,7 @@ func ValidateFile(path string) error {
 	return validate(elfFile)
 }
 
-// ValidateReader returns true if the given object file is valid.
+// ValidateReader returns an error if the given object file is not valid.
 func ValidateReader(r io.ReaderAt) error {
 	elfFile, err := elf.NewFile(r)
 	if err != nil {

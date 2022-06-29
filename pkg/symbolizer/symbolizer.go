@@ -56,7 +56,7 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, lres.Locations)
 		if err != nil {
-			level.Error(s.logger).Log("msg", "symbolization round finished with errors")
+			level.Warn(s.logger).Log("msg", "symbolization attempt finished with errors")
 			level.Debug(s.logger).Log("msg", "errors occurred during symbolization", "err", err)
 		} else {
 			level.Info(s.logger).Log("msg", "symbolization round finished successfully")
