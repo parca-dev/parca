@@ -15,7 +15,6 @@ package symbolizer
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -58,7 +57,10 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, lres.Locations)
 		if err != nil {
-			level.Error(s.logger).Log("msg", "symbolization attempt finished with errors", "err", err)
+			level.Error(s.logger).Log("msg", "symbolization round finished with errors")
+			level.Debug(s.logger).Log("msg", "errors occurred during symbolization", "err", err)
+		} else {
+			level.Info(s.logger).Log("msg", "symbolization round finished successfully")
 		}
 		return nil
 	})
@@ -127,15 +129,16 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 		// Symbolize returns a list of lines per location passed to it.
 		locationsByMapping.LocationsLines, err = s.debugInfo.Symbolize(ctx, mapping, locations)
 		if err != nil {
-			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
+			result = multierror.Append(result, err)
 			continue
 		}
 		level.Debug(logger).Log("msg", "storage symbolization request done")
 	}
-	err = result.ErrorOrNil()
-	if err != nil {
-		return err
+
+	if err := result.ErrorOrNil(); err != nil {
+		level.Warn(s.logger).Log("msg", "storage symbolization request finished with errors", "err", err)
 	}
+	level.Debug(s.logger).Log("msg", "storing found symbols")
 
 	numFunctions := 0
 	for _, locationsByMapping := range locationsByMappings {
@@ -183,6 +186,5 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 	_, err = s.metastore.CreateLocationLines(ctx, &pb.CreateLocationLinesRequest{
 		Locations: locations,
 	})
-
 	return err
 }
