@@ -71,7 +71,7 @@
     "identity-obj-proxy": "3.0.0",
     "internal-ip": "7.0.0",
     "jest": "27.5.1",
-    "jest-runtime": "28.1.1",
+    "jest-runtime": "28.1.2",
     "lerna": "5.1.6",
     "lint-staged": "13.0.3",
     "local-web-server": "5.2.1",
