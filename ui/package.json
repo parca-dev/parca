@@ -20,7 +20,7 @@
     "date-fns": "2.28.0",
     "react": "18.1.0",
     "react-dom": "18.1.0",
-    "tailwindcss": "3.0.24"
+    "tailwindcss": "3.1.4"
   },
   "devDependencies": {
     "@mdx-js/loader": "2.1.2",
@@ -30,13 +30,13 @@
     "@storybook/addon-actions": "6.5.9",
     "@storybook/addon-docs": "6.5.9",
     "@storybook/addon-essentials": "6.5.9",
-    "@storybook/addon-links": "6.5.6",
+    "@storybook/addon-links": "6.5.9",
     "@storybook/addon-outline": "6.5.9",
     "@storybook/addon-postcss": "2.0.0",
     "@storybook/addon-storyshots": "6.5.9",
-    "@storybook/builder-webpack5": "6.4.22",
-    "@storybook/manager-webpack5": "6.5.6",
-    "@storybook/react": "6.4.22",
+    "@storybook/builder-webpack5": "6.5.9",
+    "@storybook/manager-webpack5": "6.5.9",
+    "@storybook/react": "6.5.9",
     "@svgr/webpack": "6.2.1",
     "@swc/cli": "0.1.57",
     "@swc/core": "1.2.205",
