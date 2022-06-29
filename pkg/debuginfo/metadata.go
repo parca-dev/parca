@@ -109,6 +109,7 @@ func (m *metadataManager) markAsCorrupted(ctx context.Context, buildID string) e
 	}); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)
 	}
+	level.Debug(m.logger).Log("msg", "marked as corrupted", "buildid", buildID)
 	return nil
 }
 
@@ -132,10 +133,16 @@ func (m *metadataManager) markAsUploading(ctx context.Context, buildID string) e
 	}); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)
 	}
+
+	level.Debug(m.logger).Log("msg", "marked as uploading", "buildid", buildID)
 	return nil
 }
 
 func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash string) error {
+	if buildID == "" || hash == "" {
+		return fmt.Errorf("buildID and hash should not be empty, build id: %s, hash: %s", buildID, hash)
+	}
+
 	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	if err != nil {
 		level.Error(m.logger).Log("msg", "expected metadata file", "err", err)
@@ -157,10 +164,6 @@ func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash stri
 		return nil
 	}
 
-	if metaData.State != metadataStateUploading {
-		return ErrMetadataUnexpectedState
-	}
-
 	metaData.State = metadataStateUploaded
 	metaData.Hash = hash
 	metaData.UploadFinishedAt = time.Now().Unix()
@@ -171,6 +174,8 @@ func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash stri
 	if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), newData); err != nil {
 		return err
 	}
+
+	level.Debug(m.logger).Log("msg", "marked as uploaded", "buildid", buildID)
 	return nil
 }
 

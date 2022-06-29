@@ -152,6 +152,13 @@ func newCache(cacheCfg []byte) (*FilesystemCacheConfig, error) {
 
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
 	buildID := req.BuildId
+
+	var exists bool
+	var err error
+	defer func() {
+		level.Debug(s.logger).Log("msg", "debug info exists", "exists", exists, "buildid", buildID, "err", err)
+	}()
+
 	if err := validateID(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -162,28 +169,27 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 	}
 
 	if found {
-		var exists bool
 		metadataFile, err := s.metadataManager.fetch(ctx, buildID)
 		if err != nil {
 			if errors.Is(err, ErrMetadataNotFound) {
-				return &debuginfopb.ExistsResponse{Exists: false}, nil
+				return &debuginfopb.ExistsResponse{Exists: exists}, nil
 			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		if metadataFile.Hash == req.Hash {
-			return &debuginfopb.ExistsResponse{Exists: true}, nil
+		if metadataFile.Hash != "" && metadataFile.Hash == req.Hash {
+			exists = true
+			return &debuginfopb.ExistsResponse{Exists: exists}, nil
 		}
 
 		// If it is not an exact version of the source object file what we have so, let the client try to upload it.
-		exists = false
 		if metadataFile.State == metadataStateUploading {
 			exists = !isStale(metadataFile)
 		}
 		return &debuginfopb.ExistsResponse{Exists: exists}, nil
 	}
 
-	return &debuginfopb.ExistsResponse{Exists: false}, nil
+	return &debuginfopb.ExistsResponse{Exists: exists}, nil
 }
 
 func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
@@ -195,13 +201,25 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	buildID := req.GetInfo().BuildId
-	if err = validateID(buildID); err != nil {
+	r := &UploadReader{stream: stream}
+	if err := s.upload(stream.Context(), buildID, req.GetInfo().Hash, r); err != nil {
+		return fmt.Errorf("failed to upload debug information file: %w", err)
+	}
+
+	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
+	return stream.SendAndClose(&debuginfopb.UploadResponse{
+		BuildId: buildID,
+		Size:    r.size,
+	})
+}
+
+func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) error {
+	if err := validateID(buildID); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
 
-	ctx := stream.Context()
 	metadataFile, err := s.metadataManager.fetch(ctx, buildID)
 	if err == nil {
 		level.Debug(s.logger).Log("msg", "fetching metadata state", "result", metadataFile)
@@ -233,12 +251,10 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 
 	var objFileHash string
 	if found {
-		if req.GetInfo().Hash != "" {
-			if metadataFile != nil {
-				if metadataFile.Hash == req.GetInfo().Hash {
-					level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
-					return status.Error(codes.AlreadyExists, "debuginfo already exists")
-				}
+		if hash != "" && metadataFile != nil {
+			if metadataFile.Hash == hash {
+				level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
+				return status.Error(codes.AlreadyExists, "debuginfo already exists")
 			}
 		}
 
@@ -252,6 +268,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 			if err := s.metadataManager.markAsCorrupted(ctx, buildID); err != nil {
 				level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
 			}
+			level.Error(s.logger).Log("msg", "failed to validate object file", "buildid", buildID)
 			// Client will retry.
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -267,7 +284,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	}
 
 	if err := s.metadataManager.markAsUploading(ctx, buildID); err != nil {
-		err := fmt.Errorf("failed to update metadata before uploading: %w", err)
+		err = fmt.Errorf("failed to update metadata before uploading: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
 
@@ -282,7 +299,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 
 	// At this point we know that we received a better version of the debug information file,
 	// so let the client upload it.
-	r := &UploadReader{stream: stream}
+
 	if err := s.bucket.Upload(ctx, objectPath(buildID), io.TeeReader(r, buf)); err != nil {
 		msg := "failed to upload"
 		level.Error(s.logger).Log("msg", msg, "err", err)
@@ -292,22 +309,18 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	if err := elfutils.ValidateHeader(b); err != nil {
 		// Failed to validate. Mark the incoming stream as corrupted, and let the client try to upload it again.
 		if err := s.metadataManager.markAsCorrupted(ctx, buildID); err != nil {
-			err := fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)
+			err = fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)
 			return status.Error(codes.Internal, err.Error())
 		}
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := s.metadataManager.markAsUploaded(ctx, buildID, objFileHash); err != nil {
-		err := fmt.Errorf("failed to update metadata after uploaded: %w", err)
+		err = fmt.Errorf("failed to update metadata after uploaded: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
 
-	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
-	return stream.SendAndClose(&debuginfopb.UploadResponse{
-		BuildId: buildID,
-		Size:    r.size,
-	})
+	return nil
 }
 
 func isStale(metadataFile *metadata) bool {
