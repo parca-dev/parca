@@ -4,7 +4,6 @@
     "ts-protoc-gen": "^0.15.0"
   },
   "dependencies": {
-    "d3-dag": "^0.11.3",
-    "d3-sankey-circular": "^0.34.0"
+    "d3-dag": "^0.11.3"
   }
 }

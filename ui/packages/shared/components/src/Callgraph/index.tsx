@@ -1,8 +1,7 @@
-import {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import * as d3Dag from 'd3-dag';
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
-import {throttle} from 'lodash';
 import {FlamegraphNode, FlamegraphRootNode, Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {FlamegraphTooltip} from '@parca/components';
@@ -15,6 +14,10 @@ interface Props {
   sampleUnit: string;
 }
 
+interface EventTargetWithData extends EventTarget {
+  __data__: any;
+}
+
 const isRootNode = data => !data.meta;
 const getMethodName = data => data.meta.function?.name;
 
@@ -25,22 +28,18 @@ const Callgraph = ({
   width: customWidth,
   height: customHeight,
   arrows = true,
-  sampleUnit,
 }: Props): JSX.Element => {
   const {root, total, unit} = graph;
-  // TODO check if we need to pass in 'sampleUnit' or if this is the same as 'unit' in the graph
-  console.log(unit);
 
   if (!root) {
     return <div />;
   }
 
-  // Same tooltip implementation as in the Icicle Graph
-  const [hoveringNode, setHoveringNode] = useState<
-    FlamegraphNode | FlamegraphRootNode | undefined
-  >();
+  const [hoveringNode, setHoveringNode] = useState<FlamegraphNode | FlamegraphRootNode | null>(
+    null
+  );
   const [pos, setPos] = useState([0, 0]);
-  const throttledSetPos = throttle(setPos, 20);
+  const [contextNode, setContextNode] = useState<Element | null>(null);
 
   const {ref: containerRef, dimensions: originalDimensions} = useContainerDimensions();
   const fullWidth = customWidth ?? originalDimensions?.width;
@@ -49,11 +48,15 @@ const Callgraph = ({
   const defsRef = useRef(null);
   const [dimensions, setDimensions] = useState({width: 0, height: 0});
 
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
-    // X/Y coordinate array relative to svg
-    const rel = pointer(e);
+  const onMouseOver = (e: React.MouseEvent<SVGCircleElement>): void => {
+    setPos(pointer(e, svgRef.current));
+    setContextNode(e.target as Element);
+    setHoveringNode((e.target as EventTargetWithData).__data__.data);
+  };
 
-    throttledSetPos([rel[0], rel[1]]);
+  const onMouseOut = (e: React.MouseEvent<SVGCircleElement>): void => {
+    setContextNode(null);
+    setHoveringNode(null);
   };
 
   useEffect(() => {
@@ -62,13 +65,6 @@ const Callgraph = ({
         .dagHierarchy()
         .decycle(true)
         .children((d: FlamegraphNode) => d.children)(root);
-
-      // When data is a list of links, we will need to use dagConnect instead of dagHierarchy
-      //   const dag = d3Dag
-      //     .dagConnect()
-      //     .decycle(true)
-      //     .sourceId((link: Link) => link.source)
-      //     .targetId((link: Link) => link.target)(data.links);
 
       const layout = d3Dag
         .sugiyama() // base layout
@@ -107,6 +103,7 @@ const Callgraph = ({
         .attr('d', (link: d3Dag.DagLink) => line(link.points.map(point => [point.x, point.y])))
         .attr('fill', 'none')
         .attr('stroke-width', 3)
+        .style('pointer-events', 'none')
         .attr('marker-end', link => {
           return arrows ? 'url(#arrow)' : '';
         })
@@ -130,17 +127,9 @@ const Callgraph = ({
         .append('circle')
         .attr('r', NODE_RADIUS)
         .attr('fill', n => colorScale(+n.data.cumulative))
-        .attr('stroke', n => colorScale(+n.data.cumulative));
-
-      // Add text to nodes
-      nodes
-        .append('text')
-        .text(d => (isRootNode(d.data) ? 'root' : getMethodName(d.data).substring(0, 1)))
-        .attr('font-weight', 'bold')
-        .attr('font-family', 'sans-serif')
-        .attr('text-anchor', 'middle')
-        .attr('alignment-baseline', 'middle')
-        .attr('fill', 'white');
+        .attr('stroke', n => colorScale(+n.data.cumulative))
+        .on('mouseover', onMouseOver)
+        .on('mouseout', onMouseOut);
 
       // Plot Arrows
       if (arrows) {
@@ -191,20 +180,11 @@ const Callgraph = ({
 
   return (
     <div ref={containerRef}>
-      <FlamegraphTooltip
-        unit={sampleUnit}
-        total={parseFloat(total)}
-        x={pos[0]}
-        y={pos[1]}
-        hoveringNode={hoveringNode}
-        contextElement={svgRef.current}
-      />
       <svg
         ref={svgRef}
         width={fullWidth}
         height={fullHeight}
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-        onMouseMove={onMouseMove}
       >
         <defs ref={defsRef}>
           <marker id="arrow" orient="auto" markerWidth="1" markerHeight="2" refX="0.2" refY="1">
@@ -212,6 +192,14 @@ const Callgraph = ({
           </marker>
         </defs>
       </svg>
+      <FlamegraphTooltip
+        unit={unit}
+        total={parseFloat(total)}
+        x={pos[0]}
+        y={pos[1]}
+        hoveringNode={hoveringNode}
+        contextElement={contextNode}
+      />
     </div>
   );
 };

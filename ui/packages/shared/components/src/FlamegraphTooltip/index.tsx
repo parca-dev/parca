@@ -9,8 +9,9 @@ interface FlamegraphTooltipProps {
   y: number;
   unit: string;
   total: number;
-  hoveringNode: FlamegraphNode | FlamegraphRootNode | undefined;
+  hoveringNode: FlamegraphNode | FlamegraphRootNode | null | undefined;
   contextElement: Element | null;
+  isFixed?: boolean;
 }
 
 const virtualElement = {
@@ -90,10 +91,11 @@ const FlamegraphTooltip = ({
   total,
   hoveringNode,
   contextElement,
+  isFixed = false,
 }: FlamegraphTooltipProps): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
-  const {styles, attributes, ...popperProps} = usePopper(virtualElement, popperElement, {
+  const {styles, attributes, ...popperProps} = usePopper(contextElement, popperElement, {
     placement: 'auto-start',
     strategy: 'absolute',
     modifiers: [
@@ -141,62 +143,68 @@ const FlamegraphTooltip = ({
       <FlamegraphNodeTooltipTableRows hoveringNode={hoveringNode as FlamegraphNode} />
     );
 
-  return (
-    <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
-      <div className="flex">
-        <div className="m-auto">
-          <div
-            className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
-            style={{borderWidth: 1}}
-          >
-            <div className="flex flex-row">
-              <div className="ml-2 mr-6">
-                <span className="font-semibold">
-                  {hoveringFlamegraphNode.meta === undefined ? (
-                    <p>root</p>
-                  ) : (
-                    <>
-                      {hoveringFlamegraphNode.meta.function !== undefined &&
-                      hoveringFlamegraphNode.meta.function.name !== '' ? (
-                        <p>{hoveringFlamegraphNode.meta.function.name}</p>
-                      ) : (
-                        <>
-                          {hoveringFlamegraphNode.meta.location !== undefined &&
-                          parseInt(hoveringFlamegraphNode.meta.location.address, 10) !== 0 ? (
-                            <p>{hexifyAddress(hoveringFlamegraphNode.meta.location.address)}</p>
-                          ) : (
-                            <p>unknown</p>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-                </span>
-                <span className="text-gray-700 dark:text-gray-300 my-2">
-                  <table className="table-fixed">
-                    <tbody>
+  const content = (
+    <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>
+      <div className={`m-auto ${isFixed ? 'w-full h-36' : ''}`}>
+        <div
+          className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
+          style={{borderWidth: 1}}
+        >
+          <div className="flex flex-row">
+            <div className="ml-2 mr-6">
+              <span className="font-semibold">
+                {hoveringFlamegraphNode.meta === undefined ? (
+                  <p>root</p>
+                ) : (
+                  <>
+                    {hoveringFlamegraphNode.meta.function !== undefined &&
+                    hoveringFlamegraphNode.meta.function.name !== '' ? (
+                      <p>{hoveringFlamegraphNode.meta.function.name}</p>
+                    ) : (
+                      <>
+                        {hoveringFlamegraphNode.meta.location !== undefined &&
+                        parseInt(hoveringFlamegraphNode.meta.location.address, 10) !== 0 ? (
+                          <p>{hexifyAddress(hoveringFlamegraphNode.meta.location.address)}</p>
+                        ) : (
+                          <p>unknown</p>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+              </span>
+              <span className="text-gray-700 dark:text-gray-300 my-2">
+                <table className="table-fixed">
+                  <tbody>
+                    <tr>
+                      <td className="w-1/5">Cumulative</td>
+                      <td className="w-4/5">
+                        {valueFormatter(hoveringNodeCumulative, unit, 2)} (
+                        {((hoveringNodeCumulative * 100) / total).toFixed(2)}%)
+                      </td>
+                    </tr>
+                    {hoveringNode.diff !== undefined && diff !== 0 && (
                       <tr>
-                        <td className="w-1/5">Cumulative</td>
-                        <td className="w-4/5">
-                          {valueFormatter(hoveringNodeCumulative, unit, 2)} (
-                          {((hoveringNodeCumulative * 100) / total).toFixed(2)}%)
-                        </td>
+                        <td className="w-1/5">Diff</td>
+                        <td className="w-4/5">{diffText}</td>
                       </tr>
-                      {hoveringNode.diff !== undefined && diff !== 0 && (
-                        <tr>
-                          <td className="w-1/5">Diff</td>
-                          <td className="w-4/5">{diffText}</td>
-                        </tr>
-                      )}
-                      {metaRows}
-                    </tbody>
-                  </table>
-                </span>
-              </div>
+                    )}
+                    {metaRows}
+                  </tbody>
+                </table>
+              </span>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  return isFixed ? (
+    content
+  ) : (
+    <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
+      {content}
     </div>
   );
 };
