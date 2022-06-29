@@ -68,7 +68,7 @@
     "@swc/jest": "0.2.21",
     "@types/d3": "7.4.0",
     "@types/lodash.throttle": "4.1.7",
-    "chromatic": "6.6.3",
+    "chromatic": "6.6.4",
     "css-loader": "6.7.1",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-import": "2.26.0",
