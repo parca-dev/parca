@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.13.12",
+  "version": "0.13.13",
   "description": "A component library for Parca",
   "main": "src/index.tsx",
   "scripts": {
@@ -9,12 +9,12 @@
   "dependencies": {
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
-    "@parca/client": "^0.13.10",
+    "@parca/client": "^0.13.13",
     "@parca/dynamicsize": "^0.13.0",
     "@parca/functions": "^0.13.12",
     "@parca/icons": "^0.13.0",
-    "@parca/parser": "^0.13.0",
-    "@parca/profile": "^0.13.10",
+    "@parca/parser": "^0.13.13",
+    "@parca/profile": "^0.13.13",
     "@parca/store": "^0.13.12",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@types/react-datepicker": "^4.4.0",
