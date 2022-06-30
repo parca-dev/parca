@@ -15,14 +15,12 @@ package symbolizer
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/hashicorp/go-multierror"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
@@ -58,7 +56,10 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, lres.Locations)
 		if err != nil {
-			level.Error(s.logger).Log("msg", "symbolization attempt finished with errors", "err", err)
+			level.Error(s.logger).Log("msg", "symbolization round finished with errors")
+			level.Debug(s.logger).Log("msg", "errors occurred during symbolization", "err", err)
+		} else {
+			level.Info(s.logger).Log("msg", "symbolization round finished successfully")
 		}
 		return nil
 	})
@@ -117,24 +118,19 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 		locationsByMapping.Locations = append(locationsByMapping.Locations, loc)
 	}
 
-	var result *multierror.Error
 	for _, locationsByMapping := range locationsByMappings {
 		mapping := locationsByMapping.Mapping
 		locations := locationsByMapping.Locations
 		logger := log.With(s.logger, "buildid", mapping.BuildId)
-		level.Debug(logger).Log("msg", "storage symbolization request started")
 
+		level.Debug(logger).Log("msg", "storage symbolization request started")
 		// Symbolize returns a list of lines per location passed to it.
 		locationsByMapping.LocationsLines, err = s.debugInfo.Symbolize(ctx, mapping, locations)
 		if err != nil {
-			result = multierror.Append(result, fmt.Errorf("storage symbolization request failed: %w", err))
+			level.Debug(logger).Log("msg", "storage symbolization request failed", "err", err, "buildid", mapping.BuildId)
 			continue
 		}
 		level.Debug(logger).Log("msg", "storage symbolization request done")
-	}
-	err = result.ErrorOrNil()
-	if err != nil {
-		return err
 	}
 
 	numFunctions := 0
@@ -143,11 +139,21 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 			numFunctions += len(locationLines)
 		}
 	}
+	if numFunctions == 0 {
+		level.Debug(s.logger).Log("msg", "nothing to store after symbolization")
+		return nil
+	}
+	level.Debug(s.logger).Log("msg", "storing found symbols")
 
 	functions := make([]*pb.Function, numFunctions)
+	numLocations := 0
 	i := 0
 	for _, locationsByMapping := range locationsByMappings {
 		for _, locationLines := range locationsByMapping.LocationsLines {
+			if len(locationLines) == 0 {
+				continue
+			}
+			numLocations++
 			for _, line := range locationLines {
 				functions[i] = line.Function
 				i++
@@ -160,21 +166,25 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 		return err
 	}
 
+	locations = make([]*pb.Location, 0, numLocations)
 	i = 0
 	for _, locationsByMapping := range locationsByMappings {
 		for j, locationLines := range locationsByMapping.LocationsLines {
+			if len(locationLines) == 0 {
+				continue
+			}
 			lines := make([]*pb.Line, 0, len(locationLines))
 			for _, line := range locationLines {
 				lines = append(lines, &pb.Line{
 					FunctionId: fres.Functions[i].Id,
 					Line:       line.Line,
 				})
-
 				i++
 			}
 			// Update the location with the lines in-place so that in the next
 			// step we can just reuse the same locations as were originally
 			// passed in.
+			locations = append(locations, locationsByMapping.Locations[j])
 			locationsByMapping.Locations[j].Lines = &pb.LocationLines{Entries: lines}
 		}
 	}
@@ -183,6 +193,5 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 	_, err = s.metastore.CreateLocationLines(ctx, &pb.CreateLocationLinesRequest{
 		Locations: locations,
 	})
-
 	return err
 }
