@@ -152,13 +152,6 @@ func newCache(cacheCfg []byte) (*FilesystemCacheConfig, error) {
 
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
 	buildID := req.BuildId
-
-	var exists bool
-	var err error
-	defer func() {
-		level.Debug(s.logger).Log("msg", "debug info exists", "exists", exists, "buildid", buildID, "err", err)
-	}()
-
 	if err := validateInput(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -172,16 +165,17 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		metadataFile, err := s.metadataManager.fetch(ctx, buildID)
 		if err != nil {
 			if errors.Is(err, ErrMetadataNotFound) {
-				return &debuginfopb.ExistsResponse{Exists: exists}, nil
+				return &debuginfopb.ExistsResponse{Exists: false}, nil
 			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
+		// metadata.Hash should nt be empty, but let's have the check just in case.
 		if metadataFile.Hash != "" && metadataFile.Hash == req.Hash {
-			exists = true
-			return &debuginfopb.ExistsResponse{Exists: exists}, nil
+			return &debuginfopb.ExistsResponse{Exists: true}, nil
 		}
 
+		var exists bool
 		// If it is not an exact version of the source object file what we have so, let the client try to upload it.
 		if metadataFile.State == metadataStateUploading {
 			exists = !isStale(metadataFile)
@@ -189,7 +183,7 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 		return &debuginfopb.ExistsResponse{Exists: exists}, nil
 	}
 
-	return &debuginfopb.ExistsResponse{Exists: exists}, nil
+	return &debuginfopb.ExistsResponse{Exists: false}, nil
 }
 
 func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
