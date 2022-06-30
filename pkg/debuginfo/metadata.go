@@ -162,7 +162,7 @@ func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash stri
 		return nil
 	}
 
-	if metaData.BuildID != buildID {
+	if metaData.State == metadataStateUploading && metaData.BuildID != buildID {
 		return errors.New("build ids do not match")
 	}
 
