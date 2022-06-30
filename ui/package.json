@@ -62,7 +62,7 @@
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.1.0",
     "eslint-plugin-promise": "5.2.0",
-    "eslint-plugin-react": "7.30.0",
+    "eslint-plugin-react": "7.30.1",
     "eslint-plugin-react-hooks": "4.6.0",
     "eslint-plugin-standard": "5.0.0",
     "fs-extra": "10.1.0",
