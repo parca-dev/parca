@@ -6,7 +6,8 @@
     "@parca/client": "^0.13.13",
     "@parca/dynamicsize": "^0.13.0",
     "@parca/parser": "^0.13.13",
-    "d3-scale": "^4.0.2"
+    "d3-scale": "^4.0.2",
+    "@iconify/react": "^3.2.2"
   },
   "main": "src/index.tsx",
   "scripts": {

@@ -2,11 +2,13 @@ import React, {useEffect, useState} from 'react';
 import {parseParams} from '@parca/functions';
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
 import {Button, Card, SearchNodes, useGrpcMetadata, useParcaTheme} from '@parca/components';
+import {Icon} from '@iconify/react';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
 import {useQuery} from './useQuery';
 import TopTable from './TopTable';
+import {downloadPprof} from './utils';
 
 import './ProfileView.styles.css';
 
@@ -67,31 +69,18 @@ export const ProfileView = ({
     return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
   }
 
-  const downloadPProf = (e: React.MouseEvent<HTMLElement>) => {
+  const downloadPProf = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
 
-    const req = {
-      ...profileSource.QueryRequest(),
-      reportType: QueryRequest_ReportType.PPROF,
-    };
-
-    queryClient
-      .query(req, {meta: metadata})
-      .response.then(response => {
-        if (response.report.oneofKind !== 'pprof') {
-          console.log('Expected pprof report, got:', response.report.oneofKind);
-          return;
-        }
-        const blob = new Blob([response.report.pprof], {type: 'application/octet-stream'});
-
-        const link = document.createElement('a');
-        link.href = window.URL.createObjectURL(blob);
-        link.download = 'profile.pb.gz';
-        link.click();
-      })
-      .catch(error => {
-        console.error('Error while querying', error);
-      });
+    try {
+      const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = 'profile.pb.gz';
+      link.click();
+    } catch (error) {
+      console.error('Error while querying', error);
+    }
   };
 
   const resetIcicleGraph = () => setCurPath([]);
@@ -119,7 +108,11 @@ export const ProfileView = ({
           <Card.Body>
             <div className="flex py-3 w-full">
               <div className="w-2/5 flex space-x-4">
-                <div>
+                <div className="flex space-x-1">
+                  <Button color="neutral" className="w-fit">
+                    <Icon icon="ei:share-apple" width={20} />
+                  </Button>
+
                   <Button color="neutral" onClick={downloadPProf}>
                     Download pprof
                   </Button>
