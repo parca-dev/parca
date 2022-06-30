@@ -1,4 +1,25 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>parca-dev/.github"]
+  "extends": ["github>parca-dev/.github"],
+  "packageRules": [
+    {
+      "description": "Group buf packages",
+      "matchPackageNames": ["bufbuild/buf", "bufbuild/buf-setup-action"],
+      "groupName": "buf"
+    },
+    {
+      "description": "Group grpc-gateway packages",
+      "matchSourceUrls": ["https://github.com/grpc-ecosystem/grpc-gateway"],
+      "groupName": "grpc-gateway"
+    }
+  ],
+  "regexManagers": [
+    {
+      "description": "Update Buf plugins",
+      "fileMatch": ["(^|/)buf\\.gen\\.ya?ml$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)(?: (?:packageName)=(?<packageName>.+?))?(?: versioning=(?<versioning>.+?))?\\s*-?\\s*remote: ('|\")?.*:(?<currentValue>.+?)(-\\d+)?('|\")?\\s"
+      ]
+    }
+  ]
 }
