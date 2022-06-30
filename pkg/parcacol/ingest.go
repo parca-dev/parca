@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -64,6 +65,8 @@ func separateNameFromLabels(ls labels.Labels) (string, labels.Labels, error) {
 	if name == "" {
 		return "", nil, ErrMissingNameLabel
 	}
+
+	sort.Sort(out)
 
 	return name, out, nil
 }
