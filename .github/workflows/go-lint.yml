@@ -4,24 +4,39 @@ on:
     tags:
       - v*
     branches: [ main ]
-    paths:
-      - '**.go'
-      - .golangci.yml
-      - .github/workflows/go-lint.yml
   pull_request:
     branches: [ main ]
-    paths:
-      - '**.go'
-      - .golangci.yml
-      - .github/workflows/go-lint.yml
 
 env:
   # renovate: datasource=go depName=github.com/golangci/golangci-lint
   GOLANGCI_LINT_VERSION: v1.46.2
 
 jobs:
+  skip-check:
+    name: Skip check
+    # continue-on-error: true # Uncomment once integration is finished
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip-check.outputs.should_skip }}
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - id: skip-check
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+        with:
+          do_not_skip: '["push", "schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              "**.go",
+              ".golangci.yml",
+              ".github/workflows/go-lint.yml"
+            ]
+
   lint:
     name: Go Lint
+    needs: skip-check
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2

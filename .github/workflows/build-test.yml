@@ -3,20 +3,8 @@ name: Go
 on:
   push:
     branches: [ main ]
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - ui/**
-      - .github/workflows/build-test.yml
   pull_request:
     branches: [ main ]
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - ui/**
-      - .github/workflows/build-test.yml
 
 env:
   # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
@@ -25,8 +13,33 @@ env:
   UBUNTU_VERSION: '20.04'
 
 jobs:
+  skip-check:
+    name: Skip check
+    # continue-on-error: true # Uncomment once integration is finished
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip-check.outputs.should_skip }}
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - id: skip-check
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+        with:
+          do_not_skip: '["schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              "**.go",
+              "go.mod",
+              "go.sum",
+              "ui/**",
+              ".github/workflows/build-test.yml"
+            ]
+
   build-and-test-multi-arch:
     name: Test on ${{ matrix.arch }}
+    needs: skip-check
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     # Run steps on a matrix of 2 arch.
     strategy:
