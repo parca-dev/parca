@@ -15,7 +15,7 @@ env:
 jobs:
   skip-check:
     name: Skip check
-    # continue-on-error: true # Uncomment once integration is finished
+    continue-on-error: true
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip-check.outputs.should_skip }}
