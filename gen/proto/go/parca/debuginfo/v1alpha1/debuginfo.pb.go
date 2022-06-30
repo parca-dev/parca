@@ -220,7 +220,7 @@ type UploadInfo struct {
 
 	// build_id is a unique identifier for the debug data
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
-	// hash is the hash of the debug information file
+	// hash is the hash of the source file that debug information extracted from
 	Hash string `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`
 }
 

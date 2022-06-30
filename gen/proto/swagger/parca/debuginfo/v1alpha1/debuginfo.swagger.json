@@ -63,7 +63,7 @@
         },
         "hash": {
           "type": "string",
-          "title": "hash is the hash of the debug information file"
+          "title": "hash is the hash of the source file that debug information extracted from"
         }
       },
       "title": "UploadInfo contains the build_id and other metadata for the debug data"

@@ -73,7 +73,7 @@ jobs:
     - name: Test
       if: ${{ matrix.arch == 'amd64' }}
       run: |
-        make test
+        make test ENABLE_RACE=yes
 
     - name: Benchmark
       if: ${{ matrix.arch == 'amd64' }}
