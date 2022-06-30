@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/hashicorp/go-multierror"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
@@ -119,26 +118,20 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 		locationsByMapping.Locations = append(locationsByMapping.Locations, loc)
 	}
 
-	var result *multierror.Error
 	for _, locationsByMapping := range locationsByMappings {
 		mapping := locationsByMapping.Mapping
 		locations := locationsByMapping.Locations
 		logger := log.With(s.logger, "buildid", mapping.BuildId)
-		level.Debug(logger).Log("msg", "storage symbolization request started")
 
+		level.Debug(logger).Log("msg", "storage symbolization request started")
 		// Symbolize returns a list of lines per location passed to it.
 		locationsByMapping.LocationsLines, err = s.debugInfo.Symbolize(ctx, mapping, locations)
 		if err != nil {
-			result = multierror.Append(result, err)
+			level.Debug(logger).Log("msg", "storage symbolization request failed", "err", err, "buildid", mapping.BuildId)
 			continue
 		}
 		level.Debug(logger).Log("msg", "storage symbolization request done")
 	}
-
-	if err := result.ErrorOrNil(); err != nil {
-		level.Warn(s.logger).Log("msg", "storage symbolization request finished with errors", "err", err)
-	}
-	level.Debug(s.logger).Log("msg", "storing found symbols")
 
 	numFunctions := 0
 	for _, locationsByMapping := range locationsByMappings {
@@ -146,11 +139,21 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 			numFunctions += len(locationLines)
 		}
 	}
+	if numFunctions == 0 {
+		level.Debug(s.logger).Log("msg", "nothing to store after symbolization")
+		return nil
+	}
+	level.Debug(s.logger).Log("msg", "storing found symbols")
 
 	functions := make([]*pb.Function, numFunctions)
+	numLocations := 0
 	i := 0
 	for _, locationsByMapping := range locationsByMappings {
 		for _, locationLines := range locationsByMapping.LocationsLines {
+			if len(locationLines) == 0 {
+				continue
+			}
+			numLocations++
 			for _, line := range locationLines {
 				functions[i] = line.Function
 				i++
@@ -163,21 +166,25 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 		return err
 	}
 
+	locations = make([]*pb.Location, 0, numLocations)
 	i = 0
 	for _, locationsByMapping := range locationsByMappings {
 		for j, locationLines := range locationsByMapping.LocationsLines {
+			if len(locationLines) == 0 {
+				continue
+			}
 			lines := make([]*pb.Line, 0, len(locationLines))
 			for _, line := range locationLines {
 				lines = append(lines, &pb.Line{
 					FunctionId: fres.Functions[i].Id,
 					Line:       line.Line,
 				})
-
 				i++
 			}
 			// Update the location with the lines in-place so that in the next
 			// step we can just reuse the same locations as were originally
 			// passed in.
+			locations = append(locations, locationsByMapping.Locations[j])
 			locationsByMapping.Locations[j].Lines = &pb.LocationLines{Entries: lines}
 		}
 	}
