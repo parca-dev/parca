@@ -86,7 +86,7 @@ export interface UploadInfo {
      */
     buildId: string;
     /**
-     * hash is the hash of the debug information file
+     * hash is the hash of the source file that debug information extracted from
      *
      * @generated from protobuf field: string hash = 2;
      */
