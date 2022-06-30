@@ -159,7 +159,7 @@ push-signed-quay-container:
 
 .PHONY: deploy/manifests
 deploy/manifests:
-	cd deploy && make manifests
+	$(MAKE) -C deploy SEPARATE_UI=false manifests
 
 .PHONY: dev/setup
 dev/setup:
