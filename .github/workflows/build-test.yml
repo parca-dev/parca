@@ -15,8 +15,6 @@ env:
 jobs:
   build-and-test-multi-arch:
     name: Test on ${{ matrix.arch }}
-    needs: skip-check
-    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     # Run steps on a matrix of 2 arch.
     strategy:
@@ -24,9 +22,6 @@ jobs:
         arch:
           - amd64
           - arm64
-    permissions:
-      actions: write
-      contents: read
     steps:
       - id: skip-check
         uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
