@@ -24,6 +24,8 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
+// NormalizedProfileToParquetBuffer converts a normalized profile to a Parquet
+// buffer. The passed labels must be sorted.
 func NormalizedProfileToParquetBuffer(schema *dynparquet.Schema, ls labels.Labels, p *profile.NormalizedProfile) (*dynparquet.Buffer, error) {
 	names := labelNames(ls)
 	pprofLabels := profileLabelNames(p)
@@ -43,7 +45,6 @@ func NormalizedProfileToParquetBuffer(schema *dynparquet.Schema, ls labels.Label
 		r = SampleToParquetRow(
 			schema,
 			r[:0],
-			names,
 			pprofLabels,
 			pprofNumLabels,
 			ls,
@@ -103,10 +104,12 @@ func profileNumLabelNames(p *profile.NormalizedProfile) []string {
 	return names
 }
 
+// SampleToParquetRow converts a sample to a Parquet row. The passed labels
+// must be sorted.
 func SampleToParquetRow(
 	schema *dynparquet.Schema,
 	row parquet.Row,
-	labelNames, profileLabelNames, profileNumLabelNames []string,
+	profileLabelNames, profileNumLabelNames []string,
 	ls labels.Labels,
 	meta profile.Meta,
 	s *profile.NormalizedSample,
@@ -150,28 +153,9 @@ func SampleToParquetRow(
 
 		// All remaining cases take care of dynamic columns
 		case ColumnLabels:
-			labelNamesLen := len(labelNames)
-			i, j := 0, 0
-			for i < labelNamesLen {
-				if labelNames[i] == ls[j].Name {
-					value := parquet.ValueOf(ls[j].Value).Level(0, 1, columnIndex)
-					row = append(row, value)
-					columnIndex++
-					i++
-					j++
-
-					if j >= len(ls) {
-						for ; i < labelNamesLen; i++ {
-							row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-						}
-						break
-					}
-				} else {
-					// If nothing matches we add a NULL to the column
-					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-					columnIndex++
-					i++
-				}
+			for _, label := range ls {
+				row = append(row, parquet.ValueOf(label.Value).Level(0, 1, columnIndex))
+				columnIndex++
 			}
 		case ColumnPprofLabels:
 			for _, name := range profileLabelNames {
