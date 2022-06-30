@@ -176,10 +176,11 @@ func ValidateFile(path string) error {
 
 // ValidateHeader returns an error if the given object file header is not valid.
 func ValidateHeader(r io.Reader) error {
-	// TODO(kakkoyun): Introduce a pool if this creates too many allocations.
-
 	// Identity reader.
 	buf := bytes.NewBuffer(nil)
+	// limitio.Writer is used to avoid buffer overflow.
+	// We only need to read the first 2 bytes.
+	// If we receive a longer data, we will ignore the rest without an error.
 	w := limitio.NewWriter(buf, 16, true)
 
 	// NOTICE: The ELF header is 52 or 64 bytes long for 32-bit and 64-bit binaries respectively

@@ -24,7 +24,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-kit/log"
@@ -76,8 +75,6 @@ type Store struct {
 
 	symbolizer      *symbol.Symbolizer
 	metadataManager *metadataManager
-
-	pool sync.Pool
 }
 
 // NewStore returns a new debug info store.
@@ -109,11 +106,6 @@ func NewStore(logger log.Logger, symbolizer *symbol.Symbolizer, config *Config, 
 		symbolizer:       symbolizer,
 		debuginfodClient: debuginfodClient,
 		metadataManager:  newMetadataManager(logger, bucket),
-		pool: sync.Pool{
-			New: func() interface{} {
-				return bytes.NewBuffer(nil)
-			},
-		},
 	}, nil
 }
 
@@ -285,24 +277,28 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		}
 	}
 
+	// At this point we know that we received a better version of the debug information file,
+	// so let the client upload it.
+
 	if err := s.metadataManager.markAsUploading(ctx, buildID); err != nil {
 		err = fmt.Errorf("failed to update metadata before uploading: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
 
-	//nolint:forcetypeassert
-	b := s.pool.Get().(*bytes.Buffer)
-	// NOTICE: The ELF header is 52 or 64 bytes long for 32-bit and 64-bit binaries respectively.
-	buf := limitio.NewWriter(b, 64, true)
-	defer func() {
-		b.Reset()
-		s.pool.Put(b)
-	}()
+	// limitio.Writer is used to avoid buffer overflow.
+	// We only need to read the first 64 bytes (at most).
+	// The ELF header is 52 or 64 bytes long for 32-bit and 64-bit binaries respectively.
+	// If we receive a longer data, we will ignore the rest without an error.
+	b := bytes.NewBuffer(nil)
+	w := limitio.NewWriter(b, 64, true)
 
-	// At this point we know that we received a better version of the debug information file,
-	// so let the client upload it.
-
-	if err := s.bucket.Upload(ctx, objectPath(buildID), io.TeeReader(r, buf)); err != nil {
+	// Here we're optimistically uploading the received stream directly to the bucket,
+	// and if something goes wrong we mark it as corrupted, so it could be overwritten in subsequent calls.
+	// We only want to make sure we don't read a corrupted file while symbolizing.
+	// Ww also wanted to prevent any form of buffering for this data on the server-side,
+	// thus the optimistic writes directly to the object-store while also writing the header of the file into a buffer,
+	// so we can validate the ELF header.
+	if err := s.bucket.Upload(ctx, objectPath(buildID), io.TeeReader(r, w)); err != nil {
 		msg := "failed to upload"
 		level.Error(s.logger).Log("msg", msg, "err", err)
 		return status.Errorf(codes.Unknown, msg)
