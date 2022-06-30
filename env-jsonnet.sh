@@ -11,5 +11,5 @@ go install "github.com/google/go-jsonnet/cmd/jsonnet@${JSONNET_VERSION}"
 go install "github.com/google/go-jsonnet/cmd/jsonnetfmt@${JSONNET_VERSION}"
 
 # renovate: datasource=go depName=github.com/jsonnet-bundler/jsonnet-bundler
-JB_VERSION='v0.4.0'
+JB_VERSION='v0.5.1'
 go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@${JB_VERSION}
