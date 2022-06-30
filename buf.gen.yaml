@@ -7,29 +7,33 @@ managed:
       - buf.build/googleapis/googleapis
 
 plugins:
+  # renovate: datasource=github-releases depName=protocolbuffers/protobuf-go
   - remote: buf.build/protocolbuffers/plugins/go:v1.28.0-1
     out: gen/proto/go
     opt: paths=source_relative
 
+  # renovate: datasource=github-releases depName=cerbos/vtprotobuf
   - remote: buf.build/cerbos/plugins/vtproto:v0.2.0-1
     out: gen/proto/go
     opt:
       - paths=source_relative,features=marshal+unmarshal+size+pool+grpc
 
+  # renovate: datasource=github-releases depName=timostamm/protobuf-ts
   - remote: buf.build/timostamm/plugins/protobuf-ts:v2.2.2-1
     out: ui/packages/shared/client/src
     opt:
       - long_type_string
       - generate_dependencies
 
-  - remote: buf.build/grpc-ecosystem/plugins/grpc-gateway:v2.10.0-1
+  # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-gateway
+  - remote: buf.build/grpc-ecosystem/plugins/grpc-gateway:v2.10.3-1
     out: gen/proto/go
     opt:
       - paths=source_relative
       - generate_unbound_methods=true
 
-#  - name: openapiv2
-  - remote: buf.build/grpc-ecosystem/plugins/openapiv2:v2.10.0-1
+  # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-gateway
+  - remote: buf.build/grpc-ecosystem/plugins/openapiv2:v2.10.3-1
     out: gen/proto/swagger
     opt:
       - allow_merge=false
