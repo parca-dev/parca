@@ -12,8 +12,8 @@ plugins:
     out: gen/proto/go
     opt: paths=source_relative
 
-  # renovate: datasource=github-releases depName=cerbos/vtprotobuf
-  - remote: buf.build/cerbos/plugins/vtproto:v0.2.0-1
+  # renovate: datasource=github-releases depName=planetscale/vtprotobuf
+  - remote: buf.build/planetscale/plugins/vtproto:v0.3.0
     out: gen/proto/go
     opt:
       - paths=source_relative,features=marshal+unmarshal+size+pool+grpc
