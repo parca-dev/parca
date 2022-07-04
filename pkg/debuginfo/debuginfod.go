@@ -37,7 +37,7 @@ type DebugInfodClient interface {
 type NopDebugInfodClient struct{}
 
 func (NopDebugInfodClient) GetDebugInfo(context.Context, string) (io.ReadCloser, error) {
-	return io.NopCloser(bytes.NewReader(nil)), errDebugInfoNotFound
+	return io.NopCloser(bytes.NewReader(nil)), ErrDebugInfoNotFound
 }
 
 type HTTPDebugInfodClient struct {
@@ -175,7 +175,7 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 			return rc, nil
 		}
 	}
-	return nil, errDebugInfoNotFound
+	return nil, ErrDebugInfoNotFound
 }
 
 func (c *HTTPDebugInfodClient) request(ctx context.Context, u url.URL, buildID string) (io.ReadCloser, error) {
@@ -200,7 +200,7 @@ func (c *HTTPDebugInfodClient) request(ctx context.Context, u url.URL, buildID s
 		return resp.Body, nil
 	case 4:
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, errDebugInfoNotFound
+			return nil, ErrDebugInfoNotFound
 		}
 		return nil, fmt.Errorf("client error: %s", resp.Status)
 	case 5:

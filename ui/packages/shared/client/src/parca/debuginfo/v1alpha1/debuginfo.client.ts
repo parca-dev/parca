@@ -4,6 +4,9 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { DebugInfoService } from "./debuginfo";
+import type { DownloadResponse } from "./debuginfo";
+import type { DownloadRequest } from "./debuginfo";
+import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
 import type { UploadResponse } from "./debuginfo";
 import type { UploadRequest } from "./debuginfo";
 import type { ClientStreamingCall } from "@protobuf-ts/runtime-rpc";
@@ -30,6 +33,12 @@ export interface IDebugInfoServiceClient {
      * @generated from protobuf rpc: Upload(stream parca.debuginfo.v1alpha1.UploadRequest) returns (parca.debuginfo.v1alpha1.UploadResponse);
      */
     upload(options?: RpcOptions): ClientStreamingCall<UploadRequest, UploadResponse>;
+    /**
+     * Download returns the debug info for a given build_id.
+     *
+     * @generated from protobuf rpc: Download(parca.debuginfo.v1alpha1.DownloadRequest) returns (stream parca.debuginfo.v1alpha1.DownloadResponse);
+     */
+    download(input: DownloadRequest, options?: RpcOptions): ServerStreamingCall<DownloadRequest, DownloadResponse>;
 }
 /**
  * DebugInfoService is a service that allows storage of debug info
@@ -59,5 +68,14 @@ export class DebugInfoServiceClient implements IDebugInfoServiceClient, ServiceI
     upload(options?: RpcOptions): ClientStreamingCall<UploadRequest, UploadResponse> {
         const method = this.methods[1], opt = this._transport.mergeOptions(options);
         return stackIntercept<UploadRequest, UploadResponse>("clientStreaming", this._transport, method, opt);
+    }
+    /**
+     * Download returns the debug info for a given build_id.
+     *
+     * @generated from protobuf rpc: Download(parca.debuginfo.v1alpha1.DownloadRequest) returns (stream parca.debuginfo.v1alpha1.DownloadResponse);
+     */
+    download(input: DownloadRequest, options?: RpcOptions): ServerStreamingCall<DownloadRequest, DownloadResponse> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<DownloadRequest, DownloadResponse>("serverStreaming", this._transport, method, opt, input);
     }
 }

@@ -36,6 +36,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
+	"github.com/thanos-io/objstore/client"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -46,6 +47,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -226,7 +228,32 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		}
 	}
 
-	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo, debugInfodClient)
+	bucketCfg, err := yaml.Marshal(cfg.DebugInfo.Bucket)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to marshal debuginfo bucket config", "err", err)
+		return err
+	}
+
+	bucket, err := client.NewBucket(logger, bucketCfg, "parca/store")
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize debuginfo object store bucket", "err", err)
+		return err
+	}
+
+	debugInfoCache, err := debuginfo.NewCache(cfg.DebugInfo.Cache)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize debuginfo cache", "err", err)
+		return err
+	}
+
+	dbgInfoMetadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
+	dbgInfo, err := debuginfo.NewStore(
+		logger,
+		debugInfoCache.Directory,
+		dbgInfoMetadata,
+		bucket,
+		debugInfodClient,
+	)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err
@@ -256,7 +283,14 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 	{
-		s := symbolizer.New(logger, metastore, dbgInfo)
+		s := symbolizer.New(
+			logger,
+			metastore,
+			dbgInfo,
+			sym,
+			debugInfoCache.Directory,
+			debugInfoCache.Directory,
+		)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
 			func() error {
