@@ -3,20 +3,8 @@ name: Go
 on:
   push:
     branches: [ main ]
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - ui/**
-      - .github/workflows/build-test.yml
   pull_request:
     branches: [ main ]
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - ui/**
-      - .github/workflows/build-test.yml
 
 env:
   # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
@@ -35,10 +23,25 @@ jobs:
           - amd64
           - arm64
     steps:
+    - id: skip-check
+      uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+      continue-on-error: true
+      with:
+        do_not_skip: '["schedule", "workflow_dispatch"]'
+        paths: |-
+          [
+            "**.go",
+            "go.mod",
+            "go.sum",
+            "ui/**",
+            ".github/workflows/build-test.yml"
+          ]
+
     - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' }}
 
     - name: Set up Go
-      if: ${{ matrix.arch == 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
       with:
         go-version-file: .go-version
@@ -46,29 +49,29 @@ jobs:
         cache: true
 
     - name: Set up Node.js
-      if: ${{ matrix.arch == 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
       with:
         node-version-file: .node-version
         cache: 'yarn'
 
     - name: Build
-      if: ${{ matrix.arch == 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       run: |
         make build
 
     - name: Test
-      if: ${{ matrix.arch == 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       run: |
         make test ENABLE_RACE=yes
 
     - name: Benchmark
-      if: ${{ matrix.arch == 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       run: |
         make go/bench
 
     - name: Archive generated artifacts
-      if: ${{ matrix.arch == 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
       with:
         name: parca-bin
@@ -77,7 +80,7 @@ jobs:
           bin
 
     - name: 'Run ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
       run: |
         # Install QEMU and it's dependencies.
         sudo apt-get update -y
@@ -97,7 +100,7 @@ jobs:
           bash -c 'uname -m && sleep 1d'
 
     - name: 'Install packages on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
       run: |
         # Install necessary packages on the ubuntu container which will be used
         # by below steps.
@@ -108,7 +111,7 @@ jobs:
         EOF
 
     - name: 'Setup Go on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
       run: |
         # Install Golang, which will be used to build the code.
         docker exec -i ubuntu bash <<EOF
@@ -121,7 +124,7 @@ jobs:
         EOF
 
     - name: 'Test on ${{ matrix.arch }}'
-      if: ${{ matrix.arch != 'amd64' }}
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
       run: |
         # Run Go Tests. This is a very slow operation on ARM container.
         docker exec -i ubuntu bash <<EOF
