@@ -25,6 +25,7 @@ jobs:
               "buf.gen.yaml",
               "buf.work.yaml"
             ]
+          skip_after_successful_duplicate: false
 
   build:
     name: Proto PR Checks

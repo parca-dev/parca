@@ -26,6 +26,8 @@ jobs:
               "ui/**",
               ".github/workflows/ui.yml"
             ]
+          skip_after_successful_duplicate: false
+
   test:
     name: UI Test and Lint
     needs: skip-check

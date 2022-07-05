@@ -39,6 +39,7 @@ jobs:
               "gen/**",
               ".github/workflows/release-dry-run.yml"
             ]
+          skip_after_successful_duplicate: false
 
   goreleaser:
     name: Release (Dry Run)

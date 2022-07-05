@@ -28,6 +28,7 @@ jobs:
                "go.sum",
                ".github/workflows/docs.yml"
             ]
+          skip_after_successful_duplicate: false
 
   docs:
     needs: skip-check
