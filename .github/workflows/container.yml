@@ -24,7 +24,7 @@ jobs:
       - id: skip-check
         uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
         with:
-          do_not_skip: '["schedule", "workflow_dispatch"]'
+          do_not_skip: '["schedule", "workflow_dispatch", "push"]' # We don't want to skip on push as pull requests don't publish the image, they just test-build them. Deduplicating this is incorrect as the workflow run was not actually identical.
           paths: |-
             [
                "**.go",
