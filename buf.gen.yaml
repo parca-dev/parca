@@ -12,14 +12,14 @@ plugins:
     out: gen/proto/go
     opt: paths=source_relative
 
-  # renovate: datasource=github-releases depName=cerbos/vtprotobuf
-  - remote: buf.build/cerbos/plugins/vtproto:v0.2.0-1
+  # renovate: datasource=github-releases depName=planetscale/vtprotobuf
+  - remote: buf.build/planetscale/plugins/vtproto:v0.3.0
     out: gen/proto/go
     opt:
       - paths=source_relative,features=marshal+unmarshal+size+pool+grpc
 
   # renovate: datasource=github-releases depName=timostamm/protobuf-ts
-  - remote: buf.build/timostamm/plugins/protobuf-ts:v2.2.2-1
+  - remote: buf.build/timostamm/plugins/protobuf-ts:v2.7.0-1
     out: ui/packages/shared/client/src
     opt:
       - long_type_string

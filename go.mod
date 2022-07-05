@@ -19,21 +19,21 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
-	github.com/google/pprof v0.0.0-20220520215854-d04f2422c8a1
+	github.com/google/pprof v0.0.0-20220608213341-c488b8fa1db3
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-20201002093600-73cf2ae9d891
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20201207153454-9f6bf00c00a7
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.3
-	github.com/hashicorp/go-multierror v1.1.1
-	github.com/ianlancetaylor/demangle v0.0.0-20220319035150-800ac71e25c2
+	github.com/ianlancetaylor/demangle v0.0.0-20220517205856-0058ec4f073c
 	github.com/improbable-eng/grpc-web v0.15.0
+	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20220627125235-571b4dc57775
+	github.com/polarsignals/frostdb v0.0.0-20220629173648-42eb27a93c4b
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.35.0
 	github.com/prometheus/prometheus v0.36.2
-	github.com/segmentio/parquet-go v0.0.0-20220623195409-8b4d4260d8cb
+	github.com/segmentio/parquet-go v0.0.0-20220630161706-7691e3e37eea
 	github.com/stretchr/testify v1.7.5
 	github.com/thanos-io/objstore v0.0.0-20220324141029-c4f11442aa33
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.32.0
