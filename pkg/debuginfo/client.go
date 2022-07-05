@@ -29,6 +29,11 @@ import (
 
 var ErrDebugInfoAlreadyExists = errors.New("debug info already exists")
 
+// ChunkSize 8MB is the size of the chunks in which debuginfo files are
+// uploaded and downloaded. AWS S3 has a minimum of 5MB for multi part uploads
+// and a maximum of 15MB, and a default of 8MB.
+var ChunkSize = 1024 * 1024 * 8
+
 type Client struct {
 	c debuginfopb.DebugInfoServiceClient
 }
@@ -73,7 +78,8 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 	}
 
 	reader := bufio.NewReader(r)
-	buffer := make([]byte, 1024)
+
+	buffer := make([]byte, ChunkSize)
 
 	bytesSent := 0
 	for {
@@ -114,6 +120,69 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 		return 0, fmt.Errorf("close and receive: %w", err)
 	}
 	return res.Size, nil
+}
+
+type Downloader struct {
+	stream debuginfopb.DebugInfoService_DownloadClient
+	info   *debuginfopb.DownloadInfo
+}
+
+func (c *Client) Downloader(ctx context.Context, buildID string) (*Downloader, error) {
+	stream, err := c.c.Download(ctx, &debuginfopb.DownloadRequest{
+		BuildId: buildID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("initiate download: %w", err)
+	}
+
+	res, err := stream.Recv()
+	if err != nil {
+		return nil, fmt.Errorf("receive download info: %w", err)
+	}
+
+	info := res.GetInfo()
+	if info == nil {
+		return nil, fmt.Errorf("download info is nil")
+	}
+
+	return &Downloader{
+		stream: stream,
+		info:   info,
+	}, nil
+}
+
+func (d *Downloader) Info() *debuginfopb.DownloadInfo {
+	return d.info
+}
+
+func (d *Downloader) Close() error {
+	return d.stream.CloseSend()
+}
+
+func (d *Downloader) Download(ctx context.Context, w io.Writer) (int, error) {
+	bytesWritten := 0
+	for {
+		res, err := d.stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return bytesWritten, fmt.Errorf("receive next chunk: %w", err)
+		}
+
+		chunkData := res.GetChunkData()
+		if chunkData == nil {
+			return bytesWritten, fmt.Errorf("chunk does not contain data")
+		}
+
+		n, err := w.Write(chunkData)
+		if err != nil {
+			return bytesWritten, fmt.Errorf("write next chunk: %w", err)
+		}
+		bytesWritten += n
+	}
+
+	return bytesWritten, nil
 }
 
 func sentinelError(err error) error {

@@ -111,6 +111,86 @@ export interface UploadResponse {
      */
     size: string;
 }
+/**
+ * DownloadRequest upload debug info
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.DownloadRequest
+ */
+export interface DownloadRequest {
+    /**
+     * build_id is a unique identifier for the debug data
+     *
+     * @generated from protobuf field: string build_id = 1;
+     */
+    buildId: string;
+}
+/**
+ * DownloadRequest returns chunked data of the debuginfo.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.DownloadResponse
+ */
+export interface DownloadResponse {
+    /**
+     * @generated from protobuf oneof: data
+     */
+    data: {
+        oneofKind: "info";
+        /**
+         * info is the metadata for the debug info
+         *
+         * @generated from protobuf field: parca.debuginfo.v1alpha1.DownloadInfo info = 1;
+         */
+        info: DownloadInfo;
+    } | {
+        oneofKind: "chunkData";
+        /**
+         * chunk_data is the raw bytes of the debug info
+         *
+         * @generated from protobuf field: bytes chunk_data = 2;
+         */
+        chunkData: Uint8Array;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * DownloadInfo metadata for the debug data that is being downloaded.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.DownloadInfo
+ */
+export interface DownloadInfo {
+    /**
+     * Source indicates the origin of the debuginfo being downloaded.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DownloadInfo.Source source = 1;
+     */
+    source: DownloadInfo_Source;
+}
+/**
+ * Source enum describes the source a debuginfo is from.
+ *
+ * @generated from protobuf enum parca.debuginfo.v1alpha1.DownloadInfo.Source
+ */
+export enum DownloadInfo_Source {
+    /**
+     * To understand when no source is set we have the unknown source.
+     *
+     * @generated from protobuf enum value: SOURCE_UNKNOWN_UNSPECIFIED = 0;
+     */
+    UNKNOWN_UNSPECIFIED = 0,
+    /**
+     * The debuginfo was uploaded by a user/agent.
+     *
+     * @generated from protobuf enum value: SOURCE_UPLOAD = 1;
+     */
+    UPLOAD = 1,
+    /**
+     * The debuginfo was downloaded from a public debuginfod server.
+     *
+     * @generated from protobuf enum value: SOURCE_DEBUGINFOD = 2;
+     */
+    DEBUGINFOD = 2
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class ExistsRequest$Type extends MessageType<ExistsRequest> {
     constructor() {
@@ -380,10 +460,165 @@ class UploadResponse$Type extends MessageType<UploadResponse> {
  * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.UploadResponse
  */
 export const UploadResponse = new UploadResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DownloadRequest$Type extends MessageType<DownloadRequest> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.DownloadRequest", [
+            { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DownloadRequest>): DownloadRequest {
+        const message = { buildId: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<DownloadRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadRequest): DownloadRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string build_id */ 1:
+                    message.buildId = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DownloadRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string build_id = 1; */
+        if (message.buildId !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.buildId);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.DownloadRequest
+ */
+export const DownloadRequest = new DownloadRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DownloadResponse$Type extends MessageType<DownloadResponse> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.DownloadResponse", [
+            { no: 1, name: "info", kind: "message", oneof: "data", T: () => DownloadInfo },
+            { no: 2, name: "chunk_data", kind: "scalar", oneof: "data", T: 12 /*ScalarType.BYTES*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DownloadResponse>): DownloadResponse {
+        const message = { data: { oneofKind: undefined } };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<DownloadResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadResponse): DownloadResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* parca.debuginfo.v1alpha1.DownloadInfo info */ 1:
+                    message.data = {
+                        oneofKind: "info",
+                        info: DownloadInfo.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).info)
+                    };
+                    break;
+                case /* bytes chunk_data */ 2:
+                    message.data = {
+                        oneofKind: "chunkData",
+                        chunkData: reader.bytes()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DownloadResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* parca.debuginfo.v1alpha1.DownloadInfo info = 1; */
+        if (message.data.oneofKind === "info")
+            DownloadInfo.internalBinaryWrite(message.data.info, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* bytes chunk_data = 2; */
+        if (message.data.oneofKind === "chunkData")
+            writer.tag(2, WireType.LengthDelimited).bytes(message.data.chunkData);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.DownloadResponse
+ */
+export const DownloadResponse = new DownloadResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DownloadInfo$Type extends MessageType<DownloadInfo> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.DownloadInfo", [
+            { no: 1, name: "source", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DownloadInfo.Source", DownloadInfo_Source, "SOURCE_"] }
+        ]);
+    }
+    create(value?: PartialMessage<DownloadInfo>): DownloadInfo {
+        const message = { source: 0 };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<DownloadInfo>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadInfo): DownloadInfo {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* parca.debuginfo.v1alpha1.DownloadInfo.Source source */ 1:
+                    message.source = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DownloadInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* parca.debuginfo.v1alpha1.DownloadInfo.Source source = 1; */
+        if (message.source !== 0)
+            writer.tag(1, WireType.Varint).int32(message.source);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.DownloadInfo
+ */
+export const DownloadInfo = new DownloadInfo$Type();
 /**
  * @generated ServiceType for protobuf service parca.debuginfo.v1alpha1.DebugInfoService
  */
 export const DebugInfoService = new ServiceType("parca.debuginfo.v1alpha1.DebugInfoService", [
     { name: "Exists", options: {}, I: ExistsRequest, O: ExistsResponse },
-    { name: "Upload", clientStreaming: true, options: {}, I: UploadRequest, O: UploadResponse }
+    { name: "Upload", clientStreaming: true, options: {}, I: UploadRequest, O: UploadResponse },
+    { name: "Download", serverStreaming: true, options: {}, I: DownloadRequest, O: DownloadResponse }
 ]);

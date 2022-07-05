@@ -35,33 +35,33 @@ var (
 	ErrMetadataNotFound = errors.New("debug info metadata not found")
 )
 
-type metadataState int64
+type MetadataState int64
 
 const (
-	metadataStateUnknown metadataState = iota
+	MetadataStateUnknown MetadataState = iota
 	// The debug info file is being uploaded.
-	metadataStateUploading
+	MetadataStateUploading
 	// The debug info file is fully uploaded.
-	metadataStateUploaded
+	MetadataStateUploaded
 	// The debug info file is corrupted.
-	metadataStateCorrupted
+	MetadataStateCorrupted
 )
 
-var mdStateStr = map[metadataState]string{
-	metadataStateUnknown:   "METADATA_STATE_UNKNOWN",
-	metadataStateUploading: "METADATA_STATE_UPLOADING",
-	metadataStateUploaded:  "METADATA_STATE_UPLOADED",
-	metadataStateCorrupted: "METADATA_STATE_CORRUPTED",
+var mdStateStr = map[MetadataState]string{
+	MetadataStateUnknown:   "METADATA_STATE_UNKNOWN",
+	MetadataStateUploading: "METADATA_STATE_UPLOADING",
+	MetadataStateUploaded:  "METADATA_STATE_UPLOADED",
+	MetadataStateCorrupted: "METADATA_STATE_CORRUPTED",
 }
 
-var strMdState = map[string]metadataState{
-	"METADATA_STATE_UNKNOWN":   metadataStateUnknown,
-	"METADATA_STATE_UPLOADING": metadataStateUploading,
-	"METADATA_STATE_UPLOADED":  metadataStateUploaded,
-	"METADATA_STATE_CORRUPTED": metadataStateCorrupted,
+var strMdState = map[string]MetadataState{
+	"METADATA_STATE_UNKNOWN":   MetadataStateUnknown,
+	"METADATA_STATE_UPLOADING": MetadataStateUploading,
+	"METADATA_STATE_UPLOADED":  MetadataStateUploaded,
+	"METADATA_STATE_CORRUPTED": MetadataStateCorrupted,
 }
 
-func (m metadataState) String() string {
+func (m MetadataState) String() string {
 	val, ok := mdStateStr[m]
 	if !ok {
 		return "<not found>"
@@ -69,14 +69,14 @@ func (m metadataState) String() string {
 	return val
 }
 
-func (m metadataState) MarshalJSON() ([]byte, error) {
+func (m MetadataState) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString(`"`)
 	buffer.WriteString(mdStateStr[m])
 	buffer.WriteString(`"`)
 	return buffer.Bytes(), nil
 }
 
-func (m *metadataState) UnmarshalJSON(b []byte) error {
+func (m *MetadataState) UnmarshalJSON(b []byte) error {
 	var s string
 	err := json.Unmarshal(b, &s)
 	if err != nil {
@@ -86,27 +86,27 @@ func (m *metadataState) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type metadataManager struct {
+type ObjectStoreMetadata struct {
 	logger log.Logger
 
 	bucket objstore.Bucket
 }
 
-func newMetadataManager(logger log.Logger, bucket objstore.Bucket) *metadataManager {
-	return &metadataManager{logger: log.With(logger, "component", "debuginfo-metadata"), bucket: bucket}
+func NewObjectStoreMetadata(logger log.Logger, bucket objstore.Bucket) *ObjectStoreMetadata {
+	return &ObjectStoreMetadata{logger: log.With(logger, "component", "debuginfo-metadata"), bucket: bucket}
 }
 
-type metadata struct {
-	State            metadataState `json:"state"`
+type Metadata struct {
+	State            MetadataState `json:"state"`
 	BuildID          string        `json:"build_id"`
 	Hash             string        `json:"hash"`
 	UploadStartedAt  int64         `json:"upload_started_at"`
 	UploadFinishedAt int64         `json:"upload_finished_at"`
 }
 
-func (m *metadataManager) markAsCorrupted(ctx context.Context, buildID string) error {
-	if err := m.write(ctx, buildID, &metadata{
-		State: metadataStateCorrupted,
+func (m *ObjectStoreMetadata) MarkAsCorrupted(ctx context.Context, buildID string) error {
+	if err := m.write(ctx, buildID, &Metadata{
+		State: MetadataStateCorrupted,
 	}); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)
 	}
@@ -114,7 +114,7 @@ func (m *metadataManager) markAsCorrupted(ctx context.Context, buildID string) e
 	return nil
 }
 
-func (m *metadataManager) markAsUploading(ctx context.Context, buildID string) error {
+func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID string) error {
 	_, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	// The metadata file should not exist yet. Not erroring here because there's
 	// room for a race condition.
@@ -128,8 +128,8 @@ func (m *metadataManager) markAsUploading(ctx context.Context, buildID string) e
 		return err
 	}
 
-	if err := m.write(ctx, buildID, &metadata{
-		State:           metadataStateUploading,
+	if err := m.write(ctx, buildID, &Metadata{
+		State:           MetadataStateUploading,
 		BuildID:         buildID,
 		UploadStartedAt: time.Now().Unix(),
 	}); err != nil {
@@ -140,7 +140,7 @@ func (m *metadataManager) markAsUploading(ctx context.Context, buildID string) e
 	return nil
 }
 
-func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash string) error {
+func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, hash string) error {
 	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	if err != nil {
 		level.Error(m.logger).Log("msg", "expected metadata file", "err", err)
@@ -152,21 +152,21 @@ func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash stri
 		return err
 	}
 
-	metaData := &metadata{}
+	metaData := &Metadata{}
 	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
 		return err
 	}
 
 	// There's a small window where a race could happen.
-	if metaData.State == metadataStateUploaded {
+	if metaData.State == MetadataStateUploaded {
 		return nil
 	}
 
-	if metaData.State == metadataStateUploading && metaData.BuildID != buildID {
+	if metaData.State == MetadataStateUploading && metaData.BuildID != buildID {
 		return errors.New("build ids do not match")
 	}
 
-	metaData.State = metadataStateUploaded
+	metaData.State = MetadataStateUploaded
 	metaData.BuildID = buildID
 	metaData.Hash = hash
 	metaData.UploadFinishedAt = time.Now().Unix()
@@ -182,7 +182,7 @@ func (m *metadataManager) markAsUploaded(ctx context.Context, buildID, hash stri
 	return nil
 }
 
-func (m *metadataManager) fetch(ctx context.Context, buildID string) (*metadata, error) {
+func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string) (*Metadata, error) {
 	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	if err != nil {
 		if m.bucket.IsObjNotFoundErr(err) {
@@ -197,14 +197,14 @@ func (m *metadataManager) fetch(ctx context.Context, buildID string) (*metadata,
 		return nil, err
 	}
 
-	metaData := &metadata{}
+	metaData := &Metadata{}
 	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
 		return nil, err
 	}
 	return metaData, nil
 }
 
-func (m *metadataManager) write(ctx context.Context, buildID string, md *metadata) error {
+func (m *ObjectStoreMetadata) write(ctx context.Context, buildID string, md *Metadata) error {
 	metadataBytes, _ := json.MarshalIndent(md, "", "\t")
 	r := bytes.NewReader(metadataBytes)
 	if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), r); err != nil {
