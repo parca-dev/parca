@@ -27,13 +27,22 @@ import (
 func File(path string) (string, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to open file: %w", err)
+		return "", fmt.Errorf("failed to open the file: %w", err)
 	}
 	defer f.Close()
 
 	h := xxhash.New()
 	if _, err := io.Copy(h, f); err != nil {
-		return "", fmt.Errorf("failed to hash debug info file: %w", err)
+		return "", fmt.Errorf("failed to hash the file: %w", err)
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// Reader returns the hash of the reader.
+func Reader(r io.Reader) (string, error) {
+	h := xxhash.New()
+	if _, err := io.Copy(h, r); err != nil {
+		return "", fmt.Errorf("failed to hash the reader: %w", err)
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
 }

@@ -37,7 +37,7 @@ type DebugInfodClient interface {
 type NopDebugInfodClient struct{}
 
 func (NopDebugInfodClient) GetDebugInfo(context.Context, string) (io.ReadCloser, error) {
-	return io.NopCloser(bytes.NewReader(nil)), errDebugInfoNotFound
+	return io.NopCloser(bytes.NewReader(nil)), ErrDebugInfoNotFound
 }
 
 type HTTPDebugInfodClient struct {
@@ -119,6 +119,7 @@ func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, b
 		defer w.Close()
 		defer debugInfo.Close()
 
+		// TODO(kakkoyun): Use store.upload() to upload the debug info to object storage.
 		if err := c.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
 			level.Error(logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err)
 		}
@@ -142,15 +143,15 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 	logger := log.With(c.logger, "buildid", buildID)
 
 	// e.g:
-	//"https://debuginfod.elfutils.org/"
-	//"https://debuginfod.systemtap.org/"
-	//"https://debuginfod.opensuse.org/"
-	//"https://debuginfod.s.voidlinux.org/"
-	//"https://debuginfod.debian.net/"
-	//"https://debuginfod.fedoraproject.org/"
-	//"https://debuginfod.altlinux.org/"
-	//"https://debuginfod.archlinux.org/"
-	//"https://debuginfod.centos.org/"
+	// "https://debuginfod.elfutils.org/"
+	// "https://debuginfod.systemtap.org/"
+	// "https://debuginfod.opensuse.org/"
+	// "https://debuginfod.s.voidlinux.org/"
+	// "https://debuginfod.debian.net/"
+	// "https://debuginfod.fedoraproject.org/"
+	// "https://debuginfod.altlinux.org/"
+	// "https://debuginfod.archlinux.org/"
+	// "https://debuginfod.centos.org/"
 	for _, u := range c.UpstreamServers {
 		serverURL := *u
 		rc, err := func(serverURL url.URL) (io.ReadCloser, error) {
@@ -174,7 +175,7 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 			return rc, nil
 		}
 	}
-	return nil, errDebugInfoNotFound
+	return nil, ErrDebugInfoNotFound
 }
 
 func (c *HTTPDebugInfodClient) request(ctx context.Context, u url.URL, buildID string) (io.ReadCloser, error) {
@@ -199,7 +200,7 @@ func (c *HTTPDebugInfodClient) request(ctx context.Context, u url.URL, buildID s
 		return resp.Body, nil
 	case 4:
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, errDebugInfoNotFound
+			return nil, ErrDebugInfoNotFound
 		}
 		return nil, fmt.Errorf("client error: %s", resp.Status)
 	case 5:

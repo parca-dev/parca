@@ -15,6 +15,8 @@ package symbolizer
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -22,24 +24,48 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/runutil"
+	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 type Symbolizer struct {
 	logger log.Logger
 
-	metastore pb.MetastoreServiceClient
-	debugInfo *debuginfo.Store
+	metastore  pb.MetastoreServiceClient
+	symbolizer *symbol.Symbolizer
+	debuginfo  DebugInfoFetcher
+
+	// We want two different cache dirs for debuginfo and debuginfod as one of
+	// them is intended to be for files that are publicly available the other
+	// one potentially only privately.
+	debuginfodCacheDir string
+	debuginfoCacheDir  string
 }
 
-func New(logger log.Logger, metastore pb.MetastoreServiceClient, info *debuginfo.Store) *Symbolizer {
+type DebugInfoFetcher interface {
+	// Fetch ensures that the debug info for the given build ID is available on
+	// a local filesystem and returns a path to it.
+	FetchDebugInfo(ctx context.Context, buildID string) (string, debuginfopb.DownloadInfo_Source, error)
+}
+
+func New(
+	logger log.Logger,
+	metastore pb.MetastoreServiceClient,
+	debuginfo DebugInfoFetcher,
+	symbolizer *symbol.Symbolizer,
+	debuginfodCacheDir string,
+	debuginfoCacheDir string,
+) *Symbolizer {
 	return &Symbolizer{
-		logger:    log.With(logger, "component", "symbolizer"),
-		metastore: metastore,
-		debugInfo: info,
+		logger:             log.With(logger, "component", "symbolizer"),
+		metastore:          metastore,
+		symbolizer:         symbolizer,
+		debuginfo:          debuginfo,
+		debuginfodCacheDir: debuginfodCacheDir,
+		debuginfoCacheDir:  debuginfoCacheDir,
 	}
 }
 
@@ -56,7 +82,7 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 
 		err = s.symbolize(ctx, lres.Locations)
 		if err != nil {
-			level.Error(s.logger).Log("msg", "symbolization round finished with errors")
+			level.Warn(s.logger).Log("msg", "symbolization attempt finished with errors")
 			level.Debug(s.logger).Log("msg", "errors occurred during symbolization", "err", err)
 		} else {
 			level.Info(s.logger).Log("msg", "symbolization round finished successfully")
@@ -125,7 +151,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 		level.Debug(logger).Log("msg", "storage symbolization request started")
 		// Symbolize returns a list of lines per location passed to it.
-		locationsByMapping.LocationsLines, err = s.debugInfo.Symbolize(ctx, mapping, locations)
+		locationsByMapping.LocationsLines, err = s.symbolizeLocationsForMapping(ctx, mapping, locations)
 		if err != nil {
 			level.Debug(logger).Log("msg", "storage symbolization request failed", "err", err, "buildid", mapping.BuildId)
 			continue
@@ -194,4 +220,29 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 		Locations: locations,
 	})
 	return err
+}
+
+// symbolizeLocationsForMapping fetches the debug info for a given build ID and symbolizes it the
+// given location.
+func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Mapping, locations []*pb.Location) ([][]profile.LocationLine, error) {
+	logger := log.With(s.logger, "buildid", m.BuildId)
+
+	// Fetch the debug info for the build ID.
+	objFile, _, err := s.debuginfo.FetchDebugInfo(ctx, m.BuildId)
+	if err != nil {
+		return nil, err
+	}
+
+	// At this point we have the best version of the debug information file that we could find.
+	// Let's symbolize it.
+	lines, err := s.symbolizer.Symbolize(ctx, m, locations, objFile)
+	if err != nil {
+		if errors.Is(err, symbol.ErrLinerCreationFailedBefore) {
+			level.Debug(logger).Log("msg", "failed to symbolize before", "err", err)
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("failed to symbolize locations for mapping: %w", err)
+	}
+	return lines, nil
 }

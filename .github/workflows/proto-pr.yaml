@@ -2,15 +2,35 @@ name: proto-pr
 
 on:
   pull_request:
-    paths:
-      - .github/workflows/proto-pr.yaml
-      - proto/**
-      - buf.gen.yaml
-      - buf.work.yaml
 
 jobs:
+  skip-check:
+    name: Skip check
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip-check.outputs.should_skip }}
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - id: skip-check
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+        with:
+          do_not_skip: '["schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              ".github/workflows/proto-pr.yaml",
+              "proto/**",
+              "buf.gen.yaml",
+              "buf.work.yaml"
+            ]
+          skip_after_successful_duplicate: false
+
   build:
     name: Proto PR Checks
+    needs: skip-check
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2

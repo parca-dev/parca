@@ -17,6 +17,16 @@
   ],
   "paths": {},
   "definitions": {
+    "DownloadInfoSource": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN_UNSPECIFIED",
+        "SOURCE_UPLOAD",
+        "SOURCE_DEBUGINFOD"
+      ],
+      "default": "SOURCE_UNKNOWN_UNSPECIFIED",
+      "description": "Source enum describes the source a debuginfo is from.\n\n - SOURCE_UNKNOWN_UNSPECIFIED: To understand when no source is set we have the unknown source.\n - SOURCE_UPLOAD: The debuginfo was uploaded by a user/agent.\n - SOURCE_DEBUGINFOD: The debuginfo was downloaded from a public debuginfod server."
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -44,6 +54,31 @@
         }
       }
     },
+    "v1alpha1DownloadInfo": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/DownloadInfoSource",
+          "description": "Source indicates the origin of the debuginfo being downloaded."
+        }
+      },
+      "description": "DownloadInfo metadata for the debug data that is being downloaded."
+    },
+    "v1alpha1DownloadResponse": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "$ref": "#/definitions/v1alpha1DownloadInfo",
+          "title": "info is the metadata for the debug info"
+        },
+        "chunkData": {
+          "type": "string",
+          "format": "byte",
+          "title": "chunk_data is the raw bytes of the debug info"
+        }
+      },
+      "description": "DownloadRequest returns chunked data of the debuginfo."
+    },
     "v1alpha1ExistsResponse": {
       "type": "object",
       "properties": {
@@ -63,7 +98,7 @@
         },
         "hash": {
           "type": "string",
-          "title": "hash is the hash of the debug information file"
+          "title": "hash is the hash of the source file that debug information extracted from"
         }
       },
       "title": "UploadInfo contains the build_id and other metadata for the debug data"
