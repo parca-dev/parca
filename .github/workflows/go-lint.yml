@@ -32,6 +32,7 @@ jobs:
               ".golangci.yml",
               ".github/workflows/go-lint.yml"
             ]
+          skip_after_successful_duplicate: false
 
   lint:
     name: Go Lint

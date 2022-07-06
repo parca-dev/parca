@@ -39,6 +39,7 @@ jobs:
             [
               "ui/**"
             ]
+          skip_after_successful_duplicate: false
 
   analyze:
     name: Analyze

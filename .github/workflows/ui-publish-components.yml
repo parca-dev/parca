@@ -24,6 +24,7 @@ jobs:
             [
               "ui/**",
             ]
+          skip_after_successful_duplicate: false
 
   publish-ui-components:
     name: Publish UI components to NPM

@@ -41,6 +41,7 @@ jobs:
               "go.mod",
               "go.sum"
             ]
+          skip_after_successful_duplicate: false
 
   analyze:
     name: Analyze

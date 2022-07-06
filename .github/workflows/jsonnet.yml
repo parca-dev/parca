@@ -28,6 +28,7 @@ jobs:
               "*.libsonnet",
               ".github/workflows/jsonnet.yml"
             ]
+          skip_after_successful_duplicate: false
 
   build:
     name: Jsonnet Build
