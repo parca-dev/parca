@@ -4,6 +4,8 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { QueryService } from "./query";
+import type { ShareProfileResponse } from "./query";
+import type { ShareProfileRequest } from "./query";
 import type { ValuesResponse } from "./query";
 import type { ValuesRequest } from "./query";
 import type { LabelsResponse } from "./query";
@@ -61,6 +63,12 @@ export interface IQueryServiceClient {
      * @generated from protobuf rpc: Values(parca.query.v1alpha1.ValuesRequest) returns (parca.query.v1alpha1.ValuesResponse);
      */
     values(input: ValuesRequest, options?: RpcOptions): UnaryCall<ValuesRequest, ValuesResponse>;
+    /**
+     * ShareProfile uploads the given profile to pprof.me and returns a link to the profile.
+     *
+     * @generated from protobuf rpc: ShareProfile(parca.query.v1alpha1.ShareProfileRequest) returns (parca.query.v1alpha1.ShareProfileResponse);
+     */
+    shareProfile(input: ShareProfileRequest, options?: RpcOptions): UnaryCall<ShareProfileRequest, ShareProfileResponse>;
 }
 /**
  * QueryService is the service that provides APIs to retrieve and inspect profiles
@@ -126,5 +134,14 @@ export class QueryServiceClient implements IQueryServiceClient, ServiceInfo {
     values(input: ValuesRequest, options?: RpcOptions): UnaryCall<ValuesRequest, ValuesResponse> {
         const method = this.methods[5], opt = this._transport.mergeOptions(options);
         return stackIntercept<ValuesRequest, ValuesResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ShareProfile uploads the given profile to pprof.me and returns a link to the profile.
+     *
+     * @generated from protobuf rpc: ShareProfile(parca.query.v1alpha1.ShareProfileRequest) returns (parca.query.v1alpha1.ShareProfileResponse);
+     */
+    shareProfile(input: ShareProfileRequest, options?: RpcOptions): UnaryCall<ShareProfileRequest, ShareProfileResponse> {
+        const method = this.methods[6], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ShareProfileRequest, ShareProfileResponse>("unary", this._transport, method, opt, input);
     }
 }

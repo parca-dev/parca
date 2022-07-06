@@ -2,8 +2,8 @@ import React, {useEffect, useState} from 'react';
 import {parseParams} from '@parca/functions';
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
 import {Button, Card, SearchNodes, useGrpcMetadata, useParcaTheme} from '@parca/components';
-import {Icon} from '@iconify/react';
 
+import ProfileShareButton from './components/ProfileShareButton';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
 import {useQuery} from './useQuery';
@@ -109,9 +109,10 @@ export const ProfileView = ({
             <div className="flex py-3 w-full">
               <div className="w-2/5 flex space-x-4">
                 <div className="flex space-x-1">
-                  <Button color="neutral" className="w-fit">
-                    <Icon icon="ei:share-apple" width={20} />
-                  </Button>
+                  <ProfileShareButton
+                    queryRequest={profileSource.QueryRequest()}
+                    queryClient={queryClient}
+                  />
 
                   <Button color="neutral" onClick={downloadPProf}>
                     Download pprof

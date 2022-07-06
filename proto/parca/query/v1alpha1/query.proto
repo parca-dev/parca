@@ -50,6 +50,15 @@ service QueryService {
       get: "/profiles/labels/{label_name}/values"
     };
   }
+
+  // ShareProfile uploads the given profile to pprof.me and returns a link to the profile.
+  rpc ShareProfile(ShareProfileRequest) returns (ShareProfileResponse) {
+    option (google.api.http) = {
+      post: "/profiles/share"
+      body: "*"
+    };
+  }
+
 }
 
 // ProfileTypesRequest is the request to retrieve the list of available profile types.
@@ -405,4 +414,19 @@ message ValueType {
 
   // unit is the unit of the value
   string unit = 2;
+}
+
+// ShareProfileRequest represents the query denoting the profile and a description about the profile
+message ShareProfileRequest {
+  // QueryRequest that refers to the profile to be shared
+  QueryRequest query_request = 1;
+
+  // description about the profile
+  optional string description = 2;
+}
+
+// ShareProfileResponse represents the shared link of a profile
+message ShareProfileResponse {
+  // link to access the profile
+  string link = 1;
 }

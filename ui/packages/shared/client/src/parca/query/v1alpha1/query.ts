@@ -784,6 +784,38 @@ export interface ValueType {
      */
     unit: string;
 }
+/**
+ * ShareProfileRequest represents the query denoting the profile and a description about the profile
+ *
+ * @generated from protobuf message parca.query.v1alpha1.ShareProfileRequest
+ */
+export interface ShareProfileRequest {
+    /**
+     * QueryRequest that refers to the profile to be shared
+     *
+     * @generated from protobuf field: parca.query.v1alpha1.QueryRequest query_request = 1;
+     */
+    queryRequest?: QueryRequest;
+    /**
+     * description about the profile
+     *
+     * @generated from protobuf field: optional string description = 2;
+     */
+    description?: string;
+}
+/**
+ * ShareProfileResponse represents the shared link of a profile
+ *
+ * @generated from protobuf message parca.query.v1alpha1.ShareProfileResponse
+ */
+export interface ShareProfileResponse {
+    /**
+     * link to access the profile
+     *
+     * @generated from protobuf field: string link = 1;
+     */
+    link: string;
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
     constructor() {
@@ -2413,6 +2445,107 @@ class ValueType$Type extends MessageType<ValueType> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.ValueType
  */
 export const ValueType = new ValueType$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ShareProfileRequest$Type extends MessageType<ShareProfileRequest> {
+    constructor() {
+        super("parca.query.v1alpha1.ShareProfileRequest", [
+            { no: 1, name: "query_request", kind: "message", T: () => QueryRequest },
+            { no: 2, name: "description", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ShareProfileRequest>): ShareProfileRequest {
+        const message = {};
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<ShareProfileRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ShareProfileRequest): ShareProfileRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* parca.query.v1alpha1.QueryRequest query_request */ 1:
+                    message.queryRequest = QueryRequest.internalBinaryRead(reader, reader.uint32(), options, message.queryRequest);
+                    break;
+                case /* optional string description */ 2:
+                    message.description = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ShareProfileRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* parca.query.v1alpha1.QueryRequest query_request = 1; */
+        if (message.queryRequest)
+            QueryRequest.internalBinaryWrite(message.queryRequest, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* optional string description = 2; */
+        if (message.description !== undefined)
+            writer.tag(2, WireType.LengthDelimited).string(message.description);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.ShareProfileRequest
+ */
+export const ShareProfileRequest = new ShareProfileRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ShareProfileResponse$Type extends MessageType<ShareProfileResponse> {
+    constructor() {
+        super("parca.query.v1alpha1.ShareProfileResponse", [
+            { no: 1, name: "link", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ShareProfileResponse>): ShareProfileResponse {
+        const message = { link: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<ShareProfileResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ShareProfileResponse): ShareProfileResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string link */ 1:
+                    message.link = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ShareProfileResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string link = 1; */
+        if (message.link !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.link);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.ShareProfileResponse
+ */
+export const ShareProfileResponse = new ShareProfileResponse$Type();
 /**
  * @generated ServiceType for protobuf service parca.query.v1alpha1.QueryService
  */
@@ -2422,5 +2555,6 @@ export const QueryService = new ServiceType("parca.query.v1alpha1.QueryService",
     { name: "Series", options: { "google.api.http": { get: "/profiles/series" } }, I: SeriesRequest, O: SeriesResponse },
     { name: "ProfileTypes", options: { "google.api.http": { get: "/profiles/types" } }, I: ProfileTypesRequest, O: ProfileTypesResponse },
     { name: "Labels", options: { "google.api.http": { get: "/profiles/labels" } }, I: LabelsRequest, O: LabelsResponse },
-    { name: "Values", options: { "google.api.http": { get: "/profiles/labels/{label_name}/values" } }, I: ValuesRequest, O: ValuesResponse }
+    { name: "Values", options: { "google.api.http": { get: "/profiles/labels/{label_name}/values" } }, I: ValuesRequest, O: ValuesResponse },
+    { name: "ShareProfile", options: { "google.api.http": { post: "/profiles/share", body: "*" } }, I: ShareProfileRequest, O: ShareProfileResponse }
 ]);
