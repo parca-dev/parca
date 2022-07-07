@@ -53,15 +53,17 @@ const ProfileShareModal = ({
   return (
     <Modal isOpen={isOpen} closeModal={onClose} title="Share Profile" className="w-[420px]">
       <form className="py-2">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-300">
           Note: Shared profiles can be accessed by any one with the link, even from people outside
           your organisation.
         </p>
         {!isShared || error?.length > 0 ? (
           <>
-            <p className="text-sm text-gray-500 mt-3 mb-2">Enter a description(optional)</p>
+            <p className="text-sm text-gray-500 dark:text-gray-300 mt-3 mb-2">
+              Enter a description(optional)
+            </p>
             <textarea
-              className="border w-full"
+              className="border w-full text-gray-500 dark:text-gray-300 bg-inherit"
               value={description}
               onChange={e => setDescription(e.target.value)}
             ></textarea>

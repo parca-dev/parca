@@ -30,14 +30,14 @@ const ResultBox = ({value, className = ''}: Props) => {
       </span>
       <input
         type="text"
-        className="border text-sm text-gray-500 w-full px-1 py-2 flex-grow"
+        className="border text-sm bg-inherit w-full px-1 py-2 flex-grow"
         value={value}
         readOnly
       />
       <CopyToClipboard text={value} onCopy={onCopy}>
         <Button
           variant="link"
-          className="border border-l-0 w-fit text whitespace-nowrap p-4 items-center text-indigo-600 rounded-none rounded-r"
+          className="border border-l-0 w-fit whitespace-nowrap p-4 items-center !text-indigo-600 dark:!text-indigo-400 rounded-none rounded-r"
         >
           {isCopied ? 'Copied!' : 'Copy Link'}
         </Button>
