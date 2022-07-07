@@ -58,7 +58,6 @@ service QueryService {
       body: "*"
     };
   }
-
 }
 
 // ProfileTypesRequest is the request to retrieve the list of available profile types.
