@@ -60,10 +60,10 @@ const ProfileShareModal = ({
         {!isShared || error?.length > 0 ? (
           <>
             <p className="text-sm text-gray-500 dark:text-gray-300 mt-3 mb-2">
-              Enter a description(optional)
+              Enter a description (optional)
             </p>
             <textarea
-              className="border w-full text-gray-500 dark:text-gray-300 bg-inherit"
+              className="border w-full text-gray-500 dark:text-gray-300 bg-inherit text-sm px-2 py-2"
               value={description}
               onChange={e => setDescription(e.target.value)}
             ></textarea>
