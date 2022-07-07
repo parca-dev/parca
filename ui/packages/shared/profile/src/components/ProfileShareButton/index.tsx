@@ -46,6 +46,7 @@ const ProfileShareModal = ({
   const onClose = () => {
     setLoading(false);
     setError('');
+    setDescription('');
     setIsShared(false);
     closeModal();
   };
@@ -54,7 +55,7 @@ const ProfileShareModal = ({
     <Modal isOpen={isOpen} closeModal={onClose} title="Share Profile" className="w-[420px]">
       <form className="py-2">
         <p className="text-sm text-gray-500 dark:text-gray-300">
-          Note: Shared profiles can be accessed by any one with the link, even from people outside
+          Note: Shared profiles can be accessed by anyone with the link, even from people outside
           your organisation.
         </p>
         {!isShared || error?.length > 0 ? (
