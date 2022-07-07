@@ -763,7 +763,7 @@ func (q *ColumnQueryAPI) ShareProfile(ctx context.Context, req *pb.ShareProfileR
 		Description: *req.Description,
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to upload profile: %w", err)
+		return nil, status.Errorf(codes.Internal, "failed to upload profile: %s", err.Error())
 	}
 	return &pb.ShareProfileResponse{
 		Link: uploadResp.Link,

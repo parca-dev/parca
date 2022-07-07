@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -31,7 +32,9 @@ import (
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -39,11 +42,19 @@ import (
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/gen/proto/go/share"
+	sharepb "github.com/parca-dev/parca/gen/proto/go/share"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
+
+func getShareServerConn(t Testing) share.ShareClient {
+	conn, err := grpc.Dial("api.pprof.me:443", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	require.NoError(t, err)
+	return sharepb.NewShareClient(conn)
+}
 
 func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	t.Parallel()
@@ -79,6 +90,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -181,6 +193,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -249,6 +262,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -334,6 +348,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -497,6 +512,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -659,6 +675,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -731,6 +748,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -796,6 +814,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
