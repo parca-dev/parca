@@ -31,13 +31,15 @@ jobs:
           paths: |-
             [
               "**.go",
+              ".github/workflows/release-dry-run.yml",
+              ".go-version",
+              ".node-version",
+              "cmd/**",
+              "gen/**",
               "go.mod",
               "go.sum",
-              "ui/**",
-              "cmd/**",
               "pkg/**",
-              "gen/**",
-              ".github/workflows/release-dry-run.yml"
+              "ui/**"
             ]
           skip_after_successful_duplicate: false
 

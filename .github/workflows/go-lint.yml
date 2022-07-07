@@ -29,8 +29,10 @@ jobs:
           paths: |-
             [
               "**.go",
+              ".github/workflows/go-lint.yml",
+              ".go-version",
               ".golangci.yml",
-              ".github/workflows/go-lint.yml"
+              ".node-version"
             ]
           skip_after_successful_duplicate: false
 

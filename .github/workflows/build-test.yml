@@ -31,10 +31,12 @@ jobs:
         paths: |-
           [
             "**.go",
+            ".github/workflows/build-test.yml",
+            ".go-version",
+            ".node-version",
             "go.mod",
             "go.sum",
-            "ui/**",
-            ".github/workflows/build-test.yml"
+            "ui/**"
           ]
         skip_after_successful_duplicate: false
 

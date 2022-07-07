@@ -27,13 +27,15 @@ jobs:
           do_not_skip: '["schedule", "workflow_dispatch"]'
           paths: |-
             [
-               "**.go",
-               "go.mod",
-               "go.sum",
-               "Dockerfile*",
-               ".dockerignore",
-               "ui/**",
-               ".github/workflows/container.yml"
+              "**.go",
+              ".dockerignore",
+              ".github/workflows/container.yml",
+              ".go-version",
+              ".node-version",
+              "Dockerfile*",
+              "go.mod",
+              "go.sum",
+              "ui/**"
             ]
           skip_after_successful_duplicate: false
 

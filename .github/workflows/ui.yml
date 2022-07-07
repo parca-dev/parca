@@ -23,8 +23,9 @@ jobs:
           do_not_skip: '["schedule", "workflow_dispatch"]'
           paths: |-
             [
-              "ui/**",
-              ".github/workflows/ui.yml"
+              ".github/workflows/ui.yml",
+              ".node-version",
+              "ui/**"
             ]
           skip_after_successful_duplicate: false
 

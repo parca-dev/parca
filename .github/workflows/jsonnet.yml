@@ -23,10 +23,11 @@ jobs:
           do_not_skip: '["schedule", "workflow_dispatch"]'
           paths: |-
             [
-              "deploy/**",
               "*.jsonnet",
               "*.libsonnet",
-              ".github/workflows/jsonnet.yml"
+              ".github/workflows/jsonnet.yml",
+              ".go-version",
+              "deploy/**"
             ]
           skip_after_successful_duplicate: false
 
