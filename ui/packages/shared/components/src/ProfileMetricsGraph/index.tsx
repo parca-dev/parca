@@ -3,7 +3,7 @@ import MetricsGraph from '../MetricsGraph';
 import {ProfileSelection, SingleProfileSelection} from '@parca/profile';
 import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {DateTimeRange, Spinner, useGrpcMetadata} from '../';
+import {DateTimeRange, useGrpcMetadata} from '../';
 import {Query} from '@parca/parser';
 import {useParcaTheme} from '../ParcaThemeContext';
 

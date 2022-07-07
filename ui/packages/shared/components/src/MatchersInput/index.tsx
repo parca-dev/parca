@@ -4,6 +4,8 @@ import {Query} from '@parca/parser';
 import {LabelsResponse, QueryServiceClient, ValuesResponse} from '@parca/client';
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
+
+import Spinner from '../Spinner';
 import {useGrpcMetadata} from '../GrpcMetadataContext';
 
 interface MatchersInputProps {
@@ -22,6 +24,11 @@ export interface ILabelValuesResult {
   error?: Error;
 }
 
+interface UseLabelNames {
+  result: ILabelNamesResult;
+  loading: boolean;
+}
+
 interface Matchers {
   key: string;
   matcherType: string;
@@ -34,6 +41,14 @@ enum Labels {
   literal = 'literal',
 }
 
+const LoadingSpinner = () => {
+  return (
+    <div className="pt-2 pb-4">
+      <Spinner />
+    </div>
+  );
+};
+
 // eslint-disable-next-line no-useless-escape
 const labelNameValueRe = /(^([a-z])\w+)(=|!=|=~|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
 
@@ -42,19 +57,26 @@ const addQuoteMarks = (labelValue: string) => {
   return `\"${labelValue}\"`;
 };
 
-export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => {
+export const useLabelNames = (client: QueryServiceClient): UseLabelNames => {
+  const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<ILabelNamesResult>({});
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
     const call = client.labels({match: []}, {meta: metadata});
-
+    setLoading(true);
     call.response
-      .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}));
+      .then(response => {
+        setResult({response: response});
+        setLoading(false);
+      })
+      .catch(error => {
+        setResult({error: error});
+        setLoading(false);
+      });
   }, [client, metadata]);
 
-  return result;
+  return {result, loading};
 };
 
 class Suggestion {
@@ -97,19 +119,28 @@ const MatchersInput = ({
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const [labelValuesResponse, setLabelValuesResponse] = useState<string[] | null>(null);
+  const [labelValuesLoading, setLabelValuesLoading] = useState(false);
   const {styles, attributes} = usePopper(divInputRef, popperElement, {
     placement: 'bottom-start',
   });
   const metadata = useGrpcMetadata();
 
-  const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
+  const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
+  const {response: labelNamesResponse, error: labelNamesError} = result;
 
   const getLabelNameValues = (labelName: string) => {
     const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
 
+    setLabelValuesLoading(true);
     call.response
-      .then(response => setLabelValuesResponse(response.labelValues))
-      .catch(() => setLabelValuesResponse(null));
+      .then(response => {
+        setLabelValuesResponse(response.labelValues);
+        setLabelValuesLoading(false);
+      })
+      .catch(() => {
+        setLabelValuesResponse(null);
+        setLabelValuesLoading(false);
+      });
   };
 
   const labelNames =
@@ -467,73 +498,85 @@ const MatchersInput = ({
         />
       </div>
 
-      {suggestionsLength > 0 && (
-        <div
-          ref={setPopperElement}
-          style={{...styles.popper, marginLeft: 0}}
-          {...attributes.popper}
-          className="z-50"
+      <div
+        ref={setPopperElement}
+        style={{...styles.popper, marginLeft: 0}}
+        {...attributes.popper}
+        className="z-50"
+      >
+        <Transition
+          show={focusedInput && showSuggest}
+          as={Fragment}
+          leave="transition ease-in duration-100"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
         >
-          <Transition
-            show={focusedInput && showSuggest}
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
+          <div
+            style={{width: divInputRef?.offsetWidth}}
+            className="absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
           >
-            <div
-              style={{width: divInputRef?.offsetWidth}}
-              className="absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
-            >
-              {suggestionSections.labelNames.map((l, i) => (
-                <div
-                  key={i}
-                  className={cx(
-                    highlightedSuggestionIndex === i && 'text-white bg-indigo-600',
-                    'cursor-default select-none relative py-2 pl-3 pr-9'
-                  )}
-                  onMouseOver={() => setHighlightedSuggestionIndex(i)}
-                  onClick={() => applySuggestion(i)}
-                  onMouseOut={() => resetHighlight()}
-                >
-                  {l.value}
-                </div>
-              ))}
-              {suggestionSections.literals.map((l, i) => (
-                <div
-                  key={i}
-                  className={cx(
-                    highlightedSuggestionIndex === i + suggestionSections.labelNames.length &&
-                      'text-white bg-indigo-600',
-                    'cursor-default select-none relative py-2 pl-3 pr-9'
-                  )}
-                  onMouseOver={() =>
-                    setHighlightedSuggestionIndex(i + suggestionSections.labelNames.length)
-                  }
-                  onClick={() => applySuggestion(i + suggestionSections.labelNames.length)}
-                  onMouseOut={() => resetHighlight()}
-                >
-                  {l.value}
-                </div>
-              ))}
-              {suggestionSections.labelValues.map((l, i) => (
-                <div
-                  key={i}
-                  className={cx(
-                    highlightedSuggestionIndex === i && 'text-white bg-indigo-600',
-                    'cursor-default select-none relative py-2 pl-3 pr-9'
-                  )}
-                  onMouseOver={() => setHighlightedSuggestionIndex(i)}
-                  onClick={() => applySuggestion(i)}
-                  onMouseOut={() => resetHighlight()}
-                >
-                  {l.value}
-                </div>
-              ))}
-            </div>
-          </Transition>
-        </div>
-      )}
+            {labelNamesLoading ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                {suggestionSections.labelNames.map((l, i) => (
+                  <div
+                    key={i}
+                    className={cx(
+                      highlightedSuggestionIndex === i && 'text-white bg-indigo-600',
+                      'cursor-default select-none relative py-2 pl-3 pr-9'
+                    )}
+                    onMouseOver={() => setHighlightedSuggestionIndex(i)}
+                    onClick={() => applySuggestion(i)}
+                    onMouseOut={() => resetHighlight()}
+                  >
+                    {l.value}
+                  </div>
+                ))}
+              </>
+            )}
+
+            {suggestionSections.literals.map((l, i) => (
+              <div
+                key={i}
+                className={cx(
+                  highlightedSuggestionIndex === i + suggestionSections.labelNames.length &&
+                    'text-white bg-indigo-600',
+                  'cursor-default select-none relative py-2 pl-3 pr-9'
+                )}
+                onMouseOver={() =>
+                  setHighlightedSuggestionIndex(i + suggestionSections.labelNames.length)
+                }
+                onClick={() => applySuggestion(i + suggestionSections.labelNames.length)}
+                onMouseOut={() => resetHighlight()}
+              >
+                {l.value}
+              </div>
+            ))}
+
+            {labelValuesLoading && suggestionSections.labelValues.length > 0 ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                {suggestionSections.labelValues.map((l, i) => (
+                  <div
+                    key={i}
+                    className={cx(
+                      highlightedSuggestionIndex === i && 'text-white bg-indigo-600',
+                      'cursor-default select-none relative py-2 pl-3 pr-9'
+                    )}
+                    onMouseOver={() => setHighlightedSuggestionIndex(i)}
+                    onClick={() => applySuggestion(i)}
+                    onMouseOut={() => resetHighlight()}
+                  >
+                    {l.value}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </Transition>
+      </div>
     </>
   );
 };
