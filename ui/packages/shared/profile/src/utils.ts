@@ -20,8 +20,11 @@ export const downloadPprof = async (
 
   const {response} = await queryClient.query(req, {meta: metadata});
   if (response.report.oneofKind !== 'pprof') {
-    console.log('Expected pprof report, got:', response.report.oneofKind);
-    throw new Error('Expected pprof report, got: ' + response.report.oneofKind);
+    throw new Error(
+      `Expected pprof report, got: ${
+        response.report.oneofKind !== undefined ? response.report.oneofKind : 'undefined'
+      }`
+    );
   }
   const blob = new Blob([response.report.pprof], {type: 'application/octet-stream'});
   return blob;
