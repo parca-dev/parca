@@ -25,9 +25,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/thanos-io/objstore"
-	"github.com/thanos-io/objstore/client"
 	"golang.org/x/net/context"
-	"gopkg.in/yaml.v2"
 )
 
 type DebugInfodClient interface {
@@ -78,18 +76,7 @@ func NewHTTPDebugInfodClient(logger log.Logger, serverURLs []string, timeoutDura
 }
 
 // NewDebugInfodClientWithObjectStorageCache creates a new DebugInfodClient that caches the debug information in the object storage.
-func NewDebugInfodClientWithObjectStorageCache(logger log.Logger, config *Config, h DebugInfodClient) (DebugInfodClient, error) {
-	logger = log.With(logger, "component", "debuginfod")
-	cfg, err := yaml.Marshal(config.Bucket)
-	if err != nil {
-		return nil, fmt.Errorf("marshal content of debuginfod object storage configuration: %w", err)
-	}
-
-	bucket, err := client.NewBucket(logger, cfg, "parca/debuginfod")
-	if err != nil {
-		return nil, fmt.Errorf("instantiate debuginfod object storage: %w", err)
-	}
-
+func NewDebugInfodClientWithObjectStorageCache(logger log.Logger, bucket objstore.Bucket, h DebugInfodClient) (DebugInfodClient, error) {
 	return &DebugInfodClientObjectStorageCache{
 		logger: logger,
 		client: h,
