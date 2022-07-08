@@ -23,10 +23,12 @@ jobs:
           do_not_skip: '["schedule", "workflow_dispatch"]'
           paths: |-
             [
-               "**.go",
-               "go.mod",
-               "go.sum",
-               ".github/workflows/docs.yml"
+              "**.go",
+              ".github/workflows/docs.yml",
+              ".go-version",
+              ".node-version",
+              "go.mod",
+              "go.sum"
             ]
           skip_after_successful_duplicate: false
 

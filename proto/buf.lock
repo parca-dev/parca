@@ -4,7 +4,7 @@ deps:
   - remote: buf.build
     owner: googleapis
     repository: googleapis
-    commit: 868034942d3c4d24b722f6a834dd7bb2
+    commit: 0173a713ae734ba4ad55a7f32f63326d
   - remote: buf.build
     owner: grpc-ecosystem
     repository: grpc-gateway

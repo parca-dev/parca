@@ -21,9 +21,10 @@ jobs:
           paths: |-
             [
               ".github/workflows/proto-pr.yaml",
-              "proto/**",
+              ".go-version",
               "buf.gen.yaml",
-              "buf.work.yaml"
+              "buf.work.yaml",
+              "proto/**"
             ]
           skip_after_successful_duplicate: false
 
