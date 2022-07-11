@@ -45,7 +45,7 @@ jobs:
 
     - name: Set up Go
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
-      uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
+      uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
       with:
         go-version-file: .go-version
         check-latest: true
@@ -53,7 +53,7 @@ jobs:
 
     - name: Set up Node.js
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
-      uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
+      uses: actions/setup-node@5b949b50c3461bbcd5a540b150c368278160234a # tag=v3.4.0
       with:
         node-version-file: .node-version
         cache: 'yarn'
