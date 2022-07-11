@@ -93,7 +93,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*
 	default:
 	}
 
-	logger := log.With(s.logger, "buildid", m.BuildId)
+	logger := log.With(s.logger, "buildid", m.BuildId, "debuginfo_file", debugInfoFile)
 
 	liner, err := s.liner(m, debugInfoFile)
 	if err != nil {
