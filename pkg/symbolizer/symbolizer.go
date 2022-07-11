@@ -134,12 +134,6 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	for _, loc := range locations {
 		locationsByMapping := locationsByMappings[mappingsIndex[loc.MappingId]]
-		mapping := locationsByMapping.Mapping
-		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
-		if mapping == nil || len(mapping.BuildId) == 0 || UnsymbolizableMapping(mapping) {
-			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
-			continue
-		}
 		// Already symbolized!
 		if loc.Lines != nil && len(loc.Lines.Entries) > 0 {
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
@@ -150,9 +144,15 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	for _, locationsByMapping := range locationsByMappings {
 		mapping := locationsByMapping.Mapping
-		locations := locationsByMapping.Locations
 		logger := log.With(s.logger, "buildid", mapping.BuildId)
 
+		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
+		if mapping == nil || len(mapping.BuildId) == 0 || UnsymbolizableMapping(mapping) {
+			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
+			continue
+		}
+
+		locations := locationsByMapping.Locations
 		level.Debug(logger).Log("msg", "storage symbolization request started", "build_id_length", len(mapping.BuildId))
 		// Symbolize returns a list of lines per location passed to it.
 		locationsByMapping.LocationsLines, err = s.symbolizeLocationsForMapping(ctx, mapping, locations)
