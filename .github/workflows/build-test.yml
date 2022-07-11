@@ -9,8 +9,8 @@ on:
 env:
   # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
   QEMU_VERSION: 7.0.0-7
-  # renovate: datasource=docker depName=docker.io/ubuntu versioning=ubuntu
-  UBUNTU_VERSION: '20.04'
+  # renovate: datasource=docker depName=docker.io/buildpack-deps versioning=ubuntu
+  BUILDPACK_DEPS_VERSION: '20.04'
 
 jobs:
   build-and-test-multi-arch:
@@ -85,55 +85,38 @@ jobs:
     - name: 'Run ${{ matrix.arch }}'
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
       run: |
-        # Install QEMU and it's dependencies.
-        sudo apt-get update -y
-        sudo apt-get install qemu binfmt-support qemu-user-static
+        # Register QEMU
         docker run --rm --privileged "docker.io/multiarch/qemu-user-static:${QEMU_VERSION}" --reset -p yes
 
-        # Run platform specific based ubuntu image. Run it as a daemon in the background.
+        # Run platform specific based buildpack-deps image. Run it as a daemon in the background.
         # Sleep the container for 1 day so that it keeps running until
         # other steps are completed and the steps below can use the same container.
         docker run \
-          --name=ubuntu \
+          --name=buildpack-deps \
           --detach \
-          --platform='linux/${{ matrix.arch }}' \
-          --volume="${PWD}:/parca" \
-          --workdir=/parca \
-          "docker.io/ubuntu:${UBUNTU_VERSION}" \
+          --platform 'linux/${{ matrix.arch }}' \
+          --volume /home/runner/work:/home/runner/work \
+          --workdir "${PWD}" \
+          "docker.io/buildpack-deps:${BUILDPACK_DEPS_VERSION}" \
           bash -c 'uname -m && sleep 1d'
 
-    - name: 'Install packages on ${{ matrix.arch }}'
-      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
-      run: |
-        # Install necessary packages on the ubuntu container which will be used
-        # by below steps.
-        docker exec -i ubuntu bash <<EOF
-          set -euo pipefail
-          apt-get update -y -q
-          apt-get install -y -q wget make git file build-essential
-        EOF
-
+    # Install Golang, which will be used to build the code.
     - name: 'Setup Go on ${{ matrix.arch }}'
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
+      shell: docker exec buildpack-deps bash -e {0}
       run: |
-        # Install Golang, which will be used to build the code.
-        docker exec -i ubuntu bash <<EOF
-          set -euo pipefail
-          GO_VERSION="\$(<.go-version)"
-          wget --directory-prefix=/tmp "https://dl.google.com/go/go\${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-          tar -C /usr/local/ -xzf "/tmp/go\${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-          export PATH="\${PATH}:/usr/local/go/bin"
-          go version
-        EOF
+        GO_VERSION="$(<.go-version)"
+        wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+        tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+        export PATH="${PATH}:/usr/local/go/bin"
+        go version
 
+    # Run Go Tests. This is a very slow operation on ARM container.
     - name: 'Test on ${{ matrix.arch }}'
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
+      shell: docker exec buildpack-deps bash -e {0}
       run: |
-        # Run Go Tests. This is a very slow operation on ARM container.
-        docker exec -i ubuntu bash <<EOF
-          set -euo pipefail
-          export PATH="\${PATH}:/usr/local/go/bin"
-          mkdir -p ui/packages/app/web/build
-          touch ui/packages/app/web/build/index.html
-          go test -buildvcs=false -v ./...
-        EOF
+        export PATH="${PATH}:/usr/local/go/bin"
+        mkdir -p ui/packages/app/web/build
+        touch ui/packages/app/web/build/index.html
+        go test -buildvcs=false -v ./...

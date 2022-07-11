@@ -71,15 +71,20 @@ func New(
 
 func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	return runutil.Repeat(interval, ctx.Done(), func() error {
+		level.Debug(s.logger).Log("msg", "start symbolization cycle")
 		lres, err := s.metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 		if err != nil {
-			return err
+			level.Error(s.logger).Log("msg", "failed to fetch unsymbolized locations", "err", err)
+			// Try again on the next cycle.
+			return nil
 		}
 		if len(lres.Locations) == 0 {
+			level.Debug(s.logger).Log("msg", "no locations to symbolize")
 			// Nothing to symbolize.
 			return nil
 		}
 
+		level.Debug(s.logger).Log("msg", "attempting to symbolize locations", "count", len(lres.Locations))
 		err = s.symbolize(ctx, lres.Locations)
 		if err != nil {
 			level.Warn(s.logger).Log("msg", "symbolization attempt finished with errors")
@@ -119,7 +124,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	mres, err := s.metastore.Mappings(ctx, &pb.MappingsRequest{MappingIds: mappingIDs})
 	if err != nil {
-		return err
+		return fmt.Errorf("get mappings: %w", err)
 	}
 
 	// Aggregate locations per mapping to get prepared for batch request.
@@ -189,7 +194,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	fres, err := s.metastore.GetOrCreateFunctions(ctx, &pb.GetOrCreateFunctionsRequest{Functions: functions})
 	if err != nil {
-		return err
+		return fmt.Errorf("get or create functions: %w", err)
 	}
 
 	locations = make([]*pb.Location, 0, numLocations)
@@ -219,7 +224,11 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 	_, err = s.metastore.CreateLocationLines(ctx, &pb.CreateLocationLinesRequest{
 		Locations: locations,
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("create location lines: %w", err)
+	}
+
+	return nil
 }
 
 // symbolizeLocationsForMapping fetches the debug info for a given build ID and symbolizes it the
@@ -230,7 +239,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 	// Fetch the debug info for the build ID.
 	objFile, _, err := s.debuginfo.FetchDebugInfo(ctx, m.BuildId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetch debuginfo (BuildID: %q): %w", m.BuildId, err)
 	}
 
 	// At this point we have the best version of the debug information file that we could find.

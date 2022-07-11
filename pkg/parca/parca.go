@@ -221,6 +221,18 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
+	bucketCfg, err := yaml.Marshal(cfg.DebugInfo.Bucket)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to marshal debuginfo bucket config", "err", err)
+		return err
+	}
+
+	bucket, err := client.NewBucket(logger, bucketCfg, "parca")
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize debuginfo object store bucket", "err", err)
+		return err
+	}
+
 	var debugInfodClient debuginfo.DebugInfodClient = debuginfo.NopDebugInfodClient{}
 	if len(flags.DebugInfodUpstreamServers) > 0 {
 		httpDebugInfoClient, err := debuginfo.NewHTTPDebugInfodClient(logger, flags.DebugInfodUpstreamServers, flags.DebugInfodHTTPRequestTimeout)
@@ -229,23 +241,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return err
 		}
 
-		debugInfodClient, err = debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg.DebugInfo, httpDebugInfoClient)
+		debugInfodClient, err = debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, bucket, httpDebugInfoClient)
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod client cache", "err", err)
 			return err
 		}
-	}
-
-	bucketCfg, err := yaml.Marshal(cfg.DebugInfo.Bucket)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to marshal debuginfo bucket config", "err", err)
-		return err
-	}
-
-	bucket, err := client.NewBucket(logger, bucketCfg, "parca/store")
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize debuginfo object store bucket", "err", err)
-		return err
 	}
 
 	debugInfoCache, err := debuginfo.NewCache(cfg.DebugInfo.Cache)

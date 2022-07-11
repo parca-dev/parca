@@ -37,7 +37,7 @@
     "@testing-library/jest-dom": "5.16.4",
     "@testing-library/react": "13.3.0",
     "autoprefixer": "10.4.7",
-    "d3": "7.5.0",
+    "d3": "7.6.1",
     "d3-axis": "3.0.0",
     "d3-scale-chromatic": "3.0.0",
     "d3-selection": "3.0.0",
@@ -55,7 +55,7 @@
     "web-vitals": "2.1.4"
   },
   "devDependencies": {
-    "@craco/craco": "6.4.3",
+    "@craco/craco": "6.4.5",
     "@storybook/addon-actions": "6.5.9",
     "@storybook/addon-essentials": "6.5.9",
     "@storybook/addon-links": "6.5.9",
