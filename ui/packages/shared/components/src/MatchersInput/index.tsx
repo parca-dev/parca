@@ -5,7 +5,7 @@ import {LabelsResponse, QueryServiceClient, ValuesResponse} from '@parca/client'
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
 
-import Spinner from '../Spinner';
+import {useParcaTheme} from '../ParcaThemeContext';
 import {useGrpcMetadata} from '../GrpcMetadataContext';
 
 interface MatchersInputProps {
@@ -41,14 +41,6 @@ enum Labels {
   literal = 'literal',
 }
 
-const LoadingSpinner = () => {
-  return (
-    <div className="pt-2 pb-4">
-      <Spinner />
-    </div>
-  );
-};
-
 // eslint-disable-next-line no-useless-escape
 const labelNameValueRe = /(^([a-z])\w+)(=|!=|=~|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
 
@@ -64,16 +56,16 @@ export const useLabelNames = (client: QueryServiceClient): UseLabelNames => {
 
   useEffect(() => {
     const call = client.labels({match: []}, {meta: metadata});
+
     setLoading(true);
     call.response
       .then(response => {
         setResult({response: response});
-        setLoading(false);
       })
       .catch(error => {
         setResult({error: error});
-        setLoading(false);
-      });
+      })
+      .finally(() => setLoading(false));
   }, [client, metadata]);
 
   return {result, loading};
@@ -124,23 +116,29 @@ const MatchersInput = ({
     placement: 'bottom-start',
   });
   const metadata = useGrpcMetadata();
+  const {loader: Spinner} = useParcaTheme();
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
   const {response: labelNamesResponse, error: labelNamesError} = result;
+
+  const LoadingSpinner = () => {
+    return <div className="pt-2 pb-4">{Spinner}</div>;
+  };
 
   const getLabelNameValues = (labelName: string) => {
     const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
 
     setLabelValuesLoading(true);
+
     call.response
       .then(response => {
         setLabelValuesResponse(response.labelValues);
-        setLabelValuesLoading(false);
       })
       .catch(() => {
         setLabelValuesResponse(null);
         setLabelValuesLoading(false);
-      });
+      })
+      .finally(() => setLabelValuesLoading(false));
   };
 
   const labelNames =
@@ -513,7 +511,7 @@ const MatchersInput = ({
         >
           <div
             style={{width: divInputRef?.offsetWidth}}
-            className="absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+            className="absolute z-10 max-h-[400px] mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
           >
             {labelNamesLoading ? (
               <LoadingSpinner />
@@ -554,7 +552,7 @@ const MatchersInput = ({
               </div>
             ))}
 
-            {labelValuesLoading && suggestionSections.labelValues.length > 0 ? (
+            {labelValuesLoading && lastCompleted.type === 'literal' ? (
               <LoadingSpinner />
             ) : (
               <>
