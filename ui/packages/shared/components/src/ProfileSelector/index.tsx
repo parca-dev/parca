@@ -2,7 +2,7 @@ import {Query} from '@parca/parser';
 import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {ProfileSelection} from '@parca/profile';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import ProfileMetricsGraph from '../ProfileMetricsGraph';
 import MatchersInput from '../MatchersInput';
 import MergeButton from './MergeButton';
@@ -49,22 +49,29 @@ interface WellKnownProfiles {
 }
 
 export interface IProfileTypesResult {
-  response?: ProfileTypesResponse;
+  loading: boolean;
+  data?: ProfileTypesResponse;
   error?: RpcError;
 }
 
 export const useProfileTypes = (client: QueryServiceClient): IProfileTypesResult => {
-  const [result, setResult] = useState<IProfileTypesResult>({});
+  const [result, setResult] = useState<ProfileTypesResponse | undefined>(undefined);
+  const [error, setError] = useState<RpcError | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
+    if (!loading) {
+      return;
+    }
     const call = client.profileTypes({}, {meta: metadata});
     call.response
-      .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}));
-  }, [client, metadata]);
+      .then(response => setResult(response))
+      .catch(error => setError(error))
+      .finally(() => setLoading(false));
+  }, [client, metadata, loading]);
 
-  return result;
+  return {loading, data: result, error};
 };
 
 const wellKnownProfiles: WellKnownProfiles = {
@@ -165,16 +172,23 @@ const ProfileSelector = ({
   onCompareProfile,
 }: ProfileSelectorProps): JSX.Element => {
   const dispatch = useAppDispatch();
-  const {response, error} = useProfileTypes(queryClient);
-  const profileNames =
-    (error === undefined || error == null) && response !== undefined && response != null
-      ? response.types.map(
+  const {
+    loading: profileTypesLoading,
+    data: profileTypesData,
+    error,
+  } = useProfileTypes(queryClient);
+  const profileNames = useMemo(() => {
+    return (error === undefined || error == null) &&
+      profileTypesData !== undefined &&
+      profileTypesData != null
+      ? profileTypesData.types.map(
           type =>
             `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${
               type.periodUnit
             }${type.delta ? ':delta' : ''}`
         )
       : [];
+  }, [profileTypesData, error]);
 
   const profileLabels = profileNames.map(name => ({
     key: name,
@@ -272,6 +286,7 @@ const ProfileSelector = ({
             selectedKey={selectedProfileName}
             onSelection={setProfileName}
             placeholder="Select profile..."
+            loading={profileTypesLoading}
           />
           <MatchersInput
             queryClient={queryClient}
