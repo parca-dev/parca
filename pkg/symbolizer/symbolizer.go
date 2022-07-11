@@ -89,9 +89,8 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 		if err != nil {
 			level.Warn(s.logger).Log("msg", "symbolization attempt finished with errors")
 			level.Debug(s.logger).Log("msg", "errors occurred during symbolization", "err", err)
-		} else {
-			level.Info(s.logger).Log("msg", "symbolization round finished successfully")
 		}
+		level.Debug(s.logger).Log("msg", "symbolization loop completed")
 		return nil
 	})
 }
@@ -154,11 +153,11 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 		locations := locationsByMapping.Locations
 		logger := log.With(s.logger, "buildid", mapping.BuildId)
 
-		level.Debug(logger).Log("msg", "storage symbolization request started")
+		level.Debug(logger).Log("msg", "storage symbolization request started", "build_id_length", len(mapping.BuildId))
 		// Symbolize returns a list of lines per location passed to it.
 		locationsByMapping.LocationsLines, err = s.symbolizeLocationsForMapping(ctx, mapping, locations)
 		if err != nil {
-			level.Debug(logger).Log("msg", "storage symbolization request failed", "err", err, "buildid", mapping.BuildId)
+			level.Debug(logger).Log("msg", "storage symbolization request failed", "err", err)
 			continue
 		}
 		level.Debug(logger).Log("msg", "storage symbolization request done")

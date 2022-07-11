@@ -337,6 +337,9 @@ func (s *Store) Download(req *debuginfopb.DownloadRequest, stream debuginfopb.De
 
 	objFile, source, err := s.FetchDebugInfo(ctx, req.BuildId)
 	if err != nil {
+		if errors.Is(err, ErrDebugInfoNotFound) {
+			return status.Error(codes.NotFound, err.Error())
+		}
 		return status.Error(codes.Internal, err.Error())
 	}
 
@@ -483,7 +486,7 @@ func (s *Store) fetchFromObjectStore(ctx context.Context, buildID string) (strin
 		}
 
 		// Cache the file locally.
-		if err := cache(objFile, r); err != nil {
+		if err := s.cache(objFile, r); err != nil {
 			return "", fmt.Errorf("failed to fetch debug info file: %w", err)
 		}
 	}
@@ -506,7 +509,7 @@ func (s *Store) fetchDebuginfodFile(ctx context.Context, buildID string) (string
 	level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
 
 	// Cache the file locally.
-	if err := cache(objFile, r); err != nil {
+	if err := s.cache(objFile, r); err != nil {
 		level.Debug(logger).Log("msg", "failed to cache debuginfo", "err", err)
 		return "", fmt.Errorf("failed to fetch from debuginfod: %w", err)
 	}
@@ -518,8 +521,8 @@ func (s *Store) localCachePath(buildID string) string {
 	return path.Join(s.cacheDir, buildID, "debuginfo")
 }
 
-func cache(localPath string, r io.ReadCloser) error {
-	tmpfile, err := ioutil.TempFile("", "symbol-download-*")
+func (s *Store) cache(localPath string, r io.ReadCloser) error {
+	tmpfile, err := ioutil.TempFile(s.cacheDir, "symbol-download-*")
 	if err != nil {
 		return fmt.Errorf("create temp file: %w", err)
 	}
