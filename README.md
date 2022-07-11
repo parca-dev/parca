@@ -117,6 +117,9 @@ Flags:
                                    unsybolized location
       --metastore="badgerinmemory"
                                    Which metastore implementation to use
+      --profile-share-server="api.pprof.me:443"
+                                   gRPC address to send share profile requests
+                                   to.
       --debug-infod-upstream-servers=https://debuginfod.elfutils.org,...
                                    Upstream debuginfod servers. Defaults to
                                    https://debuginfod.elfutils.org. It is an

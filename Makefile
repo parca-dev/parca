@@ -120,6 +120,7 @@ proto/format:
 proto/generate: proto/vendor
 	# Generate just the annotations and http protos.
 	buf generate buf.build/googleapis/googleapis --path google/api/annotations.proto --path google/api/http.proto
+	buf generate buf.build/polarsignals/api --path share
 	# docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf generate
 	buf generate
 

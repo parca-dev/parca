@@ -95,6 +95,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				logger,
 				tracer,
 				m,
+				getShareServerConn(b),
 				query.NewEngine(
 					memory.NewGoAllocator(),
 					colDB.TableProvider(),
