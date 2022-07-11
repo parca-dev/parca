@@ -52,8 +52,6 @@ type liner interface {
 }
 
 func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
-	log.With(logger, "component", "symbolizer")
-
 	const (
 		defaultDemangleMode     = "simple"
 		defaultCacheSize        = 1000
@@ -62,7 +60,7 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	)
 
 	sym := &Symbolizer{
-		logger:    logger,
+		logger:    log.With(logger, "component", "symbolizer"),
 		demangler: demangle.NewDemangler(defaultDemangleMode, false),
 
 		// e.g: Parca binary compressed DWARF data size ~8mb as of 10.2021
