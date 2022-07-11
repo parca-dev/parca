@@ -8,7 +8,7 @@ on:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.9.2
+  GORELEASER_VERSION: v1.10.0
 
 permissions:
   contents: write
