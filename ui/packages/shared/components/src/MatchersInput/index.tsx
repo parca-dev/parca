@@ -58,13 +58,10 @@ export const useLabelNames = (client: QueryServiceClient): UseLabelNames => {
     const call = client.labels({match: []}, {meta: metadata});
 
     setLoading(true);
+
     call.response
-      .then(response => {
-        setResult({response: response});
-      })
-      .catch(error => {
-        setResult({error: error});
-      })
+      .then(response => setResult({response: response}))
+      .catch(error => setResult({error: error}))
       .finally(() => setLoading(false));
   }, [client, metadata]);
 
@@ -131,13 +128,8 @@ const MatchersInput = ({
     setLabelValuesLoading(true);
 
     call.response
-      .then(response => {
-        setLabelValuesResponse(response.labelValues);
-      })
-      .catch(() => {
-        setLabelValuesResponse(null);
-        setLabelValuesLoading(false);
-      })
+      .then(response => setLabelValuesResponse(response.labelValues))
+      .catch(() => setLabelValuesResponse(null))
       .finally(() => setLabelValuesLoading(false));
   };
 
