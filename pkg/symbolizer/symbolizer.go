@@ -89,9 +89,8 @@ func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 		if err != nil {
 			level.Warn(s.logger).Log("msg", "symbolization attempt finished with errors")
 			level.Debug(s.logger).Log("msg", "errors occurred during symbolization", "err", err)
-		} else {
-			level.Info(s.logger).Log("msg", "symbolization round finished successfully")
 		}
+		level.Debug(s.logger).Log("msg", "symbolization loop completed")
 		return nil
 	})
 }
