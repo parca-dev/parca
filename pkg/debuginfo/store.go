@@ -337,6 +337,9 @@ func (s *Store) Download(req *debuginfopb.DownloadRequest, stream debuginfopb.De
 
 	objFile, source, err := s.FetchDebugInfo(ctx, req.BuildId)
 	if err != nil {
+		if errors.Is(err, ErrDebugInfoNotFound) {
+			return status.Error(codes.NotFound, err.Error())
+		}
 		return status.Error(codes.Internal, err.Error())
 	}
 
