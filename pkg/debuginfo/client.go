@@ -29,10 +29,14 @@ import (
 
 var ErrDebugInfoAlreadyExists = errors.New("debug info already exists")
 
-// ChunkSize 8MB is the size of the chunks in which debuginfo files are
-// uploaded and downloaded. AWS S3 has a minimum of 5MB for multi part uploads
-// and a maximum of 15MB, and a default of 8MB.
-var ChunkSize = 1024 * 1024 * 8
+const (
+	// ChunkSize 8MB is the size of the chunks in which debuginfo files are
+	// uploaded and downloaded. AWS S3 has a minimum of 5MB for multi-part uploads
+	// and a maximum of 15MB, and a default of 8MB.
+	ChunkSize = 1024 * 1024 * 8
+	// MaxMsgSize is the maximum message size the server can receive or send. By default, it is 4MB.
+	MaxMsgSize = 1024 * 1024 * 32
+)
 
 type Client struct {
 	c debuginfopb.DebugInfoServiceClient
@@ -57,7 +61,7 @@ func (c *Client) Exists(ctx context.Context, buildID, hash string) (bool, error)
 }
 
 func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) (uint64, error) {
-	stream, err := c.c.Upload(ctx)
+	stream, err := c.c.Upload(ctx, grpc.MaxCallSendMsgSize(MaxMsgSize))
 	if err != nil {
 		return 0, fmt.Errorf("initiate upload: %w", err)
 	}
@@ -135,7 +139,7 @@ type Downloader struct {
 func (c *Client) Downloader(ctx context.Context, buildID string) (*Downloader, error) {
 	stream, err := c.c.Download(ctx, &debuginfopb.DownloadRequest{
 		BuildId: buildID,
-	})
+	}, grpc.MaxCallRecvMsgSize(MaxMsgSize))
 	if err != nil {
 		return nil, fmt.Errorf("initiate download: %w", err)
 	}
