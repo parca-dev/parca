@@ -48,6 +48,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
+	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/prober"
 	"github.com/parca-dev/parca/ui"
 )
@@ -112,6 +113,9 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 
 	// Start grpc server with API server registered
 	srv := grpc.NewServer(
+		// It is increased to 32MB to account for large protobuf messages (debug information uploads and downloads).
+		grpc.MaxSendMsgSize(debuginfo.MaxMsgSize),
+		grpc.MaxRecvMsgSize(debuginfo.MaxMsgSize),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
 				otelgrpc.StreamServerInterceptor(),
