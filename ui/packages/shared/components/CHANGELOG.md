@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# 0.14.0 (2022-07-12)
+
+### Bug Fixes
+
+- linter errors ([7230db4](https://github.com/kakkoyun/parca/commit/7230db46b764d3a11ecb63f2b28a2a666629b5a9))
+
+### Features
+
+- add loading state to profile query request ([42d15a5](https://github.com/kakkoyun/parca/commit/42d15a5443b18949468515e003a29fe10eed1ed0))
+- convert moment.js to date-fns ([9431e15](https://github.com/kakkoyun/parca/commit/9431e156d9438353e5542b11e33ed8e0de93547f)), closes [#613](https://github.com/kakkoyun/parca/issues/613)
+- empty state container for targets page ([d151f16](https://github.com/kakkoyun/parca/commit/d151f16ff316c1f4de4d8f68877a3dbe3136b79e))
+- useContainerDimensions hook for smooth chart resize ([3fe5670](https://github.com/kakkoyun/parca/commit/3fe5670cb94e838d83e5cb10d453ee620c2dc3c1))
+
 ## [0.13.15](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.13.15) (2022-07-12)
 
 **Note:** Version bump only for package @parca/components

@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# 0.14.0 (2022-07-12)
+
+### Features
+
+- close profile card in compare view ([d2a4d11](https://github.com/kakkoyun/parca/commit/d2a4d11ea294577164ec44f94f53c2b2df0a723a))
+- custom Pill component ([12fbb29](https://github.com/kakkoyun/parca/commit/12fbb29d0c65e60e8c506cbc988367966d8534fb))
+- empty state container for targets page ([d151f16](https://github.com/kakkoyun/parca/commit/d151f16ff316c1f4de4d8f68877a3dbe3136b79e))
+- initialize redux toolkit, use for dark mode setting ([478b6dd](https://github.com/kakkoyun/parca/commit/478b6ddc6c14e695272cef01cc24fb79b7b1b8e9))
+
 ## [0.13.15](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.13.15) (2022-07-12)
 
 **Note:** Version bump only for package @parca/web

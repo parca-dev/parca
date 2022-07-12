@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# 0.14.0 (2022-07-12)
+
+### Features
+
+- convert moment.js to date-fns ([9431e15](https://github.com/kakkoyun/parca/commit/9431e156d9438353e5542b11e33ed8e0de93547f)), closes [#613](https://github.com/kakkoyun/parca/issues/613)
+
 ## [0.13.12](https://github.com/parca-dev/parca/compare/ui-v0.13.11...ui-v0.13.12) (2022-06-27)
 
 **Note:** Version bump only for package @parca/functions

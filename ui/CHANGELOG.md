@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# 0.14.0 (2022-07-12)
+
+### Bug Fixes
+
+- **config:** Fix panic on empty profiling_config ([a8fda85](https://github.com/kakkoyun/parca/commit/a8fda85deac77cbddbe7570ddb5af41d57ff2256))
+- **grafana:** Fix datasource template ([aac133d](https://github.com/kakkoyun/parca/commit/aac133dc090616032b810259d94d3f2f6d04941a))
+- linter errors ([7230db4](https://github.com/kakkoyun/parca/commit/7230db46b764d3a11ecb63f2b28a2a666629b5a9))
+
+### Features
+
+- add loading state to profile query request ([42d15a5](https://github.com/kakkoyun/parca/commit/42d15a5443b18949468515e003a29fe10eed1ed0))
+- auto-reload configuration ([#1141](https://github.com/kakkoyun/parca/issues/1141)) ([90a799b](https://github.com/kakkoyun/parca/commit/90a799b4efc09c54e1a073cc1755bc14ec8dd94e))
+- close profile card in compare view ([d2a4d11](https://github.com/kakkoyun/parca/commit/d2a4d11ea294577164ec44f94f53c2b2df0a723a))
+- convert moment.js to date-fns ([9431e15](https://github.com/kakkoyun/parca/commit/9431e156d9438353e5542b11e33ed8e0de93547f)), closes [#613](https://github.com/kakkoyun/parca/issues/613)
+- custom Pill component ([12fbb29](https://github.com/kakkoyun/parca/commit/12fbb29d0c65e60e8c506cbc988367966d8534fb))
+- empty state container for targets page ([d151f16](https://github.com/kakkoyun/parca/commit/d151f16ff316c1f4de4d8f68877a3dbe3136b79e))
+- initialize redux toolkit, use for dark mode setting ([478b6dd](https://github.com/kakkoyun/parca/commit/478b6ddc6c14e695272cef01cc24fb79b7b1b8e9))
+- remove threadcreate profiles ([2e65244](https://github.com/kakkoyun/parca/commit/2e652446d1b8c29d61b031561bc15ffad0473ae7)), closes [#670](https://github.com/kakkoyun/parca/issues/670)
+- useContainerDimensions hook for smooth chart resize ([3fe5670](https://github.com/kakkoyun/parca/commit/3fe5670cb94e838d83e5cb10d453ee620c2dc3c1))
+
+### Reverts
+
+- Revert "Update FrostDB for Parca (#1278)" ([691d1ae](https://github.com/kakkoyun/parca/commit/691d1ae393f6faa7f8c553ec8a051d5f7e3212b5)), closes [#1278](https://github.com/kakkoyun/parca/issues/1278)
+- Revert "area/ui: Temp remove command.version.allowBranch in lerna.json" ([04d3dd3](https://github.com/kakkoyun/parca/commit/04d3dd3066deeaf10c1691f2d8feddad73ded2c8))
+- Revert "ui-v0.7.1" ([7fd6652](https://github.com/kakkoyun/parca/commit/7fd6652a745d222383aea0ed56aa3033d808a925))
+
 ## [0.13.15](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.13.15) (2022-07-12)
 
 ### Reverts

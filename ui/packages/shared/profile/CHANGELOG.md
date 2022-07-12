@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# 0.14.0 (2022-07-12)
+
+### Features
+
+- convert moment.js to date-fns ([9431e15](https://github.com/kakkoyun/parca/commit/9431e156d9438353e5542b11e33ed8e0de93547f)), closes [#613](https://github.com/kakkoyun/parca/issues/613)
+- useContainerDimensions hook for smooth chart resize ([3fe5670](https://github.com/kakkoyun/parca/commit/3fe5670cb94e838d83e5cb10d453ee620c2dc3c1))
+
+### Reverts
+
+- Revert "ui-v0.7.1" ([7fd6652](https://github.com/kakkoyun/parca/commit/7fd6652a745d222383aea0ed56aa3033d808a925))
+
 ## [0.13.15](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.13.15) (2022-07-12)
 
 **Note:** Version bump only for package @parca/profile
