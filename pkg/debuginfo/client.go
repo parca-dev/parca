@@ -84,7 +84,7 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 	bytesSent := 0
 	for {
 		n, err := reader.Read(buffer)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -96,7 +96,8 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 				ChunkData: buffer[:n],
 			},
 		})
-		if err == io.EOF {
+		bytesSent += n
+		if errors.Is(err, io.EOF) {
 			// When the stream is closed, the server will send an EOF.
 			// To get the correct error code, we need the status.
 			// So receive the message and check the status.
@@ -109,11 +110,15 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 		if err != nil {
 			return 0, fmt.Errorf("send next chunk (%d bytes sent so far): %w", bytesSent, err)
 		}
-		bytesSent += n
 	}
 
+	// It returns io.EOF when the stream completes successfully.
 	res, err := stream.CloseAndRecv()
+	if errors.Is(err, io.EOF) {
+		return res.Size, nil
+	}
 	if err != nil {
+		// On any other error, the stream is aborted and the error contains the RPC status.
 		if err := sentinelError(err); err != nil {
 			return 0, err
 		}
@@ -156,6 +161,7 @@ func (d *Downloader) Info() *debuginfopb.DownloadInfo {
 }
 
 func (d *Downloader) Close() error {
+	// Note that CloseSend does not Recv, therefore is not guaranteed to release all resources
 	return d.stream.CloseSend()
 }
 
@@ -164,7 +170,7 @@ func (d *Downloader) Download(ctx context.Context, w io.Writer) (int, error) {
 	for {
 		res, err := d.stream.Recv()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return bytesWritten, fmt.Errorf("receive next chunk: %w", err)
@@ -185,6 +191,7 @@ func (d *Downloader) Download(ctx context.Context, w io.Writer) (int, error) {
 	return bytesWritten, nil
 }
 
+// sentinelError checks underlying error for grpc.StatusCode and returns if it's a known and expected error.
 func sentinelError(err error) error {
 	if sts, ok := status.FromError(err); ok {
 		if sts.Code() == codes.AlreadyExists {
