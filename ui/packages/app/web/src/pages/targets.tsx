@@ -37,6 +37,11 @@ const scrapeClient = new ScrapeServiceClient(
   })
 );
 
+const sortTargets = (targets: {[x: string]: any}[]) =>
+  targets.sort((a, b) => {
+    return Object.keys(a)[0].localeCompare(Object.keys(b)[0]);
+  });
+
 const TargetsPage = (): JSX.Element => {
   const {response: targetsResponse, error} = useTargets(scrapeClient);
 
@@ -74,24 +79,20 @@ const TargetsPage = (): JSX.Element => {
             }
           >
             <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              {targetNamespaces
-                ?.sort((a, b) => {
-                  return Object.keys(a)[0].localeCompare(Object.keys(b)[0]);
-                })
-                .map(namespace => {
-                  const name = Object.keys(namespace)[0];
-                  const targets = namespace[name].sort((a: Target, b: Target) => {
-                    return a.url.localeCompare(b.url);
-                  });
-                  return (
-                    <div key={name} className="my-2 p-2 border-b-2">
-                      <div className="my-2">
-                        <span className="font-semibold text-xl">{name}</span>
-                      </div>
-                      <TargetsTable targets={targets} />
+              {sortTargets(targetNamespaces)?.map(namespace => {
+                const name = Object.keys(namespace)[0];
+                const targets = namespace[name].sort((a: Target, b: Target) => {
+                  return a.url.localeCompare(b.url);
+                });
+                return (
+                  <div key={name} className="my-2 p-2 border-b-2">
+                    <div className="my-2">
+                      <span className="font-semibold text-xl">{name}</span>
                     </div>
-                  );
-                })}
+                    <TargetsTable targets={targets} />
+                  </div>
+                );
+              })}
             </div>
           </EmptyState>
         </div>
