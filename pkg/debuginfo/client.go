@@ -57,7 +57,7 @@ func (c *Client) Exists(ctx context.Context, buildID, hash string) (bool, error)
 }
 
 func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) (uint64, error) {
-	stream, err := c.c.Upload(ctx)
+	stream, err := c.c.Upload(ctx, grpc.MaxCallSendMsgSize(ChunkSize))
 	if err != nil {
 		return 0, fmt.Errorf("initiate upload: %w", err)
 	}
@@ -135,7 +135,7 @@ type Downloader struct {
 func (c *Client) Downloader(ctx context.Context, buildID string) (*Downloader, error) {
 	stream, err := c.c.Download(ctx, &debuginfopb.DownloadRequest{
 		BuildId: buildID,
-	})
+	}, grpc.MaxCallRecvMsgSize(ChunkSize))
 	if err != nil {
 		return nil, fmt.Errorf("initiate download: %w", err)
 	}
