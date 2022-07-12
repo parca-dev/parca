@@ -37,6 +37,11 @@ const scrapeClient = new ScrapeServiceClient(
   })
 );
 
+const sortTargets = (targets: {[x: string]: any}[]) =>
+  targets.sort((a, b) => {
+    return Object.keys(a)[0].localeCompare(Object.keys(b)[0]);
+  });
+
 const TargetsPage = (): JSX.Element => {
   const {response: targetsResponse, error} = useTargets(scrapeClient);
 
@@ -74,7 +79,7 @@ const TargetsPage = (): JSX.Element => {
             }
           >
             <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              {targetNamespaces?.map(namespace => {
+              {sortTargets(targetNamespaces)?.map(namespace => {
                 const name = Object.keys(namespace)[0];
                 const targets = namespace[name].sort((a: Target, b: Target) => {
                   return a.url.localeCompare(b.url);
