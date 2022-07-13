@@ -42,7 +42,7 @@ enum Labels {
 }
 
 // eslint-disable-next-line no-useless-escape
-const labelNameValueRe = /(^([a-z])\w+)(=|!=|=~|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
+const labelNameValueRe = /(^([a-z])\w+)(=~|=|!=|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
 
 const addQuoteMarks = (labelValue: string) => {
   // eslint-disable-next-line no-useless-escape
@@ -115,6 +115,8 @@ const MatchersInput = ({
   const metadata = useGrpcMetadata();
   const {loader: Spinner} = useParcaTheme();
 
+  const [suggestionSections, setSuggestionSections] = useState<Suggestions>(new Suggestions());
+
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
   const {response: labelNamesResponse, error: labelNamesError} = result;
 
@@ -128,7 +130,9 @@ const MatchersInput = ({
     setLabelValuesLoading(true);
 
     call.response
-      .then(response => setLabelValuesResponse(response.labelValues))
+      .then(response => {
+        setLabelValuesResponse(response.labelValues);
+      })
       .catch(() => setLabelValuesResponse(null))
       .finally(() => setLabelValuesLoading(false));
   };
@@ -144,7 +148,7 @@ const MatchersInput = ({
     labelValuesResponse !== undefined && labelValuesResponse != null ? labelValuesResponse : [];
 
   const value = currentQuery.matchersString();
-  const suggestionSections = new Suggestions();
+  // const suggestionSections = new Suggestions();
 
   Query.suggest(`{${value}`).forEach(function (s) {
     // Skip suggestions that we just completed. This really only works,
@@ -158,12 +162,18 @@ const MatchersInput = ({
     // closing bracket doesn't in the guided query experience because all
     // we have the user do is type the matchers.
     if (s.type === Labels.literal && s.value !== '}') {
+      if (suggestionSections.literals.find(e => e.value === s.value)) {
+        return;
+      }
       suggestionSections.literals.push({
         type: s.type,
         typeahead: '',
         value: s.value,
       });
+      suggestionSections.labelNames = [];
+      suggestionSections.labelValues = [];
     }
+
     if (s.type === Labels.labelName) {
       const inputValue = s.typeahead.trim().toLowerCase();
       const inputLength = inputValue.length;
@@ -172,14 +182,21 @@ const MatchersInput = ({
         return label.toLowerCase().slice(0, inputLength) === inputValue;
       });
 
-      matches.forEach(m =>
+      matches.forEach(m => {
+        if (suggestionSections.labelNames.find(e => e.value === m)) {
+          return;
+        }
+
         suggestionSections.labelNames.push({
           type: s.type,
           typeahead: s.typeahead,
           value: m,
-        })
-      );
+        });
+        suggestionSections.literals = [];
+        suggestionSections.labelValues = [];
+      });
     }
+
     if (s.type === Labels.labelValue) {
       const inputValue = s.typeahead.trim().toLowerCase();
       const inputLength = inputValue.length;
@@ -188,13 +205,19 @@ const MatchersInput = ({
         return label.toLowerCase().slice(0, inputLength) === inputValue;
       });
 
-      matches.forEach(m =>
+      matches.forEach(m => {
+        if (suggestionSections.labelValues.find(e => e.value === m)) {
+          return;
+        }
+
         suggestionSections.labelValues.push({
           type: s.type,
           typeahead: s.typeahead,
           value: m,
-        })
-      );
+        });
+        suggestionSections.labelNames = [];
+        suggestionSections.literals = [];
+      });
     }
   });
 
@@ -225,6 +248,21 @@ const MatchersInput = ({
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
+
+    if (suggestionSections.labelNames.length > 0) {
+      suggestionSections.labelNames = suggestionSections.labelNames.filter(
+        suggestion => suggestion.value.toLowerCase().indexOf(newValue.toLowerCase()) > -1
+      );
+    }
+
+    if (suggestionSections.labelValues.length > 0) {
+      const labelValueSearch = newValue.split(/(=~|=|!=|!~)/)[2];
+
+      suggestionSections.labelValues = suggestionSections.labelValues.filter(
+        suggestion => suggestion.value.toLowerCase().indexOf(labelValueSearch.toLowerCase()) > -1
+      );
+    }
+
     setInputRef(newValue);
     resetLastCompleted();
     resetHighlight();
