@@ -1,4 +1,3 @@
-CMD_DOCKER ?= docker
 CMD_GIT ?= git
 SHELL := /usr/bin/env bash
 ifeq (,$(shell go env GOBIN))
@@ -139,7 +138,10 @@ container-dev:
 
 .PHONY: container
 container:
-	./scripts/make-containers.sh $(OUT_DOCKER):$(VERSION)
+	podman build \
+		--platform linux/amd64,linux/arm64 \
+		--timestamp 0 \
+		--manifest $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: push-container
 push-container:
@@ -190,3 +192,11 @@ endif
 
 README.md: embedmd tmp/help.txt
 	$(EMBEDMD) -w README.md
+
+.PHONY: release-dry-run
+release-dry-run:
+	goreleaser release --rm-dist --auto-snapshot --skip-validate --skip-publish --debug
+
+.PHONY: release-build
+release-build:
+	goreleaser build --rm-dist --skip-validate --snapshot --debug

@@ -1,10 +1,12 @@
-FROM docker.io/golang:1.18.4-alpine@sha256:46f1fa18ca1ec228f7ea4978ad717f0a8c5e51436e7b8efaf64011f7729886df AS builder
-RUN mkdir /.cache && chown nobody:nogroup /.cache && touch -t 202101010000.00 /.cache
+FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/golang:1.18.4-alpine@sha256:46f1fa18ca1ec228f7ea4978ad717f0a8c5e51436e7b8efaf64011f7729886df AS builder
+RUN mkdir /.cache && touch -t 202101010000.00 /.cache
+
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+ARG TARGETVARIANT
 
 # renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-health-probe
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.11
-
-WORKDIR /app
 
 RUN go install "github.com/grpc-ecosystem/grpc-health-probe@${GRPC_HEALTH_PROBE_VERSION}"
 # Predicatable path for copying over to final image
@@ -12,14 +14,18 @@ RUN if [ "$(go env GOHOSTARCH)" != "$(go env GOARCH)" ]; then \
         mv "$(go env GOPATH)/bin/$(go env GOOS)_$(go env GOARCH)/grpc-health-probe" "$(go env GOPATH)/bin/grpc-health-probe"; \
     fi
 
+WORKDIR /app
 COPY ./dist /app/dist
+
 RUN if [ "amd64" = "$(go env GOARCH)" ]; then \
         cp "dist/parca_$(go env GOOS)_$(go env GOARCH)_$(go env GOAMD64)/parca" parca; \
     else \
         cp "dist/parca_$(go env GOOS)_$(go env GOARCH)/parca" parca; \
     fi
 
-FROM docker.io/alpine:3.16.0@sha256:686d8c9dfa6f3ccfc8230bc3178d23f84eeaf7e457f36f271ab1acc53015037c AS runner
+RUN chmod +x parca
+
+FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.16.0@sha256:686d8c9dfa6f3ccfc8230bc3178d23f84eeaf7e457f36f271ab1acc53015037c AS runner
 
 USER nobody
 
