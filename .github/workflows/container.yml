@@ -39,17 +39,11 @@ jobs:
             ]
           skip_after_successful_duplicate: false
 
-  build-container:
-    name: Container build and push (when merged)
+  build-binary:
+    name: Build binary using goreleaser
     needs: skip-check
-    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-      packages: write
-      contents: read
-
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
@@ -71,24 +65,67 @@ jobs:
         run: |
           echo "goreleaser_current_tag=`git describe --match 'v*' --tags`" >> $GITHUB_ENV
 
+      - name: Get branch name
+        shell: bash
+        run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
       - name: Build binaries
         uses: goreleaser/goreleaser-action@68acf3b1adf004ac9c2f0a4259e85c5f66e99bef # tag=v3.0.0
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: build --rm-dist --skip-validate --snapshot
+          args: build --rm-dist --skip-validate --snapshot --debug
         env:
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
+
+      - name: Archive generated artifacts
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        with:
+          name: parca-dist-container
+          if-no-files-found: error
+          path: |
+            dist
+            !dist/*.txt
+
+  build-and-push-container:
+    name: Container build and push (when merged)
+    needs: build-binary
+    runs-on: ubuntu-latest
+    container:
+      # https://github.com/containers/podman/tree/main/contrib/podmanimage
+      # Specifying SHA repeatedly fails:
+      # @sha256:421ac576cebff98e90c531e7b9ce4482370ecc7cee59abc2341714031bfb5f43
+      image: quay.io/containers/podman:v4.1.1
+      options: >-
+        --device /dev/fuse:rw
+        --privileged
+        --security-opt label=disable
+        --security-opt seccomp=unconfined
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
+    steps:
+      - name: Install dependencies
+        run: dnf install --assumeyes --repo fedora git make jq
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
+        with:
+          go-version-file: .go-version
+          check-latest: true
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: parca-dist-container
+          path: dist
 
       - name: Get branch name
         shell: bash
         run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-
-      # To build multi-arch images, see also: https://github.com/redhat-actions/buildah-build#multi-arch-builds
-      - name: Install QEMU dependency
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y binfmt-support qemu-user-static
 
       - name: Build container
         run: make container
