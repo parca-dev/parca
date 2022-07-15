@@ -25,9 +25,10 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/filesystem"
+	"github.com/thanos-io/objstore/providers/filesystem"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v2"
@@ -53,7 +54,7 @@ func TestStore(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, "parca/store")
+	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
 	require.NoError(t, err)
 
 	cache, err := NewCache(

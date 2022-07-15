@@ -26,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/filesystem"
+	"github.com/thanos-io/objstore/providers/filesystem"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -452,7 +452,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, "parca/store")
+	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
 	require.NoError(t, err)
 
 	cache, err := debuginfo.NewCache(
