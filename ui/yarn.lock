@@ -2666,24 +2666,24 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@next/bundle-analyzer@12.2.0":
-  version "12.2.0"
-  resolved "https://registry.yarnpkg.com/@next/bundle-analyzer/-/bundle-analyzer-12.2.0.tgz#8abe89e23c6a9bf5afba3a15ee4d5f432d3db3b9"
-  integrity sha512-Ac+lPLMUW2TBjUi29CwQQu8ay74+mjFoSiI4O3ZlnBVD0xOeQPKwPca/9T9ScO/6/Axx4+B+42eEr2UtgNXeiw==
+"@next/bundle-analyzer@12.2.1":
+  version "12.2.1"
+  resolved "https://registry.yarnpkg.com/@next/bundle-analyzer/-/bundle-analyzer-12.2.1.tgz#9b15f487496aa1e137f640c5906e84a5daca6ebc"
+  integrity sha512-P5rj+mty9sB/58H32TFiLihy/W2Pd6vw9EorcpoyatI8tfpnyrBQOTW77QUFSeI3G4W9ovvv6ozUS/GkQvPwyQ==
   dependencies:
     webpack-bundle-analyzer "4.3.0"
 
-"@next/eslint-plugin-next@12.2.0":
-  version "12.2.0"
-  resolved "https://registry.yarnpkg.com/@next/eslint-plugin-next/-/eslint-plugin-next-12.2.0.tgz#38b36d3be244cc9a98c0e7d203bdb062f87df4ac"
-  integrity sha512-nIj5xV/z3dOfeBnE7qFAjUQZAi4pTlIMuusRM6s/T6lOz8x7mjY5s1ZkTUBmcjPVCb2VIv3CrMH0WZL6xfjZZg==
+"@next/eslint-plugin-next@12.2.1":
+  version "12.2.1"
+  resolved "https://registry.yarnpkg.com/@next/eslint-plugin-next/-/eslint-plugin-next-12.2.1.tgz#18030efbb55b0c6f48add0ac5ad74c7f66949462"
+  integrity sha512-TeixNZNtKIZl8+HSq2hioWGL7/+YVcmKCExW7p075iVNZb/wbEAgTsrfiZJfTtHwXVuyuX7dUxiaMin1yvHzjA==
   dependencies:
     glob "7.1.7"
 
-"@next/mdx@12.2.0":
-  version "12.2.0"
-  resolved "https://registry.yarnpkg.com/@next/mdx/-/mdx-12.2.0.tgz#de38207bc1150836c33455fa072afb55cdbbd194"
-  integrity sha512-obWsgfD0/1+OOr4PMQlSal34uhIDxkFe9Db+LaFfRDbsmD8+gb0YevUOV5KBoleEHXfDku0WAPUUmPmDiAxu1w==
+"@next/mdx@12.2.1":
+  version "12.2.1"
+  resolved "https://registry.yarnpkg.com/@next/mdx/-/mdx-12.2.1.tgz#fc7af117c172d69036b48799e031dbecb6937317"
+  integrity sha512-2T/EZbyX/r9vhrgDnvjybW1xbdIgOcXaiaVughkjP77HUueMSQJpvrgrJrGudcBsPoU15obX3hDMVhejSPRrcg==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
