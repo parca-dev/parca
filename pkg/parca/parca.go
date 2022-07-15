@@ -227,7 +227,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	bucket, err := client.NewBucket(logger, bucketCfg, "parca")
+	bucket, err := client.NewBucket(logger, bucketCfg, reg, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debuginfo object store bucket", "err", err)
 		return err
