@@ -1,4 +1,4 @@
-FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/golang:1.18.4-alpine@sha256:317374913e4c2ec432792e45167a856ce7c9970e77990db45a28fc178f43a93f AS builder
+FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/golang:1.18.4-alpine@sha256:53bdbdf45bfab272f7c9897ba57dc34be258a210a8cbc5dfb5ed6312c95182e6 AS builder
 RUN mkdir /.cache && touch -t 202101010000.00 /.cache
 
 ARG TARGETOS=linux
