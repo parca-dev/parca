@@ -563,6 +563,11 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) 
 	t := s.Time.AsTime()
 	p, err := q.findSingle(ctx, s.Query, t)
 	if err != nil {
+		// if the column cannot be found the timestamp is too far in the past and we don't have data
+		var colErr parcacol.ErrMissingColumn
+		if errors.As(err, &colErr) {
+			return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
+		}
 		return nil, err
 	}
 
