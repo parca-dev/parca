@@ -144,13 +144,13 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	for _, locationsByMapping := range locationsByMappings {
 		mapping := locationsByMapping.Mapping
-		logger := log.With(s.logger, "buildid", mapping.BuildId)
 
 		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
 		if mapping == nil || len(mapping.BuildId) == 0 || UnsymbolizableMapping(mapping) {
 			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
 			continue
 		}
+		logger := log.With(s.logger, "buildid", mapping.BuildId)
 
 		locations := locationsByMapping.Locations
 		level.Debug(logger).Log("msg", "storage symbolization request started", "build_id_length", len(mapping.BuildId))

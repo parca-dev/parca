@@ -86,10 +86,10 @@ func MakeLocationID(l *pb.Location) string {
 		// bytes that way.
 
 		//nolint:errcheck // ignore error as writing to the hash will cannot error
-		binary.Write(hash, binary.BigEndian, 1)
+		binary.Write(hash, binary.BigEndian, int64(1))
 	} else {
 		//nolint:errcheck // ignore error as writing to the hash will cannot error
-		binary.Write(hash, binary.BigEndian, 0)
+		binary.Write(hash, binary.BigEndian, int64(0))
 	}
 
 	// If the address is 0, then the functions attached to the
