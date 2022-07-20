@@ -86,7 +86,7 @@ func MakeLocationID(l *pb.Location) string {
 		// bytes that way.
 
 		//nolint:errcheck,staticcheck
-		// ignore error as writing to the hash will cannot error
+		// ignore the error as writing to the hash will not error
 		// https://staticcheck.io/docs/checks#SA1003
 		// The encoding/binary package can only serialize types with known sizes.
 		// This precludes the use of the int and uint types, as their sizes differ on different architectures.
@@ -94,7 +94,7 @@ func MakeLocationID(l *pb.Location) string {
 		binary.Write(hash, binary.BigEndian, 1)
 	} else {
 		//nolint:errcheck,staticcheck
-		// ignore error as writing to the hash will cannot error
+		// ignore the error as writing to the hash will not error
 		// https://staticcheck.io/docs/checks#SA1003
 		// TODO: Fix this.
 		binary.Write(hash, binary.BigEndian, 0)
