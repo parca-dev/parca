@@ -37,7 +37,7 @@
     "@storybook/builder-webpack5": "6.5.9",
     "@storybook/manager-webpack5": "6.5.9",
     "@storybook/react": "6.5.9",
-    "@svgr/webpack": "6.2.1",
+    "@svgr/webpack": "6.3.0",
     "@swc/cli": "0.1.57",
     "@swc/core": "1.2.218",
     "@swc/jest": "0.2.22",
