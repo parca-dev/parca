@@ -19,7 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"time"
 
@@ -99,9 +99,9 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 				return nil, status.Errorf(codes.Internal, "failed to create gzip reader: %v", err)
 			}
 
-			content, err := ioutil.ReadAll(r)
+			content, err := io.ReadAll(r)
 			if err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to decompress profile: %v", err)
+				return nil, status.Errorf(codes.InvalidArgument, "failed to decompress profile: %v", err)
 			}
 
 			p := &pprofpb.Profile{}
@@ -115,7 +115,7 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 				if err != nil {
 					level.Error(s.logger).Log("msg", "failed to create debug-value-log directory", "err", err)
 				} else {
-					err := ioutil.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, timestamp.FromTime(time.Now())), sample.RawProfile, 0o644)
+					err := os.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, timestamp.FromTime(time.Now())), sample.RawProfile, 0o644)
 					if err != nil {
 						level.Error(s.logger).Log("msg", "failed to write debug-value-log", "err", err)
 					}
