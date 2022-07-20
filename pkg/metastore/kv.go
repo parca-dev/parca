@@ -85,11 +85,19 @@ func MakeLocationID(l *pb.Location) string {
 		// 0. This works out well as the key is byte aligned to the nearest 8
 		// bytes that way.
 
-		//nolint:errcheck // ignore error as writing to the hash will cannot error
-		binary.Write(hash, binary.BigEndian, int64(1))
+		//nolint:errcheck,staticcheck
+		// ignore error as writing to the hash will cannot error
+		// https://staticcheck.io/docs/checks#SA1003
+		// The encoding/binary package can only serialize types with known sizes.
+		// This precludes the use of the int and uint types, as their sizes differ on different architectures.
+		// TODO: Fix this.
+		binary.Write(hash, binary.BigEndian, 1)
 	} else {
-		//nolint:errcheck // ignore error as writing to the hash will cannot error
-		binary.Write(hash, binary.BigEndian, int64(0))
+		//nolint:errcheck,staticcheck
+		// ignore error as writing to the hash will cannot error
+		// https://staticcheck.io/docs/checks#SA1003
+		// TODO: Fix this.
+		binary.Write(hash, binary.BigEndian, 0)
 	}
 
 	// If the address is 0, then the functions attached to the
