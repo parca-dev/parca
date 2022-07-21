@@ -135,8 +135,8 @@ github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible/go.mod h1:T/Aws4fEfogEE9
 github.com/andybalholm/brotli v1.0.4 h1:V7DdXeJtZscaqfNuAdSRuRFzuiKlHSC/Zh3zl9qY3JY=
 github.com/andybalholm/brotli v1.0.4/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/apache/arrow/go/v8 v8.0.0 h1:mG1dDlq8aQO4a/PB00T9H19Ga2imvqoFPHI5cykpibs=
-github.com/apache/arrow/go/v8 v8.0.0/go.mod h1:63co72EKYQT9WKr8Y1Yconk4dysC0t79wNDauYO1ZGg=
+github.com/apache/arrow/go/v8 v8.0.1 h1:smzd5nk4gP/ZV5p01MWSFahNCTCEvi3GwxsrIf416zQ=
+github.com/apache/arrow/go/v8 v8.0.1/go.mod h1:6Vzn5Pp1QuMjMPR2sagLeRIv/lY8/H+Mn4L/XN2V02o=
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/apache/thrift v0.13.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/apache/thrift v0.15.0/go.mod h1:PHK3hniurgQaNMZYaCLEqXKsYK8upmhPbmdP2FXSqgU=
