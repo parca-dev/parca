@@ -136,7 +136,6 @@ func TestStore(t *testing.T) {
 	require.NoError(t, downloader.Close())
 
 	// Test only reading the download info.
-	buf = bytes.NewBuffer(nil)
 	downloader, err = c.Downloader(ctx, hex.EncodeToString([]byte("section")))
 	require.NoError(t, err)
 	require.Equal(t, debuginfopb.DownloadInfo_SOURCE_UPLOAD, downloader.Info().Source)
