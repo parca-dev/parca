@@ -40,12 +40,12 @@ type Ingester struct {
 	schema     *dynparquet.Schema
 }
 
-func NewIngester(logger log.Logger, normalizer *Normalizer, table Table) *Ingester {
+func NewIngester(logger log.Logger, normalizer *Normalizer, table Table, schema *dynparquet.Schema) *Ingester {
 	return &Ingester{
 		logger:     logger,
 		normalizer: normalizer,
 		table:      table,
-		schema:     Schema(),
+		schema:     schema,
 	}
 }
 

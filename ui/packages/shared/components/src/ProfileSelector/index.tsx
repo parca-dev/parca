@@ -181,12 +181,16 @@ const ProfileSelector = ({
     return (error === undefined || error == null) &&
       profileTypesData !== undefined &&
       profileTypesData != null
-      ? profileTypesData.types.map(
-          type =>
-            `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${
-              type.periodUnit
-            }${type.delta ? ':delta' : ''}`
-        )
+      ? profileTypesData.types
+          .map(
+            type =>
+              `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${
+                type.periodUnit
+              }${type.delta ? ':delta' : ''}`
+          )
+          .sort((a: string, b: string): number => {
+            return a.localeCompare(b);
+          })
       : [];
   }, [profileTypesData, error]);
 

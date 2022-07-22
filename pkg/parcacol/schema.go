@@ -15,7 +15,7 @@ package parcacol
 
 import (
 	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/segmentio/parquet-go"
+	schemapb "github.com/polarsignals/frostdb/gen/proto/go/frostdb/schema/v1alpha1"
 )
 
 const (
@@ -36,75 +36,137 @@ const (
 	ColumnValue          = "value"
 )
 
-func Schema() *dynparquet.Schema {
-	return dynparquet.NewSchema(
-		SchemaName,
-		[]dynparquet.ColumnDefinition{
+func Schema() (*dynparquet.Schema, error) {
+	return dynparquet.SchemaFromDefinition(&schemapb.Schema{
+		Name: SchemaName,
+		Columns: []*schemapb.Column{
 			{
-				Name:          ColumnDuration,
-				StorageLayout: parquet.Int(64),
-				Dynamic:       false,
+				Name: ColumnDuration,
+				StorageLayout: &schemapb.StorageLayout{
+					Type: schemapb.StorageLayout_TYPE_INT64,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnLabels,
-				StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
-				Dynamic:       true,
+				Name: ColumnLabels,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_STRING,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+					Nullable: true,
+				},
+				Dynamic: true,
 			}, {
-				Name:          ColumnName,
-				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
-				Dynamic:       false,
+				Name: ColumnName,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_STRING,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnPeriod,
-				StorageLayout: parquet.Int(64),
-				Dynamic:       false,
+				Name: ColumnPeriod,
+				StorageLayout: &schemapb.StorageLayout{
+					Type: schemapb.StorageLayout_TYPE_INT64,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnPeriodType,
-				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
-				Dynamic:       false,
+				Name: ColumnPeriodType,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_STRING,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnPeriodUnit,
-				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
-				Dynamic:       false,
+				Name: ColumnPeriodUnit,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_STRING,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnPprofLabels,
-				StorageLayout: parquet.Encoded(parquet.Optional(parquet.String()), &parquet.RLEDictionary),
-				Dynamic:       true,
+				Name: ColumnPprofLabels,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_STRING,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+					Nullable: true,
+				},
+				Dynamic: true,
 			}, {
-				Name:          ColumnPprofNumLabels,
-				StorageLayout: parquet.Optional(parquet.Int(64)),
-				Dynamic:       true,
+				Name: ColumnPprofNumLabels,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_INT64,
+					Nullable: true,
+				},
+				Dynamic: true,
 			}, {
-				Name:          ColumnSampleType,
-				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
-				Dynamic:       false,
+				Name: ColumnSampleType,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_STRING,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnSampleUnit,
-				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
-				Dynamic:       false,
+				Name: ColumnSampleUnit,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_STRING,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnStacktrace,
-				StorageLayout: parquet.Encoded(parquet.String(), &parquet.RLEDictionary),
-				Dynamic:       false,
+				Name: ColumnStacktrace,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:     schemapb.StorageLayout_TYPE_STRING,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnTimestamp,
-				StorageLayout: parquet.Int(64),
-				Dynamic:       false,
+				Name: ColumnTimestamp,
+				StorageLayout: &schemapb.StorageLayout{
+					Type: schemapb.StorageLayout_TYPE_INT64,
+				},
+				Dynamic: false,
 			}, {
-				Name:          ColumnValue,
-				StorageLayout: parquet.Int(64),
-				Dynamic:       false,
+				Name: ColumnValue,
+				StorageLayout: &schemapb.StorageLayout{
+					Type: schemapb.StorageLayout_TYPE_INT64,
+				},
+				Dynamic: false,
 			},
 		},
-		[]dynparquet.SortingColumn{
-			dynparquet.Ascending(ColumnName),
-			dynparquet.Ascending(ColumnSampleType),
-			dynparquet.Ascending(ColumnSampleUnit),
-			dynparquet.Ascending(ColumnPeriodType),
-			dynparquet.Ascending(ColumnPeriodUnit),
-			dynparquet.NullsFirst(dynparquet.Ascending(ColumnLabels)),
-			dynparquet.NullsFirst(dynparquet.Ascending(ColumnStacktrace)),
-			dynparquet.Ascending(ColumnTimestamp),
-			dynparquet.NullsFirst(dynparquet.Ascending(ColumnPprofLabels)),
-			dynparquet.NullsFirst(dynparquet.Ascending(ColumnPprofNumLabels)),
+		SortingColumns: []*schemapb.SortingColumn{
+			{
+				Name:      ColumnName,
+				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
+			}, {
+				Name:      ColumnSampleType,
+				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
+			}, {
+				Name:      ColumnSampleUnit,
+				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
+			}, {
+				Name:      ColumnPeriodType,
+				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
+			}, {
+				Name:      ColumnPeriodUnit,
+				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
+			}, {
+				Name:       ColumnLabels,
+				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
+				NullsFirst: true,
+			}, {
+				Name:       ColumnStacktrace,
+				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
+				NullsFirst: true,
+			}, {
+				Name:      ColumnTimestamp,
+				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
+			}, {
+				Name:       ColumnPprofLabels,
+				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
+				NullsFirst: true,
+			}, {
+				Name:       ColumnPprofNumLabels,
+				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
+				NullsFirst: true,
+			},
 		},
-	)
+	})
 }
