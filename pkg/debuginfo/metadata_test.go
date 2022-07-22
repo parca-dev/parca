@@ -50,19 +50,9 @@ func TestMetadata(t *testing.T) {
 	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
 	require.NoError(t, err)
 
-	cache, err := NewCache(
-		&CacheConfig{
-			Type: FILESYSTEM,
-			Config: &FilesystemCacheConfig{
-				Directory: cacheDir,
-			},
-		},
-	)
-	require.NoError(t, err)
-
 	store, err := NewStore(
 		logger,
-		cache.Directory,
+		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
 		bucket,
 		NopDebugInfodClient{},

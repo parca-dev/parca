@@ -26,6 +26,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
@@ -46,7 +47,8 @@ type ProfileColumnStore struct {
 	tracer    trace.Tracer
 	metastore metastorepb.MetastoreServiceClient
 
-	table *frostdb.Table
+	table  *frostdb.Table
+	schema *dynparquet.Schema
 
 	// When the debug-value-log is enabled, every profile is first written to
 	// tmp/<labels>/<timestamp>.pb.gz before it's parsed and written to the
@@ -63,6 +65,7 @@ func NewProfileColumnStore(
 	tracer trace.Tracer,
 	metastore metastorepb.MetastoreServiceClient,
 	table *frostdb.Table,
+	schema *dynparquet.Schema,
 	debugValueLog bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{
@@ -71,6 +74,7 @@ func NewProfileColumnStore(
 		metastore:     metastore,
 		table:         table,
 		debugValueLog: debugValueLog,
+		schema:        schema,
 	}
 }
 
@@ -78,7 +82,12 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 	ctx, span := s.tracer.Start(ctx, "write-raw")
 	defer span.End()
 
-	ingester := parcacol.NewIngester(s.logger, parcacol.NewNormalizer(s.metastore), s.table)
+	ingester := parcacol.NewIngester(
+		s.logger,
+		parcacol.NewNormalizer(s.metastore),
+		s.table,
+		s.schema,
+	)
 
 	for _, series := range req.Series {
 		ls := make(labels.Labels, 0, len(series.Labels.Labels))

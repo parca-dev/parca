@@ -44,19 +44,20 @@ func Benchmark_Query_Merge(b *testing.B) {
 			logger := log.NewNopLogger()
 			reg := prometheus.NewRegistry()
 			tracer := trace.NewNoopTracerProvider().Tracer("")
-			col := columnstore.New(
+			col, err := columnstore.New(
+				logger,
 				reg,
-				8196,
-				64*1024*1024,
 			)
+			require.NoError(b, err)
 			colDB, err := col.DB("parca")
 			require.NoError(b, err)
+
+			schema, err := parcacol.Schema()
+			require.NoError(b, err)
+
 			table, err := colDB.Table(
 				"stacktraces",
-				columnstore.NewTableConfig(
-					parcacol.Schema(),
-				),
-				logger,
+				columnstore.NewTableConfig(schema),
 			)
 			require.NoError(b, err)
 			m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
@@ -76,7 +77,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			}
 
 			normalizer := parcacol.NewNormalizer(m)
-			ingester := parcacol.NewIngester(logger, normalizer, table)
+			ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 
 			profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
 			require.NoError(b, err)
@@ -121,3 +122,48 @@ func Benchmark_Query_Merge(b *testing.B) {
 		})
 	}
 }
+
+//func Benchmark_ProfileTypes(b *testing.B) {
+//	ctx := context.Background()
+//	logger := log.NewNopLogger()
+//	reg := prometheus.NewRegistry()
+//	tracer := trace.NewNoopTracerProvider().Tracer("")
+//	col, err := columnstore.New(
+//		logger,
+//		reg,
+//		frostdb.WithWAL(),
+//		frostdb.WithStoragePath("../../data"),
+//	)
+//	require.NoError(b, err)
+//
+//	require.NoError(b, col.ReplayWALs(ctx))
+//
+//	colDB, err := col.DB("parca")
+//	require.NoError(b, err)
+//
+//	require.NoError(b, err)
+//	m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
+//		b,
+//		logger,
+//		reg,
+//		tracer,
+//	))
+//
+//	api := NewColumnQueryAPI(
+//		logger,
+//		tracer,
+//		m,
+//		getShareServerConn(b),
+//		query.NewEngine(
+//			memory.NewGoAllocator(),
+//			colDB.TableProvider(),
+//		),
+//		"stacktraces",
+//	)
+//	b.ResetTimer()
+//
+//	for i := 0; i < b.N; i++ {
+//		_, err = api.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
+//		require.NoError(b, err)
+//	}
+//}
