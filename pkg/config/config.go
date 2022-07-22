@@ -29,9 +29,8 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install" // Imported for registration side-effect
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/thanos-io/objstore/client"
 	"gopkg.in/yaml.v2"
-
-	"github.com/parca-dev/parca/pkg/debuginfo"
 )
 
 const (
@@ -44,14 +43,18 @@ const (
 
 // Config holds all the configuration information for Parca.
 type Config struct {
-	DebugInfo     *debuginfo.Config `yaml:"debug_info"`
-	ScrapeConfigs []*ScrapeConfig   `yaml:"scrape_configs,omitempty"`
+	ObjectStorage *ObjectStorage  `yaml:"object_storage,omitempty"`
+	ScrapeConfigs []*ScrapeConfig `yaml:"scrape_configs,omitempty"`
+}
+
+type ObjectStorage struct {
+	Bucket *client.BucketConfig `yaml:"bucket,omitempty"`
 }
 
 // Validate returns an error if the config is not valid.
 func (c *Config) Validate() error {
 	return validation.ValidateStruct(c,
-		validation.Field(&c.DebugInfo, validation.Required, debuginfo.Valid),
+		validation.Field(&c.ObjectStorage, validation.Required, Valid),
 	)
 }
 
