@@ -49,6 +49,11 @@ export const ProfileView = ({
   const {loader} = useParcaTheme();
 
   useEffect(() => {
+    // Reset the current path when the profile source changes
+    setCurPath([]);
+  }, [profileSource]);
+
+  useEffect(() => {
     let showLoaderTimeout;
     if (isLoading && !isLoaderVisible) {
       // if the request takes longer than half a second, show the loading icon
