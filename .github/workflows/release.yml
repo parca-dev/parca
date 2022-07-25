@@ -158,7 +158,7 @@ jobs:
           echo "${{ secrets.PERSONAL_ACCESS_TOKEN }}" | podman login -u parca-dev --password-stdin ghcr.io
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@48866aa521d8bf870604709cd43ec2f602d03ff2 # tag=v2.4.1
+        uses: sigstore/cosign-installer@09a077b27eb1310dcfb21981bee195b30ce09de0 # tag=v2.5.0
 
       - name: Install crane
         uses: imjasonh/setup-crane@5146f708a817ea23476677995bf2133943b9be0b # tag=v0.1
