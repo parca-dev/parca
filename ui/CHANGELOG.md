@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.14.0](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.14.0) (2022-07-25)
+
+### Reverts
+
+- Revert "Update FrostDB for Parca (#1278)" ([691d1ae](https://github.com/parca-dev/parca/commit/691d1ae393f6faa7f8c553ec8a051d5f7e3212b5)), closes [#1278](https://github.com/parca-dev/parca/issues/1278)
+
 ## [0.13.15](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.13.15) (2022-07-12)
 
 ### Reverts
