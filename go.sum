@@ -880,8 +880,8 @@ github.com/pkg/profile v1.2.1/go.mod h1:hJw3o1OdXxsrSjjVksARp5W95eeEaEfptyVZyv6J
 github.com/pkg/sftp v1.10.1/go.mod h1:lYOWFsE0bwd1+KfKJaKeuokY15vzFx25BLbzYYoAxZI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20220725071538-8afb5acc429f h1:sOKe8prb6akHjBsju+FLlooWqgSCfpf5D3qcmuM9OEs=
-github.com/polarsignals/frostdb v0.0.0-20220725071538-8afb5acc429f/go.mod h1:Sh+8dnx7Z5jKdjcMrBqxzIhSg/qwAOzvEzSd4+0lx4I=
+github.com/polarsignals/frostdb v0.0.0-20220726090255-f9a6faac3ae9 h1:jpTKdyVJown+QuhEwW/xJAL+MQw97y/WNAPkh9+6Br4=
+github.com/polarsignals/frostdb v0.0.0-20220726090255-f9a6faac3ae9/go.mod h1:T1Afvppt+msUhrQkfrdglNZWBzssuqxORsELOC9puOQ=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
@@ -954,8 +954,8 @@ github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg
 github.com/segmentio/asm v1.1.3/go.mod h1:Ld3L4ZXGNcSLRg4JBsZ3//1+f/TjYl0Mzen/DQy1EJg=
 github.com/segmentio/encoding v0.3.5 h1:UZEiaZ55nlXGDL92scoVuw00RmiRCazIEmvPSbSvt8Y=
 github.com/segmentio/encoding v0.3.5/go.mod h1:n0JeuIqEQrQoPDGsjo8UNd1iA0U8d8+oHAA4E3G3OxM=
-github.com/segmentio/parquet-go v0.0.0-20220722215542-aa19c254125d h1:NHeWaP2gr2og2FLIq9ilvHDtKhUfGf9kJDl+y6MSDC0=
-github.com/segmentio/parquet-go v0.0.0-20220722215542-aa19c254125d/go.mod h1:BuMbRhCCg3gFchup9zucJaUjQ4m6RxX+iVci37CoMPQ=
+github.com/segmentio/parquet-go v0.0.0-20220725200142-047e5979dfcf h1:5yLngjz3nAomA1BbuHoRdPaCSsmy2RP2n+KF2Ew+VUs=
+github.com/segmentio/parquet-go v0.0.0-20220725200142-047e5979dfcf/go.mod h1:BuMbRhCCg3gFchup9zucJaUjQ4m6RxX+iVci37CoMPQ=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
