@@ -39,6 +39,7 @@ import (
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	sharepb "github.com/parca-dev/parca/gen/proto/go/share"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -53,26 +54,29 @@ type Engine interface {
 type ColumnQueryAPI struct {
 	pb.UnimplementedQueryServiceServer
 
-	logger    log.Logger
-	tracer    trace.Tracer
-	engine    Engine
-	tableName string
-	metastore metastorepb.MetastoreServiceClient
+	logger      log.Logger
+	tracer      trace.Tracer
+	engine      Engine
+	tableName   string
+	metastore   metastorepb.MetastoreServiceClient
+	shareClient sharepb.ShareClient
 }
 
 func NewColumnQueryAPI(
 	logger log.Logger,
 	tracer trace.Tracer,
 	metastore metastorepb.MetastoreServiceClient,
+	shareClient sharepb.ShareClient,
 	engine Engine,
 	tableName string,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
-		logger:    logger,
-		tracer:    tracer,
-		engine:    engine,
-		tableName: tableName,
-		metastore: metastore,
+		logger:      logger,
+		tracer:      tracer,
+		engine:      engine,
+		tableName:   tableName,
+		metastore:   metastore,
+		shareClient: shareClient,
 	}
 }
 
@@ -559,6 +563,11 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) 
 	t := s.Time.AsTime()
 	p, err := q.findSingle(ctx, s.Query, t)
 	if err != nil {
+		// if the column cannot be found the timestamp is too far in the past and we don't have data
+		var colErr parcacol.ErrMissingColumn
+		if errors.As(err, &colErr) {
+			return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
+		}
 		return nil, err
 	}
 
@@ -746,4 +755,22 @@ func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.Profile
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}
+}
+
+func (q *ColumnQueryAPI) ShareProfile(ctx context.Context, req *pb.ShareProfileRequest) (*pb.ShareProfileResponse, error) {
+	req.QueryRequest.ReportType = pb.QueryRequest_REPORT_TYPE_PPROF
+	resp, err := q.Query(ctx, req.QueryRequest)
+	if err != nil {
+		return nil, err
+	}
+	uploadResp, err := q.shareClient.Upload(ctx, &sharepb.UploadRequest{
+		Profile:     resp.GetPprof(),
+		Description: *req.Description,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to upload profile: %s", err.Error())
+	}
+	return &pb.ShareProfileResponse{
+		Link: uploadResp.Link,
+	}, nil
 }

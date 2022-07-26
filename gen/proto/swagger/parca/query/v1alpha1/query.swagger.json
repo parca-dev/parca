@@ -424,6 +424,39 @@
         ]
       }
     },
+    "/profiles/share": {
+      "post": {
+        "summary": "ShareProfile uploads the given profile to pprof.me and returns a link to the profile.",
+        "operationId": "QueryService_ShareProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ShareProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ShareProfileRequest"
+            }
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
     "/profiles/types": {
       "get": {
         "summary": "ProfileTypes returns the list of available profile types.",
@@ -934,6 +967,32 @@
       },
       "title": "QueryRangeResponse is the set of matching profile values"
     },
+    "v1alpha1QueryRequest": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/v1alpha1QueryRequestMode",
+          "title": "mode indicates the type of query performed"
+        },
+        "diff": {
+          "$ref": "#/definitions/v1alpha1DiffProfile",
+          "title": "diff contains the diff query options"
+        },
+        "merge": {
+          "$ref": "#/definitions/v1alpha1MergeProfile",
+          "title": "merge contains the merge query options"
+        },
+        "single": {
+          "$ref": "#/definitions/v1alpha1SingleProfile",
+          "title": "single contains the single query options"
+        },
+        "reportType": {
+          "$ref": "#/definitions/QueryRequestReportType",
+          "title": "report_type is the type of report to return"
+        }
+      },
+      "title": "QueryRequest is a request for a profile query"
+    },
     "v1alpha1QueryRequestMode": {
       "type": "string",
       "enum": [
@@ -967,6 +1026,30 @@
     "v1alpha1SeriesResponse": {
       "type": "object",
       "title": "SeriesResponse is unimplemented"
+    },
+    "v1alpha1ShareProfileRequest": {
+      "type": "object",
+      "properties": {
+        "queryRequest": {
+          "$ref": "#/definitions/v1alpha1QueryRequest",
+          "title": "QueryRequest that refers to the profile to be shared"
+        },
+        "description": {
+          "type": "string",
+          "title": "description about the profile"
+        }
+      },
+      "title": "ShareProfileRequest represents the query denoting the profile and a description about the profile"
+    },
+    "v1alpha1ShareProfileResponse": {
+      "type": "object",
+      "properties": {
+        "link": {
+          "type": "string",
+          "title": "link to access the profile"
+        }
+      },
+      "title": "ShareProfileResponse represents the shared link of a profile"
     },
     "v1alpha1SingleProfile": {
       "type": "object",

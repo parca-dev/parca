@@ -109,6 +109,31 @@ func request_DebugInfoService_Upload_0(ctx context.Context, marshaler runtime.Ma
 
 }
 
+func request_DebugInfoService_Download_0(ctx context.Context, marshaler runtime.Marshaler, client DebugInfoServiceClient, req *http.Request, pathParams map[string]string) (DebugInfoService_DownloadClient, runtime.ServerMetadata, error) {
+	var protoReq DownloadRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	stream, err := client.Download(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
 // RegisterDebugInfoServiceHandlerServer registers the http handlers for service DebugInfoService to "mux".
 // UnaryRPC     :call DebugInfoServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -140,6 +165,13 @@ func RegisterDebugInfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 	})
 
 	mux.Handle("POST", pattern_DebugInfoService_Upload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
+	})
+
+	mux.Handle("POST", pattern_DebugInfoService_Download_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -229,6 +261,27 @@ func RegisterDebugInfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 
 	})
 
+	mux.Handle("POST", pattern_DebugInfoService_Download_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebugInfoService/Download", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebugInfoService/Download"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_DebugInfoService_Download_0(ctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_DebugInfoService_Download_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -236,10 +289,14 @@ var (
 	pattern_DebugInfoService_Exists_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.debuginfo.v1alpha1.DebugInfoService", "Exists"}, ""))
 
 	pattern_DebugInfoService_Upload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.debuginfo.v1alpha1.DebugInfoService", "Upload"}, ""))
+
+	pattern_DebugInfoService_Download_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.debuginfo.v1alpha1.DebugInfoService", "Download"}, ""))
 )
 
 var (
 	forward_DebugInfoService_Exists_0 = runtime.ForwardResponseMessage
 
 	forward_DebugInfoService_Upload_0 = runtime.ForwardResponseMessage
+
+	forward_DebugInfoService_Download_0 = runtime.ForwardResponseStream
 )

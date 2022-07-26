@@ -16,6 +16,7 @@ package parca
 import (
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -39,20 +40,29 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/gen/proto/go/share"
+	sharepb "github.com/parca-dev/parca/gen/proto/go/share"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	queryservice "github.com/parca-dev/parca/pkg/query"
 )
 
+func getShareServerConn(t Testing) share.ShareClient {
+	conn, err := grpc.Dial("api.pprof.me:443", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	require.NoError(t, err)
+	return sharepb.NewShareClient(conn)
+}
+
 func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {
-	addr := ":7077"
+	addr := "127.0.0.1:7077"
 
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -63,6 +73,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 			ConfigPath:          "testdata/parca.yaml",
 			Port:                addr,
 			Metastore:           metaStoreBadgerInMemory,
+			StorageInMemory:     true,
 			StorageGranuleSize:  8 * 1024,
 			StorageActiveMemory: 512 * 1024 * 1024,
 		}, "test-version")
@@ -200,19 +211,20 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
+	col, err := frostdb.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
+	require.NoError(t, err)
 	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -228,6 +240,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),
@@ -263,6 +276,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 				logger,
 				parcacol.NewNormalizer(metastore),
 				table,
+				schema,
 			).Ingest(ctx, sample.Labels, p, false)
 		})
 	}
@@ -335,19 +349,20 @@ func TestConsistency(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
+	col, err := frostdb.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
+	require.NoError(t, err)
 	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -369,7 +384,7 @@ func TestConsistency(t *testing.T) {
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(MustReadAllGzip(t, "../query/testdata/alloc_objects.pb.gz")))
 
-	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table)
+	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table, schema)
 	require.NoError(t, ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p, false))
 
 	table.Sync()
@@ -377,6 +392,7 @@ func TestConsistency(t *testing.T) {
 		logger,
 		tracer,
 		metastore,
+		getShareServerConn(t),
 		query.NewEngine(
 			memory.DefaultAllocator,
 			colDB.TableProvider(),

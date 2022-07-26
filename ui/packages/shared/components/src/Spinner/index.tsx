@@ -6,7 +6,8 @@ const Spinner = () => {
         justifyContent: 'center',
         alignItems: 'center',
         height: 'inherit',
-        marginTop: 100,
+        marginTop: 40,
+        marginBottom: 40,
       }}
     >
       <svg

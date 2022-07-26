@@ -1,20 +1,18 @@
 import {useAppSelector, selectDarkMode} from '@parca/store';
-import cx from 'classnames';
-import React from 'react';
+import React, {useEffect} from 'react';
 
 const ThemeProvider = ({children}: {children: React.ReactNode}) => {
   const darkMode = useAppSelector(selectDarkMode);
 
-  return (
-    <div className={cx(darkMode && 'dark')}>
-      <div
-        style={{minHeight: '100vh'}}
-        className="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-      >
-        {children}
-      </div>
-    </div>
-  );
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  return <div style={{minHeight: '100vh'}}>{children}</div>;
 };
 
 export default ThemeProvider;

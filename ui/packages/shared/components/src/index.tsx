@@ -10,6 +10,7 @@ import Input from './Input';
 import FlamegraphTooltip from './FlamegraphTooltip';
 import MatchersInput from './MatchersInput';
 import MetricsGraph from './MetricsGraph';
+import Modal from './Modal';
 import ParcaThemeContext, {ParcaThemeProvider, useParcaTheme} from './ParcaThemeContext';
 import Pill, {PillVariant} from './Pill';
 import ProfileExplorer from './ProfileExplorer';
@@ -40,6 +41,7 @@ export {
   Input,
   MatchersInput,
   MetricsGraph,
+  Modal,
   ParcaThemeContext,
   ParcaThemeProvider,
   Pill,

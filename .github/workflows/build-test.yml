@@ -9,8 +9,8 @@ on:
 env:
   # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
   QEMU_VERSION: 7.0.0-7
-  # renovate: datasource=docker depName=docker.io/ubuntu versioning=ubuntu
-  UBUNTU_VERSION: '20.04'
+  # renovate: datasource=docker depName=docker.io/buildpack-deps versioning=ubuntu
+  BUILDPACK_DEPS_VERSION: '20.04'
 
 jobs:
   build-and-test-multi-arch:
@@ -31,18 +31,21 @@ jobs:
         paths: |-
           [
             "**.go",
+            ".github/workflows/build-test.yml",
+            ".go-version",
+            ".node-version",
             "go.mod",
             "go.sum",
-            "ui/**",
-            ".github/workflows/build-test.yml"
+            "ui/**"
           ]
+        skip_after_successful_duplicate: false
 
     - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
       if: ${{ steps.skip-check.outputs.should_skip != 'true' }}
 
     - name: Set up Go
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
-      uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
+      uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
       with:
         go-version-file: .go-version
         check-latest: true
@@ -50,7 +53,7 @@ jobs:
 
     - name: Set up Node.js
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
-      uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
+      uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
       with:
         node-version-file: .node-version
         cache: 'yarn'
@@ -82,55 +85,38 @@ jobs:
     - name: 'Run ${{ matrix.arch }}'
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
       run: |
-        # Install QEMU and it's dependencies.
-        sudo apt-get update -y
-        sudo apt-get install qemu binfmt-support qemu-user-static
+        # Register QEMU
         docker run --rm --privileged "docker.io/multiarch/qemu-user-static:${QEMU_VERSION}" --reset -p yes
 
-        # Run platform specific based ubuntu image. Run it as a daemon in the background.
+        # Run platform specific based buildpack-deps image. Run it as a daemon in the background.
         # Sleep the container for 1 day so that it keeps running until
         # other steps are completed and the steps below can use the same container.
         docker run \
-          --name=ubuntu \
+          --name=buildpack-deps \
           --detach \
-          --platform='linux/${{ matrix.arch }}' \
-          --volume="${PWD}:/parca" \
-          --workdir=/parca \
-          "docker.io/ubuntu:${UBUNTU_VERSION}" \
+          --platform 'linux/${{ matrix.arch }}' \
+          --volume /home/runner/work:/home/runner/work \
+          --workdir "${PWD}" \
+          "docker.io/buildpack-deps:${BUILDPACK_DEPS_VERSION}" \
           bash -c 'uname -m && sleep 1d'
 
-    - name: 'Install packages on ${{ matrix.arch }}'
-      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
-      run: |
-        # Install necessary packages on the ubuntu container which will be used
-        # by below steps.
-        docker exec -i ubuntu bash <<EOF
-          set -euo pipefail
-          apt-get update -y -q
-          apt-get install -y -q wget make git file build-essential
-        EOF
-
+    # Install Golang, which will be used to build the code.
     - name: 'Setup Go on ${{ matrix.arch }}'
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
+      shell: docker exec buildpack-deps bash -e {0}
       run: |
-        # Install Golang, which will be used to build the code.
-        docker exec -i ubuntu bash <<EOF
-          set -euo pipefail
-          GO_VERSION="\$(<.go-version)"
-          wget --directory-prefix=/tmp "https://dl.google.com/go/go\${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-          tar -C /usr/local/ -xzf "/tmp/go\${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-          export PATH="\${PATH}:/usr/local/go/bin"
-          go version
-        EOF
+        GO_VERSION="$(<.go-version)"
+        wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+        tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+        export PATH="${PATH}:/usr/local/go/bin"
+        go version
 
+    # Run Go Tests. This is a very slow operation on ARM container.
     - name: 'Test on ${{ matrix.arch }}'
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
+      shell: docker exec buildpack-deps bash -e {0}
       run: |
-        # Run Go Tests. This is a very slow operation on ARM container.
-        docker exec -i ubuntu bash <<EOF
-          set -euo pipefail
-          export PATH="\${PATH}:/usr/local/go/bin"
-          mkdir -p ui/packages/app/web/build
-          touch ui/packages/app/web/build/index.html
-          go test -buildvcs=false -v ./...
-        EOF
+        export PATH="${PATH}:/usr/local/go/bin"
+        mkdir -p ui/packages/app/web/build
+        touch ui/packages/app/web/build/index.html
+        go test -buildvcs=false -v ./...

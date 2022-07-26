@@ -15,6 +15,8 @@ package symbolizer
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -22,45 +24,73 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/runutil"
+	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 type Symbolizer struct {
 	logger log.Logger
 
-	metastore pb.MetastoreServiceClient
-	debugInfo *debuginfo.Store
+	metastore  pb.MetastoreServiceClient
+	symbolizer *symbol.Symbolizer
+	debuginfo  DebugInfoFetcher
+
+	// We want two different cache dirs for debuginfo and debuginfod as one of
+	// them is intended to be for files that are publicly available the other
+	// one potentially only privately.
+	debuginfodCacheDir string
+	debuginfoCacheDir  string
 }
 
-func New(logger log.Logger, metastore pb.MetastoreServiceClient, info *debuginfo.Store) *Symbolizer {
+type DebugInfoFetcher interface {
+	// Fetch ensures that the debug info for the given build ID is available on
+	// a local filesystem and returns a path to it.
+	FetchDebugInfo(ctx context.Context, buildID string) (string, debuginfopb.DownloadInfo_Source, error)
+}
+
+func New(
+	logger log.Logger,
+	metastore pb.MetastoreServiceClient,
+	debuginfo DebugInfoFetcher,
+	symbolizer *symbol.Symbolizer,
+	debuginfodCacheDir string,
+	debuginfoCacheDir string,
+) *Symbolizer {
 	return &Symbolizer{
-		logger:    log.With(logger, "component", "symbolizer"),
-		metastore: metastore,
-		debugInfo: info,
+		logger:             log.With(logger, "component", "symbolizer"),
+		metastore:          metastore,
+		symbolizer:         symbolizer,
+		debuginfo:          debuginfo,
+		debuginfodCacheDir: debuginfodCacheDir,
+		debuginfoCacheDir:  debuginfoCacheDir,
 	}
 }
 
 func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	return runutil.Repeat(interval, ctx.Done(), func() error {
+		level.Debug(s.logger).Log("msg", "start symbolization cycle")
 		lres, err := s.metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 		if err != nil {
-			return err
+			level.Error(s.logger).Log("msg", "failed to fetch unsymbolized locations", "err", err)
+			// Try again on the next cycle.
+			return nil
 		}
 		if len(lres.Locations) == 0 {
+			level.Debug(s.logger).Log("msg", "no locations to symbolize")
 			// Nothing to symbolize.
 			return nil
 		}
 
+		level.Debug(s.logger).Log("msg", "attempting to symbolize locations", "count", len(lres.Locations))
 		err = s.symbolize(ctx, lres.Locations)
 		if err != nil {
 			level.Warn(s.logger).Log("msg", "symbolization attempt finished with errors")
 			level.Debug(s.logger).Log("msg", "errors occurred during symbolization", "err", err)
-		} else {
-			level.Info(s.logger).Log("msg", "symbolization round finished successfully")
 		}
+		level.Debug(s.logger).Log("msg", "symbolization loop completed")
 		return nil
 	})
 }
@@ -93,7 +123,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	mres, err := s.metastore.Mappings(ctx, &pb.MappingsRequest{MappingIds: mappingIDs})
 	if err != nil {
-		return err
+		return fmt.Errorf("get mappings: %w", err)
 	}
 
 	// Aggregate locations per mapping to get prepared for batch request.
@@ -104,12 +134,6 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	for _, loc := range locations {
 		locationsByMapping := locationsByMappings[mappingsIndex[loc.MappingId]]
-		mapping := locationsByMapping.Mapping
-		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
-		if mapping == nil || len(mapping.BuildId) == 0 || UnsymbolizableMapping(mapping) {
-			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
-			continue
-		}
 		// Already symbolized!
 		if loc.Lines != nil && len(loc.Lines.Entries) > 0 {
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
@@ -120,14 +144,20 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	for _, locationsByMapping := range locationsByMappings {
 		mapping := locationsByMapping.Mapping
-		locations := locationsByMapping.Locations
+
+		// If Mapping or Mapping.BuildID is empty, we cannot associate an object file with functions.
+		if mapping == nil || len(mapping.BuildId) == 0 || UnsymbolizableMapping(mapping) {
+			level.Debug(s.logger).Log("msg", "mapping of location is empty, skipping")
+			continue
+		}
 		logger := log.With(s.logger, "buildid", mapping.BuildId)
 
-		level.Debug(logger).Log("msg", "storage symbolization request started")
+		locations := locationsByMapping.Locations
+		level.Debug(logger).Log("msg", "storage symbolization request started", "build_id_length", len(mapping.BuildId))
 		// Symbolize returns a list of lines per location passed to it.
-		locationsByMapping.LocationsLines, err = s.debugInfo.Symbolize(ctx, mapping, locations)
+		locationsByMapping.LocationsLines, err = s.symbolizeLocationsForMapping(ctx, mapping, locations)
 		if err != nil {
-			level.Debug(logger).Log("msg", "storage symbolization request failed", "err", err, "buildid", mapping.BuildId)
+			level.Debug(logger).Log("msg", "storage symbolization request failed", "err", err)
 			continue
 		}
 		level.Debug(logger).Log("msg", "storage symbolization request done")
@@ -163,7 +193,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 
 	fres, err := s.metastore.GetOrCreateFunctions(ctx, &pb.GetOrCreateFunctionsRequest{Functions: functions})
 	if err != nil {
-		return err
+		return fmt.Errorf("get or create functions: %w", err)
 	}
 
 	locations = make([]*pb.Location, 0, numLocations)
@@ -193,5 +223,34 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 	_, err = s.metastore.CreateLocationLines(ctx, &pb.CreateLocationLinesRequest{
 		Locations: locations,
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("create location lines: %w", err)
+	}
+
+	return nil
+}
+
+// symbolizeLocationsForMapping fetches the debug info for a given build ID and symbolizes it the
+// given location.
+func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Mapping, locations []*pb.Location) ([][]profile.LocationLine, error) {
+	logger := log.With(s.logger, "buildid", m.BuildId)
+
+	// Fetch the debug info for the build ID.
+	objFile, _, err := s.debuginfo.FetchDebugInfo(ctx, m.BuildId)
+	if err != nil {
+		return nil, fmt.Errorf("fetch debuginfo (BuildID: %q): %w", m.BuildId, err)
+	}
+
+	// At this point we have the best version of the debug information file that we could find.
+	// Let's symbolize it.
+	lines, err := s.symbolizer.Symbolize(ctx, m, locations, objFile)
+	if err != nil {
+		if errors.Is(err, symbol.ErrLinerCreationFailedBefore) {
+			level.Debug(logger).Log("msg", "failed to symbolize before", "err", err)
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("failed to symbolize locations for mapping: %w", err)
+	}
+	return lines, nil
 }

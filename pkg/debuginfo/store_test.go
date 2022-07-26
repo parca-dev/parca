@@ -25,14 +25,15 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/filesystem"
+	"github.com/thanos-io/objstore/providers/filesystem"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 func TestStore(t *testing.T) {
@@ -45,33 +46,27 @@ func TestStore(t *testing.T) {
 	defer os.RemoveAll(cacheDir)
 
 	logger := log.NewNopLogger()
-	sym, err := symbol.NewSymbolizer(logger)
+	cfg, err := yaml.Marshal(&client.BucketConfig{
+		Type: client.FILESYSTEM,
+		Config: filesystem.Config{
+			Directory: dir,
+		},
+	})
 	require.NoError(t, err)
 
-	cfg := &Config{
-		Bucket: &client.BucketConfig{
-			Type: client.FILESYSTEM,
-			Config: filesystem.Config{
-				Directory: dir,
-			},
-		},
-		Cache: &CacheConfig{
-			Type: FILESYSTEM,
-			Config: &FilesystemCacheConfig{
-				Directory: cacheDir,
-			},
-		},
-	}
+	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
+	require.NoError(t, err)
 
 	s, err := NewStore(
 		logger,
-		sym,
-		cfg,
+		cacheDir,
+		NewObjectStoreMetadata(logger, bucket),
+		bucket,
 		NopDebugInfodClient{},
 	)
 	require.NoError(t, err)
 
-	lis, err := net.Listen("tcp", ":0")
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
 	}
@@ -124,7 +119,25 @@ func TestStore(t *testing.T) {
 	require.Equal(t, 7079, len(content))
 	require.Equal(t, []byte{0x7f, 'E', 'L', 'F'}, content[:4])
 
+	ctx := context.Background()
 	exists, err := c.Exists(context.Background(), hex.EncodeToString([]byte("section")), "abcd")
 	require.NoError(t, err)
 	require.True(t, exists)
+
+	buf := bytes.NewBuffer(nil)
+	downloader, err := c.Downloader(ctx, hex.EncodeToString([]byte("section")))
+	require.NoError(t, err)
+	require.Equal(t, debuginfopb.DownloadInfo_SOURCE_UPLOAD, downloader.Info().Source)
+
+	written, err := downloader.Download(ctx, buf)
+	require.NoError(t, err)
+	require.Equal(t, 7079, written)
+	require.Equal(t, 7079, buf.Len())
+	require.NoError(t, downloader.Close())
+
+	// Test only reading the download info.
+	downloader, err = c.Downloader(ctx, hex.EncodeToString([]byte("section")))
+	require.NoError(t, err)
+	require.Equal(t, debuginfopb.DownloadInfo_SOURCE_UPLOAD, downloader.Info().Source)
+	require.NoError(t, downloader.Close())
 }

@@ -26,10 +26,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/filesystem"
+	"github.com/thanos-io/objstore/providers/filesystem"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -45,9 +46,7 @@ import (
 func TestSymbolizer(t *testing.T) {
 	var err error
 
-	_, dbgStr, metastore := setup(t)
-
-	sym := New(log.NewNopLogger(), metastore, dbgStr)
+	_, metastore, sym := setup(t)
 
 	ctx := context.Background()
 
@@ -134,7 +133,7 @@ func findIndexWithAddress(locs []*pb.Location, address uint64) int {
 }
 
 func TestRealSymbolizer(t *testing.T) {
-	conn, dbgStr, metastore := setup(t)
+	conn, metastore, sym := setup(t)
 
 	require.NoError(t, ingest(t, conn, "testdata/profile.pb.gz"))
 
@@ -145,7 +144,6 @@ func TestRealSymbolizer(t *testing.T) {
 	require.Equal(t, 11, len(ures.Locations))
 	id := ures.Locations[findIndexWithAddress(ures.Locations, 0x463784)].Id
 
-	sym := New(log.NewNopLogger(), metastore, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
@@ -185,7 +183,7 @@ func TestRealSymbolizer(t *testing.T) {
 }
 
 func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
-	conn, dbgStr, metastore := setup(t)
+	conn, metastore, sym := setup(t)
 
 	// Generated from https://github.com/polarsignals/pprof-example-app-go
 	require.NoError(t, ingest(t, conn, "testdata/normal-cpu.stripped.pprof"))
@@ -198,7 +196,6 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	sym := New(log.NewNopLogger(), metastore, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
@@ -229,7 +226,7 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 }
 
 func TestRealSymbolizerInliningDisabled(t *testing.T) {
-	conn, dbgStr, metastore := setup(t)
+	conn, metastore, sym := setup(t)
 
 	// Generated from https://github.com/polarsignals/pprof-example-app-go
 	require.NoError(t, ingest(t, conn, "testdata/inlining-disabled-cpu.stripped.pprof"))
@@ -242,7 +239,6 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x77157c)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x77265c)].Id
 
-	sym := New(log.NewNopLogger(), metastore, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
@@ -282,7 +278,7 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	// NOTICE: Uses custom Go symbolizer!
 
-	conn, dbgStr, metastore := setup(t)
+	conn, metastore, sym := setup(t)
 
 	// Generated from https://github.com/polarsignals/pprof-example-app-go
 	require.NoError(t, ingest(t, conn, "testdata/without-dwarf-cpu.stripped.pprof"))
@@ -295,7 +291,6 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	sym := New(log.NewNopLogger(), metastore, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
@@ -336,7 +331,7 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	// NOTICE: Uses custom Go symbolizer!
 
-	conn, dbgStr, metastore := setup(t)
+	conn, metastore, sym := setup(t)
 
 	// Generated from https://github.com/polarsignals/pprof-example-app-go
 	require.NoError(t, ingest(t, conn, "testdata/stripped-cpu.stripped.pprof"))
@@ -349,7 +344,6 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	sym := New(log.NewNopLogger(), metastore, dbgStr)
 	require.NoError(t, sym.symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
@@ -413,57 +407,64 @@ func ingest(t *testing.T, conn *grpc.ClientConn, path string) error {
 	return err
 }
 
-func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, pb.MetastoreServiceClient) {
+func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symbolizer) {
 	t.Helper()
 
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
-		reg,
-		8196,
-		64*1024*1024,
-	)
-	colDB, err := col.DB("parca")
-	require.NoError(t, err)
-	table, err := colDB.Table(
-		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
+	col, err := frostdb.New(
 		logger,
+		reg,
 	)
 	require.NoError(t, err)
 
-	cacheDir, err := ioutil.TempDir("", "parca-test-cache-*")
+	colDB, err := col.DB("parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
+	table, err := colDB.Table(
+		"stacktraces",
+		frostdb.NewTableConfig(schema),
+	)
+	require.NoError(t, err)
+
+	debugInfoCacheDir, err := ioutil.TempDir("", "parca-debuginfo-test-cache-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		os.RemoveAll(cacheDir)
+		os.RemoveAll(debugInfoCacheDir)
+	})
+
+	symbolizerCacheDir, err := ioutil.TempDir("", "parca-symbolizer-test-cache-*")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		os.RemoveAll(symbolizerCacheDir)
 	})
 
 	sym, err := symbol.NewSymbolizer(logger)
 	require.NoError(t, err)
 
-	cfg := &debuginfo.Config{
-		Bucket: &client.BucketConfig{
-			Type: client.FILESYSTEM,
-			Config: filesystem.Config{
-				Directory: "testdata/",
-			},
+	cfg, err := yaml.Marshal(&client.BucketConfig{
+		Type: client.FILESYSTEM,
+		Config: filesystem.Config{
+			Directory: "testdata/",
 		},
-		Cache: &debuginfo.CacheConfig{
-			Type: debuginfo.FILESYSTEM,
-			Config: &debuginfo.FilesystemCacheConfig{
-				Directory: cacheDir,
-			},
-		},
-	}
+	})
+	require.NoError(t, err)
 
+	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
+	require.NoError(t, err)
+
+	metadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
 	dbgStr, err := debuginfo.NewStore(
 		logger,
-		sym,
-		cfg,
-		debuginfo.NopDebugInfodClient{})
+		debugInfoCacheDir,
+		metadata,
+		bucket,
+		debuginfo.NopDebugInfodClient{},
+	)
 	require.NoError(t, err)
 
 	mStr := metastoretest.NewTestMetastore(
@@ -480,6 +481,7 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, pb.MetastoreServic
 		tracer,
 		metastore,
 		table,
+		schema,
 		false,
 	)
 
@@ -508,5 +510,12 @@ func setup(t *testing.T) (*grpc.ClientConn, *debuginfo.Store, pb.MetastoreServic
 		conn.Close()
 	})
 
-	return conn, dbgStr, metastore
+	return conn, metastore, New(
+		logger,
+		metastore,
+		dbgStr,
+		sym,
+		symbolizerCacheDir,
+		symbolizerCacheDir,
+	)
 }

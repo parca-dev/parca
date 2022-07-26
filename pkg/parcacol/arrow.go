@@ -24,6 +24,15 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
+type ErrMissingColumn struct {
+	column  string
+	columns int
+}
+
+func (e ErrMissingColumn) Error() string {
+	return fmt.Sprintf("expected column %s, got %d columns", e.column, e.columns)
+}
+
 func ArrowRecordToStacktraceSamples(
 	ctx context.Context,
 	m pb.MetastoreServiceClient,
@@ -34,13 +43,13 @@ func ArrowRecordToStacktraceSamples(
 	schema := ar.Schema()
 	indices := schema.FieldIndices("stacktrace")
 	if len(indices) != 1 {
-		return nil, fmt.Errorf("expected exactly one stacktrace column, got %d", len(indices))
+		return nil, ErrMissingColumn{column: "stacktrace", columns: len(indices)}
 	}
 	stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
 
 	indices = schema.FieldIndices("sum(value)")
 	if len(indices) != 1 {
-		return nil, fmt.Errorf("expected exactly one value column, got %d", len(indices))
+		return nil, ErrMissingColumn{column: "value", columns: len(indices)}
 	}
 	valueColumn := ar.Column(indices[0]).(*array.Int64)
 

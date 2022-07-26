@@ -8,7 +8,7 @@ on:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.9.2
+  GORELEASER_VERSION: v1.10.2
 
 permissions:
   contents: write
@@ -31,14 +31,17 @@ jobs:
           paths: |-
             [
               "**.go",
+              ".github/workflows/release-dry-run.yml",
+              ".go-version",
+              ".node-version",
+              "cmd/**",
+              "gen/**",
               "go.mod",
               "go.sum",
-              "ui/**",
-              "cmd/**",
               "pkg/**",
-              "gen/**",
-              ".github/workflows/release-dry-run.yml"
+              "ui/**"
             ]
+          skip_after_successful_duplicate: false
 
   goreleaser:
     name: Release (Dry Run)
@@ -54,14 +57,14 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
+        uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
         with:
           go-version-file: .go-version
           check-latest: true
           cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version-file: .node-version
           cache: 'yarn'

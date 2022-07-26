@@ -22,11 +22,11 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/filesystem"
-
-	"github.com/parca-dev/parca/pkg/symbol"
+	"github.com/thanos-io/objstore/providers/filesystem"
+	"gopkg.in/yaml.v2"
 )
 
 func TestMetadata(t *testing.T) {
@@ -39,65 +39,59 @@ func TestMetadata(t *testing.T) {
 	defer os.RemoveAll(cacheDir)
 
 	logger := log.NewNopLogger()
-	sym, err := symbol.NewSymbolizer(logger)
+	cfg, err := yaml.Marshal(&client.BucketConfig{
+		Type: client.FILESYSTEM,
+		Config: filesystem.Config{
+			Directory: dir,
+		},
+	})
 	require.NoError(t, err)
 
-	cfg := &Config{
-		Bucket: &client.BucketConfig{
-			Type: client.FILESYSTEM,
-			Config: filesystem.Config{
-				Directory: dir,
-			},
-		},
-		Cache: &CacheConfig{
-			Type: FILESYSTEM,
-			Config: &FilesystemCacheConfig{
-				Directory: cacheDir,
-			},
-		},
-	}
+	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
+	require.NoError(t, err)
 
 	store, err := NewStore(
 		logger,
-		sym,
-		cfg,
+		cacheDir,
+		NewObjectStoreMetadata(logger, bucket),
+		bucket,
 		NopDebugInfodClient{},
 	)
 	require.NoError(t, err)
 
 	// Test that the initial state should be empty.
-	_, err = store.metadataManager.fetch(context.Background(), "fake-build-id")
+	_, err = store.metadata.Fetch(context.Background(), "fake-build-id")
 	require.ErrorIs(t, err, ErrMetadataNotFound)
 
 	// Updating the state should be written to blob storage.
-	err = store.metadataManager.markAsUploading(context.Background(), "fake-build-id")
+	err = store.metadata.MarkAsUploading(context.Background(), "fake-build-id")
 	require.NoError(t, err)
 
-	md, err := store.metadataManager.fetch(context.Background(), "fake-build-id")
+	md, err := store.metadata.Fetch(context.Background(), "fake-build-id")
 	require.NoError(t, err)
-	require.Equal(t, metadataStateUploading, md.State)
+	require.Equal(t, MetadataStateUploading, md.State)
 }
 
 func TestMetadata_MarshalJSON(t *testing.T) {
 	tests := []struct {
-		m       metadata
+		m       Metadata
 		want    string
 		wantErr bool
 	}{
 		{
-			m:    metadata{State: metadataStateUnknown, BuildID: "build_id", Hash: "hash"},
+			m:    Metadata{State: MetadataStateUnknown, BuildID: "build_id", Hash: "hash"},
 			want: `{"state":"METADATA_STATE_UNKNOWN","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`,
 		},
 		{
-			m:    metadata{State: metadataStateUploading, BuildID: "build_id", Hash: "hash"},
+			m:    Metadata{State: MetadataStateUploading, BuildID: "build_id", Hash: "hash"},
 			want: `{"state":"METADATA_STATE_UPLOADING","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`,
 		},
 		{
-			m:    metadata{State: metadataStateUploaded, BuildID: "build_id", Hash: "hash"},
+			m:    Metadata{State: MetadataStateUploaded, BuildID: "build_id", Hash: "hash"},
 			want: `{"state":"METADATA_STATE_UPLOADED","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`,
 		},
 		{
-			m:    metadata{State: metadataStateCorrupted, BuildID: "build_id", Hash: "hash"},
+			m:    Metadata{State: MetadataStateCorrupted, BuildID: "build_id", Hash: "hash"},
 			want: `{"state":"METADATA_STATE_CORRUPTED","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`,
 		},
 	}
@@ -120,29 +114,29 @@ func TestMetadata_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name    string
 		b       []byte
-		want    metadata
+		want    Metadata
 		wantErr bool
 	}{
 		{
 			b:    []byte(`{"state":"METADATA_STATE_UNKNOWN","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`),
-			want: metadata{State: metadataStateUnknown, BuildID: "build_id", Hash: "hash"},
+			want: Metadata{State: MetadataStateUnknown, BuildID: "build_id", Hash: "hash"},
 		},
 		{
 			b:    []byte(`{"state":"METADATA_STATE_UPLOADING","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`),
-			want: metadata{State: metadataStateUploading, BuildID: "build_id", Hash: "hash"},
+			want: Metadata{State: MetadataStateUploading, BuildID: "build_id", Hash: "hash"},
 		},
 		{
 			b:    []byte(`{"state":"METADATA_STATE_UPLOADED","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`),
-			want: metadata{State: metadataStateUploaded, BuildID: "build_id", Hash: "hash"},
+			want: Metadata{State: MetadataStateUploaded, BuildID: "build_id", Hash: "hash"},
 		},
 		{
 			b:    []byte(`{"state":"METADATA_STATE_CORRUPTED","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`),
-			want: metadata{State: metadataStateCorrupted, BuildID: "build_id", Hash: "hash"},
+			want: Metadata{State: MetadataStateCorrupted, BuildID: "build_id", Hash: "hash"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := metadata{}
+			res := Metadata{}
 
 			if err := json.Unmarshal(tt.b, &res); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)

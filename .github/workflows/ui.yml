@@ -23,9 +23,12 @@ jobs:
           do_not_skip: '["schedule", "workflow_dispatch"]'
           paths: |-
             [
-              "ui/**",
-              ".github/workflows/ui.yml"
+              ".github/workflows/ui.yml",
+              ".node-version",
+              "ui/**"
             ]
+          skip_after_successful_duplicate: false
+
   test:
     name: UI Test and Lint
     needs: skip-check
@@ -35,7 +38,7 @@ jobs:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Set up Node.js
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version-file: .node-version
           cache: 'yarn'
@@ -44,7 +47,7 @@ jobs:
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
-      - uses: actions/cache@c3f1317a9e7b1ef106c153ac8c0f00fed3ddbc0d # tag=v3.0.4
+      - uses: actions/cache@0865c47f36e68161719c5b124609996bb5c40129 # tag=v3.0.5
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}

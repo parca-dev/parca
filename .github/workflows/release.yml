@@ -7,13 +7,13 @@ on:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.9.2
+  GORELEASER_VERSION: v1.10.2
 
 permissions:
   contents: write
 
 jobs:
-  binary:
+  release:
     runs-on: ubuntu-latest
     env:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
@@ -24,14 +24,14 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
+        uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
         with:
           go-version-file: .go-version
           check-latest: true
           cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version-file: .node-version
           cache: 'yarn'
@@ -46,19 +46,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Archive generated artifacts
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        with:
+          name: parca-dist-release
+          if-no-files-found: error
+          path: |
+            dist
+            !dist/*.txt
+
   manifests:
     name: Generate and release Kubernetes Manifests
     runs-on: ubuntu-latest
-    needs: binary
+    needs: release
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Set up Go
-        uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
+        uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
         with:
           go-version-file: .go-version
           check-latest: true
-          cache: true
 
       - name: Set up Jsonnet
         run: ./env-jsonnet.sh
@@ -101,29 +109,59 @@ jobs:
   container:
     name: Build and release container images
     runs-on: ubuntu-latest
-    needs: binary
-
+    needs: release
+    container:
+      # https://github.com/containers/podman/tree/main/contrib/podmanimage
+      # Specifying SHA repeatedly fails:
+      # @sha256:421ac576cebff98e90c531e7b9ce4482370ecc7cee59abc2341714031bfb5f43
+      image: quay.io/containers/podman:v4.1.1
+      options: >-
+        --device /dev/fuse:rw
+        --privileged
+        --security-opt label=disable
+        --security-opt seccomp=unconfined
     permissions:
       id-token: write
       packages: write
       contents: read
 
     steps:
-      - name: Install cosign
-        uses: sigstore/cosign-installer@48866aa521d8bf870604709cd43ec2f602d03ff2 # tag=v2.4.1
-
-      - name: Install crane
-        uses: imjasonh/setup-crane@5146f708a817ea23476677995bf2133943b9be0b # tag=v0.1
+      - name: Install dependencies
+        run: dnf install --assumeyes --repo fedora git make jq
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
+      - name: Set up Go
+        uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
+        with:
+          go-version-file: .go-version
+          check-latest: true
+
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
+        with:
+          name: parca-dist-release
+          path: dist
+
+      - name: Get branch name
+        shell: bash
+        run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
       - name: Build container
         run: make container
+
+      - name: Check images created
+        run: podman images | grep 'ghcr.io/parca-dev/parca'
 
       - name: Login to registry
         run: |
           echo "${{ secrets.PERSONAL_ACCESS_TOKEN }}" | podman login -u parca-dev --password-stdin ghcr.io
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@09a077b27eb1310dcfb21981bee195b30ce09de0 # tag=v2.5.0
+
+      - name: Install crane
+        uses: imjasonh/setup-crane@5146f708a817ea23476677995bf2133943b9be0b # tag=v0.1
 
       - name: Push container
         run: |

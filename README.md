@@ -99,6 +99,8 @@ Flags:
       --mutex-profile-fraction=0
                                    Fraction of mutex profile samples to collect.
       --block-profile-rate=0       Sample rate for block profile.
+      --storage-in-memory          Use in-memory storage, without write-ahead
+                                   log or persistent metastore.
       --storage-debug-value-log    Log every value written to the database into
                                    a separate file. This is only for debugging
                                    purposes to produce data to replay situations
@@ -108,6 +110,9 @@ Flags:
       --storage-active-memory=536870912
                                    Amount of memory to use for active storage.
                                    Defaults to 512MB.
+      --storage-path="data"        Path to storage directory.
+      --storage-persist            Persist storage to the configured object
+                                   storage.
       --symbolizer-demangle-mode="simple"
                                    Mode to demangle C++ symbols. Default mode is
                                    simplified: no parameters, no templates, no
@@ -117,6 +122,9 @@ Flags:
                                    unsybolized location
       --metastore="badgerinmemory"
                                    Which metastore implementation to use
+      --profile-share-server="api.pprof.me:443"
+                                   gRPC address to send share profile requests
+                                   to.
       --debug-infod-upstream-servers=https://debuginfod.elfutils.org,...
                                    Upstream debuginfod servers. Defaults to
                                    https://debuginfod.elfutils.org. It is an
@@ -125,6 +133,8 @@ Flags:
       --debug-infod-http-request-timeout=5m
                                    Timeout duration for HTTP request to upstream
                                    debuginfod server. Defaults to 5m
+      --debuginfo-cache-dir="/tmp"
+                                   Path to directory where debuginfo is cached.
       --store-address=STRING       gRPC address to send profiles and symbols to.
       --bearer-token=STRING        Bearer token to authenticate with store.
       --bearer-token-file=STRING
