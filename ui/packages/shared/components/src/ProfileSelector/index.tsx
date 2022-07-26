@@ -19,7 +19,6 @@ import {
 } from '../';
 import {CloseIcon} from '@parca/icons';
 import cx from 'classnames';
-import {setSearchNodeString, useAppDispatch} from '@parca/store';
 
 export interface QuerySelection {
   expression: string;
@@ -171,7 +170,6 @@ const ProfileSelector = ({
   comparing,
   onCompareProfile,
 }: ProfileSelectorProps): JSX.Element => {
-  const dispatch = useAppDispatch();
   const {
     loading: profileTypesLoading,
     data: profileTypesData,
@@ -238,7 +236,6 @@ const ProfileSelector = ({
   };
 
   const setQueryExpression = (): void => {
-    // dispatch(setSearchNodeString(undefined));
     setNewQueryExpression(query.toString(), false);
   };
 
