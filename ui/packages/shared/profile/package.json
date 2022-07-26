@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@iconify/react": "^3.2.2",
