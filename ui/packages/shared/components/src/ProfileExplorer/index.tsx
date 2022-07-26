@@ -75,11 +75,11 @@ const ProfileExplorerApp = ({
   if (queryParams && queryParams.expression_a) queryParams.expression_a = expression_a;
   if (queryParams && queryParams.expression_b) queryParams.expression_b = expression_b;
 
-  if (compare_a === 'true' && compare_b === 'true') {
-    dispatch(setCompare(true));
-  } else {
-    dispatch(setCompare(false));
-  }
+  // if (compare_a === 'true' && compare_b === 'true') {
+  //   dispatch(setCompare(true));
+  // } else {
+  //   dispatch(setCompare(false));
+  // }
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -197,7 +197,7 @@ const ProfileExplorerApp = ({
         },
       };
 
-      dispatch(setCompare(!compareMode));
+      // dispatch(setCompare(!compareMode));
       // dispatch(setSearchNodeString(undefined));
       void navigateTo('/', compareQuery);
     };
@@ -297,7 +297,7 @@ const ProfileExplorerApp = ({
       newQueryParameters = swapQueryParameters(queryParams);
     }
 
-    dispatch(setCompare(!compareMode));
+    // dispatch(setCompare(!compareMode));
     // dispatch(setSearchNodeString(undefined));
 
     return navigateTo('/', {

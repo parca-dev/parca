@@ -3,15 +3,10 @@
   "npmClient": "yarn",
   "tagVersionPrefix": "ui-v",
   "useWorkspaces": true,
-  "packages": [
-    "packages/shared/*"
-  ],
+  "packages": ["packages/shared/*"],
   "command": {
     "publish": {
       "conventionalCommits": true
-    },
-    "version": {
-      "allowBranch": "main"
     }
   }
 }
