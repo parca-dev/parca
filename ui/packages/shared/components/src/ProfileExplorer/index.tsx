@@ -198,7 +198,7 @@ const ProfileExplorerApp = ({
       };
 
       dispatch(setCompare(!compareMode));
-      dispatch(setSearchNodeString(undefined));
+      // dispatch(setSearchNodeString(undefined));
       void navigateTo('/', compareQuery);
     };
 
@@ -298,7 +298,7 @@ const ProfileExplorerApp = ({
     }
 
     dispatch(setCompare(!compareMode));
-    dispatch(setSearchNodeString(undefined));
+    // dispatch(setSearchNodeString(undefined));
 
     return navigateTo('/', {
       ...filterSuffix(newQueryParameters, '_b'),
