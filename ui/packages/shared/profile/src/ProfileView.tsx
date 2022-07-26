@@ -9,6 +9,7 @@ import {
   useParcaTheme,
   Callgraph,
 } from '@parca/components';
+import testData from './testdata/link_data.json';
 
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
@@ -41,7 +42,8 @@ export const ProfileView = ({
   navigateTo,
 }: ProfileViewProps): JSX.Element => {
   const router = parseParams(window.location.search);
-  const currentViewFromURL = router.currentProfileView as string;
+  // const currentViewFromURL = router.currentProfileView as string;
+  const currentViewFromURL = 'callgraph' as string;
   const [curPath, setCurPath] = useState<string[]>([]);
   const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
   const {isLoading, response, error} = useQuery(
@@ -201,7 +203,8 @@ export const ProfileView = ({
                 response !== null &&
                 response.report.oneofKind === 'flamegraph' && (
                   <div className="w-full">
-                    <Callgraph graph={response.report.flamegraph} sampleUnit={sampleUnit} />
+                    {/* <Callgraph graph={response.report.flamegraph} sampleUnit={sampleUnit} /> */}
+                    <Callgraph graph={testData} />
                   </div>
                 )}
 
