@@ -74,7 +74,7 @@ func separateNameFromLabels(ls labels.Labels) (string, labels.Labels, error) {
 func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.Profile, normalized bool) error {
 	name, ls, err := separateNameFromLabels(ls)
 	if err != nil {
-		return err
+		return fmt.Errorf("prepare labels: %w", err)
 	}
 
 	if err := validatePprofProfile(p); err != nil {
@@ -83,7 +83,7 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 
 	normalizedProfiles, err := ing.normalizer.NormalizePprof(ctx, name, p, normalized)
 	if err != nil {
-		return err
+		return fmt.Errorf("normalize profile: %w", err)
 	}
 
 	for _, p := range normalizedProfiles {
@@ -93,7 +93,7 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 		}
 
 		if err := ing.IngestProfile(ctx, ls, p); err != nil {
-			return err
+			return fmt.Errorf("ingest profile: %w", err)
 		}
 	}
 
@@ -106,21 +106,9 @@ func (ing Ingester) IngestProfile(ctx context.Context, ls labels.Labels, p *prof
 		return fmt.Errorf("failed to convert samples to buffer: %w", err)
 	}
 
-	buffer.Sort()
-
-	// This is necessary because sorting a buffer makes concurrent reading not
-	// safe as the internal pages are cyclically sorted at read time. Cloning
-	// executes the cyclic sort once and makes the resulting buffer safe for
-	// concurrent reading as it no longer has to perform the cyclic sorting at
-	// read time. This should probably be improved in the parquet library.
-	buffer, err = buffer.Clone()
-	if err != nil {
-		return err
-	}
-
 	_, err = ing.table.InsertBuffer(ctx, buffer)
 	if err != nil {
-		return fmt.Errorf("failed to insert buffer: %w", err)
+		return fmt.Errorf("insert buffer: %w", err)
 	}
 
 	return nil

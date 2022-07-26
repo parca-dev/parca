@@ -43,7 +43,8 @@ func Schema() (*dynparquet.Schema, error) {
 			{
 				Name: ColumnDuration,
 				StorageLayout: &schemapb.StorageLayout{
-					Type: schemapb.StorageLayout_TYPE_INT64,
+					Type:     schemapb.StorageLayout_TYPE_INT64,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
 				},
 				Dynamic: false,
 			}, {
@@ -64,7 +65,8 @@ func Schema() (*dynparquet.Schema, error) {
 			}, {
 				Name: ColumnPeriod,
 				StorageLayout: &schemapb.StorageLayout{
-					Type: schemapb.StorageLayout_TYPE_INT64,
+					Type:     schemapb.StorageLayout_TYPE_INT64,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
 				},
 				Dynamic: false,
 			}, {
@@ -93,6 +95,7 @@ func Schema() (*dynparquet.Schema, error) {
 				Name: ColumnPprofNumLabels,
 				StorageLayout: &schemapb.StorageLayout{
 					Type:     schemapb.StorageLayout_TYPE_INT64,
+					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
 					Nullable: true,
 				},
 				Dynamic: true,
@@ -113,20 +116,25 @@ func Schema() (*dynparquet.Schema, error) {
 			}, {
 				Name: ColumnStacktrace,
 				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_STRING,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+					Type:        schemapb.StorageLayout_TYPE_STRING,
+					Encoding:    schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+					Compression: schemapb.StorageLayout_COMPRESSION_ZSTD,
 				},
 				Dynamic: false,
 			}, {
 				Name: ColumnTimestamp,
 				StorageLayout: &schemapb.StorageLayout{
-					Type: schemapb.StorageLayout_TYPE_INT64,
+					Type:        schemapb.StorageLayout_TYPE_INT64,
+					Encoding:    schemapb.StorageLayout_ENCODING_DELTA_BINARY_PACKED,
+					Compression: schemapb.StorageLayout_COMPRESSION_ZSTD,
 				},
 				Dynamic: false,
 			}, {
 				Name: ColumnValue,
 				StorageLayout: &schemapb.StorageLayout{
-					Type: schemapb.StorageLayout_TYPE_INT64,
+					Type:        schemapb.StorageLayout_TYPE_INT64,
+					Encoding:    schemapb.StorageLayout_ENCODING_DELTA_BINARY_PACKED,
+					Compression: schemapb.StorageLayout_COMPRESSION_ZSTD,
 				},
 				Dynamic: false,
 			},
