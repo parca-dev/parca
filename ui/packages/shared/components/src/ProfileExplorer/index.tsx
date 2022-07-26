@@ -11,8 +11,9 @@ import {
   setSearchNodeString,
   store,
 } from '@parca/store';
-import {Provider} from 'react-redux';
+import {Provider, batch} from 'react-redux';
 import {DateTimeRange} from '../DateTimeRangePicker';
+import {useEffect} from 'react';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -75,11 +76,13 @@ const ProfileExplorerApp = ({
   if (queryParams && queryParams.expression_a) queryParams.expression_a = expression_a;
   if (queryParams && queryParams.expression_b) queryParams.expression_b = expression_b;
 
-  // if (compare_a === 'true' && compare_b === 'true') {
-  //   dispatch(setCompare(true));
-  // } else {
-  //   dispatch(setCompare(false));
-  // }
+  useEffect(() => {
+    if (compare_a === 'true' && compare_b === 'true') {
+      dispatch(setCompare(true));
+    } else {
+      dispatch(setCompare(false));
+    }
+  }, [compare_a, compare_b]);
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -197,8 +200,11 @@ const ProfileExplorerApp = ({
         },
       };
 
-      // dispatch(setCompare(!compareMode));
-      // dispatch(setSearchNodeString(undefined));
+      batch(() => {
+        dispatch(setCompare(!compareMode));
+        dispatch(setSearchNodeString(undefined));
+      });
+
       void navigateTo('/', compareQuery);
     };
 
@@ -297,8 +303,10 @@ const ProfileExplorerApp = ({
       newQueryParameters = swapQueryParameters(queryParams);
     }
 
-    // dispatch(setCompare(!compareMode));
-    // dispatch(setSearchNodeString(undefined));
+    batch(() => {
+      dispatch(setCompare(!compareMode));
+      dispatch(setSearchNodeString(undefined));
+    });
 
     return navigateTo('/', {
       ...filterSuffix(newQueryParameters, '_b'),

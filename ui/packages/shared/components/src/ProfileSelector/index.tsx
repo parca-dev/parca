@@ -238,7 +238,6 @@ const ProfileSelector = ({
   };
 
   const setQueryExpression = (): void => {
-    // dispatch(setSearchNodeString(undefined));
     setNewQueryExpression(query.toString(), false);
   };
 
