@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Button, Modal} from '@parca/components';
+import {Button, Modal, useGrpcMetadata} from '@parca/components';
 import {Icon} from '@iconify/react';
 import {QueryRequest, QueryServiceClient} from '@parca/client';
 import ResultBox from './ResultBox';
@@ -27,12 +27,16 @@ const ProfileShareModal = ({
   const [error, setError] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [sharedLink, setSharedLink] = useState<string>('');
+  const metadata = useGrpcMetadata();
   const isFormDataValid = () => true;
 
   const handleSubmit: () => void = async () => {
     try {
       setLoading(true);
-      const {response} = await queryClient.shareProfile({queryRequest, description});
+      const {response} = await queryClient.shareProfile(
+        {queryRequest, description},
+        {meta: metadata}
+      );
       setSharedLink(response.link);
       setLoading(false);
       setIsShared(true);
