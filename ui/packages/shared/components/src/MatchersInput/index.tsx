@@ -43,6 +43,8 @@ enum Labels {
 
 // eslint-disable-next-line no-useless-escape
 const labelNameValueRe = /(^([a-z])\w+)(=~|=|!=|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
+const labelNameLiteralRe = /(^([a-z])\w+)(=~|=|!=|!~)/;
+const literalRe = /(=~|=|!=|!~)/;
 
 const addQuoteMarks = (labelValue: string) => {
   // eslint-disable-next-line no-useless-escape
@@ -249,14 +251,16 @@ const MatchersInput = ({
   const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
 
+    // suggest the labelname that is similar to what the user is typing.
     if (suggestionSections.labelNames.length > 0) {
       suggestionSections.labelNames = suggestionSections.labelNames.filter(
         suggestion => suggestion.value.toLowerCase().indexOf(newValue.toLowerCase()) > -1
       );
     }
 
-    if (suggestionSections.labelValues.length > 0) {
-      const labelValueSearch = newValue.split(/(=~|=|!=|!~)/)[2];
+    // this checks if the user has typed a label name and a literal (=/!=,=~,!~) and is about to type the label value.
+    if (suggestionSections.labelValues.length > 0 && labelNameLiteralRe.test(newValue)) {
+      const labelValueSearch = newValue.split(literalRe)[2];
 
       suggestionSections.labelValues = suggestionSections.labelValues.filter(
         suggestion => suggestion.value.toLowerCase().indexOf(labelValueSearch.toLowerCase()) > -1
@@ -406,6 +410,40 @@ const MatchersInput = ({
         if (matchers.length === 0) return prevState;
         return matchers;
       });
+    }
+
+    // If a user has typed in a label name (and did not use the suggestion box to complete it),
+    // we can manually show the next set of suggestions, which are the literals.
+    if (event.key === '!' || event.key === '~' || event.key === '=') {
+      const labelName = inputRef.split(literalRe)[0];
+
+      if (suggestionSections.labelNames.length > 0) {
+        // Find the label name in the suggestion list and get the index
+        const suggestion = suggestionSections.labelNames.find(
+          suggestion => suggestion.value === labelName
+        );
+        // If the typed label name exists, we can apply it using the applySuggestion function
+        if (suggestion) {
+          applySuggestion(suggestionSections.labelNames.indexOf(suggestion));
+        }
+      }
+    }
+
+    // If a user has typed in a label name and literal (and did not use the suggestion box to complete it),
+    // we can manually show the next set of suggestions, which are the label values.
+    if (labelNameLiteralRe.test(inputRef)) {
+      const literal = inputRef.split(literalRe)[1];
+
+      if (suggestionSections.literals.length > 0) {
+        // Find the literal in the suggestion list and get the index
+        const suggestion = suggestionSections.literals.find(
+          suggestion => suggestion.value === literal
+        );
+        // If the typed literal exists, we can apply it using the applySuggestion function
+        if (suggestion) {
+          applySuggestion(suggestionSections.literals.indexOf(suggestion));
+        }
+      }
     }
 
     // If no suggestions is highlighted and we hit enter, we run the query,
