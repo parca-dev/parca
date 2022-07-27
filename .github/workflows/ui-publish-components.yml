@@ -33,11 +33,12 @@ jobs:
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GH_PAT_UI }}
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
         with:
           fetch-depth: "0"
+          token: ${{ secrets.GH_PAT_UI }}
 
       - name: Pull all tags for Lerna semantic release
         run: |
@@ -70,4 +71,4 @@ jobs:
         working-directory: ui
         run: yarn publish:ci
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT_UI }}
