@@ -189,14 +189,12 @@ func validatePprofProfile(p *pprofproto.Profile) error {
 		if len(s.Value) != sampleLen {
 			return fmt.Errorf("mismatch: sample has %d values vs. %d types", len(s.Value), len(p.SampleType))
 		}
-		if len(s.LocationId) > 0 {
-			for j, l := range s.LocationId {
-				if l == 0 {
-					return fmt.Errorf("location ids of stacktraces must be non-zero")
-				}
-				if l > locationsNum {
-					return fmt.Errorf("sample %d location number %d (%d) is out of range", i, j, l)
-				}
+		for j, l := range s.LocationId {
+			if l == 0 {
+				return fmt.Errorf("location ids of stacktraces must be non-zero")
+			}
+			if l > locationsNum {
+				return fmt.Errorf("sample %d location number %d (%d) is out of range", i, j, l)
 			}
 		}
 		for j, label := range s.Label {
