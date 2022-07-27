@@ -264,8 +264,8 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 
 	exprs := append(
 		selectorExprs,
-		logicalplan.Col("timestamp").GT(logicalplan.Literal(start)),
-		logicalplan.Col("timestamp").LT(logicalplan.Literal(end)),
+		logicalplan.Col("timestamp").Gt(logicalplan.Literal(start)),
+		logicalplan.Col("timestamp").Lt(logicalplan.Literal(end)),
 	)
 
 	filterExpr := logicalplan.And(exprs...)
@@ -390,7 +390,7 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 			logicalplan.Col(parcacol.ColumnSampleUnit),
 			logicalplan.Col(parcacol.ColumnPeriodType),
 			logicalplan.Col(parcacol.ColumnPeriodUnit),
-			logicalplan.Col(parcacol.ColumnDuration).GT(logicalplan.Literal(0)),
+			logicalplan.Col(parcacol.ColumnDuration).Gt(logicalplan.Literal(0)),
 		).
 		Execute(ctx, func(ar arrow.Record) error {
 			if ar.NumCols() != 6 {
@@ -658,8 +658,8 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col("timestamp").GT(logicalplan.Literal(start)),
-			logicalplan.Col("timestamp").LT(logicalplan.Literal(end)),
+			logicalplan.Col("timestamp").Gt(logicalplan.Literal(start)),
+			logicalplan.Col("timestamp").Lt(logicalplan.Literal(end)),
 		)...,
 	)
 
