@@ -189,9 +189,6 @@ func validatePprofProfile(p *pprofproto.Profile) error {
 		if len(s.Value) != sampleLen {
 			return fmt.Errorf("mismatch: sample has %d values vs. %d types", len(s.Value), len(p.SampleType))
 		}
-		if len(s.LocationId) == 0 {
-			return fmt.Errorf("sample %d has no location ids", i)
-		}
 		for j, l := range s.LocationId {
 			if l == 0 {
 				return fmt.Errorf("location ids of stacktraces must be non-zero")
