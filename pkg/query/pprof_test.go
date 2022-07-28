@@ -56,7 +56,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, profiles[0])
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
@@ -161,7 +161,8 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	require.Equal(t, 1, len(sres.Stacktraces))
 	s := sres.Stacktraces[0]
 
-	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, &parcaprofile.NormalizedProfile{
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s.Id,
 			Value:        1,
