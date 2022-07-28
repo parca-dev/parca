@@ -239,6 +239,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "jnsgruk",
+      "name": "Jon Seager",
+      "avatar_url": "https://avatars.githubusercontent.com/u/668505?v=4",
+      "profile": "http://jnsgr.uk",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
