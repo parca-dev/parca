@@ -3,9 +3,13 @@ on:
   push:
     tags:
       - v*
-    branches: [ main ]
+    branches:
+    - main
+    - release-*
   pull_request:
-    branches: [ main ]
+    branches:
+    - main
+    - release-*
 
 env:
   # renovate: datasource=go depName=github.com/golangci/golangci-lint
