@@ -2,9 +2,13 @@ name: Go
 
 on:
   push:
-    branches: [ main ]
+    branches:
+    - main
+    - release-*
   pull_request:
-    branches: [ main ]
+    branches:
+    - main
+    - release-*
 
 env:
   # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
