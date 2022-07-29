@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.9](https://github.com/parca-dev/parca/compare/ui-v0.14.8...ui-v0.14.9) (2022-07-29)
+
+### Bug Fixes
+
+- remove no-op if statement ([651e419](https://github.com/parca-dev/parca/commit/651e419f59fe78d7eaa887c59a20ea0873c57193))
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+### Bug Fixes
+
+- stop error on profile with no location id ([0733642](https://github.com/parca-dev/parca/commit/073364260f66a8fa96fb9369ff49971997332532))
+
+## [0.14.5](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.5) (2022-07-26)
+
+## 0.14.1 (2022-07-25)
+
 ## [0.14.8](https://github.com/parca-dev/parca/compare/ui-v0.14.7...ui-v0.14.8) (2022-07-29)
 
 ### Bug Fixes
