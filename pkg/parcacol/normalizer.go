@@ -60,6 +60,7 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 		return nil, fmt.Errorf("normalize stacktraces: %w", err)
 	}
 
+	sampleIndex := map[int]map[string]int{}
 	profiles := make([]*profile.NormalizedProfile, 0, len(p.SampleType))
 	for i := 0; i < len(p.SampleType); i++ {
 		normalizedProfile := &profile.NormalizedProfile{
@@ -67,10 +68,13 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 			Samples: make([]*profile.NormalizedSample, 0, len(p.Sample)),
 		}
 		profiles = append(profiles, normalizedProfile)
+		sampleIndex[i] = map[string]int{}
 	}
 
 	for i, sample := range p.Sample {
 		labels, numLabels := labelsFromSample(p.StringTable, sample.Label)
+		key := sampleKey(stacktraces[i].Id, labels, numLabels)
+
 		for j, value := range sample.Value {
 			if value == 0 {
 				continue
@@ -83,11 +87,28 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 				NumLabel:     numLabels,
 			}
 
-			profiles[j].Samples = append(profiles[j].Samples, ns)
+			index, ok := sampleIndex[j][key]
+			if !ok {
+				profiles[j].Samples = append(profiles[j].Samples, ns)
+				sampleIndex[j][key] = len(profiles[j].Samples) - 1
+			} else {
+				profiles[j].Samples[index].Value += ns.Value
+			}
 		}
 	}
 
 	return profiles, nil
+}
+
+func sampleKey(stacktraceID string, labels map[string]string, numLabels map[string]int64) string {
+	key := stacktraceID + ";"
+	for k, v := range labels {
+		key += k + "=" + v + ";"
+	}
+	for k, v := range numLabels {
+		key += k + "=" + fmt.Sprintf("%d", v) + ";"
+	}
+	return key
 }
 
 func labelsFromSample(stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
