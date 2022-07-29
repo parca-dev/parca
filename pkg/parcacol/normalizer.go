@@ -22,6 +22,10 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
+const (
+	UnsymolizableLocationAddress = 0x0
+)
+
 type Normalizer struct {
 	metastore pb.MetastoreServiceClient
 }
@@ -103,10 +107,11 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 func sampleKey(stacktraceID string, labels map[string]string, numLabels map[string]int64) string {
 	key := stacktraceID + ";"
 	for k, v := range labels {
-		key += k + "=" + v + ";"
+		key += fmt.Sprintf("%s=%s;", k, v)
 	}
+	key += ";"
 	for k, v := range numLabels {
-		key += k + "=" + fmt.Sprintf("%d", v) + ";"
+		key += fmt.Sprintf("%s=%d;", k, v)
 	}
 	return key
 }
@@ -209,6 +214,16 @@ func (n *Normalizer) NormalizeLocations(
 	}
 
 	for _, location := range locations {
+		if location.MappingId == 0 && len(location.Line) == 0 {
+			req.Locations = append(req.Locations, &pb.Location{
+				// Locations that have no lines and no mapping are never going
+				// to be possible to be symbolized, so might as well at least
+				// make them the same and therefore deduplicate them.
+				Address: UnsymolizableLocationAddress,
+			})
+			continue
+		}
+
 		addr := location.Address
 		mappingId := ""
 		if location.MappingId != 0 {
