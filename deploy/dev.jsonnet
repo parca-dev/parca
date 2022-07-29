@@ -33,8 +33,8 @@ function(agentVersion='v0.4.1', separateUI=true)
     insecure: true,
     insecureSkipVerify: true,
     tempDir: 'tmp',
-//    podLabelSelector: 'app.kubernetes.io/name in (parca-agent, parca)',
-//    podLabelSelector: 'component in (kube-apiserver, kube-scheduler, etcd)',
+    //    podLabelSelector: 'app.kubernetes.io/name in (parca-agent, parca)',
+    //    podLabelSelector: 'component in (kube-apiserver, kube-scheduler, etcd)',
   });
 
   {

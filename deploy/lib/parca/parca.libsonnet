@@ -270,6 +270,11 @@ function(params) {
             nodeSelector: {
               'kubernetes.io/os': 'linux',
             },
+            tolerations: [
+              {
+                operator: 'Exists',
+              },
+            ],
           },
         },
       },
