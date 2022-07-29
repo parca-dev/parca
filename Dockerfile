@@ -3,7 +3,7 @@ RUN mkdir /.cache && touch -t 202101010000.00 /.cache
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
-ARG TARGETVARIANT
+ARG TARGETVARIANT=v1
 
 # renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-health-probe
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.11
@@ -15,14 +15,16 @@ RUN if [ "$(go env GOHOSTARCH)" != "$(go env GOARCH)" ]; then \
     fi
 
 WORKDIR /app
-COPY ./dist /app/dist
+COPY dist dist
 
-RUN if [ "amd64" = "$(go env GOARCH)" ]; then \
-        cp "dist/parca_$(go env GOOS)_$(go env GOARCH)_$(go env GOAMD64)/parca" parca; \
+# NOTICE: See goreleaser.yml for the build paths.
+RUN if [ "${TARGETARCH}" == 'amd64' ]; then \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}_${TARGETVARIANT:-v1}/parca" . ; \
+    elif [ "${TARGETARCH}" == 'arm' ]; then \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}_${TARGETVARIANT##v}/parca" . ; \
     else \
-        cp "dist/parca_$(go env GOOS)_$(go env GOARCH)/parca" parca; \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}/parca" . ; \
     fi
-
 RUN chmod +x parca
 
 FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.16.0@sha256:686d8c9dfa6f3ccfc8230bc3178d23f84eeaf7e457f36f271ab1acc53015037c AS runner
