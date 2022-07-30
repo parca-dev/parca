@@ -10,12 +10,6 @@ linters:
     - goimports
     - revive
     - whitespace
-  disable:
-    # Until https://github.com/golangci/golangci-lint/issues/2859 is fixed
-    - staticcheck
-    - gosimple
-    - stylecheck
-    - unused
 
 issues:
   exclude-rules:

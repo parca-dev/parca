@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/go-kit/log"
@@ -33,7 +32,6 @@ import (
 	"github.com/thanos-io/objstore/client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -95,34 +93,6 @@ func NewStore(
 		metadata:         metadata,
 		debuginfodClient: debuginfodClient,
 	}, nil
-}
-
-func NewCache(cacheConf *CacheConfig) (*FilesystemCacheConfig, error) {
-	config, err := yaml.Marshal(cacheConf.Config)
-	if err != nil {
-		return nil, fmt.Errorf("marshal content of cache configuration: %w", err)
-	}
-
-	var c FilesystemCacheConfig
-	switch strings.ToUpper(string(cacheConf.Type)) {
-	case string(FILESYSTEM):
-		if err := yaml.Unmarshal(config, &c); err != nil {
-			return nil, err
-		}
-		if c.Directory == "" {
-			return nil, errors.New("missing directory for filesystem bucket")
-		}
-	default:
-		return nil, fmt.Errorf("cache with type %s is not supported", cacheConf.Type)
-	}
-
-	if _, err := os.Stat(c.Directory); os.IsNotExist(err) {
-		err := os.MkdirAll(c.Directory, 0o700)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &c, nil
 }
 
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {

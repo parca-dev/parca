@@ -38,23 +38,23 @@ type BadgerMetastore struct {
 }
 
 type BadgerLogger struct {
-	logger log.Logger
+	Logger log.Logger
 }
 
 func (l *BadgerLogger) Errorf(f string, v ...interface{}) {
-	level.Error(l.logger).Log("msg", fmt.Sprintf(f, v...))
+	level.Error(l.Logger).Log("msg", fmt.Sprintf(f, v...))
 }
 
 func (l *BadgerLogger) Warningf(f string, v ...interface{}) {
-	level.Warn(l.logger).Log("msg", fmt.Sprintf(f, v...))
+	level.Warn(l.Logger).Log("msg", fmt.Sprintf(f, v...))
 }
 
 func (l *BadgerLogger) Infof(f string, v ...interface{}) {
-	level.Info(l.logger).Log("msg", fmt.Sprintf(f, v...))
+	level.Info(l.Logger).Log("msg", fmt.Sprintf(f, v...))
 }
 
 func (l *BadgerLogger) Debugf(f string, v ...interface{}) {
-	level.Debug(l.logger).Log("msg", fmt.Sprintf(f, v...))
+	level.Debug(l.Logger).Log("msg", fmt.Sprintf(f, v...))
 }
 
 var _ pb.MetastoreServiceServer = &BadgerMetastore{}
@@ -65,12 +65,8 @@ func NewBadgerMetastore(
 	logger log.Logger,
 	reg prometheus.Registerer,
 	tracer trace.Tracer,
+	db *badger.DB,
 ) *BadgerMetastore {
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true).WithLogger(&BadgerLogger{logger: logger}))
-	if err != nil {
-		panic(err)
-	}
-
 	return &BadgerMetastore{
 		db:     db,
 		tracer: tracer,

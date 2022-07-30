@@ -22,6 +22,10 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
+const (
+	UnsymolizableLocationAddress = 0x0
+)
+
 type Normalizer struct {
 	metastore pb.MetastoreServiceClient
 }
@@ -60,6 +64,7 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 		return nil, fmt.Errorf("normalize stacktraces: %w", err)
 	}
 
+	sampleIndex := map[int]map[string]int{}
 	profiles := make([]*profile.NormalizedProfile, 0, len(p.SampleType))
 	for i := 0; i < len(p.SampleType); i++ {
 		normalizedProfile := &profile.NormalizedProfile{
@@ -67,10 +72,13 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 			Samples: make([]*profile.NormalizedSample, 0, len(p.Sample)),
 		}
 		profiles = append(profiles, normalizedProfile)
+		sampleIndex[i] = map[string]int{}
 	}
 
 	for i, sample := range p.Sample {
 		labels, numLabels := labelsFromSample(p.StringTable, sample.Label)
+		key := sampleKey(stacktraces[i].Id, labels, numLabels)
+
 		for j, value := range sample.Value {
 			if value == 0 {
 				continue
@@ -83,11 +91,29 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 				NumLabel:     numLabels,
 			}
 
-			profiles[j].Samples = append(profiles[j].Samples, ns)
+			index, ok := sampleIndex[j][key]
+			if !ok {
+				profiles[j].Samples = append(profiles[j].Samples, ns)
+				sampleIndex[j][key] = len(profiles[j].Samples) - 1
+			} else {
+				profiles[j].Samples[index].Value += ns.Value
+			}
 		}
 	}
 
 	return profiles, nil
+}
+
+func sampleKey(stacktraceID string, labels map[string]string, numLabels map[string]int64) string {
+	key := stacktraceID + ";"
+	for k, v := range labels {
+		key += fmt.Sprintf("%s=%s;", k, v)
+	}
+	key += ";"
+	for k, v := range numLabels {
+		key += fmt.Sprintf("%s=%d;", k, v)
+	}
+	return key
 }
 
 func labelsFromSample(stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
@@ -188,6 +214,16 @@ func (n *Normalizer) NormalizeLocations(
 	}
 
 	for _, location := range locations {
+		if location.MappingId == 0 && len(location.Line) == 0 {
+			req.Locations = append(req.Locations, &pb.Location{
+				// Locations that have no lines and no mapping are never going
+				// to be possible to be symbolized, so might as well at least
+				// make them the same and therefore deduplicate them.
+				Address: UnsymolizableLocationAddress,
+			})
+			continue
+		}
+
 		addr := location.Address
 		mappingId := ""
 		if location.MappingId != 0 {

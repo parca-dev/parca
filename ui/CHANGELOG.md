@@ -3,6 +3,79 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.11](https://github.com/parca-dev/parca/compare/ui-v0.14.10...ui-v0.14.11) (2022-07-30)
+
+**Note:** Version bump only for package ui
+
+## [0.14.10](https://github.com/parca-dev/parca/compare/ui-v0.14.9...ui-v0.14.10) (2022-07-29)
+
+**Note:** Version bump only for package ui
+
+## [0.14.9](https://github.com/parca-dev/parca/compare/ui-v0.14.8...ui-v0.14.9) (2022-07-29)
+
+### Bug Fixes
+
+- remove no-op if statement ([651e419](https://github.com/parca-dev/parca/commit/651e419f59fe78d7eaa887c59a20ea0873c57193))
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+### Bug Fixes
+
+- stop error on profile with no location id ([0733642](https://github.com/parca-dev/parca/commit/073364260f66a8fa96fb9369ff49971997332532))
+
+## [0.14.5](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.5) (2022-07-26)
+
+## 0.14.1 (2022-07-25)
+
+## [0.14.8](https://github.com/parca-dev/parca/compare/ui-v0.14.7...ui-v0.14.8) (2022-07-29)
+
+### Bug Fixes
+
+- remove no-op if statement ([651e419](https://github.com/parca-dev/parca/commit/651e419f59fe78d7eaa887c59a20ea0873c57193))
+- stop error on profile with no location id ([0733642](https://github.com/parca-dev/parca/commit/073364260f66a8fa96fb9369ff49971997332532))
+
+## [0.14.5](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.5) (2022-07-26)
+
+## 0.14.1 (2022-07-25)
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+## 0.14.1 (2022-07-25)
+
+**Note:** Version bump only for package ui
+
+## [0.14.6](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.6) (2022-07-27)
+
+**Note:** Version bump only for package ui
+
+## [0.14.5](https://github.com/parca-dev/parca/compare/ui-v0.14.3-alpha.0...ui-v0.14.5) (2022-07-26)
+
+**Note:** Version bump only for package ui
+
+## [0.14.3-alpha.1](https://github.com/parca-dev/parca/compare/ui-v0.14.3-alpha.0...ui-v0.14.3-alpha.1) (2022-07-26)
+
+**Note:** Version bump only for package ui
+
+## [0.14.3-alpha.0](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.3-alpha.0) (2022-07-26)
+
+**Note:** Version bump only for package ui
+
+## [0.14.2](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.2) (2022-07-26)
+
+**Note:** Version bump only for package ui
+
+## [0.14.1](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.14.1) (2022-07-25)
+
+### Reverts
+
+- Revert "Update FrostDB for Parca (#1278)" ([691d1ae](https://github.com/parca-dev/parca/commit/691d1ae393f6faa7f8c553ec8a051d5f7e3212b5)), closes [#1278](https://github.com/parca-dev/parca/issues/1278)
+
+# [0.14.0](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.14.0) (2022-07-25)
+
+### Reverts
+
+- Revert "Update FrostDB for Parca (#1278)" ([691d1ae](https://github.com/parca-dev/parca/commit/691d1ae393f6faa7f8c553ec8a051d5f7e3212b5)), closes [#1278](https://github.com/parca-dev/parca/issues/1278)
+
 ## [0.13.15](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.13.15) (2022-07-12)
 
 ### Reverts

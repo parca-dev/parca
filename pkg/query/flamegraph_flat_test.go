@@ -139,7 +139,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	p, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, &parcaprofile.NormalizedProfile{
+	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s1.Id,
 			Value:        2,
@@ -234,7 +234,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServ
 	profiles, err := normalizer.NormalizePprof(ctx, "test", p, false)
 	require.NoError(t, err)
 
-	sp, err := parcacol.SymbolizeNormalizedProfile(ctx, l, profiles[0])
+	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, sp)
@@ -292,7 +292,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, profiles[0])
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, symbolizedProfile)
@@ -440,7 +440,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	profiles, err := normalizer.NormalizePprof(ctx, "", p, false)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, profiles[0])
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphFlat(ctx, tracer, symbolizedProfile)

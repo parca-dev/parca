@@ -31,7 +31,7 @@ jobs:
           cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@5b949b50c3461bbcd5a540b150c368278160234a # tag=v3.4.0
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version-file: .node-version
           cache: 'yarn'
@@ -138,7 +138,7 @@ jobs:
           go-version-file: .go-version
           check-latest: true
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
         with:
           name: parca-dist-release
           path: dist
@@ -158,10 +158,10 @@ jobs:
           echo "${{ secrets.PERSONAL_ACCESS_TOKEN }}" | podman login -u parca-dev --password-stdin ghcr.io
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@48866aa521d8bf870604709cd43ec2f602d03ff2 # tag=v2.4.1
+        uses: sigstore/cosign-installer@09a077b27eb1310dcfb21981bee195b30ce09de0 # tag=v2.5.0
 
       - name: Install crane
-        uses: imjasonh/setup-crane@5146f708a817ea23476677995bf2133943b9be0b # tag=v0.1
+        uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4 # tag=v0.2
 
       - name: Push container
         run: |

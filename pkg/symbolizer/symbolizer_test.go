@@ -26,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/filesystem"
+	"github.com/thanos-io/objstore/providers/filesystem"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -413,19 +413,21 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
+	col, err := frostdb.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
+	require.NoError(t, err)
+
 	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 
@@ -452,23 +454,13 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, "parca/store")
-	require.NoError(t, err)
-
-	cache, err := debuginfo.NewCache(
-		&debuginfo.CacheConfig{
-			Type: debuginfo.FILESYSTEM,
-			Config: &debuginfo.FilesystemCacheConfig{
-				Directory: debugInfoCacheDir,
-			},
-		},
-	)
+	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
 	require.NoError(t, err)
 
 	metadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
 	dbgStr, err := debuginfo.NewStore(
 		logger,
-		cache.Directory,
+		debugInfoCacheDir,
 		metadata,
 		bucket,
 		debuginfo.NopDebugInfodClient{},
@@ -489,6 +481,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		tracer,
 		metastore,
 		table,
+		schema,
 		false,
 	)
 

@@ -99,6 +99,8 @@ Flags:
       --mutex-profile-fraction=0
                                    Fraction of mutex profile samples to collect.
       --block-profile-rate=0       Sample rate for block profile.
+      --storage-in-memory          Use in-memory storage, without write-ahead
+                                   log or persistent metastore.
       --storage-debug-value-log    Log every value written to the database into
                                    a separate file. This is only for debugging
                                    purposes to produce data to replay situations
@@ -108,6 +110,9 @@ Flags:
       --storage-active-memory=536870912
                                    Amount of memory to use for active storage.
                                    Defaults to 512MB.
+      --storage-path="data"        Path to storage directory.
+      --storage-persist            Persist storage to the configured object
+                                   storage.
       --symbolizer-demangle-mode="simple"
                                    Mode to demangle C++ symbols. Default mode is
                                    simplified: no parameters, no templates, no
@@ -128,6 +133,8 @@ Flags:
       --debug-infod-http-request-timeout=5m
                                    Timeout duration for HTTP request to upstream
                                    debuginfod server. Defaults to 5m
+      --debuginfo-cache-dir="/tmp"
+                                   Path to directory where debuginfo is cached.
       --store-address=STRING       gRPC address to send profiles and symbols to.
       --bearer-token=STRING        Bearer token to authenticate with store.
       --bearer-token-file=STRING
@@ -190,6 +197,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="http://hondu.co"><img src="https://avatars.githubusercontent.com/u/959128?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Javier Honduvilla Coto</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=javierhonduco" title="Code">💻</a></td>
     <td align="center"><a href="http://marselester.com"><img src="https://avatars.githubusercontent.com/u/823099?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Marsel Mavletkulov</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=marselester" title="Code">💻</a></td>
     <td align="center"><a href="http://bit.ly/2XvWly1"><img src="https://avatars.githubusercontent.com/u/24803604?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kautilya Tripathi</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=knrt10" title="Code">💻</a></td>
+    <td align="center"><a href="http://jnsgr.uk"><img src="https://avatars.githubusercontent.com/u/668505?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jon Seager</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=jnsgruk" title="Code">💻</a></td>
   </tr>
 </table>
 

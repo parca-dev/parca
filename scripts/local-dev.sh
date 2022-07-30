@@ -29,6 +29,19 @@ function mk() {
     minikube -p "${MINIKUBE_PROFILE_NAME}" "$@"
 }
 
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+  ARCH="amd64"
+elif [ "$ARCH" = "aarch64" ]; then
+  ARCH="arm64"
+fi
+
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    OS="linux"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="darwin"
+fi
+
 # Creates a local minikube cluster, and deploys the dev env into the cluster
 function up() {
     # Spin up local cluster if one isn't running
@@ -44,8 +57,13 @@ function up() {
         echo "Creating minikube cluster"
         echo "----------------------------------------------------------"
         # kvm2, hyperkit, hyperv, vmwarefu1sion, virtualbox, vmware, xhyve
+        DRIVER=kvm2
+        if [ "$OS" == "darwin" -a "$ARCH" == "arm64" ]; then
+            DRIVER=qemu2
+        fi
+        echo "Starting minikube cluster with driver: $DRIVER"
         mk start \
-            --driver=kvm2 \
+            --driver=${DRIVER} \
             --nodes=${NODE_COUNT} \
             --kubernetes-version=v1.23.3 \
             --cpus=4 \
@@ -54,6 +72,8 @@ function up() {
             --docker-opt dns=8.8.8.8 \
             --docker-opt default-ulimit=memlock=9223372036854775807:9223372036854775807
     fi
+    # Switch kubectl to the minikube context
+    mk update-context
 
     trap 'kill $(jobs -p)' SIGINT SIGTERM EXIT
 

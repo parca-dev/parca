@@ -35,12 +35,8 @@ func setupReloader(ctx context.Context, t *testing.T) (*os.File, chan *Config) {
 
 	filename := filepath.Join(t.TempDir(), "parca.yaml")
 
-	config := `debug_info:
+	config := `object_storage:
   bucket:
-    type: "FILESYSTEM"
-    config:
-      directory: "./tmp"
-  cache:
     type: "FILESYSTEM"
     config:
       directory: "./tmp"

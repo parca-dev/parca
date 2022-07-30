@@ -25,9 +25,10 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/filesystem"
+	"github.com/thanos-io/objstore/providers/filesystem"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v2"
@@ -53,22 +54,12 @@ func TestStore(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, "parca/store")
-	require.NoError(t, err)
-
-	cache, err := NewCache(
-		&CacheConfig{
-			Type: FILESYSTEM,
-			Config: &FilesystemCacheConfig{
-				Directory: cacheDir,
-			},
-		},
-	)
+	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
 	require.NoError(t, err)
 
 	s, err := NewStore(
 		logger,
-		cache.Directory,
+		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
 		bucket,
 		NopDebugInfodClient{},
@@ -145,7 +136,6 @@ func TestStore(t *testing.T) {
 	require.NoError(t, downloader.Close())
 
 	// Test only reading the download info.
-	buf = bytes.NewBuffer(nil)
 	downloader, err = c.Downloader(ctx, hex.EncodeToString([]byte("section")))
 	require.NoError(t, err)
 	require.Equal(t, debuginfopb.DownloadInfo_SOURCE_UPLOAD, downloader.Info().Source)

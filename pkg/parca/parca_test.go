@@ -62,7 +62,7 @@ func getShareServerConn(t Testing) share.ShareClient {
 }
 
 func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {
-	addr := ":7077"
+	addr := "127.0.0.1:7077"
 
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -73,6 +73,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 			ConfigPath:          "testdata/parca.yaml",
 			Port:                addr,
 			Metastore:           metaStoreBadgerInMemory,
+			StorageInMemory:     true,
 			StorageGranuleSize:  8 * 1024,
 			StorageActiveMemory: 512 * 1024 * 1024,
 		}, "test-version")
@@ -210,19 +211,20 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
+	col, err := frostdb.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
+	require.NoError(t, err)
 	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -274,6 +276,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 				logger,
 				parcacol.NewNormalizer(metastore),
 				table,
+				schema,
 			).Ingest(ctx, sample.Labels, p, false)
 		})
 	}
@@ -346,19 +349,20 @@ func TestConsistency(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
+	col, err := frostdb.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
+	require.NoError(t, err)
 	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -380,7 +384,7 @@ func TestConsistency(t *testing.T) {
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(MustReadAllGzip(t, "../query/testdata/alloc_objects.pb.gz")))
 
-	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table)
+	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table, schema)
 	require.NoError(t, ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p, false))
 
 	table.Sync()
