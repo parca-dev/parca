@@ -141,17 +141,13 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 
 	lres, err := metastore.GetOrCreateLocations(ctx, &pb.GetOrCreateLocationsRequest{
 		Locations: []*pb.Location{{
-			Lines: &pb.LocationLines{
-				Entries: []*pb.Line{{
-					FunctionId: f1.Id,
-				}},
-			},
+			Lines: []*pb.Line{{
+				FunctionId: f1.Id,
+			}},
 		}, {
-			Lines: &pb.LocationLines{
-				Entries: []*pb.Line{{
-					FunctionId: f2.Id,
-				}},
-			},
+			Lines: []*pb.Line{{
+				FunctionId: f2.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)

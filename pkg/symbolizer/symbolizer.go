@@ -135,7 +135,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 	for _, loc := range locations {
 		locationsByMapping := locationsByMappings[mappingsIndex[loc.MappingId]]
 		// Already symbolized!
-		if loc.Lines != nil && len(loc.Lines.Entries) > 0 {
+		if loc.Lines != nil && len(loc.Lines) > 0 {
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
 			continue
 		}
@@ -215,7 +215,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 			// step we can just reuse the same locations as were originally
 			// passed in.
 			locations = append(locations, locationsByMapping.Locations[j])
-			locationsByMapping.Locations[j].Lines = &pb.LocationLines{Entries: lines}
+			locationsByMapping.Locations[j].Lines = lines
 		}
 	}
 

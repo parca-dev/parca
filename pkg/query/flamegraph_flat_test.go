@@ -81,39 +81,29 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f1.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f1.Id,
+			}},
 		}, {
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f2.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f2.Id,
+			}},
 		}, {
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f3.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f3.Id,
+			}},
 		}, {
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f4.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f4.Id,
+			}},
 		}, {
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f5.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f5.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)
