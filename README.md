@@ -1,6 +1,8 @@
 <p align="center">
   <a href="#contributors-" target="_blank">
     <img src="https://img.shields.io/github/all-contributors/parca-dev/parca?style=flat" alt="contributors">
+  </a>
+  <a href="https://discord.com/invite/ZgUpYgpzXy" target="_blank">
     <img alt="Discord" src="https://img.shields.io/discord/877547706334199818?label=Discord">
   </a>
 </p>
