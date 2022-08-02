@@ -1,7 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
+
 import {QueryServiceClient, QueryResponse, QueryRequest_ReportType} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {useGrpcMetadata} from '@parca/components';
+
 import {ProfileSource} from './ProfileSource';
 
 export interface IQueryResult {
@@ -10,11 +12,17 @@ export interface IQueryResult {
   isLoading: boolean;
 }
 
+interface UseQueryOptions {
+  skip?: boolean;
+}
+
 export const useQuery = (
   client: QueryServiceClient,
   profileSource: ProfileSource,
-  reportType: QueryRequest_ReportType
+  reportType: QueryRequest_ReportType,
+  options?: UseQueryOptions
 ): IQueryResult => {
+  const {skip = false} = options || {};
   const [result, setResult] = useState<IQueryResult>({
     response: null,
     error: null,
@@ -23,6 +31,9 @@ export const useQuery = (
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
+    if (skip) {
+      return;
+    }
     setResult({
       response: null,
       error: null,
