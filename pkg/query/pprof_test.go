@@ -41,6 +41,13 @@ func TestGenerateFlatPprof(t *testing.T) {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
+	pf, err := os.Open("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+	pprofProf, err := profile.Parse(pf)
+	require.NoError(t, err)
+	require.NoError(t, pf.Close())
+	compactedOriginalProfile := pprofProf.Compact()
+
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
@@ -56,7 +63,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, profiles[0])
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
@@ -83,7 +90,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 
 	require.Equal(t, 974, len(res.Function))
 	require.Equal(t, 1886, len(res.Location))
-	require.Equal(t, 4661, len(res.Sample))
+	require.Equal(t, len(compactedOriginalProfile.Sample), len(res.Sample))
 
 	tmpfile, err := ioutil.TempFile("", "pprof")
 	defer os.Remove(tmpfile.Name())
@@ -161,7 +168,8 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	require.Equal(t, 1, len(sres.Stacktraces))
 	s := sres.Stacktraces[0]
 
-	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, &parcaprofile.NormalizedProfile{
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s.Id,
 			Value:        1,
