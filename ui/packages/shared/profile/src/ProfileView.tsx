@@ -127,7 +127,6 @@ export const ProfileView = ({
     if (view == null) {
       return;
     }
-    console.log('switchProfileView', view);
     if (navigateTo === undefined) return;
 
     setCurrentView(view);
