@@ -236,14 +236,14 @@ func (n *Normalizer) NormalizeLocations(
 			mappingId = mappingNormalizationInfo.id
 		}
 
-		lines := &pb.LocationLines{Entries: make([]*pb.Line, 0, len(location.Line))}
+		lines := make([]*pb.Line, 0, len(location.Line))
 		for _, line := range location.Line {
 			functionId := ""
 			if line.FunctionId != 0 {
 				functionIndex := line.FunctionId - 1
 				functionId = functions[functionIndex].Id
 			}
-			lines.Entries = append(lines.Entries, &pb.Line{
+			lines = append(lines, &pb.Line{
 				FunctionId: functionId,
 				Line:       line.Line,
 			})

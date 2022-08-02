@@ -10,8 +10,6 @@ import type { MappingsResponse } from "./metastore";
 import type { MappingsRequest } from "./metastore";
 import type { FunctionsResponse } from "./metastore";
 import type { FunctionsRequest } from "./metastore";
-import type { LocationLinesResponse } from "./metastore";
-import type { LocationLinesRequest } from "./metastore";
 import type { LocationsResponse } from "./metastore";
 import type { LocationsRequest } from "./metastore";
 import type { CreateLocationLinesResponse } from "./metastore";
@@ -88,12 +86,6 @@ export interface IMetastoreServiceClient {
      * @generated from protobuf rpc: Locations(parca.metastore.v1alpha1.LocationsRequest) returns (parca.metastore.v1alpha1.LocationsResponse);
      */
     locations(input: LocationsRequest, options?: RpcOptions): UnaryCall<LocationsRequest, LocationsResponse>;
-    /**
-     * LocationLines retrieves lines of locations.
-     *
-     * @generated from protobuf rpc: LocationLines(parca.metastore.v1alpha1.LocationLinesRequest) returns (parca.metastore.v1alpha1.LocationLinesResponse);
-     */
-    locationLines(input: LocationLinesRequest, options?: RpcOptions): UnaryCall<LocationLinesRequest, LocationLinesResponse>;
     /**
      * Functions retrieves functions.
      *
@@ -199,21 +191,12 @@ export class MetastoreServiceClient implements IMetastoreServiceClient, ServiceI
         return stackIntercept<LocationsRequest, LocationsResponse>("unary", this._transport, method, opt, input);
     }
     /**
-     * LocationLines retrieves lines of locations.
-     *
-     * @generated from protobuf rpc: LocationLines(parca.metastore.v1alpha1.LocationLinesRequest) returns (parca.metastore.v1alpha1.LocationLinesResponse);
-     */
-    locationLines(input: LocationLinesRequest, options?: RpcOptions): UnaryCall<LocationLinesRequest, LocationLinesResponse> {
-        const method = this.methods[7], opt = this._transport.mergeOptions(options);
-        return stackIntercept<LocationLinesRequest, LocationLinesResponse>("unary", this._transport, method, opt, input);
-    }
-    /**
      * Functions retrieves functions.
      *
      * @generated from protobuf rpc: Functions(parca.metastore.v1alpha1.FunctionsRequest) returns (parca.metastore.v1alpha1.FunctionsResponse);
      */
     functions(input: FunctionsRequest, options?: RpcOptions): UnaryCall<FunctionsRequest, FunctionsResponse> {
-        const method = this.methods[8], opt = this._transport.mergeOptions(options);
+        const method = this.methods[7], opt = this._transport.mergeOptions(options);
         return stackIntercept<FunctionsRequest, FunctionsResponse>("unary", this._transport, method, opt, input);
     }
     /**
@@ -222,7 +205,7 @@ export class MetastoreServiceClient implements IMetastoreServiceClient, ServiceI
      * @generated from protobuf rpc: Mappings(parca.metastore.v1alpha1.MappingsRequest) returns (parca.metastore.v1alpha1.MappingsResponse);
      */
     mappings(input: MappingsRequest, options?: RpcOptions): UnaryCall<MappingsRequest, MappingsResponse> {
-        const method = this.methods[9], opt = this._transport.mergeOptions(options);
+        const method = this.methods[8], opt = this._transport.mergeOptions(options);
         return stackIntercept<MappingsRequest, MappingsResponse>("unary", this._transport, method, opt, input);
     }
     /**
@@ -231,7 +214,7 @@ export class MetastoreServiceClient implements IMetastoreServiceClient, ServiceI
      * @generated from protobuf rpc: Stacktraces(parca.metastore.v1alpha1.StacktracesRequest) returns (parca.metastore.v1alpha1.StacktracesResponse);
      */
     stacktraces(input: StacktracesRequest, options?: RpcOptions): UnaryCall<StacktracesRequest, StacktracesResponse> {
-        const method = this.methods[10], opt = this._transport.mergeOptions(options);
+        const method = this.methods[9], opt = this._transport.mergeOptions(options);
         return stackIntercept<StacktracesRequest, StacktracesResponse>("unary", this._transport, method, opt, input);
     }
 }
