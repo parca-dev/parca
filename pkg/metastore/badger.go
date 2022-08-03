@@ -15,7 +15,6 @@ package metastore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/dgraph-io/badger/v3"
@@ -31,6 +30,7 @@ import (
 // store.
 type BadgerMetastore struct {
 	tracer trace.Tracer
+	logger log.Logger
 
 	db *badger.DB
 
@@ -70,6 +70,7 @@ func NewBadgerMetastore(
 	return &BadgerMetastore{
 		db:     db,
 		tracer: tracer,
+		logger: logger,
 	}
 }
 
@@ -253,49 +254,6 @@ func (m *BadgerMetastore) GetOrCreateFunctions(ctx context.Context, r *pb.GetOrC
 	return res, err
 }
 
-func (m *BadgerMetastore) LocationLines(ctx context.Context, r *pb.LocationLinesRequest) (*pb.LocationLinesResponse, error) {
-	res := &pb.LocationLinesResponse{
-		LocationLines: make([]*pb.LocationLines, 0, len(r.LocationIds)),
-	}
-
-	locationLineKeys := make([][]byte, 0, len(r.LocationIds))
-	for _, id := range r.LocationIds {
-		locationLineKeys = append(locationLineKeys, []byte(MakeLocationLinesKeyWithID(id)))
-	}
-
-	err := m.db.View(func(txn *badger.Txn) error {
-		for _, locationLineKey := range locationLineKeys {
-			item, err := txn.Get(locationLineKey)
-			if err != nil {
-				// If the key doesn't exist it means that the Location is not symbolised yet.
-				if errors.Is(err, badger.ErrKeyNotFound) {
-					res.LocationLines = append(res.LocationLines, nil)
-					continue
-				} else {
-					return err
-				}
-			}
-
-			err = item.Value(func(val []byte) error {
-				locationLines := &pb.LocationLines{}
-				err := locationLines.UnmarshalVT(val)
-				if err != nil {
-					return err
-				}
-
-				res.LocationLines = append(res.LocationLines, locationLines)
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-
-	return res, err
-}
-
 func (m *BadgerMetastore) Locations(ctx context.Context, r *pb.LocationsRequest) (*pb.LocationsResponse, error) {
 	res := &pb.LocationsResponse{
 		Locations: make([]*pb.Location, 0, len(r.LocationIds)),
@@ -350,9 +308,6 @@ func (m *BadgerMetastore) GetOrCreateLocations(ctx context.Context, r *pb.GetOrC
 		locationKeys = append(locationKeys, MakeLocationKey(location))
 	}
 
-	symbolizedLocationKeys := make([]string, 0, len(r.Locations))
-	symbolizedLocations := make([]*pb.Location, 0, len(r.Locations))
-
 	err := m.db.Update(func(txn *badger.Txn) error {
 		for i, locationKey := range locationKeys {
 			item, err := txn.Get([]byte(locationKey))
@@ -372,16 +327,13 @@ func (m *BadgerMetastore) GetOrCreateLocations(ctx context.Context, r *pb.GetOrC
 				}
 				res.Locations = append(res.Locations, location)
 
-				if location.MappingId != "" && location.Address != 0 && (location.Lines == nil || len(location.Lines.Entries) == 0) {
+				if location.MappingId != "" && location.Address != 0 && len(location.Lines) == 0 {
 					unsymbolizableKey := MakeUnsymbolizedLocationKeyWithID(location.Id)
 					if err := txn.Set([]byte(unsymbolizableKey), []byte{}); err != nil {
 						return err
 					}
 					continue
 				}
-
-				symbolizedLocationKeys = append(symbolizedLocationKeys, location.Id)
-				symbolizedLocations = append(symbolizedLocations, location)
 
 				continue
 			}
@@ -401,7 +353,7 @@ func (m *BadgerMetastore) GetOrCreateLocations(ctx context.Context, r *pb.GetOrC
 			}
 		}
 
-		return m.createLocationLines(ctx, txn, symbolizedLocationKeys, symbolizedLocations)
+		return nil
 	})
 
 	return res, err
@@ -439,36 +391,27 @@ func (m *BadgerMetastore) UnsymbolizedLocations(ctx context.Context, r *pb.Unsym
 }
 
 func (m *BadgerMetastore) CreateLocationLines(ctx context.Context, r *pb.CreateLocationLinesRequest) (*pb.CreateLocationLinesResponse, error) {
-	locationIDs := make([]string, 0, len(r.Locations))
-	for _, location := range r.Locations {
-		locationIDs = append(locationIDs, MakeLocationID(location))
-	}
-
 	err := m.db.Update(func(txn *badger.Txn) error {
-		return m.createLocationLines(ctx, txn, locationIDs, r.Locations)
+		for _, location := range r.Locations {
+			b, err := location.MarshalVT()
+			if err != nil {
+				return err
+			}
+			if err := txn.Set([]byte(MakeLocationKeyWithID(location.Id)), b); err != nil {
+				return err
+			}
+
+			if err := txn.Delete([]byte(MakeUnsymbolizedLocationKeyWithID(location.Id))); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.CreateLocationLinesResponse{}, nil
-}
-
-func (m *BadgerMetastore) createLocationLines(ctx context.Context, txn *badger.Txn, locationIDs []string, locations []*pb.Location) error {
-	for i, locationID := range locationIDs {
-		b, err := locations[i].Lines.MarshalVT()
-		if err != nil {
-			return err
-		}
-		if err := txn.Set([]byte(MakeLocationLinesKeyWithID(locationID)), b); err != nil {
-			return err
-		}
-
-		if err := txn.Delete([]byte(MakeUnsymbolizedLocationKeyWithID(locationID))); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetOrCreateStacktracesRequest) (*pb.GetOrCreateStacktracesResponse, error) {
@@ -481,6 +424,39 @@ func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetO
 		stacktraceKeys = append(stacktraceKeys, MakeStacktraceKey(stacktrace))
 	}
 
+	const maxRetries = 2
+	var result retryableGetOrCreateStacktraces
+	var err error
+
+	level.Debug(m.logger).Log("msg", "GetOrCreateStacktraces", "stacktrace_keys_len", len(r.Stacktraces))
+	for i := 0; i < maxRetries; i++ {
+		result, err = m.retryableGetOrCreateStacktraces(r, stacktraceKeys)
+		if err != nil {
+			return res, err
+		}
+
+		res.Stacktraces = append(res.Stacktraces, result.stackTraces...)
+		if len(result.retryWith) == 0 {
+			break
+		}
+		stacktraceKeys = result.retryWith
+		level.Debug(m.logger).Log("msg", "retrying GetOrCreateStacktraces", "stacktrace_keys_len", len(stacktraceKeys))
+	}
+
+	if len(result.retryWith) != 0 {
+		level.Debug(m.logger).Log("msg", "failed to GetOrCreateStacktraces all stacktraces", "stacktrace_keys_len", len(result.retryWith))
+		return res, fmt.Errorf("partial commit of stacktraces: %w", badger.ErrTxnTooBig)
+	}
+	return res, err
+}
+
+type retryableGetOrCreateStacktraces struct {
+	stackTraces []*pb.Stacktrace
+	retryWith   []string
+}
+
+func (m *BadgerMetastore) retryableGetOrCreateStacktraces(r *pb.GetOrCreateStacktracesRequest, stacktraceKeys []string) (retryableGetOrCreateStacktraces, error) {
+	result := retryableGetOrCreateStacktraces{}
 	err := m.db.Update(func(txn *badger.Txn) error {
 		for i, stacktraceKey := range stacktraceKeys {
 			item, err := txn.Get([]byte(stacktraceKey))
@@ -495,10 +471,20 @@ func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetO
 				if err != nil {
 					return err
 				}
-				if err := txn.Set([]byte(stacktraceKey), b); err != nil {
+				err = txn.Set([]byte(stacktraceKey), b)
+				if err != nil && err != badger.ErrTxnTooBig {
 					return err
 				}
-				res.Stacktraces = append(res.Stacktraces, stacktrace)
+
+				if err == badger.ErrTxnTooBig {
+					// force the calling function to commit the transaction
+					// we will go ahead and retry the operation
+					// from where we left off
+					result.retryWith = stacktraceKeys[i:]
+					return nil
+				}
+
+				result.stackTraces = append(result.stackTraces, stacktrace)
 				continue
 			}
 
@@ -509,7 +495,7 @@ func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetO
 					return err
 				}
 
-				res.Stacktraces = append(res.Stacktraces, stacktrace)
+				result.stackTraces = append(result.stackTraces, stacktrace)
 				return nil
 			})
 			if err != nil {
@@ -519,8 +505,7 @@ func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetO
 
 		return nil
 	})
-
-	return res, err
+	return result, err
 }
 
 func (m *BadgerMetastore) Stacktraces(ctx context.Context, r *pb.StacktracesRequest) (*pb.StacktracesResponse, error) {

@@ -80,7 +80,10 @@
           "description": "is_folded indicates whether the location is folded into the previous location."
         },
         "lines": {
-          "$ref": "#/definitions/v1alpha1LocationLines",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Line"
+          },
           "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
         }
       },
@@ -230,32 +233,6 @@
         }
       },
       "description": "GetOrCreateStacktracesResponse contains information about locations requested."
-    },
-    "v1alpha1LocationLines": {
-      "type": "object",
-      "properties": {
-        "entries": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/metastorev1alpha1Line"
-          },
-          "description": "Entries is the list of lines associated with the location."
-        }
-      },
-      "description": "LocationLines describes a set of lines of a location."
-    },
-    "v1alpha1LocationLinesResponse": {
-      "type": "object",
-      "properties": {
-        "locationLines": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1LocationLines"
-          },
-          "description": "LocationLines that are known to the backing metastore."
-        }
-      },
-      "description": "LocationLinesResponse contains the requested locations."
     },
     "v1alpha1LocationsResponse": {
       "type": "object",

@@ -54,7 +54,7 @@ func TestPprofToParquet(t *testing.T) {
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(MustReadAllGzip(t, "../query/testdata/alloc_objects.pb.gz")))
 
-	nps, err := NewNormalizer(metastore).NormalizePprof(ctx, "memory", p, false)
+	nps, err := NewNormalizer(metastore).NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
 	for i, np := range nps {

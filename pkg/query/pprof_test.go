@@ -60,7 +60,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
@@ -141,17 +141,13 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 
 	lres, err := metastore.GetOrCreateLocations(ctx, &pb.GetOrCreateLocationsRequest{
 		Locations: []*pb.Location{{
-			Lines: &pb.LocationLines{
-				Entries: []*pb.Line{{
-					FunctionId: f1.Id,
-				}},
-			},
+			Lines: []*pb.Line{{
+				FunctionId: f1.Id,
+			}},
 		}, {
-			Lines: &pb.LocationLines{
-				Entries: []*pb.Line{{
-					FunctionId: f2.Id,
-				}},
-			},
+			Lines: []*pb.Line{{
+				FunctionId: f2.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)

@@ -47,7 +47,7 @@ func TestGenerateTopTable(t *testing.T) {
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
@@ -187,7 +187,7 @@ func TestGenerateDiffTopTable(t *testing.T) {
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", p1, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p1, false)
 	require.NoError(t, err)
 
 	p2 := profiles[0]

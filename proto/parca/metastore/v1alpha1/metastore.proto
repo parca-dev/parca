@@ -29,8 +29,6 @@ service MetastoreService {
   rpc CreateLocationLines(CreateLocationLinesRequest) returns (CreateLocationLinesResponse) {}
   // Locations retrieves locations.
   rpc Locations(LocationsRequest) returns (LocationsResponse) {}
-  // LocationLines retrieves lines of locations.
-  rpc LocationLines(LocationLinesRequest) returns (LocationLinesResponse) {}
   // Functions retrieves functions.
   rpc Functions(FunctionsRequest) returns (FunctionsResponse) {}
   // Mappings retrieves mappings.
@@ -152,12 +150,6 @@ message LocationLinesRequest {
   repeated string location_ids = 1;
 }
 
-// LocationLinesResponse contains the requested locations.
-message LocationLinesResponse {
-  // LocationLines that are known to the backing metastore.
-  repeated LocationLines location_lines = 1;
-}
-
 // FunctionsRequest contains information about the functions requested.
 message FunctionsRequest {
   // IDs of functions to retrieve.
@@ -236,13 +228,7 @@ message Location {
 
   // lines are the call frames represented by this location. Multiple lines
   // indicate they have been inlined.
-  LocationLines lines = 6;
-}
-
-// LocationLines describes a set of lines of a location.
-message LocationLines {
-  // Entries is the list of lines associated with the location.
-  repeated Line entries = 1;
+  repeated Line lines = 6;
 }
 
 // Line describes a source code function and its line number.

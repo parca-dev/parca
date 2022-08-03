@@ -1,6 +1,8 @@
 <p align="center">
   <a href="#contributors-" target="_blank">
     <img src="https://img.shields.io/github/all-contributors/parca-dev/parca?style=flat" alt="contributors">
+  </a>
+  <a href="https://discord.com/invite/ZgUpYgpzXy" target="_blank">
     <img alt="Discord" src="https://img.shields.io/discord/877547706334199818?label=Discord">
   </a>
 </p>
@@ -198,6 +200,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="http://marselester.com"><img src="https://avatars.githubusercontent.com/u/823099?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Marsel Mavletkulov</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=marselester" title="Code">💻</a></td>
     <td align="center"><a href="http://bit.ly/2XvWly1"><img src="https://avatars.githubusercontent.com/u/24803604?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kautilya Tripathi</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=knrt10" title="Code">💻</a></td>
     <td align="center"><a href="http://jnsgr.uk"><img src="https://avatars.githubusercontent.com/u/668505?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jon Seager</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=jnsgruk" title="Code">💻</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/PhilipGough"><img src="https://avatars.githubusercontent.com/u/5781491?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Philip Gough</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=PhilipGough" title="Code">💻</a></td>
   </tr>
 </table>
 
