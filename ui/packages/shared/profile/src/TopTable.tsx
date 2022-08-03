@@ -1,21 +1,15 @@
 import React from 'react';
-import {getLastItem, valueFormatter, isSearchMatch, SEARCH_STRING_COLOR} from '@parca/functions';
+
+import {getLastItem, valueFormatter, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectCompareMode, selectSearchNodeString} from '@parca/store';
-import {
-  QueryResponse,
-  QueryServiceClient,
-  QueryRequest_ReportType,
-  TopNodeMeta,
-} from '@parca/client';
-import {ProfileSource} from './ProfileSource';
-import {useQuery} from './useQuery';
+import {TopNodeMeta, Top} from '@parca/client';
+
 import {hexifyAddress} from './utils';
 
 import './TopTable.styles.css';
 
-interface ProfileViewProps {
-  queryClient: QueryServiceClient;
-  profileSource: ProfileSource;
+interface TopTableProps {
+  data?: Top;
   sampleUnit: string;
 }
 
@@ -29,21 +23,17 @@ const Arrow = ({direction}: {direction: string | undefined}) => {
       width="11"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path clip-rule="evenodd" d="m.573997 0 5.000003 10 5-10h-9.999847z" fill-rule="evenodd" />
+      <path clipRule="evenodd" d="m.573997 0 5.000003 10 5-10h-9.999847z" fillRule="evenodd" />
     </svg>
   );
 };
 
-const useSortableData = (
-  response: QueryResponse | null,
-  config = {key: 'cumulative', direction: 'desc'}
-) => {
+const useSortableData = (top?: Top, config = {key: 'cumulative', direction: 'desc'}) => {
   const [sortConfig, setSortConfig] = React.useState<{key: string; direction: string} | null>(
     config
   );
 
-  const rawTableReport =
-    response !== null && response.report.oneofKind === 'top' ? response.report.top.list : [];
+  const rawTableReport = top ? top.list : [];
 
   const items = rawTableReport.map(node => ({
     ...node,
@@ -98,25 +88,15 @@ export const RowLabel = (meta: TopNodeMeta | undefined): string => {
   return fallback === '' ? '<unknown>' : fallback;
 };
 
-export const TopTable = ({
-  queryClient,
-  profileSource,
-  sampleUnit,
-}: ProfileViewProps): JSX.Element => {
-  const {response, error} = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP);
-  const {items, requestSort, sortConfig} = useSortableData(response);
+export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element => {
+  const {items, requestSort, sortConfig} = useSortableData(top);
   const currentSearchString = useAppSelector(selectSearchNodeString);
 
   const compareMode = useAppSelector(selectCompareMode);
 
   const unit = sampleUnit;
 
-  if (error != null) {
-    return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
-  }
-
-  const total =
-    response !== null && response.report.oneofKind === 'top' ? response.report.top.list.length : 0;
+  const total = top ? top.list.length : 0;
   if (total === 0) return <>Profile has no samples</>;
 
   const getClassNamesFor = name => {

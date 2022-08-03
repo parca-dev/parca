@@ -1,4 +1,5 @@
 import React, {MouseEvent, useEffect, useRef, useState} from 'react';
+
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
@@ -185,7 +186,7 @@ export function IcicleGraphNodes({
         const onMouseLeave = () => setHoveringNode(undefined);
 
         return (
-          <React.Fragment>
+          <React.Fragment key={`node-${key}`}>
             <IcicleRect
               key={`rect-${key}`}
               x={xStart}
