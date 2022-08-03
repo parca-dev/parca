@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import {parseParams} from '@parca/functions';
 import {QueryServiceClient, Flamegraph, Top} from '@parca/client';
@@ -83,7 +83,20 @@ export const ProfileView = ({
     setCurPath([]);
   }, [profileSource]);
 
-  const isLoaderVisible = useDelayedLoader(flamegraphData?.loading);
+  const isLoading = useMemo(() => {
+    if (currentView === 'icicle') {
+      return !!flamegraphData?.loading;
+    }
+    if (currentView === 'table') {
+      return !!topTableData?.loading;
+    }
+    if (currentView === 'both') {
+      return !!flamegraphData?.loading || !!topTableData?.loading;
+    }
+    return false;
+  }, [currentView, flamegraphData?.loading, topTableData?.loading]);
+
+  const isLoaderVisible = useDelayedLoader(isLoading);
 
   if (isLoaderVisible) {
     return <>{loader}</>;
