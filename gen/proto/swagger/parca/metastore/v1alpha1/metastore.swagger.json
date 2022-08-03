@@ -299,6 +299,10 @@
             "$ref": "#/definitions/metastorev1alpha1Location"
           },
           "description": "Locations that have a mapping and address that should be symbolizable."
+        },
+        "maxKey": {
+          "type": "string",
+          "description": "Key of the last location returned. This can be used in a subsequent call\nto UnsymbolizedLocations to continue from the last returned location."
         }
       },
       "description": "UnsymbolizedLocationsResponse contains information about the requested\nlocations that should be symbolizable but potentially haven't been\nsymbolized yet."

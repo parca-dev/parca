@@ -100,7 +100,12 @@ message GetOrCreateStacktracesResponse {
 // UnsymbolizedLocationsRequest contains information about the unsymbolized
 // locations requested. While currently empty, this could in the future contain
 // a sharding configuration or limit the number of locations to return.
-message UnsymbolizedLocationsRequest {}
+message UnsymbolizedLocationsRequest {
+  // The maximum number of locations to return.
+  uint32 limit = 1;
+  // The minimum key to start returning locations from.
+  string min_key = 2;
+}
 
 // UnsymbolizedLocationsResponse contains information about the requested
 // locations that should be symbolizable but potentially haven't been
@@ -108,6 +113,9 @@ message UnsymbolizedLocationsRequest {}
 message UnsymbolizedLocationsResponse {
   // Locations that have a mapping and address that should be symbolizable.
   repeated Location locations = 1;
+  // Key of the last location returned. This can be used in a subsequent call
+  // to UnsymbolizedLocations to continue from the last returned location.
+  string max_key = 2;
 }
 
 // CreateLocationLinesRequest contains locations and their location lines to be

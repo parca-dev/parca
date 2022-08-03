@@ -360,6 +360,7 @@ func (m *BadgerMetastore) GetOrCreateLocations(ctx context.Context, r *pb.GetOrC
 func (m *BadgerMetastore) UnsymbolizedLocations(ctx context.Context, r *pb.UnsymbolizedLocationsRequest) (*pb.UnsymbolizedLocationsResponse, error) {
 	var locations []*pb.Location
 
+	maxKey := ""
 	err := m.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchValues = false
@@ -368,9 +369,26 @@ func (m *BadgerMetastore) UnsymbolizedLocations(ctx context.Context, r *pb.Unsym
 
 		locationKeys := [][]byte{}
 		prefix := []byte(UnsymbolizedLocationLinesKeyPrefix)
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-			key := MakeLocationKeyWithID(LocationIDFromUnsymbolizedKey(string(it.Item().Key())))
+		if len(r.MinKey) > 0 {
+			it.Seek([]byte(r.MinKey))
+			if !it.ValidForPrefix(prefix) {
+				// No keys.
+				return nil
+			}
+			// Need to skip the first one as the min is not supposed to be
+			// included.
+			it.Next()
+		} else {
+			it.Seek(prefix)
+		}
+		for it.ValidForPrefix(prefix) {
+			maxKey = string(it.Item().Key())
+			key := MakeLocationKeyWithID(LocationIDFromUnsymbolizedKey(maxKey))
 			locationKeys = append(locationKeys, []byte(key))
+			if uint32(len(locationKeys)) == r.Limit {
+				break
+			}
+			it.Next()
 		}
 
 		locations = make([]*pb.Location, 0, len(locationKeys))
@@ -385,6 +403,7 @@ func (m *BadgerMetastore) UnsymbolizedLocations(ctx context.Context, r *pb.Unsym
 
 	return &pb.UnsymbolizedLocationsResponse{
 		Locations: locations,
+		MaxKey:    maxKey,
 	}, nil
 }
 
