@@ -20,12 +20,11 @@ const ProfileIcicleGraph = ({
   sampleUnit,
 }: ProfileIcicleGraphProps) => {
   const compareMode = useAppSelector(selectCompareMode);
+  const {ref, dimensions} = useContainerDimensions();
 
   if (graph === undefined) return <div>no data...</div>;
   const total = graph.total;
   if (parseFloat(total) === 0) return <>Profile has no samples</>;
-
-  const {ref, dimensions} = useContainerDimensions();
 
   return (
     <>

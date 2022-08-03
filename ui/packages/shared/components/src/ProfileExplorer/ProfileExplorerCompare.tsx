@@ -1,4 +1,4 @@
-import {ProfileDiffSource, ProfileSelection, ProfileView} from '@parca/profile';
+import {ProfileDiffSource, ProfileSelection, ProfileViewWithData} from '@parca/profile';
 import {Query} from '@parca/parser';
 import {QueryServiceClient} from '@parca/client';
 
@@ -74,7 +74,7 @@ const ProfileExplorerCompare = ({
       </div>
       <div className="grid grid-cols-1">
         {profileA != null && profileB != null ? (
-          <ProfileView
+          <ProfileViewWithData
             navigateTo={navigateTo}
             queryClient={queryClient}
             profileSource={
