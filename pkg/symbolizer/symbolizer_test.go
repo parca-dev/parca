@@ -79,7 +79,7 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ures.Locations))
 
-	err = sym.symbolize(ctx, ures.Locations)
+	err = sym.Symbolize(ctx, ures.Locations)
 	require.NoError(t, err)
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
@@ -144,7 +144,7 @@ func TestRealSymbolizer(t *testing.T) {
 	require.Equal(t, 11, len(ures.Locations))
 	id := ures.Locations[findIndexWithAddress(ures.Locations, 0x463784)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
@@ -196,7 +196,7 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
@@ -239,7 +239,7 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x77157c)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x77265c)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
@@ -291,7 +291,7 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
@@ -344,7 +344,7 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
@@ -517,5 +517,6 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		sym,
 		symbolizerCacheDir,
 		symbolizerCacheDir,
+		0,
 	)
 }

@@ -136,6 +136,18 @@ export interface GetOrCreateStacktracesResponse {
  * @generated from protobuf message parca.metastore.v1alpha1.UnsymbolizedLocationsRequest
  */
 export interface UnsymbolizedLocationsRequest {
+    /**
+     * The maximum number of locations to return.
+     *
+     * @generated from protobuf field: uint32 limit = 1;
+     */
+    limit: number;
+    /**
+     * The minimum key to start returning locations from.
+     *
+     * @generated from protobuf field: string min_key = 2;
+     */
+    minKey: string;
 }
 /**
  * UnsymbolizedLocationsResponse contains information about the requested
@@ -151,6 +163,13 @@ export interface UnsymbolizedLocationsResponse {
      * @generated from protobuf field: repeated parca.metastore.v1alpha1.Location locations = 1;
      */
     locations: Location[];
+    /**
+     * Key of the last location returned. This can be used in a subsequent call
+     * to UnsymbolizedLocations to continue from the last returned location.
+     *
+     * @generated from protobuf field: string max_key = 2;
+     */
+    maxKey: string;
 }
 /**
  * CreateLocationLinesRequest contains locations and their location lines to be
@@ -926,19 +945,47 @@ export const GetOrCreateStacktracesResponse = new GetOrCreateStacktracesResponse
 // @generated message type with reflection information, may provide speed optimized methods
 class UnsymbolizedLocationsRequest$Type extends MessageType<UnsymbolizedLocationsRequest> {
     constructor() {
-        super("parca.metastore.v1alpha1.UnsymbolizedLocationsRequest", []);
+        super("parca.metastore.v1alpha1.UnsymbolizedLocationsRequest", [
+            { no: 1, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "min_key", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
     }
     create(value?: PartialMessage<UnsymbolizedLocationsRequest>): UnsymbolizedLocationsRequest {
-        const message = {};
+        const message = { limit: 0, minKey: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<UnsymbolizedLocationsRequest>(this, message, value);
         return message;
     }
     internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UnsymbolizedLocationsRequest): UnsymbolizedLocationsRequest {
-        return target ?? this.create();
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 limit */ 1:
+                    message.limit = reader.uint32();
+                    break;
+                case /* string min_key */ 2:
+                    message.minKey = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
     }
     internalBinaryWrite(message: UnsymbolizedLocationsRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 limit = 1; */
+        if (message.limit !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.limit);
+        /* string min_key = 2; */
+        if (message.minKey !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.minKey);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -953,11 +1000,12 @@ export const UnsymbolizedLocationsRequest = new UnsymbolizedLocationsRequest$Typ
 class UnsymbolizedLocationsResponse$Type extends MessageType<UnsymbolizedLocationsResponse> {
     constructor() {
         super("parca.metastore.v1alpha1.UnsymbolizedLocationsResponse", [
-            { no: 1, name: "locations", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Location }
+            { no: 1, name: "locations", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Location },
+            { no: 2, name: "max_key", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<UnsymbolizedLocationsResponse>): UnsymbolizedLocationsResponse {
-        const message = { locations: [] };
+        const message = { locations: [], maxKey: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<UnsymbolizedLocationsResponse>(this, message, value);
@@ -970,6 +1018,9 @@ class UnsymbolizedLocationsResponse$Type extends MessageType<UnsymbolizedLocatio
             switch (fieldNo) {
                 case /* repeated parca.metastore.v1alpha1.Location locations */ 1:
                     message.locations.push(Location.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* string max_key */ 2:
+                    message.maxKey = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -986,6 +1037,9 @@ class UnsymbolizedLocationsResponse$Type extends MessageType<UnsymbolizedLocatio
         /* repeated parca.metastore.v1alpha1.Location locations = 1; */
         for (let i = 0; i < message.locations.length; i++)
             Location.internalBinaryWrite(message.locations[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string max_key = 2; */
+        if (message.maxKey !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.maxKey);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

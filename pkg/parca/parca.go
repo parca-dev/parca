@@ -350,6 +350,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			sym,
 			flags.DebuginfoCacheDir,
 			flags.DebuginfoCacheDir,
+			0,
 		)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
