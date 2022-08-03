@@ -201,6 +201,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="http://bit.ly/2XvWly1"><img src="https://avatars.githubusercontent.com/u/24803604?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kautilya Tripathi</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=knrt10" title="Code">💻</a></td>
     <td align="center"><a href="http://jnsgr.uk"><img src="https://avatars.githubusercontent.com/u/668505?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jon Seager</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=jnsgruk" title="Code">💻</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/PhilipGough"><img src="https://avatars.githubusercontent.com/u/5781491?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Philip Gough</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=PhilipGough" title="Code">💻</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
