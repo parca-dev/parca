@@ -17,8 +17,12 @@
     "@parca/profile": "^0.14.3-alpha.0",
     "@parca/store": "^0.14.1",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
+    "@types/cytoscape": "3.14.11",
+    "@types/react-cytoscapejs": "1.2.0",
     "@types/react-datepicker": "^4.4.0",
     "classnames": "^2.3.1",
+    "cytoscape": "3.17.1",
+    "react-cytoscapejs": "1.2.1",
     "react-datepicker": "^4.6.0",
     "react-use": "^17.3.2"
   },
