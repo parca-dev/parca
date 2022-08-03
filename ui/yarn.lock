@@ -4541,6 +4541,16 @@
   dependencies:
     "@types/node" "*"
 
+"@types/cytoscape@*":
+  version "3.19.7"
+  resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.19.7.tgz#a15f2905f6a0803f6efda60a00024a5974aeedba"
+  integrity sha512-JPM9gkXd302QvChbT7vnMli0QYbithROlQQQ9u0ur9YhmMkN0E/y++mKreHEhBvSf3ffiMH6RwemwPM5qbOGEw==
+
+"@types/cytoscape@3.14.11":
+  version "3.14.11"
+  resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.14.11.tgz#b5b6c90e182843f89aa1fad0d33e3f5d49237c5c"
+  integrity sha512-v/+A/5D4MuHrHZ2cIw4KThM5BA8NdBcltgYTRwqwPpSfBg2OG7EYYpyoQ9ZZzBA5VXi/xw65+AmzqwfFt62DsA==
+
 "@types/d3-array@*":
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/@types/d3-array/-/d3-array-3.0.3.tgz#87d990bf504d14ad6b16766979d04e943c046dac"
@@ -5086,6 +5096,14 @@
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/@types/range-parser/-/range-parser-1.2.4.tgz#cd667bcfdd025213aafb7ca5915a932590acdcdc"
   integrity sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==
+
+"@types/react-cytoscapejs@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@types/react-cytoscapejs/-/react-cytoscapejs-1.2.0.tgz#b6c78f266b06ed3758cdb3e106619629423a16c4"
+  integrity sha512-lDb04Bv7YFBAVVRy1y7IdCRDYUkDuo5YfpU5N4xcH1yT8MK90zQr9GS+PgI2IZBAa/fuqardyW+39ePx6kKJVw==
+  dependencies:
+    "@types/cytoscape" "*"
+    "@types/react" "*"
 
 "@types/react-datepicker@^4.4.0":
   version "4.4.2"
@@ -8454,6 +8472,22 @@ cyclist@^1.0.1:
   resolved "https://registry.yarnpkg.com/cyclist/-/cyclist-1.0.1.tgz#596e9698fd0c80e12038c2b82d6eb1b35b6224d9"
   integrity sha512-NJGVKPS81XejHcLhaLJS7plab0fK3slPh11mESeeDq2W4ZI5kUKK/LRRdVDvjJseojbPB7ZwjnyOybg3Igea/A==
 
+cytoscape@3.17.1:
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.17.1.tgz#da2dd84035db1bcfcff84989ff87f3f841ea01cc"
+  integrity sha512-66jNdRnRxIS4IE+EOax6ElhQcwK8VHmcsbGtDJ4YeuDGLRr5HLotCgeTCAIzpYt6V9CuaTuvhkSkie83wUqhxg==
+  dependencies:
+    heap "^0.2.6"
+    lodash.debounce "^4.0.8"
+
+cytoscape@^3.2.19:
+  version "3.22.1"
+  resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.22.1.tgz#bf9374193ce1d4dda31ef26a8997311a19e6077b"
+  integrity sha512-+wMWCXI+c6h7xhh0BQpttOPO7zIB7z6KyDd7D+8AkRhE9E6csXNnV5inBkdo2mxbBoll1jePVxXHqxA2J5cAog==
+  dependencies:
+    heap "^0.2.6"
+    lodash "^4.17.21"
+
 "d3-array@2 - 3", "d3-array@2.10.0 - 3", "d3-array@2.5.0 - 3", d3-array@3, d3-array@^3.1.6, d3-array@^3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/d3-array/-/d3-array-3.2.0.tgz#15bf96cd9b7333e02eb8de8053d78962eafcff14"
@@ -11315,6 +11349,11 @@ header-case@^2.0.4:
   dependencies:
     capital-case "^1.0.4"
     tslib "^2.0.3"
+
+heap@^0.2.6:
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/heap/-/heap-0.2.7.tgz#1e6adf711d3f27ce35a81fe3b7bd576c2260a8fc"
+  integrity sha512-2bsegYkkHO+h/9MGbn6KWcE45cHZgPANo5LXF7EvWdT0yT2EguSVO1nDgU5c8+ZOPwp2vMNa7YFsJhVcDR9Sdg==
 
 highlight.js@^10.4.1, highlight.js@~10.7.0:
   version "10.7.3"
@@ -17667,7 +17706,7 @@ promzard@^0.3.0:
   dependencies:
     read "1"
 
-prop-types@^15.0.0, prop-types@^15.7.2, prop-types@^15.8.1:
+prop-types@^15.0.0, prop-types@^15.6.2, prop-types@^15.7.2, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
   integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
@@ -17933,6 +17972,14 @@ react-copy-to-clipboard@^5.1.0:
   dependencies:
     copy-to-clipboard "^3.3.1"
     prop-types "^15.8.1"
+
+react-cytoscapejs@1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/react-cytoscapejs/-/react-cytoscapejs-1.2.1.tgz#ccce46acabf4f0c41dce9070743854f92b0dc050"
+  integrity sha512-8exVCetpzyGCAKuRjXPWGjFCnb22boZ3SXUPpPB/+wQI8Q8BwkT1URN3A7J1Czvj1qAbShh5QQ514mBUp7i7kw==
+  dependencies:
+    cytoscape "^3.2.19"
+    prop-types "^15.6.2"
 
 react-datepicker@^4.6.0:
   version "4.8.0"
