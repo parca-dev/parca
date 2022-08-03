@@ -248,6 +248,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "PhilipGough",
+      "name": "Philip Gough",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5781491?v=4",
+      "profile": "https://github.com/PhilipGough",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
