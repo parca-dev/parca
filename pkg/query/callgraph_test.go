@@ -45,7 +45,7 @@ func TestGenerateCallgraph(t *testing.T) {
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
