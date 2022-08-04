@@ -7,7 +7,7 @@ builds:
     id: "parca"
     binary: parca
     # https://goreleaser.com/customization/build/#reproducible-builds
-    mod_timestamp: '{{ .CommitTimestamp }}'
+    mod_timestamp: "{{ .CommitTimestamp }}"
     env:
       - CGO_ENABLED=0
     goos:
@@ -78,7 +78,7 @@ snapcrafts:
         read:
           - /etc/parca
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
   name_template: "{{ incpatch .Tag }}-next"
 source:
@@ -101,5 +101,5 @@ changelog:
   use: github
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
