@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 BIN_DIR=${BIN_DIR:-/usr/local/bin}
