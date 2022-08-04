@@ -22,6 +22,9 @@
     "@types/react-datepicker": "^4.4.0",
     "classnames": "^2.3.1",
     "cytoscape": "3.17.1",
+    "graphviz-wasm": "3.0.0",
+    "konva": "8.3.10",
+    "react-konva": "18.2.1",
     "react-cytoscapejs": "1.2.1",
     "react-datepicker": "^4.6.0",
     "react-use": "^17.3.2"

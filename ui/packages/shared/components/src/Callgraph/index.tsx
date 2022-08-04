@@ -5,6 +5,7 @@ import DotLayoutCallgraph from './DotLayoutCallgraph';
 import mockData from './CytoscapeCallgraph/mockData';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {CallgraphData} from './types';
+import {jsonGraph} from './DotLayoutCallgraph/mockData';
 
 interface Props {
   data: CallgraphData;
@@ -21,7 +22,7 @@ const Callgraph = ({data, width: customWidth, height: customHeight}: Props): JSX
     <div ref={containerRef}>
       {/* <D3DagCallgraph graph={{graph: {data: mockData}}} width={fullWidth} height={fullHeight} /> */}
       {/* <CytoscapeCallgraph data={mockData} width={fullWidth} height={fullHeight} /> */}
-      <DotLayoutCallgraph data={mockData} width={fullWidth} height={fullHeight} />
+      <DotLayoutCallgraph data={jsonGraph} width={fullWidth} height={fullHeight} />
     </div>
   );
 };

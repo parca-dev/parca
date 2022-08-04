@@ -8837,6 +8837,13 @@ decimal.js@^10.2.1:
   resolved "https://registry.yarnpkg.com/decimal.js/-/decimal.js-10.3.1.tgz#d8c3a444a9c6774ba60ca6ad7261c3a94fd5e783"
   integrity sha512-V0pfhfr8suzyPGOx3nmq4aHqabehUZn6Ch9kyFpV79TGDTWFmHqUqXdabR7QHqxzrYolF4+tVmJhUG4OURg5dQ==
 
+decode-base64@^3.0.0:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/decode-base64/-/decode-base64-3.0.1.tgz#31ef2681d0fd6b000a694525ffa7df94480efb9c"
+  integrity sha512-IWgiXlMAdm9c4RrOnvkFxYpfZRlOys4Wxnc/QT72hVLUZKCr7RPkfamgn2GXysCo06Zd4TGZyKaPHO4soBgSAg==
+  dependencies:
+    node-buffer-encoding "^1.0.1"
+
 decode-named-character-reference@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/decode-named-character-reference/-/decode-named-character-reference-1.0.2.tgz#daabac9690874c394c81e4162a0304b35d824f0e"
@@ -11107,6 +11114,14 @@ graceful-fs@^4.1.11, graceful-fs@^4.1.15, graceful-fs@^4.1.2, graceful-fs@^4.1.6
   version "4.2.10"
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.10.tgz#147d3a006da4ca3ce14728c7aefc287c367d7a6c"
   integrity sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA==
+
+graphviz-wasm@3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/graphviz-wasm/-/graphviz-wasm-3.0.0.tgz#3535c1e58562595b536f19fb0c1ef1e37e8573c7"
+  integrity sha512-WJZIQKRh+fLmdMIbG1+7KIFjCx3ccMOeOA9U25xf6DbAHyHxn6pu+vsHhn0EwVU8SmQWAwNwqT7doju6seIGFw==
+  dependencies:
+    decode-base64 "^3.0.0"
+    once "npm:@fabiospampinato/once@2.0.0"
 
 gzip-size@^6.0.0:
   version "6.0.0"
@@ -13844,6 +13859,11 @@ koa@^2.13.4:
     type-is "^1.6.16"
     vary "^1.1.2"
 
+konva@8.3.10:
+  version "8.3.10"
+  resolved "https://registry.yarnpkg.com/konva/-/konva-8.3.10.tgz#66e93815878c2d48f1b6076d5a06b18ec4eb3217"
+  integrity sha512-5zOynjWBG9wWgpA634SDH+764eyoISpmHLTOCfQ3GFN8OBVd83Genk6H0R4D3hXV0kEGIFAv7RDcSVDtQpPOMw==
+
 language-subtag-registry@~0.3.2:
   version "0.3.22"
   resolved "https://registry.yarnpkg.com/language-subtag-registry/-/language-subtag-registry-0.3.22.tgz#2e1500861b2e457eba7e7ae86877cbd08fa1fd1d"
@@ -15572,6 +15592,11 @@ no-case@^3.0.4:
     lower-case "^2.0.2"
     tslib "^2.0.3"
 
+node-buffer-encoding@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/node-buffer-encoding/-/node-buffer-encoding-1.0.1.tgz#a51ca742190084b9b35a33a672b9021f46560358"
+  integrity sha512-eklg9A4yXOlIZOIeV8D33gHZjw2g61TREuhucTM+/OR/xn4MXTZaV60fEYP+Lsa7C9bliJvvNrgkC6igafgKrw==
+
 node-dir@^0.1.10:
   version "0.1.17"
   resolved "https://registry.yarnpkg.com/node-dir/-/node-dir-0.1.17.tgz#5f5665d93351335caabef8f1c554516cf5f1e4e5"
@@ -16080,6 +16105,11 @@ once@^1.3.0, once@^1.3.1, once@^1.4.0:
   integrity sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==
   dependencies:
     wrappy "1"
+
+"once@npm:@fabiospampinato/once@2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@fabiospampinato/once/-/once-2.0.0.tgz#e76b79d51ea4ebc6214dd469e6a78773b7a587bd"
+  integrity sha512-VJmruLTCTvb1+yYlGLupECCGAsz7bwB1ZRzx6AxdVpJ9YfXkWIRnoIWl4c3aWvPOWcgUQI2cqunTHjLCAZTrSA==
 
 onetime@^5.1.0, onetime@^5.1.2:
   version "5.1.2"
@@ -18095,6 +18125,14 @@ react-is@^16.13.1, react-is@^16.7.0:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
+react-konva@18.2.1:
+  version "18.2.1"
+  resolved "https://registry.yarnpkg.com/react-konva/-/react-konva-18.2.1.tgz#389cd55c3fc4d18616f8564e0bfc098c473da78c"
+  integrity sha512-JqNMqxAMg1JC8GLs+ZtPoXMVPzQw6XQCxxiFpw01A5HVoglTJQk6Ih+VO2DUD+VAh8ic7GVNE7YeeW+IexBg7g==
+  dependencies:
+    react-reconciler "~0.29.0"
+    scheduler "^0.23.0"
+
 react-onclickoutside@^6.12.0:
   version "6.12.2"
   resolved "https://registry.yarnpkg.com/react-onclickoutside/-/react-onclickoutside-6.12.2.tgz#8e6cf80c7d17a79f2c908399918158a7b02dda01"
@@ -18107,6 +18145,14 @@ react-popper@^2.2.5:
   dependencies:
     react-fast-compare "^3.0.1"
     warning "^4.0.2"
+
+react-reconciler@~0.29.0:
+  version "0.29.0"
+  resolved "https://registry.yarnpkg.com/react-reconciler/-/react-reconciler-0.29.0.tgz#ee769bd362915076753f3845822f2d1046603de7"
+  integrity sha512-wa0fGj7Zht1EYMRhKWwoo1H9GApxYLBuhoAuXN0TlltESAjDssB+Apf0T/DngVqaMyPypDmabL37vw/2aRM98Q==
+  dependencies:
+    loose-envify "^1.1.0"
+    scheduler "^0.23.0"
 
 react-redux@^8.0.2:
   version "8.0.2"

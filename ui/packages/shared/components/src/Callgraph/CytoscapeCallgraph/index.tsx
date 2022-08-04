@@ -44,8 +44,6 @@ export default React.memo(({data, width, height}: Props) => {
     }
   }, []);
 
-  console.log({nodes, edges});
-
   return (
     <CytoscapeComponent
       elements={CytoscapeComponent.normalizeElements({
