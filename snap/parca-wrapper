@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Run the configure hook which sets defaults for any config options
+${SNAP}/snap/hooks/configure
+
+# Grab the config options
+storage_active_memory="$(snapctl get storage-active-memory)"
+log_level="$(snapctl get log-level)"
+storage_persist="$(snapctl get storage-persist)"
+port="$(snapctl get port)"
+
+# Start building an array of command line options
+opts=(
+    "--config-path=${SNAP_DATA}/parca.yaml" 
+    "--log-level=${log_level}" 
+    "--port=:${port}"
+)
+
+# Switch out command line options depending on whether the user has
+# specified storage-persist=true
+if [[ "${storage_persist}" == "true" ]]; then
+    opts+=(
+        "--storage-in-memory=false"
+        "--storage-persist"
+        "--storage-path=${SNAP_DATA}/profiles"
+    )
+else
+    opts+=(
+        "--storage-in-memory=true"
+        "--storage-active-memory=${storage_active_memory}"
+    )
+fi
+
+# Run parca with the gathered arguments
+exec ${SNAP}/parca ${opts[@]}
