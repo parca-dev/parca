@@ -81,39 +81,29 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f1.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f1.Id,
+			}},
 		}, {
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f2.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f2.Id,
+			}},
 		}, {
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f3.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f3.Id,
+			}},
 		}, {
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f4.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f4.Id,
+			}},
 		}, {
 			MappingId: m.Id,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					FunctionId: f5.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				FunctionId: f5.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)
@@ -231,7 +221,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServ
 	require.NoError(t, err)
 
 	normalizer := parcacol.NewNormalizer(l)
-	profiles, err := normalizer.NormalizePprof(ctx, "test", p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
 	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
@@ -289,7 +279,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 
 	metastore := metastore.NewInProcessClient(store)
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
@@ -437,7 +427,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	require.NoError(t, err)
 
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "", p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])

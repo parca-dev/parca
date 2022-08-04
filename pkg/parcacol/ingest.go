@@ -51,28 +51,30 @@ func NewIngester(logger log.Logger, normalizer *Normalizer, table Table, schema 
 
 var ErrMissingNameLabel = errors.New("missing __name__ label")
 
-func separateNameFromLabels(ls labels.Labels) (string, labels.Labels, error) {
+func separateNameFromLabels(ls labels.Labels) (string, map[string]struct{}, labels.Labels, error) {
+	names := make(map[string]struct{}, len(ls))
 	out := make(labels.Labels, 0, len(ls))
 	name := ""
 	for _, l := range ls {
 		if l.Name == "__name__" {
 			name = l.Value
 		} else {
+			names[l.Name] = struct{}{}
 			out = append(out, l)
 		}
 	}
 
 	if name == "" {
-		return "", nil, ErrMissingNameLabel
+		return "", nil, nil, ErrMissingNameLabel
 	}
 
 	sort.Sort(out)
 
-	return name, out, nil
+	return name, names, out, nil
 }
 
 func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.Profile, normalized bool) error {
-	name, ls, err := separateNameFromLabels(ls)
+	name, names, ls, err := separateNameFromLabels(ls)
 	if err != nil {
 		return fmt.Errorf("prepare labels: %w", err)
 	}
@@ -81,7 +83,7 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 		return err
 	}
 
-	normalizedProfiles, err := ing.normalizer.NormalizePprof(ctx, name, p, normalized)
+	normalizedProfiles, err := ing.normalizer.NormalizePprof(ctx, name, names, p, normalized)
 	if err != nil {
 		return fmt.Errorf("normalize profile: %w", err)
 	}

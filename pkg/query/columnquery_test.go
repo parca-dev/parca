@@ -421,12 +421,10 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	lres, err := m.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
 			Address: 0x1,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					Line:       1,
-					FunctionId: f1.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				Line:       1,
+				FunctionId: f1.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)
@@ -445,12 +443,10 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	lres, err = m.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
 			Address: 0x2,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					Line:       2,
-					FunctionId: f2.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				Line:       2,
+				FunctionId: f2.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)

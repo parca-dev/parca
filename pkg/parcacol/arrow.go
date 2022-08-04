@@ -205,20 +205,13 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 		mappings = mres.Mappings
 	}
 
-	lres, err := c.m.LocationLines(ctx, &pb.LocationLinesRequest{
-		LocationIds: locationIds,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get lines by location IDs: %w", err)
-	}
-
 	functionIndex := map[string]int{}
 	functionIDs := []string{}
-	for _, lines := range lres.LocationLines {
-		if lines == nil {
+	for _, location := range locations {
+		if location.Lines == nil {
 			continue
 		}
-		for _, line := range lines.Entries {
+		for _, line := range location.Lines {
 			if _, found := functionIndex[line.FunctionId]; !found {
 				functionIDs = append(functionIDs, line.FunctionId)
 				functionIndex[line.FunctionId] = len(functionIDs) - 1
@@ -234,15 +227,15 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 	}
 
 	res := make([]*profile.Location, 0, len(locations))
-	for i, location := range locations {
+	for _, location := range locations {
 		var mapping *pb.Mapping
 		if location.MappingId != "" {
 			mapping = mappings[mappingIndex[location.MappingId]]
 		}
 
 		symbolizedLines := []profile.LocationLine{}
-		if lres.LocationLines[i] != nil {
-			lines := lres.LocationLines[i].Entries
+		if location.Lines != nil {
+			lines := location.Lines
 			symbolizedLines = make([]profile.LocationLine, 0, len(lines))
 			for _, line := range lines {
 				symbolizedLines = append(symbolizedLines, profile.LocationLine{
