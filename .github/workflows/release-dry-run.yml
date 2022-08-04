@@ -72,6 +72,10 @@ jobs:
         with:
           node-version-file: .node-version
           cache: 'yarn'
+      
+      - name: Set up Snapcraft
+        run: |
+          sudo snap install snapcraft --channel=7.x/stable --classic
 
       - name: Set up environment
         run: |
