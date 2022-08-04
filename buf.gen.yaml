@@ -8,7 +8,7 @@ managed:
 
 plugins:
   # renovate: datasource=github-releases depName=protocolbuffers/protobuf-go
-  - remote: buf.build/protocolbuffers/plugins/go:v1.28.0-1
+  - remote: buf.build/protocolbuffers/plugins/go:v1.28.1-1
     out: gen/proto/go
     opt: paths=source_relative
 
