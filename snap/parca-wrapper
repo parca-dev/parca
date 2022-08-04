@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Run the configure hook which sets defaults for any config options
-${SNAP}/snap/hooks/configure
+"${SNAP}"/snap/hooks/configure
 
 # Grab the config options
 storage_active_memory="$(snapctl get storage-active-memory)"
@@ -11,8 +11,8 @@ port="$(snapctl get port)"
 
 # Start building an array of command line options
 opts=(
-    "--config-path=${SNAP_DATA}/parca.yaml" 
-    "--log-level=${log_level}" 
+    "--config-path=${SNAP_DATA}/parca.yaml"
+    "--log-level=${log_level}"
     "--port=:${port}"
 )
 
@@ -32,4 +32,4 @@ else
 fi
 
 # Run parca with the gathered arguments
-exec ${SNAP}/parca ${opts[@]}
+exec "${SNAP}"/parca "${opts[@]}"

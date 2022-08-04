@@ -2,7 +2,7 @@
 
 # On Fedora $SNAP is under /var and there is some magic to map it to /snap.
 # We need to handle that case and reset $SNAP
-SNAP=$(echo $SNAP | sed -e "s|/var/lib/snapd||g")
+SNAP="${SNAP//\/var\/lib\/snapd/}"
 
 storage_active_memory="$(snapctl get storage-active-memory)"
 if [[ -z "$storage_active_memory" ]]; then
@@ -24,5 +24,5 @@ if [[ -z "$port" ]]; then
     snapctl set port=7070
 fi
 
-mkdir -p $SNAP_DATA/profiles
-cp -pnr $SNAP/usr/share/parca/example-config.yaml $SNAP_DATA/parca.yaml
+mkdir -p "${SNAP_DATA}/profiles"
+cp -pnr "${SNAP}/usr/share/parca/example-config.yaml" "${SNAP_DATA}/parca.yaml"
