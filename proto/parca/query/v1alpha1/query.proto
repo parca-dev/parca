@@ -223,6 +223,9 @@ message QueryRequest {
 
     // REPORT_TYPE_TOP unspecified
     REPORT_TYPE_TOP = 2;
+
+    // REPORT_TYPE_CALLGRAPH unspecified
+    REPORT_TYPE_CALLGRAPH = 3;
   }
 
   // report_type is the type of report to return
@@ -331,6 +334,39 @@ message FlamegraphNodeMeta {
   parca.metastore.v1alpha1.Line line = 4;
 }
 
+// CallgraphNode represents a node in the graph
+message CallgraphNode {
+  // id is the unique id of the node
+  string id = 1;
+
+  // name is the name of the node
+  string name = 2;
+}
+
+// CallgraphEdge represents an edge in the graph
+message CallgraphEdge {
+  // id is the unique id of the edge
+  string id = 1;
+
+  // source represents the id of the source node
+  string source = 2;
+
+  // target represents the id of the target node
+  string target = 3;
+
+  // visits is the number of visits to the edge
+  int64 visits = 4;
+}
+
+// Callgraph is the callgraph report type
+message Callgraph {
+  // nodes are the nodes in the callgraph
+  repeated CallgraphNode nodes = 1;
+
+  // edges are the edges connecting nodes in the callgraph
+  repeated CallgraphEdge edges = 2;
+}
+
 // QueryResponse is the returned report for the given query
 message QueryResponse {
   // report is the generated report
@@ -343,6 +379,9 @@ message QueryResponse {
 
     // top is a top list representation of the report
     Top top = 7;
+
+    // callgraph is a callgraph nodes and edges representation of the report
+    Callgraph callgraph = 8;
   }
 }
 
