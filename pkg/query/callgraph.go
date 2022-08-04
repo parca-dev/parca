@@ -31,20 +31,20 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*pb.Callgraph, 
 		var prevNode *pb.CallgraphNode = nil
 		for _, location := range node.Locations {
 			for _, line := range location.Lines {
-				n := nodesMap[line.Function.Name];
-				if (n == nil) {
+				n := nodesMap[line.Function.Name]
+				if n == nil {
 					n = &pb.CallgraphNode{
-						Id: line.Function.Id,
+						Id:   line.Function.Id,
 						Name: line.Function.Name,
 					}
 					nodesMap[line.Function.Name] = n
 					nodes = append(nodes, n)
 				}
 				if prevNode != nil {
-					key := n.Id + " -> " + prevNode.Id;
+					key := n.Id + " -> " + prevNode.Id
 					if _, exists := edgesMap[key]; !exists {
 						edge := &pb.CallgraphEdge{
-							Id: uuid.New().String(),
+							Id:     uuid.New().String(),
 							Source: n.Id,
 							Target: prevNode.Id,
 							Visits: 1,
@@ -52,7 +52,7 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*pb.Callgraph, 
 						edges = append(edges, edge)
 						edgesMap[key] = edge
 					} else {
-						edgesMap[key].Visits += 1;
+						edgesMap[key].Visits += 1
 					}
 				}
 				prevNode = n

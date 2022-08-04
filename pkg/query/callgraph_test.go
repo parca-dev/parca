@@ -51,22 +51,22 @@ func TestGenerateCallgraph(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
-	
+
 	res, err := GenerateCallgraph(ctx, symbolizedProfile)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
 	/*
-	Validate the result for this stacktrace:
+		Validate the result for this stacktrace:
 
-		runtime/pprof.(*protobuf).varint
-		runtime/pprof.(*protobuf).uint64
-		runtime/pprof.(*protobuf).int64 (inline)
-		runtime/pprof.(*protobuf).int64Opt (inline)
-		runtime/pprof.(*profileBuilder).emitLocation
-		runtime/pprof.(*profileBuilder).appendLocsForStack
-		runtime/pprof.(*profileBuilder).build
-		runtime/pprof.profileWriter
+			runtime/pprof.(*protobuf).varint
+			runtime/pprof.(*protobuf).uint64
+			runtime/pprof.(*protobuf).int64 (inline)
+			runtime/pprof.(*protobuf).int64Opt (inline)
+			runtime/pprof.(*profileBuilder).emitLocation
+			runtime/pprof.(*profileBuilder).appendLocsForStack
+			runtime/pprof.(*profileBuilder).build
+			runtime/pprof.profileWriter
 
 	*/
 
@@ -77,7 +77,7 @@ func TestGenerateCallgraph(t *testing.T) {
 		// Validate duplicate nodes
 		if visited[node.GetId()] == true {
 			fmt.Printf("Duplicate: %s\n", node.GetId())
-			require.Fail(t, "Duplicate node found:" + node.GetName())
+			require.Fail(t, "Duplicate node found:"+node.GetName())
 		} else {
 			visited[node.GetId()] = true
 		}
@@ -110,20 +110,20 @@ func TestGenerateCallgraph(t *testing.T) {
 	}
 
 	// Validate all the required nodes are there
-	for i:=0; i<len(requiredNodes); i++ {
+	for i := 0; i < len(requiredNodes); i++ {
 		require.NotNil(t, requiredNodes[i])
 	}
 
 	edges := res.GetEdges()
 
 	// Validate all the required edges are there
-	for i:=0; i < len(requiredNodes) -1; i++ {
-		found := false;
+	for i := 0; i < len(requiredNodes)-1; i++ {
+		found := false
 
 		for _, edge := range edges {
 			if edge.GetSource() == requiredNodes[i].GetId() && edge.GetTarget() == requiredNodes[i+1].GetId() {
-				found = true;
-				break;
+				found = true
+				break
 			}
 		}
 		require.True(t, found)

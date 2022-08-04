@@ -554,7 +554,7 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 			Report: &pb.QueryResponse_Top{Top: top},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
-		callgraph, err := GenerateCallgraph(ctx, p);
+		callgraph, err := GenerateCallgraph(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())
 		}
