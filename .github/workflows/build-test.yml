@@ -110,8 +110,8 @@ jobs:
       shell: docker exec buildpack-deps bash -e {0}
       run: |
         GO_VERSION="$(<.go-version)"
-        wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-        tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+        wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
+        tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
         export PATH="${PATH}:/usr/local/go/bin"
         go version
 
