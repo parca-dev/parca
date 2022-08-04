@@ -72,10 +72,13 @@ jobs:
         with:
           node-version-file: .node-version
           cache: 'yarn'
-      
+
       - name: Set up Snapcraft
         run: |
           sudo snap install snapcraft --channel=7.x/stable --classic
+          # See https://github.com/goreleaser/goreleaser/issues/1715
+          mkdir -p "$HOME/.cache/snapcraft/download"
+          mkdir -p "$HOME/.cache/snapcraft/stage-packages"
 
       - name: Set up environment
         run: |

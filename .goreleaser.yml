@@ -7,7 +7,7 @@ builds:
     id: "parca"
     binary: parca
     # https://goreleaser.com/customization/build/#reproducible-builds
-    mod_timestamp: "{{ .CommitTimestamp }}"
+    mod_timestamp: '{{ .CommitTimestamp }}'
     env:
       - CGO_ENABLED=0
     goos:
@@ -44,6 +44,21 @@ snapcrafts:
     confinement: strict
     license: Apache-2.0
     base: core22
+    # Channels in store where snap will be pushed.
+    # Default depends on grade:
+    # * `stable` = ["edge", "beta", "candidate", "stable"]
+    # * `devel` = ["edge", "beta"]
+    channel_templates:
+      - edge
+      - "{{ if not .IsSnapshot }}stable{{ end }}"
+      # Leaving this in as a note to future self. Note that new tracks will need to be opened
+      # by request on the Snapcraft forum.
+      #
+      # - {{ .Major }}.{{ .Minor }}/edge
+      # - {{ .Major }}.{{ .Minor }}/beta
+      # - {{ .Major }}.{{ .Minor }}/candidate
+      # - {{ .Major }}.{{ .Minor }}/stable
+
     extra_files:
       - source: snap/parca-wrapper
         destination: bin/parca-wrapper
@@ -78,7 +93,7 @@ snapcrafts:
         read:
           - /etc/parca
 checksum:
-  name_template: "checksums.txt"
+  name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ incpatch .Tag }}-{{ .ShortCommit }}"
 source:
@@ -101,5 +116,5 @@ changelog:
   use: github
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
+      - '^docs:'
+      - '^test:'
