@@ -3,12 +3,12 @@ name: Release (Dry Run)
 on:
   push:
     branches:
-    - main
-    - release-*
+      - main
+      - release-*
   pull_request:
     branches:
-    - main
-    - release-*
+      - main
+      - release-*
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser

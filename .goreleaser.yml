@@ -7,7 +7,7 @@ builds:
     id: "parca"
     binary: parca
     # https://goreleaser.com/customization/build/#reproducible-builds
-    mod_timestamp: '{{ .CommitTimestamp }}'
+    mod_timestamp: "{{ .CommitTimestamp }}"
     env:
       - CGO_ENABLED=0
     goos:
@@ -44,7 +44,6 @@ snapcrafts:
     confinement: strict
     license: Apache-2.0
     base: core22
-
     extra_files:
       - source: snap/parca-wrapper
         destination: bin/parca-wrapper
@@ -54,6 +53,9 @@ snapcrafts:
         mode: 0700
       - source: snap/hooks/configure
         destination: snap/hooks/configure
+        mode: 0755
+      - source: snap/hooks/configure
+        destination: meta/hooks/configure
         mode: 0755
     apps:
       parca:
@@ -79,7 +81,7 @@ snapcrafts:
         read:
           - /etc/parca
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
   name_template: "{{ incpatch .Tag }}-{{ .ShortCommit }}"
 source:
@@ -102,5 +104,5 @@ changelog:
   use: github
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"

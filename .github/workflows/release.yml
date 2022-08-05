@@ -34,7 +34,7 @@ jobs:
         uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version-file: .node-version
-          cache: 'yarn'
+          cache: "yarn"
 
       - name: Set up Snapcraft
         run: |
@@ -196,5 +196,4 @@ jobs:
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         run: |
-          snapcraft upload --release --edge dist/*.snap
-
+          snapcraft upload --release --stable dist/*.snap

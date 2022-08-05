@@ -48,7 +48,7 @@ jobs:
           skip_after_successful_duplicate: false
 
   build:
-    name: Build Snap with goreleaser
+    name: Build Snap (goreleaser)
     needs: skip-check
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
@@ -113,6 +113,7 @@ jobs:
             dist/*.snap
 
   test:
+    name: Test Snap
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -170,6 +171,7 @@ jobs:
           sudo snap logs parca -n=all
 
   release-edge:
+    name: Release Snap (latest/edge)
     needs: [test]
     if: github.ref == 'refs/head/main'
     runs-on: ubuntu-latest
