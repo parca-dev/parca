@@ -35,7 +35,7 @@ jobs:
           paths: |-
             [
               "**.go",
-              ".github/workflows/release-dry-run.yml",
+              ".github/workflows/snap.yml",
               ".go-version",
               ".node-version",
               "cmd/**",
@@ -172,7 +172,7 @@ jobs:
 
   release-edge:
     name: Release Snap (latest/edge)
-    needs: [test]
+    needs: test
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
