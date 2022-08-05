@@ -173,7 +173,7 @@ jobs:
   release-edge:
     name: Release Snap (latest/edge)
     needs: [test]
-    if: github.ref == 'refs/head/main'
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
