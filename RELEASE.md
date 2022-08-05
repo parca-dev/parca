@@ -57,3 +57,21 @@ Go to https://github.com/parca-dev/parca/releases and check the created release.
 For patch releases, submit a pull request to merge back the release branch into the `main` branch.
 
 Take a breath. You're done releasing.
+
+## Generating Snapcraft tokens
+
+The pipeline is configured to release Snap packages automatically to
+[snapcraft.io](https://snapcraft.io).
+
+The token for the store has a limited life. It can be regenerated like so (replace date
+placeholders!):
+
+```shell
+snapcraft export-login \
+  --snaps=parca \
+  --acls package_access,package_push,package_update,package_release \
+  --expires "YYYY-MM-DD" \
+  /tmp/parca_snap_token
+```
+
+The contents of `/tmp/parca_snap_token` should then be added to a Github Secret called `SNAPCRAFT_STORE_CREDENTIALS`.
