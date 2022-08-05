@@ -196,4 +196,5 @@ jobs:
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         run: |
-          snapcraft upload --release --stable dist/*.snap
+          snapcraft upload dist/*_amd64.snap --release stable
+          snapcraft upload dist/*_arm64.snap --release stable
