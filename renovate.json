@@ -16,6 +16,11 @@
       "description": "Group grpc-gateway packages",
       "matchSourceUrls": ["https://github.com/grpc-ecosystem/grpc-gateway"],
       "groupName": "grpc-gateway"
+    },
+    {
+      "description": "Group grpc-health-probe packages",
+      "matchSourceUrls": ["https://github.com/grpc-ecosystem/grpc-health-probe"],
+      "groupName": "grpc-health-probe"
     }
   ],
   "regexManagers": [
