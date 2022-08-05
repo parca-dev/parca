@@ -179,3 +179,22 @@ jobs:
           COSIGN_EXPERIMENTAL: true
         run: |
           make sign-container
+
+  snap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
+        with:
+          name: parca-dist-release
+          path: dist
+
+      - name: Install snapcraft
+        run: |
+          sudo snap install snapcraft --classic --channel=7.x/stable
+
+      - name: Release to latest/edge
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          snapcraft upload --release --edge dist/*.snap
+
