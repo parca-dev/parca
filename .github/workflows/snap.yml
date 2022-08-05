@@ -1,4 +1,4 @@
-name: Release (Dry Run)
+name: Snap
 
 on:
   push:
@@ -47,8 +47,8 @@ jobs:
             ]
           skip_after_successful_duplicate: false
 
-  goreleaser:
-    name: Release (Dry Run)
+  build:
+    name: Build Snap (goreleaser)
     needs: skip-check
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
@@ -103,3 +103,90 @@ jobs:
           args: release --rm-dist --skip-validate --skip-publish
         env:
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
+
+      - name: Archive generated artifacts
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        with:
+          name: parca-dist-release
+          if-no-files-found: error
+          path: |
+            dist/*.snap
+
+  test:
+    name: Test Snap
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
+        with:
+          name: parca-dist-release
+          path: dist
+
+      - name: Install snapcraft
+        run: |
+          sudo snap install snapcraft --classic --channel=7.x/stable
+
+      - name: Install snap & invoke parca
+        run: |
+          sudo snap install --dangerous dist/parca*_linux_amd64.snap
+          sudo snap set parca log-level=debug
+          parca --version
+
+      - name: Start Parca - default config
+        run: |
+          sudo snap start parca
+
+          # Set some options to allow retries while Parca comes back up
+          CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
+
+          curl ${CURL_OPTS[@]} http://localhost:7070/
+          curl ${CURL_OPTS[@]} http://localhost:7070/metrics
+
+      - name: Configure snap - storage-persistence
+        run: |
+          sudo snap set parca storage-persist=true
+          sudo snap restart parca
+
+          # Set some options to allow retries while Parca comes back up
+          CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
+
+          curl ${CURL_OPTS[@]} http://localhost:7070/
+          curl ${CURL_OPTS[@]} http://localhost:7070/metrics
+
+      - name: Configure snap - port
+        run: |
+          sudo snap set parca port=8080
+          sudo snap restart parca
+
+          # Set some options to allow retries while Parca comes back up
+          CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
+
+          curl ${CURL_OPTS[@]} http://localhost:8080/
+          curl ${CURL_OPTS[@]} http://localhost:8080/metrics
+
+      # In case the above tests fail, dump the logs for inspection
+      - name: Dump snap service logs
+        if: failure()
+        run: |
+          sudo snap logs parca -n=all
+
+  release-edge:
+    name: Release Snap (latest/edge)
+    needs: [test]
+    if: github.ref == 'refs/head/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
+        with:
+          name: parca-dist-release
+          path: dist
+
+      - name: Install snapcraft
+        run: |
+          sudo snap install snapcraft --classic --channel=7.x/stable
+
+      - name: Release to latest/edge
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          snapcraft upload --release --edge dist/*.snap

@@ -34,7 +34,14 @@ jobs:
         uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version-file: .node-version
-          cache: 'yarn'
+          cache: "yarn"
+
+      - name: Set up Snapcraft
+        run: |
+          sudo snap install snapcraft --channel=7.x/stable --classic
+          # See https://github.com/goreleaser/goreleaser/issues/1715
+          mkdir -p "$HOME/.cache/snapcraft/download"
+          mkdir -p "$HOME/.cache/snapcraft/stage-packages"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@68acf3b1adf004ac9c2f0a4259e85c5f66e99bef # tag=v3.0.0
@@ -172,3 +179,21 @@ jobs:
           COSIGN_EXPERIMENTAL: true
         run: |
           make sign-container
+
+  snap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
+        with:
+          name: parca-dist-release
+          path: dist
+
+      - name: Install snapcraft
+        run: |
+          sudo snap install snapcraft --classic --channel=7.x/stable
+
+      - name: Release to latest/edge
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          snapcraft upload --release --stable dist/*.snap
