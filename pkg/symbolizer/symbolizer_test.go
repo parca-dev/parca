@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,7 +15,7 @@ package symbolizer
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	stdlog "log"
 	"net"
 	"os"
@@ -388,7 +388,7 @@ func mustReadAll(t require.TestingT, filename string) []byte {
 	require.NoError(t, err)
 	defer f.Close()
 
-	content, err := ioutil.ReadAll(f)
+	content, err := io.ReadAll(f)
 	require.NoError(t, err)
 	return content
 }
@@ -431,13 +431,13 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	)
 	require.NoError(t, err)
 
-	debugInfoCacheDir, err := ioutil.TempDir("", "parca-debuginfo-test-cache-*")
+	debugInfoCacheDir, err := os.MkdirTemp("", "parca-debuginfo-test-cache-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		os.RemoveAll(debugInfoCacheDir)
 	})
 
-	symbolizerCacheDir, err := ioutil.TempDir("", "parca-symbolizer-test-cache-*")
+	symbolizerCacheDir, err := os.MkdirTemp("", "parca-symbolizer-test-cache-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		os.RemoveAll(symbolizerCacheDir)

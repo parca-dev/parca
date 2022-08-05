@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package query
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -92,7 +91,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	require.Equal(t, 1886, len(res.Location))
 	require.Equal(t, len(compactedOriginalProfile.Sample), len(res.Sample))
 
-	tmpfile, err := ioutil.TempFile("", "pprof")
+	tmpfile, err := os.CreateTemp("", "pprof")
 	defer os.Remove(tmpfile.Name())
 	require.NoError(t, err)
 	require.NoError(t, res.Write(tmpfile))
@@ -176,7 +175,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
 	require.NoError(t, err)
 
-	tmpfile, err := ioutil.TempFile("", "pprof")
+	tmpfile, err := os.CreateTemp("", "pprof")
 	defer os.Remove(tmpfile.Name())
 	require.NoError(t, err)
 	require.NoError(t, res.Write(tmpfile))

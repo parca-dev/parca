@@ -4,15 +4,15 @@ Parca is a api for the continuous profiling [parca server](https://github.com/pa
 
 Parca contains multiple service packages for its functionality.
 
-- debuginfo 
+- debuginfo
 - profilestore
 - query
 - scrape
 
-*debuginfo:* is a service that allows storage of debug info
+_debuginfo:_ is a service that allows storage of debug info
 
-*profilestore:* is a service that allows writing pprof profiles to the service
+_profilestore:_ is a service that allows writing pprof profiles to the service
 
-*query:* is the service that allows you to query profiles from the service
+_query:_ is the service that allows you to query profiles from the service
 
-*scrape:* is the service that allows you to retrieve information about scrape targets
+_scrape:_ is the service that allows you to retrieve information about scrape targets

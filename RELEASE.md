@@ -31,8 +31,8 @@ From now on, all work happens on the `release-<major>.<minor>` branch.
 ### Via GitHub's UI
 
 Go to https://github.com/parca-dev/parca/releases/new and click on "Choose a tag" where you can type the new tag name.
-Click on "Create new tag" in the dropdown and make sure `main` is selected for a new major or minor release or the `release-<major>.<minor>` branch for a patch release. 
-The title of the release is the tag itself.  
+Click on "Create new tag" in the dropdown and make sure `main` is selected for a new major or minor release or the `release-<major>.<minor>` branch for a patch release.
+The title of the release is the tag itself.
 You can generate the changelog and then add additional contents from previous a release (like social media links and more).
 
 ### Via CLI

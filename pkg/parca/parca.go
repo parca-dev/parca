@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	goruntime "runtime"
@@ -484,7 +483,7 @@ func runScraper(
 	}
 
 	if flags.BearerTokenFile != "" {
-		b, err := ioutil.ReadFile(flags.BearerTokenFile)
+		b, err := os.ReadFile(flags.BearerTokenFile)
 		if err != nil {
 			return fmt.Errorf("failed to read bearer token from file: %w", err)
 		}

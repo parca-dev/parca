@@ -1,4 +1,4 @@
-// Copyright (c) 2022 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package debuginfo
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -94,7 +93,7 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 				r.Close()
 			})
 
-			tmpfile, err := ioutil.TempFile("", "debuginfod-download-*")
+			tmpfile, err := os.CreateTemp("", "debuginfod-download-*")
 			require.NoError(t, err)
 
 			t.Cleanup(func() {

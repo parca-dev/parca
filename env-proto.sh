@@ -10,7 +10,7 @@ BUF_VERSION='v1.7.0'
 BINARY_NAME="buf"
 
 curl -fsSL \
-  "https://github.com/bufbuild/buf/releases/download/${BUF_VERSION}/${BINARY_NAME}-$(uname -s)-$(uname -m)" \
-  -o "${BIN_DIR}/${BINARY_NAME}"
+    "https://github.com/bufbuild/buf/releases/download/${BUF_VERSION}/${BINARY_NAME}-$(uname -s)-$(uname -m)" \
+    -o "${BIN_DIR}/${BINARY_NAME}"
 
 chmod +x "${BIN_DIR}/${BINARY_NAME}"
