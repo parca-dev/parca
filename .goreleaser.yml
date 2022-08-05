@@ -59,7 +59,7 @@ snapcrafts:
         mode: 0755
     apps:
       parca:
-        command: /parca
+        command: parca
         plugs:
           - network-bind
           - network
