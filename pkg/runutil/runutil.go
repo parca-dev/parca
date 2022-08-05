@@ -1,4 +1,4 @@
-// Copyright 2018 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,9 +19,9 @@
 //
 // For repeat executes, use Repeat:
 //
-// 	err := runutil.Repeat(10*time.Second, stopc, func() error {
-// 		// ...
-// 	})
+//	err := runutil.Repeat(10*time.Second, stopc, func() error {
+//		// ...
+//	})
 package runutil
 
 import (

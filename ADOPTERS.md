@@ -30,4 +30,5 @@ Environment: Google Cloud
 Uses [Parca Agent](https://github.com/parca-dev/parca-agent): Yes
 
 Details:
+
 - Languages: Go, JavaScript (TypeScript)

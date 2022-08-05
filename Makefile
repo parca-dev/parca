@@ -182,9 +182,12 @@ tmp/help.txt: build
 	mkdir -p tmp
 	bin/parca --help > $@
 
+# renovate: datasource=go depName=github.com/campoy/embedmd
+EMBEDMD_VERSION ?= v2.0.0
+
 embedmd:
 ifeq (, $(shell which embedmd))
-	go install github.com/campoy/embedmd@latest
+	go install github.com/campoy/embedmd/v2@$(EMBEDMD_VERSION)
 EMBEDMD=$(GOBIN)/embedmd
 else
 EMBEDMD=$(shell which embedmd)

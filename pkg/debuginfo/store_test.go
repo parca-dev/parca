@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/hex"
 	"io"
-	"io/ioutil"
 	stdlog "log"
 	"net"
 	"os"
@@ -37,11 +36,11 @@ import (
 )
 
 func TestStore(t *testing.T) {
-	dir, err := ioutil.TempDir("", "parca-test")
+	dir, err := os.MkdirTemp("", "parca-test")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	cacheDir, err := ioutil.TempDir("", "parca-test-cache")
+	cacheDir, err := os.MkdirTemp("", "parca-test-cache")
 	require.NoError(t, err)
 	defer os.RemoveAll(cacheDir)
 

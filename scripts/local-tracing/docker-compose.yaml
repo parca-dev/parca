@@ -24,4 +24,3 @@ services:
       - "55670:55679" # zpages extension
     depends_on:
       - jaeger-all-in-one
-

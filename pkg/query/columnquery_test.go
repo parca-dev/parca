@@ -18,7 +18,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/tls"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 	"time"
@@ -120,7 +120,7 @@ func MustReadAllGzip(t Testing, filename string) []byte {
 
 	r, err := gzip.NewReader(f)
 	require.NoError(t, err)
-	content, err := ioutil.ReadAll(r)
+	content, err := io.ReadAll(r)
 	require.NoError(t, err)
 	return content
 }
@@ -130,7 +130,7 @@ func MustDecompressGzip(t Testing, b []byte) []byte {
 
 	r, err := gzip.NewReader(bytes.NewReader(b))
 	require.NoError(t, err)
-	content, err := ioutil.ReadAll(r)
+	content, err := io.ReadAll(r)
 	require.NoError(t, err)
 	return content
 }
@@ -166,7 +166,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	)
 
 	dir := "./testdata/many/"
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(m)

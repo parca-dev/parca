@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2022 The Parca Authors
+# Copyright 2022 The Parca Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -31,14 +31,14 @@ function mk() {
 
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
-  ARCH="amd64"
+    ARCH="amd64"
 elif [ "$ARCH" = "aarch64" ]; then
-  ARCH="arm64"
+    ARCH="arm64"
 fi
 
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+if [[ $OSTYPE == "linux-gnu"* ]]; then
     OS="linux"
-elif [[ "$OSTYPE" == "darwin"* ]]; then
+elif [[ $OSTYPE == "darwin"* ]]; then
     OS="darwin"
 fi
 
@@ -58,13 +58,13 @@ function up() {
         echo "----------------------------------------------------------"
         # kvm2, hyperkit, hyperv, vmwarefu1sion, virtualbox, vmware, xhyve
         DRIVER=kvm2
-        if [ "$OS" == "darwin" -a "$ARCH" == "arm64" ]; then
+        if [[ $OS == "darwin" ]] && [[ $ARCH == "arm64" ]]; then
             DRIVER=qemu2
         fi
         echo "Starting minikube cluster with driver: $DRIVER"
         mk start \
-            --driver=${DRIVER} \
-            --nodes=${NODE_COUNT} \
+            --driver="${DRIVER}" \
+            --nodes="${NODE_COUNT}" \
             --kubernetes-version=v1.23.3 \
             --cpus=4 \
             --memory=8gb \
@@ -117,7 +117,7 @@ function local_registry() {
     running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
     if [ "${running}" != 'true' ]; then
         docker run \
-         -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
+            -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
             registry:2
     fi
 }

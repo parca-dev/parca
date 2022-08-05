@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -113,7 +113,7 @@ func Benchmark_WriteRaw(b *testing.B) {
 
 	client, done := benchmarkSetup(ctx, b)
 
-	f, err := ioutil.ReadFile("testdata/alloc_objects.pb.gz")
+	f, err := os.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 
 	// Benchmark section
@@ -159,7 +159,7 @@ type Testing interface {
 
 func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer, *frostdb.Table, *semgroup.Group, func()) {
 	dir := "../../tmp/"
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
 
 	type Sample struct {
@@ -186,16 +186,18 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 			}
 			sort.Sort(ls)
 
-			sampleFiles, err := ioutil.ReadDir(filepath.Join(dir, file.Name()))
+			sampleFiles, err := os.ReadDir(filepath.Join(dir, file.Name()))
 			require.NoError(t, err)
 
 			for _, sampleFile := range sampleFiles {
 				if sampleFile.IsDir() {
 					continue
 				}
+				sampleFileInfo, err := sampleFile.Info()
+				require.NoError(t, err)
 				if strings.HasSuffix(sampleFile.Name(), ".pb.gz") {
 					samples = append(samples, Sample{
-						Timestamp: sampleFile.ModTime().Unix(),
+						Timestamp: sampleFileInfo.ModTime().Unix(),
 						Labels:    ls,
 						FilePath:  filepath.Join(dir, file.Name(), sampleFile.Name()),
 					})
@@ -262,7 +264,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 				return err
 			}
 
-			fileContent, err := ioutil.ReadAll(r)
+			fileContent, err := io.ReadAll(r)
 			if err != nil {
 				return err
 			}
@@ -337,7 +339,7 @@ func MustReadAllGzip(t require.TestingT, filename string) []byte {
 
 	r, err := gzip.NewReader(f)
 	require.NoError(t, err)
-	content, err := ioutil.ReadAll(r)
+	content, err := io.ReadAll(r)
 	require.NoError(t, err)
 	return content
 }
