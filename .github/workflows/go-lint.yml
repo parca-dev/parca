@@ -13,7 +13,7 @@ on:
 
 env:
   # renovate: datasource=go depName=github.com/golangci/golangci-lint
-  GOLANGCI_LINT_VERSION: v1.47.2
+  GOLANGCI_LINT_VERSION: v1.48.0
 
 jobs:
   skip-check:
