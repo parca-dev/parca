@@ -36,7 +36,7 @@
     "@svgr/webpack": "6.3.1",
     "@testing-library/jest-dom": "5.16.4",
     "@testing-library/react": "13.3.0",
-    "autoprefixer": "10.4.7",
+    "autoprefixer": "10.4.8",
     "immer": "9.0.15",
     "isomorphic-unfetch": "3.1.0",
     "lodash.debounce": "4.0.8",
