@@ -68,7 +68,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -147,7 +147,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -222,7 +222,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -309,7 +309,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -379,7 +379,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -632,7 +632,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -709,7 +709,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -775,7 +775,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()

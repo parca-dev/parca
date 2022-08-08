@@ -50,7 +50,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				reg,
 			)
 			require.NoError(b, err)
-			colDB, err := col.DB("parca")
+			colDB, err := col.DB(context.Background(), "parca")
 			require.NoError(b, err)
 
 			schema, err := parcacol.Schema()
@@ -144,7 +144,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 
 	require.NoError(b, col.ReplayWALs(ctx))
 
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(b, err)
 
 	table, err := colDB.GetTable("stacktraces")

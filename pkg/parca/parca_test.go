@@ -218,7 +218,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -356,7 +356,7 @@ func TestConsistency(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()

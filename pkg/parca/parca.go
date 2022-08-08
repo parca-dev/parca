@@ -220,7 +220,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(ctx, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to load database", "err", err)
 		return err
