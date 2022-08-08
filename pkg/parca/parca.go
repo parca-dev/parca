@@ -433,6 +433,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			if err != nil && !errors.Is(err, context.Canceled) {
 				level.Error(logger).Log("msg", "error shutting down server", "err", err)
 			}
+
+			// Close the columnstore after the parcaserver has shutdown to ensure no more writes occur against it.
+			if err := col.Close(); err != nil {
+				level.Error(logger).Log("msg", "error closing columnstore", "err", err)
+			}
 		},
 	)
 	if err := gr.Run(); err != nil {
