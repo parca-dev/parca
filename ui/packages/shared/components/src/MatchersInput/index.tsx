@@ -42,9 +42,11 @@ enum Labels {
 }
 
 // eslint-disable-next-line no-useless-escape
-const labelNameValueRe = /(^([a-z])\w+)(=~|=|!=|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
+const labelNameValueRe = /(^([a-z])\w+)(=~|=|!=|!~)(\")[a-zA-Z0-9_.-:]+(\")$/g;
+const labelNameValueWithoutQuotesRe = /(^([a-z])\w+)(=~|=|!=|!~)[a-zA-Z0-9_.-:]+$/g;
 const labelNameLiteralRe = /(^([a-z])\w+)(=~|=|!=|!~)/;
 const literalRe = /(=~|=|!=|!~)/;
+const labelNameRe = /(^([a-z])\w+)/;
 
 const addQuoteMarks = (labelValue: string) => {
   // eslint-disable-next-line no-useless-escape
@@ -367,6 +369,12 @@ const MatchersInput = ({
     applySuggestion(highlightedSuggestionIndex);
   };
 
+  const addQuotesToInputRefLabelValue = (inputRef: string): string => {
+    const labelValue = inputRef.split(literalRe)[2].replaceAll(',', '');
+    const labelValueWithQuotes = addQuoteMarks(labelValue);
+    return inputRef.replace(labelValue, labelValueWithQuotes);
+  };
+
   const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>): void => {
     const values = inputRef.replaceAll(',', '');
 
@@ -382,17 +390,26 @@ const MatchersInput = ({
     if (event.key === ',') {
       if (inputRef.length === 0) event.preventDefault();
 
-      const values = inputRef.replaceAll(',', '');
+      const sanitizedInputRef = addQuotesToInputRefLabelValue(inputRef);
+
+      const inputValues = !!labelNameValueWithoutQuotesRe.test(inputRef)
+        ? inputRef.replaceAll(',', '')
+        : sanitizedInputRef.replaceAll(',', '');
+
       if (currentLabelsCollection === null) {
-        setCurrentLabelsCollection([values]);
+        setCurrentLabelsCollection([inputValues]);
       } else {
         setCurrentLabelsCollection((oldValues: string[]) => {
           if (!labelNameValueRe.test(inputRef)) return oldValues;
-          return [...oldValues, values];
+          return [...oldValues, inputValues];
         });
-        setMatchersString(currentLabelsCollection?.join(',') + ',' + values);
       }
 
+      setMatchersString(
+        currentLabelsCollection !== null
+          ? `${currentLabelsCollection?.join(',')},${inputValues}`
+          : `${inputValues},`
+      );
       setInputRef('');
     }
   };
@@ -491,12 +508,6 @@ const MatchersInput = ({
     // Down arrow highlights next suggestions.
     if (event.key === 'ArrowDown') {
       highlightNext();
-    }
-
-    if (event.key === 'Backspace' && !inputRef) {
-      if (currentLabelsCollection === null) return;
-
-      removeLabel(currentLabelsCollection.length - 1);
     }
   };
 
