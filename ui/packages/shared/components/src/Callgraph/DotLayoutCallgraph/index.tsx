@@ -1,8 +1,8 @@
 import {useState, useEffect} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
-
 import {Stage, Layer, Circle, Line, Shape} from 'react-konva';
+import {Button} from '@parca/components';
 
 const pixelsToInches = pixels => pixels / 96;
 
@@ -18,11 +18,13 @@ const parseEdgePos = pos => {
 export const jsonToDot = ({graph, width, height}) => {
   const {nodes, edges} = graph;
   const nodesAsStrings = nodes.map(
-    node => `${node.id} [Label = "${node.label}" value=${node.value}]`
+    node => `${node.id} [cumulative=${node.cumulative} root=${node.id === 'root'}]`
   );
   const edgesAsStrings = edges.map(edge => `${edge.source} -> ${edge.target}`);
 
+  // "BT" will actually render top->bottom in our canvas
   const graphAsDot = `digraph "callgraph" { 
+      rankdir="BT"  
       ratio="fill"
       size="${pixelsToInches(width)},${pixelsToInches(height)}!"
       margin=0
@@ -37,20 +39,21 @@ export const jsonToDot = ({graph, width, height}) => {
 
 const Node = ({node}) => {
   const {x, y, color} = node;
-  const hoverColor = 'blue';
-  const [fillColor, setFillColor] = useState(color);
+  const defaultRadius = 19;
+  const hoverRadius = defaultRadius + 3;
+  const [radius, setRadius] = useState(defaultRadius);
   return (
     <Circle
       x={+x}
       y={+y}
       draggable
-      radius={19}
-      fill={fillColor}
+      radius={radius}
+      fill={color}
       onMouseOver={() => {
-        setFillColor(hoverColor);
+        setRadius(hoverRadius);
       }}
       onMouseOut={() => {
-        setFillColor(color);
+        setRadius(defaultRadius);
       }}
     />
   );
@@ -101,6 +104,7 @@ const Arrow = ({edge}) => {
 
 const DotLayoutCallgraph = ({data, height, width}) => {
   const [graph, setGraph] = useState<any>(null);
+  const [layout, setLayout] = useState<'dot' | 'twopi'>('dot');
 
   useEffect(() => {
     const getDataWithPositions = async () => {
@@ -110,7 +114,7 @@ const DotLayoutCallgraph = ({data, height, width}) => {
       // 2. Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
       await graphviz.loadWASM(); // need to load the WASM instance and wait for it
 
-      const jsonGraph = graphviz.layout(dataAsDot, 'json', 'dot');
+      const jsonGraph = graphviz.layout(dataAsDot, 'json', layout);
 
       setGraph(jsonGraph);
     };
@@ -118,7 +122,7 @@ const DotLayoutCallgraph = ({data, height, width}) => {
     if (width) {
       getDataWithPositions();
     }
-  }, [width]);
+  }, [width, layout]);
 
   // 3. Render the laided out graph in Canvas container
   if (!width || !graph) return <></>;
@@ -126,7 +130,7 @@ const DotLayoutCallgraph = ({data, height, width}) => {
   const {objects, edges: gvizEdges} = JSON.parse(graph);
   //   @ts-ignore
   const valueRange = d3.extent(
-    objects.map(node => parseInt(node.value)).filter(node => node !== undefined)
+    objects.map(node => parseInt(node.cumulative)).filter(node => node !== undefined)
   ) as [number, number];
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateRdGy)
@@ -140,7 +144,7 @@ const DotLayoutCallgraph = ({data, height, width}) => {
       id: object._gvid,
       x: parseInt(pos[0]),
       y: parseInt(pos[1]),
-      color: colorScale(object.value),
+      color: colorScale(object.cumulative),
     };
   });
 
@@ -149,23 +153,42 @@ const DotLayoutCallgraph = ({data, height, width}) => {
     source: edge.head,
     target: edge.tail,
     points: parseEdgePos(edge.pos),
-    color: colorScale(nodes.find(node => node.id === edge.head).value),
+    color: colorScale(nodes.find(node => node.id === edge.head).cumulative),
   }));
 
   return (
-    <Stage width={width} height={height}>
-      <Layer>
-        {nodes.map(node => (
-          <Node node={node} />
-        ))}
-        {edges.map(edge => (
-          <Arrow edge={edge} />
-        ))}
-        {edges.map(edge => (
-          <Edge edge={edge} />
-        ))}
-      </Layer>
-    </Stage>
+    <>
+      <div className="flex">
+        <Button
+          variant={`${layout === 'dot' ? 'primary' : 'neutral'}`}
+          className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+          onClick={() => setLayout(layout === 'dot' ? 'twopi' : 'dot')}
+        >
+          "Dot" layout
+        </Button>
+        <Button
+          variant={`${layout === 'twopi' ? 'primary' : 'neutral'}`}
+          className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+          onClick={() => setLayout(layout === 'dot' ? 'twopi' : 'dot')}
+        >
+          "Twopi" layout
+        </Button>
+      </div>
+
+      <Stage width={width} height={height}>
+        <Layer>
+          {edges.map(edge => (
+            <Edge edge={edge} />
+          ))}
+          {nodes.map(node => (
+            <Node node={node} />
+          ))}
+          {edges.map(edge => (
+            <Arrow edge={edge} />
+          ))}
+        </Layer>
+      </Stage>
+    </>
   );
 };
 
