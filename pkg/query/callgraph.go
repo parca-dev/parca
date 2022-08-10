@@ -15,7 +15,6 @@ package query
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -30,37 +29,32 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 	edges := make([]*querypb.CallgraphEdge, 0)
 	edgesMap := make(map[string]*querypb.CallgraphEdge)
 
-	for _, node := range p.Samples {
-		fmt.Println("Processing sample")
+	for _, s := range p.Samples {
 		var prevNode *querypb.CallgraphNode = nil
-		for _, location := range node.Locations {
+		for _, location := range s.Locations {
 			locationNodes := locationToCallgraphNodes(location)
-			fmt.Println("Processing locations", len(locationNodes))
-			for _, currentNode := range locationNodes {
-				currentNodeId := currentNode.Id
-				key := getNodeKey(currentNode)
-				fmt.Println("Processing node", currentNodeId)
-				fmt.Println("Node name:", currentNode.Meta.Function.Name);
+			for _, n := range locationNodes {
+				key := getNodeKey(n)
 				if _, exists := nodesMap[key]; !exists {
-					fmt.Println("Adding node")
-					nodesMap[key] = currentNode
-					nodes = append(nodes, currentNode)
+					nodesMap[key] = n
+					nodes = append(nodes, n)
 				}
+				currentNode := nodesMap[key]
+				currentNodeId := currentNode.Id
+
 				if prevNode != nil {
 					key := currentNodeId + " -> " + prevNode.Id
-					fmt.Println("Edge key:", key)
-					fmt.Println("Edge names:", currentNode.Meta.Function.Name, " -> ", prevNode.Meta.Function.Name)
 					if _, exists := edgesMap[key]; !exists {
 						edge := &querypb.CallgraphEdge{
 							Id:         uuid.New().String(),
 							Source:     currentNodeId,
 							Target:     prevNode.Id,
-							Cumulative: node.Value,
+							Cumulative: s.Value,
 						}
 						edges = append(edges, edge)
 						edgesMap[key] = edge
 					} else {
-						edgesMap[key].Cumulative += node.Value
+						edgesMap[key].Cumulative += s.Value
 					}
 				}
 				prevNode = currentNode
@@ -121,7 +115,6 @@ func linesToCallgraphNodes(
 	}
 
 	res := make([]*querypb.CallgraphNode, len(lines))
-	var prev *querypb.CallgraphNode
 
 	// Same as locations, lines are in order from deepest to highest in the
 	// stack. Therefore we start with the innermost, and work ourselves
@@ -133,10 +126,8 @@ func linesToCallgraphNodes(
 			location,
 			mapping,
 			lines[i],
-			prev,
 		)
 		res[len(lines)-1-i] = node
-		prev = node
 	}
 
 	return res
@@ -146,16 +137,14 @@ func lineToGraphNode(
 	location *profile.Location,
 	mapping *pb.Mapping,
 	line profile.LocationLine,
-	child *querypb.CallgraphNode,
 ) *querypb.CallgraphNode {
 	var mappingID string
 	if mapping != nil {
 		mappingID = mapping.Id
 	}
 
-	fmt.Println("line", line.Line)
-
 	return &querypb.CallgraphNode{
+		// Appending the line number to the location ID to make the node ID unique.
 		Id: location.ID + "_" + strconv.FormatInt(line.Line, 10),
 		Meta: &querypb.CallgraphNodeMeta{
 			Location: &pb.Location{

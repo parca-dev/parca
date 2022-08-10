@@ -15,7 +15,6 @@ package query
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -54,10 +53,7 @@ func TestGenerateCallgraph(t *testing.T) {
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fmt.Println(len(symbolizedProfile.Samples))
-
 	res, err := GenerateCallgraph(ctx, symbolizedProfile)
-	fmt.Println("=================== Test ==========================");
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -77,27 +73,14 @@ func TestGenerateCallgraph(t *testing.T) {
 
 	visited := make(map[string]*pb.CallgraphNode, 0)
 	requiredNodes := make([]*pb.CallgraphNode, 6)
-	fmt.Println(len(res.GetNodes()))
-	fmt.Println(len(res.GetEdges()))
 	for _, node := range res.GetNodes() {
 		name := node.Meta.Function.Name;
-		fmt.Println("name", name)
-		fmt.Println("Id", node.Meta.Location.Id)
 		// Validate duplicate nodes
-		if visited[node.Meta.Function.Name] != nil {
-			fmt.Printf("Duplicate: %s\n", node.GetId())
-			visitedNode := visited[node.Meta.Function.Name]
-			fmt.Println("Func Name", node.Meta.Function.Name, visitedNode.Meta.Function.Name)
-			fmt.Println("Func ID", node.Meta.Function.Id, visitedNode.Meta.Function.Id)
-			fmt.Println("Line", node.Meta.Line.Line, visitedNode.Meta.Line.Line)
+		if visited[name] != nil {
 			require.Fail(t, "Duplicate node found:"+name, node.Id)
 		} else {
-			visited[node.Meta.Function.Name] = node
+			visited[name] = node
 		}
-
-		
-
-		
 
 		// find the required nodes
 		if name == "runtime/pprof.profileWriter" {
@@ -122,15 +105,13 @@ func TestGenerateCallgraph(t *testing.T) {
 
 	// Validate all the required nodes are there
 	for i := 0; i < len(requiredNodes); i++ {
-		fmt.Println("Required node", i)
 		require.NotNil(t, requiredNodes[i], "Required node not found, index: "+ strconv.Itoa(i))
-		fmt.Println("name:", requiredNodes[i].Meta.Function.Name)
 	}
 
 	edges := res.GetEdges()
 
 	// Validate all the required edges are there
-	foundEdges := 0
+	foundEdges := 0	
 
 	for _, edge := range edges {
 		if edge.GetSource() == requiredNodes[0].GetId() && edge.GetTarget() == requiredNodes[1].GetId() {
@@ -150,5 +131,5 @@ func TestGenerateCallgraph(t *testing.T) {
 		}
 	}
 
-	require.Equal(t, 6, foundEdges)
+	require.Equal(t, 5, foundEdges)
 }
