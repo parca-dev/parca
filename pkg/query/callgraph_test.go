@@ -49,7 +49,6 @@ func TestGenerateCallgraph(t *testing.T) {
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
-	
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
@@ -74,7 +73,7 @@ func TestGenerateCallgraph(t *testing.T) {
 	visited := make(map[string]*pb.CallgraphNode, 0)
 	requiredNodes := make([]*pb.CallgraphNode, 6)
 	for _, node := range res.GetNodes() {
-		name := node.Meta.Function.Name;
+		name := node.Meta.Function.Name
 		// Validate duplicate nodes
 		if visited[name] != nil {
 			require.Fail(t, "Duplicate node found:"+name, node.Id)
@@ -105,13 +104,13 @@ func TestGenerateCallgraph(t *testing.T) {
 
 	// Validate all the required nodes are there
 	for i := 0; i < len(requiredNodes); i++ {
-		require.NotNil(t, requiredNodes[i], "Required node not found, index: "+ strconv.Itoa(i))
+		require.NotNil(t, requiredNodes[i], "Required node not found, index: "+strconv.Itoa(i))
 	}
 
 	edges := res.GetEdges()
 
 	// Validate all the required edges are there
-	foundEdges := 0	
+	foundEdges := 0
 
 	for _, edge := range edges {
 		if edge.GetSource() == requiredNodes[0].GetId() && edge.GetTarget() == requiredNodes[1].GetId() {
