@@ -31,8 +31,8 @@ From now on, all work happens on the `release-<major>.<minor>` branch.
 ### Via GitHub's UI
 
 Go to https://github.com/parca-dev/parca/releases/new and click on "Choose a tag" where you can type the new tag name.
-Click on "Create new tag" in the dropdown and make sure `main` is selected for a new major or minor release or the `release-<major>.<minor>` branch for a patch release. 
-The title of the release is the tag itself.  
+Click on "Create new tag" in the dropdown and make sure `main` is selected for a new major or minor release or the `release-<major>.<minor>` branch for a patch release.
+The title of the release is the tag itself.
 You can generate the changelog and then add additional contents from previous a release (like social media links and more).
 
 ### Via CLI
@@ -57,3 +57,21 @@ Go to https://github.com/parca-dev/parca/releases and check the created release.
 For patch releases, submit a pull request to merge back the release branch into the `main` branch.
 
 Take a breath. You're done releasing.
+
+## Generating Snapcraft tokens
+
+The pipeline is configured to release Snap packages automatically to
+[snapcraft.io](https://snapcraft.io).
+
+The token for the store has a limited life. It can be regenerated like so (replace date
+placeholders!):
+
+```shell
+snapcraft export-login \
+  --snaps=parca \
+  --acls package_access,package_push,package_update,package_release \
+  --expires "YYYY-MM-DD" \
+  /tmp/parca_snap_token
+```
+
+The contents of `/tmp/parca_snap_token` should then be added to a Github Secret called `SNAPCRAFT_STORE_CREDENTIALS`.

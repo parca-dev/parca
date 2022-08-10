@@ -10,28 +10,26 @@
   <img src="ui/packages/shared/icons/src/assets/logo.svg" alt="Parca: Continuous profiling for analysis of CPU, memory usage over time, and down to the line number." height="75">
 </p>
 
-
 <p align="center">Continuous profiling for analysis of CPU, memory usage over time, and down to the line number. Saving infrastructure cost, improving performance, and increasing reliability.</p>
-
-
 
 <p align="center"><img src="screenshot.png" alt="Screenshot of Parca"></p>
 
 ## Features
 
-* [**eBPF Profiler**](https://www.parca.dev/docs/parca-agent): A single profiler, using eBPF, automatically discovering targets from Kubernetes or systemd across the entire infrastructure with very low overhead. Supports C, C++, Rust, Go, and more!
-* **[Open Standards](https://www.parca.dev/docs/concepts/#pprof)**: Both producing pprof formatted profiles with the eBPF based profiler, and ingesting any pprof formatted profiles allowing for wide language adoption and interoperability with existing tooling.
+- [**eBPF Profiler**](https://www.parca.dev/docs/parca-agent): A single profiler, using eBPF, automatically discovering targets from Kubernetes or systemd across the entire infrastructure with very low overhead. Supports C, C++, Rust, Go, and more!
+- **[Open Standards](https://www.parca.dev/docs/concepts/#pprof)**: Both producing pprof formatted profiles with the eBPF based profiler, and ingesting any pprof formatted profiles allowing for wide language adoption and interoperability with existing tooling.
 
-* [**Optimized Storage & Querying**](https://www.parca.dev/docs/storage): Efficiently storing profiling data while retaining raw data and allowing slicing and dicing of data through a label-based search. Aggregate profiling data infrastructure wide, view single profiles in time or compare on any dimension.
+- [**Optimized Storage & Querying**](https://www.parca.dev/docs/storage): Efficiently storing profiling data while retaining raw data and allowing slicing and dicing of data through a label-based search. Aggregate profiling data infrastructure wide, view single profiles in time or compare on any dimension.
 
 ## Why?
-* **Save Money**: Many organizations have 20-30% of resources wasted with easily optimized code paths. The Parca Agent aims to lower the entry bar by requiring 0 instrumentation for the whole infrastructure. Deploy in your infrastructure and get started!
-* **Improve Performance**: Using profiling data collected over time, Parca can with confidence and statistical significance determine hot paths to optimize. Additionally it can show differences between any label dimension, such as deploys, versions, and regions.
-* **Understand Incidents**: Profiling data provides unique insight and depth into what a process executed over time. Memory leaks, but also momentary spikes in CPU or I/O causing unexpected behavior, is traditionally difficult to troubleshoot are a breeze with continuous profiling.
+
+- **Save Money**: Many organizations have 20-30% of resources wasted with easily optimized code paths. The Parca Agent aims to lower the entry bar by requiring 0 instrumentation for the whole infrastructure. Deploy in your infrastructure and get started!
+- **Improve Performance**: Using profiling data collected over time, Parca can with confidence and statistical significance determine hot paths to optimize. Additionally it can show differences between any label dimension, such as deploys, versions, and regions.
+- **Understand Incidents**: Profiling data provides unique insight and depth into what a process executed over time. Memory leaks, but also momentary spikes in CPU or I/O causing unexpected behavior, is traditionally difficult to troubleshoot are a breeze with continuous profiling.
 
 ## Feedback & Support
 
-If you have any feedback, please open a discussion in the GitHub Discussions of this project.  
+If you have any feedback, please open a discussion in the GitHub Discussions of this project.
 We would love to learn what you think!
 
 ## Installation & Documentation
@@ -72,13 +70,14 @@ The binary was compiled to `bin/parca` .
 
 Now Parca is running locally and its web UI is available on http://localhost:7070/.
 
-By default Parca is scraping it's own pprof endpoints and you should see profiles show up over time. 
-The scrape configuration can be changed in the `parca.yaml` in the root of the repository. 
+By default Parca is scraping it's own pprof endpoints and you should see profiles show up over time.
+The scrape configuration can be changed in the `parca.yaml` in the root of the repository.
 
 ### Configuration
 
 Flags:
 
+<!-- prettier-ignore-start -->
 [embedmd]:# (tmp/help.txt)
 ```txt
 Usage: parca
@@ -87,8 +86,8 @@ Flags:
   -h, --help                       Show context-sensitive help.
       --config-path="parca.yaml"
                                    Path to config file.
-      --mode="all"                 Scraper only runs a scraper that sends to a
-                                   remote gRPC endpoint. All runs all
+      --mode="all"                 Scraper only runs a scraper that sends
+                                   to a remote gRPC endpoint. All runs all
                                    components.
       --log-level="info"           log level.
       --port=":7070"               Port string for server
@@ -116,9 +115,9 @@ Flags:
       --storage-persist            Persist storage to the configured object
                                    storage.
       --symbolizer-demangle-mode="simple"
-                                   Mode to demangle C++ symbols. Default mode is
-                                   simplified: no parameters, no templates, no
-                                   return type
+                                   Mode to demangle C++ symbols. Default mode
+                                   is simplified: no parameters, no templates,
+                                   no return type
       --symbolizer-number-of-tries=3
                                    Number of tries to attempt to symbolize an
                                    unsybolized location
@@ -149,6 +148,7 @@ Flags:
                                    Label(s) to attach to all profiles in
                                    scraper-only mode.
 ```
+<!-- prettier-ignore-end -->
 
 ## Credits
 
@@ -162,6 +162,7 @@ It explains how compile Parca, run it with Tilt as container in Kubernetes and s
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
@@ -191,7 +192,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/mrueg"><img src="https://avatars.githubusercontent.com/u/489370?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Manuel Rüger</b></sub></a><br /><a href="#infra-mrueg" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     <td align="center"><a href="https://github.com/avinashupadhya99"><img src="https://avatars.githubusercontent.com/u/52544819?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Avinash Upadhyaya K R</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=avinashupadhya99" title="Code">💻</a></td>
     <td align="center"><a href="https://bandism.net/"><img src="https://avatars.githubusercontent.com/u/22633385?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ikko Ashimine</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=eltociear" title="Code">💻</a></td>
-    <td align="center"><a href="https://maxbru.net"><img src="https://avatars.githubusercontent.com/u/32458727?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Maxime Brunet</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=maxbrunet" title="Code">💻</a></td>
+    <td align="center"><a href="https://maxbru.net"><img src="https://avatars.githubusercontent.com/u/32458727?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Maxime Brunet</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=maxbrunet" title="Code">💻</a> <a href="#infra-maxbrunet" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     <td align="center"><a href="https://www.diru.tech/"><img src="https://avatars.githubusercontent.com/u/39561007?v=4?s=100" width="100px;" alt=""/><br /><sub><b>rohit</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=me-diru" title="Code">💻</a></td>
   </tr>
   <tr>
@@ -209,13 +210,6 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
 
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

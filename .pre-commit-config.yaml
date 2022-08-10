@@ -1,0 +1,65 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: end-of-file-fixer
+        exclude: ^ui/packages/shared/client/
+      - id: trailing-whitespace
+        exclude: ^ui/packages/shared/client/
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.3.0
+    hooks:
+      - id: insert-license
+        name: Insert license in comments (Go)
+        args:
+          - --license-filepath=scripts/LICENSE.txt
+          - --comment-style=//
+          - --fuzzy-match-generates-todo
+        exclude: \.pb(?:\.gw)?\.go$
+        types: [go]
+      - id: insert-license
+        name: Insert license in comments (Shell)
+        args:
+          - --license-filepath=scripts/LICENSE.txt
+          - --comment-style=#
+          - --fuzzy-match-generates-todo
+        types: [shell]
+  - repo: https://github.com/bufbuild/buf
+    rev: v1.7.0
+    hooks:
+      - id: buf-lint
+      - id: buf-format
+      - id: buf-breaking
+        args:
+          - --against=https://github.com/parca-dev/parca.git#branch=main,ref=HEAD~1,subdir=proto
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.48.0
+    hooks:
+      - id: golangci-lint
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.10.0
+    hooks:
+      - id: hadolint-docker
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.8.0
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.5.1-1
+    hooks:
+      - id: shfmt
+        # Google-style w/ 4-space indent
+        args:
+          - --write
+          - --indent=4
+          - --case-indent
+          - --binary-next-line
+  - repo: https://github.com/google/go-jsonnet
+    rev: v0.18.0
+    hooks:
+      - id: jsonnet-format
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.7.1
+    hooks:
+      - id: prettier
+        files: \.(?:[jt]sx?|md|html|s?css)$

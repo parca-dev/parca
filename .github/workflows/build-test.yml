@@ -10,6 +10,10 @@ on:
     - main
     - release-*
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
   QEMU_VERSION: 7.0.0-7
@@ -20,6 +24,7 @@ jobs:
   build-and-test-multi-arch:
     name: Test on ${{ matrix.arch }}
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     # Run steps on a matrix of 2 arch.
     strategy:
       matrix:
@@ -110,8 +115,8 @@ jobs:
       shell: docker exec buildpack-deps bash -e {0}
       run: |
         GO_VERSION="$(<.go-version)"
-        wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
-        tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION}.linux-${{ matrix.arch }}.tar.gz"
+        wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
+        tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
         export PATH="${PATH}:/usr/local/go/bin"
         go version
 

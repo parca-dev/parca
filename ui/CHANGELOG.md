@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.20](https://github.com/parca-dev/parca/compare/ui-v0.14.19...ui-v0.14.20) (2022-08-06)
+
+**Note:** Version bump only for package ui
+
+## [0.14.19](https://github.com/parca-dev/parca/compare/ui-v0.14.18...ui-v0.14.19) (2022-08-06)
+
+**Note:** Version bump only for package ui
+
+## [0.14.18](https://github.com/parca-dev/parca/compare/ui-v0.14.17...ui-v0.14.18) (2022-08-06)
+
+**Note:** Version bump only for package ui
+
+## [0.14.17](https://github.com/parca-dev/parca/compare/ui-v0.14.16...ui-v0.14.17) (2022-08-05)
+
+### Bug Fixes
+
+- fix snap package that failed review; fix ci ([#1510](https://github.com/parca-dev/parca/issues/1510)) ([14db4f6](https://github.com/parca-dev/parca/commit/14db4f69dd3907f15d1f88eae54bfb3c073d51c0))
+- lint all code ([#1511](https://github.com/parca-dev/parca/issues/1511)) ([fedec99](https://github.com/parca-dev/parca/commit/fedec99544cd061ce4fafed0b6a454aba805fc0d))
+
 ## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.15...ui-v0.14.16) (2022-08-03)
 
 ## [0.14.13](https://github.com/parca-dev/parca/compare/ui-v0.14.12...ui-v0.14.13) (2022-08-03)

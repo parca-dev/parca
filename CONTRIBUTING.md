@@ -9,6 +9,7 @@ By contributing to this project you agree to [sign a Contributor License Agreeme
 # Code of Conduct
 
 Parca follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md). Please contact the Parca maintainers at parca-team@googlegroups.com to report any CoC violations.
+
 # Prerequisites
 
 Install the following dependencies (Instructions are linked for each dependency).
@@ -41,8 +42,8 @@ Run the binary locally.
 ```
 ./bin/parca
 ```
-Once compiled the server ui can be seen at http://localhost:7070.
 
+Once compiled the server ui can be seen at http://localhost:7070.
 
 To profile all containers using Kubernetes, the parca-server can be run alongside parca-ui using Tilt.
 
@@ -57,10 +58,10 @@ $ tilt up
 ```
 
 Test your changes by running:
+
 ```
 $ cd parca && make go/test
 ```
-
 
 <!--
 TODO:
@@ -90,6 +91,7 @@ Thank you for your contributions!
 ## Sending a bug fix
 
 Let's say you want to send a bug fix for `v0.8.x`. The workflow is as follow:
+
 ```bash
 git checkout release-0.8
 git checkout --branch my-fix
@@ -137,3 +139,11 @@ We use [Prettier](https://prettier.io/docs/en/options.html) for code formatting 
 2. `singleQuote`: `true`
 3. `bracketSpacing`: `false`
 4. `arrowParens`: `'avoid'`
+
+### pre-commit
+
+[pre-commit](https://pre-commit.com) hooks can installed to help with the linting and formatting of your code:
+
+```
+pre-commit install
+```

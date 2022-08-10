@@ -23,11 +23,16 @@ on:
   schedule:
     - cron: '19 8 * * 1'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   skip-check:
     name: Skip check
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       should_skip: ${{ steps.skip-check.outputs.should_skip }}
     permissions:
