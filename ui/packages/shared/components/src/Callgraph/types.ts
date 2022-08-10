@@ -19,6 +19,7 @@ export type Edge = {
 };
 
 export interface CallgraphData {
+  total: number;
   nodes: Node[];
   edges: Edge[];
 }

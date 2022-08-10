@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -80,7 +80,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			normalizer := parcacol.NewNormalizer(m)
 			ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 
-			profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
+			profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 			require.NoError(b, err)
 
 			for j := 0; j < n; j++ {

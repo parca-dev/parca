@@ -7,7 +7,7 @@ builds:
     id: "parca"
     binary: parca
     # https://goreleaser.com/customization/build/#reproducible-builds
-    mod_timestamp: '{{ .CommitTimestamp }}'
+    mod_timestamp: "{{ .CommitTimestamp }}"
     env:
       - CGO_ENABLED=0
     goos:
@@ -31,10 +31,59 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+snapcrafts:
+  - name: parca
+    # Handle publishing with snapcraft itself
+    publish: false
+    summary: Parca continuous profiling tool
+    description: |
+      Continuous profiling for analysis of CPU and memory usage, down to the line
+      number and throughout time. Saving infrastructure cost, improving performance,
+      and increasing reliability.
+    grade: stable
+    confinement: strict
+    license: Apache-2.0
+    base: core22
+    extra_files:
+      - source: snap/parca-wrapper
+        destination: bin/parca-wrapper
+        mode: 0755
+      - source: snap/example-config.yaml
+        destination: usr/share/parca/example-config.yaml
+        mode: 0700
+      - source: snap/hooks/configure
+        destination: snap/hooks/configure
+        mode: 0755
+      - source: snap/hooks/configure
+        destination: meta/hooks/configure
+        mode: 0755
+    apps:
+      parca:
+        command: parca
+        plugs:
+          - network-bind
+          - network
+          - home
+          - etc-parca
+      parca-svc:
+        command: bin/parca-wrapper
+        daemon: simple
+        install_mode: disable
+        restart_condition: never
+        plugs:
+          - network-bind
+          - network
+          - home
+          - etc-parca
+    plugs:
+      etc-parca:
+        interface: system-files
+        read:
+          - /etc/parca
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ incpatch .Tag }}-next"
+  name_template: "{{ incpatch .Tag }}-{{ .ShortCommit }}"
 source:
   enabled: true
 release:
@@ -55,5 +104,5 @@ changelog:
   use: github
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"

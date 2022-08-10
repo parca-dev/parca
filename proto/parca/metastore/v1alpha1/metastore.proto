@@ -29,8 +29,6 @@ service MetastoreService {
   rpc CreateLocationLines(CreateLocationLinesRequest) returns (CreateLocationLinesResponse) {}
   // Locations retrieves locations.
   rpc Locations(LocationsRequest) returns (LocationsResponse) {}
-  // LocationLines retrieves lines of locations.
-  rpc LocationLines(LocationLinesRequest) returns (LocationLinesResponse) {}
   // Functions retrieves functions.
   rpc Functions(FunctionsRequest) returns (FunctionsResponse) {}
   // Mappings retrieves mappings.
@@ -102,7 +100,12 @@ message GetOrCreateStacktracesResponse {
 // UnsymbolizedLocationsRequest contains information about the unsymbolized
 // locations requested. While currently empty, this could in the future contain
 // a sharding configuration or limit the number of locations to return.
-message UnsymbolizedLocationsRequest {}
+message UnsymbolizedLocationsRequest {
+  // The maximum number of locations to return.
+  uint32 limit = 1;
+  // The minimum key to start returning locations from.
+  string min_key = 2;
+}
 
 // UnsymbolizedLocationsResponse contains information about the requested
 // locations that should be symbolizable but potentially haven't been
@@ -110,6 +113,9 @@ message UnsymbolizedLocationsRequest {}
 message UnsymbolizedLocationsResponse {
   // Locations that have a mapping and address that should be symbolizable.
   repeated Location locations = 1;
+  // Key of the last location returned. This can be used in a subsequent call
+  // to UnsymbolizedLocations to continue from the last returned location.
+  string max_key = 2;
 }
 
 // CreateLocationLinesRequest contains locations and their location lines to be
@@ -150,12 +156,6 @@ message LocationsResponse {
 message LocationLinesRequest {
   // IDs of locations to retrieve location lines for.
   repeated string location_ids = 1;
-}
-
-// LocationLinesResponse contains the requested locations.
-message LocationLinesResponse {
-  // LocationLines that are known to the backing metastore.
-  repeated LocationLines location_lines = 1;
 }
 
 // FunctionsRequest contains information about the functions requested.
@@ -236,13 +236,7 @@ message Location {
 
   // lines are the call frames represented by this location. Multiple lines
   // indicate they have been inlined.
-  LocationLines lines = 6;
-}
-
-// LocationLines describes a set of lines of a location.
-message LocationLines {
-  // Entries is the list of lines associated with the location.
-  repeated Line entries = 1;
+  repeated Line lines = 6;
 }
 
 // Line describes a source code function and its line number.

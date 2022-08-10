@@ -5,9 +5,13 @@ on:
     tags:
       - v*
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.10.2
+  GORELEASER_VERSION: v1.10.3
 
 permissions:
   contents: write
@@ -15,6 +19,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
     steps:
@@ -34,7 +39,14 @@ jobs:
         uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version-file: .node-version
-          cache: 'yarn'
+          cache: "yarn"
+
+      - name: Set up Snapcraft
+        run: |
+          sudo snap install snapcraft --channel=7.x/stable --classic
+          # See https://github.com/goreleaser/goreleaser/issues/1715
+          mkdir -p "$HOME/.cache/snapcraft/download"
+          mkdir -p "$HOME/.cache/snapcraft/stage-packages"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@68acf3b1adf004ac9c2f0a4259e85c5f66e99bef # tag=v3.0.0
@@ -58,6 +70,7 @@ jobs:
   manifests:
     name: Generate and release Kubernetes Manifests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: release
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
@@ -92,6 +105,7 @@ jobs:
   docs:
     name: Publish Docs
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: manifests
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
@@ -109,6 +123,7 @@ jobs:
   container:
     name: Build and release container images
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: release
     container:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
@@ -138,7 +153,7 @@ jobs:
           go-version-file: .go-version
           check-latest: true
 
-      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3.0.0
         with:
           name: parca-dist-release
           path: dist
@@ -161,7 +176,7 @@ jobs:
         uses: sigstore/cosign-installer@09a077b27eb1310dcfb21981bee195b30ce09de0 # tag=v2.5.0
 
       - name: Install crane
-        uses: imjasonh/setup-crane@5146f708a817ea23476677995bf2133943b9be0b # tag=v0.1
+        uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4 # tag=v0.2
 
       - name: Push container
         run: |
@@ -172,3 +187,23 @@ jobs:
           COSIGN_EXPERIMENTAL: true
         run: |
           make sign-container
+
+  snap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3.0.0
+        with:
+          name: parca-dist-release
+          path: dist
+
+      - name: Install snapcraft
+        run: |
+          sudo snap install snapcraft --classic --channel=7.x/stable
+
+      - name: Release to latest/edge
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          snapcraft upload dist/*_amd64.snap --release stable
+          snapcraft upload dist/*_arm64.snap --release stable

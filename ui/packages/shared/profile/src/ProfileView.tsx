@@ -1,30 +1,61 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
+
 import {parseParams} from '@parca/functions';
-import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
+import {QueryServiceClient, Flamegraph, Top, Callgraph} from '@parca/client';
 import {
   Button,
   Card,
   SearchNodes,
   useGrpcMetadata,
   useParcaTheme,
-  Callgraph,
+  Callgraph as CallgraphComponent,
 } from '@parca/components';
 import testData from './testdata/link_data.json';
 
 import ProfileShareButton from './components/ProfileShareButton';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
-import {useQuery} from './useQuery';
 import TopTable from './TopTable';
+import useDelayedLoader from './useDelayedLoader';
 import {downloadPprof} from './utils';
 
 import './ProfileView.styles.css';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
+interface FlamegraphData {
+  loading: boolean;
+  data?: Flamegraph;
+  error?: any;
+}
+
+interface TopTableData {
+  loading: boolean;
+  data?: Top;
+  error?: any;
+}
+
+interface CallgraphData {
+  loading: boolean;
+  data?: Callgraph;
+  error?: any;
+}
+
+type VisualizationType = 'icicle' | 'table' | 'callgraph' | 'both';
+
+interface ProfileVisState {
+  currentView: VisualizationType;
+  setCurrentView: (view: VisualizationType) => void;
+}
+
 interface ProfileViewProps {
-  queryClient: QueryServiceClient;
-  profileSource: ProfileSource;
+  flamegraphData?: FlamegraphData;
+  topTableData?: TopTableData;
+  callgraphData?: CallgraphData;
+  sampleUnit: string;
+  profileVisState: ProfileVisState;
+  profileSource?: ProfileSource;
+  queryClient?: QueryServiceClient;
   navigateTo?: NavigateFunction;
   compare?: boolean;
 }
@@ -37,23 +68,29 @@ function arrayEquals(a, b): boolean {
     a.every((val, index) => val === b[index])
   );
 }
+export const useProfileVisState = (): ProfileVisState => {
+  const router = parseParams(window.location.search);
+  const currentViewFromURL = router.currentProfileView as string;
+  const [currentView, setCurrentView] = useState<VisualizationType>(
+    (currentViewFromURL as VisualizationType) || 'icicle'
+  );
+
+  return {currentView, setCurrentView};
+};
 
 export const ProfileView = ({
-  queryClient,
+  flamegraphData,
+  topTableData,
+  callgraphData,
+  sampleUnit,
   profileSource,
+  queryClient,
   navigateTo,
+  profileVisState,
 }: ProfileViewProps): JSX.Element => {
-  const router = parseParams(window.location.search);
-  // const currentViewFromURL = router.currentProfileView as string;
-  const currentViewFromURL = 'callgraph' as string;
   const [curPath, setCurPath] = useState<string[]>([]);
-  const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
-  const {isLoading, response, error} = useQuery(
-    queryClient,
-    profileSource,
-    QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED
-  );
-  const [currentView, setCurrentView] = useState<string | undefined>(currentViewFromURL);
+  const {currentView, setCurrentView} = profileVisState;
+
   const metadata = useGrpcMetadata();
   const {loader} = useParcaTheme();
 
@@ -62,29 +99,42 @@ export const ProfileView = ({
     setCurPath([]);
   }, [profileSource]);
 
-  useEffect(() => {
-    let showLoaderTimeout;
-    if (isLoading && !isLoaderVisible) {
-      // if the request takes longer than half a second, show the loading icon
-      showLoaderTimeout = setTimeout(() => {
-        setIsLoaderVisible(true);
-      }, 500);
-    } else {
-      setIsLoaderVisible(false);
+  const isLoading = useMemo(() => {
+    if (currentView === 'icicle') {
+      return !!flamegraphData?.loading;
     }
-    return () => clearTimeout(showLoaderTimeout);
-  }, [isLoading]);
+    if (currentView === 'callgraph') {
+      return !!callgraphData?.loading;
+    }
+    if (currentView === 'table') {
+      return !!topTableData?.loading;
+    }
+    if (currentView === 'both') {
+      return !!flamegraphData?.loading || !!topTableData?.loading;
+    }
+    return false;
+  }, [currentView, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
+
+  const isLoaderVisible = useDelayedLoader(isLoading);
 
   if (isLoaderVisible) {
     return <>{loader}</>;
   }
 
-  if (error !== null) {
-    return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
+  if (flamegraphData?.error != null) {
+    console.error('Error: ', flamegraphData?.error);
+    return (
+      <div className="p-10 flex justify-center">
+        An error occurred: {flamegraphData?.error.message}
+      </div>
+    );
   }
 
   const downloadPProf = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
+    if (!profileSource || !queryClient) {
+      return;
+    }
 
     try {
       const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
@@ -105,15 +155,17 @@ export const ProfileView = ({
     }
   };
 
-  const switchProfileView = (view: string) => {
+  const switchProfileView = (view: VisualizationType) => {
+    if (view == null) {
+      return;
+    }
     if (navigateTo === undefined) return;
 
     setCurrentView(view);
+    const router = parseParams(window.location.search);
 
     navigateTo('/', {...router, ...{currentProfileView: view}});
   };
-
-  const sampleUnit = profileSource.ProfileType().sampleUnit;
 
   return (
     <>
@@ -123,10 +175,12 @@ export const ProfileView = ({
             <div className="flex py-3 w-full">
               <div className="w-2/5 flex space-x-4">
                 <div className="flex space-x-1">
-                  <ProfileShareButton
-                    queryRequest={profileSource.QueryRequest()}
-                    queryClient={queryClient}
-                  />
+                  {profileSource && queryClient ? (
+                    <ProfileShareButton
+                      queryRequest={profileSource.QueryRequest()}
+                      queryClient={queryClient}
+                    />
+                  ) : null}
 
                   <Button color="neutral" onClick={downloadPProf}>
                     Download pprof
@@ -168,7 +222,7 @@ export const ProfileView = ({
 
                 <Button
                   variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
-                  className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons no-outline-on-buttons text-ellipsis"
+                  className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons text-ellipsis"
                   onClick={() => switchProfileView('both')}
                 >
                   Both
@@ -185,54 +239,41 @@ export const ProfileView = ({
             </div>
 
             <div className="flex space-x-4 justify-between">
-              {currentView === 'icicle' &&
-                response !== null &&
-                response.report.oneofKind === 'flamegraph' && (
-                  <div className="w-full">
-                    <ProfileIcicleGraph
-                      curPath={curPath}
-                      setNewCurPath={setNewCurPath}
-                      graph={response.report.flamegraph}
-                      sampleUnit={sampleUnit}
-                    />
-                  </div>
-                )}
-
-              {currentView === 'callgraph' &&
-                response !== null &&
-                response.report.oneofKind === 'flamegraph' && (
-                  <div className="w-full">
-                    {/* <Callgraph graph={response.report.flamegraph} sampleUnit={sampleUnit} /> */}
-                    <Callgraph graph={testData} />
-                  </div>
-                )}
-
-              {currentView === 'table' && (
+              {currentView === 'icicle' && flamegraphData?.data != null && (
                 <div className="w-full">
-                  <TopTable
-                    queryClient={queryClient}
-                    profileSource={profileSource}
+                  <ProfileIcicleGraph
+                    curPath={curPath}
+                    setNewCurPath={setNewCurPath}
+                    graph={flamegraphData.data}
                     sampleUnit={sampleUnit}
                   />
+                </div>
+              )}
+
+              {currentView === 'callgraph' && callgraphData?.data != null && (
+                <div className="w-full">
+                  <CallgraphComponent graph={testData} sampleUnit={sampleUnit} />
+                </div>
+              )}
+
+              {currentView === 'table' && topTableData != null && (
+                <div className="w-full">
+                  <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
                 </div>
               )}
 
               {currentView === 'both' && (
                 <>
                   <div className="w-1/2">
-                    <TopTable
-                      queryClient={queryClient}
-                      profileSource={profileSource}
-                      sampleUnit={sampleUnit}
-                    />
+                    <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
                   </div>
 
                   <div className="w-1/2">
-                    {response !== null && response.report.oneofKind === 'flamegraph' && (
+                    {flamegraphData != null && (
                       <ProfileIcicleGraph
                         curPath={curPath}
                         setNewCurPath={setNewCurPath}
-                        graph={response.report.flamegraph}
+                        graph={flamegraphData.data}
                         sampleUnit={sampleUnit}
                       />
                     )}

@@ -2,19 +2,28 @@ name: Container
 
 on:
   push:
-    branches: [ main ]
+    branches:
+    - main
+    - release-*
   pull_request:
-    branches: [ main ]
+    branches:
+    - main
+    - release-*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.10.2
+  GORELEASER_VERSION: v1.10.3
 
 jobs:
   skip-check:
     name: Skip check
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       should_skip: ${{ steps.skip-check.outputs.should_skip }}
     permissions:
@@ -43,6 +52,7 @@ jobs:
     name: Build binary using goreleaser
     needs: skip-check
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     steps:
       - name: Check out code into the Go module directory
@@ -91,6 +101,7 @@ jobs:
     name: Container build and push (when merged)
     needs: build-binary
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     container:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
       # Specifying SHA repeatedly fails:
@@ -118,7 +129,7 @@ jobs:
           go-version-file: .go-version
           check-latest: true
 
-      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3.0.0
         with:
           name: parca-dist-container
           path: dist
@@ -139,7 +150,7 @@ jobs:
 
       - name: Install crane
         if: ${{ github.event_name != 'pull_request' }}
-        uses: imjasonh/setup-crane@5146f708a817ea23476677995bf2133943b9be0b # tag=v0.1
+        uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4 # tag=v0.2
 
       - name: Login to registry
         if: ${{ github.event_name != 'pull_request' }}

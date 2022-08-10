@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -43,6 +43,8 @@ type Symbolizer struct {
 	// one potentially only privately.
 	debuginfodCacheDir string
 	debuginfoCacheDir  string
+
+	batchSize uint32
 }
 
 type DebugInfoFetcher interface {
@@ -58,6 +60,7 @@ func New(
 	symbolizer *symbol.Symbolizer,
 	debuginfodCacheDir string,
 	debuginfoCacheDir string,
+	batchSize uint32,
 ) *Symbolizer {
 	return &Symbolizer{
 		logger:             log.With(logger, "component", "symbolizer"),
@@ -66,33 +69,51 @@ func New(
 		debuginfo:          debuginfo,
 		debuginfodCacheDir: debuginfodCacheDir,
 		debuginfoCacheDir:  debuginfoCacheDir,
+		batchSize:          batchSize,
 	}
 }
 
 func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
 	return runutil.Repeat(interval, ctx.Done(), func() error {
 		level.Debug(s.logger).Log("msg", "start symbolization cycle")
-		lres, err := s.metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
+		s.runSymbolizationCycle(ctx)
+		level.Debug(s.logger).Log("msg", "symbolization loop completed")
+		return nil
+	})
+}
+
+func (s *Symbolizer) runSymbolizationCycle(ctx context.Context) {
+	prevMaxKey := ""
+	for {
+		lres, err := s.metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{
+			Limit:  s.batchSize,
+			MinKey: prevMaxKey,
+		})
 		if err != nil {
 			level.Error(s.logger).Log("msg", "failed to fetch unsymbolized locations", "err", err)
 			// Try again on the next cycle.
-			return nil
+			return
 		}
 		if len(lres.Locations) == 0 {
 			level.Debug(s.logger).Log("msg", "no locations to symbolize")
 			// Nothing to symbolize.
-			return nil
+			return
 		}
+		prevMaxKey = lres.MaxKey
 
 		level.Debug(s.logger).Log("msg", "attempting to symbolize locations", "count", len(lres.Locations))
-		err = s.symbolize(ctx, lres.Locations)
+		err = s.Symbolize(ctx, lres.Locations)
 		if err != nil {
 			level.Warn(s.logger).Log("msg", "symbolization attempt finished with errors")
 			level.Debug(s.logger).Log("msg", "errors occurred during symbolization", "err", err)
 		}
-		level.Debug(s.logger).Log("msg", "symbolization loop completed")
-		return nil
-	})
+
+		if s.batchSize == 0 {
+			// If batch size is 0 we won't continue with the next batch as we
+			// should have already processed everything.
+			return
+		}
+	}
 }
 
 // UnsymbolizableMapping returns true if a mapping points to a binary for which
@@ -111,7 +132,7 @@ type MappingLocations struct {
 	LocationsLines [][]profile.LocationLine
 }
 
-func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) error {
+func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) error {
 	mappingsIndex := map[string]int{}
 	mappingIDs := []string{}
 	for _, loc := range locations {
@@ -135,7 +156,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 	for _, loc := range locations {
 		locationsByMapping := locationsByMappings[mappingsIndex[loc.MappingId]]
 		// Already symbolized!
-		if loc.Lines != nil && len(loc.Lines.Entries) > 0 {
+		if loc.Lines != nil && len(loc.Lines) > 0 {
 			level.Debug(s.logger).Log("msg", "location already symbolized, skipping")
 			continue
 		}
@@ -215,7 +236,7 @@ func (s *Symbolizer) symbolize(ctx context.Context, locations []*pb.Location) er
 			// step we can just reuse the same locations as were originally
 			// passed in.
 			locations = append(locations, locationsByMapping.Locations[j])
-			locationsByMapping.Locations[j].Lines = &pb.LocationLines{Entries: lines}
+			locationsByMapping.Locations[j].Lines = lines
 		}
 	}
 

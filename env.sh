@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # renovate: datasource=go depName=github.com/campoy/embedmd
@@ -10,5 +10,5 @@ GOFUMPT_VERSION='v0.3.1'
 go install "mvdan.cc/gofumpt@${GOFUMPT_VERSION}"
 
 # renovate: datasource=go depName=github.com/golangci/golangci-lint
-GOLANGCI_LINT_VERSION='v1.47.1'
+GOLANGCI_LINT_VERSION='v1.48.0'
 go install "github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}"

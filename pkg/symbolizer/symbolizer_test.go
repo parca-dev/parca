@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,7 +15,7 @@ package symbolizer
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	stdlog "log"
 	"net"
 	"os"
@@ -79,7 +79,7 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ures.Locations))
 
-	err = sym.symbolize(ctx, ures.Locations)
+	err = sym.Symbolize(ctx, ures.Locations)
 	require.NoError(t, err)
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
@@ -87,16 +87,16 @@ func TestSymbolizer(t *testing.T) {
 	require.Equal(t, 0, len(ures.Locations))
 
 	// Get updated locations.
-	llres, err := metastore.LocationLines(ctx, &pb.LocationLinesRequest{
+	lres, err = metastore.Locations(ctx, &pb.LocationsRequest{
 		LocationIds: []string{lres.Locations[0].Id},
 	})
 	require.NoError(t, err)
-	require.Equal(t, 1, len(llres.LocationLines))
-	require.Equal(t, 3, len(llres.LocationLines[0].Entries))
+	require.Equal(t, 1, len(lres.Locations))
+	require.Equal(t, 3, len(lres.Locations[0].Lines))
 
 	functionIds := []string{}
-	for _, locationLines := range llres.LocationLines {
-		for _, line := range locationLines.Entries {
+	for _, location := range lres.Locations {
+		for _, line := range location.Lines {
 			functionIds = append(functionIds, line.FunctionId)
 		}
 	}
@@ -107,20 +107,20 @@ func TestSymbolizer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, len(fres.Functions))
 
-	require.Equal(t, fres.Functions[0].Id, llres.LocationLines[0].Entries[0].FunctionId)
+	require.Equal(t, fres.Functions[0].Id, lres.Locations[0].Lines[0].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[0].Filename)
 	require.Equal(t, "main.main", fres.Functions[0].Name)
-	require.Equal(t, int64(7), llres.LocationLines[0].Entries[0].Line) // llvm-addr2line gives 10
+	require.Equal(t, int64(7), lres.Locations[0].Lines[0].Line) // llvm-addr2line gives 10
 
-	require.Equal(t, fres.Functions[1].Id, llres.LocationLines[0].Entries[1].FunctionId)
+	require.Equal(t, fres.Functions[1].Id, lres.Locations[0].Lines[1].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.iterate", fres.Functions[1].Name)
-	require.Equal(t, int64(27), llres.LocationLines[0].Entries[1].Line)
+	require.Equal(t, int64(27), lres.Locations[0].Lines[1].Line)
 
-	require.Equal(t, fres.Functions[2].Id, llres.LocationLines[0].Entries[2].FunctionId)
+	require.Equal(t, fres.Functions[2].Id, lres.Locations[0].Lines[2].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[2].Filename)
 	require.Equal(t, "main.iteratePerTenant", fres.Functions[2].Name)
-	require.Equal(t, int64(23), llres.LocationLines[0].Entries[2].Line)
+	require.Equal(t, int64(23), lres.Locations[0].Lines[2].Line)
 }
 
 func findIndexWithAddress(locs []*pb.Location, address uint64) int {
@@ -144,23 +144,23 @@ func TestRealSymbolizer(t *testing.T) {
 	require.Equal(t, 11, len(ures.Locations))
 	id := ures.Locations[findIndexWithAddress(ures.Locations, 0x463784)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ures.Locations))
 
 	// Get updated locations.
-	llres, err := metastore.LocationLines(ctx, &pb.LocationLinesRequest{
+	lres, err := metastore.Locations(ctx, &pb.LocationsRequest{
 		LocationIds: []string{id},
 	})
 	require.NoError(t, err)
-	require.Equal(t, 1, len(llres.LocationLines))
-	require.Equal(t, 3, len(llres.LocationLines[0].Entries))
+	require.Equal(t, 1, len(lres.Locations))
+	require.Equal(t, 3, len(lres.Locations[0].Lines))
 
 	functionIds := []string{}
-	for _, locationLines := range llres.LocationLines {
-		for _, line := range locationLines.Entries {
+	for _, location := range lres.Locations {
+		for _, line := range location.Lines {
 			functionIds = append(functionIds, line.FunctionId)
 		}
 	}
@@ -173,13 +173,13 @@ func TestRealSymbolizer(t *testing.T) {
 
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[0].Filename)
 	require.Equal(t, "main.main", fres.Functions[0].Name)
-	require.Equal(t, int64(7), llres.LocationLines[0].Entries[0].Line) // llvm-addr2line gives 10
+	require.Equal(t, int64(7), lres.Locations[0].Lines[0].Line) // llvm-addr2line gives 10
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.iterate", fres.Functions[1].Name)
-	require.Equal(t, int64(27), llres.LocationLines[0].Entries[1].Line)
+	require.Equal(t, int64(27), lres.Locations[0].Lines[1].Line)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[2].Filename)
 	require.Equal(t, "main.iteratePerTenant", fres.Functions[2].Name)
-	require.Equal(t, int64(23), llres.LocationLines[0].Entries[2].Line)
+	require.Equal(t, int64(23), lres.Locations[0].Lines[2].Line)
 }
 
 func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
@@ -196,33 +196,33 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ures.Locations))
 
-	llres, err := metastore.LocationLines(ctx, &pb.LocationLinesRequest{
+	lres, err := metastore.Locations(ctx, &pb.LocationsRequest{
 		LocationIds: []string{id1, id2},
 	})
 	require.NoError(t, err)
-	require.Equal(t, 2, len(llres.LocationLines))
-	require.Equal(t, 1, len(llres.LocationLines[0].Entries))
-	require.Equal(t, 1, len(llres.LocationLines[1].Entries))
+	require.Equal(t, 2, len(lres.Locations))
+	require.Equal(t, 1, len(lres.Locations[0].Lines))
+	require.Equal(t, 1, len(lres.Locations[1].Lines))
 
 	fres, err := metastore.Functions(ctx, &pb.FunctionsRequest{
-		FunctionIds: []string{llres.LocationLines[0].Entries[0].FunctionId, llres.LocationLines[1].Entries[0].FunctionId},
+		FunctionIds: []string{lres.Locations[0].Lines[0].FunctionId, lres.Locations[1].Lines[0].FunctionId},
 	})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(fres.Functions))
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/fib/fib.go", fres.Functions[0].Filename)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", fres.Functions[0].Name)
-	require.Equal(t, int64(5), llres.LocationLines[0].Entries[0].Line)
+	require.Equal(t, int64(5), lres.Locations[0].Lines[0].Line)
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.busyCPU", fres.Functions[1].Name)
-	require.Equal(t, int64(86), llres.LocationLines[1].Entries[0].Line)
+	require.Equal(t, int64(86), lres.Locations[1].Lines[0].Line)
 }
 
 func TestRealSymbolizerInliningDisabled(t *testing.T) {
@@ -239,23 +239,23 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x77157c)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x77265c)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ures.Locations))
 
-	llres, err := metastore.LocationLines(ctx, &pb.LocationLinesRequest{
+	lres, err := metastore.Locations(ctx, &pb.LocationsRequest{
 		LocationIds: []string{id1, id2},
 	})
 	require.NoError(t, err)
-	require.Equal(t, 2, len(llres.LocationLines))
-	require.Equal(t, 1, len(llres.LocationLines[0].Entries))
-	require.Equal(t, 1, len(llres.LocationLines[1].Entries))
+	require.Equal(t, 2, len(lres.Locations))
+	require.Equal(t, 1, len(lres.Locations[0].Lines))
+	require.Equal(t, 1, len(lres.Locations[1].Lines))
 
 	functionIds := []string{}
-	for _, locationLines := range llres.LocationLines {
-		for _, line := range locationLines.Entries {
+	for _, location := range lres.Locations {
+		for _, line := range location.Lines {
 			functionIds = append(functionIds, line.FunctionId)
 		}
 	}
@@ -268,11 +268,11 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/fib/fib.go", fres.Functions[0].Filename)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", fres.Functions[0].Name)
-	require.Equal(t, int64(5), llres.LocationLines[0].Entries[0].Line)
+	require.Equal(t, int64(5), lres.Locations[0].Lines[0].Line)
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.busyCPU", fres.Functions[1].Name)
-	require.Equal(t, int64(86), llres.LocationLines[1].Entries[0].Line)
+	require.Equal(t, int64(86), lres.Locations[1].Lines[0].Line)
 }
 
 func TestRealSymbolizerWithoutDWARF(t *testing.T) {
@@ -291,24 +291,24 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ures.Locations))
 
 	// Get updated locations.
-	llres, err := metastore.LocationLines(ctx, &pb.LocationLinesRequest{
+	lres, err := metastore.Locations(ctx, &pb.LocationsRequest{
 		LocationIds: []string{id1, id2},
 	})
 	require.NoError(t, err)
-	require.Equal(t, 2, len(llres.LocationLines))
-	require.Equal(t, 1, len(llres.LocationLines[0].Entries))
-	require.Equal(t, 1, len(llres.LocationLines[1].Entries))
+	require.Equal(t, 2, len(lres.Locations))
+	require.Equal(t, 1, len(lres.Locations[0].Lines))
+	require.Equal(t, 1, len(lres.Locations[1].Lines))
 
 	functionIds := []string{}
-	for _, locationLines := range llres.LocationLines {
-		for _, line := range locationLines.Entries {
+	for _, location := range lres.Locations {
+		for _, line := range location.Lines {
 			functionIds = append(functionIds, line.FunctionId)
 		}
 	}
@@ -321,11 +321,11 @@ func TestRealSymbolizerWithoutDWARF(t *testing.T) {
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/fib/fib.go", fres.Functions[0].Filename)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", fres.Functions[0].Name)
-	require.Equal(t, int64(13), llres.LocationLines[0].Entries[0].Line) // with DWARF 5
+	require.Equal(t, int64(13), lres.Locations[0].Lines[0].Line) // with DWARF 5
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.busyCPU", fres.Functions[1].Name)
-	require.Equal(t, int64(89), llres.LocationLines[1].Entries[0].Line) // with DWARF 86
+	require.Equal(t, int64(89), lres.Locations[1].Lines[0].Line) // with DWARF 86
 }
 
 func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
@@ -344,24 +344,24 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	id1 := ures.Locations[findIndexWithAddress(ures.Locations, 0x6491de)].Id
 	id2 := ures.Locations[findIndexWithAddress(ures.Locations, 0x649e46)].Id
 
-	require.NoError(t, sym.symbolize(ctx, ures.Locations))
+	require.NoError(t, sym.Symbolize(ctx, ures.Locations))
 
 	ures, err = metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ures.Locations))
 
 	// Get updated locations.
-	llres, err := metastore.LocationLines(ctx, &pb.LocationLinesRequest{
+	lres, err := metastore.Locations(ctx, &pb.LocationsRequest{
 		LocationIds: []string{id1, id2},
 	})
 	require.NoError(t, err)
-	require.Equal(t, 2, len(llres.LocationLines))
-	require.Equal(t, 1, len(llres.LocationLines[0].Entries))
-	require.Equal(t, 1, len(llres.LocationLines[1].Entries))
+	require.Equal(t, 2, len(lres.Locations))
+	require.Equal(t, 1, len(lres.Locations[0].Lines))
+	require.Equal(t, 1, len(lres.Locations[1].Lines))
 
 	functionIds := []string{}
-	for _, locationLines := range llres.LocationLines {
-		for _, line := range locationLines.Entries {
+	for _, location := range lres.Locations {
+		for _, line := range location.Lines {
 			functionIds = append(functionIds, line.FunctionId)
 		}
 	}
@@ -375,12 +375,12 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	// go -trimpath
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib/fib.go", fres.Functions[0].Filename)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", fres.Functions[0].Name)
-	require.Equal(t, int64(13), llres.LocationLines[0].Entries[0].Line) // with DWARF 5
+	require.Equal(t, int64(13), lres.Locations[0].Lines[0].Line) // with DWARF 5
 
 	// go -trimpath
 	require.Equal(t, "./main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.busyCPU", fres.Functions[1].Name)
-	require.Equal(t, int64(89), llres.LocationLines[1].Entries[0].Line) // with DWARF 86
+	require.Equal(t, int64(89), lres.Locations[1].Lines[0].Line) // with DWARF 86
 }
 
 func mustReadAll(t require.TestingT, filename string) []byte {
@@ -388,7 +388,7 @@ func mustReadAll(t require.TestingT, filename string) []byte {
 	require.NoError(t, err)
 	defer f.Close()
 
-	content, err := ioutil.ReadAll(f)
+	content, err := io.ReadAll(f)
 	require.NoError(t, err)
 	return content
 }
@@ -431,13 +431,13 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	)
 	require.NoError(t, err)
 
-	debugInfoCacheDir, err := ioutil.TempDir("", "parca-debuginfo-test-cache-*")
+	debugInfoCacheDir, err := os.MkdirTemp("", "parca-debuginfo-test-cache-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		os.RemoveAll(debugInfoCacheDir)
 	})
 
-	symbolizerCacheDir, err := ioutil.TempDir("", "parca-symbolizer-test-cache-*")
+	symbolizerCacheDir, err := os.MkdirTemp("", "parca-symbolizer-test-cache-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		os.RemoveAll(symbolizerCacheDir)
@@ -517,5 +517,6 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		sym,
 		symbolizerCacheDir,
 		symbolizerCacheDir,
+		0,
 	)
 }

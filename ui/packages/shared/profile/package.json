@@ -1,13 +1,14 @@
 {
   "name": "@parca/profile",
-  "version": "0.14.3-alpha.0",
+  "version": "0.14.16",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@iconify/react": "^3.2.2",
-    "@parca/client": "^0.14.1",
+    "@parca/client": "^0.14.16",
     "@parca/dynamicsize": "^0.14.1",
     "@parca/parser": "^0.14.1",
     "d3-scale": "^4.0.2",
+    "d3-selection": "3.0.0",
     "react-copy-to-clipboard": "^5.1.0"
   },
   "main": "src/index.tsx",

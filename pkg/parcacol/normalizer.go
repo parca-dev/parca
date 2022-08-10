@@ -16,10 +16,15 @@ package parcacol
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
+)
+
+const (
+	UnsymolizableLocationAddress = 0x0
 )
 
 type Normalizer struct {
@@ -32,7 +37,7 @@ func NewNormalizer(metastore pb.MetastoreServiceClient) *Normalizer {
 	}
 }
 
-func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
+func (n *Normalizer) NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]struct{}, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
 	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable)
 	if err != nil {
 		return nil, fmt.Errorf("normalize mappings: %w", err)
@@ -60,6 +65,7 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 		return nil, fmt.Errorf("normalize stacktraces: %w", err)
 	}
 
+	sampleIndex := map[int]map[string]int{}
 	profiles := make([]*profile.NormalizedProfile, 0, len(p.SampleType))
 	for i := 0; i < len(p.SampleType); i++ {
 		normalizedProfile := &profile.NormalizedProfile{
@@ -67,10 +73,12 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 			Samples: make([]*profile.NormalizedSample, 0, len(p.Sample)),
 		}
 		profiles = append(profiles, normalizedProfile)
+		sampleIndex[i] = map[string]int{}
 	}
 
 	for i, sample := range p.Sample {
-		labels, numLabels := labelsFromSample(p.StringTable, sample.Label)
+		labels, numLabels := labelsFromSample(takenLabelNames, p.StringTable, sample.Label)
+		key := sampleKey(stacktraces[i].Id, labels, numLabels)
 		for j, value := range sample.Value {
 			if value == 0 {
 				continue
@@ -83,26 +91,64 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, p *pprofpb
 				NumLabel:     numLabels,
 			}
 
-			profiles[j].Samples = append(profiles[j].Samples, ns)
+			index, ok := sampleIndex[j][key]
+			if !ok {
+				profiles[j].Samples = append(profiles[j].Samples, ns)
+				sampleIndex[j][key] = len(profiles[j].Samples) - 1
+			} else {
+				profiles[j].Samples[index].Value += ns.Value
+			}
 		}
 	}
 
 	return profiles, nil
 }
 
-func labelsFromSample(stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
-	// TODO: support num label units.
-	labels := map[string]string{}
-	numLabels := map[string]int64{}
+func sampleKey(stacktraceID string, labels map[string]string, numLabels map[string]int64) string {
+	key := stacktraceID + ";"
+	for k, v := range labels {
+		key += fmt.Sprintf("%s=%s;", k, v)
+	}
+	key += ";"
+	for k, v := range numLabels {
+		key += fmt.Sprintf("%s=%d;", k, v)
+	}
+	return key
+}
 
+// TODO: support num label units.
+func labelsFromSample(takenLabelNames map[string]struct{}, stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
+	labels := map[string][]string{}
+	labelNames := []string{}
 	for _, label := range plabels {
-		key := stringTable[label.Key]
-		if label.Str != 0 {
-			if _, ok := labels[key]; !ok {
-				labels[key] = stringTable[label.Str]
-			}
+		if label.Str == 0 {
 			continue
 		}
+
+		key := stringTable[label.Key]
+		if _, ok := labels[key]; !ok {
+			labels[key] = []string{}
+			labelNames = append(labelNames, key)
+		}
+		labels[key] = append(labels[key], stringTable[label.Str])
+	}
+	sort.Strings(labelNames)
+
+	resLabels := map[string]string{}
+	for _, labelName := range labelNames {
+		resLabelName := labelName
+		if _, ok := takenLabelNames[resLabelName]; ok {
+			resLabelName = "exported_" + resLabelName
+		}
+		if _, ok := resLabels[resLabelName]; ok {
+			resLabelName = "exported_" + resLabelName
+		}
+		resLabels[resLabelName] = labels[labelName][0]
+	}
+
+	numLabels := map[string]int64{}
+	for _, label := range plabels {
+		key := stringTable[label.Key]
 		if label.Num != 0 {
 			if _, ok := numLabels[key]; !ok {
 				numLabels[key] = label.Num
@@ -110,7 +156,7 @@ func labelsFromSample(stringTable []string, plabels []*pprofpb.Label) (map[strin
 		}
 	}
 
-	return labels, numLabels
+	return resLabels, numLabels
 }
 
 type mappingNormalizationInfo struct {
@@ -188,6 +234,16 @@ func (n *Normalizer) NormalizeLocations(
 	}
 
 	for _, location := range locations {
+		if location.MappingId == 0 && len(location.Line) == 0 {
+			req.Locations = append(req.Locations, &pb.Location{
+				// Locations that have no lines and no mapping are never going
+				// to be possible to be symbolized, so might as well at least
+				// make them the same and therefore deduplicate them.
+				Address: UnsymolizableLocationAddress,
+			})
+			continue
+		}
+
 		addr := location.Address
 		mappingId := ""
 		if location.MappingId != 0 {
@@ -200,14 +256,14 @@ func (n *Normalizer) NormalizeLocations(
 			mappingId = mappingNormalizationInfo.id
 		}
 
-		lines := &pb.LocationLines{Entries: make([]*pb.Line, 0, len(location.Line))}
+		lines := make([]*pb.Line, 0, len(location.Line))
 		for _, line := range location.Line {
 			functionId := ""
 			if line.FunctionId != 0 {
 				functionIndex := line.FunctionId - 1
 				functionId = functions[functionIndex].Id
 			}
-			lines.Entries = append(lines.Entries, &pb.Line{
+			lines = append(lines, &pb.Line{
 				FunctionId: functionId,
 				Line:       line.Line,
 			})

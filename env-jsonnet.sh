@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # renovate: datasource=go depName=github.com/brancz/gojsontoyaml

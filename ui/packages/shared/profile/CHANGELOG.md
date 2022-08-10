@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.15...ui-v0.14.16) (2022-08-03)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.13](https://github.com/parca-dev/parca/compare/ui-v0.14.12...ui-v0.14.13) (2022-08-03)
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.12](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.12) (2022-08-02)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+## 0.14.1 (2022-07-25)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.6](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.6) (2022-07-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.5](https://github.com/parca-dev/parca/compare/ui-v0.14.3-alpha.0...ui-v0.14.5) (2022-07-26)
+
+**Note:** Version bump only for package @parca/profile
+
 ## [0.14.3-alpha.0](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.3-alpha.0) (2022-07-26)
 
 **Note:** Version bump only for package @parca/profile

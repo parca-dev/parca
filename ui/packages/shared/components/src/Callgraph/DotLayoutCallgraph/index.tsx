@@ -84,11 +84,11 @@ const Arrow = ({edge}) => {
   );
 };
 
-const DotLayoutCallgraph = ({graph, height, width}) => {
+const DotLayoutCallgraph = ({graph, sampleUnit, height, width}) => {
   const [graphData, setGraphData] = useState<any>(null);
   const [layout, setLayout] = useState<'dot' | 'twopi'>('dot');
   const [hoveredNode, setHoveredNode] = useState<{data: any} | null>(null);
-  const {unit, total, nodes: originalNodes} = graph;
+  const {total, nodes: originalNodes} = graph;
 
   useEffect(() => {
     const getDataWithPositions = async () => {
@@ -210,7 +210,7 @@ const DotLayoutCallgraph = ({graph, height, width}) => {
         <div className={`absolute top-0`}>
           <Tooltip
             hoveringNode={originalNodes.find(n => n.id === hoveredNode.data.id)}
-            unit={unit}
+            unit={sampleUnit}
             total={total}
             isFixed={false}
           />

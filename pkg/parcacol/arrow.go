@@ -19,6 +19,7 @@ import (
 
 	"github.com/apache/arrow/go/v8/arrow"
 	"github.com/apache/arrow/go/v8/arrow/array"
+	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -33,13 +34,30 @@ func (e ErrMissingColumn) Error() string {
 	return fmt.Sprintf("expected column %s, got %d columns", e.column, e.columns)
 }
 
-func ArrowRecordToStacktraceSamples(
-	ctx context.Context,
+type ArrowToProfileConverter struct {
+	tracer trace.Tracer
+	m      pb.MetastoreServiceClient
+}
+
+func NewArrowToProfileConverter(
+	tracer trace.Tracer,
 	m pb.MetastoreServiceClient,
+) *ArrowToProfileConverter {
+	return &ArrowToProfileConverter{
+		tracer: tracer,
+		m:      m,
+	}
+}
+
+func (c *ArrowToProfileConverter) Convert(
+	ctx context.Context,
 	ar arrow.Record,
 	valueColumnName string,
 	meta profile.Meta,
 ) (*profile.Profile, error) {
+	ctx, span := c.tracer.Start(ctx, "convert-arrow-record-to-profile")
+	defer span.End()
+
 	schema := ar.Schema()
 	indices := schema.FieldIndices("stacktrace")
 	if len(indices) != 1 {
@@ -59,7 +77,7 @@ func ArrowRecordToStacktraceSamples(
 		stacktraceIDs[i] = string(stacktraceColumn.Value(i))
 	}
 
-	stacktraceLocations, err := resolveStacktraces(ctx, m, stacktraceIDs)
+	stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
 	if err != nil {
 		return nil, fmt.Errorf("read stacktrace metadata: %w", err)
 	}
@@ -78,13 +96,13 @@ func ArrowRecordToStacktraceSamples(
 	}, nil
 }
 
-func SymbolizeNormalizedProfile(ctx context.Context, m pb.MetastoreServiceClient, p *profile.NormalizedProfile) (*profile.Profile, error) {
+func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (*profile.Profile, error) {
 	stacktraceIDs := make([]string, len(p.Samples))
 	for i, sample := range p.Samples {
 		stacktraceIDs[i] = sample.StacktraceID
 	}
 
-	stacktraceLocations, err := resolveStacktraces(ctx, m, stacktraceIDs)
+	stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
 	if err != nil {
 		return nil, fmt.Errorf("read stacktrace metadata: %w", err)
 	}
@@ -104,11 +122,14 @@ func SymbolizeNormalizedProfile(ctx context.Context, m pb.MetastoreServiceClient
 	}, nil
 }
 
-func resolveStacktraces(ctx context.Context, m pb.MetastoreServiceClient, stacktraceIDs []string) (
+func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stacktraceIDs []string) (
 	[][]*profile.Location,
 	error,
 ) {
-	sres, err := m.Stacktraces(ctx, &pb.StacktracesRequest{
+	ctx, span := c.tracer.Start(ctx, "resolve-stacktraces")
+	defer span.End()
+
+	sres, err := c.m.Stacktraces(ctx, &pb.StacktracesRequest{
 		StacktraceIds: stacktraceIDs,
 	})
 	if err != nil {
@@ -131,12 +152,12 @@ func resolveStacktraces(ctx context.Context, m pb.MetastoreServiceClient, stackt
 		}
 	}
 
-	lres, err := m.Locations(ctx, &pb.LocationsRequest{LocationIds: locationIDs})
+	lres, err := c.m.Locations(ctx, &pb.LocationsRequest{LocationIds: locationIDs})
 	if err != nil {
 		return nil, err
 	}
 
-	locations, err := getLocationsFromSerializedLocations(ctx, m, locationIDs, lres.Locations)
+	locations, err := c.getLocationsFromSerializedLocations(ctx, locationIDs, lres.Locations)
 	if err != nil {
 		return nil, err
 	}
@@ -152,9 +173,8 @@ func resolveStacktraces(ctx context.Context, m pb.MetastoreServiceClient, stackt
 	return stacktraceLocations, nil
 }
 
-func getLocationsFromSerializedLocations(
+func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 	ctx context.Context,
-	s pb.MetastoreServiceClient,
 	locationIds []string,
 	locations []*pb.Location,
 ) (
@@ -176,7 +196,7 @@ func getLocationsFromSerializedLocations(
 
 	var mappings []*pb.Mapping
 	if len(mappingIDs) > 0 {
-		mres, err := s.Mappings(ctx, &pb.MappingsRequest{
+		mres, err := c.m.Mappings(ctx, &pb.MappingsRequest{
 			MappingIds: mappingIDs,
 		})
 		if err != nil {
@@ -185,20 +205,13 @@ func getLocationsFromSerializedLocations(
 		mappings = mres.Mappings
 	}
 
-	lres, err := s.LocationLines(ctx, &pb.LocationLinesRequest{
-		LocationIds: locationIds,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get lines by location IDs: %w", err)
-	}
-
 	functionIndex := map[string]int{}
 	functionIDs := []string{}
-	for _, lines := range lres.LocationLines {
-		if lines == nil {
+	for _, location := range locations {
+		if location.Lines == nil {
 			continue
 		}
-		for _, line := range lines.Entries {
+		for _, line := range location.Lines {
 			if _, found := functionIndex[line.FunctionId]; !found {
 				functionIDs = append(functionIDs, line.FunctionId)
 				functionIndex[line.FunctionId] = len(functionIDs) - 1
@@ -206,7 +219,7 @@ func getLocationsFromSerializedLocations(
 		}
 	}
 
-	fres, err := s.Functions(ctx, &pb.FunctionsRequest{
+	fres, err := c.m.Functions(ctx, &pb.FunctionsRequest{
 		FunctionIds: functionIDs,
 	})
 	if err != nil {
@@ -214,15 +227,15 @@ func getLocationsFromSerializedLocations(
 	}
 
 	res := make([]*profile.Location, 0, len(locations))
-	for i, location := range locations {
+	for _, location := range locations {
 		var mapping *pb.Mapping
 		if location.MappingId != "" {
 			mapping = mappings[mappingIndex[location.MappingId]]
 		}
 
 		symbolizedLines := []profile.LocationLine{}
-		if lres.LocationLines[i] != nil {
-			lines := lres.LocationLines[i].Entries
+		if location.Lines != nil {
+			lines := location.Lines
 			symbolizedLines = make([]profile.LocationLine, 0, len(lines))
 			for _, line := range lines {
 				symbolizedLines = append(symbolizedLines, profile.LocationLine{

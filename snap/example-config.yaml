@@ -1,0 +1,25 @@
+object_storage:
+  bucket:
+    type: "FILESYSTEM"
+    config:
+      # Do not change this value; the snap is strictly confined and doesn't have
+      # access to arbitrary locations on the filesystem.
+      directory: "/var/snap/parca/current/profiles"
+
+scrape_configs:
+  - job_name: "default"
+    scrape_interval: "3s"
+    static_configs:
+      - targets: ["127.0.0.1:7070"]
+
+    # Custom scrape endpoints can be added like just like the example below.
+    # The profile name will be `fgprof`, and it will be scraped from the given
+    # path and since it is a delta profile, a query parameter
+    # ?seconds=<scrape-interval> will be added.
+    #
+    # profiling_config:
+    #   pprof_config:
+    #     fgprof:
+    #       enabled: true
+    #       path: /debug/pprof/fgprof
+    #       delta: true

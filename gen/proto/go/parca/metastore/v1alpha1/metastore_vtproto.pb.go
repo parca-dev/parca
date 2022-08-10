@@ -56,8 +56,6 @@ type MetastoreServiceClient interface {
 	CreateLocationLines(ctx context.Context, in *CreateLocationLinesRequest, opts ...grpc.CallOption) (*CreateLocationLinesResponse, error)
 	// Locations retrieves locations.
 	Locations(ctx context.Context, in *LocationsRequest, opts ...grpc.CallOption) (*LocationsResponse, error)
-	// LocationLines retrieves lines of locations.
-	LocationLines(ctx context.Context, in *LocationLinesRequest, opts ...grpc.CallOption) (*LocationLinesResponse, error)
 	// Functions retrieves functions.
 	Functions(ctx context.Context, in *FunctionsRequest, opts ...grpc.CallOption) (*FunctionsResponse, error)
 	// Mappings retrieves mappings.
@@ -137,15 +135,6 @@ func (c *metastoreServiceClient) Locations(ctx context.Context, in *LocationsReq
 	return out, nil
 }
 
-func (c *metastoreServiceClient) LocationLines(ctx context.Context, in *LocationLinesRequest, opts ...grpc.CallOption) (*LocationLinesResponse, error) {
-	out := new(LocationLinesResponse)
-	err := c.cc.Invoke(ctx, "/parca.metastore.v1alpha1.MetastoreService/LocationLines", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *metastoreServiceClient) Functions(ctx context.Context, in *FunctionsRequest, opts ...grpc.CallOption) (*FunctionsResponse, error) {
 	out := new(FunctionsResponse)
 	err := c.cc.Invoke(ctx, "/parca.metastore.v1alpha1.MetastoreService/Functions", in, out, opts...)
@@ -202,8 +191,6 @@ type MetastoreServiceServer interface {
 	CreateLocationLines(context.Context, *CreateLocationLinesRequest) (*CreateLocationLinesResponse, error)
 	// Locations retrieves locations.
 	Locations(context.Context, *LocationsRequest) (*LocationsResponse, error)
-	// LocationLines retrieves lines of locations.
-	LocationLines(context.Context, *LocationLinesRequest) (*LocationLinesResponse, error)
 	// Functions retrieves functions.
 	Functions(context.Context, *FunctionsRequest) (*FunctionsResponse, error)
 	// Mappings retrieves mappings.
@@ -237,9 +224,6 @@ func (UnimplementedMetastoreServiceServer) CreateLocationLines(context.Context, 
 }
 func (UnimplementedMetastoreServiceServer) Locations(context.Context, *LocationsRequest) (*LocationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Locations not implemented")
-}
-func (UnimplementedMetastoreServiceServer) LocationLines(context.Context, *LocationLinesRequest) (*LocationLinesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LocationLines not implemented")
 }
 func (UnimplementedMetastoreServiceServer) Functions(context.Context, *FunctionsRequest) (*FunctionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Functions not implemented")
@@ -389,24 +373,6 @@ func _MetastoreService_Locations_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MetastoreService_LocationLines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LocationLinesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MetastoreServiceServer).LocationLines(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/parca.metastore.v1alpha1.MetastoreService/LocationLines",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MetastoreServiceServer).LocationLines(ctx, req.(*LocationLinesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _MetastoreService_Functions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FunctionsRequest)
 	if err := dec(in); err != nil {
@@ -495,10 +461,6 @@ var MetastoreService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Locations",
 			Handler:    _MetastoreService_Locations_Handler,
-		},
-		{
-			MethodName: "LocationLines",
-			Handler:    _MetastoreService_LocationLines_Handler,
 		},
 		{
 			MethodName: "Functions",
@@ -907,6 +869,18 @@ func (m *UnsymbolizedLocationsRequest) MarshalToSizedBufferVT(dAtA []byte) (int,
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.MinKey) > 0 {
+		i -= len(m.MinKey)
+		copy(dAtA[i:], m.MinKey)
+		i = encodeVarint(dAtA, i, uint64(len(m.MinKey)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Limit != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Limit))
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -939,6 +913,13 @@ func (m *UnsymbolizedLocationsResponse) MarshalToSizedBufferVT(dAtA []byte) (int
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.MaxKey) > 0 {
+		i -= len(m.MaxKey)
+		copy(dAtA[i:], m.MaxKey)
+		i = encodeVarint(dAtA, i, uint64(len(m.MaxKey)))
+		i--
+		dAtA[i] = 0x12
 	}
 	if len(m.Locations) > 0 {
 		for iNdEx := len(m.Locations) - 1; iNdEx >= 0; iNdEx-- {
@@ -1242,51 +1223,6 @@ func (m *LocationLinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 			i -= len(m.LocationIds[iNdEx])
 			copy(dAtA[i:], m.LocationIds[iNdEx])
 			i = encodeVarint(dAtA, i, uint64(len(m.LocationIds[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *LocationLinesResponse) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *LocationLinesResponse) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *LocationLinesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.LocationLines) > 0 {
-		for iNdEx := len(m.LocationLines) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.LocationLines[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -1791,15 +1727,17 @@ func (m *Location) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Lines != nil {
-		size, err := m.Lines.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+	if len(m.Lines) > 0 {
+		for iNdEx := len(m.Lines) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Lines[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x32
 		}
-		i -= size
-		i = encodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x32
 	}
 	if m.IsFolded {
 		i--
@@ -1829,51 +1767,6 @@ func (m *Location) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i = encodeVarint(dAtA, i, uint64(len(m.Id)))
 		i--
 		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *LocationLines) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *LocationLines) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *LocationLines) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.Entries) > 0 {
-		for iNdEx := len(m.Entries) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Entries[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0xa
-		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -2259,6 +2152,13 @@ func (m *UnsymbolizedLocationsRequest) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
+	if m.Limit != 0 {
+		n += 1 + sov(uint64(m.Limit))
+	}
+	l = len(m.MinKey)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
 	}
@@ -2276,6 +2176,10 @@ func (m *UnsymbolizedLocationsResponse) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
+	}
+	l = len(m.MaxKey)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
 	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
@@ -2394,24 +2298,6 @@ func (m *LocationLinesRequest) SizeVT() (n int) {
 	if len(m.LocationIds) > 0 {
 		for _, s := range m.LocationIds {
 			l = len(s)
-			n += 1 + l + sov(uint64(l))
-		}
-	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
-	return n
-}
-
-func (m *LocationLinesResponse) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.LocationLines) > 0 {
-		for _, e := range m.LocationLines {
-			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
 	}
@@ -2645,24 +2531,8 @@ func (m *Location) SizeVT() (n int) {
 	if m.IsFolded {
 		n += 2
 	}
-	if m.Lines != nil {
-		l = m.Lines.SizeVT()
-		n += 1 + l + sov(uint64(l))
-	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
-	return n
-}
-
-func (m *LocationLines) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Entries) > 0 {
-		for _, e := range m.Entries {
+	if len(m.Lines) > 0 {
+		for _, e := range m.Lines {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
@@ -3483,6 +3353,57 @@ func (m *UnsymbolizedLocationsRequest) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: UnsymbolizedLocationsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Limit", wireType)
+			}
+			m.Limit = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Limit |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MinKey = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -3567,6 +3488,38 @@ func (m *UnsymbolizedLocationsResponse) UnmarshalVT(dAtA []byte) error {
 			if err := m.Locations[len(m.Locations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MaxKey = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4122,91 +4075,6 @@ func (m *LocationLinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.LocationIds = append(m.LocationIds, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *LocationLinesResponse) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: LocationLinesResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: LocationLinesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LocationLines", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.LocationLines = append(m.LocationLines, &LocationLines{})
-			if err := m.LocationLines[len(m.LocationLines)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -5605,95 +5473,8 @@ func (m *Location) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Lines == nil {
-				m.Lines = &LocationLines{}
-			}
-			if err := m.Lines.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *LocationLines) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: LocationLines: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: LocationLines: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Entries", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Entries = append(m.Entries, &Line{})
-			if err := m.Entries[len(m.Entries)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.Lines = append(m.Lines, &Line{})
+			if err := m.Lines[len(m.Lines)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

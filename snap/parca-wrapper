@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+# Copyright 2022 The Parca Authors
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -euo pipefail
+
+# Run the configure hook which sets defaults for any config options
+"${SNAP}"/snap/hooks/configure
+
+# Grab the config options
+storage_active_memory="$(snapctl get storage-active-memory)"
+log_level="$(snapctl get log-level)"
+storage_persist="$(snapctl get storage-persist)"
+port="$(snapctl get port)"
+
+# Start building an array of command line options
+opts=(
+    "--config-path=${SNAP_DATA}/parca.yaml"
+    "--log-level=${log_level}"
+    "--port=:${port}"
+)
+
+# Switch out command line options depending on whether the user has
+# specified storage-persist=true
+if [[ "${storage_persist}" == "true" ]]; then
+    opts+=(
+        "--storage-in-memory=false"
+        "--storage-persist"
+        "--storage-path=${SNAP_DATA}/profiles"
+    )
+else
+    opts+=(
+        "--storage-in-memory=true"
+        "--storage-active-memory=${storage_active_memory}"
+    )
+fi
+
+# Run parca with the gathered arguments
+exec "${SNAP}"/parca "${opts[@]}"

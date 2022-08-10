@@ -8,12 +8,18 @@ import {CallgraphData} from './types';
 import {jsonGraphWithMetaData} from './DotLayoutCallgraph/mockData';
 
 interface Props {
-  data: CallgraphData;
+  graph: CallgraphData;
+  sampleUnit: string;
   width?: number;
   height?: number;
 }
 
-const Callgraph = ({data, width: customWidth, height: customHeight}: Props): JSX.Element => {
+const Callgraph = ({
+  graph,
+  sampleUnit,
+  width: customWidth,
+  height: customHeight,
+}: Props): JSX.Element => {
   const {ref: containerRef, dimensions: originalDimensions} = useContainerDimensions();
   const fullWidth = customWidth ?? originalDimensions?.width;
   const fullHeight = customHeight ?? 600;
@@ -22,7 +28,12 @@ const Callgraph = ({data, width: customWidth, height: customHeight}: Props): JSX
     <div ref={containerRef}>
       {/* <D3DagCallgraph graph={{graph: {data: mockData}}} width={fullWidth} height={fullHeight} /> */}
       {/* <CytoscapeCallgraph data={mockData} width={fullWidth} height={fullHeight} /> */}
-      <DotLayoutCallgraph graph={jsonGraphWithMetaData} width={fullWidth} height={fullHeight} />
+      <DotLayoutCallgraph
+        graph={graph}
+        sampleUnit={sampleUnit}
+        width={fullWidth}
+        height={fullHeight}
+      />
     </div>
   );
 };

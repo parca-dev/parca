@@ -58,8 +58,9 @@ type ColumnQueryAPI struct {
 	tracer      trace.Tracer
 	engine      Engine
 	tableName   string
-	metastore   metastorepb.MetastoreServiceClient
 	shareClient sharepb.ShareClient
+
+	arrowToProfileConverter *parcacol.ArrowToProfileConverter
 }
 
 func NewColumnQueryAPI(
@@ -75,8 +76,11 @@ func NewColumnQueryAPI(
 		tracer:      tracer,
 		engine:      engine,
 		tableName:   tableName,
-		metastore:   metastore,
 		shareClient: shareClient,
+		arrowToProfileConverter: parcacol.NewArrowToProfileConverter(
+			tracer,
+			metastore,
+		),
 	}
 }
 
@@ -264,8 +268,8 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 
 	exprs := append(
 		selectorExprs,
-		logicalplan.Col("timestamp").GT(logicalplan.Literal(start)),
-		logicalplan.Col("timestamp").LT(logicalplan.Literal(end)),
+		logicalplan.Col("timestamp").Gt(logicalplan.Literal(start)),
+		logicalplan.Col("timestamp").Lt(logicalplan.Literal(end)),
 	)
 
 	filterExpr := logicalplan.And(exprs...)
@@ -390,7 +394,7 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 			logicalplan.Col(parcacol.ColumnSampleUnit),
 			logicalplan.Col(parcacol.ColumnPeriodType),
 			logicalplan.Col(parcacol.ColumnPeriodUnit),
-			logicalplan.Col(parcacol.ColumnDuration).GT(logicalplan.Literal(0)),
+			logicalplan.Col(parcacol.ColumnDuration).Gt(logicalplan.Literal(0)),
 		).
 		Execute(ctx, func(ar arrow.Record) error {
 			if ar.NumCols() != 6 {
@@ -511,6 +515,10 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 }
 
 func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+	ctx, span := q.tracer.Start(ctx, "renderReport")
+	span.SetAttributes(attribute.String("reportType", typ.String()))
+	defer span.End()
+
 	switch typ {
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
 		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, p)
@@ -545,23 +553,32 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 		return &pb.QueryResponse{
 			Report: &pb.QueryResponse_Top{Top: top},
 		}, nil
+	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
+		callgraph, err := GenerateCallgraph(ctx, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())
+		}
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Callgraph{Callgraph: callgraph},
+		}, nil
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")
 	}
 }
 
 func (q *ColumnQueryAPI) singleRequest(ctx context.Context, s *pb.SingleProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
-	p, err := q.selectSingle(ctx, s)
+	r, valueColumn, meta, err := q.selectSingle(ctx, s)
 	if err != nil {
 		return nil, err
 	}
+	defer r.Release()
 
-	return q.renderReport(ctx, p, reportType)
-}
-
-func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (*profile.Profile, error) {
-	t := s.Time.AsTime()
-	p, err := q.findSingle(ctx, s.Query, t)
+	p, err := q.arrowRecordToProfile(
+		ctx,
+		r,
+		valueColumn,
+		meta,
+	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
 		var colErr parcacol.ErrMissingColumn
@@ -575,10 +592,15 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) 
 		return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
 	}
 
-	return p, nil
+	return q.renderReport(ctx, p, reportType)
 }
 
-func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Time) (*profile.Profile, error) {
+func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (arrow.Record, string, profile.Meta, error) {
+	t := s.Time.AsTime()
+	return q.findSingle(ctx, s.Query, t)
+}
+
+func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Time) (arrow.Record, string, profile.Meta, error) {
 	requestedTime := timestamp.FromTime(t)
 
 	ctx, span := q.tracer.Start(ctx, "findSingle")
@@ -588,7 +610,7 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 
 	meta, selectorExprs, err := queryToFilterExprs(query)
 	if err != nil {
-		return nil, err
+		return nil, "", profile.Meta{}, err
 	}
 
 	filterExpr := logicalplan.And(
@@ -613,14 +635,10 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 			return nil
 		})
 	if err != nil {
-		return nil, fmt.Errorf("execute query: %w", err)
+		return nil, "", profile.Meta{}, fmt.Errorf("execute query: %w", err)
 	}
-	defer ar.Release()
 
-	return parcacol.ArrowRecordToStacktraceSamples(
-		ctx,
-		q.metastore,
-		ar,
+	return ar,
 		"sum(value)",
 		profile.Meta{
 			Name:       meta.Name,
@@ -628,14 +646,25 @@ func (q *ColumnQueryAPI) findSingle(ctx context.Context, query string, t time.Ti
 			PeriodType: meta.PeriodType,
 			Timestamp:  requestedTime,
 		},
-	)
+		nil
 }
 
 func (q *ColumnQueryAPI) mergeRequest(ctx context.Context, m *pb.MergeProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
 	ctx, span := q.tracer.Start(ctx, "mergeRequest")
 	defer span.End()
 
-	p, err := q.selectMerge(ctx, m)
+	r, valueColumn, meta, err := q.selectMerge(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Release()
+
+	p, err := q.arrowRecordToProfile(
+		ctx,
+		r,
+		valueColumn,
+		meta,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -643,13 +672,13 @@ func (q *ColumnQueryAPI) mergeRequest(ctx context.Context, m *pb.MergeProfile, r
 	return q.renderReport(ctx, p, reportType)
 }
 
-func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*profile.Profile, error) {
+func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (arrow.Record, string, profile.Meta, error) {
 	ctx, span := q.tracer.Start(ctx, "selectMerge")
 	defer span.End()
 
 	meta, selectorExprs, err := queryToFilterExprs(m.Query)
 	if err != nil {
-		return nil, err
+		return nil, "", profile.Meta{}, err
 	}
 
 	start := timestamp.FromTime(m.Start.AsTime())
@@ -658,8 +687,8 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col("timestamp").GT(logicalplan.Literal(start)),
-			logicalplan.Col("timestamp").LT(logicalplan.Literal(end)),
+			logicalplan.Col("timestamp").Gt(logicalplan.Literal(start)),
+			logicalplan.Col("timestamp").Lt(logicalplan.Literal(end)),
 		)...,
 	)
 
@@ -676,14 +705,10 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 			return nil
 		})
 	if err != nil {
-		return nil, err
+		return nil, "", profile.Meta{}, err
 	}
-	defer ar.Release()
 
-	return parcacol.ArrowRecordToStacktraceSamples(
-		ctx,
-		q.metastore,
-		ar,
+	return ar,
 		"sum(value)",
 		profile.Meta{
 			Name:       meta.Name,
@@ -691,7 +716,7 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 			PeriodType: meta.PeriodType,
 			Timestamp:  start,
 		},
-	)
+		nil
 }
 
 func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, reportType pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -739,22 +764,59 @@ func (q *ColumnQueryAPI) diffRequest(ctx context.Context, d *pb.DiffProfile, rep
 }
 
 func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (*profile.Profile, error) {
+	var p *profile.Profile
 	switch s.Mode {
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
-		p, err := q.selectSingle(ctx, s.GetSingle())
+		r, valueColumn, meta, err := q.selectSingle(ctx, s.GetSingle())
 		if err != nil {
 			return nil, fmt.Errorf("selecting single profile: %w", err)
 		}
-		return p, err
+
+		p, err = q.arrowRecordToProfile(
+			ctx,
+			r,
+			valueColumn,
+			meta,
+		)
+		if err != nil {
+			return nil, err
+		}
 	case pb.ProfileDiffSelection_MODE_MERGE:
-		p, err := q.selectMerge(ctx, s.GetMerge())
+		r, valueColumn, meta, err := q.selectMerge(ctx, s.GetMerge())
 		if err != nil {
 			return nil, fmt.Errorf("selecting merged profile: %w", err)
 		}
-		return p, err
+
+		p, err = q.arrowRecordToProfile(
+			ctx,
+			r,
+			valueColumn,
+			meta,
+		)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}
+
+	return p, nil
+}
+
+func (q *ColumnQueryAPI) arrowRecordToProfile(
+	ctx context.Context,
+	r arrow.Record,
+	valueColumn string,
+	meta profile.Meta,
+) (*profile.Profile, error) {
+	ctx, span := q.tracer.Start(ctx, "arrowRecordToProfile")
+	defer span.End()
+	return q.arrowToProfileConverter.Convert(
+		ctx,
+		r,
+		valueColumn,
+		meta,
+	)
 }
 
 func (q *ColumnQueryAPI) ShareProfile(ctx context.Context, req *pb.ShareProfileRequest) (*pb.ShareProfileResponse, error) {
