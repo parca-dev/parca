@@ -17,3 +17,8 @@
 /pkg/debuginfo     @parca-dev/agent-maintainers
 /pkg/symbol        @parca-dev/agent-maintainers
 /pkg/symbolizer    @parca-dev/agent-maintainers
+
+package.json @parca-dev/maintainers @app/renovate-approve
+go.mod @parca-dev/maintainers @app/renovate-approve
+Dockerfile* @parca-dev/maintainers @app/renovate-approve
+.github/workflows @parca-dev/maintainers @app/renovate-approve
