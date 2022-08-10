@@ -24,6 +24,14 @@ repos:
           - --comment-style=#
           - --fuzzy-match-generates-todo
         types: [shell]
+      - id: insert-license
+        name: Insert license in comments (TypeScript)
+        args:
+          - --license-filepath=scripts/LICENSE.txt
+          - --comment-style=//
+          - --fuzzy-match-generates-todo
+        files: \.tsx?$
+        exclude: ^ui/packages/shared/client/
   - repo: https://github.com/bufbuild/buf
     rev: v1.7.0
     hooks:
