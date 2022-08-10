@@ -16,6 +16,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/go-kit/log"
@@ -36,23 +37,27 @@ func TestGenerateCallgraph(t *testing.T) {
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
+	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	l := metastoretest.NewTestMetastore(
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		tracer,
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
+	fmt.Println(len(symbolizedProfile.Samples))
+
 	res, err := GenerateCallgraph(ctx, symbolizedProfile)
+	fmt.Println("=================== Test ==========================");
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -70,62 +75,80 @@ func TestGenerateCallgraph(t *testing.T) {
 
 	*/
 
-	visited := make(map[string]bool, 0)
-	requiredNodes := make([]*pb.CallgraphNode, 8)
+	visited := make(map[string]*pb.CallgraphNode, 0)
+	requiredNodes := make([]*pb.CallgraphNode, 6)
+	fmt.Println(len(res.GetNodes()))
+	fmt.Println(len(res.GetEdges()))
 	for _, node := range res.GetNodes() {
-
+		name := node.Meta.Function.Name;
+		fmt.Println("name", name)
+		fmt.Println("Id", node.Meta.Location.Id)
 		// Validate duplicate nodes
-		if visited[node.GetId()] == true {
+		if visited[node.Meta.Function.Name] != nil {
 			fmt.Printf("Duplicate: %s\n", node.GetId())
-			require.Fail(t, "Duplicate node found:"+node.GetName())
+			visitedNode := visited[node.Meta.Function.Name]
+			fmt.Println("Func Name", node.Meta.Function.Name, visitedNode.Meta.Function.Name)
+			fmt.Println("Func ID", node.Meta.Function.Id, visitedNode.Meta.Function.Id)
+			fmt.Println("Line", node.Meta.Line.Line, visitedNode.Meta.Line.Line)
+			require.Fail(t, "Duplicate node found:"+name, node.Id)
 		} else {
-			visited[node.GetId()] = true
+			visited[node.Meta.Function.Name] = node
 		}
+
+		
+
+		
 
 		// find the required nodes
-		if node.GetName() == "runtime/pprof.profileWriter" {
+		if name == "runtime/pprof.profileWriter" {
 			requiredNodes[0] = node
 		}
-		if node.GetName() == "runtime/pprof.(*profileBuilder).build" {
+		if name == "runtime/pprof.(*profileBuilder).build" {
 			requiredNodes[1] = node
 		}
-		if node.GetName() == "runtime/pprof.(*profileBuilder).appendLocsForStack" {
+		if name == "runtime/pprof.(*profileBuilder).appendLocsForStack" {
 			requiredNodes[2] = node
 		}
-		if node.GetName() == "runtime/pprof.(*profileBuilder).emitLocation" {
+		if name == "runtime/pprof.(*profileBuilder).emitLocation" {
 			requiredNodes[3] = node
 		}
-		if node.GetName() == "runtime/pprof.(*protobuf).int64Opt" {
+		if name == "runtime/pprof.(*protobuf).uint64" {
 			requiredNodes[4] = node
 		}
-		if node.GetName() == "runtime/pprof.(*protobuf).int64" {
+		if name == "runtime/pprof.(*protobuf).varint" {
 			requiredNodes[5] = node
-		}
-		if node.GetName() == "runtime/pprof.(*protobuf).uint64" {
-			requiredNodes[6] = node
-		}
-		if node.GetName() == "runtime/pprof.(*protobuf).varint" {
-			requiredNodes[7] = node
 		}
 	}
 
 	// Validate all the required nodes are there
 	for i := 0; i < len(requiredNodes); i++ {
-		require.NotNil(t, requiredNodes[i])
+		fmt.Println("Required node", i)
+		require.NotNil(t, requiredNodes[i], "Required node not found, index: "+ strconv.Itoa(i))
+		fmt.Println("name:", requiredNodes[i].Meta.Function.Name)
 	}
 
 	edges := res.GetEdges()
 
 	// Validate all the required edges are there
-	for i := 0; i < len(requiredNodes)-1; i++ {
-		found := false
+	foundEdges := 0
 
-		for _, edge := range edges {
-			if edge.GetSource() == requiredNodes[i].GetId() && edge.GetTarget() == requiredNodes[i+1].GetId() {
-				found = true
-				break
-			}
+	for _, edge := range edges {
+		if edge.GetSource() == requiredNodes[0].GetId() && edge.GetTarget() == requiredNodes[1].GetId() {
+			foundEdges++
 		}
-		require.True(t, found)
+		if edge.GetSource() == requiredNodes[1].GetId() && edge.GetTarget() == requiredNodes[2].GetId() {
+			foundEdges++
+		}
+		if edge.GetSource() == requiredNodes[2].GetId() && edge.GetTarget() == requiredNodes[3].GetId() {
+			foundEdges++
+		}
+		if edge.GetSource() == requiredNodes[3].GetId() && edge.GetTarget() == requiredNodes[4].GetId() {
+			foundEdges++
+		}
+		if edge.GetSource() == requiredNodes[4].GetId() && edge.GetTarget() == requiredNodes[5].GetId() {
+			foundEdges++
+		}
 	}
+
+	require.Equal(t, 6, foundEdges)
 }

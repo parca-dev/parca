@@ -706,10 +706,10 @@
           "type": "string",
           "title": "target represents the id of the target node"
         },
-        "visits": {
+        "cumulative": {
           "type": "string",
           "format": "int64",
-          "title": "visits is the number of visits to the edge"
+          "title": "cumulative is the cumulative value of the edge"
         }
       },
       "title": "CallgraphEdge represents an edge in the graph"
@@ -721,12 +721,34 @@
           "type": "string",
           "title": "id is the unique id of the node"
         },
-        "name": {
-          "type": "string",
-          "title": "name is the name of the node"
+        "meta": {
+          "$ref": "#/definitions/v1alpha1CallgraphNodeMeta",
+          "title": "meta is the metadata about the node"
         }
       },
       "title": "CallgraphNode represents a node in the graph"
+    },
+    "v1alpha1CallgraphNodeMeta": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/metastorev1alpha1Location",
+          "title": "location is the location for the code"
+        },
+        "mapping": {
+          "$ref": "#/definitions/metastorev1alpha1Mapping",
+          "title": "mapping is the mapping into code"
+        },
+        "function": {
+          "$ref": "#/definitions/metastorev1alpha1Function",
+          "title": "function is the function information"
+        },
+        "line": {
+          "$ref": "#/definitions/metastorev1alpha1Line",
+          "title": "line is the line location"
+        }
+      },
+      "title": "TopNodeMeta is the metadata for a given node"
     },
     "v1alpha1DiffProfile": {
       "type": "object",

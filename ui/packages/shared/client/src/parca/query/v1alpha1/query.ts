@@ -621,11 +621,42 @@ export interface CallgraphNode {
      */
     id: string;
     /**
-     * name is the name of the node
+     * meta is the metadata about the node
      *
-     * @generated from protobuf field: string name = 2;
+     * @generated from protobuf field: parca.query.v1alpha1.CallgraphNodeMeta meta = 2;
      */
-    name: string;
+    meta?: CallgraphNodeMeta;
+}
+/**
+ * TopNodeMeta is the metadata for a given node
+ *
+ * @generated from protobuf message parca.query.v1alpha1.CallgraphNodeMeta
+ */
+export interface CallgraphNodeMeta {
+    /**
+     * location is the location for the code
+     *
+     * @generated from protobuf field: parca.metastore.v1alpha1.Location location = 1;
+     */
+    location?: Location;
+    /**
+     * mapping is the mapping into code
+     *
+     * @generated from protobuf field: parca.metastore.v1alpha1.Mapping mapping = 2;
+     */
+    mapping?: Mapping;
+    /**
+     * function is the function information
+     *
+     * @generated from protobuf field: parca.metastore.v1alpha1.Function function = 3;
+     */
+    function?: Function;
+    /**
+     * line is the line location
+     *
+     * @generated from protobuf field: parca.metastore.v1alpha1.Line line = 4;
+     */
+    line?: Line;
 }
 /**
  * CallgraphEdge represents an edge in the graph
@@ -652,11 +683,11 @@ export interface CallgraphEdge {
      */
     target: string;
     /**
-     * visits is the number of visits to the edge
+     * cumulative is the cumulative value of the edge
      *
-     * @generated from protobuf field: int64 visits = 4;
+     * @generated from protobuf field: int64 cumulative = 4;
      */
-    visits: string;
+    cumulative: string;
 }
 /**
  * Callgraph is the callgraph report type
@@ -2085,11 +2116,11 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
     constructor() {
         super("parca.query.v1alpha1.CallgraphNode", [
             { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "meta", kind: "message", T: () => CallgraphNodeMeta }
         ]);
     }
     create(value?: PartialMessage<CallgraphNode>): CallgraphNode {
-        const message = { id: "", name: "" };
+        const message = { id: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<CallgraphNode>(this, message, value);
@@ -2103,8 +2134,8 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
                 case /* string id */ 1:
                     message.id = reader.string();
                     break;
-                case /* string name */ 2:
-                    message.name = reader.string();
+                case /* parca.query.v1alpha1.CallgraphNodeMeta meta */ 2:
+                    message.meta = CallgraphNodeMeta.internalBinaryRead(reader, reader.uint32(), options, message.meta);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2121,9 +2152,9 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
         /* string id = 1; */
         if (message.id !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.id);
-        /* string name = 2; */
-        if (message.name !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.name);
+        /* parca.query.v1alpha1.CallgraphNodeMeta meta = 2; */
+        if (message.meta)
+            CallgraphNodeMeta.internalBinaryWrite(message.meta, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2135,17 +2166,85 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
  */
 export const CallgraphNode = new CallgraphNode$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class CallgraphNodeMeta$Type extends MessageType<CallgraphNodeMeta> {
+    constructor() {
+        super("parca.query.v1alpha1.CallgraphNodeMeta", [
+            { no: 1, name: "location", kind: "message", T: () => Location },
+            { no: 2, name: "mapping", kind: "message", T: () => Mapping },
+            { no: 3, name: "function", kind: "message", T: () => Function },
+            { no: 4, name: "line", kind: "message", T: () => Line }
+        ]);
+    }
+    create(value?: PartialMessage<CallgraphNodeMeta>): CallgraphNodeMeta {
+        const message = {};
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<CallgraphNodeMeta>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CallgraphNodeMeta): CallgraphNodeMeta {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* parca.metastore.v1alpha1.Location location */ 1:
+                    message.location = Location.internalBinaryRead(reader, reader.uint32(), options, message.location);
+                    break;
+                case /* parca.metastore.v1alpha1.Mapping mapping */ 2:
+                    message.mapping = Mapping.internalBinaryRead(reader, reader.uint32(), options, message.mapping);
+                    break;
+                case /* parca.metastore.v1alpha1.Function function */ 3:
+                    message.function = Function.internalBinaryRead(reader, reader.uint32(), options, message.function);
+                    break;
+                case /* parca.metastore.v1alpha1.Line line */ 4:
+                    message.line = Line.internalBinaryRead(reader, reader.uint32(), options, message.line);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CallgraphNodeMeta, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* parca.metastore.v1alpha1.Location location = 1; */
+        if (message.location)
+            Location.internalBinaryWrite(message.location, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* parca.metastore.v1alpha1.Mapping mapping = 2; */
+        if (message.mapping)
+            Mapping.internalBinaryWrite(message.mapping, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* parca.metastore.v1alpha1.Function function = 3; */
+        if (message.function)
+            Function.internalBinaryWrite(message.function, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* parca.metastore.v1alpha1.Line line = 4; */
+        if (message.line)
+            Line.internalBinaryWrite(message.line, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.CallgraphNodeMeta
+ */
+export const CallgraphNodeMeta = new CallgraphNodeMeta$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class CallgraphEdge$Type extends MessageType<CallgraphEdge> {
     constructor() {
         super("parca.query.v1alpha1.CallgraphEdge", [
             { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "source", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "target", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "visits", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
+            { no: 4, name: "cumulative", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<CallgraphEdge>): CallgraphEdge {
-        const message = { id: "", source: "", target: "", visits: "0" };
+        const message = { id: "", source: "", target: "", cumulative: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<CallgraphEdge>(this, message, value);
@@ -2165,8 +2264,8 @@ class CallgraphEdge$Type extends MessageType<CallgraphEdge> {
                 case /* string target */ 3:
                     message.target = reader.string();
                     break;
-                case /* int64 visits */ 4:
-                    message.visits = reader.int64().toString();
+                case /* int64 cumulative */ 4:
+                    message.cumulative = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2189,9 +2288,9 @@ class CallgraphEdge$Type extends MessageType<CallgraphEdge> {
         /* string target = 3; */
         if (message.target !== "")
             writer.tag(3, WireType.LengthDelimited).string(message.target);
-        /* int64 visits = 4; */
-        if (message.visits !== "0")
-            writer.tag(4, WireType.Varint).int64(message.visits);
+        /* int64 cumulative = 4; */
+        if (message.cumulative !== "0")
+            writer.tag(4, WireType.Varint).int64(message.cumulative);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
