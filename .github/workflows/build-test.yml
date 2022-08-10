@@ -22,7 +22,7 @@ env:
 
 jobs:
   build-and-test-multi-arch:
-    name: Test on ${{ matrix.arch }}
+    name: Test on ${{ matrix.arch }} (version from ${{ matrix.version-file }} file)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     # Run steps on a matrix of 2 arch.
@@ -31,6 +31,9 @@ jobs:
         arch:
           - amd64
           - arm64
+        version-file:
+          - .go-version # latest supported version
+          - go.mod      # minimum supported version
     steps:
     - id: skip-check
       uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
@@ -56,7 +59,7 @@ jobs:
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
       with:
-        go-version-file: .go-version
+        go-version-file: ${{ matrix.version-file }}
         check-latest: true
         cache: true
 
@@ -114,7 +117,11 @@ jobs:
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
       shell: docker exec buildpack-deps bash -e {0}
       run: |
-        GO_VERSION="$(<.go-version)"
+        if [[ '${{ matrix.version-file }}' == 'go.mod' ]]; then
+          GO_VERSION="$(awk '/^go/{print $2 ".0"}' go.mod)"
+        else
+          GO_VERSION="$(<.go-version)"
+        fi
         wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
         tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
         export PATH="${PATH}:/usr/local/go/bin"
