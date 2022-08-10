@@ -7,7 +7,7 @@ import DateTimePicker from './DateTimePicker';
 import Dropdown from './Dropdown';
 import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './GrpcMetadataContext';
 import Input from './Input';
-import FlamegraphTooltip from './FlamegraphTooltip';
+import GraphTooltip, {GraphTooltipContent} from './GraphTooltip';
 import MatchersInput from './MatchersInput';
 import MetricsGraph from './MetricsGraph';
 import Modal from './Modal';
@@ -35,7 +35,8 @@ export {
   DateTimeRange,
   DateTimeRangePicker,
   Dropdown,
-  FlamegraphTooltip,
+  GraphTooltip,
+  GraphTooltipContent,
   GrpcMetadataContext,
   GrpcMetadataProvider,
   Input,

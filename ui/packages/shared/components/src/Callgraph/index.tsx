@@ -22,7 +22,7 @@ const Callgraph = ({data, width: customWidth, height: customHeight}: Props): JSX
     <div ref={containerRef}>
       {/* <D3DagCallgraph graph={{graph: {data: mockData}}} width={fullWidth} height={fullHeight} /> */}
       {/* <CytoscapeCallgraph data={mockData} width={fullWidth} height={fullHeight} /> */}
-      <DotLayoutCallgraph data={jsonGraphWithMetaData} width={fullWidth} height={fullHeight} />
+      <DotLayoutCallgraph graph={jsonGraphWithMetaData} width={fullWidth} height={fullHeight} />
     </div>
   );
 };

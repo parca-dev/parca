@@ -8,6 +8,8 @@ export const dotGraph = `{
 }`;
 
 export const jsonGraph = {
+  total: '4358676',
+  unit: 'count',
   nodes: [
     {
       id: 'n0',
@@ -558,6 +560,8 @@ export const node_with_meta_data = (id, name) => ({
 });
 
 export const jsonGraphWithMetaData = {
+  total: '4358676',
+  unit: 'count',
   nodes: [
     node_with_meta_data('root', 'root node'),
     node_with_meta_data('n1', 'normal node'),

@@ -4,7 +4,7 @@ import {hexifyAddress} from '@parca/profile';
 import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';
 
-interface FlamegraphTooltipProps {
+interface GraphTooltipProps {
   x: number;
   y: number;
   unit: string;
@@ -42,11 +42,7 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
     } as ClientRect);
 }
 
-const FlamegraphNodeTooltipTableRows = ({
-  hoveringNode,
-}: {
-  hoveringNode: FlamegraphNode;
-}): JSX.Element => {
+const TooltipMetaInfo = ({hoveringNode}: {hoveringNode: FlamegraphNode}): JSX.Element => {
   if (hoveringNode.meta === undefined) return <></>;
 
   return (
@@ -85,7 +81,81 @@ const FlamegraphNodeTooltipTableRows = ({
   );
 };
 
-const FlamegraphTooltip = ({
+export const GraphTooltipContent = ({hoveringNode, unit, total, isFixed}) => {
+  const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
+  const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
+  const prevValue = hoveringNodeCumulative - diff;
+  const diffRatio = Math.abs(diff) > 0 ? diff / prevValue : 0;
+  const diffSign = diff > 0 ? '+' : '';
+  const diffValueText = diffSign + valueFormatter(diff, unit, 1);
+  const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
+  const diffText = `${diffValueText} (${diffPercentageText})`;
+  const metaRows =
+    hoveringNode.meta === undefined ? (
+      <></>
+    ) : (
+      <TooltipMetaInfo hoveringNode={hoveringNode as FlamegraphNode} />
+    );
+
+  return (
+    <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>
+      <div className={`m-auto ${isFixed ? 'w-full h-36' : ''}`}>
+        <div
+          className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
+          style={{borderWidth: 1}}
+        >
+          <div className="flex flex-row">
+            <div className="ml-2 mr-6">
+              <span className="font-semibold">
+                {hoveringNode.meta === undefined ? (
+                  <p>root</p>
+                ) : (
+                  <>
+                    {hoveringNode.meta.function !== undefined &&
+                    hoveringNode.meta.function.name !== '' ? (
+                      <p>{hoveringNode.meta.function.name}</p>
+                    ) : (
+                      <>
+                        {hoveringNode.meta.location !== undefined &&
+                        parseInt(hoveringNode.meta.location.address, 10) !== 0 ? (
+                          <p>{hexifyAddress(hoveringNode.meta.location.address)}</p>
+                        ) : (
+                          <p>unknown</p>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+              </span>
+              <span className="text-gray-700 dark:text-gray-300 my-2">
+                <table className="table-fixed">
+                  <tbody>
+                    <tr>
+                      <td className="w-1/5">Cumulative</td>
+                      <td className="w-4/5">
+                        {valueFormatter(hoveringNodeCumulative, unit, 2)} (
+                        {((hoveringNodeCumulative * 100) / total).toFixed(2)}%)
+                      </td>
+                    </tr>
+                    {hoveringNode.diff !== undefined && diff !== 0 && (
+                      <tr>
+                        <td className="w-1/5">Diff</td>
+                        <td className="w-4/5">{diffText}</td>
+                      </tr>
+                    )}
+                    {metaRows}
+                  </tbody>
+                </table>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GraphTooltip = ({
   x,
   y,
   unit,
@@ -94,7 +164,7 @@ const FlamegraphTooltip = ({
   contextElement,
   isFixed = false,
   virtualContextElement = true,
-}: FlamegraphTooltipProps): JSX.Element => {
+}: GraphTooltipProps): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
   const {styles, attributes, ...popperProps} = usePopper(
@@ -132,87 +202,18 @@ const FlamegraphTooltip = ({
 
   if (hoveringNode === undefined || hoveringNode == null) return <></>;
 
-  const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
-  const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
-  const prevValue = hoveringNodeCumulative - diff;
-  const diffRatio = Math.abs(diff) > 0 ? diff / prevValue : 0;
-  const diffSign = diff > 0 ? '+' : '';
-  const diffValueText = diffSign + valueFormatter(diff, unit, 1);
-  const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
-  const diffText = `${diffValueText} (${diffPercentageText})`;
-
-  const hoveringFlamegraphNode = hoveringNode as FlamegraphNode;
-  const metaRows =
-    hoveringFlamegraphNode.meta === undefined ? (
-      <></>
-    ) : (
-      <FlamegraphNodeTooltipTableRows hoveringNode={hoveringNode as FlamegraphNode} />
-    );
-
-  const content = (
-    <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>
-      <div className={`m-auto ${isFixed ? 'w-full h-36' : ''}`}>
-        <div
-          className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
-          style={{borderWidth: 1}}
-        >
-          <div className="flex flex-row">
-            <div className="ml-2 mr-6">
-              <span className="font-semibold">
-                {hoveringFlamegraphNode.meta === undefined ? (
-                  <p>root</p>
-                ) : (
-                  <>
-                    {hoveringFlamegraphNode.meta.function !== undefined &&
-                    hoveringFlamegraphNode.meta.function.name !== '' ? (
-                      <p>{hoveringFlamegraphNode.meta.function.name}</p>
-                    ) : (
-                      <>
-                        {hoveringFlamegraphNode.meta.location !== undefined &&
-                        parseInt(hoveringFlamegraphNode.meta.location.address, 10) !== 0 ? (
-                          <p>{hexifyAddress(hoveringFlamegraphNode.meta.location.address)}</p>
-                        ) : (
-                          <p>unknown</p>
-                        )}
-                      </>
-                    )}
-                  </>
-                )}
-              </span>
-              <span className="text-gray-700 dark:text-gray-300 my-2">
-                <table className="table-fixed">
-                  <tbody>
-                    <tr>
-                      <td className="w-1/5">Cumulative</td>
-                      <td className="w-4/5">
-                        {valueFormatter(hoveringNodeCumulative, unit, 2)} (
-                        {((hoveringNodeCumulative * 100) / total).toFixed(2)}%)
-                      </td>
-                    </tr>
-                    {hoveringNode.diff !== undefined && diff !== 0 && (
-                      <tr>
-                        <td className="w-1/5">Diff</td>
-                        <td className="w-4/5">{diffText}</td>
-                      </tr>
-                    )}
-                    {metaRows}
-                  </tbody>
-                </table>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return isFixed ? (
-    content
+    <GraphTooltipContent hoveringNode={hoveringNode} unit={unit} total={total} isFixed={isFixed} />
   ) : (
     <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
-      {content}
+      <GraphTooltipContent
+        hoveringNode={hoveringNode}
+        unit={unit}
+        total={total}
+        isFixed={isFixed}
+      />
     </div>
   );
 };
 
-export default FlamegraphTooltip;
+export default GraphTooltip;

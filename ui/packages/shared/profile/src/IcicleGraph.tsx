@@ -3,7 +3,7 @@ import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {FlamegraphTooltip} from '@parca/components';
+import {GraphTooltip} from '@parca/components';
 import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 
@@ -313,7 +313,7 @@ export default function IcicleGraph({
 
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
-      <FlamegraphTooltip
+      <GraphTooltip
         unit={sampleUnit}
         total={total}
         x={pos[0]}

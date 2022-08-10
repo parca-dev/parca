@@ -1,8 +1,9 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Circle, Line, Shape} from 'react-konva';
-import {Button} from '@parca/components';
+import {Button, GraphTooltipContent as Tooltip} from '@parca/components';
+import id from 'date-fns/esm/locale/id/index.js';
 
 const pixelsToInches = pixels => pixels / 96;
 
@@ -18,7 +19,10 @@ const parseEdgePos = pos => {
 export const jsonToDot = ({graph, width, height}) => {
   const {nodes, edges} = graph;
   const nodesAsStrings = nodes.map(
-    node => `${node.id} [cumulative=${node.cumulative} root=${node.id === 'root'}]`
+    node =>
+      `${node.id} [cumulative=${node.cumulative} root=${node.id === 'root'} address="${
+        node.meta.location.address
+      }" functionName="${node.meta.function.name}"]`
   );
   const edgesAsStrings = edges.map(edge => `${edge.source} -> ${edge.target}`);
 
@@ -35,28 +39,6 @@ export const jsonToDot = ({graph, width, height}) => {
     }`;
 
   return graphAsDot;
-};
-
-const Node = ({node}) => {
-  const {x, y, color} = node;
-  const defaultRadius = 19;
-  const hoverRadius = defaultRadius + 3;
-  const [radius, setRadius] = useState(defaultRadius);
-  return (
-    <Circle
-      x={+x}
-      y={+y}
-      draggable
-      radius={radius}
-      fill={color}
-      onMouseOver={() => {
-        setRadius(hoverRadius);
-      }}
-      onMouseOut={() => {
-        setRadius(defaultRadius);
-      }}
-    />
-  );
 };
 
 const Edge = ({edge}) => {
@@ -102,21 +84,23 @@ const Arrow = ({edge}) => {
   );
 };
 
-const DotLayoutCallgraph = ({data, height, width}) => {
-  const [graph, setGraph] = useState<any>(null);
+const DotLayoutCallgraph = ({graph, height, width}) => {
+  const [graphData, setGraphData] = useState<any>(null);
   const [layout, setLayout] = useState<'dot' | 'twopi'>('dot');
+  const [hoveredNode, setHoveredNode] = useState<{data: any} | null>(null);
+  const {unit, total, nodes: originalNodes} = graph;
 
   useEffect(() => {
     const getDataWithPositions = async () => {
       // 1. Translate JSON to 'dot' graph string
-      const dataAsDot = jsonToDot({graph: data, width, height});
+      const dataAsDot = jsonToDot({graph, width, height});
 
       // 2. Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
       await graphviz.loadWASM(); // need to load the WASM instance and wait for it
 
       const jsonGraph = graphviz.layout(dataAsDot, 'json', layout);
 
-      setGraph(jsonGraph);
+      setGraphData(jsonGraph);
     };
 
     if (width) {
@@ -125,9 +109,9 @@ const DotLayoutCallgraph = ({data, height, width}) => {
   }, [width, layout]);
 
   // 3. Render the laided out graph in Canvas container
-  if (!width || !graph) return <></>;
+  if (!width || !graphData) return <></>;
 
-  const {objects, edges: gvizEdges} = JSON.parse(graph);
+  const {objects, edges: gvizEdges} = JSON.parse(graphData);
   //   @ts-ignore
   const valueRange = d3.extent(
     objects.map(node => parseInt(node.cumulative)).filter(node => node !== undefined)
@@ -145,6 +129,7 @@ const DotLayoutCallgraph = ({data, height, width}) => {
       x: parseInt(pos[0]),
       y: parseInt(pos[1]),
       color: colorScale(object.cumulative),
+      data: originalNodes.find(n => n.id === object.name),
     };
   });
 
@@ -156,8 +141,38 @@ const DotLayoutCallgraph = ({data, height, width}) => {
     color: colorScale(nodes.find(node => node.id === edge.head).cumulative),
   }));
 
+  // TODO: need to fix on hover, doesnt recognize mouse out
+  const Node = ({node}) => {
+    const {
+      data: {id},
+      x,
+      y,
+      color,
+    } = node;
+    const defaultRadius = 19;
+    const hoverRadius = defaultRadius + 3;
+    const isHovered = hoveredNode && hoveredNode.data.id === id;
+
+    return (
+      <Circle
+        x={+x}
+        y={+y}
+        draggable
+        radius={isHovered ? hoverRadius : defaultRadius}
+        fill={color}
+        onMouseOver={() => {
+          setHoveredNode(node);
+        }}
+        onMouseOut={() => {
+          console.log('left');
+          setHoveredNode(null);
+        }}
+      />
+    );
+  };
+
   return (
-    <>
+    <div className="relative">
       <div className="flex">
         <Button
           variant={`${layout === 'dot' ? 'primary' : 'neutral'}`}
@@ -178,17 +193,30 @@ const DotLayoutCallgraph = ({data, height, width}) => {
       <Stage width={width} height={height}>
         <Layer>
           {edges.map(edge => (
-            <Edge edge={edge} />
+            <Edge key={`edge-${edge.source}-${edge.target}`} edge={edge} />
           ))}
           {nodes.map(node => (
-            <Node node={node} />
+            <Node key={`node-${node.data.id}`} node={node} />
           ))}
           {edges.map(edge => (
-            <Arrow edge={edge} />
+            <Arrow key={`arrow-${edge.source}-${edge.target}`} edge={edge} />
           ))}
         </Layer>
       </Stage>
-    </>
+
+      {/* TODO: need to reposition tooltip to be next to the node */}
+      {hoveredNode && (
+        // <div className={`absolute top-[${hoveredNode.x}px] left-[${hoveredNode.y}px]`}>
+        <div className={`absolute top-0`}>
+          <Tooltip
+            hoveringNode={originalNodes.find(n => n.id === hoveredNode.data.id)}
+            unit={unit}
+            total={total}
+            isFixed={false}
+          />
+        </div>
+      )}
+    </div>
   );
 };
 
