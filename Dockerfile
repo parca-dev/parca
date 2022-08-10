@@ -27,7 +27,7 @@ RUN chmod +x parca
 
 # https://github.com/hadolint/hadolint/issues/861
 # hadolint ignore=DL3029
-FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.16.1@sha256:7580ece7963bfa863801466c0a488f11c86f85d9988051a9f9c68cb27f6b7872 AS runner
+FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.16.2@sha256:bc41182d7ef5ffc53a40b044e725193bc10142a1243f395ee852a8d9730fc2ad AS runner
 
 USER nobody
 
