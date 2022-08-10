@@ -18,7 +18,7 @@
 /pkg/symbol        @parca-dev/agent-maintainers
 /pkg/symbolizer    @parca-dev/agent-maintainers
 
-!package.json
-!go.mod 
+!/ui/package.json
+!/go.mod 
 !Dockerfile*
-!.github/workflows
+!.github/workflows/*
