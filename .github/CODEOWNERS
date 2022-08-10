@@ -18,7 +18,9 @@
 /pkg/symbol        @parca-dev/agent-maintainers
 /pkg/symbolizer    @parca-dev/agent-maintainers
 
-/ui/package.json
-/go.mod 
+package.json
+yarn.lock
+/go.mod
+/go.sum
 Dockerfile*
 .github/workflows/*
