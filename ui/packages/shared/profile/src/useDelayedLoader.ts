@@ -5,7 +5,7 @@ interface DelayedLoaderOptions {
 }
 
 const useDelayedLoader = (isLoading = false, options?: DelayedLoaderOptions) => {
-  const {delay = 500} = options || {};
+  const {delay = 500} = options != null || {};
   const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
   useEffect(() => {
     let showLoaderTimeout;

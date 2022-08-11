@@ -5,4 +5,5 @@ node_modules/
 next-env.d.ts
 packages/shared/client/src/google
 packages/shared/client/src/parca
+packages/shared/client/src/share
 packages/shared/parser/src/selector.js

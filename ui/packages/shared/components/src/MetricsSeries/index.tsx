@@ -16,7 +16,7 @@ const MetricsSeries = ({data, line, color, strokeWidth}: MetricsSeriesProps): JS
       d={line(data.values) || undefined}
       style={{
         stroke: color,
-        strokeWidth: strokeWidth,
+        strokeWidth,
       }}
     />
   </g>
