@@ -3,7 +3,7 @@ import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Circle, Line, Shape} from 'react-konva';
 import {Button, GraphTooltipContent as Tooltip} from '@parca/components';
-import {Callgraph as CallgraphType} from '@parca/client';
+import {Callgraph as CallgraphType, CallgraphNode, CallgraphEdge} from '@parca/client';
 interface Props {
   graph: CallgraphType;
   sampleUnit: string;
@@ -32,19 +32,18 @@ export const jsonToDot = ({graph, width}) => {
       .map(entry => `${entry[0]}="${entry[1]}"`)
       .join(' ');
 
-  const nodesAsStrings = nodes.map(node => {
+  const nodesAsStrings = nodes.map((node: CallgraphNode) => {
     const dataAttributes = {
-      address: node.meta.location.address,
-      functionName: node.meta.function.name,
-      cumulative: 10,
+      address: node.meta?.location?.address,
+      functionName: node.meta?.function?.name,
+      cumulative: node.cumulative,
       root: node.id === 'root',
     };
 
-    //TODO: remove hard coded cumulative temporary value
     return `"${node.id}" [${objectAsDotAttributes(dataAttributes)}]`;
   });
 
-  const edgesAsStrings = edges.map(edge => {
+  const edgesAsStrings = edges.map((edge: CallgraphEdge) => {
     const dataAttributes = {
       cumulative: edge.cumulative,
     };
