@@ -86,8 +86,8 @@ Flags:
   -h, --help                       Show context-sensitive help.
       --config-path="parca.yaml"
                                    Path to config file.
-      --mode="all"                 Scraper only runs a scraper that sends to a
-                                   remote gRPC endpoint. All runs all
+      --mode="all"                 Scraper only runs a scraper that sends
+                                   to a remote gRPC endpoint. All runs all
                                    components.
       --log-level="info"           log level.
       --port=":7070"               Port string for server
@@ -114,9 +114,9 @@ Flags:
       --storage-path="data"        Path to storage directory.
       --storage-enable-wal         Enables write ahead log for profile storage.
       --symbolizer-demangle-mode="simple"
-                                   Mode to demangle C++ symbols. Default mode is
-                                   simplified: no parameters, no templates, no
-                                   return type
+                                   Mode to demangle C++ symbols. Default mode
+                                   is simplified: no parameters, no templates,
+                                   no return type
       --symbolizer-number-of-tries=3
                                    Number of tries to attempt to symbolize an
                                    unsybolized location
