@@ -10,7 +10,7 @@ import {
   useParcaTheme,
   Callgraph as CallgraphComponent,
 } from '@parca/components';
-import testData from './testdata/link_data.json';
+import {useContainerDimensions} from '@parca/dynamicsize';
 
 import ProfileShareButton from './components/ProfileShareButton';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
@@ -88,6 +88,7 @@ export const ProfileView = ({
   navigateTo,
   profileVisState,
 }: ProfileViewProps): JSX.Element => {
+  const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
   const {currentView, setCurrentView} = profileVisState;
 
@@ -238,7 +239,7 @@ export const ProfileView = ({
               </div>
             </div>
 
-            <div className="flex space-x-4 justify-between">
+            <div ref={ref} className="flex space-x-4 justify-between w-full">
               {currentView === 'icicle' && flamegraphData?.data != null && (
                 <div className="w-full">
                   <ProfileIcicleGraph
@@ -252,7 +253,11 @@ export const ProfileView = ({
 
               {currentView === 'callgraph' && callgraphData?.data != null && (
                 <div className="w-full">
-                  <CallgraphComponent graph={testData} sampleUnit={sampleUnit} />
+                  <CallgraphComponent
+                    graph={callgraphData.data}
+                    sampleUnit={sampleUnit}
+                    width={dimensions?.width}
+                  />
                 </div>
               )}
 
