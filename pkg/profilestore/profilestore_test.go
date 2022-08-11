@@ -43,7 +43,7 @@ func Test_LabelName_Invalid(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()

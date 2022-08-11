@@ -100,8 +100,8 @@ Flags:
       --mutex-profile-fraction=0
                                    Fraction of mutex profile samples to collect.
       --block-profile-rate=0       Sample rate for block profile.
-      --storage-in-memory          Use in-memory storage, without write-ahead
-                                   log or persistent metastore.
+      --enable-persistence         Turn on persistent storage for the metastore
+                                   and profile storage.
       --storage-debug-value-log    Log every value written to the database into
                                    a separate file. This is only for debugging
                                    purposes to produce data to replay situations
@@ -112,8 +112,7 @@ Flags:
                                    Amount of memory to use for active storage.
                                    Defaults to 512MB.
       --storage-path="data"        Path to storage directory.
-      --storage-persist            Persist storage to the configured object
-                                   storage.
+      --storage-enable-wal         Enables write ahead log for profile storage.
       --symbolizer-demangle-mode="simple"
                                    Mode to demangle C++ symbols. Default mode
                                    is simplified: no parameters, no templates,
@@ -121,8 +120,7 @@ Flags:
       --symbolizer-number-of-tries=3
                                    Number of tries to attempt to symbolize an
                                    unsybolized location
-      --metastore="badgerinmemory"
-                                   Which metastore implementation to use
+      --metastore="badger"         Which metastore implementation to use
       --profile-share-server="api.pprof.me:443"
                                    gRPC address to send share profile requests
                                    to.
