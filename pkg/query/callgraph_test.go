@@ -57,7 +57,7 @@ func TestGenerateCallgraph(t *testing.T) {
 	require.NotNil(t, res)
 
 	require.Equal(t, int64(310797348), res.Cumulative, "Root cummulative value mismatch")
-	
+
 	/*
 		Validate the result for this stacktrace:
 
