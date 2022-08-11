@@ -21,7 +21,7 @@ set -euo pipefail
 # Grab the config options
 storage_active_memory="$(snapctl get storage-active-memory)"
 log_level="$(snapctl get log-level)"
-storage_persist="$(snapctl get storage-persist)"
+storage_persist="$(snapctl get enable-persistence)"
 port="$(snapctl get port)"
 
 # Start building an array of command line options
@@ -35,13 +35,12 @@ opts=(
 # specified storage-persist=true
 if [[ "${storage_persist}" == "true" ]]; then
     opts+=(
-        "--storage-in-memory=false"
-        "--storage-persist"
+        "--enable-persistence=true"
         "--storage-path=${SNAP_DATA}/profiles"
     )
 else
     opts+=(
-        "--storage-in-memory=true"
+        "--enable-persistence=false"
         "--storage-active-memory=${storage_active_memory}"
     )
 fi

@@ -149,9 +149,9 @@ jobs:
           curl ${CURL_OPTS[@]} http://localhost:7070/
           curl ${CURL_OPTS[@]} http://localhost:7070/metrics
 
-      - name: Configure snap - storage-persistence
+      - name: Configure snap - enable-persistence 
         run: |
-          sudo snap set parca storage-persist=true
+          sudo snap set parca enable-persistence=true
           sudo snap restart parca
 
           # Set some options to allow retries while Parca comes back up
