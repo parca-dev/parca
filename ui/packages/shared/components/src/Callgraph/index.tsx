@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
-import {Stage, Layer, Circle, Line, Shape} from 'react-konva';
+import {Stage, Layer, Circle, Arrow} from 'react-konva';
 import {Button, GraphTooltipContent as Tooltip} from '@parca/components';
 import {Callgraph as CallgraphType, CallgraphNode, CallgraphEdge} from '@parca/client';
 interface Props {
@@ -10,18 +10,31 @@ interface Props {
   width?: number;
 }
 
+interface HoveredNode {
+  mouseX: number;
+  mouseY: number;
+  data: any;
+}
+
 const pixelsToInches = pixels => pixels / 96;
 
-const transformPosArr = (posArray, scale) => posArray.map(str => scale(+str));
-
-const parseEdgePos = (pos, sizeScale) => {
+const parseEdgePos = ({
+  pos,
+  xScale = n => n,
+  yScale = n => n,
+}: {
+  pos: string;
+  xScale?: (number) => void;
+  yScale?: (number) => void;
+}): number[] => {
   const parts = pos.split(' ');
-  const arrow = parts.shift();
+  const arrow = parts.shift() ?? '';
   const partsAsArrays = parts.map(part => part.split(','));
-  const [start, cp1, cp2, end] = partsAsArrays.map(posArr => transformPosArr(posArr, sizeScale));
-  // console.log(start);
-  const arrowEnd = arrow.replace('e,', '').split(',');
-  return {start, cp1, cp2, end, arrowEnd};
+  const scalePosArray = (posArr): number[] => [+xScale(+posArr[0]), +yScale(+posArr[1])];
+  const [start, cp1, cp2, end] = partsAsArrays.map(posArr => scalePosArray(posArr));
+  const arrowEnd: number[] = scalePosArray(arrow.replace('e,', '').split(','));
+
+  return [...arrowEnd, ...end, ...cp2, ...cp1, ...start];
 };
 
 export const jsonToDot = ({graph, width}) => {
@@ -50,12 +63,10 @@ export const jsonToDot = ({graph, width}) => {
     return `"${edge.source}" -> "${edge.target}" [${objectAsDotAttributes(dataAttributes)}]`;
   });
 
-  // "BT" will actually render top->bottom in our canvas
   const graphAsDot = `digraph "callgraph" { 
-      rankdir="BT"  
-      ratio="fill"
-      size="${pixelsToInches(width)}"
-      bb="0 0 ${width} ${width}"
+      rankdir="TB"  
+      ratio="1,3"
+      size="${pixelsToInches(width)}, ${pixelsToInches(width)}!"
       margin=0
       edge [margin=0]
       node [margin=0 shape=circle style=filled]
@@ -66,57 +77,62 @@ export const jsonToDot = ({graph, width}) => {
   return graphAsDot;
 };
 
-const Edge = ({edge}) => {
-  const {
-    points: {start, cp1, cp2, end},
-    color,
-  } = edge;
-  const pointsAsNumbers = [start, cp1, cp2, end].map(pos => [+pos[0], +[pos[1]]]);
-  const pointsArray = [].concat.apply([], pointsAsNumbers);
-  return <Line points={pointsArray} bezier={true} stroke={color} strokeWidth={1} />;
+const Edge = ({edge, xScale, yScale}) => {
+  const {points, color} = edge;
+
+  const scaledPoints = parseEdgePos({pos: points, xScale, yScale});
+  return (
+    <Arrow
+      points={scaledPoints}
+      bezier={true}
+      stroke={color}
+      strokeWidth={3}
+      pointerLength={10}
+      pointerWidth={10}
+      fill={color}
+    />
+  );
 };
 
-const Arrow = ({edge}) => {
+// TODO: need to reposition tooltip to be next to the node
+
+// TODO: need to fix on hover, doesnt recognize mouse out
+// TODO: should make this a memo
+const Node = ({node, hoveredNode, setHoveredNode}) => {
   const {
-    points: {end, arrowEnd},
+    data: {id},
+    x,
+    y,
     color,
-  } = edge;
+    width: nodeWidth,
+  } = node;
+
+  const defaultRadius = +nodeWidth;
+  const hoverRadius = defaultRadius + 3;
+  const isHovered = hoveredNode && hoveredNode.data.id === id;
 
   return (
-    <Shape
-      sceneFunc={(context, shape) => {
-        const PI2 = Math.PI * 2;
-        const dx = arrowEnd[0] - end[0];
-        const dy = arrowEnd[1] - end[1];
-
-        const radians = (Math.atan2(dy, dx) + PI2) % PI2;
-        const arrowLength = 15;
-        const arrowWidth = 20;
-
-        context.beginPath();
-        context.translate(+arrowEnd[0], +arrowEnd[1]);
-        context.rotate(radians);
-        context.moveTo(0, 0);
-        context.lineTo(-arrowLength, arrowWidth / 2);
-        context.lineTo(-arrowLength, -arrowWidth / 2);
-        context.closePath();
-        context.fillStrokeShape(shape);
-      }}
+    <Circle
+      x={+x}
+      y={+y}
+      draggable
+      radius={isHovered ? hoverRadius : defaultRadius}
       fill={color}
-      stroke="white"
-      strokeWidth={2}
+      onMouseOver={() => {
+        setHoveredNode({...node, mouseX: x, mouseY: y});
+      }}
+      onMouseOut={() => {
+        setHoveredNode(null);
+      }}
     />
   );
 };
 
 const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
-  // TODO: remove this placeholder value
-  const total = 1000;
-
   const [graphData, setGraphData] = useState<any>(null);
   const [layout, setLayout] = useState<'dot' | 'twopi'>('dot');
-  const [hoveredNode, setHoveredNode] = useState<{data: any} | null>(null);
-  const {nodes: rawNodes} = graph;
+  const [hoveredNode, setHoveredNode] = useState<HoveredNode | null>(null);
+  const {nodes: rawNodes, cumulative: total} = graph;
 
   useEffect(() => {
     const getDataWithPositions = async () => {
@@ -136,10 +152,11 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
     }
   }, [width, layout]);
 
-  // 3. Render the laided out graph in Canvas container
+  // 3. Render the graph with calculated layout in Canvas container
   if (!width || !graphData) return <></>;
 
   const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
+
   //   @ts-ignore
   const valueRange = d3.extent(
     objects.map(node => parseInt(node.cumulative)).filter(node => node !== undefined)
@@ -148,18 +165,17 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
     .scaleSequentialLog(d3.interpolateRdGy)
     .domain([...valueRange])
     .range(['lightgrey', 'red']);
-
   const graphBB = boundingBox.split(',');
-  //TODO: Separate x and y scale!
-  const sizeScale = d3.scaleLinear().domain([0, graphBB[2]]).range([0, width]);
+  const xScale = d3.scaleLinear().domain([0, graphBB[2]]).range([0, width]);
+  const yScale = d3.scaleLinear().domain([0, graphBB[3]]).range([0, width]);
 
   const nodes = objects.map(object => {
     const pos = object.pos.split(',');
     return {
       ...object,
       id: object._gvid,
-      x: sizeScale(parseInt(pos[0])),
-      y: sizeScale(parseInt(pos[1])),
+      x: xScale(parseInt(pos[0])),
+      y: yScale(parseInt(pos[1])),
       color: colorScale(object.cumulative),
       data: rawNodes.find(n => n.id === object.name),
     };
@@ -169,46 +185,11 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
     ...edge,
     source: edge.head,
     target: edge.tail,
-    points: parseEdgePos(edge.pos, sizeScale),
+    points: edge.pos,
     color: colorScale(+edge.cumulative),
   }));
 
-  // TODO: need to fix on hover, doesnt recognize mouse out
-  // TODO: should make this a memo
-  const Node = ({node}) => {
-    const {
-      data: {id},
-      x,
-      y,
-      color,
-      width: nodeWidth,
-    } = node;
-    console.log(node);
-    const defaultRadius = sizeScale(+nodeWidth);
-    const hoverRadius = defaultRadius + 3;
-    const isHovered = hoveredNode && hoveredNode.data.id === id;
-
-    return (
-      <Circle
-        x={+x}
-        y={+y}
-        draggable
-        radius={isHovered ? hoverRadius : defaultRadius}
-        fill={color}
-        onMouseOver={() => {
-          setHoveredNode(node);
-        }}
-        onMouseOut={() => {
-          console.log('left');
-          setHoveredNode(null);
-        }}
-      />
-    );
-  };
-
-  if (!width) {
-    return <div>no width</div>;
-  }
+  console.log(hoveredNode);
 
   return (
     <div className="relative">
@@ -232,21 +213,30 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       <Stage width={width} height={width}>
         <Layer>
           {edges.map(edge => (
-            <Edge key={`edge-${edge.source}-${edge.target}`} edge={edge} />
+            <Edge
+              key={`edge-${edge.source}-${edge.target}`}
+              edge={edge}
+              xScale={xScale}
+              yScale={yScale}
+            />
           ))}
           {nodes.map(node => (
-            <Node key={`node-${node.data.id}`} node={node} />
+            <Node
+              key={`node-${node.data.id}`}
+              node={node}
+              hoveredNode={hoveredNode}
+              setHoveredNode={setHoveredNode}
+            />
           ))}
-          {/* {edges.map(edge => (
-            <Arrow key={`arrow-${edge.source}-${edge.target}`} edge={edge} />
-          ))} */}
         </Layer>
       </Stage>
 
-      {/* TODO: need to reposition tooltip to be next to the node */}
       {hoveredNode && (
-        // <div className={`absolute top-[${hoveredNode.x}px] left-[${hoveredNode.y}px]`}>
-        <div className={`absolute top-0`}>
+        <div
+          className={`absolute`}
+          style={{top: `${hoveredNode.mouseX}px`, left: `${hoveredNode.mouseY}px`}}
+        >
+          {/* <div className={`absolute top-0`}> */}
           <Tooltip
             hoveringNode={rawNodes.find(n => n.id === hoveredNode.data.id)}
             unit={sampleUnit}
