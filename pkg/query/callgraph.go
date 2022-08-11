@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -61,7 +62,6 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 					}
 				}
 				prevNode = currentNode
-
 			}
 		}
 	}
