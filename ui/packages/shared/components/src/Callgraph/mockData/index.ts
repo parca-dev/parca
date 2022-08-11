@@ -438,7 +438,6 @@ export const jsonGraphWithGraphvizPositions = {
 export const node_with_meta_data = (id, name) => ({
   id,
   cumulative: Math.floor(Math.random() * 10),
-  diff: '0',
   meta: {
     location: {
       id: {
@@ -561,7 +560,6 @@ export const node_with_meta_data = (id, name) => ({
 
 export const jsonGraphWithMetaData = {
   total: '4358676',
-  unit: 'count',
   nodes: [
     node_with_meta_data('root', 'root node'),
     node_with_meta_data('n1', 'normal node'),

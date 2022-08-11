@@ -4,9 +4,7 @@ import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
 import {FlamegraphNode, FlamegraphRootNode, Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {FlamegraphTooltip} from '@parca/components';
-import CytoscapeCallgraph from './CytoscapeCallgraph';
-import mockData from './CytoscapeCallgraph/mockData';
+import {GraphTooltip} from '@parca/components';
 
 // TODO: REMOVE THESE NOTES
 // 1. Data is hierarchical, filter nodes to get unique nodes, remove duplicates, then take a look at the links
@@ -36,7 +34,7 @@ interface EventTargetWithData extends EventTarget {
 
 const NODE_RADIUS = 20;
 
-const Callgraph = ({
+const D3DagGraph = ({
   graph,
   width: customWidth,
   height: customHeight,
@@ -212,6 +210,7 @@ const Callgraph = ({
       .append('g')
       // TODO: pin the root node to the top of the svg
       .attr('transform', ({x, y, data}) =>
+        // @ts-ignore
         data.id === 'root' ? `translate(${x}, ${y})` : `translate(${x}, ${y})`
       );
 
@@ -280,7 +279,7 @@ const Callgraph = ({
         height={fullHeight}
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
       />
-      <FlamegraphTooltip
+      <GraphTooltip
         unit={unit}
         total={parseFloat(total)}
         x={pos[0]}
@@ -293,4 +292,4 @@ const Callgraph = ({
   );
 };
 
-export default Callgraph;
+export default D3DagGraph;

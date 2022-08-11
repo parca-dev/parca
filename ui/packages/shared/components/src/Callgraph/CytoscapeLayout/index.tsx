@@ -2,10 +2,10 @@ import React from 'react';
 import {Core as CSCore} from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
 import stylesheet from './stylesheet';
-import {CallgraphData} from '../types';
+import {Callgraph} from '@parca/client';
 
 interface Props {
-  data: CallgraphData;
+  data: Callgraph;
   width?: number;
   height?: number;
 }
