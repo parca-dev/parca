@@ -72,8 +72,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 		err := Run(ctx, logger, reg, &Flags{
 			ConfigPath:          "testdata/parca.yaml",
 			Port:                addr,
-			Metastore:           metaStoreBadgerInMemory,
-			StorageInMemory:     true,
+			Metastore:           metaStoreBadger,
 			StorageGranuleSize:  8 * 1024,
 			StorageActiveMemory: 512 * 1024 * 1024,
 		}, "test-version")
