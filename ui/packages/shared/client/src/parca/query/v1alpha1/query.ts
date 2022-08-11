@@ -626,6 +626,12 @@ export interface CallgraphNode {
      * @generated from protobuf field: parca.query.v1alpha1.CallgraphNodeMeta meta = 2;
      */
     meta?: CallgraphNodeMeta;
+    /**
+     * cumulative is the cumulative value of the node
+     *
+     * @generated from protobuf field: int64 cumulative = 3;
+     */
+    cumulative: string;
 }
 /**
  * TopNodeMeta is the metadata for a given node
@@ -707,6 +713,12 @@ export interface Callgraph {
      * @generated from protobuf field: repeated parca.query.v1alpha1.CallgraphEdge edges = 2;
      */
     edges: CallgraphEdge[];
+    /**
+     * cumulative is the total cumulative value of the callgraph
+     *
+     * @generated from protobuf field: int64 cumulative = 3;
+     */
+    cumulative: string;
 }
 /**
  * QueryResponse is the returned report for the given query
@@ -2116,11 +2128,12 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
     constructor() {
         super("parca.query.v1alpha1.CallgraphNode", [
             { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "meta", kind: "message", T: () => CallgraphNodeMeta }
+            { no: 2, name: "meta", kind: "message", T: () => CallgraphNodeMeta },
+            { no: 3, name: "cumulative", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<CallgraphNode>): CallgraphNode {
-        const message = { id: "" };
+        const message = { id: "", cumulative: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<CallgraphNode>(this, message, value);
@@ -2136,6 +2149,9 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
                     break;
                 case /* parca.query.v1alpha1.CallgraphNodeMeta meta */ 2:
                     message.meta = CallgraphNodeMeta.internalBinaryRead(reader, reader.uint32(), options, message.meta);
+                    break;
+                case /* int64 cumulative */ 3:
+                    message.cumulative = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2155,6 +2171,9 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
         /* parca.query.v1alpha1.CallgraphNodeMeta meta = 2; */
         if (message.meta)
             CallgraphNodeMeta.internalBinaryWrite(message.meta, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* int64 cumulative = 3; */
+        if (message.cumulative !== "0")
+            writer.tag(3, WireType.Varint).int64(message.cumulative);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2306,11 +2325,12 @@ class Callgraph$Type extends MessageType<Callgraph> {
     constructor() {
         super("parca.query.v1alpha1.Callgraph", [
             { no: 1, name: "nodes", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => CallgraphNode },
-            { no: 2, name: "edges", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => CallgraphEdge }
+            { no: 2, name: "edges", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => CallgraphEdge },
+            { no: 3, name: "cumulative", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<Callgraph>): Callgraph {
-        const message = { nodes: [], edges: [] };
+        const message = { nodes: [], edges: [], cumulative: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Callgraph>(this, message, value);
@@ -2326,6 +2346,9 @@ class Callgraph$Type extends MessageType<Callgraph> {
                     break;
                 case /* repeated parca.query.v1alpha1.CallgraphEdge edges */ 2:
                     message.edges.push(CallgraphEdge.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* int64 cumulative */ 3:
+                    message.cumulative = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2345,6 +2368,9 @@ class Callgraph$Type extends MessageType<Callgraph> {
         /* repeated parca.query.v1alpha1.CallgraphEdge edges = 2; */
         for (let i = 0; i < message.edges.length; i++)
             CallgraphEdge.internalBinaryWrite(message.edges[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* int64 cumulative = 3; */
+        if (message.cumulative !== "0")
+            writer.tag(3, WireType.Varint).int64(message.cumulative);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

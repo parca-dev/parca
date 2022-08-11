@@ -341,6 +341,9 @@ message CallgraphNode {
 
   // meta is the metadata about the node
   CallgraphNodeMeta meta = 2;
+
+  // cumulative is the cumulative value of the node
+  int64 cumulative = 3;
 }
 
 // TopNodeMeta is the metadata for a given node
@@ -380,6 +383,9 @@ message Callgraph {
 
   // edges are the edges connecting nodes in the callgraph
   repeated CallgraphEdge edges = 2;
+
+  // cumulative is the total cumulative value of the callgraph
+  int64 cumulative = 3;
 }
 
 // QueryResponse is the returned report for the given query

@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -28,8 +29,10 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 	nodes := make([]*querypb.CallgraphNode, 0)
 	edges := make([]*querypb.CallgraphEdge, 0)
 	edgesMap := make(map[string]*querypb.CallgraphEdge)
+	cummValue := int64(0)
 
 	for _, s := range p.Samples {
+		cummValue += s.Value
 		var prevNode *querypb.CallgraphNode = nil
 		for _, location := range s.Locations {
 			locationNodes := locationToCallgraphNodes(location)
@@ -40,6 +43,7 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 					nodes = append(nodes, n)
 				}
 				currentNode := nodesMap[key]
+				currentNode.Cumulative += s.Value
 				currentNodeId := currentNode.Id
 
 				if prevNode != nil {
@@ -58,11 +62,10 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 					}
 				}
 				prevNode = currentNode
-
 			}
 		}
 	}
-	return &querypb.Callgraph{Nodes: nodes, Edges: edges}, nil
+	return &querypb.Callgraph{Nodes: nodes, Edges: edges, Cumulative: cummValue}, nil
 }
 
 func getNodeKey(node *querypb.CallgraphNode) string {

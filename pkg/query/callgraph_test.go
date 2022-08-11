@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -56,6 +56,8 @@ func TestGenerateCallgraph(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
+	require.Equal(t, int64(310797348), res.Cumulative, "Root cummulative value mismatch")
+
 	/*
 		Validate the result for this stacktrace:
 
@@ -83,21 +85,27 @@ func TestGenerateCallgraph(t *testing.T) {
 
 		// find the required nodes
 		if name == "runtime/pprof.profileWriter" {
+			require.Equal(t, int64(2308419), node.Cumulative, "Node cummulative mismatch for "+name)
 			requiredNodes[0] = node
 		}
 		if name == "runtime/pprof.(*profileBuilder).build" {
+			require.Equal(t, int64(2479889), node.Cumulative, "Node cummulative mismatch for "+name)
 			requiredNodes[1] = node
 		}
 		if name == "runtime/pprof.(*profileBuilder).appendLocsForStack" {
+			require.Equal(t, int64(132520050), node.Cumulative, "Node cummulative mismatch for "+name)
 			requiredNodes[2] = node
 		}
 		if name == "runtime/pprof.(*profileBuilder).emitLocation" {
+			require.Equal(t, int64(14095085), node.Cumulative, "Node cummulative mismatch for "+name)
 			requiredNodes[3] = node
 		}
 		if name == "runtime/pprof.(*protobuf).uint64" {
+			require.Equal(t, int64(330616), node.Cumulative, "Node cummulative mismatch for "+name)
 			requiredNodes[4] = node
 		}
 		if name == "runtime/pprof.(*protobuf).varint" {
+			require.Equal(t, int64(399569), node.Cumulative, "Node cummulative mismatch for "+name)
 			requiredNodes[5] = node
 		}
 	}
@@ -114,18 +122,23 @@ func TestGenerateCallgraph(t *testing.T) {
 
 	for _, edge := range edges {
 		if edge.GetSource() == requiredNodes[0].GetId() && edge.GetTarget() == requiredNodes[1].GetId() {
+			require.Equal(t, int64(1756541), edge.Cumulative, "Edge cumulative mismatch for 0 -> 1")
 			foundEdges++
 		}
 		if edge.GetSource() == requiredNodes[1].GetId() && edge.GetTarget() == requiredNodes[2].GetId() {
+			require.Equal(t, int64(1553356), edge.Cumulative, "Edge cumulative mismatch for 1 -> 2")
 			foundEdges++
 		}
 		if edge.GetSource() == requiredNodes[2].GetId() && edge.GetTarget() == requiredNodes[3].GetId() {
+			require.Equal(t, int64(13353318), edge.Cumulative, "Edge cumulative mismatch for 2 -> 3")
 			foundEdges++
 		}
 		if edge.GetSource() == requiredNodes[3].GetId() && edge.GetTarget() == requiredNodes[4].GetId() {
+			require.Equal(t, int64(114140), edge.Cumulative, "Edge cumulative mismatch for 3 -> 4")
 			foundEdges++
 		}
 		if edge.GetSource() == requiredNodes[4].GetId() && edge.GetTarget() == requiredNodes[5].GetId() {
+			require.Equal(t, int64(330616), edge.Cumulative, "Edge cumulative mismatch for 4 -> 5")
 			foundEdges++
 		}
 	}
