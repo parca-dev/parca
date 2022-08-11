@@ -687,6 +687,11 @@
             "$ref": "#/definitions/v1alpha1CallgraphEdge"
           },
           "title": "edges are the edges connecting nodes in the callgraph"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the total cumulative value of the callgraph"
         }
       },
       "title": "Callgraph is the callgraph report type"
@@ -724,6 +729,11 @@
         "meta": {
           "$ref": "#/definitions/v1alpha1CallgraphNodeMeta",
           "title": "meta is the metadata about the node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the node"
         }
       },
       "title": "CallgraphNode represents a node in the graph"

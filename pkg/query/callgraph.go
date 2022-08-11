@@ -28,8 +28,10 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 	nodes := make([]*querypb.CallgraphNode, 0)
 	edges := make([]*querypb.CallgraphEdge, 0)
 	edgesMap := make(map[string]*querypb.CallgraphEdge)
+	cummValue := int64(0)
 
 	for _, s := range p.Samples {
+		cummValue += s.Value
 		var prevNode *querypb.CallgraphNode = nil
 		for _, location := range s.Locations {
 			locationNodes := locationToCallgraphNodes(location)
@@ -40,6 +42,7 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 					nodes = append(nodes, n)
 				}
 				currentNode := nodesMap[key]
+				currentNode.Cumulative += s.Value
 				currentNodeId := currentNode.Id
 
 				if prevNode != nil {
@@ -62,7 +65,7 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 			}
 		}
 	}
-	return &querypb.Callgraph{Nodes: nodes, Edges: edges}, nil
+	return &querypb.Callgraph{Nodes: nodes, Edges: edges, Cumulative: cummValue}, nil
 }
 
 func getNodeKey(node *querypb.CallgraphNode) string {
