@@ -87,13 +87,16 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	_, err = api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -191,13 +194,16 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -261,13 +267,16 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -348,13 +357,16 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `fgprof:samples:count::`,
@@ -509,13 +521,16 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -673,13 +688,16 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
 	require.NoError(t, err)
@@ -747,13 +765,16 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.Labels(ctx, &pb.LabelsRequest{})
 	require.NoError(t, err)
@@ -814,13 +835,16 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.Values(ctx, &pb.ValuesRequest{
 		LabelName: "job",
