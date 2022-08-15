@@ -21,8 +21,47 @@ env:
   BUILDPACK_DEPS_VERSION: '20.04'
 
 jobs:
+  pre-job:
+    name: Pre Job
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      go-versions: ${{steps.create-go-versions-list.outputs.versions}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+
+      - name: Create Go versions list
+        id: create-go-versions-list
+        run: |
+          MIN="$(awk '/^go/{print $2}' go.mod)"
+          MAX="$(<.go-version)"
+
+          # Example args: min 1.18 max 1.20.2
+          # Example output: ::set-output name=versions::["1.18","1.19","1.20.2"]
+          jq --null-input --raw-output \
+            --arg min "${MIN}" --arg max "${MAX}" '
+            def tovarray:
+              . | split(".") | map(tonumber);
+
+            def major: .[0];
+            def minor: .[1];
+
+            $min | tovarray as $minv |
+            $max | tovarray as $maxv |
+
+            if $maxv|major >= 2 then
+              "Go 2 not supported\n" | halt_error(1)
+            else
+              [range(($minv|minor);($maxv|minor))]
+                | map("1.\(.)") + [$max]
+                | "::set-output name=versions::\(.)"
+            end
+          '
+
   build-and-test-multi-arch:
-    name: Test on ${{ matrix.arch }} (version from ${{ matrix.version-file }} file)
+    needs: [pre-job]
+    name: Test - Go ${{ matrix.go-version }} - ${{ matrix.arch }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     # Run steps on a matrix of 2 arch.
@@ -31,9 +70,7 @@ jobs:
         arch:
           - amd64
           - arm64
-        version-file:
-          - .go-version # latest supported version
-          - go.mod      # minimum supported version
+        go-version: ${{fromJSON(needs.pre-job.outputs.go-versions)}}
     steps:
     - id: skip-check
       uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
@@ -59,7 +96,7 @@ jobs:
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # tag=v3.2.1
       with:
-        go-version-file: ${{ matrix.version-file }}
+        go-version: ${{ matrix.go-version }}
         check-latest: true
         cache: true
 
@@ -117,11 +154,7 @@ jobs:
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
       shell: docker exec buildpack-deps bash -e {0}
       run: |
-        if [[ '${{ matrix.version-file }}' == 'go.mod' ]]; then
-          GO_VERSION="$(awk '/^go/{print $2 ".0"}' go.mod)"
-        else
-          GO_VERSION="$(<.go-version)"
-        fi
+        GO_VERSION='${{ matrix.go-version }}'
         wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
         tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
         export PATH="${PATH}:/usr/local/go/bin"
