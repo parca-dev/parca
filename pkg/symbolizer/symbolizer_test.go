@@ -419,7 +419,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	)
 	require.NoError(t, err)
 
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()

@@ -29,9 +29,9 @@ if [[ -z "$log_level" ]]; then
     snapctl set log-level=info
 fi
 
-storage_persist="$(snapctl get storage-persist)"
+storage_persist="$(snapctl get enable-persistence)"
 if [[ -z "$storage_persist" ]]; then
-    snapctl set storage-persist=false
+    snapctl set enable-persistence=false
 fi
 
 port="$(snapctl get port)"
