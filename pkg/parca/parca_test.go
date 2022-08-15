@@ -72,8 +72,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 		err := Run(ctx, logger, reg, &Flags{
 			ConfigPath:          "testdata/parca.yaml",
 			Port:                addr,
-			Metastore:           metaStoreBadgerInMemory,
-			StorageInMemory:     true,
+			Metastore:           metaStoreBadger,
 			StorageGranuleSize:  8 * 1024,
 			StorageActiveMemory: 512 * 1024 * 1024,
 		}, "test-version")
@@ -218,7 +217,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -356,7 +355,7 @@ func TestConsistency(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
