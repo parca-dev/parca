@@ -96,13 +96,16 @@ func Benchmark_Query_Merge(b *testing.B) {
 			api := NewColumnQueryAPI(
 				logger,
 				tracer,
-				m,
 				getShareServerConn(b),
-				query.NewEngine(
-					memory.NewGoAllocator(),
-					colDB.TableProvider(),
+				parcacol.NewQuerier(
+					tracer,
+					query.NewEngine(
+						memory.DefaultAllocator,
+						colDB.TableProvider(),
+					),
+					"stacktraces",
+					m,
 				),
-				"stacktraces",
 			)
 			b.ResetTimer()
 
@@ -162,13 +165,16 @@ func Benchmark_ProfileTypes(b *testing.B) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		m,
 		getShareServerConn(b),
-		query.NewEngine(
-			memory.NewGoAllocator(),
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			m,
 		),
-		"stacktraces",
 	)
 	b.ResetTimer()
 
