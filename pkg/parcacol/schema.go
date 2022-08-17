@@ -118,7 +118,7 @@ func Schema() (*dynparquet.Schema, error) {
 				StorageLayout: &schemapb.StorageLayout{
 					Type:        schemapb.StorageLayout_TYPE_STRING,
 					Encoding:    schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-					Compression: schemapb.StorageLayout_COMPRESSION_ZSTD,
+					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
 				},
 				Dynamic: false,
 			}, {
@@ -126,7 +126,7 @@ func Schema() (*dynparquet.Schema, error) {
 				StorageLayout: &schemapb.StorageLayout{
 					Type:        schemapb.StorageLayout_TYPE_INT64,
 					Encoding:    schemapb.StorageLayout_ENCODING_DELTA_BINARY_PACKED,
-					Compression: schemapb.StorageLayout_COMPRESSION_ZSTD,
+					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
 				},
 				Dynamic: false,
 			}, {
@@ -134,7 +134,7 @@ func Schema() (*dynparquet.Schema, error) {
 				StorageLayout: &schemapb.StorageLayout{
 					Type:        schemapb.StorageLayout_TYPE_INT64,
 					Encoding:    schemapb.StorageLayout_ENCODING_DELTA_BINARY_PACKED,
-					Compression: schemapb.StorageLayout_COMPRESSION_ZSTD,
+					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
 				},
 				Dynamic: false,
 			},
