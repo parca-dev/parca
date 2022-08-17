@@ -343,7 +343,7 @@ export const RawMetricsGraph = ({
       const pointIndex = d3.minIndex(distances);
       const minDistance = distances[pointIndex];
       return {
-        pointIndex: pointIndex,
+        pointIndex,
         distance: minDistance,
       };
     });
@@ -473,7 +473,7 @@ export const RawMetricsGraph = ({
 
     return {
       labels: [],
-      seriesIndex: seriesIndex,
+      seriesIndex,
       timestamp: sample[0],
       value: sample[1],
       x: xScale(sample[0]),

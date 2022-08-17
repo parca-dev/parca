@@ -135,7 +135,7 @@ const ProfileExplorerApp = ({
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
     const query = {
-      expression: expression_a as string,
+      expression: expression_a,
       from: parseInt(from_a as string),
       to: parseInt(to_a as string),
       merge: (merge_a as string) === 'true',
@@ -144,7 +144,7 @@ const ProfileExplorerApp = ({
     };
 
     const profile = ProfileSelectionFromParams(
-      expression_a as string,
+      expression_a,
       from_a as string,
       to_a as string,
       merge_a as string,
@@ -235,7 +235,7 @@ const ProfileExplorerApp = ({
   }
 
   const queryA = {
-    expression: expression_a as string,
+    expression: expression_a,
     from: parseInt(from_a as string),
     to: parseInt(to_a as string),
     merge: (merge_a as string) === 'true',
@@ -243,7 +243,7 @@ const ProfileExplorerApp = ({
     profile_name: profile_name_a as string,
   };
   const queryB = {
-    expression: expression_b as string,
+    expression: expression_b,
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
     merge: (merge_b as string) === 'true',
@@ -252,7 +252,7 @@ const ProfileExplorerApp = ({
   };
 
   const profileA = ProfileSelectionFromParams(
-    expression_a as string,
+    expression_a,
     from_a as string,
     to_a as string,
     merge_a as string,
@@ -261,7 +261,7 @@ const ProfileExplorerApp = ({
     time_a as string
   );
   const profileB = ProfileSelectionFromParams(
-    expression_b as string,
+    expression_b,
     from_b as string,
     to_b as string,
     merge_b as string,

@@ -243,7 +243,7 @@ const ProfileSelector = ({
       expression: expr,
       from: timeRangeSelection.getFromMs(),
       to: timeRangeSelection.getToMs(),
-      merge: merge,
+      merge,
       timeSelection: timeRangeSelection.getRangeKey(),
     });
   };
@@ -288,7 +288,7 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header className={cx(comparing === true && 'overflow-x-scroll')}>
+      <Card.Header className={cx(comparing && 'overflow-x-scroll')}>
         <div className="flex space-x-4">
           {comparing && (
             <button type="button" onClick={() => closeProfile()}>

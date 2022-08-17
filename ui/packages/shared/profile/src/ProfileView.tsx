@@ -126,7 +126,7 @@ export const ProfileView = ({
 
   const downloadPProf = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    if (!profileSource || !queryClient) {
+    if (profileSource == null || queryClient == null) {
       return;
     }
 
@@ -169,7 +169,7 @@ export const ProfileView = ({
             <div className="flex py-3 w-full">
               <div className="w-2/5 flex space-x-4">
                 <div className="flex space-x-1">
-                  {profileSource && queryClient ? (
+                  {profileSource != null && queryClient != null ? (
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}

@@ -274,5 +274,5 @@ export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean)
 export const isSearchMatch = (currentSearchString: string | undefined, name: string) => {
   if (!currentSearchString) return;
 
-  return name.toLowerCase().indexOf(currentSearchString.toLowerCase()) !== -1;
+  return name.toLowerCase().includes(currentSearchString.toLowerCase());
 };
