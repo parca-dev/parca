@@ -1,7 +1,16 @@
 import {Arrow} from 'react-konva';
-import {parseEdgePos} from './utils';
+import {parseEdgePos} from '../utils';
 
-const Edge = ({edge, sourceNode, targetNode, xScale, yScale, nodeRadius}) => {
+interface Props {
+  edge: {points: string; color: string};
+  sourceNode: {x: number; y: number};
+  targetNode: {x: number; y: number};
+  xScale: (x: number) => number;
+  yScale: (y: number) => number;
+  nodeRadius: number;
+}
+
+const Edge = ({edge, sourceNode, targetNode, xScale, yScale, nodeRadius}: Props) => {
   const {points, color} = edge;
 
   const scaledPoints = parseEdgePos({

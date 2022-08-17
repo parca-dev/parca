@@ -2,13 +2,12 @@ import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer} from 'react-konva';
-import {Button, GraphTooltip as Tooltip} from '@parca/components';
+import {GraphTooltip as Tooltip} from '@parca/components';
 import {Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot} from './utils';
 import Node from './Node';
 import Edge from './Edge';
 
-// TODO: get rid of D3Dag and Cytoscape layouts
 // TODO: Fix self-loops
 interface Props {
   graph: CallgraphType;

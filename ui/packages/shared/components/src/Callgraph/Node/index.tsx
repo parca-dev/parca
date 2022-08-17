@@ -1,5 +1,19 @@
 import {Circle} from 'react-konva';
 
+interface Node {
+  x: number;
+  y: number;
+  data: {id: string};
+  color: string;
+}
+
+interface Props {
+  node: Node;
+  hoveredNode: Node;
+  setHoveredNode: (node: Node) => void;
+  nodeRadius: number;
+}
+
 const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}) => {
   const {
     data: {id},
