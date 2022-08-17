@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React, {Fragment, useState, useEffect} from 'react';
 import {Transition} from '@headlessui/react';
 import {Query} from '@parca/parser';
@@ -49,9 +62,7 @@ export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => 
   useEffect(() => {
     const call = client.labels({match: []}, {meta: metadata});
 
-    call.response
-      .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}));
+    call.response.then(response => setResult({response})).catch(error => setResult({error}));
   }, [client, metadata]);
 
   return result;
@@ -105,7 +116,7 @@ const MatchersInput = ({
   const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
 
   const getLabelNameValues = (labelName: string) => {
-    const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
+    const call = queryClient.values({labelName, match: []}, {meta: metadata});
 
     call.response
       .then(response => setLabelValuesResponse(response.labelValues))
@@ -248,7 +259,7 @@ const MatchersInput = ({
   };
 
   const applySuggestion = (suggestionIndex: number): void => {
-    let suggestion = getSuggestion(suggestionIndex);
+    const suggestion = getSuggestion(suggestionIndex);
 
     if (suggestion.type === Labels.labelValue) {
       suggestion.value = addQuoteMarks(suggestion.value);
@@ -438,7 +449,7 @@ const MatchersInput = ({
         className="w-full flex items-center text-sm border-gray-300 dark:border-gray-600 border-b"
       >
         <ul className="flex space-x-2">
-          {currentLabelsCollection &&
+          {currentLabelsCollection != null &&
             currentLabelsCollection.map((value, i) => (
               <li
                 key={i}

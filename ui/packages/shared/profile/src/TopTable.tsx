@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React from 'react';
 
 import {getLastItem, valueFormatter, isSearchMatch} from '@parca/functions';
@@ -33,7 +46,7 @@ const useSortableData = (top?: Top, config = {key: 'cumulative', direction: 'des
     config
   );
 
-  const rawTableReport = top ? top.list : [];
+  const rawTableReport = top != null ? top.list : [];
 
   const items = rawTableReport.map(node => ({
     ...node,
@@ -46,7 +59,7 @@ const useSortableData = (top?: Top, config = {key: 'cumulative', direction: 'des
   const sortedItems = React.useMemo(() => {
     if (!items) return;
 
-    let sortableItems = [...items];
+    const sortableItems = [...items];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -63,7 +76,7 @@ const useSortableData = (top?: Top, config = {key: 'cumulative', direction: 'des
 
   const requestSort = key => {
     let direction = 'desc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+    if (sortConfig != null && sortConfig.key === key && sortConfig.direction === 'desc') {
       direction = 'asc';
     }
     setSortConfig({key, direction});
@@ -83,7 +96,7 @@ export const RowLabel = (meta: TopNodeMeta | undefined): string => {
     return `${mapping} ${meta.function.name}`;
 
   const address = hexifyAddress(meta.location?.address);
-  const fallback = `${mapping} ${address as string}`;
+  const fallback = `${mapping} ${address}`;
 
   return fallback === '' ? '<unknown>' : fallback;
 };
@@ -96,11 +109,11 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
 
   const unit = sampleUnit;
 
-  const total = top ? top.list.length : 0;
+  const total = top != null ? top.list.length : 0;
   if (total === 0) return <>Profile has no samples</>;
 
   const getClassNamesFor = name => {
-    if (!sortConfig) {
+    if (sortConfig == null) {
       return;
     }
     return sortConfig.key === name ? sortConfig.direction : undefined;

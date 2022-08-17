@@ -39,7 +39,7 @@ There are a small number of config options:
 | Name                    | Valid Options                    | Default     | Description                                                                                        |
 | :---------------------- | :------------------------------- | :---------- | :------------------------------------------------------------------------------------------------- |
 | `storage-active-memory` | Any `int`                        | `536870912` | Total bytes in memory used for active memory storage                                               |
-| `storage-persist`       | `true`, `false`                  | `false`     | Persist data to disk (experimental). Profiles will be saved in `/var/snap/parca/current/profiles/` |
+| `enable-persistence`    | `true`, `false`                  | `false`     | Persist data to disk (experimental). Profiles will be saved in `/var/snap/parca/current/profiles/` |
 | `log-level`             | `error`, `warn`, `info`, `debug` | `info`      | Log level for Parca                                                                                |
 | `port`                  | 1024 > `int` > 65534             | `7070`      | Port for Parca server to listen on                                                                 |
 
