@@ -41,6 +41,7 @@ const getExpressionAsAString = (expression: string | []) => {
   return x;
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const sanitizeDateRange = (time_selection_a: any, from_a: any, to_a: any) => {
   const range = DateTimeRange.fromRangeKey(time_selection_a);
   if (from_a == null && to_a == null) {
@@ -58,6 +59,7 @@ const ProfileExplorerApp = ({
   const dispatch = useAppDispatch();
   const compareMode = useAppSelector(selectCompareMode);
 
+  /* eslint-disable @typescript-eslint/naming-convention */
   let {
     from_a,
     to_a,
@@ -76,18 +78,21 @@ const ProfileExplorerApp = ({
     time_selection_b,
     compare_b,
   } = queryParams;
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;
   from_a = sanitizedRange.from_a;
   to_a = sanitizedRange.to_a;
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const expression_a = getExpressionAsAString(queryParams.expression_a);
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const expression_b = getExpressionAsAString(queryParams.expression_b);
 
-  if (queryParams && queryParams.expression_a) queryParams.expression_a = expression_a;
-  if (queryParams && queryParams.expression_b) queryParams.expression_b = expression_b;
+  if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
+  if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;
 
   useEffect(() => {
     if (compare_a === 'true' && compare_b === 'true') {
@@ -95,7 +100,7 @@ const ProfileExplorerApp = ({
     } else {
       dispatch(setCompare(false));
     }
-  }, [compare_a, compare_b]);
+  }, [dispatch, compare_a, compare_b]);
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},

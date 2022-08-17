@@ -111,7 +111,11 @@ function IcicleRect({
         height={height - 1}
         style={{
           opacity:
-            Boolean(currentSearchString) && !isSearchMatch(currentSearchString, name) ? 0.5 : 1,
+            currentSearchString !== undefined &&
+            currentSearchString !== '' &&
+            !isSearchMatch(currentSearchString, name)
+              ? 0.5
+              : 1,
           fill: color,
         }}
       />
@@ -130,7 +134,7 @@ export function nodeLabel(node: FlamegraphNode): string {
   if (node.meta === undefined) return '<unknown>';
   const mapping = `${
     node.meta?.mapping?.file !== undefined && node.meta?.mapping?.file !== ''
-      ? '[' + getLastItem(node.meta.mapping.file) + '] '
+      ? '[' + (getLastItem(node.meta.mapping.file) ?? '') + '] '
       : ''
   }`;
   if (node.meta.function?.name !== undefined && node.meta.function?.name !== '')

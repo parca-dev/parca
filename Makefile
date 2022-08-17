@@ -100,7 +100,7 @@ ui/test:
 
 .PHONY: ui/lint
 ui/lint:
-	cd ui && npm run lint
+	cd ui && yarn run lint
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate

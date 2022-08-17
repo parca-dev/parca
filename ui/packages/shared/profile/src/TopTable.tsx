@@ -57,7 +57,7 @@ const useSortableData = (top?: Top, config = {key: 'cumulative', direction: 'des
   }));
 
   const sortedItems = React.useMemo(() => {
-    if (!items) return;
+    if (items.length === 0) return;
 
     const sortableItems = [...items];
     if (sortConfig !== null) {
@@ -74,7 +74,7 @@ const useSortableData = (top?: Top, config = {key: 'cumulative', direction: 'des
     return sortableItems;
   }, [items, sortConfig]);
 
-  const requestSort = key => {
+  const requestSort = (key: string) => {
     let direction = 'desc';
     if (sortConfig != null && sortConfig.key === key && sortConfig.direction === 'desc') {
       direction = 'asc';
@@ -89,7 +89,7 @@ export const RowLabel = (meta: TopNodeMeta | undefined): string => {
   if (meta === undefined) return '<unknown>';
   const mapping = `${
     meta?.mapping?.file !== undefined && meta?.mapping?.file !== ''
-      ? `[${getLastItem(meta.mapping.file)}]`
+      ? `[${getLastItem(meta.mapping.file) ?? ''}]`
       : ''
   }`;
   if (meta.function?.name !== undefined && meta.function?.name !== '')
@@ -112,7 +112,7 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
   const total = top != null ? top.list.length : 0;
   if (total === 0) return <>Profile has no samples</>;
 
-  const getClassNamesFor = name => {
+  const getClassNamesFor = (name: string) => {
     if (sortConfig == null) {
       return;
     }
@@ -138,7 +138,9 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
                 onClick={() => requestSort('name')}
               >
                 Name
-                <span className={`inline-block align-middle ml-2 ${getClassNamesFor('name')}`}>
+                <span
+                  className={`inline-block align-middle ml-2 ${getClassNamesFor('name') ?? ''}`}
+                >
                   <Arrow direction={getClassNamesFor('name')} />
                 </span>
               </th>
@@ -147,7 +149,9 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
                 onClick={() => requestSort('flat')}
               >
                 Flat
-                <span className={`inline-block align-middle ml-2 ${getClassNamesFor('flat')}`}>
+                <span
+                  className={`inline-block align-middle ml-2 ${getClassNamesFor('flat') ?? ''}`}
+                >
                   <Arrow direction={getClassNamesFor('flat')} />
                 </span>
               </th>
@@ -157,7 +161,9 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
               >
                 Cumulative
                 <span
-                  className={`inline-block align-middle ml-2 ${getClassNamesFor('cumulative')}`}
+                  className={`inline-block align-middle ml-2 ${
+                    getClassNamesFor('cumulative') ?? ''
+                  }`}
                 >
                   <Arrow direction={getClassNamesFor('cumulative')} />
                 </span>
@@ -168,7 +174,9 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
                   onClick={() => requestSort('diff')}
                 >
                   Diff
-                  <span className={`inline-block align-middle ml-2 ${getClassNamesFor('diff')}`}>
+                  <span
+                    className={`inline-block align-middle ml-2 ${getClassNamesFor('diff') ?? ''}`}
+                  >
                     <Arrow direction={getClassNamesFor('diff')} />
                   </span>
                 </th>
