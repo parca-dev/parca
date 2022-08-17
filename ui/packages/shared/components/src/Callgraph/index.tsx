@@ -1,10 +1,14 @@
 import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
-import {Stage, Layer, Circle, Arrow} from 'react-konva';
+import {Stage, Layer} from 'react-konva';
 import {Button, GraphTooltip as Tooltip} from '@parca/components';
-import {Callgraph as CallgraphType, CallgraphNode, CallgraphEdge} from '@parca/client';
+import {Callgraph as CallgraphType} from '@parca/client';
+import {jsonToDot} from './utils';
+import Node from './Node';
+import Edge from './Edge';
 
+// TODO: get rid of D3Dag and Cytoscape layouts
 // TODO: Fix self-loops
 interface Props {
   graph: CallgraphType;
@@ -17,138 +21,6 @@ interface HoveredNode {
   mouseY: number;
   data: any;
 }
-
-const pixelsToInches = pixels => pixels / 96;
-
-const parseEdgePos = ({
-  pos,
-  xScale = n => n,
-  yScale = n => n,
-  source = [],
-  target = [],
-  nodeRadius,
-}: {
-  pos: string;
-  xScale?: (number) => void;
-  yScale?: (number) => void;
-  source?: number[];
-  target?: number[];
-  nodeRadius: number;
-}): number[] => {
-  const parts = pos.split(' ');
-  const arrow = parts.shift() ?? '';
-  const partsAsArrays = parts.map(part => part.split(','));
-  const scalePosArray = (posArr): number[] => [+xScale(+posArr[0]), +yScale(+posArr[1])];
-  const [start, cp1, cp2, end] = partsAsArrays.map(posArr => scalePosArray(posArr));
-  const arrowEnd: number[] = scalePosArray(arrow.replace('e,', '').split(','));
-
-  const getTargetWithOffset = (target, lastEdgePoint) => {
-    const diffX = target[0] - lastEdgePoint[0];
-    const diffY = target[1] - lastEdgePoint[1];
-    const diffZ = Math.hypot(diffX, diffY);
-
-    const offsetX = (diffX * nodeRadius) / diffZ;
-    const offsetY = (diffY * nodeRadius) / diffZ;
-
-    return [target[0] - offsetX, target[1] - offsetY];
-  };
-
-  return [...source, ...cp1, ...cp2, ...getTargetWithOffset(target, arrowEnd)];
-};
-
-export const jsonToDot = ({graph, width, nodeRadius}) => {
-  const {nodes, edges} = graph;
-
-  const objectAsDotAttributes = obj =>
-    Object.entries(obj)
-      .map(entry => `${entry[0]}="${entry[1]}"`)
-      .join(' ');
-
-  const nodesAsStrings = nodes.map((node: CallgraphNode) => {
-    const dataAttributes = {
-      address: node.meta?.location?.address,
-      functionName: node.meta?.function?.name,
-      cumulative: node.cumulative,
-      root: node.id === 'root',
-    };
-
-    return `"${node.id}" [${objectAsDotAttributes(dataAttributes)}]`;
-  });
-
-  const edgesAsStrings = edges.map((edge: CallgraphEdge) => {
-    const dataAttributes = {
-      cumulative: edge.cumulative,
-    };
-    return `"${edge.source}" -> "${edge.target}" [${objectAsDotAttributes(dataAttributes)}]`;
-  });
-
-  const graphAsDot = `digraph "callgraph" { 
-      rankdir="TB"  
-      ratio="1,3"
-      size="${pixelsToInches(width)}, ${pixelsToInches(width)}!"
-      margin=10
-      edge [margin=0]
-      node [margin=0 shape=circle style=filled width=${nodeRadius}]
-      ${nodesAsStrings.join(' ')}
-      ${edgesAsStrings.join(' ')}
-    }`;
-
-  return graphAsDot;
-};
-
-const Edge = ({edge, sourceNode, targetNode, xScale, yScale, nodeRadius}) => {
-  const {points, color} = edge;
-
-  const scaledPoints = parseEdgePos({
-    pos: points,
-    xScale,
-    yScale,
-    source: [sourceNode.x, sourceNode.y],
-    target: [targetNode.x, targetNode.y],
-    nodeRadius,
-  });
-
-  return (
-    <Arrow
-      points={scaledPoints}
-      bezier={true}
-      stroke={color}
-      strokeWidth={3}
-      pointerLength={10}
-      pointerWidth={10}
-      fill={color}
-      onMouseOver={() => console.log({edge, scaledPoints, sourceNode, targetNode})}
-    />
-  );
-};
-
-const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}) => {
-  const {
-    data: {id},
-    x,
-    y,
-    color,
-  } = node;
-
-  const hoverRadius = defaultRadius + 3;
-  const isHovered = hoveredNode && hoveredNode.data.id === id;
-
-  return (
-    <Circle
-      x={+x}
-      y={+y}
-      draggable
-      radius={isHovered ? hoverRadius : defaultRadius}
-      fill={color}
-      onMouseOver={() => {
-        setHoveredNode({...node, mouseX: x, mouseY: y});
-      }}
-      onMouseOut={() => {
-        setHoveredNode(null);
-      }}
-    />
-  );
-};
 
 const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const containerRef = useRef<Element>(null);
