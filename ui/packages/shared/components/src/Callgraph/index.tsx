@@ -4,6 +4,8 @@ import * as d3 from 'd3';
 import {Stage, Layer, Circle, Arrow} from 'react-konva';
 import {Button, GraphTooltip as Tooltip} from '@parca/components';
 import {Callgraph as CallgraphType, CallgraphNode, CallgraphEdge} from '@parca/client';
+
+// TODO: Fix self-loops
 interface Props {
   graph: CallgraphType;
   sampleUnit: string;
@@ -22,10 +24,16 @@ const parseEdgePos = ({
   pos,
   xScale = n => n,
   yScale = n => n,
+  source = [],
+  target = [],
+  nodeRadius,
 }: {
   pos: string;
   xScale?: (number) => void;
   yScale?: (number) => void;
+  source?: number[];
+  target?: number[];
+  nodeRadius: number;
 }): number[] => {
   const parts = pos.split(' ');
   const arrow = parts.shift() ?? '';
@@ -34,10 +42,21 @@ const parseEdgePos = ({
   const [start, cp1, cp2, end] = partsAsArrays.map(posArr => scalePosArray(posArr));
   const arrowEnd: number[] = scalePosArray(arrow.replace('e,', '').split(','));
 
-  return [...arrowEnd, ...end, ...cp2, ...cp1, ...start];
+  const getTargetWithOffset = (target, lastEdgePoint) => {
+    const diffX = target[0] - lastEdgePoint[0];
+    const diffY = target[1] - lastEdgePoint[1];
+    const diffZ = Math.hypot(diffX, diffY);
+
+    const offsetX = (diffX * nodeRadius) / diffZ;
+    const offsetY = (diffY * nodeRadius) / diffZ;
+
+    return [target[0] - offsetX, target[1] - offsetY];
+  };
+
+  return [...source, ...cp1, ...cp2, ...getTargetWithOffset(target, arrowEnd)];
 };
 
-export const jsonToDot = ({graph, width}) => {
+export const jsonToDot = ({graph, width, nodeRadius}) => {
   const {nodes, edges} = graph;
 
   const objectAsDotAttributes = obj =>
@@ -67,9 +86,9 @@ export const jsonToDot = ({graph, width}) => {
       rankdir="TB"  
       ratio="1,3"
       size="${pixelsToInches(width)}, ${pixelsToInches(width)}!"
-      margin=0
+      margin=10
       edge [margin=0]
-      node [margin=0 shape=circle style=filled]
+      node [margin=0 shape=circle style=filled width=${nodeRadius}]
       ${nodesAsStrings.join(' ')}
       ${edgesAsStrings.join(' ')}
     }`;
@@ -77,10 +96,18 @@ export const jsonToDot = ({graph, width}) => {
   return graphAsDot;
 };
 
-const Edge = ({edge, xScale, yScale}) => {
+const Edge = ({edge, sourceNode, targetNode, xScale, yScale, nodeRadius}) => {
   const {points, color} = edge;
 
-  const scaledPoints = parseEdgePos({pos: points, xScale, yScale});
+  const scaledPoints = parseEdgePos({
+    pos: points,
+    xScale,
+    yScale,
+    source: [sourceNode.x, sourceNode.y],
+    target: [targetNode.x, targetNode.y],
+    nodeRadius,
+  });
+
   return (
     <Arrow
       points={scaledPoints}
@@ -90,20 +117,19 @@ const Edge = ({edge, xScale, yScale}) => {
       pointerLength={10}
       pointerWidth={10}
       fill={color}
+      onMouseOver={() => console.log({edge, scaledPoints, sourceNode, targetNode})}
     />
   );
 };
 
-const Node = ({node, hoveredNode, setHoveredNode}) => {
+const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}) => {
   const {
     data: {id},
     x,
     y,
     color,
-    width: nodeWidth,
   } = node;
 
-  const defaultRadius = +nodeWidth;
   const hoverRadius = defaultRadius + 3;
   const isHovered = hoveredNode && hoveredNode.data.id === id;
 
@@ -130,11 +156,12 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const [layout, setLayout] = useState<'dot' | 'twopi'>('dot');
   const [hoveredNode, setHoveredNode] = useState<HoveredNode | null>(null);
   const {nodes: rawNodes, cumulative: total} = graph;
+  const nodeRadius = 15;
 
   useEffect(() => {
     const getDataWithPositions = async () => {
       // 1. Translate JSON to 'dot' graph string
-      const dataAsDot = jsonToDot({graph, width});
+      const dataAsDot = jsonToDot({graph, width, nodeRadius});
 
       // 2. Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
       await graphviz.loadWASM(); // need to load the WASM instance and wait for it
@@ -210,37 +237,42 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
         <Stage width={width} height={height}>
           <Layer>
-            {edges.map(edge => (
-              <Edge
-                key={`edge-${edge.source}-${edge.target}`}
-                edge={edge}
-                xScale={xScale}
-                yScale={yScale}
-              />
-            ))}
+            {edges.map(edge => {
+              const sourceNode = nodes.find(n => n.id === edge.source);
+              const targetNode = nodes.find(n => n.id === edge.target);
+              return (
+                <Edge
+                  key={`edge-${edge.source}-${edge.target}`}
+                  edge={edge}
+                  xScale={xScale}
+                  yScale={yScale}
+                  sourceNode={sourceNode}
+                  targetNode={targetNode}
+                  nodeRadius={nodeRadius}
+                />
+              );
+            })}
             {nodes.map(node => (
               <Node
                 key={`node-${node.data.id}`}
                 node={node}
                 hoveredNode={hoveredNode}
                 setHoveredNode={setHoveredNode}
+                nodeRadius={nodeRadius}
               />
             ))}
           </Layer>
         </Stage>
-      </div>
-
-      {hoveredNode && (
         <Tooltip
-          hoveringNode={rawNodes.find(n => n.id === hoveredNode.data.id)}
+          hoveringNode={rawNodes.find(n => n.id === hoveredNode?.data.id) ?? null}
           unit={sampleUnit}
           total={+total}
           isFixed={false}
-          x={hoveredNode.mouseX}
-          y={hoveredNode.mouseY}
+          x={hoveredNode?.mouseX ?? 0}
+          y={hoveredNode?.mouseY ?? 0}
           contextElement={containerRef.current}
         />
-      )}
+      </div>
     </div>
   );
 };

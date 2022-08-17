@@ -100,7 +100,7 @@ const GraphTooltipContent = ({hoveringNode, unit, total, isFixed}) => {
     );
 
   return (
-    <div className={`flex ${isFixed ? 'w-full h-36' : 'w-90'}`}>
+    <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>
       <div className={`m-auto w-full ${isFixed ? 'w-full h-36' : ''}`}>
         <div
           className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
