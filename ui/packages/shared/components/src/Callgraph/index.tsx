@@ -1,8 +1,9 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
+import Konva from 'konva';
 import {Stage, Layer, Circle, Arrow} from 'react-konva';
-import {Button, GraphTooltipContent as Tooltip} from '@parca/components';
+import {Button, GraphTooltip as Tooltip} from '@parca/components';
 import {Callgraph as CallgraphType, CallgraphNode, CallgraphEdge} from '@parca/client';
 interface Props {
   graph: CallgraphType;
@@ -94,10 +95,6 @@ const Edge = ({edge, xScale, yScale}) => {
   );
 };
 
-// TODO: need to reposition tooltip to be next to the node
-
-// TODO: need to fix on hover, doesnt recognize mouse out
-// TODO: should make this a memo
 const Node = ({node, hoveredNode, setHoveredNode}) => {
   const {
     data: {id},
@@ -129,6 +126,7 @@ const Node = ({node, hoveredNode, setHoveredNode}) => {
 };
 
 const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
+  const containerRef = useRef<Element>(null);
   const [graphData, setGraphData] = useState<any>(null);
   const [layout, setLayout] = useState<'dot' | 'twopi'>('dot');
   const [hoveredNode, setHoveredNode] = useState<HoveredNode | null>(null);
@@ -155,6 +153,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   // 3. Render the graph with calculated layout in Canvas container
   if (!width || !graphData) return <></>;
 
+  const height = width;
   const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
 
   //   @ts-ignore
@@ -167,7 +166,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
     .range(['lightgrey', 'red']);
   const graphBB = boundingBox.split(',');
   const xScale = d3.scaleLinear().domain([0, graphBB[2]]).range([0, width]);
-  const yScale = d3.scaleLinear().domain([0, graphBB[3]]).range([0, width]);
+  const yScale = d3.scaleLinear().domain([0, graphBB[3]]).range([0, height]);
 
   const nodes = objects.map(object => {
     const pos = object.pos.split(',');
@@ -189,8 +188,6 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
     color: colorScale(+edge.cumulative),
   }));
 
-  console.log(hoveredNode);
-
   return (
     <div className="relative">
       <div className="flex">
@@ -210,40 +207,40 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
         </Button>
       </div>
 
-      <Stage width={width} height={width}>
-        <Layer>
-          {edges.map(edge => (
-            <Edge
-              key={`edge-${edge.source}-${edge.target}`}
-              edge={edge}
-              xScale={xScale}
-              yScale={yScale}
-            />
-          ))}
-          {nodes.map(node => (
-            <Node
-              key={`node-${node.data.id}`}
-              node={node}
-              hoveredNode={hoveredNode}
-              setHoveredNode={setHoveredNode}
-            />
-          ))}
-        </Layer>
-      </Stage>
+      {/* @ts-ignore */}
+      <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
+        <Stage width={width} height={height}>
+          <Layer>
+            {edges.map(edge => (
+              <Edge
+                key={`edge-${edge.source}-${edge.target}`}
+                edge={edge}
+                xScale={xScale}
+                yScale={yScale}
+              />
+            ))}
+            {nodes.map(node => (
+              <Node
+                key={`node-${node.data.id}`}
+                node={node}
+                hoveredNode={hoveredNode}
+                setHoveredNode={setHoveredNode}
+              />
+            ))}
+          </Layer>
+        </Stage>
+      </div>
 
       {hoveredNode && (
-        <div
-          className={`absolute`}
-          style={{top: `${hoveredNode.mouseX}px`, left: `${hoveredNode.mouseY}px`}}
-        >
-          {/* <div className={`absolute top-0`}> */}
-          <Tooltip
-            hoveringNode={rawNodes.find(n => n.id === hoveredNode.data.id)}
-            unit={sampleUnit}
-            total={total}
-            isFixed={false}
-          />
-        </div>
+        <Tooltip
+          hoveringNode={rawNodes.find(n => n.id === hoveredNode.data.id)}
+          unit={sampleUnit}
+          total={+total}
+          isFixed={false}
+          x={hoveredNode.mouseX}
+          y={hoveredNode.mouseY}
+          contextElement={containerRef.current}
+        />
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {CallgraphNode, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import {hexifyAddress} from '@parca/profile';
 import {useState, useEffect} from 'react';
@@ -9,7 +9,7 @@ interface GraphTooltipProps {
   y: number;
   unit: string;
   total: number;
-  hoveringNode: FlamegraphNode | FlamegraphRootNode | null | undefined;
+  hoveringNode: FlamegraphNode | FlamegraphRootNode | CallgraphNode | null | undefined;
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;
@@ -51,7 +51,7 @@ const TooltipMetaInfo = ({hoveringNode}: {hoveringNode: FlamegraphNode}): JSX.El
         hoveringNode.meta.function?.filename !== '' && (
           <tr>
             <td className="w-1/5">File</td>
-            <td className="w-4/5">
+            <td className="w-4/5 break-all">
               {hoveringNode.meta.function.filename}
               {hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== '0'
                 ? ` +${hoveringNode.meta.line.line.toString()}`
@@ -68,20 +68,22 @@ const TooltipMetaInfo = ({hoveringNode}: {hoveringNode: FlamegraphNode}): JSX.El
         hoveringNode.meta.location?.address !== '0' && (
           <tr>
             <td className="w-1/5">Address</td>
-            <td className="w-4/5">{' 0x' + hoveringNode.meta.location.address.toString()}</td>
+            <td className="w-4/5 break-all">
+              {' 0x' + hoveringNode.meta.location.address.toString()}
+            </td>
           </tr>
         )}
       {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.file !== '' && (
         <tr>
           <td className="w-1/5">Binary</td>
-          <td className="w-4/5">{getLastItem(hoveringNode.meta.mapping.file)}</td>
+          <td className="w-4/5 break-all">{getLastItem(hoveringNode.meta.mapping.file)}</td>
         </tr>
       )}
     </>
   );
 };
 
-export const GraphTooltipContent = ({hoveringNode, unit, total, isFixed}) => {
+const GraphTooltipContent = ({hoveringNode, unit, total, isFixed}) => {
   const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
   const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
   const prevValue = hoveringNodeCumulative - diff;
@@ -98,15 +100,15 @@ export const GraphTooltipContent = ({hoveringNode, unit, total, isFixed}) => {
     );
 
   return (
-    <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>
-      <div className={`m-auto ${isFixed ? 'w-full h-36' : ''}`}>
+    <div className={`flex ${isFixed ? 'w-full h-36' : 'w-90'}`}>
+      <div className={`m-auto w-full ${isFixed ? 'w-full h-36' : ''}`}>
         <div
           className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
           style={{borderWidth: 1}}
         >
           <div className="flex flex-row">
             <div className="ml-2 mr-6">
-              <span className="font-semibold">
+              <span className="font-semibold break-all">
                 {hoveringNode.meta === undefined ? (
                   <p>root</p>
                 ) : (
