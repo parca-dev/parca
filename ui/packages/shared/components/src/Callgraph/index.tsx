@@ -1,7 +1,6 @@
 import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
-import Konva from 'konva';
 import {Stage, Layer, Circle, Arrow} from 'react-konva';
 import {Button, GraphTooltip as Tooltip} from '@parca/components';
 import {Callgraph as CallgraphType, CallgraphNode, CallgraphEdge} from '@parca/client';
@@ -156,7 +155,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const height = width;
   const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
 
-  //   @ts-ignore
+  //   @ts-expect-error
   const valueRange = d3.extent(
     objects.map(node => parseInt(node.cumulative)).filter(node => node !== undefined)
   ) as [number, number];
@@ -207,7 +206,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
         </Button>
       </div>
 
-      {/* @ts-ignore */}
+      {/* @ts-expect-error */}
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
         <Stage width={width} height={height}>
           <Layer>
