@@ -1,4 +1,4 @@
-FROM docker.io/node:16.17.0-alpine@sha256:27ebce2c8f1b4c86b72ebb8636c5daf8c726cbd6c4bdcebf1bf5f532c92b0af7 AS ui-deps
+FROM docker.io/node:16.17.0-alpine@sha256:3c7ed283086d6b65c129ca9b1312f56dfbf843aeb4384a491f2040f4b6232652 AS ui-deps
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ COPY ui/packages/app/web/package.json ./packages/app/web/package.json
 COPY ui/package.json ui/yarn.lock ./
 RUN yarn workspace @parca/web install --frozen-lockfile
 
-FROM docker.io/node:16.17.0-alpine@sha256:27ebce2c8f1b4c86b72ebb8636c5daf8c726cbd6c4bdcebf1bf5f532c92b0af7 AS ui-builder
+FROM docker.io/node:16.17.0-alpine@sha256:3c7ed283086d6b65c129ca9b1312f56dfbf843aeb4384a491f2040f4b6232652 AS ui-builder
 
 WORKDIR /app
 
