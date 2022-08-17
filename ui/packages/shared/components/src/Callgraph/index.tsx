@@ -25,7 +25,6 @@ interface HoveredNode {
 const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const containerRef = useRef<Element>(null);
   const [graphData, setGraphData] = useState<any>(null);
-  const [layout, setLayout] = useState<'dot' | 'twopi'>('dot');
   const [hoveredNode, setHoveredNode] = useState<HoveredNode | null>(null);
   const {nodes: rawNodes, cumulative: total} = graph;
   const nodeRadius = 15;
@@ -38,7 +37,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       // 2. Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
       await graphviz.loadWASM(); // need to load the WASM instance and wait for it
 
-      const jsonGraph = graphviz.layout(dataAsDot, 'json', layout);
+      const jsonGraph = graphviz.layout(dataAsDot, 'json', 'dot');
 
       setGraphData(jsonGraph);
     };
@@ -46,7 +45,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
     if (width) {
       getDataWithPositions();
     }
-  }, [width, layout]);
+  }, [width]);
 
   // 3. Render the graph with calculated layout in Canvas container
   if (!width || !graphData) return <></>;
@@ -88,23 +87,6 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
 
   return (
     <div className="relative">
-      <div className="flex">
-        <Button
-          variant={`${layout === 'dot' ? 'primary' : 'neutral'}`}
-          className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-          onClick={() => setLayout(layout === 'dot' ? 'twopi' : 'dot')}
-        >
-          "Dot" layout
-        </Button>
-        <Button
-          variant={`${layout === 'twopi' ? 'primary' : 'neutral'}`}
-          className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-          onClick={() => setLayout(layout === 'dot' ? 'twopi' : 'dot')}
-        >
-          "Twopi" layout
-        </Button>
-      </div>
-
       {/* @ts-expect-error */}
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
         <Stage width={width} height={height}>
