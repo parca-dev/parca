@@ -26,7 +26,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const [graphData, setGraphData] = useState<any>(null);
   const [hoveredNode, setHoveredNode] = useState<HoveredNode | null>(null);
   const {nodes: rawNodes, cumulative: total} = graph;
-  const nodeRadius = 15;
+  const nodeRadius = 12;
 
   useEffect(() => {
     const getDataWithPositions = async () => {

@@ -29,8 +29,8 @@ export const parseEdgePos = ({
     const diffY = target[1] - lastEdgePoint[1];
     const diffZ = Math.hypot(diffX, diffY);
 
-    const offsetX = (diffX * nodeRadius) / diffZ;
-    const offsetY = (diffY * nodeRadius) / diffZ;
+    const offsetX = ((diffX * nodeRadius) / diffZ) * 1;
+    const offsetY = ((diffY * nodeRadius) / diffZ) * 1.2;
 
     return [target[0] - offsetX, target[1] - offsetY];
   };
