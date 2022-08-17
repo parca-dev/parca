@@ -252,13 +252,16 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
-		metastore,
 		sharepb.NewShareClient(conn),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracerProvider.Tracer("querier"),
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
