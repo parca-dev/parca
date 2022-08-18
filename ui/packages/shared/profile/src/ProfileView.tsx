@@ -58,7 +58,7 @@ interface ProfileViewProps {
   compare?: boolean;
 }
 
-function arrayEquals(a, b): boolean {
+function arrayEquals<T>(a: T[], b: T[]): boolean {
   return (
     Array.isArray(a) &&
     Array.isArray(b) &&
@@ -124,7 +124,7 @@ export const ProfileView = ({
     );
   }
 
-  const downloadPProf = async (e: React.MouseEvent<HTMLElement>) => {
+  const downloadPProf = async (e: React.MouseEvent<HTMLElement>): Promise<void> => {
     e.preventDefault();
     if (profileSource == null || queryClient == null) {
       return;
@@ -141,15 +141,15 @@ export const ProfileView = ({
     }
   };
 
-  const resetIcicleGraph = () => setCurPath([]);
+  const resetIcicleGraph = (): void => setCurPath([]);
 
-  const setNewCurPath = (path: string[]) => {
+  const setNewCurPath = (path: string[]): void => {
     if (!arrayEquals(curPath, path)) {
       setCurPath(path);
     }
   };
 
-  const switchProfileView = (view: VisualizationType) => {
+  const switchProfileView = (view: VisualizationType): void => {
     if (view == null) {
       return;
     }

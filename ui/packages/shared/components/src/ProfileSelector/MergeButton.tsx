@@ -11,11 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useState} from 'react';
+import {useState} from 'react';
 import {usePopper} from 'react-popper';
 import {Button} from '../';
 
-const MergeButton = ({disabled, onClick}: {disabled: boolean; onClick: () => void}) => {
+const MergeButton = ({
+  disabled,
+  onClick,
+}: {
+  disabled: boolean;
+  onClick: () => void;
+}): JSX.Element => {
   const [mergeHover, setMergeHover] = useState<boolean>(false);
   const [mergePopperReferenceElement, setMergePopperReferenceElement] =
     useState<HTMLDivElement | null>(null);

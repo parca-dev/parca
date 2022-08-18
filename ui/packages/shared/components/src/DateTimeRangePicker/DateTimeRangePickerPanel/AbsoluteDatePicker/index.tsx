@@ -24,7 +24,10 @@ interface AbsoluteDatePickerProps {
   onChange?: (from: AbsoluteDate, to: AbsoluteDate) => void;
 }
 
-const AbsoluteDatePicker = ({range, onChange = () => null}: AbsoluteDatePickerProps) => {
+const AbsoluteDatePicker = ({
+  range,
+  onChange = () => null,
+}: AbsoluteDatePickerProps): JSX.Element => {
   const [from, setFrom] = useState<Date>(
     range.from.isRelative() ? getDateHoursAgo(1) : (range.from as AbsoluteDate).value
   );

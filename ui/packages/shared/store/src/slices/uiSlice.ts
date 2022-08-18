@@ -38,6 +38,6 @@ export const uiSlice = createSlice({
 export const {setDarkMode} = uiSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
-export const selectDarkMode = (state: RootState) => state.ui.darkMode;
+export const selectDarkMode = (state: RootState): boolean => state.ui.darkMode;
 
 export default uiSlice.reducer;

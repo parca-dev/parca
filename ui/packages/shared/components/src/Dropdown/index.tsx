@@ -27,7 +27,7 @@ const Dropdown = ({
   element?: React.ReactNode;
   variant?: 'neutral' | 'link' | 'primary' | undefined;
   children?: React.ReactNode;
-}) => {
+}): JSX.Element => {
   return (
     <>
       <Menu as="div" className="relative inline-block text-left">
@@ -64,7 +64,13 @@ const Dropdown = ({
   );
 };
 
-const Item = ({children, onSelect}: {children: React.ReactNode; onSelect: () => void}) => {
+const Item = ({
+  children,
+  onSelect,
+}: {
+  children: React.ReactNode;
+  onSelect: () => void;
+}): JSX.Element => {
   return (
     <Menu.Item>
       {({active}) => (

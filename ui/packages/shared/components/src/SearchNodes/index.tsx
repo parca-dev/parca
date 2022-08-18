@@ -14,10 +14,10 @@
 import {Input} from '@parca/components';
 import {useAppDispatch, setSearchNodeString} from '@parca/store';
 
-const SearchNodes = () => {
+const SearchNodes = (): JSX.Element => {
   const dispatch = useAppDispatch();
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     dispatch(setSearchNodeString(event.target.value));
   };
 

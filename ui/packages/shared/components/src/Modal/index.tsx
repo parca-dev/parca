@@ -28,7 +28,7 @@ const Modal = ({
   closeModal: () => void;
   children: React.ReactNode;
   className?: string;
-}) => {
+}): JSX.Element => {
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>

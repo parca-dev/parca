@@ -22,13 +22,13 @@ export const GrpcMetadataProvider = ({
 }: {
   children: ReactNode;
   value?: RpcMetadata;
-}) => {
+}): JSX.Element => {
   return (
     <GrpcMetadataContext.Provider value={value ?? {}}>{children}</GrpcMetadataContext.Provider>
   );
 };
 
-export const useGrpcMetadata = () => {
+export const useGrpcMetadata = (): RpcMetadata => {
   const context = useContext(GrpcMetadataContext);
   if (context == null) {
     return {};

@@ -34,14 +34,14 @@ const ProfileShareModal = ({
   closeModal,
   queryRequest,
   queryClient,
-}: ProfileShareModalProps) => {
+}: ProfileShareModalProps): JSX.Element => {
   const [isShared, setIsShared] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [sharedLink, setSharedLink] = useState<string>('');
   const metadata = useGrpcMetadata();
-  const isFormDataValid = () => true;
+  const isFormDataValid = (): boolean => true;
 
   const handleSubmit: () => Promise<void> = async () => {
     try {
@@ -60,7 +60,7 @@ const ProfileShareModal = ({
     }
   };
 
-  const onClose = () => {
+  const onClose = (): void => {
     setLoading(false);
     setError('');
     setDescription('');
@@ -113,7 +113,7 @@ const ProfileShareModal = ({
   );
 };
 
-const ProfileShareButton = ({queryRequest, queryClient}: Props) => {
+const ProfileShareButton = ({queryRequest, queryClient}: Props): JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   return (
