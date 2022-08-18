@@ -69,7 +69,7 @@ export const useQueryRange = (
     call.response
       .then(response => setResult({response, isLoading: false, error: null}))
       .catch(error => setResult({error, isLoading: false, response: null}));
-  }, [client, queryExpression, start, end, metadata, result]);
+  }, [client, queryExpression, start, end, metadata]);
 
   return result;
 };

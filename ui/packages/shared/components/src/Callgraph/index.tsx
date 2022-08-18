@@ -33,13 +33,13 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       setGraphData(jsonGraph);
     };
 
-    if (Boolean(width)) {
+    if (width) {
       getDataWithPositions();
     }
   }, [width]);
 
   // 3. Render the graph with calculated layout in Canvas container
-  if (!width ?? !graphData) return <></>;
+  if (!width || !graphData) return <></>;
 
   const height = width;
   const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
