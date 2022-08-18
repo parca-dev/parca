@@ -2,7 +2,7 @@ import {Arrow} from 'react-konva';
 import {parseEdgePos} from '../utils';
 
 interface Props {
-  edge: {points: string; color: string};
+  edge: {points: string; color: string; source: number; target: number};
   sourceNode: {x: number; y: number};
   targetNode: {x: number; y: number};
   xScale: (x: number) => number;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 const Edge = ({edge, sourceNode, targetNode, xScale, yScale, nodeRadius}: Props) => {
-  const {points, color} = edge;
+  const {points, color, source, target} = edge;
 
   const scaledPoints = parseEdgePos({
     pos: points,
@@ -20,6 +20,7 @@ const Edge = ({edge, sourceNode, targetNode, xScale, yScale, nodeRadius}: Props)
     source: [sourceNode.x, sourceNode.y],
     target: [targetNode.x, targetNode.y],
     nodeRadius,
+    isSelfLoop: source === target,
   });
 
   return (

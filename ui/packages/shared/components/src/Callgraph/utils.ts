@@ -9,6 +9,7 @@ export const parseEdgePos = ({
   source = [],
   target = [],
   nodeRadius,
+  isSelfLoop = false,
 }: {
   pos: string;
   xScale?: (number) => void;
@@ -16,6 +17,7 @@ export const parseEdgePos = ({
   source?: number[];
   target?: number[];
   nodeRadius: number;
+  isSelfLoop?: boolean;
 }): number[] => {
   const parts = pos.split(' ');
   const arrow = parts.shift() ?? '';
@@ -35,6 +37,20 @@ export const parseEdgePos = ({
     return [target[0] - offsetX, target[1] - offsetY];
   };
 
+  if (isSelfLoop) {
+    const [sourceX, sourceY] = source;
+    const [targetX, targetY] = target;
+    return [
+      sourceX,
+      sourceY + nodeRadius,
+      sourceX,
+      sourceY + 3 * nodeRadius,
+      targetX + 5 * nodeRadius,
+      targetY,
+      targetX + nodeRadius,
+      targetY,
+    ];
+  }
   return [...source, ...cp1, ...cp2, ...getTargetWithOffset(target, arrowEnd)];
 };
 
@@ -70,7 +86,7 @@ export const jsonToDot = ({graph, width, nodeRadius}) => {
       size="${pixelsToInches(width)}, ${pixelsToInches(width)}!"
       margin=10
       edge [margin=0]
-      node [margin=0 shape=circle style=filled width=${nodeRadius}]
+      node [margin=0 width=${nodeRadius}]
       ${nodesAsStrings.join(' ')}
       ${edgesAsStrings.join(' ')}
     }`;
