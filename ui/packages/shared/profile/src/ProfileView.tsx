@@ -266,11 +266,13 @@ export const ProfileView = ({
 
               {currentView === 'callgraph' && callgraphData?.data != null && (
                 <div className="w-full">
-                  <CallgraphComponent
-                    graph={callgraphData.data}
-                    sampleUnit={sampleUnit}
-                    width={dimensions?.width}
-                  />
+                  {dimensions?.width && (
+                    <CallgraphComponent
+                      graph={callgraphData.data}
+                      sampleUnit={sampleUnit}
+                      width={dimensions?.width}
+                    />
+                  )}
                 </div>
               )}
 

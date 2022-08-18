@@ -1,20 +1,22 @@
 import {Circle} from 'react-konva';
 
-interface Node {
+export interface INode {
   x: number;
   y: number;
   data: {id: string};
   color: string;
+  mouseX?: number;
+  mouseY?: number;
 }
 
 interface Props {
-  node: Node;
-  hoveredNode: Node;
-  setHoveredNode: (node: Node) => void;
+  node: INode;
+  hoveredNode: INode | null;
+  setHoveredNode: (node: INode | null) => void;
   nodeRadius: number;
 }
 
-const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}) => {
+const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}: Props) => {
   const {
     data: {id},
     x,
@@ -22,15 +24,15 @@ const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}) =>
     color,
   } = node;
 
-  const hoverRadius = defaultRadius + 3;
-  const isHovered = hoveredNode && hoveredNode.data.id === id;
+  const hoverRadius = (defaultRadius as number) + 3;
+  const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
 
   return (
     <Circle
       x={+x}
       y={+y}
       draggable
-      radius={isHovered ? hoverRadius : defaultRadius}
+      radius={Boolean(isHovered) ? hoverRadius : defaultRadius}
       fill={color}
       onMouseOver={() => {
         setHoveredNode({...node, mouseX: x, mouseY: y});

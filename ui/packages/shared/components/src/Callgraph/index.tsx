@@ -5,26 +5,18 @@ import {Stage, Layer} from 'react-konva';
 import {GraphTooltip as Tooltip} from '@parca/components';
 import {Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot} from './utils';
-import Node from './Node';
+import Node, {INode} from './Node';
 import Edge from './Edge';
-
-// TODO: Fix self-loops
 interface Props {
   graph: CallgraphType;
   sampleUnit: string;
-  width?: number;
-}
-
-interface HoveredNode {
-  mouseX: number;
-  mouseY: number;
-  data: any;
+  width: number;
 }
 
 const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const containerRef = useRef<Element>(null);
   const [graphData, setGraphData] = useState<any>(null);
-  const [hoveredNode, setHoveredNode] = useState<HoveredNode | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
   const {nodes: rawNodes, cumulative: total} = graph;
   const nodeRadius = 12;
 
@@ -41,13 +33,13 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       setGraphData(jsonGraph);
     };
 
-    if (width) {
+    if (Boolean(width)) {
       getDataWithPositions();
     }
   }, [width]);
 
   // 3. Render the graph with calculated layout in Canvas container
-  if (!width || !graphData) return <></>;
+  if (!width ?? !graphData) return <></>;
 
   const height = width;
   const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
