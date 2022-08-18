@@ -211,7 +211,7 @@ const GraphTooltip = ({
   useEffect(() => {
     if (contextElement != null) {
       virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y);
-      update?.();
+      void update?.();
     }
   }, [x, y, contextElement, update]);
 

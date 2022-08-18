@@ -38,7 +38,7 @@ export const ProfileViewWithData = ({
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED, {
-    skip: currentView != 'icicle' && currentView != 'both',
+    skip: currentView !== 'icicle' && currentView !== 'both',
   });
 
   const {
@@ -46,7 +46,7 @@ export const ProfileViewWithData = ({
     response: topTableResponse,
     error: topTableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP, {
-    skip: currentView != 'table' && currentView != 'both',
+    skip: currentView !== 'table' && currentView !== 'both',
   });
 
   const {
