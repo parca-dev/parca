@@ -51,9 +51,10 @@ export const useQueryRange = (
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
-    setResult({
-      ...result,
-      isLoading: true,
+    setResult(prevResult => {
+      const newResult = {...prevResult};
+      newResult.isLoading = true;
+      return newResult;
     });
 
     const call = client.queryRange(
