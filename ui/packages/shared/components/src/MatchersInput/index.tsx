@@ -278,7 +278,7 @@ const MatchersInput = ({
     if (suggestion.type === Labels.labelValue) {
       const values = newValue.split(',');
 
-      if (currentLabelsCollection?.length === 0) {
+      if (currentLabelsCollection == null || currentLabelsCollection?.length === 0) {
         setCurrentLabelsCollection(values);
       } else {
         setCurrentLabelsCollection((oldValues: string[]) => [
