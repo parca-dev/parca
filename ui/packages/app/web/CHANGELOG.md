@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.31](https://github.com/parca-dev/parca/compare/ui-v0.14.30...ui-v0.14.31) (2022-08-18)
+
+
+### Bug Fixes
+
+* **ui:** address all problems reported by ESLint ([7f9c921](https://github.com/parca-dev/parca/commit/7f9c9217af49f2661a4363b9b17a9a06f1c7539b))
+
+
+
+
+
 ## [0.14.30](https://github.com/parca-dev/parca/compare/ui-v0.14.29...ui-v0.14.30) (2022-08-17)
 
 **Note:** Version bump only for package @parca/web
