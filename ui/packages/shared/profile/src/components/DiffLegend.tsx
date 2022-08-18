@@ -59,7 +59,7 @@ const DiffLegend = () => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>(null);
 
-  const {styles, attributes, ...popperProps} = usePopper(referenceElement, popperElement, {
+  const {styles, attributes} = usePopper(referenceElement, popperElement, {
     placement: 'auto-start',
     strategy: 'absolute',
   });

@@ -43,7 +43,7 @@ const ProfileShareModal = ({
   const metadata = useGrpcMetadata();
   const isFormDataValid = () => true;
 
-  const handleSubmit: () => void = async () => {
+  const handleSubmit: () => Promise<void> = async () => {
     try {
       setLoading(true);
       const {response} = await queryClient.shareProfile(
@@ -89,7 +89,7 @@ const ProfileShareModal = ({
               className="w-fit mt-4"
               onClick={e => {
                 e.preventDefault();
-                handleSubmit();
+                void handleSubmit();
               }}
               disabled={loading || !isFormDataValid()}
               type="submit"
