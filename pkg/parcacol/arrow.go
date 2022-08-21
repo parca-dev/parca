@@ -26,12 +26,12 @@ import (
 )
 
 type ErrMissingColumn struct {
-	column  string
-	columns int
+	Column  string
+	Columns int
 }
 
 func (e ErrMissingColumn) Error() string {
-	return fmt.Sprintf("expected column %s, got %d columns", e.column, e.columns)
+	return fmt.Sprintf("expected column %s, got %d columns", e.Column, e.Columns)
 }
 
 type ArrowToProfileConverter struct {
@@ -61,13 +61,13 @@ func (c *ArrowToProfileConverter) Convert(
 	schema := ar.Schema()
 	indices := schema.FieldIndices("stacktrace")
 	if len(indices) != 1 {
-		return nil, ErrMissingColumn{column: "stacktrace", columns: len(indices)}
+		return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
 	}
 	stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
 
 	indices = schema.FieldIndices("sum(value)")
 	if len(indices) != 1 {
-		return nil, ErrMissingColumn{column: "value", columns: len(indices)}
+		return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
 	}
 	valueColumn := ar.Column(indices[0]).(*array.Int64)
 

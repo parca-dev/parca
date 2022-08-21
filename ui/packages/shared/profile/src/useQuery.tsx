@@ -35,7 +35,7 @@ export const useQuery = (
   reportType: QueryRequest_ReportType,
   options?: UseQueryOptions
 ): IQueryResult => {
-  const {skip = false} = options || {};
+  const {skip = false} = options ?? {};
   const [result, setResult] = useState<IQueryResult>({
     response: null,
     error: null,
@@ -58,9 +58,9 @@ export const useQuery = (
     const call = client.query(req, {meta: metadata});
 
     call.response
-      .then(response => setResult({response: response, error: null, isLoading: false}))
-      .catch(error => setResult({error: error, response: null, isLoading: false}));
-  }, [client, profileSource, metadata, reportType]);
+      .then(response => setResult({response, error: null, isLoading: false}))
+      .catch(error => setResult({error, response: null, isLoading: false}));
+  }, [skip, client, profileSource, metadata, reportType]);
 
   return result;
 };

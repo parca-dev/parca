@@ -74,6 +74,4 @@ jobs:
 
       - name: Run ESLint
         working-directory: ui
-        run: npm run lint
-        # TODO: Address all problems reported by ESLint
-        continue-on-error: true
+        run: yarn run lint

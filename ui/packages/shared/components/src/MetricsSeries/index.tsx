@@ -26,10 +26,10 @@ const MetricsSeries = ({data, line, color, strokeWidth}: MetricsSeriesProps): JS
   <g className="line-group">
     <path
       className="line"
-      d={line(data.values) || undefined}
+      d={line(data.values) ?? undefined}
       style={{
         stroke: color,
-        strokeWidth: strokeWidth,
+        strokeWidth,
       }}
     />
   </g>

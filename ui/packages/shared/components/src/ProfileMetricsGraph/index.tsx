@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useState, useEffect} from 'react';
+import {useState, useEffect} from 'react';
 import MetricsGraph from '../MetricsGraph';
 import {ProfileSelection, SingleProfileSelection} from '@parca/profile';
 import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {DateTimeRange, Spinner, useGrpcMetadata} from '../';
+import {DateTimeRange, useGrpcMetadata} from '../';
 import {Query} from '@parca/parser';
 import {useParcaTheme} from '../ParcaThemeContext';
 
@@ -51,9 +51,10 @@ export const useQueryRange = (
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
-    setResult({
-      ...result,
-      isLoading: true,
+    setResult(prevResult => {
+      const newResult = {...prevResult};
+      newResult.isLoading = true;
+      return newResult;
     });
 
     const call = client.queryRange(
@@ -67,8 +68,8 @@ export const useQueryRange = (
     );
 
     call.response
-      .then(response => setResult({response: response, isLoading: false, error: null}))
-      .catch(error => setResult({error: error, isLoading: false, response: null}));
+      .then(response => setResult({response, isLoading: false, error: null}))
+      .catch(error => setResult({error, isLoading: false, response: null}));
   }, [client, queryExpression, start, end, metadata]);
 
   return result;
@@ -89,7 +90,7 @@ const ProfileMetricsGraph = ({
   const {loader} = useParcaTheme();
 
   useEffect(() => {
-    let showLoaderTimeout;
+    let showLoaderTimeout: ReturnType<typeof setTimeout>;
     if (isLoading && !isLoaderVisible) {
       // if the request takes longer than half a second, show the loading icon
       showLoaderTimeout = setTimeout(() => {
@@ -99,7 +100,7 @@ const ProfileMetricsGraph = ({
       setIsLoaderVisible(false);
     }
     return () => clearTimeout(showLoaderTimeout);
-  }, [isLoading]);
+  }, [isLoading, isLoaderVisible]);
 
   if (isLoaderVisible) {
     return <>{loader}</>;
@@ -119,7 +120,7 @@ const ProfileMetricsGraph = ({
 
   const series = response?.series;
   if (series !== null && series !== undefined && series?.length > 0) {
-    const handleSampleClick = (timestamp: number, value: number, labels: Label[]): void => {
+    const handleSampleClick = (timestamp: number, _value: number, labels: Label[]): void => {
       select(
         new SingleProfileSelection(Query.parse(queryExpression).profileName(), labels, timestamp)
       );

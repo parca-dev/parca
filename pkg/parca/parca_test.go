@@ -240,13 +240,16 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	const maxWorkers = 8
@@ -392,13 +395,16 @@ func TestConsistency(t *testing.T) {
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))

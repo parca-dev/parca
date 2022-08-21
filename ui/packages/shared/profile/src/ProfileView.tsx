@@ -70,7 +70,7 @@ export const useProfileVisState = (): ProfileVisState => {
   const router = parseParams(window.location.search);
   const currentViewFromURL = router.currentProfileView as string;
   const [currentView, setCurrentView] = useState<VisualizationType>(
-    (currentViewFromURL as VisualizationType) || 'icicle'
+    (currentViewFromURL as VisualizationType) ?? 'icicle'
   );
 
   return {currentView, setCurrentView};
@@ -98,13 +98,13 @@ export const ProfileView = ({
 
   const isLoading = useMemo(() => {
     if (currentView === 'icicle') {
-      return !!flamegraphData?.loading;
+      return Boolean(flamegraphData?.loading);
     }
     if (currentView === 'table') {
-      return !!topTableData?.loading;
+      return Boolean(topTableData?.loading);
     }
     if (currentView === 'both') {
-      return !!flamegraphData?.loading || !!topTableData?.loading;
+      return Boolean(flamegraphData?.loading) || Boolean(topTableData?.loading);
     }
     return false;
   }, [currentView, flamegraphData?.loading, topTableData?.loading]);
@@ -126,7 +126,7 @@ export const ProfileView = ({
 
   const downloadPProf = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    if (!profileSource || !queryClient) {
+    if (profileSource == null || queryClient == null) {
       return;
     }
 
@@ -169,14 +169,14 @@ export const ProfileView = ({
             <div className="flex py-3 w-full">
               <div className="w-2/5 flex space-x-4">
                 <div className="flex space-x-1">
-                  {profileSource && queryClient ? (
+                  {profileSource != null && queryClient != null ? (
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
                     />
                   ) : null}
 
-                  <Button color="neutral" onClick={downloadPProf}>
+                  <Button color="neutral" onClick={void downloadPProf}>
                     Download pprof
                   </Button>
                 </div>

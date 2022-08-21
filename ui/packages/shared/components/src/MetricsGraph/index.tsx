@@ -114,7 +114,7 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
       left: domRect.x + x,
       right: domRect.x + x,
       bottom: domRect.y + y,
-    } as ClientRect);
+    } as DOMRect);
 }
 
 const virtualElement: VirtualElement = {
@@ -127,7 +127,7 @@ const virtualElement: VirtualElement = {
       left: 0,
       right: 0,
       bottom: 0,
-    } as ClientRect;
+    } as DOMRect;
   },
 };
 
@@ -166,7 +166,7 @@ export const MetricsTooltip = ({
   useEffect(() => {
     if (contextElement != null) {
       virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y);
-      update?.();
+      void update?.();
     }
   }, [x, y, contextElement, update]);
 
@@ -321,7 +321,7 @@ export const RawMetricsGraph = ({
   const yScale = d3
     .scaleLinear()
     // tslint:disable-next-line
-    .domain([minY, maxY])
+    .domain([minY, maxY] as Iterable<d3.NumberValue>)
     .range([height - margin, 0]);
 
   const color = d3.scaleOrdinal(d3.schemeCategory10);
@@ -343,7 +343,7 @@ export const RawMetricsGraph = ({
       const pointIndex = d3.minIndex(distances);
       const minDistance = distances[pointIndex];
       return {
-        pointIndex: pointIndex,
+        pointIndex,
         distance: minDistance,
       };
     });
@@ -473,7 +473,7 @@ export const RawMetricsGraph = ({
 
     return {
       labels: [],
-      seriesIndex: seriesIndex,
+      seriesIndex,
       timestamp: sample[0],
       value: sample[1],
       x: xScale(sample[0]),

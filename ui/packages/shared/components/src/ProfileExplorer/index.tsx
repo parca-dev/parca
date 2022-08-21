@@ -41,6 +41,7 @@ const getExpressionAsAString = (expression: string | []) => {
   return x;
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const sanitizeDateRange = (time_selection_a: any, from_a: any, to_a: any) => {
   const range = DateTimeRange.fromRangeKey(time_selection_a);
   if (from_a == null && to_a == null) {
@@ -58,6 +59,7 @@ const ProfileExplorerApp = ({
   const dispatch = useAppDispatch();
   const compareMode = useAppSelector(selectCompareMode);
 
+  /* eslint-disable @typescript-eslint/naming-convention */
   let {
     from_a,
     to_a,
@@ -76,18 +78,21 @@ const ProfileExplorerApp = ({
     time_selection_b,
     compare_b,
   } = queryParams;
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;
   from_a = sanitizedRange.from_a;
   to_a = sanitizedRange.to_a;
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const expression_a = getExpressionAsAString(queryParams.expression_a);
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const expression_b = getExpressionAsAString(queryParams.expression_b);
 
-  if (queryParams && queryParams.expression_a) queryParams.expression_a = expression_a;
-  if (queryParams && queryParams.expression_b) queryParams.expression_b = expression_b;
+  if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
+  if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;
 
   useEffect(() => {
     if (compare_a === 'true' && compare_b === 'true') {
@@ -95,7 +100,7 @@ const ProfileExplorerApp = ({
     } else {
       dispatch(setCompare(false));
     }
-  }, [compare_a, compare_b]);
+  }, [dispatch, compare_a, compare_b]);
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -135,7 +140,7 @@ const ProfileExplorerApp = ({
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
     const query = {
-      expression: expression_a as string,
+      expression: expression_a,
       from: parseInt(from_a as string),
       to: parseInt(to_a as string),
       merge: (merge_a as string) === 'true',
@@ -144,7 +149,7 @@ const ProfileExplorerApp = ({
     };
 
     const profile = ProfileSelectionFromParams(
-      expression_a as string,
+      expression_a,
       from_a as string,
       to_a as string,
       merge_a as string,
@@ -235,7 +240,7 @@ const ProfileExplorerApp = ({
   }
 
   const queryA = {
-    expression: expression_a as string,
+    expression: expression_a,
     from: parseInt(from_a as string),
     to: parseInt(to_a as string),
     merge: (merge_a as string) === 'true',
@@ -243,7 +248,7 @@ const ProfileExplorerApp = ({
     profile_name: profile_name_a as string,
   };
   const queryB = {
-    expression: expression_b as string,
+    expression: expression_b,
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
     merge: (merge_b as string) === 'true',
@@ -252,7 +257,7 @@ const ProfileExplorerApp = ({
   };
 
   const profileA = ProfileSelectionFromParams(
-    expression_a as string,
+    expression_a,
     from_a as string,
     to_a as string,
     merge_a as string,
@@ -261,7 +266,7 @@ const ProfileExplorerApp = ({
     time_a as string
   );
   const profileB = ProfileSelectionFromParams(
-    expression_b as string,
+    expression_b,
     from_b as string,
     to_b as string,
     merge_b as string,

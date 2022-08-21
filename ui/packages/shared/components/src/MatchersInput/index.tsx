@@ -62,9 +62,7 @@ export const useLabelNames = (client: QueryServiceClient): ILabelNamesResult => 
   useEffect(() => {
     const call = client.labels({match: []}, {meta: metadata});
 
-    call.response
-      .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}));
+    call.response.then(response => setResult({response})).catch(error => setResult({error}));
   }, [client, metadata]);
 
   return result;
@@ -118,7 +116,7 @@ const MatchersInput = ({
   const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
 
   const getLabelNameValues = (labelName: string) => {
-    const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
+    const call = queryClient.values({labelName, match: []}, {meta: metadata});
 
     call.response
       .then(response => setLabelValuesResponse(response.labelValues))
@@ -195,7 +193,7 @@ const MatchersInput = ({
     suggestionSections.labelNames.length +
     suggestionSections.labelValues.length;
 
-  const getLabelsFromMatchers = matchers => {
+  const getLabelsFromMatchers = (matchers: Matchers[]) => {
     return matchers
       .filter(matcher => matcher.key !== '__name__')
       .map(matcher => `${matcher.key}${matcher.matcherType}${addQuoteMarks(matcher.value)}`);
@@ -261,7 +259,7 @@ const MatchersInput = ({
   };
 
   const applySuggestion = (suggestionIndex: number): void => {
-    let suggestion = getSuggestion(suggestionIndex);
+    const suggestion = getSuggestion(suggestionIndex);
 
     if (suggestion.type === Labels.labelValue) {
       suggestion.value = addQuoteMarks(suggestion.value);
@@ -280,10 +278,7 @@ const MatchersInput = ({
     if (suggestion.type === Labels.labelValue) {
       const values = newValue.split(',');
 
-      if (
-        currentLabelsCollection === null ||
-        (currentLabelsCollection && currentLabelsCollection.length === 0)
-      ) {
+      if (currentLabelsCollection == null || currentLabelsCollection?.length === 0) {
         setCurrentLabelsCollection(values);
       } else {
         setCurrentLabelsCollection((oldValues: string[]) => [
@@ -375,7 +370,7 @@ const MatchersInput = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === 'Backspace' && !inputRef) {
+    if (event.key === 'Backspace' && inputRef === '') {
       if (currentLabelsCollection === null) return;
 
       removeLabel(currentLabelsCollection.length - 1);
@@ -409,7 +404,7 @@ const MatchersInput = ({
       highlightNext();
     }
 
-    if (event.key === 'Backspace' && !inputRef) {
+    if (event.key === 'Backspace' && inputRef === '') {
       if (currentLabelsCollection === null) return;
 
       removeLabel(currentLabelsCollection.length - 1);
@@ -425,7 +420,7 @@ const MatchersInput = ({
     resetHighlight();
   };
 
-  const removeLabel = label => {
+  const removeLabel = (label: number) => {
     if (currentLabelsCollection === null) return;
 
     const newLabels = [...currentLabelsCollection];
@@ -451,15 +446,14 @@ const MatchersInput = ({
         className="w-full flex items-center text-sm border-gray-300 dark:border-gray-600 border-b"
       >
         <ul className="flex space-x-2">
-          {currentLabelsCollection &&
-            currentLabelsCollection.map((value, i) => (
-              <li
-                key={i}
-                className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900 rounded-md"
-              >
-                {value}
-              </li>
-            ))}
+          {currentLabelsCollection?.map((value, i) => (
+            <li
+              key={i}
+              className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900 rounded-md"
+            >
+              {value}
+            </li>
+          ))}
         </ul>
 
         <input
