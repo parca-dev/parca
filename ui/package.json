@@ -41,7 +41,7 @@
     "@swc/jest": "0.2.22",
     "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "13.3.0",
-    "@types/jest": "28.1.6",
+    "@types/jest": "28.1.7",
     "@types/node": "18.0.0",
     "@types/react": "18.0.17",
     "@types/react-dom": "18.0.6",
