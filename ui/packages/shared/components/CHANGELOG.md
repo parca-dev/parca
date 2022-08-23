@@ -3,6 +3,48 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.33](https://github.com/parca-dev/parca/compare/ui-v0.14.32...ui-v0.14.33) (2022-08-18)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
+## [0.14.31](https://github.com/parca-dev/parca/compare/ui-v0.14.30...ui-v0.14.31) (2022-08-18)
+
+
+### Bug Fixes
+
+* **ui:** address all problems reported by ESLint ([7f9c921](https://github.com/parca-dev/parca/commit/7f9c9217af49f2661a4363b9b17a9a06f1c7539b))
+
+
+
+
+
+## [0.14.30](https://github.com/parca-dev/parca/compare/ui-v0.14.29...ui-v0.14.30) (2022-08-17)
+
+
+### Bug Fixes
+
+* **ui:** run eslint --fix ([#1542](https://github.com/parca-dev/parca/issues/1542)) ([e522131](https://github.com/parca-dev/parca/commit/e5221318fc1140d661c45d2d04b096bfebba4af4))
+
+
+
+
+
+## [0.14.29](https://github.com/parca-dev/parca/compare/ui-v0.14.28...ui-v0.14.29) (2022-08-15)
+
+
+
+## 0.14.21 (2022-08-10)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
 ## [0.14.17](https://github.com/parca-dev/parca/compare/ui-v0.14.16...ui-v0.14.17) (2022-08-05)
 
 ### Bug Fixes

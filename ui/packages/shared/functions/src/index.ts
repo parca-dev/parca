@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import format from 'date-fns/format';
 
 export const SEARCH_STRING_COLOR = '#e39c9c';
@@ -5,7 +18,7 @@ export const SEARCH_STRING_COLOR = '#e39c9c';
 export const capitalize = (a: string): string =>
   a
     .split(' ')
-    .map(p => p[0].toUpperCase() + p.substr(1).toLocaleLowerCase())
+    .map(p => p[0].toUpperCase() + p.substring(1).toLocaleLowerCase())
     .join(' ');
 
 interface Unit {
@@ -51,7 +64,7 @@ const unitsInTime = {
 export const convertTime = (value: number, from: TimeUnits, to: TimeUnits): number => {
   const startUnit = unitsInTime[from];
   const endUnit = unitsInTime[to];
-  if (!startUnit || !endUnit) {
+  if (startUnit === undefined || endUnit === undefined) {
     console.error('invalid start or end unit provided');
     return value;
   }
@@ -65,13 +78,13 @@ export const formatDuration = (timeObject: TimeObject, to?: number): string => {
 
   let nanos = Object.keys(timeObject)
     .map(unit => {
-      return timeObject[unit]
+      return timeObject[unit] !== undefined
         ? convertTime(timeObject[unit], unit as TimeUnits, TimeUnits.Nanos)
         : 0;
     })
     .reduce((prev, curr) => prev + curr, 0);
 
-  if (to) {
+  if (to !== undefined) {
     nanos = to - nanos;
   }
 
@@ -153,7 +166,7 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
   }
 
   const rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
-  let i;
+  let i: number;
   for (i = format.length - 1; i > 0; i--) {
     if (absoluteNum >= format[i].multiplier) {
       break;
@@ -166,7 +179,7 @@ export const isDevMode = () => {
   return process.env.NODE_ENV === 'development';
 };
 export const getLastItem = (thePath: string | undefined) => {
-  if (!thePath) return;
+  if (thePath === undefined || thePath === '') return;
 
   const index = thePath.lastIndexOf('/');
   if (index === -1) return thePath;
@@ -174,20 +187,21 @@ export const getLastItem = (thePath: string | undefined) => {
   return thePath.substring(index + 1);
 };
 
-const transformToArray = params => params.split(',');
+const transformToArray = (params: string) => params.split(',');
 
 export const parseParams = (querystring: string) => {
   const params = new URLSearchParams(querystring);
 
   const obj: any = {};
   for (const key of Array.from(params.keys())) {
-    if (params.getAll(key).length > 1) {
-      obj[key] = params.getAll(key);
+    const values = params.getAll(key);
+    if (values.length > 1) {
+      obj[key] = values;
     } else {
-      if (params.get(key)?.includes(',') === true) {
-        obj[key] = transformToArray(params.get(key));
+      if (values[0]?.includes(',')) {
+        obj[key] = transformToArray(values[0]);
       } else {
-        obj[key] = params.get(key);
+        obj[key] = values[0];
       }
     }
   }
@@ -195,13 +209,13 @@ export const parseParams = (querystring: string) => {
   return obj;
 };
 
-export const convertToQueryParams = params =>
+export const convertToQueryParams = (params: Record<string, string>) =>
   Object.keys(params)
     .map(key => key + '=' + params[key])
     .join('&');
 
 export function convertUTCToLocalDate(date: Date) {
-  if (!date) {
+  if (date === null) {
     return date;
   }
   return new Date(
@@ -215,7 +229,7 @@ export function convertUTCToLocalDate(date: Date) {
 }
 
 export function convertLocalToUTCDate(date: Date) {
-  if (!date) {
+  if (date === null) {
     return date;
   }
   return new Date(
@@ -259,7 +273,7 @@ export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean)
 };
 
 export const isSearchMatch = (currentSearchString: string | undefined, name: string) => {
-  if (!currentSearchString) return;
+  if (currentSearchString === undefined || currentSearchString === '') return false;
 
-  return name.toLowerCase().indexOf(currentSearchString.toLowerCase()) !== -1;
+  return name.toLowerCase().includes(currentSearchString.toLowerCase());
 };

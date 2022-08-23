@@ -72,8 +72,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 		err := Run(ctx, logger, reg, &Flags{
 			ConfigPath:          "testdata/parca.yaml",
 			Port:                addr,
-			Metastore:           metaStoreBadgerInMemory,
-			StorageInMemory:     true,
+			Metastore:           metaStoreBadger,
 			StorageGranuleSize:  8 * 1024,
 			StorageActiveMemory: 512 * 1024 * 1024,
 		}, "test-version")
@@ -218,7 +217,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -241,13 +240,16 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	const maxWorkers = 8
@@ -356,7 +358,7 @@ func TestConsistency(t *testing.T) {
 		reg,
 	)
 	require.NoError(t, err)
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
 	schema, err := parcacol.Schema()
@@ -393,13 +395,16 @@ func TestConsistency(t *testing.T) {
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))

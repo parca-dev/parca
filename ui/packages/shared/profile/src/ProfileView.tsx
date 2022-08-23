@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React, {useEffect, useMemo, useState} from 'react';
 
 import {parseParams} from '@parca/functions';
@@ -57,7 +70,7 @@ export const useProfileVisState = (): ProfileVisState => {
   const router = parseParams(window.location.search);
   const currentViewFromURL = router.currentProfileView as string;
   const [currentView, setCurrentView] = useState<VisualizationType>(
-    (currentViewFromURL as VisualizationType) || 'icicle'
+    (currentViewFromURL as VisualizationType) ?? 'icicle'
   );
 
   return {currentView, setCurrentView};
@@ -85,13 +98,13 @@ export const ProfileView = ({
 
   const isLoading = useMemo(() => {
     if (currentView === 'icicle') {
-      return !!flamegraphData?.loading;
+      return Boolean(flamegraphData?.loading);
     }
     if (currentView === 'table') {
-      return !!topTableData?.loading;
+      return Boolean(topTableData?.loading);
     }
     if (currentView === 'both') {
-      return !!flamegraphData?.loading || !!topTableData?.loading;
+      return Boolean(flamegraphData?.loading) || Boolean(topTableData?.loading);
     }
     return false;
   }, [currentView, flamegraphData?.loading, topTableData?.loading]);
@@ -113,7 +126,7 @@ export const ProfileView = ({
 
   const downloadPProf = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    if (!profileSource || !queryClient) {
+    if (profileSource == null || queryClient == null) {
       return;
     }
 
@@ -156,14 +169,14 @@ export const ProfileView = ({
             <div className="flex py-3 w-full">
               <div className="w-2/5 flex space-x-4">
                 <div className="flex space-x-1">
-                  {profileSource && queryClient ? (
+                  {profileSource != null && queryClient != null ? (
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
                     />
                   ) : null}
 
-                  <Button color="neutral" onClick={downloadPProf}>
+                  <Button color="neutral" onClick={void downloadPProf}>
                     Download pprof
                   </Button>
                 </div>

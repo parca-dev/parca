@@ -70,9 +70,9 @@ import (
 )
 
 const (
-	symbolizationInterval   = 10 * time.Second
-	flagModeScraperOnly     = "scraper-only"
-	metaStoreBadgerInMemory = "badgerinmemory"
+	symbolizationInterval = 10 * time.Second
+	flagModeScraperOnly   = "scraper-only"
+	metaStoreBadger       = "badger"
 )
 
 type Flags struct {
@@ -88,18 +88,18 @@ type Flags struct {
 	MutexProfileFraction int `default:"0" help:"Fraction of mutex profile samples to collect."`
 	BlockProfileRate     int `default:"0" help:"Sample rate for block profile."`
 
-	StorageInMemory bool `default:"true" help:"Use in-memory storage, without write-ahead log or persistent metastore."`
+	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the metastore and profile storage."`
 
 	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
 	StorageGranuleSize   int    `default:"8196" help:"Granule size for storage."`
 	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
 	StoragePath          string `default:"data" help:"Path to storage directory."`
-	StoragePersist       bool   `default:"false" help:"Persist storage to the configured object storage."`
+	StorageEnableWAL     bool   `default:"false" help:"Enables write ahead log for profile storage."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 
-	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"badgerinmemory"`
+	Metastore string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
 
 	ProfileShareServer string `default:"api.pprof.me:443" help:"gRPC address to send share profile requests to."`
 
@@ -159,25 +159,28 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	badgerOptions := badger.DefaultOptions("").WithInMemory(true)
-	if !flags.StorageInMemory {
-		badgerOptions = badger.DefaultOptions(filepath.Join(flags.StoragePath, "metastore"))
-	}
-	badgerOptions = badgerOptions.WithLogger(&metastore.BadgerLogger{Logger: logger})
-
-	db, err := badger.Open(badgerOptions)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to open badger database for metastore", "err", err)
-		return err
-	}
-
 	var mStr metastorepb.MetastoreServiceServer
 	switch flags.Metastore {
-	case metaStoreBadgerInMemory:
+	case metaStoreBadger:
+		var badgerOptions badger.Options
+		switch flags.EnablePersistence {
+		case true:
+			badgerOptions = badger.DefaultOptions(filepath.Join(flags.StoragePath, "metastore"))
+		default:
+			badgerOptions = badger.DefaultOptions("").WithInMemory(true)
+		}
+
+		badgerOptions = badgerOptions.WithLogger(&metastore.BadgerLogger{Logger: logger})
+		db, err := badger.Open(badgerOptions)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to open badger database for metastore", "err", err)
+			return err
+		}
+
 		mStr = metastore.NewBadgerMetastore(
 			logger,
 			reg,
-			tracerProvider.Tracer(metaStoreBadgerInMemory),
+			tracerProvider.Tracer(metaStoreBadger),
 			db,
 		)
 	default:
@@ -193,16 +196,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		frostdb.WithActiveMemorySize(flags.StorageActiveMemory),
 	}
 
-	if flags.StoragePersist {
+	if flags.EnablePersistence {
 		frostdbOptions = append(frostdbOptions, frostdb.WithBucketStorage(objstore.NewPrefixedBucket(bucket, "blocks")))
 	}
 
-	if !flags.StorageInMemory {
-		frostdbOptions = append(
-			frostdbOptions,
-			frostdb.WithWAL(),
-			frostdb.WithStoragePath(flags.StoragePath),
-		)
+	if flags.StorageEnableWAL {
+		frostdbOptions = append(frostdbOptions, frostdb.WithWAL(), frostdb.WithStoragePath(flags.StoragePath))
 	}
 
 	col, err := frostdb.New(
@@ -220,7 +219,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	colDB, err := col.DB("parca")
+	colDB, err := col.DB(ctx, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to load database", "err", err)
 		return err
@@ -253,13 +252,16 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
-		metastore,
 		sharepb.NewShareClient(conn),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracerProvider.Tracer("querier"),
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -432,6 +434,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			err := parcaserver.Shutdown(ctx)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				level.Error(logger).Log("msg", "error shutting down server", "err", err)
+			}
+
+			// Close the columnstore after the parcaserver has shutdown to ensure no more writes occur against it.
+			if err := col.Close(); err != nil {
+				level.Error(logger).Log("msg", "error closing columnstore", "err", err)
 			}
 		},
 	)
