@@ -15,6 +15,8 @@ package query
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strconv"
 	"testing"
 
@@ -144,4 +146,69 @@ func TestGenerateCallgraph(t *testing.T) {
 	}
 
 	require.Equal(t, 5, foundEdges)
+}
+
+func TestPruneCallgraph(t *testing.T) {
+	/*
+			  C - D - E
+		     /          \
+		A - B  - F - H - I - J
+		          \
+		           G
+	*/
+	graph := &pb.Callgraph{
+		Nodes: []*pb.CallgraphNode{
+			{Id: "A", Cumulative: int64(100)},
+			{Id: "B", Cumulative: int64(200)},
+			{Id: "C", Cumulative: int64(1)},
+			{Id: "D", Cumulative: int64(1)},
+			{Id: "E", Cumulative: int64(100)},
+			{Id: "F", Cumulative: int64(100)},
+			{Id: "G", Cumulative: int64(300)},
+			{Id: "H", Cumulative: int64(100)},
+			{Id: "I", Cumulative: int64(1)},
+			{Id: "J", Cumulative: int64(100)},
+		},
+		Edges: []*pb.CallgraphEdge{
+			{Id: "1", Source: "A", Target: "B", Cumulative: 1},
+			{Id: "2", Source: "B", Target: "C", Cumulative: 1},
+			{Id: "3", Source: "C", Target: "D", Cumulative: 1},
+			{Id: "4", Source: "D", Target: "E", Cumulative: 1},
+			{Id: "5", Source: "B", Target: "F", Cumulative: 1},
+			{Id: "6", Source: "F", Target: "H", Cumulative: 1},
+			{Id: "7", Source: "F", Target: "G", Cumulative: 1},
+			{Id: "8", Source: "H", Target: "I", Cumulative: 1},
+			{Id: "9", Source: "E", Target: "I", Cumulative: 1},
+			{Id: "10", Source: "I", Target: "J", Cumulative: 1},
+		},
+		Cumulative: 1000,
+	}
+	defer func() { //catch or finally
+		if err := recover(); err != nil { //catch
+			fmt.Fprintf(os.Stderr, "Exception: %v\n", err)
+			fmt.Println(err.(error).Error())
+			os.Exit(1)
+		}
+	}()
+	prunedGraph := pruneGraph(graph)
+
+	/* Validate the pruned graph:
+
+		   - - E - -
+	     /          \
+	A - B  - F - H - I - J
+	          \
+	           G
+	*/
+
+	require.Equal(t, 8, len(prunedGraph.GetNodes()), "Number of nodes mismatch")
+	require.Equal(t, 8, len(prunedGraph.GetEdges()), "Number of edges mismatch")
+	for _, node := range prunedGraph.GetNodes() {
+		require.False(t, node.GetId() == "C", "Node C is not pruned")
+		require.False(t, node.GetId() == "D", "Node D is not pruned")
+	}
+	for _, edge := range prunedGraph.GetEdges() {
+		require.False(t, edge.GetSource() == "C" && edge.GetTarget() == "D", "Edge C -> D is not pruned")
+		require.False(t, edge.GetSource() == "B" && edge.GetTarget() == "C", "Edge B -> C is not pruned")
+	}
 }
