@@ -15,8 +15,6 @@ package query
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"strconv"
 	"testing"
 
@@ -183,13 +181,6 @@ func TestPruneCallgraph(t *testing.T) {
 		},
 		Cumulative: 1000,
 	}
-	defer func() { //catch or finally
-		if err := recover(); err != nil { //catch
-			fmt.Fprintf(os.Stderr, "Exception: %v\n", err)
-			fmt.Println(err.(error).Error())
-			os.Exit(1)
-		}
-	}()
 	prunedGraph := pruneGraph(graph)
 
 	/* Validate the pruned graph:
