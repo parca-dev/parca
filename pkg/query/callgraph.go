@@ -277,7 +277,6 @@ func findAValidParent(node *querypb.CallgraphNode, incomingEdges, outgoingEdges 
 		c += incomingEdges[parent][0].Cumulative
 		edgesToRemove = append(edgesToRemove, incomingEdges[parent][0])
 		parent = incomingEdges[parent][0].Source
-
 	}
 	return parent, c, edgesToRemove
 }
