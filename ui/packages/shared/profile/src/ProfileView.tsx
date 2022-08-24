@@ -14,6 +14,7 @@
 import React, {useEffect, useMemo, useState} from 'react';
 
 import {parseParams} from '@parca/functions';
+import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph} from '@parca/client';
 import {
   Button,
@@ -104,6 +105,8 @@ export const ProfileView = ({
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
   const {currentView, setCurrentView} = profileVisState;
+
+  const [callgraphEnabled] = useUIFeatureFlag('callgraph');
 
   const metadata = useGrpcMetadata();
   const {loader} = useParcaTheme();
@@ -216,15 +219,17 @@ export const ProfileView = ({
                   </Button>
                 </div>
 
-                <div className="mr-3">
-                  <Button
-                    variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
-                    onClick={() => switchProfileView('callgraph')}
-                    className="whitespace-nowrap text-ellipsis"
-                  >
-                    Call Graph
-                  </Button>
-                </div>
+                {callgraphEnabled ? (
+                  <div className="mr-3">
+                    <Button
+                      variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
+                      onClick={() => switchProfileView('callgraph')}
+                      className="whitespace-nowrap text-ellipsis"
+                    >
+                      Call Graph
+                    </Button>
+                  </div>
+                ) : null}
 
                 <Button
                   variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}

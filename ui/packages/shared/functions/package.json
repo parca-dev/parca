@@ -6,6 +6,9 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*"
   },
+  "dependencies": {
+    "use-local-storage-state": "^18.1.1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
