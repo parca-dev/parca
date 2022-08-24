@@ -211,6 +211,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	col, err := frostdb.New(
 		logger,
 		reg,
+		tracerProvider.Tracer("frostdb"),
 		frostdbOptions...,
 	)
 	if err != nil {
@@ -261,6 +262,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			tracerProvider.Tracer("querier"),
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracerProvider.Tracer("query-engine"),
 				colDB.TableProvider(),
 			),
 			"stacktraces",
