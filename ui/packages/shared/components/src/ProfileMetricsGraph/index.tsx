@@ -49,35 +49,31 @@ export const useQueryRange = (
   const [response, setResponse] = useState<QueryRangeResponse | null>(null);
   const metadata = useGrpcMetadata();
 
-  const fetchData = async () => {
-    setIsLoading(true);
-
-    try {
-      const {response} = await client.queryRange(
-        {
-          query: queryExpression,
-          start: Timestamp.fromDate(new Date(start)),
-          end: Timestamp.fromDate(new Date(end)),
-          limit: 0,
-        },
-        {meta: metadata}
-      );
-      setResponse(response);
-    } catch (e) {
-      setError(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
+    void (async () => {
+      setIsLoading(true);
+
+      try {
+        const {response} = await client.queryRange(
+          {
+            query: queryExpression,
+            start: Timestamp.fromDate(new Date(start)),
+            end: Timestamp.fromDate(new Date(end)),
+            limit: 0,
+          },
+          {meta: metadata}
+        );
+        setResponse(response);
+      } catch (e) {
+        setError(e);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, [client, queryExpression, start, end, metadata]);
 
   return {isLoading, error, response};
 };
-
-useQueryRange.whyDidYouRender = true;
 
 const ProfileMetricsGraph = ({
   queryClient,
