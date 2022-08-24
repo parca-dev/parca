@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Children, ReactNode} from 'react';
+import {useState, useEffect, Children, ReactNode} from 'react';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 interface Props {
@@ -34,8 +34,15 @@ const addPropsToChildren = (children: ReactNode, props: {[x: string]: any}): Rea
 export const ResponsiveSvg = (props: Props): JSX.Element => {
   const {children} = props;
   const {ref, dimensions} = useContainerDimensions();
-  const {width, height} = dimensions ?? {width: 0, height: 0};
+  const {width} = dimensions ?? {width: 0};
+  const [height, setHeight] = useState(0);
   const childrenWithDimensions = addPropsToChildren(children, {width, height});
+
+  useEffect(() => {
+    if (ref.current != null) {
+      setHeight(ref?.current.getBoundingClientRect().height);
+    }
+  }, [width]);
 
   return (
     <div ref={ref} className="w-full">
@@ -45,3 +52,5 @@ export const ResponsiveSvg = (props: Props): JSX.Element => {
     </div>
   );
 };
+
+export default ResponsiveSvg;

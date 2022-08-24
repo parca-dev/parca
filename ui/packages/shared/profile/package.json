@@ -6,6 +6,7 @@
     "@iconify/react": "^3.2.2",
     "@parca/client": "^0.14.37",
     "@parca/dynamicsize": "^0.14.36",
+    "@parca/functions": "^0.14.31",
     "@parca/parser": "^0.14.36",
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",

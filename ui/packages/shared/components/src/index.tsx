@@ -13,13 +13,14 @@
 
 import Button from './Button';
 import ButtonGroup from './ButtonGroup';
+import Callgraph from './Callgraph';
 import Card from './Card';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
 import DateTimePicker from './DateTimePicker';
 import Dropdown from './Dropdown';
 import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './GrpcMetadataContext';
 import Input from './Input';
-import FlamegraphTooltip from './FlamegraphTooltip';
+import GraphTooltip from './GraphTooltip';
 import MatchersInput from './MatchersInput';
 import MetricsGraph from './MetricsGraph';
 import Modal from './Modal';
@@ -28,6 +29,7 @@ import Pill, {PillVariant} from './Pill';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileMetricsGraph from './ProfileMetricsGraph';
 import ProfileSelector from './ProfileSelector';
+import ResponsiveSvg from './ResponsiveSvg';
 import Select from './Select';
 import type {SelectElement} from './Select';
 import SearchNodes from './SearchNodes';
@@ -40,12 +42,13 @@ export type {PillVariant, SelectElement};
 export {
   Button,
   ButtonGroup,
+  Callgraph,
   Card,
   DateTimePicker,
   DateTimeRange,
   DateTimeRangePicker,
   Dropdown,
-  FlamegraphTooltip,
+  GraphTooltip,
   GrpcMetadataContext,
   GrpcMetadataProvider,
   Input,
@@ -58,6 +61,7 @@ export {
   ProfileExplorer,
   ProfileMetricsGraph,
   ProfileSelector,
+  ResponsiveSvg,
   Select,
   SearchNodes,
   Spinner,

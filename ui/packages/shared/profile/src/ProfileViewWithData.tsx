@@ -49,6 +49,14 @@ export const ProfileViewWithData = ({
     skip: currentView !== 'table' && currentView !== 'both',
   });
 
+  const {
+    isLoading: callgraphLoading,
+    response: callgraphResponse,
+    error: callgraphError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
+    skip: currentView != 'callgraph',
+  });
+
   const sampleUnit = profileSource.ProfileType().sampleUnit;
 
   return (
@@ -66,6 +74,14 @@ export const ProfileViewWithData = ({
         data:
           topTableResponse?.report.oneofKind === 'top' ? topTableResponse.report.top : undefined,
         error: topTableError,
+      }}
+      callgraphData={{
+        loading: callgraphLoading,
+        data:
+          callgraphResponse?.report.oneofKind === 'callgraph'
+            ? callgraphResponse?.report?.callgraph
+            : undefined,
+        error: callgraphError,
       }}
       profileVisState={profileVisState}
       sampleUnit={sampleUnit}
