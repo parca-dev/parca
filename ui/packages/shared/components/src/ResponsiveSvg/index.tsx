@@ -19,8 +19,8 @@ interface Props {
   [x: string]: any;
 }
 
-const addPropsToChildren = (children, props): any => {
-  const addProps = (child): any => ({
+const addPropsToChildren = (children: ReactNode, props: {[x: string]: any}): ReactNode => {
+  const addProps = (child: JSX.Element): JSX.Element => ({
     ...child,
     props: {
       ...child.props,
@@ -31,7 +31,7 @@ const addPropsToChildren = (children, props): any => {
   return Children.map(children, addProps);
 };
 
-const ResponsiveSvg = (props: Props) => {
+export const ResponsiveSvg = (props: Props): JSX.Element => {
   const {children} = props;
   const {ref, dimensions} = useContainerDimensions();
   const {width} = dimensions ?? {width: 0};

@@ -25,7 +25,7 @@ const DiffLegendBar = ({
 }: {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-}) => {
+}): JSX.Element => {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   return (
@@ -54,7 +54,7 @@ const DiffLegendBar = ({
   );
 };
 
-const DiffLegend = () => {
+const DiffLegend = (): JSX.Element => {
   const [showLegendTooltip, setShowLegendTooltip] = useState(false);
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>(null);
@@ -64,10 +64,10 @@ const DiffLegend = () => {
     strategy: 'absolute',
   });
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = (): void => {
     setShowLegendTooltip(true);
   };
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (): void => {
     setShowLegendTooltip(false);
   };
 

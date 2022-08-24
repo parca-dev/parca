@@ -36,13 +36,17 @@ interface ProfileExplorerProps {
   navigateTo: NavigateFunction;
 }
 
-const getExpressionAsAString = (expression: string | []) => {
+const getExpressionAsAString = (expression: string | []): string => {
   const x = Array.isArray(expression) ? expression.join() : expression;
   return x;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const sanitizeDateRange = (time_selection_a: any, from_a: any, to_a: any) => {
+/* eslint-disable @typescript-eslint/naming-convention */
+const sanitizeDateRange = (
+  time_selection_a: string,
+  from_a: number,
+  to_a: number
+): {time_selection_a: string; from_a: number; to_a: number} => {
   const range = DateTimeRange.fromRangeKey(time_selection_a);
   if (from_a == null && to_a == null) {
     from_a = range.getFromMs();
@@ -50,6 +54,7 @@ const sanitizeDateRange = (time_selection_a: any, from_a: any, to_a: any) => {
   }
   return {time_selection_a: range.getRangeKey(), from_a, to_a};
 };
+/* eslint-enable @typescript-eslint/naming-convention */
 
 const ProfileExplorerApp = ({
   queryClient,
@@ -119,7 +124,7 @@ const ProfileExplorerApp = ({
     return o;
   };
 
-  const selectProfileA = (p: ProfileSelection) => {
+  const selectProfileA = (p: ProfileSelection): void => {
     queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
     queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
@@ -128,7 +133,7 @@ const ProfileExplorerApp = ({
     });
   };
 
-  const selectProfileB = (p: ProfileSelection) => {
+  const selectProfileB = (p: ProfileSelection): void => {
     queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
     queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
@@ -158,7 +163,7 @@ const ProfileExplorerApp = ({
       time_a as string
     );
 
-    const selectQuery = (q: QuerySelection) => {
+    const selectQuery = (q: QuerySelection): void => {
       return navigateTo(
         '/',
         // Filtering the _a suffix causes us to reset potential profile
@@ -177,7 +182,7 @@ const ProfileExplorerApp = ({
       );
     };
 
-    const selectProfile = (p: ProfileSelection) => {
+    const selectProfile = (p: ProfileSelection): void => {
       queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
       return navigateTo('/', {
         ...queryParams,
@@ -275,7 +280,7 @@ const ProfileExplorerApp = ({
     time_b as string
   );
 
-  const selectQueryA = (q: QuerySelection) => {
+  const selectQueryA = (q: QuerySelection): void => {
     return navigateTo(
       '/',
       // Filtering the _a suffix causes us to reset potential profile
@@ -295,7 +300,7 @@ const ProfileExplorerApp = ({
     );
   };
 
-  const selectQueryB = (q: QuerySelection) => {
+  const selectQueryB = (q: QuerySelection): void => {
     return navigateTo(
       '/',
       // Filtering the _b suffix causes us to reset potential profile
@@ -315,7 +320,7 @@ const ProfileExplorerApp = ({
     );
   };
 
-  const closeProfile = (card: string) => {
+  const closeProfile = (card: string): void => {
     let newQueryParameters = queryParams;
     if (card === 'A') {
       newQueryParameters = swapQueryParameters(queryParams);

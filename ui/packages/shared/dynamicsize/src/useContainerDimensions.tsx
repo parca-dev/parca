@@ -20,7 +20,7 @@ export const useContainerDimensions = (): {
   const ref = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<DOMRect>();
 
-  const updateDimensions = () => setDimensions(ref.current?.getBoundingClientRect());
+  const updateDimensions = (): void => setDimensions(ref.current?.getBoundingClientRect());
 
   useEffect(() => {
     updateDimensions();

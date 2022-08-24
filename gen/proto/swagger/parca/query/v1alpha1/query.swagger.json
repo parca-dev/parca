@@ -715,6 +715,10 @@
           "type": "string",
           "format": "int64",
           "title": "cumulative is the cumulative value of the edge"
+        },
+        "isCollapsed": {
+          "type": "boolean",
+          "title": "is_collapsed indicates if the edge is collapsed"
         }
       },
       "title": "CallgraphEdge represents an edge in the graph"

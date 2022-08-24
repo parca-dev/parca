@@ -3,6 +3,73 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.37](https://github.com/parca-dev/parca/compare/ui-v0.14.36...ui-v0.14.37) (2022-08-24)
+
+
+
+## [0.14.35](https://github.com/parca-dev/parca/compare/ui-v0.14.24...ui-v0.14.35) (2022-08-21)
+
+
+
+## [0.14.24](https://github.com/parca-dev/parca/compare/ui-v0.14.23...ui-v0.14.24) (2022-08-11)
+
+
+
+## [0.14.23](https://github.com/parca-dev/parca/compare/ui-v0.14.20...ui-v0.14.23) (2022-08-10)
+
+
+
+## [0.14.20](https://github.com/parca-dev/parca/compare/ui-v0.14.16...ui-v0.14.20) (2022-08-06)
+
+
+
+## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.16) (2022-08-03)
+
+
+
+## [0.14.11](https://github.com/parca-dev/parca/compare/ui-v0.14.7...ui-v0.14.11) (2022-07-30)
+
+
+### Bug Fixes
+
+* remove no-op if statement ([651e419](https://github.com/parca-dev/parca/commit/651e419f59fe78d7eaa887c59a20ea0873c57193))
+
+
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+
+### Bug Fixes
+
+* stop error on profile with no location id ([0733642](https://github.com/parca-dev/parca/commit/073364260f66a8fa96fb9369ff49971997332532))
+
+
+
+## [0.14.5](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.5) (2022-07-26)
+
+
+
+## 0.14.1 (2022-07-25)
+
+
+
+
+
+## [0.14.36](https://github.com/parca-dev/parca/compare/ui-v0.14.35...ui-v0.14.36) (2022-08-24)
+
+
+### Bug Fixes
+
+* **ui:** enforce @typescript-eslint/explicit-function-return-type ([22a18fd](https://github.com/parca-dev/parca/commit/22a18fd3f7befef5cc175131d8c997c3967a5713))
+
+
+
+## 0.14.32 (2022-08-18)
+
+
+
+
+
 ## [0.14.35](https://github.com/parca-dev/parca/compare/ui-v0.14.34...ui-v0.14.35) (2022-08-21)
 
 **Note:** Version bump only for package ui

@@ -694,6 +694,12 @@ export interface CallgraphEdge {
      * @generated from protobuf field: int64 cumulative = 4;
      */
     cumulative: string;
+    /**
+     * is_collapsed indicates if the edge is collapsed
+     *
+     * @generated from protobuf field: bool is_collapsed = 5;
+     */
+    isCollapsed: boolean;
 }
 /**
  * Callgraph is the callgraph report type
@@ -2259,11 +2265,12 @@ class CallgraphEdge$Type extends MessageType<CallgraphEdge> {
             { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "source", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "target", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "cumulative", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
+            { no: 4, name: "cumulative", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 5, name: "is_collapsed", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<CallgraphEdge>): CallgraphEdge {
-        const message = { id: "", source: "", target: "", cumulative: "0" };
+        const message = { id: "", source: "", target: "", cumulative: "0", isCollapsed: false };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<CallgraphEdge>(this, message, value);
@@ -2285,6 +2292,9 @@ class CallgraphEdge$Type extends MessageType<CallgraphEdge> {
                     break;
                 case /* int64 cumulative */ 4:
                     message.cumulative = reader.int64().toString();
+                    break;
+                case /* bool is_collapsed */ 5:
+                    message.isCollapsed = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2310,6 +2320,9 @@ class CallgraphEdge$Type extends MessageType<CallgraphEdge> {
         /* int64 cumulative = 4; */
         if (message.cumulative !== "0")
             writer.tag(4, WireType.Varint).int64(message.cumulative);
+        /* bool is_collapsed = 5; */
+        if (message.isCollapsed !== false)
+            writer.tag(5, WireType.Varint).bool(message.isCollapsed);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

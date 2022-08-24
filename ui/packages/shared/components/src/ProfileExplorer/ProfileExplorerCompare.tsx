@@ -47,11 +47,11 @@ const ProfileExplorerCompare = ({
   closeProfile,
   navigateTo,
 }: ProfileExplorerCompareProps): JSX.Element => {
-  const closeProfileA = () => {
+  const closeProfileA = (): void => {
     closeProfile('A');
   };
 
-  const closeProfileB = () => {
+  const closeProfileB = (): void => {
     closeProfile('B');
   };
 

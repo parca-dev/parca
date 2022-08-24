@@ -24,7 +24,7 @@ interface DateTimeRangePickerProps {
   range: DateTimeRange;
 }
 
-const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps) => {
+const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps): JSX.Element => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickAway(containerRef, () => {

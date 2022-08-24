@@ -19,7 +19,7 @@ interface Props {
   onChange: (date: Date | null) => void;
 }
 
-const DateTimePicker = ({selected, onChange}: Props) => (
+const DateTimePicker = ({selected, onChange}: Props): JSX.Element => (
   <ReactDatePicker
     selected={selected}
     onChange={onChange}
@@ -29,7 +29,7 @@ const DateTimePicker = ({selected, onChange}: Props) => (
   />
 );
 
-export const UTCDateTimePicker = ({selected, onChange}: Props) => (
+export const UTCDateTimePicker = ({selected, onChange}: Props): JSX.Element => (
   <ReactDatePicker
     selected={convertUTCToLocalDate(selected)}
     onChange={date => onChange(date != null ? convertLocalToUTCDate(date) : null)}

@@ -15,6 +15,7 @@ package query
 
 import (
 	"context"
+	"sort"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -22,6 +23,10 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
+)
+
+const (
+	NodeCutOffFraction = 0.005
 )
 
 func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgraph, error) {
@@ -65,7 +70,7 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 			}
 		}
 	}
-	return &querypb.Callgraph{Nodes: nodes, Edges: edges, Cumulative: cummValue}, nil
+	return pruneGraph(&querypb.Callgraph{Nodes: nodes, Edges: edges, Cumulative: cummValue}), nil
 }
 
 func getNodeKey(node *querypb.CallgraphNode) string {
@@ -164,4 +169,114 @@ func lineToGraphNode(
 			Mapping: mapping,
 		},
 	}
+}
+
+func prunableNodes(nodes []*querypb.CallgraphNode, c int64) []*querypb.CallgraphNode {
+	if len(nodes) == 0 {
+		return nodes
+	}
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Cumulative > nodes[j].Cumulative
+	})
+	i := 0
+	cutoffValue := (float64(c) * NodeCutOffFraction)
+	for ; i < len(nodes); i++ {
+		if float64(nodes[i].Cumulative) < cutoffValue {
+			break
+		}
+	}
+	return nodes[i:]
+}
+
+func pruneGraph(graph *querypb.Callgraph) *querypb.Callgraph {
+	prunableNodes := prunableNodes(graph.Nodes, graph.Cumulative)
+	finalNodes := make([]*querypb.CallgraphNode, 0)
+	finalEdges := make([]*querypb.CallgraphEdge, 0)
+	edgesMap := make(map[string]*querypb.CallgraphEdge)
+	incomingEdges := make(map[string][]*querypb.CallgraphEdge)
+	outgoingEdges := make(map[string][]*querypb.CallgraphEdge)
+	prunableNodesMap := make(map[string]bool)
+	for _, edge := range graph.Edges {
+		if incomingEdges[edge.Target] == nil {
+			incomingEdges[edge.Target] = []*querypb.CallgraphEdge{}
+		}
+		incomingEdges[edge.Target] = append(incomingEdges[edge.Target], edge)
+
+		if outgoingEdges[edge.Source] == nil {
+			outgoingEdges[edge.Source] = []*querypb.CallgraphEdge{}
+		}
+		outgoingEdges[edge.Source] = append(outgoingEdges[edge.Source], edge)
+		edgesMap[edge.Id] = edge
+	}
+
+	for _, node := range prunableNodes {
+		prunableNodesMap[node.Id] = true
+	}
+
+	nodesToRemove := make(map[string]bool, 0)
+	edgesToRemove := make(map[string]bool, 0)
+	edgesToCreate := make([]*querypb.CallgraphEdge, 0)
+
+	// Validate the eligibility of each prunableNode
+	for _, node := range prunableNodes {
+		if !prunableNodesMap[node.Id] {
+			continue
+		}
+		if len(incomingEdges[node.Id]) > 1 {
+			// Cannot prune nodes with multiple incoming edges.
+			continue
+		}
+		if len(incomingEdges[node.Id]) == 0 || len(outgoingEdges[node.Id]) == 0 {
+			// Cannot prune leaf nodes.
+			continue
+		}
+		nodesToRemove[node.Id] = true
+	}
+
+	// Remove nodes and identify edges to patch
+	for _, node := range graph.Nodes {
+		if nodesToRemove[node.Id] {
+			// patch the edges from its parent to child nodes
+			parentNodeId, cummValue, incomingEdgesToRemove := findAValidParent(node, incomingEdges, outgoingEdges, nodesToRemove)
+			for _, edge := range outgoingEdges[node.Id] {
+				if nodesToRemove[edge.Target] {
+					// Skipping the edge creation as this will be patched by the downstream node that is being removed.
+					continue
+				}
+				newEdge := &querypb.CallgraphEdge{Id: uuid.New().String(), Source: parentNodeId, Target: edge.Target, Cumulative: cummValue, IsCollapsed: true}
+				edgesToCreate = append(edgesToCreate, newEdge)
+			}
+			for _, outgoingEdge := range append(outgoingEdges[node.Id], incomingEdgesToRemove...) {
+				edgesToRemove[outgoingEdge.Id] = true
+			}
+
+			continue
+		} else {
+			finalNodes = append(finalNodes, node)
+		}
+	}
+
+	// Patch the edges and prepare the final list of edges
+	for _, edge := range graph.Edges {
+		if edgesToRemove[edge.Id] {
+			continue
+		}
+		finalEdges = append(finalEdges, edge)
+	}
+	finalEdges = append(finalEdges, edgesToCreate...)
+
+	return &querypb.Callgraph{Nodes: finalNodes, Edges: finalEdges, Cumulative: graph.Cumulative}
+}
+
+// Traverse the graph and find a valid parent node that is not marked to be deleted.
+func findAValidParent(node *querypb.CallgraphNode, incomingEdges, outgoingEdges map[string][]*querypb.CallgraphEdge, nodesToRemove map[string]bool) (string, int64, []*querypb.CallgraphEdge) {
+	parent := incomingEdges[node.Id][0].Source
+	c := incomingEdges[node.Id][0].Cumulative
+	edgesToRemove := []*querypb.CallgraphEdge{incomingEdges[node.Id][0]}
+	for nodesToRemove[parent] {
+		c += incomingEdges[parent][0].Cumulative
+		edgesToRemove = append(edgesToRemove, incomingEdges[parent][0])
+		parent = incomingEdges[parent][0].Source
+	}
+	return parent, c, edgesToRemove
 }

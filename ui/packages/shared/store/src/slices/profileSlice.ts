@@ -43,7 +43,8 @@ export const profileSlice = createSlice({
 export const {setCompare, setSearchNodeString} = profileSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
-export const selectCompareMode = (state: RootState) => state.profile.compare;
-export const selectSearchNodeString = (state: RootState) => state.profile.searchNodeString;
+export const selectCompareMode = (state: RootState): boolean => state.profile.compare;
+export const selectSearchNodeString = (state: RootState): string | undefined =>
+  state.profile.searchNodeString;
 
 export default profileSlice.reducer;

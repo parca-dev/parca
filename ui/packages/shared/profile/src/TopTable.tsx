@@ -26,7 +26,7 @@ interface TopTableProps {
   sampleUnit: string;
 }
 
-const Arrow = ({direction}: {direction: string | undefined}) => {
+const Arrow = ({direction}: {direction: string | undefined}): JSX.Element => {
   return (
     <svg
       className={`${direction !== undefined ? 'fill-[#161616] dark:fill-[#ffffff]' : ''}`}
@@ -41,7 +41,22 @@ const Arrow = ({direction}: {direction: string | undefined}) => {
   );
 };
 
-const useSortableData = (top?: Top, config = {key: 'cumulative', direction: 'desc'}) => {
+const useSortableData = (
+  top?: Top,
+  config = {key: 'cumulative', direction: 'desc'}
+): {
+  items:
+    | Array<{
+        diff: number;
+        cumulative: number;
+        flat: number;
+        name: string | undefined;
+        meta?: TopNodeMeta | undefined;
+      }>
+    | undefined;
+  requestSort: (key: string) => void;
+  sortConfig: {key: string; direction: string} | null;
+} => {
   const [sortConfig, setSortConfig] = React.useState<{key: string; direction: string} | null>(
     config
   );
@@ -74,7 +89,7 @@ const useSortableData = (top?: Top, config = {key: 'cumulative', direction: 'des
     return sortableItems;
   }, [items, sortConfig]);
 
-  const requestSort = (key: string) => {
+  const requestSort = (key: string): void => {
     let direction = 'desc';
     if (sortConfig != null && sortConfig.key === key && sortConfig.direction === 'desc') {
       direction = 'asc';
@@ -112,14 +127,14 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
   const total = top != null ? top.list.length : 0;
   if (total === 0) return <>Profile has no samples</>;
 
-  const getClassNamesFor = (name: string) => {
+  const getClassNamesFor = (name: string): string | undefined => {
     if (sortConfig == null) {
       return;
     }
     return sortConfig.key === name ? sortConfig.direction : undefined;
   };
 
-  const addPlusSign = (num: string) => {
+  const addPlusSign = (num: string): string => {
     if (num.charAt(0) === '0' || num.charAt(0) === '-') {
       return num;
     }

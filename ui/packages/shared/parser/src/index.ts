@@ -374,7 +374,7 @@ export class Query {
   }
 }
 
-function stripCurlyBrackets(input: string) {
+function stripCurlyBrackets(input: string): string {
   const withoutStartingCurly = input.startsWith('{') ? input.slice(1) : input;
   const withoutEndingCurly = withoutStartingCurly.endsWith('}')
     ? withoutStartingCurly.slice(0, withoutStartingCurly.length - 1)

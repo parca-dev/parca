@@ -30,7 +30,7 @@ export const ParcaThemeProvider = ({
 }: {
   children: ReactNode;
   value?: ParcaThemeContextProps;
-}) => {
+}): JSX.Element => {
   return (
     <ParcaThemeContext.Provider value={value ?? defaultValue}>
       {children}
@@ -38,7 +38,7 @@ export const ParcaThemeProvider = ({
   );
 };
 
-export const useParcaTheme = () => {
+export const useParcaTheme = (): ParcaThemeContextProps => {
   const context = useContext(ParcaThemeContext);
   if (context == null) {
     return defaultValue;
