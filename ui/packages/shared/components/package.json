@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.14.31",
+  "version": "0.14.33",
   "description": "A component library for Parca",
   "main": "src/index.tsx",
   "scripts": {
