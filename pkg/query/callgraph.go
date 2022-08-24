@@ -269,7 +269,7 @@ func pruneGraph(graph *querypb.Callgraph) *querypb.Callgraph {
 }
 
 // Traverse the graph and find a valid parent node that is not marked to be deleted.
-func findAValidParent(node *querypb.CallgraphNode, incomingEdges map[string][]*querypb.CallgraphEdge, outgoingEdges map[string][]*querypb.CallgraphEdge, nodesToRemove map[string]bool) (string, int64, []*querypb.CallgraphEdge) {
+func findAValidParent(node *querypb.CallgraphNode, incomingEdges, outgoingEdges map[string][]*querypb.CallgraphEdge, nodesToRemove map[string]bool) (string, int64, []*querypb.CallgraphEdge) {
 	parent := incomingEdges[node.Id][0].Source
 	c := incomingEdges[node.Id][0].Cumulative
 	edgesToRemove := []*querypb.CallgraphEdge{incomingEdges[node.Id][0]}
