@@ -243,7 +243,7 @@ func pruneGraph(graph *querypb.Callgraph) *querypb.Callgraph {
 					// Skipping the edge creation as this will be patched by the downstream node that is being removed.
 					continue
 				}
-				newEdge := &querypb.CallgraphEdge{Id: uuid.New().String(), Source: parentNodeId, Target: edge.Target, Cumulative: cummValue}
+				newEdge := &querypb.CallgraphEdge{Id: uuid.New().String(), Source: parentNodeId, Target: edge.Target, Cumulative: cummValue, IsCollapsed: true}
 				edgesToCreate = append(edgesToCreate, newEdge)
 			}
 			for _, outgoingEdge := range append(outgoingEdges[node.Id], incomingEdgesToRemove...) {

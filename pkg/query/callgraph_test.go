@@ -201,5 +201,8 @@ func TestPruneCallgraph(t *testing.T) {
 	for _, edge := range prunedGraph.GetEdges() {
 		require.False(t, edge.GetSource() == "C" && edge.GetTarget() == "D", "Edge C -> D is not pruned")
 		require.False(t, edge.GetSource() == "B" && edge.GetTarget() == "C", "Edge B -> C is not pruned")
+		if edge.GetSource() == "B" && edge.GetTarget() == "E" {
+			require.True(t, edge.IsCollapsed, "Edge B -> F is not marked as collapsed")
+		}
 	}
 }

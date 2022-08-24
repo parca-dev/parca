@@ -374,6 +374,9 @@ message CallgraphEdge {
 
   // cumulative is the cumulative value of the edge
   int64 cumulative = 4;
+
+  // is_collapsed indicates if the edge is collapsed
+  bool is_collapsed = 5;
 }
 
 // Callgraph is the callgraph report type
