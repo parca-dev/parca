@@ -24,7 +24,7 @@ export const GrpcMetadataProvider = ({
 }: {
   children: ReactNode;
   value?: RpcMetadata;
-}) => {
+}): JSX.Element => {
   return (
     <GrpcMetadataContext.Provider value={value ?? DEFAULT_VALUE}>
       {children}
@@ -32,7 +32,7 @@ export const GrpcMetadataProvider = ({
   );
 };
 
-export const useGrpcMetadata = () => {
+export const useGrpcMetadata = (): RpcMetadata => {
   const context = useContext(GrpcMetadataContext);
   if (context == null) {
     return DEFAULT_VALUE;

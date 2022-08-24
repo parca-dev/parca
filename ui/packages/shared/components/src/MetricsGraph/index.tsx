@@ -103,7 +103,7 @@ interface MetricsTooltipProps {
   sampleUnit: string;
 }
 
-function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
+function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0): () => DOMRect {
   const domRect = contextElement.getBoundingClientRect();
   return () =>
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -248,7 +248,7 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
 
   useEffect(() => {
-    const handleShiftDown = (event: {keyCode: number}) => {
+    const handleShiftDown = (event: {keyCode: number}): void => {
       if (event.keyCode === 16) {
         setFreezeTooltip(true);
       }
@@ -261,7 +261,7 @@ export const RawMetricsGraph = ({
   }, []);
 
   useEffect(() => {
-    const handleShiftUp = (event: {keyCode: number}) => {
+    const handleShiftUp = (event: {keyCode: number}): void => {
       if (event.keyCode === 16) {
         setFreezeTooltip(false);
       }
@@ -436,13 +436,13 @@ export const RawMetricsGraph = ({
     }
   };
 
-  const findSelectedProfile = () => {
+  const findSelectedProfile = (): HighlightedSeries | null => {
     if (profile == null) {
       return null;
     }
 
     let s: Series | null = null;
-    let seriesIndex: number | null = null;
+    let seriesIndex: number = -1;
 
     outer: for (let i = 0; i < series.length; i++) {
       const keys = profile.labels.map(e => e.name);

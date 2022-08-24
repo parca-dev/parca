@@ -24,10 +24,10 @@ interface Props {
 
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-const ResultBox = ({value, className = ''}: Props) => {
+const ResultBox = ({value, className = ''}: Props): JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
-  const onCopy = () => {
+  const onCopy = (): void => {
     setIsCopied(true);
     (window.document?.activeElement as HTMLElement)?.blur();
     if (timeoutHandle != null) {

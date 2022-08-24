@@ -175,10 +175,10 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
   return `${(num / format[i].multiplier).toFixed(digits).replace(rx, '$1')}${format[i].symbol}`;
 };
 
-export const isDevMode = () => {
+export const isDevMode = (): boolean => {
   return process.env.NODE_ENV === 'development';
 };
-export const getLastItem = (thePath: string | undefined) => {
+export const getLastItem = (thePath: string | undefined): string | undefined => {
   if (thePath === undefined || thePath === '') return;
 
   const index = thePath.lastIndexOf('/');
@@ -187,12 +187,12 @@ export const getLastItem = (thePath: string | undefined) => {
   return thePath.substring(index + 1);
 };
 
-const transformToArray = (params: string) => params.split(',');
+const transformToArray = (params: string): string[] => params.split(',');
 
-export const parseParams = (querystring: string) => {
+export const parseParams = (querystring: string): Record<string, string | string[]> => {
   const params = new URLSearchParams(querystring);
 
-  const obj: any = {};
+  const obj: Record<string, string | string[]> = {};
   for (const key of Array.from(params.keys())) {
     const values = params.getAll(key);
     if (values.length > 1) {
@@ -209,12 +209,12 @@ export const parseParams = (querystring: string) => {
   return obj;
 };
 
-export const convertToQueryParams = (params: Record<string, string>) =>
+export const convertToQueryParams = (params: Record<string, string>): string =>
   Object.keys(params)
     .map(key => key + '=' + params[key])
     .join('&');
 
-export function convertUTCToLocalDate(date: Date) {
+export function convertUTCToLocalDate(date: Date): Date {
   if (date === null) {
     return date;
   }
@@ -228,7 +228,7 @@ export function convertUTCToLocalDate(date: Date) {
   );
 }
 
-export function convertLocalToUTCDate(date: Date) {
+export function convertLocalToUTCDate(date: Date): Date {
   if (date === null) {
     return date;
   }
@@ -244,13 +244,14 @@ export function convertLocalToUTCDate(date: Date) {
   );
 }
 
-export const getNewSpanColor = (isDarkMode: boolean) => (isDarkMode ? '#B3BAE1' : '#929FEB');
-export const getIncreasedSpanColor = (transparency: number, isDarkMode: boolean) => {
+export const getNewSpanColor = (isDarkMode: boolean): string =>
+  isDarkMode ? '#B3BAE1' : '#929FEB';
+export const getIncreasedSpanColor = (transparency: number, isDarkMode: boolean): string => {
   return isDarkMode
     ? `rgba(255, 177, 204, ${transparency})`
     : `rgba(254, 153, 187, ${transparency})`;
 };
-export const getReducedSpanColor = (transparency: number, isDarkMode: boolean) => {
+export const getReducedSpanColor = (transparency: number, isDarkMode: boolean): string => {
   return isDarkMode
     ? `rgba(103, 158, 92, ${transparency})`
     : `rgba(164, 214, 153, ${transparency})`;
@@ -272,7 +273,7 @@ export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean)
   return color;
 };
 
-export const isSearchMatch = (currentSearchString: string | undefined, name: string) => {
+export const isSearchMatch = (currentSearchString: string | undefined, name: string): boolean => {
   if (currentSearchString === undefined || currentSearchString === '') return false;
 
   return name.toLowerCase().includes(currentSearchString.toLowerCase());

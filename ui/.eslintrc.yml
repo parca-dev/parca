@@ -34,10 +34,8 @@ rules:
 
   no-labels: [error, {allowLoop: true}]
   no-void: 0
-  # TODO fix these in follow ups
-  '@typescript-eslint/explicit-function-return-type': 'off'
-  #'@typescript-eslint/member-delimiter-style':
-  #  - error
-  #  - singleline:
-  #      delimiter: 'semi'
-  #      requireLast: false
+  '@typescript-eslint/member-delimiter-style':
+    - error
+    - singleline:
+        delimiter: 'semi'
+        requireLast: false
