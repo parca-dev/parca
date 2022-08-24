@@ -19,7 +19,7 @@ interface CardProps {
   className?: string;
 }
 
-const Card = ({children, className = ''}: CardProps) => {
+const Card = ({children, className = ''}: CardProps): JSX.Element => {
   return (
     <div className="mx-auto">
       <div
@@ -34,7 +34,13 @@ const Card = ({children, className = ''}: CardProps) => {
   );
 };
 
-const Header = ({children, className = ''}: {children: React.ReactNode; className?: string}) => {
+const Header = ({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}): JSX.Element => {
   return (
     <div
       className={cx('bg-gray-200 dark:bg-gray-800 px-4 py-4 sm:px-6', {
@@ -47,7 +53,7 @@ const Header = ({children, className = ''}: {children: React.ReactNode; classNam
   );
 };
 
-const Body = ({children}: {children: React.ReactNode}) => {
+const Body = ({children}: {children: React.ReactNode}): JSX.Element => {
   return <div className="p-4">{children}</div>;
 };
 

@@ -13,7 +13,7 @@
 
 import cx from 'classnames';
 
-const Input = ({className = '', ...props}) => {
+const Input = ({className = '', ...props}): JSX.Element => {
   return (
     <input
       {...props}

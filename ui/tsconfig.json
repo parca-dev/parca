@@ -4,6 +4,7 @@
   "compilerOptions": {
     "module": "CommonJS",
     "isolatedModules": true,
+    "strictNullChecks": true,
     "baseUrl": "."
   },
   "exclude": ["node_modules"]

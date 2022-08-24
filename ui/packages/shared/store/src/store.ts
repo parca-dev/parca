@@ -24,7 +24,9 @@ import {
   PURGE,
   REGISTER,
   persistStore,
+  Persistor,
 } from 'redux-persist';
+import {Store} from 'redux';
 
 const rootReducer = combineReducers({
   ui: uiReducer,
@@ -58,7 +60,7 @@ const store = configureStore({
     }),
 });
 
-const defaultExports = () => {
+const defaultExports = (): {store: Store; persistor: Persistor} => {
   const persistor = persistStore(store);
   return {store, persistor};
 };

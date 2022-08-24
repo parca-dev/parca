@@ -31,7 +31,7 @@ interface BaseDate {
   isRelative: () => boolean;
 }
 export class RelativeDate implements BaseDate {
-  isRelative = () => true;
+  isRelative = (): boolean => true;
   unit: UNIT_TYPE;
   value: number;
 
@@ -42,7 +42,7 @@ export class RelativeDate implements BaseDate {
 }
 
 export class AbsoluteDate implements BaseDate {
-  isRelative = () => false;
+  isRelative = (): boolean => false;
   value: Date;
   constructor(value?: Date) {
     this.value = value ?? getDateHoursAgo(1);
@@ -73,14 +73,14 @@ export class DateTimeRange {
     return `${formattedFrom} → ${formattedTo}`;
   }
 
-  getDateForPosition(position: POSITION_TYPE) {
+  getDateForPosition(position: POSITION_TYPE): DateUnion {
     if (position === POSITIONS.FROM) {
       return this.from;
     }
     return this.to;
   }
 
-  setDateForPosition(date: DateUnion, position: string) {
+  setDateForPosition(date: DateUnion, position: string): void {
     if (position === POSITIONS.FROM) {
       this.from = date;
     } else {
@@ -88,22 +88,22 @@ export class DateTimeRange {
     }
   }
 
-  getMs(date: DateUnion) {
+  getMs(date: DateUnion): number {
     if (date.isRelative()) {
       return getRelativeDateMs(date as RelativeDate);
     }
     return (date as AbsoluteDate).value.getTime();
   }
 
-  getFromMs() {
+  getFromMs(): number {
     return this.getMs(this.from);
   }
 
-  getToMs() {
+  getToMs(): number {
     return this.getMs(this.to);
   }
 
-  getDateStringKey(date: DateUnion) {
+  getDateStringKey(date: DateUnion): string {
     if (date.isRelative()) {
       const relativeDate = date as RelativeDate;
       return `${relativeDate.unit}|${relativeDate.value}`;
@@ -112,22 +112,22 @@ export class DateTimeRange {
     return `${absoluteDate.value.getTime()}`;
   }
 
-  getFromDateStringKey() {
+  getFromDateStringKey(): string {
     return this.getDateStringKey(this.from);
   }
 
-  getToDateStringKey() {
+  getToDateStringKey(): string {
     return this.getDateStringKey(this.to);
   }
 
-  getRangeKey() {
+  getRangeKey(): string {
     if (this.from.isRelative()) {
       return `relative:${this.getFromDateStringKey()}`;
     }
     return `absolute:${this.getFromDateStringKey()}-${this.getToDateStringKey()}`;
   }
 
-  static fromRangeKey(rangeKey: string | undefined) {
+  static fromRangeKey(rangeKey: string | undefined): DateTimeRange {
     if (rangeKey === undefined) {
       return new DateTimeRange();
     }
@@ -154,7 +154,7 @@ export class DateTimeRange {
     return new DateTimeRange();
   }
 
-  static fromAbsoluteDates(from: number, to: number) {
+  static fromAbsoluteDates(from: number, to: number): DateTimeRange {
     return new DateTimeRange(new AbsoluteDate(new Date(from)), new AbsoluteDate(new Date(to)));
   }
 }

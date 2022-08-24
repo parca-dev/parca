@@ -36,10 +36,10 @@ const virtualElement = {
       left: 0,
       right: 0,
       bottom: 0,
-    } as ClientRect),
+    } as DOMRect),
 };
 
-function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
+function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0): () => DOMRect {
   const domRect = contextElement.getBoundingClientRect();
   return () =>
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -50,7 +50,7 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
       left: domRect.x + x,
       right: domRect.x + x,
       bottom: domRect.y + y,
-    } as ClientRect);
+    } as DOMRect);
 }
 
 const FlamegraphNodeTooltipTableRows = ({

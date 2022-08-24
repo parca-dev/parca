@@ -50,7 +50,7 @@ enum Labels {
 // eslint-disable-next-line no-useless-escape
 const labelNameValueRe = /(^([a-z])\w+)(=|!=|=~|!~)(\")[a-zA-Z0-9_.-:]*(\")$/g;
 
-const addQuoteMarks = (labelValue: string) => {
+const addQuoteMarks = (labelValue: string): string => {
   // eslint-disable-next-line no-useless-escape
   return `\"${labelValue}\"`;
 };
@@ -115,7 +115,7 @@ const MatchersInput = ({
 
   const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
 
-  const getLabelNameValues = (labelName: string) => {
+  const getLabelNameValues = (labelName: string): void => {
     const call = queryClient.values({labelName, match: []}, {meta: metadata});
 
     call.response
@@ -193,7 +193,7 @@ const MatchersInput = ({
     suggestionSections.labelNames.length +
     suggestionSections.labelValues.length;
 
-  const getLabelsFromMatchers = (matchers: Matchers[]) => {
+  const getLabelsFromMatchers = (matchers: Matchers[]): string[] => {
     return matchers
       .filter(matcher => matcher.key !== '__name__')
       .map(matcher => `${matcher.key}${matcher.matcherType}${addQuoteMarks(matcher.value)}`);
@@ -420,7 +420,7 @@ const MatchersInput = ({
     resetHighlight();
   };
 
-  const removeLabel = (label: number) => {
+  const removeLabel = (label: number): void => {
     if (currentLabelsCollection === null) return;
 
     const newLabels = [...currentLabelsCollection];
@@ -431,7 +431,7 @@ const MatchersInput = ({
     setMatchersString(newLabelsAsAString);
   };
 
-  const removeLocalMatcher = () => {
+  const removeLocalMatcher = (): void => {
     if (localMatchers === null) return;
 
     const newMatchers = [...localMatchers];
