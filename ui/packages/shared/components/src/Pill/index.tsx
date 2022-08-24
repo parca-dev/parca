@@ -49,7 +49,7 @@ const Pill = ({
 }: {
   variant?: PillVariant;
   children: React.ReactNode;
-} & JSX.IntrinsicElements['span']) => (
+} & JSX.IntrinsicElements['span']): JSX.Element => (
   <span
     className={cx(
       VARIANTS[variant].color,

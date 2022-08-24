@@ -91,7 +91,7 @@ function IcicleRect({
   onMouseLeave,
   onClick,
   curPath,
-}: IcicleRectProps) {
+}: IcicleRectProps): JSX.Element {
   const currentSearchString = useAppSelector(selectSearchNodeString);
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
@@ -158,7 +158,7 @@ export function IcicleGraphNodes({
   path,
   setCurPath,
   curPath,
-}: IcicleGraphNodesProps) {
+}: IcicleGraphNodesProps): JSX.Element {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const nodes =
@@ -189,7 +189,7 @@ export function IcicleGraphNodes({
 
         const color = diffColor(diff, cumulative, isDarkMode);
 
-        const onClick = () => {
+        const onClick = (): void => {
           setCurPath(nextPath);
         };
 
@@ -199,8 +199,8 @@ export function IcicleGraphNodes({
             ? scaleLinear().domain([0, cumulative]).range([0, totalWidth])
             : xScale;
 
-        const onMouseEnter = () => setHoveringNode(d);
-        const onMouseLeave = () => setHoveringNode(undefined);
+        const onMouseEnter = (): void => setHoveringNode(d);
+        const onMouseLeave = (): void => setHoveringNode(undefined);
 
         return (
           <React.Fragment key={`node-${key}`}>
@@ -250,16 +250,16 @@ export function IcicleGraphRootNode({
   setHoveringNode,
   setCurPath,
   curPath,
-}: IcicleGraphRootNodeProps) {
+}: IcicleGraphRootNodeProps): JSX.Element {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const cumulative = parseFloat(node.cumulative);
   const diff = parseFloat(node.diff);
   const color = diffColor(diff, cumulative, isDarkMode);
 
-  const onClick = () => setCurPath([]);
-  const onMouseEnter = () => setHoveringNode(node);
-  const onMouseLeave = () => setHoveringNode(undefined);
+  const onClick = (): void => setCurPath([]);
+  const onMouseEnter = (): void => setHoveringNode(node);
+  const onMouseLeave = (): void => setHoveringNode(undefined);
   const path = [];
 
   return (
@@ -301,7 +301,7 @@ export default function IcicleGraph({
   setCurPath,
   curPath,
   sampleUnit,
-}: IcicleGraphProps) {
+}: IcicleGraphProps): JSX.Element {
   const [hoveringNode, setHoveringNode] = useState<
     FlamegraphNode | FlamegraphRootNode | undefined
   >();

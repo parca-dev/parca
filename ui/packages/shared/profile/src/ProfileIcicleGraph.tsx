@@ -31,7 +31,7 @@ const ProfileIcicleGraph = ({
   curPath,
   setNewCurPath,
   sampleUnit,
-}: ProfileIcicleGraphProps) => {
+}: ProfileIcicleGraphProps): JSX.Element => {
   const compareMode = useAppSelector(selectCompareMode);
   const {ref, dimensions} = useContainerDimensions();
 

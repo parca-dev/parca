@@ -30,7 +30,7 @@ export const ProfileViewWithData = ({
   queryClient,
   profileSource,
   navigateTo,
-}: ProfileViewWithDataProps) => {
+}: ProfileViewWithDataProps): JSX.Element => {
   const profileVisState = useProfileVisState();
   const {currentView} = profileVisState;
   const {

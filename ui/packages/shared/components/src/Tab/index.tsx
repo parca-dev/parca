@@ -14,7 +14,7 @@
 import cx from 'classnames';
 import {Tab as HeadlessTab} from '@headlessui/react';
 
-const Tab = ({tabs, panels, defaultTabIndex = 0}) => {
+const Tab = ({tabs, panels, defaultTabIndex = 0}): JSX.Element => {
   return (
     <HeadlessTab.Group defaultIndex={defaultTabIndex}>
       <HeadlessTab.List className="flex p-1 space-x-1 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl w-[80%] mx-auto border border-gray-300 dark:border-gray-400">

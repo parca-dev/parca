@@ -21,7 +21,10 @@ interface DateTimeRangePickerProps {
   onChange?: (from: DateUnion, to: DateUnion) => void;
 }
 
-const DateTimeRangePickerPanel = ({range, onChange = () => null}: DateTimeRangePickerProps) => {
+const DateTimeRangePickerPanel = ({
+  range,
+  onChange = () => null,
+}: DateTimeRangePickerProps): JSX.Element => {
   return (
     <div className="w-[300px] p-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
       <Tab

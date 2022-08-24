@@ -25,7 +25,7 @@ const DateTimeRangePickerTrigger = ({
   range,
   onClick,
   isActive,
-}: DateTimeRangePickerTriggerProps) => {
+}: DateTimeRangePickerTriggerProps): JSX.Element => {
   return (
     <>
       <Popover.Button onClick={onClick}>

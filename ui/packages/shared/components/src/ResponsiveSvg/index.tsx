@@ -11,16 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Children, ReactChild} from 'react';
+import {Children, ReactNode} from 'react';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 interface Props {
-  children: ReactChild;
+  children: ReactNode;
   [x: string]: any;
 }
 
-const addPropsToChildren = (children, props): any => {
-  const addProps = (child): any => ({
+const addPropsToChildren = (children: ReactNode, props: {[x: string]: any}): ReactNode => {
+  const addProps = (child: JSX.Element): JSX.Element => ({
     ...child,
     props: {
       ...child.props,
@@ -31,7 +31,7 @@ const addPropsToChildren = (children, props): any => {
   return Children.map(children, addProps);
 };
 
-export const ResponsiveSvg = (props: Props) => {
+export const ResponsiveSvg = (props: Props): JSX.Element => {
   const {children} = props;
   const {ref, dimensions} = useContainerDimensions();
   const {width, height} = dimensions ?? {width: 0, height: 0};

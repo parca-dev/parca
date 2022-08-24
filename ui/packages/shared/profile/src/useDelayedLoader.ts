@@ -17,7 +17,7 @@ interface DelayedLoaderOptions {
   delay?: number;
 }
 
-const useDelayedLoader = (isLoading = false, options?: DelayedLoaderOptions) => {
+const useDelayedLoader = (isLoading = false, options?: DelayedLoaderOptions): boolean => {
   const {delay = 500} = options ?? {};
   const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
   useEffect(() => {

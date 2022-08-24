@@ -53,7 +53,7 @@ const Button = ({
   variant?: ButtonVariant;
   className?: string;
   children: React.ReactNode;
-} & JSX.IntrinsicElements['button']) => {
+} & JSX.IntrinsicElements['button']): JSX.Element => {
   return (
     <button
       type="button"

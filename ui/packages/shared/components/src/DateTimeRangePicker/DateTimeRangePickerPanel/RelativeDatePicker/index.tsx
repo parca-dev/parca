@@ -19,7 +19,7 @@ import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 import Button from '../../../Button';
 import Select, {contructItemsFromArray} from '../../../Select';
 
-const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
+const constructKeyAndLabels = (UNITS: UNIT_TYPE[]): Array<{key: string; label: string}> => {
   return UNITS.map(unit => ({
     key: unit,
     label: `${capitalize(unit)}s`,
@@ -66,7 +66,10 @@ const quickPresetRanges = [
 
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
 
-const RelativeDatePicker = ({range, onChange = () => null}: RelativeDatePickerProps) => {
+const RelativeDatePicker = ({
+  range,
+  onChange = () => null,
+}: RelativeDatePickerProps): JSX.Element => {
   const date = range.from as RelativeDate;
   const [unit, setUnit] = useState<UNIT_TYPE>(date.isRelative() ? date.unit : UNITS.MINUTE);
   const [value, setValue] = useState<number>(date.isRelative() ? date.value : 15);

@@ -25,7 +25,7 @@ export const downloadPprof = async (
   request: QueryRequest,
   queryClient: QueryServiceClient,
   metadata: RpcMetadata
-) => {
+): Promise<Blob> => {
   const req = {
     ...request,
     reportType: QueryRequest_ReportType.PPROF,
