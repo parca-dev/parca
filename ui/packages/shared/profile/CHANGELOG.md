@@ -3,6 +3,52 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/parca-dev/parca/compare/ui-v0.14.37...ui-v0.15.0) (2022-08-24)
+
+
+
+## [0.14.32](https://github.com/parca-dev/parca/compare/ui-v0.14.30...ui-v0.14.32) (2022-08-18)
+
+
+
+## [0.14.30](https://github.com/parca-dev/parca/compare/ui-v0.14.24...ui-v0.14.30) (2022-08-17)
+
+
+### Features
+
+* implement callgraph report api ([83c81c6](https://github.com/parca-dev/parca/commit/83c81c67a140b4b723094ee0d6c2308b112b800c))
+* tooltip for callgraph ([c1d0195](https://github.com/parca-dev/parca/commit/c1d0195e45a5aa065a89c936861646f1455336ff))
+
+
+
+## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.16) (2022-08-03)
+
+
+
+## [0.14.3-alpha.0](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.3-alpha.0) (2022-07-26)
+
+
+
+## [0.13.14](https://github.com/parca-dev/parca/compare/ui-v0.13.12...ui-v0.13.14) (2022-06-29)
+
+
+### Features
+
+* add tooltip to callgraph ([b261a48](https://github.com/parca-dev/parca/commit/b261a48a92739d5fb957957da929495cb206417e))
+* connect callgraph component to actual data ([b7dd5d8](https://github.com/parca-dev/parca/commit/b7dd5d8b0851d11010f66a3a5ca03d50902636a1))
+
+
+
+## [0.13.10](https://github.com/parca-dev/parca/compare/ui-v0.13.2...ui-v0.13.10) (2022-06-22)
+
+
+
+## [0.13.2](https://github.com/parca-dev/parca/compare/ui-v0.13.1...ui-v0.13.2) (2022-05-31)
+
+
+
+
+
 ## [0.14.37](https://github.com/parca-dev/parca/compare/ui-v0.14.36...ui-v0.14.37) (2022-08-24)
 
 **Note:** Version bump only for package @parca/profile

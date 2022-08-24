@@ -3,6 +3,158 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/parca-dev/parca/compare/ui-v0.14.37...ui-v0.15.0) (2022-08-24)
+
+
+
+## [0.14.35](https://github.com/parca-dev/parca/compare/ui-v0.14.32...ui-v0.14.35) (2022-08-21)
+
+
+
+## [0.14.32](https://github.com/parca-dev/parca/compare/ui-v0.14.30...ui-v0.14.32) (2022-08-18)
+
+
+
+## [0.14.30](https://github.com/parca-dev/parca/compare/ui-v0.14.24...ui-v0.14.30) (2022-08-17)
+
+
+### Features
+
+* implement callgraph report api ([83c81c6](https://github.com/parca-dev/parca/commit/83c81c67a140b4b723094ee0d6c2308b112b800c))
+
+
+
+## [0.14.24](https://github.com/parca-dev/parca/compare/ui-v0.14.23...ui-v0.14.24) (2022-08-11)
+
+
+
+## [0.14.23](https://github.com/parca-dev/parca/compare/ui-v0.14.20...ui-v0.14.23) (2022-08-10)
+
+
+### Features
+
+* layout switcher, top down layout ([aa0d79b](https://github.com/parca-dev/parca/commit/aa0d79b93a562fbfb28e6b30811a97e0abf5f66a))
+* tooltip for callgraph ([c1d0195](https://github.com/parca-dev/parca/commit/c1d0195e45a5aa065a89c936861646f1455336ff))
+
+
+
+## [0.14.20](https://github.com/parca-dev/parca/compare/ui-v0.14.16...ui-v0.14.20) (2022-08-06)
+
+
+### Features
+
+* graphviz dot layout callgraph ([1ce0214](https://github.com/parca-dev/parca/commit/1ce02145e71143529bcec62297216a7a642eeea6))
+
+
+
+## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.16) (2022-08-03)
+
+
+
+## [0.14.11](https://github.com/parca-dev/parca/compare/ui-v0.14.7...ui-v0.14.11) (2022-07-30)
+
+
+### Bug Fixes
+
+* remove no-op if statement ([651e419](https://github.com/parca-dev/parca/commit/651e419f59fe78d7eaa887c59a20ea0873c57193))
+
+
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+
+### Bug Fixes
+
+* stop error on profile with no location id ([0733642](https://github.com/parca-dev/parca/commit/073364260f66a8fa96fb9369ff49971997332532))
+
+
+
+## [0.14.5](https://github.com/parca-dev/parca/compare/ui-v0.14.3-alpha.0...ui-v0.14.5) (2022-07-26)
+
+
+
+## [0.14.3-alpha.0](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.3-alpha.0) (2022-07-26)
+
+
+
+## [0.14.1](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.14.1) (2022-07-25)
+
+
+### Features
+
+* tooltip on node hover ([3973bd0](https://github.com/parca-dev/parca/commit/3973bd0f29970cf78607f6dfa091812360af1af8))
+
+
+### Reverts
+
+* Revert "Update FrostDB for Parca (#1278)" ([691d1ae](https://github.com/parca-dev/parca/commit/691d1ae393f6faa7f8c553ec8a051d5f7e3212b5)), closes [#1278](https://github.com/parca-dev/parca/issues/1278)
+
+
+
+## [0.13.14](https://github.com/parca-dev/parca/compare/ui-v0.13.12...ui-v0.13.14) (2022-06-29)
+
+
+
+## [0.13.12](https://github.com/parca-dev/parca/compare/ui-v0.13.10...ui-v0.13.12) (2022-06-27)
+
+
+### Features
+
+* add tooltip to callgraph ([b261a48](https://github.com/parca-dev/parca/commit/b261a48a92739d5fb957957da929495cb206417e))
+* connect callgraph component to actual data ([b7dd5d8](https://github.com/parca-dev/parca/commit/b7dd5d8b0851d11010f66a3a5ca03d50902636a1))
+
+
+
+## [0.13.10](https://github.com/parca-dev/parca/compare/ui-v0.13.2...ui-v0.13.10) (2022-06-22)
+
+
+### Features
+
+* directed graph component ([172a886](https://github.com/parca-dev/parca/commit/172a8867928a564355fd92c82c51a906b2980877))
+* export ResponsiveSvg component, Callgraph PoC ([b8a043c](https://github.com/parca-dev/parca/commit/b8a043cd37a54864ad07a84655bc7727586a924f))
+
+
+
+## [0.13.2](https://github.com/parca-dev/parca/compare/ui-v0.13.1...ui-v0.13.2) (2022-05-31)
+
+
+
+## [0.13.1](https://github.com/parca-dev/parca/compare/ui-v0.13.0...ui-v0.13.1) (2022-05-31)
+
+
+
+# [0.13.0](https://github.com/parca-dev/parca/compare/ui-v0.12.38...ui-v0.13.0) (2022-05-30)
+
+
+### Bug Fixes
+
+* linter errors ([7230db4](https://github.com/parca-dev/parca/commit/7230db46b764d3a11ecb63f2b28a2a666629b5a9))
+
+
+### Features
+
+* useContainerDimensions hook for smooth chart resize ([3fe5670](https://github.com/parca-dev/parca/commit/3fe5670cb94e838d83e5cb10d453ee620c2dc3c1))
+
+
+
+## [0.12.38](https://github.com/parca-dev/parca/compare/ui-v0.12.37...ui-v0.12.38) (2022-05-19)
+
+
+
+## [0.12.37](https://github.com/parca-dev/parca/compare/ui-v0.12.36...ui-v0.12.37) (2022-05-16)
+
+
+
+## [0.12.36](https://github.com/parca-dev/parca/compare/ui-v0.12.35...ui-v0.12.36) (2022-05-06)
+
+
+
+## 0.12.35 (2022-05-05)
+
+
+
+
+
 ## [0.14.37](https://github.com/parca-dev/parca/compare/ui-v0.14.36...ui-v0.14.37) (2022-08-24)
 
 
