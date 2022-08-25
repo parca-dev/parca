@@ -62,3 +62,37 @@ For a simple local development setup we use [Tilt](https://tilt.dev).
 ```shell
 tilt up
 ```
+
+## UI Feature Flags
+We have a feature flag system that allows you to enable or disable features for a user browser. It's a naive implementation based on browser local storage.
+
+#### Usage:
+```
+import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+
+const Header = () => {
+  const isGreetingEnabled = useUIFeatureFlag('greeting');
+  return (
+    <div>
+      <img src="/logo.png" alt="Logo"/>
+      {isGreetingEnabled ? <h1>Hello!!!</h1> : null}
+    </div>
+  );
+}
+```
+
+For easy modification of the flag states, we added a two utility query params that can be used to control the feature flag state: `enable-ui-flag` and `disable-ui-flag`.
+
+For example, if you want to enable the greeting feature for a browser, you can load the following URL:
+```
+http://localhost:3000/?enable-ui-flag=greeting
+```
+Like wise, if you would like to disable the greeting feature for a browser, you can load the following URL:
+```
+http://localhost:3000/?disable-ui-flag=greeting
+```
+
+When the app loads with the above URL, the feature flags module will handle those and update the flag state accordingly.
+Note: These 'enable' and 'disable' params work for setting one flag value at a time (rather than for example enabling "greeting" and another feature at the same time).
+
+If you are interested in the implementation details, you can read the [source here](packages/shared/functions/src/useUIFeatureFlag/index.ts).
