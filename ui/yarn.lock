@@ -4600,15 +4600,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/cytoscape@*":
+"@types/cytoscape@*", "@types/cytoscape@3.19.7":
   version "3.19.7"
   resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.19.7.tgz#a15f2905f6a0803f6efda60a00024a5974aeedba"
   integrity sha512-JPM9gkXd302QvChbT7vnMli0QYbithROlQQQ9u0ur9YhmMkN0E/y++mKreHEhBvSf3ffiMH6RwemwPM5qbOGEw==
-
-"@types/cytoscape@3.14.11":
-  version "3.14.11"
-  resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.14.11.tgz#b5b6c90e182843f89aa1fad0d33e3f5d49237c5c"
-  integrity sha512-v/+A/5D4MuHrHZ2cIw4KThM5BA8NdBcltgYTRwqwPpSfBg2OG7EYYpyoQ9ZZzBA5VXi/xw65+AmzqwfFt62DsA==
 
 "@types/d3-array@*":
   version "3.0.3"
@@ -8444,15 +8439,7 @@ cyclist@^1.0.1:
   resolved "https://registry.yarnpkg.com/cyclist/-/cyclist-1.0.1.tgz#596e9698fd0c80e12038c2b82d6eb1b35b6224d9"
   integrity sha512-NJGVKPS81XejHcLhaLJS7plab0fK3slPh11mESeeDq2W4ZI5kUKK/LRRdVDvjJseojbPB7ZwjnyOybg3Igea/A==
 
-cytoscape@3.17.1:
-  version "3.17.1"
-  resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.17.1.tgz#da2dd84035db1bcfcff84989ff87f3f841ea01cc"
-  integrity sha512-66jNdRnRxIS4IE+EOax6ElhQcwK8VHmcsbGtDJ4YeuDGLRr5HLotCgeTCAIzpYt6V9CuaTuvhkSkie83wUqhxg==
-  dependencies:
-    heap "^0.2.6"
-    lodash.debounce "^4.0.8"
-
-cytoscape@^3.2.19:
+cytoscape@3.22.1, cytoscape@^3.2.19:
   version "3.22.1"
   resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.22.1.tgz#bf9374193ce1d4dda31ef26a8997311a19e6077b"
   integrity sha512-+wMWCXI+c6h7xhh0BQpttOPO7zIB7z6KyDd7D+8AkRhE9E6csXNnV5inBkdo2mxbBoll1jePVxXHqxA2J5cAog==
