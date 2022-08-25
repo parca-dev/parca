@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
@@ -22,7 +21,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const nodeRadius = 12;
 
   useEffect(() => {
-    const getDataWithPositions = async () => {
+    const getDataWithPositions = async (): Promise<void> => {
       // 1. Translate JSON to 'dot' graph string
       const dataAsDot = jsonToDot({graph, width, nodeRadius});
 
@@ -34,13 +33,13 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       setGraphData(jsonGraph);
     };
 
-    if (width) {
-      getDataWithPositions();
+    if (width !== null) {
+      void getDataWithPositions();
     }
-  }, [width]);
+  }, [graph, width]);
 
   // 3. Render the graph with calculated layout in Canvas container
-  if (!width || !graphData) return <></>;
+  if (width == null || graphData == null) return <></>;
 
   const height = width;
   const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
@@ -88,7 +87,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
               const targetNode = nodes.find(n => n.id === edge.target);
               return (
                 <Edge
-                  key={`edge-${edge.source}-${edge.target}`}
+                  key={`edge-${edge.source as string}-${edge.target as string}`}
                   edge={edge}
                   xScale={xScale}
                   yScale={yScale}
@@ -100,7 +99,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
             })}
             {nodes.map(node => (
               <Node
-                key={`node-${node.data.id}`}
+                key={`node-${node.data.id as string}`}
                 node={node}
                 hoveredNode={hoveredNode}
                 setHoveredNode={setHoveredNode}
