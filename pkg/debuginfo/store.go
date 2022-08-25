@@ -214,6 +214,10 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		if hash != "" && metadataFile != nil {
 			if metadataFile.Hash == hash {
 				level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
+				if err := s.metadata.MarkAsUploaded(ctx, buildID, hash); err != nil {
+					err = fmt.Errorf("failed to update metadata after uploaded: %w", err)
+					return status.Error(codes.Internal, err.Error())
+				}
 				return status.Error(codes.AlreadyExists, "debuginfo already exists")
 			}
 		}
@@ -239,6 +243,10 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 			level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
 		}
 		if hasDWARF {
+			if err := s.metadata.MarkAsUploaded(ctx, buildID, hash); err != nil {
+				err = fmt.Errorf("failed to update metadata after uploaded: %w", err)
+				return status.Error(codes.Internal, err.Error())
+			}
 			return status.Error(codes.AlreadyExists, "debuginfo already exists")
 		}
 	}
