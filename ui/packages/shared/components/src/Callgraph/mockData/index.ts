@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 export const dotGraph = `{
  n1 [Label = "n1"];
  n2 [Label = "n2"];
@@ -437,7 +435,7 @@ export const jsonGraphWithGraphvizPositions = {
   ],
 };
 
-export const node_with_meta_data = (id, name) => ({
+export const nodeWithMetaData = (id, name): {id: string; cumulative: number; meta: any} => ({
   id,
   cumulative: Math.floor(Math.random() * 10),
   meta: {
@@ -534,7 +532,7 @@ export const node_with_meta_data = (id, name) => ({
       startLine: '0',
       name,
       systemName: 'runtime.gopark',
-      filename: `/opt/homebrew/Cellar/go/1.18.2/libexec/src/runtime/proc.go/${name}`,
+      filename: `/opt/homebrew/Cellar/go/1.18.2/libexec/src/runtime/proc.go/${name as string}`,
     },
     line: {
       functionId: {
@@ -563,10 +561,10 @@ export const node_with_meta_data = (id, name) => ({
 export const jsonGraphWithMetaData = {
   total: '4358676',
   nodes: [
-    node_with_meta_data('root', 'root node'),
-    node_with_meta_data('n1', 'normal node'),
-    node_with_meta_data('n2', 'second node'),
-    node_with_meta_data('n3', 'child'),
+    nodeWithMetaData('root', 'root node'),
+    nodeWithMetaData('n1', 'normal node'),
+    nodeWithMetaData('n2', 'second node'),
+    nodeWithMetaData('n3', 'child'),
   ],
   edges: [
     {
