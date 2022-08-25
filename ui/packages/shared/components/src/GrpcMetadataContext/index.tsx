@@ -14,7 +14,9 @@
 import {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 import {createContext, ReactNode, useContext} from 'react';
 
-const GrpcMetadataContext = createContext<RpcMetadata>({});
+const DEFAULT_VALUE = {};
+
+const GrpcMetadataContext = createContext<RpcMetadata>(DEFAULT_VALUE);
 
 export const GrpcMetadataProvider = ({
   children,
@@ -24,14 +26,16 @@ export const GrpcMetadataProvider = ({
   value?: RpcMetadata;
 }): JSX.Element => {
   return (
-    <GrpcMetadataContext.Provider value={value ?? {}}>{children}</GrpcMetadataContext.Provider>
+    <GrpcMetadataContext.Provider value={value ?? DEFAULT_VALUE}>
+      {children}
+    </GrpcMetadataContext.Provider>
   );
 };
 
 export const useGrpcMetadata = (): RpcMetadata => {
   const context = useContext(GrpcMetadataContext);
   if (context == null) {
-    return {};
+    return DEFAULT_VALUE;
   }
   return context;
 };

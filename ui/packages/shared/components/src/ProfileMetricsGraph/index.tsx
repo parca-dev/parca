@@ -19,6 +19,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {DateTimeRange, useGrpcMetadata} from '../';
 import {Query} from '@parca/parser';
 import {useParcaTheme} from '../ParcaThemeContext';
+import useDelayedLoader from '@parca/profile/src/useDelayedLoader';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -43,36 +44,35 @@ export const useQueryRange = (
   start: number,
   end: number
 ): IQueryRangeResult => {
-  const [result, setResult] = useState<IQueryRangeResult>({
-    response: null,
-    isLoading: false,
-    error: null,
-  });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<any>(null);
+  const [response, setResponse] = useState<QueryRangeResponse | null>(null);
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
-    setResult(prevResult => {
-      const newResult = {...prevResult};
-      newResult.isLoading = true;
-      return newResult;
-    });
+    void (async () => {
+      setIsLoading(true);
 
-    const call = client.queryRange(
-      {
-        query: queryExpression,
-        start: Timestamp.fromDate(new Date(start)),
-        end: Timestamp.fromDate(new Date(end)),
-        limit: 0,
-      },
-      {meta: metadata}
-    );
-
-    call.response
-      .then(response => setResult({response, isLoading: false, error: null}))
-      .catch(error => setResult({error, isLoading: false, response: null}));
+      try {
+        const {response} = await client.queryRange(
+          {
+            query: queryExpression,
+            start: Timestamp.fromDate(new Date(start)),
+            end: Timestamp.fromDate(new Date(end)),
+            limit: 0,
+          },
+          {meta: metadata}
+        );
+        setResponse(response);
+      } catch (e) {
+        setError(e);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, [client, queryExpression, start, end, metadata]);
 
-  return result;
+  return {isLoading, error, response};
 };
 
 const ProfileMetricsGraph = ({
@@ -86,21 +86,8 @@ const ProfileMetricsGraph = ({
   addLabelMatcher,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
-  const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
+  const isLoaderVisible = useDelayedLoader(isLoading);
   const {loader} = useParcaTheme();
-
-  useEffect(() => {
-    let showLoaderTimeout: ReturnType<typeof setTimeout>;
-    if (isLoading && !isLoaderVisible) {
-      // if the request takes longer than half a second, show the loading icon
-      showLoaderTimeout = setTimeout(() => {
-        setIsLoaderVisible(true);
-      }, 500);
-    } else {
-      setIsLoaderVisible(false);
-    }
-    return () => clearTimeout(showLoaderTimeout);
-  }, [isLoading, isLoaderVisible]);
 
   if (isLoaderVisible) {
     return <>{loader}</>;

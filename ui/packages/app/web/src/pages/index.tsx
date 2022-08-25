@@ -19,6 +19,12 @@ import {ProfileExplorer} from '@parca/components';
 
 const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 
+const queryClient = new QueryServiceClient(
+  new GrpcWebFetchTransport({
+    baseUrl: apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`,
+  })
+);
+
 const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,12 +37,6 @@ const Profiles = () => {
   };
 
   const queryParams = parseParams(location.search);
-
-  const queryClient = new QueryServiceClient(
-    new GrpcWebFetchTransport({
-      baseUrl: apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`,
-    })
-  );
 
   return (
     <ProfileExplorer queryClient={queryClient} queryParams={queryParams} navigateTo={navigateTo} />
