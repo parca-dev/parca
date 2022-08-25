@@ -16,7 +16,12 @@ interface Props {
   nodeRadius: number;
 }
 
-const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}: Props) => {
+const Node = ({
+  node,
+  hoveredNode,
+  setHoveredNode,
+  nodeRadius: defaultRadius,
+}: Props): JSX.Element => {
   const {
     data: {id},
     x,
@@ -24,7 +29,7 @@ const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}: Pr
     color,
   } = node;
 
-  const hoverRadius = (defaultRadius as number) + 3;
+  const hoverRadius = defaultRadius + 3;
   const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
 
   return (
@@ -32,7 +37,7 @@ const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}: Pr
       x={+x}
       y={+y}
       draggable
-      radius={Boolean(isHovered) ? hoverRadius : defaultRadius}
+      radius={isHovered ? hoverRadius : defaultRadius}
       fill={color}
       onMouseOver={() => {
         setHoveredNode({...node, mouseX: x, mouseY: y});

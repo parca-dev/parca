@@ -54,7 +54,7 @@ export const ProfileViewWithData = ({
     response: callgraphResponse,
     error: callgraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
-    skip: currentView != 'callgraph',
+    skip: currentView !== 'callgraph',
   });
 
   const sampleUnit = profileSource.ProfileType().sampleUnit;

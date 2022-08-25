@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
 	"github.com/thanos-io/objstore/providers/filesystem"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v2"
@@ -36,6 +37,8 @@ import (
 )
 
 func TestStore(t *testing.T) {
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
 	dir, err := os.MkdirTemp("", "parca-test")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
@@ -57,6 +60,7 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 
 	s, err := NewStore(
+		tracer,
 		logger,
 		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
