@@ -16,7 +16,12 @@ interface Props {
   nodeRadius: number;
 }
 
-const Node = ({node, hoveredNode, setHoveredNode, nodeRadius: defaultRadius}: Props) => {
+const Node = ({
+  node,
+  hoveredNode,
+  setHoveredNode,
+  nodeRadius: defaultRadius,
+}: Props): JSX.Element => {
   const {
     data: {id},
     x,
