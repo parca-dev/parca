@@ -27,6 +27,21 @@
       "default": "SOURCE_UNKNOWN_UNSPECIFIED",
       "description": "Source enum describes the source a debuginfo is from.\n\n - SOURCE_UNKNOWN_UNSPECIFIED: To understand when no source is set we have the unknown source.\n - SOURCE_UPLOAD: The debuginfo was uploaded by a user/agent.\n - SOURCE_DEBUGINFOD: The debuginfo was downloaded from a public debuginfod server."
     },
+    "debuginfov1alpha1UploadResponse": {
+      "type": "object",
+      "properties": {
+        "buildId": {
+          "type": "string",
+          "title": "build_id is a unique identifier for the debug data"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64",
+          "title": "size is the number of bytes of the debug info"
+        }
+      },
+      "title": "UploadResponse returns the build_id and the size of the uploaded debug info"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -102,21 +117,6 @@
         }
       },
       "title": "UploadInfo contains the build_id and other metadata for the debug data"
-    },
-    "v1alpha1UploadResponse": {
-      "type": "object",
-      "properties": {
-        "buildId": {
-          "type": "string",
-          "title": "build_id is a unique identifier for the debug data"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64",
-          "title": "size is the number of bytes of the debug info"
-        }
-      },
-      "title": "UploadResponse returns the build_id and the size of the uploaded debug info"
     }
   }
 }

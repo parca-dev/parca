@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "share/share.proto",
+    "title": "parca/share/share.proto",
     "version": "version not set"
   },
   "tags": [
