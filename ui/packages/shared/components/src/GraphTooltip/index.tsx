@@ -22,7 +22,7 @@ interface GraphTooltipProps {
   y: number;
   unit: string;
   total: number;
-  hoveringNode: FlamegraphNode | FlamegraphRootNode | CallgraphNode | null | undefined;
+  hoveringNode?: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;
@@ -96,13 +96,18 @@ const TooltipMetaInfo = ({hoveringNode}: {hoveringNode: FlamegraphNode}): JSX.El
   );
 };
 
+interface HoveringNode extends CallgraphNode, FlamegraphRootNode {
+  diff: string;
+  meta?: {[key: string]: any};
+}
+
 const GraphTooltipContent = ({
   hoveringNode,
   unit,
   total,
   isFixed,
 }: {
-  hoveringNode: {meta: any; diff: string; cumulative: string};
+  hoveringNode: HoveringNode;
   unit: string;
   total: number;
   isFixed: boolean;
@@ -116,11 +121,7 @@ const GraphTooltipContent = ({
   const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
   const diffText = `${diffValueText} (${diffPercentageText})`;
   const metaRows =
-    hoveringNode.meta === undefined ? (
-      <></>
-    ) : (
-      <TooltipMetaInfo hoveringNode={hoveringNode as FlamegraphNode} />
-    );
+    hoveringNode.meta === undefined ? <></> : <TooltipMetaInfo hoveringNode={hoveringNode} />;
 
   return (
     <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>
