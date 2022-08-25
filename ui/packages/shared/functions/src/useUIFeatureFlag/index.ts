@@ -11,12 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable */
 import useLocalStorageState from 'use-local-storage-state';
 
 const UI_FLAGS = 'ui-flags';
 
-const initializeFlagsFromURL = () => {
+const initializeFlagsFromURL = (): void => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -24,14 +23,14 @@ const initializeFlagsFromURL = () => {
   const url = new URL(window.location.href);
   const enableFlag = url.searchParams.get('enable-ui-flag');
   const disableFlag = url.searchParams.get('disable-ui-flag');
-  if (!enableFlag && !disableFlag) {
+  if (enableFlag !== null && disableFlag !== null) {
     return;
   }
   const flags = JSON.parse(window.localStorage.getItem(UI_FLAGS) ?? '{}');
-  if (enableFlag) {
+  if (enableFlag !== null) {
     flags[enableFlag] = true;
   }
-  if (disableFlag) {
+  if (disableFlag !== null) {
     delete flags[disableFlag];
   }
   window.localStorage.setItem(UI_FLAGS, JSON.stringify(flags));
@@ -39,13 +38,16 @@ const initializeFlagsFromURL = () => {
 
 initializeFlagsFromURL();
 
-const useUIFeatureFlag = (featureFlag: string, defaultValue: boolean = false) => {
+const useUIFeatureFlag = (
+  featureFlag: string,
+  defaultValue: boolean = false
+): Array<boolean | ((key: string) => boolean)> => {
   const [flags, setFlags] = useLocalStorageState(UI_FLAGS, {
     defaultValue: {},
   });
 
-  const value = flags[featureFlag] || defaultValue;
-  const setFlag = (flag: boolean) => {
+  const value = flags[featureFlag] ?? defaultValue;
+  const setFlag = (flag: boolean): void => {
     setFlags({...flags, [featureFlag]: flag});
   };
 

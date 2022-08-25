@@ -39,3 +39,4 @@ rules:
     - singleline:
         delimiter: 'semi'
         requireLast: false
+  '@typescript-eslint/no-dynamic-delete': 0
