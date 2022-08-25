@@ -14,8 +14,17 @@
 import React, {useEffect, useMemo, useState} from 'react';
 
 import {parseParams} from '@parca/functions';
-import {QueryServiceClient, Flamegraph, Top} from '@parca/client';
-import {Button, Card, SearchNodes, useGrpcMetadata, useParcaTheme} from '@parca/components';
+import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+import {QueryServiceClient, Flamegraph, Top, Callgraph} from '@parca/client';
+import {
+  Button,
+  Card,
+  SearchNodes,
+  useGrpcMetadata,
+  useParcaTheme,
+  Callgraph as CallgraphComponent,
+} from '@parca/components';
+import {useContainerDimensions} from '@parca/dynamicsize';
 
 import ProfileShareButton from './components/ProfileShareButton';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
@@ -40,7 +49,13 @@ interface TopTableData {
   error?: any;
 }
 
-type VisualizationType = 'icicle' | 'table' | 'both';
+interface CallgraphData {
+  loading: boolean;
+  data?: Callgraph;
+  error?: any;
+}
+
+type VisualizationType = 'icicle' | 'table' | 'callgraph' | 'both';
 
 interface ProfileVisState {
   currentView: VisualizationType;
@@ -50,6 +65,7 @@ interface ProfileVisState {
 interface ProfileViewProps {
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
+  callgraphData?: CallgraphData;
   sampleUnit: string;
   profileVisState: ProfileVisState;
   profileSource?: ProfileSource;
@@ -79,14 +95,18 @@ export const useProfileVisState = (): ProfileVisState => {
 export const ProfileView = ({
   flamegraphData,
   topTableData,
+  callgraphData,
   sampleUnit,
   profileSource,
   queryClient,
   navigateTo,
   profileVisState,
 }: ProfileViewProps): JSX.Element => {
+  const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
   const {currentView, setCurrentView} = profileVisState;
+
+  const [callgraphEnabled] = useUIFeatureFlag('callgraph');
 
   const metadata = useGrpcMetadata();
   const {loader} = useParcaTheme();
@@ -100,6 +120,9 @@ export const ProfileView = ({
     if (currentView === 'icicle') {
       return Boolean(flamegraphData?.loading);
     }
+    if (currentView === 'callgraph') {
+      return !!callgraphData?.loading;
+    }
     if (currentView === 'table') {
       return Boolean(topTableData?.loading);
     }
@@ -107,7 +130,7 @@ export const ProfileView = ({
       return Boolean(flamegraphData?.loading) || Boolean(topTableData?.loading);
     }
     return false;
-  }, [currentView, flamegraphData?.loading, topTableData?.loading]);
+  }, [currentView, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
 
   const isLoaderVisible = useDelayedLoader(isLoading);
 
@@ -196,6 +219,18 @@ export const ProfileView = ({
                   </Button>
                 </div>
 
+                {callgraphEnabled ? (
+                  <div className="mr-3">
+                    <Button
+                      variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
+                      onClick={() => switchProfileView('callgraph')}
+                      className="whitespace-nowrap text-ellipsis"
+                    >
+                      Call Graph
+                    </Button>
+                  </div>
+                ) : null}
+
                 <Button
                   variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
                   className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
@@ -222,7 +257,7 @@ export const ProfileView = ({
               </div>
             </div>
 
-            <div className="flex space-x-4 justify-between">
+            <div ref={ref} className="flex space-x-4 justify-between w-full">
               {currentView === 'icicle' && flamegraphData?.data != null && (
                 <div className="w-full">
                   <ProfileIcicleGraph
@@ -231,6 +266,18 @@ export const ProfileView = ({
                     graph={flamegraphData.data}
                     sampleUnit={sampleUnit}
                   />
+                </div>
+              )}
+
+              {currentView === 'callgraph' && callgraphData?.data != null && (
+                <div className="w-full">
+                  {dimensions?.width && (
+                    <CallgraphComponent
+                      graph={callgraphData.data}
+                      sampleUnit={sampleUnit}
+                      width={dimensions?.width}
+                    />
+                  )}
                 </div>
               )}
 

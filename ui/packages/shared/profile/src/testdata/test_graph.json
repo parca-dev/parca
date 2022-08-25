@@ -1,0 +1,53 @@
+{
+  "total": "4358676",
+  "unit": "count",
+  "height": 27,
+  "root": {
+    "id": "root",
+    "cumulative": "4358676",
+    "diff": "0",
+    "children": [
+      {
+        "id": "child_1",
+        "cumulative": "1",
+        "diff": "0",
+        "children": [
+          {
+            "id": "child_2",
+            "cumulative": "1",
+            "diff": "0",
+            "children": [
+              {
+                "id": "root",
+                "cumulative": "4358676",
+                "diff": "0",
+                "children": [
+                  {
+                    "id": "child_1",
+                    "cumulative": "1",
+                    "diff": "0",
+                    "children": [
+                      {
+                        "id": "child_2",
+                        "cumulative": "1",
+                        "diff": "0",
+                        "children": [
+                          {
+                            "id": "child_1",
+                            "cumulative": "1",
+                            "diff": "0",
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

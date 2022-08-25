@@ -3,6 +3,84 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/parca-dev/parca/compare/ui-v0.14.37...ui-v0.15.0) (2022-08-24)
+
+
+
+## [0.14.35](https://github.com/parca-dev/parca/compare/ui-v0.14.32...ui-v0.14.35) (2022-08-21)
+
+
+
+## [0.14.32](https://github.com/parca-dev/parca/compare/ui-v0.14.30...ui-v0.14.32) (2022-08-18)
+
+
+
+## [0.14.30](https://github.com/parca-dev/parca/compare/ui-v0.14.24...ui-v0.14.30) (2022-08-17)
+
+
+### Features
+
+* layout switcher, top down layout ([aa0d79b](https://github.com/parca-dev/parca/commit/aa0d79b93a562fbfb28e6b30811a97e0abf5f66a))
+* tooltip for callgraph ([c1d0195](https://github.com/parca-dev/parca/commit/c1d0195e45a5aa065a89c936861646f1455336ff))
+
+
+
+## [0.14.20](https://github.com/parca-dev/parca/compare/ui-v0.14.16...ui-v0.14.20) (2022-08-06)
+
+
+### Features
+
+* graphviz dot layout callgraph ([1ce0214](https://github.com/parca-dev/parca/commit/1ce02145e71143529bcec62297216a7a642eeea6))
+
+
+
+## [0.14.3-alpha.0](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.3-alpha.0) (2022-07-26)
+
+
+### Features
+
+* tooltip on node hover ([3973bd0](https://github.com/parca-dev/parca/commit/3973bd0f29970cf78607f6dfa091812360af1af8))
+
+
+
+## [0.13.14](https://github.com/parca-dev/parca/compare/ui-v0.13.12...ui-v0.13.14) (2022-06-29)
+
+
+
+## [0.13.12](https://github.com/parca-dev/parca/compare/ui-v0.13.10...ui-v0.13.12) (2022-06-27)
+
+
+### Features
+
+* add tooltip to callgraph ([b261a48](https://github.com/parca-dev/parca/commit/b261a48a92739d5fb957957da929495cb206417e))
+* connect callgraph component to actual data ([b7dd5d8](https://github.com/parca-dev/parca/commit/b7dd5d8b0851d11010f66a3a5ca03d50902636a1))
+
+
+
+## [0.13.10](https://github.com/parca-dev/parca/compare/ui-v0.13.2...ui-v0.13.10) (2022-06-22)
+
+
+### Features
+
+* directed graph component ([172a886](https://github.com/parca-dev/parca/commit/172a8867928a564355fd92c82c51a906b2980877))
+* export ResponsiveSvg component, Callgraph PoC ([b8a043c](https://github.com/parca-dev/parca/commit/b8a043cd37a54864ad07a84655bc7727586a924f))
+
+
+
+## [0.13.2](https://github.com/parca-dev/parca/compare/ui-v0.13.1...ui-v0.13.2) (2022-05-31)
+
+
+
+
+
+## [0.14.37](https://github.com/parca-dev/parca/compare/ui-v0.14.36...ui-v0.14.37) (2022-08-24)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
 ## [0.14.36](https://github.com/parca-dev/parca/compare/ui-v0.14.35...ui-v0.14.36) (2022-08-24)
 
 
