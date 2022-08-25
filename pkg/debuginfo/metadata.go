@@ -141,29 +141,27 @@ func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID strin
 }
 
 func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, hash string) error {
-	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
-	if err != nil {
-		level.Error(m.logger).Log("msg", "expected metadata file", "err", err)
-		return ErrMetadataShouldExist
-	}
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(r)
-	if err != nil {
-		return err
-	}
-
 	metaData := &Metadata{}
-	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
-		return err
-	}
+	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
+	if err == nil {
+		buf := new(bytes.Buffer)
+		_, err = buf.ReadFrom(r)
+		if err != nil {
+			return err
+		}
 
-	// There's a small window where a race could happen.
-	if metaData.State == MetadataStateUploaded {
-		return nil
-	}
+		if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
+			return err
+		}
 
-	if metaData.State == MetadataStateUploading && metaData.BuildID != buildID {
-		return errors.New("build ids do not match")
+		// There's a small window where a race could happen.
+		if metaData.State == MetadataStateUploaded {
+			return nil
+		}
+
+		if metaData.State == MetadataStateUploading && metaData.BuildID != buildID {
+			return errors.New("build ids do not match")
+		}
 	}
 
 	metaData.State = MetadataStateUploaded
