@@ -5169,10 +5169,10 @@
   resolved "https://registry.yarnpkg.com/@types/range-parser/-/range-parser-1.2.4.tgz#cd667bcfdd025213aafb7ca5915a932590acdcdc"
   integrity sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==
 
-"@types/react-cytoscapejs@1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@types/react-cytoscapejs/-/react-cytoscapejs-1.2.0.tgz#b6c78f266b06ed3758cdb3e106619629423a16c4"
-  integrity sha512-lDb04Bv7YFBAVVRy1y7IdCRDYUkDuo5YfpU5N4xcH1yT8MK90zQr9GS+PgI2IZBAa/fuqardyW+39ePx6kKJVw==
+"@types/react-cytoscapejs@1.2.2":
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/@types/react-cytoscapejs/-/react-cytoscapejs-1.2.2.tgz#e2d27dc11b2bac61fd3e64efe2004ab65958344f"
+  integrity sha512-Z+CeQLw4XyQOrS/SdbcUCdYfWqYmaPS/WT+gNy33KYR09BtVzekx1jeNU5kNDvXCv8/8jGlhSrSk0uO7ocGuFg==
   dependencies:
     "@types/cytoscape" "*"
     "@types/react" "*"
