@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
-
 import {CallgraphNode, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import {hexifyAddress} from '@parca/profile';
@@ -98,7 +96,17 @@ const TooltipMetaInfo = ({hoveringNode}: {hoveringNode: FlamegraphNode}): JSX.El
   );
 };
 
-const GraphTooltipContent = ({hoveringNode, unit, total, isFixed}): JSX.Element => {
+const GraphTooltipContent = ({
+  hoveringNode,
+  unit,
+  total,
+  isFixed,
+}: {
+  hoveringNode: {meta: any; diff: string; cumulative: string};
+  unit: string;
+  total: number;
+  isFixed: boolean;
+}): JSX.Element => {
   const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
   const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
   const prevValue = hoveringNodeCumulative - diff;
