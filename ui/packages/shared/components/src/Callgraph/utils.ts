@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import {CallgraphNode, CallgraphEdge} from '@parca/client';
 
 export const pixelsToInches = pixels => pixels / 96;

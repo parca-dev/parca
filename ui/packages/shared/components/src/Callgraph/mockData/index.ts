@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 export const dotGraph = `{
  n1 [Label = "n1"];
  n2 [Label = "n2"];
@@ -530,7 +532,7 @@ export const node_with_meta_data = (id, name) => ({
         '15': 177,
       },
       startLine: '0',
-      name: name,
+      name,
       systemName: 'runtime.gopark',
       filename: `/opt/homebrew/Cellar/go/1.18.2/libexec/src/runtime/proc.go/${name}`,
     },

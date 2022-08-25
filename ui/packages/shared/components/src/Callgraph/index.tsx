@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';

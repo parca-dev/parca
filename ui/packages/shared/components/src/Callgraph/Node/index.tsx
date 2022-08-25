@@ -29,7 +29,7 @@ const Node = ({
     color,
   } = node;
 
-  const hoverRadius = (defaultRadius as number) + 3;
+  const hoverRadius = defaultRadius + 3;
   const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
 
   return (
@@ -37,7 +37,7 @@ const Node = ({
       x={+x}
       y={+y}
       draggable
-      radius={Boolean(isHovered) ? hoverRadius : defaultRadius}
+      radius={isHovered ? hoverRadius : defaultRadius}
       fill={color}
       onMouseOver={() => {
         setHoveredNode({...node, mouseX: x, mouseY: y});

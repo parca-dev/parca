@@ -42,7 +42,7 @@ export const ResponsiveSvg = (props: Props): JSX.Element => {
     if (ref.current != null) {
       setHeight(ref?.current.getBoundingClientRect().height);
     }
-  }, [width]);
+  }, [width, ref]);
 
   return (
     <div ref={ref} className="w-full">

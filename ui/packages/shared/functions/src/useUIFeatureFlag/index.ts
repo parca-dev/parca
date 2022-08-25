@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable */
 import useLocalStorageState from 'use-local-storage-state';
 
 const UI_FLAGS = 'ui-flags';
