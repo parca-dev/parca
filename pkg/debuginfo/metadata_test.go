@@ -25,10 +25,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
 	"github.com/thanos-io/objstore/providers/filesystem"
+	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/yaml.v2"
 )
 
 func TestMetadata(t *testing.T) {
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
 	dir, err := os.MkdirTemp("", "parca-test")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
@@ -50,6 +53,7 @@ func TestMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	store, err := NewStore(
+		tracer,
 		logger,
 		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
