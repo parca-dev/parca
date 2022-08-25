@@ -1,8 +1,6 @@
-/* eslint-disable */
-
 import {CallgraphNode, CallgraphEdge} from '@parca/client';
 
-export const pixelsToInches = pixels => pixels / 96;
+export const pixelsToInches = (pixels: number): number => pixels / 96;
 
 export const parseEdgePos = ({
   pos,
@@ -25,10 +23,10 @@ export const parseEdgePos = ({
   const arrow = parts.shift() ?? '';
   const partsAsArrays = parts.map(part => part.split(','));
   const scalePosArray = (posArr): number[] => [+xScale(+posArr[0]), +yScale(+posArr[1])];
-  const [start, cp1, cp2, end] = partsAsArrays.map(posArr => scalePosArray(posArr));
+  const [_start, cp1, cp2, _end] = partsAsArrays.map(posArr => scalePosArray(posArr));
   const arrowEnd: number[] = scalePosArray(arrow.replace('e,', '').split(','));
 
-  const getTargetWithOffset = (target, lastEdgePoint) => {
+  const getTargetWithOffset = (target: number[], lastEdgePoint: number[]): number[] => {
     const diffX = target[0] - lastEdgePoint[0];
     const diffY = target[1] - lastEdgePoint[1];
     const diffZ = Math.hypot(diffX, diffY);
@@ -56,20 +54,28 @@ export const parseEdgePos = ({
   return [...source, ...cp1, ...cp2, ...getTargetWithOffset(target, arrowEnd)];
 };
 
-export const jsonToDot = ({graph, width, nodeRadius}) => {
+export const jsonToDot = ({
+  graph,
+  width,
+  nodeRadius,
+}: {
+  graph: {nodes: CallgraphNode[]; edges: CallgraphEdge[]};
+  width: number;
+  nodeRadius: number;
+}): string => {
   const {nodes, edges} = graph;
 
-  const objectAsDotAttributes = obj =>
+  const objectAsDotAttributes = (obj: {[key: string]: string}): string =>
     Object.entries(obj)
       .map(entry => `${entry[0]}="${entry[1]}"`)
       .join(' ');
 
   const nodesAsStrings = nodes.map((node: CallgraphNode) => {
     const dataAttributes = {
-      address: node.meta?.location?.address,
-      functionName: node.meta?.function?.name,
-      cumulative: node.cumulative,
-      root: node.id === 'root',
+      address: node.meta?.location?.address ?? '',
+      functionName: node.meta?.function?.name ?? '',
+      cumulative: node.cumulative ?? '',
+      root: (node.id === 'root').toString(),
     };
 
     return `"${node.id}" [${objectAsDotAttributes(dataAttributes)}]`;
