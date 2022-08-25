@@ -64,9 +64,11 @@ tilt up
 ```
 
 ## UI Feature Flags
+
 We have a feature flag system that allows you to enable or disable features for a user browser. It's a naive implementation based on browser local storage.
 
 #### Usage:
+
 ```
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 
@@ -84,10 +86,13 @@ const Header = () => {
 For easy modification of the flag states, we added a two utility query params that can be used to control the feature flag state: `enable-ui-flag` and `disable-ui-flag`.
 
 For example, if you want to enable the greeting feature for a browser, you can load the following URL:
+
 ```
 http://localhost:3000/?enable-ui-flag=greeting
 ```
+
 Like wise, if you would like to disable the greeting feature for a browser, you can load the following URL:
+
 ```
 http://localhost:3000/?disable-ui-flag=greeting
 ```
