@@ -73,10 +73,12 @@ export const useLabelNames = (client: QueryServiceClient): UseLabelNames => {
 
   useEffect(() => {
     const call = client.labels({match: []}, {meta: metadata});
+    setLoading(true);
 
     call.response
       .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}));
+      .catch(error => setResult({error: error}))
+      .finally(() => setLoading(false));
   }, [client, metadata]);
 
   return {result, loading};
@@ -117,7 +119,6 @@ const MatchersInput = ({
   const [localMatchers, setLocalMatchers] = useState<Matchers[] | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [showSuggest, setShowSuggest] = useState(true);
-  const [showInputTooltip, setShowInputTooltip] = useState(false);
   const [labelValuesLoading, setLabelValuesLoading] = useState(false);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
@@ -140,6 +141,7 @@ const MatchersInput = ({
 
   const getLabelNameValues = (labelName: string) => {
     const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
+    setLabelValuesLoading(true);
 
     call.response
       .then(response => {
@@ -417,6 +419,18 @@ const MatchersInput = ({
       );
       setInputRef('');
     }
+
+    if (event.key === 'Backspace' && inputRef.length > 0) {
+      if (currentLabelsCollection && currentLabelsCollection.length > 0) {
+        setMatchersString(`${currentLabelsCollection?.join(',')},${inputRef}}`);
+      } else {
+        setMatchersString(inputRef);
+      }
+
+      if (currentLabelsCollection === null && inputRef.length === 0) {
+        setMatchersString('');
+      }
+    }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -481,6 +495,8 @@ const MatchersInput = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    const value = event.currentTarget.value;
+
     if (event.key === 'Backspace' && inputRef === '') {
       if (currentLabelsCollection === null) return;
 
@@ -513,12 +529,6 @@ const MatchersInput = ({
     // Down arrow highlights next suggestions.
     if (event.key === 'ArrowDown') {
       highlightNext();
-    }
-
-    if (event.key === 'Backspace' && inputRef === '') {
-      if (currentLabelsCollection === null) return;
-
-      removeLabel(currentLabelsCollection.length - 1);
     }
   };
 
@@ -573,7 +583,7 @@ const MatchersInput = ({
           type="text"
           className={cx(
             'bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm outline-none',
-            currentQuery.profType.profileName === '' && 'cursor-not-allowed'
+            profileSelected && 'cursor-not-allowed'
           )}
           placeholder={
             profileSelected ? 'Select a profile first to query profiles...' : 'query profiles...'
