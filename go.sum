@@ -1026,8 +1026,8 @@ github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.194/go.mod 
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/kms v1.0.194/go.mod h1:yrBKWhChnDqNz1xuXdSbWXG56XawEq0G5j1lg4VwBD4=
 github.com/tencentyun/cos-go-sdk-v5 v0.7.34 h1:xm+Pg+6m486y4eugRI7/E4WasbVmpY1hp9QBSRErgp8=
 github.com/tencentyun/cos-go-sdk-v5 v0.7.34/go.mod h1:4dCEtLHGh8QPxHEkgq+nFaky7yZxQuYwgSJM87icDaw=
-github.com/thanos-io/objstore v0.0.0-20220809103346-8ef1f215e2bf h1:onQsPyHlq2yIWU+Nfl6yStuqnZuVQQN8FZ8sBb2wqtw=
-github.com/thanos-io/objstore v0.0.0-20220809103346-8ef1f215e2bf/go.mod h1:v0NhuxxxUFUPatQcVNSCUkBEVezXzl7LSdaBOZygq98=
+github.com/thanos-io/objstore v0.0.0-20220825160751-a53cb72ffecc h1:JGWg7yu0pLmSoYvTP+zDErwiGxTOyPb6/3OFcvGR6ss=
+github.com/thanos-io/objstore v0.0.0-20220825160751-a53cb72ffecc/go.mod h1:v0NhuxxxUFUPatQcVNSCUkBEVezXzl7LSdaBOZygq98=
 github.com/tidwall/gjson v1.10.2 h1:APbLGOM0rrEkd8WBw9C24nllro4ajFuJu0Sc9hRz8Bo=
 github.com/tidwall/gjson v1.10.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
