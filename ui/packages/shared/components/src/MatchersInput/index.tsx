@@ -79,7 +79,7 @@ export const useLabelNames = (client: QueryServiceClient): UseLabelNames => {
       .catch(error => setResult({error: error}));
   }, [client, metadata]);
 
-  return result;
+  return {result, loading};
 };
 
 class Suggestion {
@@ -128,8 +128,14 @@ const MatchersInput = ({
   });
   const metadata = useGrpcMetadata();
   const {loader: Spinner} = useParcaTheme();
+  const [suggestionSections, setSuggestionSections] = useState<Suggestions>(new Suggestions());
 
-  const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
+  const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
+  const {response: labelNamesResponse, error: labelNamesError} = result;
+
+  const LoadingSpinner = () => {
+    return <div className="pt-2 pb-4">{Spinner}</div>;
+  };
 
   const getLabelNameValues = (labelName: string) => {
     const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
