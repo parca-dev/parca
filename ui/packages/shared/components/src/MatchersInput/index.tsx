@@ -112,23 +112,24 @@ const MatchersInput = ({
   runQuery,
   currentQuery,
 }: MatchersInputProps): JSX.Element => {
-  const [inputRef, setInputRef] = useState<string>('');
   const [divInputRef, setDivInputRef] = useState<HTMLDivElement | null>(null);
-  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<string[] | null>(null);
+  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const [localMatchers, setLocalMatchers] = useState<Matchers[] | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [showSuggest, setShowSuggest] = useState(true);
+  const [showInputTooltip, setShowInputTooltip] = useState(false);
+  const [labelValuesLoading, setLabelValuesLoading] = useState(false);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
-  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
+  const [suggestionSections, setSuggestionSections] = useState<Suggestions>(new Suggestions());
+  const [inputRef, setInputRef] = useState<string>('');
   const [labelValuesResponse, setLabelValuesResponse] = useState<string[] | null>(null);
-  const [labelValuesLoading, setLabelValuesLoading] = useState(false);
+  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<string[] | null>(null);
   const {styles, attributes} = usePopper(divInputRef, popperElement, {
     placement: 'bottom-start',
   });
   const metadata = useGrpcMetadata();
   const {loader: Spinner} = useParcaTheme();
-  const [suggestionSections, setSuggestionSections] = useState<Suggestions>(new Suggestions());
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
   const {response: labelNamesResponse, error: labelNamesError} = result;
@@ -549,6 +550,8 @@ const MatchersInput = ({
     setLocalMatchers(newMatchers);
   };
 
+  const profileSelected = currentQuery.profType.profileName === '';
+
   return (
     <>
       <div
@@ -572,7 +575,9 @@ const MatchersInput = ({
             'bg-transparent focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm outline-none',
             currentQuery.profType.profileName === '' && 'cursor-not-allowed'
           )}
-          placeholder="filter profiles..."
+          placeholder={
+            profileSelected ? 'Select a profile first to query profiles...' : 'query profiles...'
+          }
           onChange={onChange}
           value={inputRef}
           onBlur={unfocus}
@@ -580,7 +585,10 @@ const MatchersInput = ({
           onKeyPress={handleKeyPress}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
-          disabled={currentQuery.profType.profileName === ''}
+          disabled={profileSelected}
+          title={
+            profileSelected ? 'Select a profile first to query profiles...' : 'query profiles...'
+          }
         />
       </div>
 
