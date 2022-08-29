@@ -3,6 +3,177 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.3](https://github.com/parca-dev/parca/compare/ui-v0.15.2...ui-v0.15.3) (2022-08-25)
+
+
+
+## 0.15.1 (2022-08-25)
+
+**Note:** Version bump only for package @parca/profile
+
+
+
+
+
+## [0.15.2](https://github.com/parca-dev/parca/compare/ui-v0.15.1...ui-v0.15.2) (2022-08-25)
+
+**Note:** Version bump only for package @parca/profile
+
+
+
+
+
+# [0.15.0](https://github.com/parca-dev/parca/compare/ui-v0.14.37...ui-v0.15.0) (2022-08-24)
+
+
+
+## [0.14.32](https://github.com/parca-dev/parca/compare/ui-v0.14.30...ui-v0.14.32) (2022-08-18)
+
+
+
+## [0.14.30](https://github.com/parca-dev/parca/compare/ui-v0.14.24...ui-v0.14.30) (2022-08-17)
+
+
+### Features
+
+* implement callgraph report api ([83c81c6](https://github.com/parca-dev/parca/commit/83c81c67a140b4b723094ee0d6c2308b112b800c))
+* tooltip for callgraph ([c1d0195](https://github.com/parca-dev/parca/commit/c1d0195e45a5aa065a89c936861646f1455336ff))
+
+
+
+## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.16) (2022-08-03)
+
+
+
+## [0.14.3-alpha.0](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.3-alpha.0) (2022-07-26)
+
+
+
+## [0.13.14](https://github.com/parca-dev/parca/compare/ui-v0.13.12...ui-v0.13.14) (2022-06-29)
+
+
+### Features
+
+* add tooltip to callgraph ([b261a48](https://github.com/parca-dev/parca/commit/b261a48a92739d5fb957957da929495cb206417e))
+* connect callgraph component to actual data ([b7dd5d8](https://github.com/parca-dev/parca/commit/b7dd5d8b0851d11010f66a3a5ca03d50902636a1))
+
+
+
+## [0.13.10](https://github.com/parca-dev/parca/compare/ui-v0.13.2...ui-v0.13.10) (2022-06-22)
+
+
+
+## [0.13.2](https://github.com/parca-dev/parca/compare/ui-v0.13.1...ui-v0.13.2) (2022-05-31)
+
+
+
+
+
+## [0.14.37](https://github.com/parca-dev/parca/compare/ui-v0.14.36...ui-v0.14.37) (2022-08-24)
+
+**Note:** Version bump only for package @parca/profile
+
+
+
+
+
+## [0.14.36](https://github.com/parca-dev/parca/compare/ui-v0.14.35...ui-v0.14.36) (2022-08-24)
+
+
+### Bug Fixes
+
+* **ui:** enforce @typescript-eslint/explicit-function-return-type ([22a18fd](https://github.com/parca-dev/parca/commit/22a18fd3f7befef5cc175131d8c997c3967a5713))
+
+
+
+## 0.14.32 (2022-08-18)
+
+
+
+
+
+## [0.14.31](https://github.com/parca-dev/parca/compare/ui-v0.14.30...ui-v0.14.31) (2022-08-18)
+
+
+### Bug Fixes
+
+* **ui:** address all problems reported by ESLint ([7f9c921](https://github.com/parca-dev/parca/commit/7f9c9217af49f2661a4363b9b17a9a06f1c7539b))
+
+
+
+
+
+## [0.14.30](https://github.com/parca-dev/parca/compare/ui-v0.14.29...ui-v0.14.30) (2022-08-17)
+
+
+### Bug Fixes
+
+* **ui:** run eslint --fix ([#1542](https://github.com/parca-dev/parca/issues/1542)) ([e522131](https://github.com/parca-dev/parca/commit/e5221318fc1140d661c45d2d04b096bfebba4af4))
+
+
+
+
+
+## [0.14.29](https://github.com/parca-dev/parca/compare/ui-v0.14.28...ui-v0.14.29) (2022-08-15)
+
+
+
+## 0.14.21 (2022-08-10)
+
+**Note:** Version bump only for package @parca/profile
+
+
+
+
+
+## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.15...ui-v0.14.16) (2022-08-03)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.13](https://github.com/parca-dev/parca/compare/ui-v0.14.12...ui-v0.14.13) (2022-08-03)
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.12](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.12) (2022-08-02)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+## 0.14.1 (2022-07-25)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.6](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.6) (2022-07-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.5](https://github.com/parca-dev/parca/compare/ui-v0.14.3-alpha.0...ui-v0.14.5) (2022-07-26)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.3-alpha.0](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.3-alpha.0) (2022-07-26)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.2](https://github.com/parca-dev/parca/compare/ui-v0.14.1...ui-v0.14.2) (2022-07-26)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.14.1](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.14.1) (2022-07-25)
+
+**Note:** Version bump only for package @parca/profile
+
+# [0.14.0](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.14.0) (2022-07-25)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.13.15](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.13.15) (2022-07-12)
+
+**Note:** Version bump only for package @parca/profile
+
 ## [0.13.13](https://github.com/parca-dev/parca/compare/ui-v0.13.12...ui-v0.13.13) (2022-06-29)
 
 **Note:** Version bump only for package @parca/profile

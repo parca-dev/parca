@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,24 +16,27 @@ package debuginfo
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 
 	"github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/filesystem"
+	"github.com/thanos-io/objstore/providers/filesystem"
+	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/yaml.v2"
 )
 
 func TestMetadata(t *testing.T) {
-	dir, err := ioutil.TempDir("", "parca-test")
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	dir, err := os.MkdirTemp("", "parca-test")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	cacheDir, err := ioutil.TempDir("", "parca-test-cache")
+	cacheDir, err := os.MkdirTemp("", "parca-test-cache")
 	require.NoError(t, err)
 	defer os.RemoveAll(cacheDir)
 
@@ -46,22 +49,13 @@ func TestMetadata(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, "parca/store")
-	require.NoError(t, err)
-
-	cache, err := NewCache(
-		&CacheConfig{
-			Type: FILESYSTEM,
-			Config: &FilesystemCacheConfig{
-				Directory: cacheDir,
-			},
-		},
-	)
+	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
 	require.NoError(t, err)
 
 	store, err := NewStore(
+		tracer,
 		logger,
-		cache.Directory,
+		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
 		bucket,
 		NopDebugInfodClient{},

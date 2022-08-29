@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -35,16 +35,6 @@ const locationsKeyPrefix = "v1/locations/by-key/"
 // with the provided ID in a key-value store.
 func MakeLocationKeyWithID(locationID string) string {
 	return locationsKeyPrefix + locationID
-}
-
-// Location lines are namespaced by their mapping ID.
-// `v1/locations-lines/by-key/<hashed-mapping-key>/<hashed-location-key>`.
-const locationLinesKeyPrefix = "v1/location-lines/by-key/"
-
-// MakeLocationLinesKeyWithID returns the key to be used to store/lookup a
-// location lines with the provided ID in a key-value store.
-func MakeLocationLinesKeyWithID(locationID string) string {
-	return locationLinesKeyPrefix + locationID
 }
 
 // Unsymbolized locations are namespaced by their mapping ID.
@@ -85,10 +75,18 @@ func MakeLocationID(l *pb.Location) string {
 		// 0. This works out well as the key is byte aligned to the nearest 8
 		// bytes that way.
 
-		//nolint:errcheck // ignore error as writing to the hash will cannot error
+		//nolint:errcheck,staticcheck
+		// ignore the error as writing to the hash will not error
+		// https://staticcheck.io/docs/checks#SA1003
+		// The encoding/binary package can only serialize types with known sizes.
+		// This precludes the use of the int and uint types, as their sizes differ on different architectures.
+		// TODO: Fix this.
 		binary.Write(hash, binary.BigEndian, 1)
 	} else {
-		//nolint:errcheck // ignore error as writing to the hash will cannot error
+		//nolint:errcheck,staticcheck
+		// ignore the error as writing to the hash will not error
+		// https://staticcheck.io/docs/checks#SA1003
+		// TODO: Fix this.
 		binary.Write(hash, binary.BigEndian, 0)
 	}
 
@@ -97,8 +95,8 @@ func MakeLocationID(l *pb.Location) string {
 	// runtime/language eg. ruby or python. In those cases we have no better
 	// uniqueness factor than the actual functions, and since there is no
 	// address there is no potential for asynchronously symbolizing.
-	if l.Address == 0 && l.Lines != nil {
-		for _, line := range l.Lines.Entries {
+	if l.Address == 0 {
+		for _, line := range l.Lines {
 			hash.Write([]byte(line.FunctionId))
 
 			//nolint:errcheck // ignore error as writing to the hash will cannot error

@@ -1,4 +1,3 @@
-CMD_DOCKER ?= docker
 CMD_GIT ?= git
 SHELL := /usr/bin/env bash
 ifeq (,$(shell go env GOBIN))
@@ -101,7 +100,7 @@ ui/test:
 
 .PHONY: ui/lint
 ui/lint:
-	cd ui && npm run lint
+	cd ui && yarn run lint
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate
@@ -139,7 +138,10 @@ container-dev:
 
 .PHONY: container
 container:
-	./scripts/make-containers.sh $(OUT_DOCKER):$(VERSION)
+	podman build \
+		--platform linux/amd64,linux/arm64 \
+		--timestamp 0 \
+		--manifest $(OUT_DOCKER):$(VERSION) .
 
 .PHONY: push-container
 push-container:
@@ -180,9 +182,12 @@ tmp/help.txt: build
 	mkdir -p tmp
 	bin/parca --help > $@
 
+# renovate: datasource=go depName=github.com/campoy/embedmd
+EMBEDMD_VERSION ?= v2.0.0
+
 embedmd:
 ifeq (, $(shell which embedmd))
-	go install github.com/campoy/embedmd@latest
+	go install github.com/campoy/embedmd/v2@$(EMBEDMD_VERSION)
 EMBEDMD=$(GOBIN)/embedmd
 else
 EMBEDMD=$(shell which embedmd)
@@ -190,3 +195,11 @@ endif
 
 README.md: embedmd tmp/help.txt
 	$(EMBEDMD) -w README.md
+
+.PHONY: release-dry-run
+release-dry-run:
+	goreleaser release --rm-dist --auto-snapshot --skip-validate --skip-publish --debug
+
+.PHONY: release-build
+release-build:
+	goreleaser build --rm-dist --skip-validate --snapshot --debug

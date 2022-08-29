@@ -40,50 +40,52 @@ type Ingester struct {
 	schema     *dynparquet.Schema
 }
 
-func NewIngester(logger log.Logger, normalizer *Normalizer, table Table) *Ingester {
+func NewIngester(logger log.Logger, normalizer *Normalizer, table Table, schema *dynparquet.Schema) *Ingester {
 	return &Ingester{
 		logger:     logger,
 		normalizer: normalizer,
 		table:      table,
-		schema:     Schema(),
+		schema:     schema,
 	}
 }
 
 var ErrMissingNameLabel = errors.New("missing __name__ label")
 
-func separateNameFromLabels(ls labels.Labels) (string, labels.Labels, error) {
+func separateNameFromLabels(ls labels.Labels) (string, map[string]struct{}, labels.Labels, error) {
+	names := make(map[string]struct{}, len(ls))
 	out := make(labels.Labels, 0, len(ls))
 	name := ""
 	for _, l := range ls {
 		if l.Name == "__name__" {
 			name = l.Value
 		} else {
+			names[l.Name] = struct{}{}
 			out = append(out, l)
 		}
 	}
 
 	if name == "" {
-		return "", nil, ErrMissingNameLabel
+		return "", nil, nil, ErrMissingNameLabel
 	}
 
 	sort.Sort(out)
 
-	return name, out, nil
+	return name, names, out, nil
 }
 
 func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.Profile, normalized bool) error {
-	name, ls, err := separateNameFromLabels(ls)
+	name, names, ls, err := separateNameFromLabels(ls)
 	if err != nil {
-		return err
+		return fmt.Errorf("prepare labels: %w", err)
 	}
 
 	if err := validatePprofProfile(p); err != nil {
 		return err
 	}
 
-	normalizedProfiles, err := ing.normalizer.NormalizePprof(ctx, name, p, normalized)
+	normalizedProfiles, err := ing.normalizer.NormalizePprof(ctx, name, names, p, normalized)
 	if err != nil {
-		return err
+		return fmt.Errorf("normalize profile: %w", err)
 	}
 
 	for _, p := range normalizedProfiles {
@@ -93,7 +95,7 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 		}
 
 		if err := ing.IngestProfile(ctx, ls, p); err != nil {
-			return err
+			return fmt.Errorf("ingest profile: %w", err)
 		}
 	}
 
@@ -106,21 +108,9 @@ func (ing Ingester) IngestProfile(ctx context.Context, ls labels.Labels, p *prof
 		return fmt.Errorf("failed to convert samples to buffer: %w", err)
 	}
 
-	buffer.Sort()
-
-	// This is necessary because sorting a buffer makes concurrent reading not
-	// safe as the internal pages are cyclically sorted at read time. Cloning
-	// executes the cyclic sort once and makes the resulting buffer safe for
-	// concurrent reading as it no longer has to perform the cyclic sorting at
-	// read time. This should probably be improved in the parquet library.
-	buffer, err = buffer.Clone()
-	if err != nil {
-		return err
-	}
-
 	_, err = ing.table.InsertBuffer(ctx, buffer)
 	if err != nil {
-		return fmt.Errorf("failed to insert buffer: %w", err)
+		return fmt.Errorf("insert buffer: %w", err)
 	}
 
 	return nil
@@ -200,9 +190,6 @@ func validatePprofProfile(p *pprofproto.Profile) error {
 		}
 		if len(s.Value) != sampleLen {
 			return fmt.Errorf("mismatch: sample has %d values vs. %d types", len(s.Value), len(p.SampleType))
-		}
-		if len(s.LocationId) == 0 {
-			return fmt.Errorf("sample %d has no location ids", i)
 		}
 		for j, l := range s.LocationId {
 			if l == 0 {

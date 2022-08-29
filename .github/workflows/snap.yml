@@ -1,0 +1,201 @@
+name: Snap
+
+on:
+  push:
+    branches:
+      - main
+      - release-*
+  pull_request:
+    branches:
+      - main
+      - release-*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=go depName=github.com/goreleaser/goreleaser
+  GORELEASER_VERSION: v1.10.3
+
+permissions:
+  contents: write
+
+jobs:
+  skip-check:
+    name: Skip check
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      should_skip: ${{ steps.skip-check.outputs.should_skip }}
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - id: skip-check
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+        with:
+          do_not_skip: '["schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              "**.go",
+              ".github/workflows/snap.yml",
+              ".go-version",
+              ".node-version",
+              "cmd/**",
+              "gen/**",
+              "go.mod",
+              "go.sum",
+              "pkg/**",
+              "ui/**"
+            ]
+          skip_after_successful_duplicate: false
+
+  build:
+    name: Build Snap (goreleaser)
+    needs: skip-check
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DOCKER_CLI_EXPERIMENTAL: "enabled"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
+        with:
+          go-version-file: .go-version
+          check-latest: true
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
+        with:
+          node-version-file: .node-version
+          cache: "yarn"
+
+      - name: Set up Snapcraft
+        run: |
+          sudo snap install snapcraft --channel=7.x/stable --classic
+          # See https://github.com/goreleaser/goreleaser/issues/1715
+          mkdir -p "$HOME/.cache/snapcraft/download"
+          mkdir -p "$HOME/.cache/snapcraft/stage-packages"
+
+      - name: Set up environment
+        run: |
+          ./env.sh
+
+      - name: Validate
+        uses: goreleaser/goreleaser-action@ff11ca24a9b39f2d36796d1fbd7a4e39c182630a # tag=v3.1.0
+        with:
+          distribution: goreleaser
+          version: ${{ env.GORELEASER_VERSION }}
+          args: check
+
+      - name: Set Tag
+        run: |
+          echo "goreleaser_current_tag=`git describe --match 'v*' --tags`" >> $GITHUB_ENV
+
+      - name: Dry Run
+        uses: goreleaser/goreleaser-action@ff11ca24a9b39f2d36796d1fbd7a4e39c182630a # tag=v3.1.0
+        with:
+          distribution: goreleaser
+          version: ${{ env.GORELEASER_VERSION }}
+          args: release --rm-dist --skip-validate --skip-publish
+        env:
+          GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
+
+      - name: Archive generated artifacts
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        with:
+          name: parca-dist-release
+          if-no-files-found: error
+          path: |
+            dist/*.snap
+
+  test:
+    name: Test Snap
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3.0.0
+        with:
+          name: parca-dist-release
+          path: dist
+
+      - name: Install snapcraft
+        run: |
+          sudo snap install snapcraft --classic --channel=7.x/stable
+
+      - name: Install snap & invoke parca
+        run: |
+          sudo snap install --dangerous dist/parca*_linux_amd64.snap
+          sudo snap set parca log-level=debug
+          parca --version
+
+      - name: Start Parca - default config
+        run: |
+          sudo snap start parca
+
+          # Set some options to allow retries while Parca comes back up
+          CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
+
+          curl ${CURL_OPTS[@]} http://localhost:7070/
+          curl ${CURL_OPTS[@]} http://localhost:7070/metrics
+
+      - name: Configure snap - enable-persistence
+        run: |
+          sudo snap set parca enable-persistence=true
+          sudo snap restart parca
+
+          # Set some options to allow retries while Parca comes back up
+          CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
+
+          curl ${CURL_OPTS[@]} http://localhost:7070/
+          curl ${CURL_OPTS[@]} http://localhost:7070/metrics
+
+      - name: Configure snap - port
+        run: |
+          sudo snap set parca port=8080
+          sudo snap restart parca
+
+          # Set some options to allow retries while Parca comes back up
+          CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
+
+          curl ${CURL_OPTS[@]} http://localhost:8080/
+          curl ${CURL_OPTS[@]} http://localhost:8080/metrics
+
+      # In case the above tests fail, dump the logs for inspection
+      - name: Dump snap service logs
+        if: failure()
+        run: |
+          sudo snap logs parca -n=all
+
+  release-edge:
+    name: Release Snap (latest/edge)
+    needs: test
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3.0.0
+        with:
+          name: parca-dist-release
+          path: dist
+
+      - name: Install snapcraft
+        run: |
+          sudo snap install snapcraft --classic --channel=7.x/stable
+
+      - name: Release to latest/edge
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          snapcraft upload dist/*_amd64.snap --release edge
+          snapcraft upload dist/*_arm64.snap --release edge

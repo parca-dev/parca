@@ -3,6 +3,82 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.2](https://github.com/parca-dev/parca/compare/ui-v0.15.1...ui-v0.15.2) (2022-08-25)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
+# [0.15.0](https://github.com/parca-dev/parca/compare/ui-v0.14.37...ui-v0.15.0) (2022-08-24)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
+## [0.14.37](https://github.com/parca-dev/parca/compare/ui-v0.14.36...ui-v0.14.37) (2022-08-24)
+
+
+
+## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.16) (2022-08-03)
+
+
+
+## [0.14.7](https://github.com/parca-dev/parca/compare/ui-v0.14.5...ui-v0.14.7) (2022-07-27)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
+## [0.14.16](https://github.com/parca-dev/parca/compare/ui-v0.14.15...ui-v0.14.16) (2022-08-03)
+
+
+
+## [0.14.12](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.12) (2022-08-02)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
+## [0.14.12](https://github.com/parca-dev/parca/compare/ui-v0.14.11...ui-v0.14.12) (2022-08-02)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
+## [0.14.1](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.14.1) (2022-07-25)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
+# [0.14.0](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.14.0) (2022-07-25)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
+## [0.13.15](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.13.15) (2022-07-12)
+
+**Note:** Version bump only for package @parca/client
+
+
+
+
+
 ## [0.13.13](https://github.com/parca-dev/parca/compare/ui-v0.13.12...ui-v0.13.13) (2022-06-29)
 
 **Note:** Version bump only for package @parca/client

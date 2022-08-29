@@ -3,11 +3,16 @@ name: proto-pr
 on:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   skip-check:
     name: Skip check
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       should_skip: ${{ steps.skip-check.outputs.should_skip }}
     permissions:
@@ -33,16 +38,17 @@ jobs:
     needs: skip-check
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Set up Go
-        uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # tag=v3.2.0
+        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
         with:
           go-version-file: .go-version
           check-latest: true
 
-      - uses: bufbuild/buf-setup-action@f6302b8734110a8557ffc49bb1b5ff7fae642400 # tag=v1.6.0
+      - uses: bufbuild/buf-setup-action@9447e713f7871ebf70f0f64cc2157a6aa31dd319 # tag=v1.7.0
 
       - name: Format
         run: buf format --diff --exit-code

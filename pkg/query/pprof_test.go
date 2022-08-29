@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package query
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -41,6 +40,13 @@ func TestGenerateFlatPprof(t *testing.T) {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
+	pf, err := os.Open("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+	pprofProf, err := profile.Parse(pf)
+	require.NoError(t, err)
+	require.NoError(t, pf.Close())
+	compactedOriginalProfile := pprofProf.Compact()
+
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
@@ -53,10 +59,10 @@ func TestGenerateFlatPprof(t *testing.T) {
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, profiles[0])
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
@@ -83,9 +89,9 @@ func TestGenerateFlatPprof(t *testing.T) {
 
 	require.Equal(t, 974, len(res.Function))
 	require.Equal(t, 1886, len(res.Location))
-	require.Equal(t, 4661, len(res.Sample))
+	require.Equal(t, len(compactedOriginalProfile.Sample), len(res.Sample))
 
-	tmpfile, err := ioutil.TempFile("", "pprof")
+	tmpfile, err := os.CreateTemp("", "pprof")
 	defer os.Remove(tmpfile.Name())
 	require.NoError(t, err)
 	require.NoError(t, res.Write(tmpfile))
@@ -134,17 +140,13 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 
 	lres, err := metastore.GetOrCreateLocations(ctx, &pb.GetOrCreateLocationsRequest{
 		Locations: []*pb.Location{{
-			Lines: &pb.LocationLines{
-				Entries: []*pb.Line{{
-					FunctionId: f1.Id,
-				}},
-			},
+			Lines: []*pb.Line{{
+				FunctionId: f1.Id,
+			}},
 		}, {
-			Lines: &pb.LocationLines{
-				Entries: []*pb.Line{{
-					FunctionId: f2.Id,
-				}},
-			},
+			Lines: []*pb.Line{{
+				FunctionId: f2.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)
@@ -161,7 +163,8 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	require.Equal(t, 1, len(sres.Stacktraces))
 	s := sres.Stacktraces[0]
 
-	symbolizedProfile, err := parcacol.SymbolizeNormalizedProfile(ctx, metastore, &parcaprofile.NormalizedProfile{
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s.Id,
 			Value:        1,
@@ -172,7 +175,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
 	require.NoError(t, err)
 
-	tmpfile, err := ioutil.TempFile("", "pprof")
+	tmpfile, err := os.CreateTemp("", "pprof")
 	defer os.Remove(tmpfile.Name())
 	require.NoError(t, err)
 	require.NoError(t, res.Write(tmpfile))

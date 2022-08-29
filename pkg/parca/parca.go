@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,14 +18,15 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	goruntime "runtime"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/apache/arrow/go/v8/arrow/memory"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -36,6 +37,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
+	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -68,9 +70,9 @@ import (
 )
 
 const (
-	symbolizationInterval   = 10 * time.Second
-	flagModeScraperOnly     = "scraper-only"
-	metaStoreBadgerInMemory = "badgerinmemory"
+	symbolizationInterval = 10 * time.Second
+	flagModeScraperOnly   = "scraper-only"
+	metaStoreBadger       = "badger"
 )
 
 type Flags struct {
@@ -86,19 +88,24 @@ type Flags struct {
 	MutexProfileFraction int `default:"0" help:"Fraction of mutex profile samples to collect."`
 	BlockProfileRate     int `default:"0" help:"Sample rate for block profile."`
 
-	StorageDebugValueLog bool  `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
-	StorageGranuleSize   int   `default:"8196" help:"Granule size for storage."`
-	StorageActiveMemory  int64 `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the metastore and profile storage."`
+
+	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
+	StorageGranuleSize   int    `default:"8196" help:"Granule size for storage."`
+	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	StoragePath          string `default:"data" help:"Path to storage directory."`
+	StorageEnableWAL     bool   `default:"false" help:"Enables write ahead log for profile storage."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 
-	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"badgerinmemory"`
+	Metastore string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
 
 	ProfileShareServer string `default:"api.pprof.me:443" help:"gRPC address to send share profile requests to."`
 
 	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
+	DebuginfoCacheDir            string        `default:"/tmp" help:"Path to directory where debuginfo is cached."`
 
 	StoreAddress       string            `kong:"help='gRPC address to send profiles and symbols to.'"`
 	BearerToken        string            `kong:"help='Bearer token to authenticate with store.'"`
@@ -140,13 +147,41 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return runScraper(ctx, logger, reg, tracerProvider, flags, version, cfg)
 	}
 
+	bucketCfg, err := yaml.Marshal(cfg.ObjectStorage.Bucket)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to marshal object storage bucket config", "err", err)
+		return err
+	}
+
+	bucket, err := client.NewBucket(logger, bucketCfg, reg, "parca")
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize object storage bucket", "err", err)
+		return err
+	}
+
 	var mStr metastorepb.MetastoreServiceServer
 	switch flags.Metastore {
-	case metaStoreBadgerInMemory:
+	case metaStoreBadger:
+		var badgerOptions badger.Options
+		switch flags.EnablePersistence {
+		case true:
+			badgerOptions = badger.DefaultOptions(filepath.Join(flags.StoragePath, "metastore"))
+		default:
+			badgerOptions = badger.DefaultOptions("").WithInMemory(true)
+		}
+
+		badgerOptions = badgerOptions.WithLogger(&metastore.BadgerLogger{Logger: logger})
+		db, err := badger.Open(badgerOptions)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to open badger database for metastore", "err", err)
+			return err
+		}
+
 		mStr = metastore.NewBadgerMetastore(
 			logger,
 			reg,
-			tracerProvider.Tracer(metaStoreBadgerInMemory),
+			tracerProvider.Tracer(metaStoreBadger),
+			db,
 		)
 	default:
 		err := fmt.Errorf("unknown metastore implementation: %s", flags.Metastore)
@@ -156,19 +191,47 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	metastore := metastore.NewInProcessClient(mStr)
 
-	col := frostdb.New(
+	frostdbOptions := []frostdb.Option{
+		frostdb.WithGranuleSize(flags.StorageGranuleSize),
+		frostdb.WithActiveMemorySize(flags.StorageActiveMemory),
+	}
+
+	if flags.EnablePersistence {
+		frostdbOptions = append(frostdbOptions, frostdb.WithBucketStorage(objstore.NewPrefixedBucket(bucket, "blocks")))
+	}
+
+	if flags.StorageEnableWAL {
+		frostdbOptions = append(frostdbOptions, frostdb.WithWAL(), frostdb.WithStoragePath(flags.StoragePath))
+	}
+
+	col, err := frostdb.New(
+		logger,
 		reg,
-		flags.StorageGranuleSize,
-		flags.StorageActiveMemory,
+		frostdbOptions...,
 	)
-	colDB, err := col.DB("parca")
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize storage", "err", err)
+		return err
+	}
+
+	if err := col.ReplayWALs(context.Background()); err != nil {
+		level.Error(logger).Log("msg", "failed to replay WAL", "err", err)
+		return err
+	}
+
+	colDB, err := col.DB(ctx, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to load database", "err", err)
 		return err
 	}
-	table, err := colDB.Table("stacktraces", frostdb.NewTableConfig(
-		parcacol.Schema(),
-	), logger)
+
+	schema, err := parcacol.Schema()
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to get schema", "err", err)
+		return err
+	}
+
+	table, err := colDB.Table("stacktraces", frostdb.NewTableConfig(schema))
 	if err != nil {
 		level.Error(logger).Log("msg", "create table", "err", err)
 		return err
@@ -179,6 +242,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		tracerProvider.Tracer("profilestore"),
 		metastore,
 		table,
+		schema,
 		flags.StorageDebugValueLog,
 	)
 	conn, err := grpc.Dial(flags.ProfileShareServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
@@ -188,13 +252,16 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
-		metastore,
 		sharepb.NewShareClient(conn),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracerProvider.Tracer("querier"),
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -221,18 +288,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	bucketCfg, err := yaml.Marshal(cfg.DebugInfo.Bucket)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to marshal debuginfo bucket config", "err", err)
-		return err
-	}
-
-	bucket, err := client.NewBucket(logger, bucketCfg, "parca")
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize debuginfo object store bucket", "err", err)
-		return err
-	}
-
 	var debugInfodClient debuginfo.DebugInfodClient = debuginfo.NopDebugInfodClient{}
 	if len(flags.DebugInfodUpstreamServers) > 0 {
 		httpDebugInfoClient, err := debuginfo.NewHTTPDebugInfodClient(logger, flags.DebugInfodUpstreamServers, flags.DebugInfodHTTPRequestTimeout)
@@ -241,25 +296,24 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return err
 		}
 
-		debugInfodClient, err = debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, bucket, httpDebugInfoClient)
+		debugInfodClient, err = debuginfo.NewDebugInfodClientWithObjectStorageCache(
+			logger,
+			objstore.NewPrefixedBucket(bucket, "debuginfod-cache"),
+			httpDebugInfoClient,
+		)
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod client cache", "err", err)
 			return err
 		}
 	}
 
-	debugInfoCache, err := debuginfo.NewCache(cfg.DebugInfo.Cache)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize debuginfo cache", "err", err)
-		return err
-	}
-
 	dbgInfoMetadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
 	dbgInfo, err := debuginfo.NewStore(
+		tracerProvider.Tracer("debuginfo"),
 		logger,
-		debugInfoCache.Directory,
+		flags.DebuginfoCacheDir,
 		dbgInfoMetadata,
-		bucket,
+		objstore.NewPrefixedBucket(bucket, "debuginfo"),
 		debugInfodClient,
 	)
 	if err != nil {
@@ -296,8 +350,9 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			metastore,
 			dbgInfo,
 			sym,
-			debugInfoCache.Directory,
-			debugInfoCache.Directory,
+			flags.DebuginfoCacheDir,
+			flags.DebuginfoCacheDir,
+			0,
 		)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
@@ -381,6 +436,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			if err != nil && !errors.Is(err, context.Canceled) {
 				level.Error(logger).Log("msg", "error shutting down server", "err", err)
 			}
+
+			// Close the columnstore after the parcaserver has shutdown to ensure no more writes occur against it.
+			if err := col.Close(); err != nil {
+				level.Error(logger).Log("msg", "error closing columnstore", "err", err)
+			}
 		},
 	)
 	if err := gr.Run(); err != nil {
@@ -431,7 +491,7 @@ func runScraper(
 	}
 
 	if flags.BearerTokenFile != "" {
-		b, err := ioutil.ReadFile(flags.BearerTokenFile)
+		b, err := os.ReadFile(flags.BearerTokenFile)
 		if err != nil {
 			return fmt.Errorf("failed to read bearer token from file: %w", err)
 		}

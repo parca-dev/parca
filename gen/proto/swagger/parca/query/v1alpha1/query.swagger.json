@@ -299,14 +299,15 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
               "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
               "REPORT_TYPE_PPROF",
-              "REPORT_TYPE_TOP"
+              "REPORT_TYPE_TOP",
+              "REPORT_TYPE_CALLGRAPH"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           }
@@ -487,10 +488,11 @@
       "enum": [
         "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
         "REPORT_TYPE_PPROF",
-        "REPORT_TYPE_TOP"
+        "REPORT_TYPE_TOP",
+        "REPORT_TYPE_CALLGRAPH"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -556,7 +558,10 @@
           "description": "is_folded indicates whether the location is folded into the previous location."
         },
         "lines": {
-          "$ref": "#/definitions/v1alpha1LocationLines",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Line"
+          },
           "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
         }
       },
@@ -665,6 +670,99 @@
           }
         }
       }
+    },
+    "v1alpha1Callgraph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1CallgraphNode"
+          },
+          "title": "nodes are the nodes in the callgraph"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1CallgraphEdge"
+          },
+          "title": "edges are the edges connecting nodes in the callgraph"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the total cumulative value of the callgraph"
+        }
+      },
+      "title": "Callgraph is the callgraph report type"
+    },
+    "v1alpha1CallgraphEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id is the unique id of the edge"
+        },
+        "source": {
+          "type": "string",
+          "title": "source represents the id of the source node"
+        },
+        "target": {
+          "type": "string",
+          "title": "target represents the id of the target node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the edge"
+        },
+        "isCollapsed": {
+          "type": "boolean",
+          "title": "is_collapsed indicates if the edge is collapsed"
+        }
+      },
+      "title": "CallgraphEdge represents an edge in the graph"
+    },
+    "v1alpha1CallgraphNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id is the unique id of the node"
+        },
+        "meta": {
+          "$ref": "#/definitions/v1alpha1CallgraphNodeMeta",
+          "title": "meta is the metadata about the node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the node"
+        }
+      },
+      "title": "CallgraphNode represents a node in the graph"
+    },
+    "v1alpha1CallgraphNodeMeta": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/metastorev1alpha1Location",
+          "title": "location is the location for the code"
+        },
+        "mapping": {
+          "$ref": "#/definitions/metastorev1alpha1Mapping",
+          "title": "mapping is the mapping into code"
+        },
+        "function": {
+          "$ref": "#/definitions/metastorev1alpha1Function",
+          "title": "function is the function information"
+        },
+        "line": {
+          "$ref": "#/definitions/metastorev1alpha1Line",
+          "title": "line is the line location"
+        }
+      },
+      "title": "TopNodeMeta is the metadata for a given node"
     },
     "v1alpha1DiffProfile": {
       "type": "object",
@@ -808,19 +906,6 @@
         }
       },
       "title": "LabelsResponse is the set of matching label names"
-    },
-    "v1alpha1LocationLines": {
-      "type": "object",
-      "properties": {
-        "entries": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/metastorev1alpha1Line"
-          },
-          "description": "Entries is the list of lines associated with the location."
-        }
-      },
-      "description": "LocationLines describes a set of lines of a location."
     },
     "v1alpha1MergeProfile": {
       "type": "object",
@@ -1019,6 +1104,10 @@
         "top": {
           "$ref": "#/definitions/v1alpha1Top",
           "title": "top is a top list representation of the report"
+        },
+        "callgraph": {
+          "$ref": "#/definitions/v1alpha1Callgraph",
+          "title": "callgraph is a callgraph nodes and edges representation of the report"
         }
       },
       "title": "QueryResponse is the returned report for the given query"

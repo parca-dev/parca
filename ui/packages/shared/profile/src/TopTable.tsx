@@ -1,25 +1,32 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React from 'react';
-import {getLastItem, valueFormatter, isSearchMatch, SEARCH_STRING_COLOR} from '@parca/functions';
+
+import {getLastItem, valueFormatter, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectCompareMode, selectSearchNodeString} from '@parca/store';
-import {
-  QueryResponse,
-  QueryServiceClient,
-  QueryRequest_ReportType,
-  TopNodeMeta,
-} from '@parca/client';
-import {ProfileSource} from './ProfileSource';
-import {useQuery} from './useQuery';
+import {TopNodeMeta, Top} from '@parca/client';
+
 import {hexifyAddress} from './utils';
 
 import './TopTable.styles.css';
 
-interface ProfileViewProps {
-  queryClient: QueryServiceClient;
-  profileSource: ProfileSource;
+interface TopTableProps {
+  data?: Top;
   sampleUnit: string;
 }
 
-const Arrow = ({direction}: {direction: string | undefined}) => {
+const Arrow = ({direction}: {direction: string | undefined}): JSX.Element => {
   return (
     <svg
       className={`${direction !== undefined ? 'fill-[#161616] dark:fill-[#ffffff]' : ''}`}
@@ -29,21 +36,32 @@ const Arrow = ({direction}: {direction: string | undefined}) => {
       width="11"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path clip-rule="evenodd" d="m.573997 0 5.000003 10 5-10h-9.999847z" fill-rule="evenodd" />
+      <path clipRule="evenodd" d="m.573997 0 5.000003 10 5-10h-9.999847z" fillRule="evenodd" />
     </svg>
   );
 };
 
 const useSortableData = (
-  response: QueryResponse | null,
+  top?: Top,
   config = {key: 'cumulative', direction: 'desc'}
-) => {
+): {
+  items:
+    | Array<{
+        diff: number;
+        cumulative: number;
+        flat: number;
+        name: string | undefined;
+        meta?: TopNodeMeta | undefined;
+      }>
+    | undefined;
+  requestSort: (key: string) => void;
+  sortConfig: {key: string; direction: string} | null;
+} => {
   const [sortConfig, setSortConfig] = React.useState<{key: string; direction: string} | null>(
     config
   );
 
-  const rawTableReport =
-    response !== null && response.report.oneofKind === 'top' ? response.report.top.list : [];
+  const rawTableReport = top != null ? top.list : [];
 
   const items = rawTableReport.map(node => ({
     ...node,
@@ -54,9 +72,9 @@ const useSortableData = (
   }));
 
   const sortedItems = React.useMemo(() => {
-    if (!items) return;
+    if (items.length === 0) return;
 
-    let sortableItems = [...items];
+    const sortableItems = [...items];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -71,9 +89,9 @@ const useSortableData = (
     return sortableItems;
   }, [items, sortConfig]);
 
-  const requestSort = key => {
+  const requestSort = (key: string): void => {
     let direction = 'desc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+    if (sortConfig != null && sortConfig.key === key && sortConfig.direction === 'desc') {
       direction = 'asc';
     }
     setSortConfig({key, direction});
@@ -86,47 +104,37 @@ export const RowLabel = (meta: TopNodeMeta | undefined): string => {
   if (meta === undefined) return '<unknown>';
   const mapping = `${
     meta?.mapping?.file !== undefined && meta?.mapping?.file !== ''
-      ? `[${getLastItem(meta.mapping.file)}]`
+      ? `[${getLastItem(meta.mapping.file) ?? ''}]`
       : ''
   }`;
   if (meta.function?.name !== undefined && meta.function?.name !== '')
     return `${mapping} ${meta.function.name}`;
 
   const address = hexifyAddress(meta.location?.address);
-  const fallback = `${mapping} ${address as string}`;
+  const fallback = `${mapping} ${address}`;
 
   return fallback === '' ? '<unknown>' : fallback;
 };
 
-export const TopTable = ({
-  queryClient,
-  profileSource,
-  sampleUnit,
-}: ProfileViewProps): JSX.Element => {
-  const {response, error} = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP);
-  const {items, requestSort, sortConfig} = useSortableData(response);
+export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element => {
+  const {items, requestSort, sortConfig} = useSortableData(top);
   const currentSearchString = useAppSelector(selectSearchNodeString);
 
   const compareMode = useAppSelector(selectCompareMode);
 
   const unit = sampleUnit;
 
-  if (error != null) {
-    return <div className="p-10 flex justify-center">An error occurred: {error.message}</div>;
-  }
-
-  const total =
-    response !== null && response.report.oneofKind === 'top' ? response.report.top.list.length : 0;
+  const total = top != null ? top.list.length : 0;
   if (total === 0) return <>Profile has no samples</>;
 
-  const getClassNamesFor = name => {
-    if (!sortConfig) {
+  const getClassNamesFor = (name: string): string | undefined => {
+    if (sortConfig == null) {
       return;
     }
     return sortConfig.key === name ? sortConfig.direction : undefined;
   };
 
-  const addPlusSign = (num: string) => {
+  const addPlusSign = (num: string): string => {
     if (num.charAt(0) === '0' || num.charAt(0) === '-') {
       return num;
     }
@@ -145,7 +153,9 @@ export const TopTable = ({
                 onClick={() => requestSort('name')}
               >
                 Name
-                <span className={`inline-block align-middle ml-2 ${getClassNamesFor('name')}`}>
+                <span
+                  className={`inline-block align-middle ml-2 ${getClassNamesFor('name') ?? ''}`}
+                >
                   <Arrow direction={getClassNamesFor('name')} />
                 </span>
               </th>
@@ -154,7 +164,9 @@ export const TopTable = ({
                 onClick={() => requestSort('flat')}
               >
                 Flat
-                <span className={`inline-block align-middle ml-2 ${getClassNamesFor('flat')}`}>
+                <span
+                  className={`inline-block align-middle ml-2 ${getClassNamesFor('flat') ?? ''}`}
+                >
                   <Arrow direction={getClassNamesFor('flat')} />
                 </span>
               </th>
@@ -164,7 +176,9 @@ export const TopTable = ({
               >
                 Cumulative
                 <span
-                  className={`inline-block align-middle ml-2 ${getClassNamesFor('cumulative')}`}
+                  className={`inline-block align-middle ml-2 ${
+                    getClassNamesFor('cumulative') ?? ''
+                  }`}
                 >
                   <Arrow direction={getClassNamesFor('cumulative')} />
                 </span>
@@ -175,7 +189,9 @@ export const TopTable = ({
                   onClick={() => requestSort('diff')}
                 >
                   Diff
-                  <span className={`inline-block align-middle ml-2 ${getClassNamesFor('diff')}`}>
+                  <span
+                    className={`inline-block align-middle ml-2 ${getClassNamesFor('diff') ?? ''}`}
+                  >
                     <Arrow direction={getClassNamesFor('diff')} />
                   </span>
                 </th>

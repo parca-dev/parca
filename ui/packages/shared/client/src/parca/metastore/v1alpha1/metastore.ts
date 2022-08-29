@@ -136,6 +136,18 @@ export interface GetOrCreateStacktracesResponse {
  * @generated from protobuf message parca.metastore.v1alpha1.UnsymbolizedLocationsRequest
  */
 export interface UnsymbolizedLocationsRequest {
+    /**
+     * The maximum number of locations to return.
+     *
+     * @generated from protobuf field: uint32 limit = 1;
+     */
+    limit: number;
+    /**
+     * The minimum key to start returning locations from.
+     *
+     * @generated from protobuf field: string min_key = 2;
+     */
+    minKey: string;
 }
 /**
  * UnsymbolizedLocationsResponse contains information about the requested
@@ -151,6 +163,13 @@ export interface UnsymbolizedLocationsResponse {
      * @generated from protobuf field: repeated parca.metastore.v1alpha1.Location locations = 1;
      */
     locations: Location[];
+    /**
+     * Key of the last location returned. This can be used in a subsequent call
+     * to UnsymbolizedLocations to continue from the last returned location.
+     *
+     * @generated from protobuf field: string max_key = 2;
+     */
+    maxKey: string;
 }
 /**
  * CreateLocationLinesRequest contains locations and their location lines to be
@@ -237,19 +256,6 @@ export interface LocationLinesRequest {
      * @generated from protobuf field: repeated string location_ids = 1;
      */
     locationIds: string[];
-}
-/**
- * LocationLinesResponse contains the requested locations.
- *
- * @generated from protobuf message parca.metastore.v1alpha1.LocationLinesResponse
- */
-export interface LocationLinesResponse {
-    /**
-     * LocationLines that are known to the backing metastore.
-     *
-     * @generated from protobuf field: repeated parca.metastore.v1alpha1.LocationLines location_lines = 1;
-     */
-    locationLines: LocationLines[];
 }
 /**
  * FunctionsRequest contains information about the functions requested.
@@ -432,22 +438,9 @@ export interface Location {
      * lines are the call frames represented by this location. Multiple lines
      * indicate they have been inlined.
      *
-     * @generated from protobuf field: parca.metastore.v1alpha1.LocationLines lines = 6;
+     * @generated from protobuf field: repeated parca.metastore.v1alpha1.Line lines = 6;
      */
-    lines?: LocationLines;
-}
-/**
- * LocationLines describes a set of lines of a location.
- *
- * @generated from protobuf message parca.metastore.v1alpha1.LocationLines
- */
-export interface LocationLines {
-    /**
-     * Entries is the list of lines associated with the location.
-     *
-     * @generated from protobuf field: repeated parca.metastore.v1alpha1.Line entries = 1;
-     */
-    entries: Line[];
+    lines: Line[];
 }
 /**
  * Line describes a source code function and its line number.
@@ -952,19 +945,47 @@ export const GetOrCreateStacktracesResponse = new GetOrCreateStacktracesResponse
 // @generated message type with reflection information, may provide speed optimized methods
 class UnsymbolizedLocationsRequest$Type extends MessageType<UnsymbolizedLocationsRequest> {
     constructor() {
-        super("parca.metastore.v1alpha1.UnsymbolizedLocationsRequest", []);
+        super("parca.metastore.v1alpha1.UnsymbolizedLocationsRequest", [
+            { no: 1, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "min_key", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
     }
     create(value?: PartialMessage<UnsymbolizedLocationsRequest>): UnsymbolizedLocationsRequest {
-        const message = {};
+        const message = { limit: 0, minKey: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<UnsymbolizedLocationsRequest>(this, message, value);
         return message;
     }
     internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UnsymbolizedLocationsRequest): UnsymbolizedLocationsRequest {
-        return target ?? this.create();
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 limit */ 1:
+                    message.limit = reader.uint32();
+                    break;
+                case /* string min_key */ 2:
+                    message.minKey = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
     }
     internalBinaryWrite(message: UnsymbolizedLocationsRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 limit = 1; */
+        if (message.limit !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.limit);
+        /* string min_key = 2; */
+        if (message.minKey !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.minKey);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -979,11 +1000,12 @@ export const UnsymbolizedLocationsRequest = new UnsymbolizedLocationsRequest$Typ
 class UnsymbolizedLocationsResponse$Type extends MessageType<UnsymbolizedLocationsResponse> {
     constructor() {
         super("parca.metastore.v1alpha1.UnsymbolizedLocationsResponse", [
-            { no: 1, name: "locations", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Location }
+            { no: 1, name: "locations", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Location },
+            { no: 2, name: "max_key", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<UnsymbolizedLocationsResponse>): UnsymbolizedLocationsResponse {
-        const message = { locations: [] };
+        const message = { locations: [], maxKey: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<UnsymbolizedLocationsResponse>(this, message, value);
@@ -996,6 +1018,9 @@ class UnsymbolizedLocationsResponse$Type extends MessageType<UnsymbolizedLocatio
             switch (fieldNo) {
                 case /* repeated parca.metastore.v1alpha1.Location locations */ 1:
                     message.locations.push(Location.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* string max_key */ 2:
+                    message.maxKey = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1012,6 +1037,9 @@ class UnsymbolizedLocationsResponse$Type extends MessageType<UnsymbolizedLocatio
         /* repeated parca.metastore.v1alpha1.Location locations = 1; */
         for (let i = 0; i < message.locations.length; i++)
             Location.internalBinaryWrite(message.locations[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string max_key = 2; */
+        if (message.maxKey !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.maxKey);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1330,53 +1358,6 @@ class LocationLinesRequest$Type extends MessageType<LocationLinesRequest> {
  * @generated MessageType for protobuf message parca.metastore.v1alpha1.LocationLinesRequest
  */
 export const LocationLinesRequest = new LocationLinesRequest$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class LocationLinesResponse$Type extends MessageType<LocationLinesResponse> {
-    constructor() {
-        super("parca.metastore.v1alpha1.LocationLinesResponse", [
-            { no: 1, name: "location_lines", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => LocationLines }
-        ]);
-    }
-    create(value?: PartialMessage<LocationLinesResponse>): LocationLinesResponse {
-        const message = { locationLines: [] };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<LocationLinesResponse>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: LocationLinesResponse): LocationLinesResponse {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated parca.metastore.v1alpha1.LocationLines location_lines */ 1:
-                    message.locationLines.push(LocationLines.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: LocationLinesResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated parca.metastore.v1alpha1.LocationLines location_lines = 1; */
-        for (let i = 0; i < message.locationLines.length; i++)
-            LocationLines.internalBinaryWrite(message.locationLines[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message parca.metastore.v1alpha1.LocationLinesResponse
- */
-export const LocationLinesResponse = new LocationLinesResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class FunctionsRequest$Type extends MessageType<FunctionsRequest> {
     constructor() {
@@ -1904,11 +1885,11 @@ class Location$Type extends MessageType<Location> {
             { no: 2, name: "address", kind: "scalar", T: 4 /*ScalarType.UINT64*/ },
             { no: 4, name: "mapping_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "is_folded", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 6, name: "lines", kind: "message", T: () => LocationLines }
+            { no: 6, name: "lines", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Line }
         ]);
     }
     create(value?: PartialMessage<Location>): Location {
-        const message = { id: "", address: "0", mappingId: "", isFolded: false };
+        const message = { id: "", address: "0", mappingId: "", isFolded: false, lines: [] };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Location>(this, message, value);
@@ -1931,8 +1912,8 @@ class Location$Type extends MessageType<Location> {
                 case /* bool is_folded */ 5:
                     message.isFolded = reader.bool();
                     break;
-                case /* parca.metastore.v1alpha1.LocationLines lines */ 6:
-                    message.lines = LocationLines.internalBinaryRead(reader, reader.uint32(), options, message.lines);
+                case /* repeated parca.metastore.v1alpha1.Line lines */ 6:
+                    message.lines.push(Line.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1958,9 +1939,9 @@ class Location$Type extends MessageType<Location> {
         /* bool is_folded = 5; */
         if (message.isFolded !== false)
             writer.tag(5, WireType.Varint).bool(message.isFolded);
-        /* parca.metastore.v1alpha1.LocationLines lines = 6; */
-        if (message.lines)
-            LocationLines.internalBinaryWrite(message.lines, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* repeated parca.metastore.v1alpha1.Line lines = 6; */
+        for (let i = 0; i < message.lines.length; i++)
+            Line.internalBinaryWrite(message.lines[i], writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1971,53 +1952,6 @@ class Location$Type extends MessageType<Location> {
  * @generated MessageType for protobuf message parca.metastore.v1alpha1.Location
  */
 export const Location = new Location$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class LocationLines$Type extends MessageType<LocationLines> {
-    constructor() {
-        super("parca.metastore.v1alpha1.LocationLines", [
-            { no: 1, name: "entries", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Line }
-        ]);
-    }
-    create(value?: PartialMessage<LocationLines>): LocationLines {
-        const message = { entries: [] };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<LocationLines>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: LocationLines): LocationLines {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated parca.metastore.v1alpha1.Line entries */ 1:
-                    message.entries.push(Line.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: LocationLines, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated parca.metastore.v1alpha1.Line entries = 1; */
-        for (let i = 0; i < message.entries.length; i++)
-            Line.internalBinaryWrite(message.entries[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message parca.metastore.v1alpha1.LocationLines
- */
-export const LocationLines = new LocationLines$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Line$Type extends MessageType<Line> {
     constructor() {
@@ -2268,7 +2202,6 @@ export const MetastoreService = new ServiceType("parca.metastore.v1alpha1.Metast
     { name: "UnsymbolizedLocations", options: {}, I: UnsymbolizedLocationsRequest, O: UnsymbolizedLocationsResponse },
     { name: "CreateLocationLines", options: {}, I: CreateLocationLinesRequest, O: CreateLocationLinesResponse },
     { name: "Locations", options: {}, I: LocationsRequest, O: LocationsResponse },
-    { name: "LocationLines", options: {}, I: LocationLinesRequest, O: LocationLinesResponse },
     { name: "Functions", options: {}, I: FunctionsRequest, O: FunctionsResponse },
     { name: "Mappings", options: {}, I: MappingsRequest, O: MappingsResponse },
     { name: "Stacktraces", options: {}, I: StacktracesRequest, O: StacktracesResponse }

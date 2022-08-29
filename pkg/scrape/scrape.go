@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sort"
 	"sync"
@@ -334,7 +333,7 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 	case ProfileTraceType:
 		return fmt.Errorf("unimplemented")
 	default:
-		b, err := ioutil.ReadAll(io.TeeReader(resp.Body, w))
+		b, err := io.ReadAll(io.TeeReader(resp.Body, w))
 		if err != nil {
 			return fmt.Errorf("failed to read body: %w", err)
 		}

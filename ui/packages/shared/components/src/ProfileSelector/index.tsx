@@ -1,8 +1,21 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {Query} from '@parca/parser';
 import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {ProfileSelection} from '@parca/profile';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import ProfileMetricsGraph from '../ProfileMetricsGraph';
 import MatchersInput from '../MatchersInput';
 import MergeButton from './MergeButton';
@@ -19,7 +32,6 @@ import {
 } from '../';
 import {CloseIcon} from '@parca/icons';
 import cx from 'classnames';
-import {setSearchNodeString, useAppDispatch} from '@parca/store';
 
 export interface QuerySelection {
   expression: string;
@@ -49,22 +61,29 @@ interface WellKnownProfiles {
 }
 
 export interface IProfileTypesResult {
-  response?: ProfileTypesResponse;
+  loading: boolean;
+  data?: ProfileTypesResponse;
   error?: RpcError;
 }
 
 export const useProfileTypes = (client: QueryServiceClient): IProfileTypesResult => {
-  const [result, setResult] = useState<IProfileTypesResult>({});
+  const [result, setResult] = useState<ProfileTypesResponse | undefined>(undefined);
+  const [error, setError] = useState<RpcError | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
+    if (!loading) {
+      return;
+    }
     const call = client.profileTypes({}, {meta: metadata});
     call.response
-      .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}));
-  }, [client, metadata]);
+      .then(response => setResult(response))
+      .catch(error => setError(error))
+      .finally(() => setLoading(false));
+  }, [client, metadata, loading]);
 
-  return result;
+  return {loading, data: result, error};
 };
 
 const wellKnownProfiles: WellKnownProfiles = {
@@ -164,17 +183,27 @@ const ProfileSelector = ({
   comparing,
   onCompareProfile,
 }: ProfileSelectorProps): JSX.Element => {
-  const dispatch = useAppDispatch();
-  const {response, error} = useProfileTypes(queryClient);
-  const profileNames =
-    (error === undefined || error == null) && response !== undefined && response != null
-      ? response.types.map(
-          type =>
-            `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${
-              type.periodUnit
-            }${type.delta ? ':delta' : ''}`
-        )
+  const {
+    loading: profileTypesLoading,
+    data: profileTypesData,
+    error,
+  } = useProfileTypes(queryClient);
+  const profileNames = useMemo(() => {
+    return (error === undefined || error == null) &&
+      profileTypesData !== undefined &&
+      profileTypesData != null
+      ? profileTypesData.types
+          .map(
+            type =>
+              `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${
+                type.periodUnit
+              }${type.delta ? ':delta' : ''}`
+          )
+          .sort((a: string, b: string): number => {
+            return a.localeCompare(b);
+          })
       : [];
+  }, [profileTypesData, error]);
 
   const profileLabels = profileNames.map(name => ({
     key: name,
@@ -214,13 +243,12 @@ const ProfileSelector = ({
       expression: expr,
       from: timeRangeSelection.getFromMs(),
       to: timeRangeSelection.getToMs(),
-      merge: merge,
+      merge,
       timeSelection: timeRangeSelection.getRangeKey(),
     });
   };
 
   const setQueryExpression = (): void => {
-    dispatch(setSearchNodeString(undefined));
     setNewQueryExpression(query.toString(), false);
   };
 
@@ -260,7 +288,7 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header className={cx(comparing === true && 'overflow-x-scroll')}>
+      <Card.Header className={cx(comparing && 'overflow-x-scroll')}>
         <div className="flex space-x-4">
           {comparing && (
             <button type="button" onClick={() => closeProfile()}>
@@ -272,6 +300,7 @@ const ProfileSelector = ({
             selectedKey={selectedProfileName}
             onSelection={setProfileName}
             placeholder="Select profile..."
+            loading={profileTypesLoading}
           />
           <MatchersInput
             queryClient={queryClient}

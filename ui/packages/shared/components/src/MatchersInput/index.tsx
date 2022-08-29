@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React, {Fragment, useState, useEffect} from 'react';
 import {Transition} from '@headlessui/react';
 import {Query} from '@parca/parser';
@@ -48,7 +61,7 @@ const labelNameLiteralRe = /(^([a-z])\w+)(=~|=|!=|!~)/;
 const literalRe = /(=~|=|!=|!~)/;
 const labelNameRe = /(^([a-z])\w+)/;
 
-const addQuoteMarks = (labelValue: string) => {
+const addQuoteMarks = (labelValue: string): string => {
   // eslint-disable-next-line no-useless-escape
   return `\"${labelValue}\"`;
 };
@@ -61,15 +74,12 @@ export const useLabelNames = (client: QueryServiceClient): UseLabelNames => {
   useEffect(() => {
     const call = client.labels({match: []}, {meta: metadata});
 
-    setLoading(true);
-
     call.response
       .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}))
-      .finally(() => setLoading(false));
+      .catch(error => setResult({error: error}));
   }, [client, metadata]);
 
-  return {result, loading};
+  return result;
 };
 
 class Suggestion {
@@ -119,19 +129,10 @@ const MatchersInput = ({
   const metadata = useGrpcMetadata();
   const {loader: Spinner} = useParcaTheme();
 
-  const [suggestionSections, setSuggestionSections] = useState<Suggestions>(new Suggestions());
-
-  const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
-  const {response: labelNamesResponse, error: labelNamesError} = result;
-
-  const LoadingSpinner = () => {
-    return <div className="pt-2 pb-4">{Spinner}</div>;
-  };
+  const {response: labelNamesResponse, error: labelNamesError} = useLabelNames(queryClient);
 
   const getLabelNameValues = (labelName: string) => {
     const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
-
-    setLabelValuesLoading(true);
 
     call.response
       .then(response => {
@@ -230,7 +231,7 @@ const MatchersInput = ({
     suggestionSections.labelNames.length +
     suggestionSections.labelValues.length;
 
-  const getLabelsFromMatchers = matchers => {
+  const getLabelsFromMatchers = (matchers: Matchers[]): string[] => {
     return matchers
       .filter(matcher => matcher.key !== '__name__')
       .map(matcher => `${matcher.key}${matcher.matcherType}${addQuoteMarks(matcher.value)}`);
@@ -313,7 +314,7 @@ const MatchersInput = ({
   };
 
   const applySuggestion = (suggestionIndex: number): void => {
-    let suggestion = getSuggestion(suggestionIndex);
+    const suggestion = getSuggestion(suggestionIndex);
 
     if (suggestion.type === Labels.labelValue) {
       suggestion.value = addQuoteMarks(suggestion.value);
@@ -332,10 +333,7 @@ const MatchersInput = ({
     if (suggestion.type === Labels.labelValue) {
       const values = newValue.split(',');
 
-      if (
-        currentLabelsCollection === null ||
-        (currentLabelsCollection && currentLabelsCollection.length === 0)
-      ) {
+      if (currentLabelsCollection == null || currentLabelsCollection?.length === 0) {
         setCurrentLabelsCollection(values);
       } else {
         setCurrentLabelsCollection((oldValues: string[]) => [
@@ -476,7 +474,7 @@ const MatchersInput = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === 'Backspace' && !inputRef) {
+    if (event.key === 'Backspace' && inputRef === '') {
       if (currentLabelsCollection === null) return;
 
       removeLabel(currentLabelsCollection.length - 1);
@@ -509,6 +507,12 @@ const MatchersInput = ({
     if (event.key === 'ArrowDown') {
       highlightNext();
     }
+
+    if (event.key === 'Backspace' && inputRef === '') {
+      if (currentLabelsCollection === null) return;
+
+      removeLabel(currentLabelsCollection.length - 1);
+    }
   };
 
   const focus = (): void => {
@@ -520,7 +524,7 @@ const MatchersInput = ({
     resetHighlight();
   };
 
-  const removeLabel = label => {
+  const removeLabel = (label: number): void => {
     if (currentLabelsCollection === null) return;
 
     const newLabels = [...currentLabelsCollection];
@@ -531,7 +535,7 @@ const MatchersInput = ({
     setMatchersString(newLabelsAsAString);
   };
 
-  const removeLocalMatcher = () => {
+  const removeLocalMatcher = (): void => {
     if (localMatchers === null) return;
 
     const newMatchers = [...localMatchers];
@@ -546,15 +550,14 @@ const MatchersInput = ({
         className="w-full flex items-center text-sm border-gray-300 dark:border-gray-600 border-b"
       >
         <ul className="flex space-x-2">
-          {currentLabelsCollection &&
-            currentLabelsCollection.map((value, i) => (
-              <li
-                key={i}
-                className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900 rounded-md"
-              >
-                {value}
-              </li>
-            ))}
+          {currentLabelsCollection?.map((value, i) => (
+            <li
+              key={i}
+              className="bg-indigo-600 w-fit py-1 px-2 text-gray-100 dark-gray-900 rounded-md"
+            >
+              {value}
+            </li>
+          ))}
         </ul>
 
         <input

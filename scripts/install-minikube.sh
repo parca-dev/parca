@@ -1,4 +1,6 @@
-# Copyright (c) 2022 The Parca Authors
+#!/usr/bin/env bash
+#
+# Copyright 2022 The Parca Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,11 +19,14 @@ set -euo pipefail
 TARGET_DIR=${TARGET_DIR:-${HOME}/.local/bin}
 
 # renovate: datasource=go depName=github.com/kubernetes/minikube
-MINIKUBE_VERSION='v1.26.0'
+MINIKUBE_VERSION='v1.26.1'
+
+GOOS="$(go env GOOS)"
+GOARCH="$(go env GOARCH)"
 
 if [ -e "${TARGET_DIR}/minikube" ]; then
     echo 'minikube already exists' >&2
 else
-    curl -LJO https://storage.googleapis.com/minikube/releases/"${MINIKUBE_VERSION}"/minikube-$(go env GOOS)-$(go env GOARCH)
-    install minikube-$(go env GOOS)-$(go env GOARCH) "${TARGET_DIR}"/minikube
+    curl -LJO "https://storage.googleapis.com/minikube/releases/${MINIKUBE_VERSION}/minikube-${GOOS}-${GOARCH}"
+    install "minikube-${GOOS}-${GOARCH}" "${TARGET_DIR}/minikube"
 fi

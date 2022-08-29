@@ -4,6 +4,8 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { Share } from "./share";
+import type { QueryResponse } from "../parca/query/v1alpha1/query";
+import type { ProfileRequest } from "./share";
 import { stackIntercept } from "@protobuf-ts/runtime-rpc";
 import type { UploadResponse } from "./share";
 import type { UploadRequest } from "./share";
@@ -21,6 +23,12 @@ export interface IShareClient {
      * @generated from protobuf rpc: Upload(polarsignals.share.UploadRequest) returns (polarsignals.share.UploadResponse);
      */
     upload(input: UploadRequest, options?: RpcOptions): UnaryCall<UploadRequest, UploadResponse>;
+    /**
+     * Query performs a profile query
+     *
+     * @generated from protobuf rpc: Query(polarsignals.share.ProfileRequest) returns (parca.query.v1alpha1.QueryResponse);
+     */
+    query(input: ProfileRequest, options?: RpcOptions): UnaryCall<ProfileRequest, QueryResponse>;
 }
 /**
  * Service that exposes APIs for sharing profiles.
@@ -41,5 +49,14 @@ export class ShareClient implements IShareClient, ServiceInfo {
     upload(input: UploadRequest, options?: RpcOptions): UnaryCall<UploadRequest, UploadResponse> {
         const method = this.methods[0], opt = this._transport.mergeOptions(options);
         return stackIntercept<UploadRequest, UploadResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * Query performs a profile query
+     *
+     * @generated from protobuf rpc: Query(polarsignals.share.ProfileRequest) returns (parca.query.v1alpha1.QueryResponse);
+     */
+    query(input: ProfileRequest, options?: RpcOptions): UnaryCall<ProfileRequest, QueryResponse> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ProfileRequest, QueryResponse>("unary", this._transport, method, opt, input);
     }
 }

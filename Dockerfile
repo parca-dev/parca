@@ -1,29 +1,37 @@
-FROM docker.io/golang:1.18.3-alpine@sha256:7cc62574fcf9c5fb87ad42a9789d5539a6a085971d58ee75dd2ee146cb8a8695 AS builder
-RUN mkdir /.cache && chown nobody:nogroup /.cache && touch -t 202101010000.00 /.cache
+# https://github.com/hadolint/hadolint/issues/861
+# hadolint ignore=DL3029
+FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.35.0@sha256:09439c073bd3eb029a91c72eff2c0d9f12ab9c84f66bdef360fcf3f91a81bf7c as builder
+RUN mkdir /.cache && touch -t 202101010000.00 /.cache
 
-# renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-health-probe
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.11
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+ARG TARGETVARIANT=v1
+
+# renovate: datasource=github-releases depName=grpc-ecosystem/grpc-health-probe
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.12
+RUN wget -qO/bin/grpc_health_probe "https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-${TARGETOS}-${TARGETARCH}" && \
+    chmod +x /bin/grpc_health_probe
 
 WORKDIR /app
+COPY dist dist
 
-RUN go install "github.com/grpc-ecosystem/grpc-health-probe@${GRPC_HEALTH_PROBE_VERSION}"
-# Predicatable path for copying over to final image
-RUN if [ "$(go env GOHOSTARCH)" != "$(go env GOARCH)" ]; then \
-        mv "$(go env GOPATH)/bin/$(go env GOOS)_$(go env GOARCH)/grpc-health-probe" "$(go env GOPATH)/bin/grpc-health-probe"; \
-    fi
-
-COPY ./dist /app/dist
-RUN if [ "amd64" = "$(go env GOARCH)" ]; then \
-        cp "dist/parca_$(go env GOOS)_$(go env GOARCH)_$(go env GOAMD64)/parca" parca; \
+# NOTICE: See goreleaser.yml for the build paths.
+RUN if [ "${TARGETARCH}" = 'amd64' ]; then \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}_${TARGETVARIANT:-v1}/parca" . ; \
+    elif [ "${TARGETARCH}" = 'arm' ]; then \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}_${TARGETVARIANT##v}/parca" . ; \
     else \
-        cp "dist/parca_$(go env GOOS)_$(go env GOARCH)/parca" parca; \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}/parca" . ; \
     fi
+RUN chmod +x parca
 
-FROM docker.io/alpine:3.16.0@sha256:686d8c9dfa6f3ccfc8230bc3178d23f84eeaf7e457f36f271ab1acc53015037c AS runner
+# https://github.com/hadolint/hadolint/issues/861
+# hadolint ignore=DL3029
+FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.16.2@sha256:bc41182d7ef5ffc53a40b044e725193bc10142a1243f395ee852a8d9730fc2ad AS runner
 
 USER nobody
 
-COPY --chown=0:0 --from=builder /go/bin/grpc-health-probe /
+COPY --chown=0:0 --from=builder /bin/grpc_health_probe /
 COPY --chown=0:0 --from=builder /app/parca /parca
 COPY --chown=0:0 parca.yaml /parca.yaml
 

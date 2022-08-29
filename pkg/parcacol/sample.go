@@ -57,7 +57,8 @@ func NormalizedProfileToParquetBuffer(schema *dynparquet.Schema, ls labels.Label
 		}
 	}
 
-	return pb, nil
+	pb.Sort()
+	return pb.Clone()
 }
 
 func labelNames(ls labels.Labels) []string {

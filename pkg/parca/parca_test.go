@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -62,7 +62,7 @@ func getShareServerConn(t Testing) share.ShareClient {
 }
 
 func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {
-	addr := ":7077"
+	addr := "127.0.0.1:7077"
 
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
@@ -72,7 +72,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 		err := Run(ctx, logger, reg, &Flags{
 			ConfigPath:          "testdata/parca.yaml",
 			Port:                addr,
-			Metastore:           metaStoreBadgerInMemory,
+			Metastore:           metaStoreBadger,
 			StorageGranuleSize:  8 * 1024,
 			StorageActiveMemory: 512 * 1024 * 1024,
 		}, "test-version")
@@ -112,7 +112,7 @@ func Benchmark_WriteRaw(b *testing.B) {
 
 	client, done := benchmarkSetup(ctx, b)
 
-	f, err := ioutil.ReadFile("testdata/alloc_objects.pb.gz")
+	f, err := os.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 
 	// Benchmark section
@@ -158,7 +158,7 @@ type Testing interface {
 
 func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer, *frostdb.Table, *semgroup.Group, func()) {
 	dir := "../../tmp/"
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
 
 	type Sample struct {
@@ -185,16 +185,18 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 			}
 			sort.Sort(ls)
 
-			sampleFiles, err := ioutil.ReadDir(filepath.Join(dir, file.Name()))
+			sampleFiles, err := os.ReadDir(filepath.Join(dir, file.Name()))
 			require.NoError(t, err)
 
 			for _, sampleFile := range sampleFiles {
 				if sampleFile.IsDir() {
 					continue
 				}
+				sampleFileInfo, err := sampleFile.Info()
+				require.NoError(t, err)
 				if strings.HasSuffix(sampleFile.Name(), ".pb.gz") {
 					samples = append(samples, Sample{
-						Timestamp: sampleFile.ModTime().Unix(),
+						Timestamp: sampleFileInfo.ModTime().Unix(),
 						Labels:    ls,
 						FilePath:  filepath.Join(dir, file.Name(), sampleFile.Name()),
 					})
@@ -210,19 +212,20 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
+	col, err := frostdb.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -237,13 +240,16 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	const maxWorkers = 8
@@ -260,7 +266,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 				return err
 			}
 
-			fileContent, err := ioutil.ReadAll(r)
+			fileContent, err := io.ReadAll(r)
 			if err != nil {
 				return err
 			}
@@ -274,6 +280,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 				logger,
 				parcacol.NewNormalizer(metastore),
 				table,
+				schema,
 			).Ingest(ctx, sample.Labels, p, false)
 		})
 	}
@@ -334,7 +341,7 @@ func MustReadAllGzip(t require.TestingT, filename string) []byte {
 
 	r, err := gzip.NewReader(f)
 	require.NoError(t, err)
-	content, err := ioutil.ReadAll(r)
+	content, err := io.ReadAll(r)
 	require.NoError(t, err)
 	return content
 }
@@ -346,19 +353,20 @@ func TestConsistency(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
+	col, err := frostdb.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -380,20 +388,23 @@ func TestConsistency(t *testing.T) {
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(MustReadAllGzip(t, "../query/testdata/alloc_objects.pb.gz")))
 
-	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table)
+	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table, schema)
 	require.NoError(t, ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p, false))
 
 	table.Sync()
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))

@@ -13,3 +13,5 @@ ui/packages/app/web/build
 TODO.md
 
 pkg/columnstore/testdata/merge-bench
+
+data/

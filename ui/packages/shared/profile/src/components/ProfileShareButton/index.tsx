@@ -1,5 +1,18 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {useState} from 'react';
-import {Button, Modal} from '@parca/components';
+import {Button, Modal, useGrpcMetadata} from '@parca/components';
 import {Icon} from '@iconify/react';
 import {QueryRequest, QueryServiceClient} from '@parca/client';
 import ResultBox from './ResultBox';
@@ -21,18 +34,22 @@ const ProfileShareModal = ({
   closeModal,
   queryRequest,
   queryClient,
-}: ProfileShareModalProps) => {
+}: ProfileShareModalProps): JSX.Element => {
   const [isShared, setIsShared] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [sharedLink, setSharedLink] = useState<string>('');
-  const isFormDataValid = () => true;
+  const metadata = useGrpcMetadata();
+  const isFormDataValid = (): boolean => true;
 
-  const handleSubmit: () => void = async () => {
+  const handleSubmit: () => Promise<void> = async () => {
     try {
       setLoading(true);
-      const {response} = await queryClient.shareProfile({queryRequest, description});
+      const {response} = await queryClient.shareProfile(
+        {queryRequest, description},
+        {meta: metadata}
+      );
       setSharedLink(response.link);
       setLoading(false);
       setIsShared(true);
@@ -43,7 +60,7 @@ const ProfileShareModal = ({
     }
   };
 
-  const onClose = () => {
+  const onClose = (): void => {
     setLoading(false);
     setError('');
     setDescription('');
@@ -72,7 +89,7 @@ const ProfileShareModal = ({
               className="w-fit mt-4"
               onClick={e => {
                 e.preventDefault();
-                handleSubmit();
+                void handleSubmit();
               }}
               disabled={loading || !isFormDataValid()}
               type="submit"
@@ -96,7 +113,7 @@ const ProfileShareModal = ({
   );
 };
 
-const ProfileShareButton = ({queryRequest, queryClient}: Props) => {
+const ProfileShareButton = ({queryRequest, queryClient}: Props): JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   return (

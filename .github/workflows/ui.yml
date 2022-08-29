@@ -2,15 +2,24 @@ name: UI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+    - main
+    - release-*
   pull_request:
-    branches: [ main ]
+    branches:
+    - main
+    - release-*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   skip-check:
     name: Skip check
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       should_skip: ${{ steps.skip-check.outputs.should_skip }}
     permissions:
@@ -34,11 +43,12 @@ jobs:
     needs: skip-check
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Set up Node.js
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
         with:
           node-version-file: .node-version
           cache: 'yarn'
@@ -47,7 +57,7 @@ jobs:
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
-      - uses: actions/cache@c3f1317a9e7b1ef106c153ac8c0f00fed3ddbc0d # tag=v3.0.4
+      - uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 # tag=v3.0.8
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
@@ -64,5 +74,4 @@ jobs:
 
       - name: Run ESLint
         working-directory: ui
-        run: npm run lint
-        continue-on-error: true
+        run: yarn run lint

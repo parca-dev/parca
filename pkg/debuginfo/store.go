@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -20,10 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/go-kit/log"
@@ -31,9 +29,10 @@ import (
 	"github.com/nanmu42/limitio"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -71,6 +70,7 @@ type MetadataManager interface {
 type Store struct {
 	debuginfopb.UnimplementedDebugInfoServiceServer
 
+	tracer   trace.Tracer
 	logger   log.Logger
 	cacheDir string
 
@@ -82,6 +82,7 @@ type Store struct {
 
 // NewStore returns a new debug info store.
 func NewStore(
+	tracer trace.Tracer,
 	logger log.Logger,
 	cacheDir string,
 	metadata MetadataManager,
@@ -89,6 +90,7 @@ func NewStore(
 	debuginfodClient DebugInfodClient,
 ) (*Store, error) {
 	return &Store{
+		tracer:           tracer,
 		logger:           log.With(logger, "component", "debuginfo"),
 		bucket:           bucket,
 		cacheDir:         cacheDir,
@@ -97,35 +99,10 @@ func NewStore(
 	}, nil
 }
 
-func NewCache(cacheConf *CacheConfig) (*FilesystemCacheConfig, error) {
-	config, err := yaml.Marshal(cacheConf.Config)
-	if err != nil {
-		return nil, fmt.Errorf("marshal content of cache configuration: %w", err)
-	}
-
-	var c FilesystemCacheConfig
-	switch strings.ToUpper(string(cacheConf.Type)) {
-	case string(FILESYSTEM):
-		if err := yaml.Unmarshal(config, &c); err != nil {
-			return nil, err
-		}
-		if c.Directory == "" {
-			return nil, errors.New("missing directory for filesystem bucket")
-		}
-	default:
-		return nil, fmt.Errorf("cache with type %s is not supported", cacheConf.Type)
-	}
-
-	if _, err := os.Stat(c.Directory); os.IsNotExist(err) {
-		err := os.MkdirAll(c.Directory, 0o700)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &c, nil
-}
-
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("build_id", req.GetBuildId()))
+
 	buildID := req.BuildId
 	if err := validateInput(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -174,7 +151,13 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		hash    = req.GetInfo().Hash
 		r       = &UploadReader{stream: stream}
 	)
-	if err := s.upload(stream.Context(), buildID, hash, r); err != nil {
+
+	ctx := stream.Context()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("build_id", buildID))
+	span.SetAttributes(attribute.String("hash", hash))
+
+	if err := s.upload(ctx, buildID, hash, r); err != nil {
 		return err
 	}
 
@@ -337,6 +320,9 @@ func (s *Store) Download(req *debuginfopb.DownloadRequest, stream debuginfopb.De
 
 	objFile, source, err := s.FetchDebugInfo(ctx, req.BuildId)
 	if err != nil {
+		if errors.Is(err, ErrDebugInfoNotFound) {
+			return status.Error(codes.NotFound, err.Error())
+		}
 		return status.Error(codes.Internal, err.Error())
 	}
 
@@ -483,7 +469,7 @@ func (s *Store) fetchFromObjectStore(ctx context.Context, buildID string) (strin
 		}
 
 		// Cache the file locally.
-		if err := cache(objFile, r); err != nil {
+		if err := s.cache(objFile, r); err != nil {
 			return "", fmt.Errorf("failed to fetch debug info file: %w", err)
 		}
 	}
@@ -506,7 +492,7 @@ func (s *Store) fetchDebuginfodFile(ctx context.Context, buildID string) (string
 	level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
 
 	// Cache the file locally.
-	if err := cache(objFile, r); err != nil {
+	if err := s.cache(objFile, r); err != nil {
 		level.Debug(logger).Log("msg", "failed to cache debuginfo", "err", err)
 		return "", fmt.Errorf("failed to fetch from debuginfod: %w", err)
 	}
@@ -518,8 +504,8 @@ func (s *Store) localCachePath(buildID string) string {
 	return path.Join(s.cacheDir, buildID, "debuginfo")
 }
 
-func cache(localPath string, r io.ReadCloser) error {
-	tmpfile, err := ioutil.TempFile("", "symbol-download-*")
+func (s *Store) cache(localPath string, r io.ReadCloser) error {
+	tmpfile, err := os.CreateTemp(s.cacheDir, "symbol-download-*")
 	if err != nil {
 		return fmt.Errorf("create temp file: %w", err)
 	}

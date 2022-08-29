@@ -18,7 +18,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/tls"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 	"time"
@@ -63,20 +63,18 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
-		reg,
-		8196,
-		64*1024*1024,
-	)
-	colDB, err := col.DB("parca")
-	require.NoError(t, err)
-	_, err = colDB.Table(
-		"stacktraces",
-		columnstore.NewTableConfig(
-			parcacol.Schema(),
-		),
+	col, err := columnstore.New(
 		logger,
+		reg,
 	)
+	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
+	_, err = colDB.Table("stacktraces", columnstore.NewTableConfig(schema))
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
 		t,
@@ -89,13 +87,16 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	_, err = api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -122,7 +123,7 @@ func MustReadAllGzip(t Testing, filename string) []byte {
 
 	r, err := gzip.NewReader(f)
 	require.NoError(t, err)
-	content, err := ioutil.ReadAll(r)
+	content, err := io.ReadAll(r)
 	require.NoError(t, err)
 	return content
 }
@@ -132,7 +133,7 @@ func MustDecompressGzip(t Testing, b []byte) []byte {
 
 	r, err := gzip.NewReader(bytes.NewReader(b))
 	require.NoError(t, err)
-	content, err := ioutil.ReadAll(r)
+	content, err := io.ReadAll(r)
 	require.NoError(t, err)
 	return content
 }
@@ -144,19 +145,20 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col, err := columnstore.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		columnstore.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -167,12 +169,12 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	)
 
 	dir := "./testdata/many/"
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 
 	for _, f := range files {
 		p := &pprofpb.Profile{}
@@ -192,13 +194,16 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -218,19 +223,20 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col, err := columnstore.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		columnstore.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -247,7 +253,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
@@ -261,13 +267,16 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -304,19 +313,20 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col, err := columnstore.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		columnstore.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -334,7 +344,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "fgprof",
@@ -347,13 +357,16 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `fgprof:samples:count::`,
@@ -373,19 +386,20 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col, err := columnstore.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		columnstore.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -419,12 +433,10 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	lres, err := m.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
 			Address: 0x1,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					Line:       1,
-					FunctionId: f1.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				Line:       1,
+				FunctionId: f1.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)
@@ -443,12 +455,10 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	lres, err = m.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
 			Address: 0x2,
-			Lines: &metastorepb.LocationLines{
-				Entries: []*metastorepb.Line{{
-					Line:       2,
-					FunctionId: f2.Id,
-				}},
-			},
+			Lines: []*metastorepb.Line{{
+				Line:       2,
+				FunctionId: f2.Id,
+			}},
 		}},
 	})
 	require.NoError(t, err)
@@ -465,7 +475,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	st2 := sres.Stacktraces[0]
 
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 
 	err = ingester.IngestProfile(
 		ctx,
@@ -511,13 +521,16 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -629,19 +642,20 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col, err := columnstore.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		columnstore.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -658,7 +672,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
@@ -674,13 +688,16 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
 	require.NoError(t, err)
@@ -705,19 +722,20 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col, err := columnstore.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		columnstore.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -734,7 +752,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "memory",
@@ -747,13 +765,16 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.Labels(ctx, &pb.LabelsRequest{})
 	require.NoError(t, err)
@@ -770,19 +791,20 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := columnstore.New(
+	col, err := columnstore.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		columnstore.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -800,7 +822,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "memory",
@@ -813,13 +835,16 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
-		metastore,
 		getShareServerConn(t),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 	res, err := api.Values(ctx, &pb.ValuesRequest{
 		LabelName: "job",

@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -35,12 +35,8 @@ func setupReloader(ctx context.Context, t *testing.T) (*os.File, chan *Config) {
 
 	filename := filepath.Join(t.TempDir(), "parca.yaml")
 
-	config := `debug_info:
+	config := `object_storage:
   bucket:
-    type: "FILESYSTEM"
-    config:
-      directory: "./tmp"
-  cache:
     type: "FILESYSTEM"
     config:
       directory: "./tmp"

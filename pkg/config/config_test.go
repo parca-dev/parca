@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,8 +21,6 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
-
-	"github.com/parca-dev/parca/pkg/debuginfo"
 )
 
 func TestLoad(t *testing.T) {
@@ -200,16 +198,16 @@ func Test_Config_Validation(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]Config{
-		"nilDebug": {
-			DebugInfo: nil,
+		"nilObjectStorage": {
+			ObjectStorage: nil,
 		},
 		"nilBucket": {
-			DebugInfo: &debuginfo.Config{
+			ObjectStorage: &ObjectStorage{
 				Bucket: nil,
 			},
 		},
 		"emptyType": {
-			DebugInfo: &debuginfo.Config{
+			ObjectStorage: &ObjectStorage{
 				Bucket: &client.BucketConfig{
 					Config: struct {
 						Directory string
@@ -220,7 +218,7 @@ func Test_Config_Validation(t *testing.T) {
 			},
 		},
 		"emptyConfig": {
-			DebugInfo: &debuginfo.Config{
+			ObjectStorage: &ObjectStorage{
 				Bucket: &client.BucketConfig{
 					Type: client.FILESYSTEM,
 				},

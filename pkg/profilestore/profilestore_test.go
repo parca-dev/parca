@@ -38,19 +38,20 @@ func Test_LabelName_Invalid(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := frostdb.New(
+	col, err := frostdb.New(
+		logger,
 		reg,
-		8196,
-		64*1024*1024,
 	)
-	colDB, err := col.DB("parca")
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -65,6 +66,7 @@ func Test_LabelName_Invalid(t *testing.T) {
 		tracer,
 		metastore.NewInProcessClient(m),
 		table,
+		schema,
 		false,
 	)
 

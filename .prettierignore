@@ -6,4 +6,4 @@ out/
 coverage/
 
 # Exclude protobuf generated files
-packages/shared/client
+ui/packages/shared/client

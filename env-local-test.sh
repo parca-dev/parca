@@ -3,9 +3,9 @@ set -euo pipefail
 
 ARCH_UNAME=$(uname -m)
 if [ "$ARCH_UNAME" = "x86_64" ]; then
-        ARCH=amd64
+    ARCH=amd64
 else
-        ARCH=arm64
+    ARCH=arm64
 fi
 
 curl -LO "https://storage.googleapis.com/minikube/releases/latest/minikube-linux-$ARCH"

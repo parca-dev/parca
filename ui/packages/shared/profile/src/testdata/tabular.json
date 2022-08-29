@@ -1,0 +1,30 @@
+{
+  "total": "4358676",
+  "unit": "count",
+  "height": 27,
+  "data": [
+    {
+      "id": "root"
+    },
+    {
+      "id": "child_1",
+      "parentIds": ["root", "loop_child"]
+    },
+    {
+      "id": "child_2",
+      "parentIds": ["root"]
+    },
+    {
+      "id": "grandchild_1",
+      "parentIds": ["child_1"]
+    },
+    {
+      "id": "grandchild_2",
+      "parentIds": ["child_1"]
+    },
+    {
+      "id": "loop_child",
+      "parentIds": ["grandchild_1"]
+    }
+  ]
+}

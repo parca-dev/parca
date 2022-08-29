@@ -1,12 +1,8 @@
-debug_info:
+object_storage:
   bucket:
     type: "FILESYSTEM"
     config:
-      directory: "./tmp"
-  cache:
-    type: "FILESYSTEM"
-    config:
-      directory: "./tmp"
+      directory: "./data"
 
 scrape_configs:
   - job_name: "default"

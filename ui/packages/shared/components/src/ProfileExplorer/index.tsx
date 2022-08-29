@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {QuerySelection} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca/profile';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
@@ -11,8 +24,9 @@ import {
   setSearchNodeString,
   store,
 } from '@parca/store';
-import {Provider} from 'react-redux';
+import {Provider, batch} from 'react-redux';
 import {DateTimeRange} from '../DateTimeRangePicker';
+import {useEffect} from 'react';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -22,12 +36,17 @@ interface ProfileExplorerProps {
   navigateTo: NavigateFunction;
 }
 
-const getExpressionAsAString = (expression: string | []) => {
+const getExpressionAsAString = (expression: string | []): string => {
   const x = Array.isArray(expression) ? expression.join() : expression;
   return x;
 };
 
-const sanitizeDateRange = (time_selection_a: any, from_a: any, to_a: any) => {
+/* eslint-disable @typescript-eslint/naming-convention */
+const sanitizeDateRange = (
+  time_selection_a: string,
+  from_a: number,
+  to_a: number
+): {time_selection_a: string; from_a: number; to_a: number} => {
   const range = DateTimeRange.fromRangeKey(time_selection_a);
   if (from_a == null && to_a == null) {
     from_a = range.getFromMs();
@@ -35,6 +54,7 @@ const sanitizeDateRange = (time_selection_a: any, from_a: any, to_a: any) => {
   }
   return {time_selection_a: range.getRangeKey(), from_a, to_a};
 };
+/* eslint-enable @typescript-eslint/naming-convention */
 
 const ProfileExplorerApp = ({
   queryClient,
@@ -44,6 +64,7 @@ const ProfileExplorerApp = ({
   const dispatch = useAppDispatch();
   const compareMode = useAppSelector(selectCompareMode);
 
+  /* eslint-disable @typescript-eslint/naming-convention */
   let {
     from_a,
     to_a,
@@ -62,24 +83,29 @@ const ProfileExplorerApp = ({
     time_selection_b,
     compare_b,
   } = queryParams;
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;
   from_a = sanitizedRange.from_a;
   to_a = sanitizedRange.to_a;
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const expression_a = getExpressionAsAString(queryParams.expression_a);
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const expression_b = getExpressionAsAString(queryParams.expression_b);
 
-  if (queryParams && queryParams.expression_a) queryParams.expression_a = expression_a;
-  if (queryParams && queryParams.expression_b) queryParams.expression_b = expression_b;
+  if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
+  if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;
 
-  if (compare_a === 'true' && compare_b === 'true') {
-    dispatch(setCompare(true));
-  } else {
-    dispatch(setCompare(false));
-  }
+  useEffect(() => {
+    if (compare_a === 'true' && compare_b === 'true') {
+      dispatch(setCompare(true));
+    } else {
+      dispatch(setCompare(false));
+    }
+  }, [dispatch, compare_a, compare_b]);
 
   const filterSuffix = (
     o: {[key: string]: string | string[] | undefined},
@@ -98,7 +124,7 @@ const ProfileExplorerApp = ({
     return o;
   };
 
-  const selectProfileA = (p: ProfileSelection) => {
+  const selectProfileA = (p: ProfileSelection): void => {
     queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
     queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
@@ -107,7 +133,7 @@ const ProfileExplorerApp = ({
     });
   };
 
-  const selectProfileB = (p: ProfileSelection) => {
+  const selectProfileB = (p: ProfileSelection): void => {
     queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
     queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
@@ -119,7 +145,7 @@ const ProfileExplorerApp = ({
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
     const query = {
-      expression: expression_a as string,
+      expression: expression_a,
       from: parseInt(from_a as string),
       to: parseInt(to_a as string),
       merge: (merge_a as string) === 'true',
@@ -128,7 +154,7 @@ const ProfileExplorerApp = ({
     };
 
     const profile = ProfileSelectionFromParams(
-      expression_a as string,
+      expression_a,
       from_a as string,
       to_a as string,
       merge_a as string,
@@ -137,7 +163,7 @@ const ProfileExplorerApp = ({
       time_a as string
     );
 
-    const selectQuery = (q: QuerySelection) => {
+    const selectQuery = (q: QuerySelection): void => {
       return navigateTo(
         '/',
         // Filtering the _a suffix causes us to reset potential profile
@@ -156,7 +182,7 @@ const ProfileExplorerApp = ({
       );
     };
 
-    const selectProfile = (p: ProfileSelection) => {
+    const selectProfile = (p: ProfileSelection): void => {
       queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
       return navigateTo('/', {
         ...queryParams,
@@ -197,8 +223,11 @@ const ProfileExplorerApp = ({
         },
       };
 
-      dispatch(setCompare(!compareMode));
-      dispatch(setSearchNodeString(undefined));
+      batch(() => {
+        dispatch(setCompare(!compareMode));
+        dispatch(setSearchNodeString(undefined));
+      });
+
       void navigateTo('/', compareQuery);
     };
 
@@ -216,7 +245,7 @@ const ProfileExplorerApp = ({
   }
 
   const queryA = {
-    expression: expression_a as string,
+    expression: expression_a,
     from: parseInt(from_a as string),
     to: parseInt(to_a as string),
     merge: (merge_a as string) === 'true',
@@ -224,7 +253,7 @@ const ProfileExplorerApp = ({
     profile_name: profile_name_a as string,
   };
   const queryB = {
-    expression: expression_b as string,
+    expression: expression_b,
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
     merge: (merge_b as string) === 'true',
@@ -233,7 +262,7 @@ const ProfileExplorerApp = ({
   };
 
   const profileA = ProfileSelectionFromParams(
-    expression_a as string,
+    expression_a,
     from_a as string,
     to_a as string,
     merge_a as string,
@@ -242,7 +271,7 @@ const ProfileExplorerApp = ({
     time_a as string
   );
   const profileB = ProfileSelectionFromParams(
-    expression_b as string,
+    expression_b,
     from_b as string,
     to_b as string,
     merge_b as string,
@@ -251,7 +280,7 @@ const ProfileExplorerApp = ({
     time_b as string
   );
 
-  const selectQueryA = (q: QuerySelection) => {
+  const selectQueryA = (q: QuerySelection): void => {
     return navigateTo(
       '/',
       // Filtering the _a suffix causes us to reset potential profile
@@ -271,7 +300,7 @@ const ProfileExplorerApp = ({
     );
   };
 
-  const selectQueryB = (q: QuerySelection) => {
+  const selectQueryB = (q: QuerySelection): void => {
     return navigateTo(
       '/',
       // Filtering the _b suffix causes us to reset potential profile
@@ -291,14 +320,16 @@ const ProfileExplorerApp = ({
     );
   };
 
-  const closeProfile = (card: string) => {
+  const closeProfile = (card: string): void => {
     let newQueryParameters = queryParams;
     if (card === 'A') {
       newQueryParameters = swapQueryParameters(queryParams);
     }
 
-    dispatch(setCompare(!compareMode));
-    dispatch(setSearchNodeString(undefined));
+    batch(() => {
+      dispatch(setCompare(!compareMode));
+      dispatch(setSearchNodeString(undefined));
+    });
 
     return navigateTo('/', {
       ...filterSuffix(newQueryParameters, '_b'),

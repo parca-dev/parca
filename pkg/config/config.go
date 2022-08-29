@@ -1,4 +1,4 @@
-// Copyright 2018 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,8 +16,8 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -29,9 +29,8 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install" // Imported for registration side-effect
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/thanos-io/objstore/client"
 	"gopkg.in/yaml.v2"
-
-	"github.com/parca-dev/parca/pkg/debuginfo"
 )
 
 const (
@@ -44,14 +43,18 @@ const (
 
 // Config holds all the configuration information for Parca.
 type Config struct {
-	DebugInfo     *debuginfo.Config `yaml:"debug_info"`
-	ScrapeConfigs []*ScrapeConfig   `yaml:"scrape_configs,omitempty"`
+	ObjectStorage *ObjectStorage  `yaml:"object_storage,omitempty"`
+	ScrapeConfigs []*ScrapeConfig `yaml:"scrape_configs,omitempty"`
+}
+
+type ObjectStorage struct {
+	Bucket *client.BucketConfig `yaml:"bucket,omitempty"`
 }
 
 // Validate returns an error if the config is not valid.
 func (c *Config) Validate() error {
 	return validation.ValidateStruct(c,
-		validation.Field(&c.DebugInfo, validation.Required, debuginfo.Valid),
+		validation.Field(&c.ObjectStorage, validation.Required, Valid),
 	)
 }
 
@@ -122,7 +125,7 @@ func Load(s string) (*Config, error) {
 
 // LoadFile parses the given YAML file into a Config.
 func LoadFile(filename string) (*Config, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

@@ -57,10 +57,6 @@ func (c *InProcessClient) Locations(ctx context.Context, in *pb.LocationsRequest
 	return c.m.Locations(ctx, in)
 }
 
-func (c *InProcessClient) LocationLines(ctx context.Context, in *pb.LocationLinesRequest, opts ...grpc.CallOption) (*pb.LocationLinesResponse, error) {
-	return c.m.LocationLines(ctx, in)
-}
-
 func (c *InProcessClient) Functions(ctx context.Context, in *pb.FunctionsRequest, opts ...grpc.CallOption) (*pb.FunctionsResponse, error) {
 	return c.m.Functions(ctx, in)
 }

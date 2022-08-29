@@ -1,0 +1,56 @@
+{
+  "total": "4358676",
+  "unit": "count",
+  "height": 27,
+  "data": {
+    "nodes": {
+      "root": {
+        "id": "root",
+        "cumulative": "10",
+        "diff": "0"
+      },
+      "1": {
+        "id": "1",
+        "cumulative": "2",
+        "diff": "0"
+      },
+      "2": {
+        "id": "2",
+        "cumulative": "9",
+        "diff": "0"
+      },
+      "3": {
+        "id": "3",
+        "cumulative": "8"
+      },
+      "4": {
+        "id": "4",
+        "cumulative": "2"
+      }
+    },
+    "links": [
+      {
+        "source": "root",
+        "target": "1"
+      },
+      {
+        "source": "root",
+        "target": "4"
+      },
+      {
+        "source": "1",
+        "target": "2"
+      },
+      {
+        "source": "2",
+        "target": "3"
+      }
+    ],
+    "reversedLinks": [
+      {
+        "source": "3",
+        "target": "1"
+      }
+    ]
+  }
+}

@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {useState} from 'react';
 import {capitalize} from '@parca/functions';
 
@@ -6,7 +19,7 @@ import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 import Button from '../../../Button';
 import Select, {contructItemsFromArray} from '../../../Select';
 
-const constructKeyAndLabels = (UNITS: UNIT_TYPE[]) => {
+const constructKeyAndLabels = (UNITS: UNIT_TYPE[]): Array<{key: string; label: string}> => {
   return UNITS.map(unit => ({
     key: unit,
     label: `${capitalize(unit)}s`,
@@ -53,7 +66,10 @@ const quickPresetRanges = [
 
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
 
-const RelativeDatePicker = ({range, onChange = () => null}: RelativeDatePickerProps) => {
+const RelativeDatePicker = ({
+  range,
+  onChange = () => null,
+}: RelativeDatePickerProps): JSX.Element => {
   const date = range.from as RelativeDate;
   const [unit, setUnit] = useState<UNIT_TYPE>(date.isRelative() ? date.unit : UNITS.MINUTE);
   const [value, setValue] = useState<number>(date.isRelative() ? date.value : 15);
