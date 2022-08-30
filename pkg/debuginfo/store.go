@@ -29,6 +29,8 @@ import (
 	"github.com/nanmu42/limitio"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -68,6 +70,7 @@ type MetadataManager interface {
 type Store struct {
 	debuginfopb.UnimplementedDebugInfoServiceServer
 
+	tracer   trace.Tracer
 	logger   log.Logger
 	cacheDir string
 
@@ -79,6 +82,7 @@ type Store struct {
 
 // NewStore returns a new debug info store.
 func NewStore(
+	tracer trace.Tracer,
 	logger log.Logger,
 	cacheDir string,
 	metadata MetadataManager,
@@ -86,6 +90,7 @@ func NewStore(
 	debuginfodClient DebugInfodClient,
 ) (*Store, error) {
 	return &Store{
+		tracer:           tracer,
 		logger:           log.With(logger, "component", "debuginfo"),
 		bucket:           bucket,
 		cacheDir:         cacheDir,
@@ -95,6 +100,9 @@ func NewStore(
 }
 
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("build_id", req.GetBuildId()))
+
 	buildID := req.BuildId
 	if err := validateInput(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -143,7 +151,13 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		hash    = req.GetInfo().Hash
 		r       = &UploadReader{stream: stream}
 	)
-	if err := s.upload(stream.Context(), buildID, hash, r); err != nil {
+
+	ctx := stream.Context()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("build_id", buildID))
+	span.SetAttributes(attribute.String("hash", hash))
+
+	if err := s.upload(ctx, buildID, hash, r); err != nil {
 		return err
 	}
 

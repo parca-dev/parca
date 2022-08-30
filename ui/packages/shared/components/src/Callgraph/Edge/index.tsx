@@ -10,7 +10,7 @@ interface Props {
   nodeRadius: number;
 }
 
-const Edge = ({edge, sourceNode, targetNode, xScale, yScale, nodeRadius}: Props) => {
+const Edge = ({edge, sourceNode, targetNode, xScale, yScale, nodeRadius}: Props): JSX.Element => {
   const {points, color, source, target} = edge;
 
   const scaledPoints = parseEdgePos({

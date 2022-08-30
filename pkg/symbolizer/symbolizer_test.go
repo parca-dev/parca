@@ -459,6 +459,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 
 	metadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
 	dbgStr, err := debuginfo.NewStore(
+		tracer,
 		logger,
 		debugInfoCacheDir,
 		metadata,

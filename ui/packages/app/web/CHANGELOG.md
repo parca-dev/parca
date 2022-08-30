@@ -3,6 +3,62 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.8](https://github.com/parca-dev/parca/compare/ui-v0.15.7...ui-v0.15.8) (2022-08-30)
+
+**Note:** Version bump only for package @parca/web
+
+
+
+
+
+## [0.15.7](https://github.com/parca-dev/parca/compare/ui-v0.15.6...ui-v0.15.7) (2022-08-27)
+
+**Note:** Version bump only for package @parca/web
+
+
+
+
+
+## [0.15.6](https://github.com/parca-dev/parca/compare/ui-v0.15.5...ui-v0.15.6) (2022-08-26)
+
+**Note:** Version bump only for package @parca/web
+
+
+
+
+
+## [0.15.5](https://github.com/parca-dev/parca/compare/ui-v0.15.4...ui-v0.15.5) (2022-08-25)
+
+**Note:** Version bump only for package @parca/web
+
+
+
+
+
+## [0.15.4](https://github.com/parca-dev/parca/compare/ui-v0.15.3...ui-v0.15.4) (2022-08-25)
+
+**Note:** Version bump only for package @parca/web
+
+
+
+
+
+## [0.15.3](https://github.com/parca-dev/parca/compare/ui-v0.15.2...ui-v0.15.3) (2022-08-25)
+
+**Note:** Version bump only for package @parca/web
+
+
+
+
+
+## [0.15.2](https://github.com/parca-dev/parca/compare/ui-v0.15.1...ui-v0.15.2) (2022-08-25)
+
+**Note:** Version bump only for package @parca/web
+
+
+
+
+
 ## [0.15.1](https://github.com/parca-dev/parca/compare/ui-v0.15.0...ui-v0.15.1) (2022-08-25)
 
 
