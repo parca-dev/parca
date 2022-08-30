@@ -147,7 +147,10 @@ const ProfileSelector = ({
     setQueryExpressionString(newExpressionString);
   };
 
-  const setProfileName = (profileName: string): void => {
+  const setProfileName = (profileName: string | undefined): void => {
+    if (profileName === undefined) {
+      return;
+    }
     const [newQuery, changed] = query.setProfileName(profileName);
     if (changed) {
       const q = newQuery.toString();

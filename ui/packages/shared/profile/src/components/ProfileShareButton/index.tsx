@@ -54,9 +54,13 @@ const ProfileShareModal = ({
       setLoading(false);
       setIsShared(true);
     } catch (err) {
-      console.error(err);
-      setLoading(false);
-      setError(err.toString());
+      if (err instanceof Error) {
+        console.error(err);
+        setLoading(false);
+        // https://github.com/microsoft/TypeScript/issues/38347
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        setError(err.toString());
+      }
     }
   };
 

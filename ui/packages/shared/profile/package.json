@@ -12,6 +12,9 @@
     "d3-selection": "3.0.0",
     "react-copy-to-clipboard": "^5.1.0"
   },
+  "devDependencies": {
+    "@types/react-copy-to-clipboard": "^5.0.4"
+  },
   "main": "src/index.tsx",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*"

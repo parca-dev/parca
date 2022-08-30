@@ -17,17 +17,18 @@ import {Parca, ParcaSmall} from '@parca/icons';
 import cx from 'classnames';
 import DarkModeToggle from './DarkModeToggle';
 
-const links = {
+const links: {[path: string]: {label: string; href: string; external: boolean}} = {
   '/': {label: 'Profiles', href: '/', external: false},
   '/targets': {label: 'Targets', href: '/targets', external: false},
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
 
 const Navbar = () => {
-  const getPageByHref = (href: string = '/'): {name: string; href: string; external: boolean} =>
+  const getPageByHref = (href: string = '/'): {label: string; href: string; external: boolean} =>
     links[href] ?? links['/'];
   const currentPage = getPageByHref(window.location.pathname);
-  const isCurrentPage = item => item.href === currentPage.href;
+  const isCurrentPage = (item: {label: string; href: string; external: boolean}) =>
+    item.href === currentPage.href;
 
   return (
     <Disclosure as="nav" className="dark:bg-gray-900 relative z-10">
