@@ -202,6 +202,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/PhilipGough"><img src="https://avatars.githubusercontent.com/u/5781491?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Philip Gough</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=PhilipGough" title="Code">💻</a></td>
+    <td align="center"><a href="http://www.boranseref.com/"><img src="https://avatars.githubusercontent.com/u/20660506?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Boran Seref</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=boranx" title="Code">💻</a></td>
   </tr>
 </table>
 
