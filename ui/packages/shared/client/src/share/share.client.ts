@@ -4,6 +4,8 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { Share } from "./share";
+import type { ProfileTypesResponse } from "../parca/query/v1alpha1/query";
+import type { ProfileTypesRequest } from "./share";
 import type { QueryResponse } from "../parca/query/v1alpha1/query";
 import type { ProfileRequest } from "./share";
 import { stackIntercept } from "@protobuf-ts/runtime-rpc";
@@ -29,6 +31,12 @@ export interface IShareClient {
      * @generated from protobuf rpc: Query(polarsignals.share.ProfileRequest) returns (parca.query.v1alpha1.QueryResponse);
      */
     query(input: ProfileRequest, options?: RpcOptions): UnaryCall<ProfileRequest, QueryResponse>;
+    /**
+     * ProfileTypes returns the list of available profile types.
+     *
+     * @generated from protobuf rpc: ProfileTypes(polarsignals.share.ProfileTypesRequest) returns (parca.query.v1alpha1.ProfileTypesResponse);
+     */
+    profileTypes(input: ProfileTypesRequest, options?: RpcOptions): UnaryCall<ProfileTypesRequest, ProfileTypesResponse>;
 }
 /**
  * Service that exposes APIs for sharing profiles.
@@ -58,5 +66,14 @@ export class ShareClient implements IShareClient, ServiceInfo {
     query(input: ProfileRequest, options?: RpcOptions): UnaryCall<ProfileRequest, QueryResponse> {
         const method = this.methods[1], opt = this._transport.mergeOptions(options);
         return stackIntercept<ProfileRequest, QueryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ProfileTypes returns the list of available profile types.
+     *
+     * @generated from protobuf rpc: ProfileTypes(polarsignals.share.ProfileTypesRequest) returns (parca.query.v1alpha1.ProfileTypesResponse);
+     */
+    profileTypes(input: ProfileTypesRequest, options?: RpcOptions): UnaryCall<ProfileTypesRequest, ProfileTypesResponse> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ProfileTypesRequest, ProfileTypesResponse>("unary", this._transport, method, opt, input);
     }
 }
