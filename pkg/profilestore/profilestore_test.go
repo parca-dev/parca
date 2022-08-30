@@ -41,6 +41,7 @@ func Test_LabelName_Invalid(t *testing.T) {
 	col, err := frostdb.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")

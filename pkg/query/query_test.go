@@ -48,6 +48,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			col, err := columnstore.New(
 				logger,
 				reg,
+				tracer,
 			)
 			require.NoError(b, err)
 			colDB, err := col.DB(context.Background(), "parca")
@@ -101,6 +102,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 					tracer,
 					query.NewEngine(
 						memory.DefaultAllocator,
+						tracer,
 						colDB.TableProvider(),
 					),
 					"stacktraces",
@@ -140,6 +142,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 		frostdb.WithWAL(),
 		frostdb.WithStoragePath("../../data"),
 	)
@@ -170,6 +173,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",

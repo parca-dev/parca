@@ -66,6 +66,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -92,6 +93,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -148,6 +150,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -199,6 +202,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -226,6 +230,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -272,6 +277,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -316,6 +322,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -362,6 +369,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -389,6 +397,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -526,6 +535,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -645,6 +655,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -693,6 +704,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -725,6 +737,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -770,6 +783,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -794,6 +808,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	col, err := columnstore.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -840,6 +855,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",

@@ -215,6 +215,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	col, err := frostdb.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -245,6 +246,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -356,6 +358,7 @@ func TestConsistency(t *testing.T) {
 	col, err := frostdb.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -400,6 +403,7 @@ func TestConsistency(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
+				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",

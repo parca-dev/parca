@@ -416,6 +416,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	col, err := frostdb.New(
 		logger,
 		reg,
+		tracer,
 	)
 	require.NoError(t, err)
 
