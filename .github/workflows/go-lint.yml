@@ -17,7 +17,7 @@ concurrency:
 
 env:
   # renovate: datasource=go depName=github.com/golangci/golangci-lint
-  GOLANGCI_LINT_VERSION: v1.48.0
+  GOLANGCI_LINT_VERSION: v1.49.0
 
 jobs:
   skip-check:
