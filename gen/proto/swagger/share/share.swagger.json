@@ -368,6 +368,49 @@
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
     },
+    "v1alpha1ProfileType": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is the name of the profile type."
+        },
+        "sampleType": {
+          "type": "string",
+          "description": "sample_type is the type of the samples in the profile."
+        },
+        "sampleUnit": {
+          "type": "string",
+          "description": "sample_unit is the unit of the samples in the profile."
+        },
+        "periodType": {
+          "type": "string",
+          "description": "period_type is the type of the periods in the profile."
+        },
+        "periodUnit": {
+          "type": "string",
+          "description": "period_unit is the unit of the periods in the profile."
+        },
+        "delta": {
+          "type": "boolean",
+          "description": "delta describes whether the profile is a delta profile."
+        }
+      },
+      "description": "ProfileType is the type of a profile as well as the units the profile type is available in."
+    },
+    "v1alpha1ProfileTypesResponse": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1ProfileType"
+          },
+          "description": "types is the list of available profile types."
+        }
+      },
+      "description": "ProfileTypesResponse is the response to retrieve the list of available profile types."
+    },
     "v1alpha1QueryResponse": {
       "type": "object",
       "properties": {

@@ -143,6 +143,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
+	if flags.StoreAddress != "" && flags.Mode != flagModeScraperOnly {
+		return fmt.Errorf("the mode should be set as `--mode=scraper-only`, if `StoreAddress` is set")
+	}
+
 	if flags.Mode == flagModeScraperOnly {
 		return runScraper(ctx, logger, reg, tracerProvider, flags, version, cfg)
 	}
