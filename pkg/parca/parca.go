@@ -351,6 +351,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	{
 		s := symbolizer.New(
 			logger,
+			reg,
 			metastore,
 			dbgInfo,
 			sym,

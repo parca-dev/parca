@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/prometheus/client_golang/prometheus"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -33,6 +34,11 @@ import (
 
 type Symbolizer struct {
 	logger log.Logger
+	// attempts counts the total number of symbolization attempts.
+	attempts prometheus.Counter
+	// errors counts the total number of symbolization errors, partitioned by an error reason
+	// such as failure to fetch unsymbolized locations.
+	errors *prometheus.CounterVec
 
 	metastore  pb.MetastoreServiceClient
 	symbolizer *symbol.Symbolizer
@@ -55,6 +61,7 @@ type DebugInfoFetcher interface {
 
 func New(
 	logger log.Logger,
+	reg *prometheus.Registry,
 	metastore pb.MetastoreServiceClient,
 	debuginfo DebugInfoFetcher,
 	symbolizer *symbol.Symbolizer,
@@ -62,8 +69,25 @@ func New(
 	debuginfoCacheDir string,
 	batchSize uint32,
 ) *Symbolizer {
-	return &Symbolizer{
+	attemptsTotal := prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "symbolizer_attempts_total",
+			Help: "Total number of symbolization attempts.",
+		},
+	)
+	errorsTotal := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "symbolizer_errors_total",
+			Help: "Total number of symbolization errors, partitioned by an error reason.",
+		},
+		[]string{"reason"},
+	)
+	reg.MustRegister(attemptsTotal, errorsTotal)
+
+	s := Symbolizer{
 		logger:             log.With(logger, "component", "symbolizer"),
+		attempts:           attemptsTotal,
+		errors:             errorsTotal,
 		metastore:          metastore,
 		symbolizer:         symbolizer,
 		debuginfo:          debuginfo,
@@ -71,6 +95,7 @@ func New(
 		debuginfoCacheDir:  debuginfoCacheDir,
 		batchSize:          batchSize,
 	}
+	return &s
 }
 
 func (s *Symbolizer) Run(ctx context.Context, interval time.Duration) error {
@@ -89,8 +114,10 @@ func (s *Symbolizer) runSymbolizationCycle(ctx context.Context) {
 			Limit:  s.batchSize,
 			MinKey: prevMaxKey,
 		})
+		s.attempts.Inc()
 		if err != nil {
 			level.Error(s.logger).Log("msg", "failed to fetch unsymbolized locations", "err", err)
+			s.errors.With(prometheus.Labels{"reason": "fetch_unsymbolized_locations"}).Inc()
 			// Try again on the next cycle.
 			return
 		}
@@ -144,6 +171,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 
 	mres, err := s.metastore.Mappings(ctx, &pb.MappingsRequest{MappingIds: mappingIDs})
 	if err != nil {
+		s.errors.With(prometheus.Labels{"reason": "get_mappings"}).Inc()
 		return fmt.Errorf("get mappings: %w", err)
 	}
 
@@ -214,6 +242,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 
 	fres, err := s.metastore.GetOrCreateFunctions(ctx, &pb.GetOrCreateFunctionsRequest{Functions: functions})
 	if err != nil {
+		s.errors.With(prometheus.Labels{"reason": "get_or_create_functions"}).Inc()
 		return fmt.Errorf("get or create functions: %w", err)
 	}
 
@@ -245,6 +274,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 		Locations: locations,
 	})
 	if err != nil {
+		s.errors.With(prometheus.Labels{"reason": "create_location_lines"}).Inc()
 		return fmt.Errorf("create location lines: %w", err)
 	}
 
