@@ -17,6 +17,18 @@
   ],
   "paths": {},
   "definitions": {
+    "QueryRequestReportType": {
+      "type": "string",
+      "enum": [
+        "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
+        "REPORT_TYPE_PPROF",
+        "REPORT_TYPE_TOP",
+        "REPORT_TYPE_CALLGRAPH"
+      ],
+      "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified",
+      "title": "ReportType is the type of report to return"
+    },
     "metastorev1alpha1Function": {
       "type": "object",
       "properties": {
