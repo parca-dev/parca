@@ -1,32 +1,14 @@
 object_storage:
   bucket:
-    type: 'FILESYSTEM'
+    type: "FILESYSTEM"
     config:
-      directory: './data'
+      directory: "./data"
 
 scrape_configs:
-  - job_name: 'default'
-    scrape_interval: '3s'
+  - job_name: "default"
+    scrape_interval: "3s"
     static_configs:
-      - targets: ['127.0.0.1:7070', '127.0.0.1:6000', '127.0.0.1:8080']
-        labels:
-          service: 'defaultservice'
-
-  - job_name: 'node'
-    scrape_interval: '10s'
-    scrape_timeout: '5s'
-    static_configs:
-      - targets: ['127.0.0.1:7070', '127.0.0.1:6000']
-        labels:
-          service: 'nodeservice'
-
-  - job_name: 'go'
-    scrape_interval: '20s'
-    scrape_timeout: '5s'
-    static_configs:
-      - targets: ['127.0.0.1:7070', '127.0.0.1:8080']
-        labels:
-          service: 'goservice'
+      - targets: [ '127.0.0.1:7070' ]
 
     # Custom scrape endpoints can be added like just like the example below.
     # The profile name will be `fgprof`, and it will be scraped from the given

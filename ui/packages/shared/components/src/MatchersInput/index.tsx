@@ -55,11 +55,10 @@ enum Labels {
 }
 
 // eslint-disable-next-line no-useless-escape
-const labelNameValueRe = /(^([a-z])\w+)(=~|=|!=|!~)(\")[a-zA-Z0-9_.-:]+(\")$/g;
-const labelNameValueWithoutQuotesRe = /(^([a-z])\w+)(=~|=|!=|!~)[a-zA-Z0-9_.-:]+$/g;
-const labelNameLiteralRe = /(^([a-z])\w+)(=~|=|!=|!~)/;
-const literalRe = /(=~|=|!=|!~)/;
-const labelNameRe = /(^([a-z])\w+)/;
+const labelNameValueRe = /(^([a-z])\w+)(=~|=|!=|!~)(\")[a-zA-Z0-9_.-:]+(\")$/g; // labelNameValueRe matches the following: labelName=~"labelValue"
+const labelNameValueWithoutQuotesRe = /(^([a-z])\w+)(=~|=|!=|!~)[a-zA-Z0-9_.-:]+$/g; // labelNameValueWithoutQuotesRe matches the following: labelName=~labelValue
+const labelNameLiteralRe = /(^([a-z])\w+)(=~|=|!=|!~)/; // labelNameLiteralRe matches the following: labelName=~, labelName!=~, labelName=, labelName!=
+const literalRe = /(=~|=|!=|!~)/; // literalRe matches the following: =~, =, !=, !~
 
 const addQuoteMarks = (labelValue: string): string => {
   // eslint-disable-next-line no-useless-escape
@@ -125,7 +124,7 @@ const MatchersInput = ({
   const [suggestionSections, setSuggestionSections] = useState<Suggestions>(new Suggestions());
   const [inputRef, setInputRef] = useState<string>('');
   const [labelValuesResponse, setLabelValuesResponse] = useState<string[] | null>(null);
-  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<string[] | null>(null);
+  const [currentLabelsCollection, setCurrentLabelsCollection] = useState<string[] | null>(null); // This is an array that contains query expressions that have been matched i.e. they have been completed and have the blue badge around them in the UI.
   const {styles, attributes} = usePopper(divInputRef, popperElement, {
     placement: 'bottom-start',
   });
@@ -162,7 +161,6 @@ const MatchersInput = ({
     labelValuesResponse !== undefined && labelValuesResponse != null ? labelValuesResponse : [];
 
   const value = currentQuery.matchersString();
-  // const suggestionSections = new Suggestions();
 
   Query.suggest(`{${value}`).forEach(function (s) {
     // Skip suggestions that we just completed. This really only works,
@@ -263,14 +261,16 @@ const MatchersInput = ({
   const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value;
 
-    // suggest the labelname that is similar to what the user is typing.
+    // filter out the labelname list and move to the top the labelname that is most similar to what the user is typing.
     if (suggestionSections.labelNames.length > 0) {
       suggestionSections.labelNames = suggestionSections.labelNames.filter(
         suggestion => suggestion.value.toLowerCase().indexOf(newValue.toLowerCase()) > -1
       );
     }
 
-    // this checks if the user has typed a label name and a literal (=/!=,=~,!~) and is about to type the label value.
+    // this checks if the user has typed a label name and a literal (=/!=,=~,!~) i.e labelName=~, labelName!=~, labelName=, labelName!=
+    // and is about to type the label value, then it it will filter out the labelvalue list and move to the top
+    // the labelvalue that is most similar to what the user is typing.
     if (suggestionSections.labelValues.length > 0 && labelNameLiteralRe.test(newValue)) {
       const labelValueSearch = newValue.split(literalRe)[2];
 
@@ -376,6 +376,8 @@ const MatchersInput = ({
     applySuggestion(highlightedSuggestionIndex);
   };
 
+  // This function adds quotes to the query expression if the user has typed it in manually, i.e. did not use the arrow up / down keys + Enter
+  // to choose the label name and value. Therefore, labelName=value becomes labelName="value".
   const addQuotesToInputRefLabelValue = (inputRef: string): string => {
     const labelValue = inputRef.split(literalRe)[2].replaceAll(',', '');
     const labelValueWithQuotes = addQuoteMarks(labelValue);
@@ -397,21 +399,24 @@ const MatchersInput = ({
     if (event.key === ',') {
       if (inputRef.length === 0) event.preventDefault();
 
-      const sanitizedInputRef = addQuotesToInputRefLabelValue(inputRef);
-
+      // If the current typed query expression matches the labelNameValueWithoutQuotesRe regex (i.e. the labelvalue is not quoted), then add quotes to the labelvalue.
+      // if not, just use the current inputRef value.
       const inputValues = !!labelNameValueWithoutQuotesRe.test(inputRef)
         ? inputRef.replaceAll(',', '')
-        : sanitizedInputRef.replaceAll(',', '');
+        : addQuotesToInputRefLabelValue(inputRef).replaceAll(',', '');
 
+      // if the currentLabelsCollection array is null, we don't need to concat the current inputRef value with the currentLabelsCollection array, so we just push to it.
       if (currentLabelsCollection === null) {
         setCurrentLabelsCollection([inputValues]);
       } else {
         setCurrentLabelsCollection((oldValues: string[]) => {
+          // Don't add the current inputRef value to the currentLabelsCollection array if it doesn't match the regex because that will cause an API error.
           if (!labelNameValueRe.test(inputRef)) return oldValues;
           return [...oldValues, inputValues];
         });
       }
 
+      // update the currentQuery expression with the currentLabelsCollection array if it's not null, otherwise use the current inputRef value.
       setMatchersString(
         currentLabelsCollection !== null
           ? `${currentLabelsCollection?.join(',')},${inputValues}`
@@ -420,10 +425,17 @@ const MatchersInput = ({
       setInputRef('');
     }
 
+    // We suggest the appropriate label names and label values when a user is typing, depending on what the user has typed.
+    // For example, if the user types "labelName=", we suggest the label values next.
+    // This bit of code is used for the opposite of the above bit of code, when a user is deleting characters by pressing del/backspace
+    // We update the currentQuery expression with what's in the inputRef value so that the suggestions are updated accordingly.
     if (event.key === 'Backspace' && inputRef.length > 0) {
+      // if the currentLabelsCollection array is not empty i.e has already previously completed expressions, then we first need to turn the array into a string
+      // so it can be concatenated with the current inputRef value. that becomes something like "labelName="value",newLabelName="val
       if (currentLabelsCollection && currentLabelsCollection.length > 0) {
         setMatchersString(`${currentLabelsCollection?.join(',')},${inputRef}}`);
       } else {
+        // if not, we jsut update the currentQuery expression with the current inputRef value.
         setMatchersString(inputRef);
       }
 
@@ -448,8 +460,9 @@ const MatchersInput = ({
       });
     }
 
-    // If a user has typed in a label name (and did not use the suggestion box to complete it),
-    // we can manually show the next set of suggestions, which are the literals.
+    // If a user has manually typed in a label name that actually exists in the list of label name (and did not use the
+    // highlight + arrow keys up/down + Enter/Mouse click method to complete it), and has also typed a literal value, i.e. labelName=,
+    // then we can apply a suggestion using the typed label name. This will be as if the user had highlighted the label name and hit enter.
     if (event.key === '!' || event.key === '~' || event.key === '=') {
       const labelName = inputRef.split(literalRe)[0];
 
@@ -465,8 +478,8 @@ const MatchersInput = ({
       }
     }
 
-    // If a user has typed in a label name and literal (and did not use the suggestion box to complete it),
-    // we can manually show the next set of suggestions, which are the label values.
+    // Same as above, If a user has typed in a label name and literal (and did not use the suggestion box to complete it),
+    // we can manually show the next set of suggestions, which are the label values, by applying a literal suggestion.
     if (labelNameLiteralRe.test(inputRef)) {
       const literal = inputRef.split(literalRe)[1];
 
@@ -495,8 +508,6 @@ const MatchersInput = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-    const value = event.currentTarget.value;
-
     if (event.key === 'Backspace' && inputRef === '') {
       if (currentLabelsCollection === null) return;
 
@@ -595,7 +606,7 @@ const MatchersInput = ({
           onKeyPress={handleKeyPress}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
-          disabled={profileSelected}
+          disabled={profileSelected} // Disable input if no profile has been selected
           title={
             profileSelected ? 'Select a profile first to query profiles...' : 'query profiles...'
           }
