@@ -198,6 +198,9 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	frostdbOptions := []frostdb.Option{
 		frostdb.WithGranuleSize(flags.StorageGranuleSize),
 		frostdb.WithActiveMemorySize(flags.StorageActiveMemory),
+		frostdb.WithLogger(logger),
+		frostdb.WithRegistry(reg),
+		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
 	}
 
 	if flags.EnablePersistence {
@@ -208,12 +211,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		frostdbOptions = append(frostdbOptions, frostdb.WithWAL(), frostdb.WithStoragePath(flags.StoragePath))
 	}
 
-	col, err := frostdb.New(
-		logger,
-		reg,
-		tracerProvider.Tracer("frostdb"),
-		frostdbOptions...,
-	)
+	col, err := frostdb.New(frostdbOptions...)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize storage", "err", err)
 		return err
@@ -262,8 +260,8 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			tracerProvider.Tracer("querier"),
 			query.NewEngine(
 				memory.DefaultAllocator,
-				tracerProvider.Tracer("query-engine"),
 				colDB.TableProvider(),
+				query.WithTracer(tracerProvider.Tracer("query-engine")),
 			),
 			"stacktraces",
 			metastore,

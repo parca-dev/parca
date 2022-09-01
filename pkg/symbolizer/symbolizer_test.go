@@ -411,13 +411,8 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	t.Helper()
 
 	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := frostdb.New(
-		logger,
-		reg,
-		tracer,
-	)
+	col, err := frostdb.New()
 	require.NoError(t, err)
 
 	colDB, err := col.DB(context.Background(), "parca")

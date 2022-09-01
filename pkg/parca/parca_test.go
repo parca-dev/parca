@@ -212,11 +212,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := frostdb.New(
-		logger,
-		reg,
-		tracer,
-	)
+	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -246,7 +242,6 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
-				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
@@ -355,11 +350,7 @@ func TestConsistency(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := frostdb.New(
-		logger,
-		reg,
-		tracer,
-	)
+	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -403,7 +394,6 @@ func TestConsistency(t *testing.T) {
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
-				tracer,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
