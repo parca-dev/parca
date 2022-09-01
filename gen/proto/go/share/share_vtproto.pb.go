@@ -316,6 +316,18 @@ func (m *ProfileRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.ReportType != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.ReportType))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.ProfileType != nil {
+		i -= len(*m.ProfileType)
+		copy(dAtA[i:], *m.ProfileType)
+		i = encodeVarint(dAtA, i, uint64(len(*m.ProfileType)))
+		i--
+		dAtA[i] = 0x12
+	}
 	if len(m.Id) > 0 {
 		i -= len(m.Id)
 		copy(dAtA[i:], m.Id)
@@ -426,6 +438,13 @@ func (m *ProfileRequest) SizeVT() (n int) {
 	l = len(m.Id)
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
+	}
+	if m.ProfileType != nil {
+		l = len(*m.ProfileType)
+		n += 1 + l + sov(uint64(l))
+	}
+	if m.ReportType != 0 {
+		n += 1 + sov(uint64(m.ReportType))
 	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
@@ -748,6 +767,58 @@ func (m *ProfileRequest) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Id = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProfileType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.ProfileType = &s
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportType", wireType)
+			}
+			m.ReportType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ReportType |= v1alpha1.QueryRequest_ReportType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
