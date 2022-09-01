@@ -36,6 +36,8 @@ type ShareClient interface {
 	Upload(ctx context.Context, in *UploadRequest, opts ...grpc.CallOption) (*UploadResponse, error)
 	// Query performs a profile query
 	Query(ctx context.Context, in *ProfileRequest, opts ...grpc.CallOption) (*v1alpha1.QueryResponse, error)
+	// ProfileTypes returns the list of available profile types.
+	ProfileTypes(ctx context.Context, in *ProfileTypesRequest, opts ...grpc.CallOption) (*v1alpha1.ProfileTypesResponse, error)
 }
 
 type shareClient struct {
@@ -64,6 +66,15 @@ func (c *shareClient) Query(ctx context.Context, in *ProfileRequest, opts ...grp
 	return out, nil
 }
 
+func (c *shareClient) ProfileTypes(ctx context.Context, in *ProfileTypesRequest, opts ...grpc.CallOption) (*v1alpha1.ProfileTypesResponse, error) {
+	out := new(v1alpha1.ProfileTypesResponse)
+	err := c.cc.Invoke(ctx, "/polarsignals.share.Share/ProfileTypes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ShareServer is the server API for Share service.
 // All implementations must embed UnimplementedShareServer
 // for forward compatibility
@@ -72,6 +83,8 @@ type ShareServer interface {
 	Upload(context.Context, *UploadRequest) (*UploadResponse, error)
 	// Query performs a profile query
 	Query(context.Context, *ProfileRequest) (*v1alpha1.QueryResponse, error)
+	// ProfileTypes returns the list of available profile types.
+	ProfileTypes(context.Context, *ProfileTypesRequest) (*v1alpha1.ProfileTypesResponse, error)
 	mustEmbedUnimplementedShareServer()
 }
 
@@ -84,6 +97,9 @@ func (UnimplementedShareServer) Upload(context.Context, *UploadRequest) (*Upload
 }
 func (UnimplementedShareServer) Query(context.Context, *ProfileRequest) (*v1alpha1.QueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Query not implemented")
+}
+func (UnimplementedShareServer) ProfileTypes(context.Context, *ProfileTypesRequest) (*v1alpha1.ProfileTypesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProfileTypes not implemented")
 }
 func (UnimplementedShareServer) mustEmbedUnimplementedShareServer() {}
 
@@ -134,6 +150,24 @@ func _Share_Query_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Share_ProfileTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProfileTypesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShareServer).ProfileTypes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/polarsignals.share.Share/ProfileTypes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShareServer).ProfileTypes(ctx, req.(*ProfileTypesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Share_ServiceDesc is the grpc.ServiceDesc for Share service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -148,6 +182,10 @@ var Share_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Query",
 			Handler:    _Share_Query_Handler,
+		},
+		{
+			MethodName: "ProfileTypes",
+			Handler:    _Share_ProfileTypes_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -278,6 +316,58 @@ func (m *ProfileRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.ReportType != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.ReportType))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.ProfileType != nil {
+		i -= len(*m.ProfileType)
+		copy(dAtA[i:], *m.ProfileType)
+		i = encodeVarint(dAtA, i, uint64(len(*m.ProfileType)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarint(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ProfileTypesRequest) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProfileTypesRequest) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ProfileTypesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
 	if len(m.Id) > 0 {
 		i -= len(m.Id)
 		copy(dAtA[i:], m.Id)
@@ -340,6 +430,29 @@ func (m *UploadResponse) SizeVT() (n int) {
 }
 
 func (m *ProfileRequest) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
+	if m.ProfileType != nil {
+		l = len(*m.ProfileType)
+		n += 1 + l + sov(uint64(l))
+	}
+	if m.ReportType != 0 {
+		n += 1 + sov(uint64(m.ReportType))
+	}
+	if m.unknownFields != nil {
+		n += len(m.unknownFields)
+	}
+	return n
+}
+
+func (m *ProfileTypesRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -620,6 +733,141 @@ func (m *ProfileRequest) UnmarshalVT(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: ProfileRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProfileType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.ProfileType = &s
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportType", wireType)
+			}
+			m.ReportType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ReportType |= v1alpha1.QueryRequest_ReportType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProfileTypesRequest) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProfileTypesRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProfileTypesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
