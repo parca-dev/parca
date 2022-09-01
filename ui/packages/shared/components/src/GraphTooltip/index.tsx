@@ -22,7 +22,7 @@ interface GraphTooltipProps {
   y: number;
   unit: string;
   total: number;
-  hoveringNode?: HoveringNode;
+  hoveringNode: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;

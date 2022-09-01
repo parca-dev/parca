@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+import pick from 'lodash/pick';
 import useLocalStorageState from 'use-local-storage-state';
 
 const UI_FLAGS = 'ui-flags';
@@ -26,12 +26,14 @@ const initializeFlagsFromURL = (): void => {
   if (enableFlag !== null && disableFlag !== null) {
     return;
   }
-  const flags = JSON.parse(window.localStorage.getItem(UI_FLAGS) ?? '{}');
+  let flags = JSON.parse(window.localStorage.getItem(UI_FLAGS) ?? '{}');
   if (enableFlag !== null) {
     flags[enableFlag] = true;
   }
   if (disableFlag !== null) {
-    delete flags[disableFlag];
+    if (enableFlag !== null) {
+      pick(flags, [enableFlag]);
+    } else flags = {};
   }
   window.localStorage.setItem(UI_FLAGS, JSON.stringify(flags));
 };
@@ -41,7 +43,7 @@ initializeFlagsFromURL();
 const useUIFeatureFlag = (
   featureFlag: string,
   defaultValue: boolean = false
-): Array<boolean | ((key: string) => boolean)> => {
+): [boolean, (flag: boolean) => void] => {
   const [flags, setFlags] = useLocalStorageState(UI_FLAGS, {
     defaultValue: {},
   });

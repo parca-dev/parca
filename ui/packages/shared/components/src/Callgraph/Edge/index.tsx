@@ -1,8 +1,14 @@
 import {Arrow} from 'react-konva';
 import {parseEdgePos} from '../utils';
 
+export interface IEdge {
+  source: number;
+  target: number;
+  color: string;
+  points: string;
+}
 interface Props {
-  edge: {points: string; color: string; source: number; target: number};
+  edge: IEdge;
   sourceNode: {x: number; y: number};
   targetNode: {x: number; y: number};
   xScale: (x: number) => number;

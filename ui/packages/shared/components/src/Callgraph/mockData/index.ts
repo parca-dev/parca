@@ -435,7 +435,10 @@ export const jsonGraphWithGraphvizPositions = {
   ],
 };
 
-export const nodeWithMetaData = (id, name): {id: string; cumulative: number; meta: any} => ({
+export const nodeWithMetaData = (
+  id: string,
+  name: string
+): {id: string; cumulative: number; meta: any} => ({
   id,
   cumulative: Math.floor(Math.random() * 10),
   meta: {
@@ -532,7 +535,7 @@ export const nodeWithMetaData = (id, name): {id: string; cumulative: number; met
       startLine: '0',
       name,
       systemName: 'runtime.gopark',
-      filename: `/opt/homebrew/Cellar/go/1.18.2/libexec/src/runtime/proc.go/${name as string}`,
+      filename: `/opt/homebrew/Cellar/go/1.18.2/libexec/src/runtime/proc.go/${name}`,
     },
     line: {
       functionId: {

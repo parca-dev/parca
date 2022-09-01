@@ -6,7 +6,7 @@ import {GraphTooltip as Tooltip} from '@parca/components';
 import {Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot} from './utils';
 import Node, {INode} from './Node';
-import Edge from './Edge';
+import Edge, {IEdge} from './Edge';
 interface Props {
   graph: CallgraphType;
   sampleUnit: string;
@@ -82,12 +82,12 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
         <Stage width={width} height={height}>
           <Layer>
-            {edges.map(edge => {
+            {edges.map((edge: IEdge) => {
               const sourceNode = nodes.find(n => n.id === edge.source);
               const targetNode = nodes.find(n => n.id === edge.target);
               return (
                 <Edge
-                  key={`edge-${edge.source as string}-${edge.target as string}`}
+                  key={`edge-${edge.source}-${edge.target}`}
                   edge={edge}
                   xScale={xScale}
                   yScale={yScale}
@@ -97,9 +97,9 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
                 />
               );
             })}
-            {nodes.map(node => (
+            {nodes.map((node: INode) => (
               <Node
-                key={`node-${node.data.id as string}`}
+                key={`node-${node.data.id}`}
                 node={node}
                 hoveredNode={hoveredNode}
                 setHoveredNode={setHoveredNode}
