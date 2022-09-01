@@ -53,7 +53,7 @@ jobs:
       - name: Format
         run: buf format --diff --exit-code
 
-      - uses: bufbuild/buf-lint-action@c241503a1e88af425be1122997f44be51f037b46 # tag=v1.0.1
+      - uses: bufbuild/buf-lint-action@d35dc843e3e1d4d7ec2d4b6eef89ff040b85cf28 # tag=v1.0.2
         with:
           input: 'proto'
 
