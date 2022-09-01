@@ -63,10 +63,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := columnstore.New(
-		logger,
-		reg,
-	)
+	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -145,10 +142,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := columnstore.New(
-		logger,
-		reg,
-	)
+	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -223,10 +217,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := columnstore.New(
-		logger,
-		reg,
-	)
+	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -313,10 +304,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := columnstore.New(
-		logger,
-		reg,
-	)
+	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -386,10 +374,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := columnstore.New(
-		logger,
-		reg,
-	)
+	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -642,10 +627,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := columnstore.New(
-		logger,
-		reg,
-	)
+	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -722,10 +704,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := columnstore.New(
-		logger,
-		reg,
-	)
+	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -791,10 +770,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := columnstore.New(
-		logger,
-		reg,
-	)
+	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)

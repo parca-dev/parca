@@ -212,10 +212,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := frostdb.New(
-		logger,
-		reg,
-	)
+	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
@@ -353,10 +350,7 @@ func TestConsistency(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col, err := frostdb.New(
-		logger,
-		reg,
-	)
+	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
