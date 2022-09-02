@@ -509,6 +509,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 
 	return conn, metastore, New(
 		logger,
+		prometheus.NewRegistry(),
 		metastore,
 		dbgStr,
 		sym,
