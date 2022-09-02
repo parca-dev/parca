@@ -24,6 +24,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -34,14 +35,14 @@ import (
 
 type Symbolizer struct {
 	logger log.Logger
-	// attempts counts the total number of symbolization attempts.
+	// attempts counts the total number of symbolication attempts.
 	// It counts per batch.
 	attempts prometheus.Counter
-	// errors counts the total number of symbolization errors, partitioned by an error reason
+	// errors counts the total number of symbolication errors, partitioned by an error reason
 	// such as failure to fetch unsymbolized locations.
 	// It counts per batch.
 	errors *prometheus.CounterVec
-	// duration is a histogram to measure how long it takes to finish a symbolization round.
+	// duration is a histogram to measure how long it takes to finish a symbolication round.
 	// Note, a single observation is per batch.
 	duration prometheus.Histogram
 	// storeDuration is a histogram to measure how long it takes to store the symbolized locations.
@@ -69,7 +70,7 @@ type DebugInfoFetcher interface {
 
 func New(
 	logger log.Logger,
-	reg *prometheus.Registry,
+	reg prometheus.Registerer,
 	metastore pb.MetastoreServiceClient,
 	debuginfo DebugInfoFetcher,
 	symbolizer *symbol.Symbolizer,
@@ -79,32 +80,39 @@ func New(
 ) *Symbolizer {
 	attemptsTotal := promauto.With(reg).NewCounter(
 		prometheus.CounterOpts{
-			Name: "symbolizer_symbolication_attempts_total",
-			Help: "Total number of symbolization attempts in batches.",
+			Namespace: "parca",
+			Subsystem: "symbolizer",
+			Name:      "symbolication_attempts_total",
+			Help:      "Total number of symbolication attempts in batches.",
 		},
 	)
 	errorsTotal := promauto.With(reg).NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "symbolizer_symbolication_errors_total",
-			Help: "Total number of symbolization errors in batches, partitioned by an error reason.",
+			Namespace: "parca",
+			Subsystem: "symbolizer",
+			Name:      "symbolication_errors_total",
+			Help:      "Total number of symbolication errors in batches, partitioned by an error reason.",
 		},
 		[]string{"reason"},
 	)
 	duration := promauto.With(reg).NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "symbolizer_symbolication_duration_seconds",
-			Help:    "How long it took in seconds to finish a round of the symbolization cycle in batches.",
-			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
+			Namespace: "parca",
+			Subsystem: "symbolizer",
+			Name:      "symbolication_duration_seconds",
+			Help:      "How long it took in seconds to finish a round of the symbolication cycle in batches.",
+			Buckets:   []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
 		},
 	)
 	storeDuration := promauto.With(reg).NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "symbolizer_store_duration_seconds",
-			Help:    "How long it took in seconds to store a batch of the symbolized locations.",
-			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
+			Namespace: "parca",
+			Subsystem: "symbolizer",
+			Name:      "store_duration_seconds",
+			Help:      "How long it took in seconds to store a batch of the symbolized locations.",
+			Buckets:   []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
 		},
 	)
-	reg.MustRegister(attemptsTotal, errorsTotal, duration, storeDuration)
 
 	s := Symbolizer{
 		logger:             log.With(logger, "component", "symbolizer"),
@@ -144,7 +152,7 @@ func (s *Symbolizer) runSymbolizationCycle(ctx context.Context) {
 		})
 		if err != nil {
 			level.Error(s.logger).Log("msg", "failed to fetch unsymbolized locations", "err", err)
-			s.errors.With(prometheus.Labels{"reason": "fetch_unsymbolized_locations"}).Inc()
+			s.errors.WithLabelValues("fetch_unsymbolized_locations").Inc()
 			s.duration.Observe(time.Since(begin).Seconds())
 			// Try again on the next cycle.
 			return
@@ -201,7 +209,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 
 	mres, err := s.metastore.Mappings(ctx, &pb.MappingsRequest{MappingIds: mappingIDs})
 	if err != nil {
-		s.errors.With(prometheus.Labels{"reason": "get_mappings"}).Inc()
+		s.errors.WithLabelValues("get_mappings").Inc()
 		return fmt.Errorf("get mappings: %w", err)
 	}
 
@@ -272,7 +280,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 
 	fres, err := s.metastore.GetOrCreateFunctions(ctx, &pb.GetOrCreateFunctionsRequest{Functions: functions})
 	if err != nil {
-		s.errors.With(prometheus.Labels{"reason": "get_or_create_functions"}).Inc()
+		s.errors.WithLabelValues("get_or_create_functions").Inc()
 		return fmt.Errorf("get or create functions: %w", err)
 	}
 
@@ -307,7 +315,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 		Locations: locations,
 	})
 	if err != nil {
-		s.errors.With(prometheus.Labels{"reason": "create_location_lines"}).Inc()
+		s.errors.WithLabelValues("create_location_lines").Inc()
 		return fmt.Errorf("create location lines: %w", err)
 	}
 
