@@ -77,27 +77,27 @@ func New(
 	debuginfoCacheDir string,
 	batchSize uint32,
 ) *Symbolizer {
-	attemptsTotal := prometheus.NewCounter(
+	attemptsTotal := promauto.With(reg).NewCounter(
 		prometheus.CounterOpts{
-			Name: "symbolizer_attempts_total",
+			Name: "symbolizer_symbolication_attempts_total",
 			Help: "Total number of symbolization attempts in batches.",
 		},
 	)
-	errorsTotal := prometheus.NewCounterVec(
+	errorsTotal := promauto.With(reg).NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "symbolizer_errors_total",
+			Name: "symbolizer_symbolication_errors_total",
 			Help: "Total number of symbolization errors in batches, partitioned by an error reason.",
 		},
 		[]string{"reason"},
 	)
-	duration := prometheus.NewHistogram(
+	duration := promauto.With(reg).NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "symbolizer_duration_seconds",
+			Name:    "symbolizer_symbolication_duration_seconds",
 			Help:    "How long it took in seconds to finish a round of the symbolization cycle in batches.",
 			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
 		},
 	)
-	storeDuration := prometheus.NewHistogram(
+	storeDuration := promauto.With(reg).NewHistogram(
 		prometheus.HistogramOpts{
 			Name:    "symbolizer_store_duration_seconds",
 			Help:    "How long it took in seconds to store a batch of the symbolized locations.",
