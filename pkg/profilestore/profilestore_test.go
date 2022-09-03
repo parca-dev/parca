@@ -31,7 +31,7 @@ import (
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
-func Test_LabelName_Invalid(t *testing.T) {
+func Test_LabelName_Error(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -67,19 +67,48 @@ func Test_LabelName_Invalid(t *testing.T) {
 		false,
 	)
 
-	req := &profilestorepb.WriteRawRequest{
-		Series: []*profilestorepb.RawProfileSeries{{
-			Labels: &profilestorepb.LabelSet{
-				Labels: []*profilestorepb.Label{{
+	cases := []struct {
+		name   string
+		labels []*profilestorepb.Label
+	}{
+		{
+			name: "invalid label name",
+			labels: []*profilestorepb.Label{
+				{
 					Name:  "n0:n",
 					Value: "v0",
-				}},
+				},
 			},
-		}},
+		},
+		{
+			name: "duplicate label names",
+			labels: []*profilestorepb.Label{
+				{
+					Name:  "n0",
+					Value: "v0",
+				},
+				{
+					Name:  "n0",
+					Value: "v0",
+				},
+			},
+		},
 	}
 
-	_, err = api.WriteRaw(ctx, req)
-	st, _ := status.FromError(err)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			req := &profilestorepb.WriteRawRequest{
+				Series: []*profilestorepb.RawProfileSeries{{
+					Labels: &profilestorepb.LabelSet{
+						Labels: c.labels,
+					},
+				}},
+			}
 
-	require.Equal(t, st.Code(), codes.InvalidArgument)
+			_, err = api.WriteRaw(ctx, req)
+			st, _ := status.FromError(err)
+
+			require.Equal(t, codes.InvalidArgument, st.Code())
+		})
+	}
 }
