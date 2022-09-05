@@ -31,10 +31,7 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-var (
-	ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
-	ErrLinerCreationFailedFile   = errors.New("cannot create a liner from given object file")
-)
+var ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
 
 type Symbolizer struct {
 	logger    log.Logger
@@ -204,14 +201,7 @@ func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
 // newLiner creates a new liner for the given mapping and object file path.
 func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 	logger := log.With(s.logger, "file", path, "buildid", buildID)
-	f, err := elfutils.Open(path)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to open binary", "err", err)
-		return nil, ErrLinerCreationFailedFile
-	}
-	defer f.Close()
-
-	hasDWARF, err := f.HasDWARF()
+	hasDWARF, err := elfutils.HasDWARF(path)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary has DWARF info", "err", err)
 	}
@@ -226,7 +216,7 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 
 	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
 	// Keep that section and other identifying sections in the debug information file.
-	isGo, err := f.IsSymbolizableGoObjFile()
+	isGo, err := elfutils.IsSymbolizableGoObjFile(path)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary is a Go binary", "err", err)
 	}
@@ -242,7 +232,7 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 	}
 
 	// As a last resort, use the symtab liner which utilizes .symtab section and .dynsym section.
-	hasSymbols, err := f.HasSymbols()
+	hasSymbols, err := elfutils.HasSymbols(path)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary has symbols", "err", err)
 	}
@@ -255,5 +245,5 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 		level.Error(logger).Log("msg", "failed to create symtab liner", "err", err)
 	}
 
-	return nil, ErrLinerCreationFailedFile
+	return nil, errors.New("cannot create a liner from given object file")
 }

@@ -223,12 +223,7 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 			return status.Error(codes.Internal, err.Error())
 		}
 
-		f, err := elfutils.Open(objFile)
-		if err == nil {
-			err = f.Validate()
-		}
-		if err != nil {
-			f.Close()
+		if err := elfutils.ValidateFile(objFile); err != nil {
 			// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
 			if err := s.metadata.MarkAsCorrupted(ctx, buildID); err != nil {
 				level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
@@ -239,11 +234,10 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		}
 
 		// Valid.
-		hasDWARF, err := f.HasDWARF()
+		hasDWARF, err := elfutils.HasDWARF(objFile)
 		if err != nil {
 			level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
 		}
-		f.Close()
 		if hasDWARF {
 			return status.Error(codes.AlreadyExists, "debuginfo already exists")
 		}
@@ -416,13 +410,8 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 		source = debuginfopb.DownloadInfo_SOURCE_UPLOAD
 	}
 
-	f, err := elfutils.Open(objFile)
-	if err == nil {
-		err = f.Validate()
-		defer f.Close()
-	}
 	// Let's make sure we have the best version of the debug file.
-	if err != nil {
+	if err := elfutils.ValidateFile(objFile); err != nil {
 		level.Warn(logger).Log("msg", "failed to validate debug information", "err", err)
 		// Mark the file as corrupted, and let the client try to upload it again.
 		err := s.metadata.MarkAsCorrupted(ctx, buildID)
@@ -444,18 +433,7 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 	}
 
 	if source != debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD {
-		var hasDWARF bool
-		if f.Name() == objFile {
-			hasDWARF, err = f.HasDWARF()
-		} else {
-			f.Close()
-			f, err = elfutils.Open(objFile)
-			if err == nil {
-				hasDWARF, err = f.HasDWARF()
-				f.Close()
-			}
-		}
-
+		hasDWARF, err := elfutils.HasDWARF(objFile)
 		if err != nil {
 			level.Debug(logger).Log("msg", "failed to check for DWARF", "err", err)
 		}
