@@ -32,8 +32,8 @@ type GoLiner struct {
 	symtab *gosym.Table
 }
 
-func Go(logger log.Logger, path string) (*GoLiner, error) {
-	tab, err := gosymtab(path)
+func Go(logger log.Logger, f *elf.File) (*GoLiner, error) {
+	tab, err := gosymtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
@@ -73,13 +73,8 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err err
 	return lines, nil
 }
 
-func gosymtab(path string) (*gosym.Table, error) {
-	objFile, err := elf.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer objFile.Close()
-
+func gosymtab(objFile *elf.File) (*gosym.Table, error) {
+	var err error
 	var pclntab []byte
 	if sec := objFile.Section(".gopclntab"); sec != nil {
 		if sec.Type == elf.SHT_NOBITS {

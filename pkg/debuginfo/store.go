@@ -16,6 +16,7 @@ package debuginfo
 import (
 	"bytes"
 	"context"
+	"debug/elf"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -234,12 +235,19 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		}
 
 		// Valid.
-		hasDWARF, err := elfutils.HasDWARF(objFile)
+		f, err := elf.Open(objFile)
 		if err != nil {
 			level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
-		}
-		if hasDWARF {
-			return status.Error(codes.AlreadyExists, "debuginfo already exists")
+		} else {
+			hasDWARF, err := elfutils.HasDWARF(f)
+			if err != nil {
+				level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
+			}
+			f.Close()
+
+			if hasDWARF {
+				return status.Error(codes.AlreadyExists, "debuginfo already exists")
+			}
 		}
 	}
 
@@ -433,18 +441,25 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 	}
 
 	if source != debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD {
-		hasDWARF, err := elfutils.HasDWARF(objFile)
+		f, err := elf.Open(objFile)
 		if err != nil {
 			level.Debug(logger).Log("msg", "failed to check for DWARF", "err", err)
-		}
-		if !hasDWARF {
-			// Try to download a better version from debuginfod servers.
-			dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
+		} else {
+			hasDWARF, err := elfutils.HasDWARF(f)
 			if err != nil {
-				level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
-			} else {
-				objFile = dbgFile
-				source = debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD
+				level.Debug(logger).Log("msg", "failed to check for DWARF", "err", err)
+			}
+			f.Close()
+
+			if !hasDWARF {
+				// Try to download a better version from debuginfod servers.
+				dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
+				if err != nil {
+					level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+				} else {
+					objFile = dbgFile
+					source = debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD
+				}
 			}
 		}
 	}

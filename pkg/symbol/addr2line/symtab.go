@@ -33,8 +33,8 @@ type SymtabLiner struct {
 	symbols []elf.Symbol
 }
 
-func Symbols(logger log.Logger, path string) (*SymtabLiner, error) {
-	symbols, err := symtab(path)
+func Symbols(logger log.Logger, f *elf.File) (*SymtabLiner, error) {
+	symbols, err := symtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
 	}
@@ -69,13 +69,7 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, er
 	return lines, nil
 }
 
-func symtab(path string) ([]elf.Symbol, error) {
-	objFile, err := elf.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer objFile.Close()
-
+func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 	syms, sErr := objFile.Symbols()
 	dynSyms, dErr := objFile.DynamicSymbols()
 

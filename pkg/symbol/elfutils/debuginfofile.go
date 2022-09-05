@@ -44,13 +44,7 @@ type debugInfoFile struct {
 }
 
 // NewDebugInfoFile creates a new DebugInfoFile.
-func NewDebugInfoFile(path string, demangler *demangle.Demangler) (DebugInfoFile, error) {
-	f, err := elf.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer f.Close()
-
+func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile, error) {
 	debugData, err := f.DWARF()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
