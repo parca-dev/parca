@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
 	"sync"
 	"time"
 
@@ -466,8 +465,6 @@ mainLoop:
 					Value: l.Value,
 				})
 			}
-			// Must ensure label-set is sorted
-			sort.Sort(tl)
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			protolbls := &profilepb.LabelSet{
