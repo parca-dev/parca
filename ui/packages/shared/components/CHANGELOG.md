@@ -7,10 +7,6 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 **Note:** Version bump only for package @parca/components
 
-
-
-
-
 ## [0.15.11](https://github.com/parca-dev/parca/compare/ui-v0.15.10...ui-v0.15.11) (2022-09-01)
 
 ## [0.15.8](https://github.com/parca-dev/parca/compare/ui-v0.15.1...ui-v0.15.8) (2022-08-30)
