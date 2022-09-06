@@ -19,7 +19,7 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
-	github.com/google/pprof v0.0.0-20220818150347-1763105d910c
+	github.com/google/pprof v0.0.0-20220829040838-70bd9ae97f40
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-20201002093600-73cf2ae9d891
@@ -42,7 +42,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.9.0
 	go.opentelemetry.io/otel/sdk v1.9.0
 	go.opentelemetry.io/otel/trace v1.9.0
-	golang.org/x/net v0.0.0-20220809184613-07c6da5e1ced
+	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b
 	google.golang.org/genproto v0.0.0-20220822174746-9e6da59bd2fc
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
