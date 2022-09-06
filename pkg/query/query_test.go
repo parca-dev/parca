@@ -45,10 +45,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			logger := log.NewNopLogger()
 			reg := prometheus.NewRegistry()
 			tracer := trace.NewNoopTracerProvider().Tracer("")
-			col, err := columnstore.New(
-				logger,
-				reg,
-			)
+			col, err := columnstore.New()
 			require.NoError(b, err)
 			colDB, err := col.DB(context.Background(), "parca")
 			require.NoError(b, err)
@@ -138,8 +135,6 @@ func Benchmark_ProfileTypes(b *testing.B) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col, err := columnstore.New(
-		logger,
-		reg,
 		frostdb.WithWAL(),
 		frostdb.WithStoragePath("../../data"),
 	)
