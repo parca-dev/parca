@@ -7,3 +7,6 @@ coverage/
 
 # Exclude protobuf generated files
 ui/packages/shared/client
+
+# Exclude generated changelogs
+ui/**/CHANGELOG.md
