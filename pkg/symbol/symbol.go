@@ -32,10 +32,7 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-var (
-	ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
-	ErrLinerCreationFailedFile   = errors.New("cannot create a liner from given object file")
-)
+var ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
 
 type Symbolizer struct {
 	logger    log.Logger
@@ -208,8 +205,7 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 
 	f, err := elf.Open(path)
 	if err != nil {
-		level.Error(logger).Log("msg", "failed to open binary", "err", err)
-		return nil, ErrLinerCreationFailedFile
+		return nil, fmt.Errorf("failed to open binary: %w", err)
 	}
 	defer f.Close()
 
@@ -257,5 +253,5 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 		level.Error(logger).Log("msg", "failed to create symtab liner", "err", err)
 	}
 
-	return nil, ErrLinerCreationFailedFile
+	return nil, errors.New("cannot create a liner from given object file")
 }
