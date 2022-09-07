@@ -7,36 +7,19 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 **Note:** Version bump only for package @parca/icons
 
-
-
-
-
 ## [0.14.36](https://github.com/parca-dev/parca/compare/ui-v0.14.35...ui-v0.14.36) (2022-08-24)
-
 
 ### Bug Fixes
 
-* **ui:** enforce @typescript-eslint/explicit-function-return-type ([22a18fd](https://github.com/parca-dev/parca/commit/22a18fd3f7befef5cc175131d8c997c3967a5713))
-
-
+- **ui:** enforce @typescript-eslint/explicit-function-return-type ([22a18fd](https://github.com/parca-dev/parca/commit/22a18fd3f7befef5cc175131d8c997c3967a5713))
 
 ## 0.14.32 (2022-08-18)
 
-
-
-
-
 ## [0.14.29](https://github.com/parca-dev/parca/compare/ui-v0.14.28...ui-v0.14.29) (2022-08-15)
-
-
 
 ## 0.14.21 (2022-08-10)
 
 **Note:** Version bump only for package @parca/icons
-
-
-
-
 
 ## [0.14.17](https://github.com/parca-dev/parca/compare/ui-v0.14.16...ui-v0.14.17) (2022-08-05)
 
