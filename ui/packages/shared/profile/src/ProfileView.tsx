@@ -83,13 +83,13 @@ function arrayEquals<T>(a: T[], b: T[]): boolean {
 }
 export const useProfileVisState = (): ProfileVisState => {
   const [currentView, setCurrentView] = useState<VisualizationType>(() => {
-    if (typeof window == 'undefined') {
+    if (typeof window === 'undefined') {
       return 'icicle';
     }
     const router = parseParams(window.location.search);
     const currentViewFromURL = router.currentProfileView as string;
 
-    if (currentViewFromURL) {
+    if (currentViewFromURL != null) {
       return currentViewFromURL as VisualizationType;
     }
     return 'icicle';
