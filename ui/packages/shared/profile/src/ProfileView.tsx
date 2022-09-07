@@ -21,7 +21,6 @@ import {
   Button,
   Card,
   SearchNodes,
-  useGrpcMetadata,
   useParcaTheme,
   Callgraph as CallgraphComponent,
 } from '@parca/components';
@@ -32,7 +31,6 @@ import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
 import TopTable from './TopTable';
 import useDelayedLoader from './useDelayedLoader';
-import {downloadPprof} from './utils';
 
 import './ProfileView.styles.css';
 
@@ -56,7 +54,7 @@ interface CallgraphData {
   error?: any;
 }
 
-type VisualizationType = 'icicle' | 'table' | 'callgraph' | 'both';
+export type VisualizationType = 'icicle' | 'table' | 'callgraph' | 'both';
 
 interface ProfileVisState {
   currentView: VisualizationType;
@@ -73,6 +71,7 @@ interface ProfileViewProps {
   queryClient?: QueryServiceClient;
   navigateTo?: NavigateFunction;
   compare?: boolean;
+  onDownloadPProf: () => void;
 }
 
 function arrayEquals<T>(a: T[], b: T[]): boolean {
@@ -84,11 +83,18 @@ function arrayEquals<T>(a: T[], b: T[]): boolean {
   );
 }
 export const useProfileVisState = (): ProfileVisState => {
-  const router = parseParams(window.location.search);
-  const currentViewFromURL = router.currentProfileView as string;
-  const [currentView, setCurrentView] = useState<VisualizationType>(
-    (currentViewFromURL as VisualizationType) ?? 'icicle'
-  );
+  const [currentView, setCurrentView] = useState<VisualizationType>(() => {
+    if (typeof window == 'undefined') {
+      return 'icicle';
+    }
+    const router = parseParams(window.location.search);
+    const currentViewFromURL = router.currentProfileView as string;
+
+    if (currentViewFromURL) {
+      return currentViewFromURL as VisualizationType;
+    }
+    return 'icicle';
+  });
 
   return {currentView, setCurrentView};
 };
@@ -102,6 +108,7 @@ export const ProfileView = ({
   queryClient,
   navigateTo,
   profileVisState,
+  onDownloadPProf,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
@@ -109,7 +116,6 @@ export const ProfileView = ({
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
 
-  const metadata = useGrpcMetadata();
   const {loader} = useParcaTheme();
 
   useEffect(() => {
@@ -148,23 +154,6 @@ export const ProfileView = ({
     );
   }
 
-  const downloadPProf = async (e: React.MouseEvent<HTMLElement>): Promise<void> => {
-    e.preventDefault();
-    if (profileSource == null || queryClient == null) {
-      return;
-    }
-
-    try {
-      const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = 'profile.pb.gz';
-      link.click();
-    } catch (error) {
-      console.error('Error while querying', error);
-    }
-  };
-
   const resetIcicleGraph = (): void => setCurPath([]);
 
   const setNewCurPath = (path: string[]): void => {
@@ -177,11 +166,12 @@ export const ProfileView = ({
     if (view == null) {
       return;
     }
-    if (navigateTo === undefined) return;
-
     setCurrentView(view);
-    const router = parseParams(window.location.search);
 
+    if (navigateTo === undefined) {
+      return;
+    }
+    const router = parseParams(window.location.search);
     navigateTo('/', {...router, ...{currentProfileView: view}});
   };
 
@@ -200,7 +190,13 @@ export const ProfileView = ({
                     />
                   ) : null}
 
-                  <Button color="neutral" onClick={void downloadPProf}>
+                  <Button
+                    color="neutral"
+                    onClick={e => {
+                      e.preventDefault();
+                      onDownloadPProf();
+                    }}
+                  >
                     Download pprof
                   </Button>
                 </div>
