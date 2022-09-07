@@ -50,6 +50,8 @@ jobs:
           declare -a EXTRA_ARGS=()
           if [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
             EXTRA_ARGS=(--from-ref "origin/${GITHUB_BASE_REF}" --to-ref "${GITHUB_SHA}")
+          else
+            EXTRA_ARGS=(--from-ref "${GITHUB_SHA}^" --to-ref "${GITHUB_SHA}")
           fi
 
           pre-commit run --show-diff-on-failure --color=always "${EXTRA_ARGS[@]}"

@@ -84,7 +84,7 @@ func (q *Querier) Labels(
 	err := q.engine.ScanSchema(q.tableName).
 		Distinct(logicalplan.Col("name")).
 		Filter(logicalplan.Col("name").RegexMatch("^labels\\..+$")).
-		Execute(ctx, func(ar arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
 			if ar.NumCols() != 1 {
 				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
 			}
@@ -126,7 +126,7 @@ func (q *Querier) Values(
 
 	err := q.engine.ScanTable(q.tableName).
 		Distinct(logicalplan.Col("labels."+labelName)).
-		Execute(ctx, func(ar arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
 			if ar.NumCols() != 1 {
 				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
 			}
@@ -273,7 +273,7 @@ func (q *Querier) QueryRange(
 			logicalplan.DynCol("labels"),
 			logicalplan.Col("timestamp"),
 		).
-		Execute(ctx, func(r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil
@@ -281,7 +281,7 @@ func (q *Querier) QueryRange(
 	if err != nil {
 		return nil, err
 	}
-	if ar.NumRows() == 0 {
+	if ar == nil || ar.NumRows() == 0 {
 		return nil, status.Error(
 			codes.NotFound,
 			"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
@@ -382,7 +382,7 @@ func (q *Querier) ProfileTypes(
 			logicalplan.Col(ColumnPeriodUnit),
 			logicalplan.Col(ColumnDuration).Gt(logicalplan.Literal(0)),
 		).
-		Execute(ctx, func(ar arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
 			if ar.NumCols() != 6 {
 				return fmt.Errorf("expected 6 column, got %d", ar.NumCols())
 			}
@@ -488,7 +488,7 @@ func (q *Querier) arrowRecordToProfile(
 	valueColumn string,
 	meta profile.Meta,
 ) (*profile.Profile, error) {
-	ctx, span := q.tracer.Start(ctx, "arrowRecordToProfile")
+	ctx, span := q.tracer.Start(ctx, "Querier/arrowRecordToProfile")
 	defer span.End()
 	return q.converter.Convert(
 		ctx,
@@ -503,7 +503,7 @@ func (q *Querier) QuerySingle(
 	query string,
 	time time.Time,
 ) (*profile.Profile, error) {
-	ctx, span := q.tracer.Start(ctx, "QuerySingle")
+	ctx, span := q.tracer.Start(ctx, "Querier/QuerySingle")
 	defer span.End()
 
 	ar, valueColumn, meta, err := q.findSingle(ctx, query, time)
@@ -536,7 +536,7 @@ func (q *Querier) QuerySingle(
 func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (arrow.Record, string, profile.Meta, error) {
 	requestedTime := timestamp.FromTime(t)
 
-	ctx, span := q.tracer.Start(ctx, "findSingle")
+	ctx, span := q.tracer.Start(ctx, "Querier/findSingle")
 	span.SetAttributes(attribute.String("query", query))
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
 	defer span.End()
@@ -562,7 +562,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 			logicalplan.DynCol("pprof_labels"),
 			logicalplan.DynCol("pprof_num_labels"),
 		).
-		Execute(ctx, func(r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil
@@ -583,7 +583,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 }
 
 func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time) (*profile.Profile, error) {
-	ctx, span := q.tracer.Start(ctx, "QueryMerge")
+	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
 	r, valueColumn, meta, err := q.selectMerge(ctx, query, start, end)
@@ -606,7 +606,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 }
 
 func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endTime time.Time) (arrow.Record, string, profile.Meta, error) {
-	ctx, span := q.tracer.Start(ctx, "selectMerge")
+	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
 	meta, selectorExprs, err := QueryToFilterExprs(query)
@@ -632,7 +632,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 			logicalplan.Sum(logicalplan.Col("value")),
 			logicalplan.Col("stacktrace"),
 		).
-		Execute(ctx, func(r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
 			ar = r
 			return nil
@@ -641,13 +641,11 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		return nil, "", profile.Meta{}, err
 	}
 
-	return ar,
-		"sum(value)",
-		profile.Meta{
-			Name:       meta.Name,
-			SampleType: meta.SampleType,
-			PeriodType: meta.PeriodType,
-			Timestamp:  start,
-		},
-		nil
+	meta = profile.Meta{
+		Name:       meta.Name,
+		SampleType: meta.SampleType,
+		PeriodType: meta.PeriodType,
+		Timestamp:  start,
+	}
+	return ar, "sum(value)", meta, nil
 }
