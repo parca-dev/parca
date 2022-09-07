@@ -1,4 +1,15 @@
-/* eslint-disable */
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 export const dotGraph = `{
  n1 [Label = "n1"];
@@ -437,7 +448,10 @@ export const jsonGraphWithGraphvizPositions = {
   ],
 };
 
-export const node_with_meta_data = (id, name) => ({
+export const nodeWithMetaData = (
+  id: string,
+  name: string
+): {id: string; cumulative: number; meta: any} => ({
   id,
   cumulative: Math.floor(Math.random() * 10),
   meta: {
@@ -563,10 +577,10 @@ export const node_with_meta_data = (id, name) => ({
 export const jsonGraphWithMetaData = {
   total: '4358676',
   nodes: [
-    node_with_meta_data('root', 'root node'),
-    node_with_meta_data('n1', 'normal node'),
-    node_with_meta_data('n2', 'second node'),
-    node_with_meta_data('n3', 'child'),
+    nodeWithMetaData('root', 'root node'),
+    nodeWithMetaData('n1', 'normal node'),
+    nodeWithMetaData('n2', 'second node'),
+    nodeWithMetaData('n3', 'child'),
   ],
   edges: [
     {

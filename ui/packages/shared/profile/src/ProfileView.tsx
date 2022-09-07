@@ -11,7 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable */
 import React, {useEffect, useMemo, useState} from 'react';
 
 import {parseParams} from '@parca/functions';
@@ -128,7 +127,7 @@ export const ProfileView = ({
       return Boolean(flamegraphData?.loading);
     }
     if (currentView === 'callgraph') {
-      return !!callgraphData?.loading;
+      return Boolean(callgraphData?.loading);
     }
     if (currentView === 'table') {
       return Boolean(topTableData?.loading);
@@ -268,7 +267,7 @@ export const ProfileView = ({
 
               {currentView === 'callgraph' && callgraphData?.data != null && (
                 <div className="w-full">
-                  {dimensions?.width && (
+                  {dimensions?.width !== undefined && (
                     <CallgraphComponent
                       graph={callgraphData.data}
                       sampleUnit={sampleUnit}

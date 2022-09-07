@@ -10,13 +10,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-/* eslint-disable */
+import pick from 'lodash/pick';
 import useLocalStorageState from 'use-local-storage-state';
 
 const UI_FLAGS = 'ui-flags';
 
-const initializeFlagsFromURL = () => {
+const initializeFlagsFromURL = (): void => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -24,28 +23,33 @@ const initializeFlagsFromURL = () => {
   const url = new URL(window.location.href);
   const enableFlag = url.searchParams.get('enable-ui-flag');
   const disableFlag = url.searchParams.get('disable-ui-flag');
-  if (!enableFlag && !disableFlag) {
+  if (enableFlag !== null && disableFlag !== null) {
     return;
   }
-  const flags = JSON.parse(window.localStorage.getItem(UI_FLAGS) ?? '{}');
-  if (enableFlag) {
+  let flags = JSON.parse(window.localStorage.getItem(UI_FLAGS) ?? '{}');
+  if (enableFlag !== null) {
     flags[enableFlag] = true;
   }
-  if (disableFlag) {
-    delete flags[disableFlag];
+  if (disableFlag !== null) {
+    if (enableFlag !== null) {
+      pick(flags, [enableFlag]);
+    } else flags = {};
   }
   window.localStorage.setItem(UI_FLAGS, JSON.stringify(flags));
 };
 
 initializeFlagsFromURL();
 
-const useUIFeatureFlag = (featureFlag: string, defaultValue: boolean = false) => {
+const useUIFeatureFlag = (
+  featureFlag: string,
+  defaultValue: boolean = false
+): [boolean, (flag: boolean) => void] => {
   const [flags, setFlags] = useLocalStorageState(UI_FLAGS, {
     defaultValue: {},
   });
 
-  const value = flags[featureFlag] || defaultValue;
-  const setFlag = (flag: boolean) => {
+  const value = flags[featureFlag] ?? defaultValue;
+  const setFlag = (flag: boolean): void => {
     setFlags({...flags, [featureFlag]: flag});
   };
 
