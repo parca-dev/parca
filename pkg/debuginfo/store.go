@@ -237,7 +237,7 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		// Valid.
 		f, err := elf.Open(objFile)
 		if err != nil {
-			level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
+			level.Debug(s.logger).Log("msg", "failed to open object file", "err", err)
 		} else {
 			hasDWARF, err := elfutils.HasDWARF(f)
 			if err != nil {
@@ -443,7 +443,7 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 	if source != debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD {
 		f, err := elf.Open(objFile)
 		if err != nil {
-			level.Debug(logger).Log("msg", "failed to check for DWARF", "err", err)
+			level.Debug(logger).Log("msg", "failed to open object file", "err", err)
 		} else {
 			hasDWARF, err := elfutils.HasDWARF(f)
 			if err != nil {
