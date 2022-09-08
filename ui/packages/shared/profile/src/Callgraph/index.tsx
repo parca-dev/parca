@@ -16,6 +16,8 @@ import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Circle, Arrow, Label, Text} from 'react-konva';
 import {Callgraph as CallgraphType, CallgraphEdge, CallgraphNode} from '@parca/client';
+import {useAppSelector, selectSearchNodeString} from '@parca/store';
+import {isSearchMatch} from '@parca/functions';
 import {jsonToDot} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
 import Tooltip from '../GraphTooltip';
@@ -37,6 +39,7 @@ interface NodeProps {
   hoveredNode: INode | null;
   setHoveredNode: (node: INode | null) => void;
   nodeRadius: number;
+  currentSearchString: string;
 }
 
 interface IEdge {
@@ -86,6 +89,7 @@ const Node = ({
   hoveredNode,
   setHoveredNode,
   nodeRadius: defaultRadius,
+  currentSearchString,
 }: NodeProps): JSX.Element => {
   const {
     data: {id},
@@ -98,12 +102,14 @@ const Node = ({
   const hoverRadius = defaultRadius + 3;
   const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
 
+  const isCurrentSearchMatch = isSearchMatch(currentSearchString, functionName);
+
   return (
     <Label x={+x} y={+y}>
       <Circle
         draggable
-        radius={isHovered ? hoverRadius : defaultRadius}
-        fill={color}
+        radius={isHovered || isCurrentSearchMatch ? hoverRadius : defaultRadius}
+        fill={isCurrentSearchMatch ? 'red' : color}
         onMouseOver={() => {
           setHoveredNode({...node, mouseX: x, mouseY: y});
         }}
@@ -167,6 +173,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
   const {nodes: rawNodes, cumulative: total} = graph;
   const nodeRadius = 12;
+  const currentSearchString = useAppSelector(selectSearchNodeString);
 
   useEffect(() => {
     const getDataWithPositions = async (): Promise<void> => {
@@ -268,6 +275,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
                 hoveredNode={hoveredNode}
                 setHoveredNode={setHoveredNode}
                 nodeRadius={nodeRadius}
+                currentSearchString={currentSearchString ?? ''}
               />
             ))}
           </Layer>

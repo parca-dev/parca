@@ -12,18 +12,30 @@
 // limitations under the License.
 
 import {Input} from '../';
+import {useEffect, useMemo} from 'react';
 import {useAppDispatch, setSearchNodeString} from '@parca/store';
+import {debounce} from 'lodash';
 
 const SearchNodes = (): JSX.Element => {
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  });
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     dispatch(setSearchNodeString(event.target.value));
   };
 
+  const debouncedSearch = useMemo(() => {
+    return debounce(handleChange, 300);
+  }, []);
+
   return (
     <div>
-      <Input className="text-sm" placeholder="Search nodes..." onChange={handleChange}></Input>
+      <Input className="text-sm" placeholder="Search nodes..." onChange={debouncedSearch}></Input>
     </div>
   );
 };
