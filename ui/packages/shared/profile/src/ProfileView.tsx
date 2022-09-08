@@ -215,7 +215,7 @@ export const ProfileView = ({
                   </Button>
                 </div>
 
-                {callgraphEnabled === true ? (
+                {callgraphEnabled ? (
                   <div className="mr-3">
                     <Button
                       variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
