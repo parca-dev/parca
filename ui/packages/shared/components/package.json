@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.15.18",
+  "version": "0.15.19",
   "description": "A component library for Parca",
   "main": "src/index.tsx",
   "scripts": {
@@ -14,7 +14,7 @@
     "@parca/functions": "^0.15.17",
     "@parca/icons": "^0.15.17",
     "@parca/parser": "^0.15.17",
-    "@parca/profile": "^0.15.18",
+    "@parca/profile": "^0.15.19",
     "@parca/store": "^0.15.17",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@types/cytoscape": "3.19.7",
