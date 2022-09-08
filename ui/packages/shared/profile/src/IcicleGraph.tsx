@@ -22,6 +22,7 @@ import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 
 import {hexifyAddress} from './utils';
+import {HoveringNode} from '@parca/components/src/GraphTooltip';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -336,10 +337,7 @@ export default function IcicleGraph({
         total={total}
         x={pos[0]}
         y={pos[1]}
-        // FIXME: Data structure of HoveringNode should be redefined
-        // to not require properties of CallgraphNode into FlamegraphNode and vice versa
-        // @ts-expect-error
-        hoveringNode={hoveringNode}
+        hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
       />
       <svg

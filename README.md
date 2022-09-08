@@ -106,8 +106,8 @@ Flags:
                                    a separate file. This is only for debugging
                                    purposes to produce data to replay situations
                                    in tests.
-      --storage-granule-size=8196
-                                   Granule size for storage.
+      --storage-granule-size=26265625
+                                   Granule size in bytes for storage.
       --storage-active-memory=536870912
                                    Amount of memory to use for active storage.
                                    Defaults to 512MB.
