@@ -144,7 +144,7 @@ type Manager struct {
 	targetScrapeSampleOutOfBounds prometheus.Counter
 }
 
-// Run stars the manager with a set of scrape configs.
+// Run starts the manager with a set of scrape configs.
 func (m *Manager) Run(tsets <-chan map[string][]*targetgroup.Group) error {
 	go m.reloader()
 	for {
@@ -184,6 +184,7 @@ func (m *Manager) reloader() {
 
 func (m *Manager) reload() {
 	m.mtxScrape.Lock()
+	defer m.mtxScrape.Unlock()
 	var wg sync.WaitGroup
 	level.Debug(m.logger).Log("msg", "Reloading scrape manager")
 	for setName, groups := range m.targetSets {
@@ -217,7 +218,6 @@ func (m *Manager) reload() {
 			wg.Done()
 		}(sp, groups)
 	}
-	m.mtxScrape.Unlock()
 	wg.Wait()
 }
 

@@ -15,6 +15,7 @@ package symbol
 
 import (
 	"context"
+	"debug/elf"
 	"errors"
 	"fmt"
 	"time"
@@ -201,13 +202,20 @@ func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
 // newLiner creates a new liner for the given mapping and object file path.
 func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 	logger := log.With(s.logger, "file", path, "buildid", buildID)
-	hasDWARF, err := elfutils.HasDWARF(path)
+
+	f, err := elf.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open binary: %w", err)
+	}
+	defer f.Close()
+
+	hasDWARF, err := elfutils.HasDWARF(f)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary has DWARF info", "err", err)
 	}
 	if hasDWARF {
 		level.Debug(logger).Log("msg", "using DWARF liner to resolve symbols")
-		lnr, err := addr2line.DWARF(logger, path, s.demangler)
+		lnr, err := addr2line.DWARF(log.With(logger, "file", path), f, s.demangler)
 		if err != nil {
 			return nil, err
 		}
@@ -216,14 +224,14 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 
 	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
 	// Keep that section and other identifying sections in the debug information file.
-	isGo, err := elfutils.IsSymbolizableGoObjFile(path)
+	isGo, err := elfutils.IsSymbolizableGoObjFile(f)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary is a Go binary", "err", err)
 	}
 	if isGo {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
-		lnr, err := addr2line.Go(logger, path)
+		lnr, err := addr2line.Go(logger, f)
 		if err == nil {
 			level.Debug(logger).Log("msg", "using go liner to resolve symbols")
 			return lnr, nil
@@ -232,12 +240,12 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 	}
 
 	// As a last resort, use the symtab liner which utilizes .symtab section and .dynsym section.
-	hasSymbols, err := elfutils.HasSymbols(path)
+	hasSymbols, err := elfutils.HasSymbols(f)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary has symbols", "err", err)
 	}
 	if hasSymbols {
-		lnr, err := addr2line.Symbols(logger, path)
+		lnr, err := addr2line.Symbols(logger, f)
 		if err == nil {
 			level.Debug(logger).Log("msg", "using symtab liner to resolve symbols")
 			return lnr, nil

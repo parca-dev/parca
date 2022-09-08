@@ -91,7 +91,7 @@ type Flags struct {
 	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the metastore and profile storage."`
 
 	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
-	StorageGranuleSize   int    `default:"8196" help:"Granule size for storage."`
+	StorageGranuleSize   int64  `default:"26265625" help:"Granule size in bytes for storage."`
 	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
 	StoragePath          string `default:"data" help:"Path to storage directory."`
 	StorageEnableWAL     bool   `default:"false" help:"Enables write ahead log for profile storage."`
@@ -196,7 +196,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	metastore := metastore.NewInProcessClient(mStr)
 
 	frostdbOptions := []frostdb.Option{
-		frostdb.WithGranuleSize(flags.StorageGranuleSize),
 		frostdb.WithActiveMemorySize(flags.StorageActiveMemory),
 		frostdb.WithLogger(logger),
 		frostdb.WithRegistry(reg),
