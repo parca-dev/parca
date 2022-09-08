@@ -20,6 +20,7 @@ import {Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot} from './utils';
 import Node, {INode} from './Node';
 import Edge, {IEdge} from './Edge';
+import type {HoveringNode} from '../GraphTooltip';
 interface Props {
   graph: CallgraphType;
   sampleUnit: string;
@@ -57,10 +58,11 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const height = width;
   const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
 
-  //   @ts-expect-error
-  const valueRange = d3.extent(
-    objects.map(node => parseInt(node.cumulative)).filter(node => node !== undefined)
-  ) as [number, number];
+  const valueRange: number[] = d3
+    .extent(objects.filter(node => node !== undefined).map(node => node.cumulative))
+    .map(value => parseInt(value))
+    .slice(0, 2);
+
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateRdGy)
     .domain([...valueRange])
@@ -122,7 +124,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
           </Layer>
         </Stage>
         <Tooltip
-          hoveringNode={rawNodes.find(n => n.id === hoveredNode?.data.id) ?? null}
+          hoveringNode={rawNodes.find(n => n.id === hoveredNode?.data.id) as HoveringNode}
           unit={sampleUnit}
           total={+total}
           isFixed={false}
