@@ -14,6 +14,7 @@
 package addr2line
 
 import (
+	"debug/elf"
 	"fmt"
 	"runtime/debug"
 
@@ -32,14 +33,14 @@ type DwarfLiner struct {
 }
 
 // DWARF is a symbolizer that uses DWARF debug info to symbolize addresses.
-func DWARF(logger log.Logger, path string, demangler *demangle.Demangler) (*DwarfLiner, error) {
-	dbgFile, err := elfutils.NewDebugInfoFile(path, demangler)
+func DWARF(logger log.Logger, f *elf.File, demangler *demangle.Demangler) (*DwarfLiner, error) {
+	dbgFile, err := elfutils.NewDebugInfoFile(f, demangler)
 	if err != nil {
 		return nil, err
 	}
 
 	return &DwarfLiner{
-		logger:  log.With(logger, "liner", "dwarf", "file", path),
+		logger:  log.With(logger, "liner", "dwarf"),
 		dbgFile: dbgFile,
 	}, nil
 }
