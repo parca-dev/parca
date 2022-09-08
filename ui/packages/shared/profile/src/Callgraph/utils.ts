@@ -105,7 +105,7 @@ export const jsonToDot = ({
       rankdir="TB"
       ratio="1,3"
       size="${pixelsToInches(width)}, ${pixelsToInches(width)}!"
-      margin=10
+      margin=15
       edge [margin=0]
       node [margin=0 width=${nodeRadius}]
       ${nodesAsStrings.join(' ')}
