@@ -14,6 +14,7 @@
 import {Circle} from 'react-konva';
 
 export interface INode {
+  id: number;
   x: number;
   y: number;
   data: {id: string};

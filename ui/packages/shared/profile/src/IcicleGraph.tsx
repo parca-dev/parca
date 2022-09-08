@@ -336,6 +336,9 @@ export default function IcicleGraph({
         total={total}
         x={pos[0]}
         y={pos[1]}
+        // FIXME: Data structure of HoveringNode should be redefined
+        // to not require properties of CallgraphNode into FlamegraphNode and vice versa
+        // @ts-expect-error
         hoveringNode={hoveringNode}
         contextElement={svg.current}
       />
