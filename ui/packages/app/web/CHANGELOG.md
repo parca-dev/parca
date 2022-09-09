@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.20](https://github.com/parca-dev/parca/compare/ui-v0.15.19...ui-v0.15.20) (2022-09-09)
+
+**Note:** Version bump only for package @parca/web
+
+
+
+
+
 ## [0.15.19](https://github.com/parca-dev/parca/compare/ui-v0.15.18...ui-v0.15.19) (2022-09-08)
 
 **Note:** Version bump only for package @parca/web
