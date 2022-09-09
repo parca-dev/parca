@@ -34,6 +34,8 @@ import (
 
 var ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
 
+// Symbolizer converts the memory addresses, which have been encountered in stack traces,
+// in the ingested profiles, to the corresponding human-readable source code lines.
 type Symbolizer struct {
 	logger    log.Logger
 	demangler *demangle.Demangler
@@ -48,10 +50,22 @@ type Symbolizer struct {
 	symbolizationFailed   map[string]map[uint64]struct{}
 }
 
+// liner is the interface implemented by symbolizers
+// which read an object file (symbol table or debug information) and return
+// source code lines by a given memory address.
 type liner interface {
 	PCToLines(pc uint64) ([]profile.LocationLine, error)
 }
 
+// NewSymbolizer creates a new Symbolizer.
+//
+// By default the cache can hold up to 1000 items with an item TTL 1 minute.
+// The item is a liner that provides access to a single object file
+// to resolve its memory addresses to source code lines.
+//
+// If a Symbolizer failed to extract source lines, by default it will retry up to 3 times.
+//
+// The default demangle mode is "simple".
 func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	const (
 		defaultDemangleMode     = "simple"
@@ -85,6 +99,9 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	return sym, nil
 }
 
+// Symbolize symbolizes locations for the given mapping and object file path
+// using DwarfLiner if the file contains debug info.
+// Otherwise it attempts to use GoLiner, and falls back to SymtabLiner as a last resort.
 func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Location, debugInfoFile string) ([][]profile.LocationLine, error) {
 	select {
 	case <-ctx.Done():
@@ -158,6 +175,7 @@ func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []
 	return lines
 }
 
+// Close cleans up resources, e.g., the cache.
 func (s *Symbolizer) Close() error {
 	return s.linerCache.Close()
 }
@@ -172,7 +190,7 @@ func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
 
 	// Check if we already attempt to build a liner for this path.
 	if _, failedBefore := s.linerCreationFailed[h]; failedBefore {
-		level.Debug(s.logger).Log("msg", "already failed to create liner for this debug info file, skipping")
+		level.Debug(s.logger).Log("msg", "already failed to create liner for this object file, skipping")
 		return nil, ErrLinerCreationFailedBefore
 	}
 
