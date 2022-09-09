@@ -106,8 +106,8 @@ Flags:
                                    a separate file. This is only for debugging
                                    purposes to produce data to replay situations
                                    in tests.
-      --storage-granule-size=8196
-                                   Granule size for storage.
+      --storage-granule-size=26265625
+                                   Granule size in bytes for storage.
       --storage-active-memory=536870912
                                    Amount of memory to use for active storage.
                                    Defaults to 512MB.
@@ -203,6 +203,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tr>
     <td align="center"><a href="https://github.com/PhilipGough"><img src="https://avatars.githubusercontent.com/u/5781491?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Philip Gough</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=PhilipGough" title="Code">💻</a></td>
     <td align="center"><a href="http://www.boranseref.com/"><img src="https://avatars.githubusercontent.com/u/20660506?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Boran Seref</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=boranx" title="Code">💻</a></td>
+    <td align="center"><a href="https://heylongdacoder.github.io/"><img src="https://avatars.githubusercontent.com/u/79215152?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Wen Long</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=heylongdacoder" title="Code">💻</a></td>
   </tr>
 </table>
 

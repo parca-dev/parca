@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import React from 'react';
 import Button from './Button';
 import ButtonGroup from './ButtonGroup';
-import Callgraph from './Callgraph';
 import Card from './Card';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
 import DateTimePicker from './DateTimePicker';
@@ -36,6 +36,8 @@ import SearchNodes from './SearchNodes';
 import Spinner from './Spinner';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
+
+const Callgraph = React.lazy(async () => await import('./Callgraph'));
 
 export type {PillVariant, SelectElement};
 

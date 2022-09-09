@@ -27,14 +27,17 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
+// SymtabLiner is a liner which utilizes .symtab and .dynsym sections.
 type SymtabLiner struct {
 	logger log.Logger
 
+	// symbols contains sorted symbols.
 	symbols []elf.Symbol
 }
 
-func Symbols(logger log.Logger, path string) (*SymtabLiner, error) {
-	symbols, err := symtab(path)
+// Symbols creates a new SymtabLiner.
+func Symbols(logger log.Logger, f *elf.File) (*SymtabLiner, error) {
+	symbols, err := symtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
 	}
@@ -45,6 +48,7 @@ func Symbols(logger log.Logger, path string) (*SymtabLiner, error) {
 	}, nil
 }
 
+// PCToLines looks up the line number information for a program counter (memory address).
 func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	i := sort.Search(len(lnr.symbols), func(i int) bool {
 		sym := lnr.symbols[i]
@@ -69,13 +73,11 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, er
 	return lines, nil
 }
 
-func symtab(path string) ([]elf.Symbol, error) {
-	objFile, err := elf.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer objFile.Close()
-
+// symtab returns symbols from the symbol table and the dynamic symbol table sections
+// extracted from the ELF file f.
+// The symbols are sorted by their memory addresses in ascending order
+// to facilitate searching.
+func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 	syms, sErr := objFile.Symbols()
 	dynSyms, dErr := objFile.DynamicSymbols()
 

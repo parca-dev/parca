@@ -1,4 +1,16 @@
-/* eslint-disable */
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
@@ -7,7 +19,8 @@ import {GraphTooltip as Tooltip} from '@parca/components';
 import {Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot} from './utils';
 import Node, {INode} from './Node';
-import Edge from './Edge';
+import Edge, {IEdge} from './Edge';
+import type {HoveringNode} from '../GraphTooltip';
 interface Props {
   graph: CallgraphType;
   sampleUnit: string;
@@ -22,7 +35,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   const nodeRadius = 12;
 
   useEffect(() => {
-    const getDataWithPositions = async () => {
+    const getDataWithPositions = async (): Promise<void> => {
       // 1. Translate JSON to 'dot' graph string
       const dataAsDot = jsonToDot({graph, width, nodeRadius});
 
@@ -34,21 +47,22 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       setGraphData(jsonGraph);
     };
 
-    if (width) {
-      getDataWithPositions();
+    if (width !== null) {
+      void getDataWithPositions();
     }
-  }, [width]);
+  }, [graph, width]);
 
   // 3. Render the graph with calculated layout in Canvas container
-  if (!width || !graphData) return <></>;
+  if (width == null || graphData == null) return <></>;
 
   const height = width;
   const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
 
-  //   @ts-expect-error
-  const valueRange = d3.extent(
-    objects.map(node => parseInt(node.cumulative)).filter(node => node !== undefined)
-  ) as [number, number];
+  const valueRange: number[] = d3
+    .extent(objects.filter(node => node !== undefined).map(node => node.cumulative))
+    .map(value => parseInt(value))
+    .slice(0, 2);
+
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateRdGy)
     .domain([...valueRange])
@@ -83,7 +97,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
         <Stage width={width} height={height}>
           <Layer>
-            {edges.map(edge => {
+            {edges.map((edge: IEdge) => {
               const sourceNode = nodes.find(n => n.id === edge.source);
               const targetNode = nodes.find(n => n.id === edge.target);
               return (
@@ -98,7 +112,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
                 />
               );
             })}
-            {nodes.map(node => (
+            {nodes.map((node: INode) => (
               <Node
                 key={`node-${node.data.id}`}
                 node={node}
@@ -110,7 +124,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
           </Layer>
         </Stage>
         <Tooltip
-          hoveringNode={rawNodes.find(n => n.id === hoveredNode?.data.id) ?? null}
+          hoveringNode={rawNodes.find(n => n.id === hoveredNode?.data.id) as HoveringNode}
           unit={sampleUnit}
           total={+total}
           isFixed={false}

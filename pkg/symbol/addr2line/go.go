@@ -26,14 +26,17 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
+// GoLiner is a liner which utilizes .gopclntab section to symbolize addresses.
+// It doesn't work for inlined functions.
 type GoLiner struct {
 	logger log.Logger
 
 	symtab *gosym.Table
 }
 
-func Go(logger log.Logger, path string) (*GoLiner, error) {
-	tab, err := gosymtab(path)
+// Go creates a new GoLiner.
+func Go(logger log.Logger, f *elf.File) (*GoLiner, error) {
+	tab, err := gosymtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
@@ -44,6 +47,7 @@ func Go(logger log.Logger, path string) (*GoLiner, error) {
 	}, nil
 }
 
+// PCToLines looks up the line number information for a program counter (memory address).
 func (gl *GoLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	defer func() {
 		// PCToLine panics with "invalid memory address or nil pointer dereference",
@@ -73,13 +77,11 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err err
 	return lines, nil
 }
 
-func gosymtab(path string) (*gosym.Table, error) {
-	objFile, err := elf.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer objFile.Close()
-
+// gosymtab returns the Go symbol table (.gosymtab section) decoded from the ELF file.
+func gosymtab(objFile *elf.File) (*gosym.Table, error) {
+	// The .gopclntab section contains tables and meta data required for symbolization,
+	// see https://github.com/DataDog/go-profiler-notes/blob/main/stack-traces.md#gopclntab.
+	var err error
 	var pclntab []byte
 	if sec := objFile.Section(".gopclntab"); sec != nil {
 		if sec.Type == elf.SHT_NOBITS {

@@ -56,11 +56,11 @@ jobs:
       - name: Format
         run: buf format --diff --exit-code
 
-      - uses: bufbuild/buf-lint-action@c241503a1e88af425be1122997f44be51f037b46 # tag=v1.0.1
+      - uses: bufbuild/buf-lint-action@d35dc843e3e1d4d7ec2d4b6eef89ff040b85cf28 # tag=v1.0.2
         with:
           input: 'proto'
 
-      - uses: bufbuild/buf-breaking-action@66baa05496f5650878b044dabbaa0b96a4fc75f6 # tag=v1.1.0
+      - uses: bufbuild/buf-breaking-action@1cd949a5f7c5581990772f1e0c8a5270d7e4401b # tag=v1.1.1
         with:
           input: 'proto'
           # The 'main' branch of the GitHub repository that defines the module.

@@ -16,6 +16,8 @@ import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
 import {useQuery} from './useQuery';
 import {ProfileView, useProfileVisState} from './ProfileView';
 import {ProfileSource} from './ProfileSource';
+import {downloadPprof} from './utils';
+import {useGrpcMetadata} from '@parca/components';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -32,6 +34,7 @@ export const ProfileViewWithData = ({
   navigateTo,
 }: ProfileViewWithDataProps): JSX.Element => {
   const profileVisState = useProfileVisState();
+  const metadata = useGrpcMetadata();
   const {currentView} = profileVisState;
   const {
     isLoading: flamegraphLoading,
@@ -58,6 +61,22 @@ export const ProfileViewWithData = ({
   });
 
   const sampleUnit = profileSource.ProfileType().sampleUnit;
+
+  const downloadPProfClick = async (): Promise<void> => {
+    if (profileSource == null || queryClient == null) {
+      return;
+    }
+
+    try {
+      const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = 'profile.pb.gz';
+      link.click();
+    } catch (error) {
+      console.error('Error while querying', error);
+    }
+  };
 
   return (
     <ProfileView
@@ -88,6 +107,7 @@ export const ProfileViewWithData = ({
       profileSource={profileSource}
       queryClient={queryClient}
       navigateTo={navigateTo}
+      onDownloadPProf={() => void downloadPProfClick()}
     />
   );
 };

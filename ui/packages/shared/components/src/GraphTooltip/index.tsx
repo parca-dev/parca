@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
-
 import {CallgraphNode, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import {hexifyAddress} from '@parca/profile';
@@ -24,7 +22,7 @@ interface GraphTooltipProps {
   y: number;
   unit: string;
   total: number;
-  hoveringNode: FlamegraphNode | FlamegraphRootNode | CallgraphNode | null | undefined;
+  hoveringNode: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;
@@ -98,7 +96,22 @@ const TooltipMetaInfo = ({hoveringNode}: {hoveringNode: FlamegraphNode}): JSX.El
   );
 };
 
-const GraphTooltipContent = ({hoveringNode, unit, total, isFixed}): JSX.Element => {
+export interface HoveringNode extends CallgraphNode, FlamegraphRootNode {
+  diff: string;
+  meta?: {[key: string]: any};
+}
+
+const GraphTooltipContent = ({
+  hoveringNode,
+  unit,
+  total,
+  isFixed,
+}: {
+  hoveringNode: HoveringNode;
+  unit: string;
+  total: number;
+  isFixed: boolean;
+}): JSX.Element => {
   const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
   const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
   const prevValue = hoveringNodeCumulative - diff;
@@ -108,11 +121,7 @@ const GraphTooltipContent = ({hoveringNode, unit, total, isFixed}): JSX.Element 
   const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
   const diffText = `${diffValueText} (${diffPercentageText})`;
   const metaRows =
-    hoveringNode.meta === undefined ? (
-      <></>
-    ) : (
-      <TooltipMetaInfo hoveringNode={hoveringNode as FlamegraphNode} />
-    );
+    hoveringNode.meta === undefined ? <></> : <TooltipMetaInfo hoveringNode={hoveringNode} />;
 
   return (
     <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/go-kit/log"
@@ -100,6 +101,12 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 				Name:  l.Name,
 				Value: l.Value,
 			})
+		}
+
+		// Must ensure label-set is sorted and HasDuplicateLabelNames also required a sorted label-set
+		sort.Sort(ls)
+		if name, has := ls.HasDuplicateLabelNames(); has {
+			return nil, status.Errorf(codes.InvalidArgument, "duplicate label names: %v", name)
 		}
 
 		for _, sample := range series.Samples {
