@@ -1,4 +1,4 @@
-object_storage:
+debug_info:
   bucket:
     type: "FILESYSTEM"
     config:
