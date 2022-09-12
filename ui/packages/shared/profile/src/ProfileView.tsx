@@ -174,11 +174,9 @@ export const ProfileView = ({
 
   const maxColor: string = getNewSpanColor(isDarkMode);
   // TODO: fix colors for dark mode
-  const getMinColor = (isDarkMode): string => {
-    return scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
-  };
+  const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
 
-  const colorRange: [string, string] = [getMinColor(isDarkMode), maxColor];
+  const colorRange: [string, string] = [minColor, maxColor];
 
   return (
     <div className="py-3">

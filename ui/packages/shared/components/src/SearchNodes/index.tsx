@@ -31,7 +31,7 @@ const SearchNodes = (): JSX.Element => {
     };
 
     return debounce(handleChange, 300);
-  }, []);
+  }, [dispatch]);
 
   return (
     <div>
