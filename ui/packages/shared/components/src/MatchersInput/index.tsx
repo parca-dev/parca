@@ -75,8 +75,8 @@ export const useLabelNames = (client: QueryServiceClient): UseLabelNames => {
     setLoading(true);
 
     call.response
-      .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}))
+      .then(response => setResult({response}))
+      .catch(error => setResult({error}))
       .finally(() => setLoading(false));
   }, [client, metadata]);
 
@@ -121,7 +121,7 @@ const MatchersInput = ({
   const [labelValuesLoading, setLabelValuesLoading] = useState(false);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
-  const [suggestionSections, setSuggestionSections] = useState<Suggestions>(new Suggestions());
+  const [suggestionSections] = useState<Suggestions>(new Suggestions());
   const [inputRef, setInputRef] = useState<string>('');
   const [labelValuesResponse, setLabelValuesResponse] = useState<string[] | null>(null);
   const [currentLabelsCollection, setCurrentLabelsCollection] = useState<string[] | null>(null); // This is an array that contains query expressions that have been matched i.e. they have been completed and have the blue badge around them in the UI.
@@ -134,12 +134,12 @@ const MatchersInput = ({
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
   const {response: labelNamesResponse, error: labelNamesError} = result;
 
-  const LoadingSpinner = () => {
+  const LoadingSpinner = (): JSX.Element => {
     return <div className="pt-2 pb-4">{Spinner}</div>;
   };
 
-  const getLabelNameValues = (labelName: string) => {
-    const call = queryClient.values({labelName: labelName, match: []}, {meta: metadata});
+  const getLabelNameValues = (labelName: string): void => {
+    const call = queryClient.values({labelName, match: []}, {meta: metadata});
     setLabelValuesLoading(true);
 
     call.response
@@ -174,7 +174,7 @@ const MatchersInput = ({
     // closing bracket doesn't in the guided query experience because all
     // we have the user do is type the matchers.
     if (s.type === Labels.literal && s.value !== '}') {
-      if (suggestionSections.literals.find(e => e.value === s.value)) {
+      if (suggestionSections.literals.find(e => e.value === s.value) != null) {
         return;
       }
       suggestionSections.literals.push({
@@ -195,7 +195,7 @@ const MatchersInput = ({
       });
 
       matches.forEach(m => {
-        if (suggestionSections.labelNames.find(e => e.value === m)) {
+        if (suggestionSections.labelNames.find(e => e.value === m) != null) {
           return;
         }
 
@@ -218,7 +218,7 @@ const MatchersInput = ({
       });
 
       matches.forEach(m => {
-        if (suggestionSections.labelValues.find(e => e.value === m)) {
+        if (suggestionSections.labelValues.find(e => e.value === m) != null) {
           return;
         }
 
@@ -263,8 +263,8 @@ const MatchersInput = ({
 
     // filter out the labelname list and move to the top the labelname that is most similar to what the user is typing.
     if (suggestionSections.labelNames.length > 0) {
-      suggestionSections.labelNames = suggestionSections.labelNames.filter(
-        suggestion => suggestion.value.toLowerCase().indexOf(newValue.toLowerCase()) > -1
+      suggestionSections.labelNames = suggestionSections.labelNames.filter(suggestion =>
+        suggestion.value.toLowerCase().includes(newValue.toLowerCase())
       );
     }
 
@@ -274,8 +274,8 @@ const MatchersInput = ({
     if (suggestionSections.labelValues.length > 0 && labelNameLiteralRe.test(newValue)) {
       const labelValueSearch = newValue.split(literalRe)[2];
 
-      suggestionSections.labelValues = suggestionSections.labelValues.filter(
-        suggestion => suggestion.value.toLowerCase().indexOf(labelValueSearch.toLowerCase()) > -1
+      suggestionSections.labelValues = suggestionSections.labelValues.filter(suggestion =>
+        suggestion.value.toLowerCase().includes(labelValueSearch.toLowerCase())
       );
     }
 
@@ -401,7 +401,7 @@ const MatchersInput = ({
 
       // If the current typed query expression matches the labelNameValueWithoutQuotesRe regex (i.e. the labelvalue is not quoted), then add quotes to the labelvalue.
       // if not, just use the current inputRef value.
-      const inputValues = !!labelNameValueWithoutQuotesRe.test(inputRef)
+      const inputValues = labelNameValueWithoutQuotesRe.test(inputRef)
         ? inputRef.replaceAll(',', '')
         : addQuotesToInputRefLabelValue(inputRef).replaceAll(',', '');
 
@@ -432,7 +432,7 @@ const MatchersInput = ({
     if (event.key === 'Backspace' && inputRef.length > 0) {
       // if the currentLabelsCollection array is not empty i.e has already previously completed expressions, then we first need to turn the array into a string
       // so it can be concatenated with the current inputRef value. that becomes something like "labelName="value",newLabelName="val
-      if (currentLabelsCollection && currentLabelsCollection.length > 0) {
+      if (currentLabelsCollection != null && currentLabelsCollection.length > 0) {
         setMatchersString(`${currentLabelsCollection?.join(',')},${inputRef}}`);
       } else {
         // if not, we jsut update the currentQuery expression with the current inputRef value.
@@ -472,7 +472,7 @@ const MatchersInput = ({
           suggestion => suggestion.value === labelName
         );
         // If the typed label name exists, we can apply it using the applySuggestion function
-        if (suggestion) {
+        if (suggestion != null) {
           applySuggestion(suggestionSections.labelNames.indexOf(suggestion));
         }
       }
@@ -489,7 +489,7 @@ const MatchersInput = ({
           suggestion => suggestion.value === literal
         );
         // If the typed literal exists, we can apply it using the applySuggestion function
-        if (suggestion) {
+        if (suggestion != null) {
           applySuggestion(suggestionSections.literals.indexOf(suggestion));
         }
       }
