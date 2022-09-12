@@ -314,6 +314,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	dbgInfo, err := debuginfo.NewStore(
 		tracerProvider.Tracer("debuginfo"),
 		logger,
+		reg,
 		flags.DebuginfoCacheDir,
 		dbgInfoMetadata,
 		objstore.NewPrefixedBucket(bucket, "debuginfo"),

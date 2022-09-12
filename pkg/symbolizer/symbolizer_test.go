@@ -457,6 +457,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	dbgStr, err := debuginfo.NewStore(
 		tracer,
 		logger,
+		prometheus.NewRegistry(),
 		debugInfoCacheDir,
 		metadata,
 		bucket,

@@ -62,6 +62,7 @@ func TestStore(t *testing.T) {
 	s, err := NewStore(
 		tracer,
 		logger,
+		prometheus.NewRegistry(),
 		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
 		bucket,
