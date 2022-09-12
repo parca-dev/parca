@@ -18,10 +18,9 @@ import {Stage, Layer, Circle, Arrow, Label, Text} from 'react-konva';
 import {Callgraph as CallgraphType, CallgraphEdge, CallgraphNode} from '@parca/client';
 import {useAppSelector, selectSearchNodeString} from '@parca/store';
 import {isSearchMatch} from '@parca/functions';
-import {jsonToDot} from './utils';
+import {jsonToDot, parseEdgePos} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
 import Tooltip from '../GraphTooltip';
-import {parseEdgePos} from './utils';
 
 interface INode {
   id: number;

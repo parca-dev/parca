@@ -31,7 +31,7 @@ const SearchNodes = (): JSX.Element => {
 
   const debouncedSearch = useMemo(() => {
     return debounce(handleChange, 300);
-  }, []);
+  }, [handleChange]);
 
   return (
     <div>
