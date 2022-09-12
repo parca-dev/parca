@@ -143,6 +143,9 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	grpc_health.RegisterHealthServer(srv, s.grpcProbe.HealthServer())
 
 	internalMux := chi.NewRouter()
+	if pathPrefix != "" {
+		internalMux.Mount(pathPrefix+"/api", grpcWebMux)
+	}
 	internalMux.Mount("/api", grpcWebMux)
 
 	internalMux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {

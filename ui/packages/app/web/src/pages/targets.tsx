@@ -52,7 +52,7 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
 
 const scrapeClient = new ScrapeServiceClient(
   new GrpcWebFetchTransport({
-    baseUrl: apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`,
+    baseUrl: apiEndpoint === undefined ? `${window.PATH_PREFIX}/api` : `${apiEndpoint}/api`,
   })
 );
 
