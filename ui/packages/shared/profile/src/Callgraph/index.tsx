@@ -110,6 +110,7 @@ const Node = ({
       <Circle
         draggable
         radius={isHovered || isCurrentSearchMatch ? hoverRadius : defaultRadius}
+        // TODO: May want to replace "red" with a different color on search match
         fill={isCurrentSearchMatch ? 'red' : color}
         onMouseOver={() => {
           setHoveredNode({...node, mouseX: x, mouseY: y});
@@ -217,7 +218,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   const nodeRadiusScale = d3
     .scaleLog()
     .domain(valueRange)
-    .range([nodeRadius - 2, nodeRadius + 3]);
+    .range([nodeRadius - 3, nodeRadius + 3]);
 
   const margin = 15;
   const graphBB = boundingBox.split(',');

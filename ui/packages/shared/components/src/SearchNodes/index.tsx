@@ -25,13 +25,13 @@ const SearchNodes = (): JSX.Element => {
     };
   });
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    dispatch(setSearchNodeString(event.target.value));
-  };
-
   const debouncedSearch = useMemo(() => {
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+      dispatch(setSearchNodeString(event.target.value));
+    };
+
     return debounce(handleChange, 300);
-  }, [handleChange]);
+  }, []);
 
   return (
     <div>
