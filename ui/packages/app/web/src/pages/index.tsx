@@ -21,7 +21,7 @@ const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 
 const queryClient = new QueryServiceClient(
   new GrpcWebFetchTransport({
-    baseUrl: apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`,
+    baseUrl: apiEndpoint === undefined ? `${window.PATH_PREFIX}/api` : `${apiEndpoint}/api`,
   })
 );
 
