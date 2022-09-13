@@ -3,6 +3,41 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.16.0](https://github.com/parca-dev/parca/compare/ui-v0.15.26...ui-v0.16.0) (2022-09-13)
+
+
+
+## [0.15.25](https://github.com/parca-dev/parca/compare/ui-v0.15.23...ui-v0.15.25) (2022-09-13)
+
+
+
+## [0.15.19](https://github.com/parca-dev/parca/compare/ui-v0.15.16...ui-v0.15.19) (2022-09-08)
+
+
+
+## [0.15.11](https://github.com/parca-dev/parca/compare/ui-v0.15.7...ui-v0.15.11) (2022-09-01)
+
+
+
+## [0.15.7](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.15.7) (2022-08-27)
+
+
+### Features
+
+* Add a loader to the `MatchersInput` component ([a2afe58](https://github.com/parca-dev/parca/commit/a2afe583b531ff58284652d797dd3302097796db))
+* Add a loader to the `MatchersInput` component ([741a9e8](https://github.com/parca-dev/parca/commit/741a9e81fd143881651ab33e2acb82d7d08aec45))
+* add quotes to label value values ([c0a6304](https://github.com/parca-dev/parca/commit/c0a63048c5ee41c977b212959274efd0209ad46a))
+* Prevent overflow of the label names and values by adding a fixed height ([9eec8cf](https://github.com/parca-dev/parca/commit/9eec8cf540de140671d6cb978196638706b8d5b5))
+* Suggest label names and values when typing ([912cdf8](https://github.com/parca-dev/parca/commit/912cdf87201dcc90736fa28b1bb10ca2b84333bb))
+
+
+
+## [0.13.14](https://github.com/parca-dev/parca/compare/ui-v0.13.12...ui-v0.13.14) (2022-06-29)
+
+
+
+
+
 ## [0.15.26](https://github.com/parca-dev/parca/compare/ui-v0.15.25...ui-v0.15.26) (2022-09-13)
 
 

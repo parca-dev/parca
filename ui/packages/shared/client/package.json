@@ -1,6 +1,6 @@
 {
   "name": "@parca/client",
-  "version": "0.15.11",
+  "version": "0.16.0",
   "description": "Parca API Client",
   "main": "src/index.ts",
   "scripts": {
