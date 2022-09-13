@@ -23,6 +23,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      - name: Check if pre-commit should run on all files
+        id: run-all-files
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+        continue-on-error: true
+        with:
+          do_not_skip: '["schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              ".github/workflows/pre-commit.yml",
+              ".go-version",
+              ".pre-commit-config.yaml"
+            ]
+          skip_after_successful_duplicate: false
+
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
         with:
@@ -32,6 +46,9 @@ jobs:
         uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
         with:
           go-version-file: .go-version
+
+      - name: Set GO_VERSION
+        run: echo "GO_VERSION=$(<.go-version)" >> $GITHUB_ENV
 
       - name: Set up pre-commit
         run: pipx install "pre-commit==${PRE_COMMIT_VERSION}"
@@ -43,12 +60,14 @@ jobs:
         uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 # tag=v3.0.8
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-${{ env.PY_HASH }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-go${{ env.GO_VERSION }}-${{ env.PY_HASH }}-${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Run pre-commit
         run: |
           declare -a EXTRA_ARGS=()
-          if [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
+          if [[ '${{ steps.run-all-files.outputs.should_skip }}' != 'true' ]]; then
+            EXTRA_ARGS=(--all-files)
+          elif [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
             EXTRA_ARGS=(--from-ref "origin/${GITHUB_BASE_REF}" --to-ref "${GITHUB_SHA}")
           else
             EXTRA_ARGS=(--from-ref "${GITHUB_SHA}^" --to-ref "${GITHUB_SHA}")
