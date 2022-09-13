@@ -5,6 +5,7 @@
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js packages/*",
     "fix": "eslint --fix --ext .ts,.tsx,.js packages/*",
+    "type-check": "tsc --noEmit",
     "test": "jest --coverage --config jest.config.js",
     "export": "rm -rf .next && next build && next export -o dist",
     "bootstrap": "lerna bootstrap",

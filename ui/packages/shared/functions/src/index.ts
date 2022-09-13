@@ -76,11 +76,10 @@ export const formatDuration = (timeObject: TimeObject, to?: number): string => {
   let values: string[] = [];
   const unitsLargeToSmall = Object.values(TimeUnits).reverse();
 
-  let nanos = Object.keys(timeObject)
+  let nanos = (Object.keys(timeObject) as Array<keyof TimeObject>)
     .map(unit => {
-      return timeObject[unit] !== undefined
-        ? convertTime(timeObject[unit], unit as TimeUnits, TimeUnits.Nanos)
-        : 0;
+      const time = timeObject[unit];
+      return time !== undefined ? convertTime(time, unit as TimeUnits, TimeUnits.Nanos) : 0;
     })
     .reduce((prev, curr) => prev + curr, 0);
 
@@ -159,7 +158,9 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
   }
 
   const absoluteNum = Math.abs(num);
-  const format: Unit[] = Object.values(knownValueFormatters[unit]);
+  const format: Unit[] = Object.values(
+    knownValueFormatters[unit as keyof typeof knownValueFormatters]
+  );
 
   if (format === undefined || format === null) {
     return num.toString();

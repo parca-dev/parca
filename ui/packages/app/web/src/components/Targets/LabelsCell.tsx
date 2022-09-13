@@ -11,11 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useState} from 'react';
+import {useState} from 'react';
 import {ChevronDoubleDownIcon, ChevronDoubleUpIcon} from '@heroicons/react/solid';
+import {Label} from '@parca/client';
 import {Pill, PillVariant} from '@parca/components';
 
-const LabelsCell = ({key, labels, discoveredLabels}) => {
+const LabelsCell = ({
+  key,
+  labels,
+  discoveredLabels,
+}: {
+  key: string;
+  labels: Label[];
+  discoveredLabels: Label[];
+}) => {
   const [areDiscoveredLabelsVisible, setAreDiscoveredLabelsVisible] = useState<boolean>(false);
   const allLabels = areDiscoveredLabelsVisible ? [...labels, ...discoveredLabels] : labels;
   const buttonClasses =
@@ -25,7 +34,7 @@ const LabelsCell = ({key, labels, discoveredLabels}) => {
     <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex flex-col w-96">
       <div className="flex flex-wrap">
         {allLabels.length > 0 &&
-          allLabels.map((item: {name: string; value: string}) => {
+          allLabels.map(item => {
             return (
               <div className="pb-1 pr-1">
                 <Pill

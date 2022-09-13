@@ -17,6 +17,7 @@ import LabelsCell from './LabelsCell';
 import LastScrapeCell from './LastScrapeCell';
 import {getHealthStatus} from './utils';
 import {Pill} from '@parca/components';
+import {TimeObject} from '@parca/functions';
 
 enum TargetsTableHeader {
   url = 'URL',
@@ -32,7 +33,7 @@ const getRowContentByHeader = ({
   key,
 }: {
   header: string;
-  target: any;
+  target: Target;
   key: string;
 }) => {
   switch (header) {
@@ -52,10 +53,8 @@ const getRowContentByHeader = ({
       );
     }
     case TargetsTableHeader.labels: {
-      const {
-        labels: {labels},
-        discoveredLabels: {labels: discoveredLabels},
-      } = target;
+      const labels = target.labels?.labels ?? [];
+      const discoveredLabels = target.discoveredLabels?.labels ?? [];
       return <LabelsCell labels={labels} discoveredLabels={discoveredLabels} key={key} />;
     }
     case TargetsTableHeader.lastError: {
@@ -70,7 +69,24 @@ const getRowContentByHeader = ({
       );
     }
     case TargetsTableHeader.lastScrape: {
-      const {lastScrape, lastScrapeDuration} = target;
+      const lastScrape: TimeObject =
+        target.lastScrape !== undefined
+          ? {
+              // Warning: string to number can overflow
+              // https://github.com/timostamm/protobuf-ts/blob/master/MANUAL.md#bigint-support
+              seconds: Number(target.lastScrape.seconds),
+              nanos: target.lastScrape.nanos,
+            }
+          : {};
+      const lastScrapeDuration: TimeObject =
+        target.lastScrapeDuration !== undefined
+          ? {
+              // Warning: string to number can overflow
+              // https://github.com/timostamm/protobuf-ts/blob/master/MANUAL.md#bigint-support
+              seconds: Number(target.lastScrapeDuration.seconds),
+              nanos: target.lastScrapeDuration.nanos,
+            }
+          : {};
       return (
         <LastScrapeCell key={key} lastScrape={lastScrape} lastScrapeDuration={lastScrapeDuration} />
       );
@@ -97,7 +113,7 @@ const TargetsTable = ({targets}: {targets: Target[]}) => {
     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead className="bg-gray-50 dark:bg-gray-800">
         <tr>
-          {headers.map((header: string) => (
+          {headers.map(header => (
             <th
               key={header}
               scope="col"
@@ -112,7 +128,7 @@ const TargetsTable = ({targets}: {targets: Target[]}) => {
         {targets.map((target: Target) => {
           return (
             <tr key={target.url}>
-              {headers.map((header: string) => {
+              {headers.map(header => {
                 const key = `table-cell-${header}-${target.url}`;
                 return getRowContentByHeader({header: TargetsTableHeader[header], target, key});
               })}

@@ -3,8 +3,8 @@
   "include": ["./tests/**/*", "./.storybook/*", "./packages/**/*"],
   "compilerOptions": {
     "module": "CommonJS",
+    "strict": true,
     "isolatedModules": true,
-    "strictNullChecks": true,
     "baseUrl": "."
   },
   "exclude": ["node_modules"]
