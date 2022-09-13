@@ -16,11 +16,13 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {useMemo} from 'react';
 import {SelectElement, Select} from '../';
 
+interface WellKnownProfile {
+  name: string;
+  help: string;
+}
+
 interface WellKnownProfiles {
-  [key: string]: {
-    name: string;
-    help: string;
-  };
+  [key: string]: WellKnownProfile;
 }
 
 const wellKnownProfiles: WellKnownProfiles = {
@@ -92,8 +94,24 @@ const wellKnownProfiles: WellKnownProfiles = {
   },
 };
 
-function profileSelectElement(name: string): SelectElement {
-  const wellKnown = wellKnownProfiles[name];
+function flexibleWellKnownProfileMatching(name: string): WellKnownProfile | undefined {
+  const prefixExcludedName = name.split(':').slice(1).join(':');
+  const requiredKey = Object.keys(wellKnownProfiles).find(key => {
+    if (key.endsWith(prefixExcludedName)) {
+      return true;
+    }
+    return false;
+  });
+  return requiredKey != null ? wellKnownProfiles[requiredKey] : undefined;
+}
+
+function profileSelectElement(
+  name: string,
+  flexibleKnownProfilesDetection: boolean
+): SelectElement {
+  const wellKnown: WellKnownProfile | undefined = !flexibleKnownProfilesDetection
+    ? wellKnownProfiles[name]
+    : flexibleWellKnownProfileMatching(name);
   if (wellKnown === undefined) return {active: <>{name}</>, expanded: <>{name}</>};
 
   const title = wellKnown.name.replace(/ /g, '\u00a0');
@@ -114,6 +132,7 @@ interface Props {
   loading?: boolean;
   error: RpcError | undefined;
   selectedKey: string | undefined;
+  flexibleKnownProfilesDetection?: boolean;
   onSelection: (value: string | undefined) => void;
 }
 
@@ -123,6 +142,7 @@ const ProfileTypeSelector = ({
   error,
   selectedKey,
   onSelection,
+  flexibleKnownProfilesDetection = false,
 }: Props): JSX.Element => {
   const profileNames = useMemo(() => {
     return (error === undefined || error == null) &&
@@ -143,7 +163,7 @@ const ProfileTypeSelector = ({
 
   const profileLabels = profileNames.map(name => ({
     key: name,
-    element: profileSelectElement(name),
+    element: profileSelectElement(name, flexibleKnownProfilesDetection),
   }));
 
   return (
