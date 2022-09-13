@@ -109,6 +109,7 @@ proto/all: proto/vendor proto/format proto/lint proto/generate
 proto/lint:
 	# docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf lint
 	buf lint
+	buf breaking -v --against '.git#branch=main,subdir=proto'
 
 .PHONY: proto/format
 proto/format:
