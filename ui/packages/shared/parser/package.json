@@ -1,6 +1,6 @@
 {
   "name": "@parca/parser",
-  "version": "0.15.17",
+  "version": "0.15.24",
   "description": "JavaScript parser implementation for the continuous profiling language",
   "main": "src/index.ts",
   "scripts": {
@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/nearley": "2.11.2",
     "nearley": "2.20.1"
   },
   "publishConfig": {

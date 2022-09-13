@@ -131,7 +131,8 @@ export class Query {
     }
 
     const matchers = ast.matchers.map(
-      e => new Matcher(e.key.value, matcherTypeFromString(e.matcherType.value), e.value.value)
+      (e: any) =>
+        new Matcher(e.key.value, matcherTypeFromString(e.matcherType.value), e.value.value)
     );
     return new Query(ProfileType.fromString(ast.profileName.value), matchers, '');
   }
@@ -153,10 +154,10 @@ export class Query {
     // partial parse result, also ok, we'll try our best with it :)
 
     // Parser.table is not defined in the type definitions, so we need to do this unfortunately.
-    const parserTable = p.table as any[];
-    const column = parserTable.filter(c =>
+    const parserTable = (p as any).table;
+    const column = parserTable.filter((c: any) =>
       c.states.find(
-        s =>
+        (s: any) =>
           s.data !== undefined &&
           s.data != null &&
           Object.prototype.hasOwnProperty.call(s.data, 'profileName')
@@ -164,7 +165,8 @@ export class Query {
     )[0];
     if (column !== undefined) {
       const data = column.states.find(
-        s => s.data !== undefined && Object.prototype.hasOwnProperty.call(s.data, 'profileName')
+        (s: any) =>
+          s.data !== undefined && Object.prototype.hasOwnProperty.call(s.data, 'profileName')
       ).data;
       const rest = input.slice(column.lexerState.col - 2);
       return new Query(
@@ -189,12 +191,12 @@ export class Query {
       p.save();
       return {
         successfulParse: true,
-        lastIndex: p.table.length - 1,
+        lastIndex: (p as any).table.length - 1,
       };
     } catch (error) {
       return {
         successfulParse: false,
-        lastIndex: p.table.length - 2,
+        lastIndex: (p as any).table.length - 2,
       };
     }
   }
@@ -204,19 +206,21 @@ export class Query {
     p.save();
     const {lastIndex, successfulParse} = Query.tryParse(p, input);
 
-    const parserTable = p.table;
+    const parserTable = (p as any).table;
     const column = parserTable[lastIndex];
-    const lastLexerStateIndex = parserTable.reverse().findIndex(e => e.lexerState !== undefined);
+    const lastLexerStateIndex = parserTable
+      .reverse()
+      .findIndex((e: any) => e.lexerState !== undefined);
     const lastValidCursor =
       lastLexerStateIndex >= 0 ? parserTable[lastLexerStateIndex].lexerState.col - 1 : input.length;
     const rest: string = input.slice(lastValidCursor);
 
-    const expectantStates = column.states.filter(function (state) {
+    const expectantStates = column.states.filter(function (state: any) {
       const nextSymbol = state.rule.symbols[state.dot];
       return nextSymbol;
     });
 
-    const stateStacks = expectantStates.map(function (state) {
+    const stateStacks = expectantStates.map(function (this: any, state: any) {
       const firstStateStack = this.buildFirstStateStack(state, []);
       return firstStateStack === undefined ? [state] : firstStateStack;
     }, p);
@@ -224,7 +228,7 @@ export class Query {
     const suggestions: any[] = [];
 
     const prevLabelNameStates = column.states.filter(
-      e => e.rule.name === 'labelName' && e.isComplete
+      (e: any) => e.rule.name === 'labelName' && e.isComplete
     );
 
     if (
@@ -238,7 +242,7 @@ export class Query {
       });
     }
 
-    stateStacks.forEach(function (stateStack) {
+    stateStacks.forEach(function (stateStack: any[]) {
       const state = stateStack[0];
       const nextSymbol = state.rule.symbols[state.dot];
 
@@ -260,9 +264,9 @@ export class Query {
         const types = ['profileName', 'labelName', 'labelValue'];
 
         if (nextSymbol.type !== undefined && nextSymbol.type === 'ident') {
-          const found = state.wantedBy.filter(e => types.includes(e.rule.name));
+          const found = state.wantedBy.filter((e: any) => types.includes(e.rule.name));
           const s = found === undefined ? [] : found;
-          s.map(e => e.rule.name).forEach(function (e) {
+          s.map((e: any) => e.rule.name).forEach(function (e: any) {
             const suggestion = {type: e, typeahead: ''};
             suggestions.push(suggestion);
           });
@@ -281,7 +285,7 @@ export class Query {
         // A valid strstart always means a label value.
         if (nextSymbol.type !== undefined && nextSymbol.type === 'strstart') {
           const prevMatcherTypeStates = column.states.filter(
-            e => e.rule.name === 'matcherType' && e.isComplete
+            (e: any) => e.rule.name === 'matcherType' && e.isComplete
           );
           if (prevMatcherTypeStates.length > 0 && prevMatcherTypeStates[0].data !== undefined) {
             suggestions.push({
@@ -305,7 +309,7 @@ export class Query {
 
         if (nextSymbol.type !== undefined && nextSymbol.type === 'strend') {
           const prevConstStates = column.states.filter(
-            e => e.rule.name === 'constant' && e.isComplete
+            (e: any) => e.rule.name === 'constant' && e.isComplete
           );
           if (prevConstStates.length > 0 && prevConstStates[0].data !== undefined) {
             suggestions.push({

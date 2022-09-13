@@ -104,7 +104,9 @@ const RelativeDatePicker = ({
             className="w-16 mr-2 text-sm"
             value={value}
             min={0}
-            onChange={e => setValue(parseInt(e.target.value, 10))}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setValue(parseInt(e.target.value, 10))
+            }
           />
           <Select
             className="w-32"

@@ -44,7 +44,7 @@ const useUIFeatureFlag = (
   featureFlag: string,
   defaultValue: boolean = false
 ): [boolean, (flag: boolean) => void] => {
-  const [flags, setFlags] = useLocalStorageState(UI_FLAGS, {
+  const [flags, setFlags] = useLocalStorageState<{[flag: string]: boolean}>(UI_FLAGS, {
     defaultValue: {},
   });
 

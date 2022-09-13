@@ -345,8 +345,8 @@ const MatchersInput = ({
       if (currentLabelsCollection == null || currentLabelsCollection?.length === 0) {
         setCurrentLabelsCollection(values);
       } else {
-        setCurrentLabelsCollection((oldValues: string[]) => [
-          ...oldValues,
+        setCurrentLabelsCollection((oldValues: string[] | null) => [
+          ...(oldValues ?? []),
           values[values.length - 1],
         ]);
       }

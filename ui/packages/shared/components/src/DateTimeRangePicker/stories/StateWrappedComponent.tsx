@@ -15,7 +15,7 @@ import {useState} from 'react';
 import {DateTimeRange} from '../utils';
 import DateTimeRangePicker from '../index';
 
-const StateWrappedComponent = (props): JSX.Element => {
+const StateWrappedComponent = (props: {key: string; value: any}): JSX.Element => {
   const [range, setRange] = useState(new DateTimeRange());
   return <DateTimeRangePicker range={range} onRangeSelection={setRange} {...props} />;
 };
