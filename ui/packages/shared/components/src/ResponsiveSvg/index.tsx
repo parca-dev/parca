@@ -11,15 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState, useEffect, Children, ReactNode} from 'react';
+import {useState, useEffect, Children} from 'react';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 interface Props {
-  children: ReactNode;
+  children: JSX.Element;
   [x: string]: any;
 }
 
-const addPropsToChildren = (children: ReactNode, props: {[x: string]: any}): ReactNode => {
+const addPropsToChildren = (children: JSX.Element, props: {[x: string]: any}): JSX.Element[] => {
   const addProps = (child: JSX.Element): JSX.Element => ({
     ...child,
     props: {

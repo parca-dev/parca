@@ -27,7 +27,7 @@ const useDelayedLoader = (isLoading = false, options?: DelayedLoaderOptions): bo
       showLoaderTimeout = setTimeout(() => {
         setIsLoaderVisible(true);
       }, delay);
-    } else {
+    } else if (!isLoading && isLoaderVisible) {
       setIsLoaderVisible(false);
     }
     return () => clearTimeout(showLoaderTimeout);

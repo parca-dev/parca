@@ -12,7 +12,13 @@
 // limitations under the License.
 
 import React, {useEffect, useState} from 'react';
-import {ScrapeServiceClient, Target, TargetsResponse, TargetsRequest_State} from '@parca/client';
+import {
+  ScrapeServiceClient,
+  Target,
+  Targets,
+  TargetsResponse,
+  TargetsRequest_State,
+} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {EmptyState} from '@parca/components';
 import TargetsTable from '../components/Targets/TargetsTable';
@@ -46,7 +52,7 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
 
 const scrapeClient = new ScrapeServiceClient(
   new GrpcWebFetchTransport({
-    baseUrl: apiEndpoint === undefined ? '/api' : `${apiEndpoint}/api`,
+    baseUrl: apiEndpoint === undefined ? `${window.PATH_PREFIX}/api` : `${apiEndpoint}/api`,
   })
 );
 
@@ -62,13 +68,13 @@ const TargetsPage = (): JSX.Element => {
     return <div>Error</div>;
   }
 
-  const getKeyValuePairFromArray = (key: string, value: {targets}) => {
+  const getKeyValuePairFromArray = (key: string, value: Targets) => {
     return {[key]: value.targets};
   };
 
   const {targets} = targetsResponse ?? {};
   const targetNamespaces = Object.entries(targets ?? {}).map(item =>
-    getKeyValuePairFromArray(item[0], item[1] as {targets})
+    getKeyValuePairFromArray(item[0], item[1])
   );
 
   return (

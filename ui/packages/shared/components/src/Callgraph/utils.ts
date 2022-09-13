@@ -25,8 +25,8 @@ export const parseEdgePos = ({
   isSelfLoop = false,
 }: {
   pos: string;
-  xScale?: (number) => void;
-  yScale?: (number) => void;
+  xScale?: (pos: number) => void;
+  yScale?: (pos: number) => void;
   source?: number[];
   target?: number[];
   nodeRadius: number;
@@ -35,7 +35,7 @@ export const parseEdgePos = ({
   const parts = pos.split(' ');
   const arrow = parts.shift() ?? '';
   const partsAsArrays = parts.map(part => part.split(','));
-  const scalePosArray = (posArr): number[] => [+xScale(+posArr[0]), +yScale(+posArr[1])];
+  const scalePosArray = (posArr: string[]): number[] => [+xScale(+posArr[0]), +yScale(+posArr[1])];
   const [_start, cp1, cp2, _end] = partsAsArrays.map(posArr => scalePosArray(posArr));
   const arrowEnd: number[] = scalePosArray(arrow.replace('e,', '').split(','));
 

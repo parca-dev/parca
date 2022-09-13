@@ -15,7 +15,7 @@ import React from 'react';
 
 import {getLastItem, valueFormatter, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectCompareMode, selectSearchNodeString} from '@parca/store';
-import {TopNodeMeta, Top} from '@parca/client';
+import {TopNode, TopNodeMeta, Top} from '@parca/client';
 
 import {hexifyAddress} from './utils';
 
@@ -43,7 +43,10 @@ const Arrow = ({direction}: {direction: string | undefined}): JSX.Element => {
 
 const useSortableData = (
   top?: Top,
-  config = {key: 'cumulative', direction: 'desc'}
+  config: {key: keyof TopNode | 'name'; direction: 'asc' | 'desc'} = {
+    key: 'cumulative',
+    direction: 'desc',
+  }
 ): {
   items:
     | Array<{
@@ -54,17 +57,20 @@ const useSortableData = (
         meta?: TopNodeMeta | undefined;
       }>
     | undefined;
-  requestSort: (key: string) => void;
-  sortConfig: {key: string; direction: string} | null;
+  requestSort: (key: keyof TopNode | 'name') => void;
+  sortConfig: {key: keyof TopNode | 'name'; direction: string} | null;
 } => {
-  const [sortConfig, setSortConfig] = React.useState<{key: string; direction: string} | null>(
-    config
-  );
+  const [sortConfig, setSortConfig] = React.useState<{
+    key: keyof TopNode | 'name';
+    direction: string;
+  } | null>(config);
 
   const rawTableReport = top != null ? top.list : [];
 
   const items = rawTableReport.map(node => ({
     ...node,
+    // Warning: string to number can overflow
+    // https://github.com/timostamm/protobuf-ts/blob/master/MANUAL.md#bigint-support
     diff: Number(node.diff),
     cumulative: Number(node.cumulative),
     flat: Number(node.flat),
@@ -77,10 +83,21 @@ const useSortableData = (
     const sortableItems = [...items];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const itemA = a[sortConfig.key];
+        const itemB = b[sortConfig.key];
+        if (itemA === undefined && itemB === undefined) {
+          return 0;
+        }
+        if (itemA === undefined) {
           return sortConfig.direction === 'asc' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (itemB === undefined) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        if (itemA < itemB) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (itemA > itemB) {
           return sortConfig.direction === 'asc' ? 1 : -1;
         }
         return 0;
@@ -89,7 +106,7 @@ const useSortableData = (
     return sortableItems;
   }, [items, sortConfig]);
 
-  const requestSort = (key: string): void => {
+  const requestSort = (key: keyof TopNode | 'name'): void => {
     let direction = 'desc';
     if (sortConfig != null && sortConfig.key === key && sortConfig.direction === 'desc') {
       direction = 'asc';

@@ -281,8 +281,8 @@ const MatchersInput = ({
       if (currentLabelsCollection == null || currentLabelsCollection?.length === 0) {
         setCurrentLabelsCollection(values);
       } else {
-        setCurrentLabelsCollection((oldValues: string[]) => [
-          ...oldValues,
+        setCurrentLabelsCollection((oldValues: string[] | null) => [
+          ...(oldValues ?? []),
           values[values.length - 1],
         ]);
       }
@@ -331,9 +331,9 @@ const MatchersInput = ({
       if (currentLabelsCollection === null) {
         setCurrentLabelsCollection([values]);
       } else {
-        setCurrentLabelsCollection((oldValues: string[]) => {
+        setCurrentLabelsCollection((oldValues: string[] | null) => {
           if (!labelNameValueRe.test(inputRef)) return oldValues;
-          return [...oldValues, values];
+          return [...(oldValues ?? []), values];
         });
         setMatchersString(currentLabelsCollection?.join(',') + ',' + values);
       }

@@ -1,5 +1,5 @@
 {
-  "version": "0.15.17",
+  "version": "0.15.26",
   "npmClient": "yarn",
   "tagVersionPrefix": "ui-v",
   "useWorkspaces": true,

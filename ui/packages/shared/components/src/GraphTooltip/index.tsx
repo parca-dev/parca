@@ -96,7 +96,7 @@ const TooltipMetaInfo = ({hoveringNode}: {hoveringNode: FlamegraphNode}): JSX.El
   );
 };
 
-interface HoveringNode extends CallgraphNode, FlamegraphRootNode {
+export interface HoveringNode extends CallgraphNode, FlamegraphRootNode {
   diff: string;
   meta?: {[key: string]: any};
 }

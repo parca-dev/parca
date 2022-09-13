@@ -75,3 +75,7 @@ jobs:
       - name: Run ESLint
         working-directory: ui
         run: yarn run lint
+
+      - name: Check typing
+        working-directory: ui
+        run: yarn run type-check

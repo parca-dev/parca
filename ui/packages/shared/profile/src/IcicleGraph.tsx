@@ -22,6 +22,7 @@ import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 
 import {hexifyAddress} from './utils';
+import {HoveringNode} from '@parca/components/src/GraphTooltip';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -260,7 +261,7 @@ export function IcicleGraphRootNode({
   const onClick = (): void => setCurPath([]);
   const onMouseEnter = (): void => setHoveringNode(node);
   const onMouseLeave = (): void => setHoveringNode(undefined);
-  const path = [];
+  const path: string[] = [];
 
   return (
     <g transform={'translate(0, 0)'}>
@@ -336,7 +337,7 @@ export default function IcicleGraph({
         total={total}
         x={pos[0]}
         y={pos[1]}
-        hoveringNode={hoveringNode}
+        hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
       />
       <svg

@@ -16,19 +16,39 @@ import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer} from 'react-konva';
 import {GraphTooltip as Tooltip} from '@parca/components';
-import {Callgraph as CallgraphType} from '@parca/client';
+import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot} from './utils';
 import Node, {INode} from './Node';
 import Edge, {IEdge} from './Edge';
+import type {HoveringNode} from '../GraphTooltip';
 interface Props {
   graph: CallgraphType;
   sampleUnit: string;
   width: number;
 }
 
+interface graphvizObject extends CallgraphNode {
+  _gvid: number;
+  name: string;
+  pos: string;
+}
+
+interface graphvizEdge extends CallgraphEdge {
+  _gvid: number;
+  tail: number;
+  head: number;
+  pos: string;
+}
+
+interface graphvizType {
+  edges: graphvizEdge[];
+  objects: graphvizObject[];
+  bb: string;
+}
+
 const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
-  const containerRef = useRef<Element>(null);
-  const [graphData, setGraphData] = useState<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [graphData, setGraphData] = useState<string | null>(null);
   const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
   const {nodes: rawNodes, cumulative: total} = graph;
   const nodeRadius = 12;
@@ -55,33 +75,44 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
   if (width == null || graphData == null) return <></>;
 
   const height = width;
-  const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
+  const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData) as graphvizType;
 
-  //   @ts-expect-error
-  const valueRange = d3.extent(
-    objects.map(node => parseInt(node.cumulative)).filter(node => node !== undefined)
-  ) as [number, number];
+  const cumulatives: string[] = objects
+    .filter(node => node !== undefined)
+    .map(node => node.cumulative);
+  if (cumulatives.length === 0) {
+    cumulatives.push('0');
+  }
+
+  const valueRange = (d3.extent(cumulatives) as [string, string]).map(value => parseInt(value));
+
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateRdGy)
-    .domain([...valueRange])
+    .domain(valueRange)
     .range(['lightgrey', 'red']);
   const graphBB = boundingBox.split(',');
-  const xScale = d3.scaleLinear().domain([0, graphBB[2]]).range([0, width]);
-  const yScale = d3.scaleLinear().domain([0, graphBB[3]]).range([0, height]);
+  const xScale = d3
+    .scaleLinear()
+    .domain([0, Number(graphBB[2])])
+    .range([0, width]);
+  const yScale = d3
+    .scaleLinear()
+    .domain([0, Number(graphBB[3])])
+    .range([0, height]);
 
-  const nodes = objects.map(object => {
+  const nodes: INode[] = objects.map(object => {
     const pos = object.pos.split(',');
     return {
       ...object,
       id: object._gvid,
       x: xScale(parseInt(pos[0])),
       y: yScale(parseInt(pos[1])),
-      color: colorScale(object.cumulative),
-      data: rawNodes.find(n => n.id === object.name),
+      color: colorScale(Number(object.cumulative)),
+      data: rawNodes.find(n => n.id === object.name) ?? {id: 'n0'},
     };
   });
 
-  const edges = gvizEdges.map(edge => ({
+  const edges: IEdge[] = gvizEdges.map(edge => ({
     ...edge,
     source: edge.head,
     target: edge.tail,
@@ -91,13 +122,12 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
 
   return (
     <div className="relative">
-      {/* @ts-expect-error */}
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
         <Stage width={width} height={height}>
           <Layer>
-            {edges.map((edge: IEdge) => {
-              const sourceNode = nodes.find(n => n.id === edge.source);
-              const targetNode = nodes.find(n => n.id === edge.target);
+            {edges.map(edge => {
+              const sourceNode = nodes.find(n => n.id === edge.source) ?? {x: 0, y: 0};
+              const targetNode = nodes.find(n => n.id === edge.target) ?? {x: 0, y: 0};
               return (
                 <Edge
                   key={`edge-${edge.source}-${edge.target}`}
@@ -110,7 +140,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
                 />
               );
             })}
-            {nodes.map((node: INode) => (
+            {nodes.map(node => (
               <Node
                 key={`node-${node.data.id}`}
                 node={node}
@@ -122,7 +152,7 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
           </Layer>
         </Stage>
         <Tooltip
-          hoveringNode={rawNodes.find(n => n.id === hoveredNode?.data.id) ?? null}
+          hoveringNode={rawNodes.find(n => n.id === hoveredNode?.data.id) as HoveringNode}
           unit={sampleUnit}
           total={+total}
           isFixed={false}

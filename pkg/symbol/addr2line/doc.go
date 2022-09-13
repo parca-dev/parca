@@ -11,13 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
-import {DateTimeRange} from '../utils';
-import DateTimeRangePicker from '../index';
-
-const StateWrappedComponent = (props: {key: string; value: any}): JSX.Element => {
-  const [range, setRange] = useState(new DateTimeRange());
-  return <DateTimeRangePicker range={range} onRangeSelection={setRange} {...props} />;
-};
-
-export default StateWrappedComponent;
+// Package addr2line converts memory addresses from stack traces
+// back to line information (line number, function and file name).
+package addr2line

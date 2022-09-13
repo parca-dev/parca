@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {PillVariant} from '@parca/components';
+
 export enum HealthStatus {
   'Unspecified',
   'Good',
@@ -18,8 +20,8 @@ export enum HealthStatus {
 }
 
 export const getHealthStatus = (numericValue: number) => {
-  const label = HealthStatus[numericValue];
-  const colorVariants = {
+  const label = HealthStatus[numericValue] as keyof typeof HealthStatus;
+  const colorVariants: Record<keyof typeof HealthStatus, PillVariant> = {
     Unspecified: 'neutral',
     Good: 'success',
     Bad: 'danger',
