@@ -409,10 +409,10 @@ const MatchersInput = ({
       if (currentLabelsCollection === null) {
         setCurrentLabelsCollection([inputValues]);
       } else {
-        setCurrentLabelsCollection((oldValues: string[]) => {
+        setCurrentLabelsCollection((oldValues: string[] | null) => {
           // Don't add the current inputRef value to the currentLabelsCollection array if it doesn't match the regex because that will cause an API error.
           if (!labelNameValueRe.test(inputRef)) return oldValues;
-          return [...oldValues, inputValues];
+          return [...(oldValues ?? []), inputValues];
         });
       }
 
