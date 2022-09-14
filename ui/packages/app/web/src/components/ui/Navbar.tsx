@@ -17,9 +17,11 @@ import {Parca, ParcaSmall} from '@parca/icons';
 import cx from 'classnames';
 import DarkModeToggle from './DarkModeToggle';
 
+const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
+
 const links: {[path: string]: {label: string; href: string; external: boolean}} = {
-  '/': {label: 'Profiles', href: `${window.PATH_PREFIX}/`, external: false},
-  '/targets': {label: 'Targets', href: `${window.PATH_PREFIX}/targets`, external: false},
+  '/': {label: 'Profiles', href: `${pathPrefix}/`, external: false},
+  '/targets': {label: 'Targets', href: `${pathPrefix}/targets`, external: false},
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
 const Navbar = () => {
