@@ -14,69 +14,84 @@
 package parcacol
 
 import (
+	"compress/gzip"
+	"context"
+	"fmt"
+	"io"
+	"os"
 	"testing"
 
+	"github.com/go-kit/log"
+	"github.com/polarsignals/frostdb/dynparquet"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/prometheus/model/labels"
+	"github.com/segmentio/parquet-go"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 )
 
-func TestMakeStacktraceKey(t *testing.T) {
-	g := metastore.NewLinearUUIDGenerator()
+func MustReadAllGzip(t require.TestingT, filename string) []byte {
+	f, err := os.Open(filename)
+	require.NoError(t, err)
+	defer f.Close()
 
-	s := &SampleNormalizer{
-		Location: []*metastore.Location{{ID: g.New()}, {ID: g.New()}, {ID: g.New()}},
-		Label:    map[string]string{"foo": "bar", "bar": "baz"},
-		NumLabel: map[string]int64{"foo": 1},
-		NumUnit:  map[string]string{"foo": "cpu"},
-	}
-
-	k := []byte(MakeStacktraceKey(s))
-
-	require.Len(t, k, 94)
-
-	require.Equal(t,
-		[]byte{
-			0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
-			'|',
-			0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2,
-			'|',
-			0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3,
-		},
-		k[0:50],
-	)
-
-	require.Equal(t,
-		[]byte(`"bar":"baz""foo":"bar"`),
-		k[50:72],
-	)
-
-	require.Equal(t,
-		[]byte{
-			'"', 'f', 'o', 'o', '"',
-			':', '{',
-			'"', 'c', 'p', 'u', '"',
-			':',
-			0, 0, 0, 0, 0, 0, 0, 1,
-			'}',
-		},
-		k[72:],
-	)
+	r, err := gzip.NewReader(f)
+	require.NoError(t, err)
+	content, err := io.ReadAll(r)
+	require.NoError(t, err)
+	return content
 }
 
-func BenchmarkMakeStacktraceKey(b *testing.B) {
-	g := metastore.NewLinearUUIDGenerator()
-	s := &SampleNormalizer{
-		Location: []*metastore.Location{{ID: g.New()}, {ID: g.New()}, {ID: g.New()}},
-		Label:    map[string]string{"foo": "bar"},
-		NumLabel: map[string]int64{"foo": 1},
-		NumUnit:  map[string]string{"foo": "cpu"},
-	}
+func TestPprofToParquet(t *testing.T) {
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	ctx := context.Background()
 
-	b.ReportAllocs()
-	b.StartTimer()
+	schema, err := Schema()
+	require.NoError(t, err)
 
-	for i := 0; i < b.N; i++ {
-		_ = MakeStacktraceKey(s)
+	m := metastoretest.NewTestMetastore(
+		t,
+		logger,
+		reg,
+		tracer,
+	)
+	metastore := metastore.NewInProcessClient(m)
+
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(MustReadAllGzip(t, "../query/testdata/alloc_objects.pb.gz")))
+
+	nps, err := NewNormalizer(metastore).NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
+	require.NoError(t, err)
+
+	for i, np := range nps {
+		buf, err := NormalizedProfileToParquetBuffer(schema, labels.Labels{}, np)
+		require.NoError(t, err)
+
+		b, err := schema.SerializeBuffer(buf)
+		require.NoError(t, err)
+
+		serBuf, err := dynparquet.ReaderFromBytes(b)
+		require.NoError(t, err)
+
+		rows := serBuf.Reader()
+		rowBuf := []parquet.Row{{}}
+		for {
+			_, err := rows.ReadRows(rowBuf)
+			if err == io.EOF {
+				break
+			}
+			if err != io.EOF {
+				if err != nil {
+					require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), b, 0o777))
+				}
+				require.NoError(t, err)
+			}
+		}
 	}
 }

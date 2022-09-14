@@ -3,7 +3,7 @@ services:
 
   # Jaeger
   jaeger-all-in-one:
-    image: jaegertracing/all-in-one:latest
+    image: docker.io/jaegertracing/all-in-one:1.37.0@sha256:60ab2e6b0682f79a4e42b2bd2526ac4de80a3a7a1ef136c71dc0cb85e9c50f46
     ports:
       - "16686:16686"
       - "14268"
@@ -11,7 +11,7 @@ services:
 
   # Collector
   otel-collector:
-    image: otel/opentelemetry-collector-contrib-dev:latest
+    image: docker.io/otel/opentelemetry-collector-contrib-dev:latest@sha256:5500837846e4fc39b628262d4e4dec6579e99733633f6ef76870db6542c52d26
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
@@ -24,4 +24,3 @@ services:
       - "55670:55679" # zpages extension
     depends_on:
       - jaeger-all-in-one
-

@@ -1,4 +1,4 @@
-FROM node:18.2.0-alpine3.15 AS ui-deps
+FROM docker.io/node:16.17.0-alpine@sha256:2c405ed42fc0fd6aacbe5730042640450e5ec030bada7617beac88f742b6997b AS ui-deps
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ COPY ui/packages/app/web/package.json ./packages/app/web/package.json
 COPY ui/package.json ui/yarn.lock ./
 RUN yarn workspace @parca/web install --frozen-lockfile
 
-FROM node:18.2.0-alpine3.15 AS ui-builder
+FROM docker.io/node:16.17.0-alpine@sha256:2c405ed42fc0fd6aacbe5730042640450e5ec030bada7617beac88f742b6997b AS ui-builder
 
 WORKDIR /app
 
@@ -15,13 +15,21 @@ COPY ui .
 COPY --from=ui-deps /app/node_modules ./node_modules
 RUN yarn workspace @parca/web build
 
-FROM golang:1.18.3-alpine3.15 AS builder
+FROM docker.io/golang:1.19.1-alpine@sha256:d475cef843a02575ebdcb1416d98cd76bab90a5ae8bc2cd15f357fc08b6a329f AS builder
+
+# renovate: datasource=go depName=github.com/go-delve/delve
+ARG DLV_VERSION=v1.9.1
+
+# renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-health-probe
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.12
 
 WORKDIR /app
 
+# hadolint ignore=DL3018
 RUN apk update && apk add --no-cache build-base
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
-RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
+RUN go install "github.com/go-delve/delve/cmd/dlv@${DLV_VERSION}"
+# hadolint ignore=DL3059
+RUN go install "github.com/grpc-ecosystem/grpc-health-probe@${GRPC_HEALTH_PROBE_VERSION}"
 
 COPY go.mod go.sum /app/
 RUN go mod download -modcacherw
@@ -36,7 +44,7 @@ COPY ./gen /app/gen
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -gcflags="all=-N -l" -o parca ./cmd/parca
 
-FROM golang:1.18.3-alpine3.15
+FROM docker.io/golang:1.19.1-alpine@sha256:d475cef843a02575ebdcb1416d98cd76bab90a5ae8bc2cd15f357fc08b6a329f
 
 COPY --from=builder /go/bin/dlv /
 COPY --from=builder /go/bin/grpc-health-probe /

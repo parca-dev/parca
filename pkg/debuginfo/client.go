@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -29,6 +29,15 @@ import (
 
 var ErrDebugInfoAlreadyExists = errors.New("debug info already exists")
 
+const (
+	// ChunkSize 8MB is the size of the chunks in which debuginfo files are
+	// uploaded and downloaded. AWS S3 has a minimum of 5MB for multi-part uploads
+	// and a maximum of 15MB, and a default of 8MB.
+	ChunkSize = 1024 * 1024 * 8
+	// MaxMsgSize is the maximum message size the server can receive or send. By default, it is 4MB.
+	MaxMsgSize = 1024 * 1024 * 32
+)
+
 type Client struct {
 	c debuginfopb.DebugInfoServiceClient
 }
@@ -52,7 +61,7 @@ func (c *Client) Exists(ctx context.Context, buildID, hash string) (bool, error)
 }
 
 func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) (uint64, error) {
-	stream, err := c.c.Upload(ctx)
+	stream, err := c.c.Upload(ctx, grpc.MaxCallSendMsgSize(MaxMsgSize))
 	if err != nil {
 		return 0, fmt.Errorf("initiate upload: %w", err)
 	}
@@ -73,12 +82,13 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 	}
 
 	reader := bufio.NewReader(r)
-	buffer := make([]byte, 1024)
+
+	buffer := make([]byte, ChunkSize)
 
 	bytesSent := 0
 	for {
 		n, err := reader.Read(buffer)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -90,7 +100,8 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 				ChunkData: buffer[:n],
 			},
 		})
-		if err == io.EOF {
+		bytesSent += n
+		if errors.Is(err, io.EOF) {
 			// When the stream is closed, the server will send an EOF.
 			// To get the correct error code, we need the status.
 			// So receive the message and check the status.
@@ -103,11 +114,15 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 		if err != nil {
 			return 0, fmt.Errorf("send next chunk (%d bytes sent so far): %w", bytesSent, err)
 		}
-		bytesSent += n
 	}
 
+	// It returns io.EOF when the stream completes successfully.
 	res, err := stream.CloseAndRecv()
+	if errors.Is(err, io.EOF) {
+		return res.Size, nil
+	}
 	if err != nil {
+		// On any other error, the stream is aborted and the error contains the RPC status.
 		if err := sentinelError(err); err != nil {
 			return 0, err
 		}
@@ -116,6 +131,71 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 	return res.Size, nil
 }
 
+type Downloader struct {
+	stream debuginfopb.DebugInfoService_DownloadClient
+	info   *debuginfopb.DownloadInfo
+}
+
+func (c *Client) Downloader(ctx context.Context, buildID string) (*Downloader, error) {
+	stream, err := c.c.Download(ctx, &debuginfopb.DownloadRequest{
+		BuildId: buildID,
+	}, grpc.MaxCallRecvMsgSize(MaxMsgSize))
+	if err != nil {
+		return nil, fmt.Errorf("initiate download: %w", err)
+	}
+
+	res, err := stream.Recv()
+	if err != nil {
+		return nil, fmt.Errorf("receive download info: %w", err)
+	}
+
+	info := res.GetInfo()
+	if info == nil {
+		return nil, fmt.Errorf("download info is nil")
+	}
+
+	return &Downloader{
+		stream: stream,
+		info:   info,
+	}, nil
+}
+
+func (d *Downloader) Info() *debuginfopb.DownloadInfo {
+	return d.info
+}
+
+func (d *Downloader) Close() error {
+	// Note that CloseSend does not Recv, therefore is not guaranteed to release all resources
+	return d.stream.CloseSend()
+}
+
+func (d *Downloader) Download(ctx context.Context, w io.Writer) (int, error) {
+	bytesWritten := 0
+	for {
+		res, err := d.stream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return bytesWritten, fmt.Errorf("receive next chunk: %w", err)
+		}
+
+		chunkData := res.GetChunkData()
+		if chunkData == nil {
+			return bytesWritten, fmt.Errorf("chunk does not contain data")
+		}
+
+		n, err := w.Write(chunkData)
+		if err != nil {
+			return bytesWritten, fmt.Errorf("write next chunk: %w", err)
+		}
+		bytesWritten += n
+	}
+
+	return bytesWritten, nil
+}
+
+// sentinelError checks underlying error for grpc.StatusCode and returns if it's a known and expected error.
 func sentinelError(err error) error {
 	if sts, ok := status.FromError(err); ok {
 		if sts.Code() == codes.AlreadyExists {

@@ -3,36 +3,77 @@ on:
   push:
     tags:
       - v*
-    branches: [ main ]
-    paths:
-      - '**.go'
-      - .golangci.yml
-      - .github/workflows/go-lint.yml
+    branches:
+    - main
+    - release-*
   pull_request:
-    branches: [ main ]
-    paths:
-      - '**.go'
-      - .golangci.yml
-      - .github/workflows/go-lint.yml
+    branches:
+    - main
+    - release-*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=go depName=github.com/golangci/golangci-lint
+  GOLANGCI_LINT_VERSION: v1.49.0
 
 jobs:
-  lint:
-    name: lint
+  skip-check:
+    name: Skip check
+    continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      should_skip: ${{ steps.skip-check.outputs.should_skip }}
+    permissions:
+      actions: write
+      contents: read
     steps:
-      - uses: actions/setup-go@v3
+      - id: skip-check
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
         with:
-          go-version: '1.18'
-          check-latest: true
-      - uses: actions/checkout@v3
+          do_not_skip: '["push", "schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              "**.go",
+              ".github/workflows/go-lint.yml",
+              ".go-version",
+              ".golangci.yml",
+              ".node-version"
+            ]
+          skip_after_successful_duplicate: false
 
-      - name: Build UI
-        run: make ui/build
+  lint:
+    name: Go Lint
+    needs: skip-check
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
+        with:
+          go-version-file: .go-version
+          check-latest: true
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
+        with:
+          node-version-file: .node-version
+          cache: 'yarn'
+
+      - name: Build
+        run: make build
 
       - name: Format
         run: make go/fmt && git diff --exit-code
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.2.0
+        uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # tag=v3.2.0
         with:
-          version: v1.45.2
+          version: ${{ env.GOLANGCI_LINT_VERSION }}

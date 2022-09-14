@@ -2,43 +2,71 @@ name: proto-push
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - .github/workflows/proto-push.yaml
-      - proto/**
-      - buf.gen.yaml
-      - buf.work.yaml
+    branches:
+    - main
+    - release-*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  skip-check:
+    name: Skip check
+    continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      should_skip: ${{ steps.skip-check.outputs.should_skip }}
+    permissions:
+      actions: write
+      contents: read
     steps:
-      - uses: actions/checkout@v3
+      - id: skip-check
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+        with:
+          do_not_skip: '["schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              ".github/workflows/proto-push.yaml",
+              ".go-version",
+              "buf.gen.yaml",
+              "buf.work.yaml",
+              "proto/**"
+            ]
+          skip_after_successful_duplicate: false
+
+  build:
+    name: Proto Push
+    needs: skip-check
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
         with:
-          go-version: '1.18'
+          go-version-file: .go-version
           check-latest: true
 
-      - uses: bufbuild/buf-setup-action@v1.4.0
-        with:
-          version: 1.3.1
+      - uses: bufbuild/buf-setup-action@9447e713f7871ebf70f0f64cc2157a6aa31dd319 # tag=v1.7.0
 
       - name: Format
         run: buf format --diff --exit-code
 
-      - uses: bufbuild/buf-lint-action@v1
+      - uses: bufbuild/buf-lint-action@d35dc843e3e1d4d7ec2d4b6eef89ff040b85cf28 # tag=v1.0.2
         with:
           input: 'proto'
 
-      - uses: bufbuild/buf-breaking-action@v1
+      - uses: bufbuild/buf-breaking-action@1cd949a5f7c5581990772f1e0c8a5270d7e4401b # tag=v1.1.1
         with:
           input: 'proto'
           # The 'main' branch of the GitHub repository that defines the module.
           against: 'https://github.com/${GITHUB_REPOSITORY}.git#branch=main,ref=HEAD~1,subdir=proto'
 
-      - uses: bufbuild/buf-push-action@v1
+      - uses: bufbuild/buf-push-action@1b31b985d86807e150c3bef5c4ea451db812acd2 # tag=v1.0.1
         with:
           input: 'proto'
           buf_token: ${{ secrets.BUF_TOKEN }}

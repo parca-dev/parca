@@ -1,62 +1,38 @@
-ARG NODE_BUILDER_BASE
-ARG GOLANG_BUILDER_BASE
-ARG RUNNER_BASE
+# https://github.com/hadolint/hadolint/issues/861
+# hadolint ignore=DL3029
+FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.35.0@sha256:8ea4da552e6f32d24f366f3517170f045354d45adad3434843bf0fbb9c002638 as builder
+RUN mkdir /.cache && touch -t 202101010000.00 /.cache
 
-FROM ${NODE_BUILDER_BASE} AS ui-deps
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+ARG TARGETVARIANT=v1
 
-WORKDIR /app
-
-COPY ui/packages/shared ./packages/shared
-COPY ui/packages/app/web/package.json ./packages/app/web/package.json
-COPY ui/package.json ui/yarn.lock ./
-RUN yarn workspace @parca/web install --frozen-lockfile --network-timeout 100000
-
-# Rebuild the source code only when needed
-FROM ${NODE_BUILDER_BASE} AS ui-builder
-
-ENV NODE_ENV production
-ENV CIRCLE_NODE_TOTAL 1
+# renovate: datasource=github-releases depName=grpc-ecosystem/grpc-health-probe
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.12
+RUN wget -qO/bin/grpc_health_probe "https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-${TARGETOS}-${TARGETARCH}" && \
+    chmod +x /bin/grpc_health_probe
 
 WORKDIR /app
+COPY dist dist
 
-COPY ./ui .
-COPY --from=ui-deps /app/node_modules ./node_modules
-RUN yarn workspace @parca/web build
+# NOTICE: See goreleaser.yml for the build paths.
+RUN if [ "${TARGETARCH}" = 'amd64' ]; then \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}_${TARGETVARIANT:-v1}/parca" . ; \
+    elif [ "${TARGETARCH}" = 'arm' ]; then \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}_${TARGETVARIANT##v}/parca" . ; \
+    else \
+        cp "dist/parca_${TARGETOS}_${TARGETARCH}/parca" . ; \
+    fi
+RUN chmod +x parca
 
-
-FROM ${GOLANG_BUILDER_BASE} as builder
-RUN mkdir /.cache && chown nobody:nogroup /.cache && touch -t 202101010000.00 /.cache
-
-ARG VERSION
-ARG COMMIT
-ARG ARCH=amd64
-ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV GOARCH=$ARCH
-
-WORKDIR /app
-
-COPY go.mod go.sum /app/
-RUN go mod download -modcacherw
-
-COPY --chown=nobody:nogroup go.mod go.sum ./
-COPY --chown=nobody:nogroup ./cmd/parca ./cmd/parca
-COPY --chown=nobody:nogroup ./pkg ./pkg
-COPY --chown=nobody:nogroup ./gen ./gen
-COPY --chown=nobody:nogroup ./proto ./proto
-COPY --chown=nobody:nogroup ./ui/ui.go ./ui/ui.go
-COPY --chown=nobody:nogroup --from=ui-builder /app/packages/app/web/build ./ui/packages/app/web/build
-RUN go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -trimpath -o parca ./cmd/parca
-RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
-# Predicatable path for copying over to final image
-RUN if [ "$(go env GOHOSTARCH)" != "$(go env GOARCH)" ]; then mv "$(go env GOPATH)/bin/$(go env GOOS)_$(go env GOARCH)/grpc-health-probe" "$(go env GOPATH)/bin/grpc-health-probe"; fi
-
-FROM ${RUNNER_BASE} as runner
+# https://github.com/hadolint/hadolint/issues/861
+# hadolint ignore=DL3029
+FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.16.2@sha256:bc41182d7ef5ffc53a40b044e725193bc10142a1243f395ee852a8d9730fc2ad AS runner
 
 USER nobody
 
+COPY --chown=0:0 --from=builder /bin/grpc_health_probe /
 COPY --chown=0:0 --from=builder /app/parca /parca
-COPY --chown=0:0 --from=builder /go/bin/grpc-health-probe /
 COPY --chown=0:0 parca.yaml /parca.yaml
 
 CMD ["/parca"]

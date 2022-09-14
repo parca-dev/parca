@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -27,60 +27,88 @@ import (
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
-func Test_LabelName_Invalid(t *testing.T) {
+func Test_LabelName_Error(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	col := arcticdb.New(
-		reg,
-		8196,
-		64*1024*1024,
-	)
-	colDB, err := col.DB("parca")
+	col, err := frostdb.New()
 	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
 	table, err := colDB.Table(
 		"stacktraces",
-		arcticdb.NewTableConfig(
-			parcacol.Schema(),
-		),
-		logger,
+		frostdb.NewTableConfig(schema),
 	)
 	require.NoError(t, err)
-	m := metastore.NewBadgerMetastore(
+	m := metastoretest.NewTestMetastore(
+		t,
 		logger,
 		reg,
 		tracer,
-		metastore.NewRandomUUIDGenerator(),
 	)
-	t.Cleanup(func() {
-		m.Close()
-	})
 
 	api := NewProfileColumnStore(
 		logger,
 		tracer,
-		m,
+		metastore.NewInProcessClient(m),
 		table,
+		schema,
 		false,
 	)
 
-	req := &profilestorepb.WriteRawRequest{
-		Series: []*profilestorepb.RawProfileSeries{{
-			Labels: &profilestorepb.LabelSet{
-				Labels: []*profilestorepb.Label{{
+	cases := []struct {
+		name   string
+		labels []*profilestorepb.Label
+	}{
+		{
+			name: "invalid label name",
+			labels: []*profilestorepb.Label{
+				{
 					Name:  "n0:n",
 					Value: "v0",
-				}},
+				},
 			},
-		}},
+		},
+		{
+			name: "duplicate label names",
+			labels: []*profilestorepb.Label{
+				{
+					Name:  "n0",
+					Value: "v0",
+				},
+				{
+					Name:  "n0",
+					Value: "v0",
+				},
+			},
+		},
 	}
 
-	_, err = api.WriteRaw(ctx, req)
-	st, _ := status.FromError(err)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			req := &profilestorepb.WriteRawRequest{
+				Series: []*profilestorepb.RawProfileSeries{{
+					Labels: &profilestorepb.LabelSet{
+						Labels: c.labels,
+					},
+				}},
+			}
 
-	require.Equal(t, st.Code(), codes.InvalidArgument)
+			_, err = api.WriteRaw(ctx, req)
+			st, _ := status.FromError(err)
+
+			require.Equal(t, codes.InvalidArgument, st.Code())
+		})
+	}
 }

@@ -1,20 +1,39 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {Disclosure} from '@headlessui/react';
 import {MenuIcon, XIcon} from '@heroicons/react/outline';
 import {Parca, ParcaSmall} from '@parca/icons';
 import cx from 'classnames';
 import DarkModeToggle from './DarkModeToggle';
 
-const links = {
-  '/': {label: 'Profiles', href: '/', external: false},
-  '/targets': {label: 'Targets', href: '/targets', external: false},
+const links: {[path: string]: {label: string; href: string; external: boolean}} = {
+  '/': {label: 'Profiles', href: `${window.PATH_PREFIX}/`, external: false},
+  '/targets': {label: 'Targets', href: `${window.PATH_PREFIX}/targets`, external: false},
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
-
 const Navbar = () => {
-  const getPageByHref = (href: string = '/'): {name: string; href: string; external: boolean} =>
-    links[href] ?? links['/'];
+  const removePathPrefix = (href: string) =>
+    href.startsWith(window.PATH_PREFIX) ? href.slice(window.PATH_PREFIX.length) : href;
+
+  const getPageByHref = (href: string = '/'): {label: string; href: string; external: boolean} => {
+    const link = removePathPrefix(href);
+    return links[link] ?? links['/'];
+  };
+
   const currentPage = getPageByHref(window.location.pathname);
-  const isCurrentPage = item => item.href === currentPage.href;
+  const isCurrentPage = (item: {label: string; href: string; external: boolean}) =>
+    item.href === currentPage.href;
 
   return (
     <Disclosure as="nav" className="dark:bg-gray-900 relative z-10">

@@ -192,7 +192,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/32458727?v=4",
       "profile": "https://maxbru.net",
       "contributions": [
-        "code"
+        "code",
+        "infra"
       ]
     },
     {
@@ -236,6 +237,42 @@
       "name": "Kautilya Tripathi",
       "avatar_url": "https://avatars.githubusercontent.com/u/24803604?v=4",
       "profile": "http://bit.ly/2XvWly1",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "jnsgruk",
+      "name": "Jon Seager",
+      "avatar_url": "https://avatars.githubusercontent.com/u/668505?v=4",
+      "profile": "http://jnsgr.uk",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "PhilipGough",
+      "name": "Philip Gough",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5781491?v=4",
+      "profile": "https://github.com/PhilipGough",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "boranx",
+      "name": "Boran Seref",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20660506?v=4",
+      "profile": "http://www.boranseref.com/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "heylongdacoder",
+      "name": "Wen Long",
+      "avatar_url": "https://avatars.githubusercontent.com/u/79215152?v=4",
+      "profile": "https://heylongdacoder.github.io/",
       "contributions": [
         "code"
       ]

@@ -1,0 +1,131 @@
+name: Go
+
+on:
+  push:
+    branches:
+    - main
+    - release-*
+  pull_request:
+    branches:
+    - main
+    - release-*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=docker depName=docker.io/multiarch/qemu-user-static versioning=regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$
+  QEMU_VERSION: 7.0.0-7
+  # renovate: datasource=docker depName=docker.io/buildpack-deps versioning=ubuntu
+  BUILDPACK_DEPS_VERSION: '20.04'
+
+jobs:
+  build-and-test-multi-arch:
+    name: Test on ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # Run steps on a matrix of 2 arch.
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - arm64
+    steps:
+    - id: skip-check
+      uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+      continue-on-error: true
+      with:
+        do_not_skip: '["schedule", "workflow_dispatch"]'
+        paths: |-
+          [
+            "**.go",
+            ".github/workflows/build-test.yml",
+            ".go-version",
+            ".node-version",
+            "go.mod",
+            "go.sum",
+            "ui/**"
+          ]
+        skip_after_successful_duplicate: false
+
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' }}
+
+    - name: Set up Go
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
+      uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
+      with:
+        go-version-file: .go-version
+        check-latest: true
+        cache: true
+
+    - name: Set up Node.js
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
+      uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
+      with:
+        node-version-file: .node-version
+        cache: 'yarn'
+
+    - name: Build
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
+      run: |
+        make build
+
+    - name: Test
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
+      run: |
+        make test ENABLE_RACE=yes
+
+    - name: Benchmark
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
+      run: |
+        make go/bench
+
+    - name: Archive generated artifacts
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
+      uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+      with:
+        name: parca-bin
+        if-no-files-found: error
+        path: |
+          bin
+
+    - name: 'Run ${{ matrix.arch }}'
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
+      run: |
+        # Register QEMU
+        docker run --rm --privileged "docker.io/multiarch/qemu-user-static:${QEMU_VERSION}" --reset -p yes
+
+        # Run platform specific based buildpack-deps image. Run it as a daemon in the background.
+        # Sleep the container for 1 day so that it keeps running until
+        # other steps are completed and the steps below can use the same container.
+        docker run \
+          --name=buildpack-deps \
+          --detach \
+          --platform 'linux/${{ matrix.arch }}' \
+          --volume /home/runner/work:/home/runner/work \
+          --workdir "${PWD}" \
+          "docker.io/buildpack-deps:${BUILDPACK_DEPS_VERSION}" \
+          bash -c 'uname -m && sleep 1d'
+
+    # Install Golang, which will be used to build the code.
+    - name: 'Setup Go on ${{ matrix.arch }}'
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
+      shell: docker exec buildpack-deps bash -e {0}
+      run: |
+        GO_VERSION="$(<.go-version)"
+        wget --directory-prefix=/tmp "https://dl.google.com/go/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
+        tar -C /usr/local/ -xzf "/tmp/go${GO_VERSION%.0}.linux-${{ matrix.arch }}.tar.gz"
+        export PATH="${PATH}:/usr/local/go/bin"
+        go version
+
+    # Run Go Tests. This is a very slow operation on ARM container.
+    - name: 'Test on ${{ matrix.arch }}'
+      if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch != 'amd64' }}
+      shell: docker exec buildpack-deps bash -e {0}
+      run: |
+        export PATH="${PATH}:/usr/local/go/bin"
+        mkdir -p ui/packages/app/web/build
+        touch ui/packages/app/web/build/index.html
+        go test -buildvcs=false -v ./...

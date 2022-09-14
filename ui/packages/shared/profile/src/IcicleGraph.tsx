@@ -1,12 +1,29 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React, {MouseEvent, useEffect, useRef, useState} from 'react';
+
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {FlamegraphTooltip} from '@parca/components';
-import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
+import {GraphTooltip} from '@parca/components';
+import {getLastItem, diffColor, isSearchMatch, SEARCH_STRING_COLOR} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
+
+import {hexifyAddress} from './utils';
+import {HoveringNode} from '@parca/components/src/GraphTooltip';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -76,7 +93,7 @@ function IcicleRect({
   onMouseLeave,
   onClick,
   curPath,
-}: IcicleRectProps) {
+}: IcicleRectProps): JSX.Element {
   const currentSearchString = useAppSelector(selectSearchNodeString);
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
@@ -96,7 +113,11 @@ function IcicleRect({
         height={height - 1}
         style={{
           opacity:
-            Boolean(currentSearchString) && !isSearchMatch(currentSearchString, name) ? 0.5 : 1,
+            currentSearchString !== undefined &&
+            currentSearchString !== '' &&
+            !isSearchMatch(currentSearchString, name)
+              ? 0.5
+              : 1,
           fill: color,
         }}
       />
@@ -115,17 +136,13 @@ export function nodeLabel(node: FlamegraphNode): string {
   if (node.meta === undefined) return '<unknown>';
   const mapping = `${
     node.meta?.mapping?.file !== undefined && node.meta?.mapping?.file !== ''
-      ? '[' + getLastItem(node.meta.mapping.file) + '] '
+      ? '[' + (getLastItem(node.meta.mapping.file) ?? '') + '] '
       : ''
   }`;
   if (node.meta.function?.name !== undefined && node.meta.function?.name !== '')
     return mapping + node.meta.function.name;
 
-  const address = `${
-    node.meta.location?.address !== undefined && node.meta.location?.address !== 0
-      ? '0x' + node.meta.location.address.toString(16)
-      : ''
-  }`;
+  const address = hexifyAddress(node.meta.location?.address);
   const fallback = `${mapping}${address}`;
 
   return fallback === '' ? '<unknown>' : fallback;
@@ -143,7 +160,7 @@ export function IcicleGraphNodes({
   path,
   setCurPath,
   curPath,
-}: IcicleGraphNodesProps) {
+}: IcicleGraphNodesProps): JSX.Element {
   const isDarkMode = useAppSelector(selectDarkMode);
   const isShiftDown = useIsShiftDown();
 
@@ -175,7 +192,7 @@ export function IcicleGraphNodes({
 
         const color = diffColor(diff, cumulative, isDarkMode);
 
-        const onClick = () => {
+        const onClick = (): void => {
           setCurPath(nextPath);
         };
 
@@ -197,7 +214,7 @@ export function IcicleGraphNodes({
         };
 
         return (
-          <React.Fragment>
+          <React.Fragment key={`node-${key}`}>
             <IcicleRect
               key={`rect-${key}`}
               x={xStart}
@@ -244,7 +261,7 @@ export function IcicleGraphRootNode({
   setHoveringNode,
   setCurPath,
   curPath,
-}: IcicleGraphRootNodeProps) {
+}: IcicleGraphRootNodeProps): JSX.Element {
   const isDarkMode = useAppSelector(selectDarkMode);
   const isShiftDown = useIsShiftDown();
 
@@ -305,7 +322,7 @@ export default function IcicleGraph({
   setCurPath,
   curPath,
   sampleUnit,
-}: IcicleGraphProps) {
+}: IcicleGraphProps): JSX.Element {
   const [hoveringNode, setHoveringNode] = useState<
     FlamegraphNode | FlamegraphRootNode | undefined
   >();
@@ -335,12 +352,12 @@ export default function IcicleGraph({
 
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
-      <FlamegraphTooltip
+      <GraphTooltip
         unit={sampleUnit}
         total={total}
         x={pos[0]}
         y={pos[1]}
-        hoveringNode={hoveringNode}
+        hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
       />
       <svg

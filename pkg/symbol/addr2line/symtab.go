@@ -1,4 +1,4 @@
-// Copyright (c) 2022 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -24,17 +24,20 @@ import (
 	"github.com/go-kit/log/level"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
+// SymtabLiner is a liner which utilizes .symtab and .dynsym sections.
 type SymtabLiner struct {
 	logger log.Logger
 
+	// symbols contains sorted symbols.
 	symbols []elf.Symbol
 }
 
-func Symbols(logger log.Logger, path string) (*SymtabLiner, error) {
-	symbols, err := symtab(path)
+// Symbols creates a new SymtabLiner.
+func Symbols(logger log.Logger, f *elf.File) (*SymtabLiner, error) {
+	symbols, err := symtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
 	}
@@ -45,7 +48,8 @@ func Symbols(logger log.Logger, path string) (*SymtabLiner, error) {
 	}, nil
 }
 
-func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
+// PCToLines looks up the line number information for a program counter (memory address).
+func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	i := sort.Search(len(lnr.symbols), func(i int) bool {
 		sym := lnr.symbols[i]
 		return sym.Value >= addr
@@ -59,7 +63,7 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, 
 		file = "?"
 		line int64 // 0
 	)
-	lines = append(lines, metastore.LocationLine{
+	lines = append(lines, profile.LocationLine{
 		Line: line,
 		Function: &pb.Function{
 			Name:     lnr.symbols[i].Name,
@@ -69,13 +73,11 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, 
 	return lines, nil
 }
 
-func symtab(path string) ([]elf.Symbol, error) {
-	objFile, err := elf.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer objFile.Close()
-
+// symtab returns symbols from the symbol table and the dynamic symbol table sections
+// extracted from the ELF file f.
+// The symbols are sorted by their memory addresses in ascending order
+// to facilitate searching.
+func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 	syms, sErr := objFile.Symbols()
 	dynSyms, dErr := objFile.DynamicSymbols()
 

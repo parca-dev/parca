@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,24 +18,27 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	goruntime "runtime"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/apache/arrow/go/v8/arrow/memory"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	"github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
+	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
+	"github.com/thanos-io/objstore"
+	"github.com/thanos-io/objstore/client"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -46,11 +49,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
+	sharepb "github.com/parca-dev/parca/gen/proto/go/share"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
@@ -64,9 +70,9 @@ import (
 )
 
 const (
-	symbolizationInterval   = 10 * time.Second
-	flagModeScraperOnly     = "scraper-only"
-	metaStoreBadgerInMemory = "badgerinmemory"
+	symbolizationInterval = 10 * time.Second
+	flagModeScraperOnly   = "scraper-only"
+	metaStoreBadger       = "badger"
 )
 
 type Flags struct {
@@ -82,17 +88,24 @@ type Flags struct {
 	MutexProfileFraction int `default:"0" help:"Fraction of mutex profile samples to collect."`
 	BlockProfileRate     int `default:"0" help:"Sample rate for block profile."`
 
-	StorageDebugValueLog bool  `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
-	StorageGranuleSize   int   `default:"8196" help:"Granule size for storage."`
-	StorageActiveMemory  int64 `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the metastore and profile storage."`
+
+	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
+	StorageGranuleSize   int64  `default:"26265625" help:"Granule size in bytes for storage."`
+	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	StoragePath          string `default:"data" help:"Path to storage directory."`
+	StorageEnableWAL     bool   `default:"false" help:"Enables write ahead log for profile storage."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 
-	Metastore string `default:"badgerinmemory" help:"Which metastore implementation to use" enum:"badgerinmemory"`
+	Metastore string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
+
+	ProfileShareServer string `default:"api.pprof.me:443" help:"gRPC address to send share profile requests to."`
 
 	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
+	DebuginfoCacheDir            string        `default:"/tmp" help:"Path to directory where debuginfo is cached."`
 
 	StoreAddress       string            `kong:"help='gRPC address to send profiles and symbols to.'"`
 	BearerToken        string            `kong:"help='Bearer token to authenticate with store.'"`
@@ -130,18 +143,49 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
+	if flags.StoreAddress != "" && flags.Mode != flagModeScraperOnly {
+		return fmt.Errorf("the mode should be set as `--mode=scraper-only`, if `StoreAddress` is set")
+	}
+
 	if flags.Mode == flagModeScraperOnly {
 		return runScraper(ctx, logger, reg, tracerProvider, flags, version, cfg)
 	}
 
-	var mStr metastore.ProfileMetaStore
+	bucketCfg, err := yaml.Marshal(cfg.ObjectStorage.Bucket)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to marshal object storage bucket config", "err", err)
+		return err
+	}
+
+	bucket, err := client.NewBucket(logger, bucketCfg, reg, "parca")
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize object storage bucket", "err", err)
+		return err
+	}
+
+	var mStr metastorepb.MetastoreServiceServer
 	switch flags.Metastore {
-	case metaStoreBadgerInMemory:
+	case metaStoreBadger:
+		var badgerOptions badger.Options
+		switch flags.EnablePersistence {
+		case true:
+			badgerOptions = badger.DefaultOptions(filepath.Join(flags.StoragePath, "metastore"))
+		default:
+			badgerOptions = badger.DefaultOptions("").WithInMemory(true)
+		}
+
+		badgerOptions = badgerOptions.WithLogger(&metastore.BadgerLogger{Logger: logger})
+		db, err := badger.Open(badgerOptions)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to open badger database for metastore", "err", err)
+			return err
+		}
+
 		mStr = metastore.NewBadgerMetastore(
 			logger,
 			reg,
-			tracerProvider.Tracer(metaStoreBadgerInMemory),
-			metastore.NewRandomUUIDGenerator(),
+			tracerProvider.Tracer(metaStoreBadger),
+			db,
 		)
 	default:
 		err := fmt.Errorf("unknown metastore implementation: %s", flags.Metastore)
@@ -149,19 +193,47 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	col := arcticdb.New(
-		reg,
-		flags.StorageGranuleSize,
-		flags.StorageActiveMemory,
-	)
-	colDB, err := col.DB("parca")
+	metastore := metastore.NewInProcessClient(mStr)
+
+	frostdbOptions := []frostdb.Option{
+		frostdb.WithActiveMemorySize(flags.StorageActiveMemory),
+		frostdb.WithLogger(logger),
+		frostdb.WithRegistry(reg),
+		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
+	}
+
+	if flags.EnablePersistence {
+		frostdbOptions = append(frostdbOptions, frostdb.WithBucketStorage(objstore.NewPrefixedBucket(bucket, "blocks")))
+	}
+
+	if flags.StorageEnableWAL {
+		frostdbOptions = append(frostdbOptions, frostdb.WithWAL(), frostdb.WithStoragePath(flags.StoragePath))
+	}
+
+	col, err := frostdb.New(frostdbOptions...)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize storage", "err", err)
+		return err
+	}
+
+	if err := col.ReplayWALs(context.Background()); err != nil {
+		level.Error(logger).Log("msg", "failed to replay WAL", "err", err)
+		return err
+	}
+
+	colDB, err := col.DB(ctx, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to load database", "err", err)
 		return err
 	}
-	table, err := colDB.Table("stacktraces", arcticdb.NewTableConfig(
-		parcacol.Schema(),
-	), logger)
+
+	schema, err := parcacol.Schema()
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to get schema", "err", err)
+		return err
+	}
+
+	table, err := colDB.Table("stacktraces", frostdb.NewTableConfig(schema))
 	if err != nil {
 		level.Error(logger).Log("msg", "create table", "err", err)
 		return err
@@ -170,19 +242,29 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	s := profilestore.NewProfileColumnStore(
 		logger,
 		tracerProvider.Tracer("profilestore"),
-		mStr,
+		metastore,
 		table,
+		schema,
 		flags.StorageDebugValueLog,
 	)
+	conn, err := grpc.Dial(flags.ProfileShareServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	if err != nil {
+		return fmt.Errorf("failed to create gRPC connection to ProfileShareServer: %s, %w", flags.ProfileShareServer, err)
+	}
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
-		mStr,
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
+		sharepb.NewShareClient(conn),
+		parcacol.NewQuerier(
+			tracerProvider.Tracer("querier"),
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+				query.WithTracer(tracerProvider.Tracer("query-engine")),
+			),
+			"stacktraces",
+			metastore,
 		),
-		"stacktraces",
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -217,23 +299,65 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return err
 		}
 
-		debugInfodClient, err = debuginfo.NewDebugInfodClientWithObjectStorageCache(logger, cfg.DebugInfo, httpDebugInfoClient)
+		debugInfodClient, err = debuginfo.NewDebugInfodClientWithObjectStorageCache(
+			logger,
+			objstore.NewPrefixedBucket(bucket, "debuginfod-cache"),
+			httpDebugInfoClient,
+		)
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod client cache", "err", err)
 			return err
 		}
 	}
 
-	dbgInfo, err := debuginfo.NewStore(logger, sym, cfg.DebugInfo, debugInfodClient)
+	dbgInfoMetadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
+	dbgInfo, err := debuginfo.NewStore(
+		tracerProvider.Tracer("debuginfo"),
+		logger,
+		flags.DebuginfoCacheDir,
+		dbgInfoMetadata,
+		objstore.NewPrefixedBucket(bucket, "debuginfo"),
+		debugInfodClient,
+	)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
+		return err
+	}
+
+	reloaders := []config.ComponentReloader{
+		{
+			Name: "scrape_sd",
+			Reloader: func(cfg *config.Config) error {
+				return discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs))
+			},
+		},
+		{
+			Name: "scrape",
+			Reloader: func(cfg *config.Config) error {
+				return m.ApplyConfig(cfg.ScrapeConfigs)
+			},
+		},
+	}
+
+	cfgReloader, err := config.NewConfigReloader(logger, reg, flags.ConfigPath, reloaders)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to instantiate config reloader", "err", err)
 		return err
 	}
 
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 	{
-		s := symbolizer.New(logger, mStr, dbgInfo)
+		s := symbolizer.New(
+			logger,
+			reg,
+			metastore,
+			dbgInfo,
+			sym,
+			flags.DebuginfoCacheDir,
+			flags.DebuginfoCacheDir,
+			0,
+		)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
 			func() error {
@@ -261,6 +385,15 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		func(_ error) {
 			level.Debug(logger).Log("msg", "scrape manager exiting")
 			m.Stop()
+		},
+	)
+	gr.Add(
+		func() error {
+			return cfgReloader.Run(ctx)
+		},
+		func(_ error) {
+			level.Debug(logger).Log("msg", "config file reloader exiting")
+			cancel()
 		},
 	)
 	parcaserver := server.NewServer(reg, version)
@@ -306,6 +439,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			err := parcaserver.Shutdown(ctx)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				level.Error(logger).Log("msg", "error shutting down server", "err", err)
+			}
+
+			// Close the columnstore after the parcaserver has shutdown to ensure no more writes occur against it.
+			if err := col.Close(); err != nil {
+				level.Error(logger).Log("msg", "error closing columnstore", "err", err)
 			}
 		},
 	)
@@ -357,7 +495,7 @@ func runScraper(
 	}
 
 	if flags.BearerTokenFile != "" {
-		b, err := ioutil.ReadFile(flags.BearerTokenFile)
+		b, err := os.ReadFile(flags.BearerTokenFile)
 		if err != nil {
 			return fmt.Errorf("failed to read bearer token from file: %w", err)
 		}
@@ -393,6 +531,27 @@ func runScraper(
 		return err
 	}
 
+	reloaders := []config.ComponentReloader{
+		{
+			Name: "scrape_sd",
+			Reloader: func(cfg *config.Config) error {
+				return discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs))
+			},
+		},
+		{
+			Name: "scrape",
+			Reloader: func(cfg *config.Config) error {
+				return m.ApplyConfig(cfg.ScrapeConfigs)
+			},
+		},
+	}
+
+	cfgReloader, err := config.NewConfigReloader(logger, reg, flags.ConfigPath, reloaders)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to instantiate config reloader", "err", err)
+		return err
+	}
+
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
 	gr.Add(
@@ -411,6 +570,15 @@ func runScraper(
 		func(_ error) {
 			level.Debug(logger).Log("msg", "scrape manager exiting")
 			m.Stop()
+		},
+	)
+	gr.Add(
+		func() error {
+			return cfgReloader.Run(ctx)
+		},
+		func(_ error) {
+			level.Debug(logger).Log("msg", "config file reloader exiting")
+			cancel()
 		},
 	)
 

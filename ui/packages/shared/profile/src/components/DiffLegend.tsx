@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {Fragment, useState} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {useAppSelector, selectDarkMode} from '@parca/store';
@@ -12,7 +25,7 @@ const DiffLegendBar = ({
 }: {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-}) => {
+}): JSX.Element => {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   return (
@@ -41,20 +54,20 @@ const DiffLegendBar = ({
   );
 };
 
-const DiffLegend = () => {
+const DiffLegend = (): JSX.Element => {
   const [showLegendTooltip, setShowLegendTooltip] = useState(false);
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
-  let [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>(null);
+  const [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>(null);
 
-  const {styles, attributes, ...popperProps} = usePopper(referenceElement, popperElement, {
+  const {styles, attributes} = usePopper(referenceElement, popperElement, {
     placement: 'auto-start',
     strategy: 'absolute',
   });
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = (): void => {
     setShowLegendTooltip(true);
   };
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (): void => {
     setShowLegendTooltip(false);
   };
 

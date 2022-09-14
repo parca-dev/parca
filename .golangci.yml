@@ -1,5 +1,6 @@
 run:
   deadline: 5m
+  go: '1.18'
 
 linters:
   enable:

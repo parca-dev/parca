@@ -218,7 +218,8 @@ function(params) {
          else ['--cors-allowed-origins=' + prc.config.corsAllowedOrigins]) +
         (if prc.config.storageRetentionTime == '' then []
          else ['--storage-tsdb-retention-time=' + prc.config.storageRetentionTime]) +
-        ['--debug-infod-upstream-servers=' + std.join(',', prc.config.debugInfodUpstreamServers)] +
+        (if std.length(prc.config.debugInfodUpstreamServers) <= 0 then []
+         else ['--debug-infod-upstream-servers=' + std.join(',', prc.config.debugInfodUpstreamServers)]) +
         (if prc.config.debugInfodHTTPRequestTimeout == '' then []
          else ['--debug-infod-http-request-timeout=' + prc.config.debugInfodHTTPRequestTimeout]),
       ports: [
@@ -231,13 +232,13 @@ function(params) {
       livenessProbe: if prc.config.livenessProbe == true then {
         initialDelaySeconds: 5,
         exec: {
-          command: ['/grpc-health-probe', '-v', '-addr=:' + prc.config.port],
+          command: ['/grpc_health_probe', '-v', '-addr=:' + prc.config.port],
         },
       },
       readinessProbe: if prc.config.readinessProbe == true then {
         initialDelaySeconds: 10,
         exec: {
-          command: ['/grpc-health-probe', '-v', '-addr=:' + prc.config.port],
+          command: ['/grpc_health_probe', '-v', '-addr=:' + prc.config.port],
         },
       },
     };

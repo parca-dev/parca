@@ -1,17 +1,17 @@
 before:
   hooks:
     - go mod tidy
+    - make ui/build
 builds:
   - main: ./cmd/parca/
     id: "parca"
     binary: parca
     # https://goreleaser.com/customization/build/#reproducible-builds
-    mod_timestamp: '{{ .CommitTimestamp }}'
+    mod_timestamp: "{{ .CommitTimestamp }}"
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
       - darwin
     goarch:
       - amd64
@@ -31,10 +31,59 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+snapcrafts:
+  - name: parca
+    # Handle publishing with snapcraft itself
+    publish: false
+    summary: Parca continuous profiling tool
+    description: |
+      Continuous profiling for analysis of CPU and memory usage, down to the line
+      number and throughout time. Saving infrastructure cost, improving performance,
+      and increasing reliability.
+    grade: stable
+    confinement: strict
+    license: Apache-2.0
+    base: core22
+    extra_files:
+      - source: snap/parca-wrapper
+        destination: bin/parca-wrapper
+        mode: 0755
+      - source: snap/example-config.yaml
+        destination: usr/share/parca/example-config.yaml
+        mode: 0700
+      - source: snap/hooks/configure
+        destination: snap/hooks/configure
+        mode: 0755
+      - source: snap/hooks/configure
+        destination: meta/hooks/configure
+        mode: 0755
+    apps:
+      parca:
+        command: parca
+        plugs:
+          - network-bind
+          - network
+          - home
+          - etc-parca
+      parca-svc:
+        command: bin/parca-wrapper
+        daemon: simple
+        install_mode: disable
+        restart_condition: never
+        plugs:
+          - network-bind
+          - network
+          - home
+          - etc-parca
+    plugs:
+      etc-parca:
+        interface: system-files
+        read:
+          - /etc/parca
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ incpatch .Tag }}-next"
+  name_template: "{{ incpatch .Tag }}-{{ .ShortCommit }}"
 source:
   enabled: true
 release:
@@ -55,50 +104,5 @@ changelog:
   use: github
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
-
-# It's still not possible to use docker (buildx) for reproducible builds.
-# And Goreleaser only supports podman with pro version, (https://goreleaser.com/customization/docker/#podman)
-# for full build pipeline transparency, we don't want to use pro version for Parca.
-
-#dockers:
-#  # https://goreleaser.com/customization/docker/
-#  - id: amd64
-#    use: buildx
-#    image_templates:
-#      - parca-dev/{{ .ProjectName }}:{{ .Version }}-amd64
-#      - parca-dev/{{ .ProjectName }}:latest-amd64
-#    dockerfile: Dockerfile.release
-#    extra_files:
-#      - parca.yaml
-#    build_flag_templates:
-#      - --platform=linux/amd64
-#      - --label=org.opencontainers.image.title={{ .ProjectName }}
-#      - --label=org.opencontainers.image.description={{ .ProjectName }}
-#      - --label=org.opencontainers.image.url=https://github.com/parca-dev/{{ .ProjectName }}
-#      - --label=org.opencontainers.image.source=https://github.com/parca-dev/{{ .ProjectName }}
-#      - --label=org.opencontainers.image.created={{.CommitDate}}
-#      - --label=org.opencontainers.image.version={{ .Version }}
-#      - --label=org.opencontainers.image.revision={{ .FullCommit }}
-#      - --label=org.opencontainers.image.licenses=Apache-2.0
-#
-#  - id: arm64
-#    use: buildx
-#    image_templates:
-#      - parca-dev/{{ .ProjectName }}:{{ .Version }}-arm64v8
-#      - parca-dev/{{ .ProjectName }}:latest-arm64v8
-#    goarch: arm64
-#    dockerfile: Dockerfile.release
-#    extra_files:
-#      - parca.yaml
-#    build_flag_templates:
-#      - --platform=linux/arm64/v8
-#      - --label=org.opencontainers.image.title={{ .ProjectName }}
-#      - --label=org.opencontainers.image.description={{ .ProjectName }}
-#      - --label=org.opencontainers.image.url=https://github.com/parca-dev/{{ .ProjectName }}
-#      - --label=org.opencontainers.image.source=https://github.com/parca-dev/{{ .ProjectName }}
-#      - --label=org.opencontainers.image.version={{ .Version }}
-#      - --label=org.opencontainers.image.created={{.CommitDate}}
-#      - --label=org.opencontainers.image.revision={{ .FullCommit }}
-#      - --label=org.opencontainers.image.licenses=Apache-2.0
+      - "^docs:"
+      - "^test:"

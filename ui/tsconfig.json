@@ -3,6 +3,7 @@
   "include": ["./tests/**/*", "./.storybook/*", "./packages/**/*"],
   "compilerOptions": {
     "module": "CommonJS",
+    "strict": true,
     "isolatedModules": true,
     "baseUrl": "."
   },

@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,23 +17,23 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/apache/arrow/go/v8/arrow/memory"
 	"github.com/go-kit/log"
-	"github.com/google/pprof/profile"
-	columnstore "github.com/polarsignals/arcticdb"
-	"github.com/polarsignals/arcticdb/query"
+	"github.com/polarsignals/frostdb"
+	columnstore "github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
@@ -45,53 +45,45 @@ func Benchmark_Query_Merge(b *testing.B) {
 			logger := log.NewNopLogger()
 			reg := prometheus.NewRegistry()
 			tracer := trace.NewNoopTracerProvider().Tracer("")
-			col := columnstore.New(
-				reg,
-				8196,
-				64*1024*1024,
-			)
-			colDB, err := col.DB("parca")
+			col, err := columnstore.New()
 			require.NoError(b, err)
+			colDB, err := col.DB(context.Background(), "parca")
+			require.NoError(b, err)
+
+			schema, err := parcacol.Schema()
+			require.NoError(b, err)
+
 			table, err := colDB.Table(
 				"stacktraces",
-				columnstore.NewTableConfig(
-					parcacol.Schema(),
-				),
-				logger,
+				columnstore.NewTableConfig(schema),
 			)
 			require.NoError(b, err)
-			m := metastore.NewBadgerMetastore(
+			m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
+				b,
 				logger,
 				reg,
 				tracer,
-				metastore.NewRandomUUIDGenerator(),
-			)
+			))
 
-			f, err := os.Open("../query/testdata/alloc_objects.pb.gz")
+			fileContent := MustReadAllGzip(b, "../query/testdata/alloc_objects.pb.gz")
 			require.NoError(b, err)
-			p1, err := profile.Parse(f)
-			require.NoError(b, err)
-			require.NoError(b, f.Close())
+			p := &pprofpb.Profile{}
+			require.NoError(b, p.UnmarshalVT(fileContent))
 
-			for _, s := range p1.Sample {
+			for _, s := range p.Sample {
 				s.Label = nil
-				s.NumLabel = nil
-				s.NumUnit = nil
 			}
 
-			p1 = p1.Compact()
+			normalizer := parcacol.NewNormalizer(m)
+			ingester := parcacol.NewIngester(logger, normalizer, table, schema)
 
-			ingester := parcacol.NewIngester(logger, m, table)
-
-			typeSamples, err := ingester.ConvertPProf(ctx, labels.Labels{{Name: labels.MetricName, Value: "memory"}}, p1, false)
+			profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 			require.NoError(b, err)
 
 			for j := 0; j < n; j++ {
-				for _, samples := range typeSamples {
-					for _, s := range samples {
-						s.Timestamp = int64(j + 1)
-					}
-					err = ingester.IngestSamples(ctx, samples)
+				for _, profile := range profiles {
+					profile.Meta.Timestamp = int64(j + 1)
+					err = ingester.IngestProfile(ctx, nil, profile)
 					require.NoError(b, err)
 				}
 			}
@@ -101,12 +93,16 @@ func Benchmark_Query_Merge(b *testing.B) {
 			api := NewColumnQueryAPI(
 				logger,
 				tracer,
-				m,
-				query.NewEngine(
-					memory.NewGoAllocator(),
-					colDB.TableProvider(),
+				getShareServerConn(b),
+				parcacol.NewQuerier(
+					tracer,
+					query.NewEngine(
+						memory.DefaultAllocator,
+						colDB.TableProvider(),
+					),
+					"stacktraces",
+					m,
 				),
-				"stacktraces",
 			)
 			b.ResetTimer()
 
@@ -125,5 +121,60 @@ func Benchmark_Query_Merge(b *testing.B) {
 				require.NoError(b, err)
 			}
 		})
+	}
+}
+
+func Benchmark_ProfileTypes(b *testing.B) {
+	// This benchmark is skipped by default as it requires a write-ahead log to
+	// be present for the "stacktraces" table in the "parca" database in
+	// "../../data".
+	b.Skip()
+
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col, err := columnstore.New(
+		frostdb.WithWAL(),
+		frostdb.WithStoragePath("../../data"),
+	)
+	require.NoError(b, err)
+
+	require.NoError(b, col.ReplayWALs(ctx))
+
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(b, err)
+
+	table, err := colDB.GetTable("stacktraces")
+	require.NoError(b, err)
+	table.Sync()
+
+	require.NoError(b, err)
+	m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
+		b,
+		logger,
+		reg,
+		tracer,
+	))
+
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		getShareServerConn(b),
+		parcacol.NewQuerier(
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			m,
+		),
+	)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err = api.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
+		require.NoError(b, err)
 	}
 }

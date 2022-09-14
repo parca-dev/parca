@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package symbol
 
 import (
 	"context"
+	"debug/elf"
 	"errors"
 	"fmt"
 	"time"
@@ -25,7 +26,7 @@ import (
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/hash"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
@@ -33,6 +34,8 @@ import (
 
 var ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
 
+// Symbolizer converts the memory addresses, which have been encountered in stack traces,
+// in the ingested profiles, to the corresponding human-readable source code lines.
 type Symbolizer struct {
 	logger    log.Logger
 	demangler *demangle.Demangler
@@ -47,13 +50,23 @@ type Symbolizer struct {
 	symbolizationFailed   map[string]map[uint64]struct{}
 }
 
+// liner is the interface implemented by symbolizers
+// which read an object file (symbol table or debug information) and return
+// source code lines by a given memory address.
 type liner interface {
-	PCToLines(pc uint64) ([]metastore.LocationLine, error)
+	PCToLines(pc uint64) ([]profile.LocationLine, error)
 }
 
+// NewSymbolizer creates a new Symbolizer.
+//
+// By default the cache can hold up to 1000 items with an item TTL 1 minute.
+// The item is a liner that provides access to a single object file
+// to resolve its memory addresses to source code lines.
+//
+// If a Symbolizer failed to extract source lines, by default it will retry up to 3 times.
+//
+// The default demangle mode is "simple".
 func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
-	log.With(logger, "component", "symbolizer")
-
 	const (
 		defaultDemangleMode     = "simple"
 		defaultCacheSize        = 1000
@@ -62,7 +75,7 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	)
 
 	sym := &Symbolizer{
-		logger:    logger,
+		logger:    log.With(logger, "component", "symbolizer"),
 		demangler: demangle.NewDemangler(defaultDemangleMode, false),
 
 		// e.g: Parca binary compressed DWARF data size ~8mb as of 10.2021
@@ -86,15 +99,17 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 	return sym, nil
 }
 
-// Symbolize attempts to symbolize the given locations using the given debug information file.
-func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*metastore.Location, debugInfoFile string) (map[*metastore.Location][]metastore.LocationLine, error) {
+// Symbolize symbolizes locations for the given mapping and object file path
+// using DwarfLiner if the file contains debug info.
+// Otherwise it attempts to use GoLiner, and falls back to SymtabLiner as a last resort.
+func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Location, debugInfoFile string) ([][]profile.LocationLine, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	logger := log.With(s.logger, "buildid", m.BuildId)
+	logger := log.With(s.logger, "buildid", m.BuildId, "debuginfo_file", debugInfoFile)
 
 	liner, err := s.liner(m, debugInfoFile)
 	if err != nil {
@@ -110,15 +125,15 @@ func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*
 		key = m.BuildId
 	}
 
-	locationLines := map[*metastore.Location][]metastore.LocationLine{}
+	locationsLines := make([][]profile.LocationLine, 0, len(locations))
 	for _, loc := range locations {
-		locationLines[loc] = append(locationLines[loc], s.pcToLines(liner, m.BuildId, key, loc.Address)...)
+		locationsLines = append(locationsLines, s.pcToLines(liner, m.BuildId, key, loc.Address))
 	}
-	return locationLines, nil
+	return locationsLines, nil
 }
 
 // pcToLines returns the line number of the given PC while keeping the track of symbolization attempts and failures.
-func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []metastore.LocationLine {
+func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []profile.LocationLine {
 	logger := log.With(s.logger, "addr", addr, "buildid", buildID)
 	// Check if we already attempt to symbolize this location and failed.
 	if _, failedBefore := s.symbolizationFailed[key][addr]; failedBefore {
@@ -160,6 +175,7 @@ func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []
 	return lines
 }
 
+// Close cleans up resources, e.g., the cache.
 func (s *Symbolizer) Close() error {
 	return s.linerCache.Close()
 }
@@ -174,7 +190,7 @@ func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
 
 	// Check if we already attempt to build a liner for this path.
 	if _, failedBefore := s.linerCreationFailed[h]; failedBefore {
-		level.Debug(s.logger).Log("msg", "already failed to create liner for this debug info file, skipping")
+		level.Debug(s.logger).Log("msg", "already failed to create liner for this object file, skipping")
 		return nil, ErrLinerCreationFailedBefore
 	}
 
@@ -204,13 +220,20 @@ func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
 // newLiner creates a new liner for the given mapping and object file path.
 func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 	logger := log.With(s.logger, "file", path, "buildid", buildID)
-	hasDWARF, err := elfutils.HasDWARF(path)
+
+	f, err := elf.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open binary: %w", err)
+	}
+	defer f.Close()
+
+	hasDWARF, err := elfutils.HasDWARF(f)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary has DWARF info", "err", err)
 	}
 	if hasDWARF {
 		level.Debug(logger).Log("msg", "using DWARF liner to resolve symbols")
-		lnr, err := addr2line.DWARF(logger, path, s.demangler)
+		lnr, err := addr2line.DWARF(log.With(logger, "file", path), f, s.demangler)
 		if err != nil {
 			return nil, err
 		}
@@ -219,14 +242,14 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 
 	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
 	// Keep that section and other identifying sections in the debug information file.
-	isGo, err := elfutils.IsSymbolizableGoObjFile(path)
+	isGo, err := elfutils.IsSymbolizableGoObjFile(f)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary is a Go binary", "err", err)
 	}
 	if isGo {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
-		lnr, err := addr2line.Go(logger, path)
+		lnr, err := addr2line.Go(logger, f)
 		if err == nil {
 			level.Debug(logger).Log("msg", "using go liner to resolve symbols")
 			return lnr, nil
@@ -235,12 +258,12 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 	}
 
 	// As a last resort, use the symtab liner which utilizes .symtab section and .dynsym section.
-	hasSymbols, err := elfutils.HasSymbols(path)
+	hasSymbols, err := elfutils.HasSymbols(f)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to determine if binary has symbols", "err", err)
 	}
 	if hasSymbols {
-		lnr, err := addr2line.Symbols(logger, path)
+		lnr, err := addr2line.Symbols(logger, f)
 		if err == nil {
 			level.Debug(logger).Log("msg", "using symtab liner to resolve symbols")
 			return lnr, nil

@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import (
 
 	"github.com/google/pprof/profile"
 
-	"github.com/parca-dev/parca/pkg/metastore"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -62,7 +61,7 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 	return a
 }
 
-func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore, ip *parcaprofile.StacktraceSamples) (*profile.Profile, error) {
+func GenerateFlatPprof(ctx context.Context, ip *parcaprofile.Profile) (*profile.Profile, error) {
 	meta := ip.Meta
 
 	mappingByID := map[string]*profile.Mapping{}
@@ -78,9 +77,9 @@ func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore
 	}
 
 	for _, s := range ip.Samples {
-		locations := make([]*profile.Location, 0, len(s.Location))
-		for _, l := range s.Location {
-			if loc, ok := locationByID[string(l.ID[:])]; ok {
+		locations := make([]*profile.Location, 0, len(s.Locations))
+		for _, l := range s.Locations {
+			if loc, ok := locationByID[l.ID]; ok {
 				locations = append(locations, loc)
 				continue
 			}
@@ -156,9 +155,6 @@ func GenerateFlatPprof(ctx context.Context, metaStore metastore.ProfileMetaStore
 		p.Sample = append(p.Sample, &profile.Sample{
 			Value:    []int64{s.Value},
 			Location: locations,
-			Label:    s.Label,
-			NumLabel: s.NumLabel,
-			NumUnit:  s.NumUnit,
 		})
 	}
 

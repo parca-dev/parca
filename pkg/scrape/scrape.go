@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,9 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"sort"
 	"sync"
 	"time"
 
@@ -180,7 +178,7 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) {
 	for fp, oldLoop := range sp.loops {
 		var (
 			t       = sp.activeTargets[fp]
-			s       = &targetScraper{Target: t, client: sp.client, timeout: timeout}
+			s       = &targetScraper{Target: t, logger: sp.logger, client: sp.client, timeout: timeout}
 			newLoop = sp.newLoop(t, s)
 		)
 		wg.Add(1)
@@ -334,7 +332,7 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 	case ProfileTraceType:
 		return fmt.Errorf("unimplemented")
 	default:
-		b, err := ioutil.ReadAll(io.TeeReader(resp.Body, w))
+		b, err := io.ReadAll(io.TeeReader(resp.Body, w))
 		if err != nil {
 			return fmt.Errorf("failed to read body: %w", err)
 		}
@@ -467,8 +465,6 @@ mainLoop:
 					Value: l.Value,
 				})
 			}
-			// Must ensure label-set is sorted
-			sort.Sort(tl)
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			protolbls := &profilepb.LabelSet{

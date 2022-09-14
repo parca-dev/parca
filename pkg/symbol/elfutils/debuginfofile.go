@@ -25,15 +25,17 @@ import (
 	"github.com/go-delve/delve/pkg/dwarf/reader"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
+// DebugInfoFile is the interface implemented by symbolizers that use DWARF debug info.
 type DebugInfoFile interface {
 	// SourceLines returns the resolved source lines for a given address.
-	SourceLines(addr uint64) ([]metastore.LocationLine, error)
+	SourceLines(addr uint64) ([]profile.LocationLine, error)
 }
 
+// debugInfoFile is a symbolizer that uses DWARF debug info to symbolize addresses.
 type debugInfoFile struct {
 	demangler *demangle.Demangler
 
@@ -43,14 +45,8 @@ type debugInfoFile struct {
 	abstractSubprograms map[dwarf.Offset]*dwarf.Entry
 }
 
-// NewDebugInfoFile creates a new DebugInfoFile.
-func NewDebugInfoFile(path string, demangler *demangle.Demangler) (DebugInfoFile, error) {
-	f, err := elf.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer f.Close()
-
+// NewDebugInfoFile creates a new DebugInfoFile symbolizer.
+func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile, error) {
 	debugData, err := f.DWARF()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
@@ -66,9 +62,17 @@ func NewDebugInfoFile(path string, demangler *demangle.Demangler) (DebugInfoFile
 	}, nil
 }
 
-func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, error) {
+// SourceLines returns the resolved source lines for a program counter (memory address).
+//
+// It reads DWARF sections (info, line) which include several lookup tables and
+// tries to find the name of the function that address belongs to.
+// After that it tries to find the corresponding source file and line information.
+func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error) {
 	// The reader is positioned at byte offset 0 in the DWARF “info” section.
+	// It allows reading Entry structures that are arranged in a tree.
 	er := f.debugData.Reader()
+	// SeekPC returns the Entry for the compilation unit that includes program counter,
+	// and positions the reader to read the children of that unit.
 	cu, err := er.SeekPC(addr)
 	if err != nil {
 		return nil, err
@@ -81,7 +85,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 		return nil, err
 	}
 
-	lines := []metastore.LocationLine{}
+	lines := []profile.LocationLine{}
 	var tr *godwarf.Tree
 	for _, t := range f.subprograms[cu.Offset] {
 		if t.ContainsPC(addr) {
@@ -98,7 +102,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 		name = ""
 	}
 	file, line := findLineInfo(f.lineEntries[cu.Offset], tr.Ranges)
-	lines = append(lines, metastore.LocationLine{
+	lines = append(lines, profile.LocationLine{
 		Line: line,
 		Function: f.demangler.Demangle(&pb.Function{
 			Name:     name,
@@ -117,7 +121,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]metastore.LocationLine, erro
 		}
 
 		file, line := findLineInfo(f.lineEntries[cu.Offset], ch.Ranges)
-		lines = append(lines, metastore.LocationLine{
+		lines = append(lines, profile.LocationLine{
 			Line: line,
 			Function: f.demangler.Demangle(&pb.Function{
 				Name:     name,
@@ -192,6 +196,7 @@ outer:
 				}
 			}
 
+			// Extract the tree of debug_info entries rooted at given offset.
 			tr, err := godwarf.LoadTree(entry.Offset, f.debugData, 0)
 			if err != nil {
 				return fmt.Errorf("failed to extract dwarf tree: %w", err)
@@ -204,6 +209,9 @@ outer:
 	return nil
 }
 
+// findLineInfo looks up a file name and a line number
+// in an ordered list DWARF entries (rows in a DWARF "line" table)
+// by a tree's ranges rg.
 func findLineInfo(entries []dwarf.LineEntry, rg [][2]uint64) (string, int64) {
 	var (
 		file = "?"

@@ -1,0 +1,524 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "share/share.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Share"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {},
+  "definitions": {
+    "QueryRequestReportType": {
+      "type": "string",
+      "enum": [
+        "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
+        "REPORT_TYPE_PPROF",
+        "REPORT_TYPE_TOP",
+        "REPORT_TYPE_CALLGRAPH"
+      ],
+      "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified",
+      "title": "ReportType is the type of report to return"
+    },
+    "metastorev1alpha1Location": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the unique identifier for the location."
+        },
+        "address": {
+          "type": "string",
+          "format": "uint64",
+          "description": "address is the memory address of the location if present."
+        },
+        "mappingId": {
+          "type": "string",
+          "description": "mapping_id is the unique identifier for the mapping associated with the location."
+        },
+        "isFolded": {
+          "type": "boolean",
+          "description": "is_folded indicates whether the location is folded into the previous location."
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1Line"
+          },
+          "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
+        }
+      },
+      "description": "Location describes a single location of a stack traces."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "shareUploadResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id of the uploaded profile."
+        },
+        "link": {
+          "type": "string",
+          "description": "link that can be used to access the profile."
+        }
+      },
+      "description": "UploadResponse represents the response with the link that can be used to access the profile."
+    },
+    "v1alpha1Callgraph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1CallgraphNode"
+          },
+          "title": "nodes are the nodes in the callgraph"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1CallgraphEdge"
+          },
+          "title": "edges are the edges connecting nodes in the callgraph"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the total cumulative value of the callgraph"
+        }
+      },
+      "title": "Callgraph is the callgraph report type"
+    },
+    "v1alpha1CallgraphEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id is the unique id of the edge"
+        },
+        "source": {
+          "type": "string",
+          "title": "source represents the id of the source node"
+        },
+        "target": {
+          "type": "string",
+          "title": "target represents the id of the target node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the edge"
+        },
+        "isCollapsed": {
+          "type": "boolean",
+          "title": "is_collapsed indicates if the edge is collapsed"
+        }
+      },
+      "title": "CallgraphEdge represents an edge in the graph"
+    },
+    "v1alpha1CallgraphNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id is the unique id of the node"
+        },
+        "meta": {
+          "$ref": "#/definitions/v1alpha1CallgraphNodeMeta",
+          "title": "meta is the metadata about the node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the node"
+        }
+      },
+      "title": "CallgraphNode represents a node in the graph"
+    },
+    "v1alpha1CallgraphNodeMeta": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/metastorev1alpha1Location",
+          "title": "location is the location for the code"
+        },
+        "mapping": {
+          "$ref": "#/definitions/v1alpha1Mapping",
+          "title": "mapping is the mapping into code"
+        },
+        "function": {
+          "$ref": "#/definitions/v1alpha1Function",
+          "title": "function is the function information"
+        },
+        "line": {
+          "$ref": "#/definitions/v1alpha1Line",
+          "title": "line is the line location"
+        }
+      },
+      "title": "TopNodeMeta is the metadata for a given node"
+    },
+    "v1alpha1Flamegraph": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "$ref": "#/definitions/v1alpha1FlamegraphRootNode",
+          "title": "root is the root of the flame graph"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64",
+          "title": "total is the total weight of the flame graph"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by the flame graph"
+        },
+        "height": {
+          "type": "integer",
+          "format": "int32",
+          "title": "height is the max height of the graph"
+        }
+      },
+      "title": "Flamegraph is the flame graph report type"
+    },
+    "v1alpha1FlamegraphNode": {
+      "type": "object",
+      "properties": {
+        "meta": {
+          "$ref": "#/definitions/v1alpha1FlamegraphNodeMeta",
+          "title": "meta is the metadata about the node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the node"
+        },
+        "diff": {
+          "type": "string",
+          "format": "int64",
+          "title": "diff is the diff"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1FlamegraphNode"
+          },
+          "title": "children are the child nodes"
+        }
+      },
+      "title": "FlamegraphNode represents a node in the graph"
+    },
+    "v1alpha1FlamegraphNodeMeta": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/metastorev1alpha1Location",
+          "title": "location is the location for the code"
+        },
+        "mapping": {
+          "$ref": "#/definitions/v1alpha1Mapping",
+          "title": "mapping is the mapping into code"
+        },
+        "function": {
+          "$ref": "#/definitions/v1alpha1Function",
+          "title": "function is the function information"
+        },
+        "line": {
+          "$ref": "#/definitions/v1alpha1Line",
+          "title": "line is the line location"
+        }
+      },
+      "title": "FlamegraphNodeMeta is the metadata for a given node"
+    },
+    "v1alpha1FlamegraphRootNode": {
+      "type": "object",
+      "properties": {
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the graph"
+        },
+        "diff": {
+          "type": "string",
+          "format": "int64",
+          "title": "diff is the diff"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1FlamegraphNode"
+          },
+          "title": "children are the list of the children of the root node"
+        }
+      },
+      "title": "FlamegraphRootNode is a root node of a flame graph"
+    },
+    "v1alpha1Function": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the unique identifier for the function."
+        },
+        "startLine": {
+          "type": "string",
+          "format": "int64",
+          "description": "start_line is the line number in the source file of the first line of the function."
+        },
+        "name": {
+          "type": "string",
+          "description": "name is the name of the function."
+        },
+        "systemName": {
+          "type": "string",
+          "description": "system_name describes the name of the function, as identified by the\nsystem. For instance, it can be a C++ mangled name."
+        },
+        "filename": {
+          "type": "string",
+          "description": "filename is the name of the source file of the function."
+        }
+      },
+      "description": "Function describes metadata of a source code function."
+    },
+    "v1alpha1Line": {
+      "type": "object",
+      "properties": {
+        "functionId": {
+          "type": "string",
+          "description": "function_id is the ID of the function."
+        },
+        "line": {
+          "type": "string",
+          "format": "int64",
+          "description": "line is the line number in the source file of the referenced function."
+        }
+      },
+      "description": "Line describes a source code function and its line number."
+    },
+    "v1alpha1Mapping": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the unique identifier for the mapping."
+        },
+        "start": {
+          "type": "string",
+          "format": "uint64",
+          "description": "start is the start address of the mapping."
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64",
+          "description": "limit is the length of the address space of the mapping."
+        },
+        "offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "offset in the binary that corresponds to the first mapped address."
+        },
+        "file": {
+          "type": "string",
+          "description": "file is the name of the file associated with the mapping."
+        },
+        "buildId": {
+          "type": "string",
+          "description": "build_id is the build ID of the mapping."
+        },
+        "hasFunctions": {
+          "type": "boolean",
+          "description": "has_functions indicates whether the mapping has associated functions."
+        },
+        "hasFilenames": {
+          "type": "boolean",
+          "description": "has_filenames indicates whether the mapping has associated filenames."
+        },
+        "hasLineNumbers": {
+          "type": "boolean",
+          "description": "has_line_numbers indicates whether the mapping has associated line numbers."
+        },
+        "hasInlineFrames": {
+          "type": "boolean",
+          "description": "has_inline_frames indicates whether the mapping has associated inline frames."
+        }
+      },
+      "description": "Mapping describes a memory mapping."
+    },
+    "v1alpha1ProfileType": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is the name of the profile type."
+        },
+        "sampleType": {
+          "type": "string",
+          "description": "sample_type is the type of the samples in the profile."
+        },
+        "sampleUnit": {
+          "type": "string",
+          "description": "sample_unit is the unit of the samples in the profile."
+        },
+        "periodType": {
+          "type": "string",
+          "description": "period_type is the type of the periods in the profile."
+        },
+        "periodUnit": {
+          "type": "string",
+          "description": "period_unit is the unit of the periods in the profile."
+        },
+        "delta": {
+          "type": "boolean",
+          "description": "delta describes whether the profile is a delta profile."
+        }
+      },
+      "description": "ProfileType is the type of a profile as well as the units the profile type is available in."
+    },
+    "v1alpha1ProfileTypesResponse": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1ProfileType"
+          },
+          "description": "types is the list of available profile types."
+        }
+      },
+      "description": "ProfileTypesResponse is the response to retrieve the list of available profile types."
+    },
+    "v1alpha1QueryResponse": {
+      "type": "object",
+      "properties": {
+        "flamegraph": {
+          "$ref": "#/definitions/v1alpha1Flamegraph",
+          "title": "flamegraph is a flamegraph representation of the report"
+        },
+        "pprof": {
+          "type": "string",
+          "format": "byte",
+          "title": "pprof is a pprof profile as compressed bytes"
+        },
+        "top": {
+          "$ref": "#/definitions/v1alpha1Top",
+          "title": "top is a top list representation of the report"
+        },
+        "callgraph": {
+          "$ref": "#/definitions/v1alpha1Callgraph",
+          "title": "callgraph is a callgraph nodes and edges representation of the report"
+        }
+      },
+      "title": "QueryResponse is the returned report for the given query"
+    },
+    "v1alpha1Top": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TopNode"
+          },
+          "title": "list are the list of ordered elements of the table"
+        },
+        "reported": {
+          "type": "integer",
+          "format": "int32",
+          "title": "reported is the number of lines reported"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32",
+          "title": "total is the number of lines that exist in the report"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by top table"
+        }
+      },
+      "title": "Top is the top report type"
+    },
+    "v1alpha1TopNode": {
+      "type": "object",
+      "properties": {
+        "meta": {
+          "$ref": "#/definitions/v1alpha1TopNodeMeta",
+          "title": "meta is the metadata about the node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the node"
+        },
+        "flat": {
+          "type": "string",
+          "format": "int64",
+          "title": "flat is the flat value of the node"
+        },
+        "diff": {
+          "type": "string",
+          "format": "int64",
+          "title": "diff is the diff value between two profiles"
+        }
+      },
+      "title": "TopNode is a node entry in a top list"
+    },
+    "v1alpha1TopNodeMeta": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/metastorev1alpha1Location",
+          "title": "location is the location for the code"
+        },
+        "mapping": {
+          "$ref": "#/definitions/v1alpha1Mapping",
+          "title": "mapping is the mapping into code"
+        },
+        "function": {
+          "$ref": "#/definitions/v1alpha1Function",
+          "title": "function is the function information"
+        },
+        "line": {
+          "$ref": "#/definitions/v1alpha1Line",
+          "title": "line is the line location"
+        }
+      },
+      "title": "TopNodeMeta is the metadata for a given node"
+    }
+  }
+}

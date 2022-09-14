@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
@@ -92,7 +105,7 @@ interface MetricsTooltipProps {
   sampleUnit: string;
 }
 
-function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
+function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0): () => DOMRect {
   const domRect = contextElement.getBoundingClientRect();
   return () =>
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -103,7 +116,7 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0) {
       left: domRect.x + x,
       right: domRect.x + x,
       bottom: domRect.y + y,
-    } as ClientRect);
+    } as DOMRect);
 }
 
 const virtualElement: VirtualElement = {
@@ -116,7 +129,7 @@ const virtualElement: VirtualElement = {
       left: 0,
       right: 0,
       bottom: 0,
-    } as ClientRect;
+    } as DOMRect;
   },
 };
 
@@ -155,7 +168,7 @@ export const MetricsTooltip = ({
   useEffect(() => {
     if (contextElement != null) {
       virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y);
-      update?.();
+      void update?.();
     }
   }, [x, y, contextElement, update]);
 
@@ -252,7 +265,7 @@ export const RawMetricsGraph = ({
         metric: s.labelset.labels,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.value !== undefined) {
-            const t = (d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6;
+            const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
             agg.push([t, parseFloat(d.value)]);
           }
           return agg;
@@ -284,7 +297,7 @@ export const RawMetricsGraph = ({
   const yScale = d3
     .scaleLinear()
     // tslint:disable-next-line
-    .domain([minY, maxY])
+    .domain([minY, maxY] as Iterable<d3.NumberValue>)
     .range([height - margin, 0]);
 
   const color = d3.scaleOrdinal(d3.schemeCategory10);
@@ -306,7 +319,7 @@ export const RawMetricsGraph = ({
       const pointIndex = d3.minIndex(distances);
       const minDistance = distances[pointIndex];
       return {
-        pointIndex: pointIndex,
+        pointIndex,
         distance: minDistance,
       };
     });
@@ -399,13 +412,13 @@ export const RawMetricsGraph = ({
     }
   };
 
-  const findSelectedProfile = () => {
+  const findSelectedProfile = (): HighlightedSeries | null => {
     if (profile == null) {
       return null;
     }
 
     let s: Series | null = null;
-    let seriesIndex: number | null = null;
+    let seriesIndex: number = -1;
 
     outer: for (let i = 0; i < series.length; i++) {
       const keys = profile.labels.map(e => e.name);
@@ -436,7 +449,7 @@ export const RawMetricsGraph = ({
 
     return {
       labels: [],
-      seriesIndex: seriesIndex,
+      seriesIndex,
       timestamp: sample[0],
       value: sample[1],
       x: xScale(sample[0]),
@@ -521,7 +534,14 @@ export const RawMetricsGraph = ({
               </g>
             )}
             {selected != null && (
-              <g className="circle-group" style={{fill: color(selected.seriesIndex.toString())}}>
+              <g
+                className="circle-group"
+                style={
+                  selected?.seriesIndex != null
+                    ? {fill: color(selected.seriesIndex.toString())}
+                    : {}
+                }
+              >
                 <MetricsCircle cx={selected.x} cy={selected.y} radius={5} />
               </g>
             )}

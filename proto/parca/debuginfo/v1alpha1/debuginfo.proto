@@ -9,6 +9,9 @@ service DebugInfoService {
 
   // Upload ingests debug info for a given build_id
   rpc Upload(stream UploadRequest) returns (UploadResponse) {}
+
+  // Download returns the debug info for a given build_id.
+  rpc Download(DownloadRequest) returns (stream DownloadResponse) {}
 }
 
 // ExistsRequest request to determine if debug info exists for a given build_id
@@ -43,8 +46,11 @@ message UploadInfo {
   // build_id is a unique identifier for the debug data
   string build_id = 1;
 
-  // hash is the hash of the debug information file
+  // hash is the hash of the source file that debug information extracted from
   string hash = 2;
+
+// TODO(kakkoyun): Add SourceHash and use Hash as debuginfo file hash.
+// TODO(kakkoyun): Add SourceType enum.
 }
 
 // UploadResponse returns the build_id and the size of the uploaded debug info
@@ -54,4 +60,38 @@ message UploadResponse {
 
   // size is the number of bytes of the debug info
   uint64 size = 2;
+}
+
+// DownloadRequest upload debug info
+message DownloadRequest {
+  // build_id is a unique identifier for the debug data
+  string build_id = 1;
+}
+
+// DownloadRequest returns chunked data of the debuginfo.
+message DownloadResponse {
+  // data contains either the upload info metadata or the debug info
+  oneof data {
+    // info is the metadata for the debug info
+    DownloadInfo info = 1;
+
+    // chunk_data is the raw bytes of the debug info
+    bytes chunk_data = 2;
+  }
+}
+
+// DownloadInfo metadata for the debug data that is being downloaded.
+message DownloadInfo {
+  // Source enum describes the source a debuginfo is from.
+  enum Source {
+    // To understand when no source is set we have the unknown source.
+    SOURCE_UNKNOWN_UNSPECIFIED = 0;
+    // The debuginfo was uploaded by a user/agent.
+    SOURCE_UPLOAD = 1;
+    // The debuginfo was downloaded from a public debuginfod server.
+    SOURCE_DEBUGINFOD = 2;
+  }
+
+  // Source indicates the origin of the debuginfo being downloaded.
+  Source source = 1;
 }

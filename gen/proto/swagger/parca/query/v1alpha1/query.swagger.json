@@ -299,14 +299,15 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
               "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
               "REPORT_TYPE_PPROF",
-              "REPORT_TYPE_TOP"
+              "REPORT_TYPE_TOP",
+              "REPORT_TYPE_CALLGRAPH"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           }
@@ -424,6 +425,39 @@
         ]
       }
     },
+    "/profiles/share": {
+      "post": {
+        "summary": "ShareProfile uploads the given profile to pprof.me and returns a link to the profile.",
+        "operationId": "QueryService_ShareProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ShareProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ShareProfileRequest"
+            }
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
     "/profiles/types": {
       "get": {
         "summary": "ProfileTypes returns the list of available profile types.",
@@ -454,10 +488,11 @@
       "enum": [
         "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
         "REPORT_TYPE_PPROF",
-        "REPORT_TYPE_TOP"
+        "REPORT_TYPE_TOP",
+        "REPORT_TYPE_CALLGRAPH"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -465,7 +500,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "byte",
           "description": "id is the unique identifier for the function."
         },
         "startLine": {
@@ -493,7 +527,6 @@
       "properties": {
         "functionId": {
           "type": "string",
-          "format": "byte",
           "description": "function_id is the ID of the function."
         },
         "line": {
@@ -509,7 +542,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "byte",
           "description": "id is the unique identifier for the location."
         },
         "address": {
@@ -519,12 +551,18 @@
         },
         "mappingId": {
           "type": "string",
-          "format": "byte",
           "description": "mapping_id is the unique identifier for the mapping associated with the location."
         },
         "isFolded": {
           "type": "boolean",
           "description": "is_folded indicates whether the location is folded into the previous location."
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Line"
+          },
+          "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
         }
       },
       "description": "Location describes a single location of a stack traces."
@@ -534,7 +572,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "format": "byte",
           "description": "id is the unique identifier for the mapping."
         },
         "start": {
@@ -550,7 +587,7 @@
         "offset": {
           "type": "string",
           "format": "uint64",
-          "description": "offset is the offset of the mapping."
+          "description": "offset in the binary that corresponds to the first mapped address."
         },
         "file": {
           "type": "string",
@@ -633,6 +670,99 @@
           }
         }
       }
+    },
+    "v1alpha1Callgraph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1CallgraphNode"
+          },
+          "title": "nodes are the nodes in the callgraph"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1CallgraphEdge"
+          },
+          "title": "edges are the edges connecting nodes in the callgraph"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the total cumulative value of the callgraph"
+        }
+      },
+      "title": "Callgraph is the callgraph report type"
+    },
+    "v1alpha1CallgraphEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id is the unique id of the edge"
+        },
+        "source": {
+          "type": "string",
+          "title": "source represents the id of the source node"
+        },
+        "target": {
+          "type": "string",
+          "title": "target represents the id of the target node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the edge"
+        },
+        "isCollapsed": {
+          "type": "boolean",
+          "title": "is_collapsed indicates if the edge is collapsed"
+        }
+      },
+      "title": "CallgraphEdge represents an edge in the graph"
+    },
+    "v1alpha1CallgraphNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id is the unique id of the node"
+        },
+        "meta": {
+          "$ref": "#/definitions/v1alpha1CallgraphNodeMeta",
+          "title": "meta is the metadata about the node"
+        },
+        "cumulative": {
+          "type": "string",
+          "format": "int64",
+          "title": "cumulative is the cumulative value of the node"
+        }
+      },
+      "title": "CallgraphNode represents a node in the graph"
+    },
+    "v1alpha1CallgraphNodeMeta": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/metastorev1alpha1Location",
+          "title": "location is the location for the code"
+        },
+        "mapping": {
+          "$ref": "#/definitions/metastorev1alpha1Mapping",
+          "title": "mapping is the mapping into code"
+        },
+        "function": {
+          "$ref": "#/definitions/metastorev1alpha1Function",
+          "title": "function is the function information"
+        },
+        "line": {
+          "$ref": "#/definitions/metastorev1alpha1Line",
+          "title": "line is the line location"
+        }
+      },
+      "title": "TopNodeMeta is the metadata for a given node"
     },
     "v1alpha1DiffProfile": {
       "type": "object",
@@ -922,6 +1052,32 @@
       },
       "title": "QueryRangeResponse is the set of matching profile values"
     },
+    "v1alpha1QueryRequest": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/v1alpha1QueryRequestMode",
+          "title": "mode indicates the type of query performed"
+        },
+        "diff": {
+          "$ref": "#/definitions/v1alpha1DiffProfile",
+          "title": "diff contains the diff query options"
+        },
+        "merge": {
+          "$ref": "#/definitions/v1alpha1MergeProfile",
+          "title": "merge contains the merge query options"
+        },
+        "single": {
+          "$ref": "#/definitions/v1alpha1SingleProfile",
+          "title": "single contains the single query options"
+        },
+        "reportType": {
+          "$ref": "#/definitions/QueryRequestReportType",
+          "title": "report_type is the type of report to return"
+        }
+      },
+      "title": "QueryRequest is a request for a profile query"
+    },
     "v1alpha1QueryRequestMode": {
       "type": "string",
       "enum": [
@@ -948,6 +1104,10 @@
         "top": {
           "$ref": "#/definitions/v1alpha1Top",
           "title": "top is a top list representation of the report"
+        },
+        "callgraph": {
+          "$ref": "#/definitions/v1alpha1Callgraph",
+          "title": "callgraph is a callgraph nodes and edges representation of the report"
         }
       },
       "title": "QueryResponse is the returned report for the given query"
@@ -955,6 +1115,30 @@
     "v1alpha1SeriesResponse": {
       "type": "object",
       "title": "SeriesResponse is unimplemented"
+    },
+    "v1alpha1ShareProfileRequest": {
+      "type": "object",
+      "properties": {
+        "queryRequest": {
+          "$ref": "#/definitions/v1alpha1QueryRequest",
+          "title": "QueryRequest that refers to the profile to be shared"
+        },
+        "description": {
+          "type": "string",
+          "title": "description about the profile"
+        }
+      },
+      "title": "ShareProfileRequest represents the query denoting the profile and a description about the profile"
+    },
+    "v1alpha1ShareProfileResponse": {
+      "type": "object",
+      "properties": {
+        "link": {
+          "type": "string",
+          "title": "link to access the profile"
+        }
+      },
+      "title": "ShareProfileResponse represents the shared link of a profile"
     },
     "v1alpha1SingleProfile": {
       "type": "object",

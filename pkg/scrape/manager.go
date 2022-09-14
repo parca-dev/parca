@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -113,16 +113,6 @@ func NewManager(
 	}
 	m.scrapeConfigs = c
 
-	// Cleanup and reload pool if config has changed.
-	for name, sp := range m.scrapePools {
-		if cfg, ok := m.scrapeConfigs[name]; !ok {
-			sp.stop()
-			delete(m.scrapePools, name)
-		} else if !reflect.DeepEqual(sp.config, cfg) {
-			sp.reload(cfg)
-		}
-	}
-
 	return m
 }
 
@@ -154,7 +144,7 @@ type Manager struct {
 	targetScrapeSampleOutOfBounds prometheus.Counter
 }
 
-// Run stars the manager with a set of scrape configs.
+// Run starts the manager with a set of scrape configs.
 func (m *Manager) Run(tsets <-chan map[string][]*targetgroup.Group) error {
 	go m.reloader()
 	for {
@@ -194,6 +184,7 @@ func (m *Manager) reloader() {
 
 func (m *Manager) reload() {
 	m.mtxScrape.Lock()
+	defer m.mtxScrape.Unlock()
 	var wg sync.WaitGroup
 	level.Debug(m.logger).Log("msg", "Reloading scrape manager")
 	for setName, groups := range m.targetSets {
@@ -227,7 +218,6 @@ func (m *Manager) reload() {
 			wg.Done()
 		}(sp, groups)
 	}
-	m.mtxScrape.Unlock()
 	wg.Wait()
 }
 

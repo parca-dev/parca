@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,17 +15,19 @@ package profilestore
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/google/pprof/profile"
-	"github.com/polarsignals/arcticdb"
+	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
@@ -33,8 +35,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
@@ -43,9 +46,10 @@ type ProfileColumnStore struct {
 
 	logger    log.Logger
 	tracer    trace.Tracer
-	metaStore metastore.ProfileMetaStore
+	metastore metastorepb.MetastoreServiceClient
 
-	table *arcticdb.Table
+	table  *frostdb.Table
+	schema *dynparquet.Schema
 
 	// When the debug-value-log is enabled, every profile is first written to
 	// tmp/<labels>/<timestamp>.pb.gz before it's parsed and written to the
@@ -60,26 +64,33 @@ var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
 func NewProfileColumnStore(
 	logger log.Logger,
 	tracer trace.Tracer,
-	metaStore metastore.ProfileMetaStore,
-	table *arcticdb.Table,
+	metastore metastorepb.MetastoreServiceClient,
+	table *frostdb.Table,
+	schema *dynparquet.Schema,
 	debugValueLog bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{
 		logger:        logger,
 		tracer:        tracer,
-		metaStore:     metaStore,
+		metastore:     metastore,
 		table:         table,
 		debugValueLog: debugValueLog,
+		schema:        schema,
 	}
 }
 
-func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
+func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
 	ctx, span := s.tracer.Start(ctx, "write-raw")
 	defer span.End()
 
-	ingester := parcacol.NewIngester(s.logger, s.metaStore, s.table)
+	ingester := parcacol.NewIngester(
+		s.logger,
+		parcacol.NewNormalizer(s.metastore),
+		s.table,
+		s.schema,
+	)
 
-	for _, series := range r.Series {
+	for _, series := range req.Series {
 		ls := make(labels.Labels, 0, len(series.Labels.Labels))
 		for _, l := range series.Labels.Labels {
 			if valid := model.LabelName(l.Name).IsValid(); !valid {
@@ -92,9 +103,25 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 			})
 		}
 
+		// Must ensure label-set is sorted and HasDuplicateLabelNames also required a sorted label-set
+		sort.Sort(ls)
+		if name, has := ls.HasDuplicateLabelNames(); has {
+			return nil, status.Errorf(codes.InvalidArgument, "duplicate label names: %v", name)
+		}
+
 		for _, sample := range series.Samples {
-			p, err := profile.Parse(bytes.NewBuffer(sample.RawProfile))
+			r, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
 			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to create gzip reader: %v", err)
+			}
+
+			content, err := io.ReadAll(r)
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "failed to decompress profile: %v", err)
+			}
+
+			p := &pprofpb.Profile{}
+			if err := p.UnmarshalVT(content); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
 			}
 
@@ -104,18 +131,14 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, r *profilestorepb.Wri
 				if err != nil {
 					level.Error(s.logger).Log("msg", "failed to create debug-value-log directory", "err", err)
 				} else {
-					err := ioutil.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, timestamp.FromTime(time.Now())), sample.RawProfile, 0o644)
+					err := os.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, timestamp.FromTime(time.Now())), sample.RawProfile, 0o644)
 					if err != nil {
 						level.Error(s.logger).Log("msg", "failed to write debug-value-log", "err", err)
 					}
 				}
 			}
 
-			if err := p.CheckValid(); err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
-			}
-
-			if err := ingester.Ingest(ctx, ls, p, r.Normalized); err != nil {
+			if err := ingester.Ingest(ctx, ls, p, req.Normalized); err != nil {
 				return nil, status.Errorf(codes.Internal, "failed to ingest profile: %v", err)
 			}
 		}

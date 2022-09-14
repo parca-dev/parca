@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -48,6 +48,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
+	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/prober"
 	"github.com/parca-dev/parca/ui"
 )
@@ -112,6 +113,9 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 
 	// Start grpc server with API server registered
 	srv := grpc.NewServer(
+		// It is increased to 32MB to account for large protobuf messages (debug information uploads and downloads).
+		grpc.MaxSendMsgSize(debuginfo.MaxMsgSize),
+		grpc.MaxRecvMsgSize(debuginfo.MaxMsgSize),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
 				otelgrpc.StreamServerInterceptor(),
@@ -139,6 +143,9 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	grpc_health.RegisterHealthServer(srv, s.grpcProbe.HealthServer())
 
 	internalMux := chi.NewRouter()
+	if pathPrefix != "" {
+		internalMux.Mount(pathPrefix+"/api", grpcWebMux)
+	}
 	internalMux.Mount("/api", grpcWebMux)
 
 	internalMux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {

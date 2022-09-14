@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.13.4",
+  "version": "0.16.1",
   "description": "A component library for Parca",
   "main": "src/index.tsx",
   "scripts": {
@@ -9,26 +9,36 @@
   "dependencies": {
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
-    "@parca/client": "^0.13.0",
-    "@parca/dynamicsize": "^0.13.0",
-    "@parca/functions": "^0.13.3",
-    "@parca/icons": "^0.13.0",
-    "@parca/parser": "^0.13.0",
-    "@parca/profile": "^0.13.4",
-    "@parca/store": "^0.13.3",
+    "@parca/client": "^0.16.0",
+    "@parca/dynamicsize": "^0.16.0",
+    "@parca/functions": "^0.16.0",
+    "@parca/icons": "^0.16.0",
+    "@parca/parser": "^0.16.0",
+    "@parca/profile": "^0.16.0",
+    "@parca/store": "^0.16.0",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
+    "@types/cytoscape": "3.19.8",
+    "@types/react-cytoscapejs": "1.2.2",
     "@types/react-datepicker": "^4.4.0",
     "classnames": "^2.3.1",
+    "cytoscape": "3.22.1",
+    "d3": "7.6.1",
+    "d3-selection": "3.0.0",
+    "graphviz-wasm": "3.0.0",
+    "konva": "8.3.12",
+    "react-cytoscapejs": "1.2.1",
     "react-datepicker": "^4.6.0",
+    "react-konva": "18.2.1",
     "react-use": "^17.3.2"
   },
   "devDependencies": {
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0"
+    "@types/d3": "7.4.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "peerDependencies": {
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "keywords": [],
   "author": "",

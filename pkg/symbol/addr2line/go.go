@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -23,17 +23,20 @@ import (
 	"github.com/go-kit/log"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
+// GoLiner is a liner which utilizes .gopclntab section to symbolize addresses.
+// It doesn't work for inlined functions.
 type GoLiner struct {
 	logger log.Logger
 
 	symtab *gosym.Table
 }
 
-func Go(logger log.Logger, path string) (*GoLiner, error) {
-	tab, err := gosymtab(path)
+// Go creates a new GoLiner.
+func Go(logger log.Logger, f *elf.File) (*GoLiner, error) {
+	tab, err := gosymtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
@@ -44,7 +47,8 @@ func Go(logger log.Logger, path string) (*GoLiner, error) {
 	}, nil
 }
 
-func (gl *GoLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err error) {
+// PCToLines looks up the line number information for a program counter (memory address).
+func (gl *GoLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	defer func() {
 		// PCToLine panics with "invalid memory address or nil pointer dereference",
 		//	- when it refers to an address that doesn't actually exist.
@@ -63,7 +67,7 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err e
 
 	// TODO(kakkoyun): These lines miss the inline functions.
 	// - Find a way to symbolize inline functions.
-	lines = append(lines, metastore.LocationLine{
+	lines = append(lines, profile.LocationLine{
 		Line: int64(line),
 		Function: &pb.Function{
 			Name:     name,
@@ -73,13 +77,11 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []metastore.LocationLine, err e
 	return lines, nil
 }
 
-func gosymtab(path string) (*gosym.Table, error) {
-	objFile, err := elf.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open elf: %w", err)
-	}
-	defer objFile.Close()
-
+// gosymtab returns the Go symbol table (.gosymtab section) decoded from the ELF file.
+func gosymtab(objFile *elf.File) (*gosym.Table, error) {
+	// The .gopclntab section contains tables and meta data required for symbolization,
+	// see https://github.com/DataDog/go-profiler-notes/blob/main/stack-traces.md#gopclntab.
+	var err error
 	var pclntab []byte
 	if sec := objFile.Section(".gopclntab"); sec != nil {
 		if sec.Type == elf.SHT_NOBITS {

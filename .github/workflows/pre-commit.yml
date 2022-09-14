@@ -1,0 +1,76 @@
+name: pre-commit
+
+on:
+  push:
+    branches:
+      - main
+      - release-*
+  pull_request:
+    branches:
+      - main
+      - release-*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=pypi depName=pre-commit versioning=pep440
+  PRE_COMMIT_VERSION: 2.20.0
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check if pre-commit should run on all files
+        id: run-all-files
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+        continue-on-error: true
+        with:
+          do_not_skip: '["schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              ".github/workflows/pre-commit.yml",
+              ".go-version",
+              ".pre-commit-config.yaml"
+            ]
+          skip_after_successful_duplicate: false
+
+      - name: Checkout
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
+        with:
+          go-version-file: .go-version
+
+      - name: Set GO_VERSION
+        run: echo "GO_VERSION=$(<.go-version)" >> $GITHUB_ENV
+
+      - name: Set up pre-commit
+        run: pipx install "pre-commit==${PRE_COMMIT_VERSION}"
+
+      - name: Set PY_HASH
+        run: echo "PY_HASH=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+
+      - name: Set up pre-commit cache
+        uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 # tag=v3.0.8
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-go${{ env.GO_VERSION }}-${{ env.PY_HASH }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run pre-commit
+        run: |
+          declare -a EXTRA_ARGS=()
+          if [[ '${{ steps.run-all-files.outputs.should_skip }}' != 'true' ]]; then
+            EXTRA_ARGS=(--all-files)
+          elif [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
+            EXTRA_ARGS=(--from-ref "origin/${GITHUB_BASE_REF}" --to-ref "${GITHUB_SHA}")
+          else
+            EXTRA_ARGS=(--from-ref "${GITHUB_SHA}^" --to-ref "${GITHUB_SHA}")
+          fi
+
+          pre-commit run --show-diff-on-failure --color=always "${EXTRA_ARGS[@]}"

@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,27 +14,23 @@
 package query
 
 import (
-	"bytes"
 	"context"
 	"sort"
 
 	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore metastore.ProfileMetaStore, p *profile.StacktraceSamples) (*pb.Flamegraph, error) {
+func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile.Profile) (*pb.Flamegraph, error) {
 	rootNode := &pb.FlamegraphNode{}
 	current := rootNode
 
-	samples := p.Samples
-
 	var height int32
 
-	for _, s := range samples {
-		locations := s.Location
+	for _, s := range p.Samples {
+		locations := s.Locations
 		if int32(len(locations)) > height {
 			height = int32(len(locations))
 		}
@@ -47,15 +43,11 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, metaStore 
 			for j := len(nodes) - 1; j >= 0; j-- {
 				node := nodes[j]
 
-				index := sort.Search(len(current.GetChildren()), func(i int) bool {
-					cmp := bytes.Compare(current.GetChildren()[i].GetMeta().GetLocation().GetId(), node.GetMeta().GetLocation().GetId())
-					return cmp == 0 || cmp == 1
+				index := sort.Search(len(current.Children), func(i int) bool {
+					return current.Children[i].Meta.Location.Id >= node.Meta.Location.Id
 				})
 
-				if index < len(current.GetChildren()) && bytes.Equal(
-					current.GetChildren()[index].GetMeta().GetLocation().GetId(),
-					node.GetMeta().GetLocation().GetId(),
-				) {
+				if index < len(current.GetChildren()) && current.Children[index].Meta.Location.Id == node.Meta.Location.Id {
 					// Insert onto existing node
 					current = current.Children[index]
 					current.Cumulative += s.Value

@@ -2,28 +2,57 @@ name: Jsonnet
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'deploy/**'
-      - '*.jsonnet'
-      - '*.libsonnet'
+    branches:
+    - main
+    - release-*
   pull_request:
-    branches: [ main ]
-    paths:
-      - 'deploy/**'
-      - '*.jsonnet'
-      - '*.libsonnet'
+    branches:
+    - main
+    - release-*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  skip-check:
+    name: Skip check
+    continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      should_skip: ${{ steps.skip-check.outputs.should_skip }}
+    permissions:
+      actions: write
+      contents: read
     steps:
-      - uses: actions/checkout@v3
+      - id: skip-check
+        uses: fkirc/skip-duplicate-actions@9d116fa7e55f295019cfab7e3ab72b478bcf7fdd # tag=v4.0.0
+        with:
+          do_not_skip: '["schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              "*.jsonnet",
+              "*.libsonnet",
+              ".github/workflows/jsonnet.yml",
+              ".go-version",
+              "deploy/**"
+            ]
+          skip_after_successful_duplicate: false
+
+  build:
+    name: Jsonnet Build
+    needs: skip-check
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
         with:
-          go-version: '1.18'
+          go-version-file: .go-version
           check-latest: true
 
       - name: Set up Jsonnet
@@ -33,7 +62,7 @@ jobs:
         run: cd deploy && make --always-make vendor manifests
 
       - name: Archive generatated manifests
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
         with:
           name: manifests
           path: |

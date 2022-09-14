@@ -1,4 +1,4 @@
-// Copyright (c) 2022 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestSymtabLiner_PCToLines(t *testing.T) {
@@ -36,7 +36,7 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 		name      string
 		fields    fields
 		args      args
-		wantLines []metastore.LocationLine
+		wantLines []profile.LocationLine
 		wantErr   bool
 	}{
 		{
@@ -94,7 +94,7 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			args: args{
 				addr: 1,
 			},
-			wantLines: []metastore.LocationLine{
+			wantLines: []profile.LocationLine{
 				{
 					Function: &metastorev1alpha1.Function{
 						Name:     "foo",

@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {Query} from '@parca/parser';
 import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
@@ -8,17 +21,10 @@ import MatchersInput from '../MatchersInput';
 import MergeButton from './MergeButton';
 import CompareButton from './CompareButton';
 import Card from '../Card';
-import {
-  DateTimeRangePicker,
-  DateTimeRange,
-  Select,
-  Button,
-  ButtonGroup,
-  SelectElement,
-  useGrpcMetadata,
-} from '../';
+import {DateTimeRangePicker, DateTimeRange, Button, ButtonGroup, useGrpcMetadata} from '../';
 import {CloseIcon} from '@parca/icons';
 import cx from 'classnames';
+import ProfileTypeSelector from '../ProfileTypeSelector';
 
 export interface QuerySelection {
   expression: string;
@@ -40,117 +46,31 @@ interface ProfileSelectorProps {
   onCompareProfile: () => void;
 }
 
-interface WellKnownProfiles {
-  [key: string]: {
-    name: string;
-    help: string;
-  };
-}
-
 export interface IProfileTypesResult {
-  response?: ProfileTypesResponse;
+  loading: boolean;
+  data?: ProfileTypesResponse;
   error?: RpcError;
 }
 
 export const useProfileTypes = (client: QueryServiceClient): IProfileTypesResult => {
-  const [result, setResult] = useState<IProfileTypesResult>({});
+  const [result, setResult] = useState<ProfileTypesResponse | undefined>(undefined);
+  const [error, setError] = useState<RpcError | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
+    if (!loading) {
+      return;
+    }
     const call = client.profileTypes({}, {meta: metadata});
     call.response
-      .then(response => setResult({response: response}))
-      .catch(error => setResult({error: error}));
-  }, [client, metadata]);
+      .then(response => setResult(response))
+      .catch(error => setError(error))
+      .finally(() => setLoading(false));
+  }, [client, metadata, loading]);
 
-  return result;
+  return {loading, data: result, error};
 };
-
-const wellKnownProfiles: WellKnownProfiles = {
-  'block:contentions:count:contentions:count': {
-    name: 'Block Contentions Total',
-    help: 'Stack traces that led to blocking on synchronization primitives.',
-  },
-  'block:delay:nanoseconds:contentions:count': {
-    name: 'Block Contention Time Total',
-    help: 'Time delayed stack traces caused by blocking on synchronization primitives.',
-  },
-  // Unfortunately, fgprof does not set the period type and unit.
-  'fgprof:samples:count::': {
-    name: 'Fgprof Samples Total',
-    help: 'CPU profile samples observed regardless of their current On/Off CPU scheduling status',
-  },
-  // Unfortunately, fgprof does not set the period type and unit.
-  'fgprof:time:nanoseconds::': {
-    name: 'Fgprof Samples Time Total',
-    help: 'CPU profile measured regardless of their current On/Off CPU scheduling status in nanoseconds',
-  },
-  'goroutine:goroutine:count:goroutine:count': {
-    name: 'Goroutine Created Total',
-    help: 'Stack traces that created all current goroutines.',
-  },
-  'memory:alloc_objects:count:space:bytes': {
-    name: 'Memory Allocated Objects Total',
-    help: 'A sampling of all past memory allocations by objects.',
-  },
-  'memory:alloc_space:bytes:space:bytes': {
-    name: 'Memory Allocated Bytes Total',
-    help: 'A sampling of all past memory allocations in bytes.',
-  },
-  'memory:alloc_objects:count:space:bytes:delta': {
-    name: 'Memory Allocated Objects Delta',
-    help: 'A sampling of all memory allocations during the observation by objects.',
-  },
-  'memory:alloc_space:bytes:space:bytes:delta': {
-    name: 'Memory Allocated Bytes Delta',
-    help: 'A sampling of all memory allocations during the observation in bytes.',
-  },
-  'memory:inuse_objects:count:space:bytes': {
-    name: 'Memory In-Use Objects',
-    help: 'A sampling of memory allocations of live objects by objects.',
-  },
-  'memory:inuse_space:bytes:space:bytes': {
-    name: 'Memory In-Use Bytes',
-    help: 'A sampling of memory allocations of live objects by bytes.',
-  },
-  'mutex:contentions:count:contentions:count': {
-    name: 'Mutex Contentions Total',
-    help: 'Stack traces of holders of contended mutexes.',
-  },
-  'mutex:delay:nanoseconds:contentions:count': {
-    name: 'Mutex Contention Time Total',
-    help: 'Time delayed stack traces caused by contended mutexes.',
-  },
-  'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta': {
-    name: 'Process CPU Nanoseconds',
-    help: 'CPU profile measured by the process itself in nanoseconds.',
-  },
-  'process_cpu:samples:count:cpu:nanoseconds:delta': {
-    name: 'Process CPU Samples',
-    help: 'CPU profile samples observed by the process itself.',
-  },
-  'parca_agent_cpu:samples:count:cpu:nanoseconds:delta': {
-    name: 'CPU Samples',
-    help: 'CPU profile samples observed by Parca Agent.',
-  },
-};
-
-function profileSelectElement(name: string): SelectElement {
-  const wellKnown = wellKnownProfiles[name];
-  if (wellKnown === undefined) return {active: <>{name}</>, expanded: <>{name}</>};
-
-  const title = wellKnown.name.replace(/ /g, '\u00a0');
-  return {
-    active: <>{title}</>,
-    expanded: (
-      <>
-        <span>{title}</span>
-        <br />
-        <span className="text-xs">{wellKnown.help}</span>
-      </>
-    ),
-  };
-}
 
 const ProfileSelector = ({
   queryClient,
@@ -163,21 +83,11 @@ const ProfileSelector = ({
   comparing,
   onCompareProfile,
 }: ProfileSelectorProps): JSX.Element => {
-  const {response, error} = useProfileTypes(queryClient);
-  const profileNames =
-    (error === undefined || error == null) && response !== undefined && response != null
-      ? response.types.map(
-          type =>
-            `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${
-              type.periodUnit
-            }${type.delta ? ':delta' : ''}`
-        )
-      : [];
-
-  const profileLabels = profileNames.map(name => ({
-    key: name,
-    element: profileSelectElement(name),
-  }));
+  const {
+    loading: profileTypesLoading,
+    data: profileTypesData,
+    error,
+  } = useProfileTypes(queryClient);
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
@@ -212,7 +122,7 @@ const ProfileSelector = ({
       expression: expr,
       from: timeRangeSelection.getFromMs(),
       to: timeRangeSelection.getToMs(),
-      merge: merge,
+      merge,
       timeSelection: timeRangeSelection.getRangeKey(),
     });
   };
@@ -237,7 +147,10 @@ const ProfileSelector = ({
     setQueryExpressionString(newExpressionString);
   };
 
-  const setProfileName = (profileName: string): void => {
+  const setProfileName = (profileName: string | undefined): void => {
+    if (profileName === undefined) {
+      return;
+    }
     const [newQuery, changed] = query.setProfileName(profileName);
     if (changed) {
       const q = newQuery.toString();
@@ -257,18 +170,19 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header className={cx(comparing === true && 'overflow-x-scroll')}>
+      <Card.Header className={cx(comparing && 'overflow-x-scroll')}>
         <div className="flex space-x-4">
           {comparing && (
             <button type="button" onClick={() => closeProfile()}>
               <CloseIcon />
             </button>
           )}
-          <Select
-            items={profileLabels}
+          <ProfileTypeSelector
+            profileTypesData={profileTypesData}
+            loading={profileTypesLoading}
             selectedKey={selectedProfileName}
             onSelection={setProfileName}
-            placeholder="Select profile..."
+            error={error}
           />
           <MatchersInput
             queryClient={queryClient}

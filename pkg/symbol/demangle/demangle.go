@@ -1,4 +1,4 @@
-// Copyright 2021 The Parca Authors
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,12 +21,25 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
+// Demangler demangles GCC/LLVM C++ and Rust symbol names.
+//
+// Demangling is the inverse process of mangling (encoding of each unique
+// function and parameter list combination into a unique name for the linker).
+// With mangling the linker can tell the difference between overloaded functions
+// (they have the same name in the source code but different parameter lists).
 type Demangler struct {
 	options []demangle.Option
 	mode    string
 	force   bool
 }
 
+// NewDemangler creates a new Demangler with a given demangler mode.
+//
+// The mode can be "full", "templates" (no demangling of return types or function parameters),
+// "simple" (no demangling of return types, no function or template parameters),
+// and "none" (no demangling).
+//
+// If force is set, overwrite any names that appear already demangled.
 func NewDemangler(mode string, force bool) *Demangler {
 	var options []demangle.Option
 	switch mode {
