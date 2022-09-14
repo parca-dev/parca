@@ -16,12 +16,12 @@ import React, {MouseEvent, useEffect, useRef, useState} from 'react';
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
+
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {GraphTooltip} from '@parca/components';
-import {getLastItem, diffColor, isSearchMatch, SEARCH_STRING_COLOR} from '@parca/functions';
+import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
-
 import {hexifyAddress} from './utils';
 import {HoveringNode} from '@parca/components/src/GraphTooltip';
 
@@ -202,12 +202,12 @@ export function IcicleGraphNodes({
             ? scaleLinear().domain([0, cumulative]).range([0, totalWidth])
             : xScale;
 
-        const onMouseEnter = () => {
+        const onMouseEnter = (): void => {
           if (isShiftDown) return;
 
           setHoveringNode(d);
         };
-        const onMouseLeave = () => {
+        const onMouseLeave = (): void => {
           if (isShiftDown) return;
 
           setHoveringNode(undefined);
@@ -269,19 +269,19 @@ export function IcicleGraphRootNode({
   const diff = parseFloat(node.diff);
   const color = diffColor(diff, cumulative, isDarkMode);
 
-  const onClick = () => setCurPath([]);
-  const onMouseEnter = () => {
+  const onClick = (): void => setCurPath([]);
+  const onMouseEnter = (): void => {
     if (isShiftDown) return;
 
     setHoveringNode(node);
   };
-  const onMouseLeave = () => {
+  const onMouseLeave = (): void => {
     if (isShiftDown) return;
 
     setHoveringNode(undefined);
   };
 
-  const path = [];
+  const path: string[] = [];
 
   return (
     <g transform={'translate(0, 0)'}>
