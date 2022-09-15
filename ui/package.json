@@ -16,7 +16,7 @@
     "packages/shared/*"
   ],
   "dependencies": {
-    "d3-dag": "0.11.4",
+    "d3-dag": "0.11.5",
     "date-fns": "2.29.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
