@@ -200,6 +200,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		frostdb.WithLogger(logger),
 		frostdb.WithRegistry(reg),
 		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
+		frostdb.WithGranuleSizeBytes(flags.StorageGranuleSize),
 	}
 
 	if flags.EnablePersistence {
