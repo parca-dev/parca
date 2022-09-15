@@ -443,7 +443,7 @@ func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetO
 		stacktraceKeys = append(stacktraceKeys, MakeStacktraceKey(stacktrace))
 	}
 
-	const maxRetries = 2
+	const maxRetries = 100
 	var result retryableGetOrCreateStacktraces
 	var err error
 
