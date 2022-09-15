@@ -34,8 +34,8 @@ const (
 	// uploaded and downloaded. AWS S3 has a minimum of 5MB for multi-part uploads
 	// and a maximum of 15MB, and a default of 8MB.
 	ChunkSize = 1024 * 1024 * 8
-	// MaxMsgSize is the maximum message size the server can receive or send. By default, it is 4MB.
-	MaxMsgSize = 1024 * 1024 * 32
+	// MaxMsgSize is the maximum message size the server can receive or send. By default, it is 64MB.
+	MaxMsgSize = 1024 * 1024 * 64
 )
 
 type Client struct {
