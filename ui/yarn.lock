@@ -8629,10 +8629,10 @@ d3-contour@4:
   dependencies:
     d3-array "^3.2.0"
 
-d3-dag@0.11.4:
-  version "0.11.4"
-  resolved "https://registry.yarnpkg.com/d3-dag/-/d3-dag-0.11.4.tgz#0b337e28ec7b12de02a27050e2c334420081688b"
-  integrity sha512-KeXRyX5YsO7ZWnKXEGy6FXCMo/FdWGVkUPdRI4waKzLV06EGPwz6O3YOP3/OKk2nv8KZGrjZzeGIJJ3wLYK9CA==
+d3-dag@0.11.5:
+  version "0.11.5"
+  resolved "https://registry.yarnpkg.com/d3-dag/-/d3-dag-0.11.5.tgz#666675d763770ca013d13b609eba5fc66d8d419e"
+  integrity sha512-sNHvYqjzDlvV2fyEkoOCSuLs2GeWliIg7pJcAiKXgtUSxl0kIX0C2q1J8JzzA9CQWptKxYtzxFCXiKptTW8qsQ==
   dependencies:
     d3-array "^3.1.6"
     fastpriorityqueue "0.7.2"
@@ -19114,10 +19114,10 @@ sass-loader@^12.3.0:
     klona "^2.0.4"
     neo-async "^2.6.2"
 
-sass@1.54.8:
-  version "1.54.8"
-  resolved "https://registry.yarnpkg.com/sass/-/sass-1.54.8.tgz#4adef0dd86ea2b1e4074f551eeda4fc5f812a996"
-  integrity sha512-ib4JhLRRgbg6QVy6bsv5uJxnJMTS2soVcCp9Y88Extyy13A8vV0G1fAwujOzmNkFQbR3LvedudAMbtuNRPbQww==
+sass@1.54.9:
+  version "1.54.9"
+  resolved "https://registry.yarnpkg.com/sass/-/sass-1.54.9.tgz#b05f14ed572869218d1a76961de60cd647221762"
+  integrity sha512-xb1hjASzEH+0L0WI9oFjqhRi51t/gagWnxLiwUNMltA0Ab6jIDkAacgKiGYKM9Jhy109osM7woEEai6SXeJo5Q==
   dependencies:
     chokidar ">=3.0.0 <4.0.0"
     immutable "^4.0.0"

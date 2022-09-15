@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "all-contributors-cli": "6.20.3",
+    "all-contributors-cli": "6.20.4",
     "ts-protoc-gen": "0.15.0"
   }
 }
