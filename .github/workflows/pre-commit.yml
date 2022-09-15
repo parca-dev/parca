@@ -47,9 +47,6 @@ jobs:
         with:
           go-version-file: .go-version
 
-      - name: Set GO_VERSION
-        run: echo "GO_VERSION=$(<.go-version)" >> $GITHUB_ENV
-
       - name: Set golangci-lint cache key parts
         run: |
           echo "INTERVAL_KEY=$(( $(date +%s) / (7 * 86400) ))" >> $GITHUB_ENV
@@ -73,8 +70,10 @@ jobs:
       - name: Set up pre-commit
         run: pipx install "pre-commit==${PRE_COMMIT_VERSION}"
 
-      - name: Set PY_HASH
-        run: echo "PY_HASH=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - name: Set pre-commit cache key parts
+        run: |
+          echo "GO_VERSION=$(<.go-version)" >> $GITHUB_ENV
+          echo "PY_HASH=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
 
       - name: Set up pre-commit cache
         uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 # tag=v3.0.8
