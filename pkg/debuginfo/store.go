@@ -81,12 +81,9 @@ type Store struct {
 	metadata         MetadataManager
 	debuginfodClient DebugInfodClient
 
-	validationAttemptsTotal      prometheus.Counter
-	validationErrorsTotal        prometheus.CounterVec
-	metadataUpdateDuration       prometheus.Histogram
-	uploadDebugInfoAttemptsTotal prometheus.Counter
-	uploadDebugInfoErrorsTotal   prometheus.CounterVec
-	uploadDebugInfoDuration      prometheus.Histogram
+	debugInfoUploadAttemptsTotal prometheus.Counter
+	debugInfoUploadErrorsTotal   prometheus.CounterVec
+	debugInfoUploadDuration      prometheus.Histogram
 	existsCheckDuration          prometheus.Histogram
 }
 
@@ -100,20 +97,20 @@ func NewStore(
 	bucket objstore.Bucket,
 	debuginfodClient DebugInfodClient,
 ) (*Store, error) {
-	uploadDebugInfoAttemptsTotal := prometheus.NewCounter(
+	debugInfoUploadAttemptsTotal := prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: "debuginfo_upload_attempts_total",
 			Help: "Total attempts to upload debuginfo.",
 		},
 	)
-	uploadDebugInfoErrorsTotal := prometheus.NewCounterVec(
+	debugInfoUploadErrorsTotal := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "debuginfo_upload_errors_total",
 			Help: "Total number of errors in uploading debuginfo.",
 		},
 		[]string{"reason"},
 	)
-	uploadDebugInfoDuration := prometheus.NewHistogram(
+	debugInfoUploadDuration := prometheus.NewHistogram(
 		prometheus.HistogramOpts{
 			Name:    "debuginfo_upload_duration_seconds",
 			Help:    "How long it took in seconds to upload debuginfo.",
@@ -129,26 +126,6 @@ func NewStore(
 		},
 	)
 
-	metadataUpdateDuration := prometheus.NewHistogram(
-		prometheus.HistogramOpts{
-			Name:    "debuginfo_metadata_update_duration_seconds",
-			Help:    "How long it took in seconds to finish updating metadata.",
-			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
-		},
-	)
-	validationAttemptsTotal := prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "debuginfo_validate_object_file_attempts_total",
-			Help: "Total number of validation of object file.",
-		},
-	)
-	validationErrorsTotal := prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "debuginfo_validate_object_file_errors_total",
-			Help: "Total number of errors in validationg object file.",
-		},
-		[]string{"reason"},
-	)
 	return &Store{
 		tracer:                       tracer,
 		logger:                       log.With(logger, "component", "debuginfo"),
@@ -156,12 +133,9 @@ func NewStore(
 		cacheDir:                     cacheDir,
 		metadata:                     metadata,
 		debuginfodClient:             debuginfodClient,
-		metadataUpdateDuration:       metadataUpdateDuration,
-		validationAttemptsTotal:      validationAttemptsTotal,
-		validationErrorsTotal:        *validationErrorsTotal,
-		uploadDebugInfoAttemptsTotal: uploadDebugInfoAttemptsTotal,
-		uploadDebugInfoErrorsTotal:   *uploadDebugInfoErrorsTotal,
-		uploadDebugInfoDuration:      uploadDebugInfoDuration,
+		debugInfoUploadAttemptsTotal: debugInfoUploadAttemptsTotal,
+		debugInfoUploadErrorsTotal:   *debugInfoUploadErrorsTotal,
+		debugInfoUploadDuration:      debugInfoUploadDuration,
 		existsCheckDuration:          existsCheckDuration,
 	}, nil
 }
@@ -210,12 +184,12 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 
 func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	defer func(begin time.Time) {
-		s.uploadDebugInfoDuration.Observe(time.Since(begin).Seconds())
+		s.debugInfoUploadDuration.Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	s.uploadDebugInfoAttemptsTotal.Inc()
+	s.debugInfoUploadAttemptsTotal.Inc()
 	req, err := stream.Recv()
 	if err != nil {
-		s.uploadDebugInfoErrorsTotal.WithLabelValues("stream_receive").Inc()
+		s.debugInfoUploadErrorsTotal.WithLabelValues("stream_receive").Inc()
 		msg := "failed to receive upload info"
 		level.Error(s.logger).Log("msg", msg, "err", err)
 		return status.Errorf(codes.Unknown, msg)
@@ -233,7 +207,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	span.SetAttributes(attribute.String("hash", hash))
 
 	if err := s.upload(ctx, buildID, hash, r); err != nil {
-		s.uploadDebugInfoErrorsTotal.WithLabelValues("store_upload").Inc()
+		s.debugInfoUploadErrorsTotal.WithLabelValues("store_upload").Inc()
 		return err
 	}
 
@@ -298,14 +272,13 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		if err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
-		s.validationAttemptsTotal.Inc()
 		if err := elfutils.ValidateFile(objFile); err != nil {
+			s.debugInfoUploadErrorsTotal.WithLabelValues("validation").Inc()
 			// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
 			if err := s.metadata.MarkAsCorrupted(ctx, buildID); err != nil {
 				level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
 			}
 			level.Error(s.logger).Log("msg", "failed to validate object file", "buildid", buildID)
-			s.validationErrorsTotal.WithLabelValues("validate_object_file").Inc()
 			// Client will retry.
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -318,7 +291,6 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 			hasDWARF, err := elfutils.HasDWARF(f)
 			if err != nil {
 				level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
-				s.validationErrorsTotal.WithLabelValues("has_dwarf_object_file").Inc()
 			}
 			f.Close()
 			if hasDWARF {
@@ -329,9 +301,6 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 
 	// At this point we know that we received a better version of the debug information file,
 	// so let the client upload it.
-	defer func(begin time.Time) {
-		s.metadataUpdateDuration.Observe(time.Since(begin).Seconds())
-	}(time.Now())
 	if err := s.metadata.MarkAsUploading(ctx, buildID); err != nil {
 		err = fmt.Errorf("failed to update metadata before uploading: %w", err)
 		return status.Error(codes.Internal, err.Error())
@@ -357,7 +326,6 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 	}
 
 	if err := elfutils.ValidateHeader(b); err != nil {
-		s.validationErrorsTotal.WithLabelValues("validate_header_object_file").Inc()
 		// Failed to validate. Mark the incoming stream as corrupted, and let the client try to upload it again.
 		if err := s.metadata.MarkAsCorrupted(ctx, buildID); err != nil {
 			err = fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)

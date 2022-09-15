@@ -310,7 +310,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		}
 	}
 
-	dbgInfoMetadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
+	dbgInfoMetadata := debuginfo.NewObjectStoreMetadata(logger, reg, bucket)
 	dbgInfo, err := debuginfo.NewStore(
 		tracerProvider.Tracer("debuginfo"),
 		logger,
