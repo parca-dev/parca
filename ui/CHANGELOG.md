@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.7](https://github.com/parca-dev/parca/compare/ui-v0.16.6...ui-v0.16.7) (2022-09-17)
+
+
+### Bug Fixes
+
+* set the granule size option in FrostDB ([#1726](https://github.com/parca-dev/parca/issues/1726)) ([20ba452](https://github.com/parca-dev/parca/commit/20ba452203cfc682f8ce623abe3132904418b694))
+
+
+
+
+
 ## [0.16.6](https://github.com/parca-dev/parca/compare/ui-v0.16.5...ui-v0.16.6) (2022-09-15)
 
 **Note:** Version bump only for package ui
