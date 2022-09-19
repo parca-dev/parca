@@ -30,11 +30,11 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20220908165200-51ec92480a76
+	github.com/polarsignals/frostdb v0.0.0-20220916132141-687469d4f7ea
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/prometheus v0.38.0
-	github.com/segmentio/parquet-go v0.0.0-20220802221544-d84ed320251d
+	github.com/segmentio/parquet-go v0.0.0-20220914222423-67dbe8d21ca5
 	github.com/stretchr/testify v1.8.0
 	github.com/thanos-io/objstore v0.0.0-20220825160751-a53cb72ffecc
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.34.0
