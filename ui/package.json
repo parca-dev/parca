@@ -11,7 +11,8 @@
     "bootstrap": "lerna bootstrap",
     "publish:ci": "lerna publish --yes --no-verify-access",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "chromatic": "npx chromatic --project-token=0c6e8089160b"
   },
   "workspaces": [
     "packages/app/*",
@@ -97,5 +98,7 @@
   },
   "resolutions": {
     "webpack": "^5"
-  }
+  },
+  "readme": "ERROR: No README data found!",
+  "_id": "ui@0.1.0"
 }

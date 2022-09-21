@@ -3,12 +3,12 @@ name: UI
 on:
   push:
     branches:
-    - main
-    - release-*
+      - main
+      - release-*
   pull_request:
     branches:
-    - main
-    - release-*
+      - main
+      - release-*
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -79,3 +79,8 @@ jobs:
       - name: Check typing
         working-directory: ui
         run: yarn run type-check
+
+      - name: Publish to Chromatic
+        uses: chromaui/action@v1
+        with:
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
