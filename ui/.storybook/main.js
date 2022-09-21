@@ -29,6 +29,7 @@ module.exports = {
       },
     },
   ],
+  staticDirs: [{from: '../packages/app/web/public/', to: '/public/'}],
   // A workaround for a storybook regression, see https://github.com/storybookjs/storybook/issues/14197#issuecomment-949337652
   babel: async options => ({
     ...options,

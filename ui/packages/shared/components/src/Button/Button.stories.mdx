@@ -1,0 +1,43 @@
+import {Meta, Story, Preview, Props} from '@storybook/addon-docs';
+
+import Button from '.';
+
+<Meta title="Components/Button" component={Button} />
+
+# Button
+
+Used for "call to action", i.e. triggering the main action. There should never be more than one on a page. If you need multiple buttons for different actions, decide which action is the most important and make that the primary `Button`. All other `Button` components should be secondary.
+
+### Default
+
+<Preview>
+  <Story name="Default">
+    <div className="">
+      <Button>Submit</Button>
+    </div>
+  </Story>
+</Preview>
+
+### Neutral
+
+<Preview>
+  <Story name="Neutral">
+    <div className="">
+      <Button variant="neutral">Submit</Button>
+    </div>
+  </Story>
+</Preview>
+
+### Text
+
+<Preview>
+  <Story name="Link">
+    <div className="">
+      <Button variant="link">Submit</Button>
+    </div>
+  </Story>
+</Preview>
+
+## Props
+
+<Props of={Button} />

@@ -1,0 +1,24 @@
+import {Meta, Story, Preview, Props} from '@storybook/addon-docs';
+
+import Card from '.';
+
+<Meta title="Components/Card" component={Card} />
+
+# Card
+
+### Default
+
+<Preview>
+  <Story name="Default">
+    <div className="">
+      <Card>
+        <Card.Header>This is the Card's header</Card.Header>
+        <Card.Body>This is the Card's body</Card.Body>
+      </Card>
+    </div>
+  </Story>
+</Preview>
+
+## Props
+
+<Props of={Card} />
