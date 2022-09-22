@@ -58,9 +58,9 @@ const Button = ({
     <button
       type="button"
       className={cx(
-        disabled ? 'opacity-50 pointer-events-none' : '',
+        disabled ? 'opacity-50 cursor-not-allowed' : '',
         ...Object.values(BUTTON_VARIANT[variant]),
-        'cursor-pointer group relative w-full flex $ text-sm rounded-md text-whitefocus:outline-none focus:ring-2 focus:ring-offset-2',
+        'cursor-pointer group relative w-full flex text-sm rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2',
         className
       )}
       disabled={disabled}

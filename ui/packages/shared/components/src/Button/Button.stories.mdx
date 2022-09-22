@@ -12,8 +12,13 @@ Used for "call to action", i.e. triggering the main action. There should never b
 
 <Preview>
   <Story name="Default">
-    <div className="">
-      <Button>Submit</Button>
+    <div className="flex space-x-2">
+      <div>
+        <Button>Search</Button>
+      </div>
+      <div>
+        <Button disabled={true}>Merge</Button>
+      </div>
     </div>
   </Story>
 </Preview>
@@ -22,8 +27,15 @@ Used for "call to action", i.e. triggering the main action. There should never b
 
 <Preview>
   <Story name="Neutral">
-    <div className="">
-      <Button variant="neutral">Submit</Button>
+    <div className="flex space-x-2">
+      <div>
+        <Button variant="neutral">Search</Button>
+      </div>
+      <div>
+        <Button variant="neutral" disabled={true}>
+          Merge
+        </Button>
+      </div>
     </div>
   </Story>
 </Preview>
@@ -32,8 +44,37 @@ Used for "call to action", i.e. triggering the main action. There should never b
 
 <Preview>
   <Story name="Link">
-    <div className="">
-      <Button variant="link">Submit</Button>
+    <div className="flex space-x-2">
+      <div>
+        <Button variant="link">Documentation</Button>
+      </div>
+      <div>
+        <Button variant="link" disabled={true}>
+          FAQs
+        </Button>
+      </div>
+    </div>
+  </Story>
+</Preview>
+
+### Additional classnames
+
+<Preview>
+  <Story name="Additional classnames">
+    <div className="flex space-x-2 items-center">
+      <div>
+        <Button className="bg-sky-500 border-sky-500 py-4">Merge</Button>
+      </div>
+      <div>
+        <Button className="bg-sky-500 border-sky-500 px-6" variant="neutral">
+          Search
+        </Button>
+      </div>
+      <div>
+        <Button className="text-black text-lg font-bold" variant="link">
+          Documentation
+        </Button>
+      </div>
     </div>
   </Story>
 </Preview>
