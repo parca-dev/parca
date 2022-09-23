@@ -148,7 +148,7 @@ jobs:
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}
-        uses: sigstore/cosign-installer@f3c664df7af409cb4873aa5068053ba9d61a57b6 # tag=v2.6.0
+        uses: sigstore/cosign-installer@ced07f21fb1da67979f539bbc6304c16c0677e76 # tag=v2.7.0
 
       - name: Install crane
         if: ${{ github.event_name != 'pull_request' }}
