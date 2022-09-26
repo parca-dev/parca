@@ -31,7 +31,7 @@ export const downloadPprof = async (
     reportType: QueryRequest_ReportType.PPROF,
   };
 
-  const {flamegraphResponse: response} = await queryClient.query(req, {meta: metadata});
+  const {response} = await queryClient.query(req, {meta: metadata});
   if (response.report.oneofKind !== 'pprof') {
     throw new Error(
       `Expected pprof report, got: ${

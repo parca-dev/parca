@@ -46,7 +46,7 @@ const ProfileShareModal = ({
   const handleSubmit: () => Promise<void> = async () => {
     try {
       setLoading(true);
-      const {flamegraphResponse: response} = await queryClient.shareProfile(
+      const {response} = await queryClient.shareProfile(
         {queryRequest, description},
         {meta: metadata}
       );

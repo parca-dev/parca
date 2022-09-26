@@ -54,7 +54,7 @@ export const useQueryRange = (
       setIsLoading(true);
 
       try {
-        const {flamegraphResponse: response} = await client.queryRange(
+        const {response} = await client.queryRange(
           {
             query: queryExpression,
             start: Timestamp.fromDate(new Date(start)),
