@@ -26,7 +26,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	sharepb "github.com/parca-dev/parca/gen/proto/go/share"
+	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -46,14 +46,14 @@ type ColumnQueryAPI struct {
 
 	logger      log.Logger
 	tracer      trace.Tracer
-	shareClient sharepb.ShareClient
+	shareClient sharepb.ShareServiceClient
 	querier     Querier
 }
 
 func NewColumnQueryAPI(
 	logger log.Logger,
 	tracer trace.Tracer,
-	shareClient sharepb.ShareClient,
+	shareClient sharepb.ShareServiceClient,
 	querier Querier,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{

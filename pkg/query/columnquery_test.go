@@ -42,18 +42,17 @@ import (
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/gen/proto/go/share"
-	sharepb "github.com/parca-dev/parca/gen/proto/go/share"
+	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func getShareServerConn(t Testing) share.ShareClient {
+func getShareServerConn(t Testing) sharepb.ShareServiceClient {
 	conn, err := grpc.Dial("api.pprof.me:443", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	require.NoError(t, err)
-	return sharepb.NewShareClient(conn)
+	return sharepb.NewShareServiceClient(conn)
 }
 
 func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {

@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package parca.share.v1alpha1;
+
+import "parca/query/v1alpha1/query.proto";
+
+// Service that exposes APIs for sharing profiles.
+service ShareService {
+  // Uploads the profile and returns the link that can be used to access it.
+  rpc Upload(UploadRequest) returns (UploadResponse) {}
+
+  // Query performs a profile query
+  rpc Query(QueryRequest) returns (QueryResponse) {}
+
+  // ProfileTypes returns the list of available profile types.
+  rpc ProfileTypes(ProfileTypesRequest) returns (ProfileTypesResponse) {}
+}
+
+// UploadRequest represents the request with profile bytes and description.
+message UploadRequest {
+  // pprof bytes of the profile to be uploaded.
+  bytes profile = 1;
+
+  // Description of the profile.
+  string description = 2;
+}
+
+// UploadResponse represents the response with the link that can be used to access the profile.
+message UploadResponse {
+  // id of the uploaded profile.
+  string id = 1;
+
+  // link that can be used to access the profile.
+  string link = 2;
+}
+
+// QueryRequest represents the request with the id of the profile to be queried.
+message QueryRequest {
+  // id of the profile to be queried.
+  string id = 1;
+
+  // Type of the profile to be queried.
+  optional string profile_type = 2;
+
+  // report_type is the type of report to return
+  parca.query.v1alpha1.QueryRequest.ReportType report_type = 3;
+}
+
+// ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
+message ProfileTypesRequest {
+  // id of the profile's types to be queried.
+  string id = 1;
+}
+
+// ProfileTypesResponse represents the response with the list of available profile types.
+message ProfileTypesResponse {
+  // list of available profile types.
+  repeated parca.query.v1alpha1.ProfileType types = 1;
+
+  // description of the profile uploaded.
+  string description = 2;
+}
+
+// QueryResponse is the returned report for the given query.
+message QueryResponse {
+  // report is the generated report
+  oneof report {
+    // flamegraph is a flamegraph representation of the report
+    parca.query.v1alpha1.Flamegraph flamegraph = 5;
+
+    // pprof is a pprof profile as compressed bytes
+    bytes pprof = 6;
+
+    // top is a top list representation of the report
+    parca.query.v1alpha1.Top top = 7;
+
+    // callgraph is a callgraph nodes and edges representation of the report
+    parca.query.v1alpha1.Callgraph callgraph = 8;
+  }
+}

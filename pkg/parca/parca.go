@@ -56,7 +56,7 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
-	sharepb "github.com/parca-dev/parca/gen/proto/go/share"
+	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
@@ -255,7 +255,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
-		sharepb.NewShareClient(conn),
+		sharepb.NewShareServiceClient(conn),
 		parcacol.NewQuerier(
 			tracerProvider.Tracer("querier"),
 			query.NewEngine(
