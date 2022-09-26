@@ -8,5 +8,5 @@
     "noEmit": false,
     "declaration": true
   },
-  "exclude": ["node_modules", "dist", "dist/**/*.d.ts"]
+  "exclude": ["node_modules", "dist", "dist/**/*.d.ts", "**/*.test.ts"]
 }
