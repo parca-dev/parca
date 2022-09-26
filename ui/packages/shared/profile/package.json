@@ -1,11 +1,11 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.16",
+  "version": "0.16.19",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@iconify/react": "^3.2.2",
-    "@parca/client": "^0.16.16",
-    "@parca/components": "^0.16.16",
+    "@parca/client": "^0.16.19",
+    "@parca/components": "^0.16.19",
     "@parca/dynamicsize": "^0.16.0",
     "@parca/functions": "^0.16.0",
     "@parca/parser": "^0.16.0",
