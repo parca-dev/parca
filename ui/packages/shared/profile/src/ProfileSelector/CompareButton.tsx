@@ -13,42 +13,42 @@
 
 import {useState} from 'react';
 import {usePopper} from 'react-popper';
-import {Button} from '../';
+import {Button} from '@parca/components';
 
-const MergeButton = ({
+const CompareButton = ({
   disabled,
   onClick,
 }: {
   disabled: boolean;
   onClick: () => void;
 }): JSX.Element => {
-  const [mergeHover, setMergeHover] = useState<boolean>(false);
-  const [mergePopperReferenceElement, setMergePopperReferenceElement] =
+  const [compareHover, setCompareHover] = useState<boolean>(false);
+  const [comparePopperReferenceElement, setComparePopperReferenceElement] =
     useState<HTMLDivElement | null>(null);
-  const [mergePopperElement, setMergePopperElement] = useState<HTMLDivElement | null>(null);
-  const {styles, attributes} = usePopper(mergePopperReferenceElement, mergePopperElement, {
+  const [comparePopperElement, setComparePopperElement] = useState<HTMLDivElement | null>(null);
+  const {styles, attributes} = usePopper(comparePopperReferenceElement, comparePopperElement, {
     placement: 'bottom',
   });
 
-  const mergeExplanation =
-    'Merging allows combining all profile samples of a query into a single report.';
+  const compareExplanation =
+    'Compare two profiles and see the relative difference between them more clearly.';
 
   if (disabled) return <></>;
 
   return (
-    <div ref={setMergePopperReferenceElement}>
+    <div ref={setComparePopperReferenceElement}>
       <Button
         color="neutral"
         disabled={disabled}
         onClick={onClick}
-        onMouseEnter={() => setMergeHover(true)}
-        onMouseLeave={() => setMergeHover(false)}
+        onMouseEnter={() => setCompareHover(true)}
+        onMouseLeave={() => setCompareHover(false)}
       >
-        Merge
+        Compare
       </Button>
-      {mergeHover && (
+      {compareHover && (
         <div
-          ref={setMergePopperElement}
+          ref={setComparePopperElement}
           style={styles.popper}
           {...attributes.popper}
           className="z-50"
@@ -58,8 +58,8 @@ const MergeButton = ({
               <svg className="text-black h-1 w-full left-0" x="0px" y="0px" viewBox="0 0 255 127.5">
                 <polygon className="fill-current" points="0,127.5 127.5,0 255,127.5" />
               </svg>
-              <div className="bg-black text-white text-xs rounded py-2 px-3 right-0 w-40 z-50">
-                {mergeExplanation}
+              <div className="bg-black text-white text-xs rounded py-2 px-3 right-0 w-40">
+                {compareExplanation}
               </div>
             </div>
           </div>
@@ -69,4 +69,4 @@ const MergeButton = ({
   );
 };
 
-export default MergeButton;
+export default CompareButton;

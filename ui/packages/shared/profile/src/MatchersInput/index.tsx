@@ -18,8 +18,7 @@ import {LabelsResponse, QueryServiceClient, ValuesResponse} from '@parca/client'
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
 
-import {useParcaTheme} from '../ParcaThemeContext';
-import {useGrpcMetadata} from '../GrpcMetadataContext';
+import {useParcaTheme, useGrpcMetadata} from '@parca/components';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;

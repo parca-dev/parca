@@ -16,13 +16,8 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {parseParams} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph} from '@parca/client';
-import {
-  Button,
-  Card,
-  SearchNodes,
-  useParcaTheme,
-  Callgraph as CallgraphComponent,
-} from '@parca/components';
+import {Button, Card, SearchNodes, useParcaTheme} from '@parca/components';
+import {Callgraph as CallgraphComponent} from './';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 import ProfileShareButton from './components/ProfileShareButton';

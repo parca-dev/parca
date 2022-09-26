@@ -17,7 +17,7 @@ import MetricsSeries from '../MetricsSeries';
 import MetricsCircle from '../MetricsCircle';
 import {pointer} from 'd3-selection';
 import {formatForTimespan} from '@parca/functions/time';
-import {SingleProfileSelection, timeFormat} from '@parca/profile';
+import {SingleProfileSelection, timeFormat} from '..';
 import {cutToMaxStringLength} from '@parca/functions/string';
 import throttle from 'lodash.throttle';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
