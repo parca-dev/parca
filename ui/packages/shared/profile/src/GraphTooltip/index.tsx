@@ -17,8 +17,8 @@ import {usePopper} from 'react-popper';
 
 import {CallgraphNode, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
-import {hexifyAddress} from '@parca/profile';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
+import {hexifyAddress} from '../';
 
 interface GraphTooltipProps {
   x: number;

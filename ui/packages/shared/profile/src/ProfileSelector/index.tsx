@@ -14,17 +14,23 @@
 import {Query} from '@parca/parser';
 import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {ProfileSelection} from '@parca/profile';
+import {ProfileSelection} from '..';
 import React, {useEffect, useState} from 'react';
 import ProfileMetricsGraph from '../ProfileMetricsGraph';
-import MatchersInput from '../MatchersInput';
+import MatchersInput from '../MatchersInput/index';
 import MergeButton from './MergeButton';
 import CompareButton from './CompareButton';
-import Card from '../Card';
-import {DateTimeRangePicker, DateTimeRange, Button, ButtonGroup, useGrpcMetadata} from '../';
+import {
+  Card,
+  DateTimeRangePicker,
+  DateTimeRange,
+  Button,
+  ButtonGroup,
+  useGrpcMetadata,
+} from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import cx from 'classnames';
-import ProfileTypeSelector from '../ProfileTypeSelector';
+import ProfileTypeSelector from '../ProfileTypeSelector/index';
 
 export interface QuerySelection {
   expression: string;

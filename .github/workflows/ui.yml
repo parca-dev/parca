@@ -72,6 +72,9 @@ jobs:
       - run: yarn test
         working-directory: ui
 
+      - run: yarn build
+        working-directory: ui
+
       - name: Run ESLint
         working-directory: ui
         run: yarn run lint

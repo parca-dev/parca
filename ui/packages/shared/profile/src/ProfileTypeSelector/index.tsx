@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import React, {useMemo} from 'react';
 import {ProfileTypesResponse} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {useMemo} from 'react';
-import {SelectElement, Select} from '../';
+import {SelectElement, Select} from '@parca/components';
 
 interface WellKnownProfile {
   name: string;
@@ -25,7 +25,7 @@ interface WellKnownProfiles {
   [key: string]: WellKnownProfile;
 }
 
-const wellKnownProfiles: WellKnownProfiles = {
+export const wellKnownProfiles: WellKnownProfiles = {
   'block:contentions:count:contentions:count': {
     name: 'Block Contentions Total',
     help: 'Stack traces that led to blocking on synchronization primitives.',

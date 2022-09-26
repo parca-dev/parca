@@ -15,7 +15,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
 import {formatForTimespan} from '@parca/functions/time';
-import {SingleProfileSelection, timeFormat} from '@parca/profile';
+import {SingleProfileSelection, timeFormat} from '..';
 import {cutToMaxStringLength} from '@parca/functions/string';
 import throttle from 'lodash.throttle';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';

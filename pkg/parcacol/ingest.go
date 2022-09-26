@@ -150,7 +150,7 @@ func validatePprofProfile(p *pprofproto.Profile) error {
 			return fmt.Errorf("function (id: %d) has invalid name index %d", f.Id, f.Name)
 		}
 		if f.SystemName != 0 && f.SystemName > stringTableLen {
-			return fmt.Errorf("function (id: %d) has invalid name index %d", f.Id, f.SystemName)
+			return fmt.Errorf("function (id: %d) has invalid systemname index %d", f.Id, f.SystemName)
 		}
 		if f.Filename != 0 && f.Filename > stringTableLen {
 			return fmt.Errorf("function (id: %d) has invalid filename index %d", f.Id, f.Filename)
@@ -204,7 +204,7 @@ func validatePprofProfile(p *pprofproto.Profile) error {
 				return fmt.Errorf("sample %d label %d has invalid key index %d", i, j, label.Key)
 			}
 			if label.Str != 0 && label.Str > stringTableLen {
-				return fmt.Errorf("sample %d label %d has invalid str index %d", i, j, label.Key)
+				return fmt.Errorf("sample %d label %d has invalid str index %d", i, j, label.Str)
 			}
 		}
 	}

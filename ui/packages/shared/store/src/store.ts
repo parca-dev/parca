@@ -12,8 +12,8 @@
 // limitations under the License.
 
 import {configureStore, combineReducers} from '@reduxjs/toolkit';
-import profileReducer from './slices/profileSlice';
-import uiReducer from './slices/uiSlice';
+import profileReducer, {ProfileState} from './slices/profileSlice';
+import uiReducer, {UiState} from './slices/uiSlice';
 import storage from 'redux-persist/lib/storage';
 import {
   persistReducer,
@@ -64,5 +64,7 @@ const defaultExports = (): {store: Store; persistor: Persistor} => {
   const persistor = persistStore(store);
   return {store, persistor};
 };
+
+export type {ProfileState, UiState};
 
 export default defaultExports;
