@@ -46,6 +46,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+        with:
+          fetch-depth: '0'
 
       - name: Set up Node.js
         uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3.4.1
@@ -79,3 +81,9 @@ jobs:
       - name: Check typing
         working-directory: ui
         run: yarn run type-check
+
+      - name: Publish to Chromatic
+        uses: chromaui/action@v1
+        with:
+          workingDir: ui
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
