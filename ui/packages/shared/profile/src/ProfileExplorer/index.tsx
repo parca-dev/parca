@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {QuerySelection} from '../ProfileSelector';
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '@parca/profile';
+import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
@@ -25,7 +25,7 @@ import {
   store,
 } from '@parca/store';
 import {Provider, batch} from 'react-redux';
-import {DateTimeRange} from '../DateTimeRangePicker';
+import {DateTimeRange} from '@parca/components';
 import {useEffect} from 'react';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;

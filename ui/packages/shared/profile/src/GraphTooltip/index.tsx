@@ -13,7 +13,7 @@
 
 import {CallgraphNode, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
-import {hexifyAddress} from '@parca/profile';
+import {hexifyAddress} from '../';
 import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';
 

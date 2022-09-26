@@ -9,6 +9,7 @@
     "test": "jest --coverage --config jest.config.js",
     "export": "rm -rf .next && next build && next export -o dist",
     "bootstrap": "lerna bootstrap",
+    "build": "lerna run build",
     "publish:ci": "lerna publish --yes --no-verify-access"
   },
   "workspaces": [

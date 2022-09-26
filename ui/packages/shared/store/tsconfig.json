@@ -2,7 +2,11 @@
   "extends": "../../app/web/tsconfig.json",
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "compilerOptions": {
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "noEmit": false,
+    "declaration": true
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist", "**/*.d.ts"]
 }

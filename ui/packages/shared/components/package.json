@@ -2,9 +2,11 @@
   "name": "@parca/components",
   "version": "0.16.5",
   "description": "A component library for Parca",
-  "main": "src/index.tsx",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "jest --coverage --config ../../../jest.config.js ./src/*"
+    "test": "jest --coverage --config ../../../jest.config.js ./src/*",
+    "prepublish": "yarn build",
+    "build": "tsc && tailwindcss -o dist/styles.css --minify"
   },
   "dependencies": {
     "@headlessui/react": "^1.4.3",
@@ -14,7 +16,6 @@
     "@parca/functions": "^0.16.0",
     "@parca/icons": "^0.16.0",
     "@parca/parser": "^0.16.0",
-    "@parca/profile": "^0.16.0",
     "@parca/store": "^0.16.0",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@types/cytoscape": "3.19.8",

@@ -11,21 +11,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Input} from '../';
-import {useAppDispatch, setSearchNodeString} from '@parca/store';
-
-const SearchNodes = (): JSX.Element => {
-  const dispatch = useAppDispatch();
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    dispatch(setSearchNodeString(event.target.value));
-  };
-
-  return (
-    <div>
-      <Input className="text-sm" placeholder="Search nodes..." onChange={handleChange}></Input>
-    </div>
-  );
-};
-
-export default SearchNodes;
+declare module '*.svg';
