@@ -16,9 +16,8 @@ import MetricsGraph from '../MetricsGraph';
 import {ProfileSelection, SingleProfileSelection} from '..';
 import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {DateTimeRange, useGrpcMetadata} from '@parca/components/src';
+import {DateTimeRange, useGrpcMetadata, useParcaTheme} from '@parca/components';
 import {Query} from '@parca/parser';
-import {useParcaTheme} from '@parca/components/src/ParcaThemeContext';
 import useDelayedLoader from '../useDelayedLoader';
 
 interface ProfileMetricsGraphProps {

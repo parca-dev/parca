@@ -9,6 +9,7 @@
     "@parca/dynamicsize": "^0.16.0",
     "@parca/functions": "^0.16.0",
     "@parca/parser": "^0.16.0",
+    "@parca/store": "^0.16.0",
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",
     "react-copy-to-clipboard": "^5.1.0"

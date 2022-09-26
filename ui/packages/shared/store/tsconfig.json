@@ -3,6 +3,7 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "compilerOptions": {
     "baseUrl": "./src",
+    "jsx": "react-jsx",
     "outDir": "dist",
     "noEmit": false,
     "declaration": true
