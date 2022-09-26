@@ -3,6 +3,113 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.18](https://github.com/parca-dev/parca/compare/ui-v0.16.17...ui-v0.16.18) (2022-09-26)
+
+
+
+## 0.16.16 (2022-09-26)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.17](https://github.com/parca-dev/parca/compare/ui-v0.16.16...ui-v0.16.17) (2022-09-26)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.16](https://github.com/parca-dev/parca/compare/ui-v0.16.15...ui-v0.16.16) (2022-09-26)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.15](https://github.com/parca-dev/parca/compare/ui-v0.16.14...ui-v0.16.15) (2022-09-22)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.14](https://github.com/parca-dev/parca/compare/ui-v0.16.13...ui-v0.16.14) (2022-09-21)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.13](https://github.com/parca-dev/parca/compare/ui-v0.16.12...ui-v0.16.13) (2022-09-21)
+
+
+
+## 0.16.10 (2022-09-19)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.12](https://github.com/parca-dev/parca/compare/ui-v0.16.11...ui-v0.16.12) (2022-09-20)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.11](https://github.com/parca-dev/parca/compare/ui-v0.16.10...ui-v0.16.11) (2022-09-20)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.10](https://github.com/parca-dev/parca/compare/ui-v0.16.9...ui-v0.16.10) (2022-09-19)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.9](https://github.com/parca-dev/parca/compare/ui-v0.16.8...ui-v0.16.9) (2022-09-19)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.8](https://github.com/parca-dev/parca/compare/ui-v0.16.7...ui-v0.16.8) (2022-09-17)
+
+**Note:** Version bump only for package ui
+
+
+
+
+
+## [0.16.7](https://github.com/parca-dev/parca/compare/ui-v0.16.6...ui-v0.16.7) (2022-09-17)
+
+
+### Bug Fixes
+
+* set the granule size option in FrostDB ([#1726](https://github.com/parca-dev/parca/issues/1726)) ([20ba452](https://github.com/parca-dev/parca/commit/20ba452203cfc682f8ce623abe3132904418b694))
+
+
+
+
+
 ## [0.16.6](https://github.com/parca-dev/parca/compare/ui-v0.16.5...ui-v0.16.6) (2022-09-15)
 
 **Note:** Version bump only for package ui

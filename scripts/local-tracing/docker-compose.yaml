@@ -3,7 +3,7 @@ services:
 
   # Jaeger
   jaeger-all-in-one:
-    image: docker.io/jaegertracing/all-in-one:1.37.0@sha256:60ab2e6b0682f79a4e42b2bd2526ac4de80a3a7a1ef136c71dc0cb85e9c50f46
+    image: docker.io/jaegertracing/all-in-one:1.38.0@sha256:dc111a693eb22c38ea11a71b8303430a98efe04826049faab6f73dcf6ee9ad5d
     ports:
       - "16686:16686"
       - "14268"

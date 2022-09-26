@@ -17,12 +17,12 @@ import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {GraphTooltip} from '@parca/components';
+import GraphTooltip from './GraphTooltip';
 import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 
 import {hexifyAddress} from './utils';
-import {HoveringNode} from '@parca/components/src/GraphTooltip';
+import type {HoveringNode} from './GraphTooltip';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -181,7 +181,7 @@ export function IcicleGraphNodes({
             : xScale(cumulative);
 
         if (width <= 1) {
-          return <></>;
+          return null;
         }
 
         const name = nodeLabel(d);
