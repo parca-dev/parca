@@ -2,7 +2,10 @@
   "extends": "../../../config/next.tsconfig.json",
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "compilerOptions": {
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "outDir": "dist",
+    "noEmit": false,
+    "declaration": true
   },
   "exclude": ["node_modules"]
 }

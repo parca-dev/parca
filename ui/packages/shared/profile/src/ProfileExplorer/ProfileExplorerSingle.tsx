@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import {ProfileSelection, ProfileViewWithData} from '@parca/profile';
+import {ProfileSelection, ProfileViewWithData} from '..';
 
 import {NavigateFunction} from '../ProfileExplorer';
 import ProfileSelector, {QuerySelection} from '../ProfileSelector';

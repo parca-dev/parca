@@ -13,13 +13,13 @@
 
 import {useState, useEffect} from 'react';
 import MetricsGraph from '../MetricsGraph';
-import {ProfileSelection, SingleProfileSelection} from '@parca/profile';
+import {ProfileSelection, SingleProfileSelection} from '..';
 import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {DateTimeRange, useGrpcMetadata} from '../';
+import {DateTimeRange, useGrpcMetadata} from '@parca/components/src';
 import {Query} from '@parca/parser';
-import {useParcaTheme} from '../ParcaThemeContext';
-import useDelayedLoader from '@parca/profile/src/useDelayedLoader';
+import {useParcaTheme} from '@parca/components/src/ParcaThemeContext';
+import useDelayedLoader from '../useDelayedLoader';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -54,7 +54,7 @@ export const useQueryRange = (
       setIsLoading(true);
 
       try {
-        const {response} = await client.queryRange(
+        const {flamegraphResponse: response} = await client.queryRange(
           {
             query: queryExpression,
             start: Timestamp.fromDate(new Date(start)),

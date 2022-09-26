@@ -5,6 +5,7 @@
   "dependencies": {
     "@iconify/react": "^3.2.2",
     "@parca/client": "^0.16.0",
+    "@parca/components": "^0.16.0",
     "@parca/dynamicsize": "^0.16.0",
     "@parca/functions": "^0.16.0",
     "@parca/parser": "^0.16.0",
@@ -15,9 +16,11 @@
   "devDependencies": {
     "@types/react-copy-to-clipboard": "5.0.4"
   },
-  "main": "src/index.tsx",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "jest --coverage --config ../../../jest.config.js ./src/*"
+    "test": "jest --coverage --config ../../../jest.config.js ./src/*",
+    "prepublish": "yarn build",
+    "build": "tsc && tailwindcss -o dist/styles.css --minify && cp src/*.css ./dist/"
   },
   "keywords": [],
   "author": "",

@@ -4,7 +4,9 @@
   "description": "Parca API Client",
   "main": "src/index.ts",
   "scripts": {
-    "test": "jest --coverage --config ../../../jest.config.js ./src/*"
+    "test": "jest --coverage --config ../../../jest.config.js ./src/*",
+    "prepublish": "yarn build",
+    "build": "tsc"
   },
   "dependencies": {
     "@protobuf-ts/runtime": "^2.5.0",
