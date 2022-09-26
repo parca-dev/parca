@@ -44,10 +44,6 @@ repos:
     rev: v1.49.0
     hooks:
       - id: golangci-lint
-        args:
-          # Without cache and with 2 CPU only,
-          # golangci-lint can be slow in GH Actions
-          - --timeout=5m
   - repo: https://github.com/hadolint/hadolint
     rev: v2.10.0
     hooks:
