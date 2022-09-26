@@ -450,6 +450,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	)
 	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
+			level.Info(logger).Log("msg", "terminating", "reason", err)
 			return nil
 		}
 		return err
@@ -616,6 +617,7 @@ func runScraper(
 	level.Info(logger).Log("msg", "running Parca in scrape mode", "version", version)
 	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
+			level.Info(logger).Log("msg", "terminating", "reason", err)
 			return nil
 		}
 		return err
