@@ -3015,6 +3015,16 @@
     "@opencensus/core" "^0.0.8"
     uuid "^3.2.1"
 
+"@parca/dynamicsize@^0.16.22":
+  version "0.16.22"
+  resolved "https://registry.yarnpkg.com/@parca/dynamicsize/-/dynamicsize-0.16.22.tgz#dfec2d0ca0f5303164baed99e97485f4b42dec05"
+  integrity sha512-AlkljXFh9a7kyndjxKKUFBdrs8fKeu2SOV5QFgL+BnYebebuVRf2PXoxcltXYKJwXeVHyQLBkdDqvX3+YWBCew==
+
+"@parca/parser@^0.16.22":
+  version "0.16.22"
+  resolved "https://registry.yarnpkg.com/@parca/parser/-/parser-0.16.22.tgz#c79ea4430d20a51e1425a7b25eb84244563053d3"
+  integrity sha512-Sxw8lComrr7+m/IMQ/XuCETT00q8S8w6V+UErfZIHS2Pd1z/uYES5GeNS16IrBqaNKMKsDwjUrhG+mPQkBRbsw==
+
 "@parcel/watcher@2.0.4":
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/@parcel/watcher/-/watcher-2.0.4.tgz#f300fef4cc38008ff4b8c29d92588eced3ce014b"
