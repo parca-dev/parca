@@ -92,7 +92,7 @@ go/test-clean:
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
 .PHONY: ui/build
 ui/build: $(UI_FILES)
-	cd ui && yarn --prefer-offline && yarn workspace @parca/web build
+	cd ui && yarn --prefer-offline && yarn bootstrap && yarn build
 
 .PHONY: ui/test
 ui/test:

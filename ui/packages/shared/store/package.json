@@ -1,10 +1,12 @@
 {
   "name": "@parca/store",
-  "version": "0.16.0",
+  "version": "0.16.16",
   "description": "State management for Parca UI",
-  "main": "src/index.tsx",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "jest --coverage --config ../../../jest.config.js ./src/*"
+    "test": "jest --coverage --config ../../../jest.config.js ./src/*",
+    "prepublish": "yarn build",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",

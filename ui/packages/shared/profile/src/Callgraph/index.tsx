@@ -15,13 +15,14 @@ import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer} from 'react-konva';
-import {GraphTooltip as Tooltip} from '@parca/components';
+import Tooltip from '../GraphTooltip';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot} from './utils';
 import Node, {INode} from './Node';
 import Edge, {IEdge} from './Edge';
 import type {HoveringNode} from '../GraphTooltip';
-interface Props {
+
+export interface Props {
   graph: CallgraphType;
   sampleUnit: string;
   width: number;

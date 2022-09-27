@@ -9,6 +9,7 @@
     "test": "jest --coverage --config jest.config.js",
     "export": "rm -rf .next && next build && next export -o dist",
     "bootstrap": "lerna bootstrap",
+    "build": "lerna run build",
     "publish:ci": "lerna publish --yes --no-verify-access"
   },
   "workspaces": [
@@ -24,9 +25,9 @@
   },
   "devDependencies": {
     "@mdx-js/loader": "2.1.3",
-    "@next/bundle-analyzer": "12.3.0",
-    "@next/eslint-plugin-next": "12.3.0",
-    "@next/mdx": "12.3.0",
+    "@next/bundle-analyzer": "12.3.1",
+    "@next/eslint-plugin-next": "12.3.1",
+    "@next/mdx": "12.3.1",
     "@storybook/addon-actions": "6.5.12",
     "@storybook/addon-docs": "6.5.12",
     "@storybook/addon-essentials": "6.5.12",
@@ -39,7 +40,7 @@
     "@storybook/react": "6.5.12",
     "@svgr/webpack": "6.3.1",
     "@swc/cli": "0.1.57",
-    "@swc/core": "1.3.1",
+    "@swc/core": "1.3.3",
     "@swc/jest": "0.2.22",
     "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "13.4.0",
