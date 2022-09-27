@@ -73,6 +73,10 @@ jobs:
         working-directory: ui
         run: yarn bootstrap
 
+      - name: Build Packages
+        working-directory: ui
+        run: yarn build
+
       - name: Bump versions and publish packages
         working-directory: ui
         run: yarn publish:ci
