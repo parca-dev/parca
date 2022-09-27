@@ -3,6 +3,86 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.24](https://github.com/parca-dev/parca/compare/ui-v0.16.23...ui-v0.16.24) (2022-09-27)
+
+
+
+## [0.16.20](https://github.com/parca-dev/parca/compare/ui-v0.16.19...ui-v0.16.20) (2022-09-27)
+
+
+
+## [0.16.19](https://github.com/parca-dev/parca/compare/ui-v0.16.18...ui-v0.16.19) (2022-09-26)
+
+
+
+## [0.16.18](https://github.com/parca-dev/parca/compare/ui-v0.16.17...ui-v0.16.18) (2022-09-26)
+
+
+
+## [0.16.5](https://github.com/parca-dev/parca/compare/ui-v0.16.2...ui-v0.16.5) (2022-09-14)
+
+
+
+## [0.16.2](https://github.com/parca-dev/parca/compare/ui-v0.13.4...ui-v0.16.2) (2022-09-14)
+
+
+
+## [0.13.4](https://github.com/parca-dev/parca/compare/ui-v0.13.3...ui-v0.13.4) (2022-06-07)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
+## [0.16.23](https://github.com/parca-dev/parca/compare/ui-v0.16.20...ui-v0.16.23) (2022-09-27)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
+## [0.16.22](https://github.com/parca-dev/parca/compare/ui-v0.16.20...ui-v0.16.22) (2022-09-27)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
+## [0.16.21](https://github.com/parca-dev/parca/compare/ui-v0.16.20...ui-v0.16.21) (2022-09-27)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
+## [0.16.20](https://github.com/parca-dev/parca/compare/ui-v0.16.19...ui-v0.16.20) (2022-09-27)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
+## [0.16.19](https://github.com/parca-dev/parca/compare/ui-v0.16.18...ui-v0.16.19) (2022-09-26)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
+## [0.16.16](https://github.com/parca-dev/parca/compare/ui-v0.16.15...ui-v0.16.16) (2022-09-26)
+
+**Note:** Version bump only for package @parca/components
+
+
+
+
+
 ## [0.16.5](https://github.com/parca-dev/parca/compare/ui-v0.16.4...ui-v0.16.5) (2022-09-14)
 
 **Note:** Version bump only for package @parca/components

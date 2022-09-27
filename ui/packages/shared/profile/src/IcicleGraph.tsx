@@ -16,13 +16,14 @@ import React, {MouseEvent, useEffect, useRef, useState} from 'react';
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
+
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {GraphTooltip} from '@parca/components';
+import GraphTooltip from './GraphTooltip';
 import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
-
+import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress} from './utils';
-import {HoveringNode} from '@parca/components/src/GraphTooltip';
+import type {HoveringNode} from './GraphTooltip';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -161,6 +162,7 @@ export function IcicleGraphNodes({
   curPath,
 }: IcicleGraphNodesProps): JSX.Element {
   const isDarkMode = useAppSelector(selectDarkMode);
+  const isShiftDown = useIsShiftDown();
 
   const nodes =
     curPath.length === 0 ? data : data.filter(d => d != null && curPath[0] === nodeLabel(d));
@@ -181,7 +183,7 @@ export function IcicleGraphNodes({
             : xScale(cumulative);
 
         if (width <= 1) {
-          return <></>;
+          return null;
         }
 
         const name = nodeLabel(d);
@@ -200,8 +202,16 @@ export function IcicleGraphNodes({
             ? scaleLinear().domain([0, cumulative]).range([0, totalWidth])
             : xScale;
 
-        const onMouseEnter = (): void => setHoveringNode(d);
-        const onMouseLeave = (): void => setHoveringNode(undefined);
+        const onMouseEnter = (): void => {
+          if (isShiftDown) return;
+
+          setHoveringNode(d);
+        };
+        const onMouseLeave = (): void => {
+          if (isShiftDown) return;
+
+          setHoveringNode(undefined);
+        };
 
         return (
           <React.Fragment key={`node-${key}`}>
@@ -253,14 +263,24 @@ export function IcicleGraphRootNode({
   curPath,
 }: IcicleGraphRootNodeProps): JSX.Element {
   const isDarkMode = useAppSelector(selectDarkMode);
+  const isShiftDown = useIsShiftDown();
 
   const cumulative = parseFloat(node.cumulative);
   const diff = parseFloat(node.diff);
   const color = diffColor(diff, cumulative, isDarkMode);
 
   const onClick = (): void => setCurPath([]);
-  const onMouseEnter = (): void => setHoveringNode(node);
-  const onMouseLeave = (): void => setHoveringNode(undefined);
+  const onMouseEnter = (): void => {
+    if (isShiftDown) return;
+
+    setHoveringNode(node);
+  };
+  const onMouseLeave = (): void => {
+    if (isShiftDown) return;
+
+    setHoveringNode(undefined);
+  };
+
   const path: string[] = [];
 
   return (

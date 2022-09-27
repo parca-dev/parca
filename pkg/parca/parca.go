@@ -56,7 +56,7 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
-	sharepb "github.com/parca-dev/parca/gen/proto/go/share"
+	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
@@ -255,7 +255,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
-		sharepb.NewShareClient(conn),
+		sharepb.NewShareServiceClient(conn),
 		parcacol.NewQuerier(
 			tracerProvider.Tracer("querier"),
 			query.NewEngine(
@@ -450,6 +450,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	)
 	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
+			level.Info(logger).Log("msg", "terminating", "reason", err)
 			return nil
 		}
 		return err
@@ -583,39 +584,49 @@ func runScraper(
 		},
 	)
 
-	parcaserver := server.NewServer(reg, version)
-	gr.Add(
-		func() error {
-			return parcaserver.ListenAndServe(
-				ctx,
-				logger,
-				flags.Port,
-				flags.CORSAllowedOrigins,
-				flags.PathPrefix,
-				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-					scrapepb.RegisterScrapeServiceServer(srv, m)
-					if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
-					return nil
-				}),
-			)
-		},
-		func(_ error) {
-			ctx, cancel := context.WithTimeout(ctx, 30*time.Second) // TODO make this a graceful shutdown config setting
-			defer cancel()
+	{
+		parcaserver := server.NewServer(reg, version)
+		serveCtx, cancelServe := context.WithCancel(ctx)
+		gr.Add(
+			func() error {
+				return parcaserver.ListenAndServe(
+					serveCtx,
+					logger,
+					flags.Port,
+					flags.CORSAllowedOrigins,
+					flags.PathPrefix,
+					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
+						scrapepb.RegisterScrapeServiceServer(srv, m)
+						if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
+						return nil
+					}),
+				)
+			},
+			func(_ error) {
+				level.Debug(logger).Log("msg", "server shutting down")
 
-			level.Debug(logger).Log("msg", "server shutting down")
-			err := parcaserver.Shutdown(ctx)
-			if err != nil && !errors.Is(err, context.Canceled) {
-				level.Error(logger).Log("msg", "error shutting down server", "err", err)
-			}
-		},
-	)
+				// Create a new context for the server shutdown with a deadline.
+				shutdownCtx, cancelShutdown := context.WithTimeout(ctx, 30*time.Second) // TODO make this a graceful shutdown config setting
+				defer cancelShutdown()
+
+				err := parcaserver.Shutdown(shutdownCtx)
+				// Cancels ListenAndServe after shutting down the connections.
+				// If the timeout was reached during shutdown, this should
+				// cancel any remaining live application code.
+				cancelServe()
+				if err != nil && !errors.Is(err, context.Canceled) {
+					level.Error(logger).Log("msg", "error shutting down server", "err", err)
+				}
+			},
+		)
+	}
 
 	level.Info(logger).Log("msg", "running Parca in scrape mode", "version", version)
 	if err := gr.Run(); err != nil {
 		if _, ok := err.(run.SignalError); ok {
+			level.Info(logger).Log("msg", "terminating", "reason", err)
 			return nil
 		}
 		return err

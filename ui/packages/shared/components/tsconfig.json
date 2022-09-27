@@ -1,14 +1,12 @@
 {
   "extends": "../../../config/next.tsconfig.json",
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "typings.d.ts"],
   "compilerOptions": {
     "baseUrl": "./src",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "noEmit": false,
+    "declaration": true
   },
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules", "dist", "**/*.d.ts"]
 }
