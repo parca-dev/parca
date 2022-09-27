@@ -13,8 +13,6 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
-import MetricsSeries from '../MetricsSeries';
-import MetricsCircle from '../MetricsCircle';
 import {pointer} from 'd3-selection';
 import {formatForTimespan} from '@parca/functions/time';
 import {SingleProfileSelection, timeFormat} from '..';
@@ -26,6 +24,10 @@ import type {VirtualElement} from '@popperjs/core';
 import {valueFormatter, formatDate} from '@parca/functions';
 import {DateTimeRange} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
+import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
+
+import MetricsSeries from '../MetricsSeries';
+import MetricsCircle from '../MetricsCircle';
 
 interface RawMetricsGraphProps {
   data: MetricsSeriesPb[];
@@ -244,34 +246,8 @@ export const RawMetricsGraph = ({
   const [hovering, setHovering] = useState(false);
   const [relPos, setRelPos] = useState(-1);
   const [pos, setPos] = useState([0, 0]);
-  const [freezeTooltip, setFreezeTooltip] = useState(false);
   const metricPointRef = useRef(null);
-
-  useEffect(() => {
-    const handleShiftDown = (event: {keyCode: number}): void => {
-      if (event.keyCode === 16) {
-        setFreezeTooltip(true);
-      }
-    };
-    window.addEventListener('keydown', handleShiftDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleShiftDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleShiftUp = (event: {keyCode: number}): void => {
-      if (event.keyCode === 16) {
-        setFreezeTooltip(false);
-      }
-    };
-    window.addEventListener('keyup', handleShiftUp);
-
-    return () => {
-      window.removeEventListener('keyup', handleShiftUp);
-    };
-  }, []);
+  const isShiftDown = useIsShiftDown();
 
   const time: number = parseFloat(profile?.HistoryParams().time);
 
@@ -431,7 +407,7 @@ export const RawMetricsGraph = ({
     const yCoordinate = rel[1];
     const yCoordinateWithoutMargin = yCoordinate - margin;
 
-    if (!freezeTooltip) {
+    if (!isShiftDown) {
       throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
     }
   };
@@ -505,7 +481,6 @@ export const RawMetricsGraph = ({
         ref={graph}
         onMouseEnter={function () {
           setHovering(true);
-          setFreezeTooltip(false);
         }}
         onMouseLeave={() => setHovering(false)}
       >
