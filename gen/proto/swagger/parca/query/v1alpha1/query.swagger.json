@@ -135,7 +135,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1alpha1QueryResponse"
+              "$ref": "#/definitions/parcaqueryv1alpha1QueryResponse"
             }
           },
           "default": {
@@ -466,7 +466,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1alpha1ProfileTypesResponse"
+              "$ref": "#/definitions/parcaqueryv1alpha1ProfileTypesResponse"
             }
           },
           "default": {
@@ -615,6 +615,68 @@
         }
       },
       "description": "Mapping describes a memory mapping."
+    },
+    "parcaqueryv1alpha1ProfileTypesResponse": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1ProfileType"
+          },
+          "description": "types is the list of available profile types."
+        }
+      },
+      "description": "ProfileTypesResponse is the response to retrieve the list of available profile types."
+    },
+    "parcaqueryv1alpha1QueryRequest": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/v1alpha1QueryRequestMode",
+          "title": "mode indicates the type of query performed"
+        },
+        "diff": {
+          "$ref": "#/definitions/v1alpha1DiffProfile",
+          "title": "diff contains the diff query options"
+        },
+        "merge": {
+          "$ref": "#/definitions/v1alpha1MergeProfile",
+          "title": "merge contains the merge query options"
+        },
+        "single": {
+          "$ref": "#/definitions/v1alpha1SingleProfile",
+          "title": "single contains the single query options"
+        },
+        "reportType": {
+          "$ref": "#/definitions/QueryRequestReportType",
+          "title": "report_type is the type of report to return"
+        }
+      },
+      "title": "QueryRequest is a request for a profile query"
+    },
+    "parcaqueryv1alpha1QueryResponse": {
+      "type": "object",
+      "properties": {
+        "flamegraph": {
+          "$ref": "#/definitions/v1alpha1Flamegraph",
+          "title": "flamegraph is a flamegraph representation of the report"
+        },
+        "pprof": {
+          "type": "string",
+          "format": "byte",
+          "title": "pprof is a pprof profile as compressed bytes"
+        },
+        "top": {
+          "$ref": "#/definitions/v1alpha1Top",
+          "title": "top is a top list representation of the report"
+        },
+        "callgraph": {
+          "$ref": "#/definitions/v1alpha1Callgraph",
+          "title": "callgraph is a callgraph nodes and edges representation of the report"
+        }
+      },
+      "title": "QueryResponse is the returned report for the given query"
     },
     "profilestorev1alpha1Label": {
       "type": "object",
@@ -1026,19 +1088,6 @@
       },
       "description": "ProfileType is the type of a profile as well as the units the profile type is available in."
     },
-    "v1alpha1ProfileTypesResponse": {
-      "type": "object",
-      "properties": {
-        "types": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1ProfileType"
-          },
-          "description": "types is the list of available profile types."
-        }
-      },
-      "description": "ProfileTypesResponse is the response to retrieve the list of available profile types."
-    },
     "v1alpha1QueryRangeResponse": {
       "type": "object",
       "properties": {
@@ -1052,32 +1101,6 @@
       },
       "title": "QueryRangeResponse is the set of matching profile values"
     },
-    "v1alpha1QueryRequest": {
-      "type": "object",
-      "properties": {
-        "mode": {
-          "$ref": "#/definitions/v1alpha1QueryRequestMode",
-          "title": "mode indicates the type of query performed"
-        },
-        "diff": {
-          "$ref": "#/definitions/v1alpha1DiffProfile",
-          "title": "diff contains the diff query options"
-        },
-        "merge": {
-          "$ref": "#/definitions/v1alpha1MergeProfile",
-          "title": "merge contains the merge query options"
-        },
-        "single": {
-          "$ref": "#/definitions/v1alpha1SingleProfile",
-          "title": "single contains the single query options"
-        },
-        "reportType": {
-          "$ref": "#/definitions/QueryRequestReportType",
-          "title": "report_type is the type of report to return"
-        }
-      },
-      "title": "QueryRequest is a request for a profile query"
-    },
     "v1alpha1QueryRequestMode": {
       "type": "string",
       "enum": [
@@ -1089,29 +1112,6 @@
       "description": "- MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED query unspecified\n - MODE_DIFF: MODE_DIFF is a diff query\n - MODE_MERGE: MODE_MERGE is a merge query",
       "title": "Mode is the type of query request"
     },
-    "v1alpha1QueryResponse": {
-      "type": "object",
-      "properties": {
-        "flamegraph": {
-          "$ref": "#/definitions/v1alpha1Flamegraph",
-          "title": "flamegraph is a flamegraph representation of the report"
-        },
-        "pprof": {
-          "type": "string",
-          "format": "byte",
-          "title": "pprof is a pprof profile as compressed bytes"
-        },
-        "top": {
-          "$ref": "#/definitions/v1alpha1Top",
-          "title": "top is a top list representation of the report"
-        },
-        "callgraph": {
-          "$ref": "#/definitions/v1alpha1Callgraph",
-          "title": "callgraph is a callgraph nodes and edges representation of the report"
-        }
-      },
-      "title": "QueryResponse is the returned report for the given query"
-    },
     "v1alpha1SeriesResponse": {
       "type": "object",
       "title": "SeriesResponse is unimplemented"
@@ -1120,7 +1120,7 @@
       "type": "object",
       "properties": {
         "queryRequest": {
-          "$ref": "#/definitions/v1alpha1QueryRequest",
+          "$ref": "#/definitions/parcaqueryv1alpha1QueryRequest",
           "title": "QueryRequest that refers to the profile to be shared"
         },
         "description": {
