@@ -490,7 +490,7 @@ func (m *QueryResponse_Flamegraph) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i -= size
 		i = encodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -505,7 +505,7 @@ func (m *QueryResponse_Pprof) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	copy(dAtA[i:], m.Pprof)
 	i = encodeVarint(dAtA, i, uint64(len(m.Pprof)))
 	i--
-	dAtA[i] = 0x32
+	dAtA[i] = 0x12
 	return len(dAtA) - i, nil
 }
 func (m *QueryResponse_Top) MarshalToVT(dAtA []byte) (int, error) {
@@ -523,7 +523,7 @@ func (m *QueryResponse_Top) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = encodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x1a
 	}
 	return len(dAtA) - i, nil
 }
@@ -542,7 +542,7 @@ func (m *QueryResponse_Callgraph) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= size
 		i = encodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x42
+		dAtA[i] = 0x22
 	}
 	return len(dAtA) - i, nil
 }
@@ -1322,7 +1322,7 @@ func (m *QueryResponse) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: QueryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 5:
+		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Flamegraph", wireType)
 			}
@@ -1363,7 +1363,7 @@ func (m *QueryResponse) UnmarshalVT(dAtA []byte) error {
 				m.Report = &QueryResponse_Flamegraph{v}
 			}
 			iNdEx = postIndex
-		case 6:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Pprof", wireType)
 			}
@@ -1396,7 +1396,7 @@ func (m *QueryResponse) UnmarshalVT(dAtA []byte) error {
 			copy(v, dAtA[iNdEx:postIndex])
 			m.Report = &QueryResponse_Pprof{v}
 			iNdEx = postIndex
-		case 7:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Top", wireType)
 			}
@@ -1437,7 +1437,7 @@ func (m *QueryResponse) UnmarshalVT(dAtA []byte) error {
 				m.Report = &QueryResponse_Top{v}
 			}
 			iNdEx = postIndex
-		case 8:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Callgraph", wireType)
 			}

@@ -66,15 +66,15 @@ message QueryResponse {
   // report is the generated report
   oneof report {
     // flamegraph is a flamegraph representation of the report
-    parca.query.v1alpha1.Flamegraph flamegraph = 5;
+    parca.query.v1alpha1.Flamegraph flamegraph = 1;
 
     // pprof is a pprof profile as compressed bytes
-    bytes pprof = 6;
+    bytes pprof = 2;
 
     // top is a top list representation of the report
-    parca.query.v1alpha1.Top top = 7;
+    parca.query.v1alpha1.Top top = 3;
 
     // callgraph is a callgraph nodes and edges representation of the report
-    parca.query.v1alpha1.Callgraph callgraph = 8;
+    parca.query.v1alpha1.Callgraph callgraph = 4;
   }
 }
