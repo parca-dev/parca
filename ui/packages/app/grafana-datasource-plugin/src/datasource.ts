@@ -1,0 +1,97 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import defaults from 'lodash/defaults';
+
+import {
+  DataQueryRequest,
+  DataQueryResponse,
+  DataSourceApi,
+  DataSourceInstanceSettings,
+  MutableDataFrame,
+  FieldType,
+} from '@grafana/data';
+
+import { ParcaQuery, ParcaDataSourceOptions, defaultQuery } from './types';
+import { MergedProfileSource } from '@parca/profile';
+import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
+import { QueryRequest_ReportType, QueryServiceClient } from '@parca/client';
+
+export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions> {
+  queryClient: QueryServiceClient;
+
+  constructor(instanceSettings: DataSourceInstanceSettings<ParcaDataSourceOptions>) {
+    super(instanceSettings);
+    this.queryClient = new QueryServiceClient(
+      /* @ts-expect-error */
+      new GrpcWebFetchTransport({
+        baseUrl: instanceSettings.jsonData.APIEndpoint as string,
+      })
+    );
+  }
+
+  async query(options: DataQueryRequest<ParcaQuery>): Promise<DataQueryResponse> {
+    const { range } = options;
+    const from = range!.from.valueOf();
+    const to = range!.to.valueOf();
+
+    // Return a constant for each query.
+    const data = await Promise.all(
+      options.targets.map(async (target) => {
+        const query = defaults(target, defaultQuery);
+
+        const frame = new MutableDataFrame({
+          refId: query.refId,
+          fields: [{ name: 'data', type: FieldType.other }],
+        });
+        frame.appendRow([await this.getData(from, to, query)]);
+        return frame;
+      })
+    );
+
+    return { data };
+  }
+
+  async getData(from: number, to: number, query: ParcaQuery): Promise<any> {
+    const profileSource = new MergedProfileSource(from, to, query.parcaQuery);
+    const flamegraphReq = profileSource.QueryRequest();
+    flamegraphReq.reportType = QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED;
+    const topTableReq = profileSource.QueryRequest();
+    topTableReq.reportType = QueryRequest_ReportType.TOP;
+
+    try {
+      const [flamegraphResult, topTableResult] = await Promise.all([
+        this.queryClient.query(flamegraphReq),
+        this.queryClient.query(topTableReq),
+      ]);
+
+      // TODO: Fix this
+      // @ts-expect-error
+      return {
+        flamegraphData: { loading: false, data: (await flamegraphResult).response?.report?.flamegraph },
+        topTableData: { loading: false, data: topTableResult.response?.report?.top },
+      };
+    } catch (err) {
+      console.log('err', err);
+      return { error: err };
+    }
+  }
+
+  async testDatasource() {
+    // Implement a health check for your data source.
+    return {
+      status: 'success',
+      message: 'Success',
+    };
+  }
+}

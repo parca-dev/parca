@@ -1,0 +1,30 @@
+{
+  "name": "@parca/grafana-panel",
+  "version": "0.0.1",
+  "description": "A Grafana panel plugin for Parca",
+  "scripts": {
+    "build": "grafana-toolkit plugin:build",
+    "test": "grafana-toolkit plugin:test",
+    "dev": "grafana-toolkit plugin:dev",
+    "watch": "grafana-toolkit plugin:dev --watch",
+    "sign": "grafana-toolkit plugin:sign",
+    "start": "yarn watch"
+  },
+  "author": "Parca Contributors",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@grafana/data": "latest",
+    "@grafana/toolkit": "latest",
+    "@grafana/ui": "latest",
+    "emotion": "10.0.27"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {
+    "@parca/profile": "^0.16.24",
+    "@parca/store": "^0.16.22",
+    "use-local-storage-state": "17"
+  },
+  "private": true
+}
