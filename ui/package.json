@@ -12,10 +12,12 @@
     "build": "lerna run build",
     "publish:ci": "lerna publish --yes --no-verify-access"
   },
-  "workspaces": [
-    "packages/app/*",
-    "packages/shared/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/app/*",
+      "packages/shared/*"
+    ]
+  },
   "dependencies": {
     "d3-dag": "0.11.5",
     "date-fns": "2.29.3",

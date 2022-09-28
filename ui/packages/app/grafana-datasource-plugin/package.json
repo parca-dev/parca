@@ -27,8 +27,7 @@
   "dependencies": {
     "@parca/client": "^0.16.22",
     "@parca/profile": "^0.16.24",
-    "@protobuf-ts/grpcweb-transport": "^2.8.1",
-    "use-local-storage-state": "17"
+    "@protobuf-ts/grpcweb-transport": "^2.8.1"
   },
   "private": true
 }
