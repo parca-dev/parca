@@ -16,6 +16,9 @@
     "packages": [
       "packages/app/*",
       "packages/shared/*"
+    ],
+    "nohoist": [
+      "**/d3"
     ]
   },
   "dependencies": {
