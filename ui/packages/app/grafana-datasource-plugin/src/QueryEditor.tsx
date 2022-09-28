@@ -13,17 +13,17 @@
 
 import defaults from 'lodash/defaults';
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, FunctionComponent } from 'react';
 import { Field, Input, Select } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './datasource';
 import { defaultQuery, ParcaDataSourceOptions, ParcaQuery } from './types';
-import { wellKnownProfiles } from '@parca/profile/src/ProfileTypeSelector';
+import { normalizeProfileTypesData, wellKnownProfiles } from '@parca/profile';
 
 type Props = QueryEditorProps<DataSource, ParcaQuery, ParcaDataSourceOptions>;
 
-const getDropDownItemForProfileKey = (key: string) => {
-  if (wellKnownProfiles[key]) {
+const getDropDownItemForProfileKey = (key: string): SelectableValue<string> => {
+  if (wellKnownProfiles[key] != null) {
     return {
       value: key,
       label: wellKnownProfiles[key].name,
@@ -37,53 +37,49 @@ const getDropDownItemForProfileKey = (key: string) => {
   }
 };
 
-export const QueryEditor = (props: Props) => {
+export const QueryEditor: FunctionComponent<
+  QueryEditorProps<DataSource, ParcaQuery, ParcaDataSourceOptions, ParcaQuery>
+> = (props: Props) => {
   const query = defaults(props.query, defaultQuery);
   const { parcaQuery } = query;
 
   const [profileType, setProfileType] = useState<SelectableValue<string>>(() => {
-    const indexOf = (parcaQuery || '').indexOf('{');
-    if (!parcaQuery || indexOf === -1) {
+    const indexOf = parcaQuery.indexOf('{');
+    if (indexOf === -1) {
       return null;
     }
     const profileType = parcaQuery.slice(0, indexOf);
     return getDropDownItemForProfileKey(profileType);
   });
   const [querySelector, setQuerySelector] = useState<string>(() => {
-    const indexOf = (parcaQuery || '').indexOf('{');
-    if (!parcaQuery || indexOf === -1) {
+    const indexOf = parcaQuery.indexOf('{');
+    if (indexOf === -1) {
       return '';
     }
     return parcaQuery.slice(indexOf);
   });
   const [profileTypesLoading, setProfileTypesLoading] = useState<boolean>(true);
-  const [profileTypes, setProfileTypes] = useState<SelectableValue<string>[]>([]);
-  const onParcaQueryChange = useCallback((parcaQuery: string) => {
-    const { onChange, query, onRunQuery } = props;
-    if (parcaQuery === query.parcaQuery) {
-      return;
-    }
-    console.log('parcaQuery', parcaQuery);
-    onChange({ ...query, parcaQuery });
-    // executes the query
-    onRunQuery();
-  }, []);
+  const [profileTypes, setProfileTypes] = useState<Array<SelectableValue<string>>>([]);
+
+  const { onChange, query: stateQuery, onRunQuery, datasource } = props;
+  const onParcaQueryChange = useCallback(
+    (parcaQuery: string) => {
+      if (parcaQuery === stateQuery.parcaQuery) {
+        return;
+      }
+      console.log('parcaQuery', parcaQuery);
+      onChange({ ...stateQuery, parcaQuery });
+      // executes the query
+      onRunQuery();
+    },
+    [onChange, onRunQuery, stateQuery]
+  );
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       try {
-        const { datasource } = props;
         const { response } = await datasource.queryClient.profileTypes({});
-        const profileNames = response.types
-          .map(
-            (type) =>
-              `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${type.periodUnit}${
-                type.delta ? ':delta' : ''
-              }`
-          )
-          .sort((a: string, b: string): number => {
-            return a.localeCompare(b);
-          });
+        const profileNames = normalizeProfileTypesData(response.types);
         const profileTypes = profileNames.map(getDropDownItemForProfileKey);
         setProfileTypes(profileTypes);
       } catch (error) {
@@ -91,16 +87,16 @@ export const QueryEditor = (props: Props) => {
       }
       setProfileTypesLoading(false);
     })();
-  }, []);
+  }, [datasource]);
 
   useEffect(() => {
-    if (!profileType || !querySelector) {
+    if (profileType?.value == null || querySelector == null) {
       return;
     }
     const parcaQuery = `${profileType.value}${querySelector}`;
 
     onParcaQueryChange(parcaQuery);
-  }, [profileType, querySelector]);
+  }, [profileType, querySelector, onParcaQueryChange]);
 
   return (
     <div>

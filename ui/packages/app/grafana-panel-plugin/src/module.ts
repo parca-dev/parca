@@ -12,9 +12,8 @@
 // limitations under the License.
 
 import { PanelPlugin } from '@grafana/data';
-import { SimpleOptions } from './types';
 import { ParcaPanel } from './ParcaPanel';
 
-export const plugin = new PanelPlugin<SimpleOptions>(ParcaPanel).setPanelOptions((builder) => {
+export const plugin = new PanelPlugin<{}>(ParcaPanel).setPanelOptions((builder) => {
   return builder;
 });

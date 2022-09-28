@@ -20,10 +20,8 @@ const { FormField } = LegacyForms;
 
 interface Props extends DataSourcePluginOptionsEditorProps<ParcaDataSourceOptions> {}
 
-interface State {}
-
-export class ConfigEditor extends PureComponent<Props, State> {
-  onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
+export class ConfigEditor extends PureComponent<Props, {}> {
+  onPathChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const { onOptionsChange, options } = this.props;
     const jsonData = {
       ...options.jsonData,
@@ -33,7 +31,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
   };
 
   // Secure field (only sent to the backend)
-  onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({
       ...options,
@@ -43,7 +41,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
     });
   };
 
-  onResetAPIKey = () => {
+  onResetAPIKey = (): void => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({
       ...options,
@@ -58,7 +56,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
     });
   };
 
-  render() {
+  render(): JSX.Element {
     const { options } = this.props;
     const { jsonData } = options;
 
@@ -70,7 +68,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             labelWidth={6}
             inputWidth={26}
             onChange={this.onPathChange}
-            value={jsonData.APIEndpoint || ''}
+            value={jsonData.APIEndpoint ?? ''}
             placeholder="Parca API URL. Eg: <http://localhost:7070/api>"
           />
         </div>

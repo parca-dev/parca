@@ -14,34 +14,32 @@
 import React, { useState } from 'react';
 import { Provider } from 'react-redux';
 import { PanelProps } from '@grafana/data';
-import { SimpleOptions } from 'types';
 import { css, cx } from 'emotion';
 import { stylesFactory, useTheme } from '@grafana/ui';
-import { ProfileView, VisualizationType } from '@parca/profile';
+import { ProfileView, VisualizationType, ProfileVisState } from '@parca/profile';
 import { store } from '@parca/store';
 
 import '@parca/profile/dist/styles.css';
 import '@parca/components/dist/styles.css';
 
-interface Props extends PanelProps<SimpleOptions> {}
+interface Props extends PanelProps<{}> {}
 
 const { store: parcaStore } = store();
 
-const useInMemoryProfileVisState = () => {
+const useInMemoryProfileVisState = (): ProfileVisState => {
   const [currentView, setCurrentView] = useState<VisualizationType>('icicle');
 
   return { currentView, setCurrentView };
 };
 
-export const ParcaPanel: React.FC<Props> = ({ options, data, width, height }) => {
+export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
   const theme = useTheme();
   const styles = getStyles();
 
   const profileVisState = useInMemoryProfileVisState();
 
-  // TODO: Fix this
-  // @ts-expect-error
-  const { flamegraphData, topTableData } = data.series[0]?.fields[0].values.buffer[0] ?? {};
+  const { flamegraphData, topTableData } = data.series[0]?.fields[0].values.get(0) ?? {};
+
   return (
     <Provider store={parcaStore}>
       <div

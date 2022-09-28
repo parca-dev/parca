@@ -18,8 +18,6 @@ export interface ParcaQuery extends DataQuery {
 }
 
 export const defaultQuery: Partial<ParcaQuery> = {
-  //parcaQuery: 'goroutine:goroutine:count:goroutine:count{job="default"}'
-  //parcaQuery: 'process_cpu:samples:count:cpu:nanoseconds:delta{job="default"}'
   parcaQuery: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="default"}',
 };
 

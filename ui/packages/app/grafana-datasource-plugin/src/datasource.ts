@@ -33,7 +33,6 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
   constructor(instanceSettings: DataSourceInstanceSettings<ParcaDataSourceOptions>) {
     super(instanceSettings);
     this.queryClient = new QueryServiceClient(
-      /* @ts-expect-error */
       new GrpcWebFetchTransport({
         baseUrl: instanceSettings.jsonData.APIEndpoint as string,
       })
@@ -42,8 +41,8 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
 
   async query(options: DataQueryRequest<ParcaQuery>): Promise<DataQueryResponse> {
     const { range } = options;
-    const from = range!.from.valueOf();
-    const to = range!.to.valueOf();
+    const from = range.from.valueOf();
+    const to = range.to.valueOf();
 
     // Return a constant for each query.
     const data = await Promise.all(
@@ -70,16 +69,21 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
     topTableReq.reportType = QueryRequest_ReportType.TOP;
 
     try {
-      const [flamegraphResult, topTableResult] = await Promise.all([
-        this.queryClient.query(flamegraphReq),
-        this.queryClient.query(topTableReq),
-      ]);
+      const [
+        {
+          response: { report: flamegraphReport },
+        },
+        {
+          response: { report: topTableReport },
+        },
+      ] = await Promise.all([this.queryClient.query(flamegraphReq), this.queryClient.query(topTableReq)]);
 
-      // TODO: Fix this
-      // @ts-expect-error
       return {
-        flamegraphData: { loading: false, data: (await flamegraphResult).response?.report?.flamegraph },
-        topTableData: { loading: false, data: topTableResult.response?.report?.top },
+        flamegraphData: {
+          loading: false,
+          data: flamegraphReport.oneofKind === 'flamegraph' ? flamegraphReport.flamegraph : null,
+        },
+        topTableData: { loading: false, data: topTableReport.oneofKind === 'top' ? topTableReport.top : null },
       };
     } catch (err) {
       console.log('err', err);
@@ -87,7 +91,7 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
     }
   }
 
-  async testDatasource() {
+  async testDatasource(): Promise<{ status: string; message?: string }> {
     // Implement a health check for your data source.
     return {
       status: 'success',
