@@ -16,7 +16,7 @@ import { Provider } from 'react-redux';
 import { PanelProps } from '@grafana/data';
 import { css, cx } from 'emotion';
 import { stylesFactory, useTheme } from '@grafana/ui';
-import { ProfileView, VisualizationType, ProfileVisState } from '@parca/profile';
+import { ProfileView, VisualizationType, ProfileVisState, GrafanaParcaData } from '@parca/profile';
 import { store } from '@parca/store';
 
 import '@parca/profile/dist/styles.css';
@@ -32,13 +32,29 @@ const useInMemoryProfileVisState = (): ProfileVisState => {
   return { currentView, setCurrentView };
 };
 
+function extractData<T>(data: any): T {
+  return data.series[0].fields[0].values.get(0);
+}
+
 export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
   const theme = useTheme();
   const styles = getStyles();
 
   const profileVisState = useInMemoryProfileVisState();
 
-  const { flamegraphData, topTableData } = data.series[0]?.fields[0].values.get(0) ?? {};
+  const response = extractData<GrafanaParcaData>(data);
+
+  if (response.error !== undefined) {
+    console.error('Error loading profile', response.error);
+    return (
+      <div className={styles.errorWrapper}>
+        <span>Something went wrong!</span>
+        <span>{response.error?.message}</span>
+      </div>
+    );
+  }
+
+  const { flamegraphData, topTableData, actions } = response;
 
   return (
     <Provider store={parcaStore}>
@@ -55,8 +71,8 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
         <ProfileView
           flamegraphData={flamegraphData}
           topTableData={topTableData}
-          sampleUnit={flamegraphData?.unit ?? 'bytes'}
-          onDownloadPProf={() => {}}
+          sampleUnit={flamegraphData.data?.unit ?? 'bytes'}
+          onDownloadPProf={actions.downloadPprof}
           profileVisState={profileVisState}
         />
       </div>
@@ -81,6 +97,14 @@ const getStyles = stylesFactory(() => {
       bottom: 0;
       left: 0;
       padding: 10px;
+    `,
+    errorWrapper: css`
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
     `,
   };
 });

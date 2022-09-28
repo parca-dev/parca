@@ -30,13 +30,13 @@ import './ProfileView.styles.css';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
-interface FlamegraphData {
+export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
   error?: any;
 }
 
-interface TopTableData {
+export interface TopTableData {
   loading: boolean;
   data?: Top;
   error?: any;
@@ -55,7 +55,7 @@ export interface ProfileVisState {
   setCurrentView: (view: VisualizationType) => void;
 }
 
-interface ProfileViewProps {
+export interface ProfileViewProps {
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;

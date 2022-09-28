@@ -23,9 +23,10 @@ import {
 } from '@grafana/data';
 
 import { ParcaQuery, ParcaDataSourceOptions, defaultQuery } from './types';
-import { MergedProfileSource } from '@parca/profile';
+import { downloadPprof, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import { QueryRequest_ReportType, QueryServiceClient } from '@parca/client';
+import { saveAsBlob } from '@parca/functions';
 
 export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions> {
   queryClient: QueryServiceClient;
@@ -61,7 +62,7 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
     return { data };
   }
 
-  async getData(from: number, to: number, query: ParcaQuery): Promise<any> {
+  async getData(from: number, to: number, query: ParcaQuery): Promise<GrafanaParcaData> {
     const profileSource = new MergedProfileSource(from, to, query.parcaQuery);
     const flamegraphReq = profileSource.QueryRequest();
     flamegraphReq.reportType = QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED;
@@ -81,13 +82,18 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
       return {
         flamegraphData: {
           loading: false,
-          data: flamegraphReport.oneofKind === 'flamegraph' ? flamegraphReport.flamegraph : null,
+          data: flamegraphReport.oneofKind === 'flamegraph' ? flamegraphReport.flamegraph : undefined,
         },
-        topTableData: { loading: false, data: topTableReport.oneofKind === 'top' ? topTableReport.top : null },
+        topTableData: { loading: false, data: topTableReport.oneofKind === 'top' ? topTableReport.top : undefined },
+        actions: {
+          downloadPprof: async () => {
+            const blob = await downloadPprof(profileSource.QueryRequest(), this.queryClient, {});
+            saveAsBlob(blob, 'profile.pb.gz');
+          },
+        },
       };
     } catch (err) {
-      console.log('err', err);
-      return { error: err };
+      return { error: new Error(JSON.stringify(err)) };
     }
   }
 

@@ -18,6 +18,7 @@ import {ProfileView, useProfileVisState} from './ProfileView';
 import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
 import {useGrpcMetadata} from '@parca/components';
+import {saveAsBlob} from '@parca/functions';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -69,10 +70,7 @@ export const ProfileViewWithData = ({
 
     try {
       const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = 'profile.pb.gz';
-      link.click();
+      saveAsBlob(blob, `profile.pb.gz`);
     } catch (error) {
       console.error('Error while querying', error);
     }

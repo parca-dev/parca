@@ -279,3 +279,10 @@ export const isSearchMatch = (currentSearchString: string | undefined, name: str
 
   return name.toLowerCase().includes(currentSearchString.toLowerCase());
 };
+
+export const saveAsBlob = (blob: Blob, filename: string): void => {
+  const link = document.createElement('a');
+  link.href = window.URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+};
