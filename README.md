@@ -113,6 +113,10 @@ Flags:
                                    Defaults to 512MB.
       --storage-path="data"        Path to storage directory.
       --storage-enable-wal         Enables write ahead log for profile storage.
+      --storage-row-group-size=8192
+                                   Number of rows in each row group during
+                                   compaction and persistence. Setting to <= 0
+                                   results in a single row group per file.
       --symbolizer-demangle-mode="simple"
                                    Mode to demangle C++ symbols. Default mode
                                    is simplified: no parameters, no templates,
