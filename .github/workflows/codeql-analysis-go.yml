@@ -74,9 +74,9 @@ jobs:
           cache: yarn
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@86f3159a697a097a813ad9bfa0002412d97690a4 # tag=v2.1.25
+        uses: github/codeql-action/init@e0e5ded33cabb451ae0a9768fc7b0410bad9ad44 # tag=v2.1.26
         with:
           languages: ${{ matrix.language }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@86f3159a697a097a813ad9bfa0002412d97690a4 # tag=v2.1.25
+        uses: github/codeql-action/analyze@e0e5ded33cabb451ae0a9768fc7b0410bad9ad44 # tag=v2.1.26
