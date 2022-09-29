@@ -127,7 +127,7 @@ function profileSelectElement(
   };
 }
 
-interface Props {
+export interface Props {
   profileTypesData?: ProfileTypesResponse;
   loading?: boolean;
   error: RpcError | undefined;

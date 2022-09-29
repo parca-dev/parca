@@ -50,12 +50,11 @@ interface CallgraphData {
 
 export type VisualizationType = 'icicle' | 'table' | 'callgraph' | 'both';
 
-interface ProfileVisState {
-  currentView: VisualizationType;
+export interface ProfileVisState {
   setCurrentView: (view: VisualizationType) => void;
 }
 
-interface ProfileViewProps {
+export interface ProfileViewProps {
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;

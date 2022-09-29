@@ -1,0 +1,5185 @@
+{
+  "list": [
+    {
+      "cumulative": "12",
+      "flat": "12",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/CzmXZ8KA1Lfct2pndusUkYOJ2ve3NN68xN8ijp37Pnc=",
+          "address": "4306294011",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/hQRZonL0KZdXXcjb7nPShlPX26cJNOOcMEWvJe84qaY=",
+          "startLine": "0",
+          "name": "runtime.pthread_kill",
+          "systemName": "runtime.pthread_kill",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/sys_darwin.go"
+        },
+        "line": {
+          "functionId": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/hQRZonL0KZdXXcjb7nPShlPX26cJNOOcMEWvJe84qaY=",
+          "line": "165"
+        }
+      }
+    },
+    {
+      "cumulative": "6",
+      "flat": "6",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/koh444hpWX06jyRIhyhN4Qnu0GyMWwwHxE0_wAfVFU4=",
+          "address": "4306071240",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/R-lWk5cKWVn0Sxb6RgM1rgVCiUKTcRiefz1W_9_wpuI=",
+          "startLine": "0",
+          "name": "runtime.greyobject",
+          "systemName": "runtime.greyobject",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcmark.go"
+        }
+      }
+    },
+    {
+      "cumulative": "5",
+      "flat": "5",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/EQgiJSDGpSjUJT8CyeQgWhFlmqHtv6H0RNtXnINkCg8=",
+          "address": "4306295423",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/-j1QGPYb9om2FYxWpAVk6zj0IaVOv8ZCR3Hs2uVRMHw=",
+          "startLine": "0",
+          "name": "runtime.kevent",
+          "systemName": "runtime.kevent",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/sys_darwin.go"
+        },
+        "line": {
+          "functionId": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/-j1QGPYb9om2FYxWpAVk6zj0IaVOv8ZCR3Hs2uVRMHw=",
+          "line": "400"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "4",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/hO9e6QeDX8Q4dmf_HSb5auyXIPXHJ0LcPr1x9Scofu0=",
+          "address": "4306294523",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/Wzf17ZOOuUSrgezrx76DRQ1JgvWzJoNrg_S2akMGEcM=",
+          "startLine": "0",
+          "name": "runtime.usleep",
+          "systemName": "runtime.usleep",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/sys_darwin.go"
+        },
+        "line": {
+          "functionId": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/Wzf17ZOOuUSrgezrx76DRQ1JgvWzJoNrg_S2akMGEcM=",
+          "line": "249"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "4",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/mId4UoIEDdSmeQ2pv5HWlwXfvv6K9W27SZGhCIHQ8Zk=",
+          "address": "4306295727",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/KV3AgFSBmodIo9GsQNs6Lmpx4quhIPb6DoH3-Ocp1TE=",
+          "startLine": "0",
+          "name": "runtime.pthread_cond_wait",
+          "systemName": "runtime.pthread_cond_wait",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/sys_darwin.go"
+        },
+        "line": {
+          "functionId": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/KV3AgFSBmodIo9GsQNs6Lmpx4quhIPb6DoH3-Ocp1TE=",
+          "line": "449"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "4",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/LHazOH3UnXUa7gtMEqabnR7dV1gVzj2xQm3V9wqObI0=",
+          "address": "4306379156",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "L0QxZbhBP1-ii8okSMclQh2c9aBY05L6hDaRai4fC4U=/Qr_BmE9-Paw0zmiiOLy3gN8zSetDIWj_1EpcsI7avUY=",
+          "startLine": "0",
+          "name": "runtime.memclrNoHeapPointers",
+          "systemName": "runtime.memclrNoHeapPointers",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/memclr_arm64.s"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "2",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/2tKtAAERSeoJNGHEGcoBDkZFnAXgDBywLFuPivCMrDA=",
+          "address": "4305976852",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "vy27Qym7S0MoqHCNI6lJrQZq4FuXP6FGMuXK_e-cgJU=/kUnc27wPFGSmrxkbgEil4L3GyqdvIrWq9e8yOtwvHBk=",
+          "startLine": "0",
+          "name": "runtime.(*lfstack).push",
+          "systemName": "runtime.(*lfstack).push",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/lfstack.go"
+        },
+        "line": {
+          "functionId": "vy27Qym7S0MoqHCNI6lJrQZq4FuXP6FGMuXK_e-cgJU=/kUnc27wPFGSmrxkbgEil4L3GyqdvIrWq9e8yOtwvHBk=",
+          "line": "35"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "2",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/9SMxOfheJUTyY2uRVODrTuDBD_bMj2GJiNocWcKbBjU=",
+          "address": "4306014060",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "tojIOPNLkeBFVpo7m6o8MbB8sUfMp9TF7Iv43yFG4Zc=/qYFMbWghTj0LNqiWZRFQjlOeC6oZlQ7v22TYUmVsddg=",
+          "startLine": "0",
+          "name": "runtime.findObject",
+          "systemName": "runtime.findObject",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mbitmap.go"
+        }
+      }
+    },
+    {
+      "cumulative": "10",
+      "flat": "2",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/cecipi3D3RhrD8IzcSJ23zJUbqw01dwYhiLCtFaQo5U=",
+          "address": "4306069951",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/A-0VkW52Vj_4K6BGbN1L1sdLoOjJOTlPf9MV43x9z5k=",
+          "startLine": "0",
+          "name": "runtime.scanobject",
+          "systemName": "runtime.scanobject",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcmark.go"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "2",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/D4pSHHATTelxYhZdqvAx6uFXk5QX0EBYV-1b_ydGoYw=",
+          "address": "4306070012",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "tojIOPNLkeBFVpo7m6o8MbB8sUfMp9TF7Iv43yFG4Zc=/Z73N7G25-N_iEXJxSyw5ZxiCDFJrFMAZ_TgOLqwJiXE=",
+          "startLine": "0",
+          "name": "runtime.heapBits.next",
+          "systemName": "runtime.heapBits.next",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mbitmap.go"
+        },
+        "line": {
+          "functionId": "tojIOPNLkeBFVpo7m6o8MbB8sUfMp9TF7Iv43yFG4Zc=/Z73N7G25-N_iEXJxSyw5ZxiCDFJrFMAZ_TgOLqwJiXE=",
+          "line": "444"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "2",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/rMA4MAuFCFY-wyvYTq84ETzAiynlmhn9rEa2ondy7c8=",
+          "address": "4306294623",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/u2woXFKCYRb1N739eT_Tz-4yFAi-B8TiIx7moueMsZo=",
+          "startLine": "0",
+          "name": "runtime.write1",
+          "systemName": "runtime.write1",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/sys_darwin.go"
+        },
+        "line": {
+          "functionId": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/u2woXFKCYRb1N739eT_Tz-4yFAi-B8TiIx7moueMsZo=",
+          "line": "262"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/iqPNc7VRGBJFvPDwV4T5yay-gquFneJfRrUb61wAwc8=",
+          "address": "4306008192",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "k7269l4_C0cekIi528oqJORkwslG81TGyzm2rZZFocE=/1hMGIGSuKaax3vyAe0NTxArb2nXCUbp1NHJJp4gEVo4=",
+          "startLine": "0",
+          "name": "runtime.mapaccess2_faststr",
+          "systemName": "runtime.mapaccess2_faststr",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/map_faststr.go"
+        },
+        "line": {
+          "functionId": "k7269l4_C0cekIi528oqJORkwslG81TGyzm2rZZFocE=/1hMGIGSuKaax3vyAe0NTxArb2nXCUbp1NHJJp4gEVo4=",
+          "line": "190"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/05JU_sIvyEtPzTSReuyc7od6QJtB7xILnTggVsjNJJI=",
+          "address": "4306017280",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "tojIOPNLkeBFVpo7m6o8MbB8sUfMp9TF7Iv43yFG4Zc=/03jo10u13y1EfDVIA9iR5oTk7Nuvs09NgSl0zF5ftLU=",
+          "startLine": "0",
+          "name": "runtime.heapBitsSetType",
+          "systemName": "runtime.heapBitsSetType",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mbitmap.go"
+        },
+        "line": {
+          "functionId": "tojIOPNLkeBFVpo7m6o8MbB8sUfMp9TF7Iv43yFG4Zc=/03jo10u13y1EfDVIA9iR5oTk7Nuvs09NgSl0zF5ftLU=",
+          "line": "844"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/b-FASwIvub-Uy-7IOnuhw2tRLhNnqR7k1xkqCEciLOo=",
+          "address": "4306057876",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "T5qqvy5X0rbXjRDIfxnXUtWjoZaueacbajQvfLCdu4E=/0rUiLpcMQr6Tgo89RzRgQdclFgjqj1g9fOusWJ_yR1w=",
+          "startLine": "0",
+          "name": "runtime.(*limiterEvent).consume",
+          "systemName": "runtime.(*limiterEvent).consume",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgclimit.go"
+        },
+        "line": {
+          "functionId": "T5qqvy5X0rbXjRDIfxnXUtWjoZaueacbajQvfLCdu4E=/0rUiLpcMQr6Tgo89RzRgQdclFgjqj1g9fOusWJ_yR1w=",
+          "line": "425"
+        }
+      }
+    },
+    {
+      "cumulative": "30",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/4_4ZPlvwakqGA-7PkQJXUjrcplwlSIyFf9TJ8DSDLcQ=",
+          "address": "4306067799",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/RVn2q4n228zJfVLj9CottNM1PFGWSZTUl7CyAdVTZi0=",
+          "startLine": "0",
+          "name": "runtime.gcDrain",
+          "systemName": "runtime.gcDrain",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcmark.go"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/3FAH_svaUQlCiOOpE9UuHNx9Rqc1wm84329DytgMP6I=",
+          "address": "4306088540",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-ccyYyRGreQ2Xn3QJPTKY4WkA9BqKiW6Jz_1L-wNT74=/WZSF7wcBf2ovuNX1ZlstcHaxEejIKNGNOMitA2W4VyE=",
+          "startLine": "0",
+          "name": "runtime.(*sweepClass).update",
+          "systemName": "runtime.(*sweepClass).update",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcsweep.go"
+        },
+        "line": {
+          "functionId": "-ccyYyRGreQ2Xn3QJPTKY4WkA9BqKiW6Jz_1L-wNT74=/WZSF7wcBf2ovuNX1ZlstcHaxEejIKNGNOMitA2W4VyE=",
+          "line": "75"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/UAljH7Q-84mIJTvONNmDYtgNUAZslGmCue3j5whBaMU=",
+          "address": "4306089920",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-ccyYyRGreQ2Xn3QJPTKY4WkA9BqKiW6Jz_1L-wNT74=/AnAU7k0_YXkkofGGz6LTBc2Nmo455ovyp7_lR01Z2q0=",
+          "startLine": "0",
+          "name": "runtime.(*sweepLocker).tryAcquire",
+          "systemName": "runtime.(*sweepLocker).tryAcquire",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcsweep.go"
+        },
+        "line": {
+          "functionId": "-ccyYyRGreQ2Xn3QJPTKY4WkA9BqKiW6Jz_1L-wNT74=/AnAU7k0_YXkkofGGz6LTBc2Nmo455ovyp7_lR01Z2q0=",
+          "line": "320"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/mv10FSZVRRbyhNfEbWGCCmr3H2-KT-Y4RCmjeaC9b5k=",
+          "address": "4306090504",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "ZkX_onQQEJ_cECEW4n2ME9mtYcQ1EzfwXFH7jghLGEo=/letO2FfRf7THxHD6MIixNti85EcaguxyAUAp6TrfP-c=",
+          "startLine": "0",
+          "name": "runtime.(*mSpanStateBox).get",
+          "systemName": "runtime.(*mSpanStateBox).get",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mheap.go"
+        },
+        "line": {
+          "functionId": "ZkX_onQQEJ_cECEW4n2ME9mtYcQ1EzfwXFH7jghLGEo=/letO2FfRf7THxHD6MIixNti85EcaguxyAUAp6TrfP-c=",
+          "line": "365"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/FvQyjID_7i0JGoAdk1LcD-tek_utK_zt26rxsIkXWHk=",
+          "address": "4306098688",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "vy27Qym7S0MoqHCNI6lJrQZq4FuXP6FGMuXK_e-cgJU=/fW0uOvxuiMRIcmz4oDOiyY-tSkvuEBFRbyju0zvak60=",
+          "startLine": "0",
+          "name": "runtime.(*lfstack).pop",
+          "systemName": "runtime.(*lfstack).pop",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/lfstack.go"
+        },
+        "line": {
+          "functionId": "vy27Qym7S0MoqHCNI6lJrQZq4FuXP6FGMuXK_e-cgJU=/fW0uOvxuiMRIcmz4oDOiyY-tSkvuEBFRbyju0zvak60=",
+          "line": "49"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/ZwCXkilq3Z_77A9IInI0H8RjTq5XueaIowaGymwEafw=",
+          "address": "4306200220",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/fatqReLXB7OQkjwWZkAhIBHkiYqnSqjyjPsWl46JVMo=",
+          "startLine": "0",
+          "name": "runtime.(*randomEnum).next",
+          "systemName": "runtime.(*randomEnum).next",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/fatqReLXB7OQkjwWZkAhIBHkiYqnSqjyjPsWl46JVMo=",
+          "line": "6249"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/GXlzCSzcRlBq-DMX282sBzy3sowQ86N9M2sfz5t7mNE=",
+          "address": "4306294739",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/9_ROorxQcGE4AVk-D8_MEnKi-lmHogwjKwUIzi_Pv20=",
+          "startLine": "0",
+          "name": "runtime.nanotime1",
+          "systemName": "runtime.nanotime1",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/sys_darwin.go"
+        },
+        "line": {
+          "functionId": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/9_ROorxQcGE4AVk-D8_MEnKi-lmHogwjKwUIzi_Pv20=",
+          "line": "284"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/oUEdGas-mS8RGbIf2M5BOiB6kjCILY1P9fJP2QpEmlA=",
+          "address": "4306295855",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/omQHqBLmEGh8kl-4FdndX2f16VCPbKjRi_x5sLs74is=",
+          "startLine": "0",
+          "name": "runtime.pthread_cond_signal",
+          "systemName": "runtime.pthread_cond_signal",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/sys_darwin.go"
+        },
+        "line": {
+          "functionId": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/omQHqBLmEGh8kl-4FdndX2f16VCPbKjRi_x5sLs74is=",
+          "line": "470"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/YDI9YRb3sirA6qsIM44djHKKd24--y_FKJhVLhqMtEg=",
+          "address": "4306362963",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/WSSJEP0_m1L-Mfi6h34tO4rt7FRN8iQaC9M7tIkTwpA=",
+          "startLine": "0",
+          "name": "syscall.syscall6",
+          "systemName": "syscall.syscall6",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/sys_darwin.go"
+        },
+        "line": {
+          "functionId": "oofLNG562qn9sFnHOpP8VhhQ_a0HYphJLbMt3RmiZyg=/WSSJEP0_m1L-Mfi6h34tO4rt7FRN8iQaC9M7tIkTwpA=",
+          "line": "45"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/Ap8BX5M_ICGwUMY2xuKaHeTpwa-0DETwboWgfQjILJE=",
+          "address": "4308705496",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "LMobq43AFKXHW7uvYcHjQPugsDGSlmi4rvXpJvASbYI=/sRvjThCHguQSdbML750W0HBfs0uYm7vGT8-L9sWdy_Y=",
+          "startLine": "0",
+          "name": "crypto/sha512.blockGeneric",
+          "systemName": "crypto/sha512.blockGeneric",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/crypto/sha512/sha512block.go"
+        },
+        "line": {
+          "functionId": "LMobq43AFKXHW7uvYcHjQPugsDGSlmi4rvXpJvASbYI=/sRvjThCHguQSdbML750W0HBfs0uYm7vGT8-L9sWdy_Y=",
+          "line": "111"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/tWdmGccEpmReX-pRlXpX56SlLt7g7XyCl5Ev2zM19ZM=",
+          "address": "4311308544",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "nryWJbmIRqDai-0jYYOxK5lAuu7XB-ACVFIRBUflezI=/7a72MnmNytiyRZaahph-0u_tWI4WUtCoiVQHmCNI60E=",
+          "startLine": "0",
+          "name": "github.com/dgraph-io/badger/v3/skl.(*Skiplist).findNear",
+          "systemName": "github.com/dgraph-io/badger/v3/skl.(*Skiplist).findNear",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/dgraph-io/badger/v3/skl/skl.go"
+        },
+        "line": {
+          "functionId": "nryWJbmIRqDai-0jYYOxK5lAuu7XB-ACVFIRBUflezI=/7a72MnmNytiyRZaahph-0u_tWI4WUtCoiVQHmCNI60E=",
+          "line": "219"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/G01fh9DolgdiQg66OqZ-F764P_Idpmg60k1PmGJMjdE=",
+          "address": "4313506284",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "GeNd1wDc_aDNCAicLEouPOOS4ua9Eh3dPKCOyk7KMlM=/rcEF7OFG9vzOcGKwl4Rx6Kmwn_QrBT_Bk2YqvpFvMzM=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*indexedColumnBuffer).Less",
+          "systemName": "github.com/segmentio/parquet-go.(*indexedColumnBuffer).Less",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/dictionary.go"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "1",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/V_zOUujD9hOmONFRZBePUKFdbu_idkqtLLNqP8GviUI=",
+          "address": "4313678724",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "OyxqSGkHGBRt0APn_Pc2aumZmsunU0EoGNVK16bpEpU=/Z94GWkMEZqD2CNdREFrh-p4WD2svrk_Zyh2ALq-JmjY=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*stringType).Compare",
+          "systemName": "github.com/segmentio/parquet-go.(*stringType).Compare",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/type.go"
+        },
+        "line": {
+          "functionId": "OyxqSGkHGBRt0APn_Pc2aumZmsunU0EoGNVK16bpEpU=/Z94GWkMEZqD2CNdREFrh-p4WD2svrk_Zyh2ALq-JmjY=",
+          "line": "891"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/sTJaf1gJibjGLHiFonTQ5LlOZwFRh08L-sVHzkdLK8Q=",
+          "address": "4305977659",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-Z0Jlc-RIJ4fo3g-e_yvfuAgWOdhQsH4qYUjWNiL1D8=/k7a8gx0-Enezt70QP-QqWcNR8FNYZ5OZFI_yxK7n9Bs=",
+          "startLine": "0",
+          "name": "runtime.osyield",
+          "systemName": "runtime.osyield",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/os_darwin.go"
+        },
+        "line": {
+          "functionId": "-Z0Jlc-RIJ4fo3g-e_yvfuAgWOdhQsH4qYUjWNiL1D8=/k7a8gx0-Enezt70QP-QqWcNR8FNYZ5OZFI_yxK7n9Bs=",
+          "line": "351"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/Li5a-HslLPB_Q9Ht5pTH1hC5LxZR1ivHYITZ-J-v5l4=",
+          "address": "4305978391",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "7I1BJfOLFdbSmuR5IC8ntDLoA1tmUquLncZBwQ6c0Eo=/8QxcptOZZ6VO9XBHv8XJhD8gdawkVQcu_CjlJRelfSM=",
+          "startLine": "0",
+          "name": "runtime.notewakeup",
+          "systemName": "runtime.notewakeup",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/lock_sema.go"
+        },
+        "line": {
+          "functionId": "7I1BJfOLFdbSmuR5IC8ntDLoA1tmUquLncZBwQ6c0Eo=/8QxcptOZZ6VO9XBHv8XJhD8gdawkVQcu_CjlJRelfSM=",
+          "line": "161"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/E9VP3O2CGN71fXbvD-NpBQaTjr2WimHjHcF_IlA1zyU=",
+          "address": "4305978639",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "7I1BJfOLFdbSmuR5IC8ntDLoA1tmUquLncZBwQ6c0Eo=/onVuD1crkEqD3QEoVyprQMsooCeFKiHGA300q_cTymE=",
+          "startLine": "0",
+          "name": "runtime.notesleep",
+          "systemName": "runtime.notesleep",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/lock_sema.go"
+        },
+        "line": {
+          "functionId": "7I1BJfOLFdbSmuR5IC8ntDLoA1tmUquLncZBwQ6c0Eo=/onVuD1crkEqD3QEoVyprQMsooCeFKiHGA300q_cTymE=",
+          "line": "181"
+        }
+      }
+    },
+    {
+      "cumulative": "5",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/5KZ1bV3iKVV9cybRUFgpUhSf9s7HP7eivlihkhq2nTY=",
+          "address": "4305984347",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "rnMLnQkbdm03JgolxcbfQcA7w9m6QwqWYfkYl_FJ3no=/4tWdnyaGVXBvUllqCLvB-78XEDN2CpNJcIfNIS1jDEY=",
+          "startLine": "0",
+          "name": "runtime.mallocgc",
+          "systemName": "runtime.mallocgc",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/malloc.go"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/4UQUWS9LZs5Db0Ztt6sG67a9jE7vvtFRFAhvJCf30pQ=",
+          "address": "4305985659",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "rnMLnQkbdm03JgolxcbfQcA7w9m6QwqWYfkYl_FJ3no=/vm-h51_bGtnYuBkf9ibnYCqSsJDhnIhJhb2jlaWaHx0=",
+          "startLine": "0",
+          "name": "runtime.newobject",
+          "systemName": "runtime.newobject",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/malloc.go"
+        },
+        "line": {
+          "functionId": "rnMLnQkbdm03JgolxcbfQcA7w9m6QwqWYfkYl_FJ3no=/vm-h51_bGtnYuBkf9ibnYCqSsJDhnIhJhb2jlaWaHx0=",
+          "line": "1192"
+        }
+      }
+    },
+    {
+      "cumulative": "15",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/LZdFxrwohfxE0hIhaZS6s1coOVcVzjlRhIznGJzNLF8=",
+          "address": "4306051475",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "RV32mjhCs7GskX3X1tswtXsz5HMxHDt4quID83vV7xI=/h2aoxpSSdc5hfJFNZZZUBnXg6Je3-znydnFznyO6Si4=",
+          "startLine": "0",
+          "name": "runtime.gcBgMarkWorker",
+          "systemName": "runtime.gcBgMarkWorker",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgc.go"
+        },
+        "line": {
+          "functionId": "RV32mjhCs7GskX3X1tswtXsz5HMxHDt4quID83vV7xI=/h2aoxpSSdc5hfJFNZZZUBnXg6Je3-znydnFznyO6Si4=",
+          "line": "1295"
+        }
+      }
+    },
+    {
+      "cumulative": "30",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/JocZa7d3TNbjT0_eOrY2n7f2YbZBLPYAzsfGtfIlDio=",
+          "address": "4306052311",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "RV32mjhCs7GskX3X1tswtXsz5HMxHDt4quID83vV7xI=/qupgMN7D4mFMClvnKG0e_sf4eHT_5BRVBz3rR0AKgKk=",
+          "startLine": "0",
+          "name": "runtime.gcBgMarkWorker.func2",
+          "systemName": "runtime.gcBgMarkWorker.func2",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgc.go"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/aqWYlOY-5P7DZJnktuGhctHu_r5y7C6jhcLyv1FQHfA=",
+          "address": "4306056539",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "T5qqvy5X0rbXjRDIfxnXUtWjoZaueacbajQvfLCdu4E=/weWobc7saC0-VsRO2_1r-ZoigjEZy2ZZrALhAWC_2ho=",
+          "startLine": "0",
+          "name": "runtime.(*gcCPULimiterState).update",
+          "systemName": "runtime.(*gcCPULimiterState).update",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgclimit.go"
+        },
+        "line": {
+          "functionId": "T5qqvy5X0rbXjRDIfxnXUtWjoZaueacbajQvfLCdu4E=/weWobc7saC0-VsRO2_1r-ZoigjEZy2ZZrALhAWC_2ho=",
+          "line": "175"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/za0Zdbqj4PSmrDHHJNi3hnBrLvEop_iCxfcPOlqBNJE=",
+          "address": "4306057039",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "T5qqvy5X0rbXjRDIfxnXUtWjoZaueacbajQvfLCdu4E=/IXvvR29SD0bqY95kUDa5L_pNY0F2ew8Asw6tO1hEU7Y=",
+          "startLine": "0",
+          "name": "runtime.(*gcCPULimiterState).updateLocked",
+          "systemName": "runtime.(*gcCPULimiterState).updateLocked",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgclimit.go"
+        },
+        "line": {
+          "functionId": "T5qqvy5X0rbXjRDIfxnXUtWjoZaueacbajQvfLCdu4E=/IXvvR29SD0bqY95kUDa5L_pNY0F2ew8Asw6tO1hEU7Y=",
+          "line": "211"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/tnu8tjEmUfnxZ3FGKX4zTGQlQK0cla6d86E4sWWtadY=",
+          "address": "4306062919",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/5EIfWCzvwFghQZsQ6LFyWLMYCqD0I8dpjY1ArwhuL9g=",
+          "startLine": "0",
+          "name": "runtime.gcAssistAlloc",
+          "systemName": "runtime.gcAssistAlloc",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcmark.go"
+        },
+        "line": {
+          "functionId": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/5EIfWCzvwFghQZsQ6LFyWLMYCqD0I8dpjY1ArwhuL9g=",
+          "line": "473"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/cYjcEZ-q_qwmI-r5TcFm4gpE85fcPWXVFxtZHSASwPw=",
+          "address": "4306063251",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/-AEQYvZ8DkHQMTStdXn5ZYIOHGpbNhrY0a8gnK_lnkQ=",
+          "startLine": "0",
+          "name": "runtime.gcAssistAlloc.func1",
+          "systemName": "runtime.gcAssistAlloc.func1",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcmark.go"
+        },
+        "line": {
+          "functionId": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/-AEQYvZ8DkHQMTStdXn5ZYIOHGpbNhrY0a8gnK_lnkQ=",
+          "line": "474"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/JOWNvdw1jCtXGrcddIImthyoVgDgG8KfNOfLaTXaGhw=",
+          "address": "4306064067",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/oICBrnA5oF0EutgEoI-wzzk8jFzawmlHKqvUOel9r3U=",
+          "startLine": "0",
+          "name": "runtime.gcAssistAlloc1",
+          "systemName": "runtime.gcAssistAlloc1",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcmark.go"
+        },
+        "line": {
+          "functionId": "zB_cv3QNwzC_znN6BmUAFIL5g8oy4nUcOAqrZJJVqZo=/oICBrnA5oF0EutgEoI-wzzk8jFzawmlHKqvUOel9r3U=",
+          "line": "605"
+        }
+      }
+    },
+    {
+      "cumulative": "12",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/Xy3j7dqn1KiINkykzUH2miE5-ySsRQLqFH3ijM4dq44=",
+          "address": "4306075935",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "IqnLWUu_uYR7fXg4HHfxU3bm5OeZjM3Y3cAgU_qCCWI=/pUEMws-1iOz2BD0L7_bF8ktkXTthKC9n8OK0foRyhc4=",
+          "startLine": "0",
+          "name": "runtime.(*gcControllerState).enlistWorker",
+          "systemName": "runtime.(*gcControllerState).enlistWorker",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcpacer.go"
+        },
+        "line": {
+          "functionId": "IqnLWUu_uYR7fXg4HHfxU3bm5OeZjM3Y3cAgU_qCCWI=/pUEMws-1iOz2BD0L7_bF8ktkXTthKC9n8OK0foRyhc4=",
+          "line": "802"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/6CsExIMXaG0yXO19Ft02bv019cXc5tfU3j-1-vRTcZs=",
+          "address": "4306076655",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "IqnLWUu_uYR7fXg4HHfxU3bm5OeZjM3Y3cAgU_qCCWI=/Z_cVpyrHOrZ63pQA4ejlzQ_R1PYlt2SvquNoXnzuR6Y=",
+          "startLine": "0",
+          "name": "runtime.(*gcControllerState).findRunnableGCWorker",
+          "systemName": "runtime.(*gcControllerState).findRunnableGCWorker",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcpacer.go"
+        },
+        "line": {
+          "functionId": "IqnLWUu_uYR7fXg4HHfxU3bm5OeZjM3Y3cAgU_qCCWI=/Z_cVpyrHOrZ63pQA4ejlzQ_R1PYlt2SvquNoXnzuR6Y=",
+          "line": "870"
+        }
+      }
+    },
+    {
+      "cumulative": "3",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/THO1OXjLb5Z0l2GWECoWJUDa53WjgIEqyNfWD-z0g8s=",
+          "address": "4306089823",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-ccyYyRGreQ2Xn3QJPTKY4WkA9BqKiW6Jz_1L-wNT74=/5xoDHeoTJdYjmZN66gFKfSJFI6DWqqq0jXISXVlKstg=",
+          "startLine": "0",
+          "name": "runtime.bgsweep",
+          "systemName": "runtime.bgsweep",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcsweep.go"
+        },
+        "line": {
+          "functionId": "-ccyYyRGreQ2Xn3QJPTKY4WkA9BqKiW6Jz_1L-wNT74=/5xoDHeoTJdYjmZN66gFKfSJFI6DWqqq0jXISXVlKstg=",
+          "line": "281"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/pzF4eUN8mbXoGwUO6MZsioH_DYALDyLOK1qr8VQDPF0=",
+          "address": "4306090563",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-ccyYyRGreQ2Xn3QJPTKY4WkA9BqKiW6Jz_1L-wNT74=/s5eXFvCcCh-H3_GSny9Uc1lugC_Y8zpGARpiV3iWZvE=",
+          "startLine": "0",
+          "name": "runtime.sweepone",
+          "systemName": "runtime.sweepone",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcsweep.go"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/RcoJ2a79HJCMMeickWAArEpxU4xPvY-hT6nLQcwlV7c=",
+          "address": "4306096907",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "_EL4FGRKD5WuNxT2lTWkBxqQq2pQM8RrYyA7arZ3FAU=/nmgcsFLC2hbZkSsPLQzh1YGwSqGF_kdxihCOIqe8Dgo=",
+          "startLine": "0",
+          "name": "runtime.(*gcWork).tryGet",
+          "systemName": "runtime.(*gcWork).tryGet",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcwork.go"
+        },
+        "line": {
+          "functionId": "_EL4FGRKD5WuNxT2lTWkBxqQq2pQM8RrYyA7arZ3FAU=/nmgcsFLC2hbZkSsPLQzh1YGwSqGF_kdxihCOIqe8Dgo=",
+          "line": "215"
+        }
+      }
+    },
+    {
+      "cumulative": "13",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/mAG_74Mf9cUipjVBlxE1tvHpYdDYYVcSYPnqF88OXMY=",
+          "address": "4306097443",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "_EL4FGRKD5WuNxT2lTWkBxqQq2pQM8RrYyA7arZ3FAU=/6rm_H9tA1g5uC7mTm27_h3lXis2i5MApwIpK5nxFC5g=",
+          "startLine": "0",
+          "name": "runtime.(*gcWork).balance",
+          "systemName": "runtime.(*gcWork).balance",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcwork.go"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/_fOCPJ1OZFRlrLtktIhDcaQMhaxeBTH1IXWROJ_Lc_w=",
+          "address": "4306098563",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "_EL4FGRKD5WuNxT2lTWkBxqQq2pQM8RrYyA7arZ3FAU=/n9KppwCfQ39lYCZPezI3pneDBsx9KrGAHoVsDduw1Ls=",
+          "startLine": "0",
+          "name": "runtime.putfull",
+          "systemName": "runtime.putfull",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcwork.go"
+        },
+        "line": {
+          "functionId": "_EL4FGRKD5WuNxT2lTWkBxqQq2pQM8RrYyA7arZ3FAU=/n9KppwCfQ39lYCZPezI3pneDBsx9KrGAHoVsDduw1Ls=",
+          "line": "419"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/b2fzhl19PNXCmqI31XVonqarQrkHl4s2tr0hKICr7gI=",
+          "address": "4306098911",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "_EL4FGRKD5WuNxT2lTWkBxqQq2pQM8RrYyA7arZ3FAU=/2O8tow_GtwS7FoXWMHlO_ly7SsEY99EYuOqyQd4wgpI=",
+          "startLine": "0",
+          "name": "runtime.handoff",
+          "systemName": "runtime.handoff",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/mgcwork.go"
+        },
+        "line": {
+          "functionId": "_EL4FGRKD5WuNxT2lTWkBxqQq2pQM8RrYyA7arZ3FAU=/2O8tow_GtwS7FoXWMHlO_ly7SsEY99EYuOqyQd4wgpI=",
+          "line": "445"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/Genq9bkUK83IdmYqrFegwDwhuBDfcmfLh3lCyIW9Rps=",
+          "address": "4306150851",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "t3GuB6a3SJm5hicZ5-5HEwvTqxOXVoOLKNsoUWIiVfQ=/0VV3innr7sT7vEiias_eHNkqbxlHjwHzg-vqezIx71w=",
+          "startLine": "0",
+          "name": "runtime.netpollBreak",
+          "systemName": "runtime.netpollBreak",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/netpoll_kqueue.go"
+        },
+        "line": {
+          "functionId": "t3GuB6a3SJm5hicZ5-5HEwvTqxOXVoOLKNsoUWIiVfQ=/0VV3innr7sT7vEiias_eHNkqbxlHjwHzg-vqezIx71w=",
+          "line": "89"
+        }
+      }
+    },
+    {
+      "cumulative": "5",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/kTve8-2svwkwHt4mh_VcCAPJtF7VAkiy1K_wVe1u-T4=",
+          "address": "4306151219",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "t3GuB6a3SJm5hicZ5-5HEwvTqxOXVoOLKNsoUWIiVfQ=/RF93ycoX7PK0ySo8BbTJNl-0zSNJo7VmpheGRRGN2pM=",
+          "startLine": "0",
+          "name": "runtime.netpoll",
+          "systemName": "runtime.netpoll",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/netpoll_kqueue.go"
+        },
+        "line": {
+          "functionId": "t3GuB6a3SJm5hicZ5-5HEwvTqxOXVoOLKNsoUWIiVfQ=/RF93ycoX7PK0ySo8BbTJNl-0zSNJo7VmpheGRRGN2pM=",
+          "line": "127"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/uN1qQbtNoVlwf2E9BkN1pr8OfDtUtAIODjHE_mPHCfw=",
+          "address": "4306152183",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-Z0Jlc-RIJ4fo3g-e_yvfuAgWOdhQsH4qYUjWNiL1D8=/kjzw2EKOsm5eLAeekPMe6hIM5w0Cjm-AANbVjJ_ReN0=",
+          "startLine": "0",
+          "name": "runtime.semasleep",
+          "systemName": "runtime.semasleep",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/os_darwin.go"
+        },
+        "line": {
+          "functionId": "-Z0Jlc-RIJ4fo3g-e_yvfuAgWOdhQsH4qYUjWNiL1D8=/kjzw2EKOsm5eLAeekPMe6hIM5w0Cjm-AANbVjJ_ReN0=",
+          "line": "66"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/LaqqM_SyyP9rIexySCTfV51MEH4LHo2zxxVDuuBDV0I=",
+          "address": "4306152487",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-Z0Jlc-RIJ4fo3g-e_yvfuAgWOdhQsH4qYUjWNiL1D8=/KGmXOo02YqPVs2CUwBRNsse7XSAKsQoOP6CKuor6w4U=",
+          "startLine": "0",
+          "name": "runtime.semawakeup",
+          "systemName": "runtime.semawakeup",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/os_darwin.go"
+        },
+        "line": {
+          "functionId": "-Z0Jlc-RIJ4fo3g-e_yvfuAgWOdhQsH4qYUjWNiL1D8=/KGmXOo02YqPVs2CUwBRNsse7XSAKsQoOP6CKuor6w4U=",
+          "line": "76"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/azJGhTIFhWD1F7RL7parNW3JZqZxb3Gp-TgIF-UBjvw=",
+          "address": "4306192427",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "d_F-j_19U3VJLDccGLXN5HXDkHeMHbOO8s-KMHb412A=/JAnvVy8NhzViDVyCR9VoCYyM1iM3jmsgtXAcbxZjxcU=",
+          "startLine": "0",
+          "name": "runtime.lockWithRank",
+          "systemName": "runtime.lockWithRank",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/lockrank_off.go"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/M-tbevgz8wl4xS8sWEKNfD3NWqXXUpeey6hhdGo02MI=",
+          "address": "4306192483",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/DKjyBehoiDkQP78i7xnEvEO2H7Kp1GV1xCB8c7D5lIM=",
+          "startLine": "0",
+          "name": "runtime.mPark",
+          "systemName": "runtime.mPark",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/DKjyBehoiDkQP78i7xnEvEO2H7Kp1GV1xCB8c7D5lIM=",
+          "line": "1457"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/chLFsIHazXotJpx8JnBG-UwLEzjgvEpFQVPs2ica_XQ=",
+          "address": "4306193155",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/z7VuKpgssYY7HOzWLOxC0eCrifuyR9genU7onXieWjU=",
+          "startLine": "0",
+          "name": "runtime.startm",
+          "systemName": "runtime.startm",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/z7VuKpgssYY7HOzWLOxC0eCrifuyR9genU7onXieWjU=",
+          "line": "2336"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/cELjZm0E00NEjkNh14QSngNlAlhbSQwgh-mNTnh0L8s=",
+          "address": "4306194575",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/VUTWrj-NTjlWqCSHA8ouXIQDjvvvxlBHIwMhUza5Ibw=",
+          "startLine": "0",
+          "name": "runtime.wakep",
+          "systemName": "runtime.wakep",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/VUTWrj-NTjlWqCSHA8ouXIQDjvvvxlBHIwMhUza5Ibw=",
+          "line": "2422"
+        }
+      }
+    },
+    {
+      "cumulative": "12",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/DW0E72RbTvdkJ2pH9iK9-0syi8tAt_S2Atm6DizyF5w=",
+          "address": "4306196067",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/NGk7h-CpA904dZMzwxgMiTAezZB6icJq4OabcfKOSSw=",
+          "startLine": "0",
+          "name": "runtime.findRunnable",
+          "systemName": "runtime.findRunnable",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        }
+      }
+    },
+    {
+      "cumulative": "3",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/MVtFx5BY9zZlg-n1lR_F8iAKfaiCCCujWCINp3uAgvw=",
+          "address": "4306199343",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/a-yrb6ec4FsK34gmtrd0cIo5iogazWpqeSZ1UT_9x_g=",
+          "startLine": "0",
+          "name": "runtime.pollWork",
+          "systemName": "runtime.pollWork",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/a-yrb6ec4FsK34gmtrd0cIo5iogazWpqeSZ1UT_9x_g=",
+          "line": "2883"
+        }
+      }
+    },
+    {
+      "cumulative": "14",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/hiPE_t4j189wTVmYbzpDFfqILtDDt1gXIp3skDO3JEE=",
+          "address": "4306202967",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/iG3-3IfJyZvbasirND-TxTz4hDGO-z3QmpI2YT48VM4=",
+          "startLine": "0",
+          "name": "runtime.schedule",
+          "systemName": "runtime.schedule",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/iG3-3IfJyZvbasirND-TxTz4hDGO-z3QmpI2YT48VM4=",
+          "line": "3206"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/5IEtp2LP8-qAXA-zbOjxodRdHaQRM2uYpItyhxsHkF8=",
+          "address": "4306203519",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "XcY-UGpotXvanRDTqx00WP11HC_WRWzJ49EhlTTlPRI=/r3s4R7iOxJMKzzCgMO9TVFZ7-e7deayfRssqmOfoT3U=",
+          "startLine": "0",
+          "name": "runtime.nanotime",
+          "systemName": "runtime.nanotime",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/time_nofake.go"
+        },
+        "line": {
+          "functionId": "XcY-UGpotXvanRDTqx00WP11HC_WRWzJ49EhlTTlPRI=/r3s4R7iOxJMKzzCgMO9TVFZ7-e7deayfRssqmOfoT3U=",
+          "line": "19"
+        }
+      }
+    },
+    {
+      "cumulative": "11",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/xrlC9VAj1e5Qbajy41funM6FjpJt9OrgFc_bUj3ph88=",
+          "address": "4306204311",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/aGaPFBszkcqII0_nHvPtQbKwpI-xZ2f6Gcmtu9Yz9Jw=",
+          "startLine": "0",
+          "name": "runtime.park_m",
+          "systemName": "runtime.park_m",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/aGaPFBszkcqII0_nHvPtQbKwpI-xZ2f6Gcmtu9Yz9Jw=",
+          "line": "3355"
+        }
+      }
+    },
+    {
+      "cumulative": "3",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/glPklnYgelworjRVj-IUoxeRtijJQ95X61PrdzM4BWI=",
+          "address": "4306204595",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/G1rN6l_0iHB5SYHzKALg5hfKzrCXBCQqMokf5CnekzA=",
+          "startLine": "0",
+          "name": "runtime.goschedImpl",
+          "systemName": "runtime.goschedImpl",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/G1rN6l_0iHB5SYHzKALg5hfKzrCXBCQqMokf5CnekzA=",
+          "line": "3370"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/CgaC5Mj05rjqG9T6csl2nw_533pvUZmKEhNN72SYDRY=",
+          "address": "4306204935",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/xWxrm5bV4tv2H-6WQ3Y9BR3ofZh9sfpvcr8kI78LDog=",
+          "startLine": "0",
+          "name": "runtime.gosched_m",
+          "systemName": "runtime.gosched_m",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/xWxrm5bV4tv2H-6WQ3Y9BR3ofZh9sfpvcr8kI78LDog=",
+          "line": "3378"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/6xMabBcZh43iAvhPnCOukunRDdPZf_B7GdpTo4fg1g4=",
+          "address": "4306205259",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/0Zm--M3hzVKP_loK5L5i-ILOvCZbd8UcUnDPSgRZXv8=",
+          "startLine": "0",
+          "name": "runtime.gopreempt_m",
+          "systemName": "runtime.gopreempt_m",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/0Zm--M3hzVKP_loK5L5i-ILOvCZbd8UcUnDPSgRZXv8=",
+          "line": "3398"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/t_lBG4wVvG-uFnLSpjkRm8CoVJL-w4tVwh36GIqk6eo=",
+          "address": "4306211027",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/sAWnD6PWxmTgcF2CSV5L8TQrP0lGYwAvsbHPu7qoEo4=",
+          "startLine": "0",
+          "name": "runtime.newproc.func1",
+          "systemName": "runtime.newproc.func1",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/sAWnD6PWxmTgcF2CSV5L8TQrP0lGYwAvsbHPu7qoEo4=",
+          "line": "4096"
+        }
+      }
+    },
+    {
+      "cumulative": "12",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/EV0VSTFoCafuu1Anl_yuqlcr31lGrHGH7BdcCAGPEl0=",
+          "address": "4306224415",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/X0JHdtpnOAXggv_03tZttHs9APjArKYmksrLpQbwjBE=",
+          "startLine": "0",
+          "name": "runtime.preemptone",
+          "systemName": "runtime.preemptone",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/proc.go"
+        },
+        "line": {
+          "functionId": "smd3zB5ZfjDVpMtb8ivjWz0eVrKGhBG2_9Bk9BzHK2w=/X0JHdtpnOAXggv_03tZttHs9APjArKYmksrLpQbwjBE=",
+          "line": "5401"
+        }
+      }
+    },
+    {
+      "cumulative": "12",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/UnZBiU1O4GOMkWzr7N26LUW-IOK_s6A1ryEQmaUL-ps=",
+          "address": "4306255879",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-Z0Jlc-RIJ4fo3g-e_yvfuAgWOdhQsH4qYUjWNiL1D8=/JrfWY0WRQmJSA7Toh0qQsnYGT0ZFIc2RigIcH4Os0yE=",
+          "startLine": "0",
+          "name": "runtime.signalM",
+          "systemName": "runtime.signalM",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/os_darwin.go"
+        },
+        "line": {
+          "functionId": "-Z0Jlc-RIJ4fo3g-e_yvfuAgWOdhQsH4qYUjWNiL1D8=/JrfWY0WRQmJSA7Toh0qQsnYGT0ZFIc2RigIcH4Os0yE=",
+          "line": "464"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/QWV0jDg2Fo0IyRlUt6HCcs91AIu5qxtXOjvQlxEouIc=",
+          "address": "4306266111",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-RvHZJrXp4peraHYPu6QiGIvEGpvFwC01KuHo0gF8KQ=/u_Bif47b-6kcfCMdrVCzGL-EgJM9XYmLbfWEjqLYhLk=",
+          "startLine": "0",
+          "name": "runtime.growslice",
+          "systemName": "runtime.growslice",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/slice.go"
+        },
+        "line": {
+          "functionId": "-RvHZJrXp4peraHYPu6QiGIvEGpvFwC01KuHo0gF8KQ=/u_Bif47b-6kcfCMdrVCzGL-EgJM9XYmLbfWEjqLYhLk=",
+          "line": "287"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/C1_Bd7APrEMRkv1GmCOFFyR78-K772uKpoZCIe7ibVc=",
+          "address": "4306273535",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "FvFiBFwR0O3nE8zAFAuoP5G9MIhB6cWfrp4ebj_Qd-U=/6oK0gIvy2ZF7g9NXWblqTS8jcaUcPMR9OhlzGzWt2qU=",
+          "startLine": "0",
+          "name": "runtime.newstack",
+          "systemName": "runtime.newstack",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/stack.go"
+        },
+        "line": {
+          "functionId": "FvFiBFwR0O3nE8zAFAuoP5G9MIhB6cWfrp4ebj_Qd-U=/6oK0gIvy2ZF7g9NXWblqTS8jcaUcPMR9OhlzGzWt2qU=",
+          "line": "1070"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/_-EKe0sjz_vaTJapx17Lbuu8rZXiYx6YAQdLCy0tBVg=",
+          "address": "4306280007",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "DrZDFcWfrrNQzBCHiZrk0JhDXUzA1z0Q6FIhl4rczAw=/a1kU2OTUskpRw4EcSzFmKsoYKMUhusaj_L4kXAD6834=",
+          "startLine": "0",
+          "name": "runtime.stringtoslicebyte",
+          "systemName": "runtime.stringtoslicebyte",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/string.go"
+        },
+        "line": {
+          "functionId": "DrZDFcWfrrNQzBCHiZrk0JhDXUzA1z0Q6FIhl4rczAw=/a1kU2OTUskpRw4EcSzFmKsoYKMUhusaj_L4kXAD6834=",
+          "line": "178"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/P9JzQ4kyaV1-yshMmdvM20UibQnrH5DwN-3IIKeYL7s=",
+          "address": "4306281491",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "DrZDFcWfrrNQzBCHiZrk0JhDXUzA1z0Q6FIhl4rczAw=/TUBIWl4J__d74WrW56VJBSnUYysf5J402O0bx4HF6mw=",
+          "startLine": "0",
+          "name": "runtime.rawbyteslice",
+          "systemName": "runtime.rawbyteslice",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/string.go"
+        },
+        "line": {
+          "functionId": "DrZDFcWfrrNQzBCHiZrk0JhDXUzA1z0Q6FIhl4rczAw=/TUBIWl4J__d74WrW56VJBSnUYysf5J402O0bx4HF6mw=",
+          "line": "286"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/Hn7UVHzGWvQEpjfkyMZ_Da4IYIdIr7dxYaIs1B-fAu8=",
+          "address": "4306307791",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "XcY-UGpotXvanRDTqx00WP11HC_WRWzJ49EhlTTlPRI=/CiOfUIomE2ycr-jPx6H6O2gd9jgfJyL2r7YHVGfIKxk=",
+          "startLine": "0",
+          "name": "runtime.write",
+          "systemName": "runtime.write",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/time_nofake.go"
+        },
+        "line": {
+          "functionId": "XcY-UGpotXvanRDTqx00WP11HC_WRWzJ49EhlTTlPRI=/CiOfUIomE2ycr-jPx6H6O2gd9jgfJyL2r7YHVGfIKxk=",
+          "line": "31"
+        }
+      }
+    },
+    {
+      "cumulative": "13",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/Bp9gFqgLQLC0jejyNqxLPRxgkNDCll_DPZ5zk3lWxzM=",
+          "address": "4306367827",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "6eW62XnxBSQ_9BQn7RmPpkrCJxqFxxYOPP1If1AEGx8=/v56IJx9QPqFU76zTBeltfi8v2b0_zvnVjUMKyJQfqqw=",
+          "startLine": "0",
+          "name": "runtime.mcall",
+          "systemName": "runtime.mcall",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/asm_arm64.s"
+        },
+        "line": {
+          "functionId": "6eW62XnxBSQ_9BQn7RmPpkrCJxqFxxYOPP1If1AEGx8=/v56IJx9QPqFU76zTBeltfi8v2b0_zvnVjUMKyJQfqqw=",
+          "line": "192"
+        }
+      }
+    },
+    {
+      "cumulative": "32",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/epCoKCMge9p4DcLy5eY838fJYp-9QiORDSoJiyC7yoo=",
+          "address": "4306367979",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "6eW62XnxBSQ_9BQn7RmPpkrCJxqFxxYOPP1If1AEGx8=/5JbyfGv7qe9lyKnuUb2t-qFGCvCiD89-EHW8gAz5ez0=",
+          "startLine": "0",
+          "name": "runtime.systemstack",
+          "systemName": "runtime.systemstack",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/asm_arm64.s"
+        },
+        "line": {
+          "functionId": "6eW62XnxBSQ_9BQn7RmPpkrCJxqFxxYOPP1If1AEGx8=/5JbyfGv7qe9lyKnuUb2t-qFGCvCiD89-EHW8gAz5ez0=",
+          "line": "243"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/kivyS_3H9GH9FvVrZneno93n698-_Kxho8ES1GDy-GE=",
+          "address": "4306368159",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "6eW62XnxBSQ_9BQn7RmPpkrCJxqFxxYOPP1If1AEGx8=/E7hMFuo4Wh0wk-1CBpmjdrcA025dWW_16r0ost8LXsI=",
+          "startLine": "0",
+          "name": "runtime.morestack",
+          "systemName": "runtime.morestack",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/asm_arm64.s"
+        },
+        "line": {
+          "functionId": "6eW62XnxBSQ_9BQn7RmPpkrCJxqFxxYOPP1If1AEGx8=/E7hMFuo4Wh0wk-1CBpmjdrcA025dWW_16r0ost8LXsI=",
+          "line": "316"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/EhISLdu7DKgcBKW2BnBfyzVWecSFnBdaXxKA2ZHEgHQ=",
+          "address": "4306756943",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "S0v9tEKAch2YIp43XvY057scJ1LVyytDszXc3Nebjs0=/b6CvrQb6-EGFTI2-0_zx3tMywW6ibY3VlhASZG9sl6o=",
+          "startLine": "0",
+          "name": "sort.Sort",
+          "systemName": "sort.Sort",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/sort/sort.go"
+        },
+        "line": {
+          "functionId": "S0v9tEKAch2YIp43XvY057scJ1LVyytDszXc3Nebjs0=/b6CvrQb6-EGFTI2-0_zx3tMywW6ibY3VlhASZG9sl6o=",
+          "line": "48"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/6l7SZB99S04oKRvpcYZQdsyKftVe_Zq8rjV_qBvIQqU=",
+          "address": "4306764603",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "VqpOYrCnEYI82LJx0_ARt555T03AK2ybraO_aAAObmM=/kTjjgcne6ENoydSYj-jYT1TvSuffvpDhqrcQaQdJ8mM=",
+          "startLine": "0",
+          "name": "sort.insertionSort",
+          "systemName": "sort.insertionSort",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/sort/zsortinterface.go"
+        },
+        "line": {
+          "functionId": "VqpOYrCnEYI82LJx0_ARt555T03AK2ybraO_aAAObmM=/kTjjgcne6ENoydSYj-jYT1TvSuffvpDhqrcQaQdJ8mM=",
+          "line": "12"
+        }
+      }
+    },
+    {
+      "cumulative": "8",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/nIxif85Phzg6YrMAQxoocFmA2m5fTp3NVZsfhYTd_vA=",
+          "address": "4306765707",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "VqpOYrCnEYI82LJx0_ARt555T03AK2ybraO_aAAObmM=/00KRPH2i3h8-t-PpKdVTru8yW6F7Zgz7kQ1IwOXYv0k=",
+          "startLine": "0",
+          "name": "sort.pdqsort",
+          "systemName": "sort.pdqsort",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/sort/zsortinterface.go"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/zGKVdtz9I6iA3a9d_Zv8FpoU6l266_deE5Q-MzZegp8=",
+          "address": "4306766435",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "VqpOYrCnEYI82LJx0_ARt555T03AK2ybraO_aAAObmM=/ezPoR1jHZpYCdkZTrICMaQu3afKkhR2YfLlDe_OaN-k=",
+          "startLine": "0",
+          "name": "sort.partition",
+          "systemName": "sort.partition",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/sort/zsortinterface.go"
+        },
+        "line": {
+          "functionId": "VqpOYrCnEYI82LJx0_ARt555T03AK2ybraO_aAAObmM=/ezPoR1jHZpYCdkZTrICMaQu3afKkhR2YfLlDe_OaN-k=",
+          "line": "157"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/TCEc8Mbhm_TYcaq-St6LGDEK-StbFUj-kLgfyfmKMmM=",
+          "address": "4308703075",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "ccAAuMqMxDJlTL9P_QfkjuH9BZgK-MiqpacUL5HkSwk=/ILAMBay0XQ0lJaWnsGGx0K8ZdJzv26XOq20ktUECyos=",
+          "startLine": "0",
+          "name": "crypto/sha512.block",
+          "systemName": "crypto/sha512.block",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/crypto/sha512/sha512block_generic.go"
+        },
+        "line": {
+          "functionId": "ccAAuMqMxDJlTL9P_QfkjuH9BZgK-MiqpacUL5HkSwk=/ILAMBay0XQ0lJaWnsGGx0K8ZdJzv26XOq20ktUECyos=",
+          "line": "10"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/o8noQyXBXWsA7N4lFCtkOMaWrT_ThLsVVjj_h9-5V34=",
+          "address": "4308704331",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "VyQZiYtsUy9sCjd5mIngl9NqRmRCmfe_j4qcXgiJUCg=/2CBsc6ofcaRcaG8g1KKGZ4WRd9ookplY3pSfkP-WTPM=",
+          "startLine": "0",
+          "name": "crypto/sha512.(*digest).checkSum",
+          "systemName": "crypto/sha512.(*digest).checkSum",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/crypto/sha512/sha512.go"
+        },
+        "line": {
+          "functionId": "VyQZiYtsUy9sCjd5mIngl9NqRmRCmfe_j4qcXgiJUCg=/2CBsc6ofcaRcaG8g1KKGZ4WRd9ookplY3pSfkP-WTPM=",
+          "line": "323"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/DqajxIBMt-ZmKLX1yctSjxaPra-9BuDDyi8myat7BwA=",
+          "address": "4308704939",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "VyQZiYtsUy9sCjd5mIngl9NqRmRCmfe_j4qcXgiJUCg=/Vo07zIHEGQ51JqaANCqSpZ5uohRZjvwj9GnKCZz9N9k=",
+          "startLine": "0",
+          "name": "crypto/sha512.Sum512_256",
+          "systemName": "crypto/sha512.Sum512_256",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/crypto/sha512/sha512.go"
+        },
+        "line": {
+          "functionId": "VyQZiYtsUy9sCjd5mIngl9NqRmRCmfe_j4qcXgiJUCg=/Vo07zIHEGQ51JqaANCqSpZ5uohRZjvwj9GnKCZz9N9k=",
+          "line": "383"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/X-7WPNlwekAtI2VrR-420OpVKh3oeZTmF6OS7eMs7UA=",
+          "address": "4309931983",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "EcSll9hVP6RR7BXdZF9wPmuLEC-GRp2XI1SWIsxnpxk=/CWTwfKca1dYLy0OET2uDJYRsLl93ANI5tRn9IsqZgAY=",
+          "startLine": "0",
+          "name": "net/http.(*conn).serve",
+          "systemName": "net/http.(*conn).serve",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/net/http/server.go"
+        },
+        "line": {
+          "functionId": "EcSll9hVP6RR7BXdZF9wPmuLEC-GRp2XI1SWIsxnpxk=/CWTwfKca1dYLy0OET2uDJYRsLl93ANI5tRn9IsqZgAY=",
+          "line": "1991"
+        }
+      }
+    },
+    {
+      "cumulative": "10",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/QKW1ItGbpMPcgnZiRwPbuhjAzlRlcuIo1A0b5sDBgCc=",
+          "address": "4309936599",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "EcSll9hVP6RR7BXdZF9wPmuLEC-GRp2XI1SWIsxnpxk=/Y9qdJ3Hmi-OVYW0AR_rjmey8Cw6gt6ixGAV0o6DaRXU=",
+          "startLine": "0",
+          "name": "net/http.HandlerFunc.ServeHTTP",
+          "systemName": "net/http.HandlerFunc.ServeHTTP",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/net/http/server.go"
+        },
+        "line": {
+          "functionId": "EcSll9hVP6RR7BXdZF9wPmuLEC-GRp2XI1SWIsxnpxk=/Y9qdJ3Hmi-OVYW0AR_rjmey8Cw6gt6ixGAV0o6DaRXU=",
+          "line": "2109"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/DRW5JFW6ECBq9tl-X-5UbTE7m9VbJDW3MvI1IHrSEmw=",
+          "address": "4309948659",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "EcSll9hVP6RR7BXdZF9wPmuLEC-GRp2XI1SWIsxnpxk=/Ezn4VYwn-Vtufb9uEFC9CncZP4b8Jtqvcs2LE_iMXHo=",
+          "startLine": "0",
+          "name": "net/http.serverHandler.ServeHTTP",
+          "systemName": "net/http.serverHandler.ServeHTTP",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/net/http/server.go"
+        },
+        "line": {
+          "functionId": "EcSll9hVP6RR7BXdZF9wPmuLEC-GRp2XI1SWIsxnpxk=/Ezn4VYwn-Vtufb9uEFC9CncZP4b8Jtqvcs2LE_iMXHo=",
+          "line": "2947"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/3Q3TVlWYXu8RCl2wzIR7ekm_vZwkfJiktu1clUElOms=",
+          "address": "4310113247",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "LbIsb9PpGgyo32f1_k9x-njxM_ed7364AilFYhnsyC4=/yjFkRrZGJ23UoxDqIOAwnrJ1Eybq6g_tSo5IKv03WUw=",
+          "startLine": "0",
+          "name": "golang.org/x/sys/unix.Kevent",
+          "systemName": "golang.org/x/sys/unix.Kevent",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/golang.org/x/sys/unix/syscall_bsd.go"
+        },
+        "line": {
+          "functionId": "LbIsb9PpGgyo32f1_k9x-njxM_ed7364AilFYhnsyC4=/yjFkRrZGJ23UoxDqIOAwnrJ1Eybq6g_tSo5IKv03WUw=",
+          "line": "399"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/EMTj1awOQzrHAr3bWYPhpQ98GcTLIjZJVk4jA7wBVZQ=",
+          "address": "4310115463",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "Fmqp-zkY_ecUGEZZ7ISWg65yPL6pL-lk7X7woq-oVWs=/jQIXdC-7PUBOrCjvTm71JC8fI_SMl2CbQN65FSzO3Ck=",
+          "startLine": "0",
+          "name": "golang.org/x/sys/unix.kevent",
+          "systemName": "golang.org/x/sys/unix.kevent",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/golang.org/x/sys/unix/zsyscall_darwin_arm64.go"
+        },
+        "line": {
+          "functionId": "Fmqp-zkY_ecUGEZZ7ISWg65yPL6pL-lk7X7woq-oVWs=/jQIXdC-7PUBOrCjvTm71JC8fI_SMl2CbQN65FSzO3Ck=",
+          "line": "276"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/rX_Jen8bMCzEbAGfCppRWirX_s39NRlsPAp5ZM2pMfc=",
+          "address": "4311311223",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "nryWJbmIRqDai-0jYYOxK5lAuu7XB-ACVFIRBUflezI=/fHOt7JzwYCdBFSvo83QmWZ_nSz3v39RVf2U4_cGRWwE=",
+          "startLine": "0",
+          "name": "github.com/dgraph-io/badger/v3/skl.(*Skiplist).Get",
+          "systemName": "github.com/dgraph-io/badger/v3/skl.(*Skiplist).Get",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/dgraph-io/badger/v3/skl/skl.go"
+        },
+        "line": {
+          "functionId": "nryWJbmIRqDai-0jYYOxK5lAuu7XB-ACVFIRBUflezI=/fHOt7JzwYCdBFSvo83QmWZ_nSz3v39RVf2U4_cGRWwE=",
+          "line": "379"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/CdsIsi62TETvfXDLTQ9UHs6ZxCjuwGTpk8-04OMBqp0=",
+          "address": "4311392059",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "M__7OR0bz19h7titwKqgaUiD4zFgqQxlxqfMY4AvLEE=/4iqElRp2bLxYxDczIC96Znv2WXyY-8u58nhWpiXdSIQ=",
+          "startLine": "0",
+          "name": "github.com/dgraph-io/badger/v3.(*DB).get",
+          "systemName": "github.com/dgraph-io/badger/v3.(*DB).get",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/dgraph-io/badger/v3/db.go"
+        },
+        "line": {
+          "functionId": "M__7OR0bz19h7titwKqgaUiD4zFgqQxlxqfMY4AvLEE=/4iqElRp2bLxYxDczIC96Znv2WXyY-8u58nhWpiXdSIQ=",
+          "line": "738"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/hrX6dcOI03IYkzkBs1WEuIzfsk-ZYgahiJKOz66Hkqs=",
+          "address": "4311435259",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "CRamsQdieMq6aE6ejWJTLa00f4dk-mThNyR983pOgnE=/hhMfOG2dqBE1XYO0Z6t0fvHeBETVBEE7YuCUWywlbdo=",
+          "startLine": "0",
+          "name": "github.com/dgraph-io/badger/v3.(*Item).Value",
+          "systemName": "github.com/dgraph-io/badger/v3.(*Item).Value",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/dgraph-io/badger/v3/iterator.go"
+        },
+        "line": {
+          "functionId": "CRamsQdieMq6aE6ejWJTLa00f4dk-mThNyR983pOgnE=/hhMfOG2dqBE1XYO0Z6t0fvHeBETVBEE7YuCUWywlbdo=",
+          "line": "112"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/Z48Jcfu7RukgaulpuhawCwhP8ZlnxRDb8A9TYNlT7sw=",
+          "address": "4311597607",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "YMnj0DhseaMdbGd6VTkvNqeaD9Nv9AcsWF9OoL_1Xog=/w8NQwUl_x5Ipr11Be7T0Y0lKhaSESGoNKVjh0fUm2a8=",
+          "startLine": "0",
+          "name": "github.com/dgraph-io/badger/v3.(*Txn).Get",
+          "systemName": "github.com/dgraph-io/badger/v3.(*Txn).Get",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/dgraph-io/badger/v3/txn.go"
+        },
+        "line": {
+          "functionId": "YMnj0DhseaMdbGd6VTkvNqeaD9Nv9AcsWF9OoL_1Xog=/w8NQwUl_x5Ipr11Be7T0Y0lKhaSESGoNKVjh0fUm2a8=",
+          "line": "478"
+        }
+      }
+    },
+    {
+      "cumulative": "3",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/EEV8LmFT6P8cSJ-j-74dmzuOsqSyNkcvdrpHk5oUZAo=",
+          "address": "4311604487",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "YMnj0DhseaMdbGd6VTkvNqeaD9Nv9AcsWF9OoL_1Xog=/oozFzObjB5K5SgvhNN9UwDmLpN1ERxYht9EP6aFEeGA=",
+          "startLine": "0",
+          "name": "github.com/dgraph-io/badger/v3.(*DB).Update",
+          "systemName": "github.com/dgraph-io/badger/v3.(*DB).Update",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/dgraph-io/badger/v3/txn.go"
+        },
+        "line": {
+          "functionId": "YMnj0DhseaMdbGd6VTkvNqeaD9Nv9AcsWF9OoL_1Xog=/oozFzObjB5K5SgvhNN9UwDmLpN1ERxYht9EP6aFEeGA=",
+          "line": "822"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/ObNNLY95lumNiACu0N6pwA-EaUE4AWTi2tzb7NmUVXc=",
+          "address": "4313342931",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-DrDyr8J_i6CVAU0wYkjE5IOZSaMm0m20okRBOVmUz0=/CNotv06VWR5QqEKr6unmZ4l8YqfVOVLFlNxs0M_FuKw=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*Buffer).Less",
+          "systemName": "github.com/segmentio/parquet-go.(*Buffer).Less",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/buffer.go"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/tjYiU9CRlwlSNnJ4BCbypyAaJ3NhI4sQJ4HXNT8KTms=",
+          "address": "4313344331",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "-DrDyr8J_i6CVAU0wYkjE5IOZSaMm0m20okRBOVmUz0=/gpCosed6zBwFM_z2aPz2vdCOL40tJGPJefisI4H5T5c=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*Buffer).WriteRows",
+          "systemName": "github.com/segmentio/parquet-go.(*Buffer).WriteRows",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/buffer.go"
+        },
+        "line": {
+          "functionId": "-DrDyr8J_i6CVAU0wYkjE5IOZSaMm0m20okRBOVmUz0=/gpCosed6zBwFM_z2aPz2vdCOL40tJGPJefisI4H5T5c=",
+          "line": "221"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/Y0iPMYGfqUTVVv19oRwAzGahYX_GK-qvgWa6strV86k=",
+          "address": "4313367255",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "2yEeXF5-CPbzIdRiSn1grbr58mHbtUlUtCaFaCeTKYw=/jgr-7Fl6Cl0np24t7V2IPRlbA1Ou6UlFE0UG-E2dZnI=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.nullsGoLast",
+          "systemName": "github.com/segmentio/parquet-go.nullsGoLast",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/column_buffer.go"
+        },
+        "line": {
+          "functionId": "2yEeXF5-CPbzIdRiSn1grbr58mHbtUlUtCaFaCeTKYw=/jgr-7Fl6Cl0np24t7V2IPRlbA1Ou6UlFE0UG-E2dZnI=",
+          "line": "123"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/eqTTLgwv8Wp6xiR6z9BrWrbgdOtnj5dteC5PxqN_I2Y=",
+          "address": "4313370331",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "2yEeXF5-CPbzIdRiSn1grbr58mHbtUlUtCaFaCeTKYw=/aM2FgMcQAsYRU9yzTFGwa2L1mAPnbnn64OzW0EWbO7o=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*optionalColumnBuffer).Less",
+          "systemName": "github.com/segmentio/parquet-go.(*optionalColumnBuffer).Less",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/column_buffer.go"
+        },
+        "line": {
+          "functionId": "2yEeXF5-CPbzIdRiSn1grbr58mHbtUlUtCaFaCeTKYw=/aM2FgMcQAsYRU9yzTFGwa2L1mAPnbnn64OzW0EWbO7o=",
+          "line": "269"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/mRyD8vCT3hr38w60ZqT9-tWbNM4o75QPuKE6yzrNFDs=",
+          "address": "4313487559",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "GeNd1wDc_aDNCAicLEouPOOS4ua9Eh3dPKCOyk7KMlM=/yLDdgEdoksaL180UQ6BEzLWD_n5wjnlCPTuzwrTHmQs=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*byteArrayDictionary).Insert",
+          "systemName": "github.com/segmentio/parquet-go.(*byteArrayDictionary).Insert",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/dictionary.go"
+        },
+        "line": {
+          "functionId": "GeNd1wDc_aDNCAicLEouPOOS4ua9Eh3dPKCOyk7KMlM=/yLDdgEdoksaL180UQ6BEzLWD_n5wjnlCPTuzwrTHmQs=",
+          "line": "710"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/UMMUQ-VTvkZ-FxKXgmUtzcoMt-ZpAy9DeJIb1ry-lK4=",
+          "address": "4313488131",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "GeNd1wDc_aDNCAicLEouPOOS4ua9Eh3dPKCOyk7KMlM=/BqLL9CvSsi0mNzXf5A3abAyxDmOYzK9-x5Bravb48Wc=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*byteArrayDictionary).insert",
+          "systemName": "github.com/segmentio/parquet-go.(*byteArrayDictionary).insert",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/dictionary.go"
+        },
+        "line": {
+          "functionId": "GeNd1wDc_aDNCAicLEouPOOS4ua9Eh3dPKCOyk7KMlM=/BqLL9CvSsi0mNzXf5A3abAyxDmOYzK9-x5Bravb48Wc=",
+          "line": "732"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/jKy-P9NnxmHnvcAQVAj0FHwKyVvTDEhxaRxlMBX8Q2o=",
+          "address": "4313488215",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "ARKNlbh0vjhC1afe0ShV4_YhEbvG6btUu9QL3yWf9-Y=/dyYbktBMrUd6Q7oh5MOKM9CHAqM-lkZ-Uo0zRjiYT80=",
+          "startLine": "0",
+          "name": "strings.(*Builder).WriteString",
+          "systemName": "strings.(*Builder).WriteString",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/strings/builder.go"
+        },
+        "line": {
+          "functionId": "ARKNlbh0vjhC1afe0ShV4_YhEbvG6btUu9QL3yWf9-Y=/dyYbktBMrUd6Q7oh5MOKM9CHAqM-lkZ-Uo0zRjiYT80=",
+          "line": "124"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/q0jgQjEZG4_twsWb19xsETnenjwuDk8n2z8N7_d1ai0=",
+          "address": "4313507015",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "GeNd1wDc_aDNCAicLEouPOOS4ua9Eh3dPKCOyk7KMlM=/f1ZmTNSMGWOm9vT_7_q5-2f7EvJGcNsD-JshGYc_AFA=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*indexedColumnBuffer).WriteValues",
+          "systemName": "github.com/segmentio/parquet-go.(*indexedColumnBuffer).WriteValues",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/dictionary.go"
+        },
+        "line": {
+          "functionId": "GeNd1wDc_aDNCAicLEouPOOS4ua9Eh3dPKCOyk7KMlM=/f1ZmTNSMGWOm9vT_7_q5-2f7EvJGcNsD-JshGYc_AFA=",
+          "line": "1416"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/J-WiByN-O-z1t51hwu2a6V1-8HsJsR7TVoBcj9O8_uk=",
+          "address": "4313736227",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "bPS5iOe7KSB2sG6rfU4LQrSzMb7N4qOxMO6ubAycU4Y=/ta0RhUhp6fTsEgBrc2uumKhlb2RA3MXn02KQzvUnWlQ=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*writer).WriteRows",
+          "systemName": "github.com/segmentio/parquet-go.(*writer).WriteRows",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/writer.go"
+        },
+        "line": {
+          "functionId": "bPS5iOe7KSB2sG6rfU4LQrSzMb7N4qOxMO6ubAycU4Y=/ta0RhUhp6fTsEgBrc2uumKhlb2RA3MXn02KQzvUnWlQ=",
+          "line": "669"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/cAkRXtSkk1h4m1GLwg6MlESZ4edK3Jzy3vNHAQ_XRWo=",
+          "address": "4313742203",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "bPS5iOe7KSB2sG6rfU4LQrSzMb7N4qOxMO6ubAycU4Y=/BBlg80awBrUxSbFwRbVy94ZRAUCA-xn299XYBTJv-hU=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*writerColumn).writeRows",
+          "systemName": "github.com/segmentio/parquet-go.(*writerColumn).writeRows",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/writer.go"
+        },
+        "line": {
+          "functionId": "bPS5iOe7KSB2sG6rfU4LQrSzMb7N4qOxMO6ubAycU4Y=/BBlg80awBrUxSbFwRbVy94ZRAUCA-xn299XYBTJv-hU=",
+          "line": "966"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/5HS9Fu90UqlXNbrlzEdUMNxjYJ1rmnxeU2CnuJYIzgU=",
+          "address": "4315266039",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "TF-Upfxeu3iOI-eorqGPT89Y0GP95x7nR0LRPhEjGMM=/7AR_BeOQf_tv7ho-v-zKosFHT-K3f4VPXucEXffEQts=",
+          "startLine": "0",
+          "name": "github.com/polarsignals/frostdb/dynparquet.(*Buffer).Clone",
+          "systemName": "github.com/polarsignals/frostdb/dynparquet.(*Buffer).Clone",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/polarsignals/frostdb/dynparquet/schema.go"
+        },
+        "line": {
+          "functionId": "TF-Upfxeu3iOI-eorqGPT89Y0GP95x7nR0LRPhEjGMM=/7AR_BeOQf_tv7ho-v-zKosFHT-K3f4VPXucEXffEQts=",
+          "line": "560"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/sgZKnU6FeDCq3HMyLUcAqCOKtlrP9l1F7hkT-3iqqnU=",
+          "address": "4315268639",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "bPS5iOe7KSB2sG6rfU4LQrSzMb7N4qOxMO6ubAycU4Y=/joXeo4qgLXTSq1PRzzjhdMxwezmVjkTd6S-PloE9Z38=",
+          "startLine": "0",
+          "name": "github.com/segmentio/parquet-go.(*Writer).WriteRows",
+          "systemName": "github.com/segmentio/parquet-go.(*Writer).WriteRows",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/segmentio/parquet-go/writer.go"
+        },
+        "line": {
+          "functionId": "bPS5iOe7KSB2sG6rfU4LQrSzMb7N4qOxMO6ubAycU4Y=/joXeo4qgLXTSq1PRzzjhdMxwezmVjkTd6S-PloE9Z38=",
+          "line": "155"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/auB_TcqHf0Lr7K6PSkhpvCrszR8DuG2h0DERe4ogXyQ=",
+          "address": "4315688903",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "aNhFmomQa5nD0OOHkq8-rD7BdJXZZeidB19jOWpaJZ8=/hvwb6aIS0ujMzsL6CunwRbGKp7wMW2BARh-8JRRQXnM=",
+          "startLine": "0",
+          "name": "github.com/polarsignals/frostdb.(*Table).InsertBuffer",
+          "systemName": "github.com/polarsignals/frostdb.(*Table).InsertBuffer",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/polarsignals/frostdb/table.go"
+        },
+        "line": {
+          "functionId": "aNhFmomQa5nD0OOHkq8-rD7BdJXZZeidB19jOWpaJZ8=/hvwb6aIS0ujMzsL6CunwRbGKp7wMW2BARh-8JRRQXnM=",
+          "line": "525"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/JFZhPyir3U356dpuoCrHFEMvLzbp5aonYXLqVwHPWfo=",
+          "address": "4317640751",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "dEa2LvIvwBA2dCj_mYOIkBCO2YtpxcTf3yKL9ErmjPw=/27L1IAQmcKuwMyAU_sRpVJxMyGTrVYHB1asU8R_YByU=",
+          "startLine": "0",
+          "name": "runtime/pprof.(*Profile).WriteTo",
+          "systemName": "runtime/pprof.(*Profile).WriteTo",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/pprof/pprof.go"
+        },
+        "line": {
+          "functionId": "dEa2LvIvwBA2dCj_mYOIkBCO2YtpxcTf3yKL9ErmjPw=/27L1IAQmcKuwMyAU_sRpVJxMyGTrVYHB1asU8R_YByU=",
+          "line": "330"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/fYw_4NEYf67C2nxBZJxUSxVmWt8ydV9EglC5Yu69AGQ=",
+          "address": "4317646415",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "dEa2LvIvwBA2dCj_mYOIkBCO2YtpxcTf3yKL9ErmjPw=/jNuRsqff86iMWjZ9qVkBL5L21-OBecQxOgy64wmaDd8=",
+          "startLine": "0",
+          "name": "runtime/pprof.writeAlloc",
+          "systemName": "runtime/pprof.writeAlloc",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/pprof/pprof.go"
+        },
+        "line": {
+          "functionId": "dEa2LvIvwBA2dCj_mYOIkBCO2YtpxcTf3yKL9ErmjPw=/jNuRsqff86iMWjZ9qVkBL5L21-OBecQxOgy64wmaDd8=",
+          "line": "541"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/baNHq8c7OfF59l53VqnqM7yLc_HkPL7rvaEQ_b8LGk4=",
+          "address": "4317647099",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "dEa2LvIvwBA2dCj_mYOIkBCO2YtpxcTf3yKL9ErmjPw=/ZLkIOs2GTU6-KqvvQbvhWWdAE-t-axXiRz2zK-PlymQ=",
+          "startLine": "0",
+          "name": "runtime/pprof.writeHeapInternal",
+          "systemName": "runtime/pprof.writeHeapInternal",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/pprof/pprof.go"
+        },
+        "line": {
+          "functionId": "dEa2LvIvwBA2dCj_mYOIkBCO2YtpxcTf3yKL9ErmjPw=/ZLkIOs2GTU6-KqvvQbvhWWdAE-t-axXiRz2zK-PlymQ=",
+          "line": "575"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/aCvNM1qF3sVLG_Nc8Nf02o4_-7a5JEK-243xqhAW7OY=",
+          "address": "4317663687",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "0GLwkuHPAYs5Hhu0zFNfv2gqe_8AmKjfFBfs8mY6kQQ=/8uOxHFftvKJNetOWBo_pdDg51JQHVLfyBrN4cR8B8io=",
+          "startLine": "0",
+          "name": "runtime.CallersFrames",
+          "systemName": "runtime.CallersFrames",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/symtab.go"
+        },
+        "line": {
+          "functionId": "0GLwkuHPAYs5Hhu0zFNfv2gqe_8AmKjfFBfs8mY6kQQ=/8uOxHFftvKJNetOWBo_pdDg51JQHVLfyBrN4cR8B8io=",
+          "line": "67"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/cbDEf44m8PdZtTdIkMmgArkYz5oZDbxwQ7IOVnvt9Qw=",
+          "address": "4317664039",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "7oG_izcOuZCpbOZcttS_0aLa0Og0eBW_jt4IPst5-i0=/-0-dXsDCEVfpczR289WuoBhLx72x4-H_U5Bo6H1cYWI=",
+          "startLine": "0",
+          "name": "runtime/pprof.allFrames",
+          "systemName": "runtime/pprof.allFrames",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/pprof/proto.go"
+        },
+        "line": {
+          "functionId": "7oG_izcOuZCpbOZcttS_0aLa0Og0eBW_jt4IPst5-i0=/-0-dXsDCEVfpczR289WuoBhLx72x4-H_U5Bo6H1cYWI=",
+          "line": "232"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/AxZ-xUjaodlc6cSPP8yIOTg37MdJ0Timdm8K5mFjP_0=",
+          "address": "4317667531",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "7oG_izcOuZCpbOZcttS_0aLa0Og0eBW_jt4IPst5-i0=/64djhIMQA7Y8nK9_3mHXvjA16AXsC0vq2SKwfzVc764=",
+          "startLine": "0",
+          "name": "runtime/pprof.(*profileBuilder).appendLocsForStack",
+          "systemName": "runtime/pprof.(*profileBuilder).appendLocsForStack",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/pprof/proto.go"
+        },
+        "line": {
+          "functionId": "7oG_izcOuZCpbOZcttS_0aLa0Og0eBW_jt4IPst5-i0=/64djhIMQA7Y8nK9_3mHXvjA16AXsC0vq2SKwfzVc764=",
+          "line": "443"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/2pHFLPVOedYRsoq0oOmh17PFwERM4bDwdraw99KQa-c=",
+          "address": "4317685495",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "TVkvx0cHOJ1fcYKH1qlMkawfLgjorebNK9DmiDnpLLI=/scw_-a25qCwHfVrcjmGeAFUOXObqiyBPgHm5p7lEKpQ=",
+          "startLine": "0",
+          "name": "runtime/pprof.writeHeapProto",
+          "systemName": "runtime/pprof.writeHeapProto",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/runtime/pprof/protomem.go"
+        },
+        "line": {
+          "functionId": "TVkvx0cHOJ1fcYKH1qlMkawfLgjorebNK9DmiDnpLLI=/scw_-a25qCwHfVrcjmGeAFUOXObqiyBPgHm5p7lEKpQ=",
+          "line": "46"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/xP_CrSazogm7oUy33QcCd9R6uy2EmCDahFa58cI5jsc=",
+          "address": "4328392483",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "Cn_Nfer4jTLiWjATKrwNpOkt5KzN2xRXg7DeLAhNEs8=/nmgSKz4kkOwnVXNDAaqKKvJqHfLNRopXKvYXRRV5kP8=",
+          "startLine": "0",
+          "name": "github.com/fsnotify/fsnotify.(*Watcher).readEvents",
+          "systemName": "github.com/fsnotify/fsnotify.(*Watcher).readEvents",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/fsnotify/fsnotify/kqueue.go"
+        },
+        "line": {
+          "functionId": "Cn_Nfer4jTLiWjATKrwNpOkt5KzN2xRXg7DeLAhNEs8=/nmgSKz4kkOwnVXNDAaqKKvJqHfLNRopXKvYXRRV5kP8=",
+          "line": "288"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/HVA3RkFgLQhDNv2GHVGN02d6f5pmPtxJFUDtx-1_Yno=",
+          "address": "4328396595",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "Cn_Nfer4jTLiWjATKrwNpOkt5KzN2xRXg7DeLAhNEs8=/DMnr_isRL8QPuvqsFIuf7esjJeNxZz85Cx-Sp3CIX-8=",
+          "startLine": "0",
+          "name": "github.com/fsnotify/fsnotify.read",
+          "systemName": "github.com/fsnotify/fsnotify.read",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/fsnotify/fsnotify/kqueue.go"
+        },
+        "line": {
+          "functionId": "Cn_Nfer4jTLiWjATKrwNpOkt5KzN2xRXg7DeLAhNEs8=/DMnr_isRL8QPuvqsFIuf7esjJeNxZz85Cx-Sp3CIX-8=",
+          "line": "525"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/zFs5WIPbz6MnvquHkqo_6VBXAURM2H15NiZc7gy7LQY=",
+          "address": "4344501299",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "oYvbHlAQREzhmoCXYvGZWWFmDcvOADnhKsaPOnr-jwc=/t8sh1Q9QmkSjn_SiP12CXQ5_sFVlWcQuXmjBZK5EvAg=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/gen/proto/go/google/pprof.(*Profile).UnmarshalVT",
+          "systemName": "github.com/parca-dev/parca/gen/proto/go/google/pprof.(*Profile).UnmarshalVT",
+          "filename": "/Users/yomi/Documents/batcave/parca/gen/proto/go/google/pprof/profile_vtproto.pb.go"
+        },
+        "line": {
+          "functionId": "oYvbHlAQREzhmoCXYvGZWWFmDcvOADnhKsaPOnr-jwc=/t8sh1Q9QmkSjn_SiP12CXQ5_sFVlWcQuXmjBZK5EvAg=",
+          "line": "1017"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/zhRqzznRdX1FXIX9OGNWQeCqZDicnEytVL61loZxyC4=",
+          "address": "4344839887",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "FRutg27pVqZbCAQRU_b4Q58sqljL9dFgpF7tnUX4KXY=/lubV97MW9I4xRYkRrL9G70Nv8pSittU3K976HX54YjE=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.MakeFunctionKey",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.MakeFunctionKey",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/kv.go"
+        },
+        "line": {
+          "functionId": "FRutg27pVqZbCAQRU_b4Q58sqljL9dFgpF7tnUX4KXY=/lubV97MW9I4xRYkRrL9G70Nv8pSittU3K976HX54YjE=",
+          "line": "118"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/FT67KnLQbJ_qK8jInNo0PBS_uw9zBDfAEo_lZwv-2e0=",
+          "address": "4344840115",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/T9qhnWv2bR0_HY4Od2aJNO0J0OXZsj34-M9bRQ1U6Fc=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).GetOrCreateFunctions",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).GetOrCreateFunctions",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/badger.go"
+        },
+        "line": {
+          "functionId": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/T9qhnWv2bR0_HY4Od2aJNO0J0OXZsj34-M9bRQ1U6Fc=",
+          "line": "215"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/rl2udqWrddohib_tW-_2OTHCc_dWUcivdkcTAAkhfV0=",
+          "address": "4344840339",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/96VBTTkIVxgt4o1s0zDAcX67SvqquY2Y0xtzJwPsipA=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).GetOrCreateFunctions.func1",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).GetOrCreateFunctions.func1",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/badger.go"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/AQ2P6Blw2xZC7ntpFQYfCD0mPYv_KGSOsNee0XFyjkA=",
+          "address": "4344841191",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/N7zpA-GjroPmJJXgAk7R3kiFZCgxIE_DDg5Nj0U0qdQ=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).GetOrCreateFunctions.func1.1",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).GetOrCreateFunctions.func1.1",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/badger.go"
+        },
+        "line": {
+          "functionId": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/N7zpA-GjroPmJJXgAk7R3kiFZCgxIE_DDg5Nj0U0qdQ=",
+          "line": "237"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/NCLPArkZtchCVzJ0Dv2gTd4R9ej6RY4qzk4VlsLMTQc=",
+          "address": "4344848083",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/BDb6i2WVaVIMzs5eegmR_jFU6XsCkMflAizQomBijHU=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).GetOrCreateStacktraces",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).GetOrCreateStacktraces",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/badger.go"
+        },
+        "line": {
+          "functionId": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/BDb6i2WVaVIMzs5eegmR_jFU6XsCkMflAizQomBijHU=",
+          "line": "452"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/kmHAdx2ZnpusecG9r2QOwRDElEYrBB57ip3CcE8Cksg=",
+          "address": "4344849251",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/rQY_aTN8vcqHIlLAHDnrH3SPAJMl-OZRS4IDYwjwv8k=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).retryableGetOrCreateStacktraces",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).retryableGetOrCreateStacktraces",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/badger.go"
+        },
+        "line": {
+          "functionId": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/rQY_aTN8vcqHIlLAHDnrH3SPAJMl-OZRS4IDYwjwv8k=",
+          "line": "479"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/cneuy0xgav7-MFgPEIRhnDwCAVytF7uyXiXZXWThb6k=",
+          "address": "4344849587",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/3CiMM6qeoT4Bo3NhP-8FxsyXwb9Y2ga4B2qeVdC_X3I=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).retryableGetOrCreateStacktraces.func1",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.(*BadgerMetastore).retryableGetOrCreateStacktraces.func1",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/badger.go"
+        },
+        "line": {
+          "functionId": "lUEGzmIYBY14q4ueUth4dJu6GIXTHo7iDalGtLOe8Hc=/3CiMM6qeoT4Bo3NhP-8FxsyXwb9Y2ga4B2qeVdC_X3I=",
+          "line": "481"
+        }
+      }
+    },
+    {
+      "cumulative": "3",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/4mkY6t7LcA4MTKS94i8C3dylWs3ND-2sICA-7vhZ9rQ=",
+          "address": "4344852271",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "Fy1pNcgO9JImGzGqaP_lFX5jfjRxipAqSOIbHYENHuI=/RsngXXXF3ZVOwMaRMPUOHtvjRWY-6ttOMcmFrdypI7A=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.(*InProcessClient).GetOrCreateFunctions",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.(*InProcessClient).GetOrCreateFunctions",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/inprocess.go"
+        },
+        "line": {
+          "functionId": "Fy1pNcgO9JImGzGqaP_lFX5jfjRxipAqSOIbHYENHuI=/RsngXXXF3ZVOwMaRMPUOHtvjRWY-6ttOMcmFrdypI7A=",
+          "line": "37"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/_Aou-hqKk0qmHkzgqxRCjCWEMimFMij3C2NOnreDJl4=",
+          "address": "4344852527",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "Fy1pNcgO9JImGzGqaP_lFX5jfjRxipAqSOIbHYENHuI=/Bs8YQj5WZavWXcfKw_cq45k8apyq_1Lo9eXF02nXCLI=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.(*InProcessClient).GetOrCreateStacktraces",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.(*InProcessClient).GetOrCreateStacktraces",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/inprocess.go"
+        },
+        "line": {
+          "functionId": "Fy1pNcgO9JImGzGqaP_lFX5jfjRxipAqSOIbHYENHuI=/Bs8YQj5WZavWXcfKw_cq45k8apyq_1Lo9eXF02nXCLI=",
+          "line": "45"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/uwwnFaaewJHmldGwp-ohsZi-C2Ue_juYW2Zc8wNqEP8=",
+          "address": "4344854467",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "FRutg27pVqZbCAQRU_b4Q58sqljL9dFgpF7tnUX4KXY=/uJb5JCL7MQloAGSq8BCiVoEb7ghWrnNRF7okP06BRLs=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/metastore.MakeFunctionID",
+          "systemName": "github.com/parca-dev/parca/pkg/metastore.MakeFunctionID",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/metastore/kv.go"
+        },
+        "line": {
+          "functionId": "FRutg27pVqZbCAQRU_b4Q58sqljL9dFgpF7tnUX4KXY=/uJb5JCL7MQloAGSq8BCiVoEb7ghWrnNRF7okP06BRLs=",
+          "line": "153"
+        }
+      }
+    },
+    {
+      "cumulative": "8",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/qA3t-Rs9cpmM-wU4p2ARkZbs657tYlC16LtkeNWVlos=",
+          "address": "4344965683",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "Mz8eR10HxJZFP9EXtsVghrI_SfLtJ8BftPd5Oruxkr4=/lZi9Ocyt_XADgOgkDJLRBeOnx9Sd7mpKt0qzqTHihGg=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/parcacol.Ingester.Ingest",
+          "systemName": "github.com/parca-dev/parca/pkg/parcacol.Ingester.Ingest",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/parcacol/ingest.go"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/cCtdCCz5Kyz6147c7eS9MDCWhdxm0RpPlQNt9k69Yls=",
+          "address": "4344966419",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "Mz8eR10HxJZFP9EXtsVghrI_SfLtJ8BftPd5Oruxkr4=/3eVSELtzT4jO-WxGha9VYtplE2v9rJwG0VVxLuN7A5k=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/parcacol.Ingester.IngestProfile",
+          "systemName": "github.com/parca-dev/parca/pkg/parcacol.Ingester.IngestProfile",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/parcacol/ingest.go"
+        }
+      }
+    },
+    {
+      "cumulative": "4",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/cKKiB-8t9CWNegVku0uxmyxbun6ZWSvekPueJLIEGOM=",
+          "address": "4344969447",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "HsEZ9nfis4P2Blvd5ECh8OaYZqxDrvMq1LyrFoUSBc4=/8IGYYsUttPwFoYa61fzvI1Ct5pvPzqDc-ztHOQ9LNgU=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/parcacol.(*Normalizer).NormalizePprof",
+          "systemName": "github.com/parca-dev/parca/pkg/parcacol.(*Normalizer).NormalizePprof",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/parcacol/normalizer.go"
+        }
+      }
+    },
+    {
+      "cumulative": "3",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/_bR7ABSIuQEcwaicsXcjqZnIXLS4F7l5IMHKfzt4bg8=",
+          "address": "4344975147",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "HsEZ9nfis4P2Blvd5ECh8OaYZqxDrvMq1LyrFoUSBc4=/9kZqFzM6wjhuIXTZNRyV8Lm5i-_9O-xFQRuAHO0B8Ow=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/parcacol.(*Normalizer).NormalizeFunctions",
+          "systemName": "github.com/parca-dev/parca/pkg/parcacol.(*Normalizer).NormalizeFunctions",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/parcacol/normalizer.go"
+        },
+        "line": {
+          "functionId": "HsEZ9nfis4P2Blvd5ECh8OaYZqxDrvMq1LyrFoUSBc4=/9kZqFzM6wjhuIXTZNRyV8Lm5i-_9O-xFQRuAHO0B8Ow=",
+          "line": "216"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/eiCAwPnF2Xh_L8YWVd5XZoli6nA_zeKDg-Dj2tTPPNw=",
+          "address": "4344977559",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "HsEZ9nfis4P2Blvd5ECh8OaYZqxDrvMq1LyrFoUSBc4=/DkQWWfXJhIhoSBvQbw3q-pb5U892kc6JV9BlmkHsSpI=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/parcacol.(*Normalizer).NormalizeStacktraces",
+          "systemName": "github.com/parca-dev/parca/pkg/parcacol.(*Normalizer).NormalizeStacktraces",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/parcacol/normalizer.go"
+        },
+        "line": {
+          "functionId": "HsEZ9nfis4P2Blvd5ECh8OaYZqxDrvMq1LyrFoUSBc4=/DkQWWfXJhIhoSBvQbw3q-pb5U892kc6JV9BlmkHsSpI=",
+          "line": "305"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/YESe6zQPnokR2Lu7ZXMJaJXbyTZXu0hypOpFV2ysjso=",
+          "address": "4345007143",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "TF-Upfxeu3iOI-eorqGPT89Y0GP95x7nR0LRPhEjGMM=/CFaibrwFtcqLfUUnZRznS4yLz5a4uo1IXGDCxSnPTWc=",
+          "startLine": "0",
+          "name": "github.com/polarsignals/frostdb/dynparquet.(*Buffer).Sort",
+          "systemName": "github.com/polarsignals/frostdb/dynparquet.(*Buffer).Sort",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/polarsignals/frostdb/dynparquet/schema.go"
+        },
+        "line": {
+          "functionId": "TF-Upfxeu3iOI-eorqGPT89Y0GP95x7nR0LRPhEjGMM=/CFaibrwFtcqLfUUnZRznS4yLz5a4uo1IXGDCxSnPTWc=",
+          "line": "539"
+        }
+      }
+    },
+    {
+      "cumulative": "1",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/XW-7guMEQZXD33d17B-BOkDY5eJ1dNdKmVGe55AocZI=",
+          "address": "4345007151",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "gZIvO83RtrrKbVKQNDOCQ_fAXZP8NTw7urYG4xMmXb0=/fHBdlfbCnL70pArg8UCoGf5R1z3heHWatt9jh9Mq3zI=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/parcacol.NormalizedProfileToParquetBuffer",
+          "systemName": "github.com/parca-dev/parca/pkg/parcacol.NormalizedProfileToParquetBuffer",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/parcacol/sample.go"
+        },
+        "line": {
+          "functionId": "gZIvO83RtrrKbVKQNDOCQ_fAXZP8NTw7urYG4xMmXb0=/fHBdlfbCnL70pArg8UCoGf5R1z3heHWatt9jh9Mq3zI=",
+          "line": "61"
+        }
+      }
+    },
+    {
+      "cumulative": "9",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/UWIMHV3u9SN9FU9dh7FfiACU5lo2EE5pG5FHu7Ph5Z4=",
+          "address": "4345023687",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "yS4vaumYrYs2oel91gSM9XwiXvIsniQqbDGsQ9H_fU8=/dA3Tdgs-B9gHbIXiKNQ1un5H5DXq-XcXxD08CIOLPrA=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/profilestore.(*ProfileColumnStore).WriteRaw",
+          "systemName": "github.com/parca-dev/parca/pkg/profilestore.(*ProfileColumnStore).WriteRaw",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/profilestore/profilecolumnstore.go"
+        }
+      }
+    },
+    {
+      "cumulative": "9",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/gzVEKBnFwCT1u1Pxs5FnDkEjPmzmwjrqSaVXmgqitMQ=",
+          "address": "4345173423",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "andHDf12yQ0ARnZS38RcUuBk40addZ6Fvvxmb9TgaHk=/yRb5pLJYMZOYFjpoz7KGMK3o92S1x54Hv0X7pLVYkYw=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/scrape.(*scrapeLoop).run",
+          "systemName": "github.com/parca-dev/parca/pkg/scrape.(*scrapeLoop).run",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/scrape/scrape.go"
+        },
+        "line": {
+          "functionId": "andHDf12yQ0ARnZS38RcUuBk40addZ6Fvvxmb9TgaHk=/yRb5pLJYMZOYFjpoz7KGMK3o92S1x54Hv0X7pLVYkYw=",
+          "line": "480"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/nYYIMUCKgZsGwEOfYSWgBXKpb8vuK3-ZtZ7dS-S-qWs=",
+          "address": "4345294767",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "msjCzySeFbIBaa3pPCrWvZu833KH2PdSzV79COWiQWA=/ESRcKGGsb2Ps8WlvPAjZZIrKd532VO-jP96WTDH2Y8s=",
+          "startLine": "0",
+          "name": "net/http/pprof.handler.ServeHTTP",
+          "systemName": "net/http/pprof.handler.ServeHTTP",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/net/http/pprof/pprof.go"
+        },
+        "line": {
+          "functionId": "msjCzySeFbIBaa3pPCrWvZu833KH2PdSzV79COWiQWA=/ESRcKGGsb2Ps8WlvPAjZZIrKd532VO-jP96WTDH2Y8s=",
+          "line": "253"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/V0JaoW78Nl6HAOUagQJQ4sug7qcM5Hpc5n7ZV6PANrU=",
+          "address": "4345297143",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "msjCzySeFbIBaa3pPCrWvZu833KH2PdSzV79COWiQWA=/sHSpfH9gzCpWQqYG7jtuOOdtVwpE05vkbpO60a_kz-k=",
+          "startLine": "0",
+          "name": "net/http/pprof.Index",
+          "systemName": "net/http/pprof.Index",
+          "filename": "/opt/homebrew/Cellar/go/1.19.1/libexec/src/net/http/pprof/pprof.go"
+        },
+        "line": {
+          "functionId": "msjCzySeFbIBaa3pPCrWvZu833KH2PdSzV79COWiQWA=/sHSpfH9gzCpWQqYG7jtuOOdtVwpE05vkbpO60a_kz-k=",
+          "line": "371"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/VoM4UgTem3jB6stDRQzp74__1GTpjDD92rBjZipGbDU=",
+          "address": "4345313063",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "umiWZ_iy0dsWMwhRN8w6kb6Nlu5vXGBku58i-kdG11A=/cN7WnnODMrC7m5Kzx_cCs_fVX-Fqu06RF9k2fSFy7cY=",
+          "startLine": "0",
+          "name": "github.com/go-chi/chi/v5.(*Mux).ServeHTTP",
+          "systemName": "github.com/go-chi/chi/v5.(*Mux).ServeHTTP",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/go-chi/chi/v5/mux.go"
+        },
+        "line": {
+          "functionId": "umiWZ_iy0dsWMwhRN8w6kb6Nlu5vXGBku58i-kdG11A=/cN7WnnODMrC7m5Kzx_cCs_fVX-Fqu06RF9k2fSFy7cY=",
+          "line": "88"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/S2VIHh7z5ETMdtmLfCohS65Mvr9C9Bl-6vH5FhPNJ_M=",
+          "address": "4345321339",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "umiWZ_iy0dsWMwhRN8w6kb6Nlu5vXGBku58i-kdG11A=/cIQfqC4sbEToe0XITMUv08NEjVL8K2VeixQwHQh-564=",
+          "startLine": "0",
+          "name": "github.com/go-chi/chi/v5.(*Mux).routeHTTP",
+          "systemName": "github.com/go-chi/chi/v5.(*Mux).routeHTTP",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/go-chi/chi/v5/mux.go"
+        },
+        "line": {
+          "functionId": "umiWZ_iy0dsWMwhRN8w6kb6Nlu5vXGBku58i-kdG11A=/cIQfqC4sbEToe0XITMUv08NEjVL8K2VeixQwHQh-564=",
+          "line": "442"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/59DyAlJRd0EFXl_kOP05olfN6ld9HBNZ6HP34CUIOkU=",
+          "address": "4345340531",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "2HnaCnFZ2m5LDx9Yt8lkxs1c2R-FSzjtDp2ZbM1mXbo=/5Ulrlkm6oN15fCFn5Iv8iq1jfK_gVB-svIYL4L2C9CY=",
+          "startLine": "0",
+          "name": "github.com/go-chi/cors.(*Cors).Handler.func1",
+          "systemName": "github.com/go-chi/cors.(*Cors).Handler.func1",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/github.com/go-chi/cors/cors.go"
+        },
+        "line": {
+          "functionId": "2HnaCnFZ2m5LDx9Yt8lkxs1c2R-FSzjtDp2ZbM1mXbo=/5Ulrlkm6oN15fCFn5Iv8iq1jfK_gVB-svIYL4L2C9CY=",
+          "line": "228"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/fD14YulaUkSOOnZIqu-uBSV3DHD4HPBHAkD_qnzSBlA=",
+          "address": "4345462775",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "Drdql0FAZvW8DfpYnmiY58YPTCDjyfehU7U2fPpv6WI=/fKX-gwgNRirdvGqoavQj7KKDlMWNHZU_Bq58_E9Tcnc=",
+          "startLine": "0",
+          "name": "golang.org/x/net/http2/h2c.h2cHandler.ServeHTTP",
+          "systemName": "golang.org/x/net/http2/h2c.h2cHandler.ServeHTTP",
+          "filename": "/Users/yomi/Documents/batcave/parca/vendor/golang.org/x/net/http2/h2c/h2c.go"
+        },
+        "line": {
+          "functionId": "Drdql0FAZvW8DfpYnmiY58YPTCDjyfehU7U2fPpv6WI=/fKX-gwgNRirdvGqoavQj7KKDlMWNHZU_Bq58_E9Tcnc=",
+          "line": "124"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/tgDwWJg9rIytNtwDCdlJMN7cvLs_ChHhXAkW9gJA9FU=",
+          "address": "4345493439",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "2xVyM-ujXW_6Ty7Cg0lkZ_laTjiGnanhYvRI6tsdmyI=/1xhipyN9GN_N8OrUs5crlKbreBupHQBTozwHYj_N2yE=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/server.fallbackNotFound.func1",
+          "systemName": "github.com/parca-dev/parca/pkg/server.fallbackNotFound.func1",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/server/fallback.go"
+        },
+        "line": {
+          "functionId": "2xVyM-ujXW_6Ty7Cg0lkZ_laTjiGnanhYvRI6tsdmyI=/1xhipyN9GN_N8OrUs5crlKbreBupHQBTozwHYj_N2yE=",
+          "line": "54"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/2Zh4dvn9u94LTH34VXPhfYq6el9cbdrYz0vsDn-QBl8=",
+          "address": "4345493943",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "a7nZHCSoEr1PldB3Mxb4w8IWFj1ClzuZk3kXQkP-o_w=/DGCum-axE6Nme-4ZEfCOORH_V15iYAYJ-Eqy792Asgw=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/server.(*Server).ListenAndServe.func3",
+          "systemName": "github.com/parca-dev/parca/pkg/server.(*Server).ListenAndServe.func3",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/server/server.go"
+        },
+        "line": {
+          "functionId": "a7nZHCSoEr1PldB3Mxb4w8IWFj1ClzuZk3kXQkP-o_w=/DGCum-axE6Nme-4ZEfCOORH_V15iYAYJ-Eqy792Asgw=",
+          "line": "164"
+        }
+      }
+    },
+    {
+      "cumulative": "2",
+      "flat": "0",
+      "diff": "0",
+      "meta": {
+        "location": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=/i9yxVsFGtHkWxpVNAl5bQa-iCb7_vp6EYti7fpDNSY8=",
+          "address": "4345503335",
+          "mappingId": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "isFolded": false,
+          "lines": []
+        },
+        "mapping": {
+          "id": "5ByWYLBHFM33JJ8P1ubFVW9Up-BNKZlYtpqHfg-tovs=",
+          "start": "0",
+          "limit": "0",
+          "offset": "0",
+          "file": "",
+          "buildId": "",
+          "hasFunctions": false,
+          "hasFilenames": false,
+          "hasLineNumbers": false,
+          "hasInlineFrames": false
+        },
+        "function": {
+          "id": "a7nZHCSoEr1PldB3Mxb4w8IWFj1ClzuZk3kXQkP-o_w=/Dbrj0w1mgMz04sPxB2qUVzgTYueJ1nvBMMuCrmhxkQM=",
+          "startLine": "0",
+          "name": "github.com/parca-dev/parca/pkg/server.grpcHandlerFunc.func3",
+          "systemName": "github.com/parca-dev/parca/pkg/server.grpcHandlerFunc.func3",
+          "filename": "/Users/yomi/Documents/batcave/parca/pkg/server/server.go"
+        },
+        "line": {
+          "functionId": "a7nZHCSoEr1PldB3Mxb4w8IWFj1ClzuZk3kXQkP-o_w=/Dbrj0w1mgMz04sPxB2qUVzgTYueJ1nvBMMuCrmhxkQM=",
+          "line": "326"
+        }
+      }
+    }
+  ],
+  "reported": 142,
+  "total": 182,
+  "unit": "count"
+}
