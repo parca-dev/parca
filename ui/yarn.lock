@@ -5248,6 +5248,13 @@
   dependencies:
     "@types/react" "*"
 
+"@types/react-reconciler@^0.28.0":
+  version "0.28.0"
+  resolved "https://registry.yarnpkg.com/@types/react-reconciler/-/react-reconciler-0.28.0.tgz#513acbed173140e958c909041ca14eb40412077f"
+  integrity sha512-5cjk9ottZAj7eaTsqzPUIlrVbh3hBAO2YaEL1rkjHKB3xNAId7oU8GhzvAX+gfmlfoxTwJnBjPxEHyxkEA1Ffg==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react@*":
   version "18.0.17"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-18.0.17.tgz#4583d9c322d67efe4b39a935d223edcc7050ccf4"
@@ -12786,6 +12793,13 @@ iterate-value@^1.0.2:
     es-get-iterator "^1.0.2"
     iterate-iterator "^1.0.1"
 
+its-fine@^1.0.1:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/its-fine/-/its-fine-1.0.5.tgz#dbd8130e021aafe030ca5001085c27ff2a057ab3"
+  integrity sha512-JVqIHuUGRF4mBJWV/o9CS86wU57oWAX+mE2iokFpZ+B1R1tcfRvLZXVFd9tWJgY7gfhBURYyXJs7LcoJl/Af+Q==
+  dependencies:
+    "@types/react-reconciler" "^0.28.0"
+
 jake@^10.8.5:
   version "10.8.5"
   resolved "https://registry.yarnpkg.com/jake/-/jake-10.8.5.tgz#f2183d2c59382cb274226034543b9c03b8164c46"
@@ -18243,11 +18257,12 @@ react-is@^16.13.1, react-is@^16.7.0:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
-react-konva@18.2.1:
-  version "18.2.1"
-  resolved "https://registry.yarnpkg.com/react-konva/-/react-konva-18.2.1.tgz#389cd55c3fc4d18616f8564e0bfc098c473da78c"
-  integrity sha512-JqNMqxAMg1JC8GLs+ZtPoXMVPzQw6XQCxxiFpw01A5HVoglTJQk6Ih+VO2DUD+VAh8ic7GVNE7YeeW+IexBg7g==
+react-konva@18.2.2:
+  version "18.2.2"
+  resolved "https://registry.yarnpkg.com/react-konva/-/react-konva-18.2.2.tgz#6be203d683483554ad28eb000ddacbd8030a6c4a"
+  integrity sha512-J0CyScyaWcDs5kPrcCy9ALrdVeeIUnE/rNc3wrsjMKHkqGHeC0ekCq2m+mB2tEzHuukDGk2BiLTNqGnp1wrDpA==
   dependencies:
+    its-fine "^1.0.1"
     react-reconciler "~0.29.0"
     scheduler "^0.23.0"
 
