@@ -23,7 +23,7 @@ jobs:
       contents: read
     steps:
       - id: skip-check
-        uses: fkirc/skip-duplicate-actions@b8076051474d234b9bf70d23464609b88d271060 # tag=v5.1.0
+        uses: fkirc/skip-duplicate-actions@f11521568414503656a5af807dc3018c012552c4 # tag=v5.2.0
         with:
           do_not_skip: '["schedule", "workflow_dispatch"]'
           paths: |-
