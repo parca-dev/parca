@@ -95,6 +95,7 @@ type Flags struct {
 	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
 	StoragePath          string `default:"data" help:"Path to storage directory."`
 	StorageEnableWAL     bool   `default:"false" help:"Enables write ahead log for profile storage."`
+	StorageRowGroupSize  int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -234,7 +235,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	table, err := colDB.Table("stacktraces", frostdb.NewTableConfig(schema))
+	table, err := colDB.Table("stacktraces",
+		frostdb.NewTableConfig(
+			schema,
+			frostdb.WithRowGroupSize(flags.StorageRowGroupSize),
+		),
+	)
 	if err != nil {
 		level.Error(logger).Log("msg", "create table", "err", err)
 		return err
