@@ -55,7 +55,7 @@ message Target {
   // labels are the set of labels given for the target
   parca.profilestore.v1alpha1.LabelSet labels = 2;
 
-  // lase_error is the error message most recently received from a scrape attempt
+  // last_error is the error message most recently received from a scrape attempt
   string last_error = 3;
 
   // last_scrape is the time stamp the last scrape request was performed

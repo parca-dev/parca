@@ -7,6 +7,9 @@
   "tags": [
     {
       "name": "ProfileStoreService"
+    },
+    {
+      "name": "AgentsService"
     }
   ],
   "consumes": [
@@ -16,6 +19,29 @@
     "application/json"
   ],
   "paths": {
+    "/agents": {
+      "get": {
+        "summary": "Agents return the agents that pushed data to the server",
+        "operationId": "AgentsService_Agents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1AgentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "AgentsService"
+        ]
+      }
+    },
     "/profiles/writeraw": {
       "post": {
         "summary": "WriteRaw accepts a raw set of bytes of a pprof file",
@@ -91,6 +117,42 @@
           }
         }
       }
+    },
+    "v1alpha1Agent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the agent identity that either represent by the node name or the IP address.\nWhen node name is not found, this will fallback to IP address."
+        },
+        "lastError": {
+          "type": "string",
+          "title": "last_error is the error message most recently received from a push attempt"
+        },
+        "lastPush": {
+          "type": "string",
+          "format": "date-time",
+          "title": "last_push is the time stamp the last push request was performed"
+        },
+        "lastPushDuration": {
+          "type": "string",
+          "title": "last_push_duration is the duration of the last push request"
+        }
+      },
+      "title": "Agent is the agent representation"
+    },
+    "v1alpha1AgentsResponse": {
+      "type": "object",
+      "properties": {
+        "agents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1Agent"
+          },
+          "title": "agents is a list of agents"
+        }
+      },
+      "title": "AgentsResponse is the request to retrieve a list of agents"
     },
     "v1alpha1LabelSet": {
       "type": "object",

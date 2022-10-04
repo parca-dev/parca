@@ -415,6 +415,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 					debuginfopb.RegisterDebugInfoServiceServer(srv, dbgInfo)
 					profilestorepb.RegisterProfileStoreServiceServer(srv, s)
+					profilestorepb.RegisterAgentsServiceServer(srv, s)
 					querypb.RegisterQueryServiceServer(srv, q)
 					scrapepb.RegisterScrapeServiceServer(srv, m)
 
@@ -423,6 +424,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 					}
 
 					if err := profilestorepb.RegisterProfileStoreServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+						return err
+					}
+
+					if err := profilestorepb.RegisterAgentsServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 						return err
 					}
 

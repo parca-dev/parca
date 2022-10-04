@@ -3,6 +3,8 @@ syntax = "proto3";
 package parca.profilestore.v1alpha1;
 
 import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
 // ProfileStoreService is the service the accepts pprof writes
 service ProfileStoreService {
@@ -58,4 +60,39 @@ message LabelSet {
 message RawSample {
   // raw_profile is the set of bytes of the pprof profile
   bytes raw_profile = 1;
+}
+
+// AgentsService maintains the agents
+service AgentsService {
+  // Agents return the agents that pushed data to the server
+  rpc Agents(AgentsRequest) returns (AgentsResponse) {
+    option (google.api.http) = {
+      get: "/agents"
+    };
+  }
+}
+
+// AgentsRequest is the request to retrieve a list of agents
+message AgentsRequest {}
+
+// AgentsResponse is the request to retrieve a list of agents
+message AgentsResponse {
+  // agents is a list of agents
+  repeated Agent agents = 1;
+}
+
+// Agent is the agent representation
+message Agent {
+  // id is the agent identity that either represent by the node name or the IP address.
+  // When node name is not found, this will fallback to IP address.
+  string id = 1;
+
+  // last_error is the error message most recently received from a push attempt
+  string last_error = 2;
+
+  // last_push is the time stamp the last push request was performed
+  google.protobuf.Timestamp last_push = 3;
+
+  // last_push_duration is the duration of the last push request
+  google.protobuf.Duration last_push_duration = 4;
 }
