@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.24",
+  "version": "0.16.28",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -30,7 +30,7 @@
     "konva": "8.3.12",
     "react-cytoscapejs": "1.2.1",
     "react-datepicker": "^4.6.0",
-    "react-konva": "18.2.1",
+    "react-konva": "18.2.2",
     "react-use": "^17.3.2"
   },
   "devDependencies": {
