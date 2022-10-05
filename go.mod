@@ -30,7 +30,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20221004135416-86c5aa62ea29
+	github.com/polarsignals/frostdb v0.0.0-20221005080817-e7cf877c811e
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/prometheus v0.38.0
