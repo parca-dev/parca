@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.28",
+  "version": "0.16.32",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "@parca/parser": "^0.16.23",
     "@parca/store": "^0.16.23",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
-    "@types/cytoscape": "3.19.8",
+    "@types/cytoscape": "3.19.9",
     "@types/react-cytoscapejs": "1.2.2",
     "@types/react-datepicker": "^4.4.0",
     "classnames": "^2.3.1",
