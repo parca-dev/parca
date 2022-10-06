@@ -7,7 +7,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
     "build": "tsc && tailwindcss -o dist/styles.css --minify",
-    "watch": "tsc --watch && tailwindcss -o dist/styles.css --minify"
+    "watch": "tsc --watch"
   },
   "dependencies": {
     "@headlessui/react": "^1.4.3",
