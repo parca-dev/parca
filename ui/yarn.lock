@@ -4657,10 +4657,10 @@
   resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.19.7.tgz#a15f2905f6a0803f6efda60a00024a5974aeedba"
   integrity sha512-JPM9gkXd302QvChbT7vnMli0QYbithROlQQQ9u0ur9YhmMkN0E/y++mKreHEhBvSf3ffiMH6RwemwPM5qbOGEw==
 
-"@types/cytoscape@3.19.8":
-  version "3.19.8"
-  resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.19.8.tgz#a77def4363818ce2c2004f0165d229419a5387e1"
-  integrity sha512-qaXGw5SzvQooDJRGETQ7hfgWJD6VO3YUlzFIRXWd7dQkBnKiZo9pD+UD2fKHjP01fXL8k0Y5PNqdcuW6fUOuFw==
+"@types/cytoscape@3.19.9":
+  version "3.19.9"
+  resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.19.9.tgz#d697971d4a33eacc6ae7a7a158035b5c60c064a2"
+  integrity sha512-oqCx0ZGiBO0UESbjgq052vjDAy2X53lZpMrWqiweMpvVwKw/2IiYDdzPFK6+f4tMfdv9YKEM9raO5bAZc3UYBg==
 
 "@types/d3-array@*":
   version "3.0.3"
