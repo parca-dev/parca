@@ -42,7 +42,7 @@
     "lodash.debounce": "4.0.8",
     "lodash.throttle": "4.1.1",
     "moment": "2.29.4",
-    "postcss": "8.4.16",
+    "postcss": "8.4.17",
     "react-dom": "18.2.0",
     "react-router-dom": "6.4.1",
     "react-use": "17.4.0",

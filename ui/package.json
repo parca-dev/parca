@@ -77,7 +77,7 @@
     "next-transpile-modules": "9.0.0",
     "plop": "3.1.1",
     "pm2": "5.2.0",
-    "postcss": "8.4.16",
+    "postcss": "8.4.17",
     "prettier": "2.7.1",
     "react-is": "18.2.0",
     "react-test-renderer": "18.2.0",
