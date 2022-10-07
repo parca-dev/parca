@@ -23,7 +23,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-rc.3
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20201207153454-9f6bf00c00a7
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
 	github.com/ianlancetaylor/demangle v0.0.0-20220517205856-0058ec4f073c
