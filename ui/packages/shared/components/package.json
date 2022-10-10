@@ -27,7 +27,7 @@
     "d3": "7.6.1",
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.0",
-    "konva": "8.3.12",
+    "konva": "8.3.13",
     "react-cytoscapejs": "1.2.1",
     "react-datepicker": "^4.6.0",
     "react-konva": "18.2.2",
