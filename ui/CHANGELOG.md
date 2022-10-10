@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.38](https://github.com/parca-dev/parca/compare/ui-v0.16.37...ui-v0.16.38) (2022-10-10)
+
+## [0.16.32](https://github.com/parca-dev/parca/compare/ui-v0.16.30...ui-v0.16.32) (2022-10-06)
+
+## [0.16.30](https://github.com/parca-dev/parca/compare/ui-v0.16.27...ui-v0.16.30) (2022-10-01)
+
+## 0.16.27 (2022-09-29)
+
+**Note:** Version bump only for package ui
+
+## [0.16.37](https://github.com/parca-dev/parca/compare/ui-v0.16.36...ui-v0.16.37) (2022-10-08)
+
+**Note:** Version bump only for package ui
+
+## [0.16.36](https://github.com/parca-dev/parca/compare/ui-v0.16.35...ui-v0.16.36) (2022-10-07)
+
+**Note:** Version bump only for package ui
+
 ## [0.16.35](https://github.com/parca-dev/parca/compare/ui-v0.16.34...ui-v0.16.35) (2022-10-07)
 
 **Note:** Version bump only for package ui

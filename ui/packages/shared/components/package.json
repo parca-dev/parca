@@ -1,22 +1,23 @@
 {
   "name": "@parca/components",
-  "version": "0.16.32",
+  "version": "0.16.38",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
-    "build": "tsc && tailwindcss -o dist/styles.css --minify"
+    "build": "tsc && tailwindcss -o dist/styles.css --minify",
+    "watch": "tsc --watch"
   },
   "dependencies": {
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
-    "@parca/client": "^0.16.23",
+    "@parca/client": "^0.16.38",
     "@parca/dynamicsize": "^0.16.23",
     "@parca/functions": "^0.16.23",
     "@parca/icons": "^0.16.23",
     "@parca/parser": "^0.16.23",
-    "@parca/store": "^0.16.23",
+    "@parca/store": "^0.16.38",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@types/cytoscape": "3.19.9",
     "@types/react-cytoscapejs": "1.2.2",
