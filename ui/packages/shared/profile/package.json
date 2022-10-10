@@ -22,7 +22,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
     "build": "tsc && tailwindcss -o dist/styles.css --minify && cp src/*.css ./dist/",
-    "watch": "tsc --watch"
+    "watch": "tsc-watch --onSuccess 'tailwindcss -o dist/styles.css --minify'"
   },
   "keywords": [],
   "author": "",
