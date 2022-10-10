@@ -1,4 +1,4 @@
-FROM docker.io/node:16.17.1-alpine@sha256:88d9d8da697877a4a771a40e5cbc10a12c2ad959e82f3b0f36ef35635e17f693 AS ui-deps
+FROM docker.io/node:16.17.1-alpine@sha256:4d68856f48be7c73cd83ba8af3b6bae98f4679e14d1ff49e164625ae8831533a AS ui-deps
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ COPY ui/packages/app/web/package.json ./packages/app/web/package.json
 COPY ui/package.json ui/yarn.lock ./
 RUN yarn workspace @parca/web install --frozen-lockfile
 
-FROM docker.io/node:16.17.1-alpine@sha256:88d9d8da697877a4a771a40e5cbc10a12c2ad959e82f3b0f36ef35635e17f693 AS ui-builder
+FROM docker.io/node:16.17.1-alpine@sha256:4d68856f48be7c73cd83ba8af3b6bae98f4679e14d1ff49e164625ae8831533a AS ui-builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY ui .
 COPY --from=ui-deps /app/node_modules ./node_modules
 RUN yarn workspace @parca/web build
 
-FROM docker.io/golang:1.19.2-alpine@sha256:2baa528036c1916b23de8b304083c68fb298c5661203055f2b1063390e3cdddb AS builder
+FROM docker.io/golang:1.19.2-alpine@sha256:f3e683657ddf73726b5717c2ff80cdcd9e9efb7d81f77e4948fada9a10dc7257 AS builder
 
 # renovate: datasource=go depName=github.com/go-delve/delve
 ARG DLV_VERSION=v1.9.1
@@ -44,7 +44,7 @@ COPY ./gen /app/gen
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -gcflags="all=-N -l" -o parca ./cmd/parca
 
-FROM docker.io/golang:1.19.2-alpine@sha256:2baa528036c1916b23de8b304083c68fb298c5661203055f2b1063390e3cdddb
+FROM docker.io/golang:1.19.2-alpine@sha256:f3e683657ddf73726b5717c2ff80cdcd9e9efb7d81f77e4948fada9a10dc7257
 
 COPY --from=builder /go/bin/dlv /
 COPY --from=builder /go/bin/grpc-health-probe /

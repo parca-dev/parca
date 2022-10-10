@@ -3,595 +3,329 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [0.16.32](https://github.com/parca-dev/parca/compare/ui-v0.16.31...ui-v0.16.32) (2022-10-06)
+## [0.16.37](https://github.com/parca-dev/parca/compare/ui-v0.16.36...ui-v0.16.37) (2022-10-08)
 
 **Note:** Version bump only for package ui
 
+## [0.16.36](https://github.com/parca-dev/parca/compare/ui-v0.16.35...ui-v0.16.36) (2022-10-07)
 
+**Note:** Version bump only for package ui
 
+## [0.16.35](https://github.com/parca-dev/parca/compare/ui-v0.16.34...ui-v0.16.35) (2022-10-07)
 
+**Note:** Version bump only for package ui
+
+## [0.16.34](https://github.com/parca-dev/parca/compare/ui-v0.16.33...ui-v0.16.34) (2022-10-07)
+
+**Note:** Version bump only for package ui
+
+## [0.16.33](https://github.com/parca-dev/parca/compare/ui-v0.16.32...ui-v0.16.33) (2022-10-07)
+
+**Note:** Version bump only for package ui
+
+## [0.16.32](https://github.com/parca-dev/parca/compare/ui-v0.16.31...ui-v0.16.32) (2022-10-06)
+
+**Note:** Version bump only for package ui
 
 ## [0.16.31](https://github.com/parca-dev/parca/compare/ui-v0.16.30...ui-v0.16.31) (2022-10-06)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.30](https://github.com/parca-dev/parca/compare/ui-v0.16.29...ui-v0.16.30) (2022-10-01)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.29](https://github.com/parca-dev/parca/compare/ui-v0.16.28...ui-v0.16.29) (2022-10-01)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.28](https://github.com/parca-dev/parca/compare/ui-v0.16.27...ui-v0.16.28) (2022-09-30)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.27](https://github.com/parca-dev/parca/compare/ui-v0.16.26...ui-v0.16.27) (2022-09-29)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.26](https://github.com/parca-dev/parca/compare/ui-v0.16.25...ui-v0.16.26) (2022-09-28)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.25](https://github.com/parca-dev/parca/compare/ui-v0.16.24...ui-v0.16.25) (2022-09-28)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.24](https://github.com/parca-dev/parca/compare/ui-v0.16.23...ui-v0.16.24) (2022-09-27)
-
-
 
 ## [0.16.20](https://github.com/parca-dev/parca/compare/ui-v0.16.19...ui-v0.16.20) (2022-09-27)
 
-
-
 ## [0.16.19](https://github.com/parca-dev/parca/compare/ui-v0.16.18...ui-v0.16.19) (2022-09-26)
-
-
 
 ## [0.16.18](https://github.com/parca-dev/parca/compare/ui-v0.16.17...ui-v0.16.18) (2022-09-26)
 
-
-
 ## [0.16.17](https://github.com/parca-dev/parca/compare/ui-v0.16.16...ui-v0.16.17) (2022-09-26)
-
-
 
 ## [0.16.16](https://github.com/parca-dev/parca/compare/ui-v0.16.6...ui-v0.16.16) (2022-09-26)
 
-
 ### Bug Fixes
 
-* set the granule size option in FrostDB ([#1726](https://github.com/parca-dev/parca/issues/1726)) ([20ba452](https://github.com/parca-dev/parca/commit/20ba452203cfc682f8ce623abe3132904418b694))
-
-
+- set the granule size option in FrostDB ([#1726](https://github.com/parca-dev/parca/issues/1726)) ([20ba452](https://github.com/parca-dev/parca/commit/20ba452203cfc682f8ce623abe3132904418b694))
 
 ## [0.16.6](https://github.com/parca-dev/parca/compare/ui-v0.16.5...ui-v0.16.6) (2022-09-15)
 
-
-
 ## [0.16.5](https://github.com/parca-dev/parca/compare/ui-v0.16.2...ui-v0.16.5) (2022-09-14)
-
-
 
 ## [0.16.2](https://github.com/parca-dev/parca/compare/ui-v0.13.4...ui-v0.16.2) (2022-09-14)
 
-
-
 ## [0.13.4](https://github.com/parca-dev/parca/compare/ui-v0.13.3...ui-v0.13.4) (2022-06-07)
-
-
 
 ## [0.13.3](https://github.com/parca-dev/parca/compare/ui-v0.13.2...ui-v0.13.3) (2022-06-07)
 
-
-
 ## [0.13.2](https://github.com/parca-dev/parca/compare/ui-v0.13.1...ui-v0.13.2) (2022-05-31)
-
-
 
 ## [0.13.1](https://github.com/parca-dev/parca/compare/ui-v0.13.0...ui-v0.13.1) (2022-05-31)
 
-
-
 # [0.13.0](https://github.com/parca-dev/parca/compare/ui-v0.12.38...ui-v0.13.0) (2022-05-30)
-
 
 ### Bug Fixes
 
-* linter errors ([7230db4](https://github.com/parca-dev/parca/commit/7230db46b764d3a11ecb63f2b28a2a666629b5a9))
-
+- linter errors ([7230db4](https://github.com/parca-dev/parca/commit/7230db46b764d3a11ecb63f2b28a2a666629b5a9))
 
 ### Features
 
-* useContainerDimensions hook for smooth chart resize ([3fe5670](https://github.com/parca-dev/parca/commit/3fe5670cb94e838d83e5cb10d453ee620c2dc3c1))
-
-
+- useContainerDimensions hook for smooth chart resize ([3fe5670](https://github.com/parca-dev/parca/commit/3fe5670cb94e838d83e5cb10d453ee620c2dc3c1))
 
 ## [0.12.38](https://github.com/parca-dev/parca/compare/ui-v0.12.37...ui-v0.12.38) (2022-05-19)
 
-
-
 ## [0.12.37](https://github.com/parca-dev/parca/compare/ui-v0.12.36...ui-v0.12.37) (2022-05-16)
-
-
 
 ## [0.12.36](https://github.com/parca-dev/parca/compare/ui-v0.12.35...ui-v0.12.36) (2022-05-06)
 
-
-
 ## 0.12.35 (2022-05-05)
-
-
-
-
 
 ## [0.16.23](https://github.com/parca-dev/parca/compare/ui-v0.16.20...ui-v0.16.23) (2022-09-27)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.22](https://github.com/parca-dev/parca/compare/ui-v0.16.20...ui-v0.16.22) (2022-09-27)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.21](https://github.com/parca-dev/parca/compare/ui-v0.16.20...ui-v0.16.21) (2022-09-27)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.20](https://github.com/parca-dev/parca/compare/ui-v0.16.19...ui-v0.16.20) (2022-09-27)
-
-
 
 ## [0.16.18](https://github.com/parca-dev/parca/compare/ui-v0.16.17...ui-v0.16.18) (2022-09-26)
 
-
-
 ## [0.16.17](https://github.com/parca-dev/parca/compare/ui-v0.16.16...ui-v0.16.17) (2022-09-26)
 
-
-
 ## [0.16.16](https://github.com/parca-dev/parca/compare/ui-v0.16.15...ui-v0.16.16) (2022-09-26)
-
-
 
 ## [0.16.15](https://github.com/parca-dev/parca/compare/ui-v0.16.6...ui-v0.16.15) (2022-09-22)
 
-
 ### Bug Fixes
 
-* set the granule size option in FrostDB ([#1726](https://github.com/parca-dev/parca/issues/1726)) ([20ba452](https://github.com/parca-dev/parca/commit/20ba452203cfc682f8ce623abe3132904418b694))
-
-
+- set the granule size option in FrostDB ([#1726](https://github.com/parca-dev/parca/issues/1726)) ([20ba452](https://github.com/parca-dev/parca/commit/20ba452203cfc682f8ce623abe3132904418b694))
 
 ## 0.16.6 (2022-09-15)
 
-
-
-
-
 ## [0.16.19](https://github.com/parca-dev/parca/compare/ui-v0.16.18...ui-v0.16.19) (2022-09-26)
 
-
-
 ## [0.16.17](https://github.com/parca-dev/parca/compare/ui-v0.16.16...ui-v0.16.17) (2022-09-26)
-
-
 
 ## 0.16.16 (2022-09-26)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.18](https://github.com/parca-dev/parca/compare/ui-v0.16.17...ui-v0.16.18) (2022-09-26)
 
-
-
 ## 0.16.16 (2022-09-26)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.17](https://github.com/parca-dev/parca/compare/ui-v0.16.16...ui-v0.16.17) (2022-09-26)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.16](https://github.com/parca-dev/parca/compare/ui-v0.16.15...ui-v0.16.16) (2022-09-26)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.15](https://github.com/parca-dev/parca/compare/ui-v0.16.14...ui-v0.16.15) (2022-09-22)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.14](https://github.com/parca-dev/parca/compare/ui-v0.16.13...ui-v0.16.14) (2022-09-21)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.13](https://github.com/parca-dev/parca/compare/ui-v0.16.12...ui-v0.16.13) (2022-09-21)
-
-
 
 ## 0.16.10 (2022-09-19)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.12](https://github.com/parca-dev/parca/compare/ui-v0.16.11...ui-v0.16.12) (2022-09-20)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.11](https://github.com/parca-dev/parca/compare/ui-v0.16.10...ui-v0.16.11) (2022-09-20)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.10](https://github.com/parca-dev/parca/compare/ui-v0.16.9...ui-v0.16.10) (2022-09-19)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.9](https://github.com/parca-dev/parca/compare/ui-v0.16.8...ui-v0.16.9) (2022-09-19)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.8](https://github.com/parca-dev/parca/compare/ui-v0.16.7...ui-v0.16.8) (2022-09-17)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.7](https://github.com/parca-dev/parca/compare/ui-v0.16.6...ui-v0.16.7) (2022-09-17)
-
 
 ### Bug Fixes
 
-* set the granule size option in FrostDB ([#1726](https://github.com/parca-dev/parca/issues/1726)) ([20ba452](https://github.com/parca-dev/parca/commit/20ba452203cfc682f8ce623abe3132904418b694))
-
-
-
-
+- set the granule size option in FrostDB ([#1726](https://github.com/parca-dev/parca/issues/1726)) ([20ba452](https://github.com/parca-dev/parca/commit/20ba452203cfc682f8ce623abe3132904418b694))
 
 ## [0.16.6](https://github.com/parca-dev/parca/compare/ui-v0.16.5...ui-v0.16.6) (2022-09-15)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.5](https://github.com/parca-dev/parca/compare/ui-v0.16.4...ui-v0.16.5) (2022-09-14)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.4](https://github.com/parca-dev/parca/compare/ui-v0.16.3...ui-v0.16.4) (2022-09-14)
-
-
 
 ## 0.16.2 (2022-09-14)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.3](https://github.com/parca-dev/parca/compare/ui-v0.16.2...ui-v0.16.3) (2022-09-14)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.16.2](https://github.com/parca-dev/parca/compare/ui-v0.16.1...ui-v0.16.2) (2022-09-14)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.16.1](https://github.com/parca-dev/parca/compare/ui-v0.16.0...ui-v0.16.1) (2022-09-14)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 # [0.16.0](https://github.com/parca-dev/parca/compare/ui-v0.15.26...ui-v0.16.0) (2022-09-13)
-
-
 
 ## [0.15.25](https://github.com/parca-dev/parca/compare/ui-v0.15.23...ui-v0.15.25) (2022-09-13)
 
-
-
 ## [0.15.23](https://github.com/parca-dev/parca/compare/ui-v0.15.19...ui-v0.15.23) (2022-09-12)
-
-
 
 ## [0.15.19](https://github.com/parca-dev/parca/compare/ui-v0.15.16...ui-v0.15.19) (2022-09-08)
 
-
-
 ## [0.15.16](https://github.com/parca-dev/parca/compare/ui-v0.15.13...ui-v0.15.16) (2022-09-06)
-
-
 
 ## [0.15.13](https://github.com/parca-dev/parca/compare/ui-v0.15.11...ui-v0.15.13) (2022-09-02)
 
-
-
 ## [0.15.11](https://github.com/parca-dev/parca/compare/ui-v0.15.7...ui-v0.15.11) (2022-09-01)
-
-
 
 ## [0.15.7](https://github.com/parca-dev/parca/compare/ui-v0.13.14...ui-v0.15.7) (2022-08-27)
 
-
 ### Features
 
-* Add a loader to the `MatchersInput` component ([a2afe58](https://github.com/parca-dev/parca/commit/a2afe583b531ff58284652d797dd3302097796db))
-* Add a loader to the `MatchersInput` component ([741a9e8](https://github.com/parca-dev/parca/commit/741a9e81fd143881651ab33e2acb82d7d08aec45))
-* add quotes to label value values ([c0a6304](https://github.com/parca-dev/parca/commit/c0a63048c5ee41c977b212959274efd0209ad46a))
-* Prevent overflow of the label names and values by adding a fixed height ([9eec8cf](https://github.com/parca-dev/parca/commit/9eec8cf540de140671d6cb978196638706b8d5b5))
-* Suggest label names and values when typing ([912cdf8](https://github.com/parca-dev/parca/commit/912cdf87201dcc90736fa28b1bb10ca2b84333bb))
-
+- Add a loader to the `MatchersInput` component ([a2afe58](https://github.com/parca-dev/parca/commit/a2afe583b531ff58284652d797dd3302097796db))
+- Add a loader to the `MatchersInput` component ([741a9e8](https://github.com/parca-dev/parca/commit/741a9e81fd143881651ab33e2acb82d7d08aec45))
+- add quotes to label value values ([c0a6304](https://github.com/parca-dev/parca/commit/c0a63048c5ee41c977b212959274efd0209ad46a))
+- Prevent overflow of the label names and values by adding a fixed height ([9eec8cf](https://github.com/parca-dev/parca/commit/9eec8cf540de140671d6cb978196638706b8d5b5))
+- Suggest label names and values when typing ([912cdf8](https://github.com/parca-dev/parca/commit/912cdf87201dcc90736fa28b1bb10ca2b84333bb))
 
 ### Reverts
 
-* Revert "Update FrostDB for Parca (#1278)" ([691d1ae](https://github.com/parca-dev/parca/commit/691d1ae393f6faa7f8c553ec8a051d5f7e3212b5)), closes [#1278](https://github.com/parca-dev/parca/issues/1278)
-
-
+- Revert "Update FrostDB for Parca (#1278)" ([691d1ae](https://github.com/parca-dev/parca/commit/691d1ae393f6faa7f8c553ec8a051d5f7e3212b5)), closes [#1278](https://github.com/parca-dev/parca/issues/1278)
 
 ## [0.13.14](https://github.com/parca-dev/parca/compare/ui-v0.13.12...ui-v0.13.14) (2022-06-29)
 
-
-
 ## 0.13.12 (2022-06-27)
 
-
-
-
-
 ## [0.15.26](https://github.com/parca-dev/parca/compare/ui-v0.15.25...ui-v0.15.26) (2022-09-13)
-
-
 
 ## 0.15.24 (2022-09-13)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.15.25](https://github.com/parca-dev/parca/compare/ui-v0.15.24...ui-v0.15.25) (2022-09-13)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.15.24](https://github.com/parca-dev/parca/compare/ui-v0.15.23...ui-v0.15.24) (2022-09-13)
-
-
 
 ## [0.15.19](https://github.com/parca-dev/parca/compare/ui-v0.15.17...ui-v0.15.19) (2022-09-08)
 
-
-
 ## [0.15.17](https://github.com/parca-dev/parca/compare/ui-v0.15.10...ui-v0.15.17) (2022-09-07)
-
 
 ### Bug Fixes
 
-* **ui:** type all the things (string mode) ([e91ac9d](https://github.com/parca-dev/parca/commit/e91ac9deb8a200ed3c9a9c5d81ae71e13d49466e))
-
-
+- **ui:** type all the things (string mode) ([e91ac9d](https://github.com/parca-dev/parca/commit/e91ac9deb8a200ed3c9a9c5d81ae71e13d49466e))
 
 ## 0.15.10 (2022-08-30)
 
-
-
-
-
 ## [0.15.23](https://github.com/parca-dev/parca/compare/ui-v0.15.22...ui-v0.15.23) (2022-09-12)
-
-
 
 ## 0.15.17 (2022-09-07)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.15.22](https://github.com/parca-dev/parca/compare/ui-v0.15.21...ui-v0.15.22) (2022-09-11)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.15.21](https://github.com/parca-dev/parca/compare/ui-v0.15.20...ui-v0.15.21) (2022-09-09)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.15.20](https://github.com/parca-dev/parca/compare/ui-v0.15.19...ui-v0.15.20) (2022-09-09)
 
 **Note:** Version bump only for package ui
 
-
-
-
-
 ## [0.15.19](https://github.com/parca-dev/parca/compare/ui-v0.15.18...ui-v0.15.19) (2022-09-08)
-
-
 
 ## [0.15.17](https://github.com/parca-dev/parca/compare/ui-v0.15.10...ui-v0.15.17) (2022-09-07)
 
-
-
 ## [0.15.10](https://github.com/parca-dev/parca/compare/ui-v0.15.8...ui-v0.15.10) (2022-08-30)
 
-
-
 ## [0.15.8](https://github.com/parca-dev/parca/compare/ui-v0.15.1...ui-v0.15.8) (2022-08-30)
-
-
 
 ## 0.15.1 (2022-08-25)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.15.18](https://github.com/parca-dev/parca/compare/ui-v0.15.17...ui-v0.15.18) (2022-09-08)
 
-
-
 ## [0.15.10](https://github.com/parca-dev/parca/compare/ui-v0.15.8...ui-v0.15.10) (2022-08-30)
-
-
 
 ## [0.15.8](https://github.com/parca-dev/parca/compare/ui-v0.15.1...ui-v0.15.8) (2022-08-30)
 
-
-
 ## 0.15.1 (2022-08-25)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.15.17](https://github.com/parca-dev/parca/compare/ui-v0.15.16...ui-v0.15.17) (2022-09-07)
 
-
-
 ## [0.15.13](https://github.com/parca-dev/parca/compare/ui-v0.15.11...ui-v0.15.13) (2022-09-02)
-
-
 
 ## [0.15.11](https://github.com/parca-dev/parca/compare/ui-v0.15.10...ui-v0.15.11) (2022-09-01)
 
-
-
 ## [0.15.10](https://github.com/parca-dev/parca/compare/ui-v0.15.2...ui-v0.15.10) (2022-08-30)
 
-
-
 ## [0.15.2](https://github.com/parca-dev/parca/compare/ui-v0.15.1...ui-v0.15.2) (2022-08-25)
-
-
 
 ## 0.15.1 (2022-08-25)
 
 **Note:** Version bump only for package ui
-
-
-
-
 
 ## [0.15.16](https://github.com/parca-dev/parca/compare/ui-v0.15.15...ui-v0.15.16) (2022-09-06)
 

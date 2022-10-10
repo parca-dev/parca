@@ -2,17 +2,10 @@
 # yarn lockfile v1
 
 
-"@babel/runtime@^7.18.9":
+"@babel/runtime@^7.18.9", "@babel/runtime@^7.7.6":
   version "7.19.0"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.19.0.tgz#22b11c037b094d27a8a2504ea4dcff00f50e2259"
   integrity sha512-eR8Lo9hnDS7tqkO7NsV+mKvCmv5boaXFSZ70DnfhcgiEne8hv9oCEd36Klw74EtizEqLsy4YnW8UWwpBVolHZA==
-  dependencies:
-    regenerator-runtime "^0.13.4"
-
-"@babel/runtime@^7.7.6":
-  version "7.18.9"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.18.9.tgz#b4fcfce55db3d2e5e080d2490f608a3b9f407f4a"
-  integrity sha512-lkqXDcvlFT5rvEjiu6+QYO+1GXrEHRo2LOtS7E4GtX5ESIZOgepqsZBVIj6Pv+a6zqsya9VCgiK1KAK4BvJDAw==
   dependencies:
     regenerator-runtime "^0.13.4"
 
@@ -157,9 +150,9 @@ get-caller-file@^2.0.1:
   integrity sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==
 
 google-protobuf@^3.15.5:
-  version "3.21.0"
-  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.21.0.tgz#8dfa3fca16218618d373d414d3c1139e28034d6e"
-  integrity sha512-byR7MBTK4tZ5PZEb+u5ZTzpt4SfrTxv5682MjPlHN16XeqgZE2/8HOIWeiXe8JKnT9OVbtBGhbq8mtvkK8cd5g==
+  version "3.21.1"
+  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.21.1.tgz#bb73c6e1471afdadc0a312da27ef0a68c875414f"
+  integrity sha512-iiQnqsR7nzdYfJjo2yOpJJ2bsAaOvV/85HjDx/sxcOJcNMgyj3iK00HsbZbhKS+EixWdu9fPn7quaBvb4IQHtw==
 
 has-flag@^4.0.0:
   version "4.0.0"
