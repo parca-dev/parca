@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
-    "build": "tsc"
+    "build": "tsc",
+    "watch": "tsc --watch"
   },
   "dependencies": {
     "@protobuf-ts/runtime": "^2.5.0",
