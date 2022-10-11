@@ -9,10 +9,10 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-all-contributors-cli@6.23.0:
-  version "6.23.0"
-  resolved "https://registry.yarnpkg.com/all-contributors-cli/-/all-contributors-cli-6.23.0.tgz#b048efb8b126375a67d4d56bdc3733a53b1310b8"
-  integrity sha512-myfnxTFLJ1hL5wA705QYkLm08iney2J+A1DC3m2fAe+oyFoXH03u2oK+G7B/cvgrbVl5eWw8yELKmtR6iAtoCw==
+all-contributors-cli@6.24.0:
+  version "6.24.0"
+  resolved "https://registry.yarnpkg.com/all-contributors-cli/-/all-contributors-cli-6.24.0.tgz#25c480c5c6e921532873114c2d6487816e6c22e0"
+  integrity sha512-7oSKr2PnqxsOotuSwciltcFTS1eVRdjR0cn99hbElfff7gRQBShVhsf/XBprY41sLcgqTk0l0MKgKv6QNgZdMg==
   dependencies:
     "@babel/runtime" "^7.7.6"
     async "^3.1.0"
