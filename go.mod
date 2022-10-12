@@ -49,14 +49,11 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-// required by https://github.com/grpc-ecosystem/grpc-gateway/releases/tag/v2.10.3
-replace cloud.google.com/go/storage v1.19.0 => cloud.google.com/go/storage v1.10.0
-
 require (
-	cloud.google.com/go v0.102.0 // indirect
+	cloud.google.com/go v0.102.1 // indirect
 	cloud.google.com/go/compute v1.7.0 // indirect
 	cloud.google.com/go/iam v0.3.0 // indirect
-	cloud.google.com/go/storage v1.22.1 // indirect
+	cloud.google.com/go/storage v1.23.0 // indirect
 	github.com/Azure/azure-sdk-for-go v65.0.0+incompatible // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0 // indirect
