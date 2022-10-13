@@ -65,6 +65,24 @@ func local_request_ProfileStoreService_WriteRaw_0(ctx context.Context, marshaler
 
 }
 
+func request_AgentsService_Agents_0(ctx context.Context, marshaler runtime.Marshaler, client AgentsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq AgentsRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := client.Agents(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_AgentsService_Agents_0(ctx context.Context, marshaler runtime.Marshaler, server AgentsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq AgentsRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := server.Agents(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterProfileStoreServiceHandlerServer registers the http handlers for service ProfileStoreService to "mux".
 // UnaryRPC     :call ProfileStoreServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -93,6 +111,40 @@ func RegisterProfileStoreServiceHandlerServer(ctx context.Context, mux *runtime.
 		}
 
 		forward_ProfileStoreService_WriteRaw_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+// RegisterAgentsServiceHandlerServer registers the http handlers for service AgentsService to "mux".
+// UnaryRPC     :call AgentsServiceServer directly.
+// StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterAgentsServiceHandlerFromEndpoint instead.
+func RegisterAgentsServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server AgentsServiceServer) error {
+
+	mux.Handle("GET", pattern_AgentsService_Agents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.profilestore.v1alpha1.AgentsService/Agents", runtime.WithHTTPPathPattern("/agents"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_AgentsService_Agents_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_AgentsService_Agents_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -168,4 +220,75 @@ var (
 
 var (
 	forward_ProfileStoreService_WriteRaw_0 = runtime.ForwardResponseMessage
+)
+
+// RegisterAgentsServiceHandlerFromEndpoint is same as RegisterAgentsServiceHandler but
+// automatically dials to "endpoint" and closes the connection when "ctx" gets done.
+func RegisterAgentsServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+	conn, err := grpc.Dial(endpoint, opts...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+			return
+		}
+		go func() {
+			<-ctx.Done()
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+		}()
+	}()
+
+	return RegisterAgentsServiceHandler(ctx, mux, conn)
+}
+
+// RegisterAgentsServiceHandler registers the http handlers for service AgentsService to "mux".
+// The handlers forward requests to the grpc endpoint over "conn".
+func RegisterAgentsServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterAgentsServiceHandlerClient(ctx, mux, NewAgentsServiceClient(conn))
+}
+
+// RegisterAgentsServiceHandlerClient registers the http handlers for service AgentsService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "AgentsServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "AgentsServiceClient"
+// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
+// "AgentsServiceClient" to call the correct interceptors.
+func RegisterAgentsServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client AgentsServiceClient) error {
+
+	mux.Handle("GET", pattern_AgentsService_Agents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.AgentsService/Agents", runtime.WithHTTPPathPattern("/agents"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_AgentsService_Agents_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_AgentsService_Agents_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+var (
+	pattern_AgentsService_Agents_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"agents"}, ""))
+)
+
+var (
+	forward_AgentsService_Agents_0 = runtime.ForwardResponseMessage
 )

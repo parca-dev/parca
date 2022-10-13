@@ -100,7 +100,7 @@ export interface Target {
      */
     labels?: LabelSet;
     /**
-     * lase_error is the error message most recently received from a scrape attempt
+     * last_error is the error message most recently received from a scrape attempt
      *
      * @generated from protobuf field: string last_error = 3;
      */
