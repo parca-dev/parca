@@ -5250,7 +5250,7 @@
     "@types/cytoscape" "*"
     "@types/react" "*"
 
-"@types/react-datepicker@^4.4.0":
+"@types/react-datepicker@4.4.2":
   version "4.4.2"
   resolved "https://registry.yarnpkg.com/@types/react-datepicker/-/react-datepicker-4.4.2.tgz#13ab25a5fff7f3da4c5380c471efd8b38f53010e"
   integrity sha512-g8DhWvYmaIMLzVrIEVLXncylyImyBaoPsEUr3yR13JDaaHoebhDorqnVv4tLkNGa8SjBB8SAOQvxD5jaPNBX8A==
@@ -18180,7 +18180,7 @@ react-cytoscapejs@1.2.1:
     cytoscape "^3.2.19"
     prop-types "^15.6.2"
 
-react-datepicker@^4.6.0:
+react-datepicker@4.8.0:
   version "4.8.0"
   resolved "https://registry.yarnpkg.com/react-datepicker/-/react-datepicker-4.8.0.tgz#11b8918d085a1ce4781eee4c8e4641b3cd592010"
   integrity sha512-u69zXGHMpxAa4LeYR83vucQoUCJQ6m/WBsSxmUMu/M8ahTSVMMyiyQzauHgZA2NUr9y0FUgOAix71hGYUb6tvg==
