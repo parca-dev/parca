@@ -2600,10 +2600,10 @@
     npmlog "^6.0.2"
     write-file-atomic "^4.0.1"
 
-"@mdx-js/loader@2.1.4":
-  version "2.1.4"
-  resolved "https://registry.yarnpkg.com/@mdx-js/loader/-/loader-2.1.4.tgz#9935a8203d5de9e570acb68f219de439cef4fb28"
-  integrity sha512-7k2I1vYht89cONaAkThmbq6CW0yyaEZOHDFngAMj6jqfpMfUnCE+zIbpKYJNPlgmWCR9T5r/deVNvH3BcokbKw==
+"@mdx-js/loader@2.1.5":
+  version "2.1.5"
+  resolved "https://registry.yarnpkg.com/@mdx-js/loader/-/loader-2.1.5.tgz#4e764c65333530fd786dfe4f36e918dfeac0200b"
+  integrity sha512-oXjfTa/iAcMmW8DdQ+hQFodPCLqw5VKT2yoZkLwrZfPVVpUgKrI+5/ZePYq328xxtAUStZmR3ed0PWJrwd5Pkg==
   dependencies:
     "@mdx-js/mdx" "^2.0.0"
     source-map "^0.7.0"
