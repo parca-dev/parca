@@ -18180,7 +18180,7 @@ react-cytoscapejs@1.2.1:
     cytoscape "^3.2.19"
     prop-types "^15.6.2"
 
-react-datepicker@4.8.0:
+react-datepicker@4.8.0, react-datepicker@^4.6.0:
   version "4.8.0"
   resolved "https://registry.yarnpkg.com/react-datepicker/-/react-datepicker-4.8.0.tgz#11b8918d085a1ce4781eee4c8e4641b3cd592010"
   integrity sha512-u69zXGHMpxAa4LeYR83vucQoUCJQ6m/WBsSxmUMu/M8ahTSVMMyiyQzauHgZA2NUr9y0FUgOAix71hGYUb6tvg==
