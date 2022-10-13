@@ -145,7 +145,7 @@
         },
         "lastError": {
           "type": "string",
-          "title": "lase_error is the error message most recently received from a scrape attempt"
+          "title": "last_error is the error message most recently received from a scrape attempt"
         },
         "lastScrape": {
           "type": "string",
