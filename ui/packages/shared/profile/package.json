@@ -4,12 +4,12 @@
   "description": "Profile viewing libraries",
   "dependencies": {
     "@iconify/react": "^3.2.2",
-    "@parca/client": "^0.16.42",
-    "@parca/components": "^0.16.42",
-    "@parca/dynamicsize": "^0.16.23",
-    "@parca/functions": "^0.16.23",
-    "@parca/parser": "^0.16.23",
-    "@parca/store": "^0.16.39",
+    "@parca/client": "^0.16.22",
+    "@parca/components": "^0.16.40",
+    "@parca/dynamicsize": "^0.16.22",
+    "@parca/functions": "^0.16.22",
+    "@parca/parser": "^0.16.22",
+    "@parca/store": "^0.16.22",
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",
     "react-copy-to-clipboard": "^5.1.0"

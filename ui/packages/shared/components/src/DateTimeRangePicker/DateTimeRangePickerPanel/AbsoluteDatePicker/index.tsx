@@ -17,8 +17,6 @@ import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../utils';
 import Button from '../../../Button';
 import {UTCDateTimePicker} from '../../../DateTimePicker';
 
-import 'react-datepicker/dist/react-datepicker.css';
-
 interface AbsoluteDatePickerProps {
   range: DateTimeRange;
   onChange?: (from: AbsoluteDate, to: AbsoluteDate) => void;
