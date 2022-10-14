@@ -9,8 +9,6 @@ local defaults = {
   image: error 'must provide image',
   replicas: error 'must provide replicas',
 
-  configPath: '/var/parca/parca.yaml',
-  configmapName: 'parca-config',
   config: {
     debug_info: {
       bucket: {
@@ -192,12 +190,13 @@ function(params) {
     ],
   },
 
-  configmap: {
+  configMap: {
     apiVersion: 'v1',
     kind: 'ConfigMap',
     metadata: {
-      name: prc.config.configmapName,
+      name: prc.config.name,
       namespace: prc.config.namespace,
+      labels: prc.config.commonLabels,
     },
     data: {
       'parca.yaml': std.manifestYamlDoc(prc.config.config),
@@ -211,7 +210,7 @@ function(params) {
       args:
         [
           '/parca',
-          '--config-path=' + prc.config.configPath,
+          '--config-path=/etc/parca/parca.yaml',
           '--log-level=' + prc.config.logLevel,
         ] +
         (if prc.config.corsAllowedOrigins == '' then []
@@ -226,7 +225,7 @@ function(params) {
         { name: port.name, containerPort: port.port }
         for port in prc.service.spec.ports
       ],
-      volumeMounts: [{ name: 'parca-config', mountPath: '/var/parca' }],
+      volumeMounts: [{ name: 'config', mountPath: '/etc/parca' }],
       resources: if prc.config.resources != {} then prc.config.resources else {},
       terminationMessagePolicy: 'FallbackToLogsOnError',
       livenessProbe: if prc.config.livenessProbe == true then {
@@ -264,8 +263,8 @@ function(params) {
             serviceAccountName: prc.serviceAccount.metadata.name,
             terminationGracePeriodSeconds: 120,
             volumes: [{
-              name: 'parca-config',
-              configMap: { name: prc.config.configmapName },
+              name: 'config',
+              configMap: { name: prc.configMap.metadata.name },
             }],
             nodeSelector: {
               'kubernetes.io/os': 'linux',
