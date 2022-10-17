@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.48",
+  "version": "0.16.49",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -12,12 +12,12 @@
   "dependencies": {
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
-    "@parca/client": "^0.16.22",
-    "@parca/dynamicsize": "^0.16.22",
-    "@parca/functions": "^0.16.22",
-    "@parca/icons": "^0.16.22",
-    "@parca/parser": "^0.16.48",
-    "@parca/store": "^0.16.22",
+    "@parca/client": "^0.16.49",
+    "@parca/dynamicsize": "^0.16.49",
+    "@parca/functions": "^0.16.49",
+    "@parca/icons": "^0.16.49",
+    "@parca/parser": "^0.16.49",
+    "@parca/store": "^0.16.49",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@types/cytoscape": "3.19.9",
     "@types/react-cytoscapejs": "1.2.2",
