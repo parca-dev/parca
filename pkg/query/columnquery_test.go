@@ -664,7 +664,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	}}, p, false)
 	require.NoError(t, err)
 
-	table.Sync()
+	require.NoError(t, table.EnsureCompaction())
 
 	api := NewColumnQueryAPI(
 		logger,

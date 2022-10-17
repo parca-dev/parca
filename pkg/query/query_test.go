@@ -88,7 +88,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				}
 			}
 
-			table.Sync()
+			require.NoError(b, table.EnsureCompaction())
 
 			api := NewColumnQueryAPI(
 				logger,
@@ -147,7 +147,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 
 	table, err := colDB.GetTable("stacktraces")
 	require.NoError(b, err)
-	table.Sync()
+	require.NoError(b, table.EnsureCompaction())
 
 	require.NoError(b, err)
 	m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(

@@ -311,7 +311,7 @@ func TestReplay(t *testing.T) {
 	}()
 
 	require.NoError(t, s.Wait())
-	table.Sync()
+	require.NoError(t, table.EnsureCompaction())
 }
 
 func BenchmarkValuesAPI(b *testing.B) {
@@ -319,7 +319,7 @@ func BenchmarkValuesAPI(b *testing.B) {
 	api, table, s, cleanup := replayDebugLog(ctx, b)
 	b.Cleanup(cleanup)
 	require.NoError(b, s.Wait())
-	table.Sync()
+	require.NoError(b, table.EnsureCompaction())
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -384,7 +384,7 @@ func TestConsistency(t *testing.T) {
 	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table, schema)
 	require.NoError(t, ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p, false))
 
-	table.Sync()
+	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
