@@ -278,6 +278,18 @@ message Flamegraph {
 
   // height is the max height of the graph
   int32 height = 4;
+
+  // string_table holds all deduplicated strings used in the meta data.
+  repeated string string_table = 5;
+
+  // locations deduplicated by their ID to be referenced by nodes.
+  repeated parca.metastore.v1alpha1.Location locations = 6;
+
+  // mapping deduplicated by their ID to be referenced by nodes.
+  repeated parca.metastore.v1alpha1.Mapping mapping = 7;
+
+  // function deduplicated by their ID to be referenced by nodes.
+  repeated parca.metastore.v1alpha1.Function function = 8;
 }
 
 // FlamegraphRootNode is a root node of a flame graph

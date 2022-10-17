@@ -849,6 +849,34 @@
           "type": "integer",
           "format": "int32",
           "title": "height is the max height of the graph"
+        },
+        "stringTable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "string_table holds all deduplicated strings used in the meta data."
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Location"
+          },
+          "description": "locations deduplicated by their ID to be referenced by nodes."
+        },
+        "mapping": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Mapping"
+          },
+          "description": "mapping deduplicated by their ID to be referenced by nodes."
+        },
+        "function": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Function"
+          },
+          "description": "function deduplicated by their ID to be referenced by nodes."
         }
       },
       "title": "Flamegraph is the flame graph report type"

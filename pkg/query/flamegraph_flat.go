@@ -16,9 +16,11 @@ package query
 import (
 	"context"
 	"sort"
+	"strconv"
 
 	"go.opentelemetry.io/otel/trace"
 
+	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -29,6 +31,17 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 
 	var height int32
 
+	tables := &tableConverter{
+		stringsSlice:   []string{},
+		stringsIndex:   map[string]int{},
+		mappingsSlice:  []*metastorev1alpha1.Mapping{},
+		mappingsIndex:  map[string]int{},
+		locationsSlice: []*metastorev1alpha1.Location{},
+		locationsIndex: map[string]int{},
+		functionsSlice: []*metastorev1alpha1.Function{},
+		functionsIndex: map[string]int{},
+	}
+
 	for _, s := range p.Samples {
 		locations := s.Locations
 		if int32(len(locations)) > height {
@@ -38,6 +51,9 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 		// Reverse walking the location as stacked location are like 3 > 2 > 1 > 0 where 0 is the root.
 		for i := len(locations) - 1; i >= 0; i-- {
 			location := locations[i]
+
+			tables.AddMapping(location.Mapping)
+			tables.AddLocation(location)
 
 			nodes := locationToTreeNodes(location)
 			for j := len(nodes) - 1; j >= 0; j-- {
@@ -90,7 +106,123 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 		Total:  rootNode.Cumulative,
 		Unit:   p.Meta.SampleType.Unit,
 		Height: height + 1, // add one for the root
+
+		StringTable: tables.Strings(),
+		Mapping:     tables.Mappings(),
+		Locations:   tables.Locations(),
+		Function:    tables.Functions(),
 	}
 
 	return aggregateByFunction(flamegraph), nil
+}
+
+type tableConverter struct {
+	stringsSlice   []string
+	stringsIndex   map[string]int
+	mappingsSlice  []*metastorev1alpha1.Mapping
+	mappingsIndex  map[string]int
+	locationsSlice []*metastorev1alpha1.Location
+	locationsIndex map[string]int
+	functionsSlice []*metastorev1alpha1.Function
+	functionsIndex map[string]int
+
+	stringsDedup   int
+	mappingDedup   int
+	locationsDedup int
+	functionsDedup int
+}
+
+// Strings return the table, slice more specifically, of all strings.
+func (c *tableConverter) Strings() []string {
+	return c.stringsSlice
+}
+
+// Mappings return the table, slice more specifically, of all mappings.
+func (c *tableConverter) Mappings() []*metastorev1alpha1.Mapping {
+	for _, m := range c.mappingsSlice {
+		// Set all for unnecessary fields, for the frontend, to empty strings.
+		m.Id = ""
+	}
+	return c.mappingsSlice
+}
+
+func (c *tableConverter) Locations() []*metastorev1alpha1.Location {
+	return c.locationsSlice
+}
+
+func (c *tableConverter) Functions() []*metastorev1alpha1.Function {
+	return c.functionsSlice
+}
+
+// AddString to the string table and return the strings index in the table.
+func (c *tableConverter) AddString(s string) int {
+	if i, ok := c.stringsIndex[s]; ok {
+		c.stringsDedup++
+		return i
+	}
+	c.stringsSlice = append(c.stringsSlice, s)
+	c.stringsIndex[s] = len(c.stringsSlice) - 1
+	return c.stringsIndex[s]
+}
+
+// AddMapping to the mappings table and return the mappings index in the table.
+func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) int {
+	if m == nil {
+		return 0
+	}
+	if i, ok := c.mappingsIndex[m.Id]; ok {
+		return i
+	}
+
+	_ = c.AddString(m.File)
+	_ = c.AddString(m.BuildId)
+
+	c.mappingsSlice = append(c.mappingsSlice, m)
+	c.mappingsIndex[m.Id] = len(c.mappingsSlice) - 1
+	return c.mappingsIndex[m.Id]
+}
+
+func (c *tableConverter) AddLocation(l *profile.Location) int {
+	if i, ok := c.locationsIndex[l.ID]; ok {
+		c.locationsDedup++
+		return i
+	}
+
+	var mid int
+	if l.Mapping != nil {
+		// TODO: Assumes it's there, might panic
+		mid = c.mappingsIndex[l.Mapping.Id]
+	}
+
+	lines := make([]*metastorev1alpha1.Line, 0, len(l.Lines))
+	for _, line := range l.Lines {
+		c.AddFunction(line.Function)
+	}
+
+	msl := &metastorev1alpha1.Location{
+		// Id Not important for the frontend
+		Address:   l.Address,
+		MappingId: strconv.Itoa(mid),
+		IsFolded:  l.IsFolded,
+		Lines:     lines,
+	}
+
+	c.locationsSlice = append(c.locationsSlice, msl)
+	c.locationsIndex[l.ID] = len(c.locationsSlice) - 1
+	return c.locationsIndex[l.ID]
+}
+
+func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) int {
+	if i, ok := c.functionsIndex[f.Id]; ok {
+		c.functionsDedup++
+		return i
+	}
+
+	c.AddString(f.Name)
+	c.AddString(f.Filename)
+	c.AddString(f.SystemName)
+
+	c.functionsSlice = append(c.functionsSlice, f)
+	c.functionsIndex[f.Id] = len(c.functionsSlice) - 1
+	return c.functionsIndex[f.Id]
 }
