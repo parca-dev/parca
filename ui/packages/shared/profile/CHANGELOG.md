@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.48](https://github.com/parca-dev/parca/compare/ui-v0.16.47...ui-v0.16.48) (2022-10-17)
+
+**Note:** Version bump only for package @parca/profile
+
 ## [0.16.44](https://github.com/parca-dev/parca/compare/ui-v0.16.43...ui-v0.16.44) (2022-10-13)
 
 **Note:** Version bump only for package @parca/profile

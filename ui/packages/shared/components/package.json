@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.44",
+  "version": "0.16.48",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "@parca/dynamicsize": "^0.16.22",
     "@parca/functions": "^0.16.22",
     "@parca/icons": "^0.16.22",
-    "@parca/parser": "^0.16.22",
+    "@parca/parser": "^0.16.48",
     "@parca/store": "^0.16.22",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@types/cytoscape": "3.19.9",
