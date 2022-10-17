@@ -10,9 +10,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "@types/nearley": "2.11.2",
+  "dependencies": {
+    "moo": "^0.5.2",
     "nearley": "2.20.1"
+  },
+  "devDependencies": {
+    "@types/nearley": "2.11.2"
   },
   "publishConfig": {
     "access": "public",
