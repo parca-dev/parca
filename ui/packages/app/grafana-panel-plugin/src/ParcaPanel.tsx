@@ -36,7 +36,7 @@ function extractData<T>(data: any): T {
   return data.series[0].fields[0].values.get(0);
 }
 
-export const ParcaPanel: React.FC<Props> = ({ data, width, height, options }) => {
+export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
   const styles = getStyles();
 
   const profileVisState = useInMemoryProfileVisState();
