@@ -19,7 +19,8 @@
       "packages/shared/*"
     ],
     "nohoist": [
-      "**/d3"
+      "**/d3",
+      "**/jest"
     ]
   },
   "dependencies": {

@@ -19,4 +19,7 @@ module.exports = {
     '\\.(css|scss)$': 'identity-obj-proxy',
   },
   testEnvironment: 'jsdom',
+  env: {
+    'jest/globals': true,
+  },
 };

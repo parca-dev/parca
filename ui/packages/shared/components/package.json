@@ -21,8 +21,6 @@
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "classnames": "^2.3.1",
     "cytoscape": "3.23.0",
-    "d3": "7.6.1",
-    "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.0",
     "konva": "8.3.13",
     "react-cytoscapejs": "1.2.1",
@@ -33,7 +31,6 @@
   "devDependencies": {
     "@types/cytoscape": "3.19.9",
     "@types/react-cytoscapejs": "1.2.2",
-    "@types/d3": "7.4.0",
     "@types/react-datepicker": "4.4.2",
     "react": "18.2.0",
     "react-dom": "18.2.0"
