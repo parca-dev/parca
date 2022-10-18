@@ -15,8 +15,8 @@ import React, { useState } from 'react';
 import { Provider } from 'react-redux';
 import { PanelProps } from '@grafana/data';
 import { css, cx } from 'emotion';
-import { stylesFactory, useTheme } from '@grafana/ui';
-import { ProfileView, VisualizationType, ProfileVisState, GrafanaParcaData } from '@parca/profile';
+import { stylesFactory } from '@grafana/ui';
+import { ProfileView, VisualizationType, ProfileVisState, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
 import { store } from '@parca/store';
 
 import '@parca/profile/dist/styles.css';
@@ -36,8 +36,7 @@ function extractData<T>(data: any): T {
   return data.series[0].fields[0].values.get(0);
 }
 
-export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
-  const theme = useTheme();
+export const ParcaPanel: React.FC<Props> = ({ data, width, height, options }) => {
   const styles = getStyles();
 
   const profileVisState = useInMemoryProfileVisState();
@@ -64,8 +63,7 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
           css`
             width: ${width}px;
             height: ${height}px;
-          `,
-          { dark: theme.isDark }
+          `
         )}
       >
         <ProfileView
@@ -74,6 +72,14 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
           sampleUnit={flamegraphData.data?.unit ?? 'bytes'}
           onDownloadPProf={actions.downloadPprof}
           profileVisState={profileVisState}
+          profileSource={
+            new MergedProfileSource(
+              data.timeRange.from.valueOf(),
+              data.timeRange.to.valueOf(),
+              (data.request?.targets[0] as any).parcaQuery
+            )
+          }
+          queryClient={actions.getQueryClient()}
         />
       </div>
     </Provider>
@@ -91,12 +97,6 @@ const getStyles = stylesFactory(() => {
       position: absolute;
       top: 0;
       left: 0;
-    `,
-    textBox: css`
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      padding: 10px;
     `,
     errorWrapper: css`
       display: flex;

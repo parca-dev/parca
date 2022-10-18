@@ -86,10 +86,13 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
         },
         topTableData: { loading: false, data: topTableReport.oneofKind === 'top' ? topTableReport.top : undefined },
         actions: {
-          downloadPprof: async () => {
-            const blob = await downloadPprof(profileSource.QueryRequest(), this.queryClient, {});
-            saveAsBlob(blob, 'profile.pb.gz');
+          downloadPprof: () => {
+            void (async () => {
+              const blob = await downloadPprof(profileSource.QueryRequest(), this.queryClient, {});
+              saveAsBlob(blob, 'profile.pb.gz');
+            })();
           },
+          getQueryClient: () => this.queryClient,
         },
       };
     } catch (err) {
