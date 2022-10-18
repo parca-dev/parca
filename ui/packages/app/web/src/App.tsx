@@ -19,6 +19,7 @@ import './style/file-input.css';
 import './style/metrics.css';
 import './style/profile.css';
 import './style/sidenav.css';
+import 'react-datepicker/dist/react-datepicker.css';
 import Header from './pages/layouts/Header';
 import ThemeProvider from './pages/layouts/ThemeProvider';
 import HomePage from './pages/index';

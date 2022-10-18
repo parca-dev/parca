@@ -13,6 +13,11 @@
       "groupName": "buf"
     },
     {
+      "description": "Group packages from go-grpc-middleware monorepo together",
+      "matchSourceUrls": ["https://github.com/grpc-ecosystem/go-grpc-middleware"],
+      "groupName": "go-grpc-middleware-monorepo"
+    },
+    {
       "description": "Group grpc-gateway packages",
       "matchSourceUrls": ["https://github.com/grpc-ecosystem/grpc-gateway"],
       "groupName": "grpc-gateway"

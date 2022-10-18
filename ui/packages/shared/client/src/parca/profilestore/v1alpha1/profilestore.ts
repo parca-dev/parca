@@ -12,6 +12,8 @@ import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { Duration } from "../../../google/protobuf/duration";
+import { Timestamp } from "../../../google/protobuf/timestamp";
 /**
  * WriteRawRequest writes a pprof profile for a given tenant
  *
@@ -108,6 +110,58 @@ export interface RawSample {
      * @generated from protobuf field: bytes raw_profile = 1;
      */
     rawProfile: Uint8Array;
+}
+/**
+ * AgentsRequest is the request to retrieve a list of agents
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.AgentsRequest
+ */
+export interface AgentsRequest {
+}
+/**
+ * AgentsResponse is the request to retrieve a list of agents
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.AgentsResponse
+ */
+export interface AgentsResponse {
+    /**
+     * agents is a list of agents
+     *
+     * @generated from protobuf field: repeated parca.profilestore.v1alpha1.Agent agents = 1;
+     */
+    agents: Agent[];
+}
+/**
+ * Agent is the agent representation
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.Agent
+ */
+export interface Agent {
+    /**
+     * id is the agent identity that either represent by the node name or the IP address.
+     * When node name is not found, this will fallback to IP address.
+     *
+     * @generated from protobuf field: string id = 1;
+     */
+    id: string;
+    /**
+     * last_error is the error message most recently received from a push attempt
+     *
+     * @generated from protobuf field: string last_error = 2;
+     */
+    lastError: string;
+    /**
+     * last_push is the time stamp the last push request was performed
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp last_push = 3;
+     */
+    lastPush?: Timestamp;
+    /**
+     * last_push_duration is the duration of the last push request
+     *
+     * @generated from protobuf field: google.protobuf.Duration last_push_duration = 4;
+     */
+    lastPushDuration?: Duration;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class WriteRawRequest$Type extends MessageType<WriteRawRequest> {
@@ -398,9 +452,156 @@ class RawSample$Type extends MessageType<RawSample> {
  * @generated MessageType for protobuf message parca.profilestore.v1alpha1.RawSample
  */
 export const RawSample = new RawSample$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AgentsRequest$Type extends MessageType<AgentsRequest> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.AgentsRequest", []);
+    }
+    create(value?: PartialMessage<AgentsRequest>): AgentsRequest {
+        const message = {};
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<AgentsRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AgentsRequest): AgentsRequest {
+        return target ?? this.create();
+    }
+    internalBinaryWrite(message: AgentsRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.AgentsRequest
+ */
+export const AgentsRequest = new AgentsRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AgentsResponse$Type extends MessageType<AgentsResponse> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.AgentsResponse", [
+            { no: 1, name: "agents", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Agent }
+        ]);
+    }
+    create(value?: PartialMessage<AgentsResponse>): AgentsResponse {
+        const message = { agents: [] };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<AgentsResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AgentsResponse): AgentsResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated parca.profilestore.v1alpha1.Agent agents */ 1:
+                    message.agents.push(Agent.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AgentsResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated parca.profilestore.v1alpha1.Agent agents = 1; */
+        for (let i = 0; i < message.agents.length; i++)
+            Agent.internalBinaryWrite(message.agents[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.AgentsResponse
+ */
+export const AgentsResponse = new AgentsResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Agent$Type extends MessageType<Agent> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.Agent", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "last_error", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "last_push", kind: "message", T: () => Timestamp },
+            { no: 4, name: "last_push_duration", kind: "message", T: () => Duration }
+        ]);
+    }
+    create(value?: PartialMessage<Agent>): Agent {
+        const message = { id: "", lastError: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<Agent>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Agent): Agent {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* string last_error */ 2:
+                    message.lastError = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp last_push */ 3:
+                    message.lastPush = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastPush);
+                    break;
+                case /* google.protobuf.Duration last_push_duration */ 4:
+                    message.lastPushDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.lastPushDuration);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Agent, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* string last_error = 2; */
+        if (message.lastError !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.lastError);
+        /* google.protobuf.Timestamp last_push = 3; */
+        if (message.lastPush)
+            Timestamp.internalBinaryWrite(message.lastPush, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Duration last_push_duration = 4; */
+        if (message.lastPushDuration)
+            Duration.internalBinaryWrite(message.lastPushDuration, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.Agent
+ */
+export const Agent = new Agent$Type();
 /**
  * @generated ServiceType for protobuf service parca.profilestore.v1alpha1.ProfileStoreService
  */
 export const ProfileStoreService = new ServiceType("parca.profilestore.v1alpha1.ProfileStoreService", [
     { name: "WriteRaw", options: { "google.api.http": { post: "/profiles/writeraw", body: "*" } }, I: WriteRawRequest, O: WriteRawResponse }
+]);
+/**
+ * @generated ServiceType for protobuf service parca.profilestore.v1alpha1.AgentsService
+ */
+export const AgentsService = new ServiceType("parca.profilestore.v1alpha1.AgentsService", [
+    { name: "Agents", options: { "google.api.http": { get: "/agents" } }, I: AgentsRequest, O: AgentsResponse }
 ]);

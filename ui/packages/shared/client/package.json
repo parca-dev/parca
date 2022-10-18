@@ -1,12 +1,13 @@
 {
   "name": "@parca/client",
-  "version": "0.16.23",
+  "version": "0.16.49",
   "description": "Parca API Client",
   "main": "src/index.ts",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
-    "build": "tsc"
+    "build": "tsc",
+    "watch": "tsc-watch"
   },
   "dependencies": {
     "@protobuf-ts/runtime": "^2.5.0",

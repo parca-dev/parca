@@ -33,7 +33,7 @@ jobs:
           - arm64
     steps:
     - id: skip-check
-      uses: fkirc/skip-duplicate-actions@b8076051474d234b9bf70d23464609b88d271060 # tag=v5.1.0
+      uses: fkirc/skip-duplicate-actions@f11521568414503656a5af807dc3018c012552c4 # tag=v5.2.0
       continue-on-error: true
       with:
         do_not_skip: '["schedule", "workflow_dispatch"]'
@@ -49,7 +49,7 @@ jobs:
           ]
         skip_after_successful_duplicate: false
 
-    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+    - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
       if: ${{ steps.skip-check.outputs.should_skip != 'true' }}
 
     - name: Set up Go
@@ -62,7 +62,7 @@ jobs:
 
     - name: Set up Node.js
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
-      uses: actions/setup-node@969bd2663942d722d85b6a8626225850c2f7be4b # tag=v3.5.0
+      uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # tag=v3.5.1
       with:
         node-version-file: .node-version
         cache: 'yarn'

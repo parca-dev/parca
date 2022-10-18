@@ -51,7 +51,7 @@ go/bin: go/deps
 	go build $(SANITIZERS) -o bin/ ./cmd/parca
 
 # renovate: datasource=go depName=mvdan.cc/gofumpt
-GOFUMPT_VERSION := v0.3.1
+GOFUMPT_VERSION := v0.4.0
 gofumpt:
 ifeq (, $(shell which gofumpt))
 	go install mvdan.cc/gofumpt@$(GOFUMPT_VERSION)

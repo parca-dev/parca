@@ -18,6 +18,12 @@ Then, start the Parca backend by running the command below. The `--cors-allowed-
 
 Now the Parca backend will be running and available at `localhost:7070`.
 
+Because we fetch the transpiled Typescript code from the shared `@parca` packages in the `shared/*` folder, we need to run one more command before we run the development for the React app. This command runs `tsc` in watch mode and also compiles Tailwind CSS for the affected packages.
+
+```shell
+yarn run watch
+```
+
 Finally, run the development server for the React app:
 
 ```shell
