@@ -43,7 +43,7 @@ export const downloadPprof = async (
   return blob;
 };
 
-export const truncateString = (str: string, num: number) => {
+export const truncateString = (str: string, num: number): string => {
   if (str.length <= num) {
     return str;
   }

@@ -57,6 +57,8 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0): (
       bottom: domRect.y + y,
     } as DOMRect);
 }
+const testStr =
+  '304d6656486c444d49773247312d5656327545722f59313658417076684e62336978576a4b636f4b6b2f533239316f6a62742d53535a51544845454b6c5a2f67545a4a4b6d5f53456d667344712d38654a4c55';
 
 const TooltipMetaInfo = ({
   hoveringNode,
@@ -124,18 +126,16 @@ const TooltipMetaInfo = ({
           </td>
         </tr>
       )}
-      {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.buildId !== '' && (
-        <tr>
-          <td className="w-1/5">Build Id</td>
-          <td className="w-4/5 break-all">
-            <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.buildId}>
-              <button className="cursor-pointer">
-                {truncateString(getLastItem(hoveringNode.meta.mapping.buildId) as string, 16)}
-              </button>
-            </CopyToClipboard>
-          </td>
-        </tr>
-      )}
+      {/* {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.buildId !== '' && ( */}
+      <tr>
+        <td className="w-1/5">Build Id</td>
+        <td className="w-4/5 break-all">
+          <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.buildId}>
+            <button className="cursor-pointer">{truncateString(testStr, 16)}</button>
+          </CopyToClipboard>
+        </td>
+      </tr>
+      {/* )} */}
     </>
   );
 };
