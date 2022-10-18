@@ -18,7 +18,7 @@ import {usePopper} from 'react-popper';
 import {CallgraphNode, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
-import {hexifyAddress} from '../';
+import {hexifyAddress, truncateString} from '../';
 
 interface GraphTooltipProps {
   x: number;
@@ -130,7 +130,7 @@ const TooltipMetaInfo = ({
           <td className="w-4/5 break-all">
             <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.buildId}>
               <button className="cursor-pointer">
-                {getLastItem(hoveringNode.meta.mapping.buildId)}
+                {truncateString(getLastItem(hoveringNode.meta.mapping.buildId) as string, 16)}
               </button>
             </CopyToClipboard>
           </td>
