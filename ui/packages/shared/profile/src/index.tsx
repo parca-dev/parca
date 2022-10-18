@@ -16,6 +16,7 @@ import type {Props as CallgraphProps} from '@parca/profile/src/Callgraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import type {FlamegraphData, TopTableData} from './ProfileView';
+import {QueryServiceClient} from '@parca/client';
 
 export * from './IcicleGraph';
 export * from './ProfileIcicleGraph';
@@ -37,6 +38,7 @@ interface GrafanaParcaDataPayload {
   topTableData: TopTableData;
   actions: {
     downloadPprof: () => void;
+    getQueryClient: () => QueryServiceClient;
   };
   error?: undefined;
 }
