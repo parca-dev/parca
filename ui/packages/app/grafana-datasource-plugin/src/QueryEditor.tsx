@@ -67,7 +67,6 @@ export const QueryEditor: FunctionComponent<
       if (parcaQuery === stateQuery.parcaQuery) {
         return;
       }
-      console.log('parcaQuery', parcaQuery);
       onChange({...stateQuery, parcaQuery});
       // executes the query
       onRunQuery();

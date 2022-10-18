@@ -22,19 +22,23 @@ import {
   FieldType,
 } from '@grafana/data';
 
-import { ParcaQuery, ParcaDataSourceOptions, defaultQuery } from './types';
-import { downloadPprof, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
-import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
-import { QueryRequest_ReportType, QueryServiceClient } from '@parca/client';
-import { saveAsBlob } from '@parca/functions';
+import {ParcaQuery, ParcaDataSourceOptions, defaultQuery} from './types';
+import {downloadPprof, GrafanaParcaData, MergedProfileSource} from '@parca/profile';
+import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
+import {
+  QueryRequest_ReportType,
+  QueryServiceClient,
+  HealthClient,
+  HealthCheckResponse_ServingStatus,
+} from '@parca/client';
+import {saveAsBlob} from '@parca/functions';
 
 export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions> {
-  instanceSettings: DataSourceInstanceSettings<ParcaDataSourceOptions>;
   queryClient: QueryServiceClient;
+  healthClient: HealthClient;
 
   constructor(instanceSettings: DataSourceInstanceSettings<ParcaDataSourceOptions>) {
     super(instanceSettings);
-    this.instanceSettings = instanceSettings;
     if (instanceSettings.jsonData.APIEndpoint == null) {
       throw new Error('APIEndpoint is not set');
     }
@@ -43,28 +47,33 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
         baseUrl: `${instanceSettings.jsonData.APIEndpoint}`,
       })
     );
+    this.healthClient = new HealthClient(
+      new GrpcWebFetchTransport({
+        baseUrl: `${instanceSettings.jsonData.APIEndpoint}`,
+      })
+    );
   }
 
   async query(options: DataQueryRequest<ParcaQuery>): Promise<DataQueryResponse> {
-    const { range } = options;
+    const {range} = options;
     const from = range.from.valueOf();
     const to = range.to.valueOf();
 
     // Return a constant for each query.
     const data = await Promise.all(
-      options.targets.map(async (target) => {
+      options.targets.map(async target => {
         const query = defaults(target, defaultQuery);
 
         const frame = new MutableDataFrame({
           refId: query.refId,
-          fields: [{ name: 'data', type: FieldType.other }],
+          fields: [{name: 'data', type: FieldType.other}],
         });
         frame.appendRow([await this.getData(from, to, query)]);
         return frame;
       })
     );
 
-    return { data };
+    return {data};
   }
 
   async getData(from: number, to: number, query: ParcaQuery): Promise<GrafanaParcaData> {
@@ -77,17 +86,21 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
     try {
       const [
         {
-          response: { report: flamegraphReport },
+          response: {report: flamegraphReport},
         },
         {
-          response: { report: topTableReport },
+          response: {report: topTableReport},
         },
-      ] = await Promise.all([this.queryClient.query(flamegraphReq), this.queryClient.query(topTableReq)]);
+      ] = await Promise.all([
+        this.queryClient.query(flamegraphReq),
+        this.queryClient.query(topTableReq),
+      ]);
 
       return {
         flamegraphData: {
           loading: false,
-          data: flamegraphReport.oneofKind === 'flamegraph' ? flamegraphReport.flamegraph : undefined,
+          data:
+            flamegraphReport.oneofKind === 'flamegraph' ? flamegraphReport.flamegraph : undefined,
         },
         topTableData: {
           loading: false,
@@ -104,19 +117,28 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
         },
       };
     } catch (err) {
-      return { error: new Error(JSON.stringify(err)) };
+      return {error: new Error(JSON.stringify(err))};
     }
   }
 
-  async testDatasource(): Promise<{ status: string; message?: string }> {
-    // Implement a health check for your data source.
-    if (this.instanceSettings.jsonData.APIEndpoint == null) {
-      return { status: 'error', message: 'APIEndpoint is not set' };
+  async testDatasource(): Promise<{status: string; message?: string}> {
+    try {
+      // Implement a health check for your data source.
+      const {response} = await this.healthClient.check({
+        service: '',
+      });
+      if (response.status === HealthCheckResponse_ServingStatus.SERVING) {
+        return {
+          status: 'success',
+          message: 'Data source is working',
+        };
+      }
+    } catch (err) {
+      console.log('Error while validating health check', err);
     }
-    // const healthcheckURL = `${this.instanceSettings.jsonData.APIEndpoint}/grpc-health-probe`;
     return {
-      status: 'success',
-      message: 'Success',
+      status: 'error',
+      message: 'Data source is not working',
     };
   }
 }
