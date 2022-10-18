@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
-          node-version: "14.x"
+          node-version: '14.x'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
@@ -58,7 +58,7 @@ jobs:
         if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: actions/setup-go@v2
         with:
-          go-version: "1.15"
+          go-version: '1.15'
 
       - name: Test backend
         if: steps.check-for-backend.outputs.has-backend == 'true'

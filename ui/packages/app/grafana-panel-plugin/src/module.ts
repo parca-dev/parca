@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PanelPlugin } from '@grafana/data';
-import { ParcaPanel } from './ParcaPanel';
+import {PanelPlugin} from '@grafana/data';
+import {ParcaPanel} from './ParcaPanel';
 
-export const plugin = new PanelPlugin<{}>(ParcaPanel).setPanelOptions((builder) => {
+export const plugin = new PanelPlugin<{}>(ParcaPanel).setPanelOptions(builder => {
   return builder;
 });

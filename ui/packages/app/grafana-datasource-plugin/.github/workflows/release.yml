@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*.*.*" # Run workflow on version tags, e.g. v1.0.0.
+      - 'v*.*.*' # Run workflow on version tags, e.g. v1.0.0.
 
 jobs:
   release:
@@ -15,12 +15,12 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
-          node-version: "14.x"
+          node-version: '14.x'
 
       - name: Setup Go environment
         uses: actions/setup-go@v2
         with:
-          go-version: "1.15"
+          go-version: '1.15'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path

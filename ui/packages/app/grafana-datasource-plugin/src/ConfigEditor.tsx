@@ -11,28 +11,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { ChangeEvent, PureComponent } from 'react';
-import { LegacyForms } from '@grafana/ui';
-import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
-import { ParcaDataSourceOptions } from './types';
+import React, {ChangeEvent, PureComponent} from 'react';
+import {LegacyForms} from '@grafana/ui';
+import {DataSourcePluginOptionsEditorProps} from '@grafana/data';
+import {ParcaDataSourceOptions} from './types';
 
-const { FormField } = LegacyForms;
+const {FormField} = LegacyForms;
 
 interface Props extends DataSourcePluginOptionsEditorProps<ParcaDataSourceOptions> {}
 
 export class ConfigEditor extends PureComponent<Props, {}> {
   onPathChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    const { onOptionsChange, options } = this.props;
+    const {onOptionsChange, options} = this.props;
     const jsonData = {
       ...options.jsonData,
       APIEndpoint: event.target.value,
     };
-    onOptionsChange({ ...options, jsonData });
+    onOptionsChange({...options, jsonData});
   };
 
   // Secure field (only sent to the backend)
   onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    const { onOptionsChange, options } = this.props;
+    const {onOptionsChange, options} = this.props;
     onOptionsChange({
       ...options,
       secureJsonData: {
@@ -42,7 +42,7 @@ export class ConfigEditor extends PureComponent<Props, {}> {
   };
 
   onResetAPIKey = (): void => {
-    const { onOptionsChange, options } = this.props;
+    const {onOptionsChange, options} = this.props;
     onOptionsChange({
       ...options,
       secureJsonFields: {
@@ -57,8 +57,8 @@ export class ConfigEditor extends PureComponent<Props, {}> {
   };
 
   render(): JSX.Element {
-    const { options } = this.props;
-    const { jsonData } = options;
+    const {options} = this.props;
+    const {jsonData} = options;
 
     return (
       <div className="gf-form-group">
