@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "panel",
-  "name": "Parca Panel",
+  "name": "Parca Flamegraph",
   "id": "parca-panel",
   "info": {
     "description": "Parca panel plugin for Grafana",
