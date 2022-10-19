@@ -103,10 +103,10 @@ const TooltipMetaInfo = ({
             <td className="w-4/5 break-all">
               <CopyToClipboard
                 onCopy={onCopy}
-                text={' 0x' + hoveringNode.meta.location.address.toString()}
+                text={hexifyAddress(hoveringNode.meta.location.address)}
               >
                 <button className="cursor-pointer">
-                  {' 0x' + hoveringNode.meta.location.address.toString()}
+                  {hexifyAddress(hoveringNode.meta.location.address)}
                 </button>
               </CopyToClipboard>
             </td>
