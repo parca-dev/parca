@@ -161,6 +161,16 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 				Flamegraph: fg,
 			},
 		}, nil
+	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
+		fg, err := GenerateFlamegraphTable(ctx, q.tracer, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
+		}
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Flamegraph{
+				Flamegraph: fg,
+			},
+		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
 		pp, err := GenerateFlatPprof(ctx, p)
 		if err != nil {

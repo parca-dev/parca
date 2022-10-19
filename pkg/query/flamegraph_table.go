@@ -24,7 +24,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile.Profile) (*pb.Flamegraph, error) {
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile) (*pb.Flamegraph, error) {
 	rootNode := &pb.FlamegraphNode{}
 	current := rootNode
 
@@ -53,7 +53,7 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 			li := tables.AddLocation(locations[i])
 			location := tables.locationsSlice[li]
 
-			nodes := locationToTreeNodes(location, li)
+			nodes := tableLocationToTreeNodes(location, li)
 			for j := len(nodes) - 1; j >= 0; j-- {
 				node := nodes[j]
 
@@ -81,7 +81,7 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 
 					current = node
 
-					// There is a case where locationToTreeNodes returns the node pointing to its parent,
+					// There is a case where tableLocationToTreeNodes returns the node pointing to its parent,
 					// resulting in an endless loop. We remove all possible children and add them later ourselves.
 					current.Children = nil
 				}
@@ -146,10 +146,28 @@ func (c *tableConverter) Mappings() []*metastorev1alpha1.Mapping {
 	return c.mappingsSlice
 }
 
+// GetLocation by its index. Returns nil if index doesn't exist.
+func (c *tableConverter) GetLocation(index uint32) *metastorev1alpha1.Location {
+	if uint32(len(c.locationsSlice)) > index {
+		return nil
+	}
+	return c.locationsSlice[index]
+}
+
+// Locations returns all the locations deduplicated by their ID.
 func (c *tableConverter) Locations() []*metastorev1alpha1.Location {
 	return c.locationsSlice
 }
 
+// GetFunction by its index. Returns nil if index doesn't exist.
+func (c *tableConverter) GetFunction(index uint32) *metastorev1alpha1.Function {
+	if uint32(len(c.functionsSlice)) > index {
+		return nil
+	}
+	return c.functionsSlice[index]
+}
+
+// Functions returns all the functions deduplicated by their ID.
 func (c *tableConverter) Functions() []*metastorev1alpha1.Function {
 	return c.functionsSlice
 }
@@ -165,7 +183,8 @@ func (c *tableConverter) AddString(s string) uint32 {
 	return c.stringsIndex[s]
 }
 
-// AddMapping to the mappings table and return the mappings index in the table.
+// AddMapping by its ID and only add it if it's not yet in the table.
+// Returns the mapping's index in the table.
 func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 	if m == nil {
 		return 0
@@ -185,6 +204,8 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 	return c.mappingsIndex[m.Id]
 }
 
+// AddLocation by its ID and only add it if it's not yet in the table.
+// Returns the locations's index in the table.
 func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
 	if i, ok := c.locationsIndex[l.ID]; ok {
 		c.locationsDedup++
@@ -218,6 +239,8 @@ func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
 	return c.locationsIndex[l.ID]
 }
 
+// AddFunction by its ID and only add it if it's not yet in the table.
+// Returns the function's index in the table.
 func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 	if i, ok := c.functionsIndex[f.Id]; ok {
 		c.functionsDedup++
@@ -236,4 +259,19 @@ func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 	c.functionsSlice = append(c.functionsSlice, f)
 	c.functionsIndex[f.Id] = uint32(len(c.functionsSlice) - 1)
 	return c.functionsIndex[f.Id]
+}
+
+// tableLocationToTreeNodes converts a location to its tree nodes, if the location
+// has multiple inlined functions it creates multiple nodes for each inlined
+// function.
+func tableLocationToTreeNodes(location *metastorev1alpha1.Location, locationIndex uint32) []*pb.FlamegraphNode {
+	if len(location.Lines) > 0 {
+		// return linesToTreeNodes(location, location.MappingIndex, location.Lines)
+	}
+
+	return []*pb.FlamegraphNode{{
+		Meta: &pb.FlamegraphNodeMeta{
+			LocationIndex: locationIndex,
+		},
+	}}
 }
