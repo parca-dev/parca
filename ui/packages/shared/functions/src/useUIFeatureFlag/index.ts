@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import pick from 'lodash/pick';
-import useLocalStorageState from 'use-local-storage-state';
+import useLocalStorage from 'use-local-storage';
 
 const UI_FLAGS = 'ui-flags';
 
@@ -44,9 +44,7 @@ const useUIFeatureFlag = (
   featureFlag: string,
   defaultValue: boolean = false
 ): [boolean, (flag: boolean) => void] => {
-  const [flags, setFlags] = useLocalStorageState<{[flag: string]: boolean}>(UI_FLAGS, {
-    defaultValue: {},
-  });
+  const [flags, setFlags] = useLocalStorage<{[flag: string]: boolean}>(UI_FLAGS, {});
 
   const value = flags[featureFlag] ?? defaultValue;
   const setFlag = (flag: boolean): void => {

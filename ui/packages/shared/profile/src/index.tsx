@@ -15,6 +15,8 @@ import React from 'react';
 import type {Props as CallgraphProps} from '@parca/profile/src/Callgraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
+import type {FlamegraphData, TopTableData} from './ProfileView';
+import {QueryServiceClient} from '@parca/client';
 
 export * from './IcicleGraph';
 export * from './ProfileIcicleGraph';
@@ -22,9 +24,27 @@ export * from './ProfileSource';
 export * from './ProfileView';
 export * from './ProfileViewWithData';
 export * from './utils';
+export * from './ProfileTypeSelector';
 
 export type {CallgraphProps};
 
 const Callgraph = React.lazy(async () => await import('@parca/profile/src/Callgraph'));
 
 export {Callgraph, ProfileExplorer, ProfileTypeSelector};
+
+// Leaving this in here due to lack of a better place to put it.
+interface GrafanaParcaDataPayload {
+  flamegraphData: FlamegraphData;
+  topTableData: TopTableData;
+  actions: {
+    downloadPprof: () => void;
+    getQueryClient: () => QueryServiceClient;
+  };
+  error?: undefined;
+}
+
+interface GrafanaParcaErrorPayload {
+  error: Error;
+}
+
+export type GrafanaParcaData = GrafanaParcaErrorPayload | GrafanaParcaDataPayload;

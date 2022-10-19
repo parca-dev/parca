@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import React, {useMemo} from 'react';
-import {ProfileTypesResponse} from '@parca/client';
+import {ProfileType, ProfileTypesResponse} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {SelectElement, Select} from '@parca/components';
 
@@ -96,8 +96,9 @@ export const wellKnownProfiles: WellKnownProfiles = {
 
 function flexibleWellKnownProfileMatching(name: string): WellKnownProfile | undefined {
   const prefixExcludedName = name.split(':').slice(1).join(':');
+  const deltaExcludedName = prefixExcludedName.replace(/:delta$/, '');
   const requiredKey = Object.keys(wellKnownProfiles).find(key => {
-    if (key.endsWith(prefixExcludedName)) {
+    if (key.includes(deltaExcludedName)) {
       return true;
     }
     return false;
@@ -127,6 +128,19 @@ function profileSelectElement(
   };
 }
 
+export const normalizeProfileTypesData = (types: ProfileType[]): string[] => {
+  return types
+    .map(
+      type =>
+        `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${type.periodUnit}${
+          type.delta ? ':delta' : ''
+        }`
+    )
+    .sort((a: string, b: string): number => {
+      return a.localeCompare(b);
+    });
+};
+
 interface Props {
   profileTypesData?: ProfileTypesResponse;
   loading?: boolean;
@@ -148,16 +162,7 @@ const ProfileTypeSelector = ({
     return (error === undefined || error == null) &&
       profileTypesData !== undefined &&
       profileTypesData != null
-      ? profileTypesData.types
-          .map(
-            type =>
-              `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${
-                type.periodUnit
-              }${type.delta ? ':delta' : ''}`
-          )
-          .sort((a: string, b: string): number => {
-            return a.localeCompare(b);
-          })
+      ? normalizeProfileTypesData(profileTypesData.types)
       : [];
   }, [profileTypesData, error]);
 

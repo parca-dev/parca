@@ -10,12 +10,20 @@
     "@parca/functions": "^0.16.49",
     "@parca/parser": "^0.16.49",
     "@parca/store": "^0.16.49",
+    "d3": "7.6.1",
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",
-    "react-copy-to-clipboard": "^5.1.0"
+    "graphviz-wasm": "3.0.0",
+    "konva": "8.3.12",
+    "react-cytoscapejs": "1.2.1",
+    "react-copy-to-clipboard": "^5.1.0",
+    "react-konva": "18.2.1"
   },
   "devDependencies": {
-    "@types/react-copy-to-clipboard": "5.0.4"
+    "@types/cytoscape": "3.19.8",
+    "@types/d3": "7.4.0",
+    "@types/react-copy-to-clipboard": "5.0.4",
+    "@types/react-cytoscapejs": "1.2.2"
   },
   "main": "dist/index.js",
   "scripts": {

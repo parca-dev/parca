@@ -13,10 +13,16 @@
     "watch": "lerna run --parallel watch",
     "publish:ci": "lerna publish --yes --no-verify-access"
   },
-  "workspaces": [
-    "packages/app/*",
-    "packages/shared/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/app/*",
+      "packages/shared/*"
+    ],
+    "nohoist": [
+      "**/d3",
+      "**/jest"
+    ]
+  },
   "dependencies": {
     "d3-dag": "0.11.5",
     "date-fns": "2.29.3",
