@@ -15,6 +15,7 @@ import * as d3 from 'd3';
 import {CallgraphNode, CallgraphEdge} from '@parca/client';
 
 export const pixelsToInches = (pixels: number): number => pixels / 96;
+export const inchesToPixels = (inches: number): number => inches * 96;
 
 export const getCurvePoints = ({
   pos,
@@ -89,16 +90,14 @@ const objectAsDotAttributes = (obj: {[key: string]: string | number}): string =>
 export const jsonToDot = ({
   graph,
   width,
-  defaultNodeRadius,
   colorRange,
 }: {
   graph: {nodes: CallgraphNode[]; edges: CallgraphEdge[]};
   width: number;
-  defaultNodeRadius: number;
   colorRange: [string, string];
 }): string => {
   const {nodes, edges} = graph;
-
+  const defaultNodeRadius = 12;
   const cumulatives = nodes.map((node: CallgraphNode) => node.cumulative);
   const cumulativesRange = d3.extent(cumulatives).map(value => Number(value));
   const colorScale = d3
@@ -113,11 +112,12 @@ export const jsonToDot = ({
 
   const nodesAsStrings = nodes.map((node: CallgraphNode) => {
     const dataAttributes = {
+      label: node.meta?.function?.name ? node.meta?.function?.name.substring(0, 15) : '',
       address: node.meta?.location?.address ?? '',
       functionName: node.meta?.function?.name ?? '',
       cumulative: node.cumulative ?? '',
       root: (node.id === 'root').toString(),
-      width: nodeRadiusScale(Number(node.cumulative)) * 2,
+      // width: nodeRadiusScale(Number(node.cumulative)) * 2,
       color: colorScale(Number(node.cumulative)),
     };
 
@@ -129,7 +129,7 @@ export const jsonToDot = ({
       cumulative: edge.cumulative,
       color: colorRange[1],
       opacity: colorOpacityScale(Number(edge.cumulative)),
-      nodeRadius: nodeRadiusScale(Number(edge.cumulative)),
+      // nodeRadius: nodeRadiusScale(Number(edge.cumulative)),
     };
 
     return `"${edge.source}" -> "${edge.target}" [${objectAsDotAttributes(dataAttributes)}]`;
@@ -137,16 +137,20 @@ export const jsonToDot = ({
 
   // can provide a node label that will size the nodes appropriately (and change the layout as well to account for diff widths)
   // then needs to set fixedsize=shape
+  // ratio="1,3"
+  // size="${pixelsToInches(width)}, ${pixelsToInches(width) * 10}"
   const graphAsDot = `digraph "callgraph" {
       rankdir="BT"
+      overlap="prism"
       ratio="1,3"
-      size="${pixelsToInches(width)}, ${pixelsToInches(width)}!"
       margin=15
       edge [margin=0]
-      node [shape=circle fixedsize=true margin=0]
+      node [shape=record style=rounded fixedsize=shape height=0.3]
       ${nodesAsStrings.join(' ')}
       ${edgesAsStrings.join(' ')}
     }`;
+
+  console.log(graphAsDot);
 
   return graphAsDot;
 };

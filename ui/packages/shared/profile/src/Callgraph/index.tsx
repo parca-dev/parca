@@ -14,11 +14,11 @@
 import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
-import {Stage, Layer, Circle, Arrow, Label, Text} from 'react-konva';
-import {Callgraph as CallgraphType, CallgraphEdge, CallgraphNode} from '@parca/client';
+import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
+import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {useAppSelector, selectSearchNodeString} from '@parca/store';
 import {isSearchMatch} from '@parca/functions';
-import {jsonToDot, getCurvePoints} from './utils';
+import {jsonToDot, getCurvePoints, inchesToPixels} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
 import Tooltip from '../GraphTooltip';
 
@@ -26,7 +26,6 @@ interface NodeProps {
   node: INode;
   hoveredNode: INode | null;
   setHoveredNode: (node: INode | null) => void;
-  currentSearchString: string;
 }
 interface EdgeProps {
   edge: GraphvizEdge;
@@ -49,6 +48,7 @@ interface GraphvizNode extends CallgraphNode {
   functionName: string;
   color: string;
   width: string;
+  height: string;
 }
 
 interface INode extends GraphvizNode {
@@ -65,8 +65,7 @@ interface GraphvizEdge extends CallgraphEdge {
   head: number;
   pos: string;
   color: string;
-  opacity: number;
-  nodeRadius: number;
+  opacity: string;
 }
 
 interface GraphvizType {
@@ -75,27 +74,26 @@ interface GraphvizType {
   bb: string;
 }
 
-const Node = ({node, hoveredNode, setHoveredNode, currentSearchString}: NodeProps): JSX.Element => {
+const Node = ({node, setHoveredNode}: NodeProps): JSX.Element => {
   const {
     data: {id},
     x,
     y,
     color,
     functionName,
-    width,
+    width: widthString,
+    height: heightString,
   } = node;
-
-  const radius = Number(width) / 2;
-
-  const hoverRadius = radius + 3;
-  const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
+  const currentSearchString = useAppSelector(selectSearchNodeString);
   const isCurrentSearchMatch = isSearchMatch(currentSearchString, functionName);
+  const width = Number(widthString);
+  const height = Number(heightString);
 
   return (
-    <Label x={+x} y={+y}>
-      <Circle
-        draggable
-        radius={isHovered || isCurrentSearchMatch ? hoverRadius : radius}
+    <Label x={x - inchesToPixels(width) / 2} y={y - inchesToPixels(height) / 2}>
+      <Rect
+        width={inchesToPixels(width)}
+        height={inchesToPixels(height)}
         // TODO: May want to replace "red" with a different color on search match
         fill={isCurrentSearchMatch ? 'red' : color}
         onMouseOver={() => {
@@ -106,13 +104,11 @@ const Node = ({node, hoveredNode, setHoveredNode, currentSearchString}: NodeProp
         }}
       />
       <Text
-        text={functionName.substring(0, 1)}
+        text={functionName.substring(0, 15)}
         fontSize={16}
         fill="white"
-        width={radius * 2}
-        height={radius * 2}
-        x={-radius}
-        y={-radius}
+        width={inchesToPixels(width)}
+        height={inchesToPixels(height)}
         align="center"
         verticalAlign="middle"
         listening={false}
@@ -122,7 +118,7 @@ const Node = ({node, hoveredNode, setHoveredNode, currentSearchString}: NodeProp
 };
 
 const Edge = ({edge, sourceNode, targetNode, xScale, yScale}: EdgeProps): JSX.Element => {
-  const {pos, color, head, tail, opacity, nodeRadius} = edge;
+  const {pos, color, head, tail, opacity} = edge;
 
   const points = getCurvePoints({
     pos,
@@ -130,7 +126,8 @@ const Edge = ({edge, sourceNode, targetNode, xScale, yScale}: EdgeProps): JSX.El
     yScale,
     source: [sourceNode.x, sourceNode.y],
     target: [targetNode.x, targetNode.y],
-    offsetRadius: nodeRadius,
+    // TODO: update arrow offset radius to match rect height!
+    offsetRadius: 10,
     isSelfLoop: head === tail,
   });
 
@@ -143,7 +140,7 @@ const Edge = ({edge, sourceNode, targetNode, xScale, yScale}: EdgeProps): JSX.El
       pointerLength={10}
       pointerWidth={10}
       fill={color}
-      opacity={opacity}
+      opacity={Number(opacity)}
     />
   );
 };
@@ -165,7 +162,6 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
       const dataAsDot = jsonToDot({
         graph,
         width,
-        defaultNodeRadius: DEFAULT_NODE_RADIUS,
         colorRange,
       });
 
@@ -198,7 +194,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     .domain([0, Number(graphBB[3])])
     .range([0, height - 2 * MARGIN]);
 
-  const nodes: INode[] = gvizNodes.map((node: GraphvizNode) => {
+  const nodes: INode[] = gvizNodes.map((node: GraphvizNode, i) => {
     const [x, y] = node.pos.split(',');
     return {
       ...node,
@@ -234,7 +230,6 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
                 node={node}
                 hoveredNode={hoveredNode}
                 setHoveredNode={setHoveredNode}
-                currentSearchString={currentSearchString ?? ''}
               />
             ))}
           </Layer>
