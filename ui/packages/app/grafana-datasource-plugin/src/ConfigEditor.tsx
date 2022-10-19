@@ -76,8 +76,8 @@ export class ConfigEditor extends PureComponent<Props, {}> {
                 requests from <code>{window.location.origin}</code> origin.
                 <br />
                 Ensure that the Parca server is started with either{' '}
-                <code>--cors-allowed-origins='{window.location.origin}'</code> or{' '}
-                <code>--cors-allowed-origins='*'</code> flag. Please refer the{' '}
+                <code>--cors-allowed-origins=&apos;{window.location.origin}&apos;</code> or{' '}
+                <code>--cors-allowed-origins=&apos;*&apos;</code> flag. Please refer the{' '}
                 <a
                   href="https://www.parca.dev/docs/grafana-datasource-plugin#allow-cors-requests"
                   target="_blank"
