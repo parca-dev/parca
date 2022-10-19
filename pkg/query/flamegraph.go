@@ -110,7 +110,7 @@ type Locations interface {
 	GetLocationsByIDs(ctx context.Context, id ...[]byte) (map[string]*pb.Location, [][]byte, error)
 }
 
-func aggregateByFunction(fg *querypb.Flamegraph) *querypb.Flamegraph {
+func aggregateByFunction(metaTables *tableConverter, fg *querypb.Flamegraph) *querypb.Flamegraph {
 	oldRootNode := &querypb.FlamegraphNode{
 		Cumulative: fg.Root.Cumulative,
 		Diff:       fg.Root.Diff,
@@ -127,6 +127,11 @@ func aggregateByFunction(fg *querypb.Flamegraph) *querypb.Flamegraph {
 			Diff:       fg.Root.Diff,
 		},
 		Unit: fg.Unit,
+
+		StringTable: fg.StringTable,
+		Locations:   fg.Locations,
+		Mapping:     fg.Mapping,
+		Function:    fg.Function,
 	}
 	if !it.HasMore() {
 		return tree
@@ -244,28 +249,14 @@ func equalsByName(a, b *querypb.FlamegraphNode) bool {
 // locationToTreeNodes converts a location to its tree nodes, if the location
 // has multiple inlined functions it creates multiple nodes for each inlined
 // function.
-func locationToTreeNodes(location *profile.Location) []*querypb.FlamegraphNode {
+func locationToTreeNodes(location *pb.Location, locationIndex uint32) []*querypb.FlamegraphNode {
 	if len(location.Lines) > 0 {
-		return linesToTreeNodes(
-			location,
-			location.Mapping,
-			location.Lines,
-		)
+		// return linesToTreeNodes(location, location.MappingIndex, location.Lines)
 	}
 
-	var mappingID string
-	if location.Mapping != nil {
-		mappingID = location.Mapping.Id
-	}
 	return []*querypb.FlamegraphNode{{
 		Meta: &querypb.FlamegraphNodeMeta{
-			Location: &pb.Location{
-				Id:        location.ID,
-				MappingId: mappingID,
-				Address:   location.Address,
-				IsFolded:  location.IsFolded,
-			},
-			Mapping: location.Mapping,
+			LocationIndex: locationIndex,
 		},
 	}}
 }
@@ -273,7 +264,7 @@ func locationToTreeNodes(location *profile.Location) []*querypb.FlamegraphNode {
 // linesToTreeNodes turns inlined `lines` into a stack of TreeNode items and
 // returns the slice of items in order from outer-most to inner-most.
 func linesToTreeNodes(
-	location *profile.Location,
+	location *pb.Location,
 	mapping *pb.Mapping,
 	lines []profile.LocationLine,
 ) []*querypb.FlamegraphNode {
@@ -282,7 +273,7 @@ func linesToTreeNodes(
 	}
 
 	res := make([]*querypb.FlamegraphNode, len(lines))
-	var prev *querypb.FlamegraphNode
+	// var prev *querypb.FlamegraphNode
 
 	// Same as locations, lines are in order from deepest to highest in the
 	// stack. Therefore we start with the innermost, and work ourselves
@@ -290,14 +281,14 @@ func linesToTreeNodes(
 	// into our flamegraph at our "current" position that's calling
 	// linesToTreeNodes.
 	for i := 0; i < len(lines); i++ {
-		node := lineToTreeNode(
-			location,
-			mapping,
-			lines[i],
-			prev,
-		)
-		res[len(lines)-1-i] = node
-		prev = node
+		//node := lineToTreeNode(
+		//	location,
+		//	mapping,
+		//	lines[i],
+		//	prev,
+		//)
+		//res[len(lines)-1-i] = node
+		//prev = node
 	}
 
 	return res

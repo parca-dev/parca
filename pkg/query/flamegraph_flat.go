@@ -16,7 +16,6 @@ package query
 import (
 	"context"
 	"sort"
-	"strconv"
 
 	"go.opentelemetry.io/otel/trace"
 
@@ -33,13 +32,13 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 
 	tables := &tableConverter{
 		stringsSlice:   []string{},
-		stringsIndex:   map[string]int{},
+		stringsIndex:   map[string]uint32{},
 		mappingsSlice:  []*metastorev1alpha1.Mapping{},
-		mappingsIndex:  map[string]int{},
+		mappingsIndex:  map[string]uint32{},
 		locationsSlice: []*metastorev1alpha1.Location{},
-		locationsIndex: map[string]int{},
+		locationsIndex: map[string]uint32{},
 		functionsSlice: []*metastorev1alpha1.Function{},
-		functionsIndex: map[string]int{},
+		functionsIndex: map[string]uint32{},
 	}
 
 	for _, s := range p.Samples {
@@ -50,20 +49,20 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 
 		// Reverse walking the location as stacked location are like 3 > 2 > 1 > 0 where 0 is the root.
 		for i := len(locations) - 1; i >= 0; i-- {
-			location := locations[i]
+			tables.AddMapping(locations[i].Mapping)
+			li := tables.AddLocation(locations[i])
+			location := tables.locationsSlice[li]
 
-			tables.AddMapping(location.Mapping)
-			tables.AddLocation(location)
-
-			nodes := locationToTreeNodes(location)
+			nodes := locationToTreeNodes(location, li)
 			for j := len(nodes) - 1; j >= 0; j-- {
 				node := nodes[j]
 
+				// Find the index of a child that has the same location by index.
 				index := sort.Search(len(current.Children), func(i int) bool {
-					return current.Children[i].Meta.Location.Id >= node.Meta.Location.Id
+					return current.Children[i].Meta.LocationIndex >= node.Meta.LocationIndex
 				})
 
-				if index < len(current.GetChildren()) && current.Children[index].Meta.Location.Id == node.Meta.Location.Id {
+				if index < len(current.GetChildren()) && current.Children[index].Meta.LocationIndex == node.Meta.LocationIndex {
 					// Insert onto existing node
 					current = current.Children[index]
 					current.Cumulative += s.Value
@@ -113,18 +112,19 @@ func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile
 		Function:    tables.Functions(),
 	}
 
-	return aggregateByFunction(flamegraph), nil
+	return flamegraph, nil
+	// return aggregateByFunction(tables, flamegraph), nil
 }
 
 type tableConverter struct {
 	stringsSlice   []string
-	stringsIndex   map[string]int
+	stringsIndex   map[string]uint32
 	mappingsSlice  []*metastorev1alpha1.Mapping
-	mappingsIndex  map[string]int
+	mappingsIndex  map[string]uint32
 	locationsSlice []*metastorev1alpha1.Location
-	locationsIndex map[string]int
+	locationsIndex map[string]uint32
 	functionsSlice []*metastorev1alpha1.Function
-	functionsIndex map[string]int
+	functionsIndex map[string]uint32
 
 	stringsDedup   int
 	mappingDedup   int
@@ -155,18 +155,18 @@ func (c *tableConverter) Functions() []*metastorev1alpha1.Function {
 }
 
 // AddString to the string table and return the strings index in the table.
-func (c *tableConverter) AddString(s string) int {
+func (c *tableConverter) AddString(s string) uint32 {
 	if i, ok := c.stringsIndex[s]; ok {
 		c.stringsDedup++
 		return i
 	}
 	c.stringsSlice = append(c.stringsSlice, s)
-	c.stringsIndex[s] = len(c.stringsSlice) - 1
+	c.stringsIndex[s] = uint32(len(c.stringsSlice) - 1)
 	return c.stringsIndex[s]
 }
 
 // AddMapping to the mappings table and return the mappings index in the table.
-func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) int {
+func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 	if m == nil {
 		return 0
 	}
@@ -174,21 +174,24 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) int {
 		return i
 	}
 
-	_ = c.AddString(m.File)
-	_ = c.AddString(m.BuildId)
+	// Reference strings in the string table
+	m.FileStringIndex = c.AddString(m.File)
+	m.BuildIdStringIndex = c.AddString(m.BuildId)
+	m.File = ""
+	m.BuildId = ""
 
 	c.mappingsSlice = append(c.mappingsSlice, m)
-	c.mappingsIndex[m.Id] = len(c.mappingsSlice) - 1
+	c.mappingsIndex[m.Id] = uint32(len(c.mappingsSlice) - 1)
 	return c.mappingsIndex[m.Id]
 }
 
-func (c *tableConverter) AddLocation(l *profile.Location) int {
+func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
 	if i, ok := c.locationsIndex[l.ID]; ok {
 		c.locationsDedup++
 		return i
 	}
 
-	var mid int
+	var mid uint32
 	if l.Mapping != nil {
 		// TODO: Assumes it's there, might panic
 		mid = c.mappingsIndex[l.Mapping.Id]
@@ -196,33 +199,41 @@ func (c *tableConverter) AddLocation(l *profile.Location) int {
 
 	lines := make([]*metastorev1alpha1.Line, 0, len(l.Lines))
 	for _, line := range l.Lines {
-		c.AddFunction(line.Function)
+		lines = append(lines, &metastorev1alpha1.Line{
+			Line:          line.Line,
+			FunctionIndex: c.AddFunction(line.Function),
+		})
 	}
 
 	msl := &metastorev1alpha1.Location{
 		// Id Not important for the frontend
-		Address:   l.Address,
-		MappingId: strconv.Itoa(mid),
-		IsFolded:  l.IsFolded,
-		Lines:     lines,
+		Address:      l.Address,
+		MappingIndex: mid,
+		IsFolded:     l.IsFolded,
+		Lines:        lines,
 	}
 
 	c.locationsSlice = append(c.locationsSlice, msl)
-	c.locationsIndex[l.ID] = len(c.locationsSlice) - 1
+	c.locationsIndex[l.ID] = uint32(len(c.locationsSlice) - 1)
 	return c.locationsIndex[l.ID]
 }
 
-func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) int {
+func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 	if i, ok := c.functionsIndex[f.Id]; ok {
 		c.functionsDedup++
 		return i
 	}
 
-	c.AddString(f.Name)
-	c.AddString(f.Filename)
-	c.AddString(f.SystemName)
+	// Reference strings in the string table
+	f.NameStringIndex = c.AddString(f.Name)
+	f.FilenameStringIndex = c.AddString(f.Filename)
+	f.SystemNameStringIndex = c.AddString(f.SystemName)
+	f.Id = ""
+	f.Name = ""
+	f.Filename = ""
+	f.SystemName = ""
 
 	c.functionsSlice = append(c.functionsSlice, f)
-	c.functionsIndex[f.Id] = len(c.functionsSlice) - 1
+	c.functionsIndex[f.Id] = uint32(len(c.functionsSlice) - 1)
 	return c.functionsIndex[f.Id]
 }
