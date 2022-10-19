@@ -263,7 +263,8 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 		level.Debug(logger).Log("msg", "failed to determine if binary has symbols", "err", err)
 	}
 	if hasSymbols {
-		lnr, err := addr2line.Symbols(logger, f)
+		lnr, err := addr2line.Symbols(logger, f, *s.demangler)
+
 		if err == nil {
 			level.Debug(logger).Log("msg", "using symtab liner to resolve symbols")
 			return lnr, nil

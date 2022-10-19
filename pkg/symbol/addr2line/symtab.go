@@ -25,6 +25,7 @@ import (
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
 // SymtabLiner is a liner which utilizes .symtab and .dynsym sections.
@@ -32,19 +33,21 @@ type SymtabLiner struct {
 	logger log.Logger
 
 	// symbols contains sorted symbols.
-	symbols []elf.Symbol
+	symbols   []elf.Symbol
+	demangler demangle.Demangler
 }
 
 // Symbols creates a new SymtabLiner.
-func Symbols(logger log.Logger, f *elf.File) (*SymtabLiner, error) {
+func Symbols(logger log.Logger, f *elf.File, demangler demangle.Demangler) (*SymtabLiner, error) {
 	symbols, err := symtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
 	}
 
 	return &SymtabLiner{
-		logger:  log.With(logger, "liner", "symtab"),
-		symbols: symbols,
+		logger:    log.With(logger, "liner", "symtab"),
+		symbols:   symbols,
+		demangler: demangler,
 	}, nil
 }
 
@@ -66,10 +69,10 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, er
 
 	lines = append(lines, profile.LocationLine{
 		Line: line,
-		Function: &pb.Function{
-			Name:     lnr.symbols[i-1].Name,
-			Filename: file,
-		},
+		Function: lnr.demangler.Demangle(&pb.Function{
+			SystemName: lnr.symbols[i-1].Name,
+			Filename:   file,
+		}),
 	})
 	return lines, nil
 }

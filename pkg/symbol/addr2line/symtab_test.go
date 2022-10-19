@@ -71,8 +71,9 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			wantLines: []profile.LocationLine{
 				{
 					Function: &metastorev1alpha1.Function{
-						Name:     "bar",
-						Filename: "?",
+						Name:       "bar",
+						SystemName: "bar",
+						Filename:   "?",
 					},
 					Line: 0,
 				},
@@ -105,8 +106,9 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			wantLines: []profile.LocationLine{
 				{
 					Function: &metastorev1alpha1.Function{
-						Name:     "foo",
-						Filename: "?",
+						Name:       "foo",
+						SystemName: "foo",
+						Filename:   "?",
 					},
 					Line: 0,
 				},
@@ -139,8 +141,9 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			wantLines: []profile.LocationLine{
 				{
 					Function: &metastorev1alpha1.Function{
-						Name:     "foo",
-						Filename: "?",
+						Name:       "foo",
+						SystemName: "foo",
+						Filename:   "?",
 					},
 					Line: 0,
 				},
@@ -173,8 +176,34 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			wantLines: []profile.LocationLine{
 				{
 					Function: &metastorev1alpha1.Function{
-						Name:     "baz",
-						Filename: "?",
+						Name:       "baz",
+						SystemName: "baz",
+						Filename:   "?",
+					},
+					Line: 0,
+				},
+			},
+		},
+		{
+			name: "C++ symbols are demangled",
+			fields: fields{
+				symbols: []elf.Symbol{
+					{
+						Name:  "_Z2b1v",
+						Value: 20,
+						Size:  3,
+					},
+				},
+			},
+			args: args{
+				addr: 20,
+			},
+			wantLines: []profile.LocationLine{
+				{
+					Function: &metastorev1alpha1.Function{
+						Name:       "b1()",
+						SystemName: "_Z2b1v",
+						Filename:   "?",
 					},
 					Line: 0,
 				},
