@@ -51,10 +51,10 @@ func Symbols(logger log.Logger, f *elf.File) (*SymtabLiner, error) {
 // PCToLines looks up the line number information for a program counter (memory address).
 func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	i := sort.Search(len(lnr.symbols), func(i int) bool {
-		sym := lnr.symbols[i]
-		return sym.Value >= addr
+		return lnr.symbols[i].Value > addr
 	})
-	if i >= len(lnr.symbols) {
+
+	if i < 1 || i > len(lnr.symbols) {
 		level.Debug(lnr.logger).Log("msg", "failed to find symbol for address", "addr", addr)
 		return nil, errors.New("failed to find symbol for address")
 	}
@@ -63,29 +63,27 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, er
 		file = "?"
 		line int64 // 0
 	)
+
 	lines = append(lines, profile.LocationLine{
 		Line: line,
 		Function: &pb.Function{
-			Name:     lnr.symbols[i].Name,
+			Name:     lnr.symbols[i-1].Name,
 			Filename: file,
 		},
 	})
 	return lines, nil
 }
 
-// symtab returns symbols from the symbol table and the dynamic symbol table sections
-// extracted from the ELF file f.
+// symtab returns symbols from the symbol table extracted from the ELF file f.
 // The symbols are sorted by their memory addresses in ascending order
 // to facilitate searching.
 func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 	syms, sErr := objFile.Symbols()
-	dynSyms, dErr := objFile.DynamicSymbols()
 
-	if sErr != nil && dErr != nil {
+	if sErr != nil {
 		return nil, fmt.Errorf("failed to read symbol sections: %w", sErr)
 	}
 
-	syms = append(syms, dynSyms...)
 	sort.SliceStable(syms, func(i, j int) bool {
 		return syms[i].Value < syms[j].Value
 	})

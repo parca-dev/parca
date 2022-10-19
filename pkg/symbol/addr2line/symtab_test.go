@@ -68,10 +68,18 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			args: args{
 				addr: 4,
 			},
-			wantErr: true,
+			wantLines: []profile.LocationLine{
+				{
+					Function: &metastorev1alpha1.Function{
+						Name:     "bar",
+						Filename: "?",
+					},
+					Line: 0,
+				},
+			},
 		},
 		{
-			name: "matching symbols",
+			name: "first exact address",
 			fields: fields{
 				symbols: []elf.Symbol{
 					{
@@ -98,6 +106,74 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 				{
 					Function: &metastorev1alpha1.Function{
 						Name:     "foo",
+						Filename: "?",
+					},
+					Line: 0,
+				},
+			},
+		},
+		{
+			name: "first non exact address",
+			fields: fields{
+				symbols: []elf.Symbol{
+					{
+						Name:  "foo",
+						Value: 1,
+						Size:  3,
+					},
+					{
+						Name:  "bar",
+						Value: 10,
+						Size:  3,
+					},
+					{
+						Name:  "baz",
+						Value: 20,
+						Size:  3,
+					},
+				},
+			},
+			args: args{
+				addr: 3,
+			},
+			wantLines: []profile.LocationLine{
+				{
+					Function: &metastorev1alpha1.Function{
+						Name:     "foo",
+						Filename: "?",
+					},
+					Line: 0,
+				},
+			},
+		},
+		{
+			name: "last address",
+			fields: fields{
+				symbols: []elf.Symbol{
+					{
+						Name:  "foo",
+						Value: 1,
+						Size:  3,
+					},
+					{
+						Name:  "bar",
+						Value: 10,
+						Size:  3,
+					},
+					{
+						Name:  "baz",
+						Value: 20,
+						Size:  3,
+					},
+				},
+			},
+			args: args{
+				addr: 30,
+			},
+			wantLines: []profile.LocationLine{
+				{
+					Function: &metastorev1alpha1.Function{
+						Name:     "baz",
 						Filename: "?",
 					},
 					Line: 0,
