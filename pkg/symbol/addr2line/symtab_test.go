@@ -68,10 +68,19 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			args: args{
 				addr: 4,
 			},
-			wantErr: true,
+			wantLines: []profile.LocationLine{
+				{
+					Function: &metastorev1alpha1.Function{
+						Name:       "bar",
+						SystemName: "bar",
+						Filename:   "?",
+					},
+					Line: 0,
+				},
+			},
 		},
 		{
-			name: "matching symbols",
+			name: "first exact address",
 			fields: fields{
 				symbols: []elf.Symbol{
 					{
@@ -97,8 +106,104 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			wantLines: []profile.LocationLine{
 				{
 					Function: &metastorev1alpha1.Function{
-						Name:     "foo",
-						Filename: "?",
+						Name:       "foo",
+						SystemName: "foo",
+						Filename:   "?",
+					},
+					Line: 0,
+				},
+			},
+		},
+		{
+			name: "first non exact address",
+			fields: fields{
+				symbols: []elf.Symbol{
+					{
+						Name:  "foo",
+						Value: 1,
+						Size:  3,
+					},
+					{
+						Name:  "bar",
+						Value: 10,
+						Size:  3,
+					},
+					{
+						Name:  "baz",
+						Value: 20,
+						Size:  3,
+					},
+				},
+			},
+			args: args{
+				addr: 3,
+			},
+			wantLines: []profile.LocationLine{
+				{
+					Function: &metastorev1alpha1.Function{
+						Name:       "foo",
+						SystemName: "foo",
+						Filename:   "?",
+					},
+					Line: 0,
+				},
+			},
+		},
+		{
+			name: "last address",
+			fields: fields{
+				symbols: []elf.Symbol{
+					{
+						Name:  "foo",
+						Value: 1,
+						Size:  3,
+					},
+					{
+						Name:  "bar",
+						Value: 10,
+						Size:  3,
+					},
+					{
+						Name:  "baz",
+						Value: 20,
+						Size:  3,
+					},
+				},
+			},
+			args: args{
+				addr: 30,
+			},
+			wantLines: []profile.LocationLine{
+				{
+					Function: &metastorev1alpha1.Function{
+						Name:       "baz",
+						SystemName: "baz",
+						Filename:   "?",
+					},
+					Line: 0,
+				},
+			},
+		},
+		{
+			name: "C++ symbols are demangled",
+			fields: fields{
+				symbols: []elf.Symbol{
+					{
+						Name:  "_Z2b1v",
+						Value: 20,
+						Size:  3,
+					},
+				},
+			},
+			args: args{
+				addr: 20,
+			},
+			wantLines: []profile.LocationLine{
+				{
+					Function: &metastorev1alpha1.Function{
+						Name:       "b1()",
+						SystemName: "_Z2b1v",
+						Filename:   "?",
 					},
 					Line: 0,
 				},
