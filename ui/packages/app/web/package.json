@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.49",
+  "version": "0.16.50",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -31,7 +31,7 @@
     "@parca/functions": "^0.16.49",
     "@parca/icons": "^0.16.49",
     "@parca/parser": "^0.16.49",
-    "@parca/profile": "^0.16.49",
+    "@parca/profile": "^0.16.50",
     "@parca/store": "^0.16.49",
     "@svgr/webpack": "6.4.0",
     "@testing-library/jest-dom": "5.16.5",
@@ -64,7 +64,7 @@
     "@swc/jest": "0.2.23",
     "@types/lodash.throttle": "4.1.7",
     "@types/react-datepicker": "4.4.2",
-    "chromatic": "6.10.1",
+    "chromatic": "6.10.2",
     "css-loader": "6.7.1",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-import": "2.26.0",

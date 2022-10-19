@@ -9060,10 +9060,10 @@ chownr@^2.0.0:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-2.0.0.tgz#15bfbe53d2eab4cf70f18a8cd68ebe5b3cb1dece"
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
 
-chromatic@6.10.1:
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/chromatic/-/chromatic-6.10.1.tgz#5a52e7d616dfd35b6857d724d503cb7baa842922"
-  integrity sha512-x8UN5rQ4HK1bUv2uDsHnCQW3bcsFmJH90F5w8mXHkiDc7kEAvbOAm/im2cWbi/VUDI+jW+A7SvZTUi54lBF5wQ==
+chromatic@6.10.2:
+  version "6.10.2"
+  resolved "https://registry.yarnpkg.com/chromatic/-/chromatic-6.10.2.tgz#ddb0d57f9731b9eede6e0b78b3dfd203032788a1"
+  integrity sha512-z7+sIZxkB8iiYYUUzuzIhln21lb9KjQ1pk/na9+xVuVRcjC4iam9672xIYhddXsRLN/crCiX25UxyM4znojM0Q==
   dependencies:
     "@discoveryjs/json-ext" "^0.5.7"
     "@types/webpack-env" "^1.17.0"
