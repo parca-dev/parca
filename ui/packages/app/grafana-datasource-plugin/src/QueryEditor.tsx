@@ -120,7 +120,7 @@ export const QueryEditor: FunctionComponent<
       <div className="gf-form">
         <Field label="Query Selector" description="" required>
           <Input
-            placeholder='podName="api"'
+            placeholder='{podName="api"}'
             onChange={e => setQuerySelector((e.target as HTMLInputElement).value)}
             value={querySelector}
           />

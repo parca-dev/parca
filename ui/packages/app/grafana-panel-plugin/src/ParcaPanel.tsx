@@ -15,7 +15,7 @@ import React, {useState} from 'react';
 import {Provider} from 'react-redux';
 import {PanelProps} from '@grafana/data';
 import {css, cx} from 'emotion';
-import {stylesFactory} from '@grafana/ui';
+import {Icon, stylesFactory} from '@grafana/ui';
 import {
   ProfileView,
   VisualizationType,
@@ -51,10 +51,28 @@ export const ParcaPanel: React.FC<Props> = ({data, width, height}) => {
 
   if (response.error !== undefined) {
     console.error('Error loading profile', response.error);
+    console.log('response.error', response.error);
     return (
       <div className={styles.errorWrapper}>
         <span>Something went wrong!</span>
         <span>{response.error?.message}</span>
+        <span>
+          <br />
+          <strong>Note</strong>: Please make sure cors configuration of the Parca server allow
+          requests from <code>{window.location.origin}</code> origin.
+          <br />
+          Ensure that the Parca server is started with either{' '}
+          <code>--cors-allowed-origins='{window.location.origin}'</code> or{' '}
+          <code>--cors-allowed-origins='*'</code> flag. Please refer the{' '}
+          <a
+            href="https://www.parca.dev/docs/grafana-datasource-plugin#allow-cors-requests"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            docs <Icon name="external-link-alt" />
+          </a>
+          .
+        </span>
       </div>
     );
   }
@@ -111,6 +129,7 @@ const getStyles = stylesFactory(() => {
       width: 100%;
       height: 100%;
       flex-direction: column;
+      text-align: center;
     `,
   };
 });

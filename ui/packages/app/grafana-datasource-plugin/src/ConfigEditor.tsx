@@ -12,11 +12,9 @@
 // limitations under the License.
 
 import React, {ChangeEvent, PureComponent} from 'react';
-import {LegacyForms} from '@grafana/ui';
+import {Field, Input, Icon} from '@grafana/ui';
 import {DataSourcePluginOptionsEditorProps} from '@grafana/data';
 import {ParcaDataSourceOptions} from './types';
-
-const {FormField} = LegacyForms;
 
 interface Props extends DataSourcePluginOptionsEditorProps<ParcaDataSourceOptions> {}
 
@@ -62,15 +60,35 @@ export class ConfigEditor extends PureComponent<Props, {}> {
 
     return (
       <div className="gf-form-group">
+        <div className="gf-form"></div>
         <div className="gf-form">
-          <FormField
-            label="APIEndpoint"
-            labelWidth={6}
-            inputWidth={26}
-            onChange={this.onPathChange}
-            value={jsonData.APIEndpoint ?? ''}
-            placeholder="Parca API URL. Eg: <http://localhost:7070/api>"
-          />
+          <Field label="API Endpoint" description="" required>
+            <div>
+              <Input
+                placeholder="Parca API URL. Eg: <http://localhost:7070/api>"
+                onChange={this.onPathChange}
+                value={jsonData.APIEndpoint ?? ''}
+                width={40}
+              />
+              <span>
+                <br />
+                <strong>Note</strong>: Please make sure cors configuration of the Parca server allow
+                requests from <code>{window.location.origin}</code> origin.
+                <br />
+                Ensure that the Parca server is started with either{' '}
+                <code>--cors-allowed-origins='{window.location.origin}'</code> or{' '}
+                <code>--cors-allowed-origins='*'</code> flag. Please refer the{' '}
+                <a
+                  href="https://www.parca.dev/docs/grafana-datasource-plugin#allow-cors-requests"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  docs <Icon name="external-link-alt" />
+                </a>
+                .
+              </span>
+            </div>
+          </Field>
         </div>
       </div>
     );
