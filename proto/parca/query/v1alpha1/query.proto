@@ -204,7 +204,7 @@ message QueryRequest {
   // ReportType is the type of report to return
   enum ReportType {
     // REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
-    REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
+    REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0 [deprecated = true];
 
     // REPORT_TYPE_PPROF unspecified
     REPORT_TYPE_PPROF = 1;
@@ -214,6 +214,9 @@ message QueryRequest {
 
     // REPORT_TYPE_CALLGRAPH unspecified
     REPORT_TYPE_CALLGRAPH = 3;
+
+    // REPORT_TYPE_FLAMEGRAPH_TABLE unspecified
+    REPORT_TYPE_FLAMEGRAPH_TABLE = 4;
   }
 
   // report_type is the type of report to return

@@ -375,7 +375,8 @@ export enum QueryRequest_ReportType {
     /**
      * REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
      *
-     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
+     * @deprecated
+     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0 [deprecated = true];
      */
     FLAMEGRAPH_UNSPECIFIED = 0,
     /**
@@ -395,7 +396,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_CALLGRAPH = 3;
      */
-    CALLGRAPH = 3
+    CALLGRAPH = 3,
+    /**
+     * REPORT_TYPE_FLAMEGRAPH_TABLE unspecified
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_TABLE = 4;
+     */
+    FLAMEGRAPH_TABLE = 4
 }
 /**
  * Top is the top report type

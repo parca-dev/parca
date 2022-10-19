@@ -229,7 +229,7 @@ message Location {
   uint64 address = 2;
 
   // mapping_id is the unique identifier for the mapping associated with the location.
-  string mapping_id = 4 [deprecated = true];
+  string mapping_id = 4;
 
   // is_folded indicates whether the location is folded into the previous location.
   bool is_folded = 5;
@@ -297,10 +297,10 @@ message Mapping {
   uint64 offset = 4;
 
   // file is the name of the file associated with the mapping.
-  string file = 5 [deprecated = true];
+  string file = 5;
 
   // build_id is the build ID of the mapping.
-  string build_id = 6 [deprecated = true];
+  string build_id = 6;
 
   // has_functions indicates whether the mapping has associated functions.
   bool has_functions = 7;

@@ -425,8 +425,7 @@ export interface Location {
     /**
      * mapping_id is the unique identifier for the mapping associated with the location.
      *
-     * @deprecated
-     * @generated from protobuf field: string mapping_id = 4 [deprecated = true];
+     * @generated from protobuf field: string mapping_id = 4;
      */
     mappingId: string;
     /**
@@ -563,15 +562,13 @@ export interface Mapping {
     /**
      * file is the name of the file associated with the mapping.
      *
-     * @deprecated
-     * @generated from protobuf field: string file = 5 [deprecated = true];
+     * @generated from protobuf field: string file = 5;
      */
     file: string;
     /**
      * build_id is the build ID of the mapping.
      *
-     * @deprecated
-     * @generated from protobuf field: string build_id = 6 [deprecated = true];
+     * @generated from protobuf field: string build_id = 6;
      */
     buildId: string;
     /**
@@ -1952,7 +1949,7 @@ class Location$Type extends MessageType<Location> {
                 case /* uint64 address */ 2:
                     message.address = reader.uint64().toString();
                     break;
-                case /* string mapping_id = 4 [deprecated = true];*/ 4:
+                case /* string mapping_id */ 4:
                     message.mappingId = reader.string();
                     break;
                 case /* bool is_folded */ 5:
@@ -1982,7 +1979,7 @@ class Location$Type extends MessageType<Location> {
         /* uint64 address = 2; */
         if (message.address !== "0")
             writer.tag(2, WireType.Varint).uint64(message.address);
-        /* string mapping_id = 4 [deprecated = true]; */
+        /* string mapping_id = 4; */
         if (message.mappingId !== "")
             writer.tag(4, WireType.LengthDelimited).string(message.mappingId);
         /* bool is_folded = 5; */
@@ -2203,10 +2200,10 @@ class Mapping$Type extends MessageType<Mapping> {
                 case /* uint64 offset */ 4:
                     message.offset = reader.uint64().toString();
                     break;
-                case /* string file = 5 [deprecated = true];*/ 5:
+                case /* string file */ 5:
                     message.file = reader.string();
                     break;
-                case /* string build_id = 6 [deprecated = true];*/ 6:
+                case /* string build_id */ 6:
                     message.buildId = reader.string();
                     break;
                 case /* bool has_functions */ 7:
@@ -2251,10 +2248,10 @@ class Mapping$Type extends MessageType<Mapping> {
         /* uint64 offset = 4; */
         if (message.offset !== "0")
             writer.tag(4, WireType.Varint).uint64(message.offset);
-        /* string file = 5 [deprecated = true]; */
+        /* string file = 5; */
         if (message.file !== "")
             writer.tag(5, WireType.LengthDelimited).string(message.file);
-        /* string build_id = 6 [deprecated = true]; */
+        /* string build_id = 6; */
         if (message.buildId !== "")
             writer.tag(6, WireType.LengthDelimited).string(message.buildId);
         /* bool has_functions = 7; */
