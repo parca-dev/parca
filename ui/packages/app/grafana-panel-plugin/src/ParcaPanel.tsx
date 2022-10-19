@@ -11,38 +11,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useState} from 'react';
-import {Provider} from 'react-redux';
-import {PanelProps} from '@grafana/data';
-import {css, cx} from 'emotion';
-import {stylesFactory} from '@grafana/ui';
-import {
-  ProfileView,
-  VisualizationType,
-  ProfileVisState,
-  GrafanaParcaData,
-  MergedProfileSource,
-} from '@parca/profile';
-import {store} from '@parca/store';
+import React, { useState } from 'react';
+import { Provider } from 'react-redux';
+import { PanelProps } from '@grafana/data';
+import { css, cx } from 'emotion';
+import { stylesFactory } from '@grafana/ui';
+import { ProfileView, VisualizationType, ProfileVisState, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
+import { store } from '@parca/store';
 
 import '@parca/profile/dist/styles.css';
 import '@parca/components/dist/styles.css';
 
 interface Props extends PanelProps<{}> {}
 
-const {store: parcaStore} = store();
+const { store: parcaStore } = store();
 
 const useInMemoryProfileVisState = (): ProfileVisState => {
   const [currentView, setCurrentView] = useState<VisualizationType>('icicle');
 
-  return {currentView, setCurrentView};
+  return { currentView, setCurrentView };
 };
 
 function extractData<T>(data: any): T {
   return data.series[0].fields[0].values.get(0);
 }
 
-export const ParcaPanel: React.FC<Props> = ({data, width, height}) => {
+export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
   const styles = getStyles();
 
   const profileVisState = useInMemoryProfileVisState();
@@ -59,7 +53,7 @@ export const ParcaPanel: React.FC<Props> = ({data, width, height}) => {
     );
   }
 
-  const {flamegraphData, topTableData, actions} = response;
+  const { flamegraphData, topTableData, actions } = response;
 
   return (
     <Provider store={parcaStore}>
@@ -96,7 +90,7 @@ const getStyles = stylesFactory(() => {
   return {
     wrapper: css`
       position: relative;
-      overflow: hidden;
+      overflow: scroll;
       z-index: 0;
     `,
     svg: css`

@@ -170,136 +170,134 @@ export const ProfileView = ({
   };
 
   return (
-    <>
-      <div className="py-3">
-        <Card>
-          <Card.Body>
-            <div className="flex py-3 w-full">
-              <div className="w-2/5 flex space-x-4">
-                <div className="flex space-x-1">
-                  {profileSource != null && queryClient != null ? (
-                    <ProfileShareButton
-                      queryRequest={profileSource.QueryRequest()}
-                      queryClient={queryClient}
-                    />
-                  ) : null}
-
-                  <Button
-                    color="neutral"
-                    onClick={e => {
-                      e.preventDefault();
-                      onDownloadPProf();
-                    }}
-                  >
-                    Download pprof
-                  </Button>
-                </div>
-
-                <SearchNodes />
-              </div>
-
-              <div className="flex ml-auto">
-                <div className="mr-3">
-                  <Button
-                    color="neutral"
-                    onClick={resetIcicleGraph}
-                    disabled={curPath.length === 0}
-                    className="whitespace-nowrap text-ellipsis"
-                  >
-                    Reset View
-                  </Button>
-                </div>
-
-                {callgraphEnabled ? (
-                  <div className="mr-3">
-                    <Button
-                      variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
-                      onClick={() => switchProfileView('callgraph')}
-                      className="whitespace-nowrap text-ellipsis"
-                    >
-                      Call Graph
-                    </Button>
-                  </div>
+    <div className="py-3">
+      <Card>
+        <Card.Body>
+          <div className="flex py-3 w-full">
+            <div className="w-2/5 flex space-x-4">
+              <div className="flex space-x-1">
+                {profileSource != null && queryClient != null ? (
+                  <ProfileShareButton
+                    queryRequest={profileSource.QueryRequest()}
+                    queryClient={queryClient}
+                  />
                 ) : null}
 
                 <Button
-                  variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
-                  className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-                  onClick={() => switchProfileView('table')}
+                  color="neutral"
+                  onClick={e => {
+                    e.preventDefault();
+                    onDownloadPProf();
+                  }}
                 >
-                  Table
-                </Button>
-
-                <Button
-                  variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
-                  className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons text-ellipsis"
-                  onClick={() => switchProfileView('both')}
-                >
-                  Both
-                </Button>
-
-                <Button
-                  variant={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
-                  className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-                  onClick={() => switchProfileView('icicle')}
-                >
-                  Icicle Graph
+                  Download pprof
                 </Button>
               </div>
+
+              <SearchNodes />
             </div>
 
-            <div ref={ref} className="flex space-x-4 justify-between w-full">
-              {currentView === 'icicle' && flamegraphData?.data != null && (
-                <div className="w-full">
-                  <ProfileIcicleGraph
-                    curPath={curPath}
-                    setNewCurPath={setNewCurPath}
-                    graph={flamegraphData.data}
-                    sampleUnit={sampleUnit}
-                  />
-                </div>
-              )}
+            <div className="flex ml-auto">
+              <div className="mr-3">
+                <Button
+                  color="neutral"
+                  onClick={resetIcicleGraph}
+                  disabled={curPath.length === 0}
+                  className="whitespace-nowrap text-ellipsis"
+                >
+                  Reset View
+                </Button>
+              </div>
 
-              {currentView === 'callgraph' && callgraphData?.data != null && (
-                <div className="w-full">
-                  {dimensions?.width !== undefined && (
-                    <CallgraphComponent
-                      graph={callgraphData.data}
+              {callgraphEnabled ? (
+                <div className="mr-3">
+                  <Button
+                    variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
+                    onClick={() => switchProfileView('callgraph')}
+                    className="whitespace-nowrap text-ellipsis"
+                  >
+                    Call Graph
+                  </Button>
+                </div>
+              ) : null}
+
+              <Button
+                variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
+                className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+                onClick={() => switchProfileView('table')}
+              >
+                Table
+              </Button>
+
+              <Button
+                variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
+                className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons text-ellipsis"
+                onClick={() => switchProfileView('both')}
+              >
+                Both
+              </Button>
+
+              <Button
+                variant={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
+                className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+                onClick={() => switchProfileView('icicle')}
+              >
+                Icicle Graph
+              </Button>
+            </div>
+          </div>
+
+          <div ref={ref} className="flex space-x-4 justify-between w-full">
+            {currentView === 'icicle' && flamegraphData?.data != null && (
+              <div className="w-full">
+                <ProfileIcicleGraph
+                  curPath={curPath}
+                  setNewCurPath={setNewCurPath}
+                  graph={flamegraphData.data}
+                  sampleUnit={sampleUnit}
+                />
+              </div>
+            )}
+
+            {currentView === 'callgraph' && callgraphData?.data != null && (
+              <div className="w-full">
+                {dimensions?.width !== undefined && (
+                  <CallgraphComponent
+                    graph={callgraphData.data}
+                    sampleUnit={sampleUnit}
+                    width={dimensions?.width}
+                  />
+                )}
+              </div>
+            )}
+
+            {currentView === 'table' && topTableData != null && (
+              <div className="w-full">
+                <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
+              </div>
+            )}
+
+            {currentView === 'both' && (
+              <>
+                <div className="w-1/2">
+                  <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
+                </div>
+
+                <div className="w-1/2">
+                  {flamegraphData != null && (
+                    <ProfileIcicleGraph
+                      curPath={curPath}
+                      setNewCurPath={setNewCurPath}
+                      graph={flamegraphData.data}
                       sampleUnit={sampleUnit}
-                      width={dimensions?.width}
                     />
                   )}
                 </div>
-              )}
-
-              {currentView === 'table' && topTableData != null && (
-                <div className="w-full">
-                  <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
-                </div>
-              )}
-
-              {currentView === 'both' && (
-                <>
-                  <div className="w-1/2">
-                    <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
-                  </div>
-
-                  <div className="w-1/2">
-                    {flamegraphData != null && (
-                      <ProfileIcicleGraph
-                        curPath={curPath}
-                        setNewCurPath={setNewCurPath}
-                        graph={flamegraphData.data}
-                        sampleUnit={sampleUnit}
-                      />
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </Card.Body>
-        </Card>
-      </div>
-    </>
+              </>
+            )}
+          </div>
+        </Card.Body>
+      </Card>
+    </div>
   );
 };
