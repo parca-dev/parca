@@ -617,29 +617,25 @@ export interface FlamegraphNodeMeta {
     /**
      * location is the location for the code
      *
-     * @deprecated
-     * @generated from protobuf field: parca.metastore.v1alpha1.Location location = 1 [deprecated = true];
+     * @generated from protobuf field: parca.metastore.v1alpha1.Location location = 1;
      */
     location?: Location;
     /**
      * mapping is the mapping into code
      *
-     * @deprecated
-     * @generated from protobuf field: parca.metastore.v1alpha1.Mapping mapping = 2 [deprecated = true];
+     * @generated from protobuf field: parca.metastore.v1alpha1.Mapping mapping = 2;
      */
     mapping?: Mapping;
     /**
      * function is the function information
      *
-     * @deprecated
-     * @generated from protobuf field: parca.metastore.v1alpha1.Function function = 3 [deprecated = true];
+     * @generated from protobuf field: parca.metastore.v1alpha1.Function function = 3;
      */
     function?: Function;
     /**
      * line is the line location
      *
-     * @deprecated
-     * @generated from protobuf field: parca.metastore.v1alpha1.Line line = 4 [deprecated = true];
+     * @generated from protobuf field: parca.metastore.v1alpha1.Line line = 4;
      */
     line?: Line;
     /**
@@ -2159,16 +2155,16 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* parca.metastore.v1alpha1.Location location = 1 [deprecated = true];*/ 1:
+                case /* parca.metastore.v1alpha1.Location location */ 1:
                     message.location = Location.internalBinaryRead(reader, reader.uint32(), options, message.location);
                     break;
-                case /* parca.metastore.v1alpha1.Mapping mapping = 2 [deprecated = true];*/ 2:
+                case /* parca.metastore.v1alpha1.Mapping mapping */ 2:
                     message.mapping = Mapping.internalBinaryRead(reader, reader.uint32(), options, message.mapping);
                     break;
-                case /* parca.metastore.v1alpha1.Function function = 3 [deprecated = true];*/ 3:
+                case /* parca.metastore.v1alpha1.Function function */ 3:
                     message.function = Function.internalBinaryRead(reader, reader.uint32(), options, message.function);
                     break;
-                case /* parca.metastore.v1alpha1.Line line = 4 [deprecated = true];*/ 4:
+                case /* parca.metastore.v1alpha1.Line line */ 4:
                     message.line = Line.internalBinaryRead(reader, reader.uint32(), options, message.line);
                     break;
                 case /* uint32 location_index */ 5:
@@ -2186,16 +2182,16 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
         return message;
     }
     internalBinaryWrite(message: FlamegraphNodeMeta, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* parca.metastore.v1alpha1.Location location = 1 [deprecated = true]; */
+        /* parca.metastore.v1alpha1.Location location = 1; */
         if (message.location)
             Location.internalBinaryWrite(message.location, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* parca.metastore.v1alpha1.Mapping mapping = 2 [deprecated = true]; */
+        /* parca.metastore.v1alpha1.Mapping mapping = 2; */
         if (message.mapping)
             Mapping.internalBinaryWrite(message.mapping, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* parca.metastore.v1alpha1.Function function = 3 [deprecated = true]; */
+        /* parca.metastore.v1alpha1.Function function = 3; */
         if (message.function)
             Function.internalBinaryWrite(message.function, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
-        /* parca.metastore.v1alpha1.Line line = 4 [deprecated = true]; */
+        /* parca.metastore.v1alpha1.Line line = 4; */
         if (message.line)
             Line.internalBinaryWrite(message.line, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         /* uint32 location_index = 5; */
