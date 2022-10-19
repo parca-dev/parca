@@ -16,11 +16,12 @@ import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
+import {jsonToDot, getCurvePoints} from './utils';
+import type {HoveringNode} from '../GraphTooltip';
 import {useAppSelector, selectSearchNodeString} from '@parca/store';
 import {isSearchMatch} from '@parca/functions';
-import {jsonToDot, getCurvePoints, inchesToPixels} from './utils';
-import type {HoveringNode} from '../GraphTooltip';
 import Tooltip from '../GraphTooltip';
+import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
 
 interface NodeProps {
   node: INode;
@@ -47,8 +48,8 @@ interface GraphvizNode extends CallgraphNode {
   pos: string;
   functionName: string;
   color: string;
-  width: string;
-  height: string;
+  width: string | number;
+  height: string | number;
 }
 
 interface INode extends GraphvizNode {
@@ -66,6 +67,7 @@ interface GraphvizEdge extends CallgraphEdge {
   pos: string;
   color: string;
   opacity: string;
+  boxHeight: number;
 }
 
 interface GraphvizType {
@@ -74,7 +76,7 @@ interface GraphvizType {
   bb: string;
 }
 
-const Node = ({node, setHoveredNode}: NodeProps): JSX.Element => {
+const Node = ({node, hoveredNode, setHoveredNode}: NodeProps): JSX.Element => {
   const {
     data: {id},
     x,
@@ -86,16 +88,20 @@ const Node = ({node, setHoveredNode}: NodeProps): JSX.Element => {
   } = node;
   const currentSearchString = useAppSelector(selectSearchNodeString);
   const isCurrentSearchMatch = isSearchMatch(currentSearchString, functionName);
+  const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
   const width = Number(widthString);
   const height = Number(heightString);
+  const textPadding = 6;
 
   return (
-    <Label x={x - inchesToPixels(width) / 2} y={y - inchesToPixels(height) / 2}>
+    <Label x={x - width / 2} y={y - height / 2}>
       <Rect
-        width={inchesToPixels(width)}
-        height={inchesToPixels(height)}
-        // TODO: May want to replace "red" with a different color on search match
-        fill={isCurrentSearchMatch ? 'red' : color}
+        width={width}
+        height={height}
+        fill={color}
+        cornerRadius={3}
+        stroke={isHovered ? 'black' : color}
+        strokeWidth={2}
         onMouseOver={() => {
           setHoveredNode({...node, mouseX: x, mouseY: y});
         }}
@@ -103,22 +109,26 @@ const Node = ({node, setHoveredNode}: NodeProps): JSX.Element => {
           setHoveredNode(null);
         }}
       />
-      <Text
-        text={functionName.substring(0, 15)}
-        fontSize={16}
-        fill="white"
-        width={inchesToPixels(width)}
-        height={inchesToPixels(height)}
-        align="center"
-        verticalAlign="middle"
-        listening={false}
-      />
+      {width > DEFAULT_NODE_HEIGHT + 10 && (
+        <Text
+          text={functionName}
+          fontSize={10}
+          fill="white"
+          width={width - textPadding}
+          height={height - textPadding}
+          x={textPadding / 2}
+          y={textPadding / 2}
+          align="center"
+          verticalAlign="middle"
+          listening={false}
+        />
+      )}
     </Label>
   );
 };
 
 const Edge = ({edge, sourceNode, targetNode, xScale, yScale}: EdgeProps): JSX.Element => {
-  const {pos, color, head, tail, opacity} = edge;
+  const {pos, color, head, tail, opacity, boxHeight} = edge;
 
   const points = getCurvePoints({
     pos,
@@ -126,8 +136,7 @@ const Edge = ({edge, sourceNode, targetNode, xScale, yScale}: EdgeProps): JSX.El
     yScale,
     source: [sourceNode.x, sourceNode.y],
     target: [targetNode.x, targetNode.y],
-    // TODO: update arrow offset radius to match rect height!
-    offsetRadius: 10,
+    offset: boxHeight / 2,
     isSelfLoop: head === tail,
   });
 
@@ -146,15 +155,10 @@ const Edge = ({edge, sourceNode, targetNode, xScale, yScale}: EdgeProps): JSX.El
 };
 
 const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element => {
-  const MARGIN = 15;
-  const DEFAULT_NODE_RADIUS = 12;
-
   const containerRef = useRef<HTMLDivElement>(null);
   const [graphData, setGraphData] = useState<any>(null);
   const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
   const {nodes: rawNodes, cumulative: total} = graph;
-
-  const currentSearchString = useAppSelector(selectSearchNodeString);
 
   useEffect(() => {
     const getDataWithPositions = async (): Promise<void> => {
@@ -180,19 +184,20 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
 
   // 3. Render the graph with calculated layout in Canvas container
   if (width == null || graphData == null) return <></>;
-
-  const height = (2 * width) / 3;
-  const {objects: gvizNodes, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData);
+  const {objects: gvizNodes, edges, bb: boundingBox} = JSON.parse(graphData) as GraphvizType;
 
   const graphBB = boundingBox.split(',');
+  const bbWidth = Number(graphBB[2]);
+  const bbHeight = Number(graphBB[3]);
+  const height = (width * bbHeight) / bbWidth;
   const xScale = d3
     .scaleLinear()
-    .domain([0, Number(graphBB[2])])
-    .range([0, width - 2 * MARGIN]);
+    .domain([0, bbWidth])
+    .range([0, width - 2 * GRAPH_MARGIN]);
   const yScale = d3
     .scaleLinear()
-    .domain([0, Number(graphBB[3])])
-    .range([0, height - 2 * MARGIN]);
+    .domain([0, bbHeight])
+    .range([0, height - 2 * GRAPH_MARGIN]);
 
   const nodes: INode[] = gvizNodes.map((node: GraphvizNode, i) => {
     const [x, y] = node.pos.split(',');
@@ -208,8 +213,8 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     <div className="relative">
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
         <Stage width={width} height={height}>
-          <Layer offsetX={-MARGIN} offsetY={-MARGIN}>
-            {gvizEdges.map((edge: GraphvizEdge) => {
+          <Layer offsetX={-GRAPH_MARGIN} offsetY={-GRAPH_MARGIN}>
+            {edges.map((edge: GraphvizEdge) => {
               // 'tail' in graphviz-wasm means 'source' and 'head' means 'target'
               const sourceNode = nodes.find(n => n._gvid === edge.tail) ?? {x: 0, y: 0};
               const targetNode = nodes.find(n => n._gvid === edge.head) ?? {x: 0, y: 0};

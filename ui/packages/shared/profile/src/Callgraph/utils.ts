@@ -13,9 +13,9 @@
 
 import * as d3 from 'd3';
 import {CallgraphNode, CallgraphEdge} from '@parca/client';
+import {DEFAULT_NODE_HEIGHT} from './constants';
 
 export const pixelsToInches = (pixels: number): number => pixels / 96;
-export const inchesToPixels = (inches: number): number => inches * 96;
 
 export const getCurvePoints = ({
   pos,
@@ -23,7 +23,7 @@ export const getCurvePoints = ({
   yScale = n => n,
   source = [],
   target = [],
-  offsetRadius = 0,
+  offset = 0,
   isSelfLoop = false,
 }: {
   pos: string;
@@ -32,7 +32,7 @@ export const getCurvePoints = ({
   source?: number[];
   target?: number[];
   isSelfLoop?: boolean;
-  offsetRadius?: number;
+  offset?: number;
 }): number[] => {
   if (isSelfLoop) {
     const [sourceX, sourceY] = source;
@@ -40,12 +40,12 @@ export const getCurvePoints = ({
 
     return [
       sourceX,
-      sourceY + offsetRadius,
+      sourceY + offset,
       sourceX,
-      sourceY + 3 * offsetRadius,
-      targetX + 5 * offsetRadius,
+      sourceY + 3 * offset,
+      targetX + 5 * offset,
       targetY,
-      targetX + offsetRadius,
+      targetX + offset,
       targetY,
     ];
   }
@@ -57,15 +57,15 @@ export const getCurvePoints = ({
       .replace('e,', '')
       .split(',')
       .map(str => Number(str));
-  const getLastPointWithOffset = (target: number[], last: number[], offsetRadius): number[] => {
+  const getLastPointWithOffset = (target: number[], last: number[], offset): number[] => {
     const [targetX, targetY] = target;
     const [lastX, lastY] = last;
     const diffX = targetX - lastX;
     const diffY = targetY - lastY;
     const diffZ = Math.hypot(diffX, diffY);
 
-    const offsetX = (diffX * offsetRadius) / diffZ;
-    const offsetY = (diffY * offsetRadius) / diffZ;
+    const offsetX = (diffX * offset) / diffZ;
+    const offsetY = (diffY * offset) / diffZ;
 
     return [targetX - offsetX, targetY - offsetY];
   };
@@ -73,11 +73,7 @@ export const getCurvePoints = ({
   const scaledPoints: number[][] = points.map(point => scalePoint(point));
 
   const lastPointIndex = scaledPoints.length - 1;
-  const lastPointWithOffset = getLastPointWithOffset(
-    target,
-    scaledPoints[lastPointIndex],
-    offsetRadius
-  );
+  const lastPointWithOffset = getLastPointWithOffset(target, scaledPoints[lastPointIndex], offset);
 
   return [source, ...scaledPoints.slice(2, points.length - 1), lastPointWithOffset].flat();
 };
@@ -89,7 +85,6 @@ const objectAsDotAttributes = (obj: {[key: string]: string | number}): string =>
 
 export const jsonToDot = ({
   graph,
-  width,
   colorRange,
 }: {
   graph: {nodes: CallgraphNode[]; edges: CallgraphEdge[]};
@@ -97,27 +92,27 @@ export const jsonToDot = ({
   colorRange: [string, string];
 }): string => {
   const {nodes, edges} = graph;
-  const defaultNodeRadius = 12;
   const cumulatives = nodes.map((node: CallgraphNode) => node.cumulative);
   const cumulativesRange = d3.extent(cumulatives).map(value => Number(value));
+
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateBlues)
     .domain(cumulativesRange)
     .range(colorRange);
   const colorOpacityScale = d3.scaleSequentialLog().domain(cumulativesRange).range([0.2, 1]);
-  const nodeRadiusScale = d3
+  const boxWidthScale = d3
     .scaleLog()
     .domain(cumulativesRange)
-    .range([defaultNodeRadius - 2, defaultNodeRadius + 3]);
+    .range([DEFAULT_NODE_HEIGHT, DEFAULT_NODE_HEIGHT + 40]);
 
   const nodesAsStrings = nodes.map((node: CallgraphNode) => {
     const dataAttributes = {
-      label: node.meta?.function?.name ? node.meta?.function?.name.substring(0, 15) : '',
       address: node.meta?.location?.address ?? '',
       functionName: node.meta?.function?.name ?? '',
       cumulative: node.cumulative ?? '',
       root: (node.id === 'root').toString(),
-      // width: nodeRadiusScale(Number(node.cumulative)) * 2,
+      // TODO: set box width scale to be based on flat value once we have that value available
+      width: boxWidthScale(Number(node.cumulative)),
       color: colorScale(Number(node.cumulative)),
     };
 
@@ -129,28 +124,22 @@ export const jsonToDot = ({
       cumulative: edge.cumulative,
       color: colorRange[1],
       opacity: colorOpacityScale(Number(edge.cumulative)),
-      // nodeRadius: nodeRadiusScale(Number(edge.cumulative)),
+      boxHeight: DEFAULT_NODE_HEIGHT,
     };
 
     return `"${edge.source}" -> "${edge.target}" [${objectAsDotAttributes(dataAttributes)}]`;
   });
 
-  // can provide a node label that will size the nodes appropriately (and change the layout as well to account for diff widths)
-  // then needs to set fixedsize=shape
-  // ratio="1,3"
-  // size="${pixelsToInches(width)}, ${pixelsToInches(width) * 10}"
   const graphAsDot = `digraph "callgraph" {
       rankdir="BT"
       overlap="prism"
       ratio="1,3"
       margin=15
       edge [margin=0]
-      node [shape=record style=rounded fixedsize=shape height=0.3]
+      node [shape=box style=rounded height=${DEFAULT_NODE_HEIGHT}]
       ${nodesAsStrings.join(' ')}
       ${edgesAsStrings.join(' ')}
     }`;
-
-  console.log(graphAsDot);
 
   return graphAsDot;
 };
