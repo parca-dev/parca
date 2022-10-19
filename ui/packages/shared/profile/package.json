@@ -20,7 +20,7 @@
     "react-konva": "18.2.1"
   },
   "devDependencies": {
-    "@types/cytoscape": "3.19.8",
+    "@types/cytoscape": "3.19.9",
     "@types/d3": "7.4.0",
     "@types/react-copy-to-clipboard": "5.0.4",
     "@types/react-cytoscapejs": "1.2.2"
