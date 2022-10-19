@@ -610,27 +610,37 @@ export interface FlamegraphNodeMeta {
     /**
      * location is the location for the code
      *
-     * @generated from protobuf field: parca.metastore.v1alpha1.Location location = 1;
+     * @deprecated
+     * @generated from protobuf field: parca.metastore.v1alpha1.Location location = 1 [deprecated = true];
      */
     location?: Location;
     /**
      * mapping is the mapping into code
      *
-     * @generated from protobuf field: parca.metastore.v1alpha1.Mapping mapping = 2;
+     * @deprecated
+     * @generated from protobuf field: parca.metastore.v1alpha1.Mapping mapping = 2 [deprecated = true];
      */
     mapping?: Mapping;
     /**
      * function is the function information
      *
-     * @generated from protobuf field: parca.metastore.v1alpha1.Function function = 3;
+     * @deprecated
+     * @generated from protobuf field: parca.metastore.v1alpha1.Function function = 3 [deprecated = true];
      */
     function?: Function;
     /**
      * line is the line location
      *
-     * @generated from protobuf field: parca.metastore.v1alpha1.Line line = 4;
+     * @deprecated
+     * @generated from protobuf field: parca.metastore.v1alpha1.Line line = 4 [deprecated = true];
      */
     line?: Line;
+    /**
+     * location_index has the index to the deduplicated location in the location table.
+     *
+     * @generated from protobuf field: uint32 location_index = 5;
+     */
+    locationIndex: number;
 }
 /**
  * CallgraphNode represents a node in the graph
@@ -2126,11 +2136,12 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
             { no: 1, name: "location", kind: "message", T: () => Location },
             { no: 2, name: "mapping", kind: "message", T: () => Mapping },
             { no: 3, name: "function", kind: "message", T: () => Function },
-            { no: 4, name: "line", kind: "message", T: () => Line }
+            { no: 4, name: "line", kind: "message", T: () => Line },
+            { no: 5, name: "location_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<FlamegraphNodeMeta>): FlamegraphNodeMeta {
-        const message = {};
+        const message = { locationIndex: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<FlamegraphNodeMeta>(this, message, value);
@@ -2141,17 +2152,20 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* parca.metastore.v1alpha1.Location location */ 1:
+                case /* parca.metastore.v1alpha1.Location location = 1 [deprecated = true];*/ 1:
                     message.location = Location.internalBinaryRead(reader, reader.uint32(), options, message.location);
                     break;
-                case /* parca.metastore.v1alpha1.Mapping mapping */ 2:
+                case /* parca.metastore.v1alpha1.Mapping mapping = 2 [deprecated = true];*/ 2:
                     message.mapping = Mapping.internalBinaryRead(reader, reader.uint32(), options, message.mapping);
                     break;
-                case /* parca.metastore.v1alpha1.Function function */ 3:
+                case /* parca.metastore.v1alpha1.Function function = 3 [deprecated = true];*/ 3:
                     message.function = Function.internalBinaryRead(reader, reader.uint32(), options, message.function);
                     break;
-                case /* parca.metastore.v1alpha1.Line line */ 4:
+                case /* parca.metastore.v1alpha1.Line line = 4 [deprecated = true];*/ 4:
                     message.line = Line.internalBinaryRead(reader, reader.uint32(), options, message.line);
+                    break;
+                case /* uint32 location_index */ 5:
+                    message.locationIndex = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2165,18 +2179,21 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
         return message;
     }
     internalBinaryWrite(message: FlamegraphNodeMeta, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* parca.metastore.v1alpha1.Location location = 1; */
+        /* parca.metastore.v1alpha1.Location location = 1 [deprecated = true]; */
         if (message.location)
             Location.internalBinaryWrite(message.location, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* parca.metastore.v1alpha1.Mapping mapping = 2; */
+        /* parca.metastore.v1alpha1.Mapping mapping = 2 [deprecated = true]; */
         if (message.mapping)
             Mapping.internalBinaryWrite(message.mapping, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* parca.metastore.v1alpha1.Function function = 3; */
+        /* parca.metastore.v1alpha1.Function function = 3 [deprecated = true]; */
         if (message.function)
             Function.internalBinaryWrite(message.function, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
-        /* parca.metastore.v1alpha1.Line line = 4; */
+        /* parca.metastore.v1alpha1.Line line = 4 [deprecated = true]; */
         if (message.line)
             Line.internalBinaryWrite(message.line, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 location_index = 5; */
+        if (message.locationIndex !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.locationIndex);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
