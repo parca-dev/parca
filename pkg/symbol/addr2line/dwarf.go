@@ -50,7 +50,7 @@ func DWARF(logger log.Logger, f *elf.File, demangler *demangle.Demangler) (*Dwar
 func (dl *DwarfLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("recovered stack stares:\n", string(debug.Stack()))
+			fmt.Println("recovered stack trace:\n", string(debug.Stack()))
 			err = fmt.Errorf("recovering from panic in DWARF add2line: %v", r)
 		}
 	}()
