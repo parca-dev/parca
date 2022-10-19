@@ -1,27 +1,16 @@
-# Parca Grafana Datasource Plugin
+# Parca Datasource Plugin for Grafana
 
 ## Getting started
 
-1. Install dependencies
+1. Install the Parca datasource plugin from the [Grafana plugin repository](https://grafana.com/grafana/plugins/parca-datasource/).
+2. In the Grafana UI, navigate to the `Configuration` -> `Data Sources` page.
+3. Click on the `Add data source` button.
+4. Select the `Parca` datasource.
+5. Enter the API URL of the Parca server in the `API Endpoint` field. For example, `http://localhost:7070/api`.
+   Note: Please make sure cors configuration of the Parca server allow requests from your Grafana Dashboard origin. If you Grafana dashboard is running at <code>http://localhost:3000</code>, then ensure that the Parca server is started with either --cors-allowed-origins='http://localhost:3000' or --cors-allowed-origins='\*' flag. Please refer the [docs](https://www.parca.dev/docs/grafana-datasource-plugin#allow-cors-requests).
+6. Click on the `Save & Test` button. If the connection is successful, you should see a green `Data source is working` message.
+7. Now you can use the Parca datasource in your panels.
 
-   ```bash
-   yarn install
-   ```
+## Screeenshot
 
-2. Build plugin in development mode or run in watch mode
-
-   ```bash
-   yarn dev
-   ```
-
-   or
-
-   ```bash
-   yarn watch
-   ```
-
-3. Build plugin in production mode
-
-   ```bash
-   yarn build
-   ```
+![Parca Datasource Plugin](https://raw.githubusercontent.com/parca-dev/parca/main/ui/packages/app/grafana-datasource-plugin/src/img/screenshots/datasource-config.png)
