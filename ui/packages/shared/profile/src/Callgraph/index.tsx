@@ -102,8 +102,8 @@ const Node = ({node, hoveredNode, setHoveredNode}: NodeProps): JSX.Element => {
         cornerRadius={3}
         stroke={isHovered ? 'black' : color}
         strokeWidth={2}
-        onMouseOver={() => {
-          setHoveredNode({...node, mouseX: x, mouseY: y});
+        onMouseOver={e => {
+          setHoveredNode({...node, mouseX: e.evt.clientX, mouseY: e.evt.clientY});
         }}
         onMouseOut={() => {
           setHoveredNode(null);
@@ -158,6 +158,11 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   const containerRef = useRef<HTMLDivElement>(null);
   const [graphData, setGraphData] = useState<any>(null);
   const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
+  const [stage, setStage] = useState<{scale: {x: number; y: number}; x: number; y: number}>({
+    scale: {x: 1, y: 1},
+    x: 0,
+    y: 0,
+  });
   const {nodes: rawNodes, cumulative: total} = graph;
 
   useEffect(() => {
@@ -209,10 +214,44 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     };
   });
 
+  // 4. Add zooming
+  const handleWheel = e => {
+    e.evt.preventDefault();
+
+    const scaleXBy = 0.95;
+    const scaleYBy = 1.05;
+    const stage = e.target.getStage();
+    const oldScale = stage.scaleX();
+    const mousePointTo = {
+      x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
+      y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
+    };
+
+    const newXScale = e.evt.deltaY > 0 ? oldScale * scaleXBy : oldScale / scaleXBy;
+    const newYScale = e.evt.deltaY > 0 ? oldScale * scaleYBy : oldScale / scaleYBy;
+
+    stage.scale({x: newXScale, y: newYScale});
+
+    setStage({
+      scale: {x: newXScale, y: newYScale},
+      x: -(mousePointTo.x - stage.getPointerPosition().x / newXScale) * newXScale,
+      y: -(mousePointTo.y - stage.getPointerPosition().y / newYScale) * newYScale,
+    });
+  };
+
   return (
     <div className="relative">
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
-        <Stage width={width} height={height}>
+        <Stage
+          width={width}
+          height={height}
+          onWheel={handleWheel}
+          scaleX={stage.scale.x}
+          scaleY={stage.scale.y}
+          x={stage.x}
+          y={stage.y}
+          draggable
+        >
           <Layer offsetX={-GRAPH_MARGIN} offsetY={-GRAPH_MARGIN}>
             {edges.map((edge: GraphvizEdge) => {
               // 'tail' in graphviz-wasm means 'source' and 'head' means 'target'
