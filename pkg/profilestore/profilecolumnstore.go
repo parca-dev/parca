@@ -74,6 +74,8 @@ type ProfileColumnStore struct {
 	mtx sync.Mutex
 	// ip as the key
 	agents map[string]agent
+
+	bufferPool *sync.Pool
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
@@ -94,6 +96,11 @@ func NewProfileColumnStore(
 		debugValueLog: debugValueLog,
 		schema:        schema,
 		agents:        make(map[string]agent),
+		bufferPool: &sync.Pool{
+			New: func() any {
+				return new(bytes.Buffer)
+			},
+		},
 	}
 }
 
@@ -103,6 +110,7 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 		parcacol.NewNormalizer(s.metastore),
 		s.table,
 		s.schema,
+		s.bufferPool,
 	)
 
 	for _, series := range req.Series {
