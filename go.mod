@@ -37,11 +37,11 @@ require (
 	github.com/segmentio/parquet-go v0.0.0-20221013173504-719054139246
 	github.com/stretchr/testify v1.8.0
 	github.com/thanos-io/objstore v0.0.0-20221006135717-79dcec7fe604
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.2
-	go.opentelemetry.io/otel v1.10.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.10.0
-	go.opentelemetry.io/otel/sdk v1.10.0
-	go.opentelemetry.io/otel/trace v1.10.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.3
+	go.opentelemetry.io/otel v1.11.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.0
+	go.opentelemetry.io/otel/sdk v1.11.0
+	go.opentelemetry.io/otel/trace v1.11.0
 	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
 	google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a
 	google.golang.org/grpc v1.50.0
@@ -216,8 +216,8 @@ require (
 	github.com/vultr/govultr/v2 v2.17.2 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.10.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.10.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
