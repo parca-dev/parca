@@ -24,7 +24,10 @@
         "url": "https://github.com/parca-dev/parca/blob/main/ui/packages/app/grafana-panel-plugin/LICENSE"
       }
     ],
-    "screenshots": [],
+    "screenshots": [
+      {"name": "Parca Flamegraph", "path": "img/screenshots/panel.png"},
+      {"name": "Parca Flamegraph Config", "path": "img/screenshots/panel-config.png"}
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

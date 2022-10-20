@@ -26,6 +26,8 @@ work/
 ci/
 e2e-results/
 
+release
+
 # Editor
 .idea
 
