@@ -3,6 +3,7 @@
   "npmClient": "yarn",
   "tagVersionPrefix": "ui-v",
   "useWorkspaces": true,
+  "independent": true,
   "command": {
     "publish": {
       "conventionalCommits": true
