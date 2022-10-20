@@ -20,12 +20,17 @@ export const useContainerDimensions = (): {
   const ref = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<DOMRect>();
 
-  const updateDimensions = (): void => setDimensions(ref.current?.getBoundingClientRect());
-
   useEffect(() => {
+    const updateDimensions = (): void => setDimensions(ref.current?.getBoundingClientRect());
+
     updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
+    if (ref.current == null) {
+      return;
+    }
+
+    const observer = new ResizeObserver(updateDimensions);
+    observer.observe(ref.current);
+    return () => observer.disconnect();
   }, []);
 
   return {dimensions, ref};

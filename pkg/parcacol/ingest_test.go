@@ -14,6 +14,7 @@
 package parcacol
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -70,13 +71,10 @@ func TestPprofToParquet(t *testing.T) {
 	require.NoError(t, err)
 
 	for i, np := range nps {
-		buf, err := NormalizedProfileToParquetBuffer(schema, labels.Labels{}, np)
-		require.NoError(t, err)
+		buf := bytes.NewBuffer(nil)
+		require.NoError(t, NormalizedProfileToParquetBuffer(buf, schema, labels.Labels{}, np))
 
-		b, err := schema.SerializeBuffer(buf)
-		require.NoError(t, err)
-
-		serBuf, err := dynparquet.ReaderFromBytes(b)
+		serBuf, err := dynparquet.ReaderFromBytes(buf.Bytes())
 		require.NoError(t, err)
 
 		rows := serBuf.Reader()
@@ -88,7 +86,7 @@ func TestPprofToParquet(t *testing.T) {
 			}
 			if err != io.EOF {
 				if err != nil {
-					require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), b, 0o777))
+					require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), buf.Bytes(), 0o777))
 				}
 				require.NoError(t, err)
 			}

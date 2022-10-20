@@ -1,12 +1,13 @@
 {
   "name": "@parca/functions",
-  "version": "0.16.23",
+  "version": "0.16.51",
   "description": "Templated shared functions",
   "main": "src/index.ts",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*"
   },
   "dependencies": {
+    "use-local-storage": "^2.3.6",
     "use-local-storage-state": "^18.1.1"
   },
   "keywords": [],

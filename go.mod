@@ -12,14 +12,14 @@ require (
 	github.com/dnaeon/go-vcr v1.2.0
 	github.com/fatih/semgroup v1.2.0
 	github.com/felixge/fgprof v0.9.3
-	github.com/fsnotify/fsnotify v1.5.4
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.1
 	github.com/go-delve/delve v1.9.1
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
-	github.com/google/pprof v0.0.0-20220829040838-70bd9ae97f40
+	github.com/google/pprof v0.0.0-20221010195024-131d412537ea
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-rc.3
@@ -30,20 +30,20 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20221012142626-2f2f61f5bb7e
+	github.com/polarsignals/frostdb v0.0.0-20221019131336-29b94b80433b
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/common v0.37.0
-	github.com/prometheus/prometheus v0.39.1
+	github.com/prometheus/prometheus v0.38.0
 	github.com/segmentio/parquet-go v0.0.0-20221005185849-771b3e358a03
 	github.com/stretchr/testify v1.8.0
 	github.com/thanos-io/objstore v0.0.0-20221006135717-79dcec7fe604
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.1
-	go.opentelemetry.io/otel v1.10.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.10.0
-	go.opentelemetry.io/otel/sdk v1.10.0
-	go.opentelemetry.io/otel/trace v1.10.0
-	golang.org/x/net v0.0.0-20221004154528-8021a29435af
-	google.golang.org/genproto v0.0.0-20220930163606-c98284e70a91
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.3
+	go.opentelemetry.io/otel v1.11.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.0
+	go.opentelemetry.io/otel/sdk v1.11.0
+	go.opentelemetry.io/otel/trace v1.11.0
+	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
+	google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a
 	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -216,8 +216,8 @@ require (
 	github.com/vultr/govultr/v2 v2.17.2 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.10.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.10.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect

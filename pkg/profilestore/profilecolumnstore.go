@@ -74,6 +74,8 @@ type ProfileColumnStore struct {
 	mtx sync.Mutex
 	// ip as the key
 	agents map[string]agent
+
+	bufferPool *sync.Pool
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
@@ -94,6 +96,11 @@ func NewProfileColumnStore(
 		debugValueLog: debugValueLog,
 		schema:        schema,
 		agents:        make(map[string]agent),
+		bufferPool: &sync.Pool{
+			New: func() any {
+				return new(bytes.Buffer)
+			},
+		},
 	}
 }
 
@@ -103,6 +110,7 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 		parcacol.NewNormalizer(s.metastore),
 		s.table,
 		s.schema,
+		s.bufferPool,
 	)
 
 	for _, series := range req.Series {
@@ -162,11 +170,11 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 	return nil
 }
 
-func (s *ProfileColumnStore) updateAgents(ip string, ag agent) {
+func (s *ProfileColumnStore) updateAgents(nodeNameAndIP string, ag agent) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
-	s.agents[ip] = ag
+	s.agents[nodeNameAndIP] = ag
 
 	for i, a := range s.agents {
 		if a.lastPush.Before(time.Now().Add(-5 * time.Minute)) {
@@ -214,7 +222,7 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 		ipPort := p.Addr.String()
 		ip := ipPort[:strings.LastIndex(ipPort, ":")]
 
-		s.updateAgents(ip, ag)
+		s.updateAgents(nodeName+ip, ag)
 	}
 
 	if writeErr != nil {
@@ -229,7 +237,7 @@ func (s *ProfileColumnStore) Agents(ctx context.Context, req *profilestorepb.Age
 	defer s.mtx.Unlock()
 
 	agents := make([]*profilestorepb.Agent, 0, len(s.agents))
-	for ip, ag := range s.agents {
+	for nodeNameAndIP, ag := range s.agents {
 		lastError := ""
 		lerr := ag.lastError
 		if lerr != nil {
@@ -238,7 +246,7 @@ func (s *ProfileColumnStore) Agents(ctx context.Context, req *profilestorepb.Age
 
 		id := ag.nodeName
 		if id == "" {
-			id = ip
+			id = nodeNameAndIP
 		}
 
 		agents = append(agents, &profilestorepb.Agent{

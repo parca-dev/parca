@@ -61,7 +61,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3.3.1
         with:
           go-version-file: .go-version
           check-latest: true
@@ -82,7 +82,7 @@ jobs:
         run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - name: Build binaries
-        uses: goreleaser/goreleaser-action@ff11ca24a9b39f2d36796d1fbd7a4e39c182630a # tag=v3.1.0
+        uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # tag=v3.2.0
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
@@ -126,7 +126,7 @@ jobs:
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
 
       - name: Set up Go
-        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=v3.3.0
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3.3.1
         with:
           go-version-file: .go-version
           check-latest: true
@@ -148,7 +148,7 @@ jobs:
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}
-        uses: sigstore/cosign-installer@7cc35d7fdbe70d4278a0c96779081e6fac665f88 # tag=v2.8.0
+        uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b # tag=v2.8.1
 
       - name: Install crane
         if: ${{ github.event_name != 'pull_request' }}

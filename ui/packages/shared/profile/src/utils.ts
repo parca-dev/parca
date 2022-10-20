@@ -18,7 +18,7 @@ export const hexifyAddress = (address?: string): string => {
   if (address == null) {
     return '';
   }
-  return `0x${parseInt(address, 10).toString(16)}`;
+  return `0x${BigInt(address).toString(16)}`;
 };
 
 export const downloadPprof = async (
@@ -41,4 +41,12 @@ export const downloadPprof = async (
   }
   const blob = new Blob([response.report.pprof], {type: 'application/octet-stream'});
   return blob;
+};
+
+export const truncateString = (str: string, num: number): string => {
+  if (str.length <= num) {
+    return str;
+  }
+
+  return str.slice(0, num) + '...';
 };

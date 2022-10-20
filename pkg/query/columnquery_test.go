@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"io"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -165,9 +166,15 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
 
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
 
 	for _, f := range files {
 		p := &pprofpb.Profile{}
@@ -241,9 +248,15 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	err = p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
 
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
@@ -329,9 +342,16 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	require.NoError(t, err)
 	p.TimeNanos = time.Now().UnixNano()
 
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
+
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "fgprof",
@@ -458,8 +478,14 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.Equal(t, 1, len(sres.Stacktraces))
 	st2 := sres.Stacktraces[0]
 
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
 
 	err = ingester.IngestProfile(
 		ctx,
@@ -651,9 +677,15 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	err = p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
 
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
@@ -664,7 +696,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	}}, p, false)
 	require.NoError(t, err)
 
-	table.Sync()
+	require.NoError(t, table.EnsureCompaction())
 
 	api := NewColumnQueryAPI(
 		logger,
@@ -728,9 +760,15 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	err = p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "memory",
@@ -795,9 +833,15 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	err = p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
 	metastore := metastore.NewInProcessClient(m)
 	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema)
+	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
 	err = ingester.Ingest(ctx, labels.Labels{{
 		Name:  "__name__",
 		Value: "memory",

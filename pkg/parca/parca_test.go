@@ -14,6 +14,7 @@
 package parca
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/tls"
@@ -23,6 +24,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -248,6 +250,12 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 		),
 	)
 
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
 	const maxWorkers = 8
 	s := semgroup.NewGroup(ctx, maxWorkers)
 	for _, sample := range samples {
@@ -277,6 +285,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 				parcacol.NewNormalizer(metastore),
 				table,
 				schema,
+				bufferPool,
 			).Ingest(ctx, sample.Labels, p, false)
 		})
 	}
@@ -311,7 +320,7 @@ func TestReplay(t *testing.T) {
 	}()
 
 	require.NoError(t, s.Wait())
-	table.Sync()
+	require.NoError(t, table.EnsureCompaction())
 }
 
 func BenchmarkValuesAPI(b *testing.B) {
@@ -319,7 +328,7 @@ func BenchmarkValuesAPI(b *testing.B) {
 	api, table, s, cleanup := replayDebugLog(ctx, b)
 	b.Cleanup(cleanup)
 	require.NoError(b, s.Wait())
-	table.Sync()
+	require.NoError(b, table.EnsureCompaction())
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -381,10 +390,16 @@ func TestConsistency(t *testing.T) {
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(MustReadAllGzip(t, "../query/testdata/alloc_objects.pb.gz")))
 
-	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table, schema)
+	bufferPool := &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
+	ingester := parcacol.NewIngester(logger, parcacol.NewNormalizer(metastore), table, schema, bufferPool)
 	require.NoError(t, ingester.Ingest(ctx, labels.Labels{{Name: "__name__", Value: "memory"}}, p, false))
 
-	table.Sync()
+	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,

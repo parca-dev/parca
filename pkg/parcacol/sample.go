@@ -15,6 +15,7 @@ package parcacol
 
 import (
 	"fmt"
+	"io"
 	"sort"
 
 	"github.com/polarsignals/frostdb/dynparquet"
@@ -26,19 +27,20 @@ import (
 
 // NormalizedProfileToParquetBuffer converts a normalized profile to a Parquet
 // buffer. The passed labels must be sorted.
-func NormalizedProfileToParquetBuffer(schema *dynparquet.Schema, ls labels.Labels, p *profile.NormalizedProfile) (*dynparquet.Buffer, error) {
+func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, ls labels.Labels, p *profile.NormalizedProfile) error {
 	names := labelNames(ls)
 	pprofLabels := profileLabelNames(p)
 	pprofNumLabels := profileNumLabelNames(p)
 
-	pb, err := schema.NewBuffer(map[string][]string{
+	pb, err := schema.GetBuffer(map[string][]string{
 		ColumnLabels:         names,
 		ColumnPprofLabels:    pprofLabels,
 		ColumnPprofNumLabels: pprofNumLabels,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
+	defer schema.PutBuffer(pb)
 
 	var r parquet.Row
 	for _, sample := range p.Samples {
@@ -53,12 +55,12 @@ func NormalizedProfileToParquetBuffer(schema *dynparquet.Schema, ls labels.Label
 		)
 		_, err := pb.WriteRows([]parquet.Row{r})
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	pb.Sort()
-	return pb.Clone()
+	return schema.SerializeBuffer(w, pb.Buffer)
 }
 
 func labelNames(ls labels.Labels) []string {

@@ -1,9 +1,8 @@
 {
-  "version": "0.16.45",
+  "version": "independent",
   "npmClient": "yarn",
   "tagVersionPrefix": "ui-v",
   "useWorkspaces": true,
-  "packages": ["packages/shared/*"],
   "command": {
     "publish": {
       "conventionalCommits": true

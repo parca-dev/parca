@@ -14,9 +14,11 @@
 package parcacol
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -29,7 +31,7 @@ import (
 
 type Table interface {
 	Schema() *dynparquet.Schema
-	InsertBuffer(context.Context, *dynparquet.Buffer) (tx uint64, err error)
+	Insert(context.Context, []byte) (tx uint64, err error)
 }
 
 type Ingester struct {
@@ -37,14 +39,22 @@ type Ingester struct {
 	table      Table
 	normalizer *Normalizer
 	schema     *dynparquet.Schema
+	bufferPool *sync.Pool
 }
 
-func NewIngester(logger log.Logger, normalizer *Normalizer, table Table, schema *dynparquet.Schema) *Ingester {
+func NewIngester(
+	logger log.Logger,
+	normalizer *Normalizer,
+	table Table,
+	schema *dynparquet.Schema,
+	bufferPool *sync.Pool,
+) *Ingester {
 	return &Ingester{
 		logger:     logger,
 		normalizer: normalizer,
 		table:      table,
 		schema:     schema,
+		bufferPool: bufferPool,
 	}
 }
 
@@ -100,12 +110,16 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 }
 
 func (ing Ingester) IngestProfile(ctx context.Context, ls labels.Labels, p *profile.NormalizedProfile) error {
-	buffer, err := NormalizedProfileToParquetBuffer(ing.schema, ls, p)
+	buf := ing.bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer ing.bufferPool.Put(buf)
+
+	err := NormalizedProfileToParquetBuffer(buf, ing.schema, ls, p)
 	if err != nil {
 		return fmt.Errorf("failed to convert samples to buffer: %w", err)
 	}
 
-	_, err = ing.table.InsertBuffer(ctx, buffer)
+	_, err = ing.table.Insert(ctx, buf.Bytes())
 	if err != nil {
 		return fmt.Errorf("insert buffer: %w", err)
 	}

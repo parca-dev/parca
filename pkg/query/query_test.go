@@ -14,9 +14,11 @@
 package query
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math"
+	"sync"
 	"testing"
 	"time"
 
@@ -74,8 +76,14 @@ func Benchmark_Query_Merge(b *testing.B) {
 				s.Label = nil
 			}
 
+			bufferPool := &sync.Pool{
+				New: func() any {
+					return new(bytes.Buffer)
+				},
+			}
+
 			normalizer := parcacol.NewNormalizer(m)
-			ingester := parcacol.NewIngester(logger, normalizer, table, schema)
+			ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
 
 			profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
 			require.NoError(b, err)
@@ -88,7 +96,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				}
 			}
 
-			table.Sync()
+			require.NoError(b, table.EnsureCompaction())
 
 			api := NewColumnQueryAPI(
 				logger,
@@ -147,7 +155,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 
 	table, err := colDB.GetTable("stacktraces")
 	require.NoError(b, err)
-	table.Sync()
+	require.NoError(b, table.EnsureCompaction())
 
 	require.NoError(b, err)
 	m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
