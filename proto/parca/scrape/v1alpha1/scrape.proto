@@ -11,9 +11,7 @@ import "parca/profilestore/v1alpha1/profilestore.proto";
 service ScrapeService {
   // Targets returns the set of scrape targets that are configured
   rpc Targets(TargetsRequest) returns (TargetsResponse) {
-    option (google.api.http) = {
-      get: "/targets"
-    };
+    option (google.api.http) = {get: "/targets"};
   }
 }
 
