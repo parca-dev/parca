@@ -1,4 +1,4 @@
-# Parca Grafana Datasource Plugin
+# Parca Datasource Plugin for Grafana
 
 ## Getting started
 

@@ -25,7 +25,7 @@
         "url": "https://github.com/parca-dev/parca/blob/main/ui/packages/app/grafana-datasource-plugin/LICENSE"
       }
     ],
-    "screenshots": [],
+    "screenshots": [{"name": "Parca Datasource", "path": "img/screenshots/datasource-config.png"}],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

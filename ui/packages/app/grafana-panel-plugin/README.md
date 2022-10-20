@@ -1,4 +1,4 @@
-# Parca Grafana Panel Plugin
+# Parca Framegraph Plugin for Grafana
 
 ## Getting started
 
