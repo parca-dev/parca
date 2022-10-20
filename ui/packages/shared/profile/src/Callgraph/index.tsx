@@ -15,6 +15,7 @@ import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
+import {KonvaEventObject} from 'konva/lib/Node';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot, getCurvePoints} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
@@ -185,7 +186,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     if (width !== null) {
       void getDataWithPositions();
     }
-  }, [graph, width]);
+  }, [graph, width, colorRange]);
 
   // 3. Render the graph with calculated layout in Canvas container
   if (width == null || graphData == null) return <></>;
@@ -204,7 +205,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     .domain([0, bbHeight])
     .range([0, height - 2 * GRAPH_MARGIN]);
 
-  const nodes: INode[] = gvizNodes.map((node: GraphvizNode, i) => {
+  const nodes: INode[] = gvizNodes.map((node: GraphvizNode) => {
     const [x, y] = node.pos.split(',');
     return {
       ...node,
@@ -215,28 +216,32 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   });
 
   // 4. Add zooming
-  const handleWheel = e => {
+  const handleWheel: (e: KonvaEventObject<WheelEvent>) => void = e => {
     e.evt.preventDefault();
 
     const scaleXBy = 0.95;
     const scaleYBy = 1.05;
     const stage = e.target.getStage();
-    const oldScale = stage.scaleX();
-    const mousePointTo = {
-      x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
-      y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
-    };
 
-    const newXScale = e.evt.deltaY > 0 ? oldScale * scaleXBy : oldScale / scaleXBy;
-    const newYScale = e.evt.deltaY > 0 ? oldScale * scaleYBy : oldScale / scaleYBy;
+    if (stage !== null) {
+      const oldScale = stage.scaleX();
+      const {x, y} = stage.getPointerPosition() ?? {x: 0, y: 0};
+      const mousePointTo = {
+        x: x / oldScale - stage.x() / oldScale,
+        y: y / oldScale - stage.y() / oldScale,
+      };
 
-    stage.scale({x: newXScale, y: newYScale});
+      const newXScale = e.evt.deltaX > 0 ? oldScale * scaleXBy : oldScale / scaleXBy;
+      const newYScale = e.evt.deltaY > 0 ? oldScale * scaleYBy : oldScale / scaleYBy;
 
-    setStage({
-      scale: {x: newXScale, y: newYScale},
-      x: -(mousePointTo.x - stage.getPointerPosition().x / newXScale) * newXScale,
-      y: -(mousePointTo.y - stage.getPointerPosition().y / newYScale) * newYScale,
-    });
+      stage.scale({x: newXScale, y: newYScale});
+
+      setStage({
+        scale: {x: newXScale, y: newYScale},
+        x: -(mousePointTo.x - x / newXScale) * newXScale,
+        y: -(mousePointTo.y - y / newYScale) * newYScale,
+      });
+    }
   };
 
   return (
@@ -245,6 +250,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
         <Stage
           width={width}
           height={height}
+          // @ts-expect-error
           onWheel={handleWheel}
           scaleX={stage.scale.x}
           scaleY={stage.scale.y}

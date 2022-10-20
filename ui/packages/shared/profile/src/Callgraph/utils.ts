@@ -52,7 +52,7 @@ export const getCurvePoints = ({
 
   // graphviz pos format is in format 'endpoint,startpoint,triple(cp1,cp2,end),...triple...'
   const scalePoint = (point: number[]): number[] => [xScale(point[0]), yScale(point[1])];
-  const strAsNumArray = string =>
+  const strAsNumArray = (string: string): number[] =>
     string
       .replace('e,', '')
       .split(',')
