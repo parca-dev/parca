@@ -49,8 +49,8 @@ message UploadInfo {
   // hash is the hash of the source file that debug information extracted from
   string hash = 2;
 
-// TODO(kakkoyun): Add SourceHash and use Hash as debuginfo file hash.
-// TODO(kakkoyun): Add SourceType enum.
+  // TODO(kakkoyun): Add SourceHash and use Hash as debuginfo file hash.
+  // TODO(kakkoyun): Add SourceType enum.
 }
 
 // UploadResponse returns the build_id and the size of the uploaded debug info

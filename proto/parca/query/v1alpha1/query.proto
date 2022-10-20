@@ -11,44 +11,32 @@ import "parca/profilestore/v1alpha1/profilestore.proto";
 service QueryService {
   // QueryRange performs a profile query over a time range
   rpc QueryRange(QueryRangeRequest) returns (QueryRangeResponse) {
-    option (google.api.http) = {
-      get: "/profiles/query_range"
-    };
+    option (google.api.http) = {get: "/profiles/query_range"};
   }
 
   // Query performs a profile query
   rpc Query(QueryRequest) returns (QueryResponse) {
-    option (google.api.http) = {
-      get: "/profiles/query"
-    };
+    option (google.api.http) = {get: "/profiles/query"};
   }
 
   // Series is unimplemented
   rpc Series(SeriesRequest) returns (SeriesResponse) {
-    option (google.api.http) = {
-      get: "/profiles/series"
-    };
+    option (google.api.http) = {get: "/profiles/series"};
   }
 
   // ProfileTypes returns the list of available profile types.
   rpc ProfileTypes(ProfileTypesRequest) returns (ProfileTypesResponse) {
-    option (google.api.http) = {
-      get: "/profiles/types"
-    };
+    option (google.api.http) = {get: "/profiles/types"};
   }
 
   // Labels returns the set of label names against a given matching string and time frame
   rpc Labels(LabelsRequest) returns (LabelsResponse) {
-    option (google.api.http) = {
-      get: "/profiles/labels"
-    };
+    option (google.api.http) = {get: "/profiles/labels"};
   }
 
   // Values returns the set of values that match a given label and time frame
   rpc Values(ValuesRequest) returns (ValuesResponse) {
-    option (google.api.http) = {
-      get: "/profiles/labels/{label_name}/values"
-    };
+    option (google.api.http) = {get: "/profiles/labels/{label_name}/values"};
   }
 
   // ShareProfile uploads the given profile to pprof.me and returns a link to the profile.
