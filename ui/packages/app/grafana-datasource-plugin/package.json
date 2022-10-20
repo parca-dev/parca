@@ -17,7 +17,7 @@
     "@grafana/runtime": "latest",
     "@grafana/toolkit": "latest",
     "@grafana/ui": "latest",
-    "@testing-library/jest-dom": "5.4.0",
+    "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "10.4.9",
     "@types/lodash": "latest"
   },
