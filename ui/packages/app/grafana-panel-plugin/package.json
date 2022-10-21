@@ -1,6 +1,6 @@
 {
   "name": "@parca/grafana-panel",
-  "version": "0.0.2-beta.0",
+  "version": "0.0.3",
   "description": "A Grafana panel plugin for Parca",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
@@ -9,7 +9,7 @@
     "watch": "grafana-toolkit plugin:dev --watch",
     "sign": "grafana-toolkit plugin:sign",
     "start": "yarn watch",
-    "bundle": "rm -rf dist && yarn build && mv dist parca-panel && zip release/parca-panel-plugin-0.0.2.zip parca-panel -r && rm -rf parca-panel && sha1sum release/parca-panel-plugin-0.0.2.zip"
+    "bundle": "rm -rf dist && yarn build && mv dist parca-panel && zip release/parca-panel-plugin-0.0.3.zip parca-panel -r && rm -rf parca-panel && sha1sum release/parca-panel-plugin-0.0.3.zip"
   },
   "author": "Parca Contributors",
   "license": "Apache-2.0",
