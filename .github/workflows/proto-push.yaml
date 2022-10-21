@@ -60,7 +60,7 @@ jobs:
         with:
           input: 'proto'
 
-      - uses: bufbuild/buf-breaking-action@1cd949a5f7c5581990772f1e0c8a5270d7e4401b # tag=v1.1.1
+      - uses: bufbuild/buf-breaking-action@f47418c81c00bfd65394628385593542f64db477 # tag=v1.1.2
         with:
           input: 'proto'
           # The 'main' branch of the GitHub repository that defines the module.
