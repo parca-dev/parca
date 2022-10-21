@@ -48,16 +48,16 @@ jobs:
           go-version-file: .go-version
           check-latest: true
 
-      - uses: bufbuild/buf-setup-action@ebfad693a1cf43c5a8fc187a3f6ffc9d4b5dea8f # tag=v1.8.0
+      - uses: bufbuild/buf-setup-action@3e33fea8596569a62fcaa33eb3880b6ac7098941 # tag=v1.9.0
 
       - name: Format
         run: buf format --diff --exit-code
 
-      - uses: bufbuild/buf-lint-action@d35dc843e3e1d4d7ec2d4b6eef89ff040b85cf28 # tag=v1.0.2
+      - uses: bufbuild/buf-lint-action@bd48f53224baaaf0fc55de9a913e7680ca6dbea4 # tag=v1.0.3
         with:
           input: 'proto'
 
-      - uses: bufbuild/buf-breaking-action@1cd949a5f7c5581990772f1e0c8a5270d7e4401b # tag=v1.1.1
+      - uses: bufbuild/buf-breaking-action@f47418c81c00bfd65394628385593542f64db477 # tag=v1.1.2
         with:
           input: 'proto'
           # The 'main' branch of the GitHub repository that defines the module.

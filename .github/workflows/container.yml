@@ -131,7 +131,7 @@ jobs:
           go-version-file: .go-version
           check-latest: true
 
-      - uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # tag=v3.0.0
+      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # tag=v3.0.1
         with:
           name: parca-dist-container
           path: dist
