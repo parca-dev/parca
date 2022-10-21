@@ -33,7 +33,7 @@
     "@parca/parser": "^0.16.49",
     "@parca/profile": "^0.16.54",
     "@parca/store": "^0.16.49",
-    "@svgr/webpack": "6.4.0",
+    "@svgr/webpack": "6.5.0",
     "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "13.4.0",
     "autoprefixer": "10.4.12",
