@@ -28,17 +28,6 @@ export class ConfigEditor extends PureComponent<Props, {}> {
     onOptionsChange({...options, jsonData});
   };
 
-  // Secure field (only sent to the backend)
-  onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    const {onOptionsChange, options} = this.props;
-    onOptionsChange({
-      ...options,
-      secureJsonData: {
-        apiKey: event.target.value,
-      },
-    });
-  };
-
   onResetAPIKey = (): void => {
     const {onOptionsChange, options} = this.props;
     onOptionsChange({

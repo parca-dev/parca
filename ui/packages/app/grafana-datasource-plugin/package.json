@@ -1,6 +1,6 @@
 {
   "name": "@parca/grafana-datasource",
-  "version": "0.0.2-beta.0",
+  "version": "0.0.3",
   "description": "A Grafana datasource plugin for Parca",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
@@ -9,7 +9,7 @@
     "watch": "grafana-toolkit plugin:dev --watch",
     "sign": "grafana-toolkit plugin:sign",
     "start": "yarn watch",
-    "bundle": "rm -rf dist && yarn build && mv dist parca-datasource && zip release/parca-datasource-plugin-0.0.2.zip parca-datasource -r && rm -rf parca-datasource && sha1sum release/parca-datasource-plugin-0.0.2.zip"
+    "bundle": "rm -rf dist && yarn build && yarn sign && mv dist parca-datasource && zip release/parca-datasource-plugin-0.0.3.zip parca-datasource -r && rm -rf parca-datasource && sha1sum release/parca-datasource-plugin-0.0.3.zip"
   },
   "author": "Parca Contributors",
   "license": "Apache-2.0",
