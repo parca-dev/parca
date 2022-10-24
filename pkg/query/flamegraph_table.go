@@ -20,12 +20,12 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile) (*pb.Flamegraph, error) {
-	rootNode := &pb.FlamegraphNode{}
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile) (*querypb.Flamegraph, error) {
+	rootNode := &querypb.FlamegraphNode{}
 	current := rootNode
 
 	var height int32
@@ -72,7 +72,7 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 					node.Cumulative += s.Value
 					node.Diff += s.DiffValue
 
-					newChildren := make([]*pb.FlamegraphNode, len(current.Children)+1)
+					newChildren := make([]*querypb.FlamegraphNode, len(current.Children)+1)
 					copy(newChildren, current.Children[:index])
 
 					newChildren[index] = node
@@ -96,8 +96,8 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		current = rootNode
 	}
 
-	flamegraph := &pb.Flamegraph{
-		Root: &pb.FlamegraphRootNode{
+	flamegraph := &querypb.Flamegraph{
+		Root: &querypb.FlamegraphRootNode{
 			Cumulative: rootNode.Cumulative,
 			Diff:       rootNode.Diff,
 			Children:   rootNode.Children,
@@ -112,8 +112,7 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		Function:    tables.Functions(),
 	}
 
-	return flamegraph, nil
-	// return aggregateByFunction(tables, flamegraph), nil
+	return aggregateByFunctionTable(tables, flamegraph), nil
 }
 
 type tableConverter struct {
@@ -264,14 +263,183 @@ func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 // tableLocationToTreeNodes converts a location to its tree nodes, if the location
 // has multiple inlined functions it creates multiple nodes for each inlined
 // function.
-func tableLocationToTreeNodes(location *metastorev1alpha1.Location, locationIndex uint32) []*pb.FlamegraphNode {
+func tableLocationToTreeNodes(location *metastorev1alpha1.Location, locationIndex uint32) []*querypb.FlamegraphNode {
 	if len(location.Lines) > 0 {
 		// return linesToTreeNodes(location, location.MappingIndex, location.Lines)
 	}
 
-	return []*pb.FlamegraphNode{{
-		Meta: &pb.FlamegraphNodeMeta{
+	return []*querypb.FlamegraphNode{{
+		Meta: &querypb.FlamegraphNodeMeta{
 			LocationIndex: locationIndex,
 		},
 	}}
+}
+
+type TableGetter interface {
+	Strings() []string
+	GetLocation(index uint32) *metastorev1alpha1.Location
+	GetFunction(index uint32) *metastorev1alpha1.Function
+}
+
+func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *querypb.Flamegraph {
+	oldRootNode := &querypb.FlamegraphNode{
+		Cumulative: fg.Root.Cumulative,
+		Diff:       fg.Root.Diff,
+		Children:   fg.Root.Children,
+	}
+	mergeChildrenTable(tables, oldRootNode, compareByNameTable, equalsByNameTable)
+
+	it := NewFlamegraphIterator(oldRootNode)
+	tree := &querypb.Flamegraph{
+		Total:  fg.Total,
+		Height: fg.Height,
+		Root: &querypb.FlamegraphRootNode{
+			Cumulative: fg.Root.Cumulative,
+			Diff:       fg.Root.Diff,
+		},
+		Unit:        fg.Unit,
+		StringTable: fg.StringTable,
+		Locations:   fg.Locations,
+		Mapping:     fg.Mapping,
+		Function:    fg.Function,
+	}
+	if !it.HasMore() {
+		return tree
+	}
+
+	newRootNode := &querypb.FlamegraphNode{
+		Cumulative: fg.Root.Cumulative,
+		Diff:       fg.Root.Diff,
+	}
+	stack := TreeStack{{nodes: []*querypb.FlamegraphNode{newRootNode}}}
+
+	for it.HasMore() {
+		if it.NextChild() {
+			node := it.At()
+			cur := &querypb.FlamegraphNode{
+				Meta:       node.Meta,
+				Cumulative: node.Cumulative,
+				Diff:       node.Diff,
+			}
+			mergeChildrenTable(tables, node, compareByNameTable, equalsByNameTable)
+			peekNodes := stack.Peek().nodes
+			peekNode := peekNodes[len(peekNodes)-1]
+			peekNode.Children = append(peekNode.Children, cur)
+
+			steppedInto := it.StepInto()
+			if steppedInto {
+				stack.Push(&TreeStackEntry{
+					nodes: []*querypb.FlamegraphNode{cur},
+				})
+			}
+			continue
+		}
+		it.StepUp()
+		stack.Pop()
+	}
+
+	tree.Root.Children = newRootNode.Children
+
+	return tree
+}
+
+// mergeChildren sorts and merges the children of the given node if they are equals (in-place).
+// compare function used for sorting and equals function used for comparing two nodes before merging.
+func mergeChildrenTable(
+	tables TableGetter,
+	node *querypb.FlamegraphNode,
+	compare, equals func(tables TableGetter, a *querypb.FlamegraphNode, b *querypb.FlamegraphNode) bool,
+) {
+	if len(node.Children) < 2 {
+		return
+	}
+
+	// Even though we stably sort them, we might be messing the call order?
+	sort.SliceStable(node.Children, func(i, j int) bool {
+		return compare(tables, node.Children[i], node.Children[j])
+	})
+
+	var cumulative int64
+
+	i, j := 0, 1
+	for i < len(node.Children)-1 {
+		current, next := node.Children[i], node.Children[j]
+		if equals(tables, current, next) {
+			// Merge children into the first one
+			current.Meta.Line = nil
+			if current.Meta.Mapping != nil && next.Meta.Mapping != nil && current.Meta.Mapping.Id != next.Meta.Mapping.Id {
+				current.Meta.Mapping = &metastorev1alpha1.Mapping{}
+			}
+
+			cumulative += next.Cumulative
+			current.Cumulative += next.Cumulative
+			current.Diff += next.Diff
+			current.Children = append(current.Children, next.Children...)
+			// Delete merged child
+			node.Children = append(node.Children[:j], node.Children[j+1:]...)
+			continue
+		}
+		i, j = i+1, j+1
+	}
+
+	// TODO: This is just a safeguard and should be properly fixed before this function.
+	if node.Cumulative < cumulative {
+		node.Cumulative = cumulative
+	}
+}
+
+func compareByNameTable(tables TableGetter, a, b *querypb.FlamegraphNode) bool {
+	aLocation := tables.GetLocation(a.Meta.LocationIndex)
+	bLocation := tables.GetLocation(b.Meta.LocationIndex)
+
+	if aLocation == nil || bLocation == nil {
+		return false
+	}
+	if len(aLocation.Lines) < 1 || len(bLocation.Lines) < 1 {
+		return false
+	}
+
+	aFunction := tables.GetFunction(aLocation.Lines[0].FunctionIndex)
+	bFunction := tables.GetFunction(bLocation.Lines[0].FunctionIndex)
+
+	if aFunction != nil && bFunction == nil {
+		return false
+	}
+	if aFunction == nil && bFunction != nil {
+		return true
+	}
+	if aFunction == nil && bFunction == nil {
+		return aLocation.Address <= bLocation.Address
+	}
+
+	strings := tables.Strings()
+	return strings[aFunction.NameStringIndex] <= strings[bFunction.NameStringIndex]
+}
+
+func equalsByNameTable(tables TableGetter, a, b *querypb.FlamegraphNode) bool {
+	aLocation := tables.GetLocation(a.Meta.LocationIndex)
+	bLocation := tables.GetLocation(b.Meta.LocationIndex)
+
+	if aLocation == nil || bLocation == nil {
+		return false
+	}
+	if len(aLocation.Lines) < 1 || len(bLocation.Lines) < 1 {
+		return false
+	}
+
+	aFunction := tables.GetFunction(aLocation.Lines[0].FunctionIndex)
+	bFunction := tables.GetFunction(bLocation.Lines[0].FunctionIndex)
+
+	if aFunction != nil && bFunction == nil {
+		return false
+	}
+	if aFunction == nil && bFunction != nil {
+		return false
+	}
+	if aFunction == nil && bFunction == nil {
+		return aLocation.Address == bLocation.Address
+	}
+
+	strings := tables.Strings()
+	return strings[aFunction.NameStringIndex] == strings[bFunction.NameStringIndex]
 }
