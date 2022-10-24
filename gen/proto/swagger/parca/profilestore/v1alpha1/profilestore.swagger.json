@@ -171,8 +171,7 @@
       "type": "object",
       "properties": {
         "labels": {
-          "$ref": "#/definitions/v1alpha1LabelSet",
-          "title": "LabelSet is the key value pairs to identify the corresponding profile"
+          "$ref": "#/definitions/v1alpha1LabelSet"
         },
         "samples": {
           "type": "array",
