@@ -390,6 +390,10 @@ export default function IcicleGraph({
         y={pos[1]}
         hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
+        strings={graph.stringTable}
+        mappings={graph.mapping}
+        locations={graph.locations}
+        functions={graph.function}
       />
       <svg
         className='font-robotoMono'
