@@ -136,12 +136,10 @@
       "type": "object",
       "properties": {
         "discoveredLabels": {
-          "$ref": "#/definitions/v1alpha1LabelSet",
-          "title": "discovered_labels are the set of labels for the target that have been discovered"
+          "$ref": "#/definitions/v1alpha1LabelSet"
         },
         "labels": {
-          "$ref": "#/definitions/v1alpha1LabelSet",
-          "title": "labels are the set of labels given for the target"
+          "$ref": "#/definitions/v1alpha1LabelSet"
         },
         "lastError": {
           "type": "string",
@@ -161,8 +159,7 @@
           "title": "url is the url of the target"
         },
         "health": {
-          "$ref": "#/definitions/TargetHealth",
-          "title": "health indicates the current health of the target"
+          "$ref": "#/definitions/TargetHealth"
         }
       },
       "title": "Target is the scrape target representation"

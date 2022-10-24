@@ -171,8 +171,7 @@
       "type": "object",
       "properties": {
         "flamegraph": {
-          "$ref": "#/definitions/v1alpha1Flamegraph",
-          "title": "flamegraph is a flamegraph representation of the report"
+          "$ref": "#/definitions/v1alpha1Flamegraph"
         },
         "pprof": {
           "type": "string",
@@ -180,12 +179,10 @@
           "title": "pprof is a pprof profile as compressed bytes"
         },
         "top": {
-          "$ref": "#/definitions/v1alpha1Top",
-          "title": "top is a top list representation of the report"
+          "$ref": "#/definitions/v1alpha1Top"
         },
         "callgraph": {
-          "$ref": "#/definitions/v1alpha1Callgraph",
-          "title": "callgraph is a callgraph nodes and edges representation of the report"
+          "$ref": "#/definitions/v1alpha1Callgraph"
         }
       },
       "description": "QueryResponse is the returned report for the given query."
@@ -291,8 +288,7 @@
           "title": "id is the unique id of the node"
         },
         "meta": {
-          "$ref": "#/definitions/v1alpha1CallgraphNodeMeta",
-          "title": "meta is the metadata about the node"
+          "$ref": "#/definitions/v1alpha1CallgraphNodeMeta"
         },
         "cumulative": {
           "type": "string",
@@ -306,20 +302,16 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
-          "title": "location is the location for the code"
+          "$ref": "#/definitions/metastorev1alpha1Location"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
-          "title": "mapping is the mapping into code"
+          "$ref": "#/definitions/metastorev1alpha1Mapping"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
-          "title": "function is the function information"
+          "$ref": "#/definitions/metastorev1alpha1Function"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
-          "title": "line is the line location"
+          "$ref": "#/definitions/metastorev1alpha1Line"
         }
       },
       "title": "TopNodeMeta is the metadata for a given node"
@@ -328,8 +320,7 @@
       "type": "object",
       "properties": {
         "root": {
-          "$ref": "#/definitions/v1alpha1FlamegraphRootNode",
-          "title": "root is the root of the flame graph"
+          "$ref": "#/definitions/v1alpha1FlamegraphRootNode"
         },
         "total": {
           "type": "string",
@@ -352,8 +343,7 @@
       "type": "object",
       "properties": {
         "meta": {
-          "$ref": "#/definitions/v1alpha1FlamegraphNodeMeta",
-          "title": "meta is the metadata about the node"
+          "$ref": "#/definitions/v1alpha1FlamegraphNodeMeta"
         },
         "cumulative": {
           "type": "string",
@@ -379,20 +369,16 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
-          "title": "location is the location for the code"
+          "$ref": "#/definitions/metastorev1alpha1Location"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
-          "title": "mapping is the mapping into code"
+          "$ref": "#/definitions/metastorev1alpha1Mapping"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
-          "title": "function is the function information"
+          "$ref": "#/definitions/metastorev1alpha1Function"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
-          "title": "line is the line location"
+          "$ref": "#/definitions/metastorev1alpha1Line"
         }
       },
       "title": "FlamegraphNodeMeta is the metadata for a given node"
@@ -481,8 +467,7 @@
       "type": "object",
       "properties": {
         "meta": {
-          "$ref": "#/definitions/v1alpha1TopNodeMeta",
-          "title": "meta is the metadata about the node"
+          "$ref": "#/definitions/v1alpha1TopNodeMeta"
         },
         "cumulative": {
           "type": "string",
@@ -506,20 +491,16 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
-          "title": "location is the location for the code"
+          "$ref": "#/definitions/metastorev1alpha1Location"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
-          "title": "mapping is the mapping into code"
+          "$ref": "#/definitions/metastorev1alpha1Mapping"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
-          "title": "function is the function information"
+          "$ref": "#/definitions/metastorev1alpha1Function"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
-          "title": "line is the line location"
+          "$ref": "#/definitions/metastorev1alpha1Line"
         }
       },
       "title": "TopNodeMeta is the metadata for a given node"
