@@ -1,16 +1,16 @@
-# Parca Framegraph Plugin for Grafana
+# Parca Flamegraph Plugin for Grafana
 
 ## Getting started
 
 1. Install the Parca flamegraph plugin from the [Grafana plugin repository](https://grafana.com/grafana/plugins/parca-panel/).
 2. Make sure that Parca datasource plugin is installed and configured in Grafana, if not, follow the instructions [here](#configuring-the-datasource).
-3. Congifure the Parca flamegraph panel:
+3. Configure the Parca flamegraph panel:
    1. Add a new panel to your dashboard.
    2. In the Query section:
       1. Select the Parca datasource.
       2. The `Profile Type` dropdown, lists the profile types that are available on the connected Parca server. Select the profile type you want to visualize.
       3. In the `Query Selector` field, enter the query you want to visualize. The query selector is a [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/) like expression that is used to select the profiles that you want to visualize. For example, `{job="api-server"}` will select all the profiles that have the label `job` with the value `api-server`.
-   3. In the Vizualization section on the right, select the `Parca Flamegraph` visualization. Now you should be able to see the flamegraph visualization, for the selected query.
+   3. In the Visualization section on the right, select the `Parca Flamegraph` visualization. Now you should be able to see the flamegraph visualization, for the selected query.
    4. Enter a suitable title for the panel in the `Panel Title` field.
    5. Save the Panel.
 
