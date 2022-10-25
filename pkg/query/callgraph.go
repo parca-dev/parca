@@ -39,7 +39,7 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 	for _, s := range p.Samples {
 		cummValue += s.Value
 		var prevNode *querypb.CallgraphNode = nil
-		for _, location := range s.Locations {
+		for i, location := range s.Locations {
 			locationNodes := locationToCallgraphNodes(location)
 			for _, n := range locationNodes {
 				key := getNodeKey(n)
@@ -50,6 +50,9 @@ func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgr
 				currentNode := nodesMap[key]
 				currentNode.Cumulative += s.Value
 				currentNodeId := currentNode.Id
+				if i == 0 {
+					currentNode.Flat += s.Value
+				}
 
 				if prevNode != nil {
 					key := currentNodeId + " -> " + prevNode.Id
