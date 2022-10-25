@@ -83,12 +83,12 @@ const RowHeight = 26;
 
 const icicleRectStyles = {
   cursor: 'pointer',
-  transition: 'opacity .15s linear'
+  transition: 'opacity .15s linear',
 };
 const fadedIcicleRectStyles = {
   cursor: 'pointer',
   transition: 'opacity .15s linear',
-  opacity: '0.5'
+  opacity: '0.5',
 };
 
 function IcicleRect({
@@ -101,7 +101,7 @@ function IcicleRect({
   onMouseEnter,
   onMouseLeave,
   onClick,
-  curPath
+  curPath,
 }: IcicleRectProps): JSX.Element {
   const currentSearchString = useAppSelector(selectSearchNodeString);
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
@@ -127,7 +127,7 @@ function IcicleRect({
             !isSearchMatch(currentSearchString, name)
               ? 0.5
               : 1,
-          fill: color
+          fill: color,
         }}
       />
       {width > 5 && (
@@ -141,21 +141,25 @@ function IcicleRect({
   );
 }
 
-export function nodeLabel(node: FlamegraphNode, strings: string[], mappings: Mapping[], locations: Location[], functions: Function[]): string {
+export function nodeLabel(
+  node: FlamegraphNode,
+  strings: string[],
+  mappings: Mapping[],
+  locations: Location[],
+  functions: Function[]
+): string {
   if (node.meta?.locationIndex === undefined) return '<unknown>';
 
   const location = locations[node.meta.locationIndex];
-  const mappingFile = strings[ mappings[location.mappingIndex].fileStringIndex];
+  const mappingFile = strings[mappings[location.mappingIndex].fileStringIndex];
 
   const mappingString: string = `${
-    mappingFile !== ''
-      ? '[' + (getLastItem(mappingFile) ?? '') + '] '
-      : ''
+    mappingFile !== '' ? '[' + (getLastItem(mappingFile) ?? '') + '] ' : ''
   }`;
 
-  if (location.lines.length> 0) {
-    const funcName = strings[functions[location.lines[0].functionIndex].nameStringIndex]
-    return `${mappingString} ${funcName}`
+  if (location.lines.length > 0) {
+    const funcName = strings[functions[location.lines[0].functionIndex].nameStringIndex];
+    return `${mappingString} ${funcName}`;
   }
 
   const address = hexifyAddress(location.address);
@@ -184,9 +188,12 @@ export function IcicleGraphNodes({
   const isDarkMode = useAppSelector(selectDarkMode);
   const isShiftDown = useIsShiftDown();
 
-  const nodes = curPath.length === 0
-    ? data
-    : data.filter(d => d != null && curPath[0] === nodeLabel(d, strings, mappings, locations, functions));
+  const nodes =
+    curPath.length === 0
+      ? data
+      : data.filter(
+          d => d != null && curPath[0] === nodeLabel(d, strings, mappings, locations, functions)
+        );
 
   const nextLevel = level + 1;
 
@@ -289,7 +296,7 @@ export function IcicleGraphRootNode({
   totalWidth,
   setHoveringNode,
   setCurPath,
-  curPath
+  curPath,
 }: IcicleGraphRootNodeProps): JSX.Element {
   const isDarkMode = useAppSelector(selectDarkMode);
   const isShiftDown = useIsShiftDown();
@@ -354,9 +361,11 @@ export default function IcicleGraph({
   width,
   setCurPath,
   curPath,
-  sampleUnit
+  sampleUnit,
 }: IcicleGraphProps): JSX.Element {
-  const [hoveringNode, setHoveringNode] = useState<FlamegraphNode | FlamegraphRootNode | undefined>();
+  const [hoveringNode, setHoveringNode] = useState<
+    FlamegraphNode | FlamegraphRootNode | undefined
+  >();
   const [pos, setPos] = useState([0, 0]);
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
@@ -396,11 +405,11 @@ export default function IcicleGraph({
         functions={graph.function}
       />
       <svg
-        className='font-robotoMono'
+        className="font-robotoMono"
         width={width}
         height={height}
         onMouseMove={onMouseMove}
-        preserveAspectRatio='xMinYMid'
+        preserveAspectRatio="xMinYMid"
         ref={svg}
       >
         <g ref={ref}>
