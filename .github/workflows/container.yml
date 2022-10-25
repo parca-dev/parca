@@ -16,7 +16,7 @@ concurrency:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.11.5
+  GORELEASER_VERSION: v1.12.1
 
 jobs:
   skip-check:
@@ -91,7 +91,7 @@ jobs:
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
 
       - name: Archive generated artifacts
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # tag=v3.1.1
         with:
           name: parca-dist-container
           if-no-files-found: error

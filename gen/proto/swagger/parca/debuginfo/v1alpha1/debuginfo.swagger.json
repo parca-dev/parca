@@ -73,8 +73,7 @@
       "type": "object",
       "properties": {
         "source": {
-          "$ref": "#/definitions/DownloadInfoSource",
-          "description": "Source indicates the origin of the debuginfo being downloaded."
+          "$ref": "#/definitions/DownloadInfoSource"
         }
       },
       "description": "DownloadInfo metadata for the debug data that is being downloaded."
@@ -83,8 +82,7 @@
       "type": "object",
       "properties": {
         "info": {
-          "$ref": "#/definitions/v1alpha1DownloadInfo",
-          "title": "info is the metadata for the debug info"
+          "$ref": "#/definitions/v1alpha1DownloadInfo"
         },
         "chunkData": {
           "type": "string",

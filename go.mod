@@ -8,7 +8,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
-	github.com/dgraph-io/badger/v3 v3.2103.2
+	github.com/dgraph-io/badger/v3 v3.2103.3
 	github.com/dnaeon/go-vcr v1.2.0
 	github.com/fatih/semgroup v1.2.0
 	github.com/felixge/fgprof v0.9.3
@@ -25,18 +25,18 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-rc.3
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.12.0
 	github.com/ianlancetaylor/demangle v0.0.0-20220517205856-0058ec4f073c
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20221019131336-29b94b80433b
+	github.com/polarsignals/frostdb v0.0.0-20221024164824-cc2d28dee3a9
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/common v0.37.0
-	github.com/prometheus/prometheus v0.38.0
-	github.com/segmentio/parquet-go v0.0.0-20221005185849-771b3e358a03
+	github.com/prometheus/prometheus v0.39.1
+	github.com/segmentio/parquet-go v0.0.0-20221020201645-63215c8128ff
 	github.com/stretchr/testify v1.8.0
-	github.com/thanos-io/objstore v0.0.0-20221006135717-79dcec7fe604
+	github.com/thanos-io/objstore v0.0.0-20221023094311-68347a45efaa
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.3
 	go.opentelemetry.io/otel v1.11.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.0
@@ -44,7 +44,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.11.0
 	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
 	google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a
-	google.golang.org/grpc v1.50.0
+	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -99,7 +99,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
-	github.com/dgraph-io/ristretto v0.1.0 // indirect
+	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dgryski/go-metro v0.0.0-20211217172704-adc40b04c140 // indirect
 	github.com/digitalocean/godo v1.84.1 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
@@ -133,7 +133,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/flatbuffers v2.0.5+incompatible // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
@@ -223,11 +223,11 @@ require (
 	go.uber.org/goleak v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
+	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 	golang.org/x/sync v0.0.0-20220907140024-f12130a52804 // indirect
-	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
+	golang.org/x/sys v0.0.0-20221010170243-090e33056c14 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	golang.org/x/time v0.0.0-20220920022843-2ce7c2934d45 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect

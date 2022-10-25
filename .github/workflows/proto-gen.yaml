@@ -2,11 +2,6 @@ name: proto-gen
 
 on:
   pull_request:
-    paths:
-      - .github/workflows/proto-gen.yaml
-      - proto/**
-      - buf.gen.yaml
-      - buf.work.yaml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}

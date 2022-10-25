@@ -633,24 +633,19 @@
       "type": "object",
       "properties": {
         "mode": {
-          "$ref": "#/definitions/v1alpha1QueryRequestMode",
-          "title": "mode indicates the type of query performed"
+          "$ref": "#/definitions/v1alpha1QueryRequestMode"
         },
         "diff": {
-          "$ref": "#/definitions/v1alpha1DiffProfile",
-          "title": "diff contains the diff query options"
+          "$ref": "#/definitions/v1alpha1DiffProfile"
         },
         "merge": {
-          "$ref": "#/definitions/v1alpha1MergeProfile",
-          "title": "merge contains the merge query options"
+          "$ref": "#/definitions/v1alpha1MergeProfile"
         },
         "single": {
-          "$ref": "#/definitions/v1alpha1SingleProfile",
-          "title": "single contains the single query options"
+          "$ref": "#/definitions/v1alpha1SingleProfile"
         },
         "reportType": {
-          "$ref": "#/definitions/QueryRequestReportType",
-          "title": "report_type is the type of report to return"
+          "$ref": "#/definitions/QueryRequestReportType"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -659,8 +654,7 @@
       "type": "object",
       "properties": {
         "flamegraph": {
-          "$ref": "#/definitions/v1alpha1Flamegraph",
-          "title": "flamegraph is a flamegraph representation of the report"
+          "$ref": "#/definitions/v1alpha1Flamegraph"
         },
         "pprof": {
           "type": "string",
@@ -668,12 +662,10 @@
           "title": "pprof is a pprof profile as compressed bytes"
         },
         "top": {
-          "$ref": "#/definitions/v1alpha1Top",
-          "title": "top is a top list representation of the report"
+          "$ref": "#/definitions/v1alpha1Top"
         },
         "callgraph": {
-          "$ref": "#/definitions/v1alpha1Callgraph",
-          "title": "callgraph is a callgraph nodes and edges representation of the report"
+          "$ref": "#/definitions/v1alpha1Callgraph"
         }
       },
       "title": "QueryResponse is the returned report for the given query"
@@ -793,8 +785,7 @@
           "title": "id is the unique id of the node"
         },
         "meta": {
-          "$ref": "#/definitions/v1alpha1CallgraphNodeMeta",
-          "title": "meta is the metadata about the node"
+          "$ref": "#/definitions/v1alpha1CallgraphNodeMeta"
         },
         "cumulative": {
           "type": "string",
@@ -808,20 +799,16 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
-          "title": "location is the location for the code"
+          "$ref": "#/definitions/metastorev1alpha1Location"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
-          "title": "mapping is the mapping into code"
+          "$ref": "#/definitions/metastorev1alpha1Mapping"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
-          "title": "function is the function information"
+          "$ref": "#/definitions/metastorev1alpha1Function"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
-          "title": "line is the line location"
+          "$ref": "#/definitions/metastorev1alpha1Line"
         }
       },
       "title": "TopNodeMeta is the metadata for a given node"
@@ -830,12 +817,10 @@
       "type": "object",
       "properties": {
         "a": {
-          "$ref": "#/definitions/v1alpha1ProfileDiffSelection",
-          "title": "a is the first profile to diff"
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelection"
         },
         "b": {
-          "$ref": "#/definitions/v1alpha1ProfileDiffSelection",
-          "title": "b is the second profile to diff"
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelection"
         }
       },
       "title": "DiffProfile contains parameters for a profile diff request"
@@ -844,8 +829,7 @@
       "type": "object",
       "properties": {
         "root": {
-          "$ref": "#/definitions/v1alpha1FlamegraphRootNode",
-          "title": "root is the root of the flame graph"
+          "$ref": "#/definitions/v1alpha1FlamegraphRootNode"
         },
         "total": {
           "type": "string",
@@ -868,8 +852,7 @@
       "type": "object",
       "properties": {
         "meta": {
-          "$ref": "#/definitions/v1alpha1FlamegraphNodeMeta",
-          "title": "meta is the metadata about the node"
+          "$ref": "#/definitions/v1alpha1FlamegraphNodeMeta"
         },
         "cumulative": {
           "type": "string",
@@ -895,20 +878,16 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
-          "title": "location is the location for the code"
+          "$ref": "#/definitions/metastorev1alpha1Location"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
-          "title": "mapping is the mapping into code"
+          "$ref": "#/definitions/metastorev1alpha1Mapping"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
-          "title": "function is the function information"
+          "$ref": "#/definitions/metastorev1alpha1Function"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
-          "title": "line is the line location"
+          "$ref": "#/definitions/metastorev1alpha1Line"
         }
       },
       "title": "FlamegraphNodeMeta is the metadata for a given node"
@@ -1009,8 +988,7 @@
       "type": "object",
       "properties": {
         "labelset": {
-          "$ref": "#/definitions/v1alpha1LabelSet",
-          "title": "labelset is the set of key value pairs"
+          "$ref": "#/definitions/v1alpha1LabelSet"
         },
         "samples": {
           "type": "array",
@@ -1020,12 +998,10 @@
           "title": "samples is the set of top-level cumulative values of the corresponding profiles"
         },
         "periodType": {
-          "$ref": "#/definitions/queryv1alpha1ValueType",
-          "title": "period_type is the value type of profile period"
+          "$ref": "#/definitions/queryv1alpha1ValueType"
         },
         "sampleType": {
-          "$ref": "#/definitions/queryv1alpha1ValueType",
-          "title": "sample_type is the value type of profile sample"
+          "$ref": "#/definitions/queryv1alpha1ValueType"
         }
       },
       "title": "MetricsSeries is a set of labels and corresponding sample values"
@@ -1034,16 +1010,13 @@
       "type": "object",
       "properties": {
         "mode": {
-          "$ref": "#/definitions/v1alpha1ProfileDiffSelectionMode",
-          "title": "mode is the selection of the diff mode"
+          "$ref": "#/definitions/v1alpha1ProfileDiffSelectionMode"
         },
         "merge": {
-          "$ref": "#/definitions/v1alpha1MergeProfile",
-          "title": "merge contains options for a merge request"
+          "$ref": "#/definitions/v1alpha1MergeProfile"
         },
         "single": {
-          "$ref": "#/definitions/v1alpha1SingleProfile",
-          "title": "single contains options for a single profile request"
+          "$ref": "#/definitions/v1alpha1SingleProfile"
         }
       },
       "title": "ProfileDiffSelection contains the parameters of a diff selection"
@@ -1120,8 +1093,7 @@
       "type": "object",
       "properties": {
         "queryRequest": {
-          "$ref": "#/definitions/parcaqueryv1alpha1QueryRequest",
-          "title": "QueryRequest that refers to the profile to be shared"
+          "$ref": "#/definitions/parcaqueryv1alpha1QueryRequest"
         },
         "description": {
           "type": "string",
@@ -1186,8 +1158,7 @@
       "type": "object",
       "properties": {
         "meta": {
-          "$ref": "#/definitions/v1alpha1TopNodeMeta",
-          "title": "meta is the metadata about the node"
+          "$ref": "#/definitions/v1alpha1TopNodeMeta"
         },
         "cumulative": {
           "type": "string",
@@ -1211,20 +1182,16 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
-          "title": "location is the location for the code"
+          "$ref": "#/definitions/metastorev1alpha1Location"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
-          "title": "mapping is the mapping into code"
+          "$ref": "#/definitions/metastorev1alpha1Mapping"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
-          "title": "function is the function information"
+          "$ref": "#/definitions/metastorev1alpha1Function"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
-          "title": "line is the line location"
+          "$ref": "#/definitions/metastorev1alpha1Line"
         }
       },
       "title": "TopNodeMeta is the metadata for a given node"
