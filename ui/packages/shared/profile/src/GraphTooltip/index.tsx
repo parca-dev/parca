@@ -15,7 +15,7 @@ import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';
 
-import {CallgraphNode, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress, truncateString} from '../';
@@ -95,7 +95,7 @@ const TooltipMetaInfo = ({
     }
 
     location.lines.forEach((line: Line) => {
-      if (functions !== undefined) {
+      if (functions !== undefined && hoveringNode.meta !== undefined) {
         const func = functions[line.functionIndex]
         if (strings !== undefined) {
           func.name = strings[func.nameStringIndex]
@@ -180,9 +180,9 @@ const TooltipMetaInfo = ({
   );
 };
 
-export interface HoveringNode extends CallgraphNode, FlamegraphRootNode {
+export interface HoveringNode extends CallgraphNode, FlamegraphRootNode, FlamegraphNode {
   diff: string;
-  meta?: {[key: string]: any};
+  meta?: FlamegraphNodeMeta | {[key: string]: any};
 }
 
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
@@ -229,7 +229,14 @@ const GraphTooltipContent = ({
     hoveringNode.meta === undefined ? (
       <></>
     ) : (
-      <TooltipMetaInfo onCopy={onCopy} hoveringNode={hoveringNode} strings={strings} mappings={mappings} locations={locations} functions={functions} />
+      <TooltipMetaInfo
+        onCopy={onCopy}
+        hoveringNode={hoveringNode}
+        strings={strings}
+        mappings={mappings}
+        locations={locations}
+        functions={functions}
+      />
     );
 
   const getTextForCumulative = (hoveringNodeCumulative: number): string => {
