@@ -10,14 +10,12 @@ local defaults = {
   replicas: error 'must provide replicas',
 
   config: {
-    debug_info: {
+    object_storage: {
       bucket: {
         type: 'FILESYSTEM',
-        config: { directory: './tmp' },
-      },
-      cache: {
-        type: 'FILESYSTEM',
-        config: { directory: './tmp' },
+        config: {
+          directory: './data',
+        },
       },
     },
   },
