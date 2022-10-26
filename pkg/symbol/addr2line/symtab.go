@@ -34,11 +34,11 @@ type SymtabLiner struct {
 
 	// symbols contains sorted symbols.
 	symbols   []elf.Symbol
-	demangler demangle.Demangler
+	demangler *demangle.Demangler
 }
 
 // Symbols creates a new SymtabLiner.
-func Symbols(logger log.Logger, f *elf.File, demangler demangle.Demangler) (*SymtabLiner, error) {
+func Symbols(logger log.Logger, f *elf.File, demangler *demangle.Demangler) (*SymtabLiner, error) {
 	symbols, err := symtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
