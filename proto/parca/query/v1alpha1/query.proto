@@ -332,6 +332,9 @@ message CallgraphNode {
 
   // cumulative is the cumulative value of the node
   int64 cumulative = 3;
+
+  // flat is the flat value of the node
+  int64 flat = 4;
 }
 
 // TopNodeMeta is the metadata for a given node

@@ -294,6 +294,11 @@
           "type": "string",
           "format": "int64",
           "title": "cumulative is the cumulative value of the node"
+        },
+        "flat": {
+          "type": "string",
+          "format": "int64",
+          "title": "flat is the flat value of the node"
         }
       },
       "title": "CallgraphNode represents a node in the graph"
