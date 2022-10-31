@@ -10,7 +10,7 @@
         "trailingComma": "es5",
         "singleQuote": true,
         "bracketSpacing": true,
-        "allowParens": "always",
+        "arrowParens": "always",
         "printWidth": 120
       }
     }
