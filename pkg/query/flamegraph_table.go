@@ -348,7 +348,7 @@ func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *query
 func mergeChildrenTable(
 	tables TableGetter,
 	node *querypb.FlamegraphNode,
-	compare, equals func(tables TableGetter, a *querypb.FlamegraphNode, b *querypb.FlamegraphNode) bool,
+	compare, equals func(tables TableGetter, a, b *querypb.FlamegraphNode) bool,
 ) {
 	if len(node.Children) < 2 {
 		return

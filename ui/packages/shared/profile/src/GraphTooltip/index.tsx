@@ -19,7 +19,12 @@ import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} f
 import {getLastItem, valueFormatter} from '@parca/functions';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress, truncateString} from '../';
-import {Function, Location, Mapping, Line} from "@parca/client/dist/parca/metastore/v1alpha1/metastore";
+import {
+  Function,
+  Location,
+  Mapping,
+  Line,
+} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 
 interface GraphTooltipProps {
   x: number;
@@ -83,28 +88,28 @@ const TooltipMetaInfo = ({
   // populate meta from the flamegraph metadata tables
   if (locations !== undefined) {
     const location = locations[hoveringNode.meta.locationIndex];
-    hoveringNode.meta.location = location
+    hoveringNode.meta.location = location;
 
     if (mappings !== undefined) {
-        const mapping = mappings[location.mappingIndex];
-        if (strings !== undefined) {
-          mapping.file = strings[mapping.fileStringIndex]
-          mapping.buildId = strings[mapping.buildIdStringIndex]
-        }
-        hoveringNode.meta.mapping = mapping
+      const mapping = mappings[location.mappingIndex];
+      if (strings !== undefined) {
+        mapping.file = strings[mapping.fileStringIndex];
+        mapping.buildId = strings[mapping.buildIdStringIndex];
+      }
+      hoveringNode.meta.mapping = mapping;
     }
 
     location.lines.forEach((line: Line) => {
       if (functions !== undefined && hoveringNode.meta !== undefined) {
-        const func = functions[line.functionIndex]
+        const func = functions[line.functionIndex];
         if (strings !== undefined) {
-          func.name = strings[func.nameStringIndex]
-          func.systemName = strings[func.systemNameStringIndex]
-          func.filename = strings[func.filenameStringIndex]
+          func.name = strings[func.nameStringIndex];
+          func.systemName = strings[func.systemNameStringIndex];
+          func.filename = strings[func.filenameStringIndex];
         }
-        hoveringNode.meta.function = func
+        hoveringNode.meta.function = func;
       }
-    })
+    });
   }
 
   const getTextForFile = (hoveringNode: FlamegraphNode): string => {
