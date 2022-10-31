@@ -2,5 +2,17 @@
   "printWidth": 100,
   "singleQuote": true,
   "bracketSpacing": false,
-  "arrowParens": "avoid"
+  "arrowParens": "avoid",
+  "overrides": [
+    {
+      "files": "ui/packages/app/grafana**/**/*",
+      "options": {
+        "trailingComma": "es5",
+        "singleQuote": true,
+        "bracketSpacing": true,
+        "allowParens": "always",
+        "printWidth": 120
+      }
+    }
+  ]
 }
