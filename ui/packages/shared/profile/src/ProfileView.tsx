@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useState} from 'react';
+import {Profiler, useEffect, useMemo, useState} from 'react';
 
 import {parseParams} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
@@ -27,6 +27,7 @@ import TopTable from './TopTable';
 import useDelayedLoader from './useDelayedLoader';
 
 import './ProfileView.styles.css';
+import {logRender} from './perf';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -250,12 +251,14 @@ export const ProfileView = ({
           <div ref={ref} className="flex space-x-4 justify-between w-full">
             {currentView === 'icicle' && flamegraphData?.data != null && (
               <div className="w-full">
-                <ProfileIcicleGraph
-                  curPath={curPath}
-                  setNewCurPath={setNewCurPath}
-                  graph={flamegraphData.data}
-                  sampleUnit={sampleUnit}
-                />
+                <Profiler id="icicleGraph" onRender={logRender}>
+                  <ProfileIcicleGraph
+                    curPath={curPath}
+                    setNewCurPath={setNewCurPath}
+                    graph={flamegraphData.data}
+                    sampleUnit={sampleUnit}
+                  />
+                </Profiler>
               </div>
             )}
 

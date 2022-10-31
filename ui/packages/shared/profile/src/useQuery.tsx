@@ -53,7 +53,6 @@ export const useQuery = (
       isLoading: true,
     });
     const req = profileSource.QueryRequest();
-    console.log('req', req);
     req.reportType = reportType;
 
     const call = client.query(req, {meta: metadata});
