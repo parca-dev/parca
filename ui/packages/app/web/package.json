@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.65",
+  "version": "0.16.66",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -37,7 +37,7 @@
     "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "13.4.0",
     "autoprefixer": "10.4.12",
-    "immer": "9.0.15",
+    "immer": "9.0.16",
     "isomorphic-unfetch": "3.1.0",
     "lodash.debounce": "4.0.8",
     "lodash.throttle": "4.1.1",
