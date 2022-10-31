@@ -34,7 +34,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/prometheus v0.39.1
-	github.com/segmentio/parquet-go v0.0.0-20221020201645-63215c8128ff
+	github.com/segmentio/parquet-go v0.0.0-20221026193852-4d8135a6a45e
 	github.com/stretchr/testify v1.8.1
 	github.com/thanos-io/objstore v0.0.0-20221025150406-0ea26d7a8d2b
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.4
