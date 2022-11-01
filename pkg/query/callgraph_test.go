@@ -86,26 +86,32 @@ func TestGenerateCallgraph(t *testing.T) {
 		// find the required nodes
 		if name == "runtime/pprof.profileWriter" {
 			require.Equal(t, int64(2308419), node.Cumulative, "Node cummulative mismatch for "+name)
+			require.Equal(t, int64(0), node.Flat, "Node flat mismatch for "+name)
 			requiredNodes[0] = node
 		}
 		if name == "runtime/pprof.(*profileBuilder).build" {
 			require.Equal(t, int64(2479889), node.Cumulative, "Node cummulative mismatch for "+name)
+			require.Equal(t, int64(0), node.Flat, "Node flat mismatch for "+name)
 			requiredNodes[1] = node
 		}
 		if name == "runtime/pprof.(*profileBuilder).appendLocsForStack" {
 			require.Equal(t, int64(132520050), node.Cumulative, "Node cummulative mismatch for "+name)
+			require.Equal(t, int64(201735), node.Flat, "Node flat mismatch for "+name)
 			requiredNodes[2] = node
 		}
 		if name == "runtime/pprof.(*profileBuilder).emitLocation" {
 			require.Equal(t, int64(14095085), node.Cumulative, "Node cummulative mismatch for "+name)
+			require.Equal(t, int64(13717453), node.Flat, "Node flat mismatch for "+name)
 			requiredNodes[3] = node
 		}
 		if name == "runtime/pprof.(*protobuf).uint64" {
 			require.Equal(t, int64(330616), node.Cumulative, "Node cummulative mismatch for "+name)
+			require.Equal(t, int64(0), node.Flat, "Node flat mismatch for "+name)
 			requiredNodes[4] = node
 		}
 		if name == "runtime/pprof.(*protobuf).varint" {
 			require.Equal(t, int64(399569), node.Cumulative, "Node cummulative mismatch for "+name)
+			require.Equal(t, int64(399569), node.Flat, "Node flat mismatch for "+name)
 			requiredNodes[5] = node
 		}
 	}

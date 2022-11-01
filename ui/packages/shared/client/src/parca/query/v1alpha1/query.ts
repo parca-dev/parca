@@ -632,6 +632,12 @@ export interface CallgraphNode {
      * @generated from protobuf field: int64 cumulative = 3;
      */
     cumulative: string;
+    /**
+     * flat is the flat value of the node
+     *
+     * @generated from protobuf field: int64 flat = 4;
+     */
+    flat: string;
 }
 /**
  * TopNodeMeta is the metadata for a given node
@@ -2135,11 +2141,12 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
         super("parca.query.v1alpha1.CallgraphNode", [
             { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "meta", kind: "message", T: () => CallgraphNodeMeta },
-            { no: 3, name: "cumulative", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
+            { no: 3, name: "cumulative", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 4, name: "flat", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<CallgraphNode>): CallgraphNode {
-        const message = { id: "", cumulative: "0" };
+        const message = { id: "", cumulative: "0", flat: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<CallgraphNode>(this, message, value);
@@ -2158,6 +2165,9 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
                     break;
                 case /* int64 cumulative */ 3:
                     message.cumulative = reader.int64().toString();
+                    break;
+                case /* int64 flat */ 4:
+                    message.flat = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2180,6 +2190,9 @@ class CallgraphNode$Type extends MessageType<CallgraphNode> {
         /* int64 cumulative = 3; */
         if (message.cumulative !== "0")
             writer.tag(3, WireType.Varint).int64(message.cumulative);
+        /* int64 flat = 4; */
+        if (message.flat !== "0")
+            writer.tag(4, WireType.Varint).int64(message.flat);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
