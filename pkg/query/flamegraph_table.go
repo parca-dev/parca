@@ -124,11 +124,6 @@ type tableConverter struct {
 	locationsIndex map[string]uint32
 	functionsSlice []*metastorev1alpha1.Function
 	functionsIndex map[string]uint32
-
-	stringsDedup   int
-	mappingDedup   int
-	locationsDedup int
-	functionsDedup int
 }
 
 // Strings return the table, slice more specifically, of all strings.
@@ -174,7 +169,6 @@ func (c *tableConverter) Functions() []*metastorev1alpha1.Function {
 // AddString to the string table and return the strings index in the table.
 func (c *tableConverter) AddString(s string) uint32 {
 	if i, ok := c.stringsIndex[s]; ok {
-		c.stringsDedup++
 		return i
 	}
 	c.stringsSlice = append(c.stringsSlice, s)
@@ -207,7 +201,6 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 // Returns the locations's index in the table.
 func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
 	if i, ok := c.locationsIndex[l.ID]; ok {
-		c.locationsDedup++
 		return i
 	}
 
@@ -242,7 +235,6 @@ func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
 // Returns the function's index in the table.
 func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 	if i, ok := c.functionsIndex[f.Id]; ok {
-		c.functionsDedup++
 		return i
 	}
 

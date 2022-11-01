@@ -151,6 +151,7 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 	defer span.End()
 
 	switch typ {
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
 		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, p)
 		if err != nil {
