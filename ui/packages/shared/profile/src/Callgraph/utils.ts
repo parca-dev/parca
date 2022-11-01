@@ -57,7 +57,7 @@ export const getCurvePoints = ({
       .replace('e,', '')
       .split(',')
       .map(str => Number(str));
-  const getLastPointWithOffset = (target: number[], last: number[], offset): number[] => {
+  const getLastPointWithOffset = (target: number[], last: number[], offset: number): number[] => {
     const [targetX, targetY] = target;
     const [lastX, lastY] = last;
     const diffX = targetX - lastX;
