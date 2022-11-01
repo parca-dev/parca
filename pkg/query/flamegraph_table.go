@@ -256,15 +256,13 @@ func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 // has multiple inlined functions it creates multiple nodes for each inlined
 // function.
 func tableLocationToTreeNodes(location *metastorev1alpha1.Location, locationIndex uint32) []*querypb.FlamegraphNode {
-	if len(location.Lines) > 0 {
-		// return linesToTreeNodes(location, location.MappingIndex, location.Lines)
+	nodes := make([]*querypb.FlamegraphNode, len(location.Lines))
+	for i := range location.Lines {
+		nodes[i] = &querypb.FlamegraphNode{
+			Meta: &querypb.FlamegraphNodeMeta{LocationIndex: locationIndex},
+		}
 	}
-
-	return []*querypb.FlamegraphNode{{
-		Meta: &querypb.FlamegraphNodeMeta{
-			LocationIndex: locationIndex,
-		},
-	}}
+	return nodes
 }
 
 type TableGetter interface {
