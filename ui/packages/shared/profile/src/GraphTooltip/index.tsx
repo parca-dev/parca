@@ -185,6 +185,7 @@ const TooltipMetaInfo = ({
   );
 };
 
+// @ts-expect-error
 export interface HoveringNode extends CallgraphNode, FlamegraphRootNode, FlamegraphNode {
   diff: string;
   meta?: FlamegraphNodeMeta | {[key: string]: any};
@@ -236,6 +237,7 @@ const GraphTooltipContent = ({
     ) : (
       <TooltipMetaInfo
         onCopy={onCopy}
+        // @ts-expect-error
         hoveringNode={hoveringNode}
         strings={strings}
         mappings={mappings}
