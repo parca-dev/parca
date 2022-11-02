@@ -54,7 +54,7 @@
     "@types/jest": "28.1.8",
     "@types/node": "18.0.0",
     "@types/react": "18.0.24",
-    "@types/react-dom": "18.0.7",
+    "@types/react-dom": "18.0.8",
     "@typescript-eslint/eslint-plugin": "5.41.0",
     "@typescript-eslint/parser": "5.41.0",
     "arg": "5.0.2",
