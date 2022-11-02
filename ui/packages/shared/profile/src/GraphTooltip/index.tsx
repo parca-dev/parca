@@ -15,10 +15,16 @@ import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';
 
-import {CallgraphNode, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress, truncateString} from '../';
+import {
+  Function,
+  Location,
+  Mapping,
+  Line,
+} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 
 interface GraphTooltipProps {
   x: number;
@@ -29,6 +35,10 @@ interface GraphTooltipProps {
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;
+  strings?: string[];
+  mappings?: Mapping[];
+  locations?: Location[];
+  functions?: Function[];
 }
 
 const virtualElement = {
@@ -61,11 +71,46 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0): (
 const TooltipMetaInfo = ({
   hoveringNode,
   onCopy,
+  strings,
+  mappings,
+  locations,
+  functions,
 }: {
   hoveringNode: FlamegraphNode;
   onCopy: () => void;
+  strings?: string[];
+  mappings?: Mapping[];
+  locations?: Location[];
+  functions?: Function[];
 }): JSX.Element => {
   if (hoveringNode.meta === undefined) return <></>;
+
+  // populate meta from the flamegraph metadata tables
+  if (locations !== undefined) {
+    const location = locations[hoveringNode.meta.locationIndex];
+    hoveringNode.meta.location = location;
+
+    if (mappings !== undefined) {
+      const mapping = mappings[location.mappingIndex];
+      if (strings !== undefined) {
+        mapping.file = strings[mapping.fileStringIndex];
+        mapping.buildId = strings[mapping.buildIdStringIndex];
+      }
+      hoveringNode.meta.mapping = mapping;
+    }
+
+    location.lines.forEach((line: Line) => {
+      if (functions !== undefined && hoveringNode.meta !== undefined) {
+        const func = functions[line.functionIndex];
+        if (strings !== undefined) {
+          func.name = strings[func.nameStringIndex];
+          func.systemName = strings[func.systemNameStringIndex];
+          func.filename = strings[func.filenameStringIndex];
+        }
+        hoveringNode.meta.function = func;
+      }
+    });
+  }
 
   const getTextForFile = (hoveringNode: FlamegraphNode): string => {
     if (hoveringNode.meta === undefined) return '<unknown>';
@@ -140,9 +185,10 @@ const TooltipMetaInfo = ({
   );
 };
 
-export interface HoveringNode extends CallgraphNode, FlamegraphRootNode {
+// @ts-expect-error
+export interface HoveringNode extends CallgraphNode, FlamegraphRootNode, FlamegraphNode {
   diff: string;
-  meta?: {[key: string]: any};
+  meta?: FlamegraphNodeMeta | {[key: string]: any};
 }
 
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
@@ -152,11 +198,19 @@ const GraphTooltipContent = ({
   unit,
   total,
   isFixed,
+  strings,
+  mappings,
+  locations,
+  functions,
 }: {
   hoveringNode: HoveringNode;
   unit: string;
   total: number;
   isFixed: boolean;
+  strings?: string[];
+  mappings?: Mapping[];
+  locations?: Location[];
+  functions?: Function[];
 }): JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -181,7 +235,15 @@ const GraphTooltipContent = ({
     hoveringNode.meta === undefined ? (
       <></>
     ) : (
-      <TooltipMetaInfo onCopy={onCopy} hoveringNode={hoveringNode} />
+      <TooltipMetaInfo
+        onCopy={onCopy}
+        // @ts-expect-error
+        hoveringNode={hoveringNode}
+        strings={strings}
+        mappings={mappings}
+        locations={locations}
+        functions={functions}
+      />
     );
 
   const getTextForCumulative = (hoveringNodeCumulative: number): string => {
@@ -282,6 +344,10 @@ const GraphTooltip = ({
   contextElement,
   isFixed = false,
   virtualContextElement = true,
+  strings,
+  mappings,
+  locations,
+  functions,
 }: GraphTooltipProps): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
@@ -332,6 +398,10 @@ const GraphTooltip = ({
         unit={unit}
         total={total}
         isFixed={isFixed}
+        strings={strings}
+        mappings={mappings}
+        locations={locations}
+        functions={functions}
       />
     </div>
   );

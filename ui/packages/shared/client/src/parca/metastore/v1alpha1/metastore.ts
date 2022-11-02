@@ -441,6 +441,12 @@ export interface Location {
      * @generated from protobuf field: repeated parca.metastore.v1alpha1.Line lines = 6;
      */
     lines: Line[];
+    /**
+     * mapping_index has the index into the mapping table where mappings are sent deduplicated.
+     *
+     * @generated from protobuf field: uint32 mapping_index = 7;
+     */
+    mappingIndex: number;
 }
 /**
  * Line describes a source code function and its line number.
@@ -460,6 +466,12 @@ export interface Line {
      * @generated from protobuf field: int64 line = 2;
      */
     line: string;
+    /**
+     * function_index is the index in the functions table.
+     *
+     * @generated from protobuf field: uint32 function_index = 3;
+     */
+    functionIndex: number;
 }
 /**
  * Function describes metadata of a source code function.
@@ -498,6 +510,24 @@ export interface Function {
      * @generated from protobuf field: string filename = 5;
      */
     filename: string;
+    /**
+     * name_string_index is the index in the string table to the name associated with the function.
+     *
+     * @generated from protobuf field: uint32 name_string_index = 6;
+     */
+    nameStringIndex: number;
+    /**
+     * system_name_string_index is the index in the string table to the system_name associated with the function.
+     *
+     * @generated from protobuf field: uint32 system_name_string_index = 7;
+     */
+    systemNameStringIndex: number;
+    /**
+     * filename_string_index is the index in the string table to the filename associated with the function.
+     *
+     * @generated from protobuf field: uint32 filename_string_index = 8;
+     */
+    filenameStringIndex: number;
 }
 /**
  * Mapping describes a memory mapping.
@@ -565,6 +595,18 @@ export interface Mapping {
      * @generated from protobuf field: bool has_inline_frames = 10;
      */
     hasInlineFrames: boolean;
+    /**
+     * fileStringIndex is the index in the string table to the file name associated with the mapping.
+     *
+     * @generated from protobuf field: uint32 file_string_index = 11;
+     */
+    fileStringIndex: number;
+    /**
+     * build_id_string_index is the index in the string table to the build ID of the mapping.
+     *
+     * @generated from protobuf field: uint32 build_id_string_index = 12;
+     */
+    buildIdStringIndex: number;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class GetOrCreateMappingsRequest$Type extends MessageType<GetOrCreateMappingsRequest> {
@@ -1885,11 +1927,12 @@ class Location$Type extends MessageType<Location> {
             { no: 2, name: "address", kind: "scalar", T: 4 /*ScalarType.UINT64*/ },
             { no: 4, name: "mapping_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "is_folded", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 6, name: "lines", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Line }
+            { no: 6, name: "lines", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Line },
+            { no: 7, name: "mapping_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Location>): Location {
-        const message = { id: "", address: "0", mappingId: "", isFolded: false, lines: [] };
+        const message = { id: "", address: "0", mappingId: "", isFolded: false, lines: [], mappingIndex: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Location>(this, message, value);
@@ -1914,6 +1957,9 @@ class Location$Type extends MessageType<Location> {
                     break;
                 case /* repeated parca.metastore.v1alpha1.Line lines */ 6:
                     message.lines.push(Line.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint32 mapping_index */ 7:
+                    message.mappingIndex = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1942,6 +1988,9 @@ class Location$Type extends MessageType<Location> {
         /* repeated parca.metastore.v1alpha1.Line lines = 6; */
         for (let i = 0; i < message.lines.length; i++)
             Line.internalBinaryWrite(message.lines[i], writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 mapping_index = 7; */
+        if (message.mappingIndex !== 0)
+            writer.tag(7, WireType.Varint).uint32(message.mappingIndex);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1957,11 +2006,12 @@ class Line$Type extends MessageType<Line> {
     constructor() {
         super("parca.metastore.v1alpha1.Line", [
             { no: 1, name: "function_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "line", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
+            { no: 2, name: "line", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 3, name: "function_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Line>): Line {
-        const message = { functionId: "", line: "0" };
+        const message = { functionId: "", line: "0", functionIndex: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Line>(this, message, value);
@@ -1977,6 +2027,9 @@ class Line$Type extends MessageType<Line> {
                     break;
                 case /* int64 line */ 2:
                     message.line = reader.int64().toString();
+                    break;
+                case /* uint32 function_index */ 3:
+                    message.functionIndex = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1996,6 +2049,9 @@ class Line$Type extends MessageType<Line> {
         /* int64 line = 2; */
         if (message.line !== "0")
             writer.tag(2, WireType.Varint).int64(message.line);
+        /* uint32 function_index = 3; */
+        if (message.functionIndex !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.functionIndex);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2014,11 +2070,14 @@ class Function$Type extends MessageType<Function> {
             { no: 2, name: "start_line", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
             { no: 3, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 4, name: "system_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "filename", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 5, name: "filename", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "name_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 7, name: "system_name_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 8, name: "filename_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Function>): Function {
-        const message = { id: "", startLine: "0", name: "", systemName: "", filename: "" };
+        const message = { id: "", startLine: "0", name: "", systemName: "", filename: "", nameStringIndex: 0, systemNameStringIndex: 0, filenameStringIndex: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Function>(this, message, value);
@@ -2043,6 +2102,15 @@ class Function$Type extends MessageType<Function> {
                     break;
                 case /* string filename */ 5:
                     message.filename = reader.string();
+                    break;
+                case /* uint32 name_string_index */ 6:
+                    message.nameStringIndex = reader.uint32();
+                    break;
+                case /* uint32 system_name_string_index */ 7:
+                    message.systemNameStringIndex = reader.uint32();
+                    break;
+                case /* uint32 filename_string_index */ 8:
+                    message.filenameStringIndex = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2071,6 +2139,15 @@ class Function$Type extends MessageType<Function> {
         /* string filename = 5; */
         if (message.filename !== "")
             writer.tag(5, WireType.LengthDelimited).string(message.filename);
+        /* uint32 name_string_index = 6; */
+        if (message.nameStringIndex !== 0)
+            writer.tag(6, WireType.Varint).uint32(message.nameStringIndex);
+        /* uint32 system_name_string_index = 7; */
+        if (message.systemNameStringIndex !== 0)
+            writer.tag(7, WireType.Varint).uint32(message.systemNameStringIndex);
+        /* uint32 filename_string_index = 8; */
+        if (message.filenameStringIndex !== 0)
+            writer.tag(8, WireType.Varint).uint32(message.filenameStringIndex);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2094,11 +2171,13 @@ class Mapping$Type extends MessageType<Mapping> {
             { no: 7, name: "has_functions", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 8, name: "has_filenames", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 9, name: "has_line_numbers", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 10, name: "has_inline_frames", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 10, name: "has_inline_frames", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 11, name: "file_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 12, name: "build_id_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Mapping>): Mapping {
-        const message = { id: "", start: "0", limit: "0", offset: "0", file: "", buildId: "", hasFunctions: false, hasFilenames: false, hasLineNumbers: false, hasInlineFrames: false };
+        const message = { id: "", start: "0", limit: "0", offset: "0", file: "", buildId: "", hasFunctions: false, hasFilenames: false, hasLineNumbers: false, hasInlineFrames: false, fileStringIndex: 0, buildIdStringIndex: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Mapping>(this, message, value);
@@ -2138,6 +2217,12 @@ class Mapping$Type extends MessageType<Mapping> {
                     break;
                 case /* bool has_inline_frames */ 10:
                     message.hasInlineFrames = reader.bool();
+                    break;
+                case /* uint32 file_string_index */ 11:
+                    message.fileStringIndex = reader.uint32();
+                    break;
+                case /* uint32 build_id_string_index */ 12:
+                    message.buildIdStringIndex = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2181,6 +2266,12 @@ class Mapping$Type extends MessageType<Mapping> {
         /* bool has_inline_frames = 10; */
         if (message.hasInlineFrames !== false)
             writer.tag(10, WireType.Varint).bool(message.hasInlineFrames);
+        /* uint32 file_string_index = 11; */
+        if (message.fileStringIndex !== 0)
+            writer.tag(11, WireType.Varint).uint32(message.fileStringIndex);
+        /* uint32 build_id_string_index = 12; */
+        if (message.buildIdStringIndex !== 0)
+            writer.tag(12, WireType.Varint).uint32(message.buildIdStringIndex);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

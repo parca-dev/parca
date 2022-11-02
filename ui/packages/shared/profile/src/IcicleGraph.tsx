@@ -18,12 +18,13 @@ import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import type {HoveringNode} from './GraphTooltip';
 import GraphTooltip from './GraphTooltip';
-import {getLastItem, diffColor, isSearchMatch} from '@parca/functions';
-import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
+import {diffColor, getLastItem, isSearchMatch} from '@parca/functions';
+import {selectDarkMode, selectSearchNodeString, useAppSelector} from '@parca/store';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress} from './utils';
-import type {HoveringNode} from './GraphTooltip';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -35,6 +36,10 @@ interface IcicleGraphProps {
 
 interface IcicleGraphNodesProps {
   data: FlamegraphNode[];
+  strings: string[];
+  mappings: Mapping[];
+  locations: Location[];
+  functions: Function[];
   x: number;
   y: number;
   total: number;
@@ -49,6 +54,10 @@ interface IcicleGraphNodesProps {
 
 interface IcicleGraphRootNodeProps {
   node: FlamegraphRootNode;
+  strings: string[];
+  mappings: Mapping[];
+  locations: Location[];
+  functions: Function[];
   xScale: (value: number) => number;
   total: number;
   totalWidth: number;
@@ -132,24 +141,39 @@ function IcicleRect({
   );
 }
 
-export function nodeLabel(node: FlamegraphNode): string {
-  if (node.meta === undefined) return '<unknown>';
-  const mapping = `${
-    node.meta?.mapping?.file !== undefined && node.meta?.mapping?.file !== ''
-      ? '[' + (getLastItem(node.meta.mapping.file) ?? '') + '] '
-      : ''
-  }`;
-  if (node.meta.function?.name !== undefined && node.meta.function?.name !== '')
-    return mapping + node.meta.function.name;
+export function nodeLabel(
+  node: FlamegraphNode,
+  strings: string[],
+  mappings: Mapping[],
+  locations: Location[],
+  functions: Function[]
+): string {
+  if (node.meta?.locationIndex === undefined) return '<unknown>';
 
-  const address = hexifyAddress(node.meta.location?.address);
-  const fallback = `${mapping}${address}`;
+  const location = locations[node.meta.locationIndex];
+  const mappingFile = strings[mappings[location.mappingIndex].fileStringIndex];
+
+  const mappingString: string = `${
+    mappingFile !== '' ? '[' + (getLastItem(mappingFile) ?? '') + '] ' : ''
+  }`;
+
+  if (location.lines.length > 0) {
+    const funcName = strings[functions[location.lines[0].functionIndex].nameStringIndex];
+    return `${mappingString} ${funcName}`;
+  }
+
+  const address = hexifyAddress(location.address);
+  const fallback = `${mappingString}${address}`;
 
   return fallback === '' ? '<unknown>' : fallback;
 }
 
 export function IcicleGraphNodes({
   data,
+  strings,
+  mappings,
+  locations,
+  functions,
   x,
   y,
   xScale,
@@ -165,7 +189,11 @@ export function IcicleGraphNodes({
   const isShiftDown = useIsShiftDown();
 
   const nodes =
-    curPath.length === 0 ? data : data.filter(d => d != null && curPath[0] === nodeLabel(d));
+    curPath.length === 0
+      ? data
+      : data.filter(
+          d => d != null && curPath[0] === nodeLabel(d, strings, mappings, locations, functions)
+        );
 
   const nextLevel = level + 1;
 
@@ -186,7 +214,7 @@ export function IcicleGraphNodes({
           return null;
         }
 
-        const name = nodeLabel(d);
+        const name = nodeLabel(d, strings, mappings, locations, functions);
         const key = `${level}-${i}`;
         const nextPath = path.concat([name]);
 
@@ -232,6 +260,10 @@ export function IcicleGraphNodes({
               <IcicleGraphNodes
                 key={`node-${key}`}
                 data={d.children}
+                strings={strings}
+                mappings={mappings}
+                locations={locations}
+                functions={functions}
                 x={xStart}
                 y={RowHeight}
                 xScale={newXScale}
@@ -255,6 +287,10 @@ const MemoizedIcicleGraphNodes = React.memo(IcicleGraphNodes);
 
 export function IcicleGraphRootNode({
   node,
+  strings,
+  mappings,
+  locations,
+  functions,
   xScale,
   total,
   totalWidth,
@@ -299,6 +335,10 @@ export function IcicleGraphRootNode({
       />
       <MemoizedIcicleGraphNodes
         data={node.children}
+        strings={strings}
+        mappings={mappings}
+        locations={locations}
+        functions={functions}
         x={0}
         y={RowHeight}
         xScale={xScale}
@@ -359,6 +399,10 @@ export default function IcicleGraph({
         y={pos[1]}
         hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
+        strings={graph.stringTable}
+        mappings={graph.mapping}
+        locations={graph.locations}
+        functions={graph.function}
       />
       <svg
         className="font-robotoMono"
@@ -371,6 +415,10 @@ export default function IcicleGraph({
         <g ref={ref}>
           <MemoizedIcicleGraphRootNode
             node={graph.root}
+            strings={graph.stringTable}
+            mappings={graph.mapping}
+            locations={graph.locations}
+            functions={graph.function}
             setHoveringNode={setHoveringNode}
             curPath={curPath}
             setCurPath={setCurPath}

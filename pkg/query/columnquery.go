@@ -151,8 +151,19 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 	defer span.End()
 
 	switch typ {
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
 		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
+		}
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Flamegraph{
+				Flamegraph: fg,
+			},
+		}, nil
+	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
+		fg, err := GenerateFlamegraphTable(ctx, q.tracer, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}

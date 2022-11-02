@@ -375,7 +375,8 @@ export enum QueryRequest_ReportType {
     /**
      * REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
      *
-     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
+     * @deprecated
+     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0 [deprecated = true];
      */
     FLAMEGRAPH_UNSPECIFIED = 0,
     /**
@@ -395,7 +396,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_CALLGRAPH = 3;
      */
-    CALLGRAPH = 3
+    CALLGRAPH = 3,
+    /**
+     * REPORT_TYPE_FLAMEGRAPH_TABLE unspecified
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_TABLE = 4;
+     */
+    FLAMEGRAPH_TABLE = 4
 }
 /**
  * Top is the top report type
@@ -520,6 +527,30 @@ export interface Flamegraph {
      * @generated from protobuf field: int32 height = 4;
      */
     height: number;
+    /**
+     * string_table holds all deduplicated strings used in the meta data.
+     *
+     * @generated from protobuf field: repeated string string_table = 5;
+     */
+    stringTable: string[];
+    /**
+     * locations deduplicated by their ID to be referenced by nodes.
+     *
+     * @generated from protobuf field: repeated parca.metastore.v1alpha1.Location locations = 6;
+     */
+    locations: Location[];
+    /**
+     * mapping deduplicated by their ID to be referenced by nodes.
+     *
+     * @generated from protobuf field: repeated parca.metastore.v1alpha1.Mapping mapping = 7;
+     */
+    mapping: Mapping[];
+    /**
+     * function deduplicated by their ID to be referenced by nodes.
+     *
+     * @generated from protobuf field: repeated parca.metastore.v1alpha1.Function function = 8;
+     */
+    function: Function[];
 }
 /**
  * FlamegraphRootNode is a root node of a flame graph
@@ -607,6 +638,12 @@ export interface FlamegraphNodeMeta {
      * @generated from protobuf field: parca.metastore.v1alpha1.Line line = 4;
      */
     line?: Line;
+    /**
+     * location_index has the index to the deduplicated location in the location table.
+     *
+     * @generated from protobuf field: uint32 location_index = 5;
+     */
+    locationIndex: number;
 }
 /**
  * CallgraphNode represents a node in the graph
@@ -1877,11 +1914,15 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
             { no: 1, name: "root", kind: "message", T: () => FlamegraphRootNode },
             { no: 2, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
             { no: 3, name: "unit", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "height", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
+            { no: 4, name: "height", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 5, name: "string_table", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "locations", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Location },
+            { no: 7, name: "mapping", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Mapping },
+            { no: 8, name: "function", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Function }
         ]);
     }
     create(value?: PartialMessage<Flamegraph>): Flamegraph {
-        const message = { total: "0", unit: "", height: 0 };
+        const message = { total: "0", unit: "", height: 0, stringTable: [], locations: [], mapping: [], function: [] };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Flamegraph>(this, message, value);
@@ -1903,6 +1944,18 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
                     break;
                 case /* int32 height */ 4:
                     message.height = reader.int32();
+                    break;
+                case /* repeated string string_table */ 5:
+                    message.stringTable.push(reader.string());
+                    break;
+                case /* repeated parca.metastore.v1alpha1.Location locations */ 6:
+                    message.locations.push(Location.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated parca.metastore.v1alpha1.Mapping mapping */ 7:
+                    message.mapping.push(Mapping.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated parca.metastore.v1alpha1.Function function */ 8:
+                    message.function.push(Function.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1928,6 +1981,18 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
         /* int32 height = 4; */
         if (message.height !== 0)
             writer.tag(4, WireType.Varint).int32(message.height);
+        /* repeated string string_table = 5; */
+        for (let i = 0; i < message.stringTable.length; i++)
+            writer.tag(5, WireType.LengthDelimited).string(message.stringTable[i]);
+        /* repeated parca.metastore.v1alpha1.Location locations = 6; */
+        for (let i = 0; i < message.locations.length; i++)
+            Location.internalBinaryWrite(message.locations[i], writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* repeated parca.metastore.v1alpha1.Mapping mapping = 7; */
+        for (let i = 0; i < message.mapping.length; i++)
+            Mapping.internalBinaryWrite(message.mapping[i], writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* repeated parca.metastore.v1alpha1.Function function = 8; */
+        for (let i = 0; i < message.function.length; i++)
+            Function.internalBinaryWrite(message.function[i], writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2074,11 +2139,12 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
             { no: 1, name: "location", kind: "message", T: () => Location },
             { no: 2, name: "mapping", kind: "message", T: () => Mapping },
             { no: 3, name: "function", kind: "message", T: () => Function },
-            { no: 4, name: "line", kind: "message", T: () => Line }
+            { no: 4, name: "line", kind: "message", T: () => Line },
+            { no: 5, name: "location_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<FlamegraphNodeMeta>): FlamegraphNodeMeta {
-        const message = {};
+        const message = { locationIndex: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<FlamegraphNodeMeta>(this, message, value);
@@ -2100,6 +2166,9 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
                     break;
                 case /* parca.metastore.v1alpha1.Line line */ 4:
                     message.line = Line.internalBinaryRead(reader, reader.uint32(), options, message.line);
+                    break;
+                case /* uint32 location_index */ 5:
+                    message.locationIndex = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2125,6 +2194,9 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
         /* parca.metastore.v1alpha1.Line line = 4; */
         if (message.line)
             Line.internalBinaryWrite(message.line, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 location_index = 5; */
+        if (message.locationIndex !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.locationIndex);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
