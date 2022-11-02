@@ -63,7 +63,7 @@ repos:
           - --case-indent
           - --binary-next-line
   - repo: https://github.com/google/go-jsonnet
-    rev: v0.19.0
+    rev: v0.19.1
     hooks:
       - id: jsonnet-format
   - repo: https://github.com/pre-commit/mirrors-prettier
