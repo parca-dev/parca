@@ -36,7 +36,7 @@ interface EdgeProps {
   xScale: (x: number) => number;
   yScale: (y: number) => number;
 }
-interface Props {
+export interface Props {
   graph: CallgraphType;
   sampleUnit: string;
   width: number;
@@ -250,7 +250,6 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
         <Stage
           width={width}
           height={height}
-          // @ts-expect-error
           onWheel={handleWheel}
           scaleX={stage.scale.x}
           scaleY={stage.scale.y}
