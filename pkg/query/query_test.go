@@ -124,6 +124,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 							End:   timestamppb.New(time.Unix(0, int64(time.Millisecond)*int64(n+1))),
 						},
 					},
+					//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
 				})
 				require.NoError(b, err)

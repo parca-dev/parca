@@ -299,7 +299,7 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified",
             "in": "query",
             "required": false,
             "type": "string",
@@ -307,7 +307,8 @@
               "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
               "REPORT_TYPE_PPROF",
               "REPORT_TYPE_TOP",
-              "REPORT_TYPE_CALLGRAPH"
+              "REPORT_TYPE_CALLGRAPH",
+              "REPORT_TYPE_FLAMEGRAPH_TABLE"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           }
@@ -489,10 +490,11 @@
         "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
         "REPORT_TYPE_PPROF",
         "REPORT_TYPE_TOP",
-        "REPORT_TYPE_CALLGRAPH"
+        "REPORT_TYPE_CALLGRAPH",
+        "REPORT_TYPE_FLAMEGRAPH_TABLE"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -518,6 +520,21 @@
         "filename": {
           "type": "string",
           "description": "filename is the name of the source file of the function."
+        },
+        "nameStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "name_string_index is the index in the string table to the name associated with the function."
+        },
+        "systemNameStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "system_name_string_index is the index in the string table to the system_name associated with the function."
+        },
+        "filenameStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "filename_string_index is the index in the string table to the filename associated with the function."
         }
       },
       "description": "Function describes metadata of a source code function."
@@ -533,6 +550,11 @@
           "type": "string",
           "format": "int64",
           "description": "line is the line number in the source file of the referenced function."
+        },
+        "functionIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "function_index is the index in the functions table."
         }
       },
       "description": "Line describes a source code function and its line number."
@@ -563,6 +585,11 @@
             "$ref": "#/definitions/metastorev1alpha1Line"
           },
           "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
+        },
+        "mappingIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "mapping_index has the index into the mapping table where mappings are sent deduplicated."
         }
       },
       "description": "Location describes a single location of a stack traces."
@@ -612,6 +639,16 @@
         "hasInlineFrames": {
           "type": "boolean",
           "description": "has_inline_frames indicates whether the mapping has associated inline frames."
+        },
+        "fileStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "fileStringIndex is the index in the string table to the file name associated with the mapping."
+        },
+        "buildIdStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "build_id_string_index is the index in the string table to the build ID of the mapping."
         }
       },
       "description": "Mapping describes a memory mapping."
@@ -849,6 +886,34 @@
           "type": "integer",
           "format": "int32",
           "title": "height is the max height of the graph"
+        },
+        "stringTable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "string_table holds all deduplicated strings used in the meta data."
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Location"
+          },
+          "description": "locations deduplicated by their ID to be referenced by nodes."
+        },
+        "mapping": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Mapping"
+          },
+          "description": "mapping deduplicated by their ID to be referenced by nodes."
+        },
+        "function": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metastorev1alpha1Function"
+          },
+          "description": "function deduplicated by their ID to be referenced by nodes."
         }
       },
       "title": "Flamegraph is the flame graph report type"
@@ -893,6 +958,11 @@
         },
         "line": {
           "$ref": "#/definitions/metastorev1alpha1Line"
+        },
+        "locationIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "location_index has the index to the deduplicated location in the location table."
         }
       },
       "title": "FlamegraphNodeMeta is the metadata for a given node"

@@ -204,7 +204,7 @@ message QueryRequest {
   // ReportType is the type of report to return
   enum ReportType {
     // REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified
-    REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0;
+    REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0 [deprecated = true];
 
     // REPORT_TYPE_PPROF unspecified
     REPORT_TYPE_PPROF = 1;
@@ -214,6 +214,9 @@ message QueryRequest {
 
     // REPORT_TYPE_CALLGRAPH unspecified
     REPORT_TYPE_CALLGRAPH = 3;
+
+    // REPORT_TYPE_FLAMEGRAPH_TABLE unspecified
+    REPORT_TYPE_FLAMEGRAPH_TABLE = 4;
   }
 
   // report_type is the type of report to return
@@ -278,6 +281,18 @@ message Flamegraph {
 
   // height is the max height of the graph
   int32 height = 4;
+
+  // string_table holds all deduplicated strings used in the meta data.
+  repeated string string_table = 5;
+
+  // locations deduplicated by their ID to be referenced by nodes.
+  repeated parca.metastore.v1alpha1.Location locations = 6;
+
+  // mapping deduplicated by their ID to be referenced by nodes.
+  repeated parca.metastore.v1alpha1.Mapping mapping = 7;
+
+  // function deduplicated by their ID to be referenced by nodes.
+  repeated parca.metastore.v1alpha1.Function function = 8;
 }
 
 // FlamegraphRootNode is a root node of a flame graph
@@ -320,6 +335,9 @@ message FlamegraphNodeMeta {
 
   // line is the line location
   parca.metastore.v1alpha1.Line line = 4;
+
+  // location_index has the index to the deduplicated location in the location table.
+  uint32 location_index = 5;
 }
 
 // CallgraphNode represents a node in the graph

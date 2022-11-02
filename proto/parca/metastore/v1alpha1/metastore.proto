@@ -237,6 +237,9 @@ message Location {
   // lines are the call frames represented by this location. Multiple lines
   // indicate they have been inlined.
   repeated Line lines = 6;
+
+  // mapping_index has the index into the mapping table where mappings are sent deduplicated.
+  uint32 mapping_index = 7;
 }
 
 // Line describes a source code function and its line number.
@@ -246,6 +249,9 @@ message Line {
 
   // line is the line number in the source file of the referenced function.
   int64 line = 2;
+
+  // function_index is the index in the functions table.
+  uint32 function_index = 3;
 }
 
 // Function describes metadata of a source code function.
@@ -265,6 +271,15 @@ message Function {
 
   // filename is the name of the source file of the function.
   string filename = 5;
+
+  // name_string_index is the index in the string table to the name associated with the function.
+  uint32 name_string_index = 6;
+
+  // system_name_string_index is the index in the string table to the system_name associated with the function.
+  uint32 system_name_string_index = 7;
+
+  // filename_string_index is the index in the string table to the filename associated with the function.
+  uint32 filename_string_index = 8;
 }
 
 // Mapping describes a memory mapping.
@@ -298,4 +313,10 @@ message Mapping {
 
   // has_inline_frames indicates whether the mapping has associated inline frames.
   bool has_inline_frames = 10;
+
+  // fileStringIndex is the index in the string table to the file name associated with the mapping.
+  uint32 file_string_index = 11;
+
+  // build_id_string_index is the index in the string table to the build ID of the mapping.
+  uint32 build_id_string_index = 12;
 }

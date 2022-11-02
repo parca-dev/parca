@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.53",
+  "version": "0.16.54",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -12,7 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
-    "@parca/client": "^0.16.52",
+    "@parca/client": "^0.16.53",
     "@parca/dynamicsize": "^0.16.51",
     "@parca/functions": "^0.16.51",
     "@parca/icons": "^0.16.49",

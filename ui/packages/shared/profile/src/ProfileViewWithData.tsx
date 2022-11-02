@@ -41,7 +41,7 @@ export const ProfileViewWithData = ({
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED, {
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
     skip: currentView !== 'icicle' && currentView !== 'both',
   });
 
