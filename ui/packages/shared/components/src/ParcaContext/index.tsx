@@ -11,37 +11,62 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createContext, ReactNode, useContext} from 'react';
+import {createContext, ReactNode, useContext, Reducer} from 'react';
 import Spinner from '../Spinner';
 
-interface ParcaContextProps {
-  loader: ReactNode;
-  trackingFn?: (event: string, properties?: Record<string, unknown>) => void;
-  trackingScript?: string;
+enum ActionTypes {
+  SEND_PERF_EVENT = 'SEND_PERF_EVENT',
 }
 
-const defaultValue: ParcaContextProps = {
+interface Props {
+  loader: ReactNode;
+  trackedPerfEvents: Array<string>;
+  dispatch: (action: {type: ActionTypes; payload: any}) => void;
+}
+
+interface Action {
+  type: ActionTypes;
+  payload: any;
+}
+
+export const sendPerfEvent = () => ({type: ActionTypes.SEND_PERF_EVENT});
+
+const defaultValue: Props = {
   loader: <Spinner />,
+  dispatch: () => {},
+  trackedPerfEvents: [],
 };
 
-const ParcaContext = createContext<ParcaContextProps>(defaultValue);
+const ParcaContext = createContext<Props>(defaultValue);
 
 export const ParcaContextProvider = ({
   children,
   value,
 }: {
   children: ReactNode;
-  value?: ParcaContextProps;
+  value?: Props;
 }): JSX.Element => {
   return <ParcaContext.Provider value={value ?? defaultValue}>{children}</ParcaContext.Provider>;
 };
 
-export const useParcaContext = (): ParcaContextProps => {
+export const useParcaContext = (): Props => {
   const context = useContext(ParcaContext);
   if (context == null) {
     return defaultValue;
   }
   return context;
+};
+
+// @ts-expect-error
+export const ParcaContextReducer: Reducer<Props, Action> = (state, action) => {
+  const {type, payload} = action;
+
+  switch (type) {
+    case ActionTypes.SEND_PERF_EVENT:
+      return {...state, trackedPerfEvents: state.trackedPerfEvents.push(payload)};
+    default:
+      return state;
+  }
 };
 
 export default ParcaContext;
