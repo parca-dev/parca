@@ -14,7 +14,7 @@
 import {Listbox, Transition} from '@headlessui/react';
 import {CheckIcon, SelectorIcon} from '@heroicons/react/solid';
 import cx from 'classnames';
-import {useParcaTheme} from '../ParcaThemeContext';
+import {useParcaContext} from '../ParcaContext';
 import {Fragment} from 'react';
 
 export interface SelectElement {
@@ -55,7 +55,7 @@ const Select = ({
     key: selectedKey,
     element: {active: <>{selectedKey}</>, expanded: <>{selectedKey}</>},
   };
-  const {loader} = useParcaTheme();
+  const {loader} = useParcaContext();
 
   return (
     <>

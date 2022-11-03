@@ -16,7 +16,7 @@ import MetricsGraph from '../MetricsGraph';
 import {ProfileSelection, SingleProfileSelection} from '..';
 import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {DateTimeRange, useGrpcMetadata, useParcaTheme} from '@parca/components';
+import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
 import useDelayedLoader from '../useDelayedLoader';
 
@@ -86,7 +86,7 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {loader} = useParcaTheme();
+  const {loader} = useParcaContext();
 
   if (isLoaderVisible) {
     return <>{loader}</>;

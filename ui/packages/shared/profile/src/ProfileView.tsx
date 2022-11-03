@@ -16,7 +16,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {parseParams} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph} from '@parca/client';
-import {Button, Card, SearchNodes, useParcaTheme} from '@parca/components';
+import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
 import {Callgraph as CallgraphComponent} from './';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
@@ -110,7 +110,7 @@ export const ProfileView = ({
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
 
-  const {loader} = useParcaTheme();
+  const {loader} = useParcaContext();
 
   useEffect(() => {
     // Reset the current path when the profile source changes

@@ -11,39 +11,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {createContext, ReactNode, useContext} from 'react';
+import {createContext, ReactNode, useContext} from 'react';
 import Spinner from '../Spinner';
 
-interface ParcaThemeContextProps {
+interface ParcaContextProps {
   loader: ReactNode;
+  trackingFn?: (event: string, properties?: Record<string, unknown>) => void;
+  trackingScript?: string;
 }
 
-const defaultValue: ParcaThemeContextProps = {
+const defaultValue: ParcaContextProps = {
   loader: <Spinner />,
 };
 
-const ParcaThemeContext = createContext<ParcaThemeContextProps>(defaultValue);
+const ParcaContext = createContext<ParcaContextProps>(defaultValue);
 
-export const ParcaThemeProvider = ({
+export const ParcaContextProvider = ({
   children,
   value,
 }: {
   children: ReactNode;
-  value?: ParcaThemeContextProps;
+  value?: ParcaContextProps;
 }): JSX.Element => {
-  return (
-    <ParcaThemeContext.Provider value={value ?? defaultValue}>
-      {children}
-    </ParcaThemeContext.Provider>
-  );
+  return <ParcaContext.Provider value={value ?? defaultValue}>{children}</ParcaContext.Provider>;
 };
 
-export const useParcaTheme = (): ParcaThemeContextProps => {
-  const context = useContext(ParcaThemeContext);
+export const useParcaContext = (): ParcaContextProps => {
+  const context = useContext(ParcaContext);
   if (context == null) {
     return defaultValue;
   }
   return context;
 };
 
-export default ParcaThemeContext;
+export default ParcaContext;
