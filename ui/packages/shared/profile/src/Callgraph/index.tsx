@@ -88,11 +88,13 @@ const Node = ({node, hoveredNode, setHoveredNode}: NodeProps): JSX.Element => {
     height: heightString,
   } = node;
   const currentSearchString = useAppSelector(selectSearchNodeString);
+  const isNonEmptySearch = currentSearchString !== '';
   const isCurrentSearchMatch = isSearchMatch(currentSearchString, functionName);
   const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
   const width = Number(widthString);
   const height = Number(heightString);
   const textPadding = 6;
+  const opacity = isNonEmptySearch ? (isCurrentSearchMatch ? 1 : 0.3) : 1;
 
   return (
     <Label x={x - width / 2} y={y - height / 2}>
@@ -100,6 +102,7 @@ const Node = ({node, hoveredNode, setHoveredNode}: NodeProps): JSX.Element => {
         width={width}
         height={height}
         fill={color}
+        opacity={opacity}
         cornerRadius={3}
         stroke={isHovered ? 'black' : color}
         strokeWidth={2}
