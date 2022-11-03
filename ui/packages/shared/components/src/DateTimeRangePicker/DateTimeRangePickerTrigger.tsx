@@ -26,9 +26,13 @@ const DateTimeRangePickerTrigger = ({
   onClick,
   isActive,
 }: DateTimeRangePickerTriggerProps): JSX.Element => {
+  const dateString =
+    isActive && range.from.isRelative()
+      ? `${formatDateStringForUI(range.from)} → ${formatDateStringForUI(range.to)}`
+      : range.getRangeStringForUI();
   return (
     <>
-      <Popover.Button onClick={onClick}>
+      <Popover.Button onClick={onClick} title={dateString}>
         <div
           onClick={onClick}
           className={cx(
@@ -37,10 +41,8 @@ const DateTimeRangePickerTrigger = ({
             {'!justify-center, bg-gray-100 dark:bg-gray-800': isActive}
           )}
         >
-          <span className="w-[147px] text-ellipsis overflow-hidden whitespace-nowrap">
-            {isActive && range.from.isRelative()
-              ? `${formatDateStringForUI(range.from)} → ${formatDateStringForUI(range.to)}`
-              : range.getRangeStringForUI()}
+          <span className="w-[147px] xl:w-auto text-ellipsis overflow-hidden whitespace-nowrap">
+            {dateString}
           </span>
 
           <span className="px-2 cursor-pointer">{!isActive ? '▼' : '▲'}</span>
