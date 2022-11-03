@@ -14,7 +14,13 @@
 import React from 'react';
 
 import {getLastItem, valueFormatter, isSearchMatch} from '@parca/functions';
-import {useAppSelector, selectCompareMode, selectSearchNodeString} from '@parca/store';
+import {
+  useAppSelector,
+  selectCompareMode,
+  selectSearchNodeString,
+  setSearchNodeString,
+  useAppDispatch,
+} from '@parca/store';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 
 import {hexifyAddress} from './utils';
@@ -136,8 +142,8 @@ export const RowLabel = (meta: TopNodeMeta | undefined): string => {
 export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element => {
   const {items, requestSort, sortConfig} = useSortableData(top);
   const currentSearchString = useAppSelector(selectSearchNodeString);
-
   const compareMode = useAppSelector(selectCompareMode);
+  const dispatch = useAppDispatch();
 
   const unit = sampleUnit;
 
@@ -159,10 +165,17 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
     return `+${num}`;
   };
 
+  const selectSpan = (span: string): void => {
+    dispatch(setSearchNodeString(span.trim()));
+  };
+
   return (
     <>
       <div className="w-full font-robotoMono">
-        <table className="iciclegraph-table table-fixed text-left w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <table
+          className="iciclegraph-table table-fixed text-left w-full divide-y divide-gray-200 dark:divide-gray-700"
+          tabIndex={1}
+        >
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th
@@ -221,7 +234,7 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
               return (
                 <tr
                   key={index}
-                  className="hover:bg-[#62626212] dark:hover:bg-[#ffffff12]"
+                  className="hover:bg-[#62626212] dark:hover:bg-[#ffffff12] cursor-pointer"
                   style={{
                     opacity:
                       currentSearchString !== undefined &&
@@ -230,6 +243,7 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
                         ? 0.5
                         : 1,
                   }}
+                  onClick={() => selectSpan(name)}
                 >
                   <td className="text-xs py-1.5 pl-2">{name}</td>
                   <td className="text-xs py-1.5 text-right">

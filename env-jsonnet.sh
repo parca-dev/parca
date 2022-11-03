@@ -6,7 +6,7 @@ GOJSONTOYAML_VERSION='v0.1.0'
 go install "github.com/brancz/gojsontoyaml@${GOJSONTOYAML_VERSION}"
 
 # renovate: datasource=go depName=github.com/google/go-jsonnet
-JSONNET_VERSION='635d04f'
+JSONNET_VERSION='v0.19.1'
 go install "github.com/google/go-jsonnet/cmd/jsonnet@${JSONNET_VERSION}"
 go install "github.com/google/go-jsonnet/cmd/jsonnetfmt@${JSONNET_VERSION}"
 
