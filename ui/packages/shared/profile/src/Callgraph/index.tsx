@@ -28,6 +28,7 @@ interface NodeProps {
   node: INode;
   hoveredNode: INode | null;
   setHoveredNode: (node: INode | null) => void;
+  isCurrentSearchMatch: boolean;
 }
 interface EdgeProps {
   edge: GraphvizEdge;
@@ -35,6 +36,7 @@ interface EdgeProps {
   targetNode: {x: number; y: number};
   xScale: (x: number) => number;
   yScale: (y: number) => number;
+  isCurrentSearchMatch: boolean;
 }
 export interface Props {
   graph: CallgraphType;
@@ -77,7 +79,12 @@ interface GraphvizType {
   bb: string;
 }
 
-const Node = ({node, hoveredNode, setHoveredNode}: NodeProps): JSX.Element => {
+const Node = ({
+  node,
+  hoveredNode,
+  setHoveredNode,
+  isCurrentSearchMatch,
+}: NodeProps): JSX.Element => {
   const {
     data: {id},
     x,
@@ -87,14 +94,11 @@ const Node = ({node, hoveredNode, setHoveredNode}: NodeProps): JSX.Element => {
     width: widthString,
     height: heightString,
   } = node;
-  const currentSearchString = useAppSelector(selectSearchNodeString);
-  const isNonEmptySearch = currentSearchString !== '';
-  const isCurrentSearchMatch = isSearchMatch(currentSearchString, functionName);
   const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
   const width = Number(widthString);
   const height = Number(heightString);
   const textPadding = 6;
-  const opacity = isNonEmptySearch ? (isCurrentSearchMatch ? 1 : 0.3) : 1;
+  const opacity = isCurrentSearchMatch ? 1 : 0.1;
 
   return (
     <Label x={x - width / 2} y={y - height / 2}>
@@ -131,7 +135,14 @@ const Node = ({node, hoveredNode, setHoveredNode}: NodeProps): JSX.Element => {
   );
 };
 
-const Edge = ({edge, sourceNode, targetNode, xScale, yScale}: EdgeProps): JSX.Element => {
+const Edge = ({
+  edge,
+  sourceNode,
+  targetNode,
+  xScale,
+  yScale,
+  isCurrentSearchMatch,
+}: EdgeProps): JSX.Element => {
   const {pos, color, head, tail, opacity, boxHeight} = edge;
 
   const points = getCurvePoints({
@@ -153,7 +164,7 @@ const Edge = ({edge, sourceNode, targetNode, xScale, yScale}: EdgeProps): JSX.El
       pointerLength={10}
       pointerWidth={10}
       fill={color}
-      opacity={Number(opacity)}
+      opacity={isCurrentSearchMatch ? Number(opacity) : 0}
     />
   );
 };
@@ -168,6 +179,8 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     y: 0,
   });
   const {nodes: rawNodes, cumulative: total} = graph;
+  const currentSearchString = useAppSelector(selectSearchNodeString);
+  const isSearchEmpty = currentSearchString === undefined;
 
   useEffect(() => {
     const getDataWithPositions = async (): Promise<void> => {
@@ -263,8 +276,20 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
           <Layer offsetX={-GRAPH_MARGIN} offsetY={-GRAPH_MARGIN}>
             {edges.map((edge: GraphvizEdge) => {
               // 'tail' in graphviz-wasm means 'source' and 'head' means 'target'
-              const sourceNode = nodes.find(n => n._gvid === edge.tail) ?? {x: 0, y: 0};
-              const targetNode = nodes.find(n => n._gvid === edge.head) ?? {x: 0, y: 0};
+              const sourceNode = nodes.find(n => n._gvid === edge.tail) ?? {
+                x: 0,
+                y: 0,
+                functionName: '',
+              };
+              const targetNode = nodes.find(n => n._gvid === edge.head) ?? {
+                x: 0,
+                y: 0,
+                functionName: '',
+              };
+              const isCurrentSearchMatch = isSearchEmpty
+                ? true
+                : isSearchMatch(currentSearchString, sourceNode.functionName) &&
+                  isSearchMatch(currentSearchString, targetNode.functionName);
               return (
                 <Edge
                   key={`edge-${edge.tail}-${edge.head}`}
@@ -273,17 +298,24 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
                   yScale={yScale}
                   sourceNode={sourceNode}
                   targetNode={targetNode}
+                  isCurrentSearchMatch={isCurrentSearchMatch}
                 />
               );
             })}
-            {nodes.map(node => (
-              <Node
-                key={`node-${node._gvid}`}
-                node={node}
-                hoveredNode={hoveredNode}
-                setHoveredNode={setHoveredNode}
-              />
-            ))}
+            {nodes.map(node => {
+              const isCurrentSearchMatch = isSearchEmpty
+                ? true
+                : isSearchMatch(currentSearchString, node.functionName);
+              return (
+                <Node
+                  key={`node-${node._gvid}`}
+                  node={node}
+                  hoveredNode={hoveredNode}
+                  setHoveredNode={setHoveredNode}
+                  isCurrentSearchMatch={isCurrentSearchMatch}
+                />
+              );
+            })}
           </Layer>
         </Stage>
         <Tooltip

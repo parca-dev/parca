@@ -237,17 +237,29 @@ export const ProfileView = ({
                 ) : null}
 
                 <Button
-                  color="neutral"
-                  onClick={e => {
-                    e.preventDefault();
-                    onDownloadPProf();
-                  }}
+                  variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
+                  className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+                  onClick={() => switchProfileView('table')}
                 >
-                  Download pprof
+                  Table
+                </Button>
+
+                <Button
+                  variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
+                  className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons text-ellipsis"
+                  onClick={() => switchProfileView('both')}
+                >
+                  Both
+                </Button>
+
+                <Button
+                  variant={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
+                  className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+                  onClick={() => switchProfileView('icicle')}
+                >
+                  Icicle Graph
                 </Button>
               </div>
-
-              <SearchNodes />
             </div>
 
             <div ref={ref} className="flex space-x-4 justify-between w-full">
