@@ -333,7 +333,7 @@ func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *query
 	return tree
 }
 
-// mergeChildren sorts and merges the children of the given node if they are equals (in-place).
+// mergeChildrenTable sorts and merges the children of the given node if they are equals (in-place).
 // compare function used for sorting and equals function used for comparing two nodes before merging.
 func mergeChildrenTable(
 	tables TableGetter,
