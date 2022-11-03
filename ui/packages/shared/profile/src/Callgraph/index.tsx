@@ -14,50 +14,182 @@
 import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
-import {Stage, Layer} from 'react-konva';
-import Tooltip from '../GraphTooltip';
+import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
+import {KonvaEventObject} from 'konva/lib/Node';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
-import {jsonToDot} from './utils';
-import Node, {INode} from './Node';
-import Edge, {IEdge} from './Edge';
+import {jsonToDot, getCurvePoints} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
+import {useAppSelector, selectSearchNodeString} from '@parca/store';
+import {isSearchMatch} from '@parca/functions';
+import Tooltip from '../GraphTooltip';
+import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
 
+interface NodeProps {
+  node: INode;
+  hoveredNode: INode | null;
+  setHoveredNode: (node: INode | null) => void;
+  isCurrentSearchMatch: boolean;
+}
+interface EdgeProps {
+  edge: GraphvizEdge;
+  sourceNode: {x: number; y: number};
+  targetNode: {x: number; y: number};
+  xScale: (x: number) => number;
+  yScale: (y: number) => number;
+  isCurrentSearchMatch: boolean;
+}
 export interface Props {
   graph: CallgraphType;
   sampleUnit: string;
   width: number;
+  colorRange: [string, string];
 }
 
-interface graphvizObject extends CallgraphNode {
+interface GraphvizNode extends CallgraphNode {
   _gvid: number;
   name: string;
   pos: string;
+  functionName: string;
+  color: string;
+  width: string | number;
+  height: string | number;
 }
 
-interface graphvizEdge extends CallgraphEdge {
+interface INode extends GraphvizNode {
+  x: number;
+  y: number;
+  data: {id: string};
+  mouseX?: number;
+  mouseY?: number;
+}
+
+interface GraphvizEdge extends CallgraphEdge {
   _gvid: number;
   tail: number;
   head: number;
   pos: string;
+  color: string;
+  opacity: string;
+  boxHeight: number;
 }
 
-interface graphvizType {
-  edges: graphvizEdge[];
-  objects: graphvizObject[];
+interface GraphvizType {
+  edges: GraphvizEdge[];
+  objects: GraphvizNode[];
   bb: string;
 }
 
-const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
+const Node = ({
+  node,
+  hoveredNode,
+  setHoveredNode,
+  isCurrentSearchMatch,
+}: NodeProps): JSX.Element => {
+  const {
+    data: {id},
+    x,
+    y,
+    color,
+    functionName,
+    width: widthString,
+    height: heightString,
+  } = node;
+  const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
+  const width = Number(widthString);
+  const height = Number(heightString);
+  const textPadding = 6;
+  const opacity = isCurrentSearchMatch ? 1 : 0.1;
+
+  return (
+    <Label x={x - width / 2} y={y - height / 2}>
+      <Rect
+        width={width}
+        height={height}
+        fill={color}
+        opacity={opacity}
+        cornerRadius={3}
+        stroke={isHovered ? 'black' : color}
+        strokeWidth={2}
+        onMouseOver={e => {
+          setHoveredNode({...node, mouseX: e.evt.clientX, mouseY: e.evt.clientY});
+        }}
+        onMouseOut={() => {
+          setHoveredNode(null);
+        }}
+      />
+      {width > DEFAULT_NODE_HEIGHT + 10 && (
+        <Text
+          text={functionName}
+          fontSize={10}
+          fill="white"
+          width={width - textPadding}
+          height={height - textPadding}
+          x={textPadding / 2}
+          y={textPadding / 2}
+          align="center"
+          verticalAlign="middle"
+          listening={false}
+        />
+      )}
+    </Label>
+  );
+};
+
+const Edge = ({
+  edge,
+  sourceNode,
+  targetNode,
+  xScale,
+  yScale,
+  isCurrentSearchMatch,
+}: EdgeProps): JSX.Element => {
+  const {pos, color, head, tail, opacity, boxHeight} = edge;
+
+  const points = getCurvePoints({
+    pos,
+    xScale,
+    yScale,
+    source: [sourceNode.x, sourceNode.y],
+    target: [targetNode.x, targetNode.y],
+    offset: boxHeight / 2,
+    isSelfLoop: head === tail,
+  });
+
+  return (
+    <Arrow
+      points={points}
+      bezier={true}
+      stroke={color}
+      strokeWidth={3}
+      pointerLength={10}
+      pointerWidth={10}
+      fill={color}
+      opacity={isCurrentSearchMatch ? Number(opacity) : 0}
+    />
+  );
+};
+
+const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [graphData, setGraphData] = useState<string | null>(null);
+  const [graphData, setGraphData] = useState<any>(null);
   const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
+  const [stage, setStage] = useState<{scale: {x: number; y: number}; x: number; y: number}>({
+    scale: {x: 1, y: 1},
+    x: 0,
+    y: 0,
+  });
   const {nodes: rawNodes, cumulative: total} = graph;
-  const nodeRadius = 12;
+  const currentSearchString = useAppSelector(selectSearchNodeString);
+  const isSearchEmpty = currentSearchString === undefined;
 
   useEffect(() => {
     const getDataWithPositions = async (): Promise<void> => {
       // 1. Translate JSON to 'dot' graph string
-      const dataAsDot = jsonToDot({graph, width, nodeRadius});
+      const dataAsDot = jsonToDot({
+        graph,
+        width,
+        colorRange,
+      });
 
       // 2. Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
       await graphviz.loadWASM(); // need to load the WASM instance and wait for it
@@ -70,86 +202,120 @@ const Callgraph = ({graph, sampleUnit, width}: Props): JSX.Element => {
     if (width !== null) {
       void getDataWithPositions();
     }
-  }, [graph, width]);
+  }, [graph, width, colorRange]);
 
   // 3. Render the graph with calculated layout in Canvas container
   if (width == null || graphData == null) return <></>;
+  const {objects: gvizNodes, edges, bb: boundingBox} = JSON.parse(graphData) as GraphvizType;
 
-  const height = width;
-  const {objects, edges: gvizEdges, bb: boundingBox} = JSON.parse(graphData) as graphvizType;
-
-  const cumulatives: string[] = objects
-    .filter(node => node !== undefined)
-    .map(node => node.cumulative);
-  if (cumulatives.length === 0) {
-    cumulatives.push('0');
-  }
-
-  const valueRange = (d3.extent(cumulatives) as [string, string]).map(value => parseInt(value));
-
-  const colorScale = d3
-    .scaleSequentialLog(d3.interpolateRdGy)
-    .domain(valueRange)
-    .range(['lightgrey', 'red']);
   const graphBB = boundingBox.split(',');
+  const bbWidth = Number(graphBB[2]);
+  const bbHeight = Number(graphBB[3]);
+  const height = (width * bbHeight) / bbWidth;
   const xScale = d3
     .scaleLinear()
-    .domain([0, Number(graphBB[2])])
-    .range([0, width]);
+    .domain([0, bbWidth])
+    .range([0, width - 2 * GRAPH_MARGIN]);
   const yScale = d3
     .scaleLinear()
-    .domain([0, Number(graphBB[3])])
-    .range([0, height]);
+    .domain([0, bbHeight])
+    .range([0, height - 2 * GRAPH_MARGIN]);
 
-  const nodes: INode[] = objects.map(object => {
-    const pos = object.pos.split(',');
+  const nodes: INode[] = gvizNodes.map((node: GraphvizNode) => {
+    const [x, y] = node.pos.split(',');
     return {
-      ...object,
-      id: object._gvid,
-      x: xScale(parseInt(pos[0])),
-      y: yScale(parseInt(pos[1])),
-      color: colorScale(Number(object.cumulative)),
-      data: rawNodes.find(n => n.id === object.name) ?? {id: 'n0'},
+      ...node,
+      x: xScale(Number(x)),
+      y: yScale(Number(y)),
+      data: rawNodes.find(n => n.id === node.name) ?? {id: 'n0'},
     };
   });
 
-  const edges: IEdge[] = gvizEdges.map(edge => ({
-    ...edge,
-    source: edge.head,
-    target: edge.tail,
-    points: edge.pos,
-    color: colorScale(+edge.cumulative),
-  }));
+  // 4. Add zooming
+  const handleWheel: (e: KonvaEventObject<WheelEvent>) => void = e => {
+    e.evt.preventDefault();
+
+    const scaleXBy = 0.95;
+    const scaleYBy = 1.05;
+    const stage = e.target.getStage();
+
+    if (stage !== null) {
+      const oldScale = stage.scaleX();
+      const {x, y} = stage.getPointerPosition() ?? {x: 0, y: 0};
+      const mousePointTo = {
+        x: x / oldScale - stage.x() / oldScale,
+        y: y / oldScale - stage.y() / oldScale,
+      };
+
+      const newXScale = e.evt.deltaX > 0 ? oldScale * scaleXBy : oldScale / scaleXBy;
+      const newYScale = e.evt.deltaY > 0 ? oldScale * scaleYBy : oldScale / scaleYBy;
+
+      stage.scale({x: newXScale, y: newYScale});
+
+      setStage({
+        scale: {x: newXScale, y: newYScale},
+        x: -(mousePointTo.x - x / newXScale) * newXScale,
+        y: -(mousePointTo.y - y / newYScale) * newYScale,
+      });
+    }
+  };
 
   return (
     <div className="relative">
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
-        <Stage width={width} height={height}>
-          <Layer>
-            {edges.map(edge => {
-              const sourceNode = nodes.find(n => n.id === edge.source) ?? {x: 0, y: 0};
-              const targetNode = nodes.find(n => n.id === edge.target) ?? {x: 0, y: 0};
+        <Stage
+          width={width}
+          height={height}
+          onWheel={handleWheel}
+          scaleX={stage.scale.x}
+          scaleY={stage.scale.y}
+          x={stage.x}
+          y={stage.y}
+          draggable
+        >
+          <Layer offsetX={-GRAPH_MARGIN} offsetY={-GRAPH_MARGIN}>
+            {edges.map((edge: GraphvizEdge) => {
+              // 'tail' in graphviz-wasm means 'source' and 'head' means 'target'
+              const sourceNode = nodes.find(n => n._gvid === edge.tail) ?? {
+                x: 0,
+                y: 0,
+                functionName: '',
+              };
+              const targetNode = nodes.find(n => n._gvid === edge.head) ?? {
+                x: 0,
+                y: 0,
+                functionName: '',
+              };
+              const isCurrentSearchMatch = isSearchEmpty
+                ? true
+                : isSearchMatch(currentSearchString, sourceNode.functionName) &&
+                  isSearchMatch(currentSearchString, targetNode.functionName);
               return (
                 <Edge
-                  key={`edge-${edge.source}-${edge.target}`}
+                  key={`edge-${edge.tail}-${edge.head}`}
                   edge={edge}
                   xScale={xScale}
                   yScale={yScale}
                   sourceNode={sourceNode}
                   targetNode={targetNode}
-                  nodeRadius={nodeRadius}
+                  isCurrentSearchMatch={isCurrentSearchMatch}
                 />
               );
             })}
-            {nodes.map(node => (
-              <Node
-                key={`node-${node.data.id}`}
-                node={node}
-                hoveredNode={hoveredNode}
-                setHoveredNode={setHoveredNode}
-                nodeRadius={nodeRadius}
-              />
-            ))}
+            {nodes.map(node => {
+              const isCurrentSearchMatch = isSearchEmpty
+                ? true
+                : isSearchMatch(currentSearchString, node.functionName);
+              return (
+                <Node
+                  key={`node-${node._gvid}`}
+                  node={node}
+                  hoveredNode={hoveredNode}
+                  setHoveredNode={setHoveredNode}
+                  isCurrentSearchMatch={isCurrentSearchMatch}
+                />
+              );
+            })}
           </Layer>
         </Stage>
         <Tooltip

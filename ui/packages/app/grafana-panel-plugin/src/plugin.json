@@ -25,8 +25,8 @@
       }
     ],
     "screenshots": [
-      {"name": "Parca Flamegraph", "path": "img/screenshots/panel.png"},
-      {"name": "Parca Flamegraph Config", "path": "img/screenshots/panel-config.png"}
+      { "name": "Parca Flamegraph", "path": "img/screenshots/panel.png" },
+      { "name": "Parca Flamegraph Config", "path": "img/screenshots/panel-config.png" }
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
