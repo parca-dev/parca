@@ -1,11 +1,11 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.59",
+  "version": "0.16.60",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@iconify/react": "^3.2.2",
     "@parca/client": "^0.16.53",
-    "@parca/components": "^0.16.55",
+    "@parca/components": "^0.16.56",
     "@parca/dynamicsize": "^0.16.51",
     "@parca/functions": "^0.16.51",
     "@parca/parser": "^0.16.49",
@@ -20,10 +20,11 @@
     "react-konva": "18.2.3"
   },
   "devDependencies": {
-    "@types/cytoscape": "3.19.9",
     "@types/d3": "7.4.0",
-    "@types/react-copy-to-clipboard": "5.0.4",
-    "@types/react-cytoscapejs": "1.2.2"
+    "@types/react-copy-to-clipboard": "5.0.4"
+  },
+  "resolutions": {
+    "konva": "8.3.13"
   },
   "main": "dist/index.js",
   "scripts": {
