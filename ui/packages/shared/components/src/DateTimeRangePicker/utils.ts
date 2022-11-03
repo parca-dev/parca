@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {convertLocalToUTCDate} from '@parca/functions';
+import moment from 'moment-timezone';
 
 export const UNITS = {
   MINUTE: 'minute',
@@ -60,16 +60,15 @@ export class DateTimeRange {
     this.to = to ?? new RelativeDate(UNITS.MINUTE, 0);
   }
 
-  getRangeStringForUI(): String {
+  getRangeStringForUI(): string {
     if (this.from.isRelative() && this.to.isRelative() && (this.to as RelativeDate).value === 0) {
       const from = this.from as RelativeDate;
       return `Last ${from.value} ${from.unit}${from.value > 1 ? 's' : ''}`;
     }
     const formattedFrom = formatDateStringForUI(this.from);
-    const formattedTo = formatDateStringForUI(this.to).replace(
-      `${formattedFrom.split(',')[0]},`,
-      ''
-    );
+    const formattedTo = formatDateStringForUI(this.to)
+      .replace(getUtcStringForDate(this.from as AbsoluteDate, 'll'), '')
+      .trim();
     return `${formattedFrom} → ${formattedTo}`;
   }
 
@@ -167,14 +166,7 @@ export const formatDateStringForUI: (dateString: DateUnion) => string = dateStri
     }
     return `${value} ${unit}${value > 1 ? 's' : ''} ago`;
   }
-  return convertLocalToUTCDate(dateString.value as Date).toLocaleDateString('en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    hour12: true,
-  });
+  return getUtcStringForDate(dateString as AbsoluteDate);
 };
 
 export const getDateHoursAgo = (hours = 1): Date => {
@@ -196,4 +188,11 @@ const getRelativeDateMs = (date: RelativeDate): number => {
     default:
       return now;
   }
+};
+
+export const getUtcStringForDate = (date: AbsoluteDate, format = 'lll'): string => {
+  return moment
+    .tz(date.value.toISOString(), Intl.DateTimeFormat().resolvedOptions().timeZone)
+    .utc()
+    .format(format);
 };
