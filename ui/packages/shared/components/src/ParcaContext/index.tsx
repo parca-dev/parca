@@ -26,12 +26,12 @@ interface Props {
 
 interface Action {
   type: ActionTypes;
-  payload: any;
+  payload: string;
 }
 
-export const sendPerfEvent = () => ({type: ActionTypes.SEND_PERF_EVENT});
+export const sendPerfEvent = (payload: string) => ({type: ActionTypes.SEND_PERF_EVENT, payload});
 
-const defaultValue: Props = {
+export const defaultValue: Props = {
   loader: <Spinner />,
   dispatch: () => {},
   trackedPerfEvents: [],
@@ -57,13 +57,12 @@ export const useParcaContext = (): Props => {
   return context;
 };
 
-// @ts-expect-error
 export const ParcaContextReducer: Reducer<Props, Action> = (state, action) => {
   const {type, payload} = action;
 
   switch (type) {
     case ActionTypes.SEND_PERF_EVENT:
-      return {...state, trackedPerfEvents: state.trackedPerfEvents.push(payload)};
+      return {...state, trackedPerfEvents: state.trackedPerfEvents.concat(payload)};
     default:
       return state;
   }
