@@ -25,7 +25,8 @@
         "NOT_SERVING",
         "SERVICE_UNKNOWN"
       ],
-      "default": "UNKNOWN"
+      "default": "UNKNOWN",
+      "description": " - SERVICE_UNKNOWN: Used only by the Watch method."
     },
     "protobufAny": {
       "type": "object",
