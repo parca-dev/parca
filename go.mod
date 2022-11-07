@@ -19,7 +19,7 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/goburrow/cache v0.1.4
-	github.com/google/pprof v0.0.0-20221010195024-131d412537ea
+	github.com/google/pprof v0.0.0-20221103000818-d260c55eee4c
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-rc.3
