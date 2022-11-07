@@ -12040,10 +12040,10 @@ eslint-plugin-jsx-a11y@^6.5.1:
     minimatch "^3.1.2"
     semver "^6.3.0"
 
-eslint-plugin-n@15.4.0:
-  version "15.4.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-n/-/eslint-plugin-n-15.4.0.tgz#1cfe9faff1b914ecc8f71433d228eaa5fc65b111"
-  integrity sha512-MkoKy9/lfd52TAXK4fkABgCp0aglk82Q3viy2UOWIEpTVE/Cem5P/UAxMBA4vSw7Gy+2egPqImE9euitLGp5aw==
+eslint-plugin-n@15.5.0:
+  version "15.5.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-n/-/eslint-plugin-n-15.5.0.tgz#8eb0773b019b88b145dd1eba687ccc9c50e71655"
+  integrity sha512-VCqQiZDpdm1Q9grnvy+XsENZoXDgTLqPHRQwgl9qFNNgTKR4YEnQOMN0pFB/9TbmrQ88jdeTnqTcNwRvjqMOtg==
   dependencies:
     builtins "^5.0.1"
     eslint-plugin-es "^4.1.0"
