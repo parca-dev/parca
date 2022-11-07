@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.56",
+  "version": "0.16.57",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -28,7 +28,7 @@
     "react-use": "^17.3.2"
   },
   "devDependencies": {
-    "@types/react-datepicker": "4.4.2",
+    "@types/react-datepicker": "4.8.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
