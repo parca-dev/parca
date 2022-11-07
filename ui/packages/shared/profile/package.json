@@ -22,15 +22,22 @@
   "devDependencies": {
     "@types/cytoscape": "3.19.9",
     "@types/d3": "7.4.0",
+    "@types/jest": "^29.2.1",
     "@types/react-copy-to-clipboard": "5.0.4",
-    "@types/react-cytoscapejs": "1.2.2"
+    "@types/react-cytoscapejs": "1.2.2",
+    "jest": "28.1.3",
+    "jest-environment-jsdom": "28.1.3",
+    "jest-transformer-svg": "^2.0.0",
+    "react-component-benchmark": "^2.0.0",
+    "ts-node": "^10.9.1"
   },
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
     "build": "tsc && tailwindcss -o dist/styles.css --minify && cp src/*.css ./dist/",
-    "watch": "tsc-watch --onSuccess 'tailwindcss -o dist/styles.css --minify'"
+    "watch": "tsc-watch --onSuccess 'tailwindcss -o dist/styles.css --minify'",
+    "benchmark": "jest --watch --runInBand --config ./src/benchmarks/benchmark.config.js ./src/benchmarks/*"
   },
   "keywords": [],
   "author": "",

@@ -169,6 +169,8 @@ export const ProfileView = ({
     navigateTo('/', {...router, ...{currentProfileView: view}});
   };
 
+  console.log('flamegraphData', JSON.stringify(flamegraphData?.data), JSON.stringify(sampleUnit));
+
   return (
     <div className="py-3">
       <Card>

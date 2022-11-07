@@ -6281,6 +6281,14 @@
     jest-diff "^26.0.0"
     pretty-format "^26.0.0"
 
+"@types/jest@^29.2.1":
+  version "29.2.1"
+  resolved "https://registry.yarnpkg.com/@types/jest/-/jest-29.2.1.tgz#31fda30bdf2861706abc5f1730be78bed54f83ee"
+  integrity sha512-nKixEdnGDqFOZkMTF74avFNr3yRqB1ZJ6sRZv5/28D5x2oLN14KApv7F9mfDT/vUic0L3tRCsh3XWpWjtJisUQ==
+  dependencies:
+    expect "^29.0.0"
+    pretty-format "^29.0.0"
+
 "@types/js-cookie@^2.2.6":
   version "2.2.7"
   resolved "https://registry.yarnpkg.com/@types/js-cookie/-/js-cookie-2.2.7.tgz#226a9e31680835a6188e887f3988e60c04d3f6a3"
@@ -15860,6 +15868,11 @@ jest-specific-snapshot@^4.0.0:
   dependencies:
     jest-snapshot "^26.3.0"
 
+jest-transformer-svg@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/jest-transformer-svg/-/jest-transformer-svg-2.0.0.tgz#a28584656e2a94a0eaaa17f85c709a115da51f84"
+  integrity sha512-+f6er7UZTiHTeel9nma1i0NTAU8AjbEvhK2RYUoMxTNihwo98z2rrrDBIbppZI6ACDzeul3bhRmI9M6d25J/Nw==
+
 jest-util@^26.6.2:
   version "26.6.2"
   resolved "https://registry.yarnpkg.com/jest-util/-/jest-util-26.6.2.tgz#907535dbe4d5a6cb4c47ac9b926f6af29576cbc1"
@@ -20940,6 +20953,11 @@ react-colorful@5.5.1:
   resolved "https://registry.yarnpkg.com/react-colorful/-/react-colorful-5.5.1.tgz#29d9c4e496f2ca784dd2bb5053a3a4340cfaf784"
   integrity sha512-M1TJH2X3RXEt12sWkpa6hLc/bbYS0H6F4rIqjQZ+RxNBstpY67d9TrFXtqdZwhpmBXcCwEi7stKqFue3ZRkiOg==
 
+react-component-benchmark@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/react-component-benchmark/-/react-component-benchmark-2.0.0.tgz#2335170f2f7a637ad40622e44e88f625274791bf"
+  integrity sha512-Z9dUpZ6n41NPkq1fFm//SYA/q17Z6SnBS2bi8MG00PbKwb2+c9aQ8bDvENAeTkqUrwbho7kp30n6uxwVk8PSQQ==
+
 react-copy-to-clipboard@^5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/react-copy-to-clipboard/-/react-copy-to-clipboard-5.1.0.tgz#09aae5ec4c62750ccb2e6421a58725eabc41255c"
@@ -23958,7 +23976,7 @@ ts-loader@^9.3.1:
     micromatch "^4.0.0"
     semver "^7.3.4"
 
-ts-node@10.9.1, ts-node@^10.7.0:
+ts-node@10.9.1, ts-node@^10.7.0, ts-node@^10.9.1:
   version "10.9.1"
   resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-10.9.1.tgz#e73de9102958af9e1f0b168a6ff320e25adcff4b"
   integrity sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==
