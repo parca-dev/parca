@@ -180,7 +180,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   });
   const {nodes: rawNodes, cumulative: total} = graph;
   const currentSearchString = useAppSelector(selectSearchNodeString);
-  const isSearchEmpty = currentSearchString === undefined;
+  const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
 
   useEffect(() => {
     const getDataWithPositions = async (): Promise<void> => {
