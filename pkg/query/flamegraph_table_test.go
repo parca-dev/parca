@@ -14,15 +14,19 @@
 package query
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
 	"github.com/go-kit/log"
+	"github.com/google/pprof/profile"
+	pprofprofile "github.com/google/pprof/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
@@ -189,4 +193,178 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 		}},
 	}
 	require.True(t, proto.Equal(expected, fg.Root))
+}
+
+func TestGenerateFlamegraphTableFromProfile(t *testing.T) {
+	t.Parallel()
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	reg := prometheus.NewRegistry()
+
+	l := metastoretest.NewTestMetastore(
+		t,
+		log.NewNopLogger(),
+		reg,
+		tracer,
+	)
+
+	testGenerateFlamegraphTableFromProfile(t, metastore.NewInProcessClient(l))
+}
+
+func testGenerateFlamegraphTableFromProfile(t *testing.T, l metastorepb.MetastoreServiceClient) *pb.Flamegraph {
+	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	fileContent := MustReadAllGzip(t, "./testdata/profile1.pb.gz")
+	p := &pprofpb.Profile{}
+	err := p.UnmarshalVT(fileContent)
+	require.NoError(t, err)
+
+	normalizer := parcacol.NewNormalizer(l)
+	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]struct{}{}, p, false)
+	require.NoError(t, err)
+
+	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphTable(ctx, tracer, sp)
+	require.NoError(t, err)
+
+	return fg
+}
+
+func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
+
+	functions := []*pprofprofile.Function{
+		{ID: 1, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
+		{ID: 2, Name: "internal/poll.(*FD).Accept", SystemName: "internal/poll.(*FD).Accept", Filename: "internal/poll/fd_unix.go"},
+		{ID: 3, Name: "internal/poll.(*pollDesc).waitRead", SystemName: "internal/poll.(*pollDesc).waitRead", Filename: "internal/poll/fd_poll_runtime.go"},
+		{ID: 4, Name: "internal/poll.(*pollDesc).wait", SystemName: "internal/poll.(*pollDesc).wait", Filename: "internal/poll/fd_poll_runtime.go"},
+	}
+	locations := []*pprofprofile.Location{
+		{ID: 1, Address: 94658718830132, Line: []pprofprofile.Line{{Line: 173, Function: functions[0]}}},
+		{ID: 2, Address: 94658718611115, Line: []pprofprofile.Line{
+			{Line: 89, Function: functions[1]},
+			{Line: 402, Function: functions[2]},
+		}},
+		{ID: 3, Address: 94658718597969, Line: []pprofprofile.Line{{Line: 84, Function: functions[3]}}},
+	}
+	samples := []*pprofprofile.Sample{
+		{
+			Location: []*pprofprofile.Location{locations[2], locations[1], locations[0]},
+			Value:    []int64{1},
+		},
+	}
+	b := bytes.NewBuffer(nil)
+	err := (&pprofprofile.Profile{
+		SampleType: []*profile.ValueType{{Type: "alloc_space", Unit: "bytes"}},
+		PeriodType: &profile.ValueType{Type: "space", Unit: "bytes"},
+		Sample:     samples,
+		Location:   locations,
+		Function:   functions,
+	}).Write(b)
+	require.NoError(t, err)
+
+	p := &pprofpb.Profile{}
+	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
+	require.NoError(t, err)
+
+	metastore := metastore.NewInProcessClient(store)
+	normalizer := parcacol.NewNormalizer(metastore)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
+	require.NoError(t, err)
+
+	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile)
+	require.NoError(t, err)
+
+	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
+
+	require.Equal(t, []string{
+		"net.(*netFD).accept",
+		"net/fd_unix.go",
+		"internal/poll.(*FD).Accept",
+		"internal/poll/fd_unix.go",
+		"internal/poll.(*pollDesc).waitRead",
+		"internal/poll/fd_poll_runtime.go",
+		"internal/poll.(*pollDesc).wait",
+	}, fg.GetStringTable())
+
+	require.Equal(t, []*metastorepb.Function{{
+		NameStringIndex:       0,
+		SystemNameStringIndex: 0,
+		FilenameStringIndex:   1,
+	}, {
+		NameStringIndex:       2,
+		SystemNameStringIndex: 2,
+		FilenameStringIndex:   3,
+	}, {
+		NameStringIndex:       4,
+		SystemNameStringIndex: 4,
+		FilenameStringIndex:   5,
+	}, {
+		NameStringIndex:       6,
+		SystemNameStringIndex: 6,
+		FilenameStringIndex:   5,
+	}}, fg.GetFunction())
+
+	require.Equal(t, []*metastorepb.Location{{
+		Address:      94658718830132,
+		MappingIndex: 0,
+		Lines: []*metastorepb.Line{{
+			Line:          173,
+			FunctionIndex: 0,
+		}},
+	}, {
+		Address:      94658718611115,
+		MappingIndex: 0,
+		Lines: []*metastorepb.Line{{
+			Line:          89,
+			FunctionIndex: 1,
+		}, {
+			Line:          402,
+			FunctionIndex: 2,
+		}},
+	}, {
+		Address:      94658718597969,
+		MappingIndex: 0,
+		Lines: []*metastorepb.Line{{
+			Line:          84,
+			FunctionIndex: 3,
+		}},
+	}}, fg.GetLocations())
+
+	require.Equal(t, int64(1), fg.GetTotal())
+	require.Equal(t, int32(4), fg.GetHeight())
+	require.Equal(t, "bytes", fg.GetUnit())
+
+	require.Equal(t, &pb.FlamegraphRootNode{
+		Cumulative: 1,
+		Children: []*pb.FlamegraphNode{{
+			Cumulative: 1,
+			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 0},
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 1,
+				Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+				Children: []*pb.FlamegraphNode{{
+					Cumulative: 1,
+					Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+					Children: []*pb.FlamegraphNode{{
+						Cumulative: 1,
+						Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
+					}},
+				}},
+			}},
+		}},
+	}, fg.Root)
 }
