@@ -180,7 +180,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   });
   const {nodes: rawNodes, cumulative: total} = graph;
   const currentSearchString = useAppSelector(selectSearchNodeString);
-  const isSearchEmpty = currentSearchString === undefined;
+  const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
 
   useEffect(() => {
     const getDataWithPositions = async (): Promise<void> => {
@@ -233,29 +233,35 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
 
   // 4. Add zooming
   const handleWheel: (e: KonvaEventObject<WheelEvent>) => void = e => {
+    // stop default scrolling
     e.evt.preventDefault();
 
-    const scaleXBy = 0.95;
-    const scaleYBy = 1.05;
+    const scaleBy = 1.01;
     const stage = e.target.getStage();
 
     if (stage !== null) {
       const oldScale = stage.scaleX();
-      const {x, y} = stage.getPointerPosition() ?? {x: 0, y: 0};
+      const pointer = stage.getPointerPosition() ?? {x: 0, y: 0};
       const mousePointTo = {
-        x: x / oldScale - stage.x() / oldScale,
-        y: y / oldScale - stage.y() / oldScale,
+        x: pointer.x / oldScale - stage.x() / oldScale,
+        y: pointer.y / oldScale - stage.y() / oldScale,
       };
 
-      const newXScale = e.evt.deltaX > 0 ? oldScale * scaleXBy : oldScale / scaleXBy;
-      const newYScale = e.evt.deltaY > 0 ? oldScale * scaleYBy : oldScale / scaleYBy;
+      // whether to zoom in or out
+      let direction = e.evt.deltaY > 0 ? 1 : -1;
 
-      stage.scale({x: newXScale, y: newYScale});
+      // for trackpad, e.evt.ctrlKey is true => in that case, revert direction
+      if (e.evt.ctrlKey) {
+        direction = -direction;
+      }
+
+      const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+      stage.scale({x: newScale, y: newScale});
 
       setStage({
-        scale: {x: newXScale, y: newYScale},
-        x: -(mousePointTo.x - x / newXScale) * newXScale,
-        y: -(mousePointTo.y - y / newYScale) * newYScale,
+        scale: {x: newScale, y: newScale},
+        x: -(mousePointTo.x - pointer.x / newScale) * newScale,
+        y: -(mousePointTo.y - pointer.y / newScale) * newScale,
       });
     }
   };

@@ -112,6 +112,12 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		Function:    tables.Functions(),
 	}
 
+	for _, f := range flamegraph.Function {
+		// At this point we don't need the function's ID anymore, so we don't
+		// need to transfer it over the wire.
+		f.Id = ""
+	}
+
 	return aggregateByFunctionTable(tables, flamegraph), nil
 }
 
@@ -242,7 +248,6 @@ func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 	f.NameStringIndex = c.AddString(f.Name)
 	f.FilenameStringIndex = c.AddString(f.Filename)
 	f.SystemNameStringIndex = c.AddString(f.SystemName)
-	f.Id = ""
 	f.Name = ""
 	f.Filename = ""
 	f.SystemName = ""

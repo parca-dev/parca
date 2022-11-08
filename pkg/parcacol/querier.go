@@ -139,7 +139,14 @@ func (q *Querier) Values(
 
 			for i := 0; i < stringCol.Len(); i++ {
 				val := stringCol.Value(i)
-				vals = append(vals, string(val))
+
+				// Because of an implementation detail of aggregations in
+				// FrostDB resulting columns can have the value of "", but that
+				// is equivalent to the label not existing at all, so we need
+				// to skip it.
+				if len(val) > 0 {
+					vals = append(vals, string(val))
+				}
 			}
 
 			return nil
