@@ -467,6 +467,11 @@
           "type": "integer",
           "format": "int64",
           "description": "location_index has the index to the deduplicated location in the location table."
+        },
+        "lineIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "line_index is the line index within the referenced location."
         }
       },
       "title": "FlamegraphNodeMeta is the metadata for a given node"

@@ -41,6 +41,8 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		functionsIndex: map[string]uint32{},
 	}
 
+	tables.AddString("") // Add empty string to the string table.
+
 	for _, s := range p.Samples {
 		locations := s.Locations
 		if int32(len(locations)) > height {
@@ -51,7 +53,7 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		for i := len(locations) - 1; i >= 0; i-- {
 			tables.AddMapping(locations[i].Mapping)
 			li := tables.AddLocation(locations[i])
-			location := tables.locationsSlice[li]
+			location := tables.locationsSlice[li-1]
 
 			nodes := tableLocationToTreeNodes(location, li)
 			for j := len(nodes) - 1; j >= 0; j-- {
@@ -148,10 +150,15 @@ func (c *tableConverter) Mappings() []*metastorev1alpha1.Mapping {
 
 // GetLocation by its index. Returns nil if index doesn't exist.
 func (c *tableConverter) GetLocation(index uint32) *metastorev1alpha1.Location {
-	if uint32(len(c.locationsSlice)) > index {
+	if index == 0 {
 		return nil
 	}
-	return c.locationsSlice[index]
+
+	if uint32(len(c.locationsSlice)) <= (index - 1) {
+		return nil
+	}
+
+	return c.locationsSlice[index-1]
 }
 
 // Locations returns all the locations deduplicated by their ID.
@@ -161,10 +168,14 @@ func (c *tableConverter) Locations() []*metastorev1alpha1.Location {
 
 // GetFunction by its index. Returns nil if index doesn't exist.
 func (c *tableConverter) GetFunction(index uint32) *metastorev1alpha1.Function {
-	if uint32(len(c.functionsSlice)) > index {
+	if index == 0 {
 		return nil
 	}
-	return c.functionsSlice[index]
+
+	if uint32(len(c.functionsSlice)) <= (index - 1) {
+		return nil
+	}
+	return c.functionsSlice[index-1]
 }
 
 // Functions returns all the functions deduplicated by their ID.
@@ -199,7 +210,7 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 	m.BuildId = ""
 
 	c.mappingsSlice = append(c.mappingsSlice, m)
-	c.mappingsIndex[m.Id] = uint32(len(c.mappingsSlice) - 1)
+	c.mappingsIndex[m.Id] = uint32(len(c.mappingsSlice))
 	return c.mappingsIndex[m.Id]
 }
 
@@ -233,7 +244,7 @@ func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
 	}
 
 	c.locationsSlice = append(c.locationsSlice, msl)
-	c.locationsIndex[l.ID] = uint32(len(c.locationsSlice) - 1)
+	c.locationsIndex[l.ID] = uint32(len(c.locationsSlice))
 	return c.locationsIndex[l.ID]
 }
 
@@ -253,7 +264,7 @@ func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 	f.SystemName = ""
 
 	c.functionsSlice = append(c.functionsSlice, f)
-	c.functionsIndex[f.Id] = uint32(len(c.functionsSlice) - 1)
+	c.functionsIndex[f.Id] = uint32(len(c.functionsSlice))
 	return c.functionsIndex[f.Id]
 }
 
@@ -264,7 +275,10 @@ func tableLocationToTreeNodes(location *metastorev1alpha1.Location, locationInde
 	nodes := make([]*querypb.FlamegraphNode, len(location.Lines))
 	for i := range location.Lines {
 		nodes[i] = &querypb.FlamegraphNode{
-			Meta: &querypb.FlamegraphNodeMeta{LocationIndex: locationIndex},
+			Meta: &querypb.FlamegraphNodeMeta{
+				LocationIndex: locationIndex,
+				LineIndex:     uint32(i),
+			},
 		}
 	}
 	return nodes
