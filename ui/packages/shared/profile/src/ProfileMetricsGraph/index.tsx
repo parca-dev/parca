@@ -31,7 +31,7 @@ interface ProfileMetricsGraphProps {
   addLabelMatcher: (key: string, value: string) => void;
 }
 
-export interface IQueryRangeResult {
+export interface IQueryRangeState {
   response: QueryRangeResponse | null;
   isLoading: boolean;
   error: RpcError | null;
@@ -42,36 +42,39 @@ export const useQueryRange = (
   queryExpression: string,
   start: number,
   end: number
-): IQueryRangeResult => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<any>(null);
-  const [response, setResponse] = useState<QueryRangeResponse | null>(null);
+): IQueryRangeState => {
+  const [state, setState] = useState<IQueryRangeState>({
+    response: null,
+    isLoading: true,
+    error: null,
+  });
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
     void (async () => {
-      setIsLoading(true);
+      setState({
+        response: null,
+        isLoading: true,
+        error: null,
+      });
 
-      try {
-        const {response} = await client.queryRange(
-          {
-            query: queryExpression,
-            start: Timestamp.fromDate(new Date(start)),
-            end: Timestamp.fromDate(new Date(end)),
-            limit: 0,
-          },
-          {meta: metadata}
-        );
-        setResponse(response);
-      } catch (e) {
-        setError(e);
-      } finally {
-        setIsLoading(false);
-      }
+      const call = client.queryRange(
+        {
+          query: queryExpression,
+          start: Timestamp.fromDate(new Date(start)),
+          end: Timestamp.fromDate(new Date(end)),
+          limit: 0,
+        },
+        {meta: metadata}
+      );
+
+      call.response
+        .then(response => setState({response, isLoading: false, error: null}))
+        .catch(error => setState({response: null, isLoading: false, error}));
     })();
   }, [client, queryExpression, start, end, metadata]);
 
-  return {isLoading, error, response};
+  return state;
 };
 
 const ProfileMetricsGraph = ({

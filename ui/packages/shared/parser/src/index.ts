@@ -45,6 +45,54 @@ function matcherTypeFromString(matcherTypeString: string): MatcherType {
   }
 }
 
+function findMatcherLabelName(stateStack: any): string {
+  let currentState = stateStack.find((e: any) => e.rule.name === 'matcher');
+
+  if (currentState === undefined) {
+    return '';
+  }
+
+  while (currentState.right.rule.name !== 'labelName') {
+    currentState = currentState.left;
+  }
+
+  return currentState.right.data.value;
+}
+
+export interface LiteralSuggestion {
+  type: 'literal';
+  value: string;
+  typeahead: string;
+}
+
+export interface MatcherTypeSuggestion {
+  type: 'matcherType';
+  typeahead: string;
+}
+
+export interface LabelNameSuggestion {
+  type: 'labelName';
+  typeahead: string;
+}
+
+export interface LabelValueSuggestion {
+  type: 'labelValue';
+  typeahead: string;
+  labelName: string;
+}
+
+export interface ProfileNameSuggestion {
+  type: 'profileName';
+  typeahead: string;
+}
+
+export type Suggestion =
+  | LiteralSuggestion
+  | MatcherTypeSuggestion
+  | LabelNameSuggestion
+  | LabelValueSuggestion
+  | ProfileNameSuggestion;
+
 export class Matcher {
   key: string;
   matcherType: MatcherType;
@@ -183,7 +231,6 @@ export class Query {
     p: Parser,
     input: string
   ): {
-    lastIndex: number;
     successfulParse: boolean;
   } {
     try {
@@ -191,12 +238,10 @@ export class Query {
       p.save();
       return {
         successfulParse: true,
-        lastIndex: (p as any).table.length - 1,
       };
     } catch (error) {
       return {
         successfulParse: false,
-        lastIndex: (p as any).table.length - 2,
       };
     }
   }
@@ -204,10 +249,20 @@ export class Query {
   static suggest(input: string): any[] {
     const p = NewParser();
     p.save();
-    const {lastIndex, successfulParse} = Query.tryParse(p, input);
+    const {successfulParse} = Query.tryParse(p, input);
+    const parserTable = (p as any).table as any[];
 
-    const parserTable = (p as any).table;
-    const column = parserTable[lastIndex];
+    // we want the last column with states, if there is a column with no states
+    // it means nothing could sucessfully be produced.
+    let lastColumnIndex = parserTable.length - 1;
+    for (; lastColumnIndex >= 0; lastColumnIndex--) {
+      if (parserTable[lastColumnIndex].states.length > 0) {
+        break;
+      }
+    }
+
+    const column = parserTable[lastColumnIndex];
+
     const lastLexerStateIndex = parserTable
       .reverse()
       .findIndex((e: any) => e.lexerState !== undefined);
@@ -215,17 +270,21 @@ export class Query {
       lastLexerStateIndex >= 0 ? parserTable[lastLexerStateIndex].lexerState.col - 1 : input.length;
     const rest: string = input.slice(lastValidCursor);
 
+    // Filter out states that don't expect any more input. If the dot is within
+    // the range of the list of symbols of the rule, then they are eligible.
     const expectantStates = column.states.filter(function (state: any) {
-      const nextSymbol = state.rule.symbols[state.dot];
-      return nextSymbol;
+      return state.dot < state.rule.symbols.length;
     });
 
+    // Build all the state stacks, meaning, take all the possible states and
+    // for each state, walk the stack of states to the root. That way we
+    // essentially have the "callstack" of states that led to this state.
     const stateStacks = expectantStates.map(function (this: any, state: any) {
       const firstStateStack = this.buildFirstStateStack(state, []);
       return firstStateStack === undefined ? [state] : firstStateStack;
     }, p);
 
-    const suggestions: any[] = [];
+    const suggestions: Suggestion[] = [];
 
     const prevLabelNameStates = column.states.filter(
       (e: any) => e.rule.name === 'labelName' && e.isComplete
@@ -249,12 +308,12 @@ export class Query {
       // We're not going to skip suggesting to type a whitespace character.
       if (!(nextSymbol.type !== undefined && nextSymbol.type === 'space')) {
         if (nextSymbol.literal !== undefined) {
-          const suggestion = {type: 'literal', value: nextSymbol.literal as string};
+          const suggestedValue = nextSymbol.literal as string;
           if (
-            suggestions.findIndex(s => s.type === 'literal' && s.value === suggestion.value) === -1
+            suggestions.findIndex(s => s.type === 'literal' && s.value === suggestedValue) === -1
           ) {
-            if (successfulParse || suggestion.value.startsWith(rest)) {
-              suggestions.push(suggestion);
+            if (successfulParse || suggestedValue.startsWith(rest)) {
+              suggestions.push({type: 'literal', value: suggestedValue, typeahead: rest});
             }
           }
         }
@@ -275,11 +334,10 @@ export class Query {
         // Matcher type is unambiguous, so we can go ahead and check if
         // the label name may be incomplete and suggest any matcher.
         if (nextSymbol.type !== undefined && nextSymbol.type === 'matcherType') {
-          const suggestion = {
+          suggestions.push({
             type: 'matcherType',
             typeahead: rest,
-          };
-          suggestions.push(suggestion);
+          });
         }
 
         // A valid strstart always means a label value.
@@ -293,17 +351,13 @@ export class Query {
               typeahead: prevMatcherTypeStates[0].data.value,
             });
           }
-
-          suggestions.push({
-            type: 'labelValue',
-            typeahead: '',
-          });
         }
 
         if (nextSymbol.type !== undefined && nextSymbol.type === 'constant') {
           suggestions.push({
             type: 'labelValue',
-            typeahead: '"',
+            labelName: findMatcherLabelName(stateStack),
+            typeahead: '',
           });
         }
 
@@ -314,7 +368,8 @@ export class Query {
           if (prevConstStates.length > 0 && prevConstStates[0].data !== undefined) {
             suggestions.push({
               type: 'labelValue',
-              typeahead: `"${prevConstStates[0].data.value as string}`,
+              labelName: findMatcherLabelName(stateStack),
+              typeahead: `${prevConstStates[0].data.value as string}`,
             });
           }
         }
