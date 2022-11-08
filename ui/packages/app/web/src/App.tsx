@@ -24,7 +24,6 @@ import Header from './pages/layouts/Header';
 import ThemeProvider from './pages/layouts/ThemeProvider';
 import HomePage from './pages/index';
 import TargetsPage from './pages/targets';
-import TestPage from './pages/testpage';
 import Component404 from './pages/layouts/Component404';
 import {isDevMode} from '@parca/functions';
 import {Provider} from 'react-redux';
@@ -59,7 +58,6 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/targets" element={<TargetsPage />} />
-                <Route path="/testpage" element={<TestPage />} />
                 {isDevMode() && (
                   <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
                 )}

@@ -27,7 +27,6 @@ import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
 import TopTable from './TopTable';
 import useDelayedLoader from './useDelayedLoader';
-import {logRender} from './perf';
 
 import './ProfileView.styles.css';
 
@@ -266,7 +265,7 @@ export const ProfileView = ({
             <div ref={ref} className="flex space-x-4 justify-between w-full">
               {currentView === 'icicle' && flamegraphData?.data != null && (
                 <div className="w-full">
-                  <Profiler id="icicleGraph" onRender={logRender}>
+                  <Profiler id="icicleGraph" onRender={perf.onRender}>
                     <ProfileIcicleGraph
                       curPath={curPath}
                       setNewCurPath={setNewCurPath}
