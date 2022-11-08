@@ -115,7 +115,7 @@ export const ProfileView = ({
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
 
-  const {loader} = useParcaContext();
+  const {loader, perf} = useParcaContext();
 
   useEffect(() => {
     // Reset the current path when the profile source changes

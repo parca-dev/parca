@@ -11,30 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createContext, ReactNode, useContext, Reducer} from 'react';
+import {createContext, ReactNode, useContext, Reducer, ProfilerOnRenderCallback} from 'react';
 import Spinner from '../Spinner';
-
-enum ActionTypes {
-  SEND_PERF_EVENT = 'SEND_PERF_EVENT',
-}
 
 interface Props {
   loader: ReactNode;
-  trackedPerfEvents: Array<string>;
-  dispatch: (action: {type: ActionTypes; payload: any}) => void;
+  perf: {
+    onRender: ProfilerOnRenderCallback;
+    markInteraction: (interactionName: string) => void;
+  };
 }
-
-interface Action {
-  type: ActionTypes;
-  payload: string;
-}
-
-export const sendPerfEvent = (payload: string) => ({type: ActionTypes.SEND_PERF_EVENT, payload});
 
 export const defaultValue: Props = {
   loader: <Spinner />,
-  dispatch: () => {},
-  trackedPerfEvents: [],
+  perf: {
+    onRender: () => {},
+    markInteraction: () => {},
+  },
 };
 
 const ParcaContext = createContext<Props>(defaultValue);
@@ -55,17 +48,6 @@ export const useParcaContext = (): Props => {
     return defaultValue;
   }
   return context;
-};
-
-export const ParcaContextReducer: Reducer<Props, Action> = (state, action) => {
-  const {type, payload} = action;
-
-  switch (type) {
-    case ActionTypes.SEND_PERF_EVENT:
-      return {...state, trackedPerfEvents: state.trackedPerfEvents.concat(payload)};
-    default:
-      return state;
-  }
 };
 
 export default ParcaContext;

@@ -16,41 +16,60 @@ import {
   Button,
   useParcaContext,
   parcaContextDefaultValue,
-  ParcaContextReducer,
-  sendPerfEvent,
 } from '@parca/components';
-import {useReducer} from 'react';
 
-const ChildComponent = () => {
-  const {dispatch} = useParcaContext();
+import {useReducer, ProfilerOnRenderCallback, Profiler, useState} from 'react';
 
-  const sendSomeEvent = () => {
-    console.log('Sending event');
-    dispatch(sendPerfEvent('Some event data here'));
-  };
+const ProfilerComponent = () => {
+  const [count, setCount] = useState(0);
 
   return (
     <>
-      <p>some text here</p>
-      <Button onClick={() => sendSomeEvent()}>Send some perf event</Button>
+      {count}
+      <p>Profiler here</p>
+      <Button
+        onClick={() => {
+          setCount(count + 10);
+        }}
+      >
+        Increment
+      </Button>
+    </>
+  );
+};
+
+const ChildComponent = () => {
+  const {perf} = useParcaContext();
+
+  return (
+    <>
+      <Profiler id="ProfilerComponent" onRender={perf.onRender}>
+        <ProfilerComponent />
+      </Profiler>
     </>
   );
 };
 
 const Testpage = () => {
-  const [parcaContextState, dispatchToParcaContext] = useReducer(
-    ParcaContextReducer,
-    parcaContextDefaultValue
-  );
-
-  console.log('parcaContextState', parcaContextState.trackedPerfEvents);
+  const logRender: ProfilerOnRenderCallback = (
+    id,
+    phase,
+    actualDuration,
+    baseDuration,
+    _startTime,
+    _commitTime,
+    _interactions
+  ) => {
+    console.log('Rendered', id, phase, 'act:', actualDuration, 'ms', ' base:', baseDuration, 'ms');
+  };
 
   return (
     <ParcaContextProvider
       value={{
         loader: <p>loading...</p>,
-        dispatch: dispatchToParcaContext,
-        trackedPerfEvents: parcaContextState.trackedPerfEvents,
+        perf: {
+          onRender: logRender,
+        },
       }}
     >
       <ChildComponent />
