@@ -7612,11 +7612,6 @@ adjust-sourcemap-loader@^4.0.0:
     loader-utils "^2.0.0"
     regex-parser "^2.2.11"
 
-afterframe@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/afterframe/-/afterframe-1.0.2.tgz#c63e17cdb29e4e60be2e618a315caf5ab5ade0c0"
-  integrity sha512-0JeMZI7dIfVs5guqLgidQNV7c6jBC2HO0QNSekAUB82Hr7PdU9QXNAF3kpFkvATvHYDDTGto7FPsRu1ey+aKJQ==
-
 agent-base@6, agent-base@^6.0.0, agent-base@^6.0.2:
   version "6.0.2"
   resolved "https://registry.yarnpkg.com/agent-base/-/agent-base-6.0.2.tgz#49fff58577cfee3f37176feab4c22e00f86d7f77"

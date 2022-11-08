@@ -149,23 +149,23 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 
 	// Check if tables and thus deduplication was correct and deterministic
 
-	require.Equal(t, []string{"a", "", "1", "2", "3", "5", "4"}, fg.StringTable)
+	require.Equal(t, []string{"", "a", "1", "2", "3", "5", "4"}, fg.StringTable)
 	require.Equal(t, []*metastorepb.Location{
-		{MappingIndex: 0, Lines: []*metastorepb.Line{{FunctionIndex: 0}}},
-		{MappingIndex: 0, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
-		{MappingIndex: 0, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
-		{MappingIndex: 0, Lines: []*metastorepb.Line{{FunctionIndex: 3}}},
-		{MappingIndex: 0, Lines: []*metastorepb.Line{{FunctionIndex: 4}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 3}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 4}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 5}}},
 	}, fg.Locations)
 	require.Equal(t, []*metastorepb.Mapping{
-		{BuildIdStringIndex: 1, FileStringIndex: 0},
+		{BuildIdStringIndex: 0, FileStringIndex: 1},
 	}, fg.Mapping)
 	require.Equal(t, []*metastorepb.Function{
-		{NameStringIndex: 2, SystemNameStringIndex: 1, FilenameStringIndex: 1},
-		{NameStringIndex: 3, SystemNameStringIndex: 1, FilenameStringIndex: 1},
-		{NameStringIndex: 4, SystemNameStringIndex: 1, FilenameStringIndex: 1},
-		{NameStringIndex: 5, SystemNameStringIndex: 1, FilenameStringIndex: 1},
-		{NameStringIndex: 6, SystemNameStringIndex: 1, FilenameStringIndex: 1},
+		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 4, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 5, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 6, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 	}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.
@@ -174,24 +174,144 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 		Cumulative: 6,
 		Children: []*pb.FlamegraphNode{{
 			Cumulative: 6,
-			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 0},
+			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
 			Children: []*pb.FlamegraphNode{{
 				Cumulative: 6,
-				Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+				Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
 				Children: []*pb.FlamegraphNode{{
 					Cumulative: 4,
-					Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
+					Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 3},
 					Children: []*pb.FlamegraphNode{{
-						Cumulative: 1,
-						Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 3},
-					}, {
 						Cumulative: 3,
+						Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 5},
+					}, {
+						Cumulative: 1,
 						Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 4},
 					}},
 				}},
 			}},
 		}},
 	}
+	require.Equal(t, expected, fg.Root)
+	require.True(t, proto.Equal(expected, fg.Root))
+}
+
+func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
+	ctx := context.Background()
+	var err error
+
+	l := metastoretest.NewTestMetastore(
+		t,
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+	)
+
+	metastore := metastore.NewInProcessClient(l)
+
+	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
+		Mappings: []*metastorepb.Mapping{{
+			File: "a",
+		}},
+	})
+	require.NoError(t, err)
+	m1 := mres.Mappings[0]
+
+	mres, err = metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
+		Mappings: []*metastorepb.Mapping{{
+			File: "b",
+		}},
+	})
+	require.NoError(t, err)
+	m2 := mres.Mappings[0]
+
+	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
+		Functions: []*metastorepb.Function{{
+			Id:   "foo",
+			Name: "1",
+		}},
+	})
+	require.NoError(t, err)
+	f1 := fres.Functions[0]
+
+	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+		Locations: []*metastorepb.Location{{
+			MappingId: m1.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f1.Id,
+			}},
+		}, {
+			MappingId: m2.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f1.Id,
+			}},
+		}},
+	})
+	require.NoError(t, err)
+	l1 := lres.Locations[0]
+	l2 := lres.Locations[1]
+
+	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+		Stacktraces: []*metastorepb.Stacktrace{{
+			LocationIds: []string{l1.Id},
+		}, {
+			LocationIds: []string{l2.Id},
+		}},
+	})
+	require.NoError(t, err)
+	s1 := sres.Stacktraces[0]
+	s2 := sres.Stacktraces[1]
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+		Samples: []*parcaprofile.NormalizedSample{{
+			StacktraceID: s1.Id,
+			Value:        2,
+		}, {
+			StacktraceID: s2.Id,
+			Value:        1,
+		}},
+	})
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p)
+	require.NoError(t, err)
+
+	require.Equal(t, int32(2), fg.Height)
+	require.Equal(t, int64(3), fg.Total)
+
+	// Check if tables and thus deduplication was correct and deterministic
+
+	require.Equal(t, []string{"", "a", "1", "b"}, fg.StringTable)
+	require.Equal(t, 2, len(fg.Locations))
+	require.Equal(t, uint32(1), fg.Locations[0].MappingIndex)
+	require.Equal(t, 1, len(fg.Locations[0].Lines))
+	require.Equal(t, uint32(1), fg.Locations[0].Lines[0].FunctionIndex)
+	require.Equal(t, uint32(2), fg.Locations[1].MappingIndex)
+	require.Equal(t, 1, len(fg.Locations[1].Lines))
+	require.Equal(t, uint32(1), fg.Locations[1].Lines[0].FunctionIndex)
+	require.Equal(t, []*metastorepb.Mapping{
+		{BuildIdStringIndex: 0, FileStringIndex: 1},
+		{BuildIdStringIndex: 0, FileStringIndex: 3},
+	}, fg.Mapping)
+	require.Equal(t, []*metastorepb.Function{
+		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+	}, fg.Function)
+
+	// Check the recursive flamegraph that references the tables above.
+
+	expected := &pb.FlamegraphRootNode{
+		Cumulative: 3,
+		Children: []*pb.FlamegraphNode{{
+			Cumulative: 3,
+			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
+		}},
+	}
+	require.Equal(t, int64(3), fg.Root.Cumulative)
+	require.Equal(t, 1, len(fg.Root.Children))
+	require.Equal(t, int64(3), fg.Root.Children[0].Cumulative)
+	require.Equal(t, uint32(2), fg.Root.Children[0].Meta.LocationIndex)
 	require.True(t, proto.Equal(expected, fg.Root))
 }
 
@@ -291,6 +411,7 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
 
 	require.Equal(t, []string{
+		"",
 		"net.(*netFD).accept",
 		"net/fd_unix.go",
 		"internal/poll.(*FD).Accept",
@@ -301,21 +422,21 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	}, fg.GetStringTable())
 
 	require.Equal(t, []*metastorepb.Function{{
-		NameStringIndex:       0,
-		SystemNameStringIndex: 0,
-		FilenameStringIndex:   1,
+		NameStringIndex:       1,
+		SystemNameStringIndex: 1,
+		FilenameStringIndex:   2,
 	}, {
-		NameStringIndex:       2,
-		SystemNameStringIndex: 2,
-		FilenameStringIndex:   3,
+		NameStringIndex:       3,
+		SystemNameStringIndex: 3,
+		FilenameStringIndex:   4,
 	}, {
-		NameStringIndex:       4,
-		SystemNameStringIndex: 4,
-		FilenameStringIndex:   5,
+		NameStringIndex:       5,
+		SystemNameStringIndex: 5,
+		FilenameStringIndex:   6,
 	}, {
-		NameStringIndex:       6,
-		SystemNameStringIndex: 6,
-		FilenameStringIndex:   5,
+		NameStringIndex:       7,
+		SystemNameStringIndex: 7,
+		FilenameStringIndex:   6,
 	}}, fg.GetFunction())
 
 	require.Equal(t, []*metastorepb.Location{{
@@ -323,24 +444,24 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 		MappingIndex: 0,
 		Lines: []*metastorepb.Line{{
 			Line:          173,
-			FunctionIndex: 0,
+			FunctionIndex: 1,
 		}},
 	}, {
 		Address:      94658718611115,
 		MappingIndex: 0,
 		Lines: []*metastorepb.Line{{
 			Line:          89,
-			FunctionIndex: 1,
+			FunctionIndex: 2,
 		}, {
 			Line:          402,
-			FunctionIndex: 2,
+			FunctionIndex: 3,
 		}},
 	}, {
 		Address:      94658718597969,
 		MappingIndex: 0,
 		Lines: []*metastorepb.Line{{
 			Line:          84,
-			FunctionIndex: 3,
+			FunctionIndex: 4,
 		}},
 	}}, fg.GetLocations())
 
@@ -352,16 +473,28 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 		Cumulative: 1,
 		Children: []*pb.FlamegraphNode{{
 			Cumulative: 1,
-			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 0},
+			Meta: &pb.FlamegraphNodeMeta{
+				LocationIndex: 1,
+				LineIndex:     0,
+			},
 			Children: []*pb.FlamegraphNode{{
 				Cumulative: 1,
-				Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+				Meta: &pb.FlamegraphNodeMeta{
+					LocationIndex: 2,
+					LineIndex:     1,
+				},
 				Children: []*pb.FlamegraphNode{{
 					Cumulative: 1,
-					Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+					Meta: &pb.FlamegraphNodeMeta{
+						LocationIndex: 2,
+						LineIndex:     0,
+					},
 					Children: []*pb.FlamegraphNode{{
 						Cumulative: 1,
-						Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
+						Meta: &pb.FlamegraphNodeMeta{
+							LocationIndex: 3,
+							LineIndex:     0,
+						},
 					}},
 				}},
 			}},
@@ -431,6 +564,7 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
 
 	require.Equal(t, []string{
+		"",
 		"net.(*netFD).accept",
 		"net/fd_unix.go",
 		"internal/poll.(*FD).Accept",
@@ -441,21 +575,21 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	}, fg.GetStringTable())
 
 	require.Equal(t, []*metastorepb.Function{{
-		NameStringIndex:       0,
-		SystemNameStringIndex: 0,
-		FilenameStringIndex:   1,
+		NameStringIndex:       1,
+		SystemNameStringIndex: 1,
+		FilenameStringIndex:   2,
 	}, {
-		NameStringIndex:       2,
-		SystemNameStringIndex: 2,
-		FilenameStringIndex:   3,
+		NameStringIndex:       3,
+		SystemNameStringIndex: 3,
+		FilenameStringIndex:   4,
 	}, {
-		NameStringIndex:       4,
-		SystemNameStringIndex: 4,
-		FilenameStringIndex:   5,
+		NameStringIndex:       5,
+		SystemNameStringIndex: 5,
+		FilenameStringIndex:   6,
 	}, {
-		NameStringIndex:       6,
-		SystemNameStringIndex: 6,
-		FilenameStringIndex:   5,
+		NameStringIndex:       7,
+		SystemNameStringIndex: 7,
+		FilenameStringIndex:   6,
 	}}, fg.GetFunction())
 
 	require.Equal(t, []*metastorepb.Location{{
@@ -463,24 +597,24 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 		MappingIndex: 0,
 		Lines: []*metastorepb.Line{{
 			Line:          173,
-			FunctionIndex: 0,
+			FunctionIndex: 1,
 		}},
 	}, {
 		Address:      94658718611115,
 		MappingIndex: 0,
 		Lines: []*metastorepb.Line{{
 			Line:          89,
-			FunctionIndex: 1,
+			FunctionIndex: 2,
 		}, {
 			Line:          402,
-			FunctionIndex: 2,
+			FunctionIndex: 3,
 		}},
 	}, {
 		Address:      94658718597969,
 		MappingIndex: 0,
 		Lines: []*metastorepb.Line{{
 			Line:          84,
-			FunctionIndex: 3,
+			FunctionIndex: 4,
 		}},
 	}}, fg.GetLocations())
 
@@ -492,16 +626,28 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 		Cumulative: 3,
 		Children: []*pb.FlamegraphNode{{
 			Cumulative: 3,
-			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 0},
+			Meta: &pb.FlamegraphNodeMeta{
+				LocationIndex: 1,
+				LineIndex:     0,
+			},
 			Children: []*pb.FlamegraphNode{{
 				Cumulative: 3,
-				Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+				Meta: &pb.FlamegraphNodeMeta{
+					LocationIndex: 2,
+					LineIndex:     1,
+				},
 				Children: []*pb.FlamegraphNode{{
 					Cumulative: 3,
-					Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+					Meta: &pb.FlamegraphNodeMeta{
+						LocationIndex: 2,
+						LineIndex:     0,
+					},
 					Children: []*pb.FlamegraphNode{{
 						Cumulative: 1,
-						Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
+						Meta: &pb.FlamegraphNodeMeta{
+							LocationIndex: 3,
+							LineIndex:     0,
+						},
 					}},
 				}},
 			}},

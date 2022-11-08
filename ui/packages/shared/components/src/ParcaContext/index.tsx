@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createContext, ReactNode, useContext, Reducer, ProfilerOnRenderCallback} from 'react';
+import {createContext, ReactNode, useContext, ProfilerOnRenderCallback} from 'react';
 import Spinner from '../Spinner';
 
 interface Props {

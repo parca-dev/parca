@@ -338,6 +338,9 @@ message FlamegraphNodeMeta {
 
   // location_index has the index to the deduplicated location in the location table.
   uint32 location_index = 5;
+
+  // line_index is the line index within the referenced location.
+  uint32 line_index = 6;
 }
 
 // CallgraphNode represents a node in the graph

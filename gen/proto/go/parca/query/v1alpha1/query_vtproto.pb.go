@@ -1619,6 +1619,11 @@ func (m *FlamegraphNodeMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.LineIndex != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.LineIndex))
+		i--
+		dAtA[i] = 0x30
+	}
 	if m.LocationIndex != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.LocationIndex))
 		i--
@@ -3160,6 +3165,9 @@ func (m *FlamegraphNodeMeta) SizeVT() (n int) {
 	}
 	if m.LocationIndex != 0 {
 		n += 1 + sov(uint64(m.LocationIndex))
+	}
+	if m.LineIndex != 0 {
+		n += 1 + sov(uint64(m.LineIndex))
 	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
@@ -6568,6 +6576,25 @@ func (m *FlamegraphNodeMeta) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.LocationIndex |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LineIndex", wireType)
+			}
+			m.LineIndex = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LineIndex |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
