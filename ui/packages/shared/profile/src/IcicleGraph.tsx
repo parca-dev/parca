@@ -149,16 +149,24 @@ export function nodeLabel(
   functions: Function[]
 ): string {
   if (node.meta?.locationIndex === undefined) return '<unknown>';
+  if (node.meta?.locationIndex === 0) return '<unknown>';
 
-  const location = locations[node.meta.locationIndex];
-  const mappingFile = strings[mappings[location.mappingIndex].fileStringIndex];
+  const location = locations[node.meta.locationIndex - 1];
+  const mapping =
+    location.mappingIndex !== undefined || location.mappingIndex !== 0
+      ? mappings[location.mappingIndex - 1]
+      : undefined;
+
+  const mappingFile =
+    mapping?.fileStringIndex !== undefined ? strings[mapping.fileStringIndex] : '';
 
   const mappingString: string = `${
     mappingFile !== '' ? '[' + (getLastItem(mappingFile) ?? '') + '] ' : ''
   }`;
 
   if (location.lines.length > 0) {
-    const funcName = strings[functions[location.lines[0].functionIndex].nameStringIndex];
+    const funcName =
+      strings[functions[location.lines[node.meta.lineIndex].functionIndex - 1].nameStringIndex];
     return `${mappingString} ${funcName}`;
   }
 
