@@ -11,22 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useState} from 'react';
+import {Profiler, useEffect, useMemo, useState} from 'react';
+import {scaleLinear} from 'd3';
 
 import {getNewSpanColor, parseParams} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
-import {Callgraph} from './';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 
+import {Callgraph} from './';
 import ProfileShareButton from './components/ProfileShareButton';
 import ProfileIcicleGraph from './ProfileIcicleGraph';
 import {ProfileSource} from './ProfileSource';
 import TopTable from './TopTable';
 import useDelayedLoader from './useDelayedLoader';
-import {scaleLinear} from 'd3';
+import {logRender} from './perf';
 
 import './ProfileView.styles.css';
 
@@ -265,12 +266,14 @@ export const ProfileView = ({
             <div ref={ref} className="flex space-x-4 justify-between w-full">
               {currentView === 'icicle' && flamegraphData?.data != null && (
                 <div className="w-full">
-                  <ProfileIcicleGraph
-                    curPath={curPath}
-                    setNewCurPath={setNewCurPath}
-                    graph={flamegraphData.data}
-                    sampleUnit={sampleUnit}
-                  />
+                  <Profiler id="icicleGraph" onRender={logRender}>
+                    <ProfileIcicleGraph
+                      curPath={curPath}
+                      setNewCurPath={setNewCurPath}
+                      graph={flamegraphData.data}
+                      sampleUnit={sampleUnit}
+                    />
+                  </Profiler>
                 </div>
               )}
               {currentView === 'callgraph' && callgraphData?.data != null && (
