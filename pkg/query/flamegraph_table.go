@@ -376,8 +376,10 @@ func mergeChildrenTable(
 		if equals(tables, current, next) {
 			// Merge children into the first one
 			current.Meta.Line = nil
-			if current.Meta.Mapping != nil && next.Meta.Mapping != nil && current.Meta.Mapping.Id != next.Meta.Mapping.Id {
-				current.Meta.Mapping = &metastorev1alpha1.Mapping{}
+			currLoc := tables.GetLocation(current.Meta.LocationIndex)
+			nextLoc := tables.GetLocation(next.Meta.LocationIndex)
+			if currLoc != nil && nextLoc != nil && currLoc.MappingIndex != nextLoc.MappingIndex {
+				currLoc.MappingIndex = 0
 			}
 
 			cumulative += next.Cumulative
