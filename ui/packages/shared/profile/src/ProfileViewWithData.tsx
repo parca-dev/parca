@@ -52,7 +52,7 @@ export const ProfileViewWithData = ({
       return;
     }
     perf.markInteraction('Flamegraph Render');
-  }, [flamegraphLoading, flamegraphResponse]);
+  }, [flamegraphLoading, flamegraphResponse, perf]);
 
   const {
     isLoading: topTableLoading,
