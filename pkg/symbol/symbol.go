@@ -242,11 +242,7 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 
 	// Go binaries has a special case. They use ".gopclntab" section to symbolize addresses.
 	// Keep that section and other identifying sections in the debug information file.
-	isGo, err := elfutils.IsSymbolizableGoObjFile(f)
-	if err != nil {
-		level.Debug(logger).Log("msg", "failed to determine if binary is a Go binary", "err", err)
-	}
-	if isGo {
+	if elfutils.IsSymbolizableGoObjFile(f) {
 		// Right now, this uses "debug/gosym" package, and it won't work for inlined functions,
 		// so this is just a best-effort implementation, in case we don't have DWARF.
 		lnr, err := addr2line.Go(logger, f)
