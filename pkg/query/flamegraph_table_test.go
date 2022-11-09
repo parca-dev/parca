@@ -288,7 +288,7 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	require.Equal(t, uint32(1), fg.Locations[0].MappingIndex)
 	require.Equal(t, 1, len(fg.Locations[0].Lines))
 	require.Equal(t, uint32(1), fg.Locations[0].Lines[0].FunctionIndex)
-	require.Equal(t, uint32(2), fg.Locations[1].MappingIndex)
+	require.Equal(t, uint32(0), fg.Locations[1].MappingIndex)
 	require.Equal(t, 1, len(fg.Locations[1].Lines))
 	require.Equal(t, uint32(1), fg.Locations[1].Lines[0].FunctionIndex)
 	require.Equal(t, []*metastorepb.Mapping{
@@ -305,7 +305,10 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 		Cumulative: 3,
 		Children: []*pb.FlamegraphNode{{
 			Cumulative: 3,
-			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
+			Meta: &pb.FlamegraphNodeMeta{
+				LocationIndex: 2,
+				LineIndex:     0,
+			},
 		}},
 	}
 	require.Equal(t, int64(3), fg.Root.Cumulative)
