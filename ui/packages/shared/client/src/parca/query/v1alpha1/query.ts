@@ -650,6 +650,12 @@ export interface FlamegraphNodeMeta {
      * @generated from protobuf field: uint32 location_index = 5;
      */
     locationIndex: number;
+    /**
+     * line_index is the line index within the referenced location.
+     *
+     * @generated from protobuf field: uint32 line_index = 6;
+     */
+    lineIndex: number;
 }
 /**
  * CallgraphNode represents a node in the graph
@@ -2153,11 +2159,12 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
             { no: 2, name: "mapping", kind: "message", T: () => Mapping },
             { no: 3, name: "function", kind: "message", T: () => Function },
             { no: 4, name: "line", kind: "message", T: () => Line },
-            { no: 5, name: "location_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 5, name: "location_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 6, name: "line_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<FlamegraphNodeMeta>): FlamegraphNodeMeta {
-        const message = { locationIndex: 0 };
+        const message = { locationIndex: 0, lineIndex: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<FlamegraphNodeMeta>(this, message, value);
@@ -2182,6 +2189,9 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
                     break;
                 case /* uint32 location_index */ 5:
                     message.locationIndex = reader.uint32();
+                    break;
+                case /* uint32 line_index */ 6:
+                    message.lineIndex = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2210,6 +2220,9 @@ class FlamegraphNodeMeta$Type extends MessageType<FlamegraphNodeMeta> {
         /* uint32 location_index = 5; */
         if (message.locationIndex !== 0)
             writer.tag(5, WireType.Varint).uint32(message.locationIndex);
+        /* uint32 line_index = 6; */
+        if (message.lineIndex !== 0)
+            writer.tag(6, WireType.Varint).uint32(message.lineIndex);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

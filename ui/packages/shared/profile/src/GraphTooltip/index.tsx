@@ -19,12 +19,7 @@ import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} f
 import {getLastItem, valueFormatter} from '@parca/functions';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress, truncateString} from '../';
-import {
-  Function,
-  Location,
-  Mapping,
-  Line,
-} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {Function, Location, Mapping} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 
 interface GraphTooltipProps {
   x: number;
@@ -86,22 +81,37 @@ const TooltipMetaInfo = ({
   if (hoveringNode.meta === undefined) return <></>;
 
   // populate meta from the flamegraph metadata tables
-  if (locations !== undefined) {
-    const location = locations[hoveringNode.meta.locationIndex];
+  if (
+    locations !== undefined &&
+    hoveringNode.meta.locationIndex !== undefined &&
+    hoveringNode.meta.locationIndex !== 0
+  ) {
+    const location = locations[hoveringNode.meta.locationIndex - 1];
     hoveringNode.meta.location = location;
 
-    if (mappings !== undefined) {
-      const mapping = mappings[location.mappingIndex];
-      if (strings !== undefined) {
-        mapping.file = strings[mapping.fileStringIndex];
-        mapping.buildId = strings[mapping.buildIdStringIndex];
+    if (location !== undefined) {
+      if (
+        mappings !== undefined &&
+        location.mappingIndex !== undefined &&
+        location.mappingIndex !== 0
+      ) {
+        const mapping = mappings[location.mappingIndex - 1];
+        if (strings !== undefined && mapping !== undefined) {
+          mapping.file =
+            mapping?.fileStringIndex !== undefined ? strings[mapping.fileStringIndex] : '';
+          mapping.buildId =
+            mapping?.buildIdStringIndex !== undefined ? strings[mapping.buildIdStringIndex] : '';
+        }
+        hoveringNode.meta.mapping = mapping;
       }
-      hoveringNode.meta.mapping = mapping;
-    }
 
-    location.lines.forEach((line: Line) => {
-      if (functions !== undefined && hoveringNode.meta !== undefined) {
-        const func = functions[line.functionIndex];
+      if (
+        functions !== undefined &&
+        location.lines !== undefined &&
+        hoveringNode.meta.lineIndex !== undefined &&
+        hoveringNode.meta.lineIndex < location.lines.length
+      ) {
+        const func = functions[location.lines[hoveringNode.meta.lineIndex].functionIndex - 1];
         if (strings !== undefined) {
           func.name = strings[func.nameStringIndex];
           func.systemName = strings[func.systemNameStringIndex];
@@ -109,7 +119,7 @@ const TooltipMetaInfo = ({
         }
         hoveringNode.meta.function = func;
       }
-    });
+    }
   }
 
   const getTextForFile = (hoveringNode: FlamegraphNode): string => {

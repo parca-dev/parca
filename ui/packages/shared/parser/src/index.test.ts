@@ -151,10 +151,12 @@ test('SuggestLabelMatcherType', () => {
   expect(Query.suggest('{test!')).toMatchObject([
     {
       type: 'literal',
+      typeahead: '!',
       value: '!=',
     },
     {
       type: 'literal',
+      typeahead: '!',
       value: '!~',
     },
   ]);
@@ -166,10 +168,6 @@ test('SuggestValueMatcherType', () => {
       type: 'matcherType',
       typeahead: '=',
     },
-    {
-      type: 'labelValue',
-      typeahead: '',
-    },
   ]);
 });
 
@@ -177,7 +175,8 @@ test('SuggestMatcherValue', () => {
   expect(Query.suggest('{test="')).toMatchObject([
     {
       type: 'labelValue',
-      typeahead: '"',
+      labelName: 'test',
+      typeahead: '',
     },
   ]);
 });
@@ -186,7 +185,8 @@ test('SuggestMatcherValueWithStart', () => {
   expect(Query.suggest('{test="a')).toMatchObject([
     {
       type: 'labelValue',
-      typeahead: '"a',
+      labelName: 'test',
+      typeahead: 'a',
     },
   ]);
 });
