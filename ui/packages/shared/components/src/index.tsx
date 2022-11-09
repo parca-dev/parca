@@ -20,7 +20,7 @@ import Dropdown from './Dropdown';
 import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './GrpcMetadataContext';
 import Input from './Input';
 import Modal from './Modal';
-import ParcaThemeContext, {ParcaThemeProvider, useParcaTheme} from './ParcaThemeContext';
+import ParcaContext, {defaultValue, ParcaContextProvider, useParcaContext} from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select from './Select';
@@ -44,8 +44,9 @@ export {
   GrpcMetadataProvider,
   Input,
   Modal,
-  ParcaThemeContext,
-  ParcaThemeProvider,
+  ParcaContext,
+  defaultValue as parcaContextDefaultValue,
+  ParcaContextProvider,
   Pill,
   ResponsiveSvg,
   Select,
@@ -54,5 +55,5 @@ export {
   Tab,
   EmptyState,
   useGrpcMetadata,
-  useParcaTheme,
+  useParcaContext,
 };

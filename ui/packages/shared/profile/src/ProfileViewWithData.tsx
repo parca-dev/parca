@@ -17,8 +17,9 @@ import {useQuery} from './useQuery';
 import {ProfileView, useProfileVisState} from './ProfileView';
 import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
-import {useGrpcMetadata} from '@parca/components';
+import {useGrpcMetadata, useParcaContext} from '@parca/components';
 import {saveAsBlob} from '@parca/functions';
+import {useEffect} from 'react';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -44,6 +45,14 @@ export const ProfileViewWithData = ({
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
     skip: currentView !== 'icicle' && currentView !== 'both',
   });
+  const {perf} = useParcaContext();
+
+  useEffect(() => {
+    if (flamegraphLoading) {
+      return;
+    }
+    perf.markInteraction('Flamegraph Render');
+  }, [flamegraphLoading, flamegraphResponse, perf]);
 
   const {
     isLoading: topTableLoading,
