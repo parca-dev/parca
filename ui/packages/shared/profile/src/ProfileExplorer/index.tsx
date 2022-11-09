@@ -162,7 +162,7 @@ const ProfileExplorerApp = ({
       labels_a as string[],
       profile_name_a as string,
       time_a as string,
-      filterByFunction as string | undefined
+      filterByFunction
     );
 
     const selectQuery = (q: QuerySelection): void => {
