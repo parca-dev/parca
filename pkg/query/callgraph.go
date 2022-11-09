@@ -114,7 +114,7 @@ func locationToCallgraphNodes(location *profile.Location) []*querypb.CallgraphNo
 	}}
 }
 
-// linesToTreeNodes turns inlined `lines` into a stack of TreeNode items and
+// linesToCallgraphNodes turns inlined `lines` into a stack of TreeNode items and
 // returns the slice of items in order from outer-most to inner-most.
 func linesToCallgraphNodes(
 	location *profile.Location,
