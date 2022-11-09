@@ -410,10 +410,19 @@ func compareByNameTable(tables TableGetter, a, b *querypb.FlamegraphNode) bool {
 	aLocation := tables.GetLocation(a.Meta.LocationIndex)
 	bLocation := tables.GetLocation(b.Meta.LocationIndex)
 
-	if aLocation == nil || bLocation == nil {
+	if aLocation == nil && bLocation != nil {
+		return true
+	}
+	if aLocation != nil && bLocation == nil {
 		return false
 	}
-	if len(aLocation.Lines) < 1 || len(bLocation.Lines) < 1 {
+	if aLocation == nil && bLocation == nil {
+		return false
+	}
+	if len(aLocation.Lines) == 0 && len(bLocation.Lines) > 0 {
+		return true
+	}
+	if len(aLocation.Lines) > 0 && len(bLocation.Lines) == 0 {
 		return false
 	}
 
