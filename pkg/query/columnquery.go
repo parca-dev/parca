@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-kit/log"
@@ -142,7 +143,31 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		return nil, err
 	}
 
+	if req.FilterQuery != nil {
+		p = filterProfileData(p, *req.FilterQuery)
+	}
+
 	return q.renderReport(ctx, p, req.GetReportType())
+}
+
+func filterProfileData(p *profile.Profile, filterQuery string) *profile.Profile {
+	filteredSamples := []*profile.SymbolizedSample{}
+	for _, s := range p.Samples {
+		var lines []profile.LocationLine
+		for _, loc := range s.Locations {
+			lines = append(lines, loc.Lines...)
+		}
+		for _, l := range lines {
+			if l.Function != nil && strings.Contains(strings.ToLower(l.Function.Name), strings.ToLower(filterQuery)) {
+				filteredSamples = append(filteredSamples, s)
+				break
+			}
+		}
+	}
+	return &profile.Profile{
+		Samples: filteredSamples,
+		Meta:    p.Meta,
+	}
 }
 
 func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
@@ -196,6 +221,7 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 			Report: &pb.QueryResponse_Top{Top: top},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
+		fmt.Println("callgraph")
 		callgraph, err := GenerateCallgraph(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())

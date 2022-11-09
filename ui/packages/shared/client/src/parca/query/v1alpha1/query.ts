@@ -340,6 +340,12 @@ export interface QueryRequest {
      * @generated from protobuf field: parca.query.v1alpha1.QueryRequest.ReportType report_type = 5;
      */
     reportType: QueryRequest_ReportType;
+    /**
+     * filter_query is the query string to filter the profile samples
+     *
+     * @generated from protobuf field: optional string filter_query = 6;
+     */
+    filterQuery?: string;
 }
 /**
  * Mode is the type of query request
@@ -1627,7 +1633,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 2, name: "diff", kind: "message", oneof: "options", T: () => DiffProfile },
             { no: 3, name: "merge", kind: "message", oneof: "options", T: () => MergeProfile },
             { no: 4, name: "single", kind: "message", oneof: "options", T: () => SingleProfile },
-            { no: 5, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] }
+            { no: 5, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] },
+            { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1666,6 +1673,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* parca.query.v1alpha1.QueryRequest.ReportType report_type */ 5:
                     message.reportType = reader.int32();
                     break;
+                case /* optional string filter_query */ 6:
+                    message.filterQuery = reader.string();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1693,6 +1703,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* parca.query.v1alpha1.QueryRequest.ReportType report_type = 5; */
         if (message.reportType !== 0)
             writer.tag(5, WireType.Varint).int32(message.reportType);
+        /* optional string filter_query = 6; */
+        if (message.filterQuery !== undefined)
+            writer.tag(6, WireType.LengthDelimited).string(message.filterQuery);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
