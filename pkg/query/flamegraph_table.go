@@ -426,8 +426,13 @@ func compareByNameTable(tables TableGetter, a, b *querypb.FlamegraphNode) bool {
 		return false
 	}
 
-	aFunction := tables.GetFunction(aLocation.Lines[a.Meta.LineIndex].FunctionIndex)
-	bFunction := tables.GetFunction(bLocation.Lines[b.Meta.LineIndex].FunctionIndex)
+	var aFunction, bFunction *metastorev1alpha1.Function
+	if uint32(len(aLocation.Lines)) > a.Meta.LineIndex {
+		aFunction = tables.GetFunction(aLocation.Lines[a.Meta.LineIndex].FunctionIndex)
+	}
+	if uint32(len(bLocation.Lines)) > b.Meta.LineIndex {
+		bFunction = tables.GetFunction(bLocation.Lines[b.Meta.LineIndex].FunctionIndex)
+	}
 
 	if aFunction != nil && bFunction == nil {
 		return false
