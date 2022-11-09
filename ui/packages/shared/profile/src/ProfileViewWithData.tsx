@@ -19,7 +19,8 @@ import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
 import {useGrpcMetadata} from '@parca/components';
 import {saveAsBlob} from '@parca/functions';
-import {NavigateFunction} from 'ProfileExplorer';
+
+export type NavigateFunction = (path: string, queryParams: any) => void;
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;

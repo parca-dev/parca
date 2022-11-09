@@ -12,9 +12,8 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import {ProfileSelection, ProfileViewWithData} from '..';
+import {ProfileSelection, ProfileViewWithData, NavigateFunction} from '..';
 
-import {NavigateFunction} from '../ProfileExplorer';
 import ProfileSelector, {QuerySelection} from '../ProfileSelector';
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;
