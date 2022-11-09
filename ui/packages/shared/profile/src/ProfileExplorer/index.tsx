@@ -23,6 +23,7 @@ import {
   selectCompareMode,
   setSearchNodeString,
   store,
+  selectFilterByFunction,
 } from '@parca/store';
 import {Provider, batch} from 'react-redux';
 import {DateTimeRange} from '@parca/components';
@@ -56,6 +57,23 @@ const sanitizeDateRange = (
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
+const filterSuffix = (
+  o: {[key: string]: string | string[] | undefined},
+  suffix: string
+): {[key: string]: string | string[] | undefined} =>
+  Object.fromEntries(Object.entries(o).filter(([key]) => !key.endsWith(suffix)));
+
+const swapQueryParameters = (o: {
+  [key: string]: string | string[] | undefined;
+}): {[key: string]: string | string[] | undefined} => {
+  Object.entries(o).forEach(([key, value]) => {
+    if (key.endsWith('_b')) {
+      o[key.slice(0, -2) + '_a'] = value;
+    }
+  });
+  return o;
+};
+
 const ProfileExplorerApp = ({
   queryClient,
   queryParams,
@@ -84,6 +102,7 @@ const ProfileExplorerApp = ({
     compare_b,
   } = queryParams;
   /* eslint-enable @typescript-eslint/naming-convention */
+  const filterByFunction = useAppSelector(selectFilterByFunction);
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;
@@ -107,39 +126,21 @@ const ProfileExplorerApp = ({
     }
   }, [dispatch, compare_a, compare_b]);
 
-  const filterSuffix = (
-    o: {[key: string]: string | string[] | undefined},
-    suffix: string
-  ): {[key: string]: string | string[] | undefined} =>
-    Object.fromEntries(Object.entries(o).filter(([key]) => !key.endsWith(suffix)));
-
-  const swapQueryParameters = (o: {
-    [key: string]: string | string[] | undefined;
-  }): {[key: string]: string | string[] | undefined} => {
-    Object.entries(o).forEach(([key, value]) => {
-      if (key.endsWith('_b')) {
-        o[key.slice(0, -2) + '_a'] = value;
-      }
+  const selectProfile = (p: ProfileSelection, suffix: string): void => {
+    queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
+    queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
+    return navigateTo('/', {
+      ...queryParams,
+      ...SuffixParams(p.HistoryParams(), suffix),
     });
-    return o;
   };
 
   const selectProfileA = (p: ProfileSelection): void => {
-    queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
-    queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
-    return navigateTo('/', {
-      ...queryParams,
-      ...SuffixParams(p.HistoryParams(), '_a'),
-    });
+    return selectProfile(p, '_a');
   };
 
   const selectProfileB = (p: ProfileSelection): void => {
-    queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
-    queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
-    return navigateTo('/', {
-      ...queryParams,
-      ...SuffixParams(p.HistoryParams(), '_b'),
-    });
+    return selectProfile(p, '_b');
   };
 
   // Show the SingleProfileExplorer when not comparing
@@ -160,7 +161,8 @@ const ProfileExplorerApp = ({
       merge_a as string,
       labels_a as string[],
       profile_name_a as string,
-      time_a as string
+      time_a as string,
+      filterByFunction as string | undefined
     );
 
     const selectQuery = (q: QuerySelection): void => {
@@ -295,6 +297,7 @@ const ProfileExplorerApp = ({
           to_a: q.to.toString(),
           merge_a: q.merge,
           time_selection_a: q.timeSelection,
+          filterByFunction,
         },
       }
     );
@@ -315,6 +318,7 @@ const ProfileExplorerApp = ({
           to_b: q.to.toString(),
           merge_b: q.merge,
           time_selection_b: q.timeSelection,
+          filterByFunction,
         },
       }
     );

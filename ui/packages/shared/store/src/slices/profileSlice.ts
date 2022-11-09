@@ -18,12 +18,14 @@ import type {RootState} from '../store';
 export interface ProfileState {
   compare: boolean;
   searchNodeString: string | undefined;
+  filterByFunction: string | undefined;
 }
 
 // Define the initial state using that type
 const initialState: ProfileState = {
   compare: false,
   searchNodeString: undefined,
+  filterByFunction: undefined,
 };
 
 export const profileSlice = createSlice({
@@ -37,14 +39,19 @@ export const profileSlice = createSlice({
     setSearchNodeString: (state, action: PayloadAction<string | undefined>) => {
       state.searchNodeString = action.payload;
     },
+    setFilterByFunction: (state, action: PayloadAction<string | undefined>) => {
+      state.filterByFunction = action.payload;
+    },
   },
 });
 
-export const {setCompare, setSearchNodeString} = profileSlice.actions;
+export const {setCompare, setSearchNodeString, setFilterByFunction} = profileSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectCompareMode = (state: RootState): boolean => state.profile.compare;
 export const selectSearchNodeString = (state: RootState): string | undefined =>
   state.profile.searchNodeString;
+export const selectFilterByFunction = (state: RootState): string | undefined =>
+  state.profile.filterByFunction;
 
 export default profileSlice.reducer;

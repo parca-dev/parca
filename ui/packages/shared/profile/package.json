@@ -3,7 +3,6 @@
   "version": "0.16.60",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@iconify/react": "^3.2.2",
     "@parca/client": "^0.16.53",
     "@parca/components": "^0.16.56",
     "@parca/dynamicsize": "^0.16.51",
@@ -30,8 +29,9 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
-    "build": "tsc && tailwindcss -o dist/styles.css --minify && cp src/*.css ./dist/",
-    "watch": "tsc-watch --onSuccess 'tailwindcss -o dist/styles.css --minify'"
+    "build": "tsc && yarn compile:styles",
+    "watch": "tsc-watch --onSuccess 'yarn compile:styles'",
+    "compile:styles": "tailwindcss -o dist/styles.css --minify && cp src/*.css ./dist/"
   },
   "keywords": [],
   "author": "",
