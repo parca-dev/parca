@@ -236,11 +236,13 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 
 	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
+			Address:   0x1,
 			MappingId: m1.Id,
 			Lines: []*metastorepb.Line{{
 				FunctionId: f1.Id,
 			}},
 		}, {
+			Address:   0x8,
 			MappingId: m2.Id,
 			Lines: []*metastorepb.Line{{
 				FunctionId: f1.Id,
@@ -276,11 +278,11 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 			StacktraceID: s1.Id,
 			Value:        2,
 		}, {
-			StacktraceID: s2.Id,
-			Value:        1,
-		}, {
 			StacktraceID: s3.Id,
 			Value:        2,
+		}, {
+			StacktraceID: s2.Id,
+			Value:        1,
 		}},
 	})
 	require.NoError(t, err)
@@ -298,15 +300,17 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 
 	require.Equal(t, uint32(1), fg.Locations[0].MappingIndex)
 	require.Equal(t, 1, len(fg.Locations[0].Lines))
+	require.Equal(t, uint64(0x1), fg.Locations[0].Address)
 	require.Equal(t, uint32(1), fg.Locations[0].Lines[0].FunctionIndex)
 
-	require.Equal(t, uint32(0), fg.Locations[1].MappingIndex)
-	require.Equal(t, 1, len(fg.Locations[1].Lines))
-	require.Equal(t, uint32(1), fg.Locations[1].Lines[0].FunctionIndex)
+	require.Equal(t, uint32(2), fg.Locations[1].MappingIndex)
+	require.Equal(t, 0, len(fg.Locations[1].Lines))
+	require.Equal(t, uint64(0x5), fg.Locations[1].Address)
 
-	require.Equal(t, uint32(2), fg.Locations[2].MappingIndex)
-	require.Equal(t, 0, len(fg.Locations[2].Lines))
-	require.Equal(t, uint64(0x5), fg.Locations[2].Address)
+	require.Equal(t, uint32(0), fg.Locations[2].MappingIndex)
+	require.Equal(t, 1, len(fg.Locations[2].Lines))
+	require.Equal(t, uint64(0x8), fg.Locations[2].Address)
+	require.Equal(t, uint32(1), fg.Locations[2].Lines[0].FunctionIndex)
 
 	require.Equal(t, []*metastorepb.Mapping{
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
@@ -321,24 +325,25 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	expected := &pb.FlamegraphRootNode{
 		Cumulative: 5,
 		Children: []*pb.FlamegraphNode{{
-			Cumulative: 3,
-			Meta: &pb.FlamegraphNodeMeta{
-				LocationIndex: 2,
-				LineIndex:     0,
-			},
-		}, {
 			Cumulative: 2,
 			Meta: &pb.FlamegraphNodeMeta{
+				LocationIndex: 2,
+			},
+		}, {
+			Cumulative: 3,
+			Meta: &pb.FlamegraphNodeMeta{
 				LocationIndex: 3,
+				LineIndex:     0,
 			},
 		}},
 	}
 	require.Equal(t, int64(5), fg.Root.Cumulative)
 	require.Equal(t, 2, len(fg.Root.Children))
-	require.Equal(t, int64(3), fg.Root.Children[0].Cumulative)
+	require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
 	require.Equal(t, uint32(2), fg.Root.Children[0].Meta.LocationIndex)
-	require.Equal(t, int64(2), fg.Root.Children[1].Cumulative)
+	require.Equal(t, int64(3), fg.Root.Children[1].Cumulative)
 	require.Equal(t, uint32(3), fg.Root.Children[1].Meta.LocationIndex)
+	require.Equal(t, uint32(0), fg.Root.Children[1].Meta.LineIndex)
 	require.True(t, proto.Equal(expected, fg.Root))
 }
 
