@@ -285,6 +285,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "asubiotto",
+      "name": "Alfonso Subiotto Marqués",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10560359?v=4",
+      "profile": "http://www.asubiotto.com",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
