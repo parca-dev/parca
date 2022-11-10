@@ -321,6 +321,15 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "danielqsj",
+      "name": "Daniel (Shijun) Qian",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7528864?v=4",
+      "profile": "http://danielqsj.github.io/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
