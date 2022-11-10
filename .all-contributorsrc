@@ -330,6 +330,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "avestuk",
+      "name": "Alex Vest",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28152118?v=4",
+      "profile": "https://github.com/avestuk",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 5,
