@@ -210,6 +210,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center"><a href="http://www.boranseref.com/"><img src="https://avatars.githubusercontent.com/u/20660506?v=4?s=100" width="100px;" alt="Boran Seref"/><br /><sub><b>Boran Seref</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=boranx" title="Code">💻</a></td>
       <td align="center"><a href="https://heylongdacoder.github.io/"><img src="https://avatars.githubusercontent.com/u/79215152?v=4?s=100" width="100px;" alt="Wen Long"/><br /><sub><b>Wen Long</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=heylongdacoder" title="Code">💻</a></td>
       <td align="center"><a href="http://www.dashen.tech"><img src="https://avatars.githubusercontent.com/u/15921519?v=4?s=100" width="100px;" alt="cui fliter"/><br /><sub><b>cui fliter</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=cuishuang" title="Documentation">📖</a></td>
+      <td align="center"><a href="http://www.asubiotto.com"><img src="https://avatars.githubusercontent.com/u/10560359?v=4?s=100" width="100px;" alt="Alfonso Subiotto Marqués"/><br /><sub><b>Alfonso Subiotto Marqués</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=asubiotto" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
