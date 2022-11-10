@@ -1,6 +1,6 @@
 run:
-  deadline: 5m
-  timeout: 3m
+  deadline: 7m
+  timeout: 5m
   go: '1.18'
 
 linters:
