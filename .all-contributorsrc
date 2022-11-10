@@ -303,6 +303,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "stefanvanburen",
+      "name": "Stefan VanBuren",
+      "avatar_url": "https://avatars.githubusercontent.com/u/622527?v=4",
+      "profile": "https://stefan.vanburen.xyz",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
