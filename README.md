@@ -216,6 +216,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center"><a href="https://github.com/TomHellier"><img src="https://avatars.githubusercontent.com/u/4739623?v=4?s=100" width="100px;" alt="TomHellier"/><br /><sub><b>TomHellier</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=TomHellier" title="Code">💻</a></td>
       <td align="center"><a href="https://stefan.vanburen.xyz"><img src="https://avatars.githubusercontent.com/u/622527?v=4?s=100" width="100px;" alt="Stefan VanBuren"/><br /><sub><b>Stefan VanBuren</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=stefanvanburen" title="Code">💻</a></td>
       <td align="center"><a href="https://cpanato.dev"><img src="https://avatars.githubusercontent.com/u/4115580?v=4?s=100" width="100px;" alt="Carlos Tadeu Panato Junior"/><br /><sub><b>Carlos Tadeu Panato Junior</b></sub></a><br /><a href="#infra-cpanato" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center"><a href="http://danielqsj.github.io/"><img src="https://avatars.githubusercontent.com/u/7528864?v=4?s=100" width="100px;" alt="Daniel (Shijun) Qian"/><br /><sub><b>Daniel (Shijun) Qian</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=danielqsj" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
