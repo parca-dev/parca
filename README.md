@@ -214,6 +214,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center"><a href="https://github.com/TomHellier"><img src="https://avatars.githubusercontent.com/u/4739623?v=4?s=100" width="100px;" alt="TomHellier"/><br /><sub><b>TomHellier</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=TomHellier" title="Code">💻</a></td>
+      <td align="center"><a href="https://stefan.vanburen.xyz"><img src="https://avatars.githubusercontent.com/u/622527?v=4?s=100" width="100px;" alt="Stefan VanBuren"/><br /><sub><b>Stefan VanBuren</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=stefanvanburen" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
