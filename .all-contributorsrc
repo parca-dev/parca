@@ -312,6 +312,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "cpanato",
+      "name": "Carlos Tadeu Panato Junior",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4115580?v=4",
+      "profile": "https://cpanato.dev",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 5,
