@@ -17,7 +17,8 @@ import {Query} from '@parca/parser';
 import {LabelsResponse, QueryServiceClient} from '@parca/client';
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
-import {useParcaTheme, useGrpcMetadata} from '@parca/components';
+
+import {useParcaContext, useGrpcMetadata} from '@parca/components';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
@@ -97,7 +98,7 @@ const MatchersInput = ({
     placement: 'bottom-start',
   });
   const metadata = useGrpcMetadata();
-  const {loader: Spinner} = useParcaTheme();
+  const {loader: Spinner} = useParcaContext();
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
   const {response: labelNamesResponse, error: labelNamesError} = result;

@@ -272,6 +272,13 @@ func (c *tableConverter) AddFunction(f *metastorev1alpha1.Function) uint32 {
 // has multiple inlined functions it creates multiple nodes for each inlined
 // function.
 func tableLocationToTreeNodes(location *metastorev1alpha1.Location, locationIndex uint32) []*querypb.FlamegraphNode {
+	if len(location.Lines) == 0 {
+		return []*querypb.FlamegraphNode{{
+			Meta: &querypb.FlamegraphNodeMeta{
+				LocationIndex: locationIndex,
+			},
+		}}
+	}
 	nodes := make([]*querypb.FlamegraphNode, len(location.Lines))
 	for i := range location.Lines {
 		nodes[i] = &querypb.FlamegraphNode{
@@ -352,7 +359,7 @@ func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *query
 	return tree
 }
 
-// mergeChildren sorts and merges the children of the given node if they are equals (in-place).
+// mergeChildrenTable sorts and merges the children of the given node if they are equals (in-place).
 // compare function used for sorting and equals function used for comparing two nodes before merging.
 func mergeChildrenTable(
 	tables TableGetter,
@@ -403,15 +410,29 @@ func compareByNameTable(tables TableGetter, a, b *querypb.FlamegraphNode) bool {
 	aLocation := tables.GetLocation(a.Meta.LocationIndex)
 	bLocation := tables.GetLocation(b.Meta.LocationIndex)
 
-	if aLocation == nil || bLocation == nil {
+	if aLocation == nil && bLocation != nil {
+		return true
+	}
+	if aLocation != nil && bLocation == nil {
 		return false
 	}
-	if len(aLocation.Lines) < 1 || len(bLocation.Lines) < 1 {
+	if aLocation == nil && bLocation == nil {
+		return false
+	}
+	if len(aLocation.Lines) == 0 && len(bLocation.Lines) > 0 {
+		return true
+	}
+	if len(aLocation.Lines) > 0 && len(bLocation.Lines) == 0 {
 		return false
 	}
 
-	aFunction := tables.GetFunction(aLocation.Lines[0].FunctionIndex)
-	bFunction := tables.GetFunction(bLocation.Lines[0].FunctionIndex)
+	var aFunction, bFunction *metastorev1alpha1.Function
+	if uint32(len(aLocation.Lines)) > a.Meta.LineIndex {
+		aFunction = tables.GetFunction(aLocation.Lines[a.Meta.LineIndex].FunctionIndex)
+	}
+	if uint32(len(bLocation.Lines)) > b.Meta.LineIndex {
+		bFunction = tables.GetFunction(bLocation.Lines[b.Meta.LineIndex].FunctionIndex)
+	}
 
 	if aFunction != nil && bFunction == nil {
 		return false
@@ -434,12 +455,12 @@ func equalsByNameTable(tables TableGetter, a, b *querypb.FlamegraphNode) bool {
 	if aLocation == nil || bLocation == nil {
 		return false
 	}
-	if len(aLocation.Lines) < 1 || len(bLocation.Lines) < 1 {
+	if a.Meta.LineIndex >= uint32(len(aLocation.Lines)) || b.Meta.LineIndex >= uint32(len(bLocation.Lines)) {
 		return false
 	}
 
-	aFunction := tables.GetFunction(aLocation.Lines[0].FunctionIndex)
-	bFunction := tables.GetFunction(bLocation.Lines[0].FunctionIndex)
+	aFunction := tables.GetFunction(aLocation.Lines[a.Meta.LineIndex].FunctionIndex)
+	bFunction := tables.GetFunction(bLocation.Lines[b.Meta.LineIndex].FunctionIndex)
 
 	if aFunction != nil && bFunction == nil {
 		return false

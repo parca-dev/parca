@@ -236,37 +236,59 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 
 	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
+			Address:   0x1,
 			MappingId: m1.Id,
 			Lines: []*metastorepb.Line{{
 				FunctionId: f1.Id,
 			}},
 		}, {
+			Address:   0x8,
 			MappingId: m2.Id,
 			Lines: []*metastorepb.Line{{
 				FunctionId: f1.Id,
 			}},
+		}, {
+			MappingId: m2.Id,
+			Address:   0x5,
+		}, {
+			MappingId: m2.Id,
+			Address:   0x7,
 		}},
 	})
 	require.NoError(t, err)
 	l1 := lres.Locations[0]
 	l2 := lres.Locations[1]
+	l3 := lres.Locations[2]
+	l4 := lres.Locations[3]
 
 	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
 		Stacktraces: []*metastorepb.Stacktrace{{
 			LocationIds: []string{l1.Id},
 		}, {
 			LocationIds: []string{l2.Id},
+		}, {
+			LocationIds: []string{l3.Id},
+		}, {
+			LocationIds: []string{l4.Id},
 		}},
 	})
 	require.NoError(t, err)
 	s1 := sres.Stacktraces[0]
 	s2 := sres.Stacktraces[1]
+	s3 := sres.Stacktraces[2]
+	s4 := sres.Stacktraces[3]
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s1.Id,
+			Value:        2,
+		}, {
+			StacktraceID: s3.Id,
+			Value:        2,
+		}, {
+			StacktraceID: s4.Id,
 			Value:        2,
 		}, {
 			StacktraceID: s2.Id,
@@ -279,18 +301,31 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, int32(2), fg.Height)
-	require.Equal(t, int64(3), fg.Total)
+	require.Equal(t, int64(7), fg.Total)
 
 	// Check if tables and thus deduplication was correct and deterministic
 
 	require.Equal(t, []string{"", "a", "1", "b"}, fg.StringTable)
-	require.Equal(t, 2, len(fg.Locations))
+	require.Equal(t, 4, len(fg.Locations))
+
 	require.Equal(t, uint32(1), fg.Locations[0].MappingIndex)
 	require.Equal(t, 1, len(fg.Locations[0].Lines))
+	require.Equal(t, uint64(0x1), fg.Locations[0].Address)
 	require.Equal(t, uint32(1), fg.Locations[0].Lines[0].FunctionIndex)
-	require.Equal(t, uint32(0), fg.Locations[1].MappingIndex)
-	require.Equal(t, 1, len(fg.Locations[1].Lines))
-	require.Equal(t, uint32(1), fg.Locations[1].Lines[0].FunctionIndex)
+
+	require.Equal(t, uint32(2), fg.Locations[1].MappingIndex)
+	require.Equal(t, 0, len(fg.Locations[1].Lines))
+	require.Equal(t, uint64(0x5), fg.Locations[1].Address)
+
+	require.Equal(t, uint32(2), fg.Locations[2].MappingIndex)
+	require.Equal(t, 0, len(fg.Locations[2].Lines))
+	require.Equal(t, uint64(0x7), fg.Locations[2].Address)
+
+	require.Equal(t, uint32(0), fg.Locations[3].MappingIndex)
+	require.Equal(t, 1, len(fg.Locations[3].Lines))
+	require.Equal(t, uint64(0x8), fg.Locations[3].Address)
+	require.Equal(t, uint32(1), fg.Locations[3].Lines[0].FunctionIndex)
+
 	require.Equal(t, []*metastorepb.Mapping{
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
 		{BuildIdStringIndex: 0, FileStringIndex: 3},
@@ -302,19 +337,37 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	// Check the recursive flamegraph that references the tables above.
 
 	expected := &pb.FlamegraphRootNode{
-		Cumulative: 3,
+		Cumulative: 7,
 		Children: []*pb.FlamegraphNode{{
-			Cumulative: 3,
+			Cumulative: 2,
 			Meta: &pb.FlamegraphNodeMeta{
 				LocationIndex: 2,
+			},
+		}, {
+			Cumulative: 2,
+			Meta: &pb.FlamegraphNodeMeta{
+				LocationIndex: 3,
+			},
+		}, {
+			Cumulative: 3,
+			Meta: &pb.FlamegraphNodeMeta{
+				LocationIndex: 4,
 				LineIndex:     0,
 			},
 		}},
 	}
-	require.Equal(t, int64(3), fg.Root.Cumulative)
-	require.Equal(t, 1, len(fg.Root.Children))
-	require.Equal(t, int64(3), fg.Root.Children[0].Cumulative)
+	require.Equal(t, int64(7), fg.Root.Cumulative)
+	require.Equal(t, 3, len(fg.Root.Children))
+
+	require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
 	require.Equal(t, uint32(2), fg.Root.Children[0].Meta.LocationIndex)
+
+	require.Equal(t, int64(2), fg.Root.Children[1].Cumulative)
+	require.Equal(t, uint32(3), fg.Root.Children[1].Meta.LocationIndex)
+
+	require.Equal(t, int64(3), fg.Root.Children[2].Cumulative)
+	require.Equal(t, uint32(4), fg.Root.Children[2].Meta.LocationIndex)
+	require.Equal(t, uint32(0), fg.Root.Children[2].Meta.LineIndex)
 	require.True(t, proto.Equal(expected, fg.Root))
 }
 

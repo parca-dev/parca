@@ -276,6 +276,69 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "cuishuang",
+      "name": "cui fliter",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15921519?v=4",
+      "profile": "http://www.dashen.tech",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "asubiotto",
+      "name": "Alfonso Subiotto Marqués",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10560359?v=4",
+      "profile": "http://www.asubiotto.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "TomHellier",
+      "name": "TomHellier",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4739623?v=4",
+      "profile": "https://github.com/TomHellier",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "stefanvanburen",
+      "name": "Stefan VanBuren",
+      "avatar_url": "https://avatars.githubusercontent.com/u/622527?v=4",
+      "profile": "https://stefan.vanburen.xyz",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "cpanato",
+      "name": "Carlos Tadeu Panato Junior",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4115580?v=4",
+      "profile": "https://cpanato.dev",
+      "contributions": [
+        "infra"
+      ]
+    },
+    {
+      "login": "danielqsj",
+      "name": "Daniel (Shijun) Qian",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7528864?v=4",
+      "profile": "http://danielqsj.github.io/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "avestuk",
+      "name": "Alex Vest",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28152118?v=4",
+      "profile": "https://github.com/avestuk",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 5,
