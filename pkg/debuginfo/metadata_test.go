@@ -55,8 +55,9 @@ func TestMetadata(t *testing.T) {
 	store, err := NewStore(
 		tracer,
 		logger,
+		prometheus.NewRegistry(),
 		cacheDir,
-		NewObjectStoreMetadata(logger, bucket),
+		NewObjectStoreMetadata(logger, prometheus.NewRegistry(), bucket),
 		bucket,
 		NopDebugInfodClient{},
 	)

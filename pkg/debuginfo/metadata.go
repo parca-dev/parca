@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/objstore"
 )
 
@@ -90,10 +91,28 @@ type ObjectStoreMetadata struct {
 	logger log.Logger
 
 	bucket objstore.Bucket
+
+	metadataUpdateDuration prometheus.Histogram
 }
 
-func NewObjectStoreMetadata(logger log.Logger, bucket objstore.Bucket) *ObjectStoreMetadata {
-	return &ObjectStoreMetadata{logger: log.With(logger, "component", "debuginfo-metadata"), bucket: bucket}
+func NewObjectStoreMetadata(
+	logger log.Logger,
+	reg prometheus.Registerer,
+	bucket objstore.Bucket,
+) *ObjectStoreMetadata {
+	metadataUpdateDuration := prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "debuginfo_metadata_update_duration_seconds",
+			Help:    "How long it took in seconds to finish updating metadata.",
+			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
+		},
+	)
+
+	return &ObjectStoreMetadata{
+		logger:                 log.With(logger, "component", "debuginfo-metadata"),
+		bucket:                 bucket,
+		metadataUpdateDuration: metadataUpdateDuration,
+	}
 }
 
 type Metadata struct {
@@ -170,6 +189,7 @@ func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, hash 
 	metaData.BuildID = buildID
 	metaData.Hash = hash
 	metaData.UploadFinishedAt = time.Now().Unix()
+	m.metadataUpdateDuration.Observe(time.Unix(metaData.UploadFinishedAt, 0).Sub(time.Unix(metaData.UploadStartedAt, 0)).Seconds())
 
 	metadataBytes, _ := json.MarshalIndent(&metaData, "", "\t")
 	newData := bytes.NewReader(metadataBytes)

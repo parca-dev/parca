@@ -28,6 +28,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/nanmu42/limitio"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
 	"go.opentelemetry.io/otel/attribute"
@@ -79,28 +80,70 @@ type Store struct {
 
 	metadata         MetadataManager
 	debuginfodClient DebugInfodClient
+
+	debugInfoUploadAttemptsTotal prometheus.Counter
+	debugInfoUploadErrorsTotal   prometheus.CounterVec
+	debugInfoUploadDuration      prometheus.Histogram
+	existsCheckDuration          prometheus.Histogram
 }
 
 // NewStore returns a new debug info store.
 func NewStore(
 	tracer trace.Tracer,
 	logger log.Logger,
+	reg prometheus.Registerer,
 	cacheDir string,
 	metadata MetadataManager,
 	bucket objstore.Bucket,
 	debuginfodClient DebugInfodClient,
 ) (*Store, error) {
+	debugInfoUploadAttemptsTotal := prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "debuginfo_upload_attempts_total",
+			Help: "Total attempts to upload debuginfo.",
+		},
+	)
+	debugInfoUploadErrorsTotal := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "debuginfo_upload_errors_total",
+			Help: "Total number of errors in uploading debuginfo.",
+		},
+		[]string{"reason"},
+	)
+	debugInfoUploadDuration := prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "debuginfo_upload_duration_seconds",
+			Help:    "How long it took in seconds to upload debuginfo.",
+			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
+		},
+	)
+
+	existsCheckDuration := prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "debuginfo_exists_check_duration_seconds",
+			Help:    "How long it took in seconds to check existing debuginfo.",
+			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
+		},
+	)
+
 	return &Store{
-		tracer:           tracer,
-		logger:           log.With(logger, "component", "debuginfo"),
-		bucket:           bucket,
-		cacheDir:         cacheDir,
-		metadata:         metadata,
-		debuginfodClient: debuginfodClient,
+		tracer:                       tracer,
+		logger:                       log.With(logger, "component", "debuginfo"),
+		bucket:                       bucket,
+		cacheDir:                     cacheDir,
+		metadata:                     metadata,
+		debuginfodClient:             debuginfodClient,
+		debugInfoUploadAttemptsTotal: debugInfoUploadAttemptsTotal,
+		debugInfoUploadErrorsTotal:   *debugInfoUploadErrorsTotal,
+		debugInfoUploadDuration:      debugInfoUploadDuration,
+		existsCheckDuration:          existsCheckDuration,
 	}, nil
 }
 
 func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
+	defer func(begin time.Time) {
+		s.existsCheckDuration.Observe(time.Since(begin).Seconds())
+	}(time.Now())
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", req.GetBuildId()))
 
@@ -140,8 +183,13 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 }
 
 func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
+	defer func(begin time.Time) {
+		s.debugInfoUploadDuration.Observe(time.Since(begin).Seconds())
+	}(time.Now())
+	s.debugInfoUploadAttemptsTotal.Inc()
 	req, err := stream.Recv()
 	if err != nil {
+		s.debugInfoUploadErrorsTotal.WithLabelValues("stream_receive").Inc()
 		msg := "failed to receive upload info"
 		level.Error(s.logger).Log("msg", msg, "err", err)
 		return status.Errorf(codes.Unknown, msg)
@@ -159,6 +207,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 	span.SetAttributes(attribute.String("hash", hash))
 
 	if err := s.upload(ctx, buildID, hash, r); err != nil {
+		s.debugInfoUploadErrorsTotal.WithLabelValues("store_upload").Inc()
 		return err
 	}
 
@@ -223,8 +272,8 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		if err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
-
 		if err := elfutils.ValidateFile(objFile); err != nil {
+			s.debugInfoUploadErrorsTotal.WithLabelValues("validation").Inc()
 			// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
 			if err := s.metadata.MarkAsCorrupted(ctx, buildID); err != nil {
 				level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
@@ -244,7 +293,6 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 				level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
 			}
 			f.Close()
-
 			if hasDWARF {
 				return status.Error(codes.AlreadyExists, "debuginfo already exists")
 			}
@@ -253,7 +301,6 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 
 	// At this point we know that we received a better version of the debug information file,
 	// so let the client upload it.
-
 	if err := s.metadata.MarkAsUploading(ctx, buildID); err != nil {
 		err = fmt.Errorf("failed to update metadata before uploading: %w", err)
 		return status.Error(codes.Internal, err.Error())
