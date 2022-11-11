@@ -14,7 +14,7 @@ local defaults = {
       bucket: {
         type: 'FILESYSTEM',
         config: {
-          directory: './data',
+          directory: '/var/lib/parca',
         },
       },
     },
@@ -223,7 +223,17 @@ function(params) {
         { name: port.name, containerPort: port.port }
         for port in prc.service.spec.ports
       ],
-      volumeMounts: [{ name: 'config', mountPath: '/etc/parca' }],
+      volumeMounts: [
+        {
+          name: 'config',
+          mountPath: '/etc/parca',
+        },
+      ] + (
+        if prc.config.config.object_storage.bucket.type == 'FILESYSTEM' then [{
+          name: 'data',
+          mountPath: prc.config.config.object_storage.bucket.config.directory,
+        }] else []
+      ),
       resources: if prc.config.resources != {} then prc.config.resources else {},
       terminationMessagePolicy: 'FallbackToLogsOnError',
       livenessProbe: if prc.config.livenessProbe == true then {
@@ -260,10 +270,17 @@ function(params) {
             securityContext: prc.config.securityContext,
             serviceAccountName: prc.serviceAccount.metadata.name,
             terminationGracePeriodSeconds: 120,
-            volumes: [{
-              name: 'config',
-              configMap: { name: prc.configMap.metadata.name },
-            }],
+            volumes: [
+              {
+                name: 'config',
+                configMap: { name: prc.configMap.metadata.name },
+              },
+            ] + (
+              if prc.config.config.object_storage.bucket.type == 'FILESYSTEM' then [{
+                name: 'data',
+                emptyDir: {},
+              }] else []
+            ),
             nodeSelector: {
               'kubernetes.io/os': 'linux',
             },
