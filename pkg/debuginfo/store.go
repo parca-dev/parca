@@ -211,42 +211,42 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		return err
 	}
 
-	if found {
-		if hash != "" && metadataFile != nil {
-			if metadataFile.Hash == hash {
-				level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
-				return status.Error(codes.AlreadyExists, "debuginfo already exists")
-			}
+	if found && (metadataFile == nil || (metadataFile != nil && metadataFile.State != MetadataStateCorrupted)) {
+		if hash != "" && metadataFile != nil && metadataFile.Hash == hash {
+			level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
+			return status.Error(codes.AlreadyExists, "debuginfo already exists")
 		}
 
 		objFile, _, err := s.FetchDebugInfo(ctx, buildID)
-		if err != nil {
+		if err != nil && !errors.Is(err, ErrDebugInfoNotFound) {
 			return status.Error(codes.Internal, err.Error())
 		}
 
-		if err := elfutils.ValidateFile(objFile); err != nil {
-			// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
-			if err := s.metadata.MarkAsCorrupted(ctx, buildID); err != nil {
-				level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
+		if err == nil {
+			if err := elfutils.ValidateFile(objFile); err != nil {
+				// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
+				if err := s.metadata.MarkAsCorrupted(ctx, buildID); err != nil {
+					level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
+				}
+				level.Error(s.logger).Log("msg", "failed to validate object file", "buildid", buildID)
+				// Client will retry.
+				return status.Error(codes.Internal, err.Error())
 			}
-			level.Error(s.logger).Log("msg", "failed to validate object file", "buildid", buildID)
-			// Client will retry.
-			return status.Error(codes.Internal, err.Error())
-		}
 
-		// Valid.
-		f, err := elf.Open(objFile)
-		if err != nil {
-			level.Debug(s.logger).Log("msg", "failed to open object file", "err", err)
-		} else {
-			hasDWARF, err := elfutils.HasDWARF(f)
+			// Valid.
+			f, err := elf.Open(objFile)
 			if err != nil {
-				level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
-			}
-			f.Close()
+				level.Debug(s.logger).Log("msg", "failed to open object file", "err", err)
+			} else {
+				hasDWARF, err := elfutils.HasDWARF(f)
+				if err != nil {
+					level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
+				}
+				f.Close()
 
-			if hasDWARF {
-				return status.Error(codes.AlreadyExists, "debuginfo already exists")
+				if hasDWARF {
+					return status.Error(codes.AlreadyExists, "debuginfo already exists")
+				}
 			}
 		}
 	}
@@ -255,8 +255,7 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 	// so let the client upload it.
 
 	if err := s.metadata.MarkAsUploading(ctx, buildID); err != nil {
-		err = fmt.Errorf("failed to update metadata before uploading: %w", err)
-		return status.Error(codes.Internal, err.Error())
+		return status.Error(codes.Internal, fmt.Errorf("failed to update metadata before uploading: %w", err).Error())
 	}
 
 	// limitio.Writer is used to avoid buffer overflow.
