@@ -21,7 +21,7 @@ import {useGrpcMetadata, useParcaContext} from '@parca/components';
 import {saveAsBlob} from '@parca/functions';
 import {useEffect} from 'react';
 
-type NavigateFunction = (path: string, queryParams: any) => void;
+export type NavigateFunction = (path: string, queryParams: any) => void;
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;

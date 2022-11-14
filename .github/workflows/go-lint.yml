@@ -77,3 +77,4 @@ jobs:
         uses: golangci/golangci-lint-action@0ad9a0988b3973e851ab0a07adf248ec2e100376 # v3.3.1
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
+          args: --timeout 5m

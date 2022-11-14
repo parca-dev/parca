@@ -11,19 +11,70 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Icon} from '@iconify/react';
+import Button from '../Button';
 import cx from 'classnames';
+import {useRef} from 'react';
 
-const Input = ({className = '', ...props}): JSX.Element => {
+interface SelfProps {
+  className?: string;
+  onAction?: () => void;
+  actionIcon?: JSX.Element;
+}
+
+export type Props = React.InputHTMLAttributes<HTMLInputElement> & SelfProps;
+
+const Input = ({
+  className = '',
+  onAction,
+  actionIcon = <Icon icon="ep:arrow-right" />,
+  onBlur,
+  ...props
+}: Props): JSX.Element => {
+  const ref = useRef<HTMLInputElement>(null);
   return (
-    <input
-      {...props}
-      className={cx(
-        'p-2 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600',
-        {
-          [className]: className.length > 0,
-        }
-      )}
-    />
+    <div
+      className="relative"
+      ref={ref}
+      onBlur={e => {
+        (async () => {
+          if (onBlur == null || ref.current == null) {
+            return;
+          }
+          await new Promise(resolve => setTimeout(resolve));
+          if (ref.current.contains(document.activeElement)) {
+            return;
+          }
+          onBlur(e as React.FocusEvent<HTMLInputElement>);
+        })().catch(err => {
+          console.error('Error in processing blur event', err);
+        });
+      }}
+    >
+      <input
+        {...props}
+        className={cx(
+          'p-2 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600',
+          {
+            [className]: className.length > 0,
+            'pr-10': onAction != null,
+          }
+        )}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && onAction != null) {
+            onAction();
+          }
+        }}
+      />
+      {onAction != null ? (
+        <Button
+          onClick={onAction}
+          className="!absolute w-fit inset-y-0 right-0 !px-2 aspect-square rounded-tl-none rounded-bl-none"
+        >
+          {actionIcon}
+        </Button>
+      ) : null}
+    </div>
   );
 };
 

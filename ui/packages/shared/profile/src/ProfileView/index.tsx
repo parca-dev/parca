@@ -21,14 +21,15 @@ import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
 
-import {Callgraph} from './';
-import ProfileShareButton from './components/ProfileShareButton';
-import ProfileIcicleGraph from './ProfileIcicleGraph';
-import {ProfileSource} from './ProfileSource';
-import TopTable from './TopTable';
-import useDelayedLoader from './useDelayedLoader';
+import {Callgraph} from '../';
+import ProfileShareButton from '../components/ProfileShareButton';
+import FilterByFunctionButton from './FilterByFunctionButton';
+import ProfileIcicleGraph from '../ProfileIcicleGraph';
+import {ProfileSource} from '../ProfileSource';
+import TopTable from '../TopTable';
+import useDelayedLoader from '../useDelayedLoader';
 
-import './ProfileView.styles.css';
+import '../ProfileView.styles.css';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -113,6 +114,7 @@ export const ProfileView = ({
   const currentSearchString = useAppSelector(selectSearchNodeString);
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
+  const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
 
   const {loader, perf} = useParcaContext();
 
@@ -208,57 +210,55 @@ export const ProfileView = ({
                     Download pprof
                   </Button>
                 </div>
-
-                <SearchNodes />
+                {filterByFunctionEnabled ? <FilterByFunctionButton /> : <SearchNodes />}
               </div>
 
-              <div className="flex ml-auto">
-                <div className="mr-3">
-                  <Button
-                    color="neutral"
-                    onClick={resetIcicleGraph}
-                    disabled={curPath.length === 0}
-                    className="whitespace-nowrap text-ellipsis"
-                  >
-                    Reset View
-                  </Button>
-                </div>
+              <div className="flex ml-auto gap-2">
+                {filterByFunctionEnabled ? <SearchNodes /> : null}
+                <Button
+                  color="neutral"
+                  onClick={resetIcicleGraph}
+                  disabled={curPath.length === 0}
+                  className="whitespace-nowrap text-ellipsis"
+                >
+                  Reset View
+                </Button>
 
                 {callgraphEnabled ? (
-                  <div className="mr-3">
-                    <Button
-                      variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
-                      onClick={() => switchProfileView('callgraph')}
-                      className="whitespace-nowrap text-ellipsis"
-                    >
-                      Callgraph
-                    </Button>
-                  </div>
+                  <Button
+                    variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
+                    onClick={() => switchProfileView('callgraph')}
+                    className="whitespace-nowrap text-ellipsis"
+                  >
+                    Callgraph
+                  </Button>
                 ) : null}
 
-                <Button
-                  variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
-                  className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-                  onClick={() => switchProfileView('table')}
-                >
-                  Table
-                </Button>
+                <div className="flex">
+                  <Button
+                    variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
+                    className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+                    onClick={() => switchProfileView('table')}
+                  >
+                    Table
+                  </Button>
 
-                <Button
-                  variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
-                  className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons text-ellipsis"
-                  onClick={() => switchProfileView('both')}
-                >
-                  Both
-                </Button>
+                  <Button
+                    variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
+                    className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons text-ellipsis"
+                    onClick={() => switchProfileView('both')}
+                  >
+                    Both
+                  </Button>
 
-                <Button
-                  variant={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
-                  className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-                  onClick={() => switchProfileView('icicle')}
-                >
-                  Icicle Graph
-                </Button>
+                  <Button
+                    variant={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
+                    className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
+                    onClick={() => switchProfileView('icicle')}
+                  >
+                    Icicle Graph
+                  </Button>
+                </div>
               </div>
             </div>
 

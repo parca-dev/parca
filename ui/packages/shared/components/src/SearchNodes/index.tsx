@@ -14,10 +14,12 @@
 import {Input} from '../';
 import {useEffect, useMemo} from 'react';
 import {useAppDispatch, setSearchNodeString} from '@parca/store';
+import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {debounce} from 'lodash';
 
 const SearchNodes = (): JSX.Element => {
   const dispatch = useAppDispatch();
+  const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
 
   useEffect(() => {
     return () => {
@@ -35,7 +37,11 @@ const SearchNodes = (): JSX.Element => {
 
   return (
     <div>
-      <Input className="text-sm" placeholder="Search nodes..." onChange={debouncedSearch}></Input>
+      <Input
+        className="text-sm"
+        placeholder={filterByFunctionEnabled ? 'Highlight nodes...' : 'Search nodes...'}
+        onChange={debouncedSearch}
+      ></Input>
     </div>
   );
 };

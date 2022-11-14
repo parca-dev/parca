@@ -221,6 +221,9 @@ message QueryRequest {
 
   // report_type is the type of report to return
   ReportType report_type = 5;
+
+  // filter_query is the query string to filter the profile samples
+  optional string filter_query = 6;
 }
 
 // Top is the top report type
