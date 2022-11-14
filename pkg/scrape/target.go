@@ -363,7 +363,7 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 			if err != nil {
 				return nil, fmt.Errorf("instance %d in group %s: %s", i, tg, err)
 			}
-			if lbls != nil || origLabels != nil {
+			if lbls != nil || len(origLabels) > 0 {
 				params := cfg.Params
 				if params == nil {
 					params = url.Values{}
