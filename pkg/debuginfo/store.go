@@ -405,7 +405,11 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 	objFile, err := s.fetchFromObjectStore(ctx, buildID)
 	if err != nil {
 		// It's ok if we don't have the symbols for given BuildID, it happens too often.
-		level.Warn(logger).Log("msg", "failed to fetch object", "err", err)
+		if errors.Is(err, ErrDebugInfoNotFound) {
+			level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
+		} else {
+			level.Warn(logger).Log("msg", "failed to fetch object", "err", err)
+		}
 
 		// Let's try to find a debug file from debuginfod servers.
 		objFile, err = s.fetchDebuginfodFile(ctx, buildID)
@@ -454,7 +458,11 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 				// Try to download a better version from debuginfod servers.
 				dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
 				if err != nil {
-					level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+					if errors.Is(err, ErrDebugInfoNotFound) {
+						level.Debug(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+					} else {
+						level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+					}
 				} else {
 					objFile = dbgFile
 					source = debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD
