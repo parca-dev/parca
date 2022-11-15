@@ -32,7 +32,10 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-var ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
+var (
+	ErrLinerCreationFailedBefore = errors.New("failed to initialize liner")
+	ErrLinerCreation             = errors.New("cannot create a liner from given object file")
+)
 
 // Symbolizer converts the memory addresses, which have been encountered in stack traces,
 // in the ingested profiles, to the corresponding human-readable source code lines.
@@ -201,12 +204,21 @@ func (s *Symbolizer) liner(m *pb.Mapping, path string) (liner, error) {
 
 	lnr, err := s.newLiner(m.BuildId, path)
 	if err != nil {
-		level.Error(s.logger).Log(
-			"msg", "failed to open object file",
-			"file", path,
-			"buildid", m.BuildId,
-			"err", err,
-		)
+		if errors.Is(err, ErrLinerCreation) {
+			level.Debug(s.logger).Log(
+				"msg", "failed to open object file",
+				"file", path,
+				"buildid", m.BuildId,
+				"err", err,
+			)
+		} else {
+			level.Error(s.logger).Log(
+				"msg", "failed to open object file",
+				"file", path,
+				"buildid", m.BuildId,
+				"err", err,
+			)
+		}
 		s.linerCreationFailed[h] = struct{}{}
 		s.linerCache.Invalidate(h)
 		return nil, err
@@ -260,13 +272,18 @@ func (s *Symbolizer) newLiner(buildID, path string) (liner, error) {
 	}
 	if hasSymbols {
 		lnr, err := addr2line.Symbols(logger, f, s.demangler)
-
+		if err != nil {
+			if errors.Is(err, elf.ErrNoSymbols) {
+				level.Debug(logger).Log("msg", "failed to create symtab liner", "err", err)
+			} else {
+				level.Error(logger).Log("msg", "failed to create symtab liner", "err", err)
+			}
+		}
 		if err == nil {
 			level.Debug(logger).Log("msg", "using symtab liner to resolve symbols")
 			return lnr, nil
 		}
-		level.Error(logger).Log("msg", "failed to create symtab liner", "err", err)
 	}
 
-	return nil, errors.New("cannot create a liner from given object file")
+	return nil, ErrLinerCreation
 }
