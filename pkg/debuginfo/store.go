@@ -171,13 +171,11 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 
 func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) error {
 	if err := validateInput(buildID); err != nil {
-		err = fmt.Errorf("invalid build ID: %w", err)
-		return status.Error(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, fmt.Errorf("invalid build ID: %w", err).Error())
 	}
 
 	if err := validateInput(hash); err != nil {
-		err = fmt.Errorf("invalid hash: %w", err)
-		return status.Error(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, fmt.Errorf("invalid hash: %w", err).Error())
 	}
 
 	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
@@ -230,7 +228,7 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 				}
 				level.Error(s.logger).Log("msg", "failed to validate object file", "buildid", buildID)
 				// Client will retry.
-				return status.Error(codes.Internal, err.Error())
+				return status.Error(codes.Internal, fmt.Errorf("validate elf file: %w", err).Error())
 			}
 
 			// Valid.
@@ -283,12 +281,11 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 			err = fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)
 			return status.Error(codes.Internal, err.Error())
 		}
-		return status.Error(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, fmt.Errorf("validate elf header: %w", err).Error())
 	}
 
 	if err := s.metadata.MarkAsUploaded(ctx, buildID, hash); err != nil {
-		err = fmt.Errorf("failed to update metadata after uploaded: %w", err)
-		return status.Error(codes.Internal, err.Error())
+		return status.Error(codes.Internal, fmt.Errorf("failed to update metadata after uploaded: %w", err).Error())
 	}
 
 	return nil
