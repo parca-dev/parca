@@ -16,7 +16,7 @@ import Spinner from '../Spinner';
 
 interface Props {
   loader: ReactNode;
-  perf: {
+  perf?: {
     onRender: ProfilerOnRenderCallback;
     markInteraction: (interactionName: string) => void;
   };

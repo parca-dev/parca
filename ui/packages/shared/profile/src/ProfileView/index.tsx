@@ -265,7 +265,10 @@ export const ProfileView = ({
             <div ref={ref} className="flex space-x-4 justify-between w-full">
               {currentView === 'icicle' && flamegraphData?.data != null && (
                 <div className="w-full">
-                  <Profiler id="icicleGraph" onRender={perf.onRender}>
+                  <Profiler
+                    id="icicleGraph"
+                    onRender={perf?.onRender as React.ProfilerOnRenderCallback}
+                  >
                     <ProfileIcicleGraph
                       curPath={curPath}
                       setNewCurPath={setNewCurPath}

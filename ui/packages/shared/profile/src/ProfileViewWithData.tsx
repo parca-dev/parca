@@ -51,7 +51,7 @@ export const ProfileViewWithData = ({
     if (flamegraphLoading) {
       return;
     }
-    perf.markInteraction('Flamegraph Render');
+    perf?.markInteraction('Flamegraph Render');
   }, [flamegraphLoading, flamegraphResponse, perf]);
 
   const {
