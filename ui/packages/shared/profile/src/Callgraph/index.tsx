@@ -208,6 +208,8 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   if (width == null || graphData == null) return <></>;
   const {objects: gvizNodes, edges, bb: boundingBox} = JSON.parse(graphData) as GraphvizType;
 
+  if (!gvizNodes) return <>Profile has no samples</>;
+
   const graphBB = boundingBox.split(',');
   const bbWidth = Number(graphBB[2]);
   const bbHeight = Number(graphBB[3]);

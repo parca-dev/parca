@@ -19,7 +19,18 @@ import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
+import {
+  useAppSelector,
+  selectDarkMode,
+  selectSearchNodeString,
+  selectFilterByFunction,
+  selectDashboardItems,
+  setDashboardItems,
+  DashboardItem,
+  useAppDispatch,
+  setFilterByFunction,
+  setSearchNodeString,
+} from '@parca/store';
 
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -51,19 +62,11 @@ interface CallgraphData {
   error?: any;
 }
 
-export type VisualizationType = 'icicle' | 'table' | 'callgraph' | 'both';
-
-export interface ProfileVisState {
-  currentView: VisualizationType;
-  setCurrentView: (view: VisualizationType) => void;
-}
-
 export interface ProfileViewProps {
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
   sampleUnit: string;
-  profileVisState: ProfileVisState;
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
   navigateTo?: NavigateFunction;
@@ -79,22 +82,6 @@ function arrayEquals<T>(a: T[], b: T[]): boolean {
     a.every((val, index) => val === b[index])
   );
 }
-export const useProfileVisState = (): ProfileVisState => {
-  const [currentView, setCurrentView] = useState<VisualizationType>(() => {
-    if (typeof window === 'undefined') {
-      return 'icicle';
-    }
-    const router = parseParams(window.location.search);
-    const currentViewFromURL = router.currentProfileView as string;
-
-    if (currentViewFromURL != null) {
-      return currentViewFromURL as VisualizationType;
-    }
-    return 'icicle';
-  });
-
-  return {currentView, setCurrentView};
-};
 
 export const ProfileView = ({
   flamegraphData,
@@ -104,14 +91,18 @@ export const ProfileView = ({
   profileSource,
   queryClient,
   navigateTo,
-  profileVisState,
   onDownloadPProf,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
-  const {currentView, setCurrentView} = profileVisState;
+
+  const dispatch = useAppDispatch();
+
   const isDarkMode = useAppSelector(selectDarkMode);
+
+  const dashboardItems = useAppSelector(selectDashboardItems);
   const currentSearchString = useAppSelector(selectSearchNodeString);
+  const filterByFunctionString = useAppSelector(selectFilterByFunction);
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
@@ -123,21 +114,54 @@ export const ProfileView = ({
     setCurPath([]);
   }, [profileSource]);
 
+  // set the store value to what we have in our URL
+  useEffect(() => {
+    const queryParams = parseParams(location.search);
+    const {filter_by_function, search_string, dashboard_items} = queryParams;
+    if (filter_by_function && filter_by_function !== filterByFunctionString) {
+      dispatch(setFilterByFunction(filter_by_function as string));
+    }
+
+    if (search_string && search_string !== currentSearchString) {
+      dispatch(setSearchNodeString(search_string as string));
+    }
+
+    if (dashboard_items && dashboard_items !== dashboardItems) {
+      dispatch(
+        setDashboardItems(
+          typeof dashboard_items === 'string'
+            ? [dashboard_items as DashboardItem]
+            : (dashboard_items as DashboardItem[])
+        )
+      );
+    }
+  }, []);
+
+  // every time the functionFilter or dashboardItems changes in store, we need to navigate to new URL
+  useEffect(() => {
+    const router = parseParams(window.location.search);
+    if (navigateTo != null) {
+      navigateTo('/', {
+        ...router,
+        ...{dashboard_items: encodeURIComponent(dashboardItems.join(','))},
+        ...{filter_by_function: filterByFunctionString},
+        ...{search_string: currentSearchString},
+      });
+    }
+  }, [dashboardItems, filterByFunctionString]);
+
   const isLoading = useMemo(() => {
-    if (currentView === 'icicle') {
+    if (dashboardItems.includes('icicle')) {
       return Boolean(flamegraphData?.loading);
     }
-    if (currentView === 'callgraph') {
+    if (dashboardItems.includes('callgraph')) {
       return Boolean(callgraphData?.loading);
     }
-    if (currentView === 'table') {
+    if (dashboardItems.includes('table')) {
       return Boolean(topTableData?.loading);
     }
-    if (currentView === 'both') {
-      return Boolean(flamegraphData?.loading) || Boolean(topTableData?.loading);
-    }
     return false;
-  }, [currentView, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
+  }, [dashboardItems, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
 
   const isLoaderVisible = useDelayedLoader(isLoading);
 
@@ -162,28 +186,15 @@ export const ProfileView = ({
     }
   };
 
-  const switchProfileView = (view: VisualizationType): void => {
-    if (view == null) {
-      return;
-    }
-    setCurrentView(view);
-
-    if (navigateTo === undefined) {
-      return;
-    }
-    const router = parseParams(window.location.search);
-    navigateTo('/', {
-      ...router,
-      ...{currentProfileView: view},
-      ...{searchString: currentSearchString},
-    });
+  const switchDashboardItems = (dashboardItems: DashboardItem[]): void => {
+    dispatch(setDashboardItems(dashboardItems));
   };
 
   const maxColor: string = getNewSpanColor(isDarkMode);
-  // TODO: fix colors for dark mode
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
-
   const colorRange: [string, string] = [minColor, maxColor];
+
+  const isSinglePanelView = dashboardItems.length === 1;
 
   return (
     <>
@@ -226,8 +237,8 @@ export const ProfileView = ({
 
                 {callgraphEnabled ? (
                   <Button
-                    variant={`${currentView === 'callgraph' ? 'primary' : 'neutral'}`}
-                    onClick={() => switchProfileView('callgraph')}
+                    variant={`${dashboardItems.includes('callgraph') ? 'primary' : 'neutral'}`}
+                    onClick={() => switchDashboardItems(['callgraph'])}
                     className="whitespace-nowrap text-ellipsis"
                   >
                     Callgraph
@@ -236,25 +247,29 @@ export const ProfileView = ({
 
                 <div className="flex">
                   <Button
-                    variant={`${currentView === 'table' ? 'primary' : 'neutral'}`}
+                    variant={`${dashboardItems.includes('table') ? 'primary' : 'neutral'}`}
                     className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-                    onClick={() => switchProfileView('table')}
+                    onClick={() => switchDashboardItems(['table'])}
                   >
                     Table
                   </Button>
 
                   <Button
-                    variant={`${currentView === 'both' ? 'primary' : 'neutral'}`}
+                    variant={`${
+                      dashboardItems.includes('table') && dashboardItems.includes('icicle')
+                        ? 'primary'
+                        : 'neutral'
+                    }`}
                     className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons text-ellipsis"
-                    onClick={() => switchProfileView('both')}
+                    onClick={() => switchDashboardItems(['table', 'icicle'])}
                   >
                     Both
                   </Button>
 
                   <Button
-                    variant={`${currentView === 'icicle' ? 'primary' : 'neutral'}`}
+                    variant={`${dashboardItems.includes('icicle') ? 'primary' : 'neutral'}`}
                     className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-                    onClick={() => switchProfileView('icicle')}
+                    onClick={() => switchDashboardItems(['icicle'])}
                   >
                     Icicle Graph
                   </Button>
@@ -262,55 +277,61 @@ export const ProfileView = ({
               </div>
             </div>
 
-            <div ref={ref} className="flex space-x-4 justify-between w-full">
-              {currentView === 'icicle' && flamegraphData?.data != null && (
-                <div className="w-full">
-                  <Profiler id="icicleGraph" onRender={perf.onRender}>
-                    <ProfileIcicleGraph
-                      curPath={curPath}
-                      setNewCurPath={setNewCurPath}
-                      graph={flamegraphData.data}
-                      sampleUnit={sampleUnit}
-                    />
-                  </Profiler>
-                </div>
-              )}
-              {currentView === 'callgraph' && callgraphData?.data != null && (
-                <div className="w-full">
-                  {dimensions?.width !== undefined && (
-                    <Callgraph
-                      graph={callgraphData.data}
-                      sampleUnit={sampleUnit}
-                      width={dimensions?.width}
-                      colorRange={colorRange}
-                    />
-                  )}
-                </div>
-              )}
-              {currentView === 'table' && topTableData != null && (
-                <div className="w-full">
-                  <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
-                </div>
-              )}
-              {currentView === 'both' && (
-                <>
-                  <div className="w-1/2">
-                    <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
-                  </div>
-
-                  <div className="w-1/2">
-                    {flamegraphData != null && (
+            {isSinglePanelView && (
+              <div ref={ref} className="flex space-x-4 justify-between w-full">
+                {dashboardItems.includes('icicle') && flamegraphData?.data != null && (
+                  <div className="w-full">
+                    <Profiler id="icicleGraph" onRender={perf.onRender}>
                       <ProfileIcicleGraph
                         curPath={curPath}
                         setNewCurPath={setNewCurPath}
                         graph={flamegraphData.data}
                         sampleUnit={sampleUnit}
                       />
+                    </Profiler>
+                  </div>
+                )}
+                {dashboardItems.includes('callgraph') && callgraphData?.data != null && (
+                  <div className="w-full">
+                    {dimensions?.width !== undefined && (
+                      <Callgraph
+                        graph={callgraphData.data}
+                        sampleUnit={sampleUnit}
+                        width={dimensions?.width}
+                        colorRange={colorRange}
+                      />
                     )}
                   </div>
-                </>
-              )}
-            </div>
+                )}
+                {dashboardItems.includes('table') && topTableData != null && (
+                  <div className="w-full">
+                    <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
+                  </div>
+                )}
+              </div>
+            )}
+            {!isSinglePanelView && (
+              <div ref={ref} className="flex space-x-4 justify-between w-full">
+                {dashboardItems.includes('icicle') && dashboardItems.includes('table') && (
+                  <>
+                    <div className="w-1/2">
+                      <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
+                    </div>
+
+                    <div className="w-1/2">
+                      {flamegraphData != null && (
+                        <ProfileIcicleGraph
+                          curPath={curPath}
+                          setNewCurPath={setNewCurPath}
+                          graph={flamegraphData.data}
+                          sampleUnit={sampleUnit}
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </Card.Body>
         </Card>
       </div>

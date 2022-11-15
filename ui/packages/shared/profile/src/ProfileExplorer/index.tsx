@@ -23,7 +23,6 @@ import {
   selectCompareMode,
   setSearchNodeString,
   store,
-  selectFilterByFunction,
 } from '@parca/store';
 import {Provider, batch} from 'react-redux';
 import {DateTimeRange} from '@parca/components';
@@ -98,9 +97,9 @@ const ProfileExplorerApp = ({
     time_b,
     time_selection_b,
     compare_b,
+    filter_by_function,
   } = queryParams;
   /* eslint-enable @typescript-eslint/naming-convention */
-  const filterByFunction = useAppSelector(selectFilterByFunction);
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;
@@ -160,7 +159,7 @@ const ProfileExplorerApp = ({
       labels_a as string[],
       profile_name_a as string,
       time_a as string,
-      filterByFunction
+      filter_by_function
     );
 
     const selectQuery = (q: QuerySelection): void => {
@@ -176,7 +175,6 @@ const ProfileExplorerApp = ({
             to_a: q.to.toString(),
             merge_a: q.merge,
             time_selection_a: q.timeSelection,
-            currentProfileView: 'icicle',
           },
         }
       );
@@ -218,9 +216,6 @@ const ProfileExplorerApp = ({
 
       compareQuery = {
         ...compareQuery,
-        ...{
-          currentProfileView: 'icicle',
-        },
       };
 
       batch(() => {
@@ -295,7 +290,7 @@ const ProfileExplorerApp = ({
           to_a: q.to.toString(),
           merge_a: q.merge,
           time_selection_a: q.timeSelection,
-          filterByFunction,
+          filter_by_function,
         },
       }
     );
@@ -316,7 +311,7 @@ const ProfileExplorerApp = ({
           to_b: q.to.toString(),
           merge_b: q.merge,
           time_selection_b: q.timeSelection,
-          filterByFunction,
+          filter_by_function,
         },
       }
     );

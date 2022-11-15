@@ -18,16 +18,22 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@parca/store';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 
 const FilterByFunctionButton = (): JSX.Element => {
+  const storeVal = useAppSelector(selectFilterByFunction);
   const [value, setValue] = useState<string>('');
   const dispatch = useAppDispatch();
-  const storeVal = useAppSelector(selectFilterByFunction);
 
   const onAction = (): void => {
     dispatch(setFilterByFunction(value));
   };
+
+  useEffect(() => {
+    if (storeVal) {
+      setValue(storeVal);
+    }
+  }, [storeVal]);
 
   return (
     <Input

@@ -14,12 +14,13 @@
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
 
 import {useQuery} from './useQuery';
-import {ProfileView, useProfileVisState} from './ProfileView';
+import {ProfileView} from './ProfileView';
 import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
 import {saveAsBlob} from '@parca/functions';
 import {useEffect} from 'react';
+import {useAppSelector, selectDashboardItems} from '@parca/store';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -35,15 +36,14 @@ export const ProfileViewWithData = ({
   profileSource,
   navigateTo,
 }: ProfileViewWithDataProps): JSX.Element => {
-  const profileVisState = useProfileVisState();
   const metadata = useGrpcMetadata();
-  const {currentView} = profileVisState;
+  const dashboardItems = useAppSelector(selectDashboardItems);
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
-    skip: currentView !== 'icicle' && currentView !== 'both',
+    skip: !dashboardItems.includes('icicle'),
   });
   const {perf} = useParcaContext();
 
@@ -59,7 +59,7 @@ export const ProfileViewWithData = ({
     response: topTableResponse,
     error: topTableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP, {
-    skip: currentView !== 'table' && currentView !== 'both',
+    skip: !dashboardItems.includes('table'),
   });
 
   const {
@@ -67,7 +67,7 @@ export const ProfileViewWithData = ({
     response: callgraphResponse,
     error: callgraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
-    skip: currentView !== 'callgraph',
+    skip: !dashboardItems.includes('callgraph'),
   });
 
   const sampleUnit = profileSource.ProfileType().sampleUnit;
@@ -109,7 +109,6 @@ export const ProfileViewWithData = ({
             : undefined,
         error: callgraphError,
       }}
-      profileVisState={profileVisState}
       sampleUnit={sampleUnit}
       profileSource={profileSource}
       queryClient={queryClient}

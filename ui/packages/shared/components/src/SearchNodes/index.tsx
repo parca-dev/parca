@@ -41,7 +41,7 @@ const SearchNodes = (): JSX.Element => {
         className="text-sm"
         placeholder={filterByFunctionEnabled ? 'Highlight nodes...' : 'Search nodes...'}
         onChange={debouncedSearch}
-      ></Input>
+      />
     </div>
   );
 };
