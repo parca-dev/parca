@@ -31,9 +31,9 @@
   },
   "devDependencies": {
     "@mdx-js/loader": "2.1.5",
-    "@next/bundle-analyzer": "12.3.2",
-    "@next/eslint-plugin-next": "12.3.2",
-    "@next/mdx": "12.3.2",
+    "@next/bundle-analyzer": "12.3.3",
+    "@next/eslint-plugin-next": "12.3.3",
+    "@next/mdx": "12.3.3",
     "@storybook/addon-actions": "6.5.13",
     "@storybook/addon-docs": "6.5.13",
     "@storybook/addon-essentials": "6.5.13",
