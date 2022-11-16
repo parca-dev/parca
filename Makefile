@@ -181,7 +181,7 @@ dev/up: deploy/manifests
 dev/down:
 	source ./scripts/local-dev.sh && down
 
-tmp/help.txt: build
+tmp/help.txt: go/bin
 	mkdir -p tmp
 	bin/parca --help > $@
 

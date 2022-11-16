@@ -66,7 +66,9 @@ message RawSample {
 service AgentsService {
   // Agents return the agents that pushed data to the server
   rpc Agents(AgentsRequest) returns (AgentsResponse) {
-    option (google.api.http) = {get: "/agents"};
+    option (google.api.http) = {
+      get: "/agents"
+    };
   }
 }
 
