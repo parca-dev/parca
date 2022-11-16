@@ -33,7 +33,7 @@ require (
 	github.com/polarsignals/frostdb v0.0.0-20221110172813-5c77b18189f1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.37.0
-	github.com/prometheus/prometheus v0.40.0
+	github.com/prometheus/prometheus v0.40.1
 	github.com/segmentio/parquet-go v0.0.0-20221104152612-c1599b1932bb
 	github.com/stretchr/testify v1.8.1
 	github.com/thanos-io/objstore v0.0.0-20221025150406-0ea26d7a8d2b
