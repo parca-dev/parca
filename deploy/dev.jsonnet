@@ -1,4 +1,4 @@
-function(agentVersion='v0.4.1', separateUI=true)
+function(agentVersion='v0.10.0-rc.0', separateUI=true)
   local ns = {
     apiVersion: 'v1',
     kind: 'Namespace',
