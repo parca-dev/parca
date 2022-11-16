@@ -1,15 +1,14 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.65",
+  "version": "0.16.67",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@iconify/react": "^3.2.2",
-    "@parca/client": "^0.16.54",
-    "@parca/components": "^0.16.60",
+    "@parca/client": "^0.16.55",
+    "@parca/components": "^0.16.62",
     "@parca/dynamicsize": "^0.16.51",
     "@parca/functions": "^0.16.51",
     "@parca/parser": "^0.16.50",
-    "@parca/store": "^0.16.49",
+    "@parca/store": "^0.16.50",
     "d3": "7.6.1",
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",
@@ -30,8 +29,9 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
-    "build": "tsc && tailwindcss -o dist/styles.css --minify && cp src/*.css ./dist/",
-    "watch": "tsc-watch --onSuccess 'tailwindcss -o dist/styles.css --minify'"
+    "build": "tsc && yarn compile:styles",
+    "watch": "tsc-watch --onSuccess 'yarn compile:styles'",
+    "compile:styles": "tailwindcss -o dist/styles.css --minify && cp src/*.css ./dist/"
   },
   "keywords": [],
   "author": "",

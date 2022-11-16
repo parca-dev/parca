@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-kit/log"
@@ -142,7 +143,35 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		return nil, err
 	}
 
+	if req.FilterQuery != nil {
+		p = filterProfileData(p, *req.FilterQuery)
+	}
+
 	return q.renderReport(ctx, p, req.GetReportType())
+}
+
+func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
+	for _, loc := range s.Locations {
+		for _, l := range loc.Lines {
+			if l.Function != nil && strings.Contains(strings.ToLower(l.Function.Name), strings.ToLower(filterQuery)) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func filterProfileData(p *profile.Profile, filterQuery string) *profile.Profile {
+	filteredSamples := []*profile.SymbolizedSample{}
+	for _, s := range p.Samples {
+		if keepSample(s, filterQuery) {
+			filteredSamples = append(filteredSamples, s)
+		}
+	}
+	return &profile.Profile{
+		Samples: filteredSamples,
+		Meta:    p.Meta,
+	}
 }
 
 func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
