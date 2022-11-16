@@ -15,8 +15,8 @@ import {Flamegraph} from '@parca/client';
 import {useAppSelector, selectCompareMode} from '@parca/store';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
-import DiffLegend from './components/DiffLegend';
-import IcicleGraph from './IcicleGraph';
+import DiffLegend from '../components/DiffLegend';
+import IcicleGraph from '../IcicleGraph';
 
 interface ProfileIcicleGraphProps {
   width?: number;
@@ -34,6 +34,8 @@ const ProfileIcicleGraph = ({
 }: ProfileIcicleGraphProps): JSX.Element => {
   const compareMode = useAppSelector(selectCompareMode);
   const {ref, dimensions} = useContainerDimensions();
+
+  console.log('graph', JSON.stringify(graph));
 
   if (graph === undefined) return <div>no data...</div>;
   const total = graph.total;
