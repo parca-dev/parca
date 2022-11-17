@@ -216,6 +216,10 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	require.Equal(t, 10, len(res.Series[0].Samples))
 }
 
+func ptrToString(s string) *string {
+	return &s
+}
+
 func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	t.Parallel()
 
@@ -303,6 +307,30 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+
+	unfilteredRes, err := api.Query(ctx, &pb.QueryRequest{
+		ReportType: pb.QueryRequest_REPORT_TYPE_TOP,
+		Options: &pb.QueryRequest_Single{
+			Single: &pb.SingleProfile{
+				Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+				Time:  ts,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	filteredRes, err := api.Query(ctx, &pb.QueryRequest{
+		ReportType: pb.QueryRequest_REPORT_TYPE_TOP,
+		Options: &pb.QueryRequest_Single{
+			Single: &pb.SingleProfile{
+				Query: `memory:alloc_objects:count:space:bytes{job="default", __name__="memory"}`,
+				Time:  ts,
+			},
+		},
+		FilterQuery: ptrToString("runtime"),
+	})
+	require.NoError(t, err)
+	require.Less(t, len(filteredRes.Report.(*pb.QueryResponse_Top).Top.List), len(unfilteredRes.Report.(*pb.QueryResponse_Top).Top.List), "filtered result should be smaller than unfiltered result")
 
 	testProf := &pprofpb.Profile{}
 	err = testProf.UnmarshalVT(MustDecompressGzip(t, res.Report.(*pb.QueryResponse_Pprof).Pprof))

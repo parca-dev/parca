@@ -107,6 +107,7 @@ func newScrapePool(
 			sp.metrics.targetIntervalLength,
 			buffers,
 			store,
+			cfg.NormalizedAddresses,
 		)
 	}
 
@@ -359,6 +360,8 @@ type scrapeLoop struct {
 	lastScrapeSize int
 	externalLabels labels.Labels
 
+	normalizedAddresses bool
+
 	buffers *pool.Pool
 
 	store     profilepb.ProfileStoreServiceServer
@@ -376,6 +379,7 @@ func newScrapeLoop(ctx context.Context,
 	targetIntervalLength *prometheus.SummaryVec,
 	buffers *pool.Pool,
 	store profilepb.ProfileStoreServiceServer,
+	normalizedAddresses bool,
 ) *scrapeLoop {
 	if l == nil {
 		l = log.NewNopLogger()
@@ -384,15 +388,16 @@ func newScrapeLoop(ctx context.Context,
 		buffers = pool.New(1e3, 1e6, 3, func(sz int) interface{} { return make([]byte, 0, sz) })
 	}
 	sl := &scrapeLoop{
-		target:         t,
-		scraper:        sc,
-		buffers:        buffers,
-		store:          store,
-		stopped:        make(chan struct{}),
-		l:              l,
-		externalLabels: externalLabels,
-		intervalLength: targetIntervalLength,
-		ctx:            ctx,
+		target:              t,
+		scraper:             sc,
+		buffers:             buffers,
+		store:               store,
+		stopped:             make(chan struct{}),
+		l:                   l,
+		externalLabels:      externalLabels,
+		intervalLength:      targetIntervalLength,
+		ctx:                 ctx,
+		normalizedAddresses: normalizedAddresses,
 	}
 	sl.scrapeCtx, sl.cancel = context.WithCancel(ctx)
 
@@ -478,7 +483,7 @@ mainLoop:
 			}
 
 			_, err := sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
-				Tenant: "",
+				Normalized: sl.normalizedAddresses,
 				Series: []*profilepb.RawProfileSeries{
 					{
 						Labels: protolbls,
