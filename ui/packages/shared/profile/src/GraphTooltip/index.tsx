@@ -123,9 +123,8 @@ const TooltipMetaInfo = ({
   }
 
   const getTextForFile = (hoveringNode: FlamegraphNode): string => {
-    if (hoveringNode.meta === undefined) return '<unknown>';
+    if (hoveringNode.meta?.function == null) return '<unknown>';
 
-    // @ts-expect-error
     return `${hoveringNode.meta.function.filename} ${
       hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== '0'
         ? ` +${hoveringNode.meta.line.line.toString()}`

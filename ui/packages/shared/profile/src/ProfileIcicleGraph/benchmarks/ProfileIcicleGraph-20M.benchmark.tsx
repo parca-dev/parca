@@ -14,18 +14,21 @@
 import React from 'react';
 import ProfileIcicleGraph from '..';
 import {Provider} from 'react-redux';
-import parca1mGraph from './benchdata/parca-20m.json';
 import {store} from '@parca/store';
+import parca20mGraphData from './benchdata/parca-20m.json';
+import {Flamegraph} from '@parca/client';
 
 const {store: reduxStore} = store();
+
+const parca20mGraph = parca20mGraphData as Flamegraph;
 
 export default function ({callback = () => {}}): React.ReactElement {
   return (
     <div ref={callback}>
       <Provider store={reduxStore}>
         <ProfileIcicleGraph
-          graph={parca1mGraph}
-          sampleUnit={parca1mGraph.unit}
+          graph={parca20mGraph}
+          sampleUnit={parca20mGraph.unit}
           curPath={[]}
           setNewCurPath={() => {}}
         />

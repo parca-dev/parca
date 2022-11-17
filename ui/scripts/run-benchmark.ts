@@ -29,7 +29,7 @@ const spinner = ora();
 const optionDefinitions = [{name: 'name', alias: 'n', type: String}];
 const options = commandLineArgs(optionDefinitions);
 
-export interface Result {
+interface Result {
   name: string;
   mean: number;
   sampleCount: number;
@@ -73,19 +73,46 @@ ${table}
   await fs.appendFile(reportPath, report);
 };
 
+const populateBenchmarkData = async (): Promise<void> => {
+  const stopwatch = new StopWatch();
+  stopwatch.start();
+  spinner.start('Discovering data population scripts');
+  const files = await glob('!(node_modules)/**/!(node_modules)/benchdata/populateData.ts');
+  spinner.succeed(`Found ${files.length} data population scripts ${stopwatch.stopAndReset()}ms`);
+  for (const file of files) {
+    try {
+      stopwatch.start();
+      spinner.start(`Running data population script: ${file}`);
+      const populateData = await import(path.join(DIR_NAME, `../${file}`));
+      await populateData.default();
+      spinner.succeed(`Data population script: ${file} completed ${stopwatch.stopAndReset()}ms`);
+    } catch (error) {
+      spinner.fail(`Data population script: ${file} failed ${stopwatch.stopAndReset()}ms`);
+      throw error;
+    }
+  }
+};
+
 const run = async (): Promise<void> => {
   spinner.start('Discovering benchmarks');
   const files = await glob('!(node_modules)/**/!(node_modules)/*.benchmark.tsx');
   spinner.succeed(`Found ${files.length} benchmarks`);
 
+  await populateBenchmarkData();
+
   const results: Result[] = [];
 
   for (const file of files) {
     try {
-      const result = await runBenchmark(file);
+      const result = await runBenchmark(file).catch(() => {
+        return null;
+      });
+      if (result == null) {
+        continue;
+      }
       results.push(result);
     } catch (error) {
-      // ignore
+      console.log('Error running benchmark', file, error);
     }
   }
 

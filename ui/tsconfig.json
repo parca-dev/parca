@@ -9,6 +9,7 @@
   },
   "exclude": ["node_modules"],
   "ts-node": {
+    "esm": true,
     "compilerOptions": {
       "target": "es2020",
       "module": "es2020"

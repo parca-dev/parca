@@ -3,6 +3,7 @@
   "version": "0.16.54",
   "description": "Parca API Client",
   "main": "src/index.ts",
+  "type": "module",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
