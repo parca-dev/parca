@@ -51,7 +51,12 @@ export const ProfileViewWithData = ({
     if (flamegraphLoading) {
       return;
     }
-    perf?.markInteraction('Flamegraph Render');
+
+    if (flamegraphResponse?.report.oneofKind !== 'flamegraph') {
+      return;
+    }
+
+    perf?.markInteraction('Flamegraph Render', flamegraphResponse?.report?.flamegraph.total);
   }, [flamegraphLoading, flamegraphResponse, perf]);
 
   const {
