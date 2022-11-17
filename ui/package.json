@@ -7,7 +7,7 @@
     "lint": "eslint --ext .ts,.tsx,.js packages/*",
     "fix": "eslint --fix --ext .ts,.tsx,.js packages/*",
     "type-check": "tsc --noEmit",
-    "test": "jest --coverage --config jest.config.js",
+    "test": "jest --coverage --config jest.config.cjs",
     "export": "rm -rf .next && next build && next export -o dist",
     "bootstrap": "lerna bootstrap",
     "build": "lerna run build",
