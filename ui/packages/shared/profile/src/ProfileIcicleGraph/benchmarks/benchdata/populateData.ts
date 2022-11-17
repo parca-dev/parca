@@ -16,7 +16,7 @@ import * as client from '@parca/client';
 import {QueryServiceClient} from '@parca/client';
 import fs from 'fs-extra';
 import {fileURLToPath} from 'url';
-import {default as fetch, Headers} from 'node-fetch';
+import fetch, {Headers} from 'node-fetch';
 import path from 'path';
 
 globalThis.fetch = fetch as any;

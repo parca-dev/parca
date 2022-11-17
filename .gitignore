@@ -16,4 +16,4 @@ pkg/columnstore/testdata/merge-bench
 
 data/
 
-perf-benchmark-reports
+**/benchdata/*.json
