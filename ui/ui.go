@@ -17,7 +17,6 @@ import "embed"
 
 //nolint:typecheck
 //go:embed packages/app/web/build
-
 var FS embed.FS
 
 // NOTICE: Static HTML export of a Next.js app contains several files prefixed with _,
