@@ -13,7 +13,7 @@ import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
 /**
- * ExistsRequest request to determine if debug info exists for a given build_id
+ * ExistsRequest request to determine if debuginfo exists for a given build_id
  *
  * @generated from protobuf message parca.debuginfo.v1alpha1.ExistsRequest
  */
@@ -32,7 +32,7 @@ export interface ExistsRequest {
     hash: string;
 }
 /**
- * ExistsResponse returns whether the given build_id has debug info
+ * ExistsResponse returns whether the given build_id has debuginfo
  *
  * @generated from protobuf message parca.debuginfo.v1alpha1.ExistsResponse
  */
@@ -45,7 +45,7 @@ export interface ExistsResponse {
     exists: boolean;
 }
 /**
- * UploadRequest upload debug info
+ * UploadRequest upload debuginfo
  *
  * @generated from protobuf message parca.debuginfo.v1alpha1.UploadRequest
  */
@@ -56,7 +56,7 @@ export interface UploadRequest {
     data: {
         oneofKind: "info";
         /**
-         * info is the metadata for the debug info
+         * info is the metadata for the debuginfo
          *
          * @generated from protobuf field: parca.debuginfo.v1alpha1.UploadInfo info = 1;
          */
@@ -64,7 +64,7 @@ export interface UploadRequest {
     } | {
         oneofKind: "chunkData";
         /**
-         * chunk_data is the raw bytes of the debug info
+         * chunk_data is the raw bytes of the debuginfo
          *
          * @generated from protobuf field: bytes chunk_data = 2;
          */
@@ -93,7 +93,7 @@ export interface UploadInfo {
     hash: string;
 }
 /**
- * UploadResponse returns the build_id and the size of the uploaded debug info
+ * UploadResponse returns the build_id and the size of the uploaded debuginfo
  *
  * @generated from protobuf message parca.debuginfo.v1alpha1.UploadResponse
  */
@@ -105,14 +105,14 @@ export interface UploadResponse {
      */
     buildId: string;
     /**
-     * size is the number of bytes of the debug info
+     * size is the number of bytes of the debuginfo
      *
      * @generated from protobuf field: uint64 size = 2;
      */
     size: string;
 }
 /**
- * DownloadRequest upload debug info
+ * DownloadRequest upload debuginfo
  *
  * @generated from protobuf message parca.debuginfo.v1alpha1.DownloadRequest
  */
@@ -136,7 +136,7 @@ export interface DownloadResponse {
     data: {
         oneofKind: "info";
         /**
-         * info is the metadata for the debug info
+         * info is the metadata for the debuginfo
          *
          * @generated from protobuf field: parca.debuginfo.v1alpha1.DownloadInfo info = 1;
          */
@@ -144,7 +144,7 @@ export interface DownloadResponse {
     } | {
         oneofKind: "chunkData";
         /**
-         * chunk_data is the raw bytes of the debug info
+         * chunk_data is the raw bytes of the debuginfo
          *
          * @generated from protobuf field: bytes chunk_data = 2;
          */
@@ -615,9 +615,9 @@ class DownloadInfo$Type extends MessageType<DownloadInfo> {
  */
 export const DownloadInfo = new DownloadInfo$Type();
 /**
- * @generated ServiceType for protobuf service parca.debuginfo.v1alpha1.DebugInfoService
+ * @generated ServiceType for protobuf service parca.debuginfo.v1alpha1.DebuginfoService
  */
-export const DebugInfoService = new ServiceType("parca.debuginfo.v1alpha1.DebugInfoService", [
+export const DebuginfoService = new ServiceType("parca.debuginfo.v1alpha1.DebuginfoService", [
     { name: "Exists", options: {}, I: ExistsRequest, O: ExistsResponse },
     { name: "Upload", clientStreaming: true, options: {}, I: UploadRequest, O: UploadResponse },
     { name: "Download", serverStreaming: true, options: {}, I: DownloadRequest, O: DownloadResponse }

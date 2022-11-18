@@ -3,7 +3,7 @@
 // tslint:disable
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
-import { DebugInfoService } from "./debuginfo";
+import { DebuginfoService } from "./debuginfo";
 import type { DownloadResponse } from "./debuginfo";
 import type { DownloadRequest } from "./debuginfo";
 import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
@@ -16,43 +16,43 @@ import type { ExistsRequest } from "./debuginfo";
 import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
 import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
 /**
- * DebugInfoService is a service that allows storage of debug info
+ * DebuginfoService is a service that allows storage of debuginfo
  *
- * @generated from protobuf service parca.debuginfo.v1alpha1.DebugInfoService
+ * @generated from protobuf service parca.debuginfo.v1alpha1.DebuginfoService
  */
-export interface IDebugInfoServiceClient {
+export interface IDebuginfoServiceClient {
     /**
-     * Exists returns true if the given build_id has debug info uploaded for it.
+     * Exists returns true if the given build_id has debuginfo uploaded for it.
      *
      * @generated from protobuf rpc: Exists(parca.debuginfo.v1alpha1.ExistsRequest) returns (parca.debuginfo.v1alpha1.ExistsResponse);
      */
     exists(input: ExistsRequest, options?: RpcOptions): UnaryCall<ExistsRequest, ExistsResponse>;
     /**
-     * Upload ingests debug info for a given build_id
+     * Upload ingests debuginfo for a given build_id
      *
      * @generated from protobuf rpc: Upload(stream parca.debuginfo.v1alpha1.UploadRequest) returns (parca.debuginfo.v1alpha1.UploadResponse);
      */
     upload(options?: RpcOptions): ClientStreamingCall<UploadRequest, UploadResponse>;
     /**
-     * Download returns the debug info for a given build_id.
+     * Download returns the debuginfo for a given build_id.
      *
      * @generated from protobuf rpc: Download(parca.debuginfo.v1alpha1.DownloadRequest) returns (stream parca.debuginfo.v1alpha1.DownloadResponse);
      */
     download(input: DownloadRequest, options?: RpcOptions): ServerStreamingCall<DownloadRequest, DownloadResponse>;
 }
 /**
- * DebugInfoService is a service that allows storage of debug info
+ * DebuginfoService is a service that allows storage of debuginfo
  *
- * @generated from protobuf service parca.debuginfo.v1alpha1.DebugInfoService
+ * @generated from protobuf service parca.debuginfo.v1alpha1.DebuginfoService
  */
-export class DebugInfoServiceClient implements IDebugInfoServiceClient, ServiceInfo {
-    typeName = DebugInfoService.typeName;
-    methods = DebugInfoService.methods;
-    options = DebugInfoService.options;
+export class DebuginfoServiceClient implements IDebuginfoServiceClient, ServiceInfo {
+    typeName = DebuginfoService.typeName;
+    methods = DebuginfoService.methods;
+    options = DebuginfoService.options;
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
-     * Exists returns true if the given build_id has debug info uploaded for it.
+     * Exists returns true if the given build_id has debuginfo uploaded for it.
      *
      * @generated from protobuf rpc: Exists(parca.debuginfo.v1alpha1.ExistsRequest) returns (parca.debuginfo.v1alpha1.ExistsResponse);
      */
@@ -61,7 +61,7 @@ export class DebugInfoServiceClient implements IDebugInfoServiceClient, ServiceI
         return stackIntercept<ExistsRequest, ExistsResponse>("unary", this._transport, method, opt, input);
     }
     /**
-     * Upload ingests debug info for a given build_id
+     * Upload ingests debuginfo for a given build_id
      *
      * @generated from protobuf rpc: Upload(stream parca.debuginfo.v1alpha1.UploadRequest) returns (parca.debuginfo.v1alpha1.UploadResponse);
      */
@@ -70,7 +70,7 @@ export class DebugInfoServiceClient implements IDebugInfoServiceClient, ServiceI
         return stackIntercept<UploadRequest, UploadResponse>("clientStreaming", this._transport, method, opt);
     }
     /**
-     * Download returns the debug info for a given build_id.
+     * Download returns the debuginfo for a given build_id.
      *
      * @generated from protobuf rpc: Download(parca.debuginfo.v1alpha1.DownloadRequest) returns (stream parca.debuginfo.v1alpha1.DownloadResponse);
      */

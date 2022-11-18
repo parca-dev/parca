@@ -30,7 +30,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TestHTTPDebugInfodClient_request(t *testing.T) {
+func TestHTTPDebuginfodClient_request(t *testing.T) {
 	r, err := recorder.New("testdata/fixtures")
 	if err != nil {
 		t.Fatal(err)
@@ -72,7 +72,7 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &HTTPDebugInfodClient{
+			c := &HTTPDebuginfodClient{
 				logger:          log.NewNopLogger(),
 				timeoutDuration: tt.fields.timeoutDuration,
 				client: &http.Client{

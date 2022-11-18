@@ -29,14 +29,14 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 )
 
-// DebugInfoFile is the interface implemented by symbolizers that use DWARF debug info.
-type DebugInfoFile interface {
+// DebuginfoFile is the interface implemented by symbolizers that use DWARF debuginfo.
+type DebuginfoFile interface {
 	// SourceLines returns the resolved source lines for a given address.
 	SourceLines(addr uint64) ([]profile.LocationLine, error)
 }
 
-// debugInfoFile is a symbolizer that uses DWARF debug info to symbolize addresses.
-type debugInfoFile struct {
+// debuginfoFile is a symbolizer that uses DWARF debuginfo to symbolize addresses.
+type debuginfoFile struct {
 	demangler *demangle.Demangler
 
 	debugData           *dwarf.Data
@@ -45,14 +45,14 @@ type debugInfoFile struct {
 	abstractSubprograms map[dwarf.Offset]*dwarf.Entry
 }
 
-// NewDebugInfoFile creates a new DebugInfoFile symbolizer.
-func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile, error) {
+// NewDebuginfoFile creates a new DebuginfoFile symbolizer.
+func NewDebuginfoFile(f *elf.File, demangler *demangle.Demangler) (DebuginfoFile, error) {
 	debugData, err := f.DWARF()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}
 
-	return &debugInfoFile{
+	return &debuginfoFile{
 		demangler: demangler,
 
 		debugData:           debugData,
@@ -67,7 +67,7 @@ func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile
 // It reads DWARF sections (info, line) which include several lookup tables and
 // tries to find the name of the function that address belongs to.
 // After that it tries to find the corresponding source file and line information.
-func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error) {
+func (f *debuginfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error) {
 	// The reader is positioned at byte offset 0 in the DWARF “info” section.
 	// It allows reading Entry structures that are arranged in a tree.
 	er := f.debugData.Reader()
@@ -133,7 +133,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 	return lines, nil
 }
 
-func (f *debugInfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
+func (f *debuginfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
 	if _, ok := f.lineEntries[cu.Offset]; ok {
 		// Already created.
 		return nil

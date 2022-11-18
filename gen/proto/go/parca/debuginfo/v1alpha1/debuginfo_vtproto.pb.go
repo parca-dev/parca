@@ -27,59 +27,59 @@ const (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// DebugInfoServiceClient is the client API for DebugInfoService service.
+// DebuginfoServiceClient is the client API for DebuginfoService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type DebugInfoServiceClient interface {
-	// Exists returns true if the given build_id has debug info uploaded for it.
+type DebuginfoServiceClient interface {
+	// Exists returns true if the given build_id has debuginfo uploaded for it.
 	Exists(ctx context.Context, in *ExistsRequest, opts ...grpc.CallOption) (*ExistsResponse, error)
-	// Upload ingests debug info for a given build_id
-	Upload(ctx context.Context, opts ...grpc.CallOption) (DebugInfoService_UploadClient, error)
-	// Download returns the debug info for a given build_id.
-	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DebugInfoService_DownloadClient, error)
+	// Upload ingests debuginfo for a given build_id
+	Upload(ctx context.Context, opts ...grpc.CallOption) (DebuginfoService_UploadClient, error)
+	// Download returns the debuginfo for a given build_id.
+	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DebuginfoService_DownloadClient, error)
 }
 
-type debugInfoServiceClient struct {
+type debuginfoServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewDebugInfoServiceClient(cc grpc.ClientConnInterface) DebugInfoServiceClient {
-	return &debugInfoServiceClient{cc}
+func NewDebuginfoServiceClient(cc grpc.ClientConnInterface) DebuginfoServiceClient {
+	return &debuginfoServiceClient{cc}
 }
 
-func (c *debugInfoServiceClient) Exists(ctx context.Context, in *ExistsRequest, opts ...grpc.CallOption) (*ExistsResponse, error) {
+func (c *debuginfoServiceClient) Exists(ctx context.Context, in *ExistsRequest, opts ...grpc.CallOption) (*ExistsResponse, error) {
 	out := new(ExistsResponse)
-	err := c.cc.Invoke(ctx, "/parca.debuginfo.v1alpha1.DebugInfoService/Exists", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/parca.debuginfo.v1alpha1.DebuginfoService/Exists", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *debugInfoServiceClient) Upload(ctx context.Context, opts ...grpc.CallOption) (DebugInfoService_UploadClient, error) {
-	stream, err := c.cc.NewStream(ctx, &DebugInfoService_ServiceDesc.Streams[0], "/parca.debuginfo.v1alpha1.DebugInfoService/Upload", opts...)
+func (c *debuginfoServiceClient) Upload(ctx context.Context, opts ...grpc.CallOption) (DebuginfoService_UploadClient, error) {
+	stream, err := c.cc.NewStream(ctx, &DebuginfoService_ServiceDesc.Streams[0], "/parca.debuginfo.v1alpha1.DebuginfoService/Upload", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &debugInfoServiceUploadClient{stream}
+	x := &debuginfoServiceUploadClient{stream}
 	return x, nil
 }
 
-type DebugInfoService_UploadClient interface {
+type DebuginfoService_UploadClient interface {
 	Send(*UploadRequest) error
 	CloseAndRecv() (*UploadResponse, error)
 	grpc.ClientStream
 }
 
-type debugInfoServiceUploadClient struct {
+type debuginfoServiceUploadClient struct {
 	grpc.ClientStream
 }
 
-func (x *debugInfoServiceUploadClient) Send(m *UploadRequest) error {
+func (x *debuginfoServiceUploadClient) Send(m *UploadRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *debugInfoServiceUploadClient) CloseAndRecv() (*UploadResponse, error) {
+func (x *debuginfoServiceUploadClient) CloseAndRecv() (*UploadResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -90,12 +90,12 @@ func (x *debugInfoServiceUploadClient) CloseAndRecv() (*UploadResponse, error) {
 	return m, nil
 }
 
-func (c *debugInfoServiceClient) Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DebugInfoService_DownloadClient, error) {
-	stream, err := c.cc.NewStream(ctx, &DebugInfoService_ServiceDesc.Streams[1], "/parca.debuginfo.v1alpha1.DebugInfoService/Download", opts...)
+func (c *debuginfoServiceClient) Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DebuginfoService_DownloadClient, error) {
+	stream, err := c.cc.NewStream(ctx, &DebuginfoService_ServiceDesc.Streams[1], "/parca.debuginfo.v1alpha1.DebuginfoService/Download", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &debugInfoServiceDownloadClient{stream}
+	x := &debuginfoServiceDownloadClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -105,16 +105,16 @@ func (c *debugInfoServiceClient) Download(ctx context.Context, in *DownloadReque
 	return x, nil
 }
 
-type DebugInfoService_DownloadClient interface {
+type DebuginfoService_DownloadClient interface {
 	Recv() (*DownloadResponse, error)
 	grpc.ClientStream
 }
 
-type debugInfoServiceDownloadClient struct {
+type debuginfoServiceDownloadClient struct {
 	grpc.ClientStream
 }
 
-func (x *debugInfoServiceDownloadClient) Recv() (*DownloadResponse, error) {
+func (x *debuginfoServiceDownloadClient) Recv() (*DownloadResponse, error) {
 	m := new(DownloadResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -122,82 +122,82 @@ func (x *debugInfoServiceDownloadClient) Recv() (*DownloadResponse, error) {
 	return m, nil
 }
 
-// DebugInfoServiceServer is the server API for DebugInfoService service.
-// All implementations must embed UnimplementedDebugInfoServiceServer
+// DebuginfoServiceServer is the server API for DebuginfoService service.
+// All implementations must embed UnimplementedDebuginfoServiceServer
 // for forward compatibility
-type DebugInfoServiceServer interface {
-	// Exists returns true if the given build_id has debug info uploaded for it.
+type DebuginfoServiceServer interface {
+	// Exists returns true if the given build_id has debuginfo uploaded for it.
 	Exists(context.Context, *ExistsRequest) (*ExistsResponse, error)
-	// Upload ingests debug info for a given build_id
-	Upload(DebugInfoService_UploadServer) error
-	// Download returns the debug info for a given build_id.
-	Download(*DownloadRequest, DebugInfoService_DownloadServer) error
-	mustEmbedUnimplementedDebugInfoServiceServer()
+	// Upload ingests debuginfo for a given build_id
+	Upload(DebuginfoService_UploadServer) error
+	// Download returns the debuginfo for a given build_id.
+	Download(*DownloadRequest, DebuginfoService_DownloadServer) error
+	mustEmbedUnimplementedDebuginfoServiceServer()
 }
 
-// UnimplementedDebugInfoServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedDebugInfoServiceServer struct {
+// UnimplementedDebuginfoServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedDebuginfoServiceServer struct {
 }
 
-func (UnimplementedDebugInfoServiceServer) Exists(context.Context, *ExistsRequest) (*ExistsResponse, error) {
+func (UnimplementedDebuginfoServiceServer) Exists(context.Context, *ExistsRequest) (*ExistsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Exists not implemented")
 }
-func (UnimplementedDebugInfoServiceServer) Upload(DebugInfoService_UploadServer) error {
+func (UnimplementedDebuginfoServiceServer) Upload(DebuginfoService_UploadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Upload not implemented")
 }
-func (UnimplementedDebugInfoServiceServer) Download(*DownloadRequest, DebugInfoService_DownloadServer) error {
+func (UnimplementedDebuginfoServiceServer) Download(*DownloadRequest, DebuginfoService_DownloadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Download not implemented")
 }
-func (UnimplementedDebugInfoServiceServer) mustEmbedUnimplementedDebugInfoServiceServer() {}
+func (UnimplementedDebuginfoServiceServer) mustEmbedUnimplementedDebuginfoServiceServer() {}
 
-// UnsafeDebugInfoServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to DebugInfoServiceServer will
+// UnsafeDebuginfoServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DebuginfoServiceServer will
 // result in compilation errors.
-type UnsafeDebugInfoServiceServer interface {
-	mustEmbedUnimplementedDebugInfoServiceServer()
+type UnsafeDebuginfoServiceServer interface {
+	mustEmbedUnimplementedDebuginfoServiceServer()
 }
 
-func RegisterDebugInfoServiceServer(s grpc.ServiceRegistrar, srv DebugInfoServiceServer) {
-	s.RegisterService(&DebugInfoService_ServiceDesc, srv)
+func RegisterDebuginfoServiceServer(s grpc.ServiceRegistrar, srv DebuginfoServiceServer) {
+	s.RegisterService(&DebuginfoService_ServiceDesc, srv)
 }
 
-func _DebugInfoService_Exists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DebuginfoService_Exists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExistsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DebugInfoServiceServer).Exists(ctx, in)
+		return srv.(DebuginfoServiceServer).Exists(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/parca.debuginfo.v1alpha1.DebugInfoService/Exists",
+		FullMethod: "/parca.debuginfo.v1alpha1.DebuginfoService/Exists",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DebugInfoServiceServer).Exists(ctx, req.(*ExistsRequest))
+		return srv.(DebuginfoServiceServer).Exists(ctx, req.(*ExistsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DebugInfoService_Upload_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(DebugInfoServiceServer).Upload(&debugInfoServiceUploadServer{stream})
+func _DebuginfoService_Upload_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(DebuginfoServiceServer).Upload(&debuginfoServiceUploadServer{stream})
 }
 
-type DebugInfoService_UploadServer interface {
+type DebuginfoService_UploadServer interface {
 	SendAndClose(*UploadResponse) error
 	Recv() (*UploadRequest, error)
 	grpc.ServerStream
 }
 
-type debugInfoServiceUploadServer struct {
+type debuginfoServiceUploadServer struct {
 	grpc.ServerStream
 }
 
-func (x *debugInfoServiceUploadServer) SendAndClose(m *UploadResponse) error {
+func (x *debuginfoServiceUploadServer) SendAndClose(m *UploadResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *debugInfoServiceUploadServer) Recv() (*UploadRequest, error) {
+func (x *debuginfoServiceUploadServer) Recv() (*UploadRequest, error) {
 	m := new(UploadRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -205,48 +205,48 @@ func (x *debugInfoServiceUploadServer) Recv() (*UploadRequest, error) {
 	return m, nil
 }
 
-func _DebugInfoService_Download_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _DebuginfoService_Download_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(DownloadRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(DebugInfoServiceServer).Download(m, &debugInfoServiceDownloadServer{stream})
+	return srv.(DebuginfoServiceServer).Download(m, &debuginfoServiceDownloadServer{stream})
 }
 
-type DebugInfoService_DownloadServer interface {
+type DebuginfoService_DownloadServer interface {
 	Send(*DownloadResponse) error
 	grpc.ServerStream
 }
 
-type debugInfoServiceDownloadServer struct {
+type debuginfoServiceDownloadServer struct {
 	grpc.ServerStream
 }
 
-func (x *debugInfoServiceDownloadServer) Send(m *DownloadResponse) error {
+func (x *debuginfoServiceDownloadServer) Send(m *DownloadResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-// DebugInfoService_ServiceDesc is the grpc.ServiceDesc for DebugInfoService service.
+// DebuginfoService_ServiceDesc is the grpc.ServiceDesc for DebuginfoService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var DebugInfoService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "parca.debuginfo.v1alpha1.DebugInfoService",
-	HandlerType: (*DebugInfoServiceServer)(nil),
+var DebuginfoService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "parca.debuginfo.v1alpha1.DebuginfoService",
+	HandlerType: (*DebuginfoServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Exists",
-			Handler:    _DebugInfoService_Exists_Handler,
+			Handler:    _DebuginfoService_Exists_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Upload",
-			Handler:       _DebugInfoService_Upload_Handler,
+			Handler:       _DebuginfoService_Upload_Handler,
 			ClientStreams: true,
 		},
 		{
 			StreamName:    "Download",
-			Handler:       _DebugInfoService_Download_Handler,
+			Handler:       _DebuginfoService_Download_Handler,
 			ServerStreams: true,
 		},
 	},

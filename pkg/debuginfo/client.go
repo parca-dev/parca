@@ -27,7 +27,7 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
-var ErrDebugInfoAlreadyExists = errors.New("debug info already exists")
+var ErrDebuginfoAlreadyExists = errors.New("debuginfo already exists")
 
 const (
 	// ChunkSize 8MB is the size of the chunks in which debuginfo files are
@@ -39,12 +39,12 @@ const (
 )
 
 type Client struct {
-	c debuginfopb.DebugInfoServiceClient
+	c debuginfopb.DebuginfoServiceClient
 }
 
-func NewDebugInfoClient(conn *grpc.ClientConn) *Client {
+func NewDebuginfoClient(conn *grpc.ClientConn) *Client {
 	return &Client{
-		c: debuginfopb.NewDebugInfoServiceClient(conn),
+		c: debuginfopb.NewDebuginfoServiceClient(conn),
 	}
 }
 
@@ -132,7 +132,7 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 }
 
 type Downloader struct {
-	stream debuginfopb.DebugInfoService_DownloadClient
+	stream debuginfopb.DebuginfoService_DownloadClient
 	info   *debuginfopb.DownloadInfo
 }
 
@@ -199,7 +199,7 @@ func (d *Downloader) Download(ctx context.Context, w io.Writer) (int, error) {
 func sentinelError(err error) error {
 	if sts, ok := status.FromError(err); ok {
 		if sts.Code() == codes.AlreadyExists {
-			return ErrDebugInfoAlreadyExists
+			return ErrDebuginfoAlreadyExists
 		}
 	}
 	return nil

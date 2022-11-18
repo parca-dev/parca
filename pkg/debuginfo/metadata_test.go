@@ -58,7 +58,7 @@ func TestMetadata(t *testing.T) {
 		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
 		bucket,
-		NopDebugInfodClient{},
+		NopDebuginfodClient{},
 	)
 	require.NoError(t, err)
 

@@ -9,7 +9,7 @@ Parca contains multiple service packages for its functionality.
 - query
 - scrape
 
-_debuginfo:_ is a service that allows storage of debug info
+_debuginfo:_ is a service that allows storage of debuginfo
 
 _profilestore:_ is a service that allows writing pprof profiles to the service
 

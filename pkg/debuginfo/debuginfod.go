@@ -28,17 +28,17 @@ import (
 	"golang.org/x/net/context"
 )
 
-type DebugInfodClient interface {
-	GetDebugInfo(ctx context.Context, buildid string) (io.ReadCloser, error)
+type DebuginfodClient interface {
+	GetDebuginfo(ctx context.Context, buildid string) (io.ReadCloser, error)
 }
 
-type NopDebugInfodClient struct{}
+type NopDebuginfodClient struct{}
 
-func (NopDebugInfodClient) GetDebugInfo(context.Context, string) (io.ReadCloser, error) {
-	return io.NopCloser(bytes.NewReader(nil)), ErrDebugInfoNotFound
+func (NopDebuginfodClient) GetDebuginfo(context.Context, string) (io.ReadCloser, error) {
+	return io.NopCloser(bytes.NewReader(nil)), ErrDebuginfoNotFound
 }
 
-type HTTPDebugInfodClient struct {
+type HTTPDebuginfodClient struct {
 	logger log.Logger
 	client *http.Client
 
@@ -46,15 +46,15 @@ type HTTPDebugInfodClient struct {
 	timeoutDuration time.Duration
 }
 
-type DebugInfodClientObjectStorageCache struct {
+type DebuginfodClientObjectStorageCache struct {
 	logger log.Logger
 
-	client DebugInfodClient
+	client DebuginfodClient
 	bucket objstore.Bucket
 }
 
-// NewHTTPDebugInfodClient returns a new HTTP debug info client.
-func NewHTTPDebugInfodClient(logger log.Logger, serverURLs []string, timeoutDuration time.Duration) (*HTTPDebugInfodClient, error) {
+// NewHTTPDebuginfodClient returns a new HTTP debuginfo client.
+func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, timeoutDuration time.Duration) (*HTTPDebuginfodClient, error) {
 	logger = log.With(logger, "component", "debuginfod")
 	parsedURLs := make([]*url.URL, 0, len(serverURLs))
 	for _, serverURL := range serverURLs {
@@ -67,7 +67,7 @@ func NewHTTPDebugInfodClient(logger log.Logger, serverURLs []string, timeoutDura
 			return nil, fmt.Errorf("unsupported scheme %q", u.Scheme)
 		}
 	}
-	return &HTTPDebugInfodClient{
+	return &HTTPDebuginfodClient{
 		logger:          logger,
 		UpstreamServers: parsedURLs,
 		timeoutDuration: timeoutDuration,
@@ -75,9 +75,9 @@ func NewHTTPDebugInfodClient(logger log.Logger, serverURLs []string, timeoutDura
 	}, nil
 }
 
-// NewDebugInfodClientWithObjectStorageCache creates a new DebugInfodClient that caches the debug information in the object storage.
-func NewDebugInfodClientWithObjectStorageCache(logger log.Logger, bucket objstore.Bucket, h DebugInfodClient) (DebugInfodClient, error) {
-	return &DebugInfodClientObjectStorageCache{
+// NewDebuginfodClientWithObjectStorageCache creates a new DebuginfodClient that caches the debug information in the object storage.
+func NewDebuginfodClientWithObjectStorageCache(logger log.Logger, bucket objstore.Bucket, h DebuginfodClient) (DebuginfodClient, error) {
+	return &DebuginfodClientObjectStorageCache{
 		logger: logger,
 		client: h,
 		bucket: bucket,
@@ -93,10 +93,10 @@ type readCloser struct {
 	closer
 }
 
-// GetDebugInfo returns debug info for given buildid while caching it in object storage.
-func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
+// GetDebuginfo returns debuginfo for given buildid while caching it in object storage.
+func (c *DebuginfodClientObjectStorageCache) GetDebuginfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
 	logger := log.With(c.logger, "buildid", buildID)
-	debugInfo, err := c.client.GetDebugInfo(ctx, buildID)
+	debuginfo, err := c.client.GetDebuginfo(ctx, buildID)
 	if err != nil {
 		return nil, err
 	}
@@ -104,18 +104,18 @@ func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, b
 	r, w := io.Pipe()
 	go func() {
 		defer w.Close()
-		defer debugInfo.Close()
+		defer debuginfo.Close()
 
-		// TODO(kakkoyun): Use store.upload() to upload the debug info to object storage.
+		// TODO(kakkoyun): Use store.upload() to upload the debuginfo to object storage.
 		if err := c.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
 			level.Error(logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err)
 		}
 	}()
 
 	return readCloser{
-		Reader: io.TeeReader(debugInfo, w),
+		Reader: io.TeeReader(debuginfo, w),
 		closer: closer(func() error {
-			defer debugInfo.Close()
+			defer debuginfo.Close()
 
 			if err := w.Close(); err != nil {
 				return err
@@ -125,8 +125,8 @@ func (c *DebugInfodClientObjectStorageCache) GetDebugInfo(ctx context.Context, b
 	}, nil
 }
 
-// GetDebugInfo returns debug information file for given buildID by downloading it from upstream servers.
-func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
+// GetDebuginfo returns debug information file for given buildID by downloading it from upstream servers.
+func (c *HTTPDebuginfodClient) GetDebuginfo(ctx context.Context, buildID string) (io.ReadCloser, error) {
 	logger := log.With(c.logger, "buildid", buildID)
 
 	// e.g:
@@ -153,7 +153,7 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 		}(serverURL)
 		if err != nil {
 			level.Warn(logger).Log(
-				"msg", "failed to download debug info file from upstream debuginfod server, trying next one (if exists)",
+				"msg", "failed to download debuginfo file from upstream debuginfod server, trying next one (if exists)",
 				"server", serverURL, "err", err,
 			)
 			continue
@@ -162,10 +162,10 @@ func (c *HTTPDebugInfodClient) GetDebugInfo(ctx context.Context, buildID string)
 			return rc, nil
 		}
 	}
-	return nil, ErrDebugInfoNotFound
+	return nil, ErrDebuginfoNotFound
 }
 
-func (c *HTTPDebugInfodClient) request(ctx context.Context, u url.URL, buildID string) (io.ReadCloser, error) {
+func (c *HTTPDebuginfodClient) request(ctx context.Context, u url.URL, buildID string) (io.ReadCloser, error) {
 	// https://www.mankier.com/8/debuginfod#Webapi
 	// Endpoint: /buildid/BUILDID/debuginfo
 	// If the given buildid is known to the server,
@@ -187,7 +187,7 @@ func (c *HTTPDebugInfodClient) request(ctx context.Context, u url.URL, buildID s
 		return resp.Body, nil
 	case 4:
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, ErrDebugInfoNotFound
+			return nil, ErrDebuginfoNotFound
 		}
 		return nil, fmt.Errorf("client error: %s", resp.Status)
 	case 5:

@@ -9841,8 +9841,8 @@
               "15": 119
             },
             "startLine": "0",
-            "name": "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1.RegisterDebugInfoServiceHandlerFromEndpoint.func1.1",
-            "systemName": "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1.RegisterDebugInfoServiceHandlerFromEndpoint.func1.1",
+            "name": "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1.RegisterDebuginfoServiceHandlerFromEndpoint.func1.1",
+            "systemName": "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1.RegisterDebuginfoServiceHandlerFromEndpoint.func1.1",
             "filename": "/Users/monicawojciechowski/Documents/parca/gen/proto/go/parca/debuginfo/v1alpha1/debuginfo.pb.gw.go"
           },
           "line": {

@@ -19,8 +19,8 @@ function(agentVersion='v0.4.1', separateUI=true)
     // Disabled in dev mode to be able to attach a debugger to container
     livenessProbe: false,
     readinessProbe: false,
-    debugInfodUpstreamServers: [],
-    // debugInfodHTTPRequestTimeout: '5m',
+    debuginfodUpstreamServers: [],
+    // debuginfodHTTPRequestTimeout: '5m',
   });
 
   local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({

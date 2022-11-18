@@ -6,7 +6,7 @@
   },
   "tags": [
     {
-      "name": "DebugInfoService"
+      "name": "DebuginfoService"
     }
   ],
   "consumes": [
@@ -37,10 +37,10 @@
         "size": {
           "type": "string",
           "format": "uint64",
-          "title": "size is the number of bytes of the debug info"
+          "title": "size is the number of bytes of the debuginfo"
         }
       },
-      "title": "UploadResponse returns the build_id and the size of the uploaded debug info"
+      "title": "UploadResponse returns the build_id and the size of the uploaded debuginfo"
     },
     "protobufAny": {
       "type": "object",
@@ -84,12 +84,12 @@
       "properties": {
         "info": {
           "$ref": "#/definitions/v1alpha1DownloadInfo",
-          "title": "info is the metadata for the debug info"
+          "title": "info is the metadata for the debuginfo"
         },
         "chunkData": {
           "type": "string",
           "format": "byte",
-          "title": "chunk_data is the raw bytes of the debug info"
+          "title": "chunk_data is the raw bytes of the debuginfo"
         }
       },
       "description": "DownloadRequest returns chunked data of the debuginfo."
@@ -102,7 +102,7 @@
           "title": "exists indicates if there is debug data present for the given build_id"
         }
       },
-      "title": "ExistsResponse returns whether the given build_id has debug info"
+      "title": "ExistsResponse returns whether the given build_id has debuginfo"
     },
     "v1alpha1UploadInfo": {
       "type": "object",

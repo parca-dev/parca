@@ -51,7 +51,7 @@ type Symbolizer struct {
 
 	metastore  pb.MetastoreServiceClient
 	symbolizer *symbol.Symbolizer
-	debuginfo  DebugInfoFetcher
+	debuginfo  DebuginfoFetcher
 
 	// We want two different cache dirs for debuginfo and debuginfod as one of
 	// them is intended to be for files that are publicly available the other
@@ -62,17 +62,17 @@ type Symbolizer struct {
 	batchSize uint32
 }
 
-type DebugInfoFetcher interface {
-	// Fetch ensures that the debug info for the given build ID is available on
+type DebuginfoFetcher interface {
+	// Fetch ensures that the debuginfo for the given build ID is available on
 	// a local filesystem and returns a path to it.
-	FetchDebugInfo(ctx context.Context, buildID string) (string, debuginfopb.DownloadInfo_Source, error)
+	FetchDebuginfo(ctx context.Context, buildID string) (string, debuginfopb.DownloadInfo_Source, error)
 }
 
 func New(
 	logger log.Logger,
 	reg prometheus.Registerer,
 	metastore pb.MetastoreServiceClient,
-	debuginfo DebugInfoFetcher,
+	debuginfo DebuginfoFetcher,
 	symbolizer *symbol.Symbolizer,
 	debuginfodCacheDir string,
 	debuginfoCacheDir string,
@@ -314,13 +314,13 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 	return nil
 }
 
-// symbolizeLocationsForMapping fetches the debug info for a given build ID and symbolizes it the
+// symbolizeLocationsForMapping fetches the debuginfo for a given build ID and symbolizes it the
 // given location.
 func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Mapping, locations []*pb.Location) ([][]profile.LocationLine, error) {
 	logger := log.With(s.logger, "buildid", m.BuildId)
 
-	// Fetch the debug info for the build ID.
-	objFile, _, err := s.debuginfo.FetchDebugInfo(ctx, m.BuildId)
+	// Fetch the debuginfo for the build ID.
+	objFile, _, err := s.debuginfo.FetchDebuginfo(ctx, m.BuildId)
 	if err != nil {
 		return nil, fmt.Errorf("fetch debuginfo (BuildID: %q): %w", m.BuildId, err)
 	}

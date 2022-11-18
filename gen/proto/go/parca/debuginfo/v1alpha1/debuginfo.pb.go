@@ -73,7 +73,7 @@ func (DownloadInfo_Source) EnumDescriptor() ([]byte, []int) {
 	return file_parca_debuginfo_v1alpha1_debuginfo_proto_rawDescGZIP(), []int{7, 0}
 }
 
-// ExistsRequest request to determine if debug info exists for a given build_id
+// ExistsRequest request to determine if debuginfo exists for a given build_id
 type ExistsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -131,7 +131,7 @@ func (x *ExistsRequest) GetHash() string {
 	return ""
 }
 
-// ExistsResponse returns whether the given build_id has debug info
+// ExistsResponse returns whether the given build_id has debuginfo
 type ExistsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -180,13 +180,13 @@ func (x *ExistsResponse) GetExists() bool {
 	return false
 }
 
-// UploadRequest upload debug info
+// UploadRequest upload debuginfo
 type UploadRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// data contains either the upload info metadata or the debug info
+	// data contains either the upload info metadata or the debuginfo
 	//
 	// Types that are assignable to Data:
 	//	*UploadRequest_Info
@@ -252,12 +252,12 @@ type isUploadRequest_Data interface {
 }
 
 type UploadRequest_Info struct {
-	// info is the metadata for the debug info
+	// info is the metadata for the debuginfo
 	Info *UploadInfo `protobuf:"bytes,1,opt,name=info,proto3,oneof"`
 }
 
 type UploadRequest_ChunkData struct {
-	// chunk_data is the raw bytes of the debug info
+	// chunk_data is the raw bytes of the debuginfo
 	ChunkData []byte `protobuf:"bytes,2,opt,name=chunk_data,json=chunkData,proto3,oneof"`
 }
 
@@ -323,7 +323,7 @@ func (x *UploadInfo) GetHash() string {
 	return ""
 }
 
-// UploadResponse returns the build_id and the size of the uploaded debug info
+// UploadResponse returns the build_id and the size of the uploaded debuginfo
 type UploadResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -331,7 +331,7 @@ type UploadResponse struct {
 
 	// build_id is a unique identifier for the debug data
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
-	// size is the number of bytes of the debug info
+	// size is the number of bytes of the debuginfo
 	Size uint64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
 }
 
@@ -381,7 +381,7 @@ func (x *UploadResponse) GetSize() uint64 {
 	return 0
 }
 
-// DownloadRequest upload debug info
+// DownloadRequest upload debuginfo
 type DownloadRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -436,7 +436,7 @@ type DownloadResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// data contains either the upload info metadata or the debug info
+	// data contains either the upload info metadata or the debuginfo
 	//
 	// Types that are assignable to Data:
 	//	*DownloadResponse_Info
@@ -502,12 +502,12 @@ type isDownloadResponse_Data interface {
 }
 
 type DownloadResponse_Info struct {
-	// info is the metadata for the debug info
+	// info is the metadata for the debuginfo
 	Info *DownloadInfo `protobuf:"bytes,1,opt,name=info,proto3,oneof"`
 }
 
 type DownloadResponse_ChunkData struct {
-	// chunk_data is the raw bytes of the debug info
+	// chunk_data is the raw bytes of the debuginfo
 	ChunkData []byte `protobuf:"bytes,2,opt,name=chunk_data,json=chunkData,proto3,oneof"`
 }
 
@@ -615,7 +615,7 @@ var file_parca_debuginfo_v1alpha1_debuginfo_proto_rawDesc = []byte{
 	0x0d, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x55, 0x50, 0x4c, 0x4f, 0x41, 0x44, 0x10, 0x01,
 	0x12, 0x15, 0x0a, 0x11, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x44, 0x45, 0x42, 0x55, 0x47,
 	0x49, 0x4e, 0x46, 0x4f, 0x44, 0x10, 0x02, 0x32, 0xb9, 0x02, 0x0a, 0x10, 0x44, 0x65, 0x62, 0x75,
-	0x67, 0x49, 0x6e, 0x66, 0x6f, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x5d, 0x0a, 0x06,
+	0x67, 0x69, 0x6e, 0x66, 0x6f, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x5d, 0x0a, 0x06,
 	0x45, 0x78, 0x69, 0x73, 0x74, 0x73, 0x12, 0x27, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x64,
 	0x65, 0x62, 0x75, 0x67, 0x69, 0x6e, 0x66, 0x6f, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
 	0x31, 0x2e, 0x45, 0x78, 0x69, 0x73, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
@@ -683,12 +683,12 @@ var file_parca_debuginfo_v1alpha1_debuginfo_proto_depIdxs = []int32{
 	4, // 0: parca.debuginfo.v1alpha1.UploadRequest.info:type_name -> parca.debuginfo.v1alpha1.UploadInfo
 	8, // 1: parca.debuginfo.v1alpha1.DownloadResponse.info:type_name -> parca.debuginfo.v1alpha1.DownloadInfo
 	0, // 2: parca.debuginfo.v1alpha1.DownloadInfo.source:type_name -> parca.debuginfo.v1alpha1.DownloadInfo.Source
-	1, // 3: parca.debuginfo.v1alpha1.DebugInfoService.Exists:input_type -> parca.debuginfo.v1alpha1.ExistsRequest
-	3, // 4: parca.debuginfo.v1alpha1.DebugInfoService.Upload:input_type -> parca.debuginfo.v1alpha1.UploadRequest
-	6, // 5: parca.debuginfo.v1alpha1.DebugInfoService.Download:input_type -> parca.debuginfo.v1alpha1.DownloadRequest
-	2, // 6: parca.debuginfo.v1alpha1.DebugInfoService.Exists:output_type -> parca.debuginfo.v1alpha1.ExistsResponse
-	5, // 7: parca.debuginfo.v1alpha1.DebugInfoService.Upload:output_type -> parca.debuginfo.v1alpha1.UploadResponse
-	7, // 8: parca.debuginfo.v1alpha1.DebugInfoService.Download:output_type -> parca.debuginfo.v1alpha1.DownloadResponse
+	1, // 3: parca.debuginfo.v1alpha1.DebuginfoService.Exists:input_type -> parca.debuginfo.v1alpha1.ExistsRequest
+	3, // 4: parca.debuginfo.v1alpha1.DebuginfoService.Upload:input_type -> parca.debuginfo.v1alpha1.UploadRequest
+	6, // 5: parca.debuginfo.v1alpha1.DebuginfoService.Download:input_type -> parca.debuginfo.v1alpha1.DownloadRequest
+	2, // 6: parca.debuginfo.v1alpha1.DebuginfoService.Exists:output_type -> parca.debuginfo.v1alpha1.ExistsResponse
+	5, // 7: parca.debuginfo.v1alpha1.DebuginfoService.Upload:output_type -> parca.debuginfo.v1alpha1.UploadResponse
+	7, // 8: parca.debuginfo.v1alpha1.DebuginfoService.Download:output_type -> parca.debuginfo.v1alpha1.DownloadResponse
 	6, // [6:9] is the sub-list for method output_type
 	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

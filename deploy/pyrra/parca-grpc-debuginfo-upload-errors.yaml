@@ -13,6 +13,6 @@ spec:
   indicator:
     ratio:
       errors:
-        metric: grpc_server_handled_total{grpc_service="parca.debuginfo.v1alpha1.DebugInfoService",grpc_method="Upload",grpc_code=~"Aborted|Unavailable|Internal|Unknown|Unimplemented|DataLoss"}
+        metric: grpc_server_handled_total{grpc_service="parca.debuginfo.v1alpha1.DebuginfoService",grpc_method="Upload",grpc_code=~"Aborted|Unavailable|Internal|Unknown|Unimplemented|DataLoss"}
       total:
-        metric: grpc_server_handled_total{grpc_service="parca.debuginfo.v1alpha1.DebugInfoService",grpc_method="Upload"}
+        metric: grpc_server_handled_total{grpc_service="parca.debuginfo.v1alpha1.DebuginfoService",grpc_method="Upload"}

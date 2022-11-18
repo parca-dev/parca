@@ -427,10 +427,10 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	)
 	require.NoError(t, err)
 
-	debugInfoCacheDir, err := os.MkdirTemp("", "parca-debuginfo-test-cache-*")
+	debuginfoCacheDir, err := os.MkdirTemp("", "parca-debuginfo-test-cache-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		os.RemoveAll(debugInfoCacheDir)
+		os.RemoveAll(debuginfoCacheDir)
 	})
 
 	symbolizerCacheDir, err := os.MkdirTemp("", "parca-symbolizer-test-cache-*")
@@ -457,10 +457,10 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	dbgStr, err := debuginfo.NewStore(
 		tracer,
 		logger,
-		debugInfoCacheDir,
+		debuginfoCacheDir,
 		metadata,
 		bucket,
-		debuginfo.NopDebugInfodClient{},
+		debuginfo.NopDebuginfodClient{},
 	)
 	require.NoError(t, err)
 
@@ -491,7 +491,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		grpcServer.GracefulStop()
 	})
 
-	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, dbgStr)
+	debuginfopb.RegisterDebuginfoServiceServer(grpcServer, dbgStr)
 	profilestorepb.RegisterProfileStoreServiceServer(grpcServer, pStr)
 
 	go func() {

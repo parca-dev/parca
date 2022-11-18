@@ -39,7 +39,7 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-var ErrDebugInfoNotFound = errors.New("debug info not found")
+var ErrDebuginfoNotFound = errors.New("debuginfo not found")
 
 type CacheProvider string
 
@@ -69,7 +69,7 @@ type MetadataManager interface {
 }
 
 type Store struct {
-	debuginfopb.UnimplementedDebugInfoServiceServer
+	debuginfopb.UnimplementedDebuginfoServiceServer
 
 	tracer   trace.Tracer
 	logger   log.Logger
@@ -78,17 +78,17 @@ type Store struct {
 	bucket objstore.Bucket
 
 	metadata         MetadataManager
-	debuginfodClient DebugInfodClient
+	debuginfodClient DebuginfodClient
 }
 
-// NewStore returns a new debug info store.
+// NewStore returns a new debuginfo store.
 func NewStore(
 	tracer trace.Tracer,
 	logger log.Logger,
 	cacheDir string,
 	metadata MetadataManager,
 	bucket objstore.Bucket,
-	debuginfodClient DebugInfodClient,
+	debuginfodClient DebuginfodClient,
 ) (*Store, error) {
 	return &Store{
 		tracer:           tracer,
@@ -139,7 +139,7 @@ func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*de
 	return &debuginfopb.ExistsResponse{Exists: false}, nil
 }
 
-func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
+func (s *Store) Upload(stream debuginfopb.DebuginfoService_UploadServer) error {
 	req, err := stream.Recv()
 	if err != nil {
 		msg := "failed to receive upload info"
@@ -162,7 +162,7 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 		return err
 	}
 
-	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
+	level.Debug(s.logger).Log("msg", "debuginfo uploaded", "buildid", buildID)
 	return stream.SendAndClose(&debuginfopb.UploadResponse{
 		BuildId: buildID,
 		Size:    r.size,
@@ -178,7 +178,7 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		return status.Error(codes.InvalidArgument, fmt.Errorf("invalid hash: %w", err).Error())
 	}
 
-	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
+	level.Debug(s.logger).Log("msg", "trying to upload debuginfo", "buildid", buildID)
 
 	metadataFile, err := s.metadata.Fetch(ctx, buildID)
 	if err == nil {
@@ -188,13 +188,13 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 		case MetadataStateCorrupted:
 			// Corrupted. Re-upload.
 		case MetadataStateUploaded:
-			// The debug info was fully uploaded.
+			// The debuginfo was fully uploaded.
 			return status.Error(codes.AlreadyExists, "debuginfo already exists")
 		case MetadataStateUploading:
 			if !isStale(metadataFile) {
 				return status.Error(codes.AlreadyExists, "debuginfo already exists, being uploaded right now")
 			}
-			// The debug info upload operation most likely failed.
+			// The debuginfo upload operation most likely failed.
 		default:
 			return status.Error(codes.Internal, "unknown metadata state")
 		}
@@ -211,12 +211,12 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 
 	if found && (metadataFile == nil || (metadataFile != nil && metadataFile.State != MetadataStateCorrupted)) {
 		if hash != "" && metadataFile != nil && metadataFile.Hash == hash {
-			level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
+			level.Debug(s.logger).Log("msg", "debuginfo already exists", "buildid", buildID)
 			return status.Error(codes.AlreadyExists, "debuginfo already exists")
 		}
 
-		objFile, _, err := s.FetchDebugInfo(ctx, buildID)
-		if err != nil && !errors.Is(err, ErrDebugInfoNotFound) {
+		objFile, _, err := s.FetchDebuginfo(ctx, buildID)
+		if err != nil && !errors.Is(err, ErrDebuginfoNotFound) {
 			return status.Error(codes.Internal, err.Error())
 		}
 
@@ -295,7 +295,7 @@ func isStale(metadataFile *Metadata) bool {
 	return time.Now().Add(-15 * time.Minute).After(time.Unix(metadataFile.UploadStartedAt, 0))
 }
 
-func (s *Store) Download(req *debuginfopb.DownloadRequest, stream debuginfopb.DebugInfoService_DownloadServer) error {
+func (s *Store) Download(req *debuginfopb.DownloadRequest, stream debuginfopb.DebuginfoService_DownloadServer) error {
 	if err := validateInput(req.BuildId); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -322,9 +322,9 @@ func (s *Store) Download(req *debuginfopb.DownloadRequest, stream debuginfopb.De
 		return status.Error(codes.Unavailable, "debuginfo is being uploaded")
 	}
 
-	objFile, source, err := s.FetchDebugInfo(ctx, req.BuildId)
+	objFile, source, err := s.FetchDebuginfo(ctx, req.BuildId)
 	if err != nil {
-		if errors.Is(err, ErrDebugInfoNotFound) {
+		if errors.Is(err, ErrDebuginfoNotFound) {
 			return status.Error(codes.NotFound, err.Error())
 		}
 		return status.Error(codes.Internal, err.Error())
@@ -395,14 +395,14 @@ func (s *Store) find(ctx context.Context, key string) (bool, error) {
 	return found, nil
 }
 
-func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, debuginfopb.DownloadInfo_Source, error) {
+func (s *Store) FetchDebuginfo(ctx context.Context, buildID string) (string, debuginfopb.DownloadInfo_Source, error) {
 	logger := log.With(s.logger, "buildid", buildID)
 
 	source := debuginfopb.DownloadInfo_SOURCE_UNKNOWN_UNSPECIFIED
 	objFile, err := s.fetchFromObjectStore(ctx, buildID)
 	if err != nil {
 		// It's ok if we don't have the symbols for given BuildID, it happens too often.
-		if errors.Is(err, ErrDebugInfoNotFound) {
+		if errors.Is(err, ErrDebuginfoNotFound) {
 			level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
 		} else {
 			level.Warn(logger).Log("msg", "failed to fetch object", "err", err)
@@ -455,7 +455,7 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 				// Try to download a better version from debuginfod servers.
 				dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
 				if err != nil {
-					if errors.Is(err, ErrDebugInfoNotFound) {
+					if errors.Is(err, ErrDebuginfoNotFound) {
 						level.Debug(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
 					} else {
 						level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
@@ -482,14 +482,14 @@ func (s *Store) fetchFromObjectStore(ctx context.Context, buildID string) (strin
 		if err != nil {
 			if s.bucket.IsObjNotFoundErr(err) {
 				level.Debug(logger).Log("msg", "failed to fetch object from object storage", "err", err)
-				return "", ErrDebugInfoNotFound
+				return "", ErrDebuginfoNotFound
 			}
 			return "", fmt.Errorf("failed to fetch object: %w", err)
 		}
 
 		// Cache the file locally.
 		if err := s.cache(objFile, r); err != nil {
-			return "", fmt.Errorf("failed to fetch debug info file: %w", err)
+			return "", fmt.Errorf("failed to fetch debuginfo file: %w", err)
 		}
 	}
 
@@ -502,13 +502,13 @@ func (s *Store) fetchDebuginfodFile(ctx context.Context, buildID string) (string
 
 	objFile := s.localCachePath(buildID)
 	// Try downloading the debuginfo file from the debuginfod server.
-	r, err := s.debuginfodClient.GetDebugInfo(ctx, buildID)
+	r, err := s.debuginfodClient.GetDebuginfo(ctx, buildID)
 	if err != nil {
 		level.Debug(logger).Log("msg", "failed to download debuginfo from debuginfod", "err", err)
 		return "", fmt.Errorf("failed to fetch from debuginfod: %w", err)
 	}
 	defer r.Close()
-	level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
+	level.Info(logger).Log("msg", "debuginfo downloaded from debuginfod server")
 
 	// Cache the file locally.
 	if err := s.cache(objFile, r); err != nil {
@@ -532,22 +532,22 @@ func (s *Store) cache(localPath string, r io.ReadCloser) error {
 
 	written, err := io.Copy(tmpfile, r)
 	if err != nil {
-		return fmt.Errorf("copy debug info file to local temp file: %w", err)
+		return fmt.Errorf("copy debuginfo file to local temp file: %w", err)
 	}
 	if err := tmpfile.Close(); err != nil {
-		return fmt.Errorf("close tempfile to write debug info file: %w", err)
+		return fmt.Errorf("close tempfile to write debuginfo file: %w", err)
 	}
 	if written == 0 {
-		return fmt.Errorf("received empty debug info: %w", ErrDebugInfoNotFound)
+		return fmt.Errorf("received empty debuginfo: %w", ErrDebuginfoNotFound)
 	}
 
 	err = os.MkdirAll(path.Dir(localPath), 0o700)
 	if err != nil {
-		return fmt.Errorf("create debug info file directory: %w", err)
+		return fmt.Errorf("create debuginfo file directory: %w", err)
 	}
 	// Need to use rename to make the "creation" atomic.
 	if err := os.Rename(tmpfile.Name(), localPath); err != nil {
-		return fmt.Errorf("atomically move downloaded debug info file: %w", err)
+		return fmt.Errorf("atomically move downloaded debuginfo file: %w", err)
 	}
 	return nil
 }

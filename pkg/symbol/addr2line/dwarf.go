@@ -26,16 +26,16 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
 )
 
-// DwarfLiner is a symbolizer that uses DWARF debug info to symbolize addresses.
+// DwarfLiner is a symbolizer that uses DWARF debuginfo to symbolize addresses.
 type DwarfLiner struct {
 	logger log.Logger
 
-	dbgFile elfutils.DebugInfoFile
+	dbgFile elfutils.DebuginfoFile
 }
 
 // DWARF creates a new DwarfLiner.
 func DWARF(logger log.Logger, f *elf.File, demangler *demangle.Demangler) (*DwarfLiner, error) {
-	dbgFile, err := elfutils.NewDebugInfoFile(f, demangler)
+	dbgFile, err := elfutils.NewDebuginfoFile(f, demangler)
 	if err != nil {
 		return nil, err
 	}

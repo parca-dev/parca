@@ -103,18 +103,18 @@ func NewSymbolizer(logger log.Logger, opts ...Option) (*Symbolizer, error) {
 }
 
 // Symbolize symbolizes locations for the given mapping and object file path
-// using DwarfLiner if the file contains debug info.
+// using DwarfLiner if the file contains debuginfo.
 // Otherwise it attempts to use GoLiner, and falls back to SymtabLiner as a last resort.
-func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Location, debugInfoFile string) ([][]profile.LocationLine, error) {
+func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*pb.Location, debuginfoFile string) ([][]profile.LocationLine, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	logger := log.With(s.logger, "buildid", m.BuildId, "debuginfo_file", debugInfoFile)
+	logger := log.With(s.logger, "buildid", m.BuildId, "debuginfo_file", debuginfoFile)
 
-	liner, err := s.liner(m, debugInfoFile)
+	liner, err := s.liner(m, debuginfoFile)
 	if err != nil {
 		const msg = "failed to create liner"
 		level.Debug(logger).Log("msg", msg, "err", err)
@@ -122,7 +122,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*
 	}
 
 	// Generate a hash key to use for error tracking.
-	key, err := hash.File(debugInfoFile)
+	key, err := hash.File(debuginfoFile)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to generate cache key", "err", err)
 		key = m.BuildId

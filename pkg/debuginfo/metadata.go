@@ -28,22 +28,22 @@ import (
 )
 
 var (
-	ErrMetadataShouldExist     = errors.New("debug info metadata should exist")
-	ErrMetadataUnexpectedState = errors.New("debug info metadata state is unexpected")
-	// There's no debug info metadata. This could mean that an older version
-	// uploaded the debug info files, but there's no record of the metadata, yet.
-	ErrMetadataNotFound = errors.New("debug info metadata not found")
+	ErrMetadataShouldExist     = errors.New("debuginfo metadata should exist")
+	ErrMetadataUnexpectedState = errors.New("debuginfo metadata state is unexpected")
+	// There's no debuginfo metadata. This could mean that an older version
+	// uploaded the debuginfo files, but there's no record of the metadata, yet.
+	ErrMetadataNotFound = errors.New("debuginfo metadata not found")
 )
 
 type MetadataState int64
 
 const (
 	MetadataStateUnknown MetadataState = iota
-	// The debug info file is being uploaded.
+	// The debuginfo file is being uploaded.
 	MetadataStateUploading
-	// The debug info file is fully uploaded.
+	// The debuginfo file is fully uploaded.
 	MetadataStateUploaded
-	// The debug info file is corrupted.
+	// The debuginfo file is corrupted.
 	MetadataStateCorrupted
 )
 

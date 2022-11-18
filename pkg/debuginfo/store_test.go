@@ -65,7 +65,7 @@ func TestStore(t *testing.T) {
 		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
 		bucket,
-		NopDebugInfodClient{},
+		NopDebuginfodClient{},
 	)
 	require.NoError(t, err)
 
@@ -75,7 +75,7 @@ func TestStore(t *testing.T) {
 	}
 	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
-	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, s)
+	debuginfopb.RegisterDebuginfoServiceServer(grpcServer, s)
 	go func() {
 		err := grpcServer.Serve(lis)
 		if err != nil {
@@ -86,7 +86,7 @@ func TestStore(t *testing.T) {
 	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 	defer conn.Close()
-	c := NewDebugInfoClient(conn)
+	c := NewDebuginfoClient(conn)
 
 	b := bytes.NewBuffer(nil)
 	for i := 0; i < 1024; i++ {
