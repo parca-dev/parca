@@ -65,7 +65,7 @@
     "@types/lodash.throttle": "4.1.7",
     "@types/react-datepicker": "4.8.0",
     "chromatic": "6.11.4",
-    "css-loader": "6.7.1",
+    "css-loader": "6.7.2",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-import": "2.26.0",
     "jest": "28.1.3",
