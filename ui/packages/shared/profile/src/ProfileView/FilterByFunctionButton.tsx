@@ -21,9 +21,9 @@ import {
 import {useState} from 'react';
 
 const FilterByFunctionButton = (): JSX.Element => {
-  const [value, setValue] = useState<string>('');
   const dispatch = useAppDispatch();
   const storeVal = useAppSelector(selectFilterByFunction);
+  const [value, setValue] = useState<string>(storeVal ?? '');
 
   const onAction = (): void => {
     dispatch(setFilterByFunction(value));
@@ -35,7 +35,7 @@ const FilterByFunctionButton = (): JSX.Element => {
       className="text-sm"
       onAction={onAction}
       onChange={e => setValue(e.target.value)}
-      value={value ?? ''}
+      value={value}
       onBlur={() => setValue(storeVal ?? '')}
     />
   );
