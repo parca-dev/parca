@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Button from './Button';
+import Button, {IconButton} from './Button';
 import ButtonGroup from './ButtonGroup';
 import Card from './Card';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
@@ -42,6 +42,7 @@ export {
   Dropdown,
   GrpcMetadataContext,
   GrpcMetadataProvider,
+  IconButton,
   Input,
   Modal,
   ParcaContext,

@@ -4389,6 +4389,11 @@
     redux-thunk "^2.4.1"
     reselect "^4.1.5"
 
+"@rehooks/local-storage@^2.4.4":
+  version "2.4.4"
+  resolved "https://registry.yarnpkg.com/@rehooks/local-storage/-/local-storage-2.4.4.tgz#ccf40f60c2dcbab86dc88f9e3ea898d1fb8bea2d"
+  integrity sha512-zE+kfOkG59n/1UTxdmbwktIosclr67Nlbf2MzUJ9mNtCSypVscNHeD1qT6JCSo5Pjj8DO893IKWNLJqKKzDL/Q==
+
 "@remix-run/router@1.0.3":
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/@remix-run/router/-/router-1.0.3.tgz#953b88c20ea00d0eddaffdc1b115c08474aa295d"
@@ -24809,16 +24814,6 @@ url@^0.11.0:
   dependencies:
     punycode "1.3.2"
     querystring "0.2.0"
-
-use-local-storage-state@^18.1.1:
-  version "18.1.1"
-  resolved "https://registry.yarnpkg.com/use-local-storage-state/-/use-local-storage-state-18.1.1.tgz#40e535aebed7770258e0a3a7b6923a86d9c0c52f"
-  integrity sha512-09bl6q3mkSlkEt8KeBPCmdPEWEojWYF70Qbz+7wkfQX1feaFITM9m84+h0Jr6Cnf/IvpahkFh7UbX2VNN3ioTQ==
-
-use-local-storage@^2.3.6:
-  version "2.3.6"
-  resolved "https://registry.yarnpkg.com/use-local-storage/-/use-local-storage-2.3.6.tgz#11058465143aa7537556af482b21c6b1f77a78a6"
-  integrity sha512-OJQHWYbH2M5mMaSY6uYIbfzOm7eVz1fBYFw1wqQurCR2+gQb+FjVt0KzzDAsgTOSEUNVAbaiJ0I4WcNjRn7u5w==
 
 use-memo-one@^1.1.1:
   version "1.1.3"
