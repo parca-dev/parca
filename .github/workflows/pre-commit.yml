@@ -22,6 +22,8 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
     steps:
       - name: Check if pre-commit should run on all files
         id: run-all-files
@@ -93,3 +95,7 @@ jobs:
           fi
 
           pre-commit run --show-diff-on-failure --color=always "${EXTRA_ARGS[@]}"
+
+      - name: Apply automatic fixes
+        uses: pre-commit-ci/lite-action@50143aaf27e2c42e75a5e06185a471d9582e89df # v1.0.0
+        if: github.event_name == 'pull_request' && always()
