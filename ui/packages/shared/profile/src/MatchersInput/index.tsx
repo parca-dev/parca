@@ -19,6 +19,7 @@ import {usePopper} from 'react-popper';
 import cx from 'classnames';
 
 import {useParcaContext, useGrpcMetadata} from '@parca/components';
+import SuggestionItem from './SuggestionItem';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
@@ -359,38 +360,33 @@ const MatchersInput = ({
               ) : (
                 <>
                   {suggestionSections.labelNames.map((l, i) => (
-                    <div
-                      key={i}
-                      className={cx(
-                        highlightedSuggestionIndex === i && 'text-white bg-indigo-600',
-                        'cursor-default select-none relative py-2 pl-3 pr-9'
-                      )}
-                      onMouseOver={() => setHighlightedSuggestionIndex(i)}
-                      onClick={() => applySuggestion(i)}
-                      onMouseOut={() => resetHighlight()}
-                    >
-                      {l.value}
-                    </div>
+                    <SuggestionItem
+                      isHighlighted={highlightedSuggestionIndex === i}
+                      onHighlight={() => setHighlightedSuggestionIndex(i)}
+                      onApplySuggestion={() => applySuggestion(i)}
+                      onResetHighlight={() => resetHighlight()}
+                      value={l.value}
+                      key={l.value}
+                    />
                   ))}
                 </>
               )}
 
               {suggestionSections.literals.map((l, i) => (
-                <div
-                  key={i}
-                  className={cx(
-                    highlightedSuggestionIndex === i + suggestionSections.labelNames.length &&
-                      'text-white bg-indigo-600',
-                    'cursor-default select-none relative py-2 pl-3 pr-9'
-                  )}
-                  onMouseOver={() =>
+                <SuggestionItem
+                  isHighlighted={
+                    highlightedSuggestionIndex === i + suggestionSections.labelNames.length
+                  }
+                  onHighlight={() =>
                     setHighlightedSuggestionIndex(i + suggestionSections.labelNames.length)
                   }
-                  onClick={() => applySuggestion(i + suggestionSections.labelNames.length)}
-                  onMouseOut={() => resetHighlight()}
-                >
-                  {l.value}
-                </div>
+                  onApplySuggestion={() =>
+                    applySuggestion(i + suggestionSections.labelNames.length)
+                  }
+                  onResetHighlight={() => resetHighlight()}
+                  value={l.value}
+                  key={l.value}
+                />
               ))}
 
               {labelValuesLoading && lastCompleted.type === 'literal' ? (
@@ -398,30 +394,31 @@ const MatchersInput = ({
               ) : (
                 <>
                   {suggestionSections.labelValues.map((l, i) => (
-                    <div
-                      key={i}
-                      className={cx(
-                        highlightedSuggestionIndex === i && 'text-white bg-indigo-600',
-                        'cursor-default select-none relative py-2 pl-3 pr-9'
-                      )}
-                      onMouseOver={() =>
+                    <SuggestionItem
+                      isHighlighted={
+                        highlightedSuggestionIndex ===
+                        i +
+                          suggestionSections.labelNames.length +
+                          suggestionSections.literals.length
+                      }
+                      onHighlight={() =>
                         setHighlightedSuggestionIndex(
                           i +
                             suggestionSections.labelNames.length +
                             suggestionSections.literals.length
                         )
                       }
-                      onClick={() =>
+                      onApplySuggestion={() =>
                         applySuggestion(
                           i +
                             suggestionSections.labelNames.length +
                             suggestionSections.literals.length
                         )
                       }
-                      onMouseOut={() => resetHighlight()}
-                    >
-                      {l.value}
-                    </div>
+                      onResetHighlight={() => resetHighlight()}
+                      value={l.value}
+                      key={l.value}
+                    />
                   ))}
                 </>
               )}
