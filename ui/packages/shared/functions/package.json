@@ -7,8 +7,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/*"
   },
   "dependencies": {
-    "use-local-storage": "^2.3.6",
-    "use-local-storage-state": "^18.1.1"
+    "@rehooks/local-storage": "^2.4.4"
   },
   "keywords": [],
   "author": "",
