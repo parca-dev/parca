@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import pick from 'lodash/pick';
-import useLocalStorage from 'use-local-storage';
+import {useLocalStorage} from '@rehooks/local-storage';
 
 const UI_FLAGS = 'ui-flags';
 
