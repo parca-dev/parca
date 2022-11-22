@@ -22,8 +22,6 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    permissions:
-      contents: write
     steps:
       - name: Check if pre-commit should run on all files
         id: run-all-files
