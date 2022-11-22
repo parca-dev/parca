@@ -28,11 +28,11 @@ const SuggestionItem = ({
   onApplySuggestion,
   onResetHighlight,
   value,
-}: Props) => {
+}: Props): JSX.Element => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isHighlighted && ref.current) {
+    if (isHighlighted && ref.current != null) {
       ref.current.scrollIntoView({block: 'nearest'});
     }
   }, [isHighlighted]);
