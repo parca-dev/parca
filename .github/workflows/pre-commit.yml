@@ -98,4 +98,4 @@ jobs:
 
       - name: Apply automatic fixes
         uses: pre-commit-ci/lite-action@50143aaf27e2c42e75a5e06185a471d9582e89df # v1.0.0
-        if: github.event_name == 'pull_request' && always()
+        if: always()
