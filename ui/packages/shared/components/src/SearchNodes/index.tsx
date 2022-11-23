@@ -13,14 +13,14 @@
 
 import {Input} from '../';
 import {useEffect, useMemo} from 'react';
-import {parseParams} from '@parca/functions';
+import {parseParams, selectQueryParam} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {debounce} from 'lodash';
 
 const SearchNodes = ({navigateTo}): JSX.Element => {
   const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
   const router = parseParams(window.location.search);
-  const searchStringFromURL = router.search_string;
+  const currentSearchString = selectQueryParam('search_string');
 
   useEffect(() => {
     return () => {
@@ -52,7 +52,7 @@ const SearchNodes = ({navigateTo}): JSX.Element => {
         className="text-sm"
         placeholder={filterByFunctionEnabled ? 'Highlight nodes...' : 'Search nodes...'}
         onChange={debouncedSearch}
-        defaultValue={searchStringFromURL}
+        defaultValue={currentSearchString}
       />
     </div>
   );

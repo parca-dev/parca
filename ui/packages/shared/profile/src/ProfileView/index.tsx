@@ -20,14 +20,7 @@ import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {
-  useAppSelector,
-  selectDarkMode,
-  selectDashboardItems,
-  setDashboardItems,
-  DashboardItem,
-  useAppDispatch,
-} from '@parca/store';
+import {useAppSelector, selectDarkMode} from '@parca/store';
 
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -69,6 +62,7 @@ export interface ProfileViewProps {
   navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
+  dashboardItems: string[];
 }
 
 function arrayEquals<T>(a: T[], b: T[]): boolean {
@@ -89,15 +83,15 @@ export const ProfileView = ({
   queryClient,
   navigateTo,
   onDownloadPProf,
+  dashboardItems,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
 
-  const dispatch = useAppDispatch();
-
+  const router = parseParams(window.location.search);
   const isDarkMode = useAppSelector(selectDarkMode);
+  const isSinglePanelView = dashboardItems.length === 1;
 
-  const dashboardItems = useAppSelector(selectDashboardItems);
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
 
@@ -107,17 +101,6 @@ export const ProfileView = ({
     // Reset the current path when the profile source changes
     setCurPath([]);
   }, [profileSource]);
-
-  // every time the dashboardItems changes in store, we need to navigate to new URL
-  useEffect(() => {
-    const router = parseParams(window.location.search);
-    if (navigateTo != null) {
-      navigateTo('/', {
-        ...router,
-        ...{dashboard_items: encodeURIComponent(dashboardItems.join(','))},
-      });
-    }
-  }, [dashboardItems]);
 
   const isLoading = useMemo(() => {
     if (dashboardItems.includes('icicle')) {
@@ -155,15 +138,18 @@ export const ProfileView = ({
     }
   };
 
-  const switchDashboardItems = (dashboardItems: DashboardItem[]): void => {
-    dispatch(setDashboardItems(dashboardItems));
+  const switchDashboardItems = (dashboardItems: string[]): void => {
+    if (navigateTo != null) {
+      navigateTo('/', {
+        ...router,
+        ...{dashboard_items: encodeURIComponent(dashboardItems.join(','))},
+      });
+    }
   };
 
   const maxColor: string = getNewSpanColor(isDarkMode);
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
-
-  const isSinglePanelView = dashboardItems.length === 1;
 
   return (
     <>

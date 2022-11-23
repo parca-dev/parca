@@ -13,8 +13,14 @@
 
 import React from 'react';
 
-import {getLastItem, valueFormatter, isSearchMatch, parseParams} from '@parca/functions';
-import {useAppSelector, selectCompareMode, useAppDispatch} from '@parca/store';
+import {
+  getLastItem,
+  valueFormatter,
+  isSearchMatch,
+  parseParams,
+  selectQueryParam,
+} from '@parca/functions';
+import {useAppSelector, selectCompareMode} from '@parca/store';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 
 import {hexifyAddress} from './utils';
@@ -138,9 +144,8 @@ export const RowLabel = (meta: TopNodeMeta | undefined): string => {
 export const TopTable = ({data: top, sampleUnit, navigateTo}: TopTableProps): JSX.Element => {
   const {items, requestSort, sortConfig} = useSortableData(top);
   const router = parseParams(window.location.search);
-  const currentSearchString = (router.search_string as string) ?? '';
+  const currentSearchString = selectQueryParam('search_string') as string;
   const compareMode = useAppSelector(selectCompareMode);
-  const dispatch = useAppDispatch();
 
   const unit = sampleUnit;
 

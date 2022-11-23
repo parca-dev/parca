@@ -15,21 +15,13 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import type {RootState} from '../store';
 
 // Define a type for the slice state
-
-export type DashboardItem = 'callgraph' | 'icicle' | 'table';
 export interface ProfileState {
   compare: boolean;
-  dashboardItems: DashboardItem[];
-  searchNodeString: string | undefined;
-  filterByFunction: string | undefined;
 }
 
 // Define the initial state using that type
 const initialState: ProfileState = {
   compare: false,
-  dashboardItems: ['icicle'],
-  searchNodeString: undefined,
-  filterByFunction: undefined,
 };
 
 export const profileSlice = createSlice({
@@ -40,17 +32,12 @@ export const profileSlice = createSlice({
     setCompare: (state, action: PayloadAction<boolean>) => {
       state.compare = action.payload;
     },
-    setDashboardItems: (state, action: PayloadAction<DashboardItem[] | undefined>) => {
-      state.dashboardItems = action.payload;
-    },
   },
 });
 
-export const {setCompare, setDashboardItems} = profileSlice.actions;
+export const {setCompare} = profileSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectCompareMode = (state: RootState): boolean => state.profile.compare;
-export const selectDashboardItems = (state: RootState): DashboardItem[] =>
-  state.profile.dashboardItems;
 
 export default profileSlice.reducer;

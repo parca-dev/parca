@@ -210,6 +210,20 @@ export const parseParams = (querystring: string): Record<string, string | string
   return obj;
 };
 
+export const selectQueryParam = (key: string) => {
+  const router = parseParams(window.location.search);
+
+  if (key === 'dashboard_items') {
+    let dashboardItems = router[key];
+    if (typeof dashboardItems === 'string') {
+      dashboardItems = [dashboardItems as string] ?? [];
+    }
+    return dashboardItems;
+  }
+
+  return router[key];
+};
+
 export const convertToQueryParams = (params: Record<string, string>): string =>
   Object.keys(params)
     .map(key => key + '=' + params[key])

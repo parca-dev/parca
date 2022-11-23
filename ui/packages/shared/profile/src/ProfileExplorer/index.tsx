@@ -32,6 +32,8 @@ const getExpressionAsAString = (expression: string | []): string => {
   return x;
 };
 
+const DEFAULT_DASHBOARD_ITEMS = ['icicle'];
+
 /* eslint-disable @typescript-eslint/naming-convention */
 const sanitizeDateRange = (
   time_selection_a: string,
@@ -91,6 +93,7 @@ const ProfileExplorerApp = ({
     time_selection_b,
     compare_b,
     filter_by_function,
+    dashboard_items,
   } = queryParams;
   /* eslint-enable @typescript-eslint/naming-convention */
 
@@ -122,6 +125,7 @@ const ProfileExplorerApp = ({
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), suffix),
+      dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
     });
   };
 
@@ -168,6 +172,7 @@ const ProfileExplorerApp = ({
             to_a: q.to.toString(),
             merge_a: q.merge,
             time_selection_a: q.timeSelection,
+            dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           },
         }
       );
@@ -178,6 +183,7 @@ const ProfileExplorerApp = ({
       return navigateTo('/', {
         ...queryParams,
         ...SuffixParams(p.HistoryParams(), '_a'),
+        dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
       });
     };
 
@@ -215,7 +221,11 @@ const ProfileExplorerApp = ({
         dispatch(setCompare(!compareMode));
       });
 
-      void navigateTo('/', {...compareQuery, search_string: ''});
+      void navigateTo('/', {
+        ...compareQuery,
+        search_string: '',
+        dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
+      });
     };
 
     return (
@@ -282,7 +292,8 @@ const ProfileExplorerApp = ({
           to_a: q.to.toString(),
           merge_a: q.merge,
           time_selection_a: q.timeSelection,
-          filter_by_function,
+          filter_by_function: filter_by_function ?? '',
+          dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
         },
       }
     );
@@ -303,7 +314,8 @@ const ProfileExplorerApp = ({
           to_b: q.to.toString(),
           merge_b: q.merge,
           time_selection_b: q.timeSelection,
-          filter_by_function,
+          filter_by_function: filter_by_function ?? '',
+          dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
         },
       }
     );

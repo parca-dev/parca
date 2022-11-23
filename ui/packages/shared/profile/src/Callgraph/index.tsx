@@ -19,7 +19,7 @@ import {KonvaEventObject} from 'konva/lib/Node';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot, getCurvePoints} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
-import {isSearchMatch, parseParams} from '@parca/functions';
+import {isSearchMatch, selectQueryParam} from '@parca/functions';
 import Tooltip from '../GraphTooltip';
 import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
 
@@ -178,8 +178,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     y: 0,
   });
   const {nodes: rawNodes, cumulative: total} = graph;
-  const router = parseParams(window.location.search);
-  const currentSearchString = (router.search_string as string) ?? '';
+  const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
 
   useEffect(() => {

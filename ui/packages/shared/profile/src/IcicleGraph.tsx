@@ -21,7 +21,7 @@ import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import type {HoveringNode} from './GraphTooltip';
 import GraphTooltip from './GraphTooltip';
-import {diffColor, getLastItem, isSearchMatch, parseParams} from '@parca/functions';
+import {diffColor, getLastItem, isSearchMatch, selectQueryParam} from '@parca/functions';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress} from './utils';
@@ -103,8 +103,7 @@ function IcicleRect({
   onClick,
   curPath,
 }: IcicleRectProps): JSX.Element {
-  const router = parseParams(window.location.search);
-  const currentSearchString = (router.search_string as string) ?? '';
+  const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
 
