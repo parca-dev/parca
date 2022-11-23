@@ -16,14 +16,7 @@ import {ProfileSelection, ProfileSelectionFromParams, SuffixParams, NavigateFunc
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
-import {
-  useAppSelector,
-  useAppDispatch,
-  setCompare,
-  selectCompareMode,
-  setSearchNodeString,
-  store,
-} from '@parca/store';
+import {useAppSelector, useAppDispatch, setCompare, selectCompareMode, store} from '@parca/store';
 import {Provider, batch} from 'react-redux';
 import {DateTimeRange} from '@parca/components';
 import {useEffect} from 'react';
@@ -220,10 +213,9 @@ const ProfileExplorerApp = ({
 
       batch(() => {
         dispatch(setCompare(!compareMode));
-        dispatch(setSearchNodeString(undefined));
       });
 
-      void navigateTo('/', compareQuery);
+      void navigateTo('/', {...compareQuery, search_string: ''});
     };
 
     return (
@@ -325,13 +317,13 @@ const ProfileExplorerApp = ({
 
     batch(() => {
       dispatch(setCompare(!compareMode));
-      dispatch(setSearchNodeString(undefined));
     });
 
     return navigateTo('/', {
       ...filterSuffix(newQueryParameters, '_b'),
       ...{
         compare_a: 'false',
+        search_string: '',
       },
     });
   };

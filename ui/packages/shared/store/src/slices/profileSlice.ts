@@ -43,25 +43,14 @@ export const profileSlice = createSlice({
     setDashboardItems: (state, action: PayloadAction<DashboardItem[] | undefined>) => {
       state.dashboardItems = action.payload;
     },
-    setSearchNodeString: (state, action: PayloadAction<string | undefined>) => {
-      state.searchNodeString = action.payload;
-    },
-    setFilterByFunction: (state, action: PayloadAction<string | undefined>) => {
-      state.filterByFunction = action.payload;
-    },
   },
 });
 
-export const {setCompare, setSearchNodeString, setFilterByFunction, setDashboardItems} =
-  profileSlice.actions;
+export const {setCompare, setDashboardItems} = profileSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectCompareMode = (state: RootState): boolean => state.profile.compare;
 export const selectDashboardItems = (state: RootState): DashboardItem[] =>
   state.profile.dashboardItems;
-export const selectSearchNodeString = (state: RootState): string | undefined =>
-  state.profile.searchNodeString;
-export const selectFilterByFunction = (state: RootState): string | undefined =>
-  state.profile.filterByFunction;
 
 export default profileSlice.reducer;

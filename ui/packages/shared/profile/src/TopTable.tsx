@@ -13,23 +13,19 @@
 
 import React from 'react';
 
-import {getLastItem, valueFormatter, isSearchMatch} from '@parca/functions';
-import {
-  useAppSelector,
-  selectCompareMode,
-  selectSearchNodeString,
-  setSearchNodeString,
-  useAppDispatch,
-} from '@parca/store';
+import {getLastItem, valueFormatter, isSearchMatch, parseParams} from '@parca/functions';
+import {useAppSelector, selectCompareMode, useAppDispatch} from '@parca/store';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 
 import {hexifyAddress} from './utils';
 
 import './TopTable.styles.css';
+import {NavigateFunction} from './ProfileViewWithData';
 
 interface TopTableProps {
   data?: Top;
   sampleUnit: string;
+  navigateTo?: NavigateFunction;
 }
 
 const Arrow = ({direction}: {direction: string | undefined}): JSX.Element => {
@@ -139,9 +135,10 @@ export const RowLabel = (meta: TopNodeMeta | undefined): string => {
   return fallback === '' ? '<unknown>' : fallback;
 };
 
-export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element => {
+export const TopTable = ({data: top, sampleUnit, navigateTo}: TopTableProps): JSX.Element => {
   const {items, requestSort, sortConfig} = useSortableData(top);
-  const currentSearchString = useAppSelector(selectSearchNodeString);
+  const router = parseParams(window.location.search);
+  const currentSearchString = (router.search_string as string) ?? '';
   const compareMode = useAppSelector(selectCompareMode);
   const dispatch = useAppDispatch();
 
@@ -166,7 +163,16 @@ export const TopTable = ({data: top, sampleUnit}: TopTableProps): JSX.Element =>
   };
 
   const selectSpan = (span: string): void => {
-    dispatch(setSearchNodeString(span.trim()));
+    if (navigateTo != null) {
+      navigateTo(
+        '/',
+        {
+          ...router,
+          ...{search_string: span.trim()},
+        },
+        {replace: true}
+      );
+    }
   };
 
   return (

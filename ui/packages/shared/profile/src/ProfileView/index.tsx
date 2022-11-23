@@ -15,6 +15,7 @@ import {Profiler, useEffect, useMemo, useState} from 'react';
 import {scaleLinear} from 'd3';
 
 import {getNewSpanColor, parseParams} from '@parca/functions';
+import {NavigateOptions} from 'react-router-dom';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
@@ -22,14 +23,10 @@ import {useContainerDimensions} from '@parca/dynamicsize';
 import {
   useAppSelector,
   selectDarkMode,
-  selectSearchNodeString,
-  selectFilterByFunction,
   selectDashboardItems,
   setDashboardItems,
   DashboardItem,
   useAppDispatch,
-  setFilterByFunction,
-  setSearchNodeString,
 } from '@parca/store';
 
 import {Callgraph} from '../';
@@ -42,7 +39,7 @@ import useDelayedLoader from '../useDelayedLoader';
 
 import '../ProfileView.styles.css';
 
-type NavigateFunction = (path: string, queryParams: any) => void;
+type NavigateFunction = (path: string, queryParams: any, options?: NavigateOptions) => void;
 
 export interface FlamegraphData {
   loading: boolean;
@@ -101,9 +98,6 @@ export const ProfileView = ({
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const dashboardItems = useAppSelector(selectDashboardItems);
-  const currentSearchString = useAppSelector(selectSearchNodeString);
-  const filterByFunctionString = useAppSelector(selectFilterByFunction);
-
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
 
@@ -114,41 +108,16 @@ export const ProfileView = ({
     setCurPath([]);
   }, [profileSource]);
 
-  // set the store value to what we have in our URL
-  useEffect(() => {
-    const queryParams = parseParams(location.search);
-    const {filter_by_function, search_string, dashboard_items} = queryParams;
-    if (filter_by_function && filter_by_function !== filterByFunctionString) {
-      dispatch(setFilterByFunction(filter_by_function as string));
-    }
-
-    if (search_string && search_string !== currentSearchString) {
-      dispatch(setSearchNodeString(search_string as string));
-    }
-
-    if (dashboard_items && dashboard_items !== dashboardItems) {
-      dispatch(
-        setDashboardItems(
-          typeof dashboard_items === 'string'
-            ? [dashboard_items as DashboardItem]
-            : (dashboard_items as DashboardItem[])
-        )
-      );
-    }
-  }, []);
-
-  // every time the functionFilter or dashboardItems changes in store, we need to navigate to new URL
+  // every time the dashboardItems changes in store, we need to navigate to new URL
   useEffect(() => {
     const router = parseParams(window.location.search);
     if (navigateTo != null) {
       navigateTo('/', {
         ...router,
         ...{dashboard_items: encodeURIComponent(dashboardItems.join(','))},
-        ...{filter_by_function: filterByFunctionString},
-        ...{search_string: currentSearchString},
       });
     }
-  }, [dashboardItems, filterByFunctionString]);
+  }, [dashboardItems]);
 
   const isLoading = useMemo(() => {
     if (dashboardItems.includes('icicle')) {
@@ -221,11 +190,15 @@ export const ProfileView = ({
                     Download pprof
                   </Button>
                 </div>
-                {filterByFunctionEnabled ? <FilterByFunctionButton /> : <SearchNodes />}
+                {filterByFunctionEnabled ? (
+                  <FilterByFunctionButton navigateTo={navigateTo} />
+                ) : (
+                  <SearchNodes navigateTo={navigateTo} />
+                )}
               </div>
 
               <div className="flex ml-auto gap-2">
-                {filterByFunctionEnabled ? <SearchNodes /> : null}
+                {filterByFunctionEnabled ? <SearchNodes navigateTo={navigateTo} /> : null}
                 <Button
                   color="neutral"
                   onClick={resetIcicleGraph}
@@ -305,7 +278,11 @@ export const ProfileView = ({
                 )}
                 {dashboardItems.includes('table') && topTableData != null && (
                   <div className="w-full">
-                    <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
+                    <TopTable
+                      data={topTableData.data}
+                      sampleUnit={sampleUnit}
+                      navigateTo={navigateTo}
+                    />
                   </div>
                 )}
               </div>
@@ -315,7 +292,11 @@ export const ProfileView = ({
                 {dashboardItems.includes('icicle') && dashboardItems.includes('table') && (
                   <>
                     <div className="w-1/2">
-                      <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
+                      <TopTable
+                        data={topTableData?.data}
+                        sampleUnit={sampleUnit}
+                        navigateTo={navigateTo}
+                      />
                     </div>
 
                     <div className="w-1/2">

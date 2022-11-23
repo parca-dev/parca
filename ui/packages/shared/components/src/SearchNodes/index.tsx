@@ -13,13 +13,14 @@
 
 import {Input} from '../';
 import {useEffect, useMemo} from 'react';
-import {useAppDispatch, setSearchNodeString} from '@parca/store';
+import {parseParams} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {debounce} from 'lodash';
 
-const SearchNodes = (): JSX.Element => {
-  const dispatch = useAppDispatch();
+const SearchNodes = ({navigateTo}): JSX.Element => {
   const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
+  const router = parseParams(window.location.search);
+  const searchStringFromURL = router.search_string;
 
   useEffect(() => {
     return () => {
@@ -29,11 +30,21 @@ const SearchNodes = (): JSX.Element => {
 
   const debouncedSearch = useMemo(() => {
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-      dispatch(setSearchNodeString(event.target.value));
+      const searchString = event.target.value;
+      if (navigateTo != null) {
+        navigateTo(
+          '/',
+          {
+            ...router,
+            ...{search_string: searchString},
+          },
+          {replace: true}
+        );
+      }
     };
 
     return debounce(handleChange, 300);
-  }, [dispatch]);
+  }, []);
 
   return (
     <div>
@@ -41,6 +52,7 @@ const SearchNodes = (): JSX.Element => {
         className="text-sm"
         placeholder={filterByFunctionEnabled ? 'Highlight nodes...' : 'Search nodes...'}
         onChange={debouncedSearch}
+        defaultValue={searchStringFromURL}
       />
     </div>
   );
