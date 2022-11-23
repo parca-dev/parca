@@ -85,7 +85,6 @@ func (f *debugInfoFile) buildAbstractSubprograms() error {
 		if entry == nil {
 			break
 		}
-
 		if entry.Tag == dwarf.TagSubprogram {
 			for _, field := range entry.Field {
 				if field.Attr == dwarf.AttrInline {
