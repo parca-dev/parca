@@ -52,14 +52,50 @@ func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}
 
-	return &debugInfoFile{
+	result := &debugInfoFile{
 		demangler: demangler,
 
 		debugData:           debugData,
 		lineEntries:         make(map[dwarf.Offset][]dwarf.LineEntry),
 		subprograms:         make(map[dwarf.Offset][]*godwarf.Tree),
 		abstractSubprograms: make(map[dwarf.Offset]*dwarf.Entry),
-	}, nil
+	}
+	if err = result.buildAbstractSubprograms(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// buildAbstractSubprograms will range over all compile unit, build abstractSubprograms
+// cause inline function will cover multi package
+func (f *debugInfoFile) buildAbstractSubprograms() error {
+	er := f.debugData.Reader()
+	_, err := er.Next()
+	if err != nil {
+		return errors.New("failed to read entry")
+	}
+	for {
+		entry, err := er.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			continue
+		}
+		if entry == nil {
+			break
+		}
+
+		if entry.Tag == dwarf.TagSubprogram {
+			for _, field := range entry.Field {
+				if field.Attr == dwarf.AttrInline {
+					f.abstractSubprograms[entry.Offset] = entry
+					break
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // SourceLines returns the resolved source lines for a program counter (memory address).
