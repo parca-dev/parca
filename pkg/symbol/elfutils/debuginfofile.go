@@ -97,19 +97,6 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 		return lines, nil
 	}
 
-	name, ok := tr.Entry.Val(dwarf.AttrName).(string)
-	if !ok {
-		name = ""
-	}
-	file, line := findLineInfo(f.lineEntries[cu.Offset], tr.Ranges)
-	lines = append(lines, profile.LocationLine{
-		Line: line,
-		Function: f.demangler.Demangle(&pb.Function{
-			Name:     name,
-			Filename: file,
-		}),
-	})
-
 	// If pc is 0 then all inlined calls will be returned.
 	for _, ch := range reader.InlineStack(tr, addr) {
 		var name string
@@ -130,6 +117,20 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 		})
 	}
 
+	name, ok := tr.Entry.Val(dwarf.AttrName).(string)
+	if !ok {
+		name = ""
+	}
+
+	// address correspond line must in last position
+	file, line := findLineInfo(f.lineEntries[cu.Offset], tr.Ranges)
+	lines = append(lines, profile.LocationLine{
+		Line: line,
+		Function: f.demangler.Demangle(&pb.Function{
+			Name:     name,
+			Filename: file,
+		}),
+	})
 	return lines, nil
 }
 
@@ -171,7 +172,6 @@ func (f *debugInfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
 		return errors.New("failed to find entry for compile unit")
 	}
 
-outer:
 	for {
 		entry, err := er.Next()
 		if err != nil {
@@ -189,13 +189,6 @@ outer:
 		}
 
 		if entry.Tag == dwarf.TagSubprogram {
-			for _, field := range entry.Field {
-				if field.Attr == dwarf.AttrInline {
-					f.abstractSubprograms[entry.Offset] = entry
-					continue outer
-				}
-			}
-
 			// Extract the tree of debug_info entries rooted at given offset.
 			tr, err := godwarf.LoadTree(entry.Offset, f.debugData, 0)
 			if err != nil {

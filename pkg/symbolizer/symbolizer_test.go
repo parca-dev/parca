@@ -109,18 +109,18 @@ func TestSymbolizer(t *testing.T) {
 
 	require.Equal(t, fres.Functions[0].Id, lres.Locations[0].Lines[0].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[0].Filename)
-	require.Equal(t, "main.main", fres.Functions[0].Name)
-	require.Equal(t, int64(7), lres.Locations[0].Lines[0].Line) // llvm-addr2line gives 10
+	require.Equal(t, "main.iterate", fres.Functions[0].Name)
+	require.Equal(t, int64(27), lres.Locations[0].Lines[0].Line) // llvm-addr2line gives 10
 
 	require.Equal(t, fres.Functions[1].Id, lres.Locations[0].Lines[1].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[1].Filename)
-	require.Equal(t, "main.iterate", fres.Functions[1].Name)
-	require.Equal(t, int64(27), lres.Locations[0].Lines[1].Line)
+	require.Equal(t, "main.iteratePerTenant", fres.Functions[1].Name)
+	require.Equal(t, int64(23), lres.Locations[0].Lines[1].Line)
 
 	require.Equal(t, fres.Functions[2].Id, lres.Locations[0].Lines[2].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[2].Filename)
-	require.Equal(t, "main.iteratePerTenant", fres.Functions[2].Name)
-	require.Equal(t, int64(23), lres.Locations[0].Lines[2].Line)
+	require.Equal(t, "main.main", fres.Functions[2].Name)
+	require.Equal(t, int64(7), lres.Locations[0].Lines[2].Line)
 }
 
 func findIndexWithAddress(locs []*pb.Location, address uint64) int {
@@ -172,14 +172,14 @@ func TestRealSymbolizer(t *testing.T) {
 	require.Equal(t, 3, len(fres.Functions))
 
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[0].Filename)
-	require.Equal(t, "main.main", fres.Functions[0].Name)
-	require.Equal(t, int64(7), lres.Locations[0].Lines[0].Line) // llvm-addr2line gives 10
+	require.Equal(t, "main.iterate", fres.Functions[0].Name)
+	require.Equal(t, int64(27), lres.Locations[0].Lines[0].Line) // llvm-addr2line gives 10
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[1].Filename)
-	require.Equal(t, "main.iterate", fres.Functions[1].Name)
-	require.Equal(t, int64(27), lres.Locations[0].Lines[1].Line)
+	require.Equal(t, "main.iteratePerTenant", fres.Functions[1].Name)
+	require.Equal(t, int64(23), lres.Locations[0].Lines[1].Line)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[2].Filename)
-	require.Equal(t, "main.iteratePerTenant", fres.Functions[2].Name)
-	require.Equal(t, int64(23), lres.Locations[0].Lines[2].Line)
+	require.Equal(t, "main.main", fres.Functions[2].Name)
+	require.Equal(t, int64(7), lres.Locations[0].Lines[2].Line)
 }
 
 func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
