@@ -67,7 +67,7 @@ func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile
 }
 
 // buildAbstractSubprograms will range over all compile unit, build abstractSubprograms
-// cause inline function will cover multi package
+// cause inline function will cover multi package.
 func (f *debugInfoFile) buildAbstractSubprograms() error {
 	er := f.debugData.Reader()
 	_, err := er.Next()
