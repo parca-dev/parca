@@ -176,7 +176,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 }
 
 // moveLinesForwardOneStep move each LocationLine's line filed move forward one step
-// to get right line number
+// to get right line number.
 func moveLinesForwardOneStep(lines []profile.LocationLine) {
 	if len(lines) <= 1 {
 		return
