@@ -89,11 +89,14 @@ const SuggestionsList = ({
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (event.key === 'Enter') {
+      // Disable new line in the text area
+      event.preventDefault();
+    }
     // If there is a highlighted suggestion and enter is hit, we complete
     // with the highlighted suggestion.
     if (highlightedSuggestionIndex >= 0 && event.key === 'Enter') {
       applyHighlightedSuggestion();
-      event.preventDefault();
     }
 
     // If no suggestions is highlighted and we hit enter, we run the query,
