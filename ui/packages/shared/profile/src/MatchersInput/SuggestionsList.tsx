@@ -89,7 +89,6 @@ const SuggestionsList = ({
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    console.log('handleKeyPress', event.key);
     // If there is a highlighted suggestion and enter is hit, we complete
     // with the highlighted suggestion.
     if (highlightedSuggestionIndex >= 0 && event.key === 'Enter') {
@@ -109,7 +108,6 @@ const SuggestionsList = ({
   };
 
   const handleKeyDown = (event: KeyboardEvent): void => {
-    console.log('handleKeyDown', event.key, suggestionsLength);
     // Don't need to handle any key interactions if no suggestions there.
     if (suggestionsLength === 0 || !['Tab', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
       return;
@@ -156,10 +154,12 @@ const SuggestionsList = ({
 
   const applyHighlightedSuggestion = (): void => {
     applySuggestion(getSuggestion(highlightedSuggestionIndex));
+    resetHighlight();
   };
 
   const applySuggestionWithIndex = (index: number): void => {
     applySuggestion(getSuggestion(index));
+    resetHighlight();
   };
 
   const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);

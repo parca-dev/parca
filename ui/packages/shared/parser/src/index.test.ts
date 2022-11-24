@@ -97,11 +97,6 @@ test('Partial Parsing ProfileName and rest', () => {
 });
 
 test('Parse Multiline query', () => {
-  console.log(
-    Query.parse(`memory:alloc_objects:count:space:bytes:delta{
-    instance="abc"
-  }`)
-  );
   expect(
     Query.parse(`memory:alloc_objects:count:space:bytes:delta{
     instance="abc"
