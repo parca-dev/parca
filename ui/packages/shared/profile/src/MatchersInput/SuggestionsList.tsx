@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment, useEffect, useState} from 'react';
+import {Fragment, useCallback, useEffect, useState} from 'react';
 import {Transition} from '@headlessui/react';
 import SuggestionItem from './SuggestionItem';
 import {usePopper} from 'react-popper';
@@ -65,7 +65,7 @@ const SuggestionsList = ({
   focusedInput,
   isLabelNamesLoading,
   isLabelValuesLoading,
-}: Props) => {
+}: Props): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const {styles, attributes} = usePopper(inputRef, popperElement, {
     placement: 'bottom-start',
@@ -76,70 +76,116 @@ const SuggestionsList = ({
   const suggestionsLength =
     suggestions.literals.length + suggestions.labelNames.length + suggestions.labelValues.length;
 
-  const getSuggestion = (index: number): Suggestion => {
-    if (index < suggestions.labelNames.length) {
-      return suggestions.labelNames[index];
-    }
-    if (index < suggestions.labelNames.length + suggestions.literals.length) {
-      return suggestions.literals[index - suggestions.labelNames.length];
-    }
-    return suggestions.labelValues[
-      index - suggestions.labelNames.length - suggestions.literals.length
-    ];
-  };
+  const getSuggestion = useCallback(
+    (index: number): Suggestion => {
+      if (index < suggestions.labelNames.length) {
+        return suggestions.labelNames[index];
+      }
+      if (index < suggestions.labelNames.length + suggestions.literals.length) {
+        return suggestions.literals[index - suggestions.labelNames.length];
+      }
+      return suggestions.labelValues[
+        index - suggestions.labelNames.length - suggestions.literals.length
+      ];
+    },
+    [suggestions]
+  );
 
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (event.key === 'Enter') {
-      // Disable new line in the text area
-      event.preventDefault();
-    }
-    // If there is a highlighted suggestion and enter is hit, we complete
-    // with the highlighted suggestion.
-    if (highlightedSuggestionIndex >= 0 && event.key === 'Enter') {
-      applyHighlightedSuggestion();
-    }
+  const resetHighlight = useCallback(
+    (): void => setHighlightedSuggestionIndex(-1),
+    [setHighlightedSuggestionIndex]
+  );
 
-    // If no suggestions is highlighted and we hit enter, we run the query,
-    // and hide suggestions until another actions enables them again.
-    if (highlightedSuggestionIndex === -1 && event.key === 'Enter') {
-      setShowSuggest(false);
-      runQuery();
+  const applyHighlightedSuggestion = useCallback((): void => {
+    applySuggestion(getSuggestion(highlightedSuggestionIndex));
+    resetHighlight();
+  }, [resetHighlight, applySuggestion, highlightedSuggestionIndex, getSuggestion]);
+
+  const applySuggestionWithIndex = useCallback(
+    (index: number): void => {
+      applySuggestion(getSuggestion(index));
+      resetHighlight();
+    },
+    [resetHighlight, applySuggestion, getSuggestion]
+  );
+
+  const highlightNext = useCallback((): void => {
+    const nextIndex = highlightedSuggestionIndex + 1;
+    if (nextIndex === suggestionsLength) {
+      resetHighlight();
+      return;
+    }
+    setHighlightedSuggestionIndex(nextIndex);
+  }, [highlightedSuggestionIndex, suggestionsLength, resetHighlight]);
+
+  const highlightPrevious = useCallback((): void => {
+    if (highlightedSuggestionIndex === -1) {
+      // Didn't select anything, so starting at the bottom.
+      setHighlightedSuggestionIndex(suggestionsLength - 1);
       return;
     }
 
-    setShowSuggest(true);
-  };
+    setHighlightedSuggestionIndex(highlightedSuggestionIndex - 1);
+  }, [highlightedSuggestionIndex, suggestionsLength]);
 
-  const handleKeyDown = (event: KeyboardEvent): void => {
-    // Don't need to handle any key interactions if no suggestions there.
-    if (suggestionsLength === 0 || !['Tab', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
-      return;
-    }
+  const handleKeyPress = useCallback(
+    (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+      if (event.key === 'Enter') {
+        // Disable new line in the text area
+        event.preventDefault();
+      }
+      // If there is a highlighted suggestion and enter is hit, we complete
+      // with the highlighted suggestion.
+      if (highlightedSuggestionIndex >= 0 && event.key === 'Enter') {
+        applyHighlightedSuggestion();
+      }
 
-    event.preventDefault();
-
-    // Handle tabbing through suggestions.
-    if (event.key === 'Tab' && suggestionsLength > 0) {
-      event.preventDefault();
-      if (event.shiftKey) {
-        // Shift + tab goes up.
-        highlightPrevious();
+      // If no suggestions is highlighted and we hit enter, we run the query,
+      // and hide suggestions until another actions enables them again.
+      if (highlightedSuggestionIndex === -1 && event.key === 'Enter') {
+        setShowSuggest(false);
+        runQuery();
         return;
       }
-      // Just tab goes down.
-      highlightNext();
-    }
 
-    // Up arrow highlights previous suggestions.
-    if (event.key === 'ArrowUp') {
-      highlightPrevious();
-    }
+      setShowSuggest(true);
+    },
+    [highlightedSuggestionIndex, applyHighlightedSuggestion, runQuery]
+  );
 
-    // Down arrow highlights next suggestions.
-    if (event.key === 'ArrowDown') {
-      highlightNext();
-    }
-  };
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent): void => {
+      // Don't need to handle any key interactions if no suggestions there.
+      if (suggestionsLength === 0 || !['Tab', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      // Handle tabbing through suggestions.
+      if (event.key === 'Tab' && suggestionsLength > 0) {
+        event.preventDefault();
+        if (event.shiftKey) {
+          // Shift + tab goes up.
+          highlightPrevious();
+          return;
+        }
+        // Just tab goes down.
+        highlightNext();
+      }
+
+      // Up arrow highlights previous suggestions.
+      if (event.key === 'ArrowUp') {
+        highlightPrevious();
+      }
+
+      // Down arrow highlights next suggestions.
+      if (event.key === 'ArrowDown') {
+        highlightNext();
+      }
+    },
+    [suggestionsLength, highlightNext, highlightPrevious]
+  );
 
   useEffect(() => {
     if (inputRef == null) {
@@ -153,38 +199,7 @@ const SuggestionsList = ({
       inputRef.removeEventListener('keydown', handleKeyDown);
       inputRef.removeEventListener('keypress', handleKeyPress as any);
     };
-  }, [inputRef, highlightedSuggestionIndex, suggestions]);
-
-  const applyHighlightedSuggestion = (): void => {
-    applySuggestion(getSuggestion(highlightedSuggestionIndex));
-    resetHighlight();
-  };
-
-  const applySuggestionWithIndex = (index: number): void => {
-    applySuggestion(getSuggestion(index));
-    resetHighlight();
-  };
-
-  const resetHighlight = (): void => setHighlightedSuggestionIndex(-1);
-  const highlightNext = (): void => {
-    const nextIndex = highlightedSuggestionIndex + 1;
-    if (nextIndex === suggestionsLength) {
-      resetHighlight();
-      return;
-    }
-    setHighlightedSuggestionIndex(nextIndex);
-  };
-
-  const highlightPrevious = (): void => {
-    console.log('highlightPrevious', highlightedSuggestionIndex);
-    if (highlightedSuggestionIndex === -1) {
-      // Didn't select anything, so starting at the bottom.
-      setHighlightedSuggestionIndex(suggestionsLength - 1);
-      return;
-    }
-
-    setHighlightedSuggestionIndex(highlightedSuggestionIndex - 1);
-  };
+  }, [inputRef, highlightedSuggestionIndex, suggestions, handleKeyPress, handleKeyDown]);
 
   return (
     <>

@@ -86,12 +86,13 @@ const MatchersInput = ({
     }
   }, [currentLabelName, queryClient, metadata]);
 
-  const labelNames =
-    (labelNamesError === undefined || labelNamesError == null) &&
-    labelNamesResponse !== undefined &&
-    labelNamesResponse != null
+  const labelNames = useMemo(() => {
+    return (labelNamesError === undefined || labelNamesError == null) &&
+      labelNamesResponse !== undefined &&
+      labelNamesResponse != null
       ? labelNamesResponse.labelNames.filter(e => e !== '__name__')
       : [];
+  }, [labelNamesError, labelNamesResponse]);
 
   const value = currentQuery.matchersString();
 
@@ -151,7 +152,7 @@ const MatchersInput = ({
       }
     });
     return suggestionSections;
-  }, [currentQuery, lastCompleted, labelNames, labelValues, currentLabelName]);
+  }, [currentQuery, lastCompleted, labelNames, labelValues, currentLabelName, value]);
 
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
 
@@ -162,13 +163,11 @@ const MatchersInput = ({
   };
 
   const complete = (suggestion: Suggestion): string => {
-    console.log('value', value, value.length, suggestion);
     return value.slice(0, value.length - suggestion.typeahead.length) + suggestion.value;
   };
 
   const applySuggestion = (suggestion: Suggestion): void => {
     const newValue = complete(suggestion);
-    console.log('newValue', newValue);
     setLastCompleted(suggestion);
     setMatchersString(newValue);
     if (inputRef.current !== null) {
