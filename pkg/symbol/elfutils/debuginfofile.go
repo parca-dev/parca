@@ -145,6 +145,9 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 			name = getFunctionName(abstractOrigin)
 		}
 
+		// An inlined subroutine entry may have these field:
+		// - DW_AT_call_line：line number of inlined subroutine call
+		// - DW_AT_call_file: File contain inlined subroutine call
 		file := f.lineFiles[cu.Offset][ch.Entry.Val(dwarf.AttrCallFile).(int64)].Name
 		line := ch.Entry.Val(dwarf.AttrCallLine).(int64)
 		lines = append(lines, profile.LocationLine{
@@ -175,8 +178,30 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 	return lines, nil
 }
 
-// moveLinesForwardOneStep move each LocationLine's line filed move forward one step
-// to get right line number.
+// moveLinesForwardOneStep move each LocationLine's line
+// forward one step to get right line number.
+//
+// Example program:
+// ```
+// 0 package main
+// 1
+// 2 func main() {
+// 3      Top()
+// 4 }
+// 5 func Top() {
+// 6       // pc
+// 7  }
+// ```
+// Use dwarf to tran pc to lines.
+// The function top is inline subroutine,
+// It's line would be [main.Top main.go 3],
+// (the line number is where the top be called as inlined).
+// And the pc's dwarf.LineEntry
+// is [main.main main.go 6]. (actual line number)
+// So the result is [{main.Top main.go 3}, {main.main main.go 6}].
+//
+// But the pprof format expected [{main.Top main.go 6}, {main.main main.go 3}].
+// It wants function line number not where it called, but itself.
 func moveLinesForwardOneStep(lines []profile.LocationLine) {
 	if len(lines) <= 1 {
 		return
