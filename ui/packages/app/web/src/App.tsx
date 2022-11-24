@@ -27,6 +27,7 @@ import TargetsPage from './pages/targets';
 import Component404 from './pages/layouts/Component404';
 import {isDevMode} from '@parca/functions';
 import {Provider} from 'react-redux';
+import {QueryClient, QueryClientProvider} from 'react-query';
 
 declare global {
   interface Window {
@@ -45,6 +46,14 @@ function getBasename() {
   return window.PATH_PREFIX;
 }
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 const {store: reduxStore, persistor} = store();
 
 const App = () => {
@@ -52,19 +61,21 @@ const App = () => {
     <Provider store={reduxStore}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter basename={getBasename()}>
-          <ThemeProvider>
-            <Header />
-            <div className="px-3">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/targets" element={<TargetsPage />} />
-                {isDevMode() && (
-                  <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
-                )}
-                <Route path="*" element={<Component404 />} />
-              </Routes>
-            </div>
-          </ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider>
+              <Header />
+              <div className="px-3">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/targets" element={<TargetsPage />} />
+                  {isDevMode() && (
+                    <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
+                  )}
+                  <Route path="*" element={<Component404 />} />
+                </Routes>
+              </div>
+            </ThemeProvider>
+          </QueryClientProvider>
         </BrowserRouter>
       </PersistGate>
     </Provider>
