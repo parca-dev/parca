@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
-
 import {QueryServiceClient, QueryResponse, QueryRequest_ReportType} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {useGrpcMetadata} from '@parca/components';
@@ -38,18 +36,14 @@ export const useQuery = (
 ): IQueryResult => {
   const {skip = false} = options ?? {};
   const metadata = useGrpcMetadata();
-  const {data, isLoading, error, refetch} = useGrpcQuery<QueryResponse | undefined>({
+  const {data, isLoading, error} = useGrpcQuery<QueryResponse | undefined>({
     key: ['query', profileSource, reportType],
     queryFn: async () => {
-      try {
-        const req = profileSource.QueryRequest();
-        req.reportType = reportType;
+      const req = profileSource.QueryRequest();
+      req.reportType = reportType;
 
-        const {response} = await client.query(req, {meta: metadata});
-        return response;
-      } catch (err) {
-        throw err;
-      }
+      const {response} = await client.query(req, {meta: metadata});
+      return response;
     },
     options: {
       enabled: !skip,
