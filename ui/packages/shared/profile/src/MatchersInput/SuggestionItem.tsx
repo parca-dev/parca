@@ -32,7 +32,7 @@ const SuggestionItem = ({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isHighlighted && ref.current !== null) {
+    if (isHighlighted && ref.current != null) {
       ref.current.scrollIntoView({block: 'nearest'});
     }
   }, [isHighlighted]);

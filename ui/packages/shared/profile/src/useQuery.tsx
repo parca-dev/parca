@@ -11,13 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
-
 import {QueryServiceClient, QueryResponse, QueryRequest_ReportType} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {useGrpcMetadata} from '@parca/components';
 
 import {ProfileSource} from './ProfileSource';
+import useGrpcQuery from './useGrpcQuery';
 
 export interface IQueryResult {
   response: QueryResponse | null;
@@ -36,31 +35,21 @@ export const useQuery = (
   options?: UseQueryOptions
 ): IQueryResult => {
   const {skip = false} = options ?? {};
-  const [result, setResult] = useState<IQueryResult>({
-    response: null,
-    error: null,
-    isLoading: false,
-  });
   const metadata = useGrpcMetadata();
+  const {data, isLoading, error} = useGrpcQuery<QueryResponse | undefined>({
+    key: ['query', profileSource, reportType],
+    queryFn: async () => {
+      const req = profileSource.QueryRequest();
+      req.reportType = reportType;
 
-  useEffect(() => {
-    if (skip) {
-      return;
-    }
-    setResult({
-      response: null,
-      error: null,
-      isLoading: true,
-    });
-    const req = profileSource.QueryRequest();
-    req.reportType = reportType;
+      const {response} = await client.query(req, {meta: metadata});
+      return response;
+    },
+    options: {
+      enabled: !skip,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  });
 
-    const call = client.query(req, {meta: metadata});
-
-    call.response
-      .then(response => setResult({response, error: null, isLoading: false}))
-      .catch(error => setResult({error, response: null, isLoading: false}));
-  }, [skip, client, profileSource, metadata, reportType]);
-
-  return result;
+  return {isLoading, error: error as RpcError | null, response: data ?? null};
 };

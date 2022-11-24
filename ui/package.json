@@ -53,7 +53,7 @@
     "@types/jest": "28.1.8",
     "@types/node": "18.0.0",
     "@types/react": "18.0.25",
-    "@types/react-dom": "18.0.8",
+    "@types/react-dom": "18.0.9",
     "@typescript-eslint/eslint-plugin": "5.43.0",
     "@typescript-eslint/parser": "5.43.0",
     "arg": "5.0.2",
@@ -96,7 +96,7 @@
     "ts-jest": "28.0.8",
     "ts-node": "10.9.1",
     "tsc-watch": "5.0.3",
-    "typescript": "4.8.4",
+    "typescript": "4.9.3",
     "webpack": "5.75.0"
   }
 }

@@ -17,8 +17,8 @@ import {LabelsResponse, QueryServiceClient} from '@parca/client';
 import TextareaAutosize from 'react-textarea-autosize';
 import cx from 'classnames';
 
-import {useGrpcMetadata} from '@parca/components';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
+import {useGrpcMetadata} from '@parca/components';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
@@ -210,7 +210,6 @@ const MatchersInput = ({
             : 'filter profiles... eg. node="test"'
         }
       />
-
       <SuggestionsList
         isLabelNamesLoading={labelNamesLoading}
         suggestions={suggestionSections}
