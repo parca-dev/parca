@@ -110,7 +110,7 @@ func TestSymbolizer(t *testing.T) {
 	require.Equal(t, fres.Functions[0].Id, lres.Locations[0].Lines[0].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[0].Filename)
 	require.Equal(t, "main.iterate", fres.Functions[0].Name)
-	require.Equal(t, int64(27), lres.Locations[0].Lines[0].Line) // llvm-addr2line gives 10
+	require.Equal(t, int64(27), lres.Locations[0].Lines[0].Line)
 
 	require.Equal(t, fres.Functions[1].Id, lres.Locations[0].Lines[1].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[1].Filename)
@@ -120,7 +120,7 @@ func TestSymbolizer(t *testing.T) {
 	require.Equal(t, fres.Functions[2].Id, lres.Locations[0].Lines[2].FunctionId)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[2].Filename)
 	require.Equal(t, "main.main", fres.Functions[2].Name)
-	require.Equal(t, int64(7), lres.Locations[0].Lines[2].Line)
+	require.Equal(t, int64(10), lres.Locations[0].Lines[2].Line)
 }
 
 func findIndexWithAddress(locs []*pb.Location, address uint64) int {
@@ -173,13 +173,13 @@ func TestRealSymbolizer(t *testing.T) {
 
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[0].Filename)
 	require.Equal(t, "main.iterate", fres.Functions[0].Name)
-	require.Equal(t, int64(27), lres.Locations[0].Lines[0].Line) // llvm-addr2line gives 10
+	require.Equal(t, int64(27), lres.Locations[0].Lines[0].Line)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.iteratePerTenant", fres.Functions[1].Name)
 	require.Equal(t, int64(23), lres.Locations[0].Lines[1].Line)
 	require.Equal(t, "/home/brancz/src/github.com/polarsignals/pprof-labels-example/main.go", fres.Functions[2].Filename)
 	require.Equal(t, "main.main", fres.Functions[2].Name)
-	require.Equal(t, int64(7), lres.Locations[0].Lines[2].Line)
+	require.Equal(t, int64(10), lres.Locations[0].Lines[2].Line)
 }
 
 func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
@@ -218,11 +218,11 @@ func TestRealSymbolizerDwarfAndSymbols(t *testing.T) {
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/fib/fib.go", fres.Functions[0].Filename)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", fres.Functions[0].Name)
-	require.Equal(t, int64(5), lres.Locations[0].Lines[0].Line)
+	require.Equal(t, int64(13), lres.Locations[0].Lines[0].Line)
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.busyCPU", fres.Functions[1].Name)
-	require.Equal(t, int64(86), lres.Locations[1].Lines[0].Line)
+	require.Equal(t, int64(89), lres.Locations[1].Lines[0].Line)
 }
 
 func TestRealSymbolizerInliningDisabled(t *testing.T) {
@@ -268,11 +268,11 @@ func TestRealSymbolizerInliningDisabled(t *testing.T) {
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/fib/fib.go", fres.Functions[0].Filename)
 	require.Equal(t, "github.com/polarsignals/pprof-example-app-go/fib.Fibonacci", fres.Functions[0].Name)
-	require.Equal(t, int64(5), lres.Locations[0].Lines[0].Line)
+	require.Equal(t, int64(13), lres.Locations[0].Lines[0].Line)
 
 	require.Equal(t, "/home/kakkoyun/Workspace/PolarSignals/pprof-example-app-go/main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.busyCPU", fres.Functions[1].Name)
-	require.Equal(t, int64(86), lres.Locations[1].Lines[0].Line)
+	require.Equal(t, int64(89), lres.Locations[1].Lines[0].Line)
 }
 
 func TestRealSymbolizerWithoutDWARF(t *testing.T) {
