@@ -99,8 +99,9 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 		s.bufferPool,
 	)
 
+	ls := make(labels.Labels, 0)
 	for _, series := range req.Series {
-		ls := make(labels.Labels, 0, len(series.Labels.Labels))
+		ls = ls[:0]
 		for _, l := range series.Labels.Labels {
 			if valid := model.LabelName(l.Name).IsValid(); !valid {
 				return status.Errorf(codes.InvalidArgument, "invalid label name: %v", l.Name)

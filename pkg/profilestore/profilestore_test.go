@@ -143,7 +143,6 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		metastore.NewInProcessClient(m),
 		table,
 		schema,
-		false,
 	)
 
 	req := &profilestorepb.WriteRawRequest{
