@@ -43,6 +43,7 @@ type debugInfoFile struct {
 	lineEntries         map[dwarf.Offset][]dwarf.LineEntry
 	subprograms         map[dwarf.Offset][]*godwarf.Tree
 	abstractSubprograms map[dwarf.Offset]*dwarf.Entry
+	lineFiles           map[dwarf.Offset][]*dwarf.LineFile
 }
 
 // NewDebugInfoFile creates a new DebugInfoFile symbolizer.
@@ -59,6 +60,7 @@ func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile
 		lineEntries:         make(map[dwarf.Offset][]dwarf.LineEntry),
 		subprograms:         make(map[dwarf.Offset][]*godwarf.Tree),
 		abstractSubprograms: make(map[dwarf.Offset]*dwarf.Entry),
+		lineFiles:           make(map[dwarf.Offset][]*dwarf.LineFile),
 	}
 	if err = result.buildAbstractSubprograms(); err != nil {
 		return nil, err
@@ -143,7 +145,8 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 			name = getFunctionName(abstractOrigin)
 		}
 
-		file, line := findLineInfo(f.lineEntries[cu.Offset], ch.Ranges)
+		file := f.lineFiles[cu.Offset][ch.Entry.Val(dwarf.AttrCallFile).(int64)].Name
+		line := ch.Entry.Val(dwarf.AttrCallLine).(int64)
 		lines = append(lines, profile.LocationLine{
 			Line: line,
 			Function: f.demangler.Demangle(&pb.Function{
@@ -159,7 +162,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 	}
 
 	// address correspond line must in last position
-	file, line := findLineInfo(f.lineEntries[cu.Offset], tr.Ranges)
+	file, line := findLineInfo(f.lineEntries[cu.Offset], addr)
 	lines = append(lines, profile.LocationLine{
 		Line: line,
 		Function: f.demangler.Demangle(&pb.Function{
@@ -167,7 +170,24 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 			Filename: file,
 		}),
 	})
+
+	moveLinesForwardOneStep(lines)
 	return lines, nil
+}
+
+// moveLinesForwardOneStep move each LocationLine's line filed move forward one step
+// to get right line number
+func moveLinesForwardOneStep(lines []profile.LocationLine) {
+	if len(lines) <= 1 {
+		return
+	}
+	var last int64
+	last = lines[len(lines)-1].Line
+	for i := range lines {
+		cur := lines[i].Line
+		lines[i].Line = last
+		last = cur
+	}
 }
 
 func (f *debugInfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
@@ -184,6 +204,8 @@ func (f *debugInfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
 	if lr == nil {
 		return errors.New("failed to initialize line reader")
 	}
+
+	f.lineFiles[cu.Offset] = lr.Files()
 
 	for {
 		le := dwarf.LineEntry{}
@@ -240,24 +262,21 @@ func (f *debugInfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
 
 // findLineInfo looks up a file name and a line number
 // in an ordered list DWARF entries (rows in a DWARF "line" table)
-// by a tree's ranges rg.
-func findLineInfo(entries []dwarf.LineEntry, rg [][2]uint64) (string, int64) {
+// by pc.
+func findLineInfo(entries []dwarf.LineEntry, pc uint64) (string, int64) {
 	var (
 		file = "?"
 		line int64 // 0
 	)
-	i := sort.Search(len(entries), func(i int) bool {
-		return entries[i].Address >= rg[0][0]
-	})
-	if i >= len(entries) {
-		return file, line
-	}
 
-	le := dwarf.LineEntry{}
-	pc := entries[i].Address
-	if rg[0][0] <= pc && pc < rg[0][1] {
-		le = entries[i]
-		return le.File.Name, int64(le.Line)
+	next := sort.Search(len(entries), func(i int) bool {
+		return entries[i].Address > pc
+	})
+
+	if i := next - 1; i >= 0 && next != len(entries) {
+		// entries[i].address <= pc < entries[i + 1]
+		e := entries[i]
+		file, line = e.File.Name, int64(e.Line)
 	}
 
 	return file, line
