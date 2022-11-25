@@ -1,6 +1,8 @@
 // Copyright 2014 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
+// TODO: This license is not consistent with license used in the project.
+//       Delete the inconsistent license and above line and rerun pre-commit to insert a good license.
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -34,7 +36,7 @@ const (
 
 // addr2Liner is a connection to an addr2line command for obtaining
 // address and line number information from a binary.
-// copy from github.com/google/pprof@v0.0.0-20221118152302-e6195bd50e26/internal/binutils/addr2liner.go:39
+// copy from github.com/google/pprof@v0.0.0-20221118152302-e6195bd50e26/internal/binutils/addr2liner.go:39.
 type addr2Liner struct {
 	mu   sync.Mutex
 	rw   lineReaderWriter
@@ -159,7 +161,8 @@ func (d *addr2Liner) readFrame() (Frame, bool) {
 	return Frame{
 		Func: funcname,
 		File: fileline,
-		Line: linenumber}, false
+		Line: linenumber,
+	}, false
 }
 
 func (d *addr2Liner) rawAddrInfo(addr uint64) ([]Frame, error) {
