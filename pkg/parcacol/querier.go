@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/arrow/go/v8/arrow"
 	"github.com/apache/arrow/go/v8/arrow/array"
+	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/prometheus/model/labels"
@@ -51,12 +52,14 @@ type Engine interface {
 }
 
 func NewQuerier(
+	logger log.Logger,
 	tracer trace.Tracer,
 	engine Engine,
 	tableName string,
 	metastore metastorepb.MetastoreServiceClient,
 ) *Querier {
 	return &Querier{
+		logger:    logger,
 		tracer:    tracer,
 		engine:    engine,
 		tableName: tableName,
@@ -68,6 +71,7 @@ func NewQuerier(
 }
 
 type Querier struct {
+	logger    log.Logger
 	engine    Engine
 	tableName string
 	converter *ArrowToProfileConverter

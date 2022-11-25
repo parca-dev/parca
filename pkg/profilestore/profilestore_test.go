@@ -64,7 +64,6 @@ func Test_LabelName_Error(t *testing.T) {
 		metastore.NewInProcessClient(m),
 		table,
 		schema,
-		false,
 	)
 
 	cases := []struct {

@@ -17,22 +17,17 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/base64"
-	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
-	"github.com/prometheus/prometheus/model/timestamp"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -64,13 +59,6 @@ type ProfileColumnStore struct {
 	table  *frostdb.Table
 	schema *dynparquet.Schema
 
-	// When the debug-value-log is enabled, every profile is first written to
-	// tmp/<labels>/<timestamp>.pb.gz before it's parsed and written to the
-	// columnstore. This is primarily for debugging purposes as well as
-	// reproducing situations in tests. This has huge overhead, do not enable
-	// unless you know what you're doing.
-	debugValueLog bool
-
 	mtx sync.Mutex
 	// ip as the key
 	agents map[string]agent
@@ -86,16 +74,14 @@ func NewProfileColumnStore(
 	metastore metastorepb.MetastoreServiceClient,
 	table *frostdb.Table,
 	schema *dynparquet.Schema,
-	debugValueLog bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{
-		logger:        logger,
-		tracer:        tracer,
-		metastore:     metastore,
-		table:         table,
-		debugValueLog: debugValueLog,
-		schema:        schema,
-		agents:        make(map[string]agent),
+		logger:    logger,
+		tracer:    tracer,
+		metastore: metastore,
+		table:     table,
+		schema:    schema,
+		agents:    make(map[string]agent),
 		bufferPool: &sync.Pool{
 			New: func() any {
 				return new(bytes.Buffer)
@@ -146,19 +132,6 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 			p := &pprofpb.Profile{}
 			if err := p.UnmarshalVT(content); err != nil {
 				return status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
-			}
-
-			if s.debugValueLog {
-				dir := fmt.Sprintf("tmp/%s", base64.URLEncoding.EncodeToString([]byte(ls.String())))
-				err := os.MkdirAll(dir, os.ModePerm)
-				if err != nil {
-					level.Error(s.logger).Log("msg", "failed to create debug-value-log directory", "err", err)
-				} else {
-					err := os.WriteFile(fmt.Sprintf("%s/%d.pb.gz", dir, timestamp.FromTime(time.Now())), sample.RawProfile, 0o644)
-					if err != nil {
-						level.Error(s.logger).Log("msg", "failed to write debug-value-log", "err", err)
-					}
-				}
 			}
 
 			if err := ingester.Ingest(ctx, ls, p, req.Normalized); err != nil {

@@ -83,73 +83,66 @@ Flags:
 Usage: parca
 
 Flags:
-  -h, --help                       Show context-sensitive help.
+  -h, --help                    Show context-sensitive help.
       --config-path="parca.yaml"
-                                   Path to config file.
-      --mode="all"                 Scraper only runs a scraper that sends
-                                   to a remote gRPC endpoint. All runs all
-                                   components.
-      --log-level="info"           log level.
-      --http-address=":7070"       Address to bind HTTP server to.
-      --port=""                    (DEPRECATED) Use http-address instead.
+                                Path to config file.
+      --mode="all"              Scraper only runs a scraper that sends to a
+                                remote gRPC endpoint. All runs all components.
+      --log-level="info"        log level.
+      --http-address=":7070"    Address to bind HTTP server to.
+      --port=""                 (DEPRECATED) Use http-address instead.
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
-                                   Allowed CORS origins.
-      --otlp-address=STRING        OpenTelemetry collector address to send
-                                   traces to.
-      --version                    Show application version.
-      --path-prefix=""             Path prefix for the UI
+                                Allowed CORS origins.
+      --otlp-address=STRING     OpenTelemetry collector address to send traces
+                                to.
+      --version                 Show application version.
+      --path-prefix=""          Path prefix for the UI
       --mutex-profile-fraction=0
-                                   Fraction of mutex profile samples to collect.
-      --block-profile-rate=0       Sample rate for block profile.
-      --enable-persistence         Turn on persistent storage for the metastore
-                                   and profile storage.
-      --storage-debug-value-log    Log every value written to the database into
-                                   a separate file. This is only for debugging
-                                   purposes to produce data to replay situations
-                                   in tests.
+                                Fraction of mutex profile samples to collect.
+      --block-profile-rate=0    Sample rate for block profile.
+      --enable-persistence      Turn on persistent storage for the metastore and
+                                profile storage.
       --storage-granule-size=26265625
-                                   Granule size in bytes for storage.
+                                Granule size in bytes for storage.
       --storage-active-memory=536870912
-                                   Amount of memory to use for active storage.
-                                   Defaults to 512MB.
-      --storage-path="data"        Path to storage directory.
-      --storage-enable-wal         Enables write ahead log for profile storage.
+                                Amount of memory to use for active storage.
+                                Defaults to 512MB.
+      --storage-path="data"     Path to storage directory.
+      --storage-enable-wal      Enables write ahead log for profile storage.
       --storage-row-group-size=8192
-                                   Number of rows in each row group during
-                                   compaction and persistence. Setting to <= 0
-                                   results in a single row group per file.
+                                Number of rows in each row group during
+                                compaction and persistence. Setting to <= 0
+                                results in a single row group per file.
       --symbolizer-demangle-mode="simple"
-                                   Mode to demangle C++ symbols. Default mode
-                                   is simplified: no parameters, no templates,
-                                   no return type
+                                Mode to demangle C++ symbols. Default mode
+                                is simplified: no parameters, no templates,
+                                no return type
       --symbolizer-number-of-tries=3
-                                   Number of tries to attempt to symbolize an
-                                   unsybolized location
-      --metastore="badger"         Which metastore implementation to use
+                                Number of tries to attempt to symbolize an
+                                unsybolized location
+      --metastore="badger"      Which metastore implementation to use
       --profile-share-server="api.pprof.me:443"
-                                   gRPC address to send share profile requests
-                                   to.
+                                gRPC address to send share profile requests to.
       --debug-infod-upstream-servers=https://debuginfod.elfutils.org,...
-                                   Upstream debuginfod servers. Defaults to
-                                   https://debuginfod.elfutils.org. It is an
-                                   ordered list of servers to try. Learn more at
-                                   https://sourceware.org/elfutils/Debuginfod.html
+                                Upstream debuginfod servers. Defaults to
+                                https://debuginfod.elfutils.org. It is an
+                                ordered list of servers to try. Learn more at
+                                https://sourceware.org/elfutils/Debuginfod.html
       --debug-infod-http-request-timeout=5m
-                                   Timeout duration for HTTP request to upstream
-                                   debuginfod server. Defaults to 5m
+                                Timeout duration for HTTP request to upstream
+                                debuginfod server. Defaults to 5m
       --debuginfo-cache-dir="/tmp"
-                                   Path to directory where debuginfo is cached.
-      --store-address=STRING       gRPC address to send profiles and symbols to.
-      --bearer-token=STRING        Bearer token to authenticate with store.
+                                Path to directory where debuginfo is cached.
+      --store-address=STRING    gRPC address to send profiles and symbols to.
+      --bearer-token=STRING     Bearer token to authenticate with store.
       --bearer-token-file=STRING
-                                   File to read bearer token from to
-                                   authenticate with store.
-      --insecure                   Send gRPC requests via plaintext instead of
-                                   TLS.
-      --insecure-skip-verify       Skip TLS certificate verification.
+                                File to read bearer token from to authenticate
+                                with store.
+      --insecure                Send gRPC requests via plaintext instead of TLS.
+      --insecure-skip-verify    Skip TLS certificate verification.
       --external-label=KEY=VALUE;...
-                                   Label(s) to attach to all profiles in
-                                   scraper-only mode.
+                                Label(s) to attach to all profiles in
+                                scraper-only mode.
 ```
 <!-- prettier-ignore-end -->
 
