@@ -174,12 +174,12 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 		}),
 	})
 
-	moveLinesForwardOneStep(lines)
+	moveLocationLinesForwardOneStep(lines)
 	return lines, nil
 }
 
-// moveLinesForwardOneStep move each LocationLine's line
-// forward one step to get right line number.
+// moveLinesForwardOneStep move each LocationLine's line and file
+// forward one step to get right line number and file.
 //
 // Example program:
 // ```
@@ -201,16 +201,27 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 // So the result is [{main.Top main.go 3}, {main.main main.go 6}].
 //
 // But the pprof format expected [{main.Top main.go 6}, {main.main main.go 3}].
-// It wants function line number not where it called, but itself.
-func moveLinesForwardOneStep(lines []profile.LocationLine) {
-	if len(lines) <= 1 {
+// It wants function line number and file not where it called, but itself.
+func moveLocationLinesForwardOneStep(locationLines []profile.LocationLine) {
+	if len(locationLines) <= 1 {
 		return
 	}
-	var last int64
-	last = lines[len(lines)-1].Line
-	for i := range lines {
-		cur := lines[i].Line
-		lines[i].Line = last
+
+	deepCopy := func(l profile.LocationLine) profile.LocationLine {
+		return profile.LocationLine{
+			Line: l.Line,
+			Function: &pb.Function{
+				Name:     l.Function.Name,
+				Filename: l.Function.Filename,
+			},
+		}
+	}
+
+	last := deepCopy(locationLines[len(locationLines)-1])
+	for i := range locationLines {
+		cur := deepCopy(locationLines[i])
+		locationLines[i].Line = last.Line
+		locationLines[i].Function.Filename = last.Function.Filename
 		last = cur
 	}
 }
