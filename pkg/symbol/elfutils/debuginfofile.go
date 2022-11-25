@@ -238,9 +238,9 @@ func (f *debugInfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
 		if err != nil {
 			break
 		}
-		if le.IsStmt {
-			f.lineEntries[cu.Offset] = append(f.lineEntries[cu.Offset], le)
-		}
+		// either addr2line or go tool addr2line
+		// do not check le.IsStmt
+		f.lineEntries[cu.Offset] = append(f.lineEntries[cu.Offset], le)
 	}
 
 	er := f.debugData.Reader()
