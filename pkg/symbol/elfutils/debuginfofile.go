@@ -39,7 +39,12 @@ type DebugInfoFile interface {
 type debugInfoFile struct {
 	demangler *demangle.Demangler
 
-	debugData           *dwarf.Data
+	debugData *dwarf.Data
+	cuRanges  []struct {
+		ranges [2]uint64
+		e      *dwarf.Entry
+	}
+	reader              *dwarf.Reader
 	lineEntries         map[dwarf.Offset][]dwarf.LineEntry
 	subprograms         map[dwarf.Offset][]*godwarf.Tree
 	abstractSubprograms map[dwarf.Offset]*dwarf.Entry
@@ -56,6 +61,7 @@ func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile
 	result := &debugInfoFile{
 		demangler: demangler,
 
+		reader:              debugData.Reader(),
 		debugData:           debugData,
 		lineEntries:         make(map[dwarf.Offset][]dwarf.LineEntry),
 		subprograms:         make(map[dwarf.Offset][]*godwarf.Tree),
@@ -71,7 +77,7 @@ func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile
 // buildAbstractSubprograms will range over all compile unit, build abstractSubprograms
 // cause inline function will cover multi package.
 func (f *debugInfoFile) buildAbstractSubprograms() error {
-	er := f.debugData.Reader()
+	er := f.reader
 	_, err := er.Next()
 	if err != nil {
 		return errors.New("failed to read entry")
@@ -106,17 +112,9 @@ func (f *debugInfoFile) buildAbstractSubprograms() error {
 // tries to find the name of the function that address belongs to.
 // After that it tries to find the corresponding source file and line information.
 func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error) {
-	// The reader is positioned at byte offset 0 in the DWARF “info” section.
-	// It allows reading Entry structures that are arranged in a tree.
-	er := f.debugData.Reader()
-	// SeekPC returns the Entry for the compilation unit that includes program counter,
-	// and positions the reader to read the children of that unit.
-	cu, err := er.SeekPC(addr)
+	cu, err := f.getComplicationUnit(addr)
 	if err != nil {
 		return nil, err
-	}
-	if cu == nil {
-		return nil, errors.New("failed to find a corresponding dwarf entry for given address")
 	}
 
 	if err := f.ensureLookUpTablesBuilt(cu); err != nil {
@@ -226,6 +224,57 @@ func moveLocationLinesForwardOneStep(locationLines []profile.LocationLine) {
 	}
 }
 
+func (f *debugInfoFile) getComplicationUnit(pc uint64) (*dwarf.Entry, error) {
+	// get complication unit from cache
+	next := sort.Search(len(f.cuRanges), func(i int) bool {
+		return f.cuRanges[i].ranges[0] > pc
+	})
+
+	if i := next - 1; i >= 0 && next != len(f.cuRanges) && pc < f.cuRanges[i].ranges[1] {
+		// cuRanges[i][0] <= pc < cuRanges[i + 1][0]
+		// cuRanges[i][0] <= pc < cuRanges[i][1]
+		return f.cuRanges[i].e, nil
+	}
+	if len(f.cuRanges) == 1 {
+		if f.cuRanges[0].ranges[0] <= pc && pc < f.cuRanges[0].ranges[1] {
+			return f.cuRanges[0].e, nil
+		}
+	}
+
+	// get complication unit from dwarf
+	// The reader is positioned at byte offset 0 in the DWARF “info” section.
+	// It allows reading Entry structures that are arranged in a tree.
+	er := f.reader
+	// SeekPC returns the Entry for the compilation unit that includes program counter,
+	// and positions the reader to read the children of that unit.
+	cu, err := er.SeekPC(pc)
+	if err != nil {
+		return nil, err
+	}
+	if cu == nil {
+		return nil, errors.New("failed to find a corresponding dwarf entry for given address")
+	}
+
+	// add ranges of cu to cache and sort
+	cuRanges, err := f.debugData.Ranges(cu)
+	if err != nil {
+		return nil, err
+	}
+	for _, cuRange := range cuRanges {
+		f.cuRanges = append(f.cuRanges, struct {
+			ranges [2]uint64
+			e      *dwarf.Entry
+		}{
+			ranges: cuRange,
+			e:      cu,
+		})
+	}
+	sort.Slice(f.cuRanges, func(i, j int) bool {
+		return f.cuRanges[i].ranges[0] < f.cuRanges[j].ranges[0]
+	})
+	return cu, nil
+}
+
 func (f *debugInfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
 	if _, ok := f.lineEntries[cu.Offset]; ok {
 		// Already created.
@@ -254,7 +303,7 @@ func (f *debugInfoFile) ensureLookUpTablesBuilt(cu *dwarf.Entry) error {
 		f.lineEntries[cu.Offset] = append(f.lineEntries[cu.Offset], le)
 	}
 
-	er := f.debugData.Reader()
+	er := f.reader
 	// The reader is positioned at byte offset of compile unit in the DWARF “info” section.
 	er.Seek(cu.Offset)
 	entry, err := er.Next()
@@ -313,6 +362,11 @@ func findLineInfo(entries []dwarf.LineEntry, pc uint64) (string, int64) {
 		// entries[i].address <= pc < entries[i + 1]
 		e := entries[i]
 		file, line = e.File.Name, int64(e.Line)
+	}
+	if len(entries) == 1 {
+		if entries[0].Address >= pc {
+			file, line = entries[0].File.Name, int64(entries[0].Line)
+		}
 	}
 
 	return file, line
