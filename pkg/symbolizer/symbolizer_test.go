@@ -19,9 +19,12 @@ import (
 	stdlog "log"
 	"net"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/go-kit/log"
+	"github.com/google/pprof/profile"
 	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -381,6 +384,94 @@ func TestRealSymbolizerEverythingStrippedInliningEnabled(t *testing.T) {
 	require.Equal(t, "./main.go", fres.Functions[1].Filename)
 	require.Equal(t, "main.busyCPU", fres.Functions[1].Name)
 	require.Equal(t, int64(89), lres.Locations[1].Lines[0].Line) // with DWARF 86
+}
+
+func TestDwarfEqualAddr2line(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("do not run this test on non-linux system")
+		return
+	}
+
+	dirname := "./testdata"
+	var pprofFiles []string
+
+	// without dwarf, addr2line could not work
+	files := []string{"profile.pb.gz"}
+	for _, file := range files {
+		pprofFiles = append(pprofFiles, filepath.Join(dirname, file))
+	}
+
+	for _, pprofFile := range pprofFiles {
+		// use metastore to tran unsymbolized location
+		conn, metastore, sym := setup(t)
+		require.NoError(t, ingest(t, conn, pprofFile))
+		ctx := context.Background()
+		ures, err := metastore.UnsymbolizedLocations(ctx, &pb.UnsymbolizedLocationsRequest{})
+		require.NoError(t, err)
+		require.NoError(t, sym.Symbolize(ctx, ures.Locations))
+
+		ids := make([]string, 0, len(ures.Locations))
+		for _, l := range ures.Locations {
+			ids = append(ids, l.Id)
+		}
+		lres, err := metastore.Locations(ctx, &pb.LocationsRequest{
+			LocationIds: ids,
+		})
+		require.NoError(t, err)
+
+		// use addr2liner to tran all pprof location to frames
+		data, err := os.ReadFile(pprofFile)
+		require.NoError(t, err)
+		p, err := profile.ParseData(data)
+		require.NoError(t, err)
+
+		// build addr2liner
+		// do not use addr2liner to tran system address
+		goMapping := p.Mapping[0]
+		executableFile := filepath.Join(dirname, goMapping.BuildID, "debuginfo")
+		addr2liner, err := newAddr2Liner("addr2line", executableFile, 0)
+		require.NoError(t, err)
+
+		addr2lineFrames := make(map[uint64][]Frame, len(p.Location))
+		for _, l := range p.Location {
+			if l.Mapping != goMapping {
+				continue
+			}
+			frames, err := addr2liner.addrInfo(l.Address)
+			require.NoErrorf(t, err, "error using addr2line parse address:%x for file:%s", l.Address, pprofFile)
+			addr2lineFrames[l.Address] = frames
+		}
+
+		// make sure addr2line output function order, name, line number
+		// equal with metastore
+		for _, l := range lres.Locations {
+			var functionIds []string
+			for _, line := range l.Lines {
+				functionIds = append(functionIds, line.FunctionId)
+			}
+			fres, err := metastore.Functions(ctx, &pb.FunctionsRequest{
+				FunctionIds: functionIds,
+			})
+			require.NoError(t, err)
+
+			if expectedFrames, ok := addr2lineFrames[l.Address]; ok {
+				require.Equalf(t, len(expectedFrames), len(fres.Functions),
+					"frames not equal length, address:%x for file:%s", l.Address, pprofFile)
+
+				for i, expectedFrame := range expectedFrames {
+					gotFrame := Frame{
+						Func: fres.Functions[i].Name,
+						File: fres.Functions[i].Filename,
+						Line: int(l.Lines[i].Line),
+					}
+					require.Equal(t, expectedFrame, gotFrame,
+						"metastore result not equal with addr2line, address:%x for file:%s", l.Address, pprofFile)
+				}
+			} else {
+				t.Errorf("not found address in addr2line:%d", l.Address)
+			}
+		}
+	}
 }
 
 func mustReadAll(t require.TestingT, filename string) []byte {
