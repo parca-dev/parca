@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/apache/arrow/go/v8 v8.0.1
-	github.com/cenkalti/backoff/v4 v4.1.3
+	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/dgraph-io/badger/v3 v3.2103.4
