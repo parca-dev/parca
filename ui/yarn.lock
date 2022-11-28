@@ -3909,15 +3909,7 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.6.tgz#cee20bd55e68a1720bdab363ecf0c821ded4cd45"
   integrity sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==
 
-"@protobuf-ts/grpcweb-transport@2.8.1":
-  version "2.8.1"
-  resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.8.1.tgz#1348d5d4d1bc5d5a5b59a397b0157d7bb6ce72a9"
-  integrity sha512-MllsGmH6VLSZmWJ2z5fhdvZThdWoUhjMrzdd/cGynXiNhGmMwgAgvU5kNX+Yk134h4N2kziSYmMrbzj0lLmx7w==
-  dependencies:
-    "@protobuf-ts/runtime" "^2.8.1"
-    "@protobuf-ts/runtime-rpc" "^2.8.1"
-
-"@protobuf-ts/grpcweb-transport@^2.5.0":
+"@protobuf-ts/grpcweb-transport@2.8.2", "@protobuf-ts/grpcweb-transport@^2.5.0":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.8.2.tgz#7eb15e40aeb354ea8480030c86055dedcc7bdb1a"
   integrity sha512-VG7132dOcH7t4C95EUiirzV2RTolBxIBWGxPFmnbKwHuR1lcSWDUbZZ1FIC1C/qip5jK4qcw5R76YZfV7gf8Pw==
@@ -3925,14 +3917,14 @@
     "@protobuf-ts/runtime" "^2.8.2"
     "@protobuf-ts/runtime-rpc" "^2.8.2"
 
-"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.8.1", "@protobuf-ts/runtime-rpc@^2.8.2":
+"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.8.2":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime-rpc/-/runtime-rpc-2.8.2.tgz#8af6d5eab44e2fc92cfe9a83a5c351b5f2fcdfbe"
   integrity sha512-vum/Y7AXdUTWGFu7dke/jCSB9dV3Oo3iVPcce3j7KudpzzWarDkEGvXjKv3Y8zJPj5waToyxwBNSb7eo5Vw5WA==
   dependencies:
     "@protobuf-ts/runtime" "^2.8.2"
 
-"@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.8.1", "@protobuf-ts/runtime@^2.8.2":
+"@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.8.2":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.8.2.tgz#5d5424a6ae7fb846c3f4d0f2dd6448db65bb69d6"
   integrity sha512-PVxsH81y9kEbHldxxG/8Y3z2mTXWQytRl8zNS0mTPUjkEC+8GUX6gj6LsA8EFp25fAs9V0ruh+aNWmPccEI9MA==
