@@ -89,8 +89,8 @@ func NewServer(reg *prometheus.Registry, version string) *Server {
 }
 
 // ListenAndServe starts the http grpc gateway server.
-func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port string, allowedCORSOrigins []string, pathPrefix string, registerables ...Registerable) error {
-	level.Info(logger).Log("msg", "starting server", "addr", port)
+func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr string, allowedCORSOrigins []string, pathPrefix string, registerables ...Registerable) error {
+	level.Info(logger).Log("msg", "starting server", "addr", addr)
 	logLevel := "ERROR"
 
 	logOpts := []grpc_logging.Option{
@@ -135,7 +135,7 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 
 	grpcWebMux := runtime.NewServeMux()
 	for _, r := range registerables {
-		if err := r.Register(ctx, srv, grpcWebMux, port, opts); err != nil {
+		if err := r.Register(ctx, srv, grpcWebMux, addr, opts); err != nil {
 			return err
 		}
 	}
@@ -176,7 +176,7 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, port str
 	}
 
 	s.Server = http.Server{
-		Addr: port,
+		Addr: addr,
 		Handler: grpcHandlerFunc(
 			srv,
 			fallbackNotFound(internalMux, uiHandler),

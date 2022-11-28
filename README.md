@@ -90,7 +90,8 @@ Flags:
                                    to a remote gRPC endpoint. All runs all
                                    components.
       --log-level="info"           log level.
-      --port=":7070"               Port string for server
+      --http-address=":7070"       Address to bind HTTP server to.
+      --port=""                    (DEPRECATED) Use http-address instead.
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
                                    Allowed CORS origins.
       --otlp-address=STRING        OpenTelemetry collector address to send
