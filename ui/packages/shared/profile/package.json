@@ -1,13 +1,13 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.74",
+  "version": "0.16.75",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@parca/client": "^0.16.56",
-    "@parca/components": "^0.16.65",
+    "@parca/components": "^0.16.66",
     "@parca/dynamicsize": "^0.16.51",
     "@parca/functions": "^0.16.52",
-    "@parca/parser": "^0.16.50",
+    "@parca/parser": "^0.16.51",
     "@parca/store": "^0.16.50",
     "d3": "7.6.1",
     "d3-scale": "^4.0.2",
@@ -17,8 +17,8 @@
     "react-copy-to-clipboard": "^5.1.0",
     "react-cytoscapejs": "1.2.1",
     "react-konva": "18.2.3",
-    "react-textarea-autosize": "^8.4.0",
-    "react-query": "^3.39.2"
+    "react-query": "^3.39.2",
+    "react-textarea-autosize": "^8.4.0"
   },
   "devDependencies": {
     "@types/d3": "7.4.0",
