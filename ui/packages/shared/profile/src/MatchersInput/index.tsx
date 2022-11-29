@@ -12,13 +12,15 @@
 // limitations under the License.
 
 import React, {useState, useEffect, useMemo, useRef} from 'react';
-import {Query} from '@parca/parser';
-import {LabelsResponse, QueryServiceClient} from '@parca/client';
 import TextareaAutosize from 'react-textarea-autosize';
 import cx from 'classnames';
 
-import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 import {useGrpcMetadata} from '@parca/components';
+import {sanitizeLabelValue} from '@parca/functions';
+import {Query} from '@parca/parser';
+import {LabelsResponse, QueryServiceClient} from '@parca/client';
+
+import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
@@ -79,7 +81,10 @@ const MatchersInput = ({
 
       call.response
         .then(response => {
-          setLabelValues(response.labelValues);
+          // replace single `\` in the `labelValues` string with doubles `\\` if available.
+          const newValues = sanitizeLabelValue(response.labelValues);
+
+          setLabelValues(newValues);
         })
         .catch(() => setLabelValues(null))
         .finally(() => setLabelValuesLoading(false));
