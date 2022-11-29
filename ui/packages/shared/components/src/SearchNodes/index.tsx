@@ -19,8 +19,7 @@ import {debounce} from 'lodash';
 
 const SearchNodes = ({navigateTo}): JSX.Element => {
   const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
-  const router = parseParams(window.location.search);
-  const currentSearchString = selectQueryParam('search_string');
+  const currentSearchString = selectQueryParam('search_string') as string;
 
   useEffect(() => {
     return () => {
@@ -31,15 +30,13 @@ const SearchNodes = ({navigateTo}): JSX.Element => {
   const debouncedSearch = useMemo(() => {
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
       const searchString = event.target.value;
+      const router = parseParams(window.location.search);
+
       if (navigateTo != null) {
-        navigateTo(
-          '/',
-          {
-            ...router,
-            ...{search_string: searchString},
-          },
-          {replace: true}
-        );
+        navigateTo('/', {
+          ...router,
+          ...{search_string: searchString},
+        });
       }
     };
 
