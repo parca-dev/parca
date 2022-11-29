@@ -11,7 +11,7 @@ concurrency:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.12.3
+  GORELEASER_VERSION: v1.13.0
 
 permissions:
   contents: write
@@ -94,7 +94,7 @@ jobs:
           cp deploy/manifests/openshift/manifest.yaml deploy/openshift-manifest.yaml
 
       - name: Release
-        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # tag=v0.1.14
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v0.1.15
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
@@ -129,7 +129,7 @@ jobs:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
       # Specifying SHA repeatedly fails:
       # @sha256:421ac576cebff98e90c531e7b9ce4482370ecc7cee59abc2341714031bfb5f43
-      image: quay.io/containers/podman:v4.3.0
+      image: quay.io/containers/podman:v4.3.1
       options: >-
         --device /dev/fuse:rw
         --privileged

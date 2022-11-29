@@ -208,6 +208,8 @@ function(params) {
       args:
         [
           '/parca',
+          // http-address optionally specifies the TCP address for the server to listen on, in the form "host:port".
+          '--http-address=' + ':' + prc.config.port,
           '--config-path=/etc/parca/parca.yaml',
           '--log-level=' + prc.config.logLevel,
         ] +

@@ -42,25 +42,27 @@ const BUTTON_VARIANT = {
 
 export type ButtonVariant = keyof typeof BUTTON_VARIANT;
 
+type Props = {
+  disabled?: boolean;
+  variant?: ButtonVariant;
+  className?: string;
+  children: React.ReactNode;
+} & JSX.IntrinsicElements['button'];
+
 const Button = ({
   disabled = false,
   variant = 'primary',
   children,
   className = '',
   ...props
-}: {
-  disabled?: boolean;
-  variant?: ButtonVariant;
-  className?: string;
-  children: React.ReactNode;
-} & JSX.IntrinsicElements['button']): JSX.Element => {
+}: Props): JSX.Element => {
   return (
     <button
       type="button"
       className={cx(
         disabled ? 'opacity-50 pointer-events-none' : '',
         ...Object.values(BUTTON_VARIANT[variant]),
-        'cursor-pointer group relative w-full flex $ text-sm rounded-md text-whitefocus:outline-none focus:ring-2 focus:ring-offset-2 items-center justify-center',
+        'cursor-pointer group relative w-full flex text-sm rounded-md text-whitefocus:outline-none focus:ring-2 focus:ring-offset-2 items-center justify-center',
         className
       )}
       disabled={disabled}
@@ -72,3 +74,7 @@ const Button = ({
 };
 
 export default Button;
+
+export const IconButton = ({className = '', ...props}: Exclude<Props, 'variant'>): JSX.Element => {
+  return <Button {...props} variant="link" className={`w-fit ${className}`} />;
+};

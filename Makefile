@@ -38,6 +38,8 @@ test: go/test ui/test
 
 .PHONY: clean
 clean:
+	rm -rf data
+	rm -rf tmp
 	rm -rf bin
 	rm -rf ui/packages/app/web/build
 
@@ -48,7 +50,7 @@ go/deps:
 .PHONY: go/bin
 go/bin: go/deps
 	mkdir -p ./bin
-	go build $(SANITIZERS) -o bin/ ./cmd/parca
+	go build $(SANITIZERS) -gcflags="all=-N -l" -o bin/ ./cmd/parca
 
 # renovate: datasource=go depName=mvdan.cc/gofumpt
 GOFUMPT_VERSION := v0.4.0
