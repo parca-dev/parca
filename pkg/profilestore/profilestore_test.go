@@ -111,3 +111,78 @@ func Test_LabelName_Error(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col, err := frostdb.New()
+	require.NoError(b, err)
+	colDB, err := col.DB(ctx, "parca")
+	require.NoError(b, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(b, err)
+
+	table, err := colDB.Table(
+		"stacktraces",
+		frostdb.NewTableConfig(schema),
+	)
+	require.NoError(b, err)
+	m := metastoretest.NewTestMetastore(
+		b,
+		logger,
+		reg,
+		tracer,
+	)
+
+	api := NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore.NewInProcessClient(m),
+		table,
+		schema,
+	)
+
+	req := &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{
+			{
+				Labels: &profilestorepb.LabelSet{
+					Labels: []*profilestorepb.Label{
+						{
+							Name:  "n0",
+							Value: "v0",
+						},
+					},
+				},
+			},
+			{
+				Labels: &profilestorepb.LabelSet{
+					Labels: []*profilestorepb.Label{
+						{
+							Name:  "n1",
+							Value: "v1",
+						},
+					},
+				},
+			},
+			{
+				Labels: &profilestorepb.LabelSet{
+					Labels: []*profilestorepb.Label{
+						{
+							Name:  "n2",
+							Value: "v2",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for n := 0; n < b.N; n++ {
+		api.writeSeries(ctx, req)
+	}
+}
