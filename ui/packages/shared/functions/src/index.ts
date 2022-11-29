@@ -288,11 +288,13 @@ export const saveAsBlob = (blob: Blob, filename: string): void => {
   link.click();
 };
 
-export const sanitizeLabelValue = (labels: Label[] | string[]): string[] => {
-  return labels.map(value => (value.includes('\\') ? value.replaceAll('\\', '\\\\') : value));
+export const sanitizeLabelValue = (labels: string[]): string[] => {
+  return labels.map((value: string) =>
+    value.includes('\\') ? value.replaceAll('\\', '\\\\') : value
+  );
 };
 
-export const sanitizeHighlightedValues = (labels: Label[]) =>
+export const sanitizeHighlightedValues = (labels: Label[]): Label[] =>
   labels.map(v => {
     return {
       ...v,
