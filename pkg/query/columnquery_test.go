@@ -86,6 +86,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -196,6 +197,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -276,6 +278,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -394,6 +397,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -561,6 +565,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -731,6 +736,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -811,6 +817,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -884,6 +891,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
