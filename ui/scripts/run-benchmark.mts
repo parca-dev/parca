@@ -19,6 +19,7 @@ import StopWatch from './stop-watch.js';
 import ora from 'ora';
 import commandLineArgs from 'command-line-args';
 import notLog from 'not-a-log';
+import {execa} from 'execa';
 import fs from 'fs-extra';
 
 const DIR_NAME = path.dirname(fileURLToPath(import.meta.url));
@@ -77,14 +78,18 @@ const populateBenchmarkData = async (): Promise<void> => {
   const stopwatch = new StopWatch();
   stopwatch.start();
   spinner.start('Discovering data population scripts');
-  const files = await glob('!(node_modules)/**/!(node_modules)/benchdata/populateData.ts');
+  const files = await glob('!(node_modules)/**/!(node_modules|dist)/benchdata/populateData.js');
   spinner.succeed(`Found ${files.length} data population scripts ${stopwatch.stopAndReset()}ms`);
   for (const file of files) {
     try {
       stopwatch.start();
       spinner.start(`Running data population script: ${file}`);
-      const populateData = await import(path.join(DIR_NAME, `../${file}`));
-      await populateData.default();
+      const {stdout} = await execa('babel-node', [
+        '--config-file',
+        path.join(DIR_NAME, '../babel.config.cjs'),
+        path.join(DIR_NAME, `../${file}`),
+      ]);
+      console.log('stdout', stdout);
       spinner.succeed(`Data population script: ${file} completed ${stopwatch.stopAndReset()}ms`);
     } catch (error) {
       spinner.fail(`Data population script: ${file} failed ${stopwatch.stopAndReset()}ms`);
