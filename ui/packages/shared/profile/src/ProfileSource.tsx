@@ -113,7 +113,7 @@ export class SingleProfileSelection implements ProfileSelection {
   HistoryParams(): {[key: string]: any} {
     return {
       profile_name: this.profileName,
-      labels: this.labels.map(label => `${label.name}=${label.value}`),
+      labels: this.labels.map(label => `${label.name}=${encodeURIComponent(label.value)}`),
       time: this.time,
     };
   }
