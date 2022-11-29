@@ -140,7 +140,7 @@ const ProfileSelector = ({
   const addLabelMatcher = (key: string, value: string): void => {
     // When a user clicks on a label on the metrics graph tooltip,
     // replace single `\` in the `value` string with doubles `\\` if available.
-    const newValue = value.includes('\\') ? value.replace('\\', '\\\\') : value;
+    const newValue = value.includes('\\') ? value.replaceAll('\\', '\\\\') : value;
     const [newQuery, changed] = Query.parse(queryExpressionString).setMatcher(key, newValue);
     if (changed) {
       setNewQueryExpression(newQuery.toString(), false);

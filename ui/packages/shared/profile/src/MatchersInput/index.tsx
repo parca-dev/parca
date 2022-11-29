@@ -13,12 +13,15 @@
 
 import React, {Fragment, useState, useEffect} from 'react';
 import {Transition} from '@headlessui/react';
-import {Query} from '@parca/parser';
-import {LabelsResponse, QueryServiceClient} from '@parca/client';
+
 import {usePopper} from 'react-popper';
 import cx from 'classnames';
 
 import {useParcaContext, useGrpcMetadata} from '@parca/components';
+import {sanitizeLabelValue} from '@parca/functions';
+import {Query} from '@parca/parser';
+import {LabelsResponse, QueryServiceClient} from '@parca/client';
+
 import SuggestionItem from './SuggestionItem';
 
 interface MatchersInputProps {
@@ -116,9 +119,7 @@ const MatchersInput = ({
       call.response
         .then(response => {
           // replace single `\` in the `labelValues` string with doubles `\\` if available.
-          const newValues = response.labelValues.map(value =>
-            value.includes('\\') ? value.replace('\\', '\\\\') : value
-          );
+          const newValues = sanitizeLabelValue(response.labelValues);
 
           setLabelValues(newValues);
         })

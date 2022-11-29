@@ -21,7 +21,7 @@ import throttle from 'lodash.throttle';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
 import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
-import {valueFormatter, formatDate} from '@parca/functions';
+import {valueFormatter, formatDate, sanitizeHighlightedValues} from '@parca/functions';
 import {DateTimeRange} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
@@ -360,21 +360,12 @@ export const RawMetricsGraph = ({
     e.preventDefault();
   };
 
-  // When a user clicks on any sample in the graph, replace single `\` in the `labelValues` string with doubles `\\` if available.
-  const transformedHighlightedValues = (labels: Label[]) =>
-    labels.map(v => {
-      return {
-        ...v,
-        value: v.value.includes('\\') ? v.value.replace('\\', '\\\\') : v.value,
-      };
-    });
-
   const openClosestProfile = (): void => {
     if (highlighted != null) {
       onSampleClick(
         Math.round(highlighted.timestamp),
         highlighted.value,
-        transformedHighlightedValues(highlighted.labels)
+        sanitizeHighlightedValues(highlighted.labels) // When a user clicks on any sample in the graph, replace single `\` in the `labelValues` string with doubles `\\` if available.
       );
     }
   };
