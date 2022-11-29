@@ -221,6 +221,10 @@ export const selectQueryParam = (key: string) => {
     return dashboardItems;
   }
 
+  if (key === 'compare_a' || key === 'compare_b') {
+    return router[key] === 'true';
+  }
+
   return router[key];
 };
 

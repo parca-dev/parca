@@ -20,7 +20,6 @@ import {
   parseParams,
   selectQueryParam,
 } from '@parca/functions';
-import {useAppSelector, selectCompareMode} from '@parca/store';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 
 import {hexifyAddress} from './utils';
@@ -145,7 +144,7 @@ export const TopTable = ({data: top, sampleUnit, navigateTo}: TopTableProps): JS
   const {items, requestSort, sortConfig} = useSortableData(top);
   const router = parseParams(window.location.search);
   const currentSearchString = selectQueryParam('search_string') as string;
-  const compareMode = useAppSelector(selectCompareMode);
+  const compareMode = selectQueryParam('compare_a') && selectQueryParam('compare_b');
 
   const unit = sampleUnit;
 

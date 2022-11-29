@@ -16,10 +16,9 @@ import {ProfileSelection, ProfileSelectionFromParams, SuffixParams, NavigateFunc
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
-import {useAppSelector, useAppDispatch, setCompare, selectCompareMode, store} from '@parca/store';
-import {Provider, batch} from 'react-redux';
+import {store} from '@parca/store';
+import {Provider} from 'react-redux';
 import {DateTimeRange} from '@parca/components';
-import {useEffect} from 'react';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -71,9 +70,6 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const dispatch = useAppDispatch();
-  const compareMode = useAppSelector(selectCompareMode);
-
   /* eslint-disable @typescript-eslint/naming-convention */
   let {
     from_a,
@@ -110,14 +106,6 @@ const ProfileExplorerApp = ({
 
   if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
   if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;
-
-  useEffect(() => {
-    if (compare_a === 'true' && compare_b === 'true') {
-      dispatch(setCompare(true));
-    } else {
-      dispatch(setCompare(false));
-    }
-  }, [dispatch, compare_a, compare_b]);
 
   const selectProfile = (p: ProfileSelection, suffix: string): void => {
     queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
@@ -212,14 +200,6 @@ const ProfileExplorerApp = ({
           ...compareQuery,
         };
       }
-
-      compareQuery = {
-        ...compareQuery,
-      };
-
-      batch(() => {
-        dispatch(setCompare(!compareMode));
-      });
 
       void navigateTo('/', {
         ...compareQuery,
@@ -327,14 +307,11 @@ const ProfileExplorerApp = ({
       newQueryParameters = swapQueryParameters(queryParams);
     }
 
-    batch(() => {
-      dispatch(setCompare(!compareMode));
-    });
-
     return navigateTo('/', {
       ...filterSuffix(newQueryParameters, '_b'),
       ...{
         compare_a: 'false',
+        compare_b: 'false',
         search_string: '',
       },
     });

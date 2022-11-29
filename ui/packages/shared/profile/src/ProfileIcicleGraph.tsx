@@ -12,11 +12,11 @@
 // limitations under the License.
 
 import {Flamegraph} from '@parca/client';
-import {useAppSelector, selectCompareMode} from '@parca/store';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 import DiffLegend from './components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
+import {selectQueryParam} from '@parca/functions';
 
 interface ProfileIcicleGraphProps {
   width?: number;
@@ -32,7 +32,7 @@ const ProfileIcicleGraph = ({
   setNewCurPath,
   sampleUnit,
 }: ProfileIcicleGraphProps): JSX.Element => {
-  const compareMode = useAppSelector(selectCompareMode);
+  const compareMode = selectQueryParam('compare_a') && selectQueryParam('compare_b');
   const {ref, dimensions} = useContainerDimensions();
 
   if (graph === undefined) return <div>no data...</div>;
