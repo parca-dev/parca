@@ -150,6 +150,10 @@ type ScrapeConfig struct {
 	// The URL scheme with which to fetch metrics from targets.
 	Scheme string `yaml:"scheme,omitempty"`
 
+	// NormalizedAddresses can be set to true if the addresses returned by the
+	// endpoints have already been normalized.
+	NormalizedAddresses bool `yaml:"normalized_addresses,omitempty"`
+
 	ProfilingConfig *ProfilingConfig `yaml:"profiling_config,omitempty"`
 
 	RelabelConfigs []*relabel.Config `yaml:"relabel_configs,omitempty"`

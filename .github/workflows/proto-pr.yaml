@@ -50,6 +50,9 @@ jobs:
 
       - uses: bufbuild/buf-setup-action@3e33fea8596569a62fcaa33eb3880b6ac7098941 # tag=v1.9.0
 
+      - name: version
+        run: buf --version
+
       - name: Format
         run: buf format --diff --exit-code
 

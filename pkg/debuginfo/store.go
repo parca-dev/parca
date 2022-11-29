@@ -171,13 +171,11 @@ func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
 
 func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) error {
 	if err := validateInput(buildID); err != nil {
-		err = fmt.Errorf("invalid build ID: %w", err)
-		return status.Error(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, fmt.Errorf("invalid build ID: %w", err).Error())
 	}
 
 	if err := validateInput(hash); err != nil {
-		err = fmt.Errorf("invalid hash: %w", err)
-		return status.Error(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, fmt.Errorf("invalid hash: %w", err).Error())
 	}
 
 	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
@@ -230,7 +228,7 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 				}
 				level.Error(s.logger).Log("msg", "failed to validate object file", "buildid", buildID)
 				// Client will retry.
-				return status.Error(codes.Internal, err.Error())
+				return status.Error(codes.Internal, fmt.Errorf("validate elf file: %w", err).Error())
 			}
 
 			// Valid.
@@ -283,12 +281,11 @@ func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) e
 			err = fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)
 			return status.Error(codes.Internal, err.Error())
 		}
-		return status.Error(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, fmt.Errorf("validate elf header: %w", err).Error())
 	}
 
 	if err := s.metadata.MarkAsUploaded(ctx, buildID, hash); err != nil {
-		err = fmt.Errorf("failed to update metadata after uploaded: %w", err)
-		return status.Error(codes.Internal, err.Error())
+		return status.Error(codes.Internal, fmt.Errorf("failed to update metadata after uploaded: %w", err).Error())
 	}
 
 	return nil
@@ -405,7 +402,11 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 	objFile, err := s.fetchFromObjectStore(ctx, buildID)
 	if err != nil {
 		// It's ok if we don't have the symbols for given BuildID, it happens too often.
-		level.Warn(logger).Log("msg", "failed to fetch object", "err", err)
+		if errors.Is(err, ErrDebugInfoNotFound) {
+			level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
+		} else {
+			level.Warn(logger).Log("msg", "failed to fetch object", "err", err)
+		}
 
 		// Let's try to find a debug file from debuginfod servers.
 		objFile, err = s.fetchDebuginfodFile(ctx, buildID)
@@ -454,7 +455,11 @@ func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, deb
 				// Try to download a better version from debuginfod servers.
 				dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
 				if err != nil {
-					level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+					if errors.Is(err, ErrDebugInfoNotFound) {
+						level.Debug(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+					} else {
+						level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
+					}
 				} else {
 					objFile = dbgFile
 					source = debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD

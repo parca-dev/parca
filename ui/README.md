@@ -6,7 +6,7 @@ This is a [Create React App](https://create-react-app.dev/) project that utilize
 
 The React app requires an environment variable for the API endpoint so as to talk to the Parca backend. Create a file named `.env.local` in `packages/app/web/` to add the environment variable for the API endpoint.
 
-```
+```shell
 REACT_APP_PUBLIC_API_ENDPOINT=http://localhost:7070
 ```
 
@@ -46,8 +46,7 @@ make ui/build # yarn install && yarn build
 
 We embed the artifacts (the production build and its static assets) into the final binary distribution.
 See https://pkg.go.dev/embed for further details.
-
-Run following to build the `parca` binary with embedded assets.
+Run the following to build the `parca` binary with embedded assets.
 
 ```shell
 make build
@@ -63,7 +62,7 @@ You can set up a cluster and all else you need by simply running:
 make dev/up
 ```
 
-For a simple local development setup we use [Tilt](https://tilt.dev).
+For a simple local development setup, we use [Tilt](https://tilt.dev).
 
 ```shell
 tilt up
@@ -73,33 +72,33 @@ tilt up
 
 We have a feature flag system that allows you to enable or disable features for a user browser. It's a naive implementation based on browser local storage.
 
-#### Usage:
+### Usage
 
-```
+```js
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 
 const Header = () => {
   const isGreetingEnabled = useUIFeatureFlag('greeting');
   return (
     <div>
-      <img src="/logo.png" alt="Logo"/>
+      <img src="/logo.png" alt="Logo" />
       {isGreetingEnabled ? <h1>Hello!!!</h1> : null}
     </div>
   );
-}
+};
 ```
 
-For easy modification of the flag states, we added a two utility query params that can be used to control the feature flag state: `enable-ui-flag` and `disable-ui-flag`.
+For easy modification of the flag states, we added two utility query params that can be used to control the feature flag state: `enable-ui-flag` and `disable-ui-flag`.
 
 For example, if you want to enable the greeting feature for a browser, you can load the following URL:
 
-```
+```text
 http://localhost:3000/?enable-ui-flag=greeting
 ```
 
-Like wise, if you would like to disable the greeting feature for a browser, you can load the following URL:
+Likewise, if you would like to disable the greeting feature for a browser, you can load the following URL:
 
-```
+```text
 http://localhost:3000/?disable-ui-flag=greeting
 ```
 

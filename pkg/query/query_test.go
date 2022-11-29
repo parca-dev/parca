@@ -103,6 +103,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				tracer,
 				getShareServerConn(b),
 				parcacol.NewQuerier(
+					logger,
 					tracer,
 					query.NewEngine(
 						memory.DefaultAllocator,
@@ -171,6 +172,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 		tracer,
 		getShareServerConn(b),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,

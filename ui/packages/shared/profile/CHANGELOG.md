@@ -3,6 +3,50 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.77](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.76...@parca/profile@0.16.77) (2022-11-29)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.76](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.75...@parca/profile@0.16.76) (2022-11-29)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.75 (2022-11-29)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.74](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.73...@parca/profile@0.16.74) (2022-11-24)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.73](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.72...@parca/profile@0.16.73) (2022-11-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.72](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.71...@parca/profile@0.16.72) (2022-11-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.71 (2022-11-21)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.70](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.69...@parca/profile@0.16.70) (2022-11-17)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.69 (2022-11-17)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.68 (2022-11-16)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.67](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.66...@parca/profile@0.16.67) (2022-11-15)
+
+**Note:** Version bump only for package @parca/profile
+
 ## 0.16.66 (2022-11-14)
 
 **Note:** Version bump only for package @parca/profile

@@ -240,6 +240,7 @@ func replayDebugLog(ctx context.Context, t Testing) (querypb.QueryServiceServer,
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -405,6 +406,8 @@ func TestConsistency(t *testing.T) {
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
+
+			logger,
 			tracer,
 			query.NewEngine(
 				memory.DefaultAllocator,

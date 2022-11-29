@@ -16,6 +16,7 @@ import {MenuIcon, XIcon} from '@heroicons/react/outline';
 import {Parca, ParcaSmall} from '@parca/icons';
 import cx from 'classnames';
 import DarkModeToggle from './DarkModeToggle';
+import UserPreferences from './UserPreferences';
 
 const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
 
@@ -99,6 +100,9 @@ const Navbar = () => {
                 <a target="_blank" href="https://github.com/parca-dev/parca" rel="noreferrer">
                   GitHub
                 </a>
+              </div>
+              <div className="text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+                <UserPreferences />
               </div>
               <div className="text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 <DarkModeToggle />
