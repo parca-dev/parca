@@ -115,7 +115,12 @@ const MatchersInput = ({
 
       call.response
         .then(response => {
-          setLabelValues(response.labelValues);
+          // replace single `\` in the `labelValues` string with doubles `\\` if available.
+          const newValues = response.labelValues.map(value =>
+            value.includes('\\') ? value.replace('\\', '\\\\') : value
+          );
+
+          setLabelValues(newValues);
         })
         .catch(() => setLabelValues(null))
         .finally(() => setLabelValuesLoading(false));
