@@ -47,6 +47,7 @@ func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, ls
 		r = SampleToParquetRow(
 			schema,
 			r[:0],
+			names,
 			pprofLabels,
 			pprofNumLabels,
 			ls,
@@ -112,7 +113,7 @@ func profileNumLabelNames(p *profile.NormalizedProfile) []string {
 func SampleToParquetRow(
 	schema *dynparquet.Schema,
 	row parquet.Row,
-	profileLabelNames, profileNumLabelNames []string,
+	labelNames, profileLabelNames, profileNumLabelNames []string,
 	ls labels.Labels,
 	meta profile.Meta,
 	s *profile.NormalizedSample,
@@ -156,29 +157,32 @@ func SampleToParquetRow(
 
 		// All remaining cases take care of dynamic columns
 		case ColumnLabels:
-			for _, label := range ls {
-				row = append(row, parquet.ValueOf(label.Value).Level(0, 1, columnIndex))
+			lset := ls.Map() // Convert labels to map for quicker lookup in loop.
+			for _, name := range labelNames {
+				if value, ok := lset[name]; ok {
+					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
+				} else {
+					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
+				}
 				columnIndex++
 			}
 		case ColumnPprofLabels:
 			for _, name := range profileLabelNames {
 				if value, ok := s.Label[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
-					columnIndex++
 				} else {
 					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-					columnIndex++
 				}
+				columnIndex++
 			}
 		case ColumnPprofNumLabels:
 			for _, name := range profileNumLabelNames {
 				if value, ok := s.NumLabel[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
-					columnIndex++
 				} else {
 					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-					columnIndex++
 				}
+				columnIndex++
 			}
 		default:
 			panic(fmt.Errorf("conversion not implement for column: %s", column.Name))
