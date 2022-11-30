@@ -7,5 +7,12 @@
     "isolatedModules": true,
     "baseUrl": "."
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "**/*.benchmark.tsx"],
+  "ts-node": {
+    "esm": true,
+    "compilerOptions": {
+      "target": "es2020",
+      "module": "es2020"
+    }
+  }
 }
