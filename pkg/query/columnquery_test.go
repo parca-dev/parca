@@ -521,7 +521,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 
 	err = ingester.IngestProfile(
 		ctx,
-		labels.Labels{{Name: "job", Value: "default"}},
+		labels.Labels{{Name: "job", Value: "default"}}.Map(),
 		&profile.NormalizedProfile{
 			Meta: profile.Meta{
 				Name:       "memory",
@@ -539,7 +539,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 
 	err = ingester.IngestProfile(
 		ctx,
-		labels.Labels{{Name: "job", Value: "default"}},
+		labels.Labels{{Name: "job", Value: "default"}}.Map(),
 		&profile.NormalizedProfile{
 			Meta: profile.Meta{
 				Name:       "memory",

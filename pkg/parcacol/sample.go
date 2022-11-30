@@ -19,16 +19,16 @@ import (
 	"sort"
 
 	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/segmentio/parquet-go"
+	"golang.org/x/exp/maps"
 
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
 // NormalizedProfileToParquetBuffer converts a normalized profile to a Parquet
 // buffer. The passed labels must be sorted.
-func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, ls labels.Labels, p *profile.NormalizedProfile) error {
-	names := labelNames(ls)
+func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, lset map[string]string, p *profile.NormalizedProfile) error {
+	names := labelNames(lset)
 	pprofLabels := profileLabelNames(p)
 	pprofNumLabels := profileNumLabelNames(p)
 
@@ -50,7 +50,7 @@ func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, ls
 			names,
 			pprofLabels,
 			pprofNumLabels,
-			ls,
+			lset,
 			p.Meta,
 			sample,
 		)
@@ -64,13 +64,9 @@ func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, ls
 	return schema.SerializeBuffer(w, pb.Buffer)
 }
 
-func labelNames(ls labels.Labels) []string {
-	names := []string{}
-
-	for _, label := range ls {
-		names = append(names, label.Name)
-	}
-
+func labelNames(ls map[string]string) []string {
+	names := maps.Keys(ls)
+	sort.Strings(names)
 	return names
 }
 
@@ -114,7 +110,7 @@ func SampleToParquetRow(
 	schema *dynparquet.Schema,
 	row parquet.Row,
 	labelNames, profileLabelNames, profileNumLabelNames []string,
-	ls labels.Labels,
+	lset map[string]string,
 	meta profile.Meta,
 	s *profile.NormalizedSample,
 ) parquet.Row {
@@ -157,7 +153,6 @@ func SampleToParquetRow(
 
 		// All remaining cases take care of dynamic columns
 		case ColumnLabels:
-			lset := ls.Map() // Convert labels to map for quicker lookup in loop.
 			for _, name := range labelNames {
 				if value, ok := lset[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))

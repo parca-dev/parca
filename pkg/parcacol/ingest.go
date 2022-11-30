@@ -85,6 +85,7 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 	if err != nil {
 		return fmt.Errorf("prepare labels: %w", err)
 	}
+	lset := ls.Map()
 
 	if err := validatePprofProfile(p); err != nil {
 		return err
@@ -101,7 +102,7 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 			continue
 		}
 
-		if err := ing.IngestProfile(ctx, ls, p); err != nil {
+		if err := ing.IngestProfile(ctx, lset, p); err != nil {
 			return fmt.Errorf("ingest profile: %w", err)
 		}
 	}
@@ -109,12 +110,12 @@ func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.
 	return nil
 }
 
-func (ing Ingester) IngestProfile(ctx context.Context, ls labels.Labels, p *profile.NormalizedProfile) error {
+func (ing Ingester) IngestProfile(ctx context.Context, lset map[string]string, p *profile.NormalizedProfile) error {
 	buf := ing.bufferPool.Get().(*bytes.Buffer)
 	buf.Reset()
 	defer ing.bufferPool.Put(buf)
 
-	err := NormalizedProfileToParquetBuffer(buf, ing.schema, ls, p)
+	err := NormalizedProfileToParquetBuffer(buf, ing.schema, lset, p)
 	if err != nil {
 		return fmt.Errorf("failed to convert samples to buffer: %w", err)
 	}
