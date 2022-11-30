@@ -19,16 +19,16 @@ import (
 	"sort"
 
 	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/segmentio/parquet-go"
+	"golang.org/x/exp/maps"
 
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
 // NormalizedProfileToParquetBuffer converts a normalized profile to a Parquet
 // buffer. The passed labels must be sorted.
-func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, ls labels.Labels, p *profile.NormalizedProfile) error {
-	names := labelNames(ls)
+func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, lset map[string]string, p *profile.NormalizedProfile) error {
+	names := labelNames(lset)
 	pprofLabels := profileLabelNames(p)
 	pprofNumLabels := profileNumLabelNames(p)
 
@@ -47,9 +47,10 @@ func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, ls
 		r = SampleToParquetRow(
 			schema,
 			r[:0],
+			names,
 			pprofLabels,
 			pprofNumLabels,
-			ls,
+			lset,
 			p.Meta,
 			sample,
 		)
@@ -63,13 +64,9 @@ func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, ls
 	return schema.SerializeBuffer(w, pb.Buffer)
 }
 
-func labelNames(ls labels.Labels) []string {
-	names := []string{}
-
-	for _, label := range ls {
-		names = append(names, label.Name)
-	}
-
+func labelNames(ls map[string]string) []string {
+	names := maps.Keys(ls)
+	sort.Strings(names)
 	return names
 }
 
@@ -112,8 +109,8 @@ func profileNumLabelNames(p *profile.NormalizedProfile) []string {
 func SampleToParquetRow(
 	schema *dynparquet.Schema,
 	row parquet.Row,
-	profileLabelNames, profileNumLabelNames []string,
-	ls labels.Labels,
+	labelNames, profileLabelNames, profileNumLabelNames []string,
+	lset map[string]string,
 	meta profile.Meta,
 	s *profile.NormalizedSample,
 ) parquet.Row {
@@ -156,29 +153,31 @@ func SampleToParquetRow(
 
 		// All remaining cases take care of dynamic columns
 		case ColumnLabels:
-			for _, label := range ls {
-				row = append(row, parquet.ValueOf(label.Value).Level(0, 1, columnIndex))
+			for _, name := range labelNames {
+				if value, ok := lset[name]; ok {
+					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
+				} else {
+					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
+				}
 				columnIndex++
 			}
 		case ColumnPprofLabels:
 			for _, name := range profileLabelNames {
 				if value, ok := s.Label[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
-					columnIndex++
 				} else {
 					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-					columnIndex++
 				}
+				columnIndex++
 			}
 		case ColumnPprofNumLabels:
 			for _, name := range profileNumLabelNames {
 				if value, ok := s.NumLabel[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
-					columnIndex++
 				} else {
 					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-					columnIndex++
 				}
+				columnIndex++
 			}
 		default:
 			panic(fmt.Errorf("conversion not implement for column: %s", column.Name))

@@ -25,7 +25,6 @@ import (
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/segmentio/parquet-go"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -72,7 +71,7 @@ func TestPprofToParquet(t *testing.T) {
 
 	for i, np := range nps {
 		buf := bytes.NewBuffer(nil)
-		require.NoError(t, NormalizedProfileToParquetBuffer(buf, schema, labels.Labels{}, np))
+		require.NoError(t, NormalizedProfileToParquetBuffer(buf, schema, map[string]string{}, np))
 
 		serBuf, err := dynparquet.ReaderFromBytes(buf.Bytes())
 		require.NoError(t, err)
