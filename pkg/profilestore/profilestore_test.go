@@ -15,6 +15,7 @@ package profilestore
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/go-kit/log"
@@ -145,6 +146,9 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		schema,
 	)
 
+	content, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
+	require.NoError(b, err)
+
 	req := &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{
 			{
@@ -156,6 +160,9 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 						},
 					},
 				},
+				Samples: []*profilestorepb.RawSample{{
+					RawProfile: content,
+				}},
 			},
 			{
 				Labels: &profilestorepb.LabelSet{
@@ -166,6 +173,9 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 						},
 					},
 				},
+				Samples: []*profilestorepb.RawSample{{
+					RawProfile: content,
+				}},
 			},
 			{
 				Labels: &profilestorepb.LabelSet{
@@ -176,6 +186,9 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 						},
 					},
 				},
+				Samples: []*profilestorepb.RawSample{{
+					RawProfile: content,
+				}},
 			},
 		},
 	}
