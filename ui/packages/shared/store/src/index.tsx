@@ -14,6 +14,7 @@
 import store from './store';
 import {useAppDispatch, useAppSelector} from './hooks';
 export * from './slices/uiSlice';
+export * from './slices/profileSlice';
 export * from './store';
 
 export {store, useAppDispatch, useAppSelector};

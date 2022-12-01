@@ -13,6 +13,7 @@
 
 import format from 'date-fns/format';
 import {Label} from '@parca/client';
+export * from './hooks';
 
 export const SEARCH_STRING_COLOR = '#e39c9c';
 
@@ -191,7 +192,7 @@ export const getLastItem = (thePath: string | undefined): string | undefined => 
 
 const transformToArray = (params: string): string[] => params.split(',');
 
-export const parseParams = (querystring: string): Record<string, string | string[]> => {
+export const parseParams = (querystring: string): Record<string, string | string[] | undefined> => {
   const params = new URLSearchParams(querystring);
 
   const obj: Record<string, string | string[]> = {};
@@ -229,7 +230,9 @@ export const selectQueryParam = (key: string) => {
   return router[key];
 };
 
-export const convertToQueryParams = (params: Record<string, string>): string =>
+export const convertToQueryParams = (
+  params: Record<string, string | string[] | undefined>
+): string =>
   Object.keys(params)
     .map(key => key + '=' + params[key])
     .join('&');

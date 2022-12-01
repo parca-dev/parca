@@ -89,6 +89,7 @@ export const ProfileView = ({
   const [curPath, setCurPath] = useState<string[]>([]);
 
   const router = parseParams(window.location.search);
+
   const isDarkMode = useAppSelector(selectDarkMode);
   const isSinglePanelView = dashboardItems.length === 1;
 
@@ -179,12 +180,12 @@ export const ProfileView = ({
                 {filterByFunctionEnabled ? (
                   <FilterByFunctionButton navigateTo={navigateTo} />
                 ) : (
-                  <SearchNodes navigateTo={navigateTo} />
+                  <SearchNodes />
                 )}
               </div>
 
               <div className="flex ml-auto gap-2">
-                {filterByFunctionEnabled ? <SearchNodes navigateTo={navigateTo} /> : null}
+                {filterByFunctionEnabled ? <SearchNodes /> : null}
                 <Button
                   color="neutral"
                   onClick={resetIcicleGraph}

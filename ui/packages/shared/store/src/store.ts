@@ -13,6 +13,7 @@
 
 import {configureStore, combineReducers} from '@reduxjs/toolkit';
 import uiReducer, {UiState} from './slices/uiSlice';
+import profileReducer, {ProfileState} from './slices/profileSlice';
 import storage from 'redux-persist/lib/storage';
 import {
   persistReducer,
@@ -29,6 +30,7 @@ import {Store} from 'redux';
 
 const rootReducer = combineReducers({
   ui: uiReducer,
+  profile: profileReducer,
 });
 
 const slicesToPersist = ['ui'];
@@ -63,6 +65,6 @@ const defaultExports = (): {store: Store; persistor: Persistor} => {
   return {store, persistor};
 };
 
-export type {UiState};
+export type {ProfileState, UiState};
 
 export default defaultExports;
