@@ -15,94 +15,12 @@ package parcacol
 
 import (
 	"fmt"
-	"io"
-	"sort"
 
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/segmentio/parquet-go"
-	"golang.org/x/exp/maps"
 
 	"github.com/parca-dev/parca/pkg/profile"
 )
-
-// NormalizedProfileToParquetBuffer converts a normalized profile to a Parquet
-// buffer. The passed labels must be sorted.
-func NormalizedProfileToParquetBuffer(w io.Writer, schema *dynparquet.Schema, lset map[string]string, p *profile.NormalizedProfile) error {
-	names := labelNames(lset)
-	pprofLabels := profileLabelNames(p)
-	pprofNumLabels := profileNumLabelNames(p)
-
-	pb, err := schema.GetBuffer(map[string][]string{
-		ColumnLabels:         names,
-		ColumnPprofLabels:    pprofLabels,
-		ColumnPprofNumLabels: pprofNumLabels,
-	})
-	if err != nil {
-		return err
-	}
-	defer schema.PutBuffer(pb)
-
-	var r parquet.Row
-	for _, sample := range p.Samples {
-		r = SampleToParquetRow(
-			schema,
-			r[:0],
-			names,
-			pprofLabels,
-			pprofNumLabels,
-			lset,
-			p.Meta,
-			sample,
-		)
-		_, err := pb.WriteRows([]parquet.Row{r})
-		if err != nil {
-			return err
-		}
-	}
-
-	pb.Sort()
-	return schema.SerializeBuffer(w, pb.Buffer)
-}
-
-func labelNames(ls map[string]string) []string {
-	names := maps.Keys(ls)
-	sort.Strings(names)
-	return names
-}
-
-func profileLabelNames(p *profile.NormalizedProfile) []string {
-	names := []string{}
-	seen := map[string]struct{}{}
-
-	for _, sample := range p.Samples {
-		for name := range sample.Label {
-			if _, ok := seen[name]; !ok {
-				names = append(names, name)
-				seen[name] = struct{}{}
-			}
-		}
-	}
-	sort.Strings(names)
-
-	return names
-}
-
-func profileNumLabelNames(p *profile.NormalizedProfile) []string {
-	names := []string{}
-	seen := map[string]struct{}{}
-
-	for _, sample := range p.Samples {
-		for name := range sample.NumLabel {
-			if _, ok := seen[name]; !ok {
-				names = append(names, name)
-				seen[name] = struct{}{}
-			}
-		}
-	}
-	sort.Strings(names)
-
-	return names
-}
 
 // SampleToParquetRow converts a sample to a Parquet row. The passed labels
 // must be sorted.

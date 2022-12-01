@@ -27,17 +27,17 @@ const (
 	UnsymolizableLocationAddress = 0x0
 )
 
-type Normalizer struct {
+type MetastoreNormalizer struct {
 	metastore pb.MetastoreServiceClient
 }
 
-func NewNormalizer(metastore pb.MetastoreServiceClient) *Normalizer {
-	return &Normalizer{
+func NewNormalizer(metastore pb.MetastoreServiceClient) *MetastoreNormalizer {
+	return &MetastoreNormalizer{
 		metastore: metastore,
 	}
 }
 
-func (n *Normalizer) NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]struct{}, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
+func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
 	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable)
 	if err != nil {
 		return nil, fmt.Errorf("normalize mappings: %w", err)
@@ -77,7 +77,7 @@ func (n *Normalizer) NormalizePprof(ctx context.Context, name string, takenLabel
 	}
 
 	for i, sample := range p.Sample {
-		labels, numLabels := labelsFromSample(takenLabelNames, p.StringTable, sample.Label)
+		labels, numLabels := LabelsFromSample(takenLabelNames, p.StringTable, sample.Label)
 		key := sampleKey(stacktraces[i].Id, labels, numLabels)
 		for j, value := range sample.Value {
 			if value == 0 {
@@ -116,11 +116,62 @@ func sampleKey(stacktraceID string, labels map[string]string, numLabels map[stri
 	return key
 }
 
+func LabelNamesFromSamples(
+	takenLabels map[string]string,
+	stringTable []string,
+	samples []*pprofpb.Sample,
+	allLabels map[string]struct{},
+	allNumLabels map[string]struct{},
+) {
+	labels := map[string]struct{}{}
+	for _, sample := range samples {
+		for _, label := range sample.Label {
+			// Only looking at string labels here.
+			if label.Str == 0 {
+				continue
+			}
+
+			key := stringTable[label.Key]
+			if _, ok := labels[key]; !ok {
+				labels[key] = struct{}{}
+			}
+		}
+	}
+
+	resLabels := map[string]struct{}{}
+	for labelName := range labels {
+		resLabelName := labelName
+		if _, ok := takenLabels[labelName]; ok {
+			resLabelName = "exported_" + resLabelName
+		}
+		if _, ok := resLabels[resLabelName]; !ok {
+			resLabelName = "exported_" + resLabelName
+		}
+		resLabels[resLabelName] = struct{}{}
+	}
+
+	for labelName := range resLabels {
+		allLabels[labelName] = struct{}{}
+	}
+
+	for _, sample := range samples {
+		for _, label := range sample.Label {
+			key := stringTable[label.Key]
+			if label.Num != 0 {
+				if _, ok := allNumLabels[key]; !ok {
+					allNumLabels[key] = struct{}{}
+				}
+			}
+		}
+	}
+}
+
 // TODO: support num label units.
-func labelsFromSample(takenLabelNames map[string]struct{}, stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
+func LabelsFromSample(takenLabelNames map[string]string, stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
 	labels := map[string][]string{}
 	labelNames := []string{}
 	for _, label := range plabels {
+		// Only looking at string labels here.
 		if label.Str == 0 {
 			continue
 		}
@@ -164,7 +215,7 @@ type mappingNormalizationInfo struct {
 	offset int64
 }
 
-func (n *Normalizer) NormalizeMappings(ctx context.Context, mappings []*pprofpb.Mapping, stringTable []string) ([]mappingNormalizationInfo, error) {
+func (n *MetastoreNormalizer) NormalizeMappings(ctx context.Context, mappings []*pprofpb.Mapping, stringTable []string) ([]mappingNormalizationInfo, error) {
 	req := &pb.GetOrCreateMappingsRequest{
 		Mappings: make([]*pb.Mapping, 0, len(mappings)),
 	}
@@ -199,7 +250,7 @@ func (n *Normalizer) NormalizeMappings(ctx context.Context, mappings []*pprofpb.
 	return mapInfos, nil
 }
 
-func (n *Normalizer) NormalizeFunctions(ctx context.Context, functions []*pprofpb.Function, stringTable []string) ([]*pb.Function, error) {
+func (n *MetastoreNormalizer) NormalizeFunctions(ctx context.Context, functions []*pprofpb.Function, stringTable []string) ([]*pb.Function, error) {
 	req := &pb.GetOrCreateFunctionsRequest{
 		Functions: make([]*pb.Function, 0, len(functions)),
 	}
@@ -221,7 +272,7 @@ func (n *Normalizer) NormalizeFunctions(ctx context.Context, functions []*pprofp
 	return res.Functions, nil
 }
 
-func (n *Normalizer) NormalizeLocations(
+func (n *MetastoreNormalizer) NormalizeLocations(
 	ctx context.Context,
 	locations []*pprofpb.Location,
 	mappings []mappingNormalizationInfo,
@@ -285,7 +336,7 @@ func (n *Normalizer) NormalizeLocations(
 	return res.Locations, nil
 }
 
-func (n *Normalizer) NormalizeStacktraces(ctx context.Context, samples []*pprofpb.Sample, locations []*pb.Location) ([]*pb.Stacktrace, error) {
+func (n *MetastoreNormalizer) NormalizeStacktraces(ctx context.Context, samples []*pprofpb.Sample, locations []*pb.Location) ([]*pb.Stacktrace, error) {
 	req := &pb.GetOrCreateStacktracesRequest{
 		Stacktraces: make([]*pb.Stacktrace, 0, len(samples)),
 	}

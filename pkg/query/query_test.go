@@ -14,11 +14,10 @@
 package query
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"math"
-	"sync"
+	"os"
 	"testing"
 	"time"
 
@@ -32,11 +31,12 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profilestore"
 )
 
 func Benchmark_Query_Merge(b *testing.B) {
@@ -60,40 +60,45 @@ func Benchmark_Query_Merge(b *testing.B) {
 				columnstore.NewTableConfig(schema),
 			)
 			require.NoError(b, err)
-			m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
+			metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
 				b,
 				logger,
 				reg,
 				tracer,
 			))
 
-			fileContent := MustReadAllGzip(b, "../query/testdata/alloc_objects.pb.gz")
+			fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 			require.NoError(b, err)
-			p := &pprofpb.Profile{}
-			require.NoError(b, p.UnmarshalVT(fileContent))
 
-			for _, s := range p.Sample {
-				s.Label = nil
-			}
-
-			bufferPool := &sync.Pool{
-				New: func() any {
-					return new(bytes.Buffer)
-				},
-			}
-
-			normalizer := parcacol.NewNormalizer(m)
-			ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
-
-			profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
-			require.NoError(b, err)
+			store := profilestore.NewProfileColumnStore(
+				logger,
+				tracer,
+				metastore,
+				table,
+				schema,
+			)
 
 			for j := 0; j < n; j++ {
-				for _, profile := range profiles {
-					profile.Meta.Timestamp = int64(j + 1)
-					err = ingester.IngestProfile(ctx, nil, profile)
-					require.NoError(b, err)
-				}
+				_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+					Series: []*profilestorepb.RawProfileSeries{{
+						Labels: &profilestorepb.LabelSet{
+							Labels: []*profilestorepb.Label{
+								{
+									Name:  "__name__",
+									Value: "memory",
+								},
+								{
+									Name:  "job",
+									Value: "default",
+								},
+							},
+						},
+						Samples: []*profilestorepb.RawSample{{
+							RawProfile: fileContent,
+						}},
+					}},
+				})
+				require.NoError(b, err)
 			}
 
 			require.NoError(b, table.EnsureCompaction())
@@ -110,7 +115,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 						colDB.TableProvider(),
 					),
 					"stacktraces",
-					m,
+					metastore,
 				),
 			)
 			b.ResetTimer()
@@ -121,8 +126,8 @@ func Benchmark_Query_Merge(b *testing.B) {
 					Options: &pb.QueryRequest_Merge{
 						Merge: &pb.MergeProfile{
 							Query: `{__name__="memory:alloc_objects:count:space:bytes"}`,
-							Start: timestamppb.New(time.Unix(0, 0)),
-							End:   timestamppb.New(time.Unix(0, int64(time.Millisecond)*int64(n+1))),
+							Start: timestamppb.New(time.Unix(0, math.MinInt64)),
+							End:   timestamppb.New(time.Unix(0, math.MaxInt64)),
 						},
 					},
 					//nolint:staticcheck // SA1019: Fow now we want to support these APIs
