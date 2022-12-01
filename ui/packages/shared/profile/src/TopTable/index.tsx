@@ -23,9 +23,9 @@ import {
 } from '@parca/store';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 
-import {hexifyAddress} from './utils';
+import {hexifyAddress} from '../utils';
 
-import './TopTable.styles.css';
+import '../TopTable.styles.css';
 
 interface TopTableProps {
   data?: Top;
