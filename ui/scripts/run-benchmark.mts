@@ -30,6 +30,7 @@ const optionDefinitions = [
   {name: 'name', alias: 'n', type: String},
   {name: 'debug', alias: 'd', type: Boolean},
   {name: 'compare', alias: 'c', type: String},
+  {name: 'pattern', alias: 'p', type: String, defaultValue: '*'},
 ];
 const options = commandLineArgs(optionDefinitions);
 const IS_DEBUG = process.env.DEBUG === 'true' || options.debug === true;
@@ -59,7 +60,10 @@ class ComparedValue {
   toString() {
     const diff = this.after - this.before;
     const diffPercentage = (diff / this.before) * 100;
-    return `${this.after} (${diffPercentage.toFixed(2)}%)`;
+    const diffSign = diff > 0 ? '+' : '';
+    return `${this.after} (${diffSign}${diff.toFixed(2)}, ${diffSign}${diffPercentage.toFixed(
+      2
+    )}%)`;
   }
 }
 
@@ -172,7 +176,7 @@ const populateBenchmarkData = async (): Promise<void> => {
 
 const run = async (): Promise<void> => {
   spinner.start('Discovering benchmarks');
-  const files = await glob('!(node_modules)/**/!(node_modules)/*.benchmark.tsx');
+  const files = await glob(`!(node_modules)/**/!(node_modules)/${options.pattern}.benchmark.tsx`);
   spinner.succeed(`Found ${files.length} benchmarks`);
 
   await populateBenchmarkData();
