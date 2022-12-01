@@ -23,11 +23,9 @@ import (
 	"sync"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/klauspost/compress/gzip"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/segmentio/parquet-go"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
@@ -83,7 +81,7 @@ type Series struct {
 	Samples [][]*profile.NormalizedProfile
 }
 
-func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
+func (ing NormalizedIngester) Ingest(ctx context.Context, samples []*NormalizedSample) error {
 	pBuf, err := ing.schema.GetBuffer(map[string][]string{
 		ColumnLabels:         ing.allLabelNames,
 		ColumnPprofLabels:    ing.allPprofLabelNames,
@@ -95,32 +93,20 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	defer ing.schema.PutBuffer(pBuf)
 
 	var r parquet.Row
-	for _, s := range series {
-		for _, normalizedProfiles := range s.Samples {
-			for _, p := range normalizedProfiles {
-				if len(p.Samples) == 0 {
-					ls := labels.FromMap(s.Labels)
-					level.Debug(ing.logger).Log("msg", "no samples found in profile, dropping it", "name", p.Meta.Name, "sample_type", p.Meta.SampleType.Type, "sample_unit", p.Meta.SampleType.Unit, "labels", ls)
-					continue
-				}
-
-				for _, profileSample := range p.Samples {
-					r = SampleToParquetRow(
-						ing.schema,
-						r[:0],
-						ing.allLabelNames,
-						ing.allPprofLabelNames,
-						ing.allPprofNumLabelNames,
-						s.Labels,
-						p.Meta,
-						profileSample,
-					)
-					_, err := pBuf.WriteRows([]parquet.Row{r})
-					if err != nil {
-						return err
-					}
-				}
-			}
+	for _, s := range samples {
+		r = SampleToParquetRow(
+			ing.schema,
+			r[:0],
+			ing.allLabelNames,
+			ing.allPprofLabelNames,
+			ing.allPprofNumLabelNames,
+			s.Labels,
+			*s.Meta,
+			s.Sample,
+		)
+		_, err := pBuf.WriteRows([]parquet.Row{r})
+		if err != nil {
+			return err
 		}
 	}
 
@@ -179,7 +165,7 @@ func (ing Ingester) Ingest(ctx context.Context, req *profilestorepb.WriteRawRequ
 		normalizedRequest.AllLabelNames,
 		normalizedRequest.AllPprofLabelNames,
 		normalizedRequest.AllPprofNumLabelNames,
-	).Ingest(ctx, normalizedRequest.Series); err != nil {
+	).Ingest(ctx, normalizedRequest.Samples); err != nil {
 		return status.Errorf(codes.Internal, "failed to create ingester: %v", err)
 	}
 
@@ -187,10 +173,16 @@ func (ing Ingester) Ingest(ctx context.Context, req *profilestorepb.WriteRawRequ
 }
 
 type NormalizedWriteRawRequest struct {
-	Series                []Series
 	AllLabelNames         []string
 	AllPprofLabelNames    []string
 	AllPprofNumLabelNames []string
+	Samples               []*NormalizedSample
+}
+
+type NormalizedSample struct {
+	Labels map[string]string
+	Meta   *profile.Meta
+	Sample *profile.NormalizedSample
 }
 
 type Normalizer interface {
@@ -202,7 +194,9 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 	allPprofLabelNames := make(map[string]struct{})
 	allPprofNumLabelNames := make(map[string]struct{})
 
-	series := make([]Series, 0, len(req.Series))
+	// Based on metrics the p90 of requests has less than 512 samples.
+	normalizedSamples := make([]*NormalizedSample, 0, 512)
+
 	for _, rawSeries := range req.Series {
 		ls := make(map[string]string, len(rawSeries.Labels.Labels))
 		name := ""
@@ -228,7 +222,6 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 			return NormalizedWriteRawRequest{}, status.Error(codes.InvalidArgument, ErrMissingNameLabel.Error())
 		}
 
-		samples := make([][]*profile.NormalizedProfile, 0, len(rawSeries.Samples))
 		for _, sample := range rawSeries.Samples {
 			r, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
 			if err != nil {
@@ -266,20 +259,23 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 				return NormalizedWriteRawRequest{}, fmt.Errorf("normalize profile: %w", err)
 			}
 
-			samples = append(samples, normalizedProfiles)
+			for _, normalizedProfile := range normalizedProfiles {
+				for _, normalizedSample := range normalizedProfile.Samples {
+					normalizedSamples = append(normalizedSamples, &NormalizedSample{
+						Labels: ls,
+						Meta:   &normalizedProfile.Meta,
+						Sample: normalizedSample,
+					})
+				}
+			}
 		}
-
-		series = append(series, Series{
-			Labels:  ls,
-			Samples: samples,
-		})
 	}
 
 	return NormalizedWriteRawRequest{
-		Series:                series,
 		AllLabelNames:         sortedKeys(allLabelNames),
 		AllPprofLabelNames:    sortedKeys(allPprofLabelNames),
 		AllPprofNumLabelNames: sortedKeys(allPprofNumLabelNames),
+		Samples:               normalizedSamples,
 	}, nil
 }
 
