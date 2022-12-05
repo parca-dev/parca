@@ -36,7 +36,7 @@ require (
 	github.com/prometheus/prometheus v0.40.3
 	github.com/segmentio/parquet-go v0.0.0-20221115180144-bcdc4570dd49
 	github.com/stretchr/testify v1.8.1
-	github.com/thanos-io/objstore v0.0.0-20221111162010-dc083e736d11
+	github.com/thanos-io/objstore v0.0.0-20221203221625-b84b78503c7a
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.4
 	go.opentelemetry.io/otel v1.11.1
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.1
@@ -109,7 +109,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/efficientgo/tools/core v0.0.0-20220817170617-6c25e3b627dd // indirect
+	github.com/efficientgo/core v1.0.0-rc.0.0.20221201130417-ba593f67d2a4 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/envoyproxy/go-control-plane v0.10.3 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.13 // indirect
