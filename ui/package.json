@@ -2,16 +2,18 @@
   "name": "ui",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "lint": "eslint --ext .ts,.tsx,.js packages/*",
     "fix": "eslint --fix --ext .ts,.tsx,.js packages/*",
     "type-check": "tsc --noEmit",
-    "test": "jest --coverage --config jest.config.js",
+    "test": "jest --coverage --config jest.config.cjs",
     "export": "rm -rf .next && next build && next export -o dist",
     "bootstrap": "lerna bootstrap",
     "build": "lerna run build",
     "watch": "lerna run --parallel watch",
-    "publish:ci": "lerna publish --yes --no-verify-access"
+    "publish:ci": "lerna publish --yes --no-verify-access",
+    "benchmark": "NODE_ENV=production BROWSERSLIST='Chrome > 100' GENERATE_SOURCEMAP=false ts-node --experimental-specifier-resolution=node scripts/run-benchmark.mts"
   },
   "workspaces": {
     "packages": [
@@ -20,16 +22,23 @@
     ],
     "nohoist": [
       "**/d3",
-      "**/jest"
+      "**/jest",
+      "**/@grafana/toolkit"
     ]
   },
   "dependencies": {
+    "@parca/react-benchmark": "^5.3.0",
+    "command-line-args": "^5.2.1",
     "date-fns": "2.29.3",
+    "not-a-log": "^1.0.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "tailwindcss": "3.2.4"
   },
   "devDependencies": {
+    "@babel/core": "^7.20.5",
+    "@babel/node": "^7.20.5",
+    "@babel/preset-env": "^7.20.2",
     "@mdx-js/loader": "2.1.5",
     "@next/bundle-analyzer": "12.3.4",
     "@next/eslint-plugin-next": "12.3.4",
@@ -50,12 +59,13 @@
     "@swc/jest": "0.2.23",
     "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "13.4.0",
+    "@types/command-line-args": "^5.2.0",
     "@types/jest": "28.1.8",
     "@types/node": "18.0.0",
     "@types/react": "18.0.25",
     "@types/react-dom": "18.0.9",
-    "@typescript-eslint/eslint-plugin": "5.45.0",
-    "@typescript-eslint/parser": "5.45.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.1",
+    "@typescript-eslint/parser": "^5.45.1",
     "arg": "5.0.2",
     "css-loader": "6.7.2",
     "dev-kong": "0.11.0",
@@ -72,7 +82,9 @@
     "eslint-plugin-react": "7.31.11",
     "eslint-plugin-react-hooks": "4.6.0",
     "eslint-plugin-standard": "5.0.0",
+    "execa": "^6.1.0",
     "fs-extra": "10.1.0",
+    "glob-promise": "^5.0.0",
     "globby": "13.1.2",
     "identity-obj-proxy": "3.0.0",
     "internal-ip": "7.0.0",
@@ -81,6 +93,7 @@
     "lerna": "5.6.2",
     "local-web-server": "5.2.1",
     "next-transpile-modules": "9.1.0",
+    "ora": "^6.1.2",
     "plop": "3.1.1",
     "pm2": "5.2.2",
     "postcss": "8.4.19",
