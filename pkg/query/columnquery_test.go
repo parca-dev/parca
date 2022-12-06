@@ -29,7 +29,6 @@ import (
 	columnstore "github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -42,12 +41,14 @@ import (
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/profilestore"
 )
 
 func getShareServerConn(t Testing) sharepb.ShareServiceClient {
@@ -167,28 +168,38 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
 
-	bufferPool := &sync.Pool{
-		New: func() any {
-			return new(bytes.Buffer)
-		},
-	}
-
 	metastore := metastore.NewInProcessClient(m)
-	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+	)
 
 	for _, f := range files {
-		p := &pprofpb.Profile{}
-		err = p.UnmarshalVT(MustReadAllGzip(t, dir+f.Name()))
+		fileContent, err := os.ReadFile(dir + f.Name())
 		require.NoError(t, err)
 
-		err = ingester.Ingest(ctx, labels.Labels{{
-			Name:  "__name__",
-			Value: "memory",
-		}, {
-			Name:  "job",
-			Value: "default",
-		}}, p, false)
+		_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+			Series: []*profilestorepb.RawProfileSeries{{
+				Labels: &profilestorepb.LabelSet{
+					Labels: []*profilestorepb.Label{
+						{
+							Name:  "__name__",
+							Value: "memory",
+						},
+						{
+							Name:  "job",
+							Value: "default",
+						},
+					},
+				},
+				Samples: []*profilestorepb.RawSample{{
+					RawProfile: fileContent,
+				}},
+			}},
+		})
 		require.NoError(t, err)
 	}
 
@@ -249,28 +260,40 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		tracer,
 	)
 
-	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(fileContent)
+	metastore := metastore.NewInProcessClient(m)
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+	)
+
+	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
-	bufferPool := &sync.Pool{
-		New: func() any {
-			return new(bytes.Buffer)
-		},
-	}
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(MustDecompressGzip(t, fileContent)))
 
-	metastore := metastore.NewInProcessClient(m)
-	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
-
-	err = ingester.Ingest(ctx, labels.Labels{{
-		Name:  "__name__",
-		Value: "memory",
-	}, {
-		Name:  "job",
-		Value: "default",
-	}}, p, false)
+	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "memory",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	})
 	require.NoError(t, err)
 
 	api := NewColumnQueryAPI(
@@ -367,29 +390,37 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		tracer,
 	)
 
-	fileContent := MustReadAllGzip(t, "testdata/fgprof.pb.gz")
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(fileContent)
+	fileContent, err := os.ReadFile("testdata/fgprof.pb.gz")
 	require.NoError(t, err)
-	p.TimeNanos = time.Now().UnixNano()
-
-	bufferPool := &sync.Pool{
-		New: func() any {
-			return new(bytes.Buffer)
-		},
-	}
 
 	metastore := metastore.NewInProcessClient(m)
-	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+	)
 
-	err = ingester.Ingest(ctx, labels.Labels{{
-		Name:  "__name__",
-		Value: "fgprof",
-	}, {
-		Name:  "job",
-		Value: "default",
-	}}, p, false)
+	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "fgprof",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	})
 	require.NoError(t, err)
 
 	api := NewColumnQueryAPI(
@@ -407,8 +438,9 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 			metastore,
 		),
 	)
+
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
-		Query: `fgprof:samples:count::`,
+		Query: `fgprof:samples:count:wallclock:nanoseconds:delta`,
 		Start: timestamppb.New(timestamp.Time(0)),
 		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
 	})
@@ -510,19 +542,22 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.Equal(t, 1, len(sres.Stacktraces))
 	st2 := sres.Stacktraces[0]
 
-	bufferPool := &sync.Pool{
-		New: func() any {
-			return new(bytes.Buffer)
+	ingester := parcacol.NewNormalizedIngester(
+		logger,
+		table,
+		schema,
+		&sync.Pool{
+			New: func() any {
+				return new(bytes.Buffer)
+			},
 		},
-	}
+		[]string{"job"},
+		nil, nil,
+	)
 
-	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
-
-	err = ingester.IngestProfile(
-		ctx,
-		labels.Labels{{Name: "job", Value: "default"}},
-		&profile.NormalizedProfile{
+	require.NoError(t, ingester.Ingest(ctx, []parcacol.Series{{
+		Labels: map[string]string{"job": "default"},
+		Samples: [][]*profile.NormalizedProfile{{{
 			Meta: profile.Meta{
 				Name:       "memory",
 				PeriodType: profile.ValueType{Type: "space", Unit: "bytes"},
@@ -533,14 +568,12 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				StacktraceID: st1.Id,
 				Value:        1,
 			}},
-		},
-	)
-	require.NoError(t, err)
+		}}},
+	}}))
 
-	err = ingester.IngestProfile(
-		ctx,
-		labels.Labels{{Name: "job", Value: "default"}},
-		&profile.NormalizedProfile{
+	require.NoError(t, ingester.Ingest(ctx, []parcacol.Series{{
+		Labels: map[string]string{"job": "default"},
+		Samples: [][]*profile.NormalizedProfile{{{
 			Meta: profile.Meta{
 				Name:       "memory",
 				PeriodType: profile.ValueType{Type: "space", Unit: "bytes"},
@@ -551,9 +584,8 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				StacktraceID: st2.Id,
 				Value:        2,
 			}},
-		},
-	)
-	require.NoError(t, err)
+		}}},
+	}}))
 
 	_, err = m.Stacktraces(ctx, &metastorepb.StacktracesRequest{
 		StacktraceIds: []string{st1.Id, st2.Id},
@@ -705,28 +737,37 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		tracer,
 	)
 
-	fileContent := MustReadAllGzip(t, "testdata/alloc_space_delta.pb.gz")
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(fileContent)
+	fileContent, err := os.ReadFile("testdata/alloc_space_delta.pb.gz")
 	require.NoError(t, err)
 
-	bufferPool := &sync.Pool{
-		New: func() any {
-			return new(bytes.Buffer)
-		},
-	}
-
 	metastore := metastore.NewInProcessClient(m)
-	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+	)
 
-	err = ingester.Ingest(ctx, labels.Labels{{
-		Name:  "__name__",
-		Value: "memory",
-	}, {
-		Name:  "job",
-		Value: "default",
-	}}, p, false)
+	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "memory",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	})
 	require.NoError(t, err)
 
 	require.NoError(t, table.EnsureCompaction())
@@ -789,27 +830,37 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		tracer,
 	)
 
-	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(fileContent)
+	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
-	bufferPool := &sync.Pool{
-		New: func() any {
-			return new(bytes.Buffer)
-		},
-	}
-
 	metastore := metastore.NewInProcessClient(m)
-	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
-	err = ingester.Ingest(ctx, labels.Labels{{
-		Name:  "__name__",
-		Value: "memory",
-	}, {
-		Name:  "job",
-		Value: "default",
-	}}, p, false)
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+	)
+
+	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "memory",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	})
 	require.NoError(t, err)
 
 	api := NewColumnQueryAPI(
@@ -862,28 +913,37 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		tracer,
 	)
 
-	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
+	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(fileContent)
-	require.NoError(t, err)
-
-	bufferPool := &sync.Pool{
-		New: func() any {
-			return new(bytes.Buffer)
-		},
-	}
 
 	metastore := metastore.NewInProcessClient(m)
-	normalizer := parcacol.NewNormalizer(metastore)
-	ingester := parcacol.NewIngester(logger, normalizer, table, schema, bufferPool)
-	err = ingester.Ingest(ctx, labels.Labels{{
-		Name:  "__name__",
-		Value: "memory",
-	}, {
-		Name:  "job",
-		Value: "default",
-	}}, p, false)
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+	)
+
+	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "memory",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	})
 	require.NoError(t, err)
 
 	api := NewColumnQueryAPI(

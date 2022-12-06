@@ -15,10 +15,7 @@ package profilestore
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
-	"io"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -26,16 +23,11 @@ import (
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/parcacol"
@@ -91,57 +83,13 @@ func NewProfileColumnStore(
 }
 
 func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
-	ingester := parcacol.NewIngester(
+	return parcacol.NewIngester(
 		s.logger,
-		parcacol.NewNormalizer(s.metastore),
 		s.table,
 		s.schema,
+		s.metastore,
 		s.bufferPool,
-	)
-
-	ls := make(labels.Labels, 0)
-	for _, series := range req.Series {
-		ls = ls[:0]
-		for _, l := range series.Labels.Labels {
-			if valid := model.LabelName(l.Name).IsValid(); !valid {
-				return status.Errorf(codes.InvalidArgument, "invalid label name: %v", l.Name)
-			}
-
-			ls = append(ls, labels.Label{
-				Name:  l.Name,
-				Value: l.Value,
-			})
-		}
-
-		// Must ensure label-set is sorted and HasDuplicateLabelNames also required a sorted label-set
-		sort.Sort(ls)
-		if name, has := ls.HasDuplicateLabelNames(); has {
-			return status.Errorf(codes.InvalidArgument, "duplicate label names: %v", name)
-		}
-
-		for _, sample := range series.Samples {
-			r, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
-			if err != nil {
-				return status.Errorf(codes.Internal, "failed to create gzip reader: %v", err)
-			}
-
-			content, err := io.ReadAll(r)
-			if err != nil {
-				return status.Errorf(codes.InvalidArgument, "failed to decompress profile: %v", err)
-			}
-
-			p := &pprofpb.Profile{}
-			if err := p.UnmarshalVT(content); err != nil {
-				return status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
-			}
-
-			if err := ingester.Ingest(ctx, ls, p, req.Normalized); err != nil {
-				return status.Errorf(codes.Internal, "failed to ingest profile: %v", err)
-			}
-		}
-	}
-
-	return nil
+	).Ingest(ctx, req)
 }
 
 func (s *ProfileColumnStore) updateAgents(nodeNameAndIP string, ag agent) {
