@@ -69,6 +69,7 @@ export interface IAgentsResult {
   response: AgentsResponse | null;
   error: RpcError | null;
 }
+
 export const useAgents = (client: AgentsServiceClient): IAgentsResult => {
   const [result, setResult] = useState<IAgentsResult>({
     response: null,
@@ -136,30 +137,38 @@ const TargetsPage = (): JSX.Element => {
             }
           >
             <>
-              <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                <div className="my-2 p-2 border-b-2">
-                  <div className="my-2">
-                    <span className="font-semibold text-xl">Parca Agents</span>
-                  </div>
-                  <AgentsTable agents={sortAgents(agents)} />
-                </div>
-              </div>
-              <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                {sortTargets(targetNamespaces)?.map(namespace => {
-                  const name = Object.keys(namespace)[0];
-                  const targets = namespace[name].sort((a: Target, b: Target) => {
-                    return a.url.localeCompare(b.url);
-                  });
-                  return (
-                    <div key={name} className="my-2 p-2 border-b-2">
-                      <div className="my-2">
-                        <span className="font-semibold text-xl">{name}</span>
-                      </div>
-                      <TargetsTable targets={targets} />
+              {agents.length > 0 ? (
+                <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                  <div className="my-2 p-2 border-b-2">
+                    <div className="my-2">
+                      <span className="font-semibold text-xl">Parca Agents</span>
                     </div>
-                  );
-                })}
-              </div>
+                    <AgentsTable agents={sortAgents(agents)} />
+                  </div>
+                </div>
+              ) : (
+                <></>
+              )}
+              {Object.keys(targets ?? {}).length > 0 ? (
+                <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                  {sortTargets(targetNamespaces)?.map(namespace => {
+                    const name = Object.keys(namespace)[0];
+                    const targets = namespace[name].sort((a: Target, b: Target) => {
+                      return a.url.localeCompare(b.url);
+                    });
+                    return (
+                      <div key={name} className="my-2 p-2 border-b-2">
+                        <div className="my-2">
+                          <span className="font-semibold text-xl">{name}</span>
+                        </div>
+                        <TargetsTable targets={targets} />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <></>
+              )}
             </>
           </EmptyState>
         </div>
