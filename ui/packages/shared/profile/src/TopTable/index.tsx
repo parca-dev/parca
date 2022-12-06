@@ -22,7 +22,8 @@ import {
   useAppDispatch,
 } from '@parca/store';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
-import {Table, createColumnHelper} from '@parca/components';
+import {Table} from '@parca/components';
+import {createColumnHelper, ColumnDef} from '@tanstack/react-table';
 
 import {hexifyAddress} from '../utils';
 
@@ -65,7 +66,7 @@ export const TopTable = ({data: top, sampleUnit: unit}: TopTableProps): JSX.Elem
   const dispatch = useAppDispatch();
 
   const columns = React.useMemo(() => {
-    const cols = [
+    const cols: Array<ColumnDef<TopNode, any>> = [
       columnHelper.accessor('meta', {
         header: () => <span className="text-left">Name</span>,
         cell: info => {

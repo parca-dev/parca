@@ -190,6 +190,4 @@ const Table = <T,>({
   );
 };
 
-export {createColumnHelper} from '@tanstack/react-table';
-
 export default Table;
