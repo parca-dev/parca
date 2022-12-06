@@ -35,8 +35,6 @@ const ProfileIcicleGraph = ({
   const compareMode = useAppSelector(selectCompareMode);
   const {ref, dimensions} = useContainerDimensions();
 
-  console.log('graph', JSON.stringify(graph));
-
   if (graph === undefined) return <div>no data...</div>;
   const total = graph.total;
   if (parseFloat(total) === 0) return <>Profile has no samples</>;

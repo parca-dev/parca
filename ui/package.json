@@ -13,7 +13,7 @@
     "build": "lerna run build",
     "watch": "lerna run --parallel watch",
     "publish:ci": "lerna publish --yes --no-verify-access",
-    "benchmark": "NODE_ENV=production BROWSERSLIST='Chrome > 100' GENERATE_SOURCEMAP=false ts-node --experimental-specifier-resolution=node scripts/run-benchmark.ts"
+    "benchmark": "NODE_ENV=production BROWSERSLIST='Chrome > 100' GENERATE_SOURCEMAP=false ts-node --experimental-specifier-resolution=node scripts/run-benchmark.mts"
   },
   "workspaces": {
     "packages": [
@@ -36,6 +36,9 @@
     "tailwindcss": "3.2.4"
   },
   "devDependencies": {
+    "@babel/core": "^7.20.5",
+    "@babel/node": "^7.20.5",
+    "@babel/preset-env": "^7.20.2",
     "@mdx-js/loader": "2.1.5",
     "@next/bundle-analyzer": "12.3.4",
     "@next/eslint-plugin-next": "12.3.4",
@@ -79,6 +82,7 @@
     "eslint-plugin-react": "7.31.11",
     "eslint-plugin-react-hooks": "4.6.0",
     "eslint-plugin-standard": "5.0.0",
+    "execa": "^6.1.0",
     "fs-extra": "10.1.0",
     "glob-promise": "^5.0.0",
     "globby": "13.1.2",

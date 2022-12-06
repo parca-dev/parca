@@ -69,10 +69,10 @@ jobs:
         run: yarn --prefer-offline
         working-directory: ui
 
-      - run: yarn test
+      - run: yarn build
         working-directory: ui
 
-      - run: yarn build
+      - run: yarn test
         working-directory: ui
 
       - name: Run ESLint

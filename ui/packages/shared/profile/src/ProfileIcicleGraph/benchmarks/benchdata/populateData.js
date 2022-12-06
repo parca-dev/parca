@@ -11,27 +11,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
-import * as client from '@parca/client';
-import {QueryServiceClient} from '@parca/client';
-import fs from 'fs-extra';
-import {fileURLToPath} from 'url';
-import fetch, {Headers} from 'node-fetch';
-import path from 'path';
+const {GrpcWebFetchTransport} = require('@protobuf-ts/grpcweb-transport');
+const client = require('@parca/client');
+const fs = require('fs-extra');
+const path = require('path');
+// const {fileURLToPath} = require('url');
+const fetch = require('node-fetch');
 
-globalThis.fetch = fetch as any;
-globalThis.Headers = Headers as any;
-const DIR_NAME = path.dirname(fileURLToPath(import.meta.url));
+globalThis.fetch = fetch;
+globalThis.Headers = fetch.Headers;
+const DIR_NAME = __dirname; // path.dirname(fileURLToPath(import.meta.url));
 
 const apiEndpoint = 'https://demo.parca.dev';
 
-const queryClient = new QueryServiceClient(
+const queryClient = new client.QueryServiceClient(
   new GrpcWebFetchTransport({
     baseUrl: `${apiEndpoint}/api`,
   })
 );
 
-const populateDataIfNeeded = async (from: Date, filename: string): Promise<void> => {
+const populateDataIfNeeded = async (from, filename) => {
   const filePath = path.join(DIR_NAME, filename);
   if (Object.keys(await readFile(filePath)).length > 0) {
     return;
@@ -54,15 +53,20 @@ const populateDataIfNeeded = async (from: Date, filename: string): Promise<void>
   await writeToFile(response.report.flamegraph, filePath);
 };
 
-const writeToFile = async (data: client.Flamegraph, filename: string): Promise<void> => {
+const writeToFile = async (data, filename) => {
+  await fs.createFile(filename);
   return await fs.writeFile(filename, JSON.stringify(data));
 };
 
-const readFile = async (filename: string): Promise<JSON> => {
-  return await fs.readJSON(filename);
+const readFile = async filename => {
+  try {
+    return await fs.readJSON(filename);
+  } catch (e) {
+    return {};
+  }
 };
 
-const run = async (): Promise<void> => {
+const run = async () => {
   await Promise.all([
     populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60), 'parca-1m.json'),
     populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 10), 'parca-10m.json'),
@@ -70,4 +74,12 @@ const run = async (): Promise<void> => {
   ]);
 };
 
-export default run;
+run()
+  .then(() => {
+    console.log('done');
+    process.exit(0);
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    process.exit(1);
+  });
