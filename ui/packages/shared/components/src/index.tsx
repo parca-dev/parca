@@ -28,6 +28,7 @@ import type {SelectElement} from './Select';
 import SearchNodes from './SearchNodes';
 import Spinner from './Spinner';
 import Tab from './Tab';
+import Table, {createColumnHelper} from './Table';
 import EmptyState from './EmptyState';
 
 export type {PillVariant, SelectElement};
@@ -36,6 +37,7 @@ export {
   Button,
   ButtonGroup,
   Card,
+  createColumnHelper,
   DateTimePicker,
   DateTimeRange,
   DateTimeRangePicker,
@@ -54,6 +56,7 @@ export {
   SearchNodes,
   Spinner,
   Tab,
+  Table,
   EmptyState,
   useGrpcMetadata,
   useParcaContext,
