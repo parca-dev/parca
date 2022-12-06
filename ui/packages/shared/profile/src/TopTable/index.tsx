@@ -122,7 +122,7 @@ export const TopTable = ({data: top, sampleUnit: unit}: TopTableProps): JSX.Elem
   );
 
   const onRowClick = useCallback(
-    row => {
+    (row: TopNode) => {
       const meta = row.meta;
       if (meta === undefined) {
         return;
@@ -134,7 +134,7 @@ export const TopTable = ({data: top, sampleUnit: unit}: TopTableProps): JSX.Elem
   );
 
   const shouldHighlightRow = useCallback(
-    row => {
+    (row: TopNode) => {
       const meta = row.meta;
       if (meta === undefined) return false;
       const name = RowLabel(meta);

@@ -154,7 +154,7 @@ const populateBenchmarkData = async (): Promise<void> => {
   const stopwatch = new StopWatch();
   stopwatch.start();
   spinner.start('Discovering data population scripts');
-  const files = await glob('!(node_modules)/**/!(node_modules|dist)/benchdata/populateData.js');
+  const files = await glob('!(node_modules)/**/!(node_modules|dist)/**/benchdata/populateData.js');
   spinner.succeed(`Found ${files.length} data population scripts ${stopwatch.stopAndReset()}ms`);
   for (const file of files) {
     try {
