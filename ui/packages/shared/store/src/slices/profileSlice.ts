@@ -32,7 +32,7 @@ export const profileSlice = createSlice({
     setFilterByFunction: (state, action: PayloadAction<string | undefined>) => {
       state.filterByFunction = action.payload;
     },
-    setGlobalStateValue: (
+    setProfileStateValue: (
       state,
       action: PayloadAction<{key: string; value: string | string[] | undefined}>
     ) => {
@@ -41,10 +41,12 @@ export const profileSlice = createSlice({
   },
 });
 
-export const {setFilterByFunction, setGlobalStateValue} = profileSlice.actions;
+export const {setFilterByFunction, setProfileStateValue} = profileSlice.actions;
 
 export const selectFilterByFunction = (state: RootState): string | undefined =>
   state.profile.filterByFunction;
-export const selectGlobalState = (state: RootState): ProfileState => state.profile;
+export const selectProfileStateValue = (key: string) => (state: RootState) => {
+  return state.profile[key];
+};
 
 export default profileSlice.reducer;

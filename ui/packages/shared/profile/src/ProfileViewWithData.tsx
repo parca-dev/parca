@@ -12,17 +12,13 @@
 // limitations under the License.
 
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
-import {NavigateOptions} from 'react-router-dom';
-
 import {useQuery} from './useQuery';
 import {ProfileView} from './ProfileView';
 import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
-import {saveAsBlob, selectQueryParam} from '@parca/functions';
+import {saveAsBlob, selectQueryParam, NavigateFunction} from '@parca/functions';
 import {useEffect} from 'react';
-
-export type NavigateFunction = (path: string, queryParams: any, options?: NavigateOptions) => void;
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;

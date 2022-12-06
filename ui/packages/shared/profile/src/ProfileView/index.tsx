@@ -180,12 +180,12 @@ export const ProfileView = ({
                 {filterByFunctionEnabled ? (
                   <FilterByFunctionButton navigateTo={navigateTo} />
                 ) : (
-                  <SearchNodes />
+                  <SearchNodes navigateTo={navigateTo} />
                 )}
               </div>
 
               <div className="flex ml-auto gap-2">
-                {filterByFunctionEnabled ? <SearchNodes /> : null}
+                {filterByFunctionEnabled ? <SearchNodes navigateTo={navigateTo} /> : null}
                 <Button
                   color="neutral"
                   onClick={resetIcicleGraph}

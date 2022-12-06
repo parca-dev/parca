@@ -14,11 +14,15 @@
 import {Input} from '../';
 import {useEffect, useMemo} from 'react';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
-import {useURLState} from '@parca/functions';
+import {useURLState, NavigateFunction} from '@parca/functions';
 import {debounce} from 'lodash';
 
-const SearchNodes = (): JSX.Element => {
-  const [currentSearchString, setSearchString] = useURLState('search_string');
+interface Props {
+  navigateTo?: NavigateFunction;
+}
+
+const SearchNodes = ({navigateTo}: Props): JSX.Element => {
+  const [currentSearchString, setSearchString] = useURLState({param: 'search_string', navigateTo});
   const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
 
   useEffect(() => {
