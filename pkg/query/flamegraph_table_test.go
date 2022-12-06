@@ -397,7 +397,7 @@ func testGenerateFlamegraphTableFromProfile(t *testing.T, l metastorepb.Metastor
 	require.NoError(t, err)
 
 	normalizer := parcacol.NewNormalizer(l)
-	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]struct{}{}, p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false)
 	require.NoError(t, err)
 
 	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
@@ -455,7 +455,7 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 
 	metastore := metastore.NewInProcessClient(store)
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]struct{}{}, p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
@@ -608,7 +608,7 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	require.NoError(t, err)
 
 	normalizer := parcacol.NewNormalizer(metastore)
-	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]struct{}{}, p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
