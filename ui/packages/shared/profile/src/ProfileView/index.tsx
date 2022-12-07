@@ -12,12 +12,12 @@
 // limitations under the License.
 
 import {Profiler, useEffect, useMemo, useState} from 'react';
-import {dispatch, scaleLinear} from 'd3';
+import {scaleLinear} from 'd3';
 
 import {getNewSpanColor, parseParams} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
+import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {
   useAppSelector,
