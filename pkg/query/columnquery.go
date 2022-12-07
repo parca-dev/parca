@@ -23,6 +23,7 @@ import (
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -274,14 +275,29 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (*pr
 		return nil, status.Error(codes.InvalidArgument, "requested diff mode, but did not provide parameters for diff")
 	}
 
-	base, err := q.selectProfileForDiff(ctx, d.A)
-	if err != nil {
-		return nil, fmt.Errorf("reading base profile: %w", err)
-	}
+	g, ctx := errgroup.WithContext(ctx)
+	var base *profile.Profile
+	g.Go(func() error {
+		var err error
+		base, err = q.selectProfileForDiff(ctx, d.A)
+		if err != nil {
+			return fmt.Errorf("reading base profile: %w", err)
+		}
+		return nil
+	})
 
-	compare, err := q.selectProfileForDiff(ctx, d.B)
-	if err != nil {
-		return nil, fmt.Errorf("reading compared profile: %w", err)
+	var compare *profile.Profile
+	g.Go(func() error {
+		var err error
+		compare, err = q.selectProfileForDiff(ctx, d.B)
+		if err != nil {
+			return fmt.Errorf("reading compared profile: %w", err)
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.
