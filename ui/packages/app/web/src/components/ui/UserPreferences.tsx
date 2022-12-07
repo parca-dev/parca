@@ -52,9 +52,14 @@ const UserPreferences = () => {
         title="Preferences"
       >
         <div className="min-h-40 min-w-96 mt-8">
-          <h4 className="font-medium mb-2">Experimental Features</h4>
-          <FlagToggle name="Enable Callgraph" id="callgraph" />
-          <FlagToggle name="Enable Filter By Function" id="filterByFunction" />
+          <FlagToggle
+            name="Highlight matching nodes after filtering"
+            id="highlightAfterFiltering"
+          />
+          <div className=" min-w-96 mt-8">
+            <h4 className="font-medium mb-2">Experimental Features</h4>
+            <FlagToggle name="Enable Callgraph" id="callgraph" />
+          </div>
         </div>
         <div className="flex justify-end">
           <Button onClick={() => setIsOpen(false)} className="w-fit">
