@@ -143,4 +143,15 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, debuginfopb.DownloadInfo_SOURCE_UPLOAD, downloader.Info().Source)
 	require.NoError(t, downloader.Close())
+
+	bucket, err = client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
+	require.NoError(t, err)
+
+	// Replace bucket with a new empty one.
+	s.bucket = bucket
+
+	// Test that the response is cached.
+	exists, err = c.Exists(context.Background(), hex.EncodeToString([]byte("section")), "abcd")
+	require.NoError(t, err)
+	require.True(t, exists)
 }

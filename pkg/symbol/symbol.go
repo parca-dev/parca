@@ -137,7 +137,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, m *pb.Mapping, locations []*
 
 // pcToLines returns the line number of the given PC while keeping the track of symbolization attempts and failures.
 func (s *Symbolizer) pcToLines(liner liner, buildID, key string, addr uint64) []profile.LocationLine {
-	logger := log.With(s.logger, "addr", addr, "buildid", buildID)
+	logger := log.With(s.logger, "addr", fmt.Sprintf("0x%x", addr), "buildid", buildID)
 	// Check if we already attempt to symbolize this location and failed.
 	if _, failedBefore := s.symbolizationFailed[key][addr]; failedBefore {
 		level.Debug(logger).Log("msg", "location already had been attempted to be symbolized and failed, skipping")
