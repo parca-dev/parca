@@ -29,9 +29,6 @@ export const profileSlice = createSlice({
   name: 'profile',
   initialState,
   reducers: {
-    setFilterByFunction: (state, action: PayloadAction<string | undefined>) => {
-      state.filterByFunction = action.payload;
-    },
     setProfileStateValue: (
       state,
       action: PayloadAction<{key: string; value: string | string[] | undefined}>
@@ -41,7 +38,7 @@ export const profileSlice = createSlice({
   },
 });
 
-export const {setFilterByFunction, setProfileStateValue} = profileSlice.actions;
+export const {setProfileStateValue} = profileSlice.actions;
 
 export const selectFilterByFunction = (state: RootState): string | undefined =>
   state.profile.filterByFunction;

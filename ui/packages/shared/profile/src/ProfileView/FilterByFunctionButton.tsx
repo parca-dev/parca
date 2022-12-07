@@ -12,25 +12,15 @@
 // limitations under the License.
 
 import {Input} from '@parca/components';
-import {parseParams} from '@parca/functions';
+import {parseParams, useURLState} from '@parca/functions';
 import {useState} from 'react';
 
 const FilterByFunctionButton = ({navigateTo}): JSX.Element => {
-  const router = parseParams(window.location.search);
-  const filterValueFromURL = router.filter_by_function as string;
-  const [value, setValue] = useState<string>(filterValueFromURL);
+  const [storeValue, setStoreValue] = useURLState({param: 'filter_by_function', navigateTo});
+  const [localValue, setLocalValue] = useState(storeValue as string);
 
   const onAction = (): void => {
-    if (navigateTo != null) {
-      navigateTo(
-        '/',
-        {
-          ...router,
-          ...{filter_by_function: value},
-        },
-        {replace: true}
-      );
-    }
+    setStoreValue(localValue);
   };
 
   return (
@@ -38,9 +28,9 @@ const FilterByFunctionButton = ({navigateTo}): JSX.Element => {
       placeholder="Filter by function"
       className="text-sm"
       onAction={onAction}
-      onChange={e => setValue(e.target.value)}
-      value={value ?? ''}
-      onBlur={() => setValue(filterValueFromURL ?? '')}
+      onChange={e => setLocalValue(e.target.value)}
+      value={localValue ?? ''}
+      onBlur={() => setLocalValue(storeValue as string)}
     />
   );
 };
