@@ -253,6 +253,7 @@ func (q *Querier) QueryRange(
 	ctx context.Context,
 	query string,
 	startTime, endTime time.Time,
+	step time.Duration,
 	limit uint32,
 ) ([]*pb.MetricsSeries, error) {
 	_, selectorExprs, err := QueryToFilterExprs(query)

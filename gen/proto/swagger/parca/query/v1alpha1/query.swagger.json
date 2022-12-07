@@ -382,6 +382,13 @@
             "required": false,
             "type": "integer",
             "format": "int64"
+          },
+          {
+            "name": "step",
+            "description": "step is the duration of each sample returned.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [

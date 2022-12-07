@@ -17,6 +17,7 @@ import { Function } from "../../metastore/v1alpha1/metastore";
 import { Mapping } from "../../metastore/v1alpha1/metastore";
 import { Location } from "../../metastore/v1alpha1/metastore";
 import { LabelSet } from "../../profilestore/v1alpha1/profilestore";
+import { Duration } from "../../../google/protobuf/duration";
 import { Timestamp } from "../../../google/protobuf/timestamp";
 /**
  * ProfileTypesRequest is the request to retrieve the list of available profile types.
@@ -111,6 +112,12 @@ export interface QueryRangeRequest {
      * @generated from protobuf field: uint32 limit = 4;
      */
     limit: number;
+    /**
+     * step is the duration of each sample returned.
+     *
+     * @generated from protobuf field: google.protobuf.Duration step = 5;
+     */
+    step?: Duration;
 }
 /**
  * QueryRangeResponse is the set of matching profile values
@@ -1177,7 +1184,8 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
             { no: 1, name: "query", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "start", kind: "message", T: () => Timestamp },
             { no: 3, name: "end", kind: "message", T: () => Timestamp },
-            { no: 4, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 4, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "step", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<QueryRangeRequest>): QueryRangeRequest {
@@ -1204,6 +1212,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
                 case /* uint32 limit */ 4:
                     message.limit = reader.uint32();
                     break;
+                case /* google.protobuf.Duration step */ 5:
+                    message.step = Duration.internalBinaryRead(reader, reader.uint32(), options, message.step);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1228,6 +1239,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
         /* uint32 limit = 4; */
         if (message.limit !== 0)
             writer.tag(4, WireType.Varint).uint32(message.limit);
+        /* google.protobuf.Duration step = 5; */
+        if (message.step)
+            Duration.internalBinaryWrite(message.step, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
