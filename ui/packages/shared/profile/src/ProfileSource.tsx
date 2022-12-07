@@ -82,6 +82,7 @@ export function ProfileSelectionFromParams(
     return new MergedProfileSelection(parseInt(from), parseInt(to), expression, filterQuery);
   }
   if (labels !== undefined && time !== undefined && profileName !== undefined) {
+    // TODO: Make it a MergeProfileSelection going forward
     return new SingleProfileSelection(
       profileName,
       ParseLabels(labels),

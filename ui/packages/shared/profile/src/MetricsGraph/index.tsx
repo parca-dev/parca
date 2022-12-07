@@ -33,7 +33,7 @@ interface RawMetricsGraphProps {
   data: MetricsSeriesPb[];
   from: number;
   to: number;
-  profile: SingleProfileSelection | null;
+  profile: SingleProfileSelection | null; // TODO: Take MergeProfileSelection going forward
   onSampleClick: (timestamp: number, value: number, labels: Label[]) => void;
   onLabelClick: (labelName: string, labelValue: string) => void;
   setTimeRange: (range: DateTimeRange) => void;
@@ -249,6 +249,7 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
   const isShiftDown = useIsShiftDown();
 
+  // TODO: Take time from MergeProfileSelection via from field
   const time: number = parseFloat(profile?.HistoryParams().time);
 
   if (width === undefined || width == null) {

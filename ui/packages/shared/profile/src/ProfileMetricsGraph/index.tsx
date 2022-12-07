@@ -13,8 +13,8 @@
 
 import {useState, useEffect} from 'react';
 import MetricsGraph from '../MetricsGraph';
-import {ProfileSelection, SingleProfileSelection} from '..';
-import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/client';
+import {ProfileSelection, SingleProfileSelection} from '..';   // TODO: Take MergeProfileSelection going forward
+import {QueryServiceClient, QueryRangeResponse, Label, Timestamp, Duration} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
@@ -58,11 +58,21 @@ export const useQueryRange = (
         error: null,
       });
 
+      // Get the duration of requested time.
+      // Divide by 1000 to get seconds.
+      // Divide by 1000 to get the duration each step should have to end up with 1000 data points.
+      // We need to convert to integer, and sometimes it could happen to be < 1,
+      // therefore we ceil instead of floor.
+      const step = Math.ceil((end - start) / 1000 / 1000);
+
+      console.log(step)
+
       const call = client.queryRange(
         {
           query: queryExpression,
           start: Timestamp.fromDate(new Date(start)),
           end: Timestamp.fromDate(new Date(end)),
+          step: Duration.create({seconds: step.toString()}),
           limit: 0,
         },
         {meta: metadata}
@@ -117,6 +127,7 @@ const ProfileMetricsGraph = ({
   if (series !== null && series !== undefined && series?.length > 0) {
     const handleSampleClick = (timestamp: number, _value: number, labels: Label[]): void => {
       select(
+        // TODO: Make it a MergeProfileSelection going forward
         new SingleProfileSelection(Query.parse(queryExpression).profileName(), labels, timestamp)
       );
     };
@@ -130,7 +141,7 @@ const ProfileMetricsGraph = ({
           data={series}
           from={from}
           to={to}
-          profile={profile as SingleProfileSelection}
+          profile={profile as SingleProfileSelection} // TODO: Make it a MergeProfileSelection going forward
           setTimeRange={setTimeRange}
           onSampleClick={handleSampleClick}
           onLabelClick={addLabelMatcher}
