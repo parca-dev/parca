@@ -144,7 +144,9 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	if req.FilterQuery != nil {
-		p = filterProfileData(p, *req.FilterQuery)
+		ctx, span := q.tracer.Start(ctx, "filterByFunction")
+		p = filterProfileData(ctx, p, *req.FilterQuery)
+		span.End()
 	}
 
 	return q.renderReport(ctx, p, req.GetReportType())
@@ -161,7 +163,7 @@ func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
 	return false
 }
 
-func filterProfileData(p *profile.Profile, filterQuery string) *profile.Profile {
+func filterProfileData(ctx context.Context, p *profile.Profile, filterQuery string) *profile.Profile {
 	filteredSamples := []*profile.SymbolizedSample{}
 	for _, s := range p.Samples {
 		if keepSample(s, filterQuery) {
