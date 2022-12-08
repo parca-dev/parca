@@ -18,16 +18,24 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@parca/store';
-import {useState} from 'react';
+import {Icon} from '@iconify/react';
+import {useCallback, useMemo, useState} from 'react';
 
 const FilterByFunctionButton = (): JSX.Element => {
   const dispatch = useAppDispatch();
   const storeVal = useAppSelector(selectFilterByFunction);
   const [value, setValue] = useState<string>(storeVal ?? '');
 
-  const onAction = (): void => {
-    dispatch(setFilterByFunction(value));
-  };
+  const isClearAction = useMemo(() => {
+    return value === storeVal && value != null;
+  }, [value, storeVal]);
+
+  const onAction = useCallback((): void => {
+    dispatch(setFilterByFunction(isClearAction ? undefined : value));
+    if (isClearAction) {
+      setValue('');
+    }
+  }, [dispatch, isClearAction, value]);
 
   return (
     <Input
@@ -37,6 +45,7 @@ const FilterByFunctionButton = (): JSX.Element => {
       onChange={e => setValue(e.target.value)}
       value={value}
       onBlur={() => setValue(storeVal ?? '')}
+      actionIcon={isClearAction ? <Icon icon="ep:circle-close" /> : <Icon icon="ep:arrow-right" />}
     />
   );
 };

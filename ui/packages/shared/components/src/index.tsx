@@ -25,7 +25,6 @@ import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select from './Select';
 import type {SelectElement} from './Select';
-import SearchNodes from './SearchNodes';
 import Spinner from './Spinner';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
@@ -51,7 +50,6 @@ export {
   Pill,
   ResponsiveSvg,
   Select,
-  SearchNodes,
   Spinner,
   Tab,
   EmptyState,

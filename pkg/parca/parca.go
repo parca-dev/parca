@@ -92,12 +92,11 @@ type Flags struct {
 
 	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the metastore and profile storage."`
 
-	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
-	StorageGranuleSize   int64  `default:"26265625" help:"Granule size in bytes for storage."`
-	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
-	StoragePath          string `default:"data" help:"Path to storage directory."`
-	StorageEnableWAL     bool   `default:"false" help:"Enables write ahead log for profile storage."`
-	StorageRowGroupSize  int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
+	StorageGranuleSize  int64  `default:"26265625" help:"Granule size in bytes for storage."`
+	StorageActiveMemory int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	StoragePath         string `default:"data" help:"Path to storage directory."`
+	StorageEnableWAL    bool   `default:"false" help:"Enables write ahead log for profile storage."`
+	StorageRowGroupSize int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -259,7 +258,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		metastore,
 		table,
 		schema,
-		flags.StorageDebugValueLog,
 	)
 	conn, err := grpc.Dial(flags.ProfileShareServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	if err != nil {
@@ -270,6 +268,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		tracerProvider.Tracer("query-service"),
 		sharepb.NewShareServiceClient(conn),
 		parcacol.NewQuerier(
+			logger,
 			tracerProvider.Tracer("querier"),
 			query.NewEngine(
 				memory.DefaultAllocator,

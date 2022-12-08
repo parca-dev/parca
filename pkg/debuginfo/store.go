@@ -27,6 +27,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/nanmu42/limitio"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
@@ -79,6 +80,8 @@ type Store struct {
 
 	metadata         MetadataManager
 	debuginfodClient DebugInfodClient
+
+	existsCache *lru.ARCCache[string, struct{}]
 }
 
 // NewStore returns a new debug info store.
@@ -90,6 +93,11 @@ func NewStore(
 	bucket objstore.Bucket,
 	debuginfodClient DebugInfodClient,
 ) (*Store, error) {
+	existsCache, err := lru.NewARC[string, struct{}](100_000)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Store{
 		tracer:           tracer,
 		logger:           log.With(logger, "component", "debuginfo"),
@@ -97,6 +105,8 @@ func NewStore(
 		cacheDir:         cacheDir,
 		metadata:         metadata,
 		debuginfodClient: debuginfodClient,
+
+		existsCache: existsCache,
 	}, nil
 }
 
@@ -382,16 +392,23 @@ func validateInput(id string) error {
 }
 
 func (s *Store) find(ctx context.Context, key string) (bool, error) {
-	found := false
-	err := s.bucket.Iter(ctx, key, func(_ string) error {
-		// We just need any debug files to be present, so if a file under the directory for the build ID exists,
-		// it's found: <buildid>/debuginfo, or <buildid>/metadata.
-		found = true
-		return nil
-	})
+	_, found := s.existsCache.Get(key)
+	if found {
+		// We can't cache the negative result, because the file might be
+		// uploaded in the meantime.
+		return true, nil
+	}
+
+	found, err := s.bucket.Exists(ctx, objectPath(key))
 	if err != nil {
 		return false, status.Error(codes.Internal, err.Error())
 	}
+
+	if found {
+		// Only cache the positive result.
+		s.existsCache.Add(key, struct{}{})
+	}
+
 	return found, nil
 }
 

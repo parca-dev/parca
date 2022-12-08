@@ -24,15 +24,15 @@ import (
 func TestLabelsFromSample(t *testing.T) {
 	cases := []struct {
 		name            string
-		takenLabels     map[string]struct{}
+		takenLabels     map[string]string
 		stringTable     []string
 		samples         []*pprofpb.Label
 		resultLabels    map[string]string
 		resultNumLabels map[string]int64
 	}{{
 		name: "descending order",
-		takenLabels: map[string]struct{}{
-			"foo": {},
+		takenLabels: map[string]string{
+			"foo": "bar",
 		},
 		stringTable: []string{"", "foo", "bar", "exported_foo", "baz"},
 		samples: []*pprofpb.Label{{
@@ -49,8 +49,8 @@ func TestLabelsFromSample(t *testing.T) {
 		resultNumLabels: map[string]int64{},
 	}, {
 		name: "ascending order",
-		takenLabels: map[string]struct{}{
-			"a": {},
+		takenLabels: map[string]string{
+			"a": "b",
 		},
 		stringTable: []string{"", "a", "bar", "exported_a", "baz"},
 		samples: []*pprofpb.Label{{
@@ -69,7 +69,7 @@ func TestLabelsFromSample(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
-			labels, numLabels := labelsFromSample(c.takenLabels, c.stringTable, c.samples)
+			labels, numLabels := LabelsFromSample(c.takenLabels, c.stringTable, c.samples)
 			require.Equal(t, c.resultLabels, labels)
 			require.Equal(t, c.resultNumLabels, numLabels)
 		})

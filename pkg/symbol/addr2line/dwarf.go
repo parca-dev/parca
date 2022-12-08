@@ -57,7 +57,7 @@ func (dl *DwarfLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err 
 
 	lines, err = dl.dbgFile.SourceLines(addr)
 	if err != nil {
-		level.Debug(dl.logger).Log("msg", "failed to symbolize location", "addr", addr, "err", err)
+		level.Debug(dl.logger).Log("msg", "failed to symbolize location", "addr", fmt.Sprintf("0x%x", addr), "err", err)
 		return nil, err
 	}
 	return lines, nil
