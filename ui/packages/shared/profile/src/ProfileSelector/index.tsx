@@ -29,7 +29,6 @@ import {
   useGrpcMetadata,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
-import cx from 'classnames';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
 
 export interface QuerySelection {
@@ -198,7 +197,6 @@ const ProfileSelector = ({
               currentQuery={query}
             />
           </div>
-
           <DateTimeRangePicker
             onRangeSelection={setTimeRangeSelection}
             range={timeRangeSelection}
