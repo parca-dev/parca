@@ -3,30 +3,25 @@
 // tslint:disable
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
-import { DebugInfoService } from "./debuginfo";
-import type { DownloadResponse } from "./debuginfo";
-import type { DownloadRequest } from "./debuginfo";
-import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
+import { DebuginfoService } from "./debuginfo";
+import type { MarkUploadFinishedResponse } from "./debuginfo";
+import type { MarkUploadFinishedRequest } from "./debuginfo";
+import type { InitiateUploadResponse } from "./debuginfo";
+import type { InitiateUploadRequest } from "./debuginfo";
+import type { ShouldInitiateUploadResponse } from "./debuginfo";
+import type { ShouldInitiateUploadRequest } from "./debuginfo";
+import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
+import { stackIntercept } from "@protobuf-ts/runtime-rpc";
 import type { UploadResponse } from "./debuginfo";
 import type { UploadRequest } from "./debuginfo";
 import type { ClientStreamingCall } from "@protobuf-ts/runtime-rpc";
-import { stackIntercept } from "@protobuf-ts/runtime-rpc";
-import type { ExistsResponse } from "./debuginfo";
-import type { ExistsRequest } from "./debuginfo";
-import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
 import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
 /**
- * DebugInfoService is a service that allows storage of debug info
+ * DebuginfoService is a service that allows storage of debug info
  *
- * @generated from protobuf service parca.debuginfo.v1alpha1.DebugInfoService
+ * @generated from protobuf service parca.debuginfo.v1alpha1.DebuginfoService
  */
-export interface IDebugInfoServiceClient {
-    /**
-     * Exists returns true if the given build_id has debug info uploaded for it.
-     *
-     * @generated from protobuf rpc: Exists(parca.debuginfo.v1alpha1.ExistsRequest) returns (parca.debuginfo.v1alpha1.ExistsResponse);
-     */
-    exists(input: ExistsRequest, options?: RpcOptions): UnaryCall<ExistsRequest, ExistsResponse>;
+export interface IDebuginfoServiceClient {
     /**
      * Upload ingests debug info for a given build_id
      *
@@ -34,31 +29,34 @@ export interface IDebugInfoServiceClient {
      */
     upload(options?: RpcOptions): ClientStreamingCall<UploadRequest, UploadResponse>;
     /**
-     * Download returns the debug info for a given build_id.
+     * ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.
      *
-     * @generated from protobuf rpc: Download(parca.debuginfo.v1alpha1.DownloadRequest) returns (stream parca.debuginfo.v1alpha1.DownloadResponse);
+     * @generated from protobuf rpc: ShouldInitiateUpload(parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest) returns (parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse);
      */
-    download(input: DownloadRequest, options?: RpcOptions): ServerStreamingCall<DownloadRequest, DownloadResponse>;
+    shouldInitiateUpload(input: ShouldInitiateUploadRequest, options?: RpcOptions): UnaryCall<ShouldInitiateUploadRequest, ShouldInitiateUploadResponse>;
+    /**
+     * InitiateUpload returns a strategy and information to upload debug info for a given build_id.
+     *
+     * @generated from protobuf rpc: InitiateUpload(parca.debuginfo.v1alpha1.InitiateUploadRequest) returns (parca.debuginfo.v1alpha1.InitiateUploadResponse);
+     */
+    initiateUpload(input: InitiateUploadRequest, options?: RpcOptions): UnaryCall<InitiateUploadRequest, InitiateUploadResponse>;
+    /**
+     * MarkUploadFinished marks the upload as finished for a given build_id.
+     *
+     * @generated from protobuf rpc: MarkUploadFinished(parca.debuginfo.v1alpha1.MarkUploadFinishedRequest) returns (parca.debuginfo.v1alpha1.MarkUploadFinishedResponse);
+     */
+    markUploadFinished(input: MarkUploadFinishedRequest, options?: RpcOptions): UnaryCall<MarkUploadFinishedRequest, MarkUploadFinishedResponse>;
 }
 /**
- * DebugInfoService is a service that allows storage of debug info
+ * DebuginfoService is a service that allows storage of debug info
  *
- * @generated from protobuf service parca.debuginfo.v1alpha1.DebugInfoService
+ * @generated from protobuf service parca.debuginfo.v1alpha1.DebuginfoService
  */
-export class DebugInfoServiceClient implements IDebugInfoServiceClient, ServiceInfo {
-    typeName = DebugInfoService.typeName;
-    methods = DebugInfoService.methods;
-    options = DebugInfoService.options;
+export class DebuginfoServiceClient implements IDebuginfoServiceClient, ServiceInfo {
+    typeName = DebuginfoService.typeName;
+    methods = DebuginfoService.methods;
+    options = DebuginfoService.options;
     constructor(private readonly _transport: RpcTransport) {
-    }
-    /**
-     * Exists returns true if the given build_id has debug info uploaded for it.
-     *
-     * @generated from protobuf rpc: Exists(parca.debuginfo.v1alpha1.ExistsRequest) returns (parca.debuginfo.v1alpha1.ExistsResponse);
-     */
-    exists(input: ExistsRequest, options?: RpcOptions): UnaryCall<ExistsRequest, ExistsResponse> {
-        const method = this.methods[0], opt = this._transport.mergeOptions(options);
-        return stackIntercept<ExistsRequest, ExistsResponse>("unary", this._transport, method, opt, input);
     }
     /**
      * Upload ingests debug info for a given build_id
@@ -66,16 +64,34 @@ export class DebugInfoServiceClient implements IDebugInfoServiceClient, ServiceI
      * @generated from protobuf rpc: Upload(stream parca.debuginfo.v1alpha1.UploadRequest) returns (parca.debuginfo.v1alpha1.UploadResponse);
      */
     upload(options?: RpcOptions): ClientStreamingCall<UploadRequest, UploadResponse> {
-        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        const method = this.methods[0], opt = this._transport.mergeOptions(options);
         return stackIntercept<UploadRequest, UploadResponse>("clientStreaming", this._transport, method, opt);
     }
     /**
-     * Download returns the debug info for a given build_id.
+     * ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.
      *
-     * @generated from protobuf rpc: Download(parca.debuginfo.v1alpha1.DownloadRequest) returns (stream parca.debuginfo.v1alpha1.DownloadResponse);
+     * @generated from protobuf rpc: ShouldInitiateUpload(parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest) returns (parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse);
      */
-    download(input: DownloadRequest, options?: RpcOptions): ServerStreamingCall<DownloadRequest, DownloadResponse> {
+    shouldInitiateUpload(input: ShouldInitiateUploadRequest, options?: RpcOptions): UnaryCall<ShouldInitiateUploadRequest, ShouldInitiateUploadResponse> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ShouldInitiateUploadRequest, ShouldInitiateUploadResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * InitiateUpload returns a strategy and information to upload debug info for a given build_id.
+     *
+     * @generated from protobuf rpc: InitiateUpload(parca.debuginfo.v1alpha1.InitiateUploadRequest) returns (parca.debuginfo.v1alpha1.InitiateUploadResponse);
+     */
+    initiateUpload(input: InitiateUploadRequest, options?: RpcOptions): UnaryCall<InitiateUploadRequest, InitiateUploadResponse> {
         const method = this.methods[2], opt = this._transport.mergeOptions(options);
-        return stackIntercept<DownloadRequest, DownloadResponse>("serverStreaming", this._transport, method, opt, input);
+        return stackIntercept<InitiateUploadRequest, InitiateUploadResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * MarkUploadFinished marks the upload as finished for a given build_id.
+     *
+     * @generated from protobuf rpc: MarkUploadFinished(parca.debuginfo.v1alpha1.MarkUploadFinishedRequest) returns (parca.debuginfo.v1alpha1.MarkUploadFinishedResponse);
+     */
+    markUploadFinished(input: MarkUploadFinishedRequest, options?: RpcOptions): UnaryCall<MarkUploadFinishedRequest, MarkUploadFinishedResponse> {
+        const method = this.methods[3], opt = this._transport.mergeOptions(options);
+        return stackIntercept<MarkUploadFinishedRequest, MarkUploadFinishedResponse>("unary", this._transport, method, opt, input);
     }
 }
