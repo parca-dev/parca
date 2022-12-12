@@ -44,6 +44,7 @@ import (
 var (
 	ErrTimestampColumnNotFound = errors.New("timestamp column not found")
 	ErrValueColumnNotFound     = errors.New("value column not found")
+	ErrDurationColumnNotFound  = errors.New("duration column not found")
 )
 
 type Engine interface {
@@ -280,9 +281,15 @@ func (q *Querier) QueryRange(
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			logicalplan.Sum(logicalplan.Col("value")),
-			logicalplan.DynCol("labels"),
-			logicalplan.Col("timestamp"),
+			[]logicalplan.Expr{
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+				logicalplan.Sum(logicalplan.Col(ColumnDuration)),
+				logicalplan.Sum(logicalplan.Col(ColumnPeriod)),
+			},
+			[]logicalplan.Expr{
+				logicalplan.DynCol(ColumnLabels),
+				logicalplan.Col(ColumnTimestamp),
+			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -303,11 +310,15 @@ func (q *Querier) QueryRange(
 	timestampColumnFound := false
 	valueColumnIndex := 0
 	valueColumnFound := false
+	durationColumnIndex := 0
+	durationColumnFound := false
+	periodColumnIndex := 0
+	periodColumnFound := false
 	labelColumnIndices := []int{}
 
 	fields := ar.Schema().Fields()
 	for i, field := range fields {
-		if field.Name == "timestamp" {
+		if field.Name == ColumnTimestamp {
 			timestampColumnIndex = i
 			timestampColumnFound = true
 			continue
@@ -315,6 +326,16 @@ func (q *Querier) QueryRange(
 		if field.Name == "sum(value)" {
 			valueColumnIndex = i
 			valueColumnFound = true
+			continue
+		}
+		if field.Name == "sum(duration)" {
+			durationColumnIndex = i
+			durationColumnFound = true
+			continue
+		}
+		if field.Name == "sum(period)" {
+			periodColumnIndex = i
+			periodColumnFound = true
 			continue
 		}
 
@@ -329,6 +350,14 @@ func (q *Querier) QueryRange(
 
 	if !valueColumnFound {
 		return nil, ErrValueColumnNotFound
+	}
+
+	if !durationColumnFound {
+		return nil, ErrDurationColumnNotFound
+	}
+
+	if !periodColumnFound {
+		return nil, ErrDurationColumnNotFound
 	}
 
 	for i := 0; i < int(ar.NumRows()); i++ {
@@ -360,6 +389,12 @@ func (q *Querier) QueryRange(
 			index = len(resSeries) - 1
 			labelsetToIndex[s] = index
 		}
+
+		fmt.Println(
+			ar.Column(valueColumnIndex).(*array.Int64).Value(i),
+			ar.Column(durationColumnIndex).(*array.Int64).Value(i),
+			ar.Column(periodColumnIndex).(*array.Int64).Value(i),
+		)
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
@@ -568,10 +603,14 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			logicalplan.Sum(logicalplan.Col("value")),
-			logicalplan.Col("stacktrace"),
-			logicalplan.DynCol("pprof_labels"),
-			logicalplan.DynCol("pprof_num_labels"),
+			[]logicalplan.Expr{
+				logicalplan.Sum(logicalplan.Col("value")),
+			},
+			[]logicalplan.Expr{
+				logicalplan.Col("stacktrace"),
+				logicalplan.DynCol("pprof_labels"),
+				logicalplan.DynCol("pprof_num_labels"),
+			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -640,8 +679,12 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			logicalplan.Sum(logicalplan.Col("value")),
-			logicalplan.Col("stacktrace"),
+			[]logicalplan.Expr{
+				logicalplan.Sum(logicalplan.Col("value")),
+			},
+			[]logicalplan.Expr{
+				logicalplan.Col("stacktrace"),
+			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
