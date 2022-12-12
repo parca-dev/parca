@@ -18,210 +18,277 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"sort"
 	"sync"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/klauspost/compress/gzip"
 	"github.com/polarsignals/frostdb/dynparquet"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
+	"github.com/segmentio/parquet-go"
+	"golang.org/x/exp/maps"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	pprofproto "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
+
+var ErrMissingNameLabel = errors.New("missing __name__ label")
 
 type Table interface {
 	Schema() *dynparquet.Schema
 	Insert(context.Context, []byte) (tx uint64, err error)
 }
 
+type NormalizedIngester struct {
+	logger     log.Logger
+	table      Table
+	schema     *dynparquet.Schema
+	bufferPool *sync.Pool
+
+	allLabelNames         []string
+	allPprofLabelNames    []string
+	allPprofNumLabelNames []string
+}
+
+func NewNormalizedIngester(
+	logger log.Logger,
+	table Table,
+	schema *dynparquet.Schema,
+	bufferPool *sync.Pool,
+	allLabelNames []string,
+	allPprofLabelNames []string,
+	allPprofNumLabelNames []string,
+) NormalizedIngester {
+	return NormalizedIngester{
+		logger:     logger,
+		table:      table,
+		schema:     schema,
+		bufferPool: bufferPool,
+
+		allLabelNames:         allLabelNames,
+		allPprofLabelNames:    allPprofLabelNames,
+		allPprofNumLabelNames: allPprofNumLabelNames,
+	}
+}
+
+type Series struct {
+	Labels  map[string]string
+	Samples [][]*profile.NormalizedProfile
+}
+
+func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
+	pBuf, err := ing.schema.GetBuffer(map[string][]string{
+		ColumnLabels:         ing.allLabelNames,
+		ColumnPprofLabels:    ing.allPprofLabelNames,
+		ColumnPprofNumLabels: ing.allPprofNumLabelNames,
+	})
+	if err != nil {
+		return err
+	}
+	defer ing.schema.PutBuffer(pBuf)
+
+	var r parquet.Row
+	for _, s := range series {
+		for _, normalizedProfiles := range s.Samples {
+			for _, p := range normalizedProfiles {
+				if len(p.Samples) == 0 {
+					ls := labels.FromMap(s.Labels)
+					level.Debug(ing.logger).Log("msg", "no samples found in profile, dropping it", "name", p.Meta.Name, "sample_type", p.Meta.SampleType.Type, "sample_unit", p.Meta.SampleType.Unit, "labels", ls)
+					continue
+				}
+
+				for _, profileSample := range p.Samples {
+					r = SampleToParquetRow(
+						ing.schema,
+						r[:0],
+						ing.allLabelNames,
+						ing.allPprofLabelNames,
+						ing.allPprofNumLabelNames,
+						s.Labels,
+						p.Meta,
+						profileSample,
+					)
+					_, err := pBuf.WriteRows([]parquet.Row{r})
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	pBuf.Sort()
+
+	buf := ing.bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer ing.bufferPool.Put(buf)
+
+	if err := ing.schema.SerializeBuffer(buf, pBuf.Buffer); err != nil {
+		return err
+	}
+
+	if _, err := ing.table.Insert(ctx, buf.Bytes()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type Ingester struct {
 	logger     log.Logger
 	table      Table
-	normalizer *Normalizer
 	schema     *dynparquet.Schema
+	metastore  metastorepb.MetastoreServiceClient
 	bufferPool *sync.Pool
 }
 
 func NewIngester(
 	logger log.Logger,
-	normalizer *Normalizer,
 	table Table,
 	schema *dynparquet.Schema,
+	metastore metastorepb.MetastoreServiceClient,
 	bufferPool *sync.Pool,
-) *Ingester {
-	return &Ingester{
+) Ingester {
+	return Ingester{
 		logger:     logger,
-		normalizer: normalizer,
 		table:      table,
 		schema:     schema,
+		metastore:  metastore,
 		bufferPool: bufferPool,
 	}
 }
 
-var ErrMissingNameLabel = errors.New("missing __name__ label")
-
-func separateNameFromLabels(ls labels.Labels) (string, map[string]struct{}, labels.Labels, error) {
-	names := make(map[string]struct{}, len(ls))
-	out := make(labels.Labels, 0, len(ls))
-	name := ""
-	for _, l := range ls {
-		if l.Name == "__name__" {
-			name = l.Value
-		} else {
-			names[l.Name] = struct{}{}
-			out = append(out, l)
-		}
-	}
-
-	if name == "" {
-		return "", nil, nil, ErrMissingNameLabel
-	}
-
-	return name, names, out, nil
-}
-
-func (ing Ingester) Ingest(ctx context.Context, ls labels.Labels, p *pprofproto.Profile, normalized bool) error {
-	name, names, ls, err := separateNameFromLabels(ls)
+func (ing Ingester) Ingest(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
+	normalizedRequest, err := NormalizeWriteRawRequest(ctx, NewNormalizer(ing.metastore), req)
 	if err != nil {
-		return fmt.Errorf("prepare labels: %w", err)
-	}
-
-	if err := validatePprofProfile(p); err != nil {
 		return err
 	}
 
-	normalizedProfiles, err := ing.normalizer.NormalizePprof(ctx, name, names, p, normalized)
-	if err != nil {
-		return fmt.Errorf("normalize profile: %w", err)
-	}
-
-	for _, p := range normalizedProfiles {
-		if len(p.Samples) == 0 {
-			level.Debug(ing.logger).Log("msg", "no samples found in profile, dropping it", "name", p.Meta.Name, "sample_type", p.Meta.SampleType.Type, "sample_unit", p.Meta.SampleType.Unit, "labels", ls)
-			continue
-		}
-
-		if err := ing.IngestProfile(ctx, ls, p); err != nil {
-			return fmt.Errorf("ingest profile: %w", err)
-		}
+	if err := NewNormalizedIngester(
+		ing.logger,
+		ing.table,
+		ing.schema,
+		ing.bufferPool,
+		normalizedRequest.AllLabelNames,
+		normalizedRequest.AllPprofLabelNames,
+		normalizedRequest.AllPprofNumLabelNames,
+	).Ingest(ctx, normalizedRequest.Series); err != nil {
+		return status.Errorf(codes.Internal, "failed to create ingester: %v", err)
 	}
 
 	return nil
 }
 
-func (ing Ingester) IngestProfile(ctx context.Context, ls labels.Labels, p *profile.NormalizedProfile) error {
-	buf := ing.bufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer ing.bufferPool.Put(buf)
-
-	err := NormalizedProfileToParquetBuffer(buf, ing.schema, ls, p)
-	if err != nil {
-		return fmt.Errorf("failed to convert samples to buffer: %w", err)
-	}
-
-	_, err = ing.table.Insert(ctx, buf.Bytes())
-	if err != nil {
-		return fmt.Errorf("insert buffer: %w", err)
-	}
-
-	return nil
+type NormalizedWriteRawRequest struct {
+	Series                []Series
+	AllLabelNames         []string
+	AllPprofLabelNames    []string
+	AllPprofNumLabelNames []string
 }
 
-func validatePprofProfile(p *pprofproto.Profile) error {
-	stringTableLen := int64(len(p.StringTable))
+type Normalizer interface {
+	NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error)
+}
 
-	if stringTableLen > 0 && p.StringTable[0] != "" {
-		return fmt.Errorf("first item in string table is expected to be empty string, but it is %q", p.StringTable[0])
+func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error) {
+	allLabelNames := make(map[string]struct{})
+	allPprofLabelNames := make(map[string]struct{})
+	allPprofNumLabelNames := make(map[string]struct{})
+
+	series := make([]Series, 0, len(req.Series))
+	for _, rawSeries := range req.Series {
+		ls := make(map[string]string, len(rawSeries.Labels.Labels))
+		name := ""
+		for _, l := range rawSeries.Labels.Labels {
+			if l.Name == model.MetricNameLabel {
+				name = l.Value
+				continue
+			}
+
+			if valid := model.LabelName(l.Name).IsValid(); !valid {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "invalid label name: %v", l.Name)
+			}
+
+			if _, ok := ls[l.Name]; ok {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "duplicate label name: %v", l.Name)
+			}
+
+			ls[l.Name] = l.Value
+			allLabelNames[l.Name] = struct{}{}
+		}
+
+		if name == "" {
+			return NormalizedWriteRawRequest{}, status.Error(codes.InvalidArgument, ErrMissingNameLabel.Error())
+		}
+
+		samples := make([][]*profile.NormalizedProfile, 0, len(rawSeries.Samples))
+		for _, sample := range rawSeries.Samples {
+			r, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
+			if err != nil {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.Internal, "failed to create gzip reader: %v", err)
+			}
+
+			content, err := io.ReadAll(r)
+			if err != nil {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "failed to decompress profile: %v", err)
+			}
+
+			if err := r.Close(); err != nil {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.Internal, "failed to close gzip reader: %v", err)
+			}
+
+			p := &pprofpb.Profile{}
+			if err := p.UnmarshalVT(content); err != nil {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
+			}
+
+			if err := ValidatePprofProfile(p); err != nil {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
+			}
+
+			LabelNamesFromSamples(
+				ls,
+				p.StringTable,
+				p.Sample,
+				allPprofLabelNames,
+				allPprofNumLabelNames,
+			)
+
+			normalizedProfiles, err := normalizer.NormalizePprof(ctx, name, ls, p, req.Normalized)
+			if err != nil {
+				return NormalizedWriteRawRequest{}, fmt.Errorf("normalize profile: %w", err)
+			}
+
+			samples = append(samples, normalizedProfiles)
+		}
+
+		series = append(series, Series{
+			Labels:  ls,
+			Samples: samples,
+		})
 	}
 
-	// Check that all mappings/locations/functions are in the tables
-	// Check that there are no duplicate ids
-	mappingsNum := uint64(len(p.Mapping))
-	for i, m := range p.Mapping {
-		if m == nil {
-			return fmt.Errorf("profile has nil mapping")
-		}
-		if m.Id != uint64(i+1) {
-			return fmt.Errorf("mapping id is not sequential")
-		}
-		if m.Filename != 0 && m.Filename > stringTableLen {
-			return fmt.Errorf("mapping (id: %d) has invalid filename index %d", m.Id, m.Filename)
-		}
-		if m.BuildId != 0 && m.BuildId > stringTableLen {
-			return fmt.Errorf("mapping (id: %d) has invalid buildid index %d", m.Id, m.Filename)
-		}
+	return NormalizedWriteRawRequest{
+		Series:                series,
+		AllLabelNames:         sortedKeys(allLabelNames),
+		AllPprofLabelNames:    sortedKeys(allPprofLabelNames),
+		AllPprofNumLabelNames: sortedKeys(allPprofNumLabelNames),
+	}, nil
+}
+
+func sortedKeys(m map[string]struct{}) []string {
+	if len(m) == 0 {
+		return nil
 	}
 
-	functionsNum := uint64(len(p.Function))
-	for i, f := range p.Function {
-		if f == nil {
-			return fmt.Errorf("profile has nil function")
-		}
-		if f.Id != uint64(i+1) {
-			return fmt.Errorf("function id is not sequential")
-		}
-		if f.Name != 0 && f.Name > stringTableLen {
-			return fmt.Errorf("function (id: %d) has invalid name index %d", f.Id, f.Name)
-		}
-		if f.SystemName != 0 && f.SystemName > stringTableLen {
-			return fmt.Errorf("function (id: %d) has invalid systemname index %d", f.Id, f.SystemName)
-		}
-		if f.Filename != 0 && f.Filename > stringTableLen {
-			return fmt.Errorf("function (id: %d) has invalid filename index %d", f.Id, f.Filename)
-		}
-	}
-
-	locationsNum := uint64(len(p.Location))
-	for i, l := range p.Location {
-		if l == nil {
-			return fmt.Errorf("profile has nil location")
-		}
-		if l.Id != uint64(i+1) {
-			return fmt.Errorf("location id is not sequential")
-		}
-		if l.MappingId != 0 && l.MappingId > mappingsNum {
-			return fmt.Errorf("location has invalid mapping id: %d", l.MappingId)
-		}
-		for _, ln := range l.Line {
-			if ln.FunctionId != 0 && ln.FunctionId > functionsNum {
-				return fmt.Errorf("location %d has invalid function id: %d", l.Id, ln.FunctionId)
-			}
-		}
-	}
-
-	// Check that sample values are consistent
-	sampleLen := len(p.SampleType)
-	if sampleLen == 0 && len(p.Sample) != 0 {
-		return fmt.Errorf("missing sample type information")
-	}
-
-	for i, s := range p.Sample {
-		if s == nil {
-			return fmt.Errorf("profile has nil sample")
-		}
-		if len(s.Value) != sampleLen {
-			return fmt.Errorf("mismatch: sample has %d values vs. %d types", len(s.Value), len(p.SampleType))
-		}
-		for j, l := range s.LocationId {
-			if l == 0 {
-				return fmt.Errorf("location ids of stacktraces must be non-zero")
-			}
-			if l > locationsNum {
-				return fmt.Errorf("sample %d location number %d (%d) is out of range", i, j, l)
-			}
-		}
-		for j, label := range s.Label {
-			if label.Key == 0 {
-				return fmt.Errorf("sample %d label %d has no key", i, j)
-			}
-			if label.Key != 0 && label.Key > stringTableLen {
-				return fmt.Errorf("sample %d label %d has invalid key index %d", i, j, label.Key)
-			}
-			if label.Str != 0 && label.Str > stringTableLen {
-				return fmt.Errorf("sample %d label %d has invalid str index %d", i, j, label.Str)
-			}
-		}
-	}
-
-	return nil
+	out := maps.Keys(m)
+	sort.Strings(out)
+	return out
 }

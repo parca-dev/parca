@@ -16,6 +16,7 @@ import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
 import {KonvaEventObject} from 'konva/lib/Node';
+import {Button} from '@parca/components';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot, getCurvePoints} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
@@ -267,6 +268,15 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     }
   };
 
+  // 5. Reset zoom
+  const resetZoom = (): void => {
+    setStage({
+      scale: {x: 1, y: 1},
+      x: 0,
+      y: 0,
+    });
+  };
+
   return (
     <div className="relative">
       <div className={`w-[${width}px] h-[${height}px]`} ref={containerRef}>
@@ -334,6 +344,11 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
           y={hoveredNode?.mouseY ?? 0}
           contextElement={containerRef.current}
         />
+        {stage.scale.x !== 1 && (
+          <Button className="w-auto !absolute top-0 right-0" variant="neutral" onClick={resetZoom}>
+            Reset Zoom
+          </Button>
+        )}
       </div>
     </div>
   );

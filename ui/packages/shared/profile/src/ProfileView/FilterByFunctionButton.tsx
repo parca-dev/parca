@@ -12,16 +12,26 @@
 // limitations under the License.
 
 import {Input} from '@parca/components';
-import {parseParams, useURLState} from '@parca/functions';
-import {useState} from 'react';
+import {useURLState} from '@parca/functions';
+import {Icon} from '@iconify/react';
+import {useCallback, useMemo, useState} from 'react';
 
 const FilterByFunctionButton = ({navigateTo}): JSX.Element => {
   const [storeValue, setStoreValue] = useURLState({param: 'filter_by_function', navigateTo});
   const [localValue, setLocalValue] = useState(storeValue as string);
 
-  const onAction = (): void => {
-    setStoreValue(localValue);
-  };
+  const isClearAction = useMemo(() => {
+    return localValue === storeValue && localValue != null && localValue !== '';
+  }, [localValue, storeValue]);
+
+  const onAction = useCallback((): void => {
+    if (isClearAction) {
+      setLocalValue('');
+      setStoreValue('');
+    } else {
+      setStoreValue(localValue);
+    }
+  }, [localValue, isClearAction]);
 
   return (
     <Input
@@ -31,6 +41,7 @@ const FilterByFunctionButton = ({navigateTo}): JSX.Element => {
       onChange={e => setLocalValue(e.target.value)}
       value={localValue ?? ''}
       onBlur={() => setLocalValue(storeValue as string)}
+      actionIcon={isClearAction ? <Icon icon="ep:circle-close" /> : <Icon icon="ep:arrow-right" />}
     />
   );
 };

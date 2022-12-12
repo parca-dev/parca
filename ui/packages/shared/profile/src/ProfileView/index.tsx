@@ -18,7 +18,7 @@ import {getNewSpanColor, parseParams} from '@parca/functions';
 import {NavigateOptions} from 'react-router-dom';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
+import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode} from '@parca/store';
 
@@ -94,7 +94,6 @@ export const ProfileView = ({
   const isSinglePanelView = dashboardItems.length === 1;
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
 
   const {loader, perf} = useParcaContext();
 
@@ -117,10 +116,6 @@ export const ProfileView = ({
   }, [dashboardItems, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
 
   const isLoaderVisible = useDelayedLoader(isLoading);
-
-  if (isLoaderVisible) {
-    return <>{loader}</>;
-  }
 
   if (flamegraphData?.error != null) {
     console.error('Error: ', flamegraphData?.error);
@@ -164,6 +159,7 @@ export const ProfileView = ({
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
+                      disabled={isLoading}
                     />
                   ) : null}
 
@@ -173,19 +169,15 @@ export const ProfileView = ({
                       e.preventDefault();
                       onDownloadPProf();
                     }}
+                    disabled={isLoading}
                   >
                     Download pprof
                   </Button>
                 </div>
-                {filterByFunctionEnabled ? (
-                  <FilterByFunctionButton navigateTo={navigateTo} />
-                ) : (
-                  <SearchNodes navigateTo={navigateTo} />
-                )}
+                <FilterByFunctionButton navigateTo={navigateTo} />
               </div>
 
               <div className="flex ml-auto gap-2">
-                {filterByFunctionEnabled ? <SearchNodes navigateTo={navigateTo} /> : null}
                 <Button
                   color="neutral"
                   onClick={resetIcicleGraph}
@@ -237,45 +229,49 @@ export const ProfileView = ({
               </div>
             </div>
 
-            {isSinglePanelView && (
-              <div ref={ref} className="flex space-x-4 justify-between w-full">
-                {dashboardItems.includes('icicle') && flamegraphData?.data != null && (
-                  <div className="w-full">
-                    <Profiler
-                      id="icicleGraph"
-                      onRender={perf?.onRender as React.ProfilerOnRenderCallback}
-                    >
-                      <ProfileIcicleGraph
-                        curPath={curPath}
-                        setNewCurPath={setNewCurPath}
-                        graph={flamegraphData.data}
+            {isLoaderVisible ? (
+              <>{loader}</>
+            ) : (
+              isSinglePanelView && (
+                <div ref={ref} className="flex space-x-4 justify-between w-full">
+                  {dashboardItems.includes('icicle') && flamegraphData?.data != null && (
+                    <div className="w-full">
+                      <Profiler
+                        id="icicleGraph"
+                        onRender={perf?.onRender as React.ProfilerOnRenderCallback}
+                      >
+                        <ProfileIcicleGraph
+                          curPath={curPath}
+                          setNewCurPath={setNewCurPath}
+                          graph={flamegraphData.data}
+                          sampleUnit={sampleUnit}
+                        />
+                      </Profiler>
+                    </div>
+                  )}
+                  {dashboardItems.includes('callgraph') && callgraphData?.data != null && (
+                    <div className="w-full">
+                      {dimensions?.width !== undefined && (
+                        <Callgraph
+                          graph={callgraphData.data}
+                          sampleUnit={sampleUnit}
+                          width={dimensions?.width}
+                          colorRange={colorRange}
+                        />
+                      )}
+                    </div>
+                  )}
+                  {dashboardItems.includes('table') && topTableData != null && (
+                    <div className="w-full">
+                      <TopTable
+                        data={topTableData.data}
                         sampleUnit={sampleUnit}
+                        navigateTo={navigateTo}
                       />
-                    </Profiler>
-                  </div>
-                )}
-                {dashboardItems.includes('callgraph') && callgraphData?.data != null && (
-                  <div className="w-full">
-                    {dimensions?.width !== undefined && (
-                      <Callgraph
-                        graph={callgraphData.data}
-                        sampleUnit={sampleUnit}
-                        width={dimensions?.width}
-                        colorRange={colorRange}
-                      />
-                    )}
-                  </div>
-                )}
-                {dashboardItems.includes('table') && topTableData != null && (
-                  <div className="w-full">
-                    <TopTable
-                      data={topTableData.data}
-                      sampleUnit={sampleUnit}
-                      navigateTo={navigateTo}
-                    />
-                  </div>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )
             )}
             {!isSinglePanelView && (
               <div ref={ref} className="flex space-x-4 justify-between w-full">

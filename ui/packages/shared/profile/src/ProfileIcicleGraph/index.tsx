@@ -14,8 +14,8 @@
 import {Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
-import DiffLegend from './components/DiffLegend';
-import IcicleGraph from './IcicleGraph';
+import DiffLegend from '../components/DiffLegend';
+import IcicleGraph from '../IcicleGraph';
 import {selectQueryParam} from '@parca/functions';
 
 interface ProfileIcicleGraphProps {

@@ -19,6 +19,7 @@ import {
   setProfileStateValue,
   selectProfileStateValue,
 } from '@parca/store';
+import useUIFeatureFlag from '../../useUIFeatureFlag';
 
 interface Props {
   param: string;
@@ -29,6 +30,7 @@ interface Props {
 export const useURLState = ({param, navigateTo, withURLUpdate = true}) => {
   const dispatch = useAppDispatch();
   const router = parseParams(window.location.search);
+  const [highlightAfterFilteringEnabled] = useUIFeatureFlag('highlightAfterFiltering');
 
   // 1. set initial value to the store value or URL value
   const value = useAppSelector(selectProfileStateValue(param)) ?? router[param];
@@ -42,6 +44,11 @@ export const useURLState = ({param, navigateTo, withURLUpdate = true}) => {
       if (router[param] !== value) {
         const searchParams = router;
         searchParams[param] = value;
+
+        if (param === 'filter_by_function') {
+          searchParams['search_string'] = highlightAfterFilteringEnabled ? value : '';
+        }
+
         Object.keys(searchParams).forEach(
           key => isEmpty(searchParams[key]) && delete searchParams[key]
         );

@@ -67,17 +67,6 @@
       "description": "- HEALTH_UNKNOWN_UNSPECIFIED: HEALTH_UNKNOWN_UNSPECIFIED unspecified\n - HEALTH_GOOD: HEALTH_GOOD healthy target\n - HEALTH_BAD: HEALTH_BAD unhealthy target",
       "title": "Health are the possible health values of a target"
     },
-    "TargetsRequestState": {
-      "type": "string",
-      "enum": [
-        "STATE_ANY_UNSPECIFIED",
-        "STATE_ACTIVE",
-        "STATE_DROPPED"
-      ],
-      "default": "STATE_ANY_UNSPECIFIED",
-      "description": "- STATE_ANY_UNSPECIFIED: STATE_ANY_UNSPECIFIED unspecified\n - STATE_ACTIVE: STATE_ACTIVE target active state\n - STATE_DROPPED: STATE_DROPPED target dropped state",
-      "title": "State represents the current state of a target"
-    },
     "profilestorev1alpha1Label": {
       "type": "object",
       "properties": {
@@ -179,6 +168,17 @@
         }
       },
       "title": "Targets is a list of targets"
+    },
+    "v1alpha1TargetsRequestState": {
+      "type": "string",
+      "enum": [
+        "STATE_ANY_UNSPECIFIED",
+        "STATE_ACTIVE",
+        "STATE_DROPPED"
+      ],
+      "default": "STATE_ANY_UNSPECIFIED",
+      "description": "- STATE_ANY_UNSPECIFIED: STATE_ANY_UNSPECIFIED unspecified\n - STATE_ACTIVE: STATE_ACTIVE target active state\n - STATE_DROPPED: STATE_DROPPED target dropped state",
+      "title": "State represents the current state of a target"
     },
     "v1alpha1TargetsResponse": {
       "type": "object",

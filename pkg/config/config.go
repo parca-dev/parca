@@ -53,9 +53,13 @@ type ObjectStorage struct {
 
 // Validate returns an error if the config is not valid.
 func (c *Config) Validate() error {
-	return validation.ValidateStruct(c,
-		validation.Field(&c.ObjectStorage, validation.Required, Valid),
-	)
+	if err := validation.ValidateStruct(c,
+		validation.Field(&c.ObjectStorage, validation.Required, ObjectStorageValid),
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func trueValue() *bool {

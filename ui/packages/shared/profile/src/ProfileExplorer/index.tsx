@@ -12,13 +12,14 @@
 // limitations under the License.
 
 import {QuerySelection} from '../ProfileSelector';
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams, NavigateFunction} from '..';
+import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
 import {store} from '@parca/store';
 import {Provider} from 'react-redux';
 import {DateTimeRange} from '@parca/components';
+import {NavigateFunction} from '@parca/functions';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;

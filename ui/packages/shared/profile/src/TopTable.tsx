@@ -19,13 +19,12 @@ import {
   isSearchMatch,
   parseParams,
   selectQueryParam,
+  NavigateFunction,
 } from '@parca/functions';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
-
 import {hexifyAddress} from './utils';
 
 import './TopTable.styles.css';
-import {NavigateFunction} from './ProfileViewWithData';
 
 interface TopTableProps {
   data?: Top;

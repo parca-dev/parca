@@ -5,7 +5,8 @@
     "baseUrl": "./src",
     "outDir": "dist",
     "noEmit": false,
-    "declaration": true
+    "declaration": true,
+    "target": "ES6"
   },
   "exclude": ["node_modules", "dist", "**/*.d.ts"]
 }

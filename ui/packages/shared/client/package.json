@@ -1,8 +1,8 @@
 {
   "name": "@parca/client",
-  "version": "0.16.56",
+  "version": "0.16.58",
   "description": "Parca API Client",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
