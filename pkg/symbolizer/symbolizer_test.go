@@ -20,6 +20,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
@@ -427,12 +428,6 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	)
 	require.NoError(t, err)
 
-	debugInfoCacheDir, err := os.MkdirTemp("", "parca-debuginfo-test-cache-*")
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		os.RemoveAll(debugInfoCacheDir)
-	})
-
 	symbolizerCacheDir, err := os.MkdirTemp("", "parca-symbolizer-test-cache-*")
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -454,13 +449,16 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	require.NoError(t, err)
 
 	metadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
+	debuginfodClient := debuginfo.NopDebuginfodClient{}
 	dbgStr, err := debuginfo.NewStore(
 		tracer,
 		logger,
-		debugInfoCacheDir,
 		metadata,
 		bucket,
-		debuginfo.NopDebugInfodClient{},
+		debuginfodClient,
+		debuginfo.SignedUpload{Enabled: false},
+		15*time.Minute,
+		1024*1024*1024,
 	)
 	require.NoError(t, err)
 
@@ -490,7 +488,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		grpcServer.GracefulStop()
 	})
 
-	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, dbgStr)
+	debuginfopb.RegisterDebuginfoServiceServer(grpcServer, dbgStr)
 	profilestorepb.RegisterProfileStoreServiceServer(grpcServer, pStr)
 
 	go func() {
@@ -509,10 +507,10 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	return conn, metastore, New(
 		logger,
 		prometheus.NewRegistry(),
+		metadata,
 		metastore,
-		dbgStr,
+		debuginfo.NewFetcher(metadata, debuginfodClient, bucket),
 		sym,
-		symbolizerCacheDir,
 		symbolizerCacheDir,
 		0,
 	)

@@ -26,7 +26,7 @@ import (
 )
 
 type UploadReader struct {
-	stream debuginfopb.DebugInfoService_UploadServer
+	stream debuginfopb.DebuginfoService_UploadServer
 	cur    io.Reader
 	size   uint64
 }

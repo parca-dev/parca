@@ -15,8 +15,11 @@ package symbolizer
 
 import (
 	"context"
+	"debug/elf"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -26,12 +29,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/runutil"
 	"github.com/parca-dev/parca/pkg/symbol"
 )
+
+type DebuginfoMetadata interface {
+	MarkAsNotValidELF(ctx context.Context, buildID string) error
+}
 
 type Symbolizer struct {
 	logger log.Logger
@@ -51,31 +57,28 @@ type Symbolizer struct {
 
 	metastore  pb.MetastoreServiceClient
 	symbolizer *symbol.Symbolizer
-	debuginfo  DebugInfoFetcher
-
-	// We want two different cache dirs for debuginfo and debuginfod as one of
-	// them is intended to be for files that are publicly available the other
-	// one potentially only privately.
-	debuginfodCacheDir string
-	debuginfoCacheDir  string
+	debuginfo  DebuginfoFetcher
+	metadata   DebuginfoMetadata
 
 	batchSize uint32
+
+	tmpDir string
 }
 
-type DebugInfoFetcher interface {
+type DebuginfoFetcher interface {
 	// Fetch ensures that the debug info for the given build ID is available on
 	// a local filesystem and returns a path to it.
-	FetchDebugInfo(ctx context.Context, buildID string) (string, debuginfopb.DownloadInfo_Source, error)
+	FetchDebuginfo(ctx context.Context, buildID string) (io.ReadCloser, error)
 }
 
 func New(
 	logger log.Logger,
 	reg prometheus.Registerer,
+	metadata DebuginfoMetadata,
 	metastore pb.MetastoreServiceClient,
-	debuginfo DebugInfoFetcher,
+	debuginfo DebuginfoFetcher,
 	symbolizer *symbol.Symbolizer,
-	debuginfodCacheDir string,
-	debuginfoCacheDir string,
+	tmpDir string,
 	batchSize uint32,
 ) *Symbolizer {
 	attemptsTotal := promauto.With(reg).NewCounter(
@@ -107,17 +110,17 @@ func New(
 	)
 
 	s := Symbolizer{
-		logger:             log.With(logger, "component", "symbolizer"),
-		attempts:           attemptsTotal,
-		errors:             errorsTotal,
-		duration:           duration,
-		storeDuration:      storeDuration,
-		metastore:          metastore,
-		symbolizer:         symbolizer,
-		debuginfo:          debuginfo,
-		debuginfodCacheDir: debuginfodCacheDir,
-		debuginfoCacheDir:  debuginfoCacheDir,
-		batchSize:          batchSize,
+		logger:        log.With(logger, "component", "symbolizer"),
+		attempts:      attemptsTotal,
+		errors:        errorsTotal,
+		duration:      duration,
+		storeDuration: storeDuration,
+		metastore:     metastore,
+		symbolizer:    symbolizer,
+		debuginfo:     debuginfo,
+		tmpDir:        tmpDir,
+		batchSize:     batchSize,
+		metadata:      metadata,
 	}
 	return &s
 }
@@ -320,14 +323,44 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 	logger := log.With(s.logger, "buildid", m.BuildId)
 
 	// Fetch the debug info for the build ID.
-	objFile, _, err := s.debuginfo.FetchDebugInfo(ctx, m.BuildId)
+	rc, err := s.debuginfo.FetchDebuginfo(ctx, m.BuildId)
 	if err != nil {
 		return nil, fmt.Errorf("fetch debuginfo (BuildID: %q): %w", m.BuildId, err)
 	}
 
+	f, err := os.CreateTemp(s.tmpDir, "parca-symbolizer-*")
+	if err != nil {
+		return nil, fmt.Errorf("create temp file: %w", err)
+	}
+
+	_, err = io.Copy(f, rc)
+	if err != nil {
+		return nil, fmt.Errorf("copy debuginfo to temp file: %w", err)
+	}
+
+	if err := rc.Close(); err != nil {
+		return nil, fmt.Errorf("close debuginfo reader: %w", err)
+	}
+
+	if err := f.Close(); err != nil {
+		return nil, fmt.Errorf("close temp file: %w", err)
+	}
+
+	e, err := elf.Open(f.Name())
+	if err != nil {
+		if err := s.metadata.MarkAsNotValidELF(ctx, m.BuildId); err != nil {
+			level.Error(logger).Log("msg", "failed to mark build ID as not ELF", "err", err)
+		}
+		return nil, fmt.Errorf("open temp file as ELF: %w", err)
+	}
+
+	if err := e.Close(); err != nil {
+		return nil, fmt.Errorf("close debuginfo file: %w", err)
+	}
+
 	// At this point we have the best version of the debug information file that we could find.
 	// Let's symbolize it.
-	lines, err := s.symbolizer.Symbolize(ctx, m, locations, objFile)
+	lines, err := s.symbolizer.Symbolize(ctx, m, locations, f.Name())
 	if err != nil {
 		if errors.Is(err, symbol.ErrLinerCreationFailedBefore) {
 			level.Debug(logger).Log("msg", "failed to symbolize before", "err", err)

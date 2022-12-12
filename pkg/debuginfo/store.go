@@ -14,33 +14,29 @@
 package debuginfo
 
 import (
-	"bytes"
 	"context"
-	"debug/elf"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path"
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
-	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/nanmu42/limitio"
+	"github.com/google/uuid"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-	"github.com/parca-dev/parca/pkg/symbol/elfutils"
+	"github.com/parca-dev/parca/pkg/signedupload"
 )
 
-var ErrDebugInfoNotFound = errors.New("debug info not found")
+var ErrDebuginfoNotFound = errors.New("debuginfo not found")
 
 type CacheProvider string
 
@@ -63,320 +59,331 @@ type CacheConfig struct {
 }
 
 type MetadataManager interface {
-	MarkAsCorrupted(ctx context.Context, buildID string) error
-	MarkAsUploading(ctx context.Context, buildID string) error
-	MarkAsUploaded(ctx context.Context, buildID, hash string) error
-	Fetch(ctx context.Context, buildID string) (*Metadata, error)
+	MarkAsDebuginfodSource(ctx context.Context, buildID string) error
+	MarkAsUploading(ctx context.Context, buildID, uploadID, hash string, startedAt *timestamppb.Timestamp) error
+	MarkAsUploaded(ctx context.Context, buildID, uploadID string, finishedAt *timestamppb.Timestamp) error
+	Fetch(ctx context.Context, buildID string) (*debuginfopb.Debuginfo, error)
 }
 
 type Store struct {
-	debuginfopb.UnimplementedDebugInfoServiceServer
+	debuginfopb.UnimplementedDebuginfoServiceServer
 
-	tracer   trace.Tracer
-	logger   log.Logger
-	cacheDir string
+	tracer trace.Tracer
+	logger log.Logger
 
 	bucket objstore.Bucket
 
 	metadata         MetadataManager
-	debuginfodClient DebugInfodClient
+	debuginfodClient DebuginfodClient
 
-	existsCache *lru.ARCCache[string, struct{}]
+	signedUpload SignedUpload
+
+	maxUploadDuration time.Duration
+	maxUploadSize     int64
+
+	timeNow func() time.Time
+}
+
+type SignedUpload struct {
+	Enabled bool
+	Client  signedupload.Client
 }
 
 // NewStore returns a new debug info store.
 func NewStore(
 	tracer trace.Tracer,
 	logger log.Logger,
-	cacheDir string,
 	metadata MetadataManager,
 	bucket objstore.Bucket,
-	debuginfodClient DebugInfodClient,
+	debuginfodClient DebuginfodClient,
+	signedUpload SignedUpload,
+	maxUploadDuration time.Duration,
+	maxUploadSize int64,
 ) (*Store, error) {
-	existsCache, err := lru.NewARC[string, struct{}](100_000)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Store{
-		tracer:           tracer,
-		logger:           log.With(logger, "component", "debuginfo"),
-		bucket:           bucket,
-		cacheDir:         cacheDir,
-		metadata:         metadata,
-		debuginfodClient: debuginfodClient,
-
-		existsCache: existsCache,
+		tracer:            tracer,
+		logger:            log.With(logger, "component", "debuginfo"),
+		bucket:            bucket,
+		metadata:          metadata,
+		debuginfodClient:  debuginfodClient,
+		signedUpload:      signedUpload,
+		maxUploadDuration: maxUploadDuration,
+		maxUploadSize:     maxUploadSize,
+		timeNow:           time.Now,
 	}, nil
 }
 
-func (s *Store) Exists(ctx context.Context, req *debuginfopb.ExistsRequest) (*debuginfopb.ExistsResponse, error) {
+const (
+	ReasonDebuginfoInDebuginfod  = "Debuginfo exists in debuginfod, therefore no upload is necessary."
+	ReasonFirstTimeSeen          = "First time we see this Build ID, and it does not exist in debuginfod, therefore please upload!"
+	ReasonUploadStale            = "A previous upload was started but not finished and is now stale, so it can be retried."
+	ReasonUploadInProgress       = "A previous upload is still in-progress and not stale yet (only stale uploads can be retried)."
+	ReasonDebuginfoAlreadyExists = "Debuginfo already exists and is not marked as invalid, therefore no new upload is needed."
+	ReasonDebuginfoInvalid       = "Debuginfo already exists but is marked as invalid, therefore a new upload is needed. Hash the debuginfo and initiate the upload."
+	ReasonDebuginfoEqual         = "Debuginfo already exists and is marked as invalid, but the proposed hash is the same as the one already available, therefore the upload is not accepted as it would result in the same invalid debuginfos."
+	ReasonDebuginfoNotEqual      = "Debuginfo already exists but is marked as invalid, therefore a new upload will be accepted."
+	ReasonDebuginfodSource       = "Debuginfo is available from debuginfod already and not marked as invalid, therefore no new upload is needed."
+	ReasonDebuginfodInvalid      = "Debuginfo is available from debuginfod already but is marked as invalid, therefore a new upload is needed."
+)
+
+// ShouldInitiateUpload returns whether an upload should be initiated for the
+// given build ID. Checking if an upload should even be initiated allows the
+// parca-agent to avoid extracting debuginfos unnecessarily from a binary.
+func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.ShouldInitiateUploadRequest) (*debuginfopb.ShouldInitiateUploadResponse, error) {
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attribute.String("build_id", req.GetBuildId()))
+	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
 	buildID := req.BuildId
 	if err := validateInput(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	found, err := s.find(ctx, buildID)
-	if err != nil {
-		return nil, err
-	}
+	dbginfo, err := s.metadata.Fetch(ctx, buildID)
+	if err != nil && !errors.Is(err, ErrMetadataNotFound) {
+		return nil, status.Error(codes.Internal, err.Error())
+	} else if errors.Is(err, ErrMetadataNotFound) {
+		// First time we see this Build ID.
 
-	if found {
-		metadataFile, err := s.metadata.Fetch(ctx, buildID)
+		existsInDebuginfod, err := s.debuginfodClient.Exists(ctx, buildID)
 		if err != nil {
-			if errors.Is(err, ErrMetadataNotFound) {
-				return &debuginfopb.ExistsResponse{Exists: false}, nil
-			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		// metadata.Hash should nt be empty, but let's have the check just in case.
-		if metadataFile.Hash != "" && metadataFile.Hash == req.Hash {
-			return &debuginfopb.ExistsResponse{Exists: true}, nil
+		if existsInDebuginfod {
+			return &debuginfopb.ShouldInitiateUploadResponse{
+				ShouldInitiateUpload: false,
+				Reason:               ReasonDebuginfoInDebuginfod,
+			}, s.metadata.MarkAsDebuginfodSource(ctx, buildID)
 		}
 
-		var exists bool
-		// If it is not an exact version of the source object file what we have so, let the client try to upload it.
-		if metadataFile.State == MetadataStateUploading {
-			exists = !isStale(metadataFile)
+		return &debuginfopb.ShouldInitiateUploadResponse{
+			ShouldInitiateUpload: true,
+			Reason:               ReasonFirstTimeSeen,
+		}, nil
+	} else {
+		// We have seen this Build ID before and there is metadata for it.
+
+		switch dbginfo.Source {
+		case debuginfopb.Debuginfo_SOURCE_UPLOAD:
+			if dbginfo.Upload == nil {
+				return nil, status.Error(codes.Internal, "metadata inconsistency: upload is nil")
+			}
+
+			switch dbginfo.Upload.State {
+			case debuginfopb.DebuginfoUpload_STATE_UPLOADING:
+				if s.uploadIsStale(dbginfo.Upload) {
+					return &debuginfopb.ShouldInitiateUploadResponse{
+						ShouldInitiateUpload: true,
+						Reason:               ReasonUploadStale,
+					}, nil
+				}
+
+				return &debuginfopb.ShouldInitiateUploadResponse{
+					ShouldInitiateUpload: false,
+					Reason:               ReasonUploadInProgress,
+				}, nil
+			case debuginfopb.DebuginfoUpload_STATE_UPLOADED:
+				if dbginfo.Quality == nil || !dbginfo.Quality.NotValidElf {
+					return &debuginfopb.ShouldInitiateUploadResponse{
+						ShouldInitiateUpload: false,
+						Reason:               ReasonDebuginfoAlreadyExists,
+					}, nil
+				}
+
+				if req.Hash == "" {
+					return &debuginfopb.ShouldInitiateUploadResponse{
+						ShouldInitiateUpload: true,
+						Reason:               ReasonDebuginfoInvalid,
+					}, nil
+				}
+
+				if dbginfo.Upload.Hash == req.Hash {
+					return &debuginfopb.ShouldInitiateUploadResponse{
+						ShouldInitiateUpload: false,
+						Reason:               ReasonDebuginfoEqual,
+					}, nil
+				}
+
+				return &debuginfopb.ShouldInitiateUploadResponse{
+					ShouldInitiateUpload: true,
+					Reason:               ReasonDebuginfoNotEqual,
+				}, nil
+			default:
+				return nil, status.Error(codes.Internal, "metadata inconsistency: unknown upload state")
+			}
+		case debuginfopb.Debuginfo_SOURCE_DEBUGINFOD:
+			if dbginfo.Quality == nil || !dbginfo.Quality.NotValidElf {
+				// We already have debuginfo that's also not marked to be
+				// invalid, so we don't need to upload it again.
+				return &debuginfopb.ShouldInitiateUploadResponse{
+					ShouldInitiateUpload: false,
+					Reason:               ReasonDebuginfodSource,
+				}, nil
+			}
+
+			return &debuginfopb.ShouldInitiateUploadResponse{
+				ShouldInitiateUpload: true,
+				Reason:               ReasonDebuginfodInvalid,
+			}, nil
+		default:
+			return nil, status.Errorf(codes.Internal, "unknown debuginfo source %q", dbginfo.Source)
 		}
-		return &debuginfopb.ExistsResponse{Exists: exists}, nil
 	}
-
-	return &debuginfopb.ExistsResponse{Exists: false}, nil
 }
 
-func (s *Store) Upload(stream debuginfopb.DebugInfoService_UploadServer) error {
+func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUploadRequest) (*debuginfopb.InitiateUploadResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("build_id", req.BuildId))
+
+	if req.Hash == "" {
+		return nil, status.Error(codes.InvalidArgument, "hash must be set")
+	}
+
+	// We don't want to blindly accept upload initiation requests that
+	// shouldn't have happened.
+	shouldInitiateResp, err := s.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{
+		BuildId: req.BuildId,
+		Hash:    req.Hash,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !shouldInitiateResp.ShouldInitiateUpload {
+		if shouldInitiateResp.Reason == ReasonDebuginfoEqual {
+			return nil, status.Error(codes.AlreadyExists, ReasonDebuginfoEqual)
+		}
+		return nil, status.Errorf(codes.FailedPrecondition, "upload should not have been attempted to be initiated, a previous check should have failed with: %s", shouldInitiateResp.Reason)
+	}
+
+	if req.Size > s.maxUploadSize {
+		return nil, status.Errorf(codes.InvalidArgument, "upload size %d exceeds maximum allowed size %d", req.Size, s.maxUploadSize)
+	}
+
+	uploadID := uuid.New().String()
+	uploadStarted := s.timeNow()
+	uploadExpiry := uploadStarted.Add(s.maxUploadDuration)
+
+	if !s.signedUpload.Enabled {
+		if err := s.metadata.MarkAsUploading(ctx, req.BuildId, uploadID, req.Hash, timestamppb.New(uploadStarted)); err != nil {
+			return nil, fmt.Errorf("mark debuginfo upload as uploading via gRPC: %w", err)
+		}
+
+		return &debuginfopb.InitiateUploadResponse{
+			UploadInstructions: &debuginfopb.UploadInstructions{
+				BuildId:        req.BuildId,
+				UploadId:       uploadID,
+				UploadStrategy: debuginfopb.UploadInstructions_UPLOAD_STRATEGY_GRPC,
+			},
+		}, nil
+	}
+
+	signedURL, err := s.signedUpload.Client.SignedPUT(ctx, objectPath(req.BuildId), req.Size, uploadExpiry)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if err := s.metadata.MarkAsUploading(ctx, req.BuildId, uploadID, req.Hash, timestamppb.New(uploadStarted)); err != nil {
+		return nil, fmt.Errorf("mark debuginfo upload as uploading via signed URL: %w", err)
+	}
+
+	return &debuginfopb.InitiateUploadResponse{
+		UploadInstructions: &debuginfopb.UploadInstructions{
+			BuildId:        req.BuildId,
+			UploadId:       uploadID,
+			UploadStrategy: debuginfopb.UploadInstructions_UPLOAD_STRATEGY_SIGNED_URL,
+			SignedUrl:      signedURL,
+		},
+	}, nil
+}
+
+func (s *Store) MarkUploadFinished(ctx context.Context, req *debuginfopb.MarkUploadFinishedRequest) (*debuginfopb.MarkUploadFinishedResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("build_id", req.BuildId))
+	span.SetAttributes(attribute.String("upload_id", req.UploadId))
+
+	buildID := req.BuildId
+	if err := validateInput(buildID); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	err := s.metadata.MarkAsUploaded(ctx, buildID, req.UploadId, timestamppb.New(s.timeNow()))
+	if errors.Is(err, ErrDebuginfoNotFound) {
+		return nil, status.Error(codes.NotFound, "no debuginfo metadata found for build id")
+	}
+	if errors.Is(err, ErrUploadMetadataNotFound) {
+		return nil, status.Error(codes.NotFound, "no debuginfo upload metadata found for build id")
+	}
+	if errors.Is(err, ErrUploadIDMismatch) {
+		return nil, status.Error(codes.InvalidArgument, "upload id mismatch")
+	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &debuginfopb.MarkUploadFinishedResponse{}, nil
+}
+
+func (s *Store) Upload(stream debuginfopb.DebuginfoService_UploadServer) error {
+	if s.signedUpload.Enabled {
+		return status.Error(codes.Unimplemented, "signed URL uploads are the only supported upload strategy for this service")
+	}
+
 	req, err := stream.Recv()
 	if err != nil {
-		msg := "failed to receive upload info"
-		level.Error(s.logger).Log("msg", msg, "err", err)
-		return status.Errorf(codes.Unknown, msg)
+		return status.Errorf(codes.Unknown, "failed to receive upload info: %q", err)
 	}
 
 	var (
-		buildID = req.GetInfo().BuildId
-		hash    = req.GetInfo().Hash
-		r       = &UploadReader{stream: stream}
+		buildID  = req.GetInfo().BuildId
+		uploadID = req.GetInfo().UploadId
+		r        = &UploadReader{stream: stream}
 	)
 
 	ctx := stream.Context()
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", buildID))
-	span.SetAttributes(attribute.String("hash", hash))
+	span.SetAttributes(attribute.String("upload_id", uploadID))
 
-	if err := s.upload(ctx, buildID, hash, r); err != nil {
+	if err := s.upload(ctx, buildID, uploadID, r); err != nil {
 		return err
 	}
 
-	level.Debug(s.logger).Log("msg", "debug info uploaded", "buildid", buildID)
 	return stream.SendAndClose(&debuginfopb.UploadResponse{
 		BuildId: buildID,
 		Size:    r.size,
 	})
 }
 
-func (s *Store) upload(ctx context.Context, buildID, hash string, r io.Reader) error {
+func (s *Store) upload(ctx context.Context, buildID, uploadID string, r io.Reader) error {
 	if err := validateInput(buildID); err != nil {
-		return status.Error(codes.InvalidArgument, fmt.Errorf("invalid build ID: %w", err).Error())
+		return status.Errorf(codes.InvalidArgument, "invalid build ID: %q", err)
 	}
 
-	if err := validateInput(hash); err != nil {
-		return status.Error(codes.InvalidArgument, fmt.Errorf("invalid hash: %w", err).Error())
-	}
-
-	level.Debug(s.logger).Log("msg", "trying to upload debug info", "buildid", buildID)
-
-	metadataFile, err := s.metadata.Fetch(ctx, buildID)
-	if err == nil {
-		level.Debug(s.logger).Log("msg", "fetching metadata state", "result", metadataFile)
-
-		switch metadataFile.State {
-		case MetadataStateCorrupted:
-			// Corrupted. Re-upload.
-		case MetadataStateUploaded:
-			// The debug info was fully uploaded.
-			return status.Error(codes.AlreadyExists, "debuginfo already exists")
-		case MetadataStateUploading:
-			if !isStale(metadataFile) {
-				return status.Error(codes.AlreadyExists, "debuginfo already exists, being uploaded right now")
-			}
-			// The debug info upload operation most likely failed.
-		default:
-			return status.Error(codes.Internal, "unknown metadata state")
-		}
-	} else {
-		if !errors.Is(err, ErrMetadataNotFound) {
-			level.Error(s.logger).Log("msg", "failed to fetch metadata state", "err", err)
-		}
-	}
-
-	found, err := s.find(ctx, buildID)
+	dbginfo, err := s.metadata.Fetch(ctx, buildID)
 	if err != nil {
-		return err
-	}
-
-	if found && (metadataFile == nil || (metadataFile != nil && metadataFile.State != MetadataStateCorrupted)) {
-		if hash != "" && metadataFile != nil && metadataFile.Hash == hash {
-			level.Debug(s.logger).Log("msg", "debug info already exists", "buildid", buildID)
-			return status.Error(codes.AlreadyExists, "debuginfo already exists")
+		if errors.Is(err, ErrMetadataNotFound) {
+			return status.Error(codes.FailedPrecondition, "metadata not found, this indicates that the upload was not previously initiated")
 		}
-
-		objFile, _, err := s.FetchDebugInfo(ctx, buildID)
-		if err != nil && !errors.Is(err, ErrDebugInfoNotFound) {
-			return status.Error(codes.Internal, err.Error())
-		}
-
-		if err == nil {
-			if err := elfutils.ValidateFile(objFile); err != nil {
-				// Failed to validate. Mark the file as corrupted, and let the client try to upload it again.
-				if err := s.metadata.MarkAsCorrupted(ctx, buildID); err != nil {
-					level.Warn(s.logger).Log("msg", "failed to update metadata as corrupted", "err", err)
-				}
-				level.Error(s.logger).Log("msg", "failed to validate object file", "buildid", buildID)
-				// Client will retry.
-				return status.Error(codes.Internal, fmt.Errorf("validate elf file: %w", err).Error())
-			}
-
-			// Valid.
-			f, err := elf.Open(objFile)
-			if err != nil {
-				level.Debug(s.logger).Log("msg", "failed to open object file", "err", err)
-			} else {
-				hasDWARF, err := elfutils.HasDWARF(f)
-				if err != nil {
-					level.Debug(s.logger).Log("msg", "failed to check for DWARF", "err", err)
-				}
-				f.Close()
-
-				if hasDWARF {
-					return status.Error(codes.AlreadyExists, "debuginfo already exists")
-				}
-			}
-		}
+		return status.Error(codes.Internal, err.Error())
 	}
 
-	// At this point we know that we received a better version of the debug information file,
-	// so let the client upload it.
-
-	if err := s.metadata.MarkAsUploading(ctx, buildID); err != nil {
-		return status.Error(codes.Internal, fmt.Errorf("failed to update metadata before uploading: %w", err).Error())
+	if dbginfo.Upload == nil {
+		return status.Error(codes.FailedPrecondition, "metadata not found, this indicates that the upload was not previously initiated")
 	}
 
-	// limitio.Writer is used to avoid buffer overflow.
-	// We only need to read the first 64 bytes (at most).
-	// The ELF header is 52 or 64 bytes long for 32-bit and 64-bit binaries respectively.
-	// If we receive a longer data, we will ignore the rest without an error.
-	b := bytes.NewBuffer(nil)
-	w := limitio.NewWriter(b, 64, true)
-
-	// Here we're optimistically uploading the received stream directly to the bucket,
-	// and if something goes wrong we mark it as corrupted, so it could be overwritten in subsequent calls.
-	// We only want to make sure we don't read a corrupted file while symbolizing.
-	// Ww also wanted to prevent any form of buffering for this data on the server-side,
-	// thus the optimistic writes directly to the object-store while also writing the header of the file into a buffer,
-	// so we can validate the ELF header.
-	if err := s.bucket.Upload(ctx, objectPath(buildID), io.TeeReader(r, w)); err != nil {
-		msg := "failed to upload"
-		level.Error(s.logger).Log("msg", msg, "err", err)
-		return status.Errorf(codes.Unknown, msg)
+	if dbginfo.Upload.Id != uploadID {
+		return status.Error(codes.InvalidArgument, "the upload ID does not match the one returned by the InitiateUpload call")
 	}
 
-	if err := elfutils.ValidateHeader(b); err != nil {
-		// Failed to validate. Mark the incoming stream as corrupted, and let the client try to upload it again.
-		if err := s.metadata.MarkAsCorrupted(ctx, buildID); err != nil {
-			err = fmt.Errorf("failed to update metadata after uploaded, as corrupted: %w", err)
-			return status.Error(codes.Internal, err.Error())
-		}
-		return status.Error(codes.InvalidArgument, fmt.Errorf("validate elf header: %w", err).Error())
-	}
-
-	if err := s.metadata.MarkAsUploaded(ctx, buildID, hash); err != nil {
-		return status.Error(codes.Internal, fmt.Errorf("failed to update metadata after uploaded: %w", err).Error())
+	if err := s.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
+		return status.Error(codes.Internal, fmt.Errorf("upload debuginfo: %w", err).Error())
 	}
 
 	return nil
 }
 
-func isStale(metadataFile *Metadata) bool {
-	return time.Now().Add(-15 * time.Minute).After(time.Unix(metadataFile.UploadStartedAt, 0))
-}
-
-func (s *Store) Download(req *debuginfopb.DownloadRequest, stream debuginfopb.DebugInfoService_DownloadServer) error {
-	if err := validateInput(req.BuildId); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	ctx := stream.Context()
-	found, err := s.find(ctx, req.BuildId)
-	if err != nil {
-		return err
-	}
-
-	if !found {
-		return status.Error(codes.NotFound, "debuginfo not found")
-	}
-
-	metadata, err := s.metadata.Fetch(ctx, req.BuildId)
-	if err != nil {
-		return status.Error(codes.Internal, err.Error())
-	}
-
-	switch metadata.State {
-	case MetadataStateCorrupted:
-		return status.Error(codes.FailedPrecondition, "debuginfo is corrupted")
-	case MetadataStateUploading:
-		return status.Error(codes.Unavailable, "debuginfo is being uploaded")
-	}
-
-	objFile, source, err := s.FetchDebugInfo(ctx, req.BuildId)
-	if err != nil {
-		if errors.Is(err, ErrDebugInfoNotFound) {
-			return status.Error(codes.NotFound, err.Error())
-		}
-		return status.Error(codes.Internal, err.Error())
-	}
-
-	if err := stream.Send(&debuginfopb.DownloadResponse{
-		Data: &debuginfopb.DownloadResponse_Info{
-			Info: &debuginfopb.DownloadInfo{
-				Source: source,
-			},
-		},
-	}); err != nil {
-		return err
-	}
-
-	f, err := os.Open(objFile)
-	if err != nil {
-		return status.Error(codes.Internal, err.Error())
-	}
-
-	buf := make([]byte, ChunkSize)
-	bytesSent := 0
-	for {
-		n, err := f.Read(buf)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return fmt.Errorf("read next chunk (%d bytes sent so far): %w", bytesSent, err)
-		}
-		bytesSent += n
-
-		if err := stream.Send(&debuginfopb.DownloadResponse{
-			Data: &debuginfopb.DownloadResponse_ChunkData{
-				ChunkData: buf[:n],
-			},
-		}); err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (s *Store) uploadIsStale(upload *debuginfopb.DebuginfoUpload) bool {
+	return upload.StartedAt.AsTime().Add(s.maxUploadDuration + 2*time.Minute).Before(s.timeNow())
 }
 
 func validateInput(id string) error {
@@ -388,184 +395,6 @@ func validateInput(id string) error {
 		return errors.New("unexpectedly short input")
 	}
 
-	return nil
-}
-
-func (s *Store) find(ctx context.Context, key string) (bool, error) {
-	_, found := s.existsCache.Get(key)
-	if found {
-		// We can't cache the negative result, because the file might be
-		// uploaded in the meantime.
-		return true, nil
-	}
-
-	found, err := s.bucket.Exists(ctx, objectPath(key))
-	if err != nil {
-		return false, status.Error(codes.Internal, err.Error())
-	}
-
-	if found {
-		// Only cache the positive result.
-		s.existsCache.Add(key, struct{}{})
-	}
-
-	return found, nil
-}
-
-func (s *Store) FetchDebugInfo(ctx context.Context, buildID string) (string, debuginfopb.DownloadInfo_Source, error) {
-	logger := log.With(s.logger, "buildid", buildID)
-
-	source := debuginfopb.DownloadInfo_SOURCE_UNKNOWN_UNSPECIFIED
-	objFile, err := s.fetchFromObjectStore(ctx, buildID)
-	if err != nil {
-		// It's ok if we don't have the symbols for given BuildID, it happens too often.
-		if errors.Is(err, ErrDebugInfoNotFound) {
-			level.Debug(logger).Log("msg", "failed to fetch object", "err", err)
-		} else {
-			level.Warn(logger).Log("msg", "failed to fetch object", "err", err)
-		}
-
-		// Let's try to find a debug file from debuginfod servers.
-		objFile, err = s.fetchDebuginfodFile(ctx, buildID)
-		if err != nil {
-			return "", source, fmt.Errorf("failed to fetch: %w", err)
-		}
-		source = debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD
-	} else {
-		source = debuginfopb.DownloadInfo_SOURCE_UPLOAD
-	}
-
-	// Let's make sure we have the best version of the debug file.
-	if err := elfutils.ValidateFile(objFile); err != nil {
-		level.Warn(logger).Log("msg", "failed to validate debug information", "err", err)
-		// Mark the file as corrupted, and let the client try to upload it again.
-		err := s.metadata.MarkAsCorrupted(ctx, buildID)
-		if err != nil {
-			level.Warn(logger).Log(
-				"msg", "failed to mark debug information",
-				"err", fmt.Errorf("failed to update metadata for corrupted: %w", err),
-			)
-		}
-		if source != debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD {
-			dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
-			if err != nil {
-				level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
-			} else {
-				objFile = dbgFile
-				source = debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD
-			}
-		}
-	}
-
-	if source != debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD {
-		f, err := elf.Open(objFile)
-		if err != nil {
-			level.Debug(logger).Log("msg", "failed to open object file", "err", err)
-		} else {
-			hasDWARF, err := elfutils.HasDWARF(f)
-			if err != nil {
-				level.Debug(logger).Log("msg", "failed to check for DWARF", "err", err)
-			}
-			f.Close()
-
-			if !hasDWARF {
-				// Try to download a better version from debuginfod servers.
-				dbgFile, err := s.fetchDebuginfodFile(ctx, buildID)
-				if err != nil {
-					if errors.Is(err, ErrDebugInfoNotFound) {
-						level.Debug(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
-					} else {
-						level.Warn(logger).Log("msg", "failed to fetch debuginfod file", "err", err)
-					}
-				} else {
-					objFile = dbgFile
-					source = debuginfopb.DownloadInfo_SOURCE_DEBUGINFOD
-				}
-			}
-		}
-	}
-
-	return objFile, source, nil
-}
-
-func (s *Store) fetchFromObjectStore(ctx context.Context, buildID string) (string, error) {
-	logger := log.With(s.logger, "buildid", buildID)
-
-	objFile := s.localCachePath(buildID)
-	// Check if it's already cached locally; if not download.
-	if _, err := os.Stat(objFile); os.IsNotExist(err) {
-		// Download the debuginfo file from the bucket.
-		r, err := s.bucket.Get(ctx, objectPath(buildID))
-		if err != nil {
-			if s.bucket.IsObjNotFoundErr(err) {
-				level.Debug(logger).Log("msg", "failed to fetch object from object storage", "err", err)
-				return "", ErrDebugInfoNotFound
-			}
-			return "", fmt.Errorf("failed to fetch object: %w", err)
-		}
-
-		// Cache the file locally.
-		if err := s.cache(objFile, r); err != nil {
-			return "", fmt.Errorf("failed to fetch debug info file: %w", err)
-		}
-	}
-
-	return objFile, nil
-}
-
-func (s *Store) fetchDebuginfodFile(ctx context.Context, buildID string) (string, error) {
-	logger := log.With(s.logger, "buildid", buildID)
-	level.Debug(logger).Log("msg", "attempting to download from debuginfod servers")
-
-	objFile := s.localCachePath(buildID)
-	// Try downloading the debuginfo file from the debuginfod server.
-	r, err := s.debuginfodClient.GetDebugInfo(ctx, buildID)
-	if err != nil {
-		level.Debug(logger).Log("msg", "failed to download debuginfo from debuginfod", "err", err)
-		return "", fmt.Errorf("failed to fetch from debuginfod: %w", err)
-	}
-	defer r.Close()
-	level.Info(logger).Log("msg", "debug info downloaded from debuginfod server")
-
-	// Cache the file locally.
-	if err := s.cache(objFile, r); err != nil {
-		level.Debug(logger).Log("msg", "failed to cache debuginfo", "err", err)
-		return "", fmt.Errorf("failed to fetch from debuginfod: %w", err)
-	}
-
-	return objFile, nil
-}
-
-func (s *Store) localCachePath(buildID string) string {
-	return path.Join(s.cacheDir, buildID, "debuginfo")
-}
-
-func (s *Store) cache(localPath string, r io.ReadCloser) error {
-	tmpfile, err := os.CreateTemp(s.cacheDir, "symbol-download-*")
-	if err != nil {
-		return fmt.Errorf("create temp file: %w", err)
-	}
-	defer os.Remove(tmpfile.Name())
-
-	written, err := io.Copy(tmpfile, r)
-	if err != nil {
-		return fmt.Errorf("copy debug info file to local temp file: %w", err)
-	}
-	if err := tmpfile.Close(); err != nil {
-		return fmt.Errorf("close tempfile to write debug info file: %w", err)
-	}
-	if written == 0 {
-		return fmt.Errorf("received empty debug info: %w", ErrDebugInfoNotFound)
-	}
-
-	err = os.MkdirAll(path.Dir(localPath), 0o700)
-	if err != nil {
-		return fmt.Errorf("create debug info file directory: %w", err)
-	}
-	// Need to use rename to make the "creation" atomic.
-	if err := os.Rename(tmpfile.Name(), localPath); err != nil {
-		return fmt.Errorf("atomically move downloaded debug info file: %w", err)
-	}
 	return nil
 }
 

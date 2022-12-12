@@ -65,6 +65,7 @@ import (
 	queryservice "github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
+	"github.com/parca-dev/parca/pkg/signedupload"
 	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbolizer"
 )
@@ -108,6 +109,10 @@ type Flags struct {
 	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 	DebuginfoCacheDir            string        `default:"/tmp" help:"Path to directory where debuginfo is cached."`
+	DebuginfoUploadMaxSize       int64         `default:"1000000000" help:"Maximum size of debuginfo upload in bytes."`
+	DebuginfoUploadMaxDuration   time.Duration `default:"15m" help:"Maximum duration of debuginfo upload."`
+
+	DebuginfoUploadsSignedURL bool `default:"false" help:"Whether to use signed URLs for debuginfo uploads."`
 
 	StoreAddress       string            `kong:"help='gRPC address to send profiles and symbols to.'"`
 	BearerToken        string            `kong:"help='Bearer token to authenticate with store.'"`
@@ -168,6 +173,22 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize object storage bucket", "err", err)
 		return err
+	}
+
+	var signedUploadClient signedupload.Client
+	if flags.DebuginfoUploadsSignedURL {
+		var err error
+		signedUploadClient, err = signedupload.NewClient(
+			context.Background(),
+			cfg.ObjectStorage.Bucket,
+		)
+
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to initialize signed upload client", "err", err)
+			return err
+		}
+
+		defer signedUploadClient.Close()
 	}
 
 	var mStr metastorepb.MetastoreServiceServer
@@ -304,15 +325,15 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	var debugInfodClient debuginfo.DebugInfodClient = debuginfo.NopDebugInfodClient{}
+	var debuginfodClient debuginfo.DebuginfodClient = debuginfo.NopDebuginfodClient{}
 	if len(flags.DebugInfodUpstreamServers) > 0 {
-		httpDebugInfoClient, err := debuginfo.NewHTTPDebugInfodClient(logger, flags.DebugInfodUpstreamServers, flags.DebugInfodHTTPRequestTimeout)
+		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.DebugInfodUpstreamServers, flags.DebugInfodHTTPRequestTimeout)
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
 			return err
 		}
 
-		debugInfodClient, err = debuginfo.NewDebugInfodClientWithObjectStorageCache(
+		debuginfodClient, err = debuginfo.NewDebuginfodClientWithObjectStorageCache(
 			logger,
 			objstore.NewPrefixedBucket(bucket, "debuginfod-cache"),
 			httpDebugInfoClient,
@@ -323,14 +344,21 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		}
 	}
 
-	dbgInfoMetadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
-	dbgInfo, err := debuginfo.NewStore(
+	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
+	prefixedSignedUploadClient := signedupload.NewPrefixedClient(signedUploadClient, "debuginfo")
+	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(logger, debuginfoBucket)
+	dbginfo, err := debuginfo.NewStore(
 		tracerProvider.Tracer("debuginfo"),
 		logger,
-		flags.DebuginfoCacheDir,
-		dbgInfoMetadata,
-		objstore.NewPrefixedBucket(bucket, "debuginfo"),
-		debugInfodClient,
+		debuginfoMetadata,
+		debuginfoBucket,
+		debuginfodClient,
+		debuginfo.SignedUpload{
+			Enabled: flags.DebuginfoUploadsSignedURL,
+			Client:  prefixedSignedUploadClient,
+		},
+		flags.DebuginfoUploadMaxDuration,
+		flags.DebuginfoUploadMaxSize,
 	)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
@@ -364,10 +392,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		s := symbolizer.New(
 			logger,
 			reg,
+			debuginfoMetadata,
 			metastore,
-			dbgInfo,
+			debuginfo.NewFetcher(debuginfoMetadata, debuginfodClient, debuginfoBucket),
 			sym,
-			flags.DebuginfoCacheDir,
 			flags.DebuginfoCacheDir,
 			0,
 		)
@@ -419,13 +447,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				flags.CORSAllowedOrigins,
 				flags.PathPrefix,
 				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-					debuginfopb.RegisterDebugInfoServiceServer(srv, dbgInfo)
+					debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
 					profilestorepb.RegisterProfileStoreServiceServer(srv, s)
 					profilestorepb.RegisterAgentsServiceServer(srv, s)
 					querypb.RegisterQueryServiceServer(srv, q)
 					scrapepb.RegisterScrapeServiceServer(srv, m)
 
-					if err := debuginfopb.RegisterDebugInfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+					if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 						return err
 					}
 
