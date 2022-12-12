@@ -50,23 +50,6 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
       <div className={styles.errorWrapper}>
         <span>Something went wrong!</span>
         <span>{response.error?.message}</span>
-        <span>
-          <br />
-          <strong>Note</strong>: Please make sure cors configuration of the Parca server allow requests from{' '}
-          <code>{window.location.origin}</code> origin.
-          <br />
-          Ensure that the Parca server is started with either{' '}
-          <code>--cors-allowed-origins=&apos;{window.location.origin}&apos;</code> or{' '}
-          <code>--cors-allowed-origins=&apos;*&apos;</code> flag. Please refer the{' '}
-          <a
-            href="https://www.parca.dev/docs/grafana-datasource-plugin#allow-cors-requests"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            docs <Icon name="external-link-alt" />
-          </a>
-          .
-        </span>
       </div>
     );
   }
