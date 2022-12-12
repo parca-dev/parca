@@ -15,7 +15,7 @@ import React, { useState } from 'react';
 import { Provider } from 'react-redux';
 import { PanelProps } from '@grafana/data';
 import { css, cx } from 'emotion';
-import { Icon, stylesFactory } from '@grafana/ui';
+import { stylesFactory } from '@grafana/ui';
 import { ProfileView, VisualizationType, ProfileVisState, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
 import { store } from '@parca/store';
 
