@@ -172,10 +172,6 @@ export const ProfileView = ({
 
   const isLoaderVisible = useDelayedLoader(isLoading);
 
-  if (isLoaderVisible) {
-    return <>{loader}</>;
-  }
-
   if (flamegraphData?.error != null) {
     console.error('Error: ', flamegraphData?.error);
     return (
@@ -228,6 +224,7 @@ export const ProfileView = ({
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
+                      disabled={isLoading}
                     />
                   ) : null}
 
@@ -237,6 +234,7 @@ export const ProfileView = ({
                       e.preventDefault();
                       onDownloadPProf();
                     }}
+                    disabled={isLoading}
                   >
                     Download pprof
                   </Button>
@@ -292,58 +290,62 @@ export const ProfileView = ({
               </div>
             </div>
 
-            <div ref={ref} className="flex space-x-4 justify-between w-full">
-              {currentView === 'icicle' && flamegraphData?.data != null && (
-                <div className="w-full">
-                  <Profiler
-                    id="icicleGraph"
-                    onRender={perf?.onRender as React.ProfilerOnRenderCallback}
-                  >
-                    <ProfileIcicleGraph
-                      curPath={curPath}
-                      setNewCurPath={setNewCurPath}
-                      graph={flamegraphData.data}
-                      sampleUnit={sampleUnit}
-                    />
-                  </Profiler>
-                </div>
-              )}
-              {currentView === 'callgraph' && callgraphData?.data != null && (
-                <div className="w-full">
-                  {dimensions?.width !== undefined && (
-                    <Callgraph
-                      graph={callgraphData.data}
-                      sampleUnit={sampleUnit}
-                      width={dimensions?.width}
-                      colorRange={colorRange}
-                    />
-                  )}
-                </div>
-              )}
-              {currentView === 'table' && topTableData != null && (
-                <div className="w-full">
-                  <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
-                </div>
-              )}
-              {currentView === 'both' && (
-                <>
-                  <div className="w-1/2">
-                    <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
-                  </div>
-
-                  <div className="w-1/2">
-                    {flamegraphData != null && (
+            {isLoaderVisible ? (
+              <>{loader}</>
+            ) : (
+              <div ref={ref} className="flex space-x-4 justify-between w-full">
+                {currentView === 'icicle' && flamegraphData?.data != null && (
+                  <div className="w-full">
+                    <Profiler
+                      id="icicleGraph"
+                      onRender={perf?.onRender as React.ProfilerOnRenderCallback}
+                    >
                       <ProfileIcicleGraph
                         curPath={curPath}
                         setNewCurPath={setNewCurPath}
                         graph={flamegraphData.data}
                         sampleUnit={sampleUnit}
                       />
+                    </Profiler>
+                  </div>
+                )}
+                {currentView === 'callgraph' && callgraphData?.data != null && (
+                  <div className="w-full">
+                    {dimensions?.width !== undefined && (
+                      <Callgraph
+                        graph={callgraphData.data}
+                        sampleUnit={sampleUnit}
+                        width={dimensions?.width}
+                        colorRange={colorRange}
+                      />
                     )}
                   </div>
-                </>
-              )}
-            </div>
+                )}
+                {currentView === 'table' && topTableData != null && (
+                  <div className="w-full">
+                    <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
+                  </div>
+                )}
+                {currentView === 'both' && (
+                  <>
+                    <div className="w-1/2">
+                      <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
+                    </div>
+
+                    <div className="w-1/2">
+                      {flamegraphData != null && (
+                        <ProfileIcicleGraph
+                          curPath={curPath}
+                          setNewCurPath={setNewCurPath}
+                          graph={flamegraphData.data}
+                          sampleUnit={sampleUnit}
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </Card.Body>
         </Card>
       </div>
