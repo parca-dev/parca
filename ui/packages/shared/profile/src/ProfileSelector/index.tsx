@@ -29,7 +29,6 @@ import {
   useGrpcMetadata,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
-import cx from 'classnames';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
 
 export interface QuerySelection {
@@ -138,7 +137,10 @@ const ProfileSelector = ({
   };
 
   const addLabelMatcher = (key: string, value: string): void => {
-    const [newQuery, changed] = Query.parse(queryExpressionString).setMatcher(key, value);
+    // When a user clicks on a label on the metrics graph tooltip,
+    // replace single `\` in the `value` string with doubles `\\` if available.
+    const newValue = value.includes('\\') ? value.replaceAll('\\', '\\\\') : value;
+    const [newQuery, changed] = Query.parse(queryExpressionString).setMatcher(key, newValue);
     if (changed) {
       setNewQueryExpression(newQuery.toString(), false);
     }
@@ -176,53 +178,54 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header className={cx(comparing && 'overflow-x-scroll')}>
-        <div className="flex space-x-4">
-          {comparing && (
-            <button type="button" onClick={() => closeProfile()}>
-              <CloseIcon />
-            </button>
-          )}
-          <ProfileTypeSelector
-            profileTypesData={profileTypesData}
-            loading={profileTypesLoading}
-            selectedKey={selectedProfileName}
-            onSelection={setProfileName}
-            error={error}
-          />
-          <MatchersInput
-            queryClient={queryClient}
-            setMatchersString={setMatchersString}
-            runQuery={setQueryExpression}
-            currentQuery={query}
-          />
+      <Card.Header className="flex space-x-2">
+        <div className="flex flex-wrap w-full justify-start space-x-2 space-y-1">
+          <div className="ml-2 mt-1">
+            <ProfileTypeSelector
+              profileTypesData={profileTypesData}
+              loading={profileTypesLoading}
+              selectedKey={selectedProfileName}
+              onSelection={setProfileName}
+              error={error}
+            />
+          </div>
+          <div className="w-full flex-1">
+            <MatchersInput
+              queryClient={queryClient}
+              setMatchersString={setMatchersString}
+              runQuery={setQueryExpression}
+              currentQuery={query}
+            />
+          </div>
           <DateTimeRangePicker
             onRangeSelection={setTimeRangeSelection}
             range={timeRangeSelection}
           />
-          {searchDisabled ? (
-            <div>
-              <Button disabled={true}>Search</Button>
-            </div>
-          ) : (
-            <>
-              <ButtonGroup style={{marginRight: 5}}>
+          <ButtonGroup>
+            {!searchDisabled && (
+              <>
                 <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
                 {!comparing && (
                   <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
                 )}
-              </ButtonGroup>
-              <div>
-                <Button
-                  onClick={(e: React.MouseEvent<HTMLElement>) => {
-                    e.preventDefault();
-                    setQueryExpression();
-                  }}
-                >
-                  Search
-                </Button>
-              </div>
-            </>
+              </>
+            )}
+            <Button
+              disabled={searchDisabled}
+              onClick={(e: React.MouseEvent<HTMLElement>) => {
+                e.preventDefault();
+                setQueryExpression();
+              }}
+            >
+              Search
+            </Button>
+          </ButtonGroup>
+        </div>
+        <div>
+          {comparing && (
+            <button type="button" onClick={() => closeProfile()}>
+              <CloseIcon />
+            </button>
           )}
         </div>
       </Card.Header>

@@ -29,7 +29,7 @@ jobs:
       contents: read
     steps:
       - id: skip-check
-        uses: fkirc/skip-duplicate-actions@f11521568414503656a5af807dc3018c012552c4 # tag=v5.2.0
+        uses: fkirc/skip-duplicate-actions@12aca0a884f6137d619d6a8a09fcc3406ced5281 # v5.3.0
         with:
           do_not_skip: '["schedule", "workflow_dispatch"]'
           paths: |-
@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
 
       - name: Set up Go
-        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3.3.1
+        uses: actions/setup-go@d0a58c1c4d2b25278816e339b944508c875f3613 # v3.4.0
         with:
           go-version-file: .go-version
           cache: true
@@ -74,9 +74,9 @@ jobs:
           cache: yarn
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@678fc3afe258fb2e0cdc165ccf77b85719de7b3c # v2.1.33
+        uses: github/codeql-action/init@a669cc5936cc5e1b6a362ec1ff9e410dc570d190 # v2.1.36
         with:
           languages: ${{ matrix.language }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@678fc3afe258fb2e0cdc165ccf77b85719de7b3c # v2.1.33
+        uses: github/codeql-action/analyze@a669cc5936cc5e1b6a362ec1ff9e410dc570d190 # v2.1.36

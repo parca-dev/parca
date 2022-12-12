@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Check if pre-commit should run on all files
         id: run-all-files
-        uses: fkirc/skip-duplicate-actions@f11521568414503656a5af807dc3018c012552c4 # tag=v5.2.0
+        uses: fkirc/skip-duplicate-actions@12aca0a884f6137d619d6a8a09fcc3406ced5281 # v5.3.0
         continue-on-error: true
         with:
           do_not_skip: '["schedule", "workflow_dispatch"]'
@@ -43,7 +43,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3.3.1
+        uses: actions/setup-go@d0a58c1c4d2b25278816e339b944508c875f3613 # v3.4.0
         with:
           go-version-file: .go-version
 
@@ -93,3 +93,7 @@ jobs:
           fi
 
           pre-commit run --show-diff-on-failure --color=always "${EXTRA_ARGS[@]}"
+
+      - name: 'pre-commit-ci-lite: Apply automatic fixes'
+        uses: pre-commit-ci/lite-action@50143aaf27e2c42e75a5e06185a471d9582e89df # v1.0.0
+        if: always()

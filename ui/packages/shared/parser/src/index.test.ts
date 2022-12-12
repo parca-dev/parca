@@ -96,6 +96,20 @@ test('Partial Parsing ProfileName and rest', () => {
   });
 });
 
+test('Parse Multiline query', () => {
+  expect(
+    Query.parse(`memory:alloc_objects:count:space:bytes:delta{
+    instance="abc"
+  }`)
+  ).toMatchObject(
+    new Query(
+      new ProfileType('memory', 'alloc_objects', 'count', 'space', 'bytes', true),
+      [new Matcher('instance', MatcherType.MatchEqual, 'abc')],
+      ''
+    )
+  );
+});
+
 test('SuggestEmpty', () => {
   expect(Query.suggest('')).toMatchObject([
     {

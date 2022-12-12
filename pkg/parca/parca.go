@@ -76,10 +76,12 @@ const (
 )
 
 type Flags struct {
-	ConfigPath         string   `default:"parca.yaml" help:"Path to config file."`
-	Mode               string   `default:"all" enum:"all,scraper-only" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
-	LogLevel           string   `default:"info" enum:"error,warn,info,debug" help:"log level."`
-	Port               string   `default:":7070" help:"Port string for server"`
+	ConfigPath  string `default:"parca.yaml" help:"Path to config file."`
+	Mode        string `default:"all" enum:"all,scraper-only" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
+	LogLevel    string `default:"info" enum:"error,warn,info,debug" help:"log level."`
+	HTTPAddress string `default:":7070" help:"Address to bind HTTP server to."`
+	Port        string `default:"" help:"(DEPRECATED) Use http-address instead."`
+
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
 	OTLPAddress        string   `help:"OpenTelemetry collector address to send traces to."`
 	Version            bool     `help:"Show application version."`
@@ -90,12 +92,11 @@ type Flags struct {
 
 	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the metastore and profile storage."`
 
-	StorageDebugValueLog bool   `default:"false" help:"Log every value written to the database into a separate file. This is only for debugging purposes to produce data to replay situations in tests."`
-	StorageGranuleSize   int64  `default:"26265625" help:"Granule size in bytes for storage."`
-	StorageActiveMemory  int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
-	StoragePath          string `default:"data" help:"Path to storage directory."`
-	StorageEnableWAL     bool   `default:"false" help:"Enables write ahead log for profile storage."`
-	StorageRowGroupSize  int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
+	StorageGranuleSize  int64  `default:"26265625" help:"Granule size in bytes for storage."`
+	StorageActiveMemory int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	StoragePath         string `default:"data" help:"Path to storage directory."`
+	StorageEnableWAL    bool   `default:"false" help:"Enables write ahead log for profile storage."`
+	StorageRowGroupSize int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
 
 	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
 	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
@@ -131,6 +132,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return err
 		}
 		defer closer()
+	}
+
+	if flags.Port != "" {
+		level.Warn(logger).Log("msg", "flag --port is deprecated, use --http-address instead")
+		flags.HTTPAddress = flags.Port
 	}
 
 	cfg, err := config.LoadFile(flags.ConfigPath)
@@ -252,7 +258,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		metastore,
 		table,
 		schema,
-		flags.StorageDebugValueLog,
 	)
 	conn, err := grpc.Dial(flags.ProfileShareServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	if err != nil {
@@ -263,6 +268,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		tracerProvider.Tracer("query-service"),
 		sharepb.NewShareServiceClient(conn),
 		parcacol.NewQuerier(
+			logger,
 			tracerProvider.Tracer("querier"),
 			query.NewEngine(
 				memory.DefaultAllocator,
@@ -409,7 +415,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return parcaserver.ListenAndServe(
 				ctx,
 				logger,
-				flags.Port,
+				flags.HTTPAddress,
 				flags.CORSAllowedOrigins,
 				flags.PathPrefix,
 				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
@@ -603,7 +609,7 @@ func runScraper(
 				return parcaserver.ListenAndServe(
 					serveCtx,
 					logger,
-					flags.Port,
+					flags.HTTPAddress,
 					flags.CORSAllowedOrigins,
 					flags.PathPrefix,
 					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {

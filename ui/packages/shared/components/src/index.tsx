@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Button from './Button';
+import Button, {IconButton} from './Button';
 import ButtonGroup from './ButtonGroup';
 import Card from './Card';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
@@ -25,7 +25,6 @@ import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select from './Select';
 import type {SelectElement} from './Select';
-import SearchNodes from './SearchNodes';
 import Spinner from './Spinner';
 import Tab from './Tab';
 import EmptyState from './EmptyState';
@@ -42,6 +41,7 @@ export {
   Dropdown,
   GrpcMetadataContext,
   GrpcMetadataProvider,
+  IconButton,
   Input,
   Modal,
   ParcaContext,
@@ -50,7 +50,6 @@ export {
   Pill,
   ResponsiveSvg,
   Select,
-  SearchNodes,
   Spinner,
   Tab,
   EmptyState,

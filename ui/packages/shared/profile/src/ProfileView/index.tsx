@@ -17,9 +17,16 @@ import {scaleLinear} from 'd3';
 import {getNewSpanColor, parseParams} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
+import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
+import {
+  useAppSelector,
+  selectDarkMode,
+  selectSearchNodeString,
+  selectFilterByFunction,
+  useAppDispatch,
+  setSearchNodeString,
+} from '@parca/store';
 
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -107,14 +114,16 @@ export const ProfileView = ({
   profileVisState,
   onDownloadPProf,
 }: ProfileViewProps): JSX.Element => {
+  const dispatch = useAppDispatch();
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
   const {currentView, setCurrentView} = profileVisState;
   const isDarkMode = useAppSelector(selectDarkMode);
   const currentSearchString = useAppSelector(selectSearchNodeString);
+  const filterByFunctionString = useAppSelector(selectFilterByFunction);
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
+  const [highlightAfterFilteringEnabled] = useUIFeatureFlag('highlightAfterFiltering');
 
   const {loader, perf} = useParcaContext();
 
@@ -138,6 +147,28 @@ export const ProfileView = ({
     }
     return false;
   }, [currentView, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
+
+  useEffect(() => {
+    if (!highlightAfterFilteringEnabled) {
+      if (currentSearchString !== undefined && currentSearchString !== '') {
+        dispatch(setSearchNodeString(''));
+      }
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
+    if (filterByFunctionString === currentSearchString) {
+      return;
+    }
+    dispatch(setSearchNodeString(filterByFunctionString));
+  }, [
+    isLoading,
+    filterByFunctionString,
+    dispatch,
+    highlightAfterFilteringEnabled,
+    currentSearchString,
+  ]);
 
   const isLoaderVisible = useDelayedLoader(isLoading);
 
@@ -210,11 +241,10 @@ export const ProfileView = ({
                     Download pprof
                   </Button>
                 </div>
-                {filterByFunctionEnabled ? <FilterByFunctionButton /> : <SearchNodes />}
+                <FilterByFunctionButton />
               </div>
 
               <div className="flex ml-auto gap-2">
-                {filterByFunctionEnabled ? <SearchNodes /> : null}
                 <Button
                   color="neutral"
                   onClick={resetIcicleGraph}
