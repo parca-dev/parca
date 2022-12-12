@@ -15,10 +15,9 @@ package debuginfo
 
 import (
 	"context"
-	"encoding/json"
 	"os"
-	"reflect"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,10 +25,14 @@ import (
 	"github.com/thanos-io/objstore/client"
 	"github.com/thanos-io/objstore/providers/filesystem"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v2"
+
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
 func TestMetadata(t *testing.T) {
+	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	dir, err := os.MkdirTemp("", "parca-test")
@@ -55,95 +58,29 @@ func TestMetadata(t *testing.T) {
 	store, err := NewStore(
 		tracer,
 		logger,
-		cacheDir,
 		NewObjectStoreMetadata(logger, bucket),
 		bucket,
-		NopDebugInfodClient{},
+		NopDebuginfodClient{},
+		SignedUpload{
+			Enabled: false,
+		},
+		time.Minute*15,
+		1024*1024*1024,
 	)
 	require.NoError(t, err)
 
 	// Test that the initial state should be empty.
-	_, err = store.metadata.Fetch(context.Background(), "fake-build-id")
+	_, err = store.metadata.Fetch(ctx, "fake-build-id")
 	require.ErrorIs(t, err, ErrMetadataNotFound)
 
 	// Updating the state should be written to blob storage.
-	err = store.metadata.MarkAsUploading(context.Background(), "fake-build-id")
+	time := time.Now()
+	err = store.metadata.MarkAsUploading(ctx, "fake-build-id", "fake-upload-id", "fake-hash", timestamppb.New(time))
 	require.NoError(t, err)
 
-	md, err := store.metadata.Fetch(context.Background(), "fake-build-id")
+	dbginfo, err := store.metadata.Fetch(ctx, "fake-build-id")
 	require.NoError(t, err)
-	require.Equal(t, MetadataStateUploading, md.State)
-}
-
-func TestMetadata_MarshalJSON(t *testing.T) {
-	tests := []struct {
-		m       Metadata
-		want    string
-		wantErr bool
-	}{
-		{
-			m:    Metadata{State: MetadataStateUnknown, BuildID: "build_id", Hash: "hash"},
-			want: `{"state":"METADATA_STATE_UNKNOWN","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`,
-		},
-		{
-			m:    Metadata{State: MetadataStateUploading, BuildID: "build_id", Hash: "hash"},
-			want: `{"state":"METADATA_STATE_UPLOADING","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`,
-		},
-		{
-			m:    Metadata{State: MetadataStateUploaded, BuildID: "build_id", Hash: "hash"},
-			want: `{"state":"METADATA_STATE_UPLOADED","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`,
-		},
-		{
-			m:    Metadata{State: MetadataStateCorrupted, BuildID: "build_id", Hash: "hash"},
-			want: `{"state":"METADATA_STATE_CORRUPTED","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.m.State.String(), func(t *testing.T) {
-			got, err := json.Marshal(tt.m)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			gotStr := string(got)
-			if !reflect.DeepEqual(gotStr, tt.want) {
-				t.Errorf("MarshalJSON() got = %v, want %v", gotStr, tt.want)
-			}
-		})
-	}
-}
-
-func TestMetadata_UnmarshalJSON(t *testing.T) {
-	tests := []struct {
-		name    string
-		b       []byte
-		want    Metadata
-		wantErr bool
-	}{
-		{
-			b:    []byte(`{"state":"METADATA_STATE_UNKNOWN","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`),
-			want: Metadata{State: MetadataStateUnknown, BuildID: "build_id", Hash: "hash"},
-		},
-		{
-			b:    []byte(`{"state":"METADATA_STATE_UPLOADING","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`),
-			want: Metadata{State: MetadataStateUploading, BuildID: "build_id", Hash: "hash"},
-		},
-		{
-			b:    []byte(`{"state":"METADATA_STATE_UPLOADED","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`),
-			want: Metadata{State: MetadataStateUploaded, BuildID: "build_id", Hash: "hash"},
-		},
-		{
-			b:    []byte(`{"state":"METADATA_STATE_CORRUPTED","build_id":"build_id","hash":"hash","upload_started_at":0,"upload_finished_at":0}`),
-			want: Metadata{State: MetadataStateCorrupted, BuildID: "build_id", Hash: "hash"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			res := Metadata{}
-
-			if err := json.Unmarshal(tt.b, &res); (err != nil) != tt.wantErr {
-				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	require.Equal(t, "fake-build-id", dbginfo.BuildId)
+	require.Equal(t, "fake-upload-id", dbginfo.Upload.Id)
+	require.Equal(t, debuginfopb.DebuginfoUpload_STATE_UPLOADING, dbginfo.Upload.State)
 }

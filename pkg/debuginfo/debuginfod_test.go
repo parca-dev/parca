@@ -72,7 +72,7 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &HTTPDebugInfodClient{
+			c := &HTTPDebuginfodClient{
 				logger:          log.NewNopLogger(),
 				timeoutDuration: tt.fields.timeoutDuration,
 				client: &http.Client{

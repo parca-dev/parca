@@ -133,6 +133,13 @@ Flags:
                                 debuginfod server. Defaults to 5m
       --debuginfo-cache-dir="/tmp"
                                 Path to directory where debuginfo is cached.
+      --debuginfo-upload-max-size=1000000000
+                                Maximum size of debuginfo upload in bytes.
+      --debuginfo-upload-max-duration=15m
+                                Maximum duration of debuginfo upload.
+      --debuginfo-uploads-signed-url
+                                Whether to use signed URLs for debuginfo
+                                uploads.
       --store-address=STRING    gRPC address to send profiles and symbols to.
       --bearer-token=STRING     Bearer token to authenticate with store.
       --bearer-token-file=STRING
