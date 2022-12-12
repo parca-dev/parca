@@ -38,7 +38,7 @@ require (
 	github.com/segmentio/parquet-go v0.0.0-20221209161419-3f277a904e0e
 	github.com/stretchr/testify v1.8.1
 	github.com/thanos-io/objstore v0.0.0-20221207004404-2e4c6638339a
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.4
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.37.0
 	go.opentelemetry.io/otel v1.11.2
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.2
 	go.opentelemetry.io/otel/sdk v1.11.2
@@ -221,6 +221,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.2 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.2 // indirect
+	go.opentelemetry.io/otel/metric v0.34.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
