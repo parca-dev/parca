@@ -41,11 +41,6 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-var (
-	ErrTimestampColumnNotFound = errors.New("timestamp column not found")
-	ErrValueColumnNotFound     = errors.New("value column not found")
-)
-
 type Engine interface {
 	ScanTable(name string) query.Builder
 	ScanSchema(name string) query.Builder
@@ -228,16 +223,16 @@ func QueryToFilterExprs(query string) (profile.Meta, []logicalplan.Expr, error) 
 	}
 
 	exprs := append([]logicalplan.Expr{
-		logicalplan.Col("name").Eq(logicalplan.Literal(name)),
-		logicalplan.Col("sample_type").Eq(logicalplan.Literal(sampleType)),
-		logicalplan.Col("sample_unit").Eq(logicalplan.Literal(sampleUnit)),
-		logicalplan.Col("period_type").Eq(logicalplan.Literal(periodType)),
-		logicalplan.Col("period_unit").Eq(logicalplan.Literal(periodUnit)),
+		logicalplan.Col(ColumnName).Eq(logicalplan.Literal(name)),
+		logicalplan.Col(ColumnSampleType).Eq(logicalplan.Literal(sampleType)),
+		logicalplan.Col(ColumnSampleUnit).Eq(logicalplan.Literal(sampleUnit)),
+		logicalplan.Col(ColumnPeriodType).Eq(logicalplan.Literal(periodType)),
+		logicalplan.Col(ColumnPeriodUnit).Eq(logicalplan.Literal(periodUnit)),
 	}, labelFilterExpressions...)
 
-	deltaPlan := logicalplan.Col("duration").Eq(logicalplan.Literal(0))
+	deltaPlan := logicalplan.Col(ColumnDuration).Eq(logicalplan.Literal(0))
 	if delta {
-		deltaPlan = logicalplan.Col("duration").NotEq(logicalplan.Literal(0))
+		deltaPlan = logicalplan.Col(ColumnDuration).NotEq(logicalplan.Literal(0))
 	}
 
 	exprs = append(exprs, deltaPlan)
@@ -264,10 +259,15 @@ func (q *Querier) QueryRange(
 	start := timestamp.FromTime(startTime)
 	end := timestamp.FromTime(endTime)
 
+	// The step cannot be lower than 1s
+	if step < time.Second {
+		step = time.Second
+	}
+
 	exprs := append(
 		selectorExprs,
-		logicalplan.Col("timestamp").Gt(logicalplan.Literal(start)),
-		logicalplan.Col("timestamp").Lt(logicalplan.Literal(end)),
+		logicalplan.Col(ColumnTimestamp).Gt(logicalplan.Literal(start)),
+		logicalplan.Col(ColumnTimestamp).Lt(logicalplan.Literal(end)),
 	)
 
 	filterExpr := logicalplan.And(exprs...)
@@ -282,11 +282,14 @@ func (q *Querier) QueryRange(
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col("value")),
+				logicalplan.Sum(logicalplan.Col(ColumnDuration)),
+				logicalplan.Sum(logicalplan.Col(ColumnPeriod)),
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+				logicalplan.Count(logicalplan.Col(ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.DynCol("labels"),
-				logicalplan.Col("timestamp"),
+				logicalplan.DynCol(ColumnLabels),
+				logicalplan.Duration(step),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -304,22 +307,32 @@ func (q *Querier) QueryRange(
 		)
 	}
 
-	timestampColumnIndex := 0
-	timestampColumnFound := false
-	valueColumnIndex := 0
-	valueColumnFound := false
+	const ColumnDurationSum = "sum(duration)"
+	const ColumnPeriodSum = "sum(period)"
+	const ColumnValueCount = "count(value)"
+	const ColumnValueSum = "sum(value)"
+
+	type columnIndex struct {
+		index int
+		found bool
+	}
+	// Add necessary columns and their found value is false by default.
+	columnIndices := map[string]columnIndex{
+		ColumnDurationSum: {},
+		ColumnPeriodSum:   {},
+		ColumnTimestamp:   {},
+		ColumnValueCount:  {},
+		ColumnValueSum:    {},
+	}
 	labelColumnIndices := []int{}
 
 	fields := ar.Schema().Fields()
 	for i, field := range fields {
-		if field.Name == "timestamp" {
-			timestampColumnIndex = i
-			timestampColumnFound = true
-			continue
-		}
-		if field.Name == "sum(value)" {
-			valueColumnIndex = i
-			valueColumnFound = true
+		if _, ok := columnIndices[field.Name]; ok {
+			columnIndices[field.Name] = columnIndex{
+				index: i,
+				found: true,
+			}
 			continue
 		}
 
@@ -328,12 +341,10 @@ func (q *Querier) QueryRange(
 		}
 	}
 
-	if !timestampColumnFound {
-		return nil, ErrTimestampColumnNotFound
-	}
-
-	if !valueColumnFound {
-		return nil, ErrValueColumnNotFound
+	for name, index := range columnIndices {
+		if !index.found {
+			return nil, fmt.Errorf("%s column not found", name)
+		}
 	}
 
 	for i := 0; i < int(ar.NumRows()); i++ {
@@ -366,10 +377,18 @@ func (q *Querier) QueryRange(
 			labelsetToIndex[s] = index
 		}
 
+		ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
+		durationSum := ar.Column(columnIndices[ColumnDurationSum].index).(*array.Int64).Value(i)
+		periodSum := ar.Column(columnIndices[ColumnPeriodSum].index).(*array.Int64).Value(i)
+		valueSum := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
+		valueCount := ar.Column(columnIndices[ColumnValueCount].index).(*array.Int64).Value(i)
+
+		result := (float64(periodSum) / float64(valueCount) / float64(durationSum) / float64(valueCount)) * float64(valueSum)
+
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp: timestamppb.New(timestamp.Time(ar.Column(timestampColumnIndex).(*array.Int64).Value(i))),
-			Value:     ar.Column(valueColumnIndex).(*array.Int64).Value(i),
+			Timestamp: timestamppb.New(timestamp.Time(ts)),
+			Value:     int64(result),
 		})
 	}
 
@@ -599,12 +618,12 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col("value")),
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.Col("stacktrace"),
-				logicalplan.DynCol("pprof_labels"),
-				logicalplan.DynCol("pprof_num_labels"),
+				logicalplan.Col(ColumnStacktrace),
+				logicalplan.DynCol(ColumnPprofLabels),
+				logicalplan.DynCol(ColumnPprofNumLabels),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -665,8 +684,8 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col("timestamp").Gt(logicalplan.Literal(start)),
-			logicalplan.Col("timestamp").Lt(logicalplan.Literal(end)),
+			logicalplan.Col(ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(ColumnTimestamp).Lt(logicalplan.Literal(end)),
 		)...,
 	)
 
@@ -675,10 +694,10 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col("value")),
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.Col("stacktrace"),
+				logicalplan.Col(ColumnStacktrace),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
