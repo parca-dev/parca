@@ -12,6 +12,8 @@
 // limitations under the License.
 
 import {createContext, ReactNode, useContext, ProfilerOnRenderCallback} from 'react';
+import {RpcError} from '@protobuf-ts/runtime-rpc';
+
 import Spinner from '../Spinner';
 
 interface Props {
@@ -19,6 +21,9 @@ interface Props {
   perf?: {
     onRender?: ProfilerOnRenderCallback;
     markInteraction: (interactionName: string, sampleCount: number | string) => void;
+  };
+  onError?: {
+    metricsGraphError: (error: RpcError) => void;
   };
 }
 

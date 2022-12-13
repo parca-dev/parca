@@ -15,6 +15,7 @@ import {QueryServiceClient} from '@parca/client';
 import {ProfileSelection, ProfileViewWithData, NavigateFunction} from '..';
 
 import ProfileSelector, {QuerySelection} from '../ProfileSelector';
+
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;
   query: QuerySelection;
