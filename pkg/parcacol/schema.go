@@ -116,8 +116,10 @@ func Schema() (*dynparquet.Schema, error) {
 			}, {
 				Name: ColumnStacktrace,
 				StorageLayout: &schemapb.StorageLayout{
-					Type:        schemapb.StorageLayout_TYPE_STRING,
-					Encoding:    schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
+					Type: schemapb.StorageLayout_TYPE_STRING,
+					// NOTE: using RLE dictionary causes compaction to explode
+					// in memory due to high cardinality of the dictionaries.
+					Encoding:    schemapb.StorageLayout_ENCODING_PLAIN_UNSPECIFIED,
 					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
 				},
 				Dynamic: false,

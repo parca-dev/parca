@@ -2,32 +2,89 @@ syntax = "proto3";
 
 package parca.debuginfo.v1alpha1;
 
-// DebugInfoService is a service that allows storage of debug info
-service DebugInfoService {
-  // Exists returns true if the given build_id has debug info uploaded for it.
-  rpc Exists(ExistsRequest) returns (ExistsResponse) {}
+import "google/protobuf/timestamp.proto";
 
+// DebuginfoService is a service that allows storage of debug info
+service DebuginfoService {
   // Upload ingests debug info for a given build_id
   rpc Upload(stream UploadRequest) returns (UploadResponse) {}
 
-  // Download returns the debug info for a given build_id.
-  rpc Download(DownloadRequest) returns (stream DownloadResponse) {}
+  // ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.
+  rpc ShouldInitiateUpload(ShouldInitiateUploadRequest) returns (ShouldInitiateUploadResponse) {}
+
+  // InitiateUpload returns a strategy and information to upload debug info for a given build_id.
+  rpc InitiateUpload(InitiateUploadRequest) returns (InitiateUploadResponse) {}
+
+  // MarkUploadFinished marks the upload as finished for a given build_id.
+  rpc MarkUploadFinished(MarkUploadFinishedRequest) returns (MarkUploadFinishedResponse) {}
 }
 
-// ExistsRequest request to determine if debug info exists for a given build_id
-message ExistsRequest {
-  // build_id is a unique identifier for the debug data
+// ShouldInitiateUploadRequest is the request for ShouldInitiateUpload.
+message ShouldInitiateUploadRequest {
+  // The build_id of the debuginfo.
   string build_id = 1;
-
-  // hash is the hash of the debug information file
+  // Hash of the debuginfo to upload.
   string hash = 2;
 }
 
-// ExistsResponse returns whether the given build_id has debug info
-message ExistsResponse {
-  // exists indicates if there is debug data present for the given build_id
-  bool exists = 1;
+// ShouldInitiateUploadResponse is the response for ShouldInitiateUpload.
+message ShouldInitiateUploadResponse {
+  // Whether an upload should be initiated or not.
+  bool should_initiate_upload = 1;
+  // Reason for why an upload should be initiated or not.
+  string reason = 2;
 }
+
+// InitiateUploadRequest is the request to initiate an upload.
+message InitiateUploadRequest {
+  // The build_id of the debug info to upload.
+  string build_id = 1;
+  // The size of the debug info to upload.
+  int64 size = 2;
+  // Hash of the debuginfo to upload.
+  string hash = 3;
+}
+
+// InitiateUploadResponse is the response to an InitiateUploadRequest.
+message InitiateUploadResponse {
+  // UploadInstructions contains the instructions for the client to upload the debuginfo.
+  UploadInstructions upload_instructions = 1;
+}
+
+// UploadInstructions contains the instructions for the client to upload debuginfo.
+message UploadInstructions {
+  // The build ID of the debuginfo to upload.
+  string build_id = 1;
+
+  // The strategy to use for uploading.
+  enum UploadStrategy {
+    // The upload is not allowed.
+    UPLOAD_STRATEGY_UNSPECIFIED = 0;
+    // The upload is allowed and should be done via the Upload RPC.
+    UPLOAD_STRATEGY_GRPC = 1;
+    // The upload is allowed and should be done via a returned signed URL.
+    UPLOAD_STRATEGY_SIGNED_URL = 2;
+  }
+
+  // The upload_id to use for uploading.
+  string upload_id = 2;
+  // The strategy to use for uploading.
+  UploadStrategy upload_strategy = 3;
+  // The signed url to use for uploading using a PUT request when the upload
+  // strategy is SIGNED_STRATEGY_URL.
+  string signed_url = 4;
+}
+
+// MarkUploadFinishedRequest is the request to mark an upload as finished.
+message MarkUploadFinishedRequest {
+  // The build_id of the debug info to mark as finished.
+  string build_id = 1;
+  // The upload_id of the debug info to mark as finished.
+  string upload_id = 2;
+}
+
+// MarkUploadFinishedResponse is the response to a MarkUploadFinishedRequest.
+message MarkUploadFinishedResponse {}
 
 // UploadRequest upload debug info
 message UploadRequest {
@@ -45,12 +102,8 @@ message UploadRequest {
 message UploadInfo {
   // build_id is a unique identifier for the debug data
   string build_id = 1;
-
-  // hash is the hash of the source file that debug information extracted from
-  string hash = 2;
-
-  // TODO(kakkoyun): Add SourceHash and use Hash as debuginfo file hash.
-  // TODO(kakkoyun): Add SourceType enum.
+  // upload_id is a unique identifier for the upload
+  string upload_id = 2;
 }
 
 // UploadResponse returns the build_id and the size of the uploaded debug info
@@ -62,36 +115,62 @@ message UploadResponse {
   uint64 size = 2;
 }
 
-// DownloadRequest upload debug info
-message DownloadRequest {
-  // build_id is a unique identifier for the debug data
+// Debuginfo contains metadata about a debuginfo file.
+message Debuginfo {
+  // BuildID is the build ID of the debuginfo.
   string build_id = 1;
-}
 
-// DownloadRequest returns chunked data of the debuginfo.
-message DownloadResponse {
-  // data contains either the upload info metadata or the debug info
-  oneof data {
-    // info is the metadata for the debug info
-    DownloadInfo info = 1;
-
-    // chunk_data is the raw bytes of the debug info
-    bytes chunk_data = 2;
-  }
-}
-
-// DownloadInfo metadata for the debug data that is being downloaded.
-message DownloadInfo {
-  // Source enum describes the source a debuginfo is from.
+  // Source is the source of the debuginfo.
   enum Source {
     // To understand when no source is set we have the unknown source.
     SOURCE_UNKNOWN_UNSPECIFIED = 0;
     // The debuginfo was uploaded by a user/agent.
     SOURCE_UPLOAD = 1;
-    // The debuginfo was downloaded from a public debuginfod server.
+    // The debuginfo is available from the configured debuginfod server(s).
     SOURCE_DEBUGINFOD = 2;
   }
 
-  // Source indicates the origin of the debuginfo being downloaded.
-  Source source = 1;
+  // Source is the source of the debuginfo.
+  Source source = 2;
+
+  // DebuginfoUpload is the debuginfo upload metadata.
+  DebuginfoUpload upload = 3;
+
+  // Quality is the quality of the debuginfo. This is set asynchonously by the
+  // symbolizer when the debuginfo is actually used.
+  DebuginfoQuality quality = 4;
+}
+
+// DebuginfoUpload contains metadata about a debuginfo upload.
+message DebuginfoUpload {
+  // UploadID is the ID of the debuginfo upload.
+  string id = 1;
+
+  // Hash is the hash of the debuginfo.
+  string hash = 2;
+
+  // The state of the debuginfo upload.
+  enum State {
+    // To understand when no upload state is set we have the unknown state.
+    STATE_UNKNOWN_UNSPECIFIED = 0;
+    // The debuginfo is currently being uploaded.
+    STATE_UPLOADING = 1;
+    // The debuginfo has been uploaded successfully.
+    STATE_UPLOADED = 2;
+  }
+
+  // State is the current state of the debuginfo upload.
+  State state = 3;
+
+  // StartedAt is the time the debuginfo upload was started.
+  google.protobuf.Timestamp started_at = 4;
+
+  // FinishedAt is the time the debuginfo upload was finished.
+  google.protobuf.Timestamp finished_at = 5;
+}
+
+// DebuginfoQuality is the quality of the debuginfo.
+message DebuginfoQuality {
+  // The debuginfo file is not a valid ELF file.
+  bool not_valid_elf = 1;
 }

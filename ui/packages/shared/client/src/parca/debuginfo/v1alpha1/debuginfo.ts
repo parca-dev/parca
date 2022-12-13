@@ -12,37 +12,165 @@ import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { Timestamp } from "../../../google/protobuf/timestamp";
 /**
- * ExistsRequest request to determine if debug info exists for a given build_id
+ * ShouldInitiateUploadRequest is the request for ShouldInitiateUpload.
  *
- * @generated from protobuf message parca.debuginfo.v1alpha1.ExistsRequest
+ * @generated from protobuf message parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest
  */
-export interface ExistsRequest {
+export interface ShouldInitiateUploadRequest {
     /**
-     * build_id is a unique identifier for the debug data
+     * The build_id of the debuginfo.
      *
      * @generated from protobuf field: string build_id = 1;
      */
     buildId: string;
     /**
-     * hash is the hash of the debug information file
+     * Hash of the debuginfo to upload.
      *
      * @generated from protobuf field: string hash = 2;
      */
     hash: string;
 }
 /**
- * ExistsResponse returns whether the given build_id has debug info
+ * ShouldInitiateUploadResponse is the response for ShouldInitiateUpload.
  *
- * @generated from protobuf message parca.debuginfo.v1alpha1.ExistsResponse
+ * @generated from protobuf message parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse
  */
-export interface ExistsResponse {
+export interface ShouldInitiateUploadResponse {
     /**
-     * exists indicates if there is debug data present for the given build_id
+     * Whether an upload should be initiated or not.
      *
-     * @generated from protobuf field: bool exists = 1;
+     * @generated from protobuf field: bool should_initiate_upload = 1;
      */
-    exists: boolean;
+    shouldInitiateUpload: boolean;
+    /**
+     * Reason for why an upload should be initiated or not.
+     *
+     * @generated from protobuf field: string reason = 2;
+     */
+    reason: string;
+}
+/**
+ * InitiateUploadRequest is the request to initiate an upload.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.InitiateUploadRequest
+ */
+export interface InitiateUploadRequest {
+    /**
+     * The build_id of the debug info to upload.
+     *
+     * @generated from protobuf field: string build_id = 1;
+     */
+    buildId: string;
+    /**
+     * The size of the debug info to upload.
+     *
+     * @generated from protobuf field: int64 size = 2;
+     */
+    size: string;
+    /**
+     * Hash of the debuginfo to upload.
+     *
+     * @generated from protobuf field: string hash = 3;
+     */
+    hash: string;
+}
+/**
+ * InitiateUploadResponse is the response to an InitiateUploadRequest.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.InitiateUploadResponse
+ */
+export interface InitiateUploadResponse {
+    /**
+     * UploadInstructions contains the instructions for the client to upload the debuginfo.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.UploadInstructions upload_instructions = 1;
+     */
+    uploadInstructions?: UploadInstructions;
+}
+/**
+ * UploadInstructions contains the instructions for the client to upload debuginfo.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.UploadInstructions
+ */
+export interface UploadInstructions {
+    /**
+     * The build ID of the debuginfo to upload.
+     *
+     * @generated from protobuf field: string build_id = 1;
+     */
+    buildId: string;
+    /**
+     * The upload_id to use for uploading.
+     *
+     * @generated from protobuf field: string upload_id = 2;
+     */
+    uploadId: string;
+    /**
+     * The strategy to use for uploading.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.UploadInstructions.UploadStrategy upload_strategy = 3;
+     */
+    uploadStrategy: UploadInstructions_UploadStrategy;
+    /**
+     * The signed url to use for uploading using a PUT request when the upload
+     * strategy is SIGNED_STRATEGY_URL.
+     *
+     * @generated from protobuf field: string signed_url = 4;
+     */
+    signedUrl: string;
+}
+/**
+ * The strategy to use for uploading.
+ *
+ * @generated from protobuf enum parca.debuginfo.v1alpha1.UploadInstructions.UploadStrategy
+ */
+export enum UploadInstructions_UploadStrategy {
+    /**
+     * The upload is not allowed.
+     *
+     * @generated from protobuf enum value: UPLOAD_STRATEGY_UNSPECIFIED = 0;
+     */
+    UNSPECIFIED = 0,
+    /**
+     * The upload is allowed and should be done via the Upload RPC.
+     *
+     * @generated from protobuf enum value: UPLOAD_STRATEGY_GRPC = 1;
+     */
+    GRPC = 1,
+    /**
+     * The upload is allowed and should be done via a returned signed URL.
+     *
+     * @generated from protobuf enum value: UPLOAD_STRATEGY_SIGNED_URL = 2;
+     */
+    SIGNED_URL = 2
+}
+/**
+ * MarkUploadFinishedRequest is the request to mark an upload as finished.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.MarkUploadFinishedRequest
+ */
+export interface MarkUploadFinishedRequest {
+    /**
+     * The build_id of the debug info to mark as finished.
+     *
+     * @generated from protobuf field: string build_id = 1;
+     */
+    buildId: string;
+    /**
+     * The upload_id of the debug info to mark as finished.
+     *
+     * @generated from protobuf field: string upload_id = 2;
+     */
+    uploadId: string;
+}
+/**
+ * MarkUploadFinishedResponse is the response to a MarkUploadFinishedRequest.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.MarkUploadFinishedResponse
+ */
+export interface MarkUploadFinishedResponse {
 }
 /**
  * UploadRequest upload debug info
@@ -86,11 +214,11 @@ export interface UploadInfo {
      */
     buildId: string;
     /**
-     * hash is the hash of the source file that debug information extracted from
+     * upload_id is a unique identifier for the upload
      *
-     * @generated from protobuf field: string hash = 2;
+     * @generated from protobuf field: string upload_id = 2;
      */
-    hash: string;
+    uploadId: string;
 }
 /**
  * UploadResponse returns the build_id and the size of the uploaded debug info
@@ -112,66 +240,43 @@ export interface UploadResponse {
     size: string;
 }
 /**
- * DownloadRequest upload debug info
+ * Debuginfo contains metadata about a debuginfo file.
  *
- * @generated from protobuf message parca.debuginfo.v1alpha1.DownloadRequest
+ * @generated from protobuf message parca.debuginfo.v1alpha1.Debuginfo
  */
-export interface DownloadRequest {
+export interface Debuginfo {
     /**
-     * build_id is a unique identifier for the debug data
+     * BuildID is the build ID of the debuginfo.
      *
      * @generated from protobuf field: string build_id = 1;
      */
     buildId: string;
-}
-/**
- * DownloadRequest returns chunked data of the debuginfo.
- *
- * @generated from protobuf message parca.debuginfo.v1alpha1.DownloadResponse
- */
-export interface DownloadResponse {
     /**
-     * @generated from protobuf oneof: data
-     */
-    data: {
-        oneofKind: "info";
-        /**
-         * info is the metadata for the debug info
-         *
-         * @generated from protobuf field: parca.debuginfo.v1alpha1.DownloadInfo info = 1;
-         */
-        info: DownloadInfo;
-    } | {
-        oneofKind: "chunkData";
-        /**
-         * chunk_data is the raw bytes of the debug info
-         *
-         * @generated from protobuf field: bytes chunk_data = 2;
-         */
-        chunkData: Uint8Array;
-    } | {
-        oneofKind: undefined;
-    };
-}
-/**
- * DownloadInfo metadata for the debug data that is being downloaded.
- *
- * @generated from protobuf message parca.debuginfo.v1alpha1.DownloadInfo
- */
-export interface DownloadInfo {
-    /**
-     * Source indicates the origin of the debuginfo being downloaded.
+     * Source is the source of the debuginfo.
      *
-     * @generated from protobuf field: parca.debuginfo.v1alpha1.DownloadInfo.Source source = 1;
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.Debuginfo.Source source = 2;
      */
-    source: DownloadInfo_Source;
+    source: Debuginfo_Source;
+    /**
+     * DebuginfoUpload is the debuginfo upload metadata.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoUpload upload = 3;
+     */
+    upload?: DebuginfoUpload;
+    /**
+     * Quality is the quality of the debuginfo. This is set asynchonously by the
+     * symbolizer when the debuginfo is actually used.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoQuality quality = 4;
+     */
+    quality?: DebuginfoQuality;
 }
 /**
- * Source enum describes the source a debuginfo is from.
+ * Source is the source of the debuginfo.
  *
- * @generated from protobuf enum parca.debuginfo.v1alpha1.DownloadInfo.Source
+ * @generated from protobuf enum parca.debuginfo.v1alpha1.Debuginfo.Source
  */
-export enum DownloadInfo_Source {
+export enum Debuginfo_Source {
     /**
      * To understand when no source is set we have the unknown source.
      *
@@ -185,28 +290,103 @@ export enum DownloadInfo_Source {
      */
     UPLOAD = 1,
     /**
-     * The debuginfo was downloaded from a public debuginfod server.
+     * The debuginfo is available from the configured debuginfod server(s).
      *
      * @generated from protobuf enum value: SOURCE_DEBUGINFOD = 2;
      */
     DEBUGINFOD = 2
 }
+/**
+ * DebuginfoUpload contains metadata about a debuginfo upload.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.DebuginfoUpload
+ */
+export interface DebuginfoUpload {
+    /**
+     * UploadID is the ID of the debuginfo upload.
+     *
+     * @generated from protobuf field: string id = 1;
+     */
+    id: string;
+    /**
+     * Hash is the hash of the debuginfo.
+     *
+     * @generated from protobuf field: string hash = 2;
+     */
+    hash: string;
+    /**
+     * State is the current state of the debuginfo upload.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoUpload.State state = 3;
+     */
+    state: DebuginfoUpload_State;
+    /**
+     * StartedAt is the time the debuginfo upload was started.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp started_at = 4;
+     */
+    startedAt?: Timestamp;
+    /**
+     * FinishedAt is the time the debuginfo upload was finished.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp finished_at = 5;
+     */
+    finishedAt?: Timestamp;
+}
+/**
+ * The state of the debuginfo upload.
+ *
+ * @generated from protobuf enum parca.debuginfo.v1alpha1.DebuginfoUpload.State
+ */
+export enum DebuginfoUpload_State {
+    /**
+     * To understand when no upload state is set we have the unknown state.
+     *
+     * @generated from protobuf enum value: STATE_UNKNOWN_UNSPECIFIED = 0;
+     */
+    UNKNOWN_UNSPECIFIED = 0,
+    /**
+     * The debuginfo is currently being uploaded.
+     *
+     * @generated from protobuf enum value: STATE_UPLOADING = 1;
+     */
+    UPLOADING = 1,
+    /**
+     * The debuginfo has been uploaded successfully.
+     *
+     * @generated from protobuf enum value: STATE_UPLOADED = 2;
+     */
+    UPLOADED = 2
+}
+/**
+ * DebuginfoQuality is the quality of the debuginfo.
+ *
+ * @generated from protobuf message parca.debuginfo.v1alpha1.DebuginfoQuality
+ */
+export interface DebuginfoQuality {
+    /**
+     * The debuginfo file is not a valid ELF file.
+     *
+     * @generated from protobuf field: bool not_valid_elf = 1;
+     */
+    notValidElf: boolean;
+}
 // @generated message type with reflection information, may provide speed optimized methods
-class ExistsRequest$Type extends MessageType<ExistsRequest> {
+class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadRequest> {
     constructor() {
-        super("parca.debuginfo.v1alpha1.ExistsRequest", [
+        super("parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest", [
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<ExistsRequest>): ExistsRequest {
+    create(value?: PartialMessage<ShouldInitiateUploadRequest>): ShouldInitiateUploadRequest {
         const message = { buildId: "", hash: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
-            reflectionMergePartial<ExistsRequest>(this, message, value);
+            reflectionMergePartial<ShouldInitiateUploadRequest>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ExistsRequest): ExistsRequest {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ShouldInitiateUploadRequest): ShouldInitiateUploadRequest {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
@@ -228,7 +408,7 @@ class ExistsRequest$Type extends MessageType<ExistsRequest> {
         }
         return message;
     }
-    internalBinaryWrite(message: ExistsRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+    internalBinaryWrite(message: ShouldInitiateUploadRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string build_id = 1; */
         if (message.buildId !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.buildId);
@@ -242,30 +422,34 @@ class ExistsRequest$Type extends MessageType<ExistsRequest> {
     }
 }
 /**
- * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.ExistsRequest
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest
  */
-export const ExistsRequest = new ExistsRequest$Type();
+export const ShouldInitiateUploadRequest = new ShouldInitiateUploadRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class ExistsResponse$Type extends MessageType<ExistsResponse> {
+class ShouldInitiateUploadResponse$Type extends MessageType<ShouldInitiateUploadResponse> {
     constructor() {
-        super("parca.debuginfo.v1alpha1.ExistsResponse", [
-            { no: 1, name: "exists", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        super("parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse", [
+            { no: 1, name: "should_initiate_upload", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "reason", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<ExistsResponse>): ExistsResponse {
-        const message = { exists: false };
+    create(value?: PartialMessage<ShouldInitiateUploadResponse>): ShouldInitiateUploadResponse {
+        const message = { shouldInitiateUpload: false, reason: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
-            reflectionMergePartial<ExistsResponse>(this, message, value);
+            reflectionMergePartial<ShouldInitiateUploadResponse>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ExistsResponse): ExistsResponse {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ShouldInitiateUploadResponse): ShouldInitiateUploadResponse {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool exists */ 1:
-                    message.exists = reader.bool();
+                case /* bool should_initiate_upload */ 1:
+                    message.shouldInitiateUpload = reader.bool();
+                    break;
+                case /* string reason */ 2:
+                    message.reason = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -278,10 +462,13 @@ class ExistsResponse$Type extends MessageType<ExistsResponse> {
         }
         return message;
     }
-    internalBinaryWrite(message: ExistsResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool exists = 1; */
-        if (message.exists !== false)
-            writer.tag(1, WireType.Varint).bool(message.exists);
+    internalBinaryWrite(message: ShouldInitiateUploadResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool should_initiate_upload = 1; */
+        if (message.shouldInitiateUpload !== false)
+            writer.tag(1, WireType.Varint).bool(message.shouldInitiateUpload);
+        /* string reason = 2; */
+        if (message.reason !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.reason);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -289,9 +476,265 @@ class ExistsResponse$Type extends MessageType<ExistsResponse> {
     }
 }
 /**
- * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.ExistsResponse
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse
  */
-export const ExistsResponse = new ExistsResponse$Type();
+export const ShouldInitiateUploadResponse = new ShouldInitiateUploadResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.InitiateUploadRequest", [
+            { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "size", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 3, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<InitiateUploadRequest>): InitiateUploadRequest {
+        const message = { buildId: "", size: "0", hash: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<InitiateUploadRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: InitiateUploadRequest): InitiateUploadRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string build_id */ 1:
+                    message.buildId = reader.string();
+                    break;
+                case /* int64 size */ 2:
+                    message.size = reader.int64().toString();
+                    break;
+                case /* string hash */ 3:
+                    message.hash = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: InitiateUploadRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string build_id = 1; */
+        if (message.buildId !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.buildId);
+        /* int64 size = 2; */
+        if (message.size !== "0")
+            writer.tag(2, WireType.Varint).int64(message.size);
+        /* string hash = 3; */
+        if (message.hash !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.hash);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.InitiateUploadRequest
+ */
+export const InitiateUploadRequest = new InitiateUploadRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class InitiateUploadResponse$Type extends MessageType<InitiateUploadResponse> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.InitiateUploadResponse", [
+            { no: 1, name: "upload_instructions", kind: "message", T: () => UploadInstructions }
+        ]);
+    }
+    create(value?: PartialMessage<InitiateUploadResponse>): InitiateUploadResponse {
+        const message = {};
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<InitiateUploadResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: InitiateUploadResponse): InitiateUploadResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* parca.debuginfo.v1alpha1.UploadInstructions upload_instructions */ 1:
+                    message.uploadInstructions = UploadInstructions.internalBinaryRead(reader, reader.uint32(), options, message.uploadInstructions);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: InitiateUploadResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* parca.debuginfo.v1alpha1.UploadInstructions upload_instructions = 1; */
+        if (message.uploadInstructions)
+            UploadInstructions.internalBinaryWrite(message.uploadInstructions, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.InitiateUploadResponse
+ */
+export const InitiateUploadResponse = new InitiateUploadResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class UploadInstructions$Type extends MessageType<UploadInstructions> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.UploadInstructions", [
+            { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "upload_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "upload_strategy", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.UploadInstructions.UploadStrategy", UploadInstructions_UploadStrategy, "UPLOAD_STRATEGY_"] },
+            { no: 4, name: "signed_url", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<UploadInstructions>): UploadInstructions {
+        const message = { buildId: "", uploadId: "", uploadStrategy: 0, signedUrl: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<UploadInstructions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UploadInstructions): UploadInstructions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string build_id */ 1:
+                    message.buildId = reader.string();
+                    break;
+                case /* string upload_id */ 2:
+                    message.uploadId = reader.string();
+                    break;
+                case /* parca.debuginfo.v1alpha1.UploadInstructions.UploadStrategy upload_strategy */ 3:
+                    message.uploadStrategy = reader.int32();
+                    break;
+                case /* string signed_url */ 4:
+                    message.signedUrl = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UploadInstructions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string build_id = 1; */
+        if (message.buildId !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.buildId);
+        /* string upload_id = 2; */
+        if (message.uploadId !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.uploadId);
+        /* parca.debuginfo.v1alpha1.UploadInstructions.UploadStrategy upload_strategy = 3; */
+        if (message.uploadStrategy !== 0)
+            writer.tag(3, WireType.Varint).int32(message.uploadStrategy);
+        /* string signed_url = 4; */
+        if (message.signedUrl !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.signedUrl);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.UploadInstructions
+ */
+export const UploadInstructions = new UploadInstructions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class MarkUploadFinishedRequest$Type extends MessageType<MarkUploadFinishedRequest> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.MarkUploadFinishedRequest", [
+            { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "upload_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<MarkUploadFinishedRequest>): MarkUploadFinishedRequest {
+        const message = { buildId: "", uploadId: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<MarkUploadFinishedRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: MarkUploadFinishedRequest): MarkUploadFinishedRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string build_id */ 1:
+                    message.buildId = reader.string();
+                    break;
+                case /* string upload_id */ 2:
+                    message.uploadId = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: MarkUploadFinishedRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string build_id = 1; */
+        if (message.buildId !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.buildId);
+        /* string upload_id = 2; */
+        if (message.uploadId !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.uploadId);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.MarkUploadFinishedRequest
+ */
+export const MarkUploadFinishedRequest = new MarkUploadFinishedRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class MarkUploadFinishedResponse$Type extends MessageType<MarkUploadFinishedResponse> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.MarkUploadFinishedResponse", []);
+    }
+    create(value?: PartialMessage<MarkUploadFinishedResponse>): MarkUploadFinishedResponse {
+        const message = {};
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<MarkUploadFinishedResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: MarkUploadFinishedResponse): MarkUploadFinishedResponse {
+        return target ?? this.create();
+    }
+    internalBinaryWrite(message: MarkUploadFinishedResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.MarkUploadFinishedResponse
+ */
+export const MarkUploadFinishedResponse = new MarkUploadFinishedResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class UploadRequest$Type extends MessageType<UploadRequest> {
     constructor() {
@@ -357,11 +800,11 @@ class UploadInfo$Type extends MessageType<UploadInfo> {
     constructor() {
         super("parca.debuginfo.v1alpha1.UploadInfo", [
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "upload_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<UploadInfo>): UploadInfo {
-        const message = { buildId: "", hash: "" };
+        const message = { buildId: "", uploadId: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<UploadInfo>(this, message, value);
@@ -375,8 +818,8 @@ class UploadInfo$Type extends MessageType<UploadInfo> {
                 case /* string build_id */ 1:
                     message.buildId = reader.string();
                     break;
-                case /* string hash */ 2:
-                    message.hash = reader.string();
+                case /* string upload_id */ 2:
+                    message.uploadId = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -393,9 +836,9 @@ class UploadInfo$Type extends MessageType<UploadInfo> {
         /* string build_id = 1; */
         if (message.buildId !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.buildId);
-        /* string hash = 2; */
-        if (message.hash !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.hash);
+        /* string upload_id = 2; */
+        if (message.uploadId !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.uploadId);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -461,20 +904,23 @@ class UploadResponse$Type extends MessageType<UploadResponse> {
  */
 export const UploadResponse = new UploadResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DownloadRequest$Type extends MessageType<DownloadRequest> {
+class Debuginfo$Type extends MessageType<Debuginfo> {
     constructor() {
-        super("parca.debuginfo.v1alpha1.DownloadRequest", [
-            { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        super("parca.debuginfo.v1alpha1.Debuginfo", [
+            { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "source", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.Debuginfo.Source", Debuginfo_Source, "SOURCE_"] },
+            { no: 3, name: "upload", kind: "message", T: () => DebuginfoUpload },
+            { no: 4, name: "quality", kind: "message", T: () => DebuginfoQuality }
         ]);
     }
-    create(value?: PartialMessage<DownloadRequest>): DownloadRequest {
-        const message = { buildId: "" };
+    create(value?: PartialMessage<Debuginfo>): Debuginfo {
+        const message = { buildId: "", source: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
-            reflectionMergePartial<DownloadRequest>(this, message, value);
+            reflectionMergePartial<Debuginfo>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadRequest): DownloadRequest {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Debuginfo): Debuginfo {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
@@ -482,6 +928,15 @@ class DownloadRequest$Type extends MessageType<DownloadRequest> {
                 case /* string build_id */ 1:
                     message.buildId = reader.string();
                     break;
+                case /* parca.debuginfo.v1alpha1.Debuginfo.Source source */ 2:
+                    message.source = reader.int32();
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoUpload upload */ 3:
+                    message.upload = DebuginfoUpload.internalBinaryRead(reader, reader.uint32(), options, message.upload);
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoQuality quality */ 4:
+                    message.quality = DebuginfoQuality.internalBinaryRead(reader, reader.uint32(), options, message.quality);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -493,117 +948,19 @@ class DownloadRequest$Type extends MessageType<DownloadRequest> {
         }
         return message;
     }
-    internalBinaryWrite(message: DownloadRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+    internalBinaryWrite(message: Debuginfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string build_id = 1; */
         if (message.buildId !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.buildId);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.DownloadRequest
- */
-export const DownloadRequest = new DownloadRequest$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class DownloadResponse$Type extends MessageType<DownloadResponse> {
-    constructor() {
-        super("parca.debuginfo.v1alpha1.DownloadResponse", [
-            { no: 1, name: "info", kind: "message", oneof: "data", T: () => DownloadInfo },
-            { no: 2, name: "chunk_data", kind: "scalar", oneof: "data", T: 12 /*ScalarType.BYTES*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DownloadResponse>): DownloadResponse {
-        const message = { data: { oneofKind: undefined } };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<DownloadResponse>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadResponse): DownloadResponse {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* parca.debuginfo.v1alpha1.DownloadInfo info */ 1:
-                    message.data = {
-                        oneofKind: "info",
-                        info: DownloadInfo.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).info)
-                    };
-                    break;
-                case /* bytes chunk_data */ 2:
-                    message.data = {
-                        oneofKind: "chunkData",
-                        chunkData: reader.bytes()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DownloadResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* parca.debuginfo.v1alpha1.DownloadInfo info = 1; */
-        if (message.data.oneofKind === "info")
-            DownloadInfo.internalBinaryWrite(message.data.info, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* bytes chunk_data = 2; */
-        if (message.data.oneofKind === "chunkData")
-            writer.tag(2, WireType.LengthDelimited).bytes(message.data.chunkData);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.DownloadResponse
- */
-export const DownloadResponse = new DownloadResponse$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class DownloadInfo$Type extends MessageType<DownloadInfo> {
-    constructor() {
-        super("parca.debuginfo.v1alpha1.DownloadInfo", [
-            { no: 1, name: "source", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DownloadInfo.Source", DownloadInfo_Source, "SOURCE_"] }
-        ]);
-    }
-    create(value?: PartialMessage<DownloadInfo>): DownloadInfo {
-        const message = { source: 0 };
-        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
-        if (value !== undefined)
-            reflectionMergePartial<DownloadInfo>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadInfo): DownloadInfo {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* parca.debuginfo.v1alpha1.DownloadInfo.Source source */ 1:
-                    message.source = reader.int32();
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DownloadInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* parca.debuginfo.v1alpha1.DownloadInfo.Source source = 1; */
+        /* parca.debuginfo.v1alpha1.Debuginfo.Source source = 2; */
         if (message.source !== 0)
-            writer.tag(1, WireType.Varint).int32(message.source);
+            writer.tag(2, WireType.Varint).int32(message.source);
+        /* parca.debuginfo.v1alpha1.DebuginfoUpload upload = 3; */
+        if (message.upload)
+            DebuginfoUpload.internalBinaryWrite(message.upload, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* parca.debuginfo.v1alpha1.DebuginfoQuality quality = 4; */
+        if (message.quality)
+            DebuginfoQuality.internalBinaryWrite(message.quality, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -611,14 +968,137 @@ class DownloadInfo$Type extends MessageType<DownloadInfo> {
     }
 }
 /**
- * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.DownloadInfo
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.Debuginfo
  */
-export const DownloadInfo = new DownloadInfo$Type();
+export const Debuginfo = new Debuginfo$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DebuginfoUpload$Type extends MessageType<DebuginfoUpload> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.DebuginfoUpload", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "state", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoUpload.State", DebuginfoUpload_State, "STATE_"] },
+            { no: 4, name: "started_at", kind: "message", T: () => Timestamp },
+            { no: 5, name: "finished_at", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<DebuginfoUpload>): DebuginfoUpload {
+        const message = { id: "", hash: "", state: 0 };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<DebuginfoUpload>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DebuginfoUpload): DebuginfoUpload {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* string hash */ 2:
+                    message.hash = reader.string();
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoUpload.State state */ 3:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp started_at */ 4:
+                    message.startedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.startedAt);
+                    break;
+                case /* google.protobuf.Timestamp finished_at */ 5:
+                    message.finishedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.finishedAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DebuginfoUpload, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* string hash = 2; */
+        if (message.hash !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.hash);
+        /* parca.debuginfo.v1alpha1.DebuginfoUpload.State state = 3; */
+        if (message.state !== 0)
+            writer.tag(3, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp started_at = 4; */
+        if (message.startedAt)
+            Timestamp.internalBinaryWrite(message.startedAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp finished_at = 5; */
+        if (message.finishedAt)
+            Timestamp.internalBinaryWrite(message.finishedAt, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
 /**
- * @generated ServiceType for protobuf service parca.debuginfo.v1alpha1.DebugInfoService
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.DebuginfoUpload
  */
-export const DebugInfoService = new ServiceType("parca.debuginfo.v1alpha1.DebugInfoService", [
-    { name: "Exists", options: {}, I: ExistsRequest, O: ExistsResponse },
+export const DebuginfoUpload = new DebuginfoUpload$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DebuginfoQuality$Type extends MessageType<DebuginfoQuality> {
+    constructor() {
+        super("parca.debuginfo.v1alpha1.DebuginfoQuality", [
+            { no: 1, name: "not_valid_elf", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DebuginfoQuality>): DebuginfoQuality {
+        const message = { notValidElf: false };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<DebuginfoQuality>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DebuginfoQuality): DebuginfoQuality {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool not_valid_elf */ 1:
+                    message.notValidElf = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DebuginfoQuality, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool not_valid_elf = 1; */
+        if (message.notValidElf !== false)
+            writer.tag(1, WireType.Varint).bool(message.notValidElf);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.debuginfo.v1alpha1.DebuginfoQuality
+ */
+export const DebuginfoQuality = new DebuginfoQuality$Type();
+/**
+ * @generated ServiceType for protobuf service parca.debuginfo.v1alpha1.DebuginfoService
+ */
+export const DebuginfoService = new ServiceType("parca.debuginfo.v1alpha1.DebuginfoService", [
     { name: "Upload", clientStreaming: true, options: {}, I: UploadRequest, O: UploadResponse },
-    { name: "Download", serverStreaming: true, options: {}, I: DownloadRequest, O: DownloadResponse }
+    { name: "ShouldInitiateUpload", options: {}, I: ShouldInitiateUploadRequest, O: ShouldInitiateUploadResponse },
+    { name: "InitiateUpload", options: {}, I: InitiateUploadRequest, O: InitiateUploadResponse },
+    { name: "MarkUploadFinished", options: {}, I: MarkUploadFinishedRequest, O: MarkUploadFinishedResponse }
 ]);

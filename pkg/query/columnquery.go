@@ -23,6 +23,7 @@ import (
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -144,7 +145,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	if req.FilterQuery != nil {
-		p = filterProfileData(p, *req.FilterQuery)
+		p = q.filterProfileData(ctx, p, *req.FilterQuery)
 	}
 
 	return q.renderReport(ctx, p, req.GetReportType())
@@ -161,7 +162,9 @@ func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
 	return false
 }
 
-func filterProfileData(p *profile.Profile, filterQuery string) *profile.Profile {
+func (q *ColumnQueryAPI) filterProfileData(ctx context.Context, p *profile.Profile, filterQuery string) *profile.Profile {
+	_, span := q.tracer.Start(ctx, "filterByFunction")
+	defer span.End()
 	filteredSamples := []*profile.SymbolizedSample{}
 	for _, s := range p.Samples {
 		if keepSample(s, filterQuery) {
@@ -272,14 +275,29 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (*pr
 		return nil, status.Error(codes.InvalidArgument, "requested diff mode, but did not provide parameters for diff")
 	}
 
-	base, err := q.selectProfileForDiff(ctx, d.A)
-	if err != nil {
-		return nil, fmt.Errorf("reading base profile: %w", err)
-	}
+	g, ctx := errgroup.WithContext(ctx)
+	var base *profile.Profile
+	g.Go(func() error {
+		var err error
+		base, err = q.selectProfileForDiff(ctx, d.A)
+		if err != nil {
+			return fmt.Errorf("reading base profile: %w", err)
+		}
+		return nil
+	})
 
-	compare, err := q.selectProfileForDiff(ctx, d.B)
-	if err != nil {
-		return nil, fmt.Errorf("reading compared profile: %w", err)
+	var compare *profile.Profile
+	g.Go(func() error {
+		var err error
+		compare, err = q.selectProfileForDiff(ctx, d.B)
+		if err != nil {
+			return fmt.Errorf("reading compared profile: %w", err)
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.

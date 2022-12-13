@@ -16,75 +16,26 @@ package debuginfo
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"path"
-	"time"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/thanos-io/objstore"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
 var (
-	ErrMetadataShouldExist     = errors.New("debug info metadata should exist")
-	ErrMetadataUnexpectedState = errors.New("debug info metadata state is unexpected")
-	// There's no debug info metadata. This could mean that an older version
-	// uploaded the debug info files, but there's no record of the metadata, yet.
-	ErrMetadataNotFound = errors.New("debug info metadata not found")
+	ErrMetadataShouldExist     = errors.New("debuginfo metadata should exist")
+	ErrMetadataUnexpectedState = errors.New("debuginfo metadata state is unexpected")
+	ErrMetadataNotFound        = errors.New("debuginfo metadata not found")
+	ErrUploadMetadataNotFound  = errors.New("debuginfo upload metadata not found")
+	ErrUploadIDMismatch        = errors.New("debuginfo upload id mismatch")
 )
-
-type MetadataState int64
-
-const (
-	MetadataStateUnknown MetadataState = iota
-	// The debug info file is being uploaded.
-	MetadataStateUploading
-	// The debug info file is fully uploaded.
-	MetadataStateUploaded
-	// The debug info file is corrupted.
-	MetadataStateCorrupted
-)
-
-var mdStateStr = map[MetadataState]string{
-	MetadataStateUnknown:   "METADATA_STATE_UNKNOWN",
-	MetadataStateUploading: "METADATA_STATE_UPLOADING",
-	MetadataStateUploaded:  "METADATA_STATE_UPLOADED",
-	MetadataStateCorrupted: "METADATA_STATE_CORRUPTED",
-}
-
-var strMdState = map[string]MetadataState{
-	"METADATA_STATE_UNKNOWN":   MetadataStateUnknown,
-	"METADATA_STATE_UPLOADING": MetadataStateUploading,
-	"METADATA_STATE_UPLOADED":  MetadataStateUploaded,
-	"METADATA_STATE_CORRUPTED": MetadataStateCorrupted,
-}
-
-func (m MetadataState) String() string {
-	val, ok := mdStateStr[m]
-	if !ok {
-		return "<not found>"
-	}
-	return val
-}
-
-func (m MetadataState) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString(`"`)
-	buffer.WriteString(mdStateStr[m])
-	buffer.WriteString(`"`)
-	return buffer.Bytes(), nil
-}
-
-func (m *MetadataState) UnmarshalJSON(b []byte) error {
-	var s string
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
-	}
-	*m = strMdState[s]
-	return nil
-}
 
 type ObjectStoreMetadata struct {
 	logger log.Logger
@@ -96,120 +47,98 @@ func NewObjectStoreMetadata(logger log.Logger, bucket objstore.Bucket) *ObjectSt
 	return &ObjectStoreMetadata{logger: log.With(logger, "component", "debuginfo-metadata"), bucket: bucket}
 }
 
-type Metadata struct {
-	State            MetadataState `json:"state"`
-	BuildID          string        `json:"build_id"`
-	Hash             string        `json:"hash"`
-	UploadStartedAt  int64         `json:"upload_started_at"`
-	UploadFinishedAt int64         `json:"upload_finished_at"`
-}
-
-func (m *ObjectStoreMetadata) MarkAsCorrupted(ctx context.Context, buildID string) error {
-	if err := m.write(ctx, buildID, &Metadata{
-		State: MetadataStateCorrupted,
-	}); err != nil {
-		return fmt.Errorf("failed to write metadata: %w", err)
-	}
-	level.Debug(m.logger).Log("msg", "marked as corrupted", "buildid", buildID)
-	return nil
-}
-
-func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID string) error {
-	_, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
-	// The metadata file should not exist yet. Not erroring here because there's
-	// room for a race condition.
-	if err == nil {
-		level.Info(m.logger).Log("msg", "there should not be a metadata file")
-		return nil
-	}
-
-	if !m.bucket.IsObjNotFoundErr(err) {
-		level.Error(m.logger).Log("msg", "unexpected error", "err", err)
-		return err
-	}
-
-	if err := m.write(ctx, buildID, &Metadata{
-		State:           MetadataStateUploading,
-		BuildID:         buildID,
-		UploadStartedAt: time.Now().Unix(),
-	}); err != nil {
-		return fmt.Errorf("failed to write metadata: %w", err)
-	}
-
-	level.Debug(m.logger).Log("msg", "marked as uploading", "buildid", buildID)
-	return nil
-}
-
-func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, hash string) error {
-	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
-	if err != nil {
-		level.Error(m.logger).Log("msg", "expected metadata file", "err", err)
-		return ErrMetadataShouldExist
-	}
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(r)
+func (m *ObjectStoreMetadata) MarkAsNotValidELF(ctx context.Context, buildID string) error {
+	dbginfo, err := m.Fetch(ctx, buildID)
 	if err != nil {
 		return err
 	}
 
-	metaData := &Metadata{}
-	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
-		return err
+	dbginfo.Quality = &debuginfopb.DebuginfoQuality{
+		NotValidElf: true,
 	}
 
-	// There's a small window where a race could happen.
-	if metaData.State == MetadataStateUploaded {
-		return nil
+	if err := m.write(ctx, dbginfo); err != nil {
+		return fmt.Errorf("failed to write metadata: %w", err)
 	}
 
-	if metaData.State == MetadataStateUploading && metaData.BuildID != buildID {
-		return errors.New("build ids do not match")
-	}
-
-	metaData.State = MetadataStateUploaded
-	metaData.BuildID = buildID
-	metaData.Hash = hash
-	metaData.UploadFinishedAt = time.Now().Unix()
-
-	metadataBytes, _ := json.MarshalIndent(&metaData, "", "\t")
-	newData := bytes.NewReader(metadataBytes)
-
-	if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), newData); err != nil {
-		return err
-	}
-
-	level.Debug(m.logger).Log("msg", "marked as uploaded", "buildid", buildID)
 	return nil
 }
 
-func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string) (*Metadata, error) {
+func (m *ObjectStoreMetadata) MarkAsDebuginfodSource(ctx context.Context, buildID string) error {
+	return m.write(ctx, &debuginfopb.Debuginfo{
+		BuildId: buildID,
+		Source:  debuginfopb.Debuginfo_SOURCE_DEBUGINFOD,
+	})
+}
+
+func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID, uploadID, hash string, startedAt *timestamppb.Timestamp) error {
+	return m.write(ctx, &debuginfopb.Debuginfo{
+		BuildId: buildID,
+		Source:  debuginfopb.Debuginfo_SOURCE_UPLOAD,
+		Upload: &debuginfopb.DebuginfoUpload{
+			Id:        uploadID,
+			Hash:      hash,
+			State:     debuginfopb.DebuginfoUpload_STATE_UPLOADING,
+			StartedAt: startedAt,
+		},
+	})
+}
+
+func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, uploadID string, finishedAt *timestamppb.Timestamp) error {
+	dbginfo, err := m.Fetch(ctx, buildID)
+	if err != nil {
+		return err
+	}
+
+	if dbginfo.Upload == nil {
+		return ErrUploadMetadataNotFound
+	}
+
+	if dbginfo.Upload.Id != uploadID {
+		return ErrUploadIDMismatch
+	}
+
+	dbginfo.Upload.State = debuginfopb.DebuginfoUpload_STATE_UPLOADED
+	dbginfo.Upload.FinishedAt = finishedAt
+
+	return m.write(ctx, dbginfo)
+}
+
+func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string) (*debuginfopb.Debuginfo, error) {
 	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	if err != nil {
 		if m.bucket.IsObjNotFoundErr(err) {
 			return nil, ErrMetadataNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("fetch debuginfo metadata from object storage: %w", err)
 	}
 
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(r)
+	content, err := io.ReadAll(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read debuginfo metadata from object storage: %w", err)
 	}
 
-	metaData := &Metadata{}
-	if err := json.Unmarshal(buf.Bytes(), metaData); err != nil {
-		return nil, err
+	dbginfo := &debuginfopb.Debuginfo{}
+	if err := protojson.Unmarshal(content, dbginfo); err != nil {
+		return nil, fmt.Errorf("unmarshal debuginfo metadata: %w", err)
 	}
-	return metaData, nil
+	return dbginfo, nil
 }
 
-func (m *ObjectStoreMetadata) write(ctx context.Context, buildID string, md *Metadata) error {
-	metadataBytes, _ := json.MarshalIndent(md, "", "\t")
-	r := bytes.NewReader(metadataBytes)
-	if err := m.bucket.Upload(ctx, metadataObjectPath(buildID), r); err != nil {
-		level.Error(m.logger).Log("msg", "failed to create metadata file", "err", err)
+func (m *ObjectStoreMetadata) write(ctx context.Context, dbginfo *debuginfopb.Debuginfo) error {
+	if dbginfo.BuildId == "" {
+		return errors.New("build id is required to wirte debuginfo metadata")
+	}
+
+	// Writing in multiline mode to make it easier to read for humans.
+	debuginfoJSON, err := (protojson.MarshalOptions{Multiline: true}).Marshal(dbginfo)
+	if err != nil {
 		return err
+	}
+
+	r := bytes.NewReader(debuginfoJSON)
+	if err := m.bucket.Upload(ctx, metadataObjectPath(dbginfo.BuildId), r); err != nil {
+		return fmt.Errorf("write debuginfo metadata to object storage: %w", err)
 	}
 	return nil
 }

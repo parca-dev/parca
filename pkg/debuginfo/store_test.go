@@ -16,56 +16,63 @@ package debuginfo
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"io"
 	stdlog "log"
 	"net"
-	"os"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"github.com/thanos-io/objstore/client"
-	"github.com/thanos-io/objstore/providers/filesystem"
+	"github.com/thanos-io/objstore"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"gopkg.in/yaml.v2"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
+type fakeDebuginfodClient struct {
+	items map[string]io.ReadCloser
+}
+
+func (c *fakeDebuginfodClient) Get(ctx context.Context, buildid string) (io.ReadCloser, error) {
+	item, ok := c.items[buildid]
+	if !ok {
+		return nil, ErrDebuginfoNotFound
+	}
+
+	return item, nil
+}
+
+func (c *fakeDebuginfodClient) Exists(ctx context.Context, buildid string) (bool, error) {
+	_, ok := c.items[buildid]
+	return ok, nil
+}
+
 func TestStore(t *testing.T) {
+	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	dir, err := os.MkdirTemp("", "parca-test")
-	require.NoError(t, err)
-	defer os.RemoveAll(dir)
-
-	cacheDir, err := os.MkdirTemp("", "parca-test-cache")
-	require.NoError(t, err)
-	defer os.RemoveAll(cacheDir)
-
 	logger := log.NewNopLogger()
-	cfg, err := yaml.Marshal(&client.BucketConfig{
-		Type: client.FILESYSTEM,
-		Config: filesystem.Config{
-			Directory: dir,
-		},
-	})
-	require.NoError(t, err)
+	bucket := objstore.NewInMemBucket()
 
-	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
-	require.NoError(t, err)
-
+	metadata := NewObjectStoreMetadata(logger, bucket)
 	s, err := NewStore(
 		tracer,
 		logger,
-		cacheDir,
-		NewObjectStoreMetadata(logger, bucket),
+		metadata,
 		bucket,
-		NopDebugInfodClient{},
+		&fakeDebuginfodClient{
+			items: map[string]io.ReadCloser{
+				"deadbeef": io.NopCloser(bytes.NewBufferString("debuginfo1")),
+			},
+		},
+		SignedUpload{
+			Enabled: false,
+		},
+		time.Minute*15,
+		1024*1024*1024,
 	)
 	require.NoError(t, err)
 
@@ -75,7 +82,7 @@ func TestStore(t *testing.T) {
 	}
 	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
-	debuginfopb.RegisterDebugInfoServiceServer(grpcServer, s)
+	debuginfopb.RegisterDebuginfoServiceServer(grpcServer, s)
 	go func() {
 		err := grpcServer.Serve(lis)
 		if err != nil {
@@ -86,7 +93,9 @@ func TestStore(t *testing.T) {
 	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 	defer conn.Close()
-	c := NewDebugInfoClient(conn)
+
+	debuginfoClient := debuginfopb.NewDebuginfoServiceClient(conn)
+	grpcUploadClient := NewGrpcUploadClient(debuginfoClient)
 
 	b := bytes.NewBuffer(nil)
 	for i := 0; i < 1024; i++ {
@@ -98,49 +107,123 @@ func TestStore(t *testing.T) {
 	for i := 0; i < 1024; i++ {
 		b.Write([]byte("c"))
 	}
-	_, err = c.Upload(context.Background(), "abcd", "abcd", b)
-	require.Error(t, err)
 
-	nf, err := os.Open("testdata/validelf_nosections")
+	// Totally wrong order of upload protocol sequence.
+	_, err = grpcUploadClient.Upload(ctx, &debuginfopb.UploadInstructions{BuildId: "abcd"}, bytes.NewReader(b.Bytes()))
+	require.EqualError(t, err, "rpc error: code = FailedPrecondition desc = metadata not found, this indicates that the upload was not previously initiated")
+
+	// Simulate we initiated this upload 30 minutes ago.
+	s.timeNow = func() time.Time { return time.Now().Add(-30 * time.Minute) }
+
+	shouldInitiateResp, err := debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd"})
+	require.NoError(t, err)
+	require.True(t, shouldInitiateResp.ShouldInitiateUpload)
+	require.Equal(t, ReasonFirstTimeSeen, shouldInitiateResp.Reason)
+
+	_, err = debuginfoClient.InitiateUpload(ctx, &debuginfopb.InitiateUploadRequest{
+		BuildId: "abcd",
+		Hash:    "foo",
+		Size:    2,
+	})
 	require.NoError(t, err)
 
-	_, err = c.Upload(context.Background(), hex.EncodeToString([]byte("nosection")), "abcd", nf)
-	require.Error(t, err)
+	// An upload is already in progress. So we should not initiate another one.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd"})
+	require.NoError(t, err)
+	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
+	require.Equal(t, ReasonUploadInProgress, shouldInitiateResp.Reason)
 
-	wf, err := os.Open("testdata/validelf_withsections")
+	// Set time to current time, where the upload should be expired. So we can initiate a new one.
+	s.timeNow = time.Now
+
+	// Correct upload flow.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd"})
+	require.NoError(t, err)
+	require.True(t, shouldInitiateResp.ShouldInitiateUpload)
+	require.Equal(t, ReasonUploadStale, shouldInitiateResp.Reason)
+
+	initiateResp, err := debuginfoClient.InitiateUpload(ctx, &debuginfopb.InitiateUploadRequest{
+		BuildId: "abcd",
+		Hash:    "foo",
+		Size:    2,
+	})
 	require.NoError(t, err)
 
-	size, err := c.Upload(context.Background(), hex.EncodeToString([]byte("section")), "abcd", wf)
+	size, err := grpcUploadClient.Upload(ctx, initiateResp.UploadInstructions, bytes.NewReader(b.Bytes()))
 	require.NoError(t, err)
-	require.Equal(t, 7079, int(size))
+	require.Equal(t, 3072, int(size))
 
-	obj, err := s.bucket.Get(context.Background(), hex.EncodeToString([]byte("section"))+"/debuginfo")
+	_, err = debuginfoClient.MarkUploadFinished(ctx, &debuginfopb.MarkUploadFinishedRequest{BuildId: "abcd", UploadId: initiateResp.UploadInstructions.UploadId})
+	require.NoError(t, err)
+
+	obj, err := s.bucket.Get(ctx, "abcd/debuginfo")
 	require.NoError(t, err)
 
 	content, err := io.ReadAll(obj)
 	require.NoError(t, err)
-	require.Equal(t, 7079, len(content))
-	require.Equal(t, []byte{0x7f, 'E', 'L', 'F'}, content[:4])
+	require.Equal(t, 3072, len(content))
+	require.Equal(t, b.Bytes(), content)
 
-	ctx := context.Background()
-	exists, err := c.Exists(context.Background(), hex.EncodeToString([]byte("section")), "abcd")
+	// Uploads should not be asked to be initiated again since so far there is
+	// nothing wrong with the upload. It uploaded successfully and is not
+	// marked invalid.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd"})
 	require.NoError(t, err)
-	require.True(t, exists)
+	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
+	require.Equal(t, ReasonDebuginfoAlreadyExists, shouldInitiateResp.Reason)
 
-	buf := bytes.NewBuffer(nil)
-	downloader, err := c.Downloader(ctx, hex.EncodeToString([]byte("section")))
+	// If asynchronously we figured out the debuginfo was not a valid ELF file,
+	// we should allow uploading something else. Don't test the whole upload
+	// flow again, just the ShouldInitiateUpload part.
+	require.NoError(t, metadata.MarkAsNotValidELF(ctx, "abcd"))
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd"})
 	require.NoError(t, err)
-	require.Equal(t, debuginfopb.DownloadInfo_SOURCE_UPLOAD, downloader.Info().Source)
+	require.Equal(t, ReasonDebuginfoInvalid, shouldInitiateResp.Reason)
+	require.True(t, shouldInitiateResp.ShouldInitiateUpload)
 
-	written, err := downloader.Download(ctx, buf)
+	// But we won't accept it if the hash is the same.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{
+		BuildId: "abcd",
+		Hash:    "foo",
+	})
 	require.NoError(t, err)
-	require.Equal(t, 7079, written)
-	require.Equal(t, 7079, buf.Len())
-	require.NoError(t, downloader.Close())
+	require.Equal(t, ReasonDebuginfoEqual, shouldInitiateResp.Reason)
+	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
 
-	// Test only reading the download info.
-	downloader, err = c.Downloader(ctx, hex.EncodeToString([]byte("section")))
+	// An initiation request would error.
+	_, err = debuginfoClient.InitiateUpload(ctx, &debuginfopb.InitiateUploadRequest{
+		BuildId: "abcd",
+		Hash:    "foo",
+		Size:    2,
+	})
+	require.EqualError(t, err, "rpc error: code = AlreadyExists desc = Debuginfo already exists and is marked as invalid, but the proposed hash is the same as the one already available, therefore the upload is not accepted as it would result in the same invalid debuginfos.")
+
+	// If the hash is different, we will accept it.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{
+		BuildId: "abcd",
+		Hash:    "bar",
+	})
 	require.NoError(t, err)
-	require.Equal(t, debuginfopb.DownloadInfo_SOURCE_UPLOAD, downloader.Info().Source)
-	require.NoError(t, downloader.Close())
+	require.Equal(t, ReasonDebuginfoNotEqual, shouldInitiateResp.Reason)
+	require.True(t, shouldInitiateResp.ShouldInitiateUpload)
+
+	// The debuginfod client should be able to fetch the debuginfo, therefore don't allow uploading.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "deadbeef"})
+	require.NoError(t, err)
+	require.Equal(t, ReasonDebuginfoInDebuginfod, shouldInitiateResp.Reason)
+	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
+
+	// This stays the same, but the debuginfod client should be able to fetch the debuginfo.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "deadbeef"})
+	require.NoError(t, err)
+	require.Equal(t, ReasonDebuginfodSource, shouldInitiateResp.Reason)
+	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
+
+	// If we mark the debuginfo as invalid, we should allow uploading.
+	require.NoError(t, metadata.MarkAsNotValidELF(ctx, "deadbeef"))
+
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "deadbeef"})
+	require.NoError(t, err)
+	require.Equal(t, ReasonDebuginfodInvalid, shouldInitiateResp.Reason)
+	require.True(t, shouldInitiateResp.ShouldInitiateUpload)
 }

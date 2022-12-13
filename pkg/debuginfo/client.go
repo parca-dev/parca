@@ -27,7 +27,7 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
-var ErrDebugInfoAlreadyExists = errors.New("debug info already exists")
+var ErrDebuginfoAlreadyExists = errors.New("debug info already exists")
 
 const (
 	// ChunkSize 8MB is the size of the chunks in which debuginfo files are
@@ -38,30 +38,24 @@ const (
 	MaxMsgSize = 1024 * 1024 * 64
 )
 
-type Client struct {
-	c debuginfopb.DebugInfoServiceClient
+type GrpcDebuginfoUploadServiceClient interface {
+	Upload(ctx context.Context, opts ...grpc.CallOption) (debuginfopb.DebuginfoService_UploadClient, error)
 }
 
-func NewDebugInfoClient(conn *grpc.ClientConn) *Client {
-	return &Client{
-		c: debuginfopb.NewDebugInfoServiceClient(conn),
-	}
+type GrpcUploadClient struct {
+	GrpcDebuginfoUploadServiceClient
 }
 
-func (c *Client) Exists(ctx context.Context, buildID, hash string) (bool, error) {
-	res, err := c.c.Exists(ctx, &debuginfopb.ExistsRequest{
-		BuildId: buildID,
-		Hash:    hash,
-	})
-	if err != nil {
-		return false, err
-	}
-
-	return res.Exists, nil
+func NewGrpcUploadClient(client GrpcDebuginfoUploadServiceClient) *GrpcUploadClient {
+	return &GrpcUploadClient{client}
 }
 
-func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) (uint64, error) {
-	stream, err := c.c.Upload(ctx, grpc.MaxCallSendMsgSize(MaxMsgSize))
+func (c *GrpcUploadClient) Upload(ctx context.Context, uploadInstructions *debuginfopb.UploadInstructions, r io.Reader) (uint64, error) {
+	return c.grpcUpload(ctx, uploadInstructions, r)
+}
+
+func (c *GrpcUploadClient) grpcUpload(ctx context.Context, uploadInstructions *debuginfopb.UploadInstructions, r io.Reader) (uint64, error) {
+	stream, err := c.GrpcDebuginfoUploadServiceClient.Upload(ctx, grpc.MaxCallSendMsgSize(MaxMsgSize))
 	if err != nil {
 		return 0, fmt.Errorf("initiate upload: %w", err)
 	}
@@ -69,8 +63,8 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 	err = stream.Send(&debuginfopb.UploadRequest{
 		Data: &debuginfopb.UploadRequest_Info{
 			Info: &debuginfopb.UploadInfo{
-				BuildId: buildID,
-				Hash:    hash,
+				UploadId: uploadInstructions.UploadId,
+				BuildId:  uploadInstructions.BuildId,
 			},
 		},
 	})
@@ -131,75 +125,14 @@ func (c *Client) Upload(ctx context.Context, buildID, hash string, r io.Reader) 
 	return res.Size, nil
 }
 
-type Downloader struct {
-	stream debuginfopb.DebugInfoService_DownloadClient
-	info   *debuginfopb.DownloadInfo
-}
-
-func (c *Client) Downloader(ctx context.Context, buildID string) (*Downloader, error) {
-	stream, err := c.c.Download(ctx, &debuginfopb.DownloadRequest{
-		BuildId: buildID,
-	}, grpc.MaxCallRecvMsgSize(MaxMsgSize))
-	if err != nil {
-		return nil, fmt.Errorf("initiate download: %w", err)
-	}
-
-	res, err := stream.Recv()
-	if err != nil {
-		return nil, fmt.Errorf("receive download info: %w", err)
-	}
-
-	info := res.GetInfo()
-	if info == nil {
-		return nil, fmt.Errorf("download info is nil")
-	}
-
-	return &Downloader{
-		stream: stream,
-		info:   info,
-	}, nil
-}
-
-func (d *Downloader) Info() *debuginfopb.DownloadInfo {
-	return d.info
-}
-
-func (d *Downloader) Close() error {
-	// Note that CloseSend does not Recv, therefore is not guaranteed to release all resources
-	return d.stream.CloseSend()
-}
-
-func (d *Downloader) Download(ctx context.Context, w io.Writer) (int, error) {
-	bytesWritten := 0
-	for {
-		res, err := d.stream.Recv()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return bytesWritten, fmt.Errorf("receive next chunk: %w", err)
-		}
-
-		chunkData := res.GetChunkData()
-		if chunkData == nil {
-			return bytesWritten, fmt.Errorf("chunk does not contain data")
-		}
-
-		n, err := w.Write(chunkData)
-		if err != nil {
-			return bytesWritten, fmt.Errorf("write next chunk: %w", err)
-		}
-		bytesWritten += n
-	}
-
-	return bytesWritten, nil
-}
-
 // sentinelError checks underlying error for grpc.StatusCode and returns if it's a known and expected error.
 func sentinelError(err error) error {
 	if sts, ok := status.FromError(err); ok {
 		if sts.Code() == codes.AlreadyExists {
-			return ErrDebugInfoAlreadyExists
+			return ErrDebuginfoAlreadyExists
+		}
+		if sts.Code() == codes.FailedPrecondition {
+			return err
 		}
 	}
 	return nil

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {MouseEvent, useEffect, useRef, useState} from 'react';
+import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
 
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
@@ -385,7 +385,17 @@ export default function IcicleGraph({
     }
   }, [width]);
 
-  if (graph.root === undefined || width === undefined) return <></>;
+  const total = useMemo(() => parseFloat(graph.total), [graph.total]);
+  const xScale = useMemo(() => {
+    if (width === undefined) {
+      return () => 0;
+    }
+    return scaleLinear().domain([0, total]).range([0, width]);
+  }, [total, width]);
+
+  if (graph.root === undefined || width === undefined) {
+    return <></>;
+  }
 
   const throttledSetPos = throttle(setPos, 20);
   const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
@@ -394,9 +404,6 @@ export default function IcicleGraph({
 
     throttledSetPos([rel[0], rel[1]]);
   };
-
-  const total = parseFloat(graph.total);
-  const xScale = scaleLinear().domain([0, total]).range([0, width]);
 
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>

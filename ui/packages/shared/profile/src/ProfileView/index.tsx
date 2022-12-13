@@ -17,9 +17,16 @@ import {scaleLinear} from 'd3';
 import {getNewSpanColor, parseParams} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, SearchNodes, useParcaContext} from '@parca/components';
+import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {useAppSelector, selectDarkMode, selectSearchNodeString} from '@parca/store';
+import {
+  useAppSelector,
+  selectDarkMode,
+  selectSearchNodeString,
+  selectFilterByFunction,
+  useAppDispatch,
+  setSearchNodeString,
+} from '@parca/store';
 
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -107,14 +114,16 @@ export const ProfileView = ({
   profileVisState,
   onDownloadPProf,
 }: ProfileViewProps): JSX.Element => {
+  const dispatch = useAppDispatch();
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
   const {currentView, setCurrentView} = profileVisState;
   const isDarkMode = useAppSelector(selectDarkMode);
   const currentSearchString = useAppSelector(selectSearchNodeString);
+  const filterByFunctionString = useAppSelector(selectFilterByFunction);
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [filterByFunctionEnabled] = useUIFeatureFlag('filterByFunction');
+  const [highlightAfterFilteringEnabled] = useUIFeatureFlag('highlightAfterFiltering');
 
   const {loader, perf} = useParcaContext();
 
@@ -139,11 +148,29 @@ export const ProfileView = ({
     return false;
   }, [currentView, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
 
-  const isLoaderVisible = useDelayedLoader(isLoading);
+  useEffect(() => {
+    if (!highlightAfterFilteringEnabled) {
+      if (currentSearchString !== undefined && currentSearchString !== '') {
+        dispatch(setSearchNodeString(''));
+      }
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
+    if (filterByFunctionString === currentSearchString) {
+      return;
+    }
+    dispatch(setSearchNodeString(filterByFunctionString));
+  }, [
+    isLoading,
+    filterByFunctionString,
+    dispatch,
+    highlightAfterFilteringEnabled,
+    currentSearchString,
+  ]);
 
-  if (isLoaderVisible) {
-    return <>{loader}</>;
-  }
+  const isLoaderVisible = useDelayedLoader(isLoading);
 
   if (flamegraphData?.error != null) {
     console.error('Error: ', flamegraphData?.error);
@@ -197,6 +224,7 @@ export const ProfileView = ({
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
+                      disabled={isLoading}
                     />
                   ) : null}
 
@@ -206,15 +234,15 @@ export const ProfileView = ({
                       e.preventDefault();
                       onDownloadPProf();
                     }}
+                    disabled={isLoading}
                   >
                     Download pprof
                   </Button>
                 </div>
-                {filterByFunctionEnabled ? <FilterByFunctionButton /> : <SearchNodes />}
+                <FilterByFunctionButton />
               </div>
 
               <div className="flex ml-auto gap-2">
-                {filterByFunctionEnabled ? <SearchNodes /> : null}
                 <Button
                   color="neutral"
                   onClick={resetIcicleGraph}
@@ -262,58 +290,62 @@ export const ProfileView = ({
               </div>
             </div>
 
-            <div ref={ref} className="flex space-x-4 justify-between w-full">
-              {currentView === 'icicle' && flamegraphData?.data != null && (
-                <div className="w-full">
-                  <Profiler
-                    id="icicleGraph"
-                    onRender={perf?.onRender as React.ProfilerOnRenderCallback}
-                  >
-                    <ProfileIcicleGraph
-                      curPath={curPath}
-                      setNewCurPath={setNewCurPath}
-                      graph={flamegraphData.data}
-                      sampleUnit={sampleUnit}
-                    />
-                  </Profiler>
-                </div>
-              )}
-              {currentView === 'callgraph' && callgraphData?.data != null && (
-                <div className="w-full">
-                  {dimensions?.width !== undefined && (
-                    <Callgraph
-                      graph={callgraphData.data}
-                      sampleUnit={sampleUnit}
-                      width={dimensions?.width}
-                      colorRange={colorRange}
-                    />
-                  )}
-                </div>
-              )}
-              {currentView === 'table' && topTableData != null && (
-                <div className="w-full">
-                  <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
-                </div>
-              )}
-              {currentView === 'both' && (
-                <>
-                  <div className="w-1/2">
-                    <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
-                  </div>
-
-                  <div className="w-1/2">
-                    {flamegraphData != null && (
+            {isLoaderVisible ? (
+              <>{loader}</>
+            ) : (
+              <div ref={ref} className="flex space-x-4 justify-between w-full">
+                {currentView === 'icicle' && flamegraphData?.data != null && (
+                  <div className="w-full">
+                    <Profiler
+                      id="icicleGraph"
+                      onRender={perf?.onRender as React.ProfilerOnRenderCallback}
+                    >
                       <ProfileIcicleGraph
                         curPath={curPath}
                         setNewCurPath={setNewCurPath}
                         graph={flamegraphData.data}
                         sampleUnit={sampleUnit}
                       />
+                    </Profiler>
+                  </div>
+                )}
+                {currentView === 'callgraph' && callgraphData?.data != null && (
+                  <div className="w-full">
+                    {dimensions?.width !== undefined && (
+                      <Callgraph
+                        graph={callgraphData.data}
+                        sampleUnit={sampleUnit}
+                        width={dimensions?.width}
+                        colorRange={colorRange}
+                      />
                     )}
                   </div>
-                </>
-              )}
-            </div>
+                )}
+                {currentView === 'table' && topTableData != null && (
+                  <div className="w-full">
+                    <TopTable data={topTableData.data} sampleUnit={sampleUnit} />
+                  </div>
+                )}
+                {currentView === 'both' && (
+                  <>
+                    <div className="w-1/2">
+                      <TopTable data={topTableData?.data} sampleUnit={sampleUnit} />
+                    </div>
+
+                    <div className="w-1/2">
+                      {flamegraphData != null && (
+                        <ProfileIcicleGraph
+                          curPath={curPath}
+                          setNewCurPath={setNewCurPath}
+                          graph={flamegraphData.data}
+                          sampleUnit={sampleUnit}
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </Card.Body>
         </Card>
       </div>

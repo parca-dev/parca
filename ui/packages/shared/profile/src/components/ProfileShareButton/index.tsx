@@ -20,6 +20,7 @@ import ResultBox from './ResultBox';
 interface Props {
   queryRequest: QueryRequest;
   queryClient: QueryServiceClient;
+  disabled?: boolean;
 }
 
 interface ProfileShareModalProps {
@@ -117,12 +118,12 @@ const ProfileShareModal = ({
   );
 };
 
-const ProfileShareButton = ({queryRequest, queryClient}: Props): JSX.Element => {
+const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props): JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   return (
     <>
-      <Button color="neutral" className="w-fit" onClick={() => setIsOpen(true)}>
+      <Button color="neutral" className="w-fit" onClick={() => setIsOpen(true)} disabled={disabled}>
         <Icon icon="ei:share-apple" width={20} />
       </Button>
       <ProfileShareModal
