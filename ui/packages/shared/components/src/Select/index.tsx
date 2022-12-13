@@ -24,6 +24,7 @@ export interface SelectElement {
 
 export interface SelectItem {
   key: string;
+  disabled?: boolean;
   element: SelectElement;
 }
 
@@ -100,10 +101,12 @@ const Select = ({
                     items.map(option => (
                       <Listbox.Option
                         key={option.key}
-                        className={({active}) =>
+                        disabled={option.disabled ?? false}
+                        className={({active, disabled}) =>
                           cx(
                             active && 'text-white bg-indigo-600',
-                            'cursor-default select-none relative py-2 pl-3 pr-9'
+                            'cursor-default select-none relative py-2 pl-3 pr-9',
+                            disabled && 'opacity-50'
                           )
                         }
                         value={option.key}

@@ -49,6 +49,10 @@ export const useURLState = ({param, navigateTo, withURLUpdate = true}) => {
           searchParams['search_string'] = highlightAfterFilteringEnabled ? value : '';
         }
 
+        if (param === 'dashboard_items') {
+          searchParams[param] = value;
+        }
+
         Object.keys(searchParams).forEach(
           key => isEmpty(searchParams[key]) && delete searchParams[key]
         );
@@ -57,6 +61,16 @@ export const useURLState = ({param, navigateTo, withURLUpdate = true}) => {
       }
     }
   }, [value]);
+
+  if (param === 'dashboard_items') {
+    let dashboardItems: string[] = [];
+    if (typeof value === 'string') {
+      dashboardItems = [value as string] ?? [];
+    } else {
+      dashboardItems = value as string[];
+    }
+    return [dashboardItems, setValue] as const;
+  }
 
   return [value, setValue] as const;
 };

@@ -17,7 +17,7 @@ import {ProfileView} from './ProfileView';
 import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
-import {saveAsBlob, selectQueryParam, NavigateFunction} from '@parca/functions';
+import {saveAsBlob, NavigateFunction, useURLState} from '@parca/functions';
 import {useEffect} from 'react';
 
 interface ProfileViewWithDataProps {
@@ -33,7 +33,7 @@ export const ProfileViewWithData = ({
   navigateTo,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const dashboardItems = selectQueryParam('dashboard_items') as string[];
+  const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
@@ -115,7 +115,6 @@ export const ProfileViewWithData = ({
       queryClient={queryClient}
       navigateTo={navigateTo}
       onDownloadPProf={() => void downloadPProfClick()}
-      dashboardItems={dashboardItems}
     />
   );
 };

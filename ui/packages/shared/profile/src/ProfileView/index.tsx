@@ -14,9 +14,8 @@
 import {Profiler, useEffect, useMemo, useState} from 'react';
 import {scaleLinear} from 'd3';
 
-import {getNewSpanColor, parseParams} from '@parca/functions';
+import {getNewSpanColor, parseParams, useURLState} from '@parca/functions';
 import {NavigateOptions} from 'react-router-dom';
-import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
@@ -25,6 +24,7 @@ import {useAppSelector, selectDarkMode} from '@parca/store';
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
 import FilterByFunctionButton from './FilterByFunctionButton';
+import ViewSelector from './ViewSelector';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import TopTable from '../TopTable';
@@ -62,7 +62,6 @@ export interface ProfileViewProps {
   navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
-  dashboardItems: string[];
 }
 
 function arrayEquals<T>(a: T[], b: T[]): boolean {
@@ -83,17 +82,16 @@ export const ProfileView = ({
   queryClient,
   navigateTo,
   onDownloadPProf,
-  dashboardItems,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
-
-  const router = parseParams(window.location.search);
-
+  const [rawDashboardItems, setDashboardItems] = useURLState({
+    param: 'dashboard_items',
+    navigateTo,
+  });
+  const dashboardItems = rawDashboardItems as string[];
   const isDarkMode = useAppSelector(selectDarkMode);
   const isSinglePanelView = dashboardItems.length === 1;
-
-  const [callgraphEnabled] = useUIFeatureFlag('callgraph');
 
   const {loader, perf} = useParcaContext();
 
@@ -126,26 +124,80 @@ export const ProfileView = ({
     );
   }
 
-  const resetIcicleGraph = (): void => setCurPath([]);
-
   const setNewCurPath = (path: string[]): void => {
     if (!arrayEquals(curPath, path)) {
       setCurPath(path);
     }
   };
 
-  const switchDashboardItems = (dashboardItems: string[]): void => {
-    if (navigateTo != null) {
-      navigateTo('/', {
-        ...router,
-        ...{dashboard_items: encodeURIComponent(dashboardItems.join(','))},
-      });
-    }
-  };
-
   const maxColor: string = getNewSpanColor(isDarkMode);
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
+
+  const getDashboardItemByType = (type: string, isHalfScreen) => {
+    switch (type) {
+      case 'icicle': {
+        return (
+          flamegraphData?.data != null && (
+            <Profiler id="icicleGraph" onRender={perf?.onRender as React.ProfilerOnRenderCallback}>
+              <ProfileIcicleGraph
+                curPath={curPath}
+                setNewCurPath={setNewCurPath}
+                graph={flamegraphData.data}
+                sampleUnit={sampleUnit}
+              />
+            </Profiler>
+          )
+        );
+      }
+      case 'callgraph': {
+        return (
+          callgraphData?.data != null &&
+          dimensions?.width !== undefined && (
+            <Callgraph
+              graph={callgraphData.data}
+              sampleUnit={sampleUnit}
+              width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
+              colorRange={colorRange}
+            />
+          )
+        );
+      }
+      case 'table': {
+        return (
+          topTableData != null && (
+            <TopTable data={topTableData.data} sampleUnit={sampleUnit} navigateTo={navigateTo} />
+          )
+        );
+      }
+      default: {
+        return <></>;
+      }
+    }
+  };
+
+  console.log(dashboardItems);
+  const dashboardItemsWithViewSelector = dashboardItems.map((dashboardItem, index) => {
+    const styles = isSinglePanelView ? 'w-full' : 'w-1/2';
+    const isHalfScreen = !isSinglePanelView;
+    return (
+      <div key={index} className={styles}>
+        <div className="w-full flex justify-end">
+          <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
+        </div>
+        {getDashboardItemByType(dashboardItem, isHalfScreen)}
+      </div>
+    );
+  });
+
+  const handleAddView = () => {
+    const newDashboardItems = [...dashboardItems, ''];
+    setDashboardItems(newDashboardItems);
+  };
+
+  const handleResetView = () => {
+    setDashboardItems(['icicle']);
+  };
 
   return (
     <>
@@ -180,123 +232,29 @@ export const ProfileView = ({
               <div className="flex ml-auto gap-2">
                 <Button
                   color="neutral"
-                  onClick={resetIcicleGraph}
-                  disabled={curPath.length === 0}
+                  onClick={handleResetView}
+                  disabled={isSinglePanelView}
                   className="whitespace-nowrap text-ellipsis"
                 >
-                  Reset View
+                  Reset Panels
                 </Button>
 
-                {callgraphEnabled ? (
-                  <Button
-                    variant={`${dashboardItems.includes('callgraph') ? 'primary' : 'neutral'}`}
-                    onClick={() => switchDashboardItems(['callgraph'])}
-                    className="whitespace-nowrap text-ellipsis"
-                  >
-                    Callgraph
-                  </Button>
-                ) : null}
-
-                <div className="flex">
-                  <Button
-                    variant={`${dashboardItems.includes('table') ? 'primary' : 'neutral'}`}
-                    className="items-center rounded-tr-none rounded-br-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-                    onClick={() => switchDashboardItems(['table'])}
-                  >
-                    Table
-                  </Button>
-
-                  <Button
-                    variant={`${
-                      dashboardItems.includes('table') && dashboardItems.includes('icicle')
-                        ? 'primary'
-                        : 'neutral'
-                    }`}
-                    className="items-center rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none border-l-0 border-r-0 w-auto px-8 whitespace-nowrap no-outline-on-buttons text-ellipsis"
-                    onClick={() => switchDashboardItems(['table', 'icicle'])}
-                  >
-                    Both
-                  </Button>
-
-                  <Button
-                    variant={`${dashboardItems.includes('icicle') ? 'primary' : 'neutral'}`}
-                    className="items-center rounded-tl-none rounded-bl-none w-auto px-8 whitespace-nowrap text-ellipsis no-outline-on-buttons"
-                    onClick={() => switchDashboardItems(['icicle'])}
-                  >
-                    Icicle Graph
-                  </Button>
-                </div>
+                <Button
+                  color="primary"
+                  onClick={handleAddView}
+                  disabled={!isSinglePanelView || dashboardItems.length < 1}
+                  className="whitespace-nowrap text-ellipsis"
+                >
+                  Add Panel
+                </Button>
               </div>
             </div>
 
             {isLoaderVisible ? (
               <>{loader}</>
             ) : (
-              isSinglePanelView && (
-                <div ref={ref} className="flex space-x-4 justify-between w-full">
-                  {dashboardItems.includes('icicle') && flamegraphData?.data != null && (
-                    <div className="w-full">
-                      <Profiler
-                        id="icicleGraph"
-                        onRender={perf?.onRender as React.ProfilerOnRenderCallback}
-                      >
-                        <ProfileIcicleGraph
-                          curPath={curPath}
-                          setNewCurPath={setNewCurPath}
-                          graph={flamegraphData.data}
-                          sampleUnit={sampleUnit}
-                        />
-                      </Profiler>
-                    </div>
-                  )}
-                  {dashboardItems.includes('callgraph') && callgraphData?.data != null && (
-                    <div className="w-full">
-                      {dimensions?.width !== undefined && (
-                        <Callgraph
-                          graph={callgraphData.data}
-                          sampleUnit={sampleUnit}
-                          width={dimensions?.width}
-                          colorRange={colorRange}
-                        />
-                      )}
-                    </div>
-                  )}
-                  {dashboardItems.includes('table') && topTableData != null && (
-                    <div className="w-full">
-                      <TopTable
-                        data={topTableData.data}
-                        sampleUnit={sampleUnit}
-                        navigateTo={navigateTo}
-                      />
-                    </div>
-                  )}
-                </div>
-              )
-            )}
-            {!isSinglePanelView && (
               <div ref={ref} className="flex space-x-4 justify-between w-full">
-                {dashboardItems.includes('icicle') && dashboardItems.includes('table') && (
-                  <>
-                    <div className="w-1/2">
-                      <TopTable
-                        data={topTableData?.data}
-                        sampleUnit={sampleUnit}
-                        navigateTo={navigateTo}
-                      />
-                    </div>
-
-                    <div className="w-1/2">
-                      {flamegraphData != null && (
-                        <ProfileIcicleGraph
-                          curPath={curPath}
-                          setNewCurPath={setNewCurPath}
-                          graph={flamegraphData.data}
-                          sampleUnit={sampleUnit}
-                        />
-                      )}
-                    </div>
-                  </>
-                )}
+                {dashboardItemsWithViewSelector}
               </div>
             )}
           </Card.Body>
