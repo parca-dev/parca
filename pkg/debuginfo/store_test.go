@@ -123,6 +123,7 @@ func TestStore(t *testing.T) {
 	_, err = debuginfoClient.InitiateUpload(ctx, &debuginfopb.InitiateUploadRequest{
 		BuildId: "abcd",
 		Hash:    "foo",
+		Size:    2,
 	})
 	require.NoError(t, err)
 
@@ -144,6 +145,7 @@ func TestStore(t *testing.T) {
 	initiateResp, err := debuginfoClient.InitiateUpload(ctx, &debuginfopb.InitiateUploadRequest{
 		BuildId: "abcd",
 		Hash:    "foo",
+		Size:    2,
 	})
 	require.NoError(t, err)
 
@@ -192,6 +194,7 @@ func TestStore(t *testing.T) {
 	_, err = debuginfoClient.InitiateUpload(ctx, &debuginfopb.InitiateUploadRequest{
 		BuildId: "abcd",
 		Hash:    "foo",
+		Size:    2,
 	})
 	require.EqualError(t, err, "rpc error: code = AlreadyExists desc = Debuginfo already exists and is marked as invalid, but the proposed hash is the same as the one already available, therefore the upload is not accepted as it would result in the same invalid debuginfos.")
 
