@@ -8,5 +8,12 @@
     "noEmit": false,
     "declaration": true
   },
-  "exclude": ["node_modules", "dist", "dist/**/*.d.ts", "**/*.test.ts", "**/*.benchmark.tsx"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist/**/*.d.ts",
+    "**/*.test.ts",
+    "**/*.benchmark.tsx",
+    "**/benchdata/**/*.*"
+  ]
 }
