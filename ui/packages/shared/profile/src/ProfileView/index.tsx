@@ -176,7 +176,6 @@ export const ProfileView = ({
     }
   };
 
-  console.log(dashboardItems);
   const dashboardItemsWithViewSelector = dashboardItems.map((dashboardItem, index) => {
     const styles = isSinglePanelView ? 'w-full' : 'w-1/2';
     const isHalfScreen = !isSinglePanelView;
