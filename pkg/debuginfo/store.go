@@ -238,6 +238,9 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 	if req.Hash == "" {
 		return nil, status.Error(codes.InvalidArgument, "hash must be set")
 	}
+	if req.Size == 0 {
+		return nil, status.Error(codes.InvalidArgument, "size must be set")
+	}
 
 	// We don't want to blindly accept upload initiation requests that
 	// shouldn't have happened.

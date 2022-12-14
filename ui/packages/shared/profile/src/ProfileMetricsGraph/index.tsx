@@ -89,7 +89,13 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {loader} = useParcaContext();
+  const {loader, onError} = useParcaContext();
+
+  useEffect(() => {
+    if (error !== null) {
+      onError?.(error, 'metricsGraph');
+    }
+  }, [error, onError]);
 
   if (isLoaderVisible) {
     return <>{loader}</>;
