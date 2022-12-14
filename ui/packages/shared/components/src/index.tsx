@@ -27,6 +27,7 @@ import Select from './Select';
 import type {SelectElement} from './Select';
 import Spinner from './Spinner';
 import Tab from './Tab';
+import Table from './Table';
 import EmptyState from './EmptyState';
 
 export type {PillVariant, SelectElement};
@@ -52,6 +53,7 @@ export {
   Select,
   Spinner,
   Tab,
+  Table,
   EmptyState,
   useGrpcMetadata,
   useParcaContext,

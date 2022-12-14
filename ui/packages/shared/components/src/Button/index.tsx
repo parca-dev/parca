@@ -78,3 +78,18 @@ export default Button;
 export const IconButton = ({className = '', ...props}: Exclude<Props, 'variant'>): JSX.Element => {
   return <Button {...props} variant="link" className={`w-fit ${className}`} />;
 };
+
+export const PageButton = ({children, className = '', ...rest}: Props): JSX.Element => {
+  return (
+    <button
+      type="button"
+      className={cx(
+        'relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-none bg-white dark:bg-gray-900 text-sm font-medium text-gray-500 hover:bg-gray-50',
+        className
+      )}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+};

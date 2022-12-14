@@ -89,13 +89,15 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {loader} = useParcaContext();
+  const {loader, onError} = useParcaContext();
 
   if (isLoaderVisible) {
     return <>{loader}</>;
   }
 
   if (error !== null) {
+    onError?.metricsGraphError(error);
+
     return (
       <div
         className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
