@@ -22,9 +22,7 @@ interface Props {
     onRender?: ProfilerOnRenderCallback;
     markInteraction: (interactionName: string, sampleCount: number | string) => void;
   };
-  onError?: {
-    metricsGraphError: (error: RpcError) => void;
-  };
+  onError?: (error: RpcError, originatingFeature: string) => void;
 }
 
 export const defaultValue: Props = {
