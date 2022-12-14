@@ -6,7 +6,7 @@
   },
   "tags": [
     {
-      "name": "DebugInfoService"
+      "name": "DebuginfoService"
     }
   ],
   "consumes": [
@@ -17,15 +17,15 @@
   ],
   "paths": {},
   "definitions": {
-    "DownloadInfoSource": {
+    "UploadInstructionsUploadStrategy": {
       "type": "string",
       "enum": [
-        "SOURCE_UNKNOWN_UNSPECIFIED",
-        "SOURCE_UPLOAD",
-        "SOURCE_DEBUGINFOD"
+        "UPLOAD_STRATEGY_UNSPECIFIED",
+        "UPLOAD_STRATEGY_GRPC",
+        "UPLOAD_STRATEGY_SIGNED_URL"
       ],
-      "default": "SOURCE_UNKNOWN_UNSPECIFIED",
-      "description": "Source enum describes the source a debuginfo is from.\n\n - SOURCE_UNKNOWN_UNSPECIFIED: To understand when no source is set we have the unknown source.\n - SOURCE_UPLOAD: The debuginfo was uploaded by a user/agent.\n - SOURCE_DEBUGINFOD: The debuginfo was downloaded from a public debuginfod server."
+      "default": "UPLOAD_STRATEGY_UNSPECIFIED",
+      "description": "The strategy to use for uploading.\n\n - UPLOAD_STRATEGY_UNSPECIFIED: The upload is not allowed.\n - UPLOAD_STRATEGY_GRPC: The upload is allowed and should be done via the Upload RPC.\n - UPLOAD_STRATEGY_SIGNED_URL: The upload is allowed and should be done via a returned signed URL."
     },
     "parcadebuginfov1alpha1UploadResponse": {
       "type": "object",
@@ -69,40 +69,33 @@
         }
       }
     },
-    "v1alpha1DownloadInfo": {
+    "v1alpha1InitiateUploadResponse": {
       "type": "object",
       "properties": {
-        "source": {
-          "$ref": "#/definitions/DownloadInfoSource",
-          "description": "Source indicates the origin of the debuginfo being downloaded."
+        "uploadInstructions": {
+          "$ref": "#/definitions/v1alpha1UploadInstructions",
+          "description": "UploadInstructions contains the instructions for the client to upload the debuginfo."
         }
       },
-      "description": "DownloadInfo metadata for the debug data that is being downloaded."
+      "description": "InitiateUploadResponse is the response to an InitiateUploadRequest."
     },
-    "v1alpha1DownloadResponse": {
+    "v1alpha1MarkUploadFinishedResponse": {
+      "type": "object",
+      "description": "MarkUploadFinishedResponse is the response to a MarkUploadFinishedRequest."
+    },
+    "v1alpha1ShouldInitiateUploadResponse": {
       "type": "object",
       "properties": {
-        "info": {
-          "$ref": "#/definitions/v1alpha1DownloadInfo",
-          "title": "info is the metadata for the debug info"
-        },
-        "chunkData": {
-          "type": "string",
-          "format": "byte",
-          "title": "chunk_data is the raw bytes of the debug info"
-        }
-      },
-      "description": "DownloadRequest returns chunked data of the debuginfo."
-    },
-    "v1alpha1ExistsResponse": {
-      "type": "object",
-      "properties": {
-        "exists": {
+        "shouldInitiateUpload": {
           "type": "boolean",
-          "title": "exists indicates if there is debug data present for the given build_id"
+          "description": "Whether an upload should be initiated or not."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for why an upload should be initiated or not."
         }
       },
-      "title": "ExistsResponse returns whether the given build_id has debug info"
+      "description": "ShouldInitiateUploadResponse is the response for ShouldInitiateUpload."
     },
     "v1alpha1UploadInfo": {
       "type": "object",
@@ -111,12 +104,34 @@
           "type": "string",
           "title": "build_id is a unique identifier for the debug data"
         },
-        "hash": {
+        "uploadId": {
           "type": "string",
-          "title": "hash is the hash of the source file that debug information extracted from"
+          "title": "upload_id is a unique identifier for the upload"
         }
       },
       "title": "UploadInfo contains the build_id and other metadata for the debug data"
+    },
+    "v1alpha1UploadInstructions": {
+      "type": "object",
+      "properties": {
+        "buildId": {
+          "type": "string",
+          "description": "The build ID of the debuginfo to upload."
+        },
+        "uploadId": {
+          "type": "string",
+          "description": "The upload_id to use for uploading."
+        },
+        "uploadStrategy": {
+          "$ref": "#/definitions/UploadInstructionsUploadStrategy",
+          "description": "The strategy to use for uploading."
+        },
+        "signedUrl": {
+          "type": "string",
+          "description": "The signed url to use for uploading using a PUT request when the upload\nstrategy is SIGNED_STRATEGY_URL."
+        }
+      },
+      "description": "UploadInstructions contains the instructions for the client to upload debuginfo."
     }
   }
 }

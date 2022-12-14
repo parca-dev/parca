@@ -23,12 +23,17 @@ import {execa} from 'execa';
 import fs from 'fs-extra';
 
 const DIR_NAME = path.dirname(fileURLToPath(import.meta.url));
-const IS_DEBUG = process.env.DEBUG === 'true';
 
 const spinner = ora();
 
-const optionDefinitions = [{name: 'name', alias: 'n', type: String}];
+const optionDefinitions = [
+  {name: 'name', alias: 'n', type: String},
+  {name: 'debug', alias: 'd', type: Boolean},
+  {name: 'compare', alias: 'c', type: String},
+  {name: 'pattern', alias: 'p', type: String, defaultValue: '*'},
+];
 const options = commandLineArgs(optionDefinitions);
+const IS_DEBUG = process.env.DEBUG === 'true' || options.debug === true;
 
 interface Result {
   name: string;
@@ -42,6 +47,34 @@ interface Result {
   p50: number;
   p75: number;
   p90: number;
+}
+
+class ComparedValue {
+  before: number;
+  after: number;
+  constructor(before: number, after: number) {
+    this.before = before;
+    this.after = after;
+  }
+
+  toString() {
+    const diff = this.after - this.before;
+    const diffPercentage = (diff / this.before) * 100;
+    const diffSign = diff > 0 ? '+' : '';
+    return `${this.after} (${diffSign}${diff.toFixed(2)}, ${diffSign}${diffPercentage.toFixed(
+      2
+    )}%)`;
+  }
+}
+
+interface CompareResult {
+  name: string;
+  mean: string;
+  min: string;
+  max: string;
+  p50: string;
+  p75: string;
+  p90: string;
 }
 
 const runTime = new Date();
@@ -66,19 +99,62 @@ ${table}
 
   console.log(report);
 
-  if (options.name === undefined || options.name == null) {
-    return;
+  if (options.name != null) {
+    const reportPath = path.join(
+      DIR_NAME,
+      `../perf-benchmark-reports/${options.name as string}.txt`
+    );
+    await fs.ensureFile(reportPath);
+    await fs.appendFile(reportPath, report);
+    const jsonReportPath = path.join(
+      DIR_NAME,
+      `../perf-benchmark-reports/${options.name as string}.json`
+    );
+    await fs.ensureFile(jsonReportPath);
+    await fs.writeFile(jsonReportPath, JSON.stringify({benchmarks: results}, null, 2));
   }
-  const reportPath = path.join(DIR_NAME, `../perf-benchmark-reports/${options.name as string}.txt`);
-  await fs.ensureFile(reportPath);
-  await fs.appendFile(reportPath, report);
+
+  if (options.compare != null) {
+    const compareFile = path.resolve(DIR_NAME, `../perf-benchmark-reports/${options.compare}.json`);
+    const compareReport = await fs.readJSON(compareFile, 'utf-8');
+    const beforeResults = compareReport.benchmarks as Result[];
+    const comparedResults = beforeResults
+      .map(beforeResult => {
+        const result = results.find(r => r.name === beforeResult.name);
+        if (result === undefined) {
+          return;
+        }
+        const compareResult: CompareResult = {
+          name: result.name,
+          mean: new ComparedValue(beforeResult.mean, result.mean).toString(),
+          min: new ComparedValue(beforeResult.min, result.min).toString(),
+          max: new ComparedValue(beforeResult.max, result.max).toString(),
+          p50: new ComparedValue(beforeResult.p50, result.p50).toString(),
+          p75: new ComparedValue(beforeResult.p75, result.p75).toString(),
+          p90: new ComparedValue(beforeResult.p90, result.p90).toString(),
+        };
+        return compareResult;
+      })
+      .filter(Boolean);
+    const compareTable = notLog.table(comparedResults, [
+      'name',
+      'mean',
+      'min',
+      'max',
+      'p50',
+      'p75',
+      'p90',
+    ]);
+    console.log(`Compare with ${options.compare}:`);
+    console.log(compareTable);
+  }
 };
 
 const populateBenchmarkData = async (): Promise<void> => {
   const stopwatch = new StopWatch();
   stopwatch.start();
   spinner.start('Discovering data population scripts');
-  const files = await glob('!(node_modules)/**/!(node_modules|dist)/benchdata/populateData.js');
+  const files = await glob('!(node_modules)/**/!(node_modules|dist)/**/benchdata/populateData.js');
   spinner.succeed(`Found ${files.length} data population scripts ${stopwatch.stopAndReset()}ms`);
   for (const file of files) {
     try {
@@ -100,7 +176,7 @@ const populateBenchmarkData = async (): Promise<void> => {
 
 const run = async (): Promise<void> => {
   spinner.start('Discovering benchmarks');
-  const files = await glob('!(node_modules)/**/!(node_modules)/*.benchmark.tsx');
+  const files = await glob(`!(node_modules)/**/!(node_modules)/${options.pattern}.benchmark.tsx`);
   spinner.succeed(`Found ${files.length} benchmarks`);
 
   await populateBenchmarkData();

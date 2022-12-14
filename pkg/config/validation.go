@@ -20,14 +20,14 @@ import (
 	"github.com/thanos-io/objstore/client"
 )
 
-// Valid is the ValidRule.
-var Valid = ValidRule{}
+// ObjectStorageValid is the ValidRule.
+var ObjectStorageValid = ObjectStorageValidRule{}
 
-// ValidRule is a validation rule for the Config. It implements the validation.Rule interface.
-type ValidRule struct{}
+// ObjectStorageValidRule is a validation rule for the Config. It implements the validation.Rule interface.
+type ObjectStorageValidRule struct{}
 
-// Validate returns an error if the config is not valid.
-func (v ValidRule) Validate(value interface{}) error {
+// ObjectStorageValidate returns an error if the config is not valid.
+func (v ObjectStorageValidRule) Validate(value interface{}) error {
 	c, ok := value.(*ObjectStorage)
 	if !ok {
 		return errors.New("DebugInfo is invalid")

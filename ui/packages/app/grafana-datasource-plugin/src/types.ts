@@ -18,7 +18,7 @@ export interface ParcaQuery extends DataQuery {
 }
 
 export const defaultQuery: Partial<ParcaQuery> = {
-  parcaQuery: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="default"}',
+  parcaQuery: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}',
 };
 
 /**
