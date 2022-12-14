@@ -9,7 +9,7 @@
     "watch": "grafana-toolkit plugin:dev --watch",
     "sign": "grafana-toolkit plugin:sign",
     "start": "yarn watch",
-    "bundle": "rm -rf dist && yarn build && yarn sign && mv dist parca-datasource && zip release/parca-datasource-plugin-0.0.3.zip parca-datasource -r && rm -rf parca-datasource && sha1sum release/parca-datasource-plugin-0.0.3.zip"
+    "bundle": "rm -rf dist && yarn build && yarn sign && mv dist parca-datasource && zip release/parca-datasource-plugin-0.0.36.zip parca-datasource -r && rm -rf parca-datasource && sha1sum release/parca-datasource-plugin-0.0.36.zip"
   },
   "author": "Parca Contributors",
   "license": "Apache-2.0",
