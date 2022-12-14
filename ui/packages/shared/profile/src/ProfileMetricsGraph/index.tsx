@@ -95,7 +95,7 @@ const ProfileMetricsGraph = ({
     if (error !== null) {
       onError?.(error, 'metricsGraph');
     }
-  }, [error]);
+  }, [error, onError]);
 
   if (isLoaderVisible) {
     return <>{loader}</>;
