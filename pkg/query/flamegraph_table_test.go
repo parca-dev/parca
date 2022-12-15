@@ -812,7 +812,6 @@ func TestFlamegraphTrimming(t *testing.T) {
 			},
 		},
 	}, trimmedGraph)
-
 }
 
 func TestFlamegraphTrimmingSingleNodeGraph(t *testing.T) {
@@ -829,5 +828,4 @@ func TestFlamegraphTrimmingSingleNodeGraph(t *testing.T) {
 			Cumulative: 100,
 		},
 	}, trimmedGraph)
-
 }
