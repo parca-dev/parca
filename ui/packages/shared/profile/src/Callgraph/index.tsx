@@ -345,7 +345,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
           contextElement={containerRef.current}
         />
         {stage.scale.x !== 1 && (
-          <Button className="w-auto !absolute top-0 right-0" variant="neutral" onClick={resetZoom}>
+          <Button className="w-auto !absolute top-0 left-0" variant="neutral" onClick={resetZoom}>
             Reset Zoom
           </Button>
         )}

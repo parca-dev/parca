@@ -14,7 +14,9 @@
 import {Profiler, useEffect, useMemo, useState} from 'react';
 import {scaleLinear} from 'd3';
 
-import {getNewSpanColor, parseParams, useURLState} from '@parca/functions';
+import cx from 'classnames';
+import {getNewSpanColor, useURLState} from '@parca/functions';
+import {CloseIcon} from '@parca/icons';
 import {NavigateOptions} from 'react-router-dom';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, useParcaContext} from '@parca/components';
@@ -134,7 +136,7 @@ export const ProfileView = ({
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
 
-  const getDashboardItemByType = (type: string, isHalfScreen) => {
+  const getDashboardItemByType = ({type, isHalfScreen}: {type: string; isHalfScreen: boolean}) => {
     switch (type) {
       case 'icicle': {
         return (
@@ -176,19 +178,6 @@ export const ProfileView = ({
     }
   };
 
-  const dashboardItemsWithViewSelector = dashboardItems.map((dashboardItem, index) => {
-    const styles = isSinglePanelView ? 'w-full' : 'w-1/2';
-    const isHalfScreen = !isSinglePanelView;
-    return (
-      <div key={index} className={styles}>
-        <div className="w-full flex justify-end">
-          <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
-        </div>
-        {getDashboardItemByType(dashboardItem, isHalfScreen)}
-      </div>
-    );
-  });
-
   const handleAddView = () => {
     const newDashboardItems = [...dashboardItems, ''];
     setDashboardItems(newDashboardItems);
@@ -197,6 +186,33 @@ export const ProfileView = ({
   const handleResetView = () => {
     setDashboardItems(['icicle']);
   };
+
+  const handleClosePanel = visualizationType => {
+    const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);
+    setDashboardItems(newDashboardItems);
+  };
+
+  const dashboardItemsWithViewSelector = dashboardItems.map((dashboardItem, index) => {
+    return (
+      <div
+        key={index}
+        className={cx(
+          'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
+          isSinglePanelView ? 'w-full' : 'w-1/2'
+        )}
+      >
+        <div className="w-full flex justify-end pb-2">
+          <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
+          {!isSinglePanelView && (
+            <button type="button" onClick={() => handleClosePanel(dashboardItem)} className="pl-2">
+              <CloseIcon />
+            </button>
+          )}
+        </div>
+        {getDashboardItemByType({type: dashboardItem, isHalfScreen: !isSinglePanelView})}
+      </div>
+    );
+  });
 
   return (
     <>

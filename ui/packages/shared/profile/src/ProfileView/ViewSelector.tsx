@@ -14,16 +14,14 @@
 import {Select, SelectElement} from '@parca/components';
 import {useURLState, NavigateFunction} from '@parca/functions';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
-import {Icon} from '@iconify/react';
-import {useCallback} from 'react';
 
 interface Props {
   position: number;
   defaultValue: string;
-  navigateTo: NavigateFunction;
+  navigateTo?: NavigateFunction;
 }
 
-const ViewSelector = ({defaultValue, navigateTo, position}): JSX.Element => {
+const ViewSelector = ({defaultValue, navigateTo, position}: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [dashboardItems, setDashboardItems] = useURLState({
     param: 'dashboard_items',
@@ -78,7 +76,7 @@ const ViewSelector = ({defaultValue, navigateTo, position}): JSX.Element => {
       return;
     }
 
-    // replace the item in the dashboard items array that matches the position of the key
+    // Note: this will need to be updated if we ever have more more than 2 panels
     const isFirstChart = position === 0;
     const newDashboardItems = isFirstChart
       ? [value, dashboardItems[1]]
