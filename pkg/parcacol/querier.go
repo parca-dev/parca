@@ -189,10 +189,46 @@ func MatchersToBooleanExpressions(matchers []*labels.Matcher) ([]logicalplan.Exp
 	return exprs, nil
 }
 
-func QueryToFilterExprs(query string) (profile.Meta, []logicalplan.Expr, error) {
+func QueryToFilterExprs(query string) (QueryParts, []logicalplan.Expr, error) {
+	qp, err := parseQuery(query)
+	if err != nil {
+		return qp, nil, err
+	}
+
+	labelFilterExpressions, err := MatchersToBooleanExpressions(qp.Matchers)
+	if err != nil {
+		return qp, nil, status.Error(codes.InvalidArgument, "failed to build query")
+	}
+
+	exprs := append([]logicalplan.Expr{
+		logicalplan.Col(ColumnName).Eq(logicalplan.Literal(qp.Meta.Name)),
+		logicalplan.Col(ColumnSampleType).Eq(logicalplan.Literal(qp.Meta.SampleType.Type)),
+		logicalplan.Col(ColumnSampleUnit).Eq(logicalplan.Literal(qp.Meta.SampleType.Unit)),
+		logicalplan.Col(ColumnPeriodType).Eq(logicalplan.Literal(qp.Meta.PeriodType.Type)),
+		logicalplan.Col(ColumnPeriodUnit).Eq(logicalplan.Literal(qp.Meta.PeriodType.Unit)),
+	}, labelFilterExpressions...)
+
+	deltaPlan := logicalplan.Col(ColumnDuration).Eq(logicalplan.Literal(0))
+	if qp.Delta {
+		deltaPlan = logicalplan.Col(ColumnDuration).NotEq(logicalplan.Literal(0))
+	}
+
+	exprs = append(exprs, deltaPlan)
+
+	return qp, exprs, nil
+}
+
+type QueryParts struct {
+	Meta     profile.Meta
+	Delta    bool
+	Matchers []*labels.Matcher
+}
+
+// parseQuery from a string into the QueryParts struct.
+func parseQuery(query string) (QueryParts, error) {
 	parsedSelector, err := parser.ParseMetricSelector(query)
 	if err != nil {
-		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "failed to parse query")
+		return QueryParts{}, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
 
 	sel := make([]*labels.Matcher, 0, len(parsedSelector))
@@ -205,43 +241,33 @@ func QueryToFilterExprs(query string) (profile.Meta, []logicalplan.Expr, error) 
 		}
 	}
 	if nameLabel == nil {
-		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
+		return QueryParts{}, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
 	}
 
 	parts := strings.Split(nameLabel.Value, ":")
 	if len(parts) != 5 && len(parts) != 6 {
-		return profile.Meta{}, nil, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
+		return QueryParts{}, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
 	}
-	name, sampleType, sampleUnit, periodType, periodUnit, delta := parts[0], parts[1], parts[2], parts[3], parts[4], false
+	delta := false
 	if len(parts) == 6 && parts[5] == "delta" {
 		delta = true
 	}
 
-	labelFilterExpressions, err := MatchersToBooleanExpressions(sel)
-	if err != nil {
-		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "failed to build query")
-	}
-
-	exprs := append([]logicalplan.Expr{
-		logicalplan.Col(ColumnName).Eq(logicalplan.Literal(name)),
-		logicalplan.Col(ColumnSampleType).Eq(logicalplan.Literal(sampleType)),
-		logicalplan.Col(ColumnSampleUnit).Eq(logicalplan.Literal(sampleUnit)),
-		logicalplan.Col(ColumnPeriodType).Eq(logicalplan.Literal(periodType)),
-		logicalplan.Col(ColumnPeriodUnit).Eq(logicalplan.Literal(periodUnit)),
-	}, labelFilterExpressions...)
-
-	deltaPlan := logicalplan.Col(ColumnDuration).Eq(logicalplan.Literal(0))
-	if delta {
-		deltaPlan = logicalplan.Col(ColumnDuration).NotEq(logicalplan.Literal(0))
-	}
-
-	exprs = append(exprs, deltaPlan)
-
-	return profile.Meta{
-		Name:       name,
-		SampleType: profile.ValueType{Type: sampleType, Unit: sampleUnit},
-		PeriodType: profile.ValueType{Type: periodType, Unit: periodUnit},
-	}, exprs, nil
+	return QueryParts{
+		Meta: profile.Meta{
+			Name: parts[0],
+			SampleType: profile.ValueType{
+				Type: parts[1],
+				Unit: parts[2],
+			},
+			PeriodType: profile.ValueType{
+				Type: parts[3],
+				Unit: parts[4],
+			},
+		},
+		Delta:    delta,
+		Matchers: sel,
+	}, nil
 }
 
 func (q *Querier) QueryRange(
@@ -251,7 +277,7 @@ func (q *Querier) QueryRange(
 	step time.Duration,
 	limit uint32,
 ) ([]*pb.MetricsSeries, error) {
-	_, selectorExprs, err := QueryToFilterExprs(query)
+	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
 		return nil, err
 	}
@@ -272,13 +298,23 @@ func (q *Querier) QueryRange(
 
 	filterExpr := logicalplan.And(exprs...)
 
-	resSeries := []*pb.MetricsSeries{}
-	labelsetToIndex := map[string]int{}
+	if queryParts.Delta {
+		return q.queryRangeDelta(ctx, filterExpr, step)
+	}
 
-	labelSet := labels.Labels{}
+	return q.queryRangeNonDelta(ctx, filterExpr, step)
+}
 
+const (
+	ColumnDurationSum = "sum(" + ColumnDuration + ")"
+	ColumnPeriodSum   = "sum(" + ColumnPeriod + ")"
+	ColumnValueCount  = "count(" + ColumnValue + ")"
+	ColumnValueSum    = "sum(" + ColumnValue + ")"
+)
+
+func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
 	var ar arrow.Record
-	err = q.engine.ScanTable(q.tableName).
+	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
@@ -306,11 +342,6 @@ func (q *Querier) QueryRange(
 			"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
 		)
 	}
-
-	const ColumnDurationSum = "sum(duration)"
-	const ColumnPeriodSum = "sum(period)"
-	const ColumnValueCount = "count(value)"
-	const ColumnValueSum = "sum(value)"
 
 	type columnIndex struct {
 		index int
@@ -346,6 +377,11 @@ func (q *Querier) QueryRange(
 			return nil, fmt.Errorf("%s column not found", name)
 		}
 	}
+
+	labelSet := labels.Labels{}
+
+	resSeries := []*pb.MetricsSeries{}
+	labelsetToIndex := map[string]int{}
 
 	for i := 0; i < int(ar.NumRows()); i++ {
 		labelSet = labelSet[:0]
@@ -383,12 +419,127 @@ func (q *Querier) QueryRange(
 		valueSum := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
 		valueCount := ar.Column(columnIndices[ColumnValueCount].index).(*array.Int64).Value(i)
 
-		result := (float64(periodSum) / float64(valueCount) / float64(durationSum) / float64(valueCount)) * float64(valueSum)
+		result := 1000 * (float64(valueSum) * (float64(periodSum) / float64(valueCount))) / (float64(durationSum) / float64(valueCount))
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
 			Timestamp: timestamppb.New(timestamp.Time(ts)),
 			Value:     int64(result),
+		})
+	}
+
+	// This is horrible and should be fixed. The data is sorted in the storage, we should not have to sort it here.
+	for _, series := range resSeries {
+		sort.Slice(series.Samples, func(i, j int) bool {
+			return series.Samples[i].Timestamp.AsTime().Before(series.Samples[j].Timestamp.AsTime())
+		})
+	}
+
+	return resSeries, nil
+}
+
+func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
+	var ar arrow.Record
+	err := q.engine.ScanTable(q.tableName).
+		Filter(filterExpr).
+		Aggregate(
+			[]logicalplan.Expr{
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+			},
+			[]logicalplan.Expr{
+				logicalplan.DynCol(ColumnLabels),
+				logicalplan.Duration(step),
+			},
+		).
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+			r.Retain()
+			ar = r
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	if ar == nil || ar.NumRows() == 0 {
+		return nil, status.Error(
+			codes.NotFound,
+			"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
+		)
+	}
+
+	type columnIndex struct {
+		index int
+		found bool
+	}
+	// Add necessary columns and their found value is false by default.
+	columnIndices := map[string]columnIndex{
+		ColumnTimestamp: {},
+		ColumnValueSum:  {},
+	}
+	labelColumnIndices := []int{}
+
+	fields := ar.Schema().Fields()
+	for i, field := range fields {
+		if _, ok := columnIndices[field.Name]; ok {
+			columnIndices[field.Name] = columnIndex{
+				index: i,
+				found: true,
+			}
+			continue
+		}
+
+		if strings.HasPrefix(field.Name, "labels.") {
+			labelColumnIndices = append(labelColumnIndices, i)
+		}
+	}
+
+	for name, index := range columnIndices {
+		if !index.found {
+			return nil, fmt.Errorf("%s column not found", name)
+		}
+	}
+
+	labelSet := labels.Labels{}
+
+	resSeries := []*pb.MetricsSeries{}
+	labelsetToIndex := map[string]int{}
+
+	for i := 0; i < int(ar.NumRows()); i++ {
+		labelSet = labelSet[:0]
+		for _, labelColumnIndex := range labelColumnIndices {
+			col := ar.Column(labelColumnIndex).(*array.Binary)
+			if col.IsNull(i) {
+				continue
+			}
+
+			v := col.Value(i)
+			if len(v) > 0 {
+				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: string(v)})
+			}
+		}
+
+		sort.Sort(labelSet)
+		s := labelSet.String()
+		index, ok := labelsetToIndex[s]
+		if !ok {
+			pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
+			for _, l := range labelSet {
+				pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
+					Name:  l.Name,
+					Value: l.Value,
+				})
+			}
+			resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
+			index = len(resSeries) - 1
+			labelsetToIndex[s] = index
+		}
+
+		ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
+		value := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
+
+		series := resSeries[index]
+		series.Samples = append(series.Samples, &pb.MetricsSample{
+			Timestamp: timestamppb.New(timestamp.Time(ts)),
+			Value:     value,
 		})
 	}
 
@@ -601,7 +752,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
 	defer span.End()
 
-	meta, selectorExprs, err := QueryToFilterExprs(query)
+	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
 		return nil, "", profile.Meta{}, err
 	}
@@ -638,9 +789,9 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 	return ar,
 		"sum(value)",
 		profile.Meta{
-			Name:       meta.Name,
-			SampleType: meta.SampleType,
-			PeriodType: meta.PeriodType,
+			Name:       queryParts.Meta.Name,
+			SampleType: queryParts.Meta.SampleType,
+			PeriodType: queryParts.Meta.PeriodType,
 			Timestamp:  requestedTime,
 		},
 		nil
@@ -673,7 +824,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
-	meta, selectorExprs, err := QueryToFilterExprs(query)
+	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
 		return nil, "", profile.Meta{}, err
 	}
@@ -709,10 +860,10 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		return nil, "", profile.Meta{}, err
 	}
 
-	meta = profile.Meta{
-		Name:       meta.Name,
-		SampleType: meta.SampleType,
-		PeriodType: meta.PeriodType,
+	meta := profile.Meta{
+		Name:       queryParts.Meta.Name,
+		SampleType: queryParts.Meta.SampleType,
+		PeriodType: queryParts.Meta.PeriodType,
 		Timestamp:  start,
 	}
 	return ar, "sum(value)", meta, nil
