@@ -69,7 +69,7 @@ jobs:
           # The 'main' branch of the GitHub repository that defines the module.
           against: 'https://github.com/${GITHUB_REPOSITORY}.git#branch=main,ref=HEAD~1,subdir=proto'
 
-      - uses: bufbuild/buf-push-action@958c3416ab0a441c05642ad6daa6330ee57e6900 # v1.1.0
+      - uses: bufbuild/buf-push-action@1c45f6a21ec277ee4c1fa2772e49b9541ea17f38 # v1.1.1
         with:
           input: 'proto'
           buf_token: ${{ secrets.BUF_TOKEN }}
