@@ -97,7 +97,7 @@
     "plop": "3.1.1",
     "pm2": "5.2.2",
     "postcss": "8.4.19",
-    "prettier": "2.8.0",
+    "prettier": "2.8.1",
     "react-is": "18.2.0",
     "react-test-renderer": "18.2.0",
     "replace-in-files": "3.0.0",
@@ -109,7 +109,7 @@
     "ts-jest": "28.0.8",
     "ts-node": "10.9.1",
     "tsc-watch": "5.0.3",
-    "typescript": "4.9.3",
+    "typescript": "4.9.4",
     "webpack": "5.75.0"
   }
 }
