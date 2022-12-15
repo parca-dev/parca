@@ -88,7 +88,7 @@ func TestReloadValid(t *testing.T) {
 	f, reloadConfig := setupReloader(ctx, t)
 	defer f.Close()
 
-	config := `    scrape_timeout: "3s"
+	config := `    scrape_timeout: "4s"
 `
 
 	if _, err := f.WriteString(config); err != nil {
@@ -97,7 +97,7 @@ func TestReloadValid(t *testing.T) {
 
 	select {
 	case cfg := <-reloadConfig:
-		require.Equal(t, model.Duration(time.Second*3), cfg.ScrapeConfigs[0].ScrapeTimeout)
+		require.Equal(t, model.Duration(time.Second*4), cfg.ScrapeConfigs[0].ScrapeTimeout)
 	case <-ctx.Done():
 		t.Error("configuration reload timed out")
 	}

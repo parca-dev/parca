@@ -42,7 +42,7 @@ func TestLoadComplex(t *testing.T) {
 	complexYAML := `
 scrape_configs:
   - job_name: 'parca'
-    scrape_interval: 10s
+    scrape_interval: 5s
     static_configs:
       - targets: [ 'localhost:10902' ]
     profiling_config:
@@ -74,8 +74,8 @@ scrape_configs:
 		ScrapeConfigs: []*ScrapeConfig{
 			{
 				JobName:        "parca",
-				ScrapeInterval: model.Duration(10 * time.Second),
-				ScrapeTimeout:  model.Duration(10 * time.Second),
+				ScrapeInterval: model.Duration(5 * time.Second),
+				ScrapeTimeout:  model.Duration(8 * time.Second),
 				Scheme:         "http",
 				ProfilingConfig: &ProfilingConfig{
 					PprofConfig: PprofConfig{
@@ -115,14 +115,14 @@ scrape_configs:
 			{
 				JobName:         "empty-profiling-config",
 				ScrapeInterval:  model.Duration(10 * time.Second),
-				ScrapeTimeout:   model.Duration(10 * time.Second),
+				ScrapeTimeout:   model.Duration(13 * time.Second),
 				Scheme:          "http",
 				ProfilingConfig: DefaultScrapeConfig().ProfilingConfig,
 			},
 			{
 				JobName:        "path-prefix",
 				ScrapeInterval: model.Duration(10 * time.Second),
-				ScrapeTimeout:  model.Duration(10 * time.Second),
+				ScrapeTimeout:  model.Duration(13 * time.Second),
 				Scheme:         "http",
 				ProfilingConfig: &ProfilingConfig{
 					PprofPrefix: "/test/prefix",
@@ -158,7 +158,7 @@ scrape_configs:
 			{
 				JobName:        "path-prefix-with-defaults",
 				ScrapeInterval: model.Duration(10 * time.Second),
-				ScrapeTimeout:  model.Duration(10 * time.Second),
+				ScrapeTimeout:  model.Duration(13 * time.Second),
 				Scheme:         "http",
 				ProfilingConfig: &ProfilingConfig{
 					PprofPrefix: "/test/prefix",
