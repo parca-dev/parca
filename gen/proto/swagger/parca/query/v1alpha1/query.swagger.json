@@ -318,6 +318,13 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "disableTrimming",
+            "description": "disable_trimming disables trimming of insignificant nodes in the report",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -699,6 +706,10 @@
         "filterQuery": {
           "type": "string",
           "title": "filter_query is the query string to filter the profile samples"
+        },
+        "disableTrimming": {
+          "type": "boolean",
+          "title": "disable_trimming disables trimming of insignificant nodes in the report"
         }
       },
       "title": "QueryRequest is a request for a profile query"

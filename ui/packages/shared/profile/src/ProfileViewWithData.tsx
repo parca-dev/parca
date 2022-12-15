@@ -20,6 +20,7 @@ import {downloadPprof} from './utils';
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
 import {saveAsBlob} from '@parca/functions';
 import {useEffect} from 'react';
+import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -38,12 +39,14 @@ export const ProfileViewWithData = ({
   const profileVisState = useProfileVisState();
   const metadata = useGrpcMetadata();
   const {currentView} = profileVisState;
+  const [disableTrimming] = useUIFeatureFlag('flamegraphDisableTrimming', false);
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
     skip: currentView !== 'icicle' && currentView !== 'both',
+    disableTrimming,
   });
   const {perf} = useParcaContext();
 

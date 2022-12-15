@@ -224,6 +224,9 @@ message QueryRequest {
 
   // filter_query is the query string to filter the profile samples
   optional string filter_query = 6;
+
+  // disable_trimming disables trimming of insignificant nodes in the report
+  optional bool disable_trimming = 7;
 }
 
 // Top is the top report type

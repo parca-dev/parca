@@ -1101,6 +1101,16 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			}
 		}
 	}
+	if m.DisableTrimming != nil {
+		i--
+		if *m.DisableTrimming {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
+	}
 	if m.FilterQuery != nil {
 		i -= len(*m.FilterQuery)
 		copy(dAtA[i:], *m.FilterQuery)
@@ -2926,6 +2936,9 @@ func (m *QueryRequest) SizeVT() (n int) {
 	if m.FilterQuery != nil {
 		l = len(*m.FilterQuery)
 		n += 1 + l + sov(uint64(l))
+	}
+	if m.DisableTrimming != nil {
+		n += 2
 	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
@@ -5343,6 +5356,27 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.FilterQuery = &s
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DisableTrimming", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.DisableTrimming = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

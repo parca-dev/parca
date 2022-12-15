@@ -148,7 +148,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		p = q.filterProfileData(ctx, p, *req.FilterQuery)
 	}
 
-	return q.renderReport(ctx, p, req.GetReportType())
+	return q.renderReport(ctx, p, req.GetReportType(), req.GetDisableTrimming())
 }
 
 func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
@@ -177,7 +177,7 @@ func (q *ColumnQueryAPI) filterProfileData(ctx context.Context, p *profile.Profi
 	}
 }
 
-func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType, disableTrimming bool) (*pb.QueryResponse, error) {
 	ctx, span := q.tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
 	defer span.End()
@@ -195,7 +195,7 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
-		fg, err := GenerateFlamegraphTable(ctx, q.tracer, p)
+		fg, err := GenerateFlamegraphTable(ctx, q.tracer, p, disableTrimming)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}

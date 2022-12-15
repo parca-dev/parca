@@ -56,6 +56,10 @@ const UserPreferences = () => {
             name="Highlight matching nodes after filtering"
             id="highlightAfterFiltering"
           />
+          <FlagToggle
+            name="Disable trimming of insignificant nodes"
+            id="flamegraphDisableTrimming"
+          />
           <div className=" min-w-96 mt-8">
             <h4 className="font-medium mb-2">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />

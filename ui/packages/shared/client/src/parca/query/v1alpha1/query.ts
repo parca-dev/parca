@@ -346,6 +346,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional string filter_query = 6;
      */
     filterQuery?: string;
+    /**
+     * disable_trimming disables trimming of insignificant nodes in the report
+     *
+     * @generated from protobuf field: optional bool disable_trimming = 7;
+     */
+    disableTrimming?: boolean;
 }
 /**
  * Mode is the type of query request
@@ -1640,7 +1646,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 3, name: "merge", kind: "message", oneof: "options", T: () => MergeProfile },
             { no: 4, name: "single", kind: "message", oneof: "options", T: () => SingleProfile },
             { no: 5, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] },
-            { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
+            { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "disable_trimming", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1682,6 +1689,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional string filter_query */ 6:
                     message.filterQuery = reader.string();
                     break;
+                case /* optional bool disable_trimming */ 7:
+                    message.disableTrimming = reader.bool();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1712,6 +1722,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional string filter_query = 6; */
         if (message.filterQuery !== undefined)
             writer.tag(6, WireType.LengthDelimited).string(message.filterQuery);
+        /* optional bool disable_trimming = 7; */
+        if (message.disableTrimming !== undefined)
+            writer.tag(7, WireType.Varint).bool(message.disableTrimming);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
