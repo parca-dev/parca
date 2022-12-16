@@ -370,6 +370,30 @@ export interface DebuginfoQuality {
      * @generated from protobuf field: bool not_valid_elf = 1;
      */
     notValidElf: boolean;
+    /**
+     * Whether the debuginfo contains dwarf information.
+     *
+     * @generated from protobuf field: bool has_dwarf = 2;
+     */
+    hasDwarf: boolean;
+    /**
+     * Whether the debuginfo contains Go's pclntab.
+     *
+     * @generated from protobuf field: bool has_go_pclntab = 3;
+     */
+    hasGoPclntab: boolean;
+    /**
+     * Whether the debuginfo contains symtab.
+     *
+     * @generated from protobuf field: bool has_symtab = 4;
+     */
+    hasSymtab: boolean;
+    /**
+     * Whether the debuginfo contains dynsym.
+     *
+     * @generated from protobuf field: bool has_dynsym = 5;
+     */
+    hasDynsym: boolean;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadRequest> {
@@ -1050,11 +1074,15 @@ export const DebuginfoUpload = new DebuginfoUpload$Type();
 class DebuginfoQuality$Type extends MessageType<DebuginfoQuality> {
     constructor() {
         super("parca.debuginfo.v1alpha1.DebuginfoQuality", [
-            { no: 1, name: "not_valid_elf", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 1, name: "not_valid_elf", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "has_dwarf", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "has_go_pclntab", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "has_symtab", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 5, name: "has_dynsym", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<DebuginfoQuality>): DebuginfoQuality {
-        const message = { notValidElf: false };
+        const message = { notValidElf: false, hasDwarf: false, hasGoPclntab: false, hasSymtab: false, hasDynsym: false };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<DebuginfoQuality>(this, message, value);
@@ -1067,6 +1095,18 @@ class DebuginfoQuality$Type extends MessageType<DebuginfoQuality> {
             switch (fieldNo) {
                 case /* bool not_valid_elf */ 1:
                     message.notValidElf = reader.bool();
+                    break;
+                case /* bool has_dwarf */ 2:
+                    message.hasDwarf = reader.bool();
+                    break;
+                case /* bool has_go_pclntab */ 3:
+                    message.hasGoPclntab = reader.bool();
+                    break;
+                case /* bool has_symtab */ 4:
+                    message.hasSymtab = reader.bool();
+                    break;
+                case /* bool has_dynsym */ 5:
+                    message.hasDynsym = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1083,6 +1123,18 @@ class DebuginfoQuality$Type extends MessageType<DebuginfoQuality> {
         /* bool not_valid_elf = 1; */
         if (message.notValidElf !== false)
             writer.tag(1, WireType.Varint).bool(message.notValidElf);
+        /* bool has_dwarf = 2; */
+        if (message.hasDwarf !== false)
+            writer.tag(2, WireType.Varint).bool(message.hasDwarf);
+        /* bool has_go_pclntab = 3; */
+        if (message.hasGoPclntab !== false)
+            writer.tag(3, WireType.Varint).bool(message.hasGoPclntab);
+        /* bool has_symtab = 4; */
+        if (message.hasSymtab !== false)
+            writer.tag(4, WireType.Varint).bool(message.hasSymtab);
+        /* bool has_dynsym = 5; */
+        if (message.hasDynsym !== false)
+            writer.tag(5, WireType.Varint).bool(message.hasDynsym);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
