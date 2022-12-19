@@ -448,7 +448,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			},
 			[]logicalplan.Expr{
 				logicalplan.DynCol(ColumnLabels),
-				logicalplan.Duration(step),
+				logicalplan.Col(ColumnTimestamp),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -501,6 +501,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	labelSet := labels.Labels{}
 
 	resSeries := []*pb.MetricsSeries{}
+	resSeriesBuckets := map[int]map[int64]struct{}{}
 	labelsetToIndex := map[string]int{}
 
 	for i := 0; i < int(ar.NumRows()); i++ {
@@ -531,16 +532,34 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
 			index = len(resSeries) - 1
 			labelsetToIndex[s] = index
+			resSeriesBuckets[index] = map[int64]struct{}{}
 		}
 
 		ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
 		value := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
+
+		// Each step bucket will only return one of the timestamps and its value.
+		// For this reason we'll take each timestamp and divide it by the step seconds.
+		// If we have seen a MetricsSample for this bucket before, we'll ignore this one.
+		// If we haven't seen one we'll add this sample to the response.
+
+		// TODO: This still queries way too much data from the underlying database.
+		// This needs to be moved to FrostDB to not even query all of this data in the first place.
+		// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
+		// Even worse for a week, we'd query 60480 samples and only return 1000.
+		tsBucket := ts / 1000 / int64(step.Seconds())
+		if _, found := resSeriesBuckets[index][tsBucket]; found {
+			// We already have a MetricsSample for this timestamp bucket, ignore it.
+			continue
+		}
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
 			Timestamp: timestamppb.New(timestamp.Time(ts)),
 			Value:     value,
 		})
+		// Mark the timestamp bucket as filled by the above MetricsSample.
+		resSeriesBuckets[index][tsBucket] = struct{}{}
 	}
 
 	// This is horrible and should be fixed. The data is sorted in the storage, we should not have to sort it here.
