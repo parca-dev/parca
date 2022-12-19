@@ -58,7 +58,7 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.5.1-1
+    rev: v3.5.1-2
     hooks:
       - id: shfmt
         # Google-style w/ 4-space indent
