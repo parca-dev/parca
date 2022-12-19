@@ -35,10 +35,13 @@ type SymtabLiner struct {
 	// symbols contains sorted symbols.
 	symbols   []elf.Symbol
 	demangler *demangle.Demangler
+
+	filename string
+	f        *elf.File
 }
 
 // Symbols creates a new SymtabLiner.
-func Symbols(logger log.Logger, f *elf.File, demangler *demangle.Demangler) (*SymtabLiner, error) {
+func Symbols(logger log.Logger, filename string, f *elf.File, demangler *demangle.Demangler) (*SymtabLiner, error) {
 	symbols, err := symtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
@@ -48,6 +51,27 @@ func Symbols(logger log.Logger, f *elf.File, demangler *demangle.Demangler) (*Sy
 		logger:    log.With(logger, "liner", "symtab"),
 		symbols:   symbols,
 		demangler: demangler,
+		filename:  filename,
+		f:         f,
+	}, nil
+}
+
+func (lnr *SymtabLiner) Close() error {
+	return lnr.f.Close()
+}
+
+func (lnr *SymtabLiner) File() string {
+	return lnr.filename
+}
+
+func (lnr *SymtabLiner) PCRange() ([2]uint64, error) {
+	if len(lnr.symbols) == 0 {
+		return [2]uint64{}, errors.New("no symbols found")
+	}
+
+	return [2]uint64{
+		lnr.symbols[0].Value,
+		lnr.symbols[len(lnr.symbols)-1].Value + lnr.symbols[len(lnr.symbols)-1].Size,
 	}, nil
 }
 

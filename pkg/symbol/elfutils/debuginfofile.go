@@ -15,7 +15,6 @@ package elfutils
 
 import (
 	"debug/dwarf"
-	"debug/elf"
 	"errors"
 	"fmt"
 	"io"
@@ -46,12 +45,7 @@ type debugInfoFile struct {
 }
 
 // NewDebugInfoFile creates a new DebugInfoFile symbolizer.
-func NewDebugInfoFile(f *elf.File, demangler *demangle.Demangler) (DebugInfoFile, error) {
-	debugData, err := f.DWARF()
-	if err != nil {
-		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
-	}
-
+func NewDebugInfoFile(debugData *dwarf.Data, demangler *demangle.Demangler) (DebugInfoFile, error) {
 	return &debugInfoFile{
 		demangler: demangler,
 
@@ -75,7 +69,7 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 	// and positions the reader to read the children of that unit.
 	cu, err := er.SeekPC(addr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("seek to PC: %w", err)
 	}
 	if cu == nil {
 		return nil, errors.New("failed to find a corresponding dwarf entry for given address")
