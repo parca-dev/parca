@@ -66,7 +66,6 @@ import (
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/signedupload"
-	"github.com/parca-dev/parca/pkg/symbol"
 	"github.com/parca-dev/parca/pkg/symbolizer"
 )
 
@@ -315,16 +314,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	sym, err := symbol.NewSymbolizer(logger,
-		symbol.WithDemangleMode(flags.SymbolizerDemangleMode),
-		symbol.WithAttemptThreshold(flags.SymbolizerNumberOfTries),
-		symbol.WithCacheItemTTL(symbolizationInterval*3),
-	)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize symbolizer", "err", err)
-		return err
-	}
-
 	var debuginfodClient debuginfo.DebuginfodClient = debuginfo.NopDebuginfodClient{}
 	if len(flags.DebugInfodUpstreamServers) > 0 {
 		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.DebugInfodUpstreamServers, flags.DebugInfodHTTPRequestTimeout)
@@ -394,10 +383,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			reg,
 			debuginfoMetadata,
 			metastore,
-			debuginfo.NewFetcher(debuginfoMetadata, debuginfodClient, debuginfoBucket),
-			sym,
+			debuginfo.NewFetcher(debuginfodClient, debuginfoBucket),
 			flags.DebuginfoCacheDir,
 			0,
+			symbolizer.WithDemangleMode(flags.SymbolizerDemangleMode),
+			symbolizer.WithAttemptThreshold(flags.SymbolizerNumberOfTries),
 		)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
@@ -407,7 +397,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			func(_ error) {
 				level.Debug(logger).Log("msg", "symbolizer server shutting down")
 				cancel()
-				sym.Close()
 			})
 	}
 	gr.Add(

@@ -31,20 +31,49 @@ import (
 type GoLiner struct {
 	logger log.Logger
 
-	symtab *gosym.Table
+	symtab   *gosym.Table
+	f        *elf.File
+	filename string
 }
 
 // Go creates a new GoLiner.
-func Go(logger log.Logger, f *elf.File) (*GoLiner, error) {
+func Go(logger log.Logger, filename string, f *elf.File) (*GoLiner, error) {
 	tab, err := gosymtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
 
 	return &GoLiner{
-		logger: log.With(logger, "liner", "go"),
-		symtab: tab,
+		logger:   log.With(logger, "liner", "go"),
+		symtab:   tab,
+		f:        f,
+		filename: filename,
 	}, nil
+}
+
+func (gl *GoLiner) Close() error {
+	return gl.f.Close()
+}
+
+func (gl *GoLiner) File() string {
+	return gl.filename
+}
+
+func (gl *GoLiner) PCRange() ([2]uint64, error) {
+	minSet := false
+	var min, max uint64
+
+	for _, f := range gl.symtab.Funcs {
+		if !minSet {
+			min = f.Entry
+			minSet = true
+		}
+		if f.End > max {
+			max = f.End
+		}
+	}
+
+	return [2]uint64{min, max}, nil
 }
 
 // PCToLines looks up the line number information for a program counter (memory address).

@@ -28,13 +28,14 @@ import (
 func TestDwarfSymbolizer(t *testing.T) {
 	logger := log.NewNopLogger()
 	demangler := demangle.NewDemangler("simple", true)
-	elfFile, err := elf.Open("testdata/basic-cpp-no-fp-with-debuginfo")
+	filename := "testdata/basic-cpp-no-fp-with-debuginfo"
+	elfFile, err := elf.Open(filename)
 	if err != nil {
 		panic("failure opening elf file")
 	}
 	defer elfFile.Close()
 
-	dwarf, err := DWARF(logger, elfFile, demangler)
+	dwarf, err := DWARF(logger, filename, elfFile, demangler)
 	if err != nil {
 		panic("failure reading DWARF file")
 	}
