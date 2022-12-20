@@ -20,7 +20,7 @@ import {downloadPprof} from './utils';
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
 import {saveAsBlob} from '@parca/functions';
 import {useEffect} from 'react';
-import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -39,7 +39,8 @@ export const ProfileViewWithData = ({
   const profileVisState = useProfileVisState();
   const metadata = useGrpcMetadata();
   const {currentView} = profileVisState;
-  const [disableTrimming] = useUIFeatureFlag('flamegraphDisableTrimming', false);
+  const [disableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.DISABLE_TRIMMING.key);
+  const [nodeTrimThreshold] = useUserPreference<number>(USER_PREFERENCES.NODE_TRIM_THRESHOLD.key);
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
@@ -47,6 +48,7 @@ export const ProfileViewWithData = ({
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
     skip: currentView !== 'icicle' && currentView !== 'both',
     disableTrimming,
+    nodeTrimThreshold,
   });
   const {perf} = useParcaContext();
 

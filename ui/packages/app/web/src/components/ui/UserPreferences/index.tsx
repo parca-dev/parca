@@ -14,7 +14,10 @@
 import {Icon} from '@iconify/react';
 import {Button, IconButton, Modal} from '@parca/components';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+import {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 import {useState} from 'react';
+import GraphTrimming from './GraphTrimming';
+import UserPreferenceItem from './UserPreferenceItem';
 
 interface FlagToggleProps {
   name: string;
@@ -50,16 +53,11 @@ const UserPreferences = () => {
           setIsOpen(false);
         }}
         title="Preferences"
+        className="max-w-[500px]"
       >
-        <div className="min-h-40 min-w-96 mt-8">
-          <FlagToggle
-            name="Highlight matching nodes after filtering"
-            id="highlightAfterFiltering"
-          />
-          <FlagToggle
-            name="Disable trimming of insignificant nodes"
-            id="flamegraphDisableTrimming"
-          />
+        <div className="min-h-40 w-[500px] mt-8">
+          <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING} />
+          <GraphTrimming />
           <div className=" min-w-96 mt-8">
             <h4 className="font-medium mb-2">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />

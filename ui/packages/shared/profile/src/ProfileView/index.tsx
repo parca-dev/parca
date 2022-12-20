@@ -37,6 +37,7 @@ import TopTable from '../TopTable';
 import useDelayedLoader from '../useDelayedLoader';
 
 import '../ProfileView.styles.css';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -123,7 +124,9 @@ export const ProfileView = ({
   const filterByFunctionString = useAppSelector(selectFilterByFunction);
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [highlightAfterFilteringEnabled] = useUIFeatureFlag('highlightAfterFiltering');
+  const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
+    USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
+  );
 
   const {loader, perf} = useParcaContext();
 
