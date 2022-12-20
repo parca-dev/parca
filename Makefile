@@ -6,16 +6,16 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 ifeq ($(GITHUB_BRANCH_NAME),)
-	BRANCH := $(shell git rev-parse --abbrev-ref HEAD)-
+	BRANCH := $(shell $(CMD_GIT) rev-parse --abbrev-ref HEAD)-
 else
 	BRANCH := $(GITHUB_BRANCH_NAME)-
 endif
 ifeq ($(GITHUB_SHA),)
-	COMMIT := $(shell git describe --no-match --dirty --always --abbrev=8)
+	COMMIT := $(shell $(CMD_GIT) describe --no-match --dirty --always --abbrev=8)
 else
 	COMMIT := $(shell echo $(GITHUB_SHA) | cut -c1-8)
 endif
-VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags 2>/dev/null || echo '$(BRANCH)$(COMMIT)'))
+VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags --match='v*' || echo '$(subst /,-,$(BRANCH))$(COMMIT)'))
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
 ENABLE_RACE := no
@@ -55,11 +55,11 @@ go/bin: go/deps
 # renovate: datasource=go depName=mvdan.cc/gofumpt
 GOFUMPT_VERSION := v0.4.0
 gofumpt:
-ifeq (, $(shell which gofumpt))
+ifeq (, $(shell command -v gofumpt >/dev/null))
 	go install mvdan.cc/gofumpt@$(GOFUMPT_VERSION)
 GOFUMPT=$(GOBIN)/gofumpt
 else
-GOFUMPT=$(shell which gofumpt)
+GOFUMPT=$(shell command -v gofumpt)
 endif
 
 # Rather than running this over and over we recommend running gofumpt on save with your editor.
@@ -189,11 +189,11 @@ tmp/help.txt: build
 EMBEDMD_VERSION ?= v2.0.0
 
 embedmd:
-ifeq (, $(shell which embedmd))
+ifeq (, $(shell command -v embedmd >/dev/null))
 	go install github.com/campoy/embedmd/v2@$(EMBEDMD_VERSION)
 EMBEDMD=$(GOBIN)/embedmd
 else
-EMBEDMD=$(shell which embedmd)
+EMBEDMD=$(shell command -v embedmd)
 endif
 
 README.md: embedmd tmp/help.txt

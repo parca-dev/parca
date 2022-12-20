@@ -160,7 +160,7 @@ jobs:
 
       - name: Get branch name
         shell: bash
-        run: echo "GITHUB_BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+        run: echo "GITHUB_BRANCH_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: Build container
         run: make container
