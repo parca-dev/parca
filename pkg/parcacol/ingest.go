@@ -22,13 +22,11 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/apache/arrow/go/v8/arrow"
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/klauspost/compress/gzip"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/model/labels"
-	"github.com/segmentio/parquet-go"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -44,6 +42,7 @@ var ErrMissingNameLabel = errors.New("missing __name__ label")
 type Table interface {
 	Schema() *dynparquet.Schema
 	Insert(context.Context, []byte) (tx uint64, err error)
+	InsertRecord(context.Context, arrow.Record) (tx uint64, err error)
 }
 
 type NormalizedIngester struct {
@@ -84,57 +83,20 @@ type Series struct {
 }
 
 func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
-	pBuf, err := ing.schema.GetBuffer(map[string][]string{
-		ColumnLabels:         ing.allLabelNames,
-		ColumnPprofLabels:    ing.allPprofLabelNames,
-		ColumnPprofNumLabels: ing.allPprofNumLabelNames,
-	})
+
+	record, err := SeriesToArrowRecord(
+		ing.schema,
+		series,
+		ing.allLabelNames,
+		ing.allPprofLabelNames,
+		ing.allPprofNumLabelNames,
+	)
 	if err != nil {
 		return err
 	}
-	defer ing.schema.PutBuffer(pBuf)
+	defer record.Release()
 
-	var r parquet.Row
-	for _, s := range series {
-		for _, normalizedProfiles := range s.Samples {
-			for _, p := range normalizedProfiles {
-				if len(p.Samples) == 0 {
-					ls := labels.FromMap(s.Labels)
-					level.Debug(ing.logger).Log("msg", "no samples found in profile, dropping it", "name", p.Meta.Name, "sample_type", p.Meta.SampleType.Type, "sample_unit", p.Meta.SampleType.Unit, "labels", ls)
-					continue
-				}
-
-				for _, profileSample := range p.Samples {
-					r = SampleToParquetRow(
-						ing.schema,
-						r[:0],
-						ing.allLabelNames,
-						ing.allPprofLabelNames,
-						ing.allPprofNumLabelNames,
-						s.Labels,
-						p.Meta,
-						profileSample,
-					)
-					_, err := pBuf.WriteRows([]parquet.Row{r})
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-
-	pBuf.Sort()
-
-	buf := ing.bufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer ing.bufferPool.Put(buf)
-
-	if err := ing.schema.SerializeBuffer(buf, pBuf.Buffer); err != nil {
-		return err
-	}
-
-	if _, err := ing.table.Insert(ctx, buf.Bytes()); err != nil {
+	if _, err := ing.table.InsertRecord(ctx, record); err != nil {
 		return err
 	}
 
