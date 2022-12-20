@@ -14,12 +14,12 @@
 package addr2line
 
 import (
+	"debug/dwarf"
 	"debug/elf"
 	"fmt"
 	"runtime/debug"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
@@ -30,20 +30,74 @@ import (
 type DwarfLiner struct {
 	logger log.Logger
 
-	dbgFile elfutils.DebugInfoFile
+	debugData *dwarf.Data
+	dbgFile   elfutils.DebugInfoFile
+	f         *elf.File
+	filename  string
 }
 
 // DWARF creates a new DwarfLiner.
-func DWARF(logger log.Logger, f *elf.File, demangler *demangle.Demangler) (*DwarfLiner, error) {
-	dbgFile, err := elfutils.NewDebugInfoFile(f, demangler)
+func DWARF(logger log.Logger, filename string, f *elf.File, demangler *demangle.Demangler) (*DwarfLiner, error) {
+	debugData, err := f.DWARF()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
+	}
+
+	dbgFile, err := elfutils.NewDebugInfoFile(debugData, demangler)
 	if err != nil {
 		return nil, err
 	}
 
 	return &DwarfLiner{
-		logger:  log.With(logger, "liner", "dwarf"),
-		dbgFile: dbgFile,
+		logger:    log.With(logger, "liner", "dwarf"),
+		dbgFile:   dbgFile,
+		debugData: debugData,
+		f:         f,
+		filename:  filename,
 	}, nil
+}
+
+func (dl *DwarfLiner) Close() error {
+	return dl.f.Close()
+}
+
+func (dl *DwarfLiner) File() string {
+	return dl.filename
+}
+
+func (dl *DwarfLiner) PCRange() ([2]uint64, error) {
+	r := dl.debugData.Reader()
+
+	minSet := false
+	var min, max uint64
+	for {
+		e, err := r.Next()
+		if err != nil {
+			return [2]uint64{}, fmt.Errorf("read DWARF entry: %w", err)
+		}
+		if e == nil {
+			break
+		}
+
+		ranges, err := dl.debugData.Ranges(e)
+		if err != nil {
+			return [2]uint64{}, err
+		}
+		for _, pcs := range ranges {
+			if !minSet {
+				min = pcs[0]
+				minSet = true
+			}
+			if pcs[1] > max {
+				max = pcs[1]
+			}
+			if pcs[0] < min {
+				min = pcs[0]
+			}
+		}
+	}
+
+	return [2]uint64{min, max}, nil
 }
 
 // PCToLines returns the resolved source lines for a program counter (memory address).
@@ -57,7 +111,6 @@ func (dl *DwarfLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err 
 
 	lines, err = dl.dbgFile.SourceLines(addr)
 	if err != nil {
-		level.Debug(dl.logger).Log("msg", "failed to symbolize location", "addr", fmt.Sprintf("0x%x", addr), "err", err)
 		return nil, err
 	}
 	return lines, nil

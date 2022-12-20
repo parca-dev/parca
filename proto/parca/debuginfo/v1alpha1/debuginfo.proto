@@ -173,4 +173,12 @@ message DebuginfoUpload {
 message DebuginfoQuality {
   // The debuginfo file is not a valid ELF file.
   bool not_valid_elf = 1;
+  // Whether the debuginfo contains dwarf information.
+  bool has_dwarf = 2;
+  // Whether the debuginfo contains Go's pclntab.
+  bool has_go_pclntab = 3;
+  // Whether the debuginfo contains symtab.
+  bool has_symtab = 4;
+  // Whether the debuginfo contains dynsym.
+  bool has_dynsym = 5;
 }

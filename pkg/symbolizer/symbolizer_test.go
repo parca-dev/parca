@@ -41,7 +41,6 @@ import (
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profilestore"
-	"github.com/parca-dev/parca/pkg/symbol"
 )
 
 func TestSymbolizer(t *testing.T) {
@@ -434,9 +433,6 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		os.RemoveAll(symbolizerCacheDir)
 	})
 
-	sym, err := symbol.NewSymbolizer(logger)
-	require.NoError(t, err)
-
 	cfg, err := yaml.Marshal(&client.BucketConfig{
 		Type: client.FILESYSTEM,
 		Config: filesystem.Config{
@@ -509,8 +505,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		prometheus.NewRegistry(),
 		metadata,
 		metastore,
-		debuginfo.NewFetcher(metadata, debuginfodClient, bucket),
-		sym,
+		debuginfo.NewFetcher(debuginfodClient, bucket),
 		symbolizerCacheDir,
 		0,
 	)

@@ -47,15 +47,13 @@ func NewObjectStoreMetadata(logger log.Logger, bucket objstore.Bucket) *ObjectSt
 	return &ObjectStoreMetadata{logger: log.With(logger, "component", "debuginfo-metadata"), bucket: bucket}
 }
 
-func (m *ObjectStoreMetadata) MarkAsNotValidELF(ctx context.Context, buildID string) error {
+func (m *ObjectStoreMetadata) SetQuality(ctx context.Context, buildID string, quality *debuginfopb.DebuginfoQuality) error {
 	dbginfo, err := m.Fetch(ctx, buildID)
 	if err != nil {
 		return err
 	}
 
-	dbginfo.Quality = &debuginfopb.DebuginfoQuality{
-		NotValidElf: true,
-	}
+	dbginfo.Quality = quality
 
 	if err := m.write(ctx, dbginfo); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)

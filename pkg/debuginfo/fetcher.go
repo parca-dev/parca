@@ -16,67 +16,36 @@ package debuginfo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
-	"time"
 
 	"github.com/thanos-io/objstore"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
-var ErrUnknownDebuginfoSource = errors.New("unknown debuginfo source")
+var (
+	ErrUnknownDebuginfoSource = errors.New("unknown debuginfo source")
+	ErrNotUploadedYet         = errors.New("debuginfo not uploaded yet")
+)
 
 type Fetcher struct {
-	metadata         MetadataManager
 	debuginfodClient DebuginfodClient
 	bucket           objstore.Bucket
 }
 
 func NewFetcher(
-	metadata MetadataManager,
 	debuginfodClient DebuginfodClient,
 	bucket objstore.Bucket,
 ) *Fetcher {
 	return &Fetcher{
-		metadata:         metadata,
 		debuginfodClient: debuginfodClient,
 		bucket:           bucket,
 	}
 }
 
-func (f *Fetcher) FetchDebuginfo(ctx context.Context, buildid string) (io.ReadCloser, error) {
-	dbginfo, err := f.metadata.Fetch(ctx, buildid)
-	if err != nil {
-		return nil, fmt.Errorf("fetching metadata: %w", err)
-	}
-
+func (f *Fetcher) FetchDebuginfo(ctx context.Context, dbginfo *debuginfopb.Debuginfo) (io.ReadCloser, error) {
 	switch dbginfo.Source {
 	case debuginfopb.Debuginfo_SOURCE_UPLOAD:
-		if dbginfo.Upload.State != debuginfopb.DebuginfoUpload_STATE_UPLOADED {
-			ticker := time.NewTicker(10 * time.Second)
-			defer ticker.Stop()
-
-			ctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
-			defer cancel()
-			for {
-				select {
-				case <-ctx.Done():
-					return nil, errors.New("timed out waiting for upload to finish")
-				default:
-				}
-
-				dbginfo, err = f.metadata.Fetch(ctx, buildid)
-				if err != nil {
-					return nil, fmt.Errorf("fetching metadata: %w", err)
-				}
-
-				if dbginfo.Upload.State == debuginfopb.DebuginfoUpload_STATE_UPLOADED {
-					break
-				}
-			}
-		}
-
 		return f.fetchFromBucket(ctx, dbginfo)
 	case debuginfopb.Debuginfo_SOURCE_DEBUGINFOD:
 		return f.fetchFromDebuginfod(ctx, dbginfo)

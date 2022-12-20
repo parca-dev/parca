@@ -1,1 +1,13 @@
-{"buildId":"2d6912fd3dd64542f6f6294f4bf9cb6c265b3085","upload":{"id":"my-upload-id","state":"STATE_UPLOADED"},"source":"SOURCE_UPLOAD"}
+{
+  "buildId": "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
+  "source": "SOURCE_UPLOAD",
+  "upload": {
+    "id": "my-upload-id",
+    "state": "STATE_UPLOADED"
+  },
+  "quality": {
+    "hasDwarf": true,
+    "hasGoPclntab": true,
+    "hasSymtab": true
+  }
+}
