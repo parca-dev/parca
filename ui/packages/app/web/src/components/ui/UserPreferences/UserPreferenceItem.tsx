@@ -47,6 +47,7 @@ const GenericInput = ({id, type, value, onChange, disabled = false}: GenericInpu
         />
       );
   }
+  return null;
 };
 
 interface UserPreferenceItemProps {
