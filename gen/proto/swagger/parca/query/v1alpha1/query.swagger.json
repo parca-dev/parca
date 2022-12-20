@@ -325,6 +325,14 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "nodeTrimThreshold",
+            "description": "node_trim_threshold is the threshold for trimming insignificant nodes in the report",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "float"
           }
         ],
         "tags": [
@@ -710,6 +718,11 @@
         "disableTrimming": {
           "type": "boolean",
           "title": "disable_trimming disables trimming of insignificant nodes in the report"
+        },
+        "nodeTrimThreshold": {
+          "type": "number",
+          "format": "float",
+          "title": "node_trim_threshold is the threshold for trimming insignificant nodes in the report"
         }
       },
       "title": "QueryRequest is a request for a profile query"

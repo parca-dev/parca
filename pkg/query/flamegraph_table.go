@@ -24,7 +24,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, disableTriming bool) (*querypb.Flamegraph, error) {
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, disableTriming bool, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
 	rootNode := &querypb.FlamegraphNode{}
 	current := rootNode
 
@@ -126,7 +126,7 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		return aggregatedFlamegraph, nil
 	}
 
-	return TrimFlamegraph(ctx, tracer, aggregatedFlamegraph, NodeCutOffFraction), nil
+	return TrimFlamegraph(ctx, tracer, aggregatedFlamegraph, nodeTrimFraction), nil
 }
 
 type tableConverter struct {
@@ -500,7 +500,7 @@ func (n FlamegraphChildren) Diff() int64 {
 	return diff
 }
 
-func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, thresholdRate float64) *querypb.Flamegraph {
+func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, thresholdRate float32) *querypb.Flamegraph {
 	ctx, span := tracer.Start(ctx, "trimFlamegraph")
 	defer span.End()
 	if graph == nil {
@@ -508,7 +508,7 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	}
 	total := graph.Total
 
-	threshold := int64(thresholdRate * float64(total))
+	threshold := int64(float64(thresholdRate) * float64(total))
 	var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, graph.Root.Children, threshold)
 	newTotal := int64(0)
 	newDiff := int64(0)

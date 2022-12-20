@@ -227,6 +227,9 @@ message QueryRequest {
 
   // disable_trimming disables trimming of insignificant nodes in the report
   optional bool disable_trimming = 7;
+
+  // node_trim_threshold is the threshold for trimming insignificant nodes in the report
+  optional float node_trim_threshold = 8;
 }
 
 // Top is the top report type

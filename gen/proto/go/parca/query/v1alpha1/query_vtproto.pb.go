@@ -6,6 +6,7 @@ package queryv1alpha1
 
 import (
 	context "context"
+	binary "encoding/binary"
 	fmt "fmt"
 	v1alpha11 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	v1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
@@ -16,6 +17,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
+	math "math"
 	bits "math/bits"
 )
 
@@ -1100,6 +1102,12 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 				return 0, err
 			}
 		}
+	}
+	if m.NodeTrimThreshold != nil {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(*m.NodeTrimThreshold))))
+		i--
+		dAtA[i] = 0x45
 	}
 	if m.DisableTrimming != nil {
 		i--
@@ -2939,6 +2947,9 @@ func (m *QueryRequest) SizeVT() (n int) {
 	}
 	if m.DisableTrimming != nil {
 		n += 2
+	}
+	if m.NodeTrimThreshold != nil {
+		n += 5
 	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
@@ -5377,6 +5388,18 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.DisableTrimming = &b
+		case 8:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeTrimThreshold", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			v2 := float32(math.Float32frombits(v))
+			m.NodeTrimThreshold = &v2
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
