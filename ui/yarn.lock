@@ -3362,10 +3362,10 @@
   resolved "https://registry.yarnpkg.com/@mapbox/unitbezier/-/unitbezier-0.0.0.tgz#15651bd553a67b8581fb398810c98ad86a34524e"
   integrity sha512-HPnRdYO0WjFjRTSwO3frz1wKaU649OBFPX3Zo/2WZvuRi6zMiRGui8SnPQiQABgqCf8YikDe5t3HViTVw1WUzA==
 
-"@mdx-js/loader@2.1.5":
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/@mdx-js/loader/-/loader-2.1.5.tgz#4e764c65333530fd786dfe4f36e918dfeac0200b"
-  integrity sha512-oXjfTa/iAcMmW8DdQ+hQFodPCLqw5VKT2yoZkLwrZfPVVpUgKrI+5/ZePYq328xxtAUStZmR3ed0PWJrwd5Pkg==
+"@mdx-js/loader@2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@mdx-js/loader/-/loader-2.2.1.tgz#71634e87659cd29240933d174a151a4d4ab3b70c"
+  integrity sha512-J4E8A5H+xtk4otZiEZ5AXl61Tj04Avm5MqLQazITdI3+puVXVnTTuZUKM1oNHTtfDIfOl0uMt+o/Ij+x6Fvf+g==
   dependencies:
     "@mdx-js/mdx" "^2.0.0"
     source-map "^0.7.0"
