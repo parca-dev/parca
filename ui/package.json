@@ -67,7 +67,7 @@
     "@typescript-eslint/eslint-plugin": "^5.45.1",
     "@typescript-eslint/parser": "^5.45.1",
     "arg": "5.0.2",
-    "css-loader": "6.7.2",
+    "css-loader": "6.7.3",
     "dev-kong": "0.11.0",
     "eslint": "8.29.0",
     "eslint-config-prettier": "8.5.0",
