@@ -194,7 +194,7 @@ func local_request_QueryService_Labels_0(ctx context.Context, marshaler runtime.
 }
 
 var (
-	filter_QueryService_Values_0 = &utilities.DoubleArray{Encoding: map[string]int{"label_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_QueryService_Values_0 = &utilities.DoubleArray{Encoding: map[string]int{"label_name": 0, "labelName": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 )
 
 func request_QueryService_Values_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
