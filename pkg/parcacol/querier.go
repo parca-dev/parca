@@ -280,9 +280,13 @@ func (q *Querier) QueryRange(
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			logicalplan.Sum(logicalplan.Col("value")),
-			logicalplan.DynCol("labels"),
-			logicalplan.Col("timestamp"),
+			[]logicalplan.Expr{
+				logicalplan.Sum(logicalplan.Col("value")),
+			},
+			[]logicalplan.Expr{
+				logicalplan.DynCol("labels"),
+				logicalplan.Col("timestamp"),
+			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -568,10 +572,14 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			logicalplan.Sum(logicalplan.Col("value")),
-			logicalplan.Col("stacktrace"),
-			logicalplan.DynCol("pprof_labels"),
-			logicalplan.DynCol("pprof_num_labels"),
+			[]logicalplan.Expr{
+				logicalplan.Sum(logicalplan.Col("value")),
+			},
+			[]logicalplan.Expr{
+				logicalplan.Col("stacktrace"),
+				logicalplan.DynCol("pprof_labels"),
+				logicalplan.DynCol("pprof_num_labels"),
+			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -640,8 +648,12 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			logicalplan.Sum(logicalplan.Col("value")),
-			logicalplan.Col("stacktrace"),
+			[]logicalplan.Expr{
+				logicalplan.Sum(logicalplan.Col("value")),
+			},
+			[]logicalplan.Expr{
+				logicalplan.Col("stacktrace"),
+			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
