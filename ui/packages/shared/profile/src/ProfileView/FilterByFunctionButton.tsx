@@ -31,7 +31,7 @@ const FilterByFunctionButton = ({navigateTo}): JSX.Element => {
     } else {
       setStoreValue(localValue);
     }
-  }, [localValue, isClearAction]);
+  }, [localValue, isClearAction, setStoreValue]);
 
   return (
     <Input

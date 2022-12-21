@@ -28,7 +28,7 @@ const ViewSelector = ({defaultValue, navigateTo, position}: Props): JSX.Element 
     navigateTo,
   });
 
-  const allItems: {key: string; canBeSelected: boolean; supportingText?: string}[] = [
+  const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
   ];
@@ -46,8 +46,8 @@ const ViewSelector = ({defaultValue, navigateTo, position}: Props): JSX.Element 
     key: string;
     supportingText?: string;
   }): SelectElement => {
-    const capitalizeFirstLetter = string => {
-      return string.charAt(0).toUpperCase() + string.slice(1);
+    const capitalizeFirstLetter = (string: string): string => {
+      return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
     };
 
     const title = capitalizeFirstLetter(key);
@@ -57,7 +57,7 @@ const ViewSelector = ({defaultValue, navigateTo, position}: Props): JSX.Element 
       expanded: (
         <>
           <span>{title}</span>
-          {supportingText && <span className="text-xs">{supportingText}</span>}
+          {supportingText !== null && <span className="text-xs">{supportingText}</span>}
         </>
       ),
     };

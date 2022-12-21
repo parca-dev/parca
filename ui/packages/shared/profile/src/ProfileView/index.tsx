@@ -136,40 +136,45 @@ export const ProfileView = ({
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
 
-  const getDashboardItemByType = ({type, isHalfScreen}: {type: string; isHalfScreen: boolean}) => {
+  const getDashboardItemByType = ({
+    type,
+    isHalfScreen,
+  }: {
+    type: string;
+    isHalfScreen: boolean;
+  }): JSX.Element => {
     switch (type) {
       case 'icicle': {
-        return (
-          flamegraphData?.data != null && (
-            <Profiler id="icicleGraph" onRender={perf?.onRender as React.ProfilerOnRenderCallback}>
-              <ProfileIcicleGraph
-                curPath={curPath}
-                setNewCurPath={setNewCurPath}
-                graph={flamegraphData.data}
-                sampleUnit={sampleUnit}
-              />
-            </Profiler>
-          )
+        return flamegraphData?.data != null ? (
+          <Profiler id="icicleGraph" onRender={perf?.onRender as React.ProfilerOnRenderCallback}>
+            <ProfileIcicleGraph
+              curPath={curPath}
+              setNewCurPath={setNewCurPath}
+              graph={flamegraphData.data}
+              sampleUnit={sampleUnit}
+            />
+          </Profiler>
+        ) : (
+          <></>
         );
       }
       case 'callgraph': {
-        return (
-          callgraphData?.data != null &&
-          dimensions?.width !== undefined && (
-            <Callgraph
-              graph={callgraphData.data}
-              sampleUnit={sampleUnit}
-              width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
-              colorRange={colorRange}
-            />
-          )
+        return callgraphData?.data != null && dimensions?.width !== undefined ? (
+          <Callgraph
+            graph={callgraphData.data}
+            sampleUnit={sampleUnit}
+            width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
+            colorRange={colorRange}
+          />
+        ) : (
+          <></>
         );
       }
       case 'table': {
-        return (
-          topTableData != null && (
-            <TopTable data={topTableData.data} sampleUnit={sampleUnit} navigateTo={navigateTo} />
-          )
+        return topTableData != null ? (
+          <TopTable data={topTableData.data} sampleUnit={sampleUnit} navigateTo={navigateTo} />
+        ) : (
+          <></>
         );
       }
       default: {
@@ -178,16 +183,16 @@ export const ProfileView = ({
     }
   };
 
-  const handleAddView = () => {
+  const handleAddView = (): void => {
     const newDashboardItems = [...dashboardItems, ''];
     setDashboardItems(newDashboardItems);
   };
 
-  const handleResetView = () => {
+  const handleResetView = (): void => {
     setDashboardItems(['icicle']);
   };
 
-  const handleClosePanel = visualizationType => {
+  const handleClosePanel = (visualizationType: string): void => {
     const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);
     setDashboardItems(newDashboardItems);
   };

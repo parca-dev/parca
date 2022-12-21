@@ -27,26 +27,31 @@ interface Props {
   withURLUpdate?: boolean;
 }
 
-export const useURLState = ({param, navigateTo, withURLUpdate = true}) => {
+export const useURLState = ({
+  param,
+  navigateTo,
+  withURLUpdate = true,
+}: Props): [string | string[], (string) => void] => {
   const dispatch = useAppDispatch();
   const router = parseParams(window.location.search);
   const [highlightAfterFilteringEnabled] = useUIFeatureFlag('highlightAfterFiltering');
 
   // 1. set initial value to the store value or URL value
   const value = useAppSelector(selectProfileStateValue(param)) ?? router[param];
-  const setValue = value => dispatch(setProfileStateValue({key: param, value}));
+  const setValue = (value): {payload: {key: string; value?: string | string[]}; type: string} =>
+    dispatch(setProfileStateValue({key: param, value}));
 
   // whenever the store value changes, (optionally) update the URL
   useEffect(() => {
-    const isEmpty = val => val === undefined || val === null || val === '';
+    const isEmpty = (val): boolean => val === undefined || val === null || val === '';
 
-    if (withURLUpdate && navigateTo) {
+    if (withURLUpdate && navigateTo !== undefined) {
       if (router[param] !== value) {
         const searchParams = router;
         searchParams[param] = value;
 
         if (param === 'filter_by_function') {
-          searchParams['search_string'] = highlightAfterFilteringEnabled ? value : '';
+          searchParams.search_string = highlightAfterFilteringEnabled ? value : '';
         }
 
         if (param === 'dashboard_items') {
@@ -54,23 +59,24 @@ export const useURLState = ({param, navigateTo, withURLUpdate = true}) => {
         }
 
         Object.keys(searchParams).forEach(
+          // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
           key => isEmpty(searchParams[key]) && delete searchParams[key]
         );
 
         navigateTo('/', {...searchParams}, {replace: true});
       }
     }
-  }, [value]);
+  }, [value, highlightAfterFilteringEnabled, navigateTo, param, router, withURLUpdate]);
 
   if (param === 'dashboard_items') {
     let dashboardItems: string[] = [];
     if (typeof value === 'string') {
-      dashboardItems = [value as string] ?? [];
+      dashboardItems = [value] ?? [];
     } else {
-      dashboardItems = value as string[];
+      dashboardItems = value;
     }
-    return [dashboardItems, setValue] as const;
+    return [dashboardItems, setValue];
   }
 
-  return [value, setValue] as const;
+  return [value, setValue];
 };

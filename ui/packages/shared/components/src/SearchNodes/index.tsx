@@ -38,7 +38,7 @@ const SearchNodes = ({navigateTo}: Props): JSX.Element => {
     };
 
     return debounce(handleChange, 300);
-  }, []);
+  }, [setSearchString]);
 
   return (
     <div>

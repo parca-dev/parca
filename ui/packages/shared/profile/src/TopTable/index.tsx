@@ -64,7 +64,8 @@ const addPlusSign = (num: string): string => {
 export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProps): JSX.Element => {
   const router = parseParams(window.location.search);
   const currentSearchString = selectQueryParam('search_string') as string;
-  const compareMode = selectQueryParam('compare_a') && selectQueryParam('compare_b');
+  const compareMode =
+    Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
 
   const columns = React.useMemo(() => {
     const cols: Array<ColumnDef<TopNode, any>> = [
@@ -116,18 +117,21 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
     return cols;
   }, [unit, compareMode]);
 
-  const selectSpan = useCallback((span: string): void => {
-    if (navigateTo != null) {
-      navigateTo(
-        '/',
-        {
-          ...router,
-          ...{search_string: span.trim()},
-        },
-        {replace: true}
-      );
-    }
-  }, []);
+  const selectSpan = useCallback(
+    (span: string): void => {
+      if (navigateTo != null) {
+        navigateTo(
+          '/',
+          {
+            ...router,
+            ...{search_string: span.trim()},
+          },
+          {replace: true}
+        );
+      }
+    },
+    [navigateTo, router]
+  );
 
   const onRowClick = useCallback(
     (row: TopNode) => {

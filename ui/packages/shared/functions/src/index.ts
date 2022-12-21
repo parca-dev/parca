@@ -215,29 +215,27 @@ export const parseParams = (querystring: string): Record<string, string | string
   return obj;
 };
 
-export const selectQueryParam = (key: string) => {
+export const selectQueryParam = (key: string): string | string[] | undefined => {
   const router = parseParams(window.location.search);
 
   if (key === 'dashboard_items') {
     let dashboardItems = router[key];
     if (typeof dashboardItems === 'string') {
-      dashboardItems = [dashboardItems as string] ?? [];
+      dashboardItems = [dashboardItems] ?? [];
     }
     return dashboardItems;
   }
 
   if (key === 'compare_a' || key === 'compare_b') {
-    return router[key] === 'true';
+    return router[key] === 'true' ? 'true' : 'false';
   }
 
   return router[key];
 };
 
-export const convertToQueryParams = (
-  params: Record<string, string | string[] | undefined>
-): string =>
+export const convertToQueryParams = (params: string | string[]): string =>
   Object.keys(params)
-    .map(key => key + '=' + params[key])
+    .map((key: string) => `${key}=${params[key] as string}`)
     .join('&');
 
 export function convertUTCToLocalDate(date: Date): Date {

@@ -32,7 +32,8 @@ const ProfileIcicleGraph = ({
   setNewCurPath,
   sampleUnit,
 }: ProfileIcicleGraphProps): JSX.Element => {
-  const compareMode = selectQueryParam('compare_a') && selectQueryParam('compare_b');
+  const compareMode: boolean =
+    Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
   const {ref, dimensions} = useContainerDimensions();
 
   if (graph === undefined) return <div>no data...</div>;
