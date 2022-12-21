@@ -24,5 +24,5 @@ func TestIsSymbolizableGoObjFile(t *testing.T) {
 	f, err := elf.Open("testdata/main")
 	require.NoError(t, err)
 
-	require.True(t, IsSymbolizableGoObjFile(f))
+	require.True(t, HasGoPclntab(f))
 }

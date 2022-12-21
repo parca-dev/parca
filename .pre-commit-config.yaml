@@ -54,11 +54,11 @@ repos:
     hooks:
       - id: hadolint-docker
   - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: v0.8.0
+    rev: v0.9.0
     hooks:
       - id: shellcheck
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.5.1-1
+    rev: v3.5.1-2
     hooks:
       - id: shfmt
         # Google-style w/ 4-space indent

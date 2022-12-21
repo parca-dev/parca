@@ -15,10 +15,9 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/cors v1.2.1
-	github.com/go-delve/delve v1.9.1
+	github.com/go-delve/delve v1.20.1
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/goburrow/cache v0.1.4
 	github.com/google/pprof v0.0.0-20221203041831-ce31453925ec
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
@@ -28,13 +27,13 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0
 	github.com/ianlancetaylor/demangle v0.0.0-20220517205856-0058ec4f073c
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/klauspost/compress v1.15.12
+	github.com/klauspost/compress v1.15.13
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/polarsignals/frostdb v0.0.0-20221212142313-cd6396864829
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.39.0
-	github.com/prometheus/prometheus v0.40.5
+	github.com/prometheus/prometheus v0.40.7
 	github.com/segmentio/parquet-go v0.0.0-20221212205011-52de454c1d86
 	github.com/stretchr/testify v1.8.1
 	github.com/thanos-io/objstore v0.0.0-20221207004404-2e4c6638339a
