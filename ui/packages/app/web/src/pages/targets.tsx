@@ -103,7 +103,7 @@ const TargetsPage = (): JSX.Element => {
   if (targetsError !== null) {
     return <div>Targets Error: {targetsError.toString()}</div>;
   }
-  if (agentsError !== null && agentsError.code !== "UNIMPLEMENTED") {
+  if (agentsError !== null && agentsError.code !== 'UNIMPLEMENTED') {
     return <div>Agents Error: {agentsError.toString()}</div>;
   }
 
