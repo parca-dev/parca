@@ -76,3 +76,18 @@ repos:
     hooks:
       - id: prettier
         files: \.(?:[jt]sx?|md|html|s?css)$
+  - repo: local
+    hooks:
+      - id: post-merge-local
+        name: Post merge
+        description: This hook removes redundant npm dependencies and does a fresh installation.
+        entry: sh ./scripts/post-merge.sh
+        language: system
+        stages: [post-merge]
+      - id: post-checkout-local
+        name: Post checkout
+        always_run: true
+        description: This hook removes redundant npm dependencies and does a fresh installation.
+        entry: sh ./scripts/post-merge.sh
+        language: system
+        stages: [post-checkout]
