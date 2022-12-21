@@ -96,6 +96,10 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	}
 	defer record.Release()
 
+	if record.NumRows() == 0 {
+		return nil
+	}
+
 	if _, err := ing.table.InsertRecord(ctx, record); err != nil {
 		return err
 	}
