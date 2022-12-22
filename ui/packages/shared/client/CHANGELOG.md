@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.16.61 (2022-12-20)
+
+# 0.15.0 (2022-12-20)
+
+**Note:** Version bump only for package @parca/client
+
 ## 0.16.60 (2022-12-19)
 
 **Note:** Version bump only for package @parca/client

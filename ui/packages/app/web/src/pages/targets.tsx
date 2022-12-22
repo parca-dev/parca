@@ -100,9 +100,11 @@ const TargetsPage = (): JSX.Element => {
   const {response: targetsResponse, error: targetsError} = useTargets(scrapeClient);
   const {response: agentsResponse, error: agentsError} = useAgents(agentsClient);
 
-  // TODO: We should support showing the other type's response if only one errors.
-  if (targetsError !== null || agentsError !== null) {
-    return <div>Error</div>;
+  if (targetsError !== null) {
+    return <div>Targets Error: {targetsError.toString()}</div>;
+  }
+  if (agentsError !== null && agentsError.code !== 'UNIMPLEMENTED') {
+    return <div>Agents Error: {agentsError.toString()}</div>;
   }
 
   const getKeyValuePairFromArray = (key: string, value: Targets) => {
