@@ -1107,17 +1107,7 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= 4
 		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(*m.NodeTrimThreshold))))
 		i--
-		dAtA[i] = 0x45
-	}
-	if m.DisableTrimming != nil {
-		i--
-		if *m.DisableTrimming {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x38
+		dAtA[i] = 0x3d
 	}
 	if m.FilterQuery != nil {
 		i -= len(*m.FilterQuery)
@@ -1418,6 +1408,11 @@ func (m *Flamegraph) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.UntrimmedTotal != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.UntrimmedTotal))
+		i--
+		dAtA[i] = 0x48
 	}
 	if len(m.Function) > 0 {
 		for iNdEx := len(m.Function) - 1; iNdEx >= 0; iNdEx-- {
@@ -2945,9 +2940,6 @@ func (m *QueryRequest) SizeVT() (n int) {
 		l = len(*m.FilterQuery)
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.DisableTrimming != nil {
-		n += 2
-	}
 	if m.NodeTrimThreshold != nil {
 		n += 5
 	}
@@ -3117,6 +3109,9 @@ func (m *Flamegraph) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
+	}
+	if m.UntrimmedTotal != 0 {
+		n += 1 + sov(uint64(m.UntrimmedTotal))
 	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
@@ -5368,27 +5363,6 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			m.FilterQuery = &s
 			iNdEx = postIndex
 		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DisableTrimming", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			b := bool(v != 0)
-			m.DisableTrimming = &b
-		case 8:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NodeTrimThreshold", wireType)
 			}
@@ -6185,6 +6159,25 @@ func (m *Flamegraph) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UntrimmedTotal", wireType)
+			}
+			m.UntrimmedTotal = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UntrimmedTotal |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

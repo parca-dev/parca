@@ -225,11 +225,8 @@ message QueryRequest {
   // filter_query is the query string to filter the profile samples
   optional string filter_query = 6;
 
-  // disable_trimming disables trimming of insignificant nodes in the report
-  optional bool disable_trimming = 7;
-
-  // node_trim_threshold is the threshold for trimming insignificant nodes in the report
-  optional float node_trim_threshold = 8;
+  // node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
+  optional float node_trim_threshold = 7;
 }
 
 // Top is the top report type
@@ -302,6 +299,9 @@ message Flamegraph {
 
   // function deduplicated by their ID to be referenced by nodes.
   repeated parca.metastore.v1alpha1.Function function = 8;
+
+  // untrimmed_total is the total weight of the flame graph before trimming
+  int64 untrimmed_total = 9;
 }
 
 // FlamegraphRootNode is a root node of a flame graph

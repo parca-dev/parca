@@ -413,6 +413,11 @@
             "$ref": "#/definitions/metastorev1alpha1Function"
           },
           "description": "function deduplicated by their ID to be referenced by nodes."
+        },
+        "untrimmedTotal": {
+          "type": "string",
+          "format": "int64",
+          "title": "untrimmed_total is the total weight of the flame graph before trimming"
         }
       },
       "title": "Flamegraph is the flame graph report type"

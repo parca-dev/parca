@@ -24,7 +24,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, disableTriming bool, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
 	rootNode := &querypb.FlamegraphNode{}
 	current := rootNode
 
@@ -104,9 +104,10 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 			Diff:       rootNode.Diff,
 			Children:   rootNode.Children,
 		},
-		Total:  rootNode.Cumulative,
-		Unit:   p.Meta.SampleType.Unit,
-		Height: height + 1, // add one for the root
+		Total:          rootNode.Cumulative,
+		UntrimmedTotal: rootNode.Cumulative,
+		Unit:           p.Meta.SampleType.Unit,
+		Height:         height + 1, // add one for the root
 
 		StringTable: tables.Strings(),
 		Mapping:     tables.Mappings(),
@@ -122,7 +123,7 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 
 	aggregatedFlamegraph := aggregateByFunctionTable(tables, flamegraph)
 
-	if disableTriming {
+	if nodeTrimFraction == 0 {
 		return aggregatedFlamegraph, nil
 	}
 
@@ -515,9 +516,6 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	if len(graph.Root.Children) > 0 {
 		newTotal = children.Cumulative()
 		newDiff = children.Diff()
-	} else {
-		newTotal = graph.Root.Cumulative
-		newDiff = graph.Root.Diff
 	}
 
 	trimmedGraph := &querypb.Flamegraph{
@@ -526,13 +524,14 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 			Cumulative: newTotal,
 			Diff:       newDiff,
 		},
-		Total:       newTotal,
-		Unit:        graph.Unit,
-		Height:      graph.Height,
-		StringTable: graph.StringTable,
-		Locations:   graph.Locations,
-		Mapping:     graph.Mapping,
-		Function:    graph.Function,
+		Total:          newTotal,
+		UntrimmedTotal: graph.Total,
+		Unit:           graph.Unit,
+		Height:         graph.Height,
+		StringTable:    graph.StringTable,
+		Locations:      graph.Locations,
+		Mapping:        graph.Mapping,
+		Function:       graph.Function,
 	}
 
 	return trimmedGraph

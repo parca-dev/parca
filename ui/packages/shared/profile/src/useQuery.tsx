@@ -26,7 +26,6 @@ export interface IQueryResult {
 
 interface UseQueryOptions {
   skip?: boolean;
-  disableTrimming?: boolean;
   nodeTrimThreshold?: number;
 }
 
@@ -36,14 +35,13 @@ export const useQuery = (
   reportType: QueryRequest_ReportType,
   options?: UseQueryOptions
 ): IQueryResult => {
-  const {skip = false, disableTrimming = false} = options ?? {};
+  const {skip = false} = options ?? {};
   const metadata = useGrpcMetadata();
   const {data, isLoading, error} = useGrpcQuery<QueryResponse | undefined>({
-    key: ['query', profileSource, reportType, options?.disableTrimming, options?.nodeTrimThreshold],
+    key: ['query', profileSource, reportType, options?.nodeTrimThreshold],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
       req.reportType = reportType;
-      req.disableTrimming = disableTrimming;
       req.nodeTrimThreshold = options?.nodeTrimThreshold;
 
       const {response} = await client.query(req, {meta: metadata});

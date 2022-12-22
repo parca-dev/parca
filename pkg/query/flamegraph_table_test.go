@@ -141,7 +141,7 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, true, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0))
 	require.NoError(t, err)
 
 	require.Equal(t, int32(5), fg.Height)
@@ -297,7 +297,7 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, true, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0))
 	require.NoError(t, err)
 
 	require.Equal(t, int32(2), fg.Height)
@@ -403,7 +403,7 @@ func testGenerateFlamegraphTableFromProfile(t *testing.T, l metastorepb.Metastor
 	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, true, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, float32(0))
 	require.NoError(t, err)
 
 	return fg
@@ -461,7 +461,7 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, true, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0))
 	require.NoError(t, err)
 
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
@@ -614,7 +614,7 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, true, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0))
 	require.NoError(t, err)
 
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
@@ -768,7 +768,8 @@ func TestFlamegraphTrimming(t *testing.T) {
 	}
 	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, 0.02)
 	require.Equal(t, &pb.Flamegraph{
-		Total: 100,
+		Total:          100,
+		UntrimmedTotal: 102,
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: 100,
 			Children: []*pb.FlamegraphNode{
@@ -819,13 +820,20 @@ func TestFlamegraphTrimmingSingleNodeGraph(t *testing.T) {
 		Total: 100,
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: 100,
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 100,
+			}},
 		},
 	}
 	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, float32(0.02))
 	require.Equal(t, &pb.Flamegraph{
-		Total: 100,
+		Total:          100,
+		UntrimmedTotal: 100,
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: 100,
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 100,
+			}},
 		},
 	}, trimmedGraph)
 }

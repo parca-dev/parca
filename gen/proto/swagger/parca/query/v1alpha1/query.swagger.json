@@ -320,15 +320,8 @@
             "type": "string"
           },
           {
-            "name": "disableTrimming",
-            "description": "disable_trimming disables trimming of insignificant nodes in the report",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
             "name": "nodeTrimThreshold",
-            "description": "node_trim_threshold is the threshold for trimming insignificant nodes in the report",
+            "description": "node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report",
             "in": "query",
             "required": false,
             "type": "number",
@@ -715,14 +708,10 @@
           "type": "string",
           "title": "filter_query is the query string to filter the profile samples"
         },
-        "disableTrimming": {
-          "type": "boolean",
-          "title": "disable_trimming disables trimming of insignificant nodes in the report"
-        },
         "nodeTrimThreshold": {
           "type": "number",
           "format": "float",
-          "title": "node_trim_threshold is the threshold for trimming insignificant nodes in the report"
+          "title": "node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -965,6 +954,11 @@
             "$ref": "#/definitions/metastorev1alpha1Function"
           },
           "description": "function deduplicated by their ID to be referenced by nodes."
+        },
+        "untrimmedTotal": {
+          "type": "string",
+          "format": "int64",
+          "title": "untrimmed_total is the total weight of the flame graph before trimming"
         }
       },
       "title": "Flamegraph is the flame graph report type"

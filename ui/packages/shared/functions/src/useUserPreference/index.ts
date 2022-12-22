@@ -29,17 +29,11 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     type: 'boolean',
     default: true,
   },
-  DISABLE_TRIMMING: {
-    name: 'Disable trimming of insignificant nodes',
-    key: 'DISABLE_TRIMMING',
+  DISABLE_GRAPH_TRIMMING: {
+    name: 'Disable trimming of nodes that are too small to be seen',
+    key: 'DISABLE_GRAPH_TRIMMING',
     type: 'boolean',
     default: false,
-  },
-  NODE_TRIM_THRESHOLD: {
-    name: 'Node trim threshold',
-    key: 'NODE_TRIM_THRESHOLD',
-    type: 'number',
-    default: 0.5,
   },
 } as const;
 

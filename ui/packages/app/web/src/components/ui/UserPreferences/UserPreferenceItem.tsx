@@ -38,9 +38,10 @@ const GenericInput = ({id, type, value, onChange, disabled = false}: GenericInpu
     case 'number':
       return (
         <input
-          className="bg-inherit border p-1 w-20 disabled:cursor-not-allowed rounded-sm"
+          className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 p-1 px-2 w-20 disabled:cursor-not-allowed rounded-md"
           id={id}
           type="number"
+          min="0"
           value={value}
           onChange={e => onChange(Number(e.target.value))}
           disabled={disabled}
@@ -53,13 +54,17 @@ const GenericInput = ({id, type, value, onChange, disabled = false}: GenericInpu
 interface UserPreferenceItemProps {
   userPreferenceDetails: UserPreferenceDetails;
   className?: string;
+  labelToLeft?: boolean;
   disabled?: boolean;
+  inputSuffix?: string;
 }
 
 function UserPreferenceItem<T>({
   userPreferenceDetails,
   className = '',
+  labelToLeft = false,
   disabled = false,
+  inputSuffix = '',
 }: UserPreferenceItemProps) {
   const [enabledTrimming, setEnabledTrimming] = useUserPreference<T>(userPreferenceDetails.key);
 
@@ -67,6 +72,9 @@ function UserPreferenceItem<T>({
     <div
       className={cx('flex gap-2 items-center', {[className]: className, 'opacity-50': disabled})}
     >
+      {labelToLeft ? (
+        <label htmlFor={userPreferenceDetails.key}>{userPreferenceDetails.name}</label>
+      ) : null}
       <GenericInput
         id={userPreferenceDetails.key}
         value={enabledTrimming}
@@ -74,7 +82,10 @@ function UserPreferenceItem<T>({
         type={userPreferenceDetails.type}
         disabled={disabled}
       />
-      <label htmlFor={userPreferenceDetails.key}>{userPreferenceDetails.name}</label>
+      {inputSuffix ? <span>{inputSuffix}</span> : null}
+      {!labelToLeft ? (
+        <label htmlFor={userPreferenceDetails.key}>{userPreferenceDetails.name}</label>
+      ) : null}
     </div>
   );
 }

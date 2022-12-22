@@ -16,7 +16,6 @@ import {Button, IconButton, Modal} from '@parca/components';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 import {useState} from 'react';
-import GraphTrimming from './GraphTrimming';
 import UserPreferenceItem from './UserPreferenceItem';
 
 interface FlagToggleProps {
@@ -53,12 +52,12 @@ const UserPreferences = () => {
           setIsOpen(false);
         }}
         title="Preferences"
-        className="max-w-[500px]"
+        className="max-w-[460px]"
       >
-        <div className="min-h-40 w-[500px] mt-8">
+        <div className="min-h-40 w-[460px] mt-8">
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING} />
-          <GraphTrimming />
-          <div className=" min-w-96 mt-8">
+          <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.DISABLE_GRAPH_TRIMMING} />
+          <div className=" min-w-96 mt-10">
             <h4 className="font-medium mb-2">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />
           </div>
