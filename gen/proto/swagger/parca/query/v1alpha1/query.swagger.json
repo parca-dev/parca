@@ -318,6 +318,14 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "nodeTrimThreshold",
+            "description": "node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "float"
           }
         ],
         "tags": [
@@ -699,6 +707,11 @@
         "filterQuery": {
           "type": "string",
           "title": "filter_query is the query string to filter the profile samples"
+        },
+        "nodeTrimThreshold": {
+          "type": "number",
+          "format": "float",
+          "title": "node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -941,6 +954,11 @@
             "$ref": "#/definitions/metastorev1alpha1Function"
           },
           "description": "function deduplicated by their ID to be referenced by nodes."
+        },
+        "untrimmedTotal": {
+          "type": "string",
+          "format": "int64",
+          "title": "untrimmed_total is the total weight of the flame graph before trimming"
         }
       },
       "title": "Flamegraph is the flame graph report type"

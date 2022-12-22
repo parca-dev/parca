@@ -19,7 +19,8 @@ import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
 import {saveAsBlob} from '@parca/functions';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 export type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -38,12 +39,33 @@ export const ProfileViewWithData = ({
   const profileVisState = useProfileVisState();
   const metadata = useGrpcMetadata();
   const {currentView} = profileVisState;
+  const [nodeTrimThreshold, setNodeTrimThreshold] = useState<number>(0);
+  const [disableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.DISABLE_GRAPH_TRIMMING.key);
+
+  useEffect(() => {
+    if (disableTrimming) {
+      setNodeTrimThreshold(0);
+    }
+  }, [disableTrimming]);
+
+  const onFlamegraphContainerResize = (width: number): void => {
+    if (disableTrimming || width === 0) {
+      return;
+    }
+    const threshold = (1 / width) * 100;
+    if (threshold === nodeTrimThreshold) {
+      return;
+    }
+    setNodeTrimThreshold(threshold);
+  };
+
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
     skip: currentView !== 'icicle' && currentView !== 'both',
+    nodeTrimThreshold,
   });
   const {perf} = useParcaContext();
 
@@ -120,6 +142,7 @@ export const ProfileViewWithData = ({
       queryClient={queryClient}
       navigateTo={navigateTo}
       onDownloadPProf={() => void downloadPProfClick()}
+      onFlamegraphContainerResize={onFlamegraphContainerResize}
     />
   );
 };

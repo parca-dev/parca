@@ -24,7 +24,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile) (*querypb.Flamegraph, error) {
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
 	rootNode := &querypb.FlamegraphNode{}
 	current := rootNode
 
@@ -104,9 +104,10 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 			Diff:       rootNode.Diff,
 			Children:   rootNode.Children,
 		},
-		Total:  rootNode.Cumulative,
-		Unit:   p.Meta.SampleType.Unit,
-		Height: height + 1, // add one for the root
+		Total:          rootNode.Cumulative,
+		UntrimmedTotal: rootNode.Cumulative,
+		Unit:           p.Meta.SampleType.Unit,
+		Height:         height + 1, // add one for the root
 
 		StringTable: tables.Strings(),
 		Mapping:     tables.Mappings(),
@@ -120,7 +121,13 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		f.Id = ""
 	}
 
-	return aggregateByFunctionTable(tables, flamegraph), nil
+	aggregatedFlamegraph := aggregateByFunctionTable(tables, flamegraph)
+
+	if nodeTrimFraction == 0 {
+		return aggregatedFlamegraph, nil
+	}
+
+	return TrimFlamegraph(ctx, tracer, aggregatedFlamegraph, nodeTrimFraction), nil
 }
 
 type tableConverter struct {
@@ -474,4 +481,84 @@ func equalsByNameTable(tables TableGetter, a, b *querypb.FlamegraphNode) bool {
 
 	strings := tables.Strings()
 	return strings[aFunction.NameStringIndex] == strings[bFunction.NameStringIndex]
+}
+
+type FlamegraphChildren []*querypb.FlamegraphNode
+
+func (n FlamegraphChildren) Cumulative() int64 {
+	cumulative := int64(0)
+	for _, child := range n {
+		cumulative += child.Cumulative
+	}
+	return cumulative
+}
+
+func (n FlamegraphChildren) Diff() int64 {
+	diff := int64(0)
+	for _, child := range n {
+		diff += child.Diff
+	}
+	return diff
+}
+
+func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, thresholdRate float32) *querypb.Flamegraph {
+	ctx, span := tracer.Start(ctx, "trimFlamegraph")
+	defer span.End()
+	if graph == nil {
+		return nil
+	}
+	total := graph.Total
+
+	threshold := int64(float64(thresholdRate) * float64(total))
+	var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, graph.Root.Children, threshold)
+	newTotal := int64(0)
+	newDiff := int64(0)
+	if len(graph.Root.Children) > 0 {
+		newTotal = children.Cumulative()
+		newDiff = children.Diff()
+	}
+
+	trimmedGraph := &querypb.Flamegraph{
+		Root: &querypb.FlamegraphRootNode{
+			Children:   children,
+			Cumulative: newTotal,
+			Diff:       newDiff,
+		},
+		Total:          newTotal,
+		UntrimmedTotal: graph.Total,
+		Unit:           graph.Unit,
+		Height:         graph.Height,
+		StringTable:    graph.StringTable,
+		Locations:      graph.Locations,
+		Mapping:        graph.Mapping,
+		Function:       graph.Function,
+	}
+
+	return trimmedGraph
+}
+
+func trimFlamegraphNodes(ctx context.Context, tracer trace.Tracer, nodes []*querypb.FlamegraphNode, threshold int64) []*querypb.FlamegraphNode {
+	var trimmedNodes []*querypb.FlamegraphNode
+	for _, node := range nodes {
+		if node.Cumulative < threshold {
+			continue
+		}
+		var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, node.Children, threshold)
+		newCum := int64(0)
+		newDiff := int64(0)
+		if len(node.Children) > 0 {
+			newCum = children.Cumulative()
+			newDiff = children.Diff()
+		} else {
+			newCum = node.Cumulative
+			newDiff = node.Diff
+		}
+		trimmedNodes = append(trimmedNodes, &querypb.FlamegraphNode{
+			Meta:       node.Meta,
+			Cumulative: newCum,
+			Diff:       newDiff,
+			Children:   children,
+		})
+	}
+	return trimmedNodes
 }
