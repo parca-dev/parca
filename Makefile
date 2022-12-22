@@ -42,6 +42,8 @@ clean:
 	rm -rf tmp
 	rm -rf bin
 	rm -rf ui/packages/app/web/build
+	find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
+	find . -name 'dist' -type d -prune -exec rm -rf '{}' +
 
 .PHONY: go/deps
 go/deps:
