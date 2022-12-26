@@ -18,7 +18,7 @@ require (
 	github.com/go-delve/delve v1.20.1
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/google/pprof v0.0.0-20221203041831-ce31453925ec
+	github.com/google/pprof v0.0.0-20221219190121-3cb0bae90811
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-rc.3
