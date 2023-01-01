@@ -5820,10 +5820,10 @@
     "@svgr/plugin-svgo" "^5.5.0"
     loader-utils "^2.0.0"
 
-"@swc/cli@0.1.58":
-  version "0.1.58"
-  resolved "https://registry.yarnpkg.com/@swc/cli/-/cli-0.1.58.tgz#da06f7a4807a70d3ec3fbae4faf62bbebba26361"
-  integrity sha512-6Wjxs783ni/O1tshHkof2g/L3uAJgfpo/bV0aeibCrRRHfaDTqw/bToY260Mu9T/1bewdb/yWW8IbW1nxUGihA==
+"@swc/cli@0.1.59":
+  version "0.1.59"
+  resolved "https://registry.yarnpkg.com/@swc/cli/-/cli-0.1.59.tgz#cb0be624f98ca9e41caa2de454d151faec83cd19"
+  integrity sha512-BlX3wIxYTwdtR22dIqZ3FEIOJPqnlByAp4JY46OMZi2UXMB3ZbOzefawD2ZlLafRUWyy5NtiZZty5waKzaYRnA==
   dependencies:
     bin-wrapper "^4.1.0"
     commander "^7.1.0"
