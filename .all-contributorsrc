@@ -339,6 +339,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "ShubhamPalriwala",
+      "name": "Shubham Palriwala",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55556994?v=4",
+      "profile": "https://github.com/ShubhamPalriwala",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
