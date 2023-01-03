@@ -14,9 +14,12 @@
 import {Disclosure} from '@headlessui/react';
 import {MenuIcon, XIcon} from '@heroicons/react/outline';
 import {Parca, ParcaSmall} from '@parca/icons';
+import GitHubButton from 'react-github-btn';
 import cx from 'classnames';
+import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import DarkModeToggle from './DarkModeToggle';
 import UserPreferences from './UserPreferences';
+import {useAppSelector, selectDarkMode} from '@parca/store';
 
 const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
 
@@ -25,6 +28,23 @@ const links: {[path: string]: {label: string; href: string; external: boolean}} 
   '/targets': {label: 'Targets', href: `${pathPrefix}/targets`, external: false},
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
+
+const GitHubStarButton = () => {
+  const isDarkMode = useAppSelector(selectDarkMode);
+
+  return (
+    <GitHubButton
+      href="https://github.com/parca-dev/parca"
+      data-color-scheme={isDarkMode ? 'dark' : 'light'}
+      data-size="large"
+      data-show-count="false"
+      aria-label="Star parca-dev/parca on GitHub"
+    >
+      Star
+    </GitHubButton>
+  );
+};
+
 const Navbar = () => {
   const removePathPrefix = (href: string) =>
     href.startsWith(window.PATH_PREFIX) ? href.slice(window.PATH_PREFIX.length) : href;
@@ -43,7 +63,7 @@ const Navbar = () => {
       {({open}) => (
         <>
           <div className="mx-auto px-3">
-            <div className="relative flex items-center justify-between h-16">
+            <div className="relative flex items-center justify-between h-16 gap-1">
               <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
                 {/* mobile menu button */}
                 <Disclosure.Button className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
@@ -72,7 +92,7 @@ const Navbar = () => {
                   />
                 </div>
                 <div className="hidden sm:block sm:ml-6">
-                  <div className="flex space-x-4">
+                  <div className="flex gap-2 items-center">
                     {Object.values(links).map(item => (
                       <a
                         key={item.label}
@@ -90,22 +110,27 @@ const Navbar = () => {
                         {item.label}
                       </a>
                     ))}
+                    <div className="px-3 hidden md:flex pt-2">
+                      <GitHubStarButton />
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="text-gray-500 dark:text-gray-0 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                {window.APP_VERSION}
-              </div>
-              <div className="text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                <a target="_blank" href="https://github.com/parca-dev/parca" rel="noreferrer">
-                  GitHub
-                </a>
-              </div>
-              <div className="text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                <UserPreferences />
-              </div>
-              <div className="text-gray-800 dark:text-gray-100 absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                <DarkModeToggle />
+              <div className="flex gap-3 items-center">
+                <div className="text-gray-500">
+                  <ReleaseNotesViewer version={window.APP_VERSION} />
+                </div>
+                <div className="pl-4">
+                  <a target="_blank" href="https://github.com/parca-dev/parca" rel="noreferrer">
+                    GitHub
+                  </a>
+                </div>
+                <div className="">
+                  <UserPreferences />
+                </div>
+                <div className="">
+                  <DarkModeToggle />
+                </div>
               </div>
             </div>
           </div>
@@ -127,6 +152,9 @@ const Navbar = () => {
                   {item.label}
                 </a>
               ))}
+              <div className="px-3 pt-1">
+                <GitHubStarButton />
+              </div>
             </div>
           </Disclosure.Panel>
         </>
