@@ -68,6 +68,7 @@ const ReleaseNotesViewer = ({version}: Props) => {
         className={cx({'cursor-pointer': isReleaseNotesAvailable})}
       >
         {version}
+        {isReleaseNotesAvailable ? ` - What's new?` : ''}
       </span>
       {isReleaseNotesAvailable ? (
         <Modal
