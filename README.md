@@ -220,6 +220,10 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center"><a href="http://danielqsj.github.io/"><img src="https://avatars.githubusercontent.com/u/7528864?v=4?s=100" width="100px;" alt="Daniel (Shijun) Qian"/><br /><sub><b>Daniel (Shijun) Qian</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=danielqsj" title="Code">💻</a></td>
       <td align="center"><a href="https://github.com/avestuk"><img src="https://avatars.githubusercontent.com/u/28152118?v=4?s=100" width="100px;" alt="Alex Vest"/><br /><sub><b>Alex Vest</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=avestuk" title="Documentation">📖</a></td>
     </tr>
+    <tr>
+      <td align="center"><a href="https://github.com/ShubhamPalriwala"><img src="https://avatars.githubusercontent.com/u/55556994?v=4?s=100" width="100px;" alt="Shubham Palriwala"/><br /><sub><b>Shubham Palriwala</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=ShubhamPalriwala" title="Code">💻</a></td>
+      <td align="center"><a href="https://github.com/fabxc"><img src="https://avatars.githubusercontent.com/u/4948210?v=4?s=100" width="100px;" alt="Fabian Reinartz"/><br /><sub><b>Fabian Reinartz</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=fabxc" title="Code">💻</a></td>
+    </tr>
   </tbody>
 </table>
 

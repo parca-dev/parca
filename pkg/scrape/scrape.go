@@ -326,6 +326,10 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusPermanentRedirect {
+			return fmt.Errorf("server is being redirected with HTTP status %s, please add the destination path", resp.Status)
+		}
+
 		return fmt.Errorf("server returned HTTP status %s", resp.Status)
 	}
 

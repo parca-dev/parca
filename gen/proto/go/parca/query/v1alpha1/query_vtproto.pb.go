@@ -6,6 +6,7 @@ package queryv1alpha1
 
 import (
 	context "context"
+	binary "encoding/binary"
 	fmt "fmt"
 	v1alpha11 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	v1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
@@ -16,6 +17,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
+	math "math"
 	bits "math/bits"
 )
 
@@ -1101,6 +1103,12 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			}
 		}
 	}
+	if m.NodeTrimThreshold != nil {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(*m.NodeTrimThreshold))))
+		i--
+		dAtA[i] = 0x3d
+	}
 	if m.FilterQuery != nil {
 		i -= len(*m.FilterQuery)
 		copy(dAtA[i:], *m.FilterQuery)
@@ -1400,6 +1408,11 @@ func (m *Flamegraph) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.UntrimmedTotal != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.UntrimmedTotal))
+		i--
+		dAtA[i] = 0x48
 	}
 	if len(m.Function) > 0 {
 		for iNdEx := len(m.Function) - 1; iNdEx >= 0; iNdEx-- {
@@ -2927,6 +2940,9 @@ func (m *QueryRequest) SizeVT() (n int) {
 		l = len(*m.FilterQuery)
 		n += 1 + l + sov(uint64(l))
 	}
+	if m.NodeTrimThreshold != nil {
+		n += 5
+	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
 	}
@@ -3093,6 +3109,9 @@ func (m *Flamegraph) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
+	}
+	if m.UntrimmedTotal != 0 {
+		n += 1 + sov(uint64(m.UntrimmedTotal))
 	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
@@ -5343,6 +5362,18 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			s := string(dAtA[iNdEx:postIndex])
 			m.FilterQuery = &s
 			iNdEx = postIndex
+		case 7:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeTrimThreshold", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			v2 := float32(math.Float32frombits(v))
+			m.NodeTrimThreshold = &v2
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -6128,6 +6159,25 @@ func (m *Flamegraph) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UntrimmedTotal", wireType)
+			}
+			m.UntrimmedTotal = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UntrimmedTotal |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

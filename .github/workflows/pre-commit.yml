@@ -16,7 +16,7 @@ concurrency:
 
 env:
   # renovate: datasource=pypi depName=pre-commit versioning=pep440
-  PRE_COMMIT_VERSION: 2.20.0
+  PRE_COMMIT_VERSION: ==2.21.0
 
 jobs:
   pre-commit:
@@ -55,7 +55,7 @@ jobs:
 
       # Same as https://github.com/golangci/golangci-lint-action#caching-internals
       - name: Set up golangci-lint cache
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 # tag=v3.0.11
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d # v3.2.2
         with:
           path: |
             ~/.cache/golangci-lint
@@ -68,7 +68,7 @@ jobs:
             golangci-lint.cache-
 
       - name: Set up pre-commit
-        run: pipx install "pre-commit==${PRE_COMMIT_VERSION}"
+        run: pipx install "pre-commit${PRE_COMMIT_VERSION}"
 
       - name: Set pre-commit cache key parts
         run: |
@@ -76,7 +76,7 @@ jobs:
           echo "PY_HASH=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
 
       - name: Set up pre-commit cache
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 # tag=v3.0.11
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d # v3.2.2
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-go${{ env.GO_VERSION }}-${{ env.PY_HASH }}-${{ hashFiles('.pre-commit-config.yaml') }}

@@ -31,12 +31,13 @@ import {
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
 import FilterByFunctionButton from './FilterByFunctionButton';
-import ProfileIcicleGraph from '../ProfileIcicleGraph';
+import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import TopTable from '../TopTable';
 import useDelayedLoader from '../useDelayedLoader';
 
 import '../ProfileView.styles.css';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 type NavigateFunction = (path: string, queryParams: any) => void;
 
@@ -76,6 +77,7 @@ export interface ProfileViewProps {
   navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
+  onFlamegraphContainerResize?: ResizeHandler;
 }
 
 function arrayEquals<T>(a: T[], b: T[]): boolean {
@@ -113,6 +115,7 @@ export const ProfileView = ({
   navigateTo,
   profileVisState,
   onDownloadPProf,
+  onFlamegraphContainerResize,
 }: ProfileViewProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const {ref, dimensions} = useContainerDimensions();
@@ -123,7 +126,9 @@ export const ProfileView = ({
   const filterByFunctionString = useAppSelector(selectFilterByFunction);
 
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [highlightAfterFilteringEnabled] = useUIFeatureFlag('highlightAfterFiltering');
+  const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
+    USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
+  );
 
   const {loader, perf} = useParcaContext();
 
@@ -305,6 +310,7 @@ export const ProfileView = ({
                         setNewCurPath={setNewCurPath}
                         graph={flamegraphData.data}
                         sampleUnit={sampleUnit}
+                        onContainerResize={onFlamegraphContainerResize}
                       />
                     </Profiler>
                   </div>

@@ -148,7 +148,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		p = q.filterProfileData(ctx, p, *req.FilterQuery)
 	}
 
-	return q.renderReport(ctx, p, req.GetReportType())
+	return q.renderReport(ctx, p, req.GetReportType(), req.GetNodeTrimThreshold())
 }
 
 func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
@@ -177,10 +177,15 @@ func (q *ColumnQueryAPI) filterProfileData(ctx context.Context, p *profile.Profi
 	}
 }
 
-func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType) (*pb.QueryResponse, error) {
+func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType, nodeTrimThreshold float32) (*pb.QueryResponse, error) {
 	ctx, span := q.tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
 	defer span.End()
+
+	nodeTrimFraction := float32(0)
+	if nodeTrimThreshold != 0 {
+		nodeTrimFraction = nodeTrimThreshold / 100
+	}
 
 	switch typ {
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
@@ -195,7 +200,7 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
-		fg, err := GenerateFlamegraphTable(ctx, q.tracer, p)
+		fg, err := GenerateFlamegraphTable(ctx, q.tracer, p, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
