@@ -97,6 +97,7 @@ type Flags struct {
 
 	Symbolizer FlagsSymbolizer `embed:"" prefix:"symbolizer-"`
 
+	Debuginfo  FlagsDebuginfo  `embed:"" prefix:"debuginfo-"`
 	Debuginfod FlagsDebuginfod `embed:"" prefix:"debuginfod-"`
 
 	Metastore string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
@@ -129,13 +130,18 @@ type FlagsSymbolizer struct {
 	NumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 }
 
+// FlagsDebuginfo configures the Parca Debuginfo client.
+type FlagsDebuginfo struct {
+	CacheDir          string        `default:"/tmp" help:"Path to directory where debuginfo is cached."`
+	UploadMaxSize     int64         `default:"1000000000" help:"Maximum size of debuginfo upload in bytes."`
+	UploadMaxDuration time.Duration `default:"15m" help:"Maximum duration of debuginfo upload."`
+	UploadsSignedURL  bool          `default:"false" help:"Whether to use signed URLs for debuginfo uploads."`
+}
+
+// FlagsDebuginfod configures the Parca Debuginfo daemon / server.
 type FlagsDebuginfod struct {
 	UpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
-	CacheDir           string        `default:"/tmp" help:"Path to directory where debuginfo is cached."`
-	UploadMaxSize      int64         `default:"1000000000" help:"Maximum size of debuginfo upload in bytes."`
-	UploadMaxDuration  time.Duration `default:"15m" help:"Maximum duration of debuginfo upload."`
-	UploadsSignedURL   bool          `default:"false" help:"Whether to use signed URLs for debuginfo uploads."`
 }
 
 // Run the parca server.
@@ -192,7 +198,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	var signedUploadClient signedupload.Client
-	if flags.Debuginfod.UploadsSignedURL {
+	if flags.Debuginfo.UploadsSignedURL {
 		var err error
 		signedUploadClient, err = signedupload.NewClient(
 			context.Background(),
@@ -360,11 +366,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		debuginfoBucket,
 		debuginfodClient,
 		debuginfo.SignedUpload{
-			Enabled: flags.Debuginfod.UploadsSignedURL,
+			Enabled: flags.Debuginfo.UploadsSignedURL,
 			Client:  prefixedSignedUploadClient,
 		},
-		flags.Debuginfod.UploadMaxDuration,
-		flags.Debuginfod.UploadMaxSize,
+		flags.Debuginfo.UploadMaxDuration,
+		flags.Debuginfo.UploadMaxSize,
 	)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
@@ -401,7 +407,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			debuginfoMetadata,
 			metastore,
 			debuginfo.NewFetcher(debuginfodClient, debuginfoBucket),
-			flags.Debuginfod.CacheDir,
+			flags.Debuginfo.CacheDir,
 			0,
 			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
 			symbolizer.WithAttemptThreshold(flags.Symbolizer.NumberOfTries),

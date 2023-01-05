@@ -122,6 +122,15 @@ Flags:
       --symbolizer-number-of-tries=3
                                 Number of tries to attempt to symbolize an
                                 unsybolized location
+      --debuginfo-cache-dir="/tmp"
+                                Path to directory where debuginfo is cached.
+      --debuginfo-upload-max-size=1000000000
+                                Maximum size of debuginfo upload in bytes.
+      --debuginfo-upload-max-duration=15m
+                                Maximum duration of debuginfo upload.
+      --debuginfo-uploads-signed-url
+                                Whether to use signed URLs for debuginfo
+                                uploads.
       --debuginfod-upstream-servers=https://debuginfod.elfutils.org,...
                                 Upstream debuginfod servers. Defaults to
                                 https://debuginfod.elfutils.org. It is an
@@ -130,15 +139,6 @@ Flags:
       --debuginfod-http-request-timeout=5m
                                 Timeout duration for HTTP request to upstream
                                 debuginfod server. Defaults to 5m
-      --debuginfod-cache-dir="/tmp"
-                                Path to directory where debuginfo is cached.
-      --debuginfod-upload-max-size=1000000000
-                                Maximum size of debuginfo upload in bytes.
-      --debuginfod-upload-max-duration=15m
-                                Maximum duration of debuginfo upload.
-      --debuginfod-uploads-signed-url
-                                Whether to use signed URLs for debuginfo
-                                uploads.
       --metastore="badger"      Which metastore implementation to use
       --profile-share-server="api.pprof.me:443"
                                 gRPC address to send share profile requests to.
