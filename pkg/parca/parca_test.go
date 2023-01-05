@@ -65,11 +65,13 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 	go func() {
 		defer close(done)
 		err := Run(ctx, logger, reg, &Flags{
-			ConfigPath:          "testdata/parca.yaml",
-			Port:                addr,
-			Metastore:           metaStoreBadger,
-			StorageGranuleSize:  8 * 1024,
-			StorageActiveMemory: 512 * 1024 * 1024,
+			ConfigPath: "testdata/parca.yaml",
+			Port:       addr,
+			Metastore:  metaStoreBadger,
+			Storage: FlagsStorage{
+				GranuleSize:  8 * 1024,
+				ActiveMemory: 512 * 1024 * 1024,
+			},
 		}, "test-version")
 		if !errors.Is(err, context.Canceled) {
 			require.NoError(b, err)
