@@ -97,7 +97,7 @@ type Flags struct {
 
 	Symbolizer FlagsSymbolizer `embed:"" prefix:"symbolizer-"`
 
-	DebugInfod FlagsDebugInfod `embed:"" prefix:"debug-infod-"`
+	Debuginfod FlagsDebuginfod `embed:"" prefix:"debuginfod-"`
 
 	Metastore string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
 
@@ -129,7 +129,7 @@ type FlagsSymbolizer struct {
 	NumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 }
 
-type FlagsDebugInfod struct {
+type FlagsDebuginfod struct {
 	UpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 	CacheDir           string        `default:"/tmp" help:"Path to directory where debuginfo is cached."`
@@ -192,7 +192,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	var signedUploadClient signedupload.Client
-	if flags.DebugInfod.UploadsSignedURL {
+	if flags.Debuginfod.UploadsSignedURL {
 		var err error
 		signedUploadClient, err = signedupload.NewClient(
 			context.Background(),
@@ -332,8 +332,8 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	var debuginfodClient debuginfo.DebuginfodClient = debuginfo.NopDebuginfodClient{}
-	if len(flags.DebugInfod.UpstreamServers) > 0 {
-		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.DebugInfod.UpstreamServers, flags.DebugInfod.HTTPRequestTimeout)
+	if len(flags.Debuginfod.UpstreamServers) > 0 {
+		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.Debuginfod.UpstreamServers, flags.Debuginfod.HTTPRequestTimeout)
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
 			return err
@@ -360,11 +360,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		debuginfoBucket,
 		debuginfodClient,
 		debuginfo.SignedUpload{
-			Enabled: flags.DebugInfod.UploadsSignedURL,
+			Enabled: flags.Debuginfod.UploadsSignedURL,
 			Client:  prefixedSignedUploadClient,
 		},
-		flags.DebugInfod.UploadMaxDuration,
-		flags.DebugInfod.UploadMaxSize,
+		flags.Debuginfod.UploadMaxDuration,
+		flags.Debuginfod.UploadMaxSize,
 	)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
@@ -401,7 +401,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			debuginfoMetadata,
 			metastore,
 			debuginfo.NewFetcher(debuginfodClient, debuginfoBucket),
-			flags.DebugInfod.CacheDir,
+			flags.Debuginfod.CacheDir,
 			0,
 			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
 			symbolizer.WithAttemptThreshold(flags.Symbolizer.NumberOfTries),
