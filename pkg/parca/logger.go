@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	LogFormatLogfmt = "logfmt"
-	LogFormatJSON   = "json"
+	LogFormatJSON = "json"
 )
 
 // NewLogger returns a log.Logger that prints in the provided format at the
@@ -51,9 +50,10 @@ func NewLogger(logLevel, logFormat, debugName string) log.Logger {
 		panic("unexpected log level")
 	}
 
-	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	writer := log.NewSyncWriter(os.Stderr)
+	logger = log.NewLogfmtLogger(writer)
 	if logFormat == LogFormatJSON {
-		logger = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
+		logger = log.NewJSONLogger(writer)
 	}
 
 	logger = level.NewFilter(logger, lvl)

@@ -78,9 +78,10 @@ const (
 type Flags struct {
 	ConfigPath  string `default:"parca.yaml" help:"Path to config file."`
 	Mode        string `default:"all" enum:"all,scraper-only" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
-	LogLevel    string `default:"info" enum:"error,warn,info,debug" help:"log level."`
 	HTTPAddress string `default:":7070" help:"Address to bind HTTP server to."`
 	Port        string `default:"" help:"(DEPRECATED) Use http-address instead."`
+
+	Logs FlagsLogs `embed:"" prefix:"log-"`
 
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
 	OTLPAddress        string   `help:"OpenTelemetry collector address to send traces to."`
@@ -108,6 +109,11 @@ type Flags struct {
 	Insecure           bool              `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
 	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
+}
+
+type FlagsLogs struct {
+	Level  string `enum:"error,warn,info,debug" default:"info" help:"Log level."`
+	Format string `enum:"logfmt,json" default:"logfmt" help:"Configure if structured logging as JSON or as logfmt"`
 }
 
 type FlagsStorage struct {
