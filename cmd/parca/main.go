@@ -45,7 +45,7 @@ func main() {
 	serverStr := figure.NewColorFigure("Parca", "roman", "cyan", true)
 	serverStr.Print()
 
-	logger := parca.NewLogger(flags.LogLevel, parca.LogFormatLogfmt, "parca")
+	logger := parca.NewLogger(flags.Logs.Level, flags.Logs.Format, "parca")
 	level.Debug(logger).Log("msg", "parca initialized",
 		"version", version,
 		"commit", commit,

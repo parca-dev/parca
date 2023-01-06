@@ -30,7 +30,7 @@ type ObjectStorageValidRule struct{}
 func (v ObjectStorageValidRule) Validate(value interface{}) error {
 	c, ok := value.(*ObjectStorage)
 	if !ok {
-		return errors.New("DebugInfo is invalid")
+		return errors.New("debuginfod is invalid")
 	}
 	return validation.ValidateStruct(c,
 		validation.Field(&c.Bucket, validation.Required, BucketValid),
