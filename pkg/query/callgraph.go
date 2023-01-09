@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	NodeCutOffFraction = 0.005
+	NodeCutOffFraction = float32(0.005)
 )
 
 func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgraph, error) {
@@ -182,7 +182,7 @@ func prunableNodes(nodes []*querypb.CallgraphNode, c int64) []*querypb.Callgraph
 		return nodes[i].Cumulative > nodes[j].Cumulative
 	})
 	i := 0
-	cutoffValue := (float64(c) * NodeCutOffFraction)
+	cutoffValue := (float64(c) * float64(NodeCutOffFraction))
 	for ; i < len(nodes); i++ {
 		if float64(nodes[i].Cumulative) < cutoffValue {
 			break

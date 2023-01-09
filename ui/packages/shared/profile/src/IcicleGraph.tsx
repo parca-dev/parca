@@ -384,7 +384,7 @@ export default function IcicleGraph({
     if (ref.current != null) {
       setHeight(ref?.current.getBoundingClientRect().height);
     }
-  }, [width]);
+  }, [width, graph]);
 
   const total = useMemo(() => parseFloat(graph.total), [graph.total]);
   const xScale = useMemo(() => {

@@ -17,6 +17,11 @@ import {useContainerDimensions} from '@parca/dynamicsize';
 import DiffLegend from '../components/DiffLegend';
 import IcicleGraph from '../IcicleGraph';
 import {selectQueryParam} from '@parca/functions';
+import {useEffect, useMemo} from 'react';
+
+const numberFormatter = new Intl.NumberFormat('en-US');
+
+export type ResizeHandler = (width: number, height: number) => void;
 
 interface ProfileIcicleGraphProps {
   width?: number;
@@ -24,6 +29,7 @@ interface ProfileIcicleGraphProps {
   sampleUnit: string;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
+  onContainerResize?: ResizeHandler;
 }
 
 const ProfileIcicleGraph = ({
@@ -31,10 +37,38 @@ const ProfileIcicleGraph = ({
   curPath,
   setNewCurPath,
   sampleUnit,
+  onContainerResize,
 }: ProfileIcicleGraphProps): JSX.Element => {
   const compareMode: boolean =
     Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
   const {ref, dimensions} = useContainerDimensions();
+
+  useEffect(() => {
+    if (dimensions === undefined) return;
+    if (onContainerResize === undefined) return;
+
+    onContainerResize(dimensions.width, dimensions.height);
+  }, [dimensions, onContainerResize]);
+
+  const [trimDifference, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] =
+    useMemo(() => {
+      if (graph === undefined || graph.untrimmedTotal === '0') {
+        return [BigInt(0), '0'];
+      }
+
+      const untrimmedTotal = BigInt(graph.untrimmedTotal);
+      const total = BigInt(graph.total);
+
+      const trimDifference = untrimmedTotal - total;
+      const trimmedPercentage = (total * BigInt(100)) / untrimmedTotal;
+
+      return [
+        trimDifference,
+        trimmedPercentage.toString(),
+        numberFormatter.format(total),
+        numberFormatter.format(untrimmedTotal),
+      ];
+    }, [graph]);
 
   if (graph === undefined) return <div>no data...</div>;
   const total = graph.total;
@@ -43,6 +77,11 @@ const ProfileIcicleGraph = ({
   return (
     <>
       {compareMode && <DiffLegend />}
+      {trimDifference > BigInt(0) ? (
+        <p className="my-2 text-sm">
+          Showing {formattedTotal}({trimmedPercentage}%) out of {formattedUntrimmedTotal} samples
+        </p>
+      ) : null}
       <div ref={ref}>
         <IcicleGraph
           width={dimensions?.width}

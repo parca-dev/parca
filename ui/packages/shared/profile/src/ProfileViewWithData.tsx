@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect, useState} from 'react';
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
 import {useQuery} from './useQuery';
 import {ProfileView} from './ProfileView';
@@ -18,7 +19,7 @@ import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
 import {saveAsBlob, NavigateFunction, useURLState} from '@parca/functions';
-import {useEffect} from 'react';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;
@@ -34,12 +35,33 @@ export const ProfileViewWithData = ({
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
+  const [nodeTrimThreshold, setNodeTrimThreshold] = useState<number>(0);
+  const [disableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.DISABLE_GRAPH_TRIMMING.key);
+
+  useEffect(() => {
+    if (disableTrimming) {
+      setNodeTrimThreshold(0);
+    }
+  }, [disableTrimming]);
+
+  const onFlamegraphContainerResize = (width: number): void => {
+    if (disableTrimming || width === 0) {
+      return;
+    }
+    const threshold = (1 / width) * 100;
+    if (threshold === nodeTrimThreshold) {
+      return;
+    }
+    setNodeTrimThreshold(threshold);
+  };
+
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
     skip: !dashboardItems.includes('icicle'),
+    nodeTrimThreshold,
   });
   const {perf} = useParcaContext();
 
@@ -115,6 +137,7 @@ export const ProfileViewWithData = ({
       queryClient={queryClient}
       navigateTo={navigateTo}
       onDownloadPProf={() => void downloadPProfClick()}
+      onFlamegraphContainerResize={onFlamegraphContainerResize}
     />
   );
 };

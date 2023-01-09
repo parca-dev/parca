@@ -23,11 +23,11 @@ builds:
       # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
       - -X main.version={{.Version}} -X main.commit={{.Commit}}
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      amd64: x86_64
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
         format: zip
@@ -86,6 +86,7 @@ snapshot:
   name_template: "{{ incpatch .Tag }}-{{ .ShortCommit }}"
 source:
   enabled: true
+  rlcp: true
 release:
   prerelease: auto
   # Defaults to empty.

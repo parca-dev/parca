@@ -27,7 +27,7 @@ import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
 import FilterByFunctionButton from './FilterByFunctionButton';
 import ViewSelector from './ViewSelector';
-import ProfileIcicleGraph from '../ProfileIcicleGraph';
+import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import TopTable from '../TopTable';
 import useDelayedLoader from '../useDelayedLoader';
@@ -64,6 +64,7 @@ export interface ProfileViewProps {
   navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
+  onFlamegraphContainerResize?: ResizeHandler;
 }
 
 function arrayEquals<T>(a: T[], b: T[]): boolean {
@@ -84,6 +85,7 @@ export const ProfileView = ({
   queryClient,
   navigateTo,
   onDownloadPProf,
+  onFlamegraphContainerResize,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
@@ -152,6 +154,7 @@ export const ProfileView = ({
               setNewCurPath={setNewCurPath}
               graph={flamegraphData.data}
               sampleUnit={sampleUnit}
+              onContainerResize={onFlamegraphContainerResize}
             />
           </Profiler>
         ) : (

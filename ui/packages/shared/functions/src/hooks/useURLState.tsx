@@ -66,7 +66,8 @@ export const useURLState = ({
         navigateTo('/', {...searchParams}, {replace: true});
       }
     }
-  }, [value, highlightAfterFilteringEnabled, navigateTo, param, router, withURLUpdate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, highlightAfterFilteringEnabled, param, withURLUpdate, navigateTo]);
 
   if (param === 'dashboard_items') {
     let dashboardItems: string[] = [];

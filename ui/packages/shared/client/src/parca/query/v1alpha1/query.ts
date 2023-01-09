@@ -346,6 +346,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional string filter_query = 6;
      */
     filterQuery?: string;
+    /**
+     * node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
+     *
+     * @generated from protobuf field: optional float node_trim_threshold = 7;
+     */
+    nodeTrimThreshold?: number;
 }
 /**
  * Mode is the type of query request
@@ -557,6 +563,12 @@ export interface Flamegraph {
      * @generated from protobuf field: repeated parca.metastore.v1alpha1.Function function = 8;
      */
     function: Function[];
+    /**
+     * untrimmed_total is the total weight of the flame graph before trimming
+     *
+     * @generated from protobuf field: int64 untrimmed_total = 9;
+     */
+    untrimmedTotal: string;
 }
 /**
  * FlamegraphRootNode is a root node of a flame graph
@@ -1640,7 +1652,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 3, name: "merge", kind: "message", oneof: "options", T: () => MergeProfile },
             { no: 4, name: "single", kind: "message", oneof: "options", T: () => SingleProfile },
             { no: 5, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] },
-            { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
+            { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1682,6 +1695,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional string filter_query */ 6:
                     message.filterQuery = reader.string();
                     break;
+                case /* optional float node_trim_threshold */ 7:
+                    message.nodeTrimThreshold = reader.float();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1712,6 +1728,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional string filter_query = 6; */
         if (message.filterQuery !== undefined)
             writer.tag(6, WireType.LengthDelimited).string(message.filterQuery);
+        /* optional float node_trim_threshold = 7; */
+        if (message.nodeTrimThreshold !== undefined)
+            writer.tag(7, WireType.Bit32).float(message.nodeTrimThreshold);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1937,11 +1956,12 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
             { no: 5, name: "string_table", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 6, name: "locations", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Location },
             { no: 7, name: "mapping", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Mapping },
-            { no: 8, name: "function", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Function }
+            { no: 8, name: "function", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Function },
+            { no: 9, name: "untrimmed_total", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<Flamegraph>): Flamegraph {
-        const message = { total: "0", unit: "", height: 0, stringTable: [], locations: [], mapping: [], function: [] };
+        const message = { total: "0", unit: "", height: 0, stringTable: [], locations: [], mapping: [], function: [], untrimmedTotal: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Flamegraph>(this, message, value);
@@ -1975,6 +1995,9 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
                     break;
                 case /* repeated parca.metastore.v1alpha1.Function function */ 8:
                     message.function.push(Function.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* int64 untrimmed_total */ 9:
+                    message.untrimmedTotal = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2012,6 +2035,9 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
         /* repeated parca.metastore.v1alpha1.Function function = 8; */
         for (let i = 0; i < message.function.length; i++)
             Function.internalBinaryWrite(message.function[i], writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* int64 untrimmed_total = 9; */
+        if (message.untrimmedTotal !== "0")
+            writer.tag(9, WireType.Varint).int64(message.untrimmedTotal);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
