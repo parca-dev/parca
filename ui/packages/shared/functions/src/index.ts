@@ -13,6 +13,7 @@
 
 import format from 'date-fns/format';
 import {Label} from '@parca/client';
+import colors from 'tailwindcss/colors';
 
 export const SEARCH_STRING_COLOR = '#e39c9c';
 
@@ -246,31 +247,164 @@ export function convertLocalToUTCDate(date: Date): Date {
   );
 }
 
-export const getNewSpanColor = (isDarkMode: boolean): string =>
-  isDarkMode ? '#B3BAE1' : '#929FEB';
+export const COLOR_PROFILES = {
+  default: {colors: [['#B3BAE1', '#929FEB']], colorMap: {}},
+  subtle: {
+    colors: [
+      [colors.pink['200'], colors.pink['200']],
+      [colors.green['100'], colors.green['100']],
+      [colors.slate['200'], colors.slate['200']],
+      [colors.indigo['200'], colors.indigo['200']],
+      [colors.yellow['200'], colors.yellow['200']],
+      [colors.emerald['200'], colors.emerald['200']],
+      [colors.orange['200'], colors.orange['200']],
+    ],
+    colorMap: {},
+  },
+  ocean: {
+    colors: [
+      [colors.green['300'], colors.green['300']],
+      [colors.emerald['300'], colors.emerald['300']],
+      [colors.teal['300'], colors.teal['300']],
+      [colors.cyan['300'], colors.cyan['300']],
+      [colors.sky['300'], colors.sky['300']],
+      [colors.blue['300'], colors.blue['300']],
+      [colors.indigo['300'], colors.indigo['300']],
+      [colors.violet['300'], colors.violet['300']],
+      [colors.purple['300'], colors.purple['300']],
+    ],
+    colorMap: {},
+  },
+  warm: {
+    colors: [
+      [colors.red['300'], colors.red['300']],
+      [colors.orange['300'], colors.orange['300']],
+      [colors.yellow['300'], colors.yellow['300']],
+      [colors.lime['300'], colors.lime['300']],
+      [colors.green['300'], colors.green['300']],
+      [colors.emerald['300'], colors.emerald['300']],
+      [colors.amber['300'], colors.amber['300']],
+      // [colors.fuchsia['300'], colors.fuchsia['300']],
+      // [colors.purple['300'], colors.purple['300']],
+    ],
+    colorMap: {},
+  },
+  ranbow: {
+    colors: [
+      [colors.amber['300'], colors.amber['300']],
+      [colors.blue['300'], colors.blue['300']],
+      [colors.cyan['300'], colors.cyan['300']],
+      [colors.emerald['300'], colors.emerald['300']],
+      [colors.fuchsia['300'], colors.fuchsia['300']],
+      [colors.green['300'], colors.green['300']],
+      [colors.indigo['300'], colors.indigo['300']],
+      [colors.lime['300'], colors.lime['300']],
+      [colors.orange['300'], colors.orange['300']],
+      [colors.pink['300'], colors.pink['300']],
+      [colors.purple['300'], colors.purple['300']],
+      [colors.red['300'], colors.red['300']],
+      [colors.rose['300'], colors.rose['300']],
+      [colors.sky['300'], colors.sky['300']],
+      [colors.teal['300'], colors.teal['300']],
+      [colors.violet['300'], colors.violet['300']],
+      [colors.yellow['300'], colors.yellow['300']],
+    ],
+    colorMap: {},
+  },
+};
+
+const extractColorFeature = (name: string): string => {
+  if (name.trim().startsWith('runtime') || name === 'root') {
+    return 'runtime';
+  }
+
+  const binaryRegex = /^(\[[^\s]*\])/gm;
+  const binaryMatch = name.trim().match(binaryRegex);
+  if (binaryMatch != null) {
+    return binaryMatch[0];
+  }
+
+  return 'Everything else';
+};
+
+const findAColor = (colorIndex: number, colors: string[][]): string[] => {
+  return colors[colorIndex];
+  // TODO: add some logic to find unallocated colors if this index is already allocated to another feature for better color distribution.
+};
+
+const getColorForFeature = (feature: string, isDarkMode: boolean, colorProfileName): string => {
+  const featureColorMap = COLOR_PROFILES[colorProfileName].colorMap;
+  if (featureColorMap[feature] != null) {
+    const color = featureColorMap[feature];
+    return !isDarkMode ? color[0] : color[1];
+  }
+
+  const colors = COLOR_PROFILES[colorProfileName].colors;
+
+  // Add charaters in the feature name to the color map
+  const colorIndex =
+    feature === 'Everything else'
+      ? colors.length - 1
+      : feature
+          .toLowerCase()
+          .split('')
+          .reduce((acc, char) => {
+            acc += char.charCodeAt(0);
+            return acc;
+          }, 0) %
+        (colors.length - 1);
+
+  const color = findAColor(colorIndex, colors);
+  featureColorMap[feature] = color;
+  return !isDarkMode ? color[0] : color[1];
+};
+
+export const getNewSpanColor = (
+  isDarkMode: boolean,
+  nodeName = '',
+  colorProfileName = 'default'
+): FeatureColor => {
+  // return isDarkMode ? '#B3BAE1' : '#929FEB';
+  const feature = extractColorFeature(nodeName);
+  return {color: getColorForFeature(feature, isDarkMode, colorProfileName), feature};
+};
+
 export const getIncreasedSpanColor = (transparency: number, isDarkMode: boolean): string => {
   return isDarkMode
     ? `rgba(255, 177, 204, ${transparency})`
     : `rgba(254, 153, 187, ${transparency})`;
 };
+
 export const getReducedSpanColor = (transparency: number, isDarkMode: boolean): string => {
   return isDarkMode
     ? `rgba(103, 158, 92, ${transparency})`
     : `rgba(164, 214, 153, ${transparency})`;
 };
 
-export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean): string => {
+export interface FeatureColor {
+  feature?: string;
+  color: string;
+}
+
+export const diffColor = (
+  diff: number,
+  cumulative: number,
+  isDarkMode: boolean,
+  nodeName: string,
+  colorProfileName: string
+): FeatureColor => {
   const prevValue = cumulative - diff;
   const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0;
 
   const diffTransparency =
     Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
 
-  const newSpanColor = getNewSpanColor(isDarkMode);
+  const newSpanColor = getNewSpanColor(isDarkMode, nodeName, colorProfileName);
   const increasedSpanColor = getIncreasedSpanColor(diffTransparency, isDarkMode);
   const reducedSpanColor = getReducedSpanColor(diffTransparency, isDarkMode);
 
-  const color = diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
+  const color: FeatureColor =
+    diff === 0 ? newSpanColor : diff > 0 ? {color: increasedSpanColor} : {color: reducedSpanColor};
 
   return color;
 };

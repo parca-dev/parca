@@ -35,6 +35,12 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     type: 'boolean',
     default: false,
   },
+  FLAMEGRAPH_COLOR_PROFILE: {
+    name: 'Flamegraph color profile',
+    key: 'FLAMEGRAPH_COLOR_PROFILE',
+    type: 'string',
+    default: 'default',
+  },
 } as const;
 
 export type UserPreference = keyof typeof USER_PREFERENCES;

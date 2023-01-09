@@ -21,10 +21,11 @@ import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import type {HoveringNode} from './GraphTooltip';
 import GraphTooltip from './GraphTooltip';
-import {diffColor, getLastItem, isSearchMatch} from '@parca/functions';
+import {diffColor, FeatureColor, getLastItem, isSearchMatch} from '@parca/functions';
 import {selectDarkMode, selectSearchNodeString, useAppSelector} from '@parca/store';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress} from './utils';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -176,6 +177,8 @@ export function nodeLabel(
   return fallback === '' ? '<unknown>' : fallback;
 }
 
+const featureColors: {[key: string]: FeatureColor} = {};
+
 export function IcicleGraphNodes({
   data,
   strings,
@@ -195,6 +198,7 @@ export function IcicleGraphNodes({
 }: IcicleGraphNodesProps): JSX.Element {
   const isDarkMode = useAppSelector(selectDarkMode);
   const isShiftDown = useIsShiftDown();
+  const [colorProfile] = useUserPreference<string>(USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key);
 
   const nodes =
     curPath.length === 0
@@ -226,7 +230,9 @@ export function IcicleGraphNodes({
         const key = `${level}-${i}`;
         const nextPath = path.concat([name]);
 
-        const color = diffColor(diff, cumulative, isDarkMode);
+        const featureColor = diffColor(diff, cumulative, isDarkMode, name, colorProfile);
+        featureColors[featureColor.feature ?? ''] = featureColor;
+        const {color} = featureColor;
 
         const onClick = (): void => {
           setCurPath(nextPath);
@@ -309,9 +315,15 @@ export function IcicleGraphRootNode({
   const isDarkMode = useAppSelector(selectDarkMode);
   const isShiftDown = useIsShiftDown();
 
+  const [colorProfile] = useUserPreference<string>(USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key);
+
   const cumulative = parseFloat(node.cumulative);
   const diff = parseFloat(node.diff);
-  const color = diffColor(diff, cumulative, isDarkMode);
+  const featureColor = diffColor(diff, cumulative, isDarkMode, 'root', colorProfile);
+  featureColors[featureColor.feature ?? ''] = featureColor;
+  const {color} = featureColor;
+
+  console.log('color', color);
 
   const onClick = (): void => setCurPath([]);
   const onMouseEnter = (): void => {
@@ -378,12 +390,35 @@ export default function IcicleGraph({
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
+  const [featureColorsState, setFeatureColorsState] =
+    useState<Record<string, FeatureColor>>(featureColors);
 
   useEffect(() => {
     if (ref.current != null) {
       setHeight(ref?.current.getBoundingClientRect().height);
     }
   }, [width, graph]);
+
+  useEffect(() => {
+    if (
+      Object.values(
+        Object.values(featureColors).reduce((acc, val) => {
+          acc[val.color] = true;
+          return acc;
+        }, {})
+      ).length < 2
+    ) {
+      if (Object.values(featureColorsState).length > 0) {
+        setFeatureColorsState({});
+      }
+      return;
+    }
+
+    if (Object.values(featureColorsState).length !== Object.values(featureColors).length) {
+      console.log('setting featurColors', featureColors);
+      setFeatureColorsState(featureColors);
+    }
+  });
 
   const total = useMemo(() => parseFloat(graph.total), [graph.total]);
   const xScale = useMemo(() => {
@@ -405,8 +440,30 @@ export default function IcicleGraph({
     throttledSetPos([rel[0], rel[1]]);
   };
 
+  console.log('featureColorsState', featureColorsState);
+
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
+      <div className="flex flex-wrap gap-4 px-10 my-6">
+        {Object.values(featureColorsState)
+          .sort((a, b) => {
+            if (a.feature === 'Everything else') {
+              return 1;
+            }
+            if (b.feature === 'Everything else') {
+              return -1;
+            }
+            return a.feature?.localeCompare(b.feature ?? '') ?? 0;
+          })
+          .map(({feature, color}) => {
+            return (
+              <div key={feature} className="flex gap-1 items-center">
+                <div className="w-4 h-4 mr-1 inline-block" style={{backgroundColor: color}} />
+                <span className="text-sm">{feature}</span>
+              </div>
+            );
+          })}
+      </div>
       <GraphTooltip
         unit={sampleUnit}
         total={total}
@@ -420,7 +477,7 @@ export default function IcicleGraph({
         functions={graph.function}
       />
       <svg
-        className="font-robotoMono"
+        className="font-robotoMono "
         width={width}
         height={height}
         onMouseMove={onMouseMove}

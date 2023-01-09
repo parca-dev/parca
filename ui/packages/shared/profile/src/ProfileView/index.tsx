@@ -211,7 +211,7 @@ export const ProfileView = ({
     });
   };
 
-  const maxColor: string = getNewSpanColor(isDarkMode);
+  const maxColor: string = getNewSpanColor(isDarkMode).color;
   // TODO: fix colors for dark mode
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
 
