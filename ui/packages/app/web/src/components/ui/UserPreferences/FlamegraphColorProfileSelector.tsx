@@ -24,7 +24,7 @@ const FlamegraphColorProfileSelector = () => {
   return (
     <fieldset className={'flex gap-2 items-center mt-2'}>
       <legend className="mb-1">Flamegraph Color Profile</legend>
-      <div className="flex flex-col pl-4 gap-2 text-sm">
+      <div className="flex flex-col pl-4 gap-3 text-sm">
         {Object.keys(COLOR_PROFILES).map(profile => {
           const isSelected = profile === colorProfileName;
           return (
@@ -43,11 +43,11 @@ const FlamegraphColorProfileSelector = () => {
                 />
                 <span>{profile}</span>
               </label>
-              <div className="flex gap-2 flex-wrap w-64">
+              <div className="flex gap-2 w-72 overflow-scroll">
                 {COLOR_PROFILES[profile].colors.map(color => (
                   <div
                     key={color}
-                    className="w-4 h-4 rounded-full"
+                    className="w-3 h-4 rounded-full flex-shrink-0"
                     style={{backgroundColor: isDarkMode ? color[0] : color[1]}}
                   />
                 ))}

@@ -248,16 +248,16 @@ export function convertLocalToUTCDate(date: Date): Date {
 }
 
 export const COLOR_PROFILES = {
-  default: {colors: [['#B3BAE1', '#929FEB']], colorMap: {}},
+  default: {colors: [['#929FEB', '#B3BAE1']], colorMap: {}},
   subtle: {
     colors: [
-      [colors.pink['200'], colors.pink['200']],
-      [colors.green['100'], colors.green['100']],
       [colors.slate['200'], colors.slate['200']],
-      [colors.indigo['200'], colors.indigo['200']],
-      [colors.yellow['200'], colors.yellow['200']],
-      [colors.emerald['200'], colors.emerald['200']],
       [colors.orange['200'], colors.orange['200']],
+      [colors.yellow['200'], colors.yellow['200']],
+      [colors.green['100'], colors.green['100']],
+      [colors.emerald['200'], colors.emerald['200']],
+      [colors.indigo['200'], colors.indigo['200']],
+      [colors.pink['200'], colors.pink['200']],
     ],
     colorMap: {},
   },
@@ -279,35 +279,33 @@ export const COLOR_PROFILES = {
     colors: [
       [colors.red['300'], colors.red['300']],
       [colors.orange['300'], colors.orange['300']],
+      [colors.amber['300'], colors.amber['300']],
       [colors.yellow['300'], colors.yellow['300']],
       [colors.lime['300'], colors.lime['300']],
       [colors.green['300'], colors.green['300']],
       [colors.emerald['300'], colors.emerald['300']],
-      [colors.amber['300'], colors.amber['300']],
-      // [colors.fuchsia['300'], colors.fuchsia['300']],
-      // [colors.purple['300'], colors.purple['300']],
     ],
     colorMap: {},
   },
   ranbow: {
     colors: [
-      [colors.amber['300'], colors.amber['300']],
-      [colors.blue['300'], colors.blue['300']],
-      [colors.cyan['300'], colors.cyan['300']],
-      [colors.emerald['300'], colors.emerald['300']],
-      [colors.fuchsia['300'], colors.fuchsia['300']],
-      [colors.green['300'], colors.green['300']],
-      [colors.indigo['300'], colors.indigo['300']],
-      [colors.lime['300'], colors.lime['300']],
-      [colors.orange['300'], colors.orange['300']],
-      [colors.pink['300'], colors.pink['300']],
-      [colors.purple['300'], colors.purple['300']],
       [colors.red['300'], colors.red['300']],
-      [colors.rose['300'], colors.rose['300']],
-      [colors.sky['300'], colors.sky['300']],
-      [colors.teal['300'], colors.teal['300']],
-      [colors.violet['300'], colors.violet['300']],
+      [colors.orange['300'], colors.orange['300']],
+      [colors.amber['300'], colors.amber['300']],
       [colors.yellow['300'], colors.yellow['300']],
+      [colors.lime['300'], colors.lime['300']],
+      [colors.green['300'], colors.green['300']],
+      [colors.emerald['300'], colors.emerald['300']],
+      [colors.teal['300'], colors.teal['300']],
+      [colors.cyan['300'], colors.cyan['300']],
+      [colors.sky['300'], colors.sky['300']],
+      [colors.blue['300'], colors.blue['300']],
+      [colors.indigo['300'], colors.indigo['300']],
+      [colors.violet['300'], colors.violet['300']],
+      [colors.purple['300'], colors.purple['300']],
+      [colors.fuchsia['300'], colors.fuchsia['300']],
+      [colors.pink['300'], colors.pink['300']],
+      [colors.rose['300'], colors.rose['300']],
     ],
     colorMap: {},
   },
@@ -351,8 +349,7 @@ const getColorForFeature = (feature: string, isDarkMode: boolean, colorProfileNa
           .reduce((acc, char) => {
             acc += char.charCodeAt(0);
             return acc;
-          }, 0) %
-        (colors.length - 1);
+          }, 0) % (colors.length > 1 ? colors.length - 1 : 1);
 
   const color = findAColor(colorIndex, colors);
   featureColorMap[feature] = color;
