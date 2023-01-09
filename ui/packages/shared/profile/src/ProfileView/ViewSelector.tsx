@@ -19,9 +19,21 @@ interface Props {
   position: number;
   defaultValue: string;
   navigateTo?: NavigateFunction;
+  placeholderText?: string;
+  primary?: boolean;
+  addView?: boolean;
+  disabled?: boolean;
 }
 
-const ViewSelector = ({defaultValue, navigateTo, position}: Props): JSX.Element => {
+const ViewSelector = ({
+  defaultValue,
+  navigateTo,
+  position,
+  placeholderText,
+  primary = false,
+  addView = false,
+  disabled = false,
+}: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [dashboardItems, setDashboardItems] = useURLState({
     param: 'dashboard_items',
@@ -70,6 +82,11 @@ const ViewSelector = ({defaultValue, navigateTo, position}: Props): JSX.Element 
   }));
 
   const onSelection = (value: string | undefined): void => {
+    if (addView) {
+      setDashboardItems([dashboardItems[0], value]);
+      return;
+    }
+
     const isOnlyChart = dashboardItems.length === 1;
     if (isOnlyChart) {
       setDashboardItems([value]);
@@ -90,7 +107,9 @@ const ViewSelector = ({defaultValue, navigateTo, position}: Props): JSX.Element 
       items={items}
       selectedKey={defaultValue}
       onSelection={onSelection}
-      placeholder="Select view type..."
+      placeholder={placeholderText ?? 'Select view type...'}
+      primary={primary}
+      disabled={disabled}
     />
   );
 };

@@ -186,11 +186,6 @@ export const ProfileView = ({
     }
   };
 
-  const handleAddView = (): void => {
-    const newDashboardItems = [...dashboardItems, ''];
-    setDashboardItems(newDashboardItems);
-  };
-
   const handleResetView = (): void => {
     setDashboardItems(['icicle']);
   };
@@ -262,14 +257,15 @@ export const ProfileView = ({
                   Reset Panels
                 </Button>
 
-                <Button
-                  color="primary"
-                  onClick={handleAddView}
+                <ViewSelector
+                  defaultValue=""
+                  navigateTo={navigateTo}
+                  position={-1}
+                  placeholderText="Add panel..."
+                  primary
+                  addView={true}
                   disabled={!isSinglePanelView || dashboardItems.length < 1}
-                  className="whitespace-nowrap text-ellipsis"
-                >
-                  Add Panel
-                </Button>
+                />
               </div>
             </div>
 

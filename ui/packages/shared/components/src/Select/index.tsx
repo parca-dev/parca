@@ -43,6 +43,8 @@ const Select = ({
   width,
   className = '',
   loading,
+  primary = false,
+  disabled = false,
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
@@ -51,12 +53,18 @@ const Select = ({
   width?: number;
   className?: string;
   loading?: boolean;
+  primary?: boolean;
+  disabled?: boolean;
 }): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
     element: {active: <>{selectedKey}</>, expanded: <>{selectedKey}</>},
   };
   const {loader} = useParcaContext();
+  const defaultStyles =
+    'relative bg-gray-50 dark:bg-gray-900 border-t border-r border-b border-l dark:border-gray-600 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-sm';
+  const primaryStyles =
+    'relative text-gray-100 dark-gray-900 justify-center bg-indigo-600 border border-indigo-500 font-medium py-2 px-4 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-sm';
 
   return (
     <>
@@ -67,7 +75,8 @@ const Select = ({
               <Listbox.Button
                 className={cx(
                   width !== undefined ? `w-${width}` : '',
-                  'relative bg-gray-50 dark:bg-gray-900 border-t border-r border-b border-l dark:border-gray-600 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-sm',
+                  disabled ? 'opacity-50 cursor-not-allowed' : '',
+                  primary ? primaryStyles : defaultStyles,
                   {[className]: className.length > 0}
                 )}
               >
