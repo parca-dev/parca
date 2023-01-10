@@ -88,49 +88,60 @@ const Select = ({
                 leaveFrom="opacity-100"
                 leaveTo="opacity-0"
               >
-                <Listbox.Options
-                  className={cx(
-                    width !== undefined ? `w-${width}` : '',
-                    'absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 dark:border-gray-600 shadow-lg rounded-md py-1 text-base ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-20 overflow-auto focus:outline-none sm:text-sm'
-                  )}
-                >
+                <Listbox.Options>
                   {loading === true ? (
-                    <div className="w-[270px]">{loader}</div>
+                    <div className="absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 dark:border-gray-600 shadow-lg rounded-md py-1 text-base ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-20 overflow-auto focus:outline-none sm:text-sm">
+                      <div className="w-[270px]">{loader}</div>
+                    </div>
                   ) : (
-                    items.map(option => (
-                      <Listbox.Option
-                        key={option.key}
-                        className={({active}) =>
-                          cx(
-                            active && 'text-white bg-indigo-600',
-                            'cursor-default select-none relative py-2 pl-3 pr-9'
-                          )
-                        }
-                        value={option.key}
-                      >
-                        {({selected, active}) => (
-                          <>
-                            <div className="flex items-center">
-                              <span
-                                className={cx(selected ? 'font-semibold' : 'font-normal', 'ml-3')}
-                              >
-                                {option.element.expanded}
-                              </span>
-                            </div>
-                            {selected ? (
-                              <span
-                                className={cx(
-                                  active ? 'text-white' : 'text-indigo-600',
-                                  'absolute inset-y-0 right-0 flex items-center pr-4'
-                                )}
-                              >
-                                <CheckIcon className="h-5 w-5" aria-hidden="true" />
-                              </span>
-                            ) : null}
-                          </>
-                        )}
-                      </Listbox.Option>
-                    ))
+                    <>
+                      {items.length > 0 && (
+                        <div
+                          className={cx(
+                            width !== undefined ? `w-${width}` : '',
+                            'absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 dark:border-gray-600 shadow-lg rounded-md py-1 text-base ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-20 overflow-auto focus:outline-none sm:text-sm'
+                          )}
+                        >
+                          {items.map(option => (
+                            <Listbox.Option
+                              key={option.key}
+                              className={({active}) =>
+                                cx(
+                                  active && 'text-white bg-indigo-600',
+                                  'cursor-default select-none relative py-2 pl-3 pr-9'
+                                )
+                              }
+                              value={option.key}
+                            >
+                              {({selected, active}) => (
+                                <>
+                                  <div className="flex items-center">
+                                    <span
+                                      className={cx(
+                                        selected ? 'font-semibold' : 'font-normal',
+                                        'ml-3'
+                                      )}
+                                    >
+                                      {option.element.expanded}
+                                    </span>
+                                  </div>
+                                  {selected ? (
+                                    <span
+                                      className={cx(
+                                        active ? 'text-white' : 'text-indigo-600',
+                                        'absolute inset-y-0 right-0 flex items-center pr-4'
+                                      )}
+                                    >
+                                      <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                    </span>
+                                  ) : null}
+                                </>
+                              )}
+                            </Listbox.Option>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </Listbox.Options>
               </Transition>

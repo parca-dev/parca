@@ -27,7 +27,7 @@ const GenericInput = ({id, type, value, onChange, disabled = false}: GenericInpu
     case 'boolean':
       return (
         <input
-          className="bg-inherit border disabled:cursor-not-allowed"
+          className="bg-inherit border disabled:cursor-not-allowed mt-[5px]"
           id={id}
           type="checkbox"
           checked={value}
@@ -70,7 +70,10 @@ function UserPreferenceItem<T>({
 
   return (
     <div
-      className={cx('flex gap-2 items-center', {[className]: className, 'opacity-50': disabled})}
+      className={cx('flex gap-2 mb-1 items-start', {
+        [className]: className,
+        'opacity-50': disabled,
+      })}
     >
       {labelToLeft ? (
         <label htmlFor={userPreferenceDetails.key}>{userPreferenceDetails.name}</label>

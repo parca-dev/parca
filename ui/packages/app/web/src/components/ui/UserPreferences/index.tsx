@@ -54,10 +54,10 @@ const UserPreferences = () => {
         title="Preferences"
         className="max-w-[460px]"
       >
-        <div className="min-h-40 w-[460px] mt-8">
+        <div className="min-h-40 mt-8">
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING} />
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.DISABLE_GRAPH_TRIMMING} />
-          <div className=" min-w-96 mt-10">
+          <div className="min-w-96 mt-10">
             <h4 className="font-medium mb-2">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />
           </div>
