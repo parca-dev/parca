@@ -8,7 +8,7 @@ ARG TARGETARCH=amd64
 ARG TARGETVARIANT=v1
 
 # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-health-probe
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.14
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.15
 RUN wget -qO/bin/grpc_health_probe "https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-${TARGETOS}-${TARGETARCH}" && \
     chmod +x /bin/grpc_health_probe
 
@@ -27,7 +27,7 @@ RUN chmod +x parca
 
 # https://github.com/hadolint/hadolint/issues/861
 # hadolint ignore=DL3029
-FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.17.0@sha256:8914eb54f968791faf6a8638949e480fef81e697984fba772b3976835194c6d4 AS runner
+FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.17.1@sha256:f271e74b17ced29b915d351685fd4644785c6d1559dd1f2d4189a5e851ef753a AS runner
 
 USER nobody
 

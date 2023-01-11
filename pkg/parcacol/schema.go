@@ -162,12 +162,12 @@ func Schema() (*dynparquet.Schema, error) {
 				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
 				NullsFirst: true,
 			}, {
+				Name:      ColumnTimestamp,
+				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
+			}, {
 				Name:       ColumnStacktrace,
 				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
 				NullsFirst: true,
-			}, {
-				Name:      ColumnTimestamp,
-				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
 			}, {
 				Name:       ColumnPprofLabels,
 				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
