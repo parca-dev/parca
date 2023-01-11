@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Provider } from 'react-redux';
 import { PanelProps } from '@grafana/data';
 import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
-import { ProfileView, VisualizationType, ProfileVisState, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
+import { ProfileView, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
 import { store } from '@parca/store';
 
 import '@parca/profile/dist/styles.css';
@@ -26,20 +26,12 @@ interface Props extends PanelProps<{}> {}
 
 const { store: parcaStore } = store();
 
-const useInMemoryProfileVisState = (): ProfileVisState => {
-  const [currentView, setCurrentView] = useState<VisualizationType>('icicle');
-
-  return { currentView, setCurrentView };
-};
-
 function extractData<T>(data: any): T {
   return data.series[0].fields[0].values.get(0);
 }
 
 export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
   const styles = getStyles();
-
-  const profileVisState = useInMemoryProfileVisState();
 
   const response = extractData<GrafanaParcaData>(data);
 
@@ -72,7 +64,6 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
           topTableData={topTableData}
           sampleUnit={flamegraphData.data?.unit ?? 'bytes'}
           onDownloadPProf={actions.downloadPprof}
-          profileVisState={profileVisState}
           profileSource={
             new MergedProfileSource(
               data.timeRange.from.valueOf(),
