@@ -20,8 +20,7 @@ import {Button} from '@parca/components';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot, getCurvePoints} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
-import {useAppSelector, selectSearchNodeString} from '@parca/store';
-import {isSearchMatch} from '@parca/functions';
+import {isSearchMatch, selectQueryParam} from '@parca/functions';
 import Tooltip from '../GraphTooltip';
 import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
 
@@ -180,7 +179,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
     y: 0,
   });
   const {nodes: rawNodes, cumulative: total} = graph;
-  const currentSearchString = useAppSelector(selectSearchNodeString);
+  const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
 
   useEffect(() => {
@@ -208,6 +207,8 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   // 3. Render the graph with calculated layout in Canvas container
   if (width == null || graphData == null) return <></>;
   const {objects: gvizNodes, edges, bb: boundingBox} = JSON.parse(graphData) as GraphvizType;
+
+  if (gvizNodes.length < 1) return <>Profile has no samples</>;
 
   const graphBB = boundingBox.split(',');
   const bbWidth = Number(graphBB[2]);
@@ -344,7 +345,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
           contextElement={containerRef.current}
         />
         {stage.scale.x !== 1 && (
-          <Button className="w-auto !absolute top-0 right-0" variant="neutral" onClick={resetZoom}>
+          <Button className="w-auto !absolute top-0 left-0" variant="neutral" onClick={resetZoom}>
             Reset Zoom
           </Button>
         )}

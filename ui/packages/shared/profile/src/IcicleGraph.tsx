@@ -21,9 +21,10 @@ import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import type {HoveringNode} from './GraphTooltip';
 import GraphTooltip from './GraphTooltip';
-import {diffColor, getLastItem, isSearchMatch} from '@parca/functions';
-import {selectDarkMode, selectSearchNodeString, useAppSelector} from '@parca/store';
+import {diffColor, getLastItem, isSearchMatch, selectQueryParam} from '@parca/functions';
+import {selectDarkMode, useAppSelector} from '@parca/store';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
+import {Button} from '@parca/components';
 import {hexifyAddress} from './utils';
 
 interface IcicleGraphProps {
@@ -103,7 +104,7 @@ function IcicleRect({
   onClick,
   curPath,
 }: IcicleRectProps): JSX.Element {
-  const currentSearchString = useAppSelector(selectSearchNodeString);
+  const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
 
@@ -419,6 +420,17 @@ export default function IcicleGraph({
         locations={graph.locations}
         functions={graph.function}
       />
+      <div className="w-full flex justify-start">
+        <Button
+          color="neutral"
+          onClick={() => setCurPath([])}
+          disabled={curPath.length === 0}
+          className="w-auto"
+          variant="neutral"
+        >
+          Reset zoom
+        </Button>
+      </div>
       <svg
         className="font-robotoMono"
         width={width}
