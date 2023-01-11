@@ -31,19 +31,22 @@ export const useURLState = ({
   param,
   navigateTo,
   withURLUpdate = true,
-}: Props): [string | string[], (string) => void] => {
+}: Props): [string | string[], (val: string | string[]) => void] => {
   const dispatch = useAppDispatch();
   const router = parseParams(window.location.search);
   const [highlightAfterFilteringEnabled] = useUIFeatureFlag('highlightAfterFiltering');
 
   // 1. set initial value to the store value or URL value
   const value = useAppSelector(selectProfileStateValue(param)) ?? router[param];
-  const setValue = (value): {payload: {key: string; value?: string | string[]}; type: string} =>
+  const setValue = (
+    value: string | string[]
+  ): {payload: {key: string; value?: string | string[]}; type: string} =>
     dispatch(setProfileStateValue({key: param, value}));
 
   // whenever the store value changes, (optionally) update the URL
   useEffect(() => {
-    const isEmpty = (val): boolean => val === undefined || val === null || val === '';
+    const isEmpty = (val: string | string[] | undefined): boolean =>
+      val === undefined || val === null || val === '';
 
     if (withURLUpdate && navigateTo !== undefined) {
       if (router[param] !== value) {

@@ -48,7 +48,7 @@ const Select = ({
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
-  onSelection: (value: string | undefined) => void;
+  onSelection: (value: string) => void;
   placeholder?: string;
   width?: number;
   className?: string;

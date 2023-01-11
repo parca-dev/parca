@@ -17,7 +17,6 @@ import {scaleLinear} from 'd3';
 import cx from 'classnames';
 import {getNewSpanColor, useURLState} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
-import {NavigateOptions} from 'react-router-dom';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
@@ -34,7 +33,7 @@ import useDelayedLoader from '../useDelayedLoader';
 
 import '../ProfileView.styles.css';
 
-type NavigateFunction = (path: string, queryParams: any, options?: NavigateOptions) => void;
+type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 
 export interface FlamegraphData {
   loading: boolean;

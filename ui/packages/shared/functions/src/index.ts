@@ -11,12 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {NavigateOptions} from 'react-router-dom';
 import format from 'date-fns/format';
 import {Label} from '@parca/client';
 export * from './hooks';
 
-export type NavigateFunction = (path: string, queryParams: any, options?: NavigateOptions) => void;
+export type NavigateFunction = (
+  path: string,
+  queryParams: any,
+  options?: {replace?: boolean}
+) => void;
 
 export const SEARCH_STRING_COLOR = '#e39c9c';
 
@@ -233,7 +236,7 @@ export const selectQueryParam = (key: string): string | string[] | undefined => 
   return router[key];
 };
 
-export const convertToQueryParams = (params: string | string[]): string =>
+export const convertToQueryParams = (params: {[key: string]: string | string[]}): string =>
   Object.keys(params)
     .map((key: string) => `${key}=${params[key] as string}`)
     .join('&');

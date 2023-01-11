@@ -12,11 +12,15 @@
 // limitations under the License.
 
 import {Input} from '@parca/components';
-import {useURLState} from '@parca/functions';
+import {useURLState, NavigateFunction} from '@parca/functions';
 import {Icon} from '@iconify/react';
 import {useCallback, useMemo, useState} from 'react';
 
-const FilterByFunctionButton = ({navigateTo}): JSX.Element => {
+const FilterByFunctionButton = ({
+  navigateTo,
+}: {
+  navigateTo: NavigateFunction | undefined;
+}): JSX.Element => {
   const [storeValue, setStoreValue] = useURLState({param: 'filter_by_function', navigateTo});
   const [localValue, setLocalValue] = useState(storeValue as string);
 

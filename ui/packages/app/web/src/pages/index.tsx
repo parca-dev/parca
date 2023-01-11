@@ -14,7 +14,7 @@
 import {useCallback} from 'react';
 import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import {QueryServiceClient} from '@parca/client';
-import {NavigateOptions, useLocation, useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate} from 'react-router-dom';
 import {parseParams, convertToQueryParams} from '@parca/functions';
 import {ProfileExplorer} from '@parca/profile';
 
@@ -31,7 +31,7 @@ const Profiles = () => {
   const navigate = useNavigate();
 
   const navigateTo = useCallback(
-    (path: string, queryParams: any, options?: NavigateOptions) => {
+    (path: string, queryParams: any, options?: {replace?: boolean}) => {
       navigate(
         {
           pathname: path,

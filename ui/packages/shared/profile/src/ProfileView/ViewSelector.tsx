@@ -81,7 +81,7 @@ const ViewSelector = ({
     element: getOption(item),
   }));
 
-  const onSelection = (value: string | undefined): void => {
+  const onSelection = (value: string): void => {
     if (addView) {
       setDashboardItems([dashboardItems[0], value]);
       return;
