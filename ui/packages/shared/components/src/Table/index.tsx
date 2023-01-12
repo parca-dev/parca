@@ -25,7 +25,6 @@ import {useCallback, useRef, useState} from 'react';
 import {Icon} from '@iconify/react';
 
 declare module '@tanstack/table-core' {
-  // @ts-expect-error
   interface ColumnMeta {
     align: 'left' | 'right';
   }

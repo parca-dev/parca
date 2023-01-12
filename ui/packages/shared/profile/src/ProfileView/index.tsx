@@ -199,12 +199,6 @@ export const ProfileView = ({
     setDashboardItems([dashboardItems[1], dashboardItems[0]]);
   };
 
-  const getItemStyle = (isDragging: boolean, draggableStyle): {[key: string]: string | number} => ({
-    userSelect: 'none',
-    background: isDragging ? 'lightgrey' : 'white',
-    ...draggableStyle,
-  });
-
   return (
     <>
       <div className="py-3">
@@ -277,7 +271,7 @@ export const ProfileView = ({
                               index={index}
                               isDragDisabled={isSinglePanelView}
                             >
-                              {(provided, snapshot) => (
+                              {(provided, snapshot: {isDragging: boolean}) => (
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
@@ -285,11 +279,8 @@ export const ProfileView = ({
                                   key={dashboardItem}
                                   className={cx(
                                     'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
-                                    isSinglePanelView ? 'w-full' : 'w-1/2'
-                                  )}
-                                  style={getItemStyle(
-                                    snapshot.isDragging,
-                                    provided.draggableProps.style
+                                    isSinglePanelView ? 'w-full' : 'w-1/2',
+                                    snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
                                   )}
                                 >
                                   <div className="w-full flex justify-end pb-2">
