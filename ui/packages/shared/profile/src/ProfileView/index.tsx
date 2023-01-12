@@ -21,6 +21,7 @@ import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@
 import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode} from '@parca/store';
+import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
 
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -194,26 +195,14 @@ export const ProfileView = ({
     setDashboardItems(newDashboardItems);
   };
 
-  const dashboardItemsWithViewSelector = dashboardItems.map((dashboardItem, index) => {
-    return (
-      <div
-        key={index}
-        className={cx(
-          'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
-          isSinglePanelView ? 'w-full' : 'w-1/2'
-        )}
-      >
-        <div className="w-full flex justify-end pb-2">
-          <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
-          {!isSinglePanelView && (
-            <button type="button" onClick={() => handleClosePanel(dashboardItem)} className="pl-2">
-              <CloseIcon />
-            </button>
-          )}
-        </div>
-        {getDashboardItemByType({type: dashboardItem, isHalfScreen: !isSinglePanelView})}
-      </div>
-    );
+  const onDragEnd = (): void => {
+    setDashboardItems([dashboardItems[1], dashboardItems[0]]);
+  };
+
+  const getItemStyle = (isDragging: boolean, draggableStyle): {[key: string]: string | number} => ({
+    userSelect: 'none',
+    background: isDragging ? 'lightgrey' : 'white',
+    ...draggableStyle,
   });
 
   return (
@@ -271,9 +260,68 @@ export const ProfileView = ({
             {isLoaderVisible ? (
               <>{loader}</>
             ) : (
-              <div ref={ref} className="flex space-x-4 justify-between w-full">
-                {dashboardItemsWithViewSelector}
-              </div>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <div className="w-full" ref={ref}>
+                  <Droppable droppableId="droppable" direction="horizontal">
+                    {provided => (
+                      <div
+                        ref={provided.innerRef}
+                        className="flex space-x-4 justify-between w-full"
+                        {...provided.droppableProps}
+                      >
+                        {dashboardItems.map((dashboardItem, index) => {
+                          return (
+                            <Draggable
+                              key={dashboardItem}
+                              draggableId={dashboardItem}
+                              index={index}
+                              isDragDisabled={isSinglePanelView}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  key={dashboardItem}
+                                  className={cx(
+                                    'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
+                                    isSinglePanelView ? 'w-full' : 'w-1/2'
+                                  )}
+                                  style={getItemStyle(
+                                    snapshot.isDragging,
+                                    provided.draggableProps.style
+                                  )}
+                                >
+                                  <div className="w-full flex justify-end pb-2">
+                                    <ViewSelector
+                                      defaultValue={dashboardItem}
+                                      navigateTo={navigateTo}
+                                      position={index}
+                                    />
+                                    {!isSinglePanelView && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleClosePanel(dashboardItem)}
+                                        className="pl-2"
+                                      >
+                                        <CloseIcon />
+                                      </button>
+                                    )}
+                                  </div>
+                                  {getDashboardItemByType({
+                                    type: dashboardItem,
+                                    isHalfScreen: !isSinglePanelView,
+                                  })}
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              </DragDropContext>
             )}
           </Card.Body>
         </Card>
