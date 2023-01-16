@@ -43,7 +43,7 @@ const FlamegraphColorProfileSelector = () => {
                 />
                 <span>{profile}</span>
               </label>
-              <div className="flex gap-2 w-72 overflow-scroll">
+              <div className="flex gap-2 w-72 overflow-auto">
                 {COLOR_PROFILES[profile].colors.map(color => (
                   <div
                     key={color}
