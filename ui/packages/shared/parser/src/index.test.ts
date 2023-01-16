@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {MatcherType, Matcher, Query, ProfileType} from './index';
+import {MatcherTypes, Matcher, Query, ProfileType} from './index';
 
 test('QueryParseEmpty', () => {
   expect(Query.parse('')).toMatchObject(
@@ -29,7 +29,7 @@ test('QueryParseWithMatcher', () => {
   expect(Query.parse('memory:inuse_objects:count:space:bytes{instance="abc"}')).toMatchObject(
     new Query(
       new ProfileType('memory', 'inuse_objects', 'count', 'space', 'bytes', false),
-      [new Matcher('instance', MatcherType.MatchEqual, 'abc')],
+      [new Matcher('instance', MatcherTypes.MatchEqual, 'abc')],
       ''
     )
   );
@@ -104,7 +104,7 @@ test('Parse Multiline query', () => {
   ).toMatchObject(
     new Query(
       new ProfileType('memory', 'alloc_objects', 'count', 'space', 'bytes', true),
-      [new Matcher('instance', MatcherType.MatchEqual, 'abc')],
+      [new Matcher('instance', MatcherTypes.MatchEqual, 'abc')],
       ''
     )
   );
