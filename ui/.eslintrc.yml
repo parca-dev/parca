@@ -2,6 +2,7 @@
 extends:
   - 'standard-with-typescript'
   - 'prettier'
+  - 'plugin:typescript-enum/recommended'
 
 parserOptions:
   project: './tsconfig.json'
@@ -14,6 +15,7 @@ plugins:
   - jest-dom
   - '@typescript-eslint'
   - react-hooks
+  - typescript-enum
 
 settings:
   react:

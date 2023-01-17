@@ -19,13 +19,13 @@ import {getHealthStatus} from './utils';
 import {Pill} from '@parca/components';
 import {TimeObject} from '@parca/functions';
 
-enum TargetsTableHeader {
-  url = 'URL',
-  health = 'Health Status',
-  labels = 'Labels',
-  lastScrape = 'Last Scrape',
-  lastError = 'Last Error',
-}
+const TargetsTableHeader = {
+  url: 'URL',
+  health: 'Health Status',
+  labels: 'Labels',
+  lastScrape: 'Last Scrape',
+  lastError: 'Last Error',
+};
 
 const getRowContentByHeader = ({
   header,
@@ -94,6 +94,7 @@ const getRowContentByHeader = ({
     case TargetsTableHeader.health: {
       const {health} = target;
       const {label, colorVariant} = getHealthStatus(health);
+
       return (
         <td key={key} className="px-6 py-4 whitespace-nowrap">
           <Pill variant={colorVariant}>{label}</Pill>
