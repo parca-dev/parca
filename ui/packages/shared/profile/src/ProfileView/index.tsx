@@ -95,7 +95,7 @@ export const ProfileView = ({
   });
   const dashboardItems = rawDashboardItems as string[];
   const isDarkMode = useAppSelector(selectDarkMode);
-  const isSinglePanelView = dashboardItems.length === 1;
+  const isMultiPanelView = dashboardItems.length > 1;
 
   const {loader, perf} = useParcaContext();
 
@@ -195,8 +195,19 @@ export const ProfileView = ({
     setDashboardItems(newDashboardItems);
   };
 
-  const onDragEnd = (): void => {
-    setDashboardItems([dashboardItems[1], dashboardItems[0]]);
+  const onDragEnd = (dragData): void => {
+    const {destination, source, draggableId} = dragData;
+
+    if (destination.index !== source.index) {
+      const targetItem = draggableId;
+      const otherItems = dashboardItems.filter(item => item !== targetItem);
+      const newDashboardItems =
+        destination.index < source.index
+          ? [targetItem, ...otherItems]
+          : [...otherItems, targetItem];
+
+      setDashboardItems(newDashboardItems);
+    }
   };
 
   return (
@@ -233,7 +244,7 @@ export const ProfileView = ({
                 <Button
                   color="neutral"
                   onClick={handleResetView}
-                  disabled={isSinglePanelView}
+                  disabled={!isMultiPanelView}
                   className="whitespace-nowrap text-ellipsis"
                 >
                   Reset Panels
@@ -246,7 +257,7 @@ export const ProfileView = ({
                   placeholderText="Add panel..."
                   primary
                   addView={true}
-                  disabled={!isSinglePanelView || dashboardItems.length < 1}
+                  disabled={isMultiPanelView || dashboardItems.length < 1}
                 />
               </div>
             </div>
@@ -269,7 +280,7 @@ export const ProfileView = ({
                               key={dashboardItem}
                               draggableId={dashboardItem}
                               index={index}
-                              isDragDisabled={isSinglePanelView}
+                              isDragDisabled={!isMultiPanelView}
                             >
                               {(provided, snapshot: {isDragging: boolean}) => (
                                 <div
@@ -278,13 +289,16 @@ export const ProfileView = ({
                                   key={dashboardItem}
                                   className={cx(
                                     'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
-                                    isSinglePanelView ? 'w-full' : 'w-1/2',
+                                    isMultiPanelView ? 'w-1/2' : 'w-full',
                                     snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
                                   )}
                                 >
                                   <div className="w-full flex justify-end pb-2">
                                     <div className="w-full flex justify-between">
-                                      <div {...provided.dragHandleProps}>
+                                      <div
+                                        className={cx(isMultiPanelView ? 'visible' : 'invisible')}
+                                        {...provided.dragHandleProps}
+                                      >
                                         <DragIndicator />
                                       </div>
                                       <ViewSelector
@@ -294,7 +308,7 @@ export const ProfileView = ({
                                       />
                                     </div>
 
-                                    {!isSinglePanelView && (
+                                    {isMultiPanelView && (
                                       <button
                                         type="button"
                                         onClick={() => handleClosePanel(dashboardItem)}
@@ -306,7 +320,7 @@ export const ProfileView = ({
                                   </div>
                                   {getDashboardItemByType({
                                     type: dashboardItem,
-                                    isHalfScreen: !isSinglePanelView,
+                                    isHalfScreen: isMultiPanelView,
                                   })}
                                 </div>
                               )}
