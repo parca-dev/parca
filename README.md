@@ -88,9 +88,11 @@ Flags:
                                 Path to config file.
       --mode="all"              Scraper only runs a scraper that sends to a
                                 remote gRPC endpoint. All runs all components.
-      --log-level="info"        log level.
       --http-address=":7070"    Address to bind HTTP server to.
       --port=""                 (DEPRECATED) Use http-address instead.
+      --log-level="info"        Log level.
+      --log-format="logfmt"     Configure if structured logging as JSON or as
+                                logfmt
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
                                 Allowed CORS origins.
       --otlp-address=STRING     OpenTelemetry collector address to send traces
@@ -120,17 +122,6 @@ Flags:
       --symbolizer-number-of-tries=3
                                 Number of tries to attempt to symbolize an
                                 unsybolized location
-      --metastore="badger"      Which metastore implementation to use
-      --profile-share-server="api.pprof.me:443"
-                                gRPC address to send share profile requests to.
-      --debug-infod-upstream-servers=https://debuginfod.elfutils.org,...
-                                Upstream debuginfod servers. Defaults to
-                                https://debuginfod.elfutils.org. It is an
-                                ordered list of servers to try. Learn more at
-                                https://sourceware.org/elfutils/Debuginfod.html
-      --debug-infod-http-request-timeout=5m
-                                Timeout duration for HTTP request to upstream
-                                debuginfod server. Defaults to 5m
       --debuginfo-cache-dir="/tmp"
                                 Path to directory where debuginfo is cached.
       --debuginfo-upload-max-size=1000000000
@@ -140,6 +131,17 @@ Flags:
       --debuginfo-uploads-signed-url
                                 Whether to use signed URLs for debuginfo
                                 uploads.
+      --debuginfod-upstream-servers=https://debuginfod.elfutils.org,...
+                                Upstream debuginfod servers. Defaults to
+                                https://debuginfod.elfutils.org. It is an
+                                ordered list of servers to try. Learn more at
+                                https://sourceware.org/elfutils/Debuginfod.html
+      --debuginfod-http-request-timeout=5m
+                                Timeout duration for HTTP request to upstream
+                                debuginfod server. Defaults to 5m
+      --metastore="badger"      Which metastore implementation to use
+      --profile-share-server="api.pprof.me:443"
+                                gRPC address to send share profile requests to.
       --store-address=STRING    gRPC address to send profiles and symbols to.
       --bearer-token=STRING     Bearer token to authenticate with store.
       --bearer-token-file=STRING

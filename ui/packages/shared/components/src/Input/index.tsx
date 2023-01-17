@@ -69,7 +69,7 @@ const Input = ({
       {onAction != null ? (
         <Button
           onClick={onAction}
-          className="!absolute w-fit inset-y-0 right-0 !px-2 aspect-square rounded-tl-none rounded-bl-none"
+          className="!absolute w-fit inset-y-0 right-0 !px-2 rounded-tl-none rounded-bl-none"
         >
           {actionIcon}
         </Button>

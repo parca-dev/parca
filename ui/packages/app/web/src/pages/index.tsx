@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useCallback} from 'react';
 import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import {QueryServiceClient} from '@parca/client';
 import {useLocation, useNavigate} from 'react-router-dom';
@@ -29,12 +30,18 @@ const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navigateTo = (path: string, queryParams: any) => {
-    navigate({
-      pathname: path,
-      search: `?${convertToQueryParams(queryParams)}`,
-    });
-  };
+  const navigateTo = useCallback(
+    (path: string, queryParams: any, options?: {replace?: boolean}) => {
+      navigate(
+        {
+          pathname: path,
+          search: `?${convertToQueryParams(queryParams)}`,
+        },
+        options ?? {}
+      );
+    },
+    [navigate]
+  );
 
   const queryParams = parseParams(location.search);
 

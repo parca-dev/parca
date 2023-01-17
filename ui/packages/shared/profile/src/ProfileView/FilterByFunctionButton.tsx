@@ -12,39 +12,39 @@
 // limitations under the License.
 
 import {Input} from '@parca/components';
-import {
-  selectFilterByFunction,
-  setFilterByFunction,
-  useAppDispatch,
-  useAppSelector,
-} from '@parca/store';
+import {useURLState, NavigateFunction} from '@parca/functions';
 import {Icon} from '@iconify/react';
 import {useCallback, useMemo, useState} from 'react';
 
-const FilterByFunctionButton = (): JSX.Element => {
-  const dispatch = useAppDispatch();
-  const storeVal = useAppSelector(selectFilterByFunction);
-  const [value, setValue] = useState<string>(storeVal ?? '');
+const FilterByFunctionButton = ({
+  navigateTo,
+}: {
+  navigateTo: NavigateFunction | undefined;
+}): JSX.Element => {
+  const [storeValue, setStoreValue] = useURLState({param: 'filter_by_function', navigateTo});
+  const [localValue, setLocalValue] = useState(storeValue as string);
 
   const isClearAction = useMemo(() => {
-    return value === storeVal && value != null;
-  }, [value, storeVal]);
+    return localValue === storeValue && localValue != null && localValue !== '';
+  }, [localValue, storeValue]);
 
   const onAction = useCallback((): void => {
-    dispatch(setFilterByFunction(isClearAction ? undefined : value));
     if (isClearAction) {
-      setValue('');
+      setLocalValue('');
+      setStoreValue('');
+    } else {
+      setStoreValue(localValue);
     }
-  }, [dispatch, isClearAction, value]);
+  }, [localValue, isClearAction, setStoreValue]);
 
   return (
     <Input
       placeholder="Filter by function"
       className="text-sm"
       onAction={onAction}
-      onChange={e => setValue(e.target.value)}
-      value={value}
-      onBlur={() => setValue(storeVal ?? '')}
+      onChange={e => setLocalValue(e.target.value)}
+      value={localValue ?? ''}
+      onBlur={() => setLocalValue(storeValue as string)}
       actionIcon={isClearAction ? <Icon icon="ep:circle-close" /> : <Icon icon="ep:arrow-right" />}
     />
   );

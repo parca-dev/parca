@@ -38,7 +38,7 @@ jobs:
           skip_after_successful_duplicate: false
 
       - name: Checkout
-        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           fetch-depth: 0
 
@@ -55,7 +55,7 @@ jobs:
 
       # Same as https://github.com/golangci/golangci-lint-action#caching-internals
       - name: Set up golangci-lint cache
-        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d # v3.2.2
+        uses: actions/cache@58c146cc91c5b9e778e71775dfe9bf1442ad9a12 # v3.2.3
         with:
           path: |
             ~/.cache/golangci-lint
@@ -76,7 +76,7 @@ jobs:
           echo "PY_HASH=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
 
       - name: Set up pre-commit cache
-        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d # v3.2.2
+        uses: actions/cache@58c146cc91c5b9e778e71775dfe9bf1442ad9a12 # v3.2.3
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-go${{ env.GO_VERSION }}-${{ env.PY_HASH }}-${{ hashFiles('.pre-commit-config.yaml') }}

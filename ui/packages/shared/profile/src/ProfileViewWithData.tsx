@@ -11,18 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect, useState} from 'react';
 import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
-
 import {useQuery} from './useQuery';
-import {ProfileView, useProfileVisState} from './ProfileView';
+import {ProfileView} from './ProfileView';
 import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
-import {saveAsBlob} from '@parca/functions';
-import {useEffect, useState} from 'react';
+import {saveAsBlob, NavigateFunction, useURLState} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
-
-export type NavigateFunction = (path: string, queryParams: any) => void;
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;
@@ -36,9 +33,8 @@ export const ProfileViewWithData = ({
   profileSource,
   navigateTo,
 }: ProfileViewWithDataProps): JSX.Element => {
-  const profileVisState = useProfileVisState();
   const metadata = useGrpcMetadata();
-  const {currentView} = profileVisState;
+  const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
   const [nodeTrimThreshold, setNodeTrimThreshold] = useState<number>(0);
   const [disableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.DISABLE_GRAPH_TRIMMING.key);
 
@@ -64,7 +60,7 @@ export const ProfileViewWithData = ({
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
-    skip: currentView !== 'icicle' && currentView !== 'both',
+    skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
   });
   const {perf} = useParcaContext();
@@ -86,7 +82,7 @@ export const ProfileViewWithData = ({
     response: topTableResponse,
     error: topTableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP, {
-    skip: currentView !== 'table' && currentView !== 'both',
+    skip: !dashboardItems.includes('table'),
   });
 
   const {
@@ -94,7 +90,7 @@ export const ProfileViewWithData = ({
     response: callgraphResponse,
     error: callgraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
-    skip: currentView !== 'callgraph',
+    skip: !dashboardItems.includes('callgraph'),
   });
 
   const sampleUnit = profileSource.ProfileType().sampleUnit;
@@ -136,7 +132,6 @@ export const ProfileViewWithData = ({
             : undefined,
         error: callgraphError,
       }}
-      profileVisState={profileVisState}
       sampleUnit={sampleUnit}
       profileSource={profileSource}
       queryClient={queryClient}

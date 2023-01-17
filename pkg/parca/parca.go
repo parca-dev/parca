@@ -78,9 +78,10 @@ const (
 type Flags struct {
 	ConfigPath  string `default:"parca.yaml" help:"Path to config file."`
 	Mode        string `default:"all" enum:"all,scraper-only" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
-	LogLevel    string `default:"info" enum:"error,warn,info,debug" help:"log level."`
 	HTTPAddress string `default:":7070" help:"Address to bind HTTP server to."`
 	Port        string `default:"" help:"(DEPRECATED) Use http-address instead."`
+
+	Logs FlagsLogs `embed:"" prefix:"log-"`
 
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
 	OTLPAddress        string   `help:"OpenTelemetry collector address to send traces to."`
@@ -92,26 +93,16 @@ type Flags struct {
 
 	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the metastore and profile storage."`
 
-	StorageGranuleSize  int64  `default:"26265625" help:"Granule size in bytes for storage."`
-	StorageActiveMemory int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
-	StoragePath         string `default:"data" help:"Path to storage directory."`
-	StorageEnableWAL    bool   `default:"false" help:"Enables write ahead log for profile storage."`
-	StorageRowGroupSize int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
+	Storage FlagsStorage `embed:"" prefix:"storage-"`
 
-	SymbolizerDemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
-	SymbolizerNumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
+	Symbolizer FlagsSymbolizer `embed:"" prefix:"symbolizer-"`
+
+	Debuginfo  FlagsDebuginfo  `embed:"" prefix:"debuginfo-"`
+	Debuginfod FlagsDebuginfod `embed:"" prefix:"debuginfod-"`
 
 	Metastore string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
 
 	ProfileShareServer string `default:"api.pprof.me:443" help:"gRPC address to send share profile requests to."`
-
-	DebugInfodUpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
-	DebugInfodHTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
-	DebuginfoCacheDir            string        `default:"/tmp" help:"Path to directory where debuginfo is cached."`
-	DebuginfoUploadMaxSize       int64         `default:"1000000000" help:"Maximum size of debuginfo upload in bytes."`
-	DebuginfoUploadMaxDuration   time.Duration `default:"15m" help:"Maximum duration of debuginfo upload."`
-
-	DebuginfoUploadsSignedURL bool `default:"false" help:"Whether to use signed URLs for debuginfo uploads."`
 
 	StoreAddress       string            `kong:"help='gRPC address to send profiles and symbols to.'"`
 	BearerToken        string            `kong:"help='Bearer token to authenticate with store.'"`
@@ -119,6 +110,38 @@ type Flags struct {
 	Insecure           bool              `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
 	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
+}
+
+type FlagsLogs struct {
+	Level  string `enum:"error,warn,info,debug" default:"info" help:"Log level."`
+	Format string `enum:"logfmt,json" default:"logfmt" help:"Configure if structured logging as JSON or as logfmt"`
+}
+
+type FlagsStorage struct {
+	GranuleSize  int64  `default:"26265625" help:"Granule size in bytes for storage."`
+	ActiveMemory int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	Path         string `default:"data" help:"Path to storage directory."`
+	EnableWAL    bool   `default:"false" help:"Enables write ahead log for profile storage."`
+	RowGroupSize int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
+}
+
+type FlagsSymbolizer struct {
+	DemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
+	NumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
+}
+
+// FlagsDebuginfo configures the Parca Debuginfo client.
+type FlagsDebuginfo struct {
+	CacheDir          string        `default:"/tmp" help:"Path to directory where debuginfo is cached."`
+	UploadMaxSize     int64         `default:"1000000000" help:"Maximum size of debuginfo upload in bytes."`
+	UploadMaxDuration time.Duration `default:"15m" help:"Maximum duration of debuginfo upload."`
+	UploadsSignedURL  bool          `default:"false" help:"Whether to use signed URLs for debuginfo uploads."`
+}
+
+// FlagsDebuginfod configures the Parca Debuginfo daemon / server.
+type FlagsDebuginfod struct {
+	UpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
+	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 }
 
 // Run the parca server.
@@ -175,7 +198,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	var signedUploadClient signedupload.Client
-	if flags.DebuginfoUploadsSignedURL {
+	if flags.Debuginfo.UploadsSignedURL {
 		var err error
 		signedUploadClient, err = signedupload.NewClient(
 			context.Background(),
@@ -196,7 +219,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		var badgerOptions badger.Options
 		switch flags.EnablePersistence {
 		case true:
-			badgerOptions = badger.DefaultOptions(filepath.Join(flags.StoragePath, "metastore"))
+			badgerOptions = badger.DefaultOptions(filepath.Join(flags.Storage.Path, "metastore"))
 		default:
 			badgerOptions = badger.DefaultOptions("").WithInMemory(true)
 		}
@@ -223,19 +246,19 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	metastore := metastore.NewInProcessClient(mStr)
 
 	frostdbOptions := []frostdb.Option{
-		frostdb.WithActiveMemorySize(flags.StorageActiveMemory),
+		frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
 		frostdb.WithLogger(logger),
 		frostdb.WithRegistry(reg),
 		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
-		frostdb.WithGranuleSizeBytes(flags.StorageGranuleSize),
+		frostdb.WithGranuleSizeBytes(flags.Storage.GranuleSize),
 	}
 
 	if flags.EnablePersistence {
 		frostdbOptions = append(frostdbOptions, frostdb.WithBucketStorage(objstore.NewPrefixedBucket(bucket, "blocks")))
 	}
 
-	if flags.StorageEnableWAL {
-		frostdbOptions = append(frostdbOptions, frostdb.WithWAL(), frostdb.WithStoragePath(flags.StoragePath))
+	if flags.Storage.EnableWAL {
+		frostdbOptions = append(frostdbOptions, frostdb.WithWAL(), frostdb.WithStoragePath(flags.Storage.Path))
 	}
 
 	col, err := frostdb.New(frostdbOptions...)
@@ -264,7 +287,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	table, err := colDB.Table("stacktraces",
 		frostdb.NewTableConfig(
 			schema,
-			frostdb.WithRowGroupSize(flags.StorageRowGroupSize),
+			frostdb.WithRowGroupSize(flags.Storage.RowGroupSize),
 		),
 	)
 	if err != nil {
@@ -315,8 +338,8 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	var debuginfodClient debuginfo.DebuginfodClient = debuginfo.NopDebuginfodClient{}
-	if len(flags.DebugInfodUpstreamServers) > 0 {
-		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.DebugInfodUpstreamServers, flags.DebugInfodHTTPRequestTimeout)
+	if len(flags.Debuginfod.UpstreamServers) > 0 {
+		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.Debuginfod.UpstreamServers, flags.Debuginfod.HTTPRequestTimeout)
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
 			return err
@@ -343,11 +366,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		debuginfoBucket,
 		debuginfodClient,
 		debuginfo.SignedUpload{
-			Enabled: flags.DebuginfoUploadsSignedURL,
+			Enabled: flags.Debuginfo.UploadsSignedURL,
 			Client:  prefixedSignedUploadClient,
 		},
-		flags.DebuginfoUploadMaxDuration,
-		flags.DebuginfoUploadMaxSize,
+		flags.Debuginfo.UploadMaxDuration,
+		flags.Debuginfo.UploadMaxSize,
 	)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
@@ -384,10 +407,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			debuginfoMetadata,
 			metastore,
 			debuginfo.NewFetcher(debuginfodClient, debuginfoBucket),
-			flags.DebuginfoCacheDir,
+			flags.Debuginfo.CacheDir,
 			0,
-			symbolizer.WithDemangleMode(flags.SymbolizerDemangleMode),
-			symbolizer.WithAttemptThreshold(flags.SymbolizerNumberOfTries),
+			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
+			symbolizer.WithAttemptThreshold(flags.Symbolizer.NumberOfTries),
 		)
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(

@@ -13,14 +13,14 @@
 
 import React, {useCallback, useMemo} from 'react';
 
-import {getLastItem, valueFormatter, isSearchMatch} from '@parca/functions';
 import {
-  useAppSelector,
-  selectCompareMode,
-  selectSearchNodeString,
-  setSearchNodeString,
-  useAppDispatch,
-} from '@parca/store';
+  getLastItem,
+  valueFormatter,
+  isSearchMatch,
+  NavigateFunction,
+  parseParams,
+  selectQueryParam,
+} from '@parca/functions';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 import {Table} from '@parca/components';
 import {createColumnHelper, ColumnDef} from '@tanstack/react-table';
@@ -32,6 +32,7 @@ import '../TopTable.styles.css';
 interface TopTableProps {
   data?: Top;
   sampleUnit: string;
+  navigateTo?: NavigateFunction;
 }
 
 export const RowLabel = (meta: TopNodeMeta | undefined): string => {
@@ -60,10 +61,11 @@ const addPlusSign = (num: string): string => {
   return `+${num}`;
 };
 
-export const TopTable = ({data: top, sampleUnit: unit}: TopTableProps): JSX.Element => {
-  const currentSearchString = useAppSelector(selectSearchNodeString);
-  const compareMode = useAppSelector(selectCompareMode);
-  const dispatch = useAppDispatch();
+export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProps): JSX.Element => {
+  const router = parseParams(window.location.search);
+  const currentSearchString = selectQueryParam('search_string') as string;
+  const compareMode =
+    Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
 
   const columns = React.useMemo(() => {
     const cols: Array<ColumnDef<TopNode, any>> = [
@@ -117,9 +119,18 @@ export const TopTable = ({data: top, sampleUnit: unit}: TopTableProps): JSX.Elem
 
   const selectSpan = useCallback(
     (span: string): void => {
-      dispatch(setSearchNodeString(span.trim()));
+      if (navigateTo != null) {
+        navigateTo(
+          '/',
+          {
+            ...router,
+            ...{search_string: span.trim()},
+          },
+          {replace: true}
+        );
+      }
     },
-    [dispatch]
+    [navigateTo, router]
   );
 
   const onRowClick = useCallback(

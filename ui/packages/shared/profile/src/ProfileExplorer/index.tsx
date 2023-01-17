@@ -12,22 +12,14 @@
 // limitations under the License.
 
 import {QuerySelection} from '../ProfileSelector';
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams, NavigateFunction} from '..';
+import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
-import {
-  useAppSelector,
-  useAppDispatch,
-  setCompare,
-  selectCompareMode,
-  setSearchNodeString,
-  store,
-  selectFilterByFunction,
-} from '@parca/store';
-import {Provider, batch} from 'react-redux';
+import {store} from '@parca/store';
+import {Provider} from 'react-redux';
 import {DateTimeRange} from '@parca/components';
-import {useEffect} from 'react';
+import {NavigateFunction} from '@parca/functions';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -39,6 +31,8 @@ const getExpressionAsAString = (expression: string | []): string => {
   const x = Array.isArray(expression) ? expression.join() : expression;
   return x;
 };
+
+const DEFAULT_DASHBOARD_ITEMS = ['icicle'];
 
 /* eslint-disable @typescript-eslint/naming-convention */
 const sanitizeDateRange = (
@@ -77,9 +71,6 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const dispatch = useAppDispatch();
-  const compareMode = useAppSelector(selectCompareMode);
-
   /* eslint-disable @typescript-eslint/naming-convention */
   let {
     from_a,
@@ -98,9 +89,10 @@ const ProfileExplorerApp = ({
     time_b,
     time_selection_b,
     compare_b,
+    filter_by_function,
+    dashboard_items,
   } = queryParams;
   /* eslint-enable @typescript-eslint/naming-convention */
-  const filterByFunction = useAppSelector(selectFilterByFunction);
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;
@@ -116,20 +108,13 @@ const ProfileExplorerApp = ({
   if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
   if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;
 
-  useEffect(() => {
-    if (compare_a === 'true' && compare_b === 'true') {
-      dispatch(setCompare(true));
-    } else {
-      dispatch(setCompare(false));
-    }
-  }, [dispatch, compare_a, compare_b]);
-
   const selectProfile = (p: ProfileSelection, suffix: string): void => {
     queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
     queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), suffix),
+      dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
     });
   };
 
@@ -160,7 +145,7 @@ const ProfileExplorerApp = ({
       labels_a as string[],
       profile_name_a as string,
       time_a as string,
-      filterByFunction
+      filter_by_function
     );
 
     const selectQuery = (q: QuerySelection): void => {
@@ -176,7 +161,7 @@ const ProfileExplorerApp = ({
             to_a: q.to.toString(),
             merge_a: q.merge,
             time_selection_a: q.timeSelection,
-            currentProfileView: 'icicle',
+            dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           },
         }
       );
@@ -187,6 +172,7 @@ const ProfileExplorerApp = ({
       return navigateTo('/', {
         ...queryParams,
         ...SuffixParams(p.HistoryParams(), '_a'),
+        dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
       });
     };
 
@@ -216,19 +202,11 @@ const ProfileExplorerApp = ({
         };
       }
 
-      compareQuery = {
+      void navigateTo('/', {
         ...compareQuery,
-        ...{
-          currentProfileView: 'icicle',
-        },
-      };
-
-      batch(() => {
-        dispatch(setCompare(!compareMode));
-        dispatch(setSearchNodeString(undefined));
+        search_string: '',
+        dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
       });
-
-      void navigateTo('/', compareQuery);
     };
 
     return (
@@ -295,7 +273,8 @@ const ProfileExplorerApp = ({
           to_a: q.to.toString(),
           merge_a: q.merge,
           time_selection_a: q.timeSelection,
-          filterByFunction,
+          filter_by_function: filter_by_function ?? '',
+          dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
         },
       }
     );
@@ -316,7 +295,8 @@ const ProfileExplorerApp = ({
           to_b: q.to.toString(),
           merge_b: q.merge,
           time_selection_b: q.timeSelection,
-          filterByFunction,
+          filter_by_function: filter_by_function ?? '',
+          dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
         },
       }
     );
@@ -328,15 +308,12 @@ const ProfileExplorerApp = ({
       newQueryParameters = swapQueryParameters(queryParams);
     }
 
-    batch(() => {
-      dispatch(setCompare(!compareMode));
-      dispatch(setSearchNodeString(undefined));
-    });
-
     return navigateTo('/', {
       ...filterSuffix(newQueryParameters, '_b'),
       ...{
         compare_a: 'false',
+        compare_b: 'false',
+        search_string: '',
       },
     });
   };

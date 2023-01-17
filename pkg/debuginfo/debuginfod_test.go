@@ -24,10 +24,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
+	"gopkg.in/dnaeon/go-vcr.v3/recorder"
 )
 
 func TestHTTPDebugInfodClient_request(t *testing.T) {

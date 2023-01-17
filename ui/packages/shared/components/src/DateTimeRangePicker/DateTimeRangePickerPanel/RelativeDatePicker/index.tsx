@@ -112,7 +112,7 @@ const RelativeDatePicker = ({
             className="w-32"
             items={contructItemsFromArray(constructKeyAndLabels(Object.values(UNITS)))}
             selectedKey={unit}
-            onSelection={key => setUnit(key as UNIT_TYPE)}
+            onSelection={key => setUnit(key)}
           />
         </div>
         <div className="w-32 mx-auto pb-2">
