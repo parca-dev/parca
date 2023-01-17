@@ -21,7 +21,13 @@ import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@
 import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode} from '@parca/store';
-import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+  DraggableLocation,
+} from 'react-beautiful-dnd';
 
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -195,14 +201,14 @@ export const ProfileView = ({
     setDashboardItems(newDashboardItems);
   };
 
-  const onDragEnd = (dragData): void => {
-    const {destination, source, draggableId} = dragData;
+  const onDragEnd = (result: DropResult): void => {
+    const {destination, source, draggableId} = result;
 
-    if (destination.index !== source.index) {
+    if (Boolean(destination) && destination?.index !== source.index) {
       const targetItem = draggableId;
       const otherItems = dashboardItems.filter(item => item !== targetItem);
       const newDashboardItems =
-        destination.index < source.index
+        (destination as DraggableLocation).index < source.index
           ? [targetItem, ...otherItems]
           : [...otherItems, targetItem];
 
