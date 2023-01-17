@@ -16,7 +16,7 @@ import {scaleLinear} from 'd3';
 
 import cx from 'classnames';
 import {getNewSpanColor, useURLState} from '@parca/functions';
-import {CloseIcon} from '@parca/icons';
+import {CloseIcon, DragIndicator} from '@parca/icons';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
@@ -275,7 +275,6 @@ export const ProfileView = ({
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
                                   key={dashboardItem}
                                   className={cx(
                                     'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
@@ -284,11 +283,17 @@ export const ProfileView = ({
                                   )}
                                 >
                                   <div className="w-full flex justify-end pb-2">
-                                    <ViewSelector
-                                      defaultValue={dashboardItem}
-                                      navigateTo={navigateTo}
-                                      position={index}
-                                    />
+                                    <div className="w-full flex justify-between">
+                                      <div {...provided.dragHandleProps}>
+                                        <DragIndicator />
+                                      </div>
+                                      <ViewSelector
+                                        defaultValue={dashboardItem}
+                                        navigateTo={navigateTo}
+                                        position={index}
+                                      />
+                                    </div>
+
                                     {!isSinglePanelView && (
                                       <button
                                         type="button"

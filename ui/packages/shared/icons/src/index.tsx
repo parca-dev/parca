@@ -21,6 +21,7 @@ import {ReactComponent as LinkedIn} from './assets/linkedin.svg';
 import {ReactComponent as Twitter} from './assets/twitter.svg';
 import {ReactComponent as ArrowForward} from './assets/arrow-forward.svg';
 import CloseIcon from './CloseIcon';
+import DragIndicator from './DragIndicator';
 
 export {
   Parca,
@@ -28,6 +29,7 @@ export {
   CloseIcon,
   CompareArrows,
   Checkmark,
+  DragIndicator,
   RedX,
   GitHub,
   LinkedIn,
