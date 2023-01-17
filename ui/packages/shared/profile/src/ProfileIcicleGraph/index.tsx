@@ -15,7 +15,7 @@ import {Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 import DiffLegend from '../components/DiffLegend';
-import IcicleGraph from '../IcicleGraph';
+import IcicleGraph from './IcicleGraph';
 import {selectQueryParam} from '@parca/functions';
 import {useEffect, useMemo} from 'react';
 
