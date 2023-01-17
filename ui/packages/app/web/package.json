@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.158",
+  "version": "0.16.159",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -48,7 +48,7 @@
     "react-dom": "18.2.0",
     "react-github-btn": "^1.4.0",
     "react-markdown": "^8.0.4",
-    "react-router-dom": "6.6.1",
+    "react-router-dom": "6.6.2",
     "react-use": "17.4.0",
     "tailwindcss": "3.2.4",
     "web-vitals": "2.1.4"
