@@ -14,7 +14,7 @@
 /* eslint-disable  @typescript-eslint/ban-types */
 // I disabled this rule in the file because TypeScript seems to be mistaking @parca's Function type for the native JavaScriptFunction constructor
 
-import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
+import {MouseEvent, useEffect, useMemo, useRef, useState, memo, Fragment} from 'react';
 
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
@@ -254,7 +254,7 @@ export function IcicleGraphNodes({
         };
 
         return (
-          <React.Fragment key={`node-${key}`}>
+          <Fragment key={`node-${key}`}>
             <IcicleRect
               key={`rect-${key}`}
               x={xStart}
@@ -288,14 +288,14 @@ export function IcicleGraphNodes({
                 setCurPath={setCurPath}
               />
             )}
-          </React.Fragment>
+          </Fragment>
         );
       })}
     </g>
   );
 }
 
-const MemoizedIcicleGraphNodes = React.memo(IcicleGraphNodes);
+const MemoizedIcicleGraphNodes = memo(IcicleGraphNodes);
 
 export function IcicleGraphRootNode({
   node,
@@ -366,7 +366,7 @@ export function IcicleGraphRootNode({
   );
 }
 
-const MemoizedIcicleGraphRootNode = React.memo(IcicleGraphRootNode);
+const MemoizedIcicleGraphRootNode = memo(IcicleGraphRootNode);
 
 export default function IcicleGraph({
   graph,

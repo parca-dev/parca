@@ -5,6 +5,12 @@ extends:
   - 'plugin:typescript-enum/recommended'
   - 'eslint:recommended'
   - 'plugin:@typescript-eslint/recommended'
+  - 'plugin:react/recommended'
+  - 'plugin:jest/recommended'
+  - 'plugin:jest/style'
+  - 'plugin:react/jsx-runtime'
+  - 'plugin:import/typescript'
+  - 'plugin:import/recommended'
 
 parser: '@typescript-eslint/parser'
 
@@ -22,6 +28,8 @@ plugins:
   - typescript-enum
 
 settings:
+  import/resolver:
+    typescript: {}
   react:
     version: detect
 

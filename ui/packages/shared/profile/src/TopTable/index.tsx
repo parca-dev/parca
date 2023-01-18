@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {
   getLastItem,
@@ -67,7 +67,7 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
   const compareMode =
     Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
 
-  const columns = React.useMemo(() => {
+  const columns = useMemo(() => {
     const cols: Array<ColumnDef<TopNode>> = [
       columnHelper.accessor('meta', {
         header: () => <span className="text-left">Name</span>,

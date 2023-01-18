@@ -11,7 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
 import {formatDate} from '@parca/functions';
 import {Query, ProfileType} from '@parca/parser';
 import {
@@ -354,7 +353,7 @@ export class MergedProfileSource implements ProfileSource {
   Describe(): JSX.Element {
     return (
       <a>
-        Merge of "{this.query}" from {formatDate(this.from, timeFormat)} to{' '}
+        Merge of &quot;{this.query}&quot; from {formatDate(this.from, timeFormat)} to{' '}
         {formatDate(this.to, timeFormat)}
       </a>
     );
