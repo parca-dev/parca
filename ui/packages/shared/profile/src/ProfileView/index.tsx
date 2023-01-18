@@ -193,10 +193,6 @@ export const ProfileView = ({
     }
   };
 
-  const handleResetView = (): void => {
-    setDashboardItems(['icicle']);
-  };
-
   const handleClosePanel = (visualizationType: string): void => {
     const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);
     setDashboardItems(newDashboardItems);
@@ -248,15 +244,6 @@ export const ProfileView = ({
               </div>
 
               <div className="flex ml-auto gap-2">
-                <Button
-                  color="neutral"
-                  onClick={handleResetView}
-                  disabled={!isMultiPanelView}
-                  className="whitespace-nowrap text-ellipsis"
-                >
-                  Reset Panels
-                </Button>
-
                 <ViewSelector
                   defaultValue=""
                   navigateTo={navigateTo}
