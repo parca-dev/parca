@@ -31,7 +31,7 @@ declare module '@tanstack/table-core' {
   }
 }
 
-interface Props<TData extends any> {
+interface Props<TData> {
   data: TData[];
   columns: Array<ColumnDef<TData>>;
   initialSorting?: SortingState;

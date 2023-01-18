@@ -11,6 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable  @typescript-eslint/ban-types */
+// I disabled this rule in the file because TypeScript seems to be mistaking @parca's Function type for the native JavaScriptFunction constructor
+
 import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
 
 import {throttle} from 'lodash';
@@ -161,7 +164,7 @@ export function nodeLabel(
   const mappingFile =
     mapping?.fileStringIndex !== undefined ? strings[mapping.fileStringIndex] : '';
 
-  const mappingString: string = `${
+  const mappingString = `${
     mappingFile !== '' ? '[' + (getLastItem(mappingFile) ?? '') + '] ' : ''
   }`;
 

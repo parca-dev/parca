@@ -28,8 +28,8 @@ interface Props {
 export const defaultValue: Props = {
   loader: <Spinner />,
   perf: {
-    onRender: () => {},
-    markInteraction: () => {},
+    onRender: () => {} /* eslint-disable-line @typescript-eslint/no-empty-function */,
+    markInteraction: () => {} /* eslint-disable-line @typescript-eslint/no-empty-function */,
   },
 };
 

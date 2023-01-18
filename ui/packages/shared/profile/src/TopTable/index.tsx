@@ -68,7 +68,7 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
     Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
 
   const columns = React.useMemo(() => {
-    const cols: Array<ColumnDef<TopNode, any>> = [
+    const cols: Array<ColumnDef<TopNode>> = [
       columnHelper.accessor('meta', {
         header: () => <span className="text-left">Name</span>,
         cell: info => {

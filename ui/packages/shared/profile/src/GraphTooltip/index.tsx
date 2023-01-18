@@ -11,6 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable  @typescript-eslint/ban-types */
+// I disabled this rule in the file because TypeScript seems to be mistaking @parca's Function type for the native JavaScriptFunction constructor
+
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';

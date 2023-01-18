@@ -68,7 +68,7 @@ const ProfileExplorerCompare = ({
             closeProfile={closeProfileA}
             enforcedProfileName={''}
             comparing={true}
-            onCompareProfile={() => {}}
+            onCompareProfile={() => {}} /* eslint-disable-line @typescript-eslint/no-empty-function */
           />
         </div>
         <div className="pl-2">
@@ -81,7 +81,7 @@ const ProfileExplorerCompare = ({
             closeProfile={closeProfileB}
             enforcedProfileName={Query.parse(queryA.expression).profileName()}
             comparing={true}
-            onCompareProfile={() => {}}
+            onCompareProfile={() => {}} /* eslint-disable-line @typescript-eslint/no-empty-function */
           />
         </div>
       </div>
