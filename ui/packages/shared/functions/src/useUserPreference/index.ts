@@ -29,9 +29,9 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     type: 'boolean',
     default: true,
   },
-  DISABLE_GRAPH_TRIMMING: {
-    name: 'Disable trimming of nodes that are too small to be seen',
-    key: 'DISABLE_GRAPH_TRIMMING',
+  ENABLE_GRAPH_TRIMMING: {
+    name: 'Enable trimming of nodes that are too small to be seen',
+    key: 'ENABLE_GRAPH_TRIMMING',
     type: 'boolean',
     default: false,
   },
