@@ -16,7 +16,8 @@ import {scaleLinear} from 'd3';
 
 import cx from 'classnames';
 import {getNewSpanColor, useURLState} from '@parca/functions';
-import {CloseIcon, DragIndicator} from '@parca/icons';
+import {CloseIcon} from '@parca/icons';
+import {Icon} from '@iconify/react';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
 import {Button, Card, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
@@ -305,7 +306,10 @@ export const ProfileView = ({
                                         className={cx(isMultiPanelView ? 'visible' : 'invisible')}
                                         {...provided.dragHandleProps}
                                       >
-                                        <DragIndicator />
+                                        <Icon
+                                          className="text-xl"
+                                          icon="material-symbols:drag-indicator"
+                                        />
                                       </div>
                                       <ViewSelector
                                         defaultValue={dashboardItem}
