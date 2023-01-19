@@ -87,7 +87,7 @@ func getNodeKey(node *querypb.CallgraphNode) string {
 // locationToCallgraphNodes converts a location to its tree nodes, if the location
 // has multiple inlined functions it creates multiple nodes for each inlined
 // function.
-func locationToCallgraphNodes(location *profile.Location) []*querypb.CallgraphNode {
+func locationToCallgraphNodes(location profile.Location) []*querypb.CallgraphNode {
 	if len(location.Lines) > 0 {
 		return linesToCallgraphNodes(
 			location,
@@ -117,7 +117,7 @@ func locationToCallgraphNodes(location *profile.Location) []*querypb.CallgraphNo
 // linesToCallgraphNodes turns inlined `lines` into a stack of TreeNode items and
 // returns the slice of items in order from outer-most to inner-most.
 func linesToCallgraphNodes(
-	location *profile.Location,
+	location profile.Location,
 	mapping *pb.Mapping,
 	lines []profile.LocationLine,
 ) []*querypb.CallgraphNode {
@@ -145,7 +145,7 @@ func linesToCallgraphNodes(
 }
 
 func lineToGraphNode(
-	location *profile.Location,
+	location profile.Location,
 	mapping *pb.Mapping,
 	line profile.LocationLine,
 ) *querypb.CallgraphNode {

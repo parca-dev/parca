@@ -223,7 +223,7 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 
 // AddLocation by its ID and only add it if it's not yet in the table.
 // Returns the locations's index in the table.
-func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
+func (c *tableConverter) AddLocation(l profile.Location) uint32 {
 	if i, ok := c.locationsIndex[l.ID]; ok {
 		return i
 	}

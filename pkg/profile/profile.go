@@ -44,7 +44,7 @@ type NumLabel struct {
 }
 
 type SymbolizedSample struct {
-	Locations []*Location
+	Locations []Location
 	Value     int64
 	DiffValue int64
 	Label     map[string]string

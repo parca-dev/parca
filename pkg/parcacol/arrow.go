@@ -123,7 +123,7 @@ func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context
 }
 
 func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stacktraceIDs []string) (
-	[][]*profile.Location,
+	[][]profile.Location,
 	error,
 ) {
 	ctx, span := c.tracer.Start(ctx, "resolve-stacktraces")
@@ -162,9 +162,9 @@ func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stackt
 		return nil, err
 	}
 
-	stacktraceLocations := make([][]*profile.Location, len(sres.Stacktraces))
+	stacktraceLocations := make([][]profile.Location, len(sres.Stacktraces))
 	for i, stacktrace := range sres.Stacktraces {
-		stacktraceLocations[i] = make([]*profile.Location, len(stacktrace.LocationIds))
+		stacktraceLocations[i] = make([]profile.Location, len(stacktrace.LocationIds))
 		for j, id := range stacktrace.LocationIds {
 			stacktraceLocations[i][j] = locations[locationIndex[id]]
 		}
@@ -178,7 +178,7 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 	locationIds []string,
 	locations []*pb.Location,
 ) (
-	[]*profile.Location,
+	[]profile.Location,
 	error,
 ) {
 	mappingIndex := map[string]int{}
@@ -226,7 +226,7 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 		return nil, fmt.Errorf("get functions by ids: %w", err)
 	}
 
-	res := make([]*profile.Location, 0, len(locations))
+	res := make([]profile.Location, 0, len(locations))
 	for _, location := range locations {
 		var mapping *pb.Mapping
 		if location.MappingId != "" {
@@ -245,7 +245,7 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 			}
 		}
 
-		res = append(res, &profile.Location{
+		res = append(res, profile.Location{
 			ID:       location.Id,
 			Address:  location.Address,
 			IsFolded: location.IsFolded,
