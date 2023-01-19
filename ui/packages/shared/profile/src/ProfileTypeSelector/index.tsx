@@ -14,7 +14,8 @@
 import {useMemo} from 'react';
 import {ProfileType, ProfileTypesResponse} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {SelectElement, Select} from '@parca/components';
+import {Select} from '@parca/components';
+import type {SelectElement} from '@parca/components';
 
 interface WellKnownProfile {
   name: string;

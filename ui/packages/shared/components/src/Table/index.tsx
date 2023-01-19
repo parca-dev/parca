@@ -11,14 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  SortingState,
-  useReactTable,
-} from '@tanstack/react-table';
+import {flexRender, getCoreRowModel, getSortedRowModel, useReactTable} from '@tanstack/react-table';
+import type {ColumnDef, SortingState} from '@tanstack/react-table';
 import cx from 'classnames';
 import {useVirtual} from 'react-virtual';
 import {useCallback, useRef, useState} from 'react';

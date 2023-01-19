@@ -23,7 +23,8 @@ import {
 } from '@parca/functions';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 import {Table} from '@parca/components';
-import {createColumnHelper, ColumnDef} from '@tanstack/react-table';
+import {createColumnHelper} from '@tanstack/react-table';
+import type {ColumnDef} from '@tanstack/react-table';
 
 import {hexifyAddress} from '../utils';
 

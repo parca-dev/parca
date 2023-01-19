@@ -28,7 +28,7 @@ import FilterByFunctionButton from './FilterByFunctionButton';
 import ViewSelector from './ViewSelector';
 import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
-import TopTable from '../TopTable';
+import {TopTable} from '../TopTable';
 import useDelayedLoader from '../useDelayedLoader';
 
 import '../ProfileView.styles.css';
