@@ -69,7 +69,7 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
     Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
 
   const columns = useMemo(() => {
-    const cols: Array<ColumnDef<TopNode>> = [
+    const cols: Array<ColumnDef<TopNode, any>> = [
       columnHelper.accessor('meta', {
         header: () => <span className="text-left">Name</span>,
         cell: info => {
