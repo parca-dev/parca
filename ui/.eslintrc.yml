@@ -12,6 +12,8 @@ extends:
   - 'plugin:react/jsx-runtime'
   - 'plugin:import/recommended'
   - 'plugin:import/typescript'
+  - 'plugin:promise/recommended'
+  - 'plugin:react-hooks/recommended'
 
 parser: '@typescript-eslint/parser'
 
@@ -67,3 +69,5 @@ rules:
   import/namespace: 2
   import/default: 2
   import/export: 2
+
+  promise/catch-or-return: [error, {allowFinally: true}]
