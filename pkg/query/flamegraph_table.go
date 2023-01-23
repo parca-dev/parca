@@ -543,15 +543,14 @@ func trimFlamegraphNodes(ctx context.Context, tracer trace.Tracer, nodes []*quer
 		if node.Cumulative < threshold {
 			continue
 		}
+		var oldChildren FlamegraphChildren = node.Children
+		flat := node.Cumulative - oldChildren.Cumulative()
 		var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, node.Children, threshold)
-		newCum := int64(0)
-		newDiff := int64(0)
-		if len(node.Children) > 0 {
-			newCum = children.Cumulative()
-			newDiff = children.Diff()
-		} else {
-			newCum = node.Cumulative
-			newDiff = node.Diff
+		newCum := int64(flat)
+		newDiff := int64(node.Diff)
+		if len(children) > 0 {
+			newCum += children.Cumulative()
+			newDiff += children.Diff()
 		}
 		trimmedNodes = append(trimmedNodes, &querypb.FlamegraphNode{
 			Meta:       node.Meta,

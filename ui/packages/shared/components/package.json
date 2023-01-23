@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.85",
+  "version": "0.16.87",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "@iconify/react": "^3.2.2",
     "@parca/client": "^0.16.62",
     "@parca/dynamicsize": "^0.16.52",
-    "@parca/functions": "^0.16.57",
+    "@parca/functions": "^0.16.58",
     "@parca/icons": "^0.16.51",
     "@parca/parser": "^0.16.53",
     "@parca/store": "^0.16.52",
@@ -23,7 +23,7 @@
     "@tanstack/react-table": "^8.7.0",
     "@types/react-datepicker": "^4.4.0",
     "classnames": "^2.3.1",
-    "d3": "7.8.1",
+    "d3": "7.8.2",
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.0",
     "react-datepicker": "^4.6.0",

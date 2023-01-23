@@ -40,7 +40,7 @@ const ProfileIcicleGraph = ({
   onContainerResize,
 }: ProfileIcicleGraphProps): JSX.Element => {
   const compareMode: boolean =
-    Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
+    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
   const {ref, dimensions} = useContainerDimensions();
 
   useEffect(() => {
