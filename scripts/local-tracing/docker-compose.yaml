@@ -11,7 +11,7 @@ services:
 
   # Collector
   otel-collector:
-    image: docker.io/otel/opentelemetry-collector-contrib-dev:latest@sha256:bc8e6486bcf44df7a5b88db6034e386e8daa19b3e931fd7fee0af08ebb61dfc2
+    image: docker.io/otel/opentelemetry-collector-contrib-dev:latest@sha256:3ad7985ca3e446e1f0afbfc8b0d972a2d6f48a72c8725c9f1b565c2429a02228
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
