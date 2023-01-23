@@ -402,27 +402,27 @@ func (q *Querier) ProfileTypes(
 				return fmt.Errorf("expected 6 column, got %d", ar.NumCols())
 			}
 
-			nameColumn, err := BinaryFieldFromRecord(ar, ColumnName)
+			nameColumn, err := DictionaryFromRecord(ar, ColumnName)
 			if err != nil {
 				return err
 			}
 
-			sampleTypeColumn, err := BinaryFieldFromRecord(ar, ColumnSampleType)
+			sampleTypeColumn, err := DictionaryFromRecord(ar, ColumnSampleType)
 			if err != nil {
 				return err
 			}
 
-			sampleUnitColumn, err := BinaryFieldFromRecord(ar, ColumnSampleUnit)
+			sampleUnitColumn, err := DictionaryFromRecord(ar, ColumnSampleUnit)
 			if err != nil {
 				return err
 			}
 
-			periodTypeColumn, err := BinaryFieldFromRecord(ar, ColumnPeriodType)
+			periodTypeColumn, err := DictionaryFromRecord(ar, ColumnPeriodType)
 			if err != nil {
 				return err
 			}
 
-			periodUnitColumn, err := BinaryFieldFromRecord(ar, ColumnPeriodUnit)
+			periodUnitColumn, err := DictionaryFromRecord(ar, ColumnPeriodUnit)
 			if err != nil {
 				return err
 			}
@@ -433,11 +433,11 @@ func (q *Querier) ProfileTypes(
 			}
 
 			for i := 0; i < int(ar.NumRows()); i++ {
-				name := string(nameColumn.Value(i))
-				sampleType := string(sampleTypeColumn.Value(i))
-				sampleUnit := string(sampleUnitColumn.Value(i))
-				periodType := string(periodTypeColumn.Value(i))
-				periodUnit := string(periodUnitColumn.Value(i))
+				name := StringValueFromDictionary(nameColumn, i)
+				sampleType := StringValueFromDictionary(sampleTypeColumn, i)
+				sampleUnit := StringValueFromDictionary(sampleUnitColumn, i)
+				periodType := StringValueFromDictionary(periodTypeColumn, i)
+				periodUnit := StringValueFromDictionary(periodUnitColumn, i)
 				delta := deltaColumn.Value(i)
 
 				key := fmt.Sprintf("%s:%s:%s:%s:%s", name, sampleType, sampleUnit, periodType, periodUnit)
@@ -467,6 +467,31 @@ func (q *Querier) ProfileTypes(
 	}
 
 	return res, nil
+}
+
+func StringValueFromDictionary(arr *array.Dictionary, i int) string {
+	switch dict := arr.Dictionary().(type) {
+	case *array.Binary:
+		return string(dict.Value(arr.GetValueIndex(i)))
+	case *array.String:
+		return dict.Value(arr.GetValueIndex(i))
+	default:
+		panic(fmt.Sprintf("unsupported dictionary type: %T", dict))
+	}
+}
+
+func DictionaryFromRecord(ar arrow.Record, name string) (*array.Dictionary, error) {
+	indices := ar.Schema().FieldIndices(name)
+	if len(indices) != 1 {
+		return nil, fmt.Errorf("expected 1 column named %q, got %d", name, len(indices))
+	}
+
+	col, ok := ar.Column(indices[0]).(*array.Dictionary)
+	if !ok {
+		return nil, fmt.Errorf("expected column %q to be a dictionary column, got %T", name, ar.Column(indices[0]))
+	}
+
+	return col, nil
 }
 
 func BinaryFieldFromRecord(ar arrow.Record, name string) (*array.Binary, error) {

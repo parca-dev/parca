@@ -150,25 +150,25 @@ func SeriesToArrowRecord(
 							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Duration)
 							i++
 						case ColumnName:
-							bldr.Field(i).(*array.BinaryBuilder).Append([]byte(p.Meta.Name))
+							bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.Name)
 							i++
 						case ColumnPeriod:
 							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Period)
 							i++
 						case ColumnPeriodType:
-							bldr.Field(i).(*array.BinaryBuilder).Append([]byte(p.Meta.PeriodType.Type))
+							bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.PeriodType.Type)
 							i++
 						case ColumnPeriodUnit:
-							bldr.Field(i).(*array.BinaryBuilder).Append([]byte(p.Meta.PeriodType.Unit))
+							bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.PeriodType.Unit)
 							i++
 						case ColumnSampleType:
-							bldr.Field(i).(*array.BinaryBuilder).Append([]byte(p.Meta.SampleType.Type))
+							bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.SampleType.Type)
 							i++
 						case ColumnSampleUnit:
-							bldr.Field(i).(*array.BinaryBuilder).Append([]byte(p.Meta.SampleType.Unit))
+							bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.SampleType.Unit)
 							i++
 						case ColumnStacktrace:
-							bldr.Field(i).(*array.BinaryBuilder).Append([]byte(sample.StacktraceID))
+							bldr.Field(i).(*array.BinaryBuilder).AppendString(sample.StacktraceID)
 							i++
 						case ColumnTimestamp:
 							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Timestamp)
@@ -177,9 +177,10 @@ func SeriesToArrowRecord(
 							bldr.Field(i).(*array.Int64Builder).Append(sample.Value)
 							i++
 						case ColumnLabels:
+
 							for _, name := range labelNames {
 								if value, ok := s.Labels[name]; ok {
-									bldr.Field(i).(*array.BinaryBuilder).Append([]byte(value))
+									bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(value)
 								} else {
 									bldr.Field(i).AppendNull()
 								}
@@ -188,7 +189,7 @@ func SeriesToArrowRecord(
 						case ColumnPprofLabels:
 							for _, name := range profileLabelNames {
 								if value, ok := sample.Label[name]; ok {
-									bldr.Field(i).(*array.BinaryBuilder).Append([]byte(value))
+									bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(value)
 								} else {
 									bldr.Field(i).AppendNull()
 								}
