@@ -428,7 +428,7 @@ export default function IcicleGraph({
           className="w-auto"
           variant="neutral"
         >
-          Reset zoom
+          Reset View
         </Button>
       </div>
       <svg
