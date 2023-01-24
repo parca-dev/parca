@@ -23,6 +23,7 @@ import GraphTooltip from '../../GraphTooltip';
 import {FeatureColor} from '@parca/functions';
 import {Button} from '@parca/components';
 import {featureColors, IcicleNode, RowHeight} from './IcicleGraphNodes';
+import {selectStackColors, useAppSelector} from '@parca/store';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -46,35 +47,13 @@ export default function IcicleGraph({
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
-  const [featureColorsState, setFeatureColorsState] =
-    useState<Record<string, FeatureColor>>(featureColors);
+  const stackColors = useAppSelector(selectStackColors);
 
   useEffect(() => {
     if (ref.current != null) {
       setHeight(ref?.current.getBoundingClientRect().height);
     }
   }, [width, graph]);
-
-  useEffect(() => {
-    if (
-      Object.values(
-        Object.values(featureColors).reduce((acc, val) => {
-          acc[val.color] = true;
-          return acc;
-        }, {})
-      ).length < 2
-    ) {
-      if (Object.values(featureColorsState).length > 0) {
-        setFeatureColorsState({});
-      }
-      return;
-    }
-
-    if (Object.values(featureColorsState).length !== Object.values(featureColors).length) {
-      console.log('setting featurColors', featureColors);
-      setFeatureColorsState(featureColors);
-    }
-  });
 
   const total = useMemo(() => parseFloat(graph.total), [graph.total]);
   const xScale = useMemo(() => {
@@ -96,22 +75,20 @@ export default function IcicleGraph({
     throttledSetPos([rel[0], rel[1]]);
   };
 
-  console.log('featureColorsState', featureColorsState);
-
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
       <div className="flex flex-wrap gap-4 px-10 my-6">
-        {Object.values(featureColorsState)
-          .sort((a, b) => {
-            if (a.feature === 'Everything else') {
+        {Object.entries(stackColors)
+          .sort(([featureA], [featureB]) => {
+            if (featureA === 'Everything else') {
               return 1;
             }
-            if (b.feature === 'Everything else') {
+            if (featureB === 'Everything else') {
               return -1;
             }
-            return a.feature?.localeCompare(b.feature ?? '') ?? 0;
+            return featureA?.localeCompare(featureB ?? '') ?? 0;
           })
-          .map(({feature, color}) => {
+          .map(([feature, color]) => {
             return (
               <div key={feature} className="flex gap-1 items-center">
                 <div className="w-4 h-4 mr-1 inline-block" style={{backgroundColor: color}} />

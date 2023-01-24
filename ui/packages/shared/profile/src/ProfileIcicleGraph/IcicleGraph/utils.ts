@@ -17,10 +17,17 @@ import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1
 import {hexifyAddress} from '../../utils';
 
 export const getBinaryName = (
-  location: Location,
+  node: FlamegraphNode,
   mappings: Mapping[],
+  locations: Location[],
   strings: string[]
 ): string | undefined => {
+  if (node.meta?.locationIndex === undefined || node.meta?.locationIndex === 0) {
+    return undefined;
+  }
+
+  const location = locations[node.meta.locationIndex - 1];
+
   if (location.mappingIndex === undefined || location.mappingIndex === 0) {
     return undefined;
   }
@@ -45,7 +52,7 @@ export function nodeLabel(
 
   const location = locations[node.meta.locationIndex - 1];
 
-  const binary = getBinaryName(location, mappings, strings);
+  const binary = getBinaryName(node, mappings, locations, strings);
 
   const mappingString: string = binary != null ? `[${binary}]` : '';
 

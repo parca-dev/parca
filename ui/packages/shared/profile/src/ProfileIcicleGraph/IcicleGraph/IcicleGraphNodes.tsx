@@ -15,13 +15,12 @@ import React from 'react';
 
 import {scaleLinear} from 'd3-scale';
 import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
-import {diffColor, isSearchMatch, selectQueryParam, FeatureColor} from '@parca/functions';
-import {selectDarkMode, useAppSelector} from '@parca/store';
+import {isSearchMatch, selectQueryParam, FeatureColor} from '@parca/functions';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 import {nodeLabel} from './utils';
+import useNodeColor from './useNodeColor';
 
 export const RowHeight = 26;
 export const featureColors: {[key: string]: FeatureColor} = {};
@@ -153,16 +152,14 @@ export const IcicleNode = React.memo(
     isRoot = false,
   }: IcicleNodeProps): JSX.Element => {
     const isShiftDown = useIsShiftDown();
-    const isDarkMode = useAppSelector(selectDarkMode);
-    const [colorProfile] = useUserPreference<string>(USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key);
     const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
+    const colorResult = useNodeColor({data, strings, mappings, locations, functions});
     const name = isRoot ? 'root' : nodeLabel(data, strings, mappings, locations, functions);
     const nextPath = path.concat([name]);
     const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
     const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
     const nextLevel = level + 1;
     const cumulative = parseFloat(data.cumulative);
-    const diff = parseFloat(data.diff);
     const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);
     const newXScale =
       nextCurPath.length === 0 && curPath.length === 1
@@ -177,10 +174,6 @@ export const IcicleNode = React.memo(
     if (width <= 1) {
       return <>{null}</>;
     }
-
-    const featureColor = diffColor(diff, cumulative, isDarkMode, name, colorProfile);
-    featureColors[featureColor.feature ?? ''] = featureColor;
-    const {color} = featureColor;
 
     const onMouseEnter = (): void => {
       if (isShiftDown) return;
@@ -216,7 +209,7 @@ export const IcicleNode = React.memo(
                 !isSearchMatch(currentSearchString, name)
                   ? 0.5
                   : 1,
-              fill: color,
+              fill: colorResult,
             }}
           />
           {width > 5 && (
