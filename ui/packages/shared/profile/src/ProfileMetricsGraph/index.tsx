@@ -13,12 +13,13 @@
 
 import {useState, useEffect} from 'react';
 import MetricsGraph from '../MetricsGraph';
-import {ProfileSelection, SingleProfileSelection} from '..';   // TODO: Take MergeProfileSelection going forward
+import {ProfileSelection, SingleProfileSelection} from '..'; // TODO: Take MergeProfileSelection going forward
 import {QueryServiceClient, QueryRangeResponse, Label, Timestamp, Duration} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
 import useDelayedLoader from '../useDelayedLoader';
+import {getStepDuration} from '@parca/functions';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -63,16 +64,16 @@ export const useQueryRange = (
       // Divide by 1000 to get the duration each step should have to end up with 1000 data points.
       // We need to convert to integer, and sometimes it could happen to be < 1,
       // therefore we ceil instead of floor.
-      const step = Math.ceil((end - start) / 1000 / 1000);
 
-      console.log(step)
+      const totalSteps = 1000;
+      const stepDuration = getStepDuration(start, end, totalSteps);
 
       const call = client.queryRange(
         {
           query: queryExpression,
           start: Timestamp.fromDate(new Date(start)),
           end: Timestamp.fromDate(new Date(end)),
-          step: Duration.create({seconds: step.toString()}),
+          step: Duration.create(stepDuration),
           limit: 0,
         },
         {meta: metadata}
