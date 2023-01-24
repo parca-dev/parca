@@ -29,11 +29,11 @@ require (
 	github.com/klauspost/compress v1.15.14
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20230112095718-a6269f25db79
+	github.com/polarsignals/frostdb v0.0.0-20230118081847-7b5aa873a416
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.39.0
 	github.com/prometheus/prometheus v0.41.0
-	github.com/segmentio/parquet-go v0.0.0-20230106170957-952b1613a191
+	github.com/segmentio/parquet-go v0.0.0-20230120165150-63d6a781234f
 	github.com/stretchr/testify v1.8.1
 	github.com/thanos-io/objstore v0.0.0-20221213124554-e4d8ba6bc6f3
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.37.0
