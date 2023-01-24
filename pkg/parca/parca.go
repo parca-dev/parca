@@ -25,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/apache/arrow/go/v8/arrow/memory"
+	"github.com/apache/arrow/go/v10/arrow/memory"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"

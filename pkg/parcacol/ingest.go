@@ -22,7 +22,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/apache/arrow/go/v8/arrow"
+	"github.com/apache/arrow/go/v10/arrow"
 	"github.com/go-kit/log"
 	"github.com/klauspost/compress/gzip"
 	"github.com/polarsignals/frostdb/dynparquet"
