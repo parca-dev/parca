@@ -11,23 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {PillVariant} from '@parca/components';
+import {getHealthStatus} from './utils';
 
-const HealthStatus = {
-  Unspecified: 'Unspecified',
-  Good: 'Good',
-  Bad: 'Bad',
-} as const;
-
-type HealthStatusType = typeof HealthStatus[keyof typeof HealthStatus];
-
-export const getHealthStatus = (numericValue: number) => {
-  const label = Object.values(HealthStatus)[numericValue];
-
-  const colorVariants: Record<HealthStatusType, PillVariant> = {
-    Unspecified: 'neutral',
-    Good: 'success',
-    Bad: 'danger',
-  };
-  return {label, colorVariant: colorVariants[label]};
-};
+describe('getHealthStatus', () => {
+  it('returns the correct label and colorVariant for the numeric value', () => {
+    expect(getHealthStatus(0)).toEqual({
+      label: 'Unspecified',
+      colorVariant: 'neutral',
+    });
+    expect(getHealthStatus(1)).toEqual({
+      label: 'Good',
+      colorVariant: 'success',
+    });
+    expect(getHealthStatus(2)).toEqual({
+      label: 'Bad',
+      colorVariant: 'danger',
+    });
+  });
+});

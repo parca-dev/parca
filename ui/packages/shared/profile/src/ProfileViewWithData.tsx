@@ -36,16 +36,16 @@ export const ProfileViewWithData = ({
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
   const [nodeTrimThreshold, setNodeTrimThreshold] = useState<number>(0);
-  const [disableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.DISABLE_GRAPH_TRIMMING.key);
+  const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
 
   useEffect(() => {
-    if (disableTrimming) {
+    if (!enableTrimming) {
       setNodeTrimThreshold(0);
     }
-  }, [disableTrimming]);
+  }, [enableTrimming]);
 
   const onFlamegraphContainerResize = (width: number): void => {
-    if (disableTrimming || width === 0) {
+    if (!enableTrimming || width === 0) {
       return;
     }
     const threshold = (1 / width) * 100;

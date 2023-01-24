@@ -837,3 +837,34 @@ func TestFlamegraphTrimmingSingleNodeGraph(t *testing.T) {
 		},
 	}, trimmedGraph)
 }
+
+func TestFlamegraphTrimmingNodeWithFlatValues(t *testing.T) {
+	fullGraph := &pb.Flamegraph{
+		Total: 151,
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: 151,
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 151,
+				Children: []*pb.FlamegraphNode{{
+					Cumulative: 100,
+				}, {
+					Cumulative: 1,
+				}},
+			}},
+		},
+	}
+	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, float32(0.02))
+	require.Equal(t, &pb.Flamegraph{
+		Total:          150,
+		UntrimmedTotal: 151,
+		Root: &pb.FlamegraphRootNode{
+			Cumulative: 150,
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 150,
+				Children: []*pb.FlamegraphNode{{
+					Cumulative: 100,
+				}},
+			}},
+		},
+	}, trimmedGraph)
+}

@@ -16,11 +16,11 @@ import {Agent} from '@parca/client';
 import LastScrapeCell from './LastScrapeCell';
 import {TimeObject} from '@parca/functions';
 
-enum AgentsTableHeader {
-  id = 'Name',
-  lastPush = 'Last Push',
-  lastError = 'Last Error',
-}
+const AgentsTableHeader = {
+  id: 'Name',
+  lastPush: 'Last Push',
+  lastError: 'Last Error',
+};
 
 const getRowContentByHeader = ({
   header,

@@ -47,17 +47,19 @@ export interface TimeObject {
   years?: number;
 }
 
-export enum TimeUnits {
-  Nanos = 'nanos',
-  Micros = 'micros',
-  Milliseconds = 'milliseconds',
-  Seconds = 'seconds',
-  Minutes = 'minutes',
-  Hours = 'hours',
-  Days = 'days',
-  Weeks = 'weeks',
-  Years = 'years',
-}
+export const TimeUnits = {
+  Nanos: 'nanos',
+  Micros: 'micros',
+  Milliseconds: 'milliseconds',
+  Seconds: 'seconds',
+  Minutes: 'minutes',
+  Hours: 'hours',
+  Days: 'days',
+  Weeks: 'weeks',
+  Years: 'years',
+} as const;
+
+export type TimeUnit = typeof TimeUnits[keyof typeof TimeUnits];
 
 const unitsInTime = {
   [TimeUnits.Nanos]: {multiplier: 1, symbol: 'ns'},
@@ -71,7 +73,7 @@ const unitsInTime = {
   [TimeUnits.Years]: {multiplier: 60 * 60 * 24 * 365 * 1e9, symbol: 'y'},
 };
 
-export const convertTime = (value: number, from: TimeUnits, to: TimeUnits): number => {
+export const convertTime = (value: number, from: TimeUnit, to: TimeUnit): number => {
   const startUnit = unitsInTime[from];
   const endUnit = unitsInTime[to];
   if (startUnit === undefined || endUnit === undefined) {
@@ -89,7 +91,7 @@ export const formatDuration = (timeObject: TimeObject, to?: number): string => {
   let nanos = (Object.keys(timeObject) as Array<keyof TimeObject>)
     .map(unit => {
       const time = timeObject[unit];
-      return time !== undefined ? convertTime(time, unit as TimeUnits, TimeUnits.Nanos) : 0;
+      return time !== undefined ? convertTime(time, unit as TimeUnit, TimeUnits.Nanos) : 0;
     })
     .reduce((prev, curr) => prev + curr, 0);
 
