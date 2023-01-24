@@ -338,12 +338,12 @@ func (q *Querier) QueryRange(
 	for i := 0; i < int(ar.NumRows()); i++ {
 		labelSet = labelSet[:0]
 		for _, labelColumnIndex := range labelColumnIndices {
-			col := ar.Column(labelColumnIndex).(*array.Binary)
+			col := ar.Column(labelColumnIndex).(*array.Dictionary)
 			if col.IsNull(i) {
 				continue
 			}
 
-			v := col.Value(i)
+			v := col.Dictionary().(*array.Binary).Value(col.GetValueIndex(i))
 			if len(v) > 0 {
 				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: string(v)})
 			}
