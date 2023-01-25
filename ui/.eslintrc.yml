@@ -3,6 +3,17 @@ extends:
   - 'standard-with-typescript'
   - 'prettier'
   - 'plugin:typescript-enum/recommended'
+  - 'eslint:recommended'
+  - 'plugin:@typescript-eslint/recommended'
+  - 'plugin:react/recommended'
+  - 'plugin:jest/recommended'
+  - 'plugin:jest/style'
+  - 'plugin:jest-dom/recommended'
+  - 'plugin:react/jsx-runtime'
+  - 'plugin:import/recommended'
+  - 'plugin:import/typescript'
+
+parser: '@typescript-eslint/parser'
 
 parserOptions:
   project: './tsconfig.json'
@@ -18,6 +29,13 @@ plugins:
   - typescript-enum
 
 settings:
+  import/resolver:
+    node:
+      extensions:
+        - .ts
+        - .tsx
+        - .js
+        - .jsx
   react:
     version: detect
 
@@ -41,3 +59,13 @@ rules:
     - singleline:
         delimiter: 'semi'
         requireLast: false
+
+  ban-ts-comment: 0
+  '@typescript-eslint/ban-ts-comment': 0
+
+  '@typescript-eslint/no-empty-function': 0
+
+  import/named: 2
+  import/namespace: 2
+  import/default: 2
+  import/export: 2
