@@ -173,6 +173,7 @@ const ProfileSelector = ({
     queryExpressionString === '' ||
     queryExpressionString === '{}';
 
+  const mergeHidden = query.profType.delta === false;
   const mergeDisabled = selectedProfileName === '' || querySelection.expression === undefined;
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
@@ -204,7 +205,9 @@ const ProfileSelector = ({
           <ButtonGroup>
             {!searchDisabled && (
               <>
-                <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
+                {!mergeHidden && (
+                  <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
+                )}
                 {!comparing && (
                   <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
                 )}
