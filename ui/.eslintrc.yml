@@ -65,6 +65,8 @@ rules:
   ban-ts-comment: 0
   '@typescript-eslint/ban-ts-comment': 0
 
+  '@typescript-eslint/no-empty-function': 0
+
   import/named: 2
   import/namespace: 2
   import/default: 2

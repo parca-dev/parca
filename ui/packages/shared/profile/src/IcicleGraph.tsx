@@ -11,9 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable  @typescript-eslint/ban-types */
-// I disabled this rule in the file because TypeScript seems to be mistaking @parca's Function type for the native JavaScriptFunction constructor
-
 import {MouseEvent, useEffect, useMemo, useRef, useState, memo, Fragment} from 'react';
 
 import {throttle} from 'lodash';
@@ -21,7 +18,11 @@ import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {
+  Mapping,
+  Function as ParcaFunction,
+  Location,
+} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import type {HoveringNode} from './GraphTooltip';
 import GraphTooltip from './GraphTooltip';
 import {diffColor, getLastItem, isSearchMatch, selectQueryParam} from '@parca/functions';
@@ -43,7 +44,7 @@ interface IcicleGraphNodesProps {
   strings: string[];
   mappings: Mapping[];
   locations: Location[];
-  functions: Function[];
+  functions: ParcaFunction[];
   x: number;
   y: number;
   total: number;
@@ -61,7 +62,7 @@ interface IcicleGraphRootNodeProps {
   strings: string[];
   mappings: Mapping[];
   locations: Location[];
-  functions: Function[];
+  functions: ParcaFunction[];
   xScale: (value: number) => number;
   total: number;
   totalWidth: number;
@@ -150,7 +151,7 @@ export function nodeLabel(
   strings: string[],
   mappings: Mapping[],
   locations: Location[],
-  functions: Function[]
+  functions: ParcaFunction[]
 ): string {
   if (node.meta?.locationIndex === undefined) return '<unknown>';
   if (node.meta?.locationIndex === 0) return '<unknown>';
