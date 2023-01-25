@@ -31,7 +31,7 @@ const addPropsToChildren = (children: JSX.Element, props: {[x: string]: any}): J
   return Children.map(children, addProps);
 };
 
-export const ResponsiveSvg = (props: Props): JSX.Element => {
+const ResponsiveSvg = (props: Props): JSX.Element => {
   const {children} = props;
   const {ref, dimensions} = useContainerDimensions();
   const {width} = dimensions ?? {width: 0};

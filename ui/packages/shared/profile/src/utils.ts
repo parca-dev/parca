@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {RpcMetadata} from '@protobuf-ts/runtime-rpc';
+import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
 export const hexifyAddress = (address?: string): string => {
   if (address == null) {

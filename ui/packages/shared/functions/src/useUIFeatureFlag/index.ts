@@ -42,7 +42,7 @@ initializeFlagsFromURL();
 
 const useUIFeatureFlag = (
   featureFlag: string,
-  defaultValue: boolean = false
+  defaultValue = false
 ): [boolean, (flag: boolean) => void] => {
   const [flags, setFlags] = useLocalStorage<{[flag: string]: boolean}>(UI_FLAGS, {});
 

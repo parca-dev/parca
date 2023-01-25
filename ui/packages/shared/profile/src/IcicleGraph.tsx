@@ -11,14 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
+import {MouseEvent, useEffect, useMemo, useRef, useState, memo, Fragment} from 'react';
 
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {
+  Mapping,
+  Function as ParcaFunction,
+  Location,
+} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import type {HoveringNode} from './GraphTooltip';
 import GraphTooltip from './GraphTooltip';
 import {diffColor, getLastItem, isSearchMatch, selectQueryParam} from '@parca/functions';
@@ -40,7 +44,7 @@ interface IcicleGraphNodesProps {
   strings: string[];
   mappings: Mapping[];
   locations: Location[];
-  functions: Function[];
+  functions: ParcaFunction[];
   x: number;
   y: number;
   total: number;
@@ -58,7 +62,7 @@ interface IcicleGraphRootNodeProps {
   strings: string[];
   mappings: Mapping[];
   locations: Location[];
-  functions: Function[];
+  functions: ParcaFunction[];
   xScale: (value: number) => number;
   total: number;
   totalWidth: number;
@@ -147,7 +151,7 @@ export function nodeLabel(
   strings: string[],
   mappings: Mapping[],
   locations: Location[],
-  functions: Function[]
+  functions: ParcaFunction[]
 ): string {
   if (node.meta?.locationIndex === undefined) return '<unknown>';
   if (node.meta?.locationIndex === 0) return '<unknown>';
@@ -161,7 +165,7 @@ export function nodeLabel(
   const mappingFile =
     mapping?.fileStringIndex !== undefined ? strings[mapping.fileStringIndex] : '';
 
-  const mappingString: string = `${
+  const mappingString = `${
     mappingFile !== '' ? '[' + (getLastItem(mappingFile) ?? '') + '] ' : ''
   }`;
 
@@ -251,7 +255,7 @@ export function IcicleGraphNodes({
         };
 
         return (
-          <React.Fragment key={`node-${key}`}>
+          <Fragment key={`node-${key}`}>
             <IcicleRect
               key={`rect-${key}`}
               x={xStart}
@@ -285,14 +289,14 @@ export function IcicleGraphNodes({
                 setCurPath={setCurPath}
               />
             )}
-          </React.Fragment>
+          </Fragment>
         );
       })}
     </g>
   );
 }
 
-const MemoizedIcicleGraphNodes = React.memo(IcicleGraphNodes);
+const MemoizedIcicleGraphNodes = memo(IcicleGraphNodes);
 
 export function IcicleGraphRootNode({
   node,
@@ -363,7 +367,7 @@ export function IcicleGraphRootNode({
   );
 }
 
-const MemoizedIcicleGraphRootNode = React.memo(IcicleGraphRootNode);
+const MemoizedIcicleGraphRootNode = memo(IcicleGraphRootNode);
 
 export default function IcicleGraph({
   graph,
