@@ -13,6 +13,7 @@
 
 import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
 
+import cx from 'classnames';
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
@@ -26,6 +27,7 @@ import {selectDarkMode, useAppSelector} from '@parca/store';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {Button} from '@parca/components';
 import {hexifyAddress} from './utils';
+import {useURLState} from '@parca/functions';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -379,6 +381,11 @@ export default function IcicleGraph({
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
+  const [rawDashboardItems] = useURLState({
+    param: 'dashboard_items',
+  });
+
+  const dashboardItems = rawDashboardItems as string[];
 
   useEffect(() => {
     if (ref.current != null) {
@@ -407,7 +414,7 @@ export default function IcicleGraph({
   };
 
   return (
-    <div onMouseLeave={() => setHoveringNode(undefined)}>
+    <div onMouseLeave={() => setHoveringNode(undefined)} className="relative">
       <GraphTooltip
         unit={sampleUnit}
         total={total}
@@ -420,7 +427,12 @@ export default function IcicleGraph({
         locations={graph.locations}
         functions={graph.function}
       />
-      <div className="w-full flex justify-start">
+      <div
+        className={cx(
+          dashboardItems.length > 1 ? 'top-[-46px] left-[25px]' : 'top-[-45px]',
+          'flex justify-start absolute '
+        )}
+      >
         <Button
           color="neutral"
           onClick={() => setCurPath([])}
