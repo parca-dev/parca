@@ -22,6 +22,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/apache/arrow/go/v10/arrow"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/klauspost/compress/gzip"
@@ -39,11 +40,14 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
+var ExperimentalArrow bool
+
 var ErrMissingNameLabel = errors.New("missing __name__ label")
 
 type Table interface {
 	Schema() *dynparquet.Schema
 	Insert(context.Context, []byte) (tx uint64, err error)
+	InsertRecord(context.Context, arrow.Record) (tx uint64, err error)
 }
 
 type NormalizedIngester struct {
@@ -84,6 +88,31 @@ type Series struct {
 }
 
 func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
+	// Experimental feature that ingests profiles as arrow records.
+	if ExperimentalArrow {
+		record, err := SeriesToArrowRecord(
+			ing.schema,
+			series,
+			ing.allLabelNames,
+			ing.allPprofLabelNames,
+			ing.allPprofNumLabelNames,
+		)
+		if err != nil {
+			return err
+		}
+		defer record.Release()
+
+		if record.NumRows() == 0 {
+			return nil
+		}
+
+		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	pBuf, err := ing.schema.GetBuffer(map[string][]string{
 		ColumnLabels:         ing.allLabelNames,
 		ColumnPprofLabels:    ing.allPprofLabelNames,

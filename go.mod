@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/storage v1.28.1
 	github.com/alecthomas/kong v0.7.1
-	github.com/apache/arrow/go/v8 v8.0.1
+	github.com/apache/arrow/go/v10 v10.0.1
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -29,7 +29,7 @@ require (
 	github.com/klauspost/compress v1.15.14
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20230118081847-7b5aa873a416
+	github.com/polarsignals/frostdb v0.0.0-20230126135007-568778865975
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.39.0
 	github.com/prometheus/prometheus v0.41.0
@@ -167,7 +167,7 @@ require (
 	github.com/linode/linodego v1.9.3 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/dns v1.1.50 // indirect
