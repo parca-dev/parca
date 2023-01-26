@@ -13,13 +13,13 @@
 
 import {useState, useEffect} from 'react';
 import MetricsGraph from '../MetricsGraph';
-import {ProfileSelection, SingleProfileSelection} from '..'; // TODO: Take MergeProfileSelection going forward
+import {MergedProfileSelection, ProfileSelection} from '..';
 import {QueryServiceClient, QueryRangeResponse, Label, Timestamp, Duration} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
 import useDelayedLoader from '../useDelayedLoader';
-import {getStepDuration} from '@parca/functions';
+import {getStepDuration, getStepDurationInMilliseconds} from '@parca/functions';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -59,15 +59,7 @@ export const useQueryRange = (
         error: null,
       });
 
-      // Get the duration of requested time.
-      // Divide by 1000 to get seconds.
-      // Divide by 1000 to get the duration each step should have to end up with 1000 data points.
-      // We need to convert to integer, and sometimes it could happen to be < 1,
-      // therefore we ceil instead of floor.
-
-      const totalSteps = 1000;
-      const stepDuration = getStepDuration(start, end, totalSteps);
-
+      const stepDuration = getStepDuration(start, end);
       const call = client.queryRange(
         {
           query: queryExpression,
@@ -126,11 +118,17 @@ const ProfileMetricsGraph = ({
 
   const series = response?.series;
   if (series !== null && series !== undefined && series?.length > 0) {
+    const stepDuration = getStepDuration(from, to);
+    const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
+
     const handleSampleClick = (timestamp: number, _value: number, labels: Label[]): void => {
-      select(
-        // TODO: Make it a MergeProfileSelection going forward
-        new SingleProfileSelection(Query.parse(queryExpression).profileName(), labels, timestamp)
-      );
+      const isDeltaType = Query.parse(queryExpression).profileType().delta;
+
+      const startTimestamp = timestamp;
+      // if type delta, send a merge request with end timestamp = clicked timestamp + stepDuration
+      const endTimestamp = isDeltaType ? timestamp + stepDurationInMilliseconds : timestamp;
+
+      select(new MergedProfileSelection(startTimestamp, endTimestamp, labels, queryExpression));
     };
 
     return (
@@ -142,7 +140,7 @@ const ProfileMetricsGraph = ({
           data={series}
           from={from}
           to={to}
-          profile={profile as SingleProfileSelection} // TODO: Make it a MergeProfileSelection going forward
+          profile={profile as MergedProfileSelection}
           setTimeRange={setTimeRange}
           onSampleClick={handleSampleClick}
           onLabelClick={addLabelMatcher}

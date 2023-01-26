@@ -30,12 +30,12 @@ import {
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
+import {useURLState, NavigateFunction} from '@parca/functions';
 
 export interface QuerySelection {
   expression: string;
   from: number;
   to: number;
-  merge: boolean;
   timeSelection: string;
 }
 
@@ -49,6 +49,7 @@ interface ProfileSelectorProps {
   profileSelection: ProfileSelection | null;
   comparing: boolean;
   onCompareProfile: () => void;
+  navigateTo?: NavigateFunction;
 }
 
 export interface IProfileTypesResult {
@@ -87,12 +88,16 @@ const ProfileSelector = ({
   profileSelection,
   comparing,
   onCompareProfile,
+  navigateTo,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
+
+  const [userMerged, setUserMerged] = useURLState({param: 'userMerged', navigateTo});
+  const [delta, setDelta] = useURLState({param: 'delta', navigateTo});
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
@@ -122,18 +127,21 @@ const ProfileSelector = ({
     enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(queryExpressionString);
   const selectedProfileName = query.profileName();
 
-  const setNewQueryExpression = (expr: string, merge: boolean): void => {
+  useEffect(() => {
+    setDelta(query.profType.delta ? 'true' : 'false');
+  }, [query]);
+
+  const setNewQueryExpression = (expr: string): void => {
     selectQuery({
       expression: expr,
       from: timeRangeSelection.getFromMs(),
       to: timeRangeSelection.getToMs(),
-      merge,
       timeSelection: timeRangeSelection.getRangeKey(),
     });
   };
 
   const setQueryExpression = (): void => {
-    setNewQueryExpression(query.toString(), false);
+    setNewQueryExpression(query.toString());
   };
 
   const addLabelMatcher = (key: string, value: string): void => {
@@ -142,12 +150,13 @@ const ProfileSelector = ({
     const newValue = value.includes('\\') ? value.replaceAll('\\', '\\\\') : value;
     const [newQuery, changed] = Query.parse(queryExpressionString).setMatcher(key, newValue);
     if (changed) {
-      setNewQueryExpression(newQuery.toString(), false);
+      setNewQueryExpression(newQuery.toString());
     }
   };
 
   const setMergedSelection = (): void => {
-    setNewQueryExpression(queryExpressionString, true);
+    setUserMerged('true');
+    setNewQueryExpression(queryExpressionString);
   };
 
   const setMatchersString = (matchers: string): void => {
@@ -173,7 +182,7 @@ const ProfileSelector = ({
     queryExpressionString === '' ||
     queryExpressionString === '{}';
 
-  const mergeHidden = query.profType.delta === false;
+  const mergeHidden = delta === 'false';
   const mergeDisabled = selectedProfileName === '' || querySelection.expression === undefined;
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
@@ -205,7 +214,7 @@ const ProfileSelector = ({
           <ButtonGroup>
             {!searchDisabled && (
               <>
-                {!mergeHidden && (
+                {!mergeHidden && userMerged === 'false' && (
                   <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
                 )}
                 {!comparing && (
@@ -218,6 +227,7 @@ const ProfileSelector = ({
               onClick={(e: React.MouseEvent<HTMLElement>) => {
                 e.preventDefault();
                 setQueryExpression();
+                setUserMerged('false');
               }}
             >
               Search
@@ -232,13 +242,13 @@ const ProfileSelector = ({
           )}
         </div>
       </Card.Header>
-      {!querySelection.merge && (
+      {
         <Card.Body>
           {querySelection.expression !== undefined &&
           querySelection.expression.length > 0 &&
           querySelection.from !== undefined &&
           querySelection.to !== undefined &&
-          (profileSelection == null || profileSelection.Type() !== 'merge') ? (
+          userMerged === 'false' ? (
             <ProfileMetricsGraph
               queryClient={queryClient}
               queryExpression={querySelection.expression}
@@ -252,7 +262,6 @@ const ProfileSelector = ({
                   expression: queryExpressionString,
                   from: range.getFromMs(),
                   to: range.getToMs(),
-                  merge: false,
                   timeSelection: range.getRangeKey(),
                 });
               }}
@@ -260,7 +269,7 @@ const ProfileSelector = ({
             />
           ) : (
             <>
-              {(profileSelection == null || profileSelection.Type() !== 'merge') && (
+              {profileSelection == null && (
                 <div className="my-20 text-center">
                   <p>Run a query, and the result will be displayed here.</p>
                 </div>
@@ -268,7 +277,7 @@ const ProfileSelector = ({
             </>
           )}
         </Card.Body>
-      )}
+      }
     </Card>
   );
 };

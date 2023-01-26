@@ -15,7 +15,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
 import {formatForTimespan} from '@parca/functions/time';
-import {SingleProfileSelection, timeFormat} from '..';
+import {MergedProfileSelection, timeFormat} from '..';
 import {cutToMaxStringLength} from '@parca/functions/string';
 import throttle from 'lodash.throttle';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
@@ -33,7 +33,7 @@ interface RawMetricsGraphProps {
   data: MetricsSeriesPb[];
   from: number;
   to: number;
-  profile: SingleProfileSelection | null; // TODO: Take MergeProfileSelection going forward
+  profile: MergedProfileSelection | null;
   onSampleClick: (timestamp: number, value: number, labels: Label[]) => void;
   onLabelClick: (labelName: string, labelValue: string) => void;
   setTimeRange: (range: DateTimeRange) => void;
@@ -249,7 +249,6 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
   const isShiftDown = useIsShiftDown();
 
-  // TODO: Take time from MergeProfileSelection via from field
   const time: number = parseFloat(profile?.HistoryParams().time);
 
   if (width === undefined || width == null) {
@@ -463,7 +462,6 @@ export const RawMetricsGraph = ({
   };
 
   const selected = findSelectedProfile();
-
   return (
     <>
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (

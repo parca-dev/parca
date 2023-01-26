@@ -69,6 +69,7 @@ const ProfileExplorerCompare = ({
             enforcedProfileName={''}
             comparing={true}
             onCompareProfile={() => {}}
+            navigateTo={navigateTo}
           />
         </div>
         <div className="pl-2">
@@ -82,6 +83,7 @@ const ProfileExplorerCompare = ({
             enforcedProfileName={Query.parse(queryA.expression).profileName()}
             comparing={true}
             onCompareProfile={() => {}}
+            navigateTo={navigateTo}
           />
         </div>
       </div>

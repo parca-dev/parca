@@ -132,7 +132,6 @@ const ProfileExplorerApp = ({
       expression: expression_a,
       from: parseInt(from_a as string),
       to: parseInt(to_a as string),
-      merge: (merge_a as string) === 'true',
       profile_name: profile_name_a as string,
       timeSelection: time_selection_a as string,
     };
@@ -141,11 +140,8 @@ const ProfileExplorerApp = ({
       expression_a,
       from_a as string,
       to_a as string,
-      merge_a as string,
-      labels_a as string[],
-      profile_name_a as string,
       time_a as string,
-      filter_by_function
+      labels_a as string[]
     );
 
     const selectQuery = (q: QuerySelection): void => {
@@ -159,7 +155,6 @@ const ProfileExplorerApp = ({
             expression_a: encodeURIComponent(q.expression),
             from_a: q.from.toString(),
             to_a: q.to.toString(),
-            merge_a: q.merge,
             time_selection_a: q.timeSelection,
             dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           },
@@ -182,7 +177,6 @@ const ProfileExplorerApp = ({
         expression_a: encodeURIComponent(query.expression),
         from_a: query.from.toString(),
         to_a: query.to.toString(),
-        merge_a: query.merge,
         time_selection_a: query.timeSelection,
         profile_name_a: query.profile_name,
 
@@ -190,7 +184,6 @@ const ProfileExplorerApp = ({
         expression_b: encodeURIComponent(query.expression),
         from_b: query.from.toString(),
         to_b: query.to.toString(),
-        merge_b: query.merge,
         time_selection_b: query.timeSelection,
         profile_name_b: query.profile_name,
       };
@@ -226,7 +219,6 @@ const ProfileExplorerApp = ({
     expression: expression_a,
     from: parseInt(from_a as string),
     to: parseInt(to_a as string),
-    merge: (merge_a as string) === 'true',
     timeSelection: time_selection_a as string,
     profile_name: profile_name_a as string,
   };
@@ -234,7 +226,6 @@ const ProfileExplorerApp = ({
     expression: expression_b,
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
-    merge: (merge_b as string) === 'true',
     timeSelection: time_selection_b as string,
     profile_name: profile_name_b as string,
   };
@@ -243,19 +234,15 @@ const ProfileExplorerApp = ({
     expression_a,
     from_a as string,
     to_a as string,
-    merge_a as string,
-    labels_a as string[],
-    profile_name_a as string,
-    time_a as string
+    time_a as string,
+    labels_a as string[]
   );
   const profileB = ProfileSelectionFromParams(
     expression_b,
     from_b as string,
     to_b as string,
-    merge_b as string,
-    labels_b as string[],
-    profile_name_b as string,
-    time_b as string
+    time_b as string,
+    labels_b as string[]
   );
 
   const selectQueryA = (q: QuerySelection): void => {
@@ -271,7 +258,6 @@ const ProfileExplorerApp = ({
           expression_b: encodeURIComponent(expression_b),
           from_a: q.from.toString(),
           to_a: q.to.toString(),
-          merge_a: q.merge,
           time_selection_a: q.timeSelection,
           filter_by_function: filter_by_function ?? '',
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
@@ -293,7 +279,6 @@ const ProfileExplorerApp = ({
           expression_a: encodeURIComponent(expression_a),
           from_b: q.from.toString(),
           to_b: q.to.toString(),
-          merge_b: q.merge,
           time_selection_b: q.timeSelection,
           filter_by_function: filter_by_function ?? '',
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,

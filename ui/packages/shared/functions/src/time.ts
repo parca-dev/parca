@@ -136,3 +136,7 @@ export const getStepDuration = (start: number, end: number, stepCount: number = 
 
   return {seconds: whole.toString(), nanos: Math.floor(decimal * 1e9)};
 };
+
+export const getStepDurationInMilliseconds = (stepDuration: Duration): number => {
+  return parseInt(stepDuration.seconds, 10) * 1000 + stepDuration.nanos / 1e6;
+};
