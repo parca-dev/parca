@@ -433,8 +433,8 @@ export default function IcicleGraph({
       />
       <div
         className={cx(
-          dashboardItems.length > 1 ? 'top-[-46px] left-[25px]' : 'top-[-45px]',
-          'flex justify-start absolute '
+          dashboardItems.length > 1 ?? 'left-[25px]',
+          'flex justify-start absolute top-[-45px]'
         )}
       >
         <Button

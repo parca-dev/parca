@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import cx from 'classnames';
 import {useCallback, useMemo} from 'react';
 
 import {
@@ -19,10 +20,10 @@ import {
   isSearchMatch,
   NavigateFunction,
   parseParams,
-  selectQueryParam,
+  useURLState,
 } from '@parca/functions';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
-import {Table} from '@parca/components';
+import {Button, Table} from '@parca/components';
 import {createColumnHelper} from '@tanstack/react-table';
 import type {ColumnDef} from '@tanstack/react-table';
 
@@ -64,9 +65,11 @@ const addPlusSign = (num: string): string => {
 
 export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProps): JSX.Element => {
   const router = parseParams(window.location.search);
-  const currentSearchString = selectQueryParam('search_string') as string;
-  const compareMode =
-    Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
+  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
+  const [currentSearchString] = useURLState({param: 'search_string'});
+  const [compareMode] = useURLState({param: 'compare_a'});
+
+  const dashboardItems = rawDashboardItems as string[];
 
   const columns = useMemo(() => {
     const cols: Array<ColumnDef<TopNode, any>> = [
@@ -151,7 +154,7 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
       const meta = row.meta;
       if (meta === undefined) return false;
       const name = RowLabel(meta);
-      return isSearchMatch(currentSearchString, name);
+      return isSearchMatch(currentSearchString as string, name);
     },
     [currentSearchString]
   );
@@ -159,6 +162,19 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
   const enableHighlighting = useMemo(() => {
     return currentSearchString != null && currentSearchString?.length > 0;
   }, [currentSearchString]);
+
+  const clearSelection = useCallback((): void => {
+    if (navigateTo != null) {
+      navigateTo(
+        '/',
+        {
+          ...router,
+          ...{search_string: ''},
+        },
+        {replace: true}
+      );
+    }
+  }, [navigateTo, router]);
 
   const initialSorting = useMemo(() => {
     return [{id: compareMode ? 'diff' : 'cumulative', desc: true}];
@@ -169,7 +185,18 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
   if (total === 0) return <>Profile has no samples</>;
 
   return (
-    <>
+    <div className="relative">
+      <div className={cx(dashboardItems.length > 1 ? 'left-[25px]' : '', 'absolute top-[-45px]')}>
+        <Button
+          color="neutral"
+          onClick={clearSelection}
+          className="w-auto"
+          variant="neutral"
+          disabled={currentSearchString === undefined || currentSearchString.length === 0}
+        >
+          Clear selection
+        </Button>
+      </div>
       <div className="w-full font-robotoMono h-[80vh] overflow-scroll">
         <Table
           data={top?.list ?? []}
@@ -180,7 +207,7 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
           shouldHighlightRow={shouldHighlightRow}
         />
       </div>
-    </>
+    </div>
   );
 };
 
