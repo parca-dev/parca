@@ -136,13 +136,13 @@ func (q *Querier) Values(
 			}
 
 			col := ar.Column(0)
-			stringCol, ok := col.(*array.Binary)
+			dict, ok := col.(*array.Dictionary)
 			if !ok {
-				return fmt.Errorf("expected string column, got %T", col)
+				return fmt.Errorf("expected dictionary column, got %T", col)
 			}
 
-			for i := 0; i < stringCol.Len(); i++ {
-				val := stringCol.Value(i)
+			for i := 0; i < dict.Len(); i++ {
+				val := StringValueFromDictionary(dict, i)
 
 				// Because of an implementation detail of aggregations in
 				// FrostDB resulting columns can have the value of "", but that
