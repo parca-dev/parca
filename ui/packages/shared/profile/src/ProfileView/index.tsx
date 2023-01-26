@@ -285,7 +285,10 @@ export const ProfileView = ({
                                   <div className="w-full flex justify-end pb-2">
                                     <div className="w-full flex justify-between">
                                       <div
-                                        className={cx(isMultiPanelView ? 'visible' : 'invisible')}
+                                        className={cx(
+                                          isMultiPanelView ? 'visible' : 'invisible',
+                                          'flex items-center'
+                                        )}
                                         {...provided.dragHandleProps}
                                       >
                                         <Icon
