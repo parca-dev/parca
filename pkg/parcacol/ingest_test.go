@@ -23,6 +23,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/apache/arrow/go/v10/arrow"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
@@ -55,6 +56,10 @@ type fakeTable struct {
 
 func (t *fakeTable) Schema() *dynparquet.Schema {
 	return t.schema
+}
+
+func (t *fakeTable) InsertRecord(ctx context.Context, record arrow.Record) (uint64, error) {
+	return 0, fmt.Errorf("unimplemented")
 }
 
 func (t *fakeTable) Insert(ctx context.Context, data []byte) (uint64, error) {
