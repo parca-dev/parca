@@ -116,7 +116,6 @@ func SeriesToArrowRecord(
 	series []Series,
 	labelNames, profileLabelNames, profileNumLabelNames []string,
 ) (arrow.Record, error) {
-
 	ps, err := schema.DynamicParquetSchema(map[string][]string{
 		ColumnLabels:         labelNames,
 		ColumnPprofLabels:    profileLabelNames,
