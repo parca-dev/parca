@@ -3,7 +3,7 @@ module github.com/parca-dev/parca
 go 1.19
 
 require (
-	cloud.google.com/go/storage v1.28.1
+	cloud.google.com/go/storage v1.29.0
 	github.com/alecthomas/kong v0.7.1
 	github.com/apache/arrow/go/v10 v10.0.1
 	github.com/cenkalti/backoff/v4 v4.2.0
@@ -54,7 +54,7 @@ require (
 )
 
 require (
-	cloud.google.com/go v0.105.0 // indirect
+	cloud.google.com/go v0.107.0 // indirect
 	cloud.google.com/go/compute v1.14.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v0.8.0 // indirect
