@@ -18154,10 +18154,10 @@ koa@^2.13.4:
     type-is "^1.6.16"
     vary "^1.1.2"
 
-konva@8.4.0:
-  version "8.4.0"
-  resolved "https://registry.yarnpkg.com/konva/-/konva-8.4.0.tgz#e8860794c79a34c3f736940708ed98e63875aec8"
-  integrity sha512-o38I9j1Gr5CprnBwPI9dCSzb4cvN/8pnjuFHtKrGcNBfKmaLvYfcIakTEDm6xLt17O+S/6nXhLdXa5wqiHHS9Q==
+konva@8.4.1:
+  version "8.4.1"
+  resolved "https://registry.yarnpkg.com/konva/-/konva-8.4.1.tgz#7ccada23b7cfa2110afccb0afcb26bb925c05f41"
+  integrity sha512-O628p664F3WZ0jz1mkFly9NEDPMbRCcFwf9WA9e4AANPnYBQ365BcVfqp7i7ZRhXqBFu++87y4tT6kBQWAkd6g==
 
 language-subtag-registry@~0.3.2:
   version "0.3.22"
