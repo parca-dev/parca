@@ -15,17 +15,19 @@
 package addr2line
 
 import (
+	"bytes"
 	"debug/elf"
+	"encoding/binary"
 	"errors"
 	"fmt"
-	"sort"
-
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
+	"io/ioutil"
+	"strings"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
+	"github.com/parca-dev/parca/pkg/symbol/symbolSearcher"
 )
 
 // SymtabLiner is a liner which utilizes .symtab and .dynsym sections.
@@ -35,6 +37,7 @@ type SymtabLiner struct {
 	// symbols contains sorted symbols.
 	symbols   []elf.Symbol
 	demangler *demangle.Demangler
+	searcher  symbolSearcher.SymbolSearcher
 
 	filename string
 	f        *elf.File
@@ -47,9 +50,11 @@ func Symbols(logger log.Logger, filename string, f *elf.File, demangler *demangl
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
 	}
 
+	searcher := symbolSearcher.New(symbols)
 	return &SymtabLiner{
 		logger:    log.With(logger, "liner", "symtab"),
-		symbols:   symbols,
+		searcher:  searcher,
+		symbols:   searcher.Symbols(),
 		demangler: demangler,
 		filename:  filename,
 		f:         f,
@@ -77,13 +82,9 @@ func (lnr *SymtabLiner) PCRange() ([2]uint64, error) {
 
 // PCToLines looks up the line number information for a program counter (memory address).
 func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
-	i := sort.Search(len(lnr.symbols), func(i int) bool {
-		return lnr.symbols[i].Value > addr
-	})
-
-	if i < 1 || i > len(lnr.symbols) {
-		level.Debug(lnr.logger).Log("msg", "failed to find symbol for address", "addr", addr)
-		return nil, errors.New("failed to find symbol for address")
+	name, err := lnr.searcher.Find(addr)
+	if err != nil {
+		return nil, err
 	}
 
 	var (
@@ -91,12 +92,17 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, er
 		line int64 // 0
 	)
 
+	isplt := strings.HasSuffix(name, "@plt")
+	result := lnr.demangler.Demangle(&pb.Function{
+		SystemName: strings.TrimSuffix(name, "@plt"),
+		Filename:   file,
+	})
+	if isplt {
+		result.Name = result.Name + "@plt"
+	}
 	lines = append(lines, profile.LocationLine{
-		Line: line,
-		Function: lnr.demangler.Demangle(&pb.Function{
-			SystemName: lnr.symbols[i-1].Name,
-			Filename:   file,
-		}),
+		Line:     line,
+		Function: result,
 	})
 	return lines, nil
 }
@@ -106,14 +112,51 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, er
 // to facilitate searching.
 func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 	syms, sErr := objFile.Symbols()
+	dynSyms, dErr := objFile.DynamicSymbols()
 
-	if sErr != nil {
+	var pltSymbols []elf.Symbol
+	// see symbol-elf.c/dso__synthesize_plt_symbols
+	if pltRelSection, pltSection := objFile.Section(".rela.plt"), objFile.Section(".plt"); dErr == nil &&
+		pltRelSection != nil && pltSection != nil &&
+		objFile.Sections[pltRelSection.Link].Type == elf.SHT_DYNSYM {
+		data, err := ioutil.ReadAll(pltRelSection.Open())
+		if err != nil {
+			return nil, fmt.Errorf("failed to data of .rela.plt section:%s", err)
+		}
+		var (
+			rela elf.Rela64
+		)
+		b := bytes.NewReader(data)
+		off := pltSection.Offset
+		for b.Len() > 0 {
+			off += pltSection.Entsize
+			err := binary.Read(b, objFile.ByteOrder, &rela)
+			if err != nil {
+				return nil, fmt.Errorf("read plt section error, err:%s, section:%v", err, *pltRelSection)
+			}
+			// see applyRelocationsAMD64 go1.19.3/src/debug/elf/file.go:664
+			i := rela.Info >> 32
+			if i > uint64(len(dynSyms)) || i == 0 {
+				continue
+			}
+			s := dynSyms[i-1]
+
+			pltSymbols = append(pltSymbols, elf.Symbol{
+				Name:    s.Name + "@plt", // keep consistent with perf
+				Info:    elf.ST_INFO(elf.STB_GLOBAL, elf.STT_FUNC),
+				Section: elf.SectionIndex(1), // just to pass elfSymIsFunction's section check
+				Value:   off,
+				Size:    pltRelSection.Entsize,
+				Version: "",
+				Library: "",
+			})
+		}
+	}
+
+	if sErr != nil && dErr != nil {
 		return nil, fmt.Errorf("failed to read symbol sections: %w", sErr)
 	}
 
-	sort.SliceStable(syms, func(i, j int) bool {
-		return syms[i].Value < syms[j].Value
-	})
-
+	syms = append(syms, append(dynSyms, pltSymbols...)...)
 	return syms, nil
 }
