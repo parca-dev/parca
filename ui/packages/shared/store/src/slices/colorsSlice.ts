@@ -57,8 +57,8 @@ const getColorForFeature = (feature: string, isDarkMode: boolean, colorProfileNa
   return !isDarkMode ? color[0] : color[1];
 };
 
-export interface GenerateColorRequest {
-  feature: string;
+export interface SetFeaturesRequest {
+  features: string[];
   colorProfileName: string;
 }
 
@@ -73,22 +73,17 @@ export const colorsSlice = createSlice({
         [action.payload.name]: action.payload.color,
       };
     },
-    generateColorForFeature: function generateColorForFeatureFunc(
-      state,
-      action: PayloadAction<GenerateColorRequest>
-    ) {
-      if (state.colors[action.payload.feature] != null) {
-        return; // Don't generate a color if it already exists (e.g. when switching color profiles
-      }
-      console.log('Generating color for feature', action.payload.feature);
-      state.colors = {
-        ...state.colors,
-        [action.payload.feature]: getColorForFeature(
-          action.payload.feature,
-          false,
-          action.payload.colorProfileName
-        ),
-      };
+    setFeatures: (state, action: PayloadAction<SetFeaturesRequest>) => {
+      console.time('setFeatures: Generating colors for features');
+      state.colors = action.payload.features
+        .map(feature => {
+          return [feature, getColorForFeature(feature, false, action.payload.colorProfileName)];
+        })
+        .reduce((acc, [feature, color]) => {
+          acc[feature] = color;
+          return acc;
+        }, {});
+      console.timeEnd('setFeatures: Generating colors for features');
     },
     resetColors: state => {
       state.colors = {};
@@ -96,7 +91,7 @@ export const colorsSlice = createSlice({
   },
 });
 
-export const {addColor, resetColors, generateColorForFeature} = colorsSlice.actions;
+export const {addColor, resetColors, setFeatures} = colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;

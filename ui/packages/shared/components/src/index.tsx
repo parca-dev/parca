@@ -19,6 +19,7 @@ import DateTimePicker from './DateTimePicker';
 import Dropdown from './Dropdown';
 import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './GrpcMetadataContext';
 import Input from './Input';
+import {KeyDownProvider, useKeyDown} from './KeyDownContext';
 import Modal from './Modal';
 import ParcaContext, {defaultValue, ParcaContextProvider, useParcaContext} from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
@@ -44,6 +45,7 @@ export {
   GrpcMetadataProvider,
   IconButton,
   Input,
+  KeyDownProvider,
   Modal,
   ParcaContext,
   defaultValue as parcaContextDefaultValue,
@@ -56,5 +58,6 @@ export {
   Table,
   EmptyState,
   useGrpcMetadata,
+  useKeyDown,
   useParcaContext,
 };

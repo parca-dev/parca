@@ -17,9 +17,9 @@ import {usePopper} from 'react-popper';
 
 import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
-import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {hexifyAddress, truncateString} from '../';
 import {Function, Location, Mapping} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {useKeyDown} from '@parca/components';
 
 interface GraphTooltipProps {
   x: number;
@@ -385,7 +385,7 @@ const GraphTooltip = ({
   );
 
   const update = popperProps.update;
-  const isShiftDown = useIsShiftDown();
+  const {isShiftDown} = useKeyDown();
 
   useEffect(() => {
     if (contextElement != null) {

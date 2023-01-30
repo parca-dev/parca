@@ -339,59 +339,8 @@ export const COLOR_PROFILES = {
   },
 };
 
-const extractColorFeature = (name: string): string => {
-  if (name.trim().startsWith('runtime') || name === 'root') {
-    return 'runtime';
-  }
-
-  const binaryRegex = /^(\[[^\s]*\])/gm;
-  const binaryMatch = name.trim().match(binaryRegex);
-  if (binaryMatch != null) {
-    return binaryMatch[0];
-  }
-
-  return 'Everything else';
-};
-
-const findAColor = (colorIndex: number, colors: string[][]): string[] => {
-  return colors[colorIndex];
-  // TODO: add some logic to find unallocated colors if this index is already allocated to another feature for better color distribution.
-};
-
-const getColorForFeature = (feature: string, isDarkMode: boolean, colorProfileName): string => {
-  const featureColorMap = COLOR_PROFILES[colorProfileName].colorMap;
-  if (featureColorMap[feature] != null) {
-    const color = featureColorMap[feature];
-    return !isDarkMode ? color[0] : color[1];
-  }
-
-  const colors = COLOR_PROFILES[colorProfileName].colors;
-
-  // Add charaters in the feature name to the color map
-  const colorIndex =
-    feature === 'Everything else'
-      ? colors.length - 1
-      : feature
-          .toLowerCase()
-          .split('')
-          .reduce((acc, char) => {
-            acc += char.charCodeAt(0);
-            return acc;
-          }, 0) % (colors.length > 1 ? colors.length - 1 : 1);
-
-  const color = findAColor(colorIndex, colors);
-  featureColorMap[feature] = color;
-  return !isDarkMode ? color[0] : color[1];
-};
-
-export const getNewSpanColor = (
-  isDarkMode: boolean,
-  nodeName = '',
-  colorProfileName = 'default'
-): FeatureColor => {
-  // return isDarkMode ? '#B3BAE1' : '#929FEB';
-  const feature = extractColorFeature(nodeName);
-  return {color: getColorForFeature(feature, isDarkMode, colorProfileName), feature};
+export const getNewSpanColor = (isDarkMode: boolean): string => {
+  return isDarkMode ? '#B3BAE1' : '#929FEB';
 };
 
 export const getIncreasedSpanColor = (transparency: number, isDarkMode: boolean): string => {
@@ -406,30 +355,19 @@ export const getReducedSpanColor = (transparency: number, isDarkMode: boolean): 
     : `rgba(164, 214, 153, ${transparency})`;
 };
 
-export interface FeatureColor {
-  feature?: string;
-  color: string;
-}
-
-export const diffColor = (
-  diff: number,
-  cumulative: number,
-  isDarkMode: boolean,
-  nodeName: string,
-  colorProfileName: string
-): FeatureColor => {
+export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean): string => {
   const prevValue = cumulative - diff;
   const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0;
 
   const diffTransparency =
     Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
 
-  const newSpanColor = getNewSpanColor(isDarkMode, nodeName, colorProfileName);
+  const newSpanColor = getNewSpanColor(isDarkMode);
   const increasedSpanColor = getIncreasedSpanColor(diffTransparency, isDarkMode);
   const reducedSpanColor = getReducedSpanColor(diffTransparency, isDarkMode);
 
-  const color: FeatureColor =
-    diff === 0 ? newSpanColor : diff > 0 ? {color: increasedSpanColor} : {color: reducedSpanColor};
+  const color: string =
+    diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
 
   return color;
 };

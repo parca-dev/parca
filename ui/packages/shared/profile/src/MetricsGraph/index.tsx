@@ -22,9 +22,8 @@ import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/cli
 import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
 import {valueFormatter, formatDate, sanitizeHighlightedValues} from '@parca/functions';
-import {DateTimeRange} from '@parca/components';
+import {DateTimeRange, useKeyDown} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 
 import MetricsSeries from '../MetricsSeries';
 import MetricsCircle from '../MetricsCircle';
@@ -247,7 +246,7 @@ export const RawMetricsGraph = ({
   const [relPos, setRelPos] = useState(-1);
   const [pos, setPos] = useState([0, 0]);
   const metricPointRef = useRef(null);
-  const isShiftDown = useIsShiftDown();
+  const {isShiftDown} = useKeyDown();
 
   const time: number = parseFloat(profile?.HistoryParams().time);
 

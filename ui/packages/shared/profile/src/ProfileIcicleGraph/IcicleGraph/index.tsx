@@ -20,10 +20,11 @@ import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import type {HoveringNode} from '../../GraphTooltip';
 import GraphTooltip from '../../GraphTooltip';
-import {FeatureColor} from '@parca/functions';
 import {Button} from '@parca/components';
-import {featureColors, IcicleNode, RowHeight} from './IcicleGraphNodes';
+import {IcicleNode, RowHeight} from './IcicleGraphNodes';
 import {selectStackColors, useAppSelector} from '@parca/store';
+import useColoredGraph from './useColoredGraph';
+import {selectQueryParam} from '@parca/functions';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -48,14 +49,27 @@ export default function IcicleGraph({
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
   const stackColors = useAppSelector(selectStackColors);
+  const coloredGraph = useColoredGraph(graph);
+  const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
+  const stack̉ColorArray = useMemo(() => {
+    return Object.entries(stackColors).sort(([featureA], [featureB]) => {
+      if (featureA === 'Everything else') {
+        return 1;
+      }
+      if (featureB === 'Everything else') {
+        return -1;
+      }
+      return featureA?.localeCompare(featureB ?? '') ?? 0;
+    });
+  }, [stackColors]);
 
   useEffect(() => {
     if (ref.current != null) {
       setHeight(ref?.current.getBoundingClientRect().height);
     }
-  }, [width, graph]);
+  }, [width, coloredGraph]);
 
-  const total = useMemo(() => parseFloat(graph.total), [graph.total]);
+  const total = useMemo(() => parseFloat(coloredGraph.total), [coloredGraph.total]);
   const xScale = useMemo(() => {
     if (width === undefined) {
       return () => 0;
@@ -63,7 +77,7 @@ export default function IcicleGraph({
     return scaleLinear().domain([0, total]).range([0, width]);
   }, [total, width]);
 
-  if (graph.root === undefined || width === undefined) {
+  if (coloredGraph.root === undefined || width === undefined) {
     return <></>;
   }
 
@@ -78,24 +92,14 @@ export default function IcicleGraph({
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
       <div className="flex flex-wrap gap-4 px-10 my-6">
-        {Object.entries(stackColors)
-          .sort(([featureA], [featureB]) => {
-            if (featureA === 'Everything else') {
-              return 1;
-            }
-            if (featureB === 'Everything else') {
-              return -1;
-            }
-            return featureA?.localeCompare(featureB ?? '') ?? 0;
-          })
-          .map(([feature, color]) => {
-            return (
-              <div key={feature} className="flex gap-1 items-center">
-                <div className="w-4 h-4 mr-1 inline-block" style={{backgroundColor: color}} />
-                <span className="text-sm">{feature}</span>
-              </div>
-            );
-          })}
+        {stack̉ColorArray.map(([feature, color]) => {
+          return (
+            <div key={feature} className="flex gap-1 items-center">
+              <div className="w-4 h-4 mr-1 inline-block" style={{backgroundColor: color}} />
+              <span className="text-sm">{feature}</span>
+            </div>
+          );
+        })}
       </div>
       <GraphTooltip
         unit={sampleUnit}
@@ -104,10 +108,10 @@ export default function IcicleGraph({
         y={pos[1]}
         hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
-        strings={graph.stringTable}
-        mappings={graph.mapping}
-        locations={graph.locations}
-        functions={graph.function}
+        strings={coloredGraph.stringTable}
+        mappings={coloredGraph.mapping}
+        locations={coloredGraph.locations}
+        functions={coloredGraph.function}
       />
       <div className="w-full flex justify-start">
         <Button
@@ -121,7 +125,7 @@ export default function IcicleGraph({
         </Button>
       </div>
       <svg
-        className="font-robotoMono "
+        className="font-robotoMono"
         width={width}
         height={height}
         onMouseMove={onMouseMove}
@@ -138,16 +142,17 @@ export default function IcicleGraph({
               setCurPath={setCurPath}
               setHoveringNode={setHoveringNode}
               curPath={curPath}
-              data={graph.root}
-              strings={graph.stringTable}
-              mappings={graph.mapping}
-              locations={graph.locations}
-              functions={graph.function}
+              data={coloredGraph.root}
+              strings={coloredGraph.stringTable}
+              mappings={coloredGraph.mapping}
+              locations={coloredGraph.locations}
+              functions={coloredGraph.function}
               total={total}
               xScale={xScale}
               path={[]}
               level={0}
               isRoot={true}
+              searchString={currentSearchString}
             />
           </g>
         </g>

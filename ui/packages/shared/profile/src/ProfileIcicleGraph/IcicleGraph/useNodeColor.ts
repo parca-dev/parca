@@ -11,82 +11,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {FlamegraphNode} from '@parca/client';
-import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
-import {COLOR_PROFILES, diffColor} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
-import {
-  selectDarkMode,
-  selectStackColors,
-  useAppDispatch,
-  useAppSelector,
-  generateColorForFeature,
-} from '@parca/store';
-import {memo, useEffect, useMemo} from 'react';
-import {getBinaryName, nodeLabel} from './utils';
-
-const extractFeature = (
-  data: FlamegraphNode,
-  mappings: Mapping[],
-  locations: Location[],
-  strings: string[],
-  functions: Function[]
-): string => {
-  const name = nodeLabel(data, strings, mappings, locations, functions).trim();
-  if (name.startsWith('runtime') || name === 'root') {
-    return 'runtime';
-  }
-
-  const binaryName = getBinaryName(data, mappings, locations, strings);
-  if (binaryName != null) {
-    return binaryName;
-  }
-
-  return 'NA';
-};
+import {diffColor} from '@parca/functions';
+import {selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
+import {useMemo} from 'react';
+import type {ColoredFlamegraphNode} from './useColoredGraph';
 
 interface Props {
-  data: FlamegraphNode;
-  strings: string[];
-  mappings: Mapping[];
-  locations: Location[];
-  functions: Function[];
+  data: ColoredFlamegraphNode;
 }
 
-const useNodeColor = ({data, strings, mappings, locations, functions}: Props): string => {
+const useNodeColor = ({data}: Props): string => {
   const colors = useAppSelector(selectStackColors);
-  const [colorProfile] = useUserPreference<string>(USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key);
-  const dispatch = useAppDispatch();
   const isDarkMode = useAppSelector(selectDarkMode);
-  const name = nodeLabel(data, strings, mappings, locations, functions).trim();
-  const feature = useMemo(
-    function extractFeatureMemo() {
-      return extractFeature(data, mappings, locations, strings, functions);
-    },
-    [data, strings, mappings, locations, functions]
-  );
-
-  useEffect(
-    function useNodeColorEffect() {
-      if (colors[feature] == null) {
-        dispatch(generateColorForFeature({feature, colorProfileName: colorProfile}));
-      }
-    },
-    [colors, feature, colorProfile, dispatch]
-  );
 
   const color: string = useMemo(() => {
     const diff = parseFloat(data.diff);
-    const cumulative = parseFloat(data.cumulative);
     // eslint-disable-next-line no-constant-condition
     if (Math.abs(diff) > 0) {
-      const featureColor = diffColor(diff, cumulative, isDarkMode, name, colorProfile);
-      return featureColor.color;
+      const cumulative = parseFloat(data.cumulative);
+      return diffColor(diff, cumulative, isDarkMode);
     }
 
-    const color = colors[feature];
+    const color = colors[data.feature ?? 'NA'];
     return color;
-  }, [colors, colorProfile, data, feature, isDarkMode, name]);
+  }, [data, colors, isDarkMode]);
 
   return color;
 };

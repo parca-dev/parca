@@ -19,7 +19,7 @@ import {getNewSpanColor, useURLState} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
 import {Icon} from '@iconify/react';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, useParcaContext} from '@parca/components';
+import {Button, Card, useParcaContext, KeyDownProvider} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode} from '@parca/store';
 import {
@@ -141,7 +141,7 @@ export const ProfileView = ({
     }
   };
 
-  const maxColor: string = getNewSpanColor(isDarkMode).color;
+  const maxColor: string = getNewSpanColor(isDarkMode);
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
 
@@ -214,7 +214,7 @@ export const ProfileView = ({
   };
 
   return (
-    <>
+    <KeyDownProvider>
       <div className="py-3">
         <Card>
           <Card.Body>
@@ -333,6 +333,6 @@ export const ProfileView = ({
           </Card.Body>
         </Card>
       </div>
-    </>
+    </KeyDownProvider>
   );
 };

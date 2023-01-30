@@ -42,7 +42,7 @@ const DiffLegendBar = ({
             style={{
               backgroundColor:
                 absoluteValue === 0
-                  ? getNewSpanColor(isDarkMode).color
+                  ? getNewSpanColor(isDarkMode)
                   : valueAsPercentage > 0
                   ? getIncreasedSpanColor(absoluteValue, isDarkMode)
                   : getReducedSpanColor(absoluteValue, isDarkMode),

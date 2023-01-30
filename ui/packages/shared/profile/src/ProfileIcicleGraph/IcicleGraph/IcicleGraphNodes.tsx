@@ -11,19 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
+import React, {useMemo} from 'react';
 
 import {scaleLinear} from 'd3-scale';
 import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
-import {isSearchMatch, selectQueryParam, FeatureColor} from '@parca/functions';
-import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
+import {isSearchMatch} from '@parca/functions';
 import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 
 import {nodeLabel} from './utils';
 import useNodeColor from './useNodeColor';
+import {useKeyDown} from '@parca/components';
 
 export const RowHeight = 26;
-export const featureColors: {[key: string]: FeatureColor} = {};
 
 interface IcicleGraphNodesProps {
   data: FlamegraphNode[];
@@ -41,6 +40,7 @@ interface IcicleGraphNodesProps {
   setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
   path: string[];
   xScale: (value: number) => number;
+  searchString?: string;
 }
 
 export const IcicleGraphNodes = React.memo(
@@ -60,6 +60,7 @@ export const IcicleGraphNodes = React.memo(
     path,
     setCurPath,
     curPath,
+    searchString,
   }: IcicleGraphNodesProps): JSX.Element => {
     const nodes =
       curPath.length === 0
@@ -93,6 +94,7 @@ export const IcicleGraphNodes = React.memo(
               functions={functions}
               total={total}
               xScale={xScale}
+              searchString={searchString}
             />
           );
         })}
@@ -119,6 +121,7 @@ interface IcicleNodeProps {
   setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
   xScale: (value: number) => number;
   isRoot?: boolean;
+  searchString?: string;
 }
 
 const icicleRectStyles = {
@@ -150,11 +153,13 @@ export const IcicleNode = React.memo(
     totalWidth,
     xScale,
     isRoot = false,
+    searchString,
   }: IcicleNodeProps): JSX.Element => {
-    const isShiftDown = useIsShiftDown();
-    const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
-    const colorResult = useNodeColor({data, strings, mappings, locations, functions});
-    const name = isRoot ? 'root' : nodeLabel(data, strings, mappings, locations, functions);
+    const {isShiftDown} = useKeyDown();
+    const colorResult = useNodeColor({data});
+    const name = useMemo(() => {
+      return isRoot ? 'root' : nodeLabel(data, strings, mappings, locations, functions);
+    }, [data, strings, mappings, locations, functions, isRoot]);
     const nextPath = path.concat([name]);
     const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
     const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
@@ -204,9 +209,9 @@ export const IcicleNode = React.memo(
             height={height - 1}
             style={{
               opacity:
-                currentSearchString !== undefined &&
-                currentSearchString !== '' &&
-                !isSearchMatch(currentSearchString, name)
+                searchString !== undefined &&
+                searchString !== '' &&
+                !isSearchMatch(searchString, name)
                   ? 0.5
                   : 1,
               fill: colorResult,
@@ -237,6 +242,7 @@ export const IcicleNode = React.memo(
             path={nextPath}
             curPath={nextCurPath}
             setCurPath={setCurPath}
+            searchString={searchString}
           />
         )}
       </>

@@ -67,3 +67,23 @@ export function nodeLabel(
 
   return fallback === '' ? '<unknown>' : fallback;
 }
+
+export const extractFeature = (
+  data: FlamegraphNode,
+  mappings: Mapping[],
+  locations: Location[],
+  strings: string[],
+  functions: Function[]
+): string => {
+  const name = nodeLabel(data, strings, mappings, locations, functions).trim();
+  if (name.startsWith('runtime') || name === 'root') {
+    return 'runtime';
+  }
+
+  const binaryName = getBinaryName(data, mappings, locations, strings);
+  if (binaryName != null) {
+    return binaryName;
+  }
+
+  return 'NA';
+};
