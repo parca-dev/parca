@@ -1,3 +1,16 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package symbolSearcher
 
 import (
@@ -49,12 +62,12 @@ func (s SymbolSearcher) Find(addr uint64) (string, error) {
 	return s.symbols[i].Name, nil
 }
 
-// copy from symbol-elf.c/elf_sym__is_function
+// copy from symbol-elf.c/elf_sym__is_function.
 func elfSymIsFunction(s elf.Symbol) bool {
 	return elf.ST_TYPE(s.Info) == elf.STT_FUNC && s.Name != "" && s.Section != elf.SHN_UNDEF
 }
 
-// copy from symbol.c/choose_best_symbol
+// copy from symbol.c/choose_best_symbol.
 func chooseBestSymbol(syma, symb elf.Symbol) bool {
 	/* Prefer a symbol with non zero length */
 	if symb.Size == 0 && syma.Size > 0 {

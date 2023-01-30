@@ -20,9 +20,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/go-kit/log"
 	"io/ioutil"
 	"strings"
+
+	"github.com/go-kit/log"
+
+	"github.com/go-kit/log"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -123,9 +126,7 @@ func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to data of .rela.plt section:%s", err)
 		}
-		var (
-			rela elf.Rela64
-		)
+		var rela elf.Rela64
 		b := bytes.NewReader(data)
 		off := pltSection.Offset
 		for b.Len() > 0 {
