@@ -26,12 +26,17 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import type {HoveringNode} from './GraphTooltip';
 import GraphTooltip from './GraphTooltip';
-import {diffColor, getLastItem, isSearchMatch, selectQueryParam} from '@parca/functions';
+import {
+  diffColor,
+  getLastItem,
+  isSearchMatch,
+  selectQueryParam,
+  useURLState,
+} from '@parca/functions';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import useIsShiftDown from '@parca/components/src/hooks/useIsShiftDown';
 import {Button} from '@parca/components';
 import {hexifyAddress} from './utils';
-import {useURLState} from '@parca/functions';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -433,7 +438,7 @@ export default function IcicleGraph({
       />
       <div
         className={cx(
-          dashboardItems.length > 1 ?? 'left-[25px]',
+          dashboardItems.length > 1 ? 'left-[25px]' : 'top-[-45px]',
           'flex justify-start absolute top-[-45px]'
         )}
       >

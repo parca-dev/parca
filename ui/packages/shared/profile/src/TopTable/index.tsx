@@ -11,7 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import cx from 'classnames';
 import {useCallback, useMemo} from 'react';
 
 import {
@@ -67,7 +66,9 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
   const router = parseParams(window.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
   const [currentSearchString] = useURLState({param: 'search_string'});
-  const [compareMode] = useURLState({param: 'compare_a'});
+  const [rawcompareMode] = useURLState({param: 'compare_a'});
+
+  const compareMode: boolean = rawcompareMode === undefined ? false : rawcompareMode === 'true';
 
   const dashboardItems = rawDashboardItems as string[];
 
@@ -139,6 +140,11 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
 
   const onRowClick = useCallback(
     (row: TopNode) => {
+      // If there is only one dashboard item, we don't want to select a span
+      if (dashboardItems.length <= 1) {
+        return;
+      }
+
       const meta = row.meta;
       if (meta === undefined) {
         return;
@@ -146,7 +152,7 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
       const name = RowLabel(meta);
       selectSpan(name);
     },
-    [selectSpan]
+    [selectSpan, dashboardItems.length]
   );
 
   const shouldHighlightRow = useCallback(
@@ -186,17 +192,21 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
 
   return (
     <div className="relative">
-      <div className={cx(dashboardItems.length > 1 ? 'left-[25px]' : '', 'absolute top-[-45px]')}>
-        <Button
-          color="neutral"
-          onClick={clearSelection}
-          className="w-auto"
-          variant="neutral"
-          disabled={currentSearchString === undefined || currentSearchString.length === 0}
-        >
-          Clear selection
-        </Button>
-      </div>
+      {/* Clearing the selection is only useful when two visualizations types are selected. So we'll only show it in that case */}
+      {dashboardItems.length > 1 && (
+        <div className="left-[25px] top-[-45px] absolute">
+          <Button
+            color="neutral"
+            onClick={clearSelection}
+            className="w-auto"
+            variant="neutral"
+            disabled={currentSearchString === undefined || currentSearchString.length === 0}
+          >
+            Clear selection
+          </Button>
+        </div>
+      )}
+
       <div className="w-full font-robotoMono h-[80vh] overflow-scroll">
         <Table
           data={top?.list ?? []}
