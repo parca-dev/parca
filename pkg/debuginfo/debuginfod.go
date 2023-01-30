@@ -71,12 +71,13 @@ func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, timeoutDura
 		if u.Scheme != "http" && u.Scheme != "https" {
 			return nil, fmt.Errorf("unsupported scheme %q", u.Scheme)
 		}
+
+		parsedURLs = append(parsedURLs, u)
 	}
 	return &HTTPDebuginfodClient{
 		logger:          logger,
 		upstreamServers: parsedURLs,
-		timeoutDuration: timeoutDuration,
-		client:          http.DefaultClient,
+		client:          &http.Client{Timeout: timeoutDuration},
 	}, nil
 }
 
@@ -158,9 +159,6 @@ func (c *HTTPDebuginfodClient) Get(ctx context.Context, buildID string) (io.Read
 	for _, u := range c.upstreamServers {
 		serverURL := *u
 		rc, err := func(serverURL url.URL) (io.ReadCloser, error) {
-			ctx, cancel := context.WithTimeout(ctx, c.timeoutDuration)
-			defer cancel()
-
 			rc, err := c.request(ctx, serverURL, buildID)
 			if err != nil {
 				return nil, err
