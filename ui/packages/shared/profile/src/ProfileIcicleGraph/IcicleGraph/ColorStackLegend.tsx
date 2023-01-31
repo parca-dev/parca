@@ -21,9 +21,10 @@ import type {NavigateFunction} from '@parca/functions';
 
 interface Props {
   navigateTo?: NavigateFunction;
+  compareMode?: boolean;
 }
 
-const ColorStackLegend = ({navigateTo}: Props): JSX.Element => {
+const ColorStackLegend = ({navigateTo, compareMode = false}: Props): JSX.Element => {
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
@@ -42,9 +43,10 @@ const ColorStackLegend = ({navigateTo}: Props): JSX.Element => {
     });
   }, [stackColors]);
 
-  if (colorProfileName === 'default') {
+  if (colorProfileName === 'default' || compareMode) {
     return <></>;
   }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-10 gap-2 px-10 my-6">
       {stackColorArray.map(([feature, color]) => {

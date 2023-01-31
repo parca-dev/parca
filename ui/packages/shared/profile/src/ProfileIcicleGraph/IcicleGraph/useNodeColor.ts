@@ -18,23 +18,23 @@ import type {ColoredFlamegraphNode} from './useColoredGraph';
 
 interface Props {
   data: ColoredFlamegraphNode;
+  compareMode: boolean;
 }
 
-const useNodeColor = ({data}: Props): string => {
+const useNodeColor = ({data, compareMode}: Props): string => {
   const colors = useAppSelector(selectStackColors);
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const color: string = useMemo(() => {
-    const diff = parseFloat(data.diff);
-    // eslint-disable-next-line no-constant-condition
-    if (Math.abs(diff) > 0) {
+    if (compareMode) {
+      const diff = parseFloat(data.diff);
       const cumulative = parseFloat(data.cumulative);
       return diffColor(diff, cumulative, isDarkMode);
     }
 
     const color = colors[data.feature ?? EVERYTHING_ELSE];
     return color;
-  }, [data, colors, isDarkMode]);
+  }, [data, colors, isDarkMode, compareMode]);
 
   return color;
 };

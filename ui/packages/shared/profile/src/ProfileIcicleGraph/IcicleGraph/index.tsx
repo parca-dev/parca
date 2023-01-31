@@ -59,6 +59,8 @@ export const IcicleGraph = memo(function IcicleGraph({
   const dashboardItems = rawDashboardItems as string[];
   const coloredGraph = useColoredGraph(graph);
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
+  const compareMode: boolean =
+    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
 
   useEffect(() => {
     if (ref.current != null) {
@@ -88,7 +90,7 @@ export const IcicleGraph = memo(function IcicleGraph({
 
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)} className="relative">
-      <ColorStackLegend navigateTo={navigateTo} />
+      <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
       <GraphTooltip
         unit={sampleUnit}
         total={total}
@@ -146,6 +148,7 @@ export const IcicleGraph = memo(function IcicleGraph({
               level={0}
               isRoot={true}
               searchString={currentSearchString}
+              compareMode={compareMode}
             />
           </g>
         </g>

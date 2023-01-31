@@ -45,6 +45,7 @@ interface IcicleGraphNodesProps {
   path: string[];
   xScale: (value: number) => number;
   searchString?: string;
+  compareMode: boolean;
 }
 
 export const IcicleGraphNodes = React.memo(function IcicleGraphNodes({
@@ -64,6 +65,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodes({
   setCurPath,
   curPath,
   searchString,
+  compareMode,
 }: IcicleGraphNodesProps): JSX.Element {
   const nodes =
     curPath.length === 0
@@ -98,6 +100,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodes({
             total={total}
             xScale={xScale}
             searchString={searchString}
+            compareMode={compareMode}
           />
         );
       })}
@@ -124,6 +127,7 @@ interface IcicleNodeProps {
   xScale: (value: number) => number;
   isRoot?: boolean;
   searchString?: string;
+  compareMode: boolean;
 }
 
 const icicleRectStyles = {
@@ -155,9 +159,10 @@ export const IcicleNode = React.memo(function IcicleNode({
   xScale,
   isRoot = false,
   searchString,
+  compareMode,
 }: IcicleNodeProps): JSX.Element {
   const {isShiftDown} = useKeyDown();
-  const colorResult = useNodeColor({data});
+  const colorResult = useNodeColor({data, compareMode});
   const name = useMemo(() => {
     return isRoot ? 'root' : nodeLabel(data, strings, mappings, locations, functions);
   }, [data, strings, mappings, locations, functions, isRoot]);
@@ -244,6 +249,7 @@ export const IcicleNode = React.memo(function IcicleNode({
           curPath={nextCurPath}
           setCurPath={setCurPath}
           searchString={searchString}
+          compareMode={compareMode}
         />
       )}
     </>
