@@ -33,6 +33,8 @@ export interface StackColor {
   name: string;
 }
 
+export const EVERYTHING_ELSE = 'Everything else';
+
 const findAColor = (colorIndex: number, colors: string[][]): string[] => {
   return colors[colorIndex];
   // TODO: add some logic to find unallocated colors if this index is already allocated to another feature for better color distribution.
@@ -43,7 +45,7 @@ const getColorForFeature = (feature: string, isDarkMode: boolean, colorProfileNa
 
   // Add charaters in the feature name to the color map
   const colorIndex =
-    feature === 'Everything else'
+    feature === EVERYTHING_ELSE
       ? colors.length - 1
       : feature
           .toLowerCase()
@@ -74,7 +76,6 @@ export const colorsSlice = createSlice({
       };
     },
     setFeatures: (state, action: PayloadAction<SetFeaturesRequest>) => {
-      console.time('setFeatures: Generating colors for features');
       state.colors = action.payload.features
         .map(feature => {
           return [feature, getColorForFeature(feature, false, action.payload.colorProfileName)];
@@ -83,7 +84,6 @@ export const colorsSlice = createSlice({
           acc[feature] = color;
           return acc;
         }, {});
-      console.timeEnd('setFeatures: Generating colors for features');
     },
     resetColors: state => {
       state.colors = {};

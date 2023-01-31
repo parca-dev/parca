@@ -17,8 +17,8 @@ import {useQuery} from './useQuery';
 import {ProfileView} from './ProfileView';
 import {ProfileSource} from './ProfileSource';
 import {downloadPprof} from './utils';
-import {useGrpcMetadata, useParcaContext} from '@parca/components';
-import {saveAsBlob, NavigateFunction, useURLState} from '@parca/functions';
+import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
+import {saveAsBlob, NavigateFunction} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 interface ProfileViewWithDataProps {

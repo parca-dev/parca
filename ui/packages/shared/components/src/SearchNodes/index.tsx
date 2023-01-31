@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Input} from '../';
+import {Input, useURLState} from '../';
 import {useEffect, useMemo} from 'react';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
-import {useURLState, NavigateFunction} from '@parca/functions';
+import {NavigateFunction} from '@parca/functions';
 import {debounce} from 'lodash';
 
 interface Props {

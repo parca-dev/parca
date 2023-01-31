@@ -28,7 +28,7 @@ const FlamegraphColorProfileSelector = () => {
         {Object.keys(COLOR_PROFILES).map(profile => {
           const isSelected = profile === colorProfileName;
           return (
-            <div className="flex items-center">
+            <div className="flex items-center" key={profile}>
               <label key={profile} className="capitalize flex gap-1 items-center w-24">
                 <input
                   type="radio"

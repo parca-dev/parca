@@ -15,11 +15,11 @@ import {Profiler, useEffect, useMemo, useState} from 'react';
 import {scaleLinear} from 'd3';
 
 import cx from 'classnames';
-import {getNewSpanColor, useURLState} from '@parca/functions';
+import {getNewSpanColor} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
 import {Icon} from '@iconify/react';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, useParcaContext, KeyDownProvider} from '@parca/components';
+import {Button, Card, useParcaContext, KeyDownProvider, useURLState} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode} from '@parca/store';
 import {
@@ -162,10 +162,11 @@ export const ProfileView = ({
               graph={flamegraphData.data}
               sampleUnit={sampleUnit}
               onContainerResize={onFlamegraphContainerResize}
+              navigateTo={navigateTo}
             />
           </Profiler>
         ) : (
-          <></>
+          <> </>
         );
       }
       case 'callgraph': {

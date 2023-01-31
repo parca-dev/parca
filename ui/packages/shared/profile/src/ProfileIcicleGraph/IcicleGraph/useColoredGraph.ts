@@ -38,7 +38,7 @@ const colorNodes = (
   mappings: Mapping[],
   locations: Location[],
   functions: Function[],
-  features: {[key: string]: boolean} = {}
+  features: {[key: string]: boolean}
 ): ColoredFlamegraphNode[] => {
   if (nodes === undefined) {
     return [];
@@ -48,7 +48,14 @@ const colorNodes = (
       ...node,
     };
     if (node.children != null) {
-      coloredNode.children = colorNodes(node.children, strings, mappings, locations, functions);
+      coloredNode.children = colorNodes(
+        node.children,
+        strings,
+        mappings,
+        locations,
+        functions,
+        features
+      );
     }
     coloredNode.feature = extractFeature(node, mappings, locations, strings, functions);
     features[coloredNode.feature] = true;
@@ -64,7 +71,6 @@ const useColoredGraph = (graph: Flamegraph): ColoredFlamegraph => {
     if (graph.root == null) {
       return [graph as ColoredFlamegraph, []];
     }
-    console.time('coloring nodes');
     const features: {[key: string]: boolean} = {};
     const coloredGraph = {
       ...graph,
@@ -80,9 +86,6 @@ const useColoredGraph = (graph: Flamegraph): ColoredFlamegraph => {
         ),
       },
     };
-    console.timeEnd('coloring nodes');
-    console.log('features', features);
-    console.log('coloring nodes done', coloredGraph);
     return [coloredGraph, Object.keys(features)];
   }, [graph]);
 

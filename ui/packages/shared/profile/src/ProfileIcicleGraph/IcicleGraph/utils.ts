@@ -15,6 +15,7 @@ import {getLastItem} from '@parca/functions';
 import {FlamegraphNode} from '@parca/client';
 import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {hexifyAddress} from '../../utils';
+import {EVERYTHING_ELSE} from '@parca/store';
 
 export const getBinaryName = (
   node: FlamegraphNode,
@@ -85,5 +86,5 @@ export const extractFeature = (
     return binaryName;
   }
 
-  return 'NA';
+  return EVERYTHING_ELSE;
 };

@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {diffColor} from '@parca/functions';
-import {selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
+import {EVERYTHING_ELSE, selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
 import {useMemo} from 'react';
 import type {ColoredFlamegraphNode} from './useColoredGraph';
 
@@ -32,7 +32,7 @@ const useNodeColor = ({data}: Props): string => {
       return diffColor(diff, cumulative, isDarkMode);
     }
 
-    const color = colors[data.feature ?? 'NA'];
+    const color = colors[data.feature ?? EVERYTHING_ELSE];
     return color;
   }, [data, colors, isDarkMode]);
 
