@@ -16,7 +16,8 @@ import {useContainerDimensions} from '@parca/dynamicsize';
 
 import DiffLegend from '../components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
-import {NavigateFunction, selectQueryParam} from '@parca/functions';
+import {selectQueryParam} from '@parca/functions';
+import type {NavigateFunction} from '@parca/functions';
 import {useEffect, useMemo} from 'react';
 
 const numberFormatter = new Intl.NumberFormat('en-US');

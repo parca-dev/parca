@@ -17,10 +17,10 @@ import {
   getLastItem,
   valueFormatter,
   isSearchMatch,
-  NavigateFunction,
   parseParams,
   selectQueryParam,
 } from '@parca/functions';
+import type {NavigateFunction} from '@parca/functions';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 import {Table} from '@parca/components';
 import {createColumnHelper} from '@tanstack/react-table';

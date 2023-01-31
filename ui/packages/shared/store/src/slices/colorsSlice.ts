@@ -12,7 +12,8 @@
 // limitations under the License.
 
 import {COLOR_PROFILES} from '@parca/functions';
-import {createSlice, PayloadAction} from '@reduxjs/toolkit';
+import {createSlice} from '@reduxjs/toolkit';
+import type {PayloadAction} from '@reduxjs/toolkit';
 import type {RootState} from '../store';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions

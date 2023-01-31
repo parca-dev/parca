@@ -17,7 +17,7 @@ import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPrefe
 import {EVERYTHING_ELSE, selectStackColors, useAppSelector} from '@parca/store';
 import {useMemo} from 'react';
 import {useURLState} from '@parca/components';
-import {NavigateFunction} from '@parca/functions';
+import type {NavigateFunction} from '@parca/functions';
 
 interface Props {
   navigateTo?: NavigateFunction;

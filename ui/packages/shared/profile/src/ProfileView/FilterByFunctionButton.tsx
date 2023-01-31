@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {Input, useURLState} from '@parca/components';
-import {NavigateFunction} from '@parca/functions';
+import type {NavigateFunction} from '@parca/functions';
 import {Icon} from '@iconify/react';
 import {useCallback, useMemo, useState} from 'react';
 

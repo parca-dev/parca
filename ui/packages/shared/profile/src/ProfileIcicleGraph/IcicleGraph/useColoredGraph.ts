@@ -12,7 +12,11 @@
 // limitations under the License.
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {
+  Mapping,
+  Function as ParcaFunction,
+  Location,
+} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 import {setFeatures, useAppDispatch} from '@parca/store';
 import {useEffect, useMemo} from 'react';
@@ -37,7 +41,7 @@ const colorNodes = (
   strings: string[],
   mappings: Mapping[],
   locations: Location[],
-  functions: Function[],
+  functions: ParcaFunction[],
   features: {[key: string]: boolean}
 ): ColoredFlamegraphNode[] => {
   if (nodes === undefined) {

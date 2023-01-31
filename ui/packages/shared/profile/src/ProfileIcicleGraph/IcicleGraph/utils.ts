@@ -13,7 +13,11 @@
 
 import {getLastItem} from '@parca/functions';
 import {FlamegraphNode} from '@parca/client';
-import {Mapping, Function, Location} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {
+  Mapping,
+  Function as ParcaFunction,
+  Location,
+} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {hexifyAddress} from '../../utils';
 import {EVERYTHING_ELSE} from '@parca/store';
 
@@ -46,7 +50,7 @@ export function nodeLabel(
   strings: string[],
   mappings: Mapping[],
   locations: Location[],
-  functions: Function[]
+  functions: ParcaFunction[]
 ): string {
   if (node.meta?.locationIndex === undefined) return '<unknown>';
   if (node.meta?.locationIndex === 0) return '<unknown>';
@@ -74,7 +78,7 @@ export const extractFeature = (
   mappings: Mapping[],
   locations: Location[],
   strings: string[],
-  functions: Function[]
+  functions: ParcaFunction[]
 ): string => {
   const name = nodeLabel(data, strings, mappings, locations, functions).trim();
   if (name.startsWith('runtime') || name === 'root') {
