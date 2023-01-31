@@ -507,14 +507,14 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	for i := 0; i < int(ar.NumRows()); i++ {
 		labelSet = labelSet[:0]
 		for _, labelColumnIndex := range labelColumnIndices {
-			col := ar.Column(labelColumnIndex).(*array.Binary)
-			if col.IsNull(i) {
+			col, ok := ar.Column(labelColumnIndex).(*array.Dictionary)
+			if col.IsNull(i) || !ok {
 				continue
 			}
 
-			v := col.Value(i)
+			v := StringValueFromDictionary(col, i)
 			if len(v) > 0 {
-				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: string(v)})
+				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: v})
 			}
 		}
 
