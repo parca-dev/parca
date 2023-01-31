@@ -45,7 +45,7 @@ const ProfileExplorerSingle = ({
             querySelection={query}
             selectQuery={selectQuery}
             selectProfile={selectProfile}
-            closeProfile={() => {}}
+            closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
             profileSelection={profile}
             comparing={false}
             onCompareProfile={compareProfile}

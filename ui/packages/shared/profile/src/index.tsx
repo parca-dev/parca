@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
+import {lazy} from 'react';
 import type {Props as CallgraphProps} from '@parca/profile/src/Callgraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
@@ -28,7 +28,7 @@ export * from './ProfileTypeSelector';
 
 export type {CallgraphProps};
 
-const Callgraph = React.lazy(async () => await import('@parca/profile/src/Callgraph'));
+const Callgraph = lazy(async () => await import('@parca/profile/src/Callgraph'));
 
 export {Callgraph, ProfileExplorer, ProfileTypeSelector};
 

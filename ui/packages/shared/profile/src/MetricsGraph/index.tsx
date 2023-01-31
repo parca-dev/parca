@@ -421,7 +421,7 @@ export const RawMetricsGraph = ({
     }
 
     let s: Series | null = null;
-    let seriesIndex: number = -1;
+    let seriesIndex = -1;
 
     outer: for (let i = 0; i < series.length; i++) {
       const keys = profile.labels.map(e => e.name);

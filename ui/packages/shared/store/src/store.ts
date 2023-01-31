@@ -25,9 +25,9 @@ import {
   PURGE,
   REGISTER,
   persistStore,
-  Persistor,
 } from 'redux-persist';
-import {Store} from 'redux';
+import type {Persistor} from 'redux-persist';
+import type {Store} from 'redux';
 
 const rootReducer = combineReducers({
   ui: uiReducer,

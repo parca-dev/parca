@@ -22,13 +22,8 @@ import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@
 import {Button, Card, useParcaContext, KeyDownProvider, useURLState} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode} from '@parca/store';
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-  DraggableLocation,
-} from 'react-beautiful-dnd';
+import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
+import type {DropResult, DraggableLocation} from 'react-beautiful-dnd';
 
 import {Callgraph} from '../';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -36,7 +31,7 @@ import FilterByFunctionButton from './FilterByFunctionButton';
 import ViewSelector from './ViewSelector';
 import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
-import TopTable from '../TopTable';
+import {TopTable} from '../TopTable';
 import useDelayedLoader from '../useDelayedLoader';
 
 import '../ProfileView.styles.css';
@@ -291,7 +286,10 @@ export const ProfileView = ({
                                   <div className="w-full flex justify-end pb-2">
                                     <div className="w-full flex justify-between">
                                       <div
-                                        className={cx(isMultiPanelView ? 'visible' : 'invisible')}
+                                        className={cx(
+                                          isMultiPanelView ? 'visible' : 'invisible',
+                                          'flex items-center'
+                                        )}
                                         {...provided.dragHandleProps}
                                       >
                                         <Icon

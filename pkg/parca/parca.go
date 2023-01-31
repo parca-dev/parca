@@ -25,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/apache/arrow/go/v8/arrow/memory"
+	"github.com/apache/arrow/go/v10/arrow/memory"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -110,6 +110,8 @@ type Flags struct {
 	Insecure           bool              `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
 	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
+
+	ExperimentalArrow bool `default:"false" help:"EXPERIMENTAL: Enables Arrow ingestion, this will reduce CPU usage but will increase memory usage."`
 }
 
 type FlagsLogs struct {
@@ -160,6 +162,9 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		}
 		defer closer()
 	}
+
+	// Enable arrow ingestion
+	parcacol.ExperimentalArrow = flags.ExperimentalArrow
 
 	if flags.Port != "" {
 		level.Warn(logger).Log("msg", "flag --port is deprecated, use --http-address instead")

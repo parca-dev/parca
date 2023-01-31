@@ -33,10 +33,12 @@ const DateTimeRangePickerPanel = ({
           <RelativeDatePicker
             range={range}
             onChange={(from, to) => onChange(from as DateUnion, to as DateUnion)}
+            key={0}
           />,
           <AbsoluteDatePicker
             range={range}
             onChange={(from, to) => onChange(from as DateUnion, to as DateUnion)}
+            key={1}
           />,
         ]}
         defaultTabIndex={range.from.isRelative() ? 0 : 1}

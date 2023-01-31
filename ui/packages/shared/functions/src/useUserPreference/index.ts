@@ -19,7 +19,7 @@ export interface UserPreferenceDetails {
   name: string;
   key: string;
   type: string;
-  default: any;
+  default: boolean | string;
 }
 
 export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {

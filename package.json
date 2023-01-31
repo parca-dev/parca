@@ -1,5 +1,7 @@
 {
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.48.2",
+    "@typescript-eslint/parser": "^5.48.2",
     "all-contributors-cli": "6.24.0",
     "ts-protoc-gen": "0.15.0"
   }

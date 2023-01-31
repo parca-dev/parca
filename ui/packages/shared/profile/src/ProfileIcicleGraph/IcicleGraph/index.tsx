@@ -13,6 +13,7 @@
 
 import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
 
+import cx from 'classnames';
 import {throttle} from 'lodash';
 import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
@@ -20,7 +21,7 @@ import {scaleLinear} from 'd3-scale';
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import type {HoveringNode} from '../../GraphTooltip';
 import GraphTooltip from '../../GraphTooltip';
-import {Button} from '@parca/components';
+import {Button, useURLState} from '@parca/components';
 import {IcicleNode, RowHeight} from './IcicleGraphNodes';
 import useColoredGraph from './useColoredGraph';
 import {NavigateFunction, selectQueryParam} from '@parca/functions';
@@ -44,6 +45,11 @@ export const IcicleGraph = memo(
     const [height, setHeight] = useState(0);
     const svg = useRef(null);
     const ref = useRef<SVGGElement>(null);
+    const [rawDashboardItems] = useURLState({
+      param: 'dashboard_items',
+    });
+
+    const dashboardItems = rawDashboardItems as string[];
     const coloredGraph = useColoredGraph(graph);
     const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
 
@@ -74,7 +80,7 @@ export const IcicleGraph = memo(
     };
 
     return (
-      <div onMouseLeave={() => setHoveringNode(undefined)}>
+      <div onMouseLeave={() => setHoveringNode(undefined)} className="relative">
         <ColorStackLegend navigateTo={navigateTo} />
         <GraphTooltip
           unit={sampleUnit}
@@ -88,7 +94,12 @@ export const IcicleGraph = memo(
           locations={coloredGraph.locations}
           functions={coloredGraph.function}
         />
-        <div className="w-full flex justify-start">
+        <div
+          className={cx(
+            dashboardItems.length > 1 ? 'top-[-46px] left-[25px]' : 'top-[-45px]',
+            'flex justify-start absolute '
+          )}
+        >
           <Button
             color="neutral"
             onClick={() => setCurPath([])}
@@ -96,7 +107,7 @@ export const IcicleGraph = memo(
             className="w-auto"
             variant="neutral"
           >
-            Reset zoom
+            Reset View
           </Button>
         </div>
         <svg

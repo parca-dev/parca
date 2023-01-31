@@ -18,8 +18,12 @@ import {usePopper} from 'react-popper';
 import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
 import {hexifyAddress, truncateString} from '../';
-import {Function, Location, Mapping} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
+import {
+  Function as ParcaFunction,
+  Location,
+  Mapping,
+} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 
 interface GraphTooltipProps {
   x: number;
@@ -33,7 +37,7 @@ interface GraphTooltipProps {
   strings?: string[];
   mappings?: Mapping[];
   locations?: Location[];
-  functions?: Function[];
+  functions?: ParcaFunction[];
 }
 
 const virtualElement = {
@@ -76,7 +80,7 @@ const TooltipMetaInfo = ({
   strings?: string[];
   mappings?: Mapping[];
   locations?: Location[];
-  functions?: Function[];
+  functions?: ParcaFunction[];
 }): JSX.Element => {
   if (hoveringNode.meta === undefined) return <></>;
 
@@ -219,7 +223,7 @@ const GraphTooltipContent = ({
   strings?: string[];
   mappings?: Mapping[];
   locations?: Location[];
-  functions?: Function[];
+  functions?: ParcaFunction[];
 }): JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 

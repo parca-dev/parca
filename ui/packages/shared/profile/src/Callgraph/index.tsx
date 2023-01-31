@@ -15,7 +15,7 @@ import {useState, useEffect, useRef} from 'react';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
-import {KonvaEventObject} from 'konva/lib/Node';
+import type {KonvaEventObject} from 'konva/lib/Node';
 import {Button} from '@parca/components';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot, getCurvePoints} from './utils';

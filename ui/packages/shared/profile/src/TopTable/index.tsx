@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {
   getLastItem,
@@ -23,7 +23,8 @@ import {
 } from '@parca/functions';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
 import {Table} from '@parca/components';
-import {createColumnHelper, ColumnDef} from '@tanstack/react-table';
+import {createColumnHelper} from '@tanstack/react-table';
+import type {ColumnDef} from '@tanstack/react-table';
 
 import {hexifyAddress} from '../utils';
 
@@ -67,7 +68,7 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
   const compareMode =
     Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
 
-  const columns = React.useMemo(() => {
+  const columns = useMemo(() => {
     const cols: Array<ColumnDef<TopNode, any>> = [
       columnHelper.accessor('meta', {
         header: () => <span className="text-left">Name</span>,
