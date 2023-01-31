@@ -30,6 +30,7 @@ import Spinner from './Spinner';
 import Tab from './Tab';
 import Table from './Table';
 import EmptyState from './EmptyState';
+import {useURLState} from './hooks/useURLState';
 
 export type {PillVariant, SelectElement};
 
@@ -60,4 +61,5 @@ export {
   useGrpcMetadata,
   useKeyDown,
   useParcaContext,
+  useURLState,
 };

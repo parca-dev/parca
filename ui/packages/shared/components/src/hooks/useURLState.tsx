@@ -12,14 +12,14 @@
 // limitations under the License.
 
 import {useEffect} from 'react';
-import {parseParams} from '../index';
 import {
   useAppDispatch,
   useAppSelector,
   setProfileStateValue,
   selectProfileStateValue,
 } from '@parca/store';
-import useUIFeatureFlag from '../../useUIFeatureFlag';
+import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+import {parseParams} from '@parca/functions';
 
 interface Props {
   param: string;

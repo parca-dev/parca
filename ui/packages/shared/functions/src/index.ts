@@ -15,8 +15,6 @@ import format from 'date-fns/format';
 import {Label} from '@parca/client';
 import colors from 'tailwindcss/colors';
 
-export * from './hooks';
-
 export type NavigateFunction = (
   path: string,
   queryParams: any,
