@@ -17,6 +17,7 @@ import {
   Function as ParcaFunction,
   Location,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import type {ColorProfileName} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 import {setFeatures, useAppDispatch} from '@parca/store';
 import {useEffect, useMemo} from 'react';
@@ -69,7 +70,9 @@ const colorNodes = (
 
 const useColoredGraph = (graph: Flamegraph): ColoredFlamegraph => {
   const dispatch = useAppDispatch();
-  const [colorProfile] = useUserPreference<string>(USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key);
+  const [colorProfile] = useUserPreference<ColorProfileName>(
+    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
+  );
 
   const [coloredGraph, features]: [ColoredFlamegraph, string[]] = useMemo(() => {
     if (graph.root == null) {

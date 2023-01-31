@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {COLOR_PROFILES} from '@parca/functions';
+import {ColorProfileName, ColorsDuo, COLOR_PROFILES} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 
@@ -25,7 +25,7 @@ const FlamegraphColorProfileSelector = () => {
     <fieldset className={'flex gap-2 items-center mt-2'}>
       <legend className="mb-1">Flamegraph Color Profile</legend>
       <div className="flex flex-col pl-4 gap-3 text-sm">
-        {Object.keys(COLOR_PROFILES).map(profile => {
+        {(Object.keys(COLOR_PROFILES) as ColorProfileName[]).map(profile => {
           const isSelected = profile === colorProfileName;
           return (
             <div className="flex items-center" key={profile}>
@@ -44,9 +44,9 @@ const FlamegraphColorProfileSelector = () => {
                 <span>{profile}</span>
               </label>
               <div className="flex gap-2 w-72 overflow-auto">
-                {COLOR_PROFILES[profile].colors.map(color => (
+                {COLOR_PROFILES[profile].colors.map((color: ColorsDuo) => (
                   <div
-                    key={color}
+                    key={`${color[0]}-${color[1]}`}
                     className="w-3 h-4 rounded-full flex-shrink-0"
                     style={{backgroundColor: isDarkMode ? color[0] : color[1]}}
                   />

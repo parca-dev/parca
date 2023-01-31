@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import type {ColorProfileName, ColorsDuo} from '@parca/functions';
 import {COLOR_PROFILES} from '@parca/functions';
 import {createSlice} from '@reduxjs/toolkit';
 import type {PayloadAction} from '@reduxjs/toolkit';
@@ -41,8 +42,12 @@ const findAColor = (colorIndex: number, colors: string[][]): string[] => {
   // TODO: add some logic to find unallocated colors if this index is already allocated to another feature for better color distribution.
 };
 
-const getColorForFeature = (feature: string, isDarkMode: boolean, colorProfileName): string => {
-  const colors = COLOR_PROFILES[colorProfileName].colors;
+const getColorForFeature = (
+  feature: string,
+  isDarkMode: boolean,
+  colorProfileName: ColorProfileName
+): string => {
+  const colors: ColorsDuo[] = COLOR_PROFILES[colorProfileName].colors;
 
   // Add charaters in the feature name to the color map
   const colorIndex =
@@ -62,7 +67,7 @@ const getColorForFeature = (feature: string, isDarkMode: boolean, colorProfileNa
 
 export interface SetFeaturesRequest {
   features: string[];
-  colorProfileName: string;
+  colorProfileName: ColorProfileName;
 }
 
 export const colorsSlice = createSlice({
@@ -81,7 +86,7 @@ export const colorsSlice = createSlice({
         .map(feature => {
           return [feature, getColorForFeature(feature, false, action.payload.colorProfileName)];
         })
-        .reduce((acc, [feature, color]) => {
+        .reduce((acc: {[key: string]: string}, [feature, color]) => {
           acc[feature] = color;
           return acc;
         }, {});

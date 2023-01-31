@@ -273,8 +273,11 @@ export function convertLocalToUTCDate(date: Date): Date {
   );
 }
 
-export const COLOR_PROFILES = {
-  default: {colors: [['#929FEB', '#B3BAE1']], colorMap: {}},
+export type ColorProfileName = 'default' | 'subtle' | 'ocean' | 'warm' | 'rainbow';
+export type ColorsDuo = [string, string];
+
+export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} = {
+  default: {colors: [['#929FEB', '#B3BAE1']]},
   subtle: {
     colors: [
       [colors.slate['200'], colors.slate['200']],
@@ -285,7 +288,6 @@ export const COLOR_PROFILES = {
       [colors.indigo['200'], colors.indigo['200']],
       [colors.pink['200'], colors.pink['200']],
     ],
-    colorMap: {},
   },
   ocean: {
     colors: [
@@ -299,7 +301,6 @@ export const COLOR_PROFILES = {
       [colors.violet['300'], colors.violet['300']],
       [colors.purple['300'], colors.purple['300']],
     ],
-    colorMap: {},
   },
   warm: {
     colors: [
@@ -311,9 +312,8 @@ export const COLOR_PROFILES = {
       [colors.green['300'], colors.green['300']],
       [colors.emerald['300'], colors.emerald['300']],
     ],
-    colorMap: {},
   },
-  ranbow: {
+  rainbow: {
     colors: [
       [colors.red['300'], colors.red['300']],
       [colors.orange['300'], colors.orange['300']],
@@ -333,7 +333,6 @@ export const COLOR_PROFILES = {
       [colors.pink['300'], colors.pink['300']],
       [colors.rose['300'], colors.rose['300']],
     ],
-    colorMap: {},
   },
 };
 
