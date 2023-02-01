@@ -863,7 +863,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col(ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(ColumnTimestamp).GtEq(logicalplan.Literal(start)),
 			logicalplan.Col(ColumnTimestamp).Lt(logicalplan.Literal(end)),
 		)...,
 	)
@@ -877,6 +877,8 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 			},
 			[]logicalplan.Expr{
 				logicalplan.Col(ColumnStacktrace),
+				logicalplan.DynCol(ColumnPprofLabels),
+				logicalplan.DynCol(ColumnPprofNumLabels),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
