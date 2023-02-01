@@ -33,8 +33,6 @@ const MergeButton = ({
   const mergeExplanation =
     'Merging allows combining all profile samples of a query into a single report.';
 
-  if (disabled) return <></>;
-
   return (
     <div ref={setMergePopperReferenceElement}>
       <Button
@@ -44,7 +42,7 @@ const MergeButton = ({
         onMouseEnter={() => setMergeHover(true)}
         onMouseLeave={() => setMergeHover(false)}
       >
-        Merge
+        {disabled ? 'Merged' : 'Merge'}
       </Button>
       {mergeHover && (
         <div

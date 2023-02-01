@@ -182,8 +182,8 @@ const ProfileSelector = ({
     queryExpressionString === '' ||
     queryExpressionString === '{}';
 
-  const mergeHidden = delta === 'false';
-  const mergeDisabled = selectedProfileName === '' || querySelection.expression === undefined;
+  const mergeHidden =
+    delta === 'false' || selectedProfileName === '' || querySelection.expression === undefined;
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
@@ -214,8 +214,8 @@ const ProfileSelector = ({
           <ButtonGroup>
             {!searchDisabled && (
               <>
-                {!mergeHidden && userMerged === 'false' && (
-                  <MergeButton disabled={mergeDisabled} onClick={setMergedSelection} />
+                {!mergeHidden && (
+                  <MergeButton disabled={userMerged === 'true'} onClick={setMergedSelection} />
                 )}
                 {!comparing && (
                   <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
@@ -247,8 +247,7 @@ const ProfileSelector = ({
           {querySelection.expression !== undefined &&
           querySelection.expression.length > 0 &&
           querySelection.from !== undefined &&
-          querySelection.to !== undefined &&
-          userMerged === 'false' ? (
+          querySelection.to !== undefined ? (
             <ProfileMetricsGraph
               queryClient={queryClient}
               queryExpression={querySelection.expression}
@@ -266,6 +265,7 @@ const ProfileSelector = ({
                 });
               }}
               addLabelMatcher={addLabelMatcher}
+              onPointClick={() => setUserMerged('false')}
             />
           ) : (
             <>

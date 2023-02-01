@@ -30,6 +30,7 @@ interface ProfileMetricsGraphProps {
   select: (source: ProfileSelection) => void;
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (key: string, value: string) => void;
+  onPointClick: () => void;
 }
 
 export interface IQueryRangeState {
@@ -89,6 +90,7 @@ const ProfileMetricsGraph = ({
   select,
   setTimeRange,
   addLabelMatcher,
+  onPointClick,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
@@ -128,6 +130,7 @@ const ProfileMetricsGraph = ({
       // if type delta, send a merge request with end timestamp = clicked timestamp + stepDuration
       const endTimestamp = isDeltaType ? timestamp + stepDurationInMilliseconds : timestamp;
 
+      onPointClick();
       select(new MergedProfileSelection(startTimestamp, endTimestamp, labels, queryExpression));
     };
 
