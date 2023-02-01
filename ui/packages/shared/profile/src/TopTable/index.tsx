@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {memo, useCallback, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {
   getLastItem,
@@ -172,7 +172,7 @@ export const TopTable = ({
 
   const total = top != null ? top.list.length : 0;
 
-  if (total === 0 && loading === false) return <>Profile has no samples</>;
+  if (total === 0 && !loading) return <>Profile has no samples</>;
 
   return (
     <>

@@ -76,7 +76,7 @@ const ProfileIcicleGraph = ({
 
   const total = graph.total;
 
-  if (parseFloat(total) === 0 && loading === false) return <>Profile has no samples</>;
+  if (parseFloat(total) === 0 && !loading) return <>Profile has no samples</>;
 
   return (
     <>
