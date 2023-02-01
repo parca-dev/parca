@@ -157,6 +157,7 @@ export const ProfileView = ({
               graph={flamegraphData.data}
               sampleUnit={sampleUnit}
               onContainerResize={onFlamegraphContainerResize}
+              loading={flamegraphData.loading}
             />
           </Profiler>
         ) : (
@@ -177,7 +178,12 @@ export const ProfileView = ({
       }
       case 'table': {
         return topTableData != null ? (
-          <TopTable data={topTableData.data} sampleUnit={sampleUnit} navigateTo={navigateTo} />
+          <TopTable
+            loading={topTableData.loading}
+            data={topTableData.data}
+            sampleUnit={sampleUnit}
+            navigateTo={navigateTo}
+          />
         ) : (
           <></>
         );

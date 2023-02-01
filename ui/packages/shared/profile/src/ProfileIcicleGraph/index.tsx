@@ -30,6 +30,7 @@ interface ProfileIcicleGraphProps {
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
   onContainerResize?: ResizeHandler;
+  loading: boolean;
 }
 
 const ProfileIcicleGraph = ({
@@ -38,6 +39,7 @@ const ProfileIcicleGraph = ({
   setNewCurPath,
   sampleUnit,
   onContainerResize,
+  loading,
 }: ProfileIcicleGraphProps): JSX.Element => {
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
@@ -71,8 +73,10 @@ const ProfileIcicleGraph = ({
     }, [graph]);
 
   if (graph === undefined) return <div>no data...</div>;
+
   const total = graph.total;
-  if (parseFloat(total) === 0) return <>Profile has no samples</>;
+
+  if (parseFloat(total) === 0 && loading === false) return <>Profile has no samples</>;
 
   return (
     <>
