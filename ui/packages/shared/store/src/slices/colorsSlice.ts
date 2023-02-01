@@ -37,7 +37,7 @@ export interface StackColor {
 
 export const EVERYTHING_ELSE = 'Everything else';
 
-const findAColor = (colorIndex: number, colors: string[][]): string[] => {
+const findAColor = (colorIndex: number, colors: ColorsDuo[]): ColorsDuo => {
   return colors[colorIndex];
   // TODO: add some logic to find unallocated colors if this index is already allocated to another feature for better color distribution.
 };
