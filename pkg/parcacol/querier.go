@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/arrow/go/v8/arrow"
-	"github.com/apache/arrow/go/v8/arrow/array"
+	"github.com/apache/arrow/go/v10/arrow"
+	"github.com/apache/arrow/go/v10/arrow/array"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -100,6 +100,11 @@ func (q *Querier) Labels(
 			}
 
 			for i := 0; i < stringCol.Len(); i++ {
+				// This should usually not happen, but better safe than sorry.
+				if stringCol.IsNull(i) {
+					continue
+				}
+
 				val := stringCol.Value(i)
 				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
 			}
@@ -136,20 +141,24 @@ func (q *Querier) Values(
 			}
 
 			col := ar.Column(0)
-			stringCol, ok := col.(*array.Binary)
+			dict, ok := col.(*array.Dictionary)
 			if !ok {
-				return fmt.Errorf("expected string column, got %T", col)
+				return fmt.Errorf("expected dictionary column, got %T", col)
 			}
 
-			for i := 0; i < stringCol.Len(); i++ {
-				val := stringCol.Value(i)
+			for i := 0; i < dict.Len(); i++ {
+				if dict.IsNull(i) {
+					continue
+				}
+
+				val := StringValueFromDictionary(dict, i)
 
 				// Because of an implementation detail of aggregations in
 				// FrostDB resulting columns can have the value of "", but that
 				// is equivalent to the label not existing at all, so we need
 				// to skip it.
 				if len(val) > 0 {
-					vals = append(vals, string(val))
+					vals = append(vals, val)
 				}
 			}
 
@@ -338,12 +347,12 @@ func (q *Querier) QueryRange(
 	for i := 0; i < int(ar.NumRows()); i++ {
 		labelSet = labelSet[:0]
 		for _, labelColumnIndex := range labelColumnIndices {
-			col := ar.Column(labelColumnIndex).(*array.Binary)
+			col := ar.Column(labelColumnIndex).(*array.Dictionary)
 			if col.IsNull(i) {
 				continue
 			}
 
-			v := col.Value(i)
+			v := col.Dictionary().(*array.Binary).Value(col.GetValueIndex(i))
 			if len(v) > 0 {
 				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: string(v)})
 			}
@@ -402,27 +411,27 @@ func (q *Querier) ProfileTypes(
 				return fmt.Errorf("expected 6 column, got %d", ar.NumCols())
 			}
 
-			nameColumn, err := BinaryFieldFromRecord(ar, ColumnName)
+			nameColumn, err := DictionaryFromRecord(ar, ColumnName)
 			if err != nil {
 				return err
 			}
 
-			sampleTypeColumn, err := BinaryFieldFromRecord(ar, ColumnSampleType)
+			sampleTypeColumn, err := DictionaryFromRecord(ar, ColumnSampleType)
 			if err != nil {
 				return err
 			}
 
-			sampleUnitColumn, err := BinaryFieldFromRecord(ar, ColumnSampleUnit)
+			sampleUnitColumn, err := DictionaryFromRecord(ar, ColumnSampleUnit)
 			if err != nil {
 				return err
 			}
 
-			periodTypeColumn, err := BinaryFieldFromRecord(ar, ColumnPeriodType)
+			periodTypeColumn, err := DictionaryFromRecord(ar, ColumnPeriodType)
 			if err != nil {
 				return err
 			}
 
-			periodUnitColumn, err := BinaryFieldFromRecord(ar, ColumnPeriodUnit)
+			periodUnitColumn, err := DictionaryFromRecord(ar, ColumnPeriodUnit)
 			if err != nil {
 				return err
 			}
@@ -433,11 +442,11 @@ func (q *Querier) ProfileTypes(
 			}
 
 			for i := 0; i < int(ar.NumRows()); i++ {
-				name := string(nameColumn.Value(i))
-				sampleType := string(sampleTypeColumn.Value(i))
-				sampleUnit := string(sampleUnitColumn.Value(i))
-				periodType := string(periodTypeColumn.Value(i))
-				periodUnit := string(periodUnitColumn.Value(i))
+				name := StringValueFromDictionary(nameColumn, i)
+				sampleType := StringValueFromDictionary(sampleTypeColumn, i)
+				sampleUnit := StringValueFromDictionary(sampleUnitColumn, i)
+				periodType := StringValueFromDictionary(periodTypeColumn, i)
+				periodUnit := StringValueFromDictionary(periodUnitColumn, i)
 				delta := deltaColumn.Value(i)
 
 				key := fmt.Sprintf("%s:%s:%s:%s:%s", name, sampleType, sampleUnit, periodType, periodUnit)
@@ -467,6 +476,31 @@ func (q *Querier) ProfileTypes(
 	}
 
 	return res, nil
+}
+
+func StringValueFromDictionary(arr *array.Dictionary, i int) string {
+	switch dict := arr.Dictionary().(type) {
+	case *array.Binary:
+		return string(dict.Value(arr.GetValueIndex(i)))
+	case *array.String:
+		return dict.Value(arr.GetValueIndex(i))
+	default:
+		panic(fmt.Sprintf("unsupported dictionary type: %T", dict))
+	}
+}
+
+func DictionaryFromRecord(ar arrow.Record, name string) (*array.Dictionary, error) {
+	indices := ar.Schema().FieldIndices(name)
+	if len(indices) != 1 {
+		return nil, fmt.Errorf("expected 1 column named %q, got %d", name, len(indices))
+	}
+
+	col, ok := ar.Column(indices[0]).(*array.Dictionary)
+	if !ok {
+		return nil, fmt.Errorf("expected column %q to be a dictionary column, got %T", name, ar.Column(indices[0]))
+	}
+
+	return col, nil
 }
 
 func BinaryFieldFromRecord(ar arrow.Record, name string) (*array.Binary, error) {

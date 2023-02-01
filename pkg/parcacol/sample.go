@@ -14,9 +14,15 @@
 package parcacol
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/apache/arrow/go/v10/arrow"
+	"github.com/apache/arrow/go/v10/arrow/array"
+	"github.com/apache/arrow/go/v10/arrow/memory"
 	"github.com/polarsignals/frostdb/dynparquet"
+	"github.com/polarsignals/frostdb/pqarrow"
+	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/segmentio/parquet-go"
 
 	"github.com/parca-dev/parca/pkg/profile"
@@ -103,4 +109,115 @@ func SampleToParquetRow(
 	}
 
 	return row
+}
+
+func SeriesToArrowRecord(
+	schema *dynparquet.Schema,
+	series []Series,
+	labelNames, profileLabelNames, profileNumLabelNames []string,
+) (arrow.Record, error) {
+	ps, err := schema.DynamicParquetSchema(map[string][]string{
+		ColumnLabels:         labelNames,
+		ColumnPprofLabels:    profileLabelNames,
+		ColumnPprofNumLabels: profileNumLabelNames,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps, logicalplan.IterOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	bldr := array.NewRecordBuilder(memory.NewGoAllocator(), as)
+	defer bldr.Release()
+
+	for _, s := range series {
+		for _, np := range s.Samples {
+			for _, p := range np {
+				if len(p.Samples) == 0 {
+					continue
+				}
+
+				for _, sample := range p.Samples {
+					i := 0
+					for _, col := range schema.Columns() {
+						switch col.Name {
+						case ColumnDuration:
+							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Duration)
+							i++
+						case ColumnName:
+							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.Name)
+							i++
+						case ColumnPeriod:
+							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Period)
+							i++
+						case ColumnPeriodType:
+							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.PeriodType.Type)
+							i++
+						case ColumnPeriodUnit:
+							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.PeriodType.Unit)
+							i++
+						case ColumnSampleType:
+							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.SampleType.Type)
+							i++
+						case ColumnSampleUnit:
+							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.SampleType.Unit)
+							i++
+						case ColumnStacktrace:
+							bldr.Field(i).(*array.BinaryBuilder).AppendString(sample.StacktraceID)
+							i++
+						case ColumnTimestamp:
+							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Timestamp)
+							i++
+						case ColumnValue:
+							bldr.Field(i).(*array.Int64Builder).Append(sample.Value)
+							i++
+						case ColumnLabels:
+							for _, name := range labelNames {
+								if value, ok := s.Labels[name]; ok {
+									if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(value); err != nil {
+										return nil, err
+									}
+								} else {
+									bldr.Field(i).AppendNull()
+								}
+								i++
+							}
+						case ColumnPprofLabels:
+							for _, name := range profileLabelNames {
+								if value, ok := sample.Label[name]; ok {
+									if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(value); err != nil {
+										return nil, err
+									}
+								} else {
+									bldr.Field(i).AppendNull()
+								}
+								i++
+							}
+						case ColumnPprofNumLabels:
+							for _, name := range profileNumLabelNames {
+								if value, ok := sample.NumLabel[name]; ok {
+									bldr.Field(i).(*array.Int64Builder).Append(value)
+								} else {
+									bldr.Field(i).AppendNull()
+								}
+								i++
+							}
+						default:
+							panic(fmt.Sprintf("unknown column %v", col.Name))
+						}
+					}
+
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+		}
+	}
+
+	return bldr.NewRecord(), nil
 }
