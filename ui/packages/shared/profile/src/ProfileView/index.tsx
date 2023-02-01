@@ -226,7 +226,6 @@ export const ProfileView = ({
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
-                      disabled={isLoading}
                     />
                   ) : null}
 
@@ -236,7 +235,6 @@ export const ProfileView = ({
                       e.preventDefault();
                       onDownloadPProf();
                     }}
-                    disabled={isLoading}
                   >
                     Download pprof
                   </Button>
