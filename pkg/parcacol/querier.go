@@ -95,6 +95,11 @@ func (q *Querier) Labels(
 			}
 
 			for i := 0; i < stringCol.Len(); i++ {
+				// This should usually not happen, but better safe than sorry.
+				if stringCol.IsNull(i) {
+					continue
+				}
+
 				val := stringCol.Value(i)
 				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
 			}
@@ -137,6 +142,10 @@ func (q *Querier) Values(
 			}
 
 			for i := 0; i < dict.Len(); i++ {
+				if dict.IsNull(i) {
+					continue
+				}
+
 				val := StringValueFromDictionary(dict, i)
 
 				// Because of an implementation detail of aggregations in
@@ -144,7 +153,7 @@ func (q *Querier) Values(
 				// is equivalent to the label not existing at all, so we need
 				// to skip it.
 				if len(val) > 0 {
-					vals = append(vals, string(val))
+					vals = append(vals, val)
 				}
 			}
 
