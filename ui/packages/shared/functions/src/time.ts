@@ -129,7 +129,7 @@ export const formatForTimespan = (from: number, to: number): string => {
   return 'd/M';
 };
 
-export const getStepDuration = (start: number, end: number, stepCount: number = 1000): Duration => {
+export const getStepDuration = (start, end, stepCount = 1000): Duration => {
   const durationSeconds = (end - start) / stepCount / 1000;
   const whole = Math.floor(durationSeconds);
   const decimal = durationSeconds - whole;

@@ -13,7 +13,12 @@
 
 import {Query} from '@parca/parser';
 import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
-import {getStepDuration, getStepDurationInMilliseconds} from '@parca/functions';
+import {
+  getStepDuration,
+  getStepDurationInMilliseconds,
+  useURLState,
+  NavigateFunction,
+} from '@parca/functions';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {MergedProfileSelection, ProfileSelection} from '..';
 import React, {useEffect, useState} from 'react';
@@ -30,7 +35,6 @@ import {
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
-import {useURLState, NavigateFunction} from '@parca/functions';
 
 export interface QuerySelection {
   expression: string;
@@ -263,7 +267,9 @@ const ProfileSelector = ({
                 const isDeltaType = Query.parse(queryExpression).profileType().delta;
                 const mergeFrom = timestamp;
                 // if type delta, send a merge request with end timestamp = clicked timestamp + stepDuration
-                const mergeTo = isDeltaType ? timestamp + stepDurationInMilliseconds : timestamp;
+                const mergeTo = isDeltaType
+                  ? parseInt(timestamp) + stepDurationInMilliseconds
+                  : timestamp;
 
                 setMergeFrom(mergeFrom.toString());
                 setMergeTo(mergeTo.toString());
