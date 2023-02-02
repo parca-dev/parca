@@ -25,8 +25,6 @@ import (
 
 	"github.com/go-kit/log"
 
-	"github.com/go-kit/log"
-
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
@@ -128,7 +126,12 @@ func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 		}
 		var rela elf.Rela64
 		b := bytes.NewReader(data)
-		off := pltSection.Offset
+
+		// in perf script, it use pltSection.Offset
+		// but the computeBase return symbol address, which require pltSection.Addr
+		// - ET_EXEC, pltSection.Addr and  pltSection.Offset not same
+		// - ET_DYNSYM, pltSection.Addr and  pltSection.Offset is same
+		off := pltSection.Addr
 		for b.Len() > 0 {
 			off += pltSection.Entsize
 			err := binary.Read(b, objFile.ByteOrder, &rela)

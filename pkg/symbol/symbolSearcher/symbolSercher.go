@@ -53,7 +53,9 @@ func (s SymbolSearcher) Find(addr uint64) (string, error) {
 		sym := s.symbols[i]
 		return sym.Value > addr
 	})
-	if i >= len(s.symbols) || i == 0 {
+	if i == 0 ||
+		// addr < sym[i-1]
+		addr < s.symbols[i-1].Value {
 		return "", errors.New("failed to find symbol for address")
 	}
 
@@ -118,7 +120,10 @@ func chooseBestSymbol(syma, symb elf.Symbol) bool {
 	if strings.HasPrefix(syma.Name, "SyS") || strings.HasPrefix(syma.Name, "compat_SyS") {
 		return true
 	}
-	return false
+
+	/* Finally, if we can't distinguish them in any other way, try to
+	   get consistent results by sorting the symbols by name.  */
+	return syma.Name < symb.Name
 }
 
 func prefixUnderscoresCount(s string) int {
