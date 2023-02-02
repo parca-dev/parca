@@ -3,8 +3,8 @@ syntax = "proto3";
 package parca.query.v1alpha1;
 
 import "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 import "parca/metastore/v1alpha1/metastore.proto";
 import "parca/profilestore/v1alpha1/profilestore.proto";
 
