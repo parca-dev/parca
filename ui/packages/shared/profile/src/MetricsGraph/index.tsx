@@ -249,7 +249,8 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
   const isShiftDown = useIsShiftDown();
 
-  const time: number = parseFloat(profile?.HistoryParams().time);
+  // the time of the selected point is the start of the merge window
+  const time: number = parseFloat(profile?.HistoryParams().merge_from);
 
   if (width === undefined || width == null) {
     width = 0;

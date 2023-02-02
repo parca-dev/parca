@@ -13,12 +13,12 @@
 
 import {Query} from '@parca/parser';
 import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
+import {getStepDuration, getStepDurationInMilliseconds} from '@parca/functions';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {ProfileSelection} from '..';
+import {MergedProfileSelection, ProfileSelection} from '..';
 import React, {useEffect, useState} from 'react';
 import ProfileMetricsGraph from '../ProfileMetricsGraph';
 import MatchersInput from '../MatchersInput/index';
-import MergeButton from './MergeButton';
 import CompareButton from './CompareButton';
 import {
   Card,
@@ -50,6 +50,7 @@ interface ProfileSelectorProps {
   comparing: boolean;
   onCompareProfile: () => void;
   navigateTo?: NavigateFunction;
+  suffix: string;
 }
 
 export interface IProfileTypesResult {
@@ -89,6 +90,7 @@ const ProfileSelector = ({
   comparing,
   onCompareProfile,
   navigateTo,
+  suffix,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -96,8 +98,8 @@ const ProfileSelector = ({
     error,
   } = useProfileTypes(queryClient);
 
-  const [userMerged, setUserMerged] = useURLState({param: 'userMerged', navigateTo});
-  const [delta, setDelta] = useURLState({param: 'delta', navigateTo});
+  const [_mergeFrom, setMergeFrom] = useURLState({param: `merge_from${suffix}`, navigateTo});
+  const [_mergeTo, setMergeTo] = useURLState({param: `merge_to${suffix}`, navigateTo});
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
@@ -127,10 +129,6 @@ const ProfileSelector = ({
     enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(queryExpressionString);
   const selectedProfileName = query.profileName();
 
-  useEffect(() => {
-    setDelta(query.profType.delta ? 'true' : 'false');
-  }, [query]);
-
   const setNewQueryExpression = (expr: string): void => {
     selectQuery({
       expression: expr,
@@ -155,8 +153,9 @@ const ProfileSelector = ({
   };
 
   const setMergedSelection = (): void => {
-    setUserMerged('true');
-    setNewQueryExpression(queryExpressionString);
+    setMergeFrom(querySelection.from.toString());
+    setMergeTo(querySelection.to.toString());
+    setQueryExpression();
   };
 
   const setMatchersString = (matchers: string): void => {
@@ -182,8 +181,6 @@ const ProfileSelector = ({
     queryExpressionString === '' ||
     queryExpressionString === '{}';
 
-  const mergeHidden =
-    delta === 'false' || selectedProfileName === '' || querySelection.expression === undefined;
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
@@ -214,9 +211,6 @@ const ProfileSelector = ({
           <ButtonGroup>
             {!searchDisabled && (
               <>
-                {!mergeHidden && (
-                  <MergeButton disabled={userMerged === 'true'} onClick={setMergedSelection} />
-                )}
                 {!comparing && (
                   <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
                 )}
@@ -226,8 +220,7 @@ const ProfileSelector = ({
               disabled={searchDisabled}
               onClick={(e: React.MouseEvent<HTMLElement>) => {
                 e.preventDefault();
-                setQueryExpression();
-                setUserMerged('false');
+                setMergedSelection();
               }}
             >
               Search
@@ -253,7 +246,6 @@ const ProfileSelector = ({
               queryExpression={querySelection.expression}
               from={querySelection.from}
               to={querySelection.to}
-              select={selectProfile}
               profile={profileSelection}
               setTimeRange={(range: DateTimeRange) => {
                 setTimeRangeSelection(range);
@@ -265,7 +257,21 @@ const ProfileSelector = ({
                 });
               }}
               addLabelMatcher={addLabelMatcher}
-              onPointClick={() => setUserMerged('false')}
+              onPointClick={(timestamp, labels, queryExpression) => {
+                const stepDuration = getStepDuration(querySelection.from, querySelection.to);
+                const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
+                const isDeltaType = Query.parse(queryExpression).profileType().delta;
+                const mergeFrom = timestamp;
+                // if type delta, send a merge request with end timestamp = clicked timestamp + stepDuration
+                const mergeTo = isDeltaType ? timestamp + stepDurationInMilliseconds : timestamp;
+
+                setMergeFrom(mergeFrom.toString());
+                setMergeTo(mergeTo.toString());
+
+                selectProfile(
+                  new MergedProfileSelection(mergeFrom, mergeTo, labels, queryExpression)
+                );
+              }}
             />
           ) : (
             <>

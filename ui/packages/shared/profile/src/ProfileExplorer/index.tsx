@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+import {useState} from 'react';
 import {QuerySelection} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
@@ -20,6 +20,7 @@ import {store} from '@parca/store';
 import {Provider} from 'react-redux';
 import {DateTimeRange} from '@parca/components';
 import {NavigateFunction} from '@parca/functions';
+import {useEffect} from 'react';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -75,24 +76,58 @@ const ProfileExplorerApp = ({
   let {
     from_a,
     to_a,
-    merge_a,
     profile_name_a,
     labels_a,
-    time_a,
+    merge_from_a,
+    merge_to_a,
     time_selection_a,
     compare_a,
     from_b,
     to_b,
-    merge_b,
     profile_name_b,
     labels_b,
-    time_b,
+    merge_from_b,
+    merge_to_b,
     time_selection_b,
     compare_b,
     filter_by_function,
     dashboard_items,
   } = queryParams;
   /* eslint-enable @typescript-eslint/naming-convention */
+  const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
+  const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
+
+  useEffect(() => {
+    const mergeFrom = merge_from_a ?? from_a;
+    const mergeTo = merge_to_a ?? to_a;
+    const labels = (labels_a as string[]) ?? [''];
+    const profileA = ProfileSelectionFromParams(
+      expression_a,
+      from_a as string,
+      to_a as string,
+      mergeFrom as string,
+      mergeTo as string,
+      labels
+    );
+
+    setProfileA(profileA);
+  }, [merge_from_a, merge_to_a]);
+
+  useEffect(() => {
+    const mergeFrom = merge_from_b ?? from_b;
+    const mergeTo = merge_to_b ?? to_b;
+    const labels = (labels_b as string[]) ?? [''];
+    const profileB = ProfileSelectionFromParams(
+      expression_b,
+      from_b as string,
+      to_b as string,
+      mergeFrom as string,
+      mergeTo as string,
+      labels
+    );
+
+    setProfileB(profileB);
+  }, [merge_from_b, merge_to_b]);
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;
@@ -126,24 +161,16 @@ const ProfileExplorerApp = ({
     return selectProfile(p, '_b');
   };
 
+  const queryA = {
+    expression: expression_a,
+    from: parseInt(from_a as string),
+    to: parseInt(to_a as string),
+    timeSelection: time_selection_a as string,
+    profile_name: profile_name_a as string,
+  };
+
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
-    const query = {
-      expression: expression_a,
-      from: parseInt(from_a as string),
-      to: parseInt(to_a as string),
-      profile_name: profile_name_a as string,
-      timeSelection: time_selection_a as string,
-    };
-
-    const profile = ProfileSelectionFromParams(
-      expression_a,
-      from_a as string,
-      to_a as string,
-      time_a as string,
-      labels_a as string[]
-    );
-
     const selectQuery = (q: QuerySelection): void => {
       return navigateTo(
         '/',
@@ -174,23 +201,23 @@ const ProfileExplorerApp = ({
     const compareProfile = (): void => {
       let compareQuery = {
         compare_a: 'true',
-        expression_a: encodeURIComponent(query.expression),
-        from_a: query.from.toString(),
-        to_a: query.to.toString(),
-        time_selection_a: query.timeSelection,
-        profile_name_a: query.profile_name,
+        expression_a: encodeURIComponent(queryA.expression),
+        from_a: queryA.from.toString(),
+        to_a: queryA.to.toString(),
+        time_selection_a: queryA.timeSelection,
+        profile_name_a: queryA.profile_name,
 
         compare_b: 'true',
-        expression_b: encodeURIComponent(query.expression),
-        from_b: query.from.toString(),
-        to_b: query.to.toString(),
-        time_selection_b: query.timeSelection,
-        profile_name_b: query.profile_name,
+        expression_b: encodeURIComponent(queryA.expression),
+        from_b: queryA.from.toString(),
+        to_b: queryA.to.toString(),
+        time_selection_b: queryA.timeSelection,
+        profile_name_b: queryA.profile_name,
       };
 
-      if (profile != null) {
+      if (profileA != null) {
         compareQuery = {
-          ...SuffixParams(profile.HistoryParams(), '_a'),
+          ...SuffixParams(profileA.HistoryParams(), '_a'),
           ...compareQuery,
         };
       }
@@ -205,8 +232,8 @@ const ProfileExplorerApp = ({
     return (
       <ProfileExplorerSingle
         queryClient={queryClient}
-        query={query}
-        profile={profile}
+        query={queryA}
+        profile={profileA}
         selectQuery={selectQuery}
         selectProfile={selectProfile}
         compareProfile={compareProfile}
@@ -215,13 +242,6 @@ const ProfileExplorerApp = ({
     );
   }
 
-  const queryA = {
-    expression: expression_a,
-    from: parseInt(from_a as string),
-    to: parseInt(to_a as string),
-    timeSelection: time_selection_a as string,
-    profile_name: profile_name_a as string,
-  };
   const queryB = {
     expression: expression_b,
     from: parseInt(from_b as string),
@@ -229,21 +249,6 @@ const ProfileExplorerApp = ({
     timeSelection: time_selection_b as string,
     profile_name: profile_name_b as string,
   };
-
-  const profileA = ProfileSelectionFromParams(
-    expression_a,
-    from_a as string,
-    to_a as string,
-    time_a as string,
-    labels_a as string[]
-  );
-  const profileB = ProfileSelectionFromParams(
-    expression_b,
-    from_b as string,
-    to_b as string,
-    time_b as string,
-    labels_b as string[]
-  );
 
   const selectQueryA = (q: QuerySelection): void => {
     return navigateTo(

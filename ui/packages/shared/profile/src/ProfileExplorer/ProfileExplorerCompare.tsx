@@ -70,6 +70,7 @@ const ProfileExplorerCompare = ({
             comparing={true}
             onCompareProfile={() => {}}
             navigateTo={navigateTo}
+            suffix={'_a'}
           />
         </div>
         <div className="pl-2">
@@ -84,6 +85,7 @@ const ProfileExplorerCompare = ({
             comparing={true}
             onCompareProfile={() => {}}
             navigateTo={navigateTo}
+            suffix={'_b'}
           />
         </div>
       </div>

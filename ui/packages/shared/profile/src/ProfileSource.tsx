@@ -66,15 +66,21 @@ export function ProfileSelectionFromParams(
   expression: string | undefined,
   from: string | undefined,
   to: string | undefined,
-  time: string | undefined,
+  merge_from: string | undefined,
+  merge_to: string | undefined,
   labels: string[],
   filterQuery?: string
 ): ProfileSelection | null {
-  if (from !== undefined && to !== undefined && time !== undefined && expression !== undefined) {
+  if (
+    from !== undefined &&
+    to !== undefined &&
+    merge_from !== undefined &&
+    merge_to !== undefined &&
+    expression !== undefined
+  ) {
     return new MergedProfileSelection(
-      parseInt(time),
-      // TODO: needs to be time + stepDuration if URL delta is true
-      parseInt(time) + 1000,
+      parseInt(merge_from),
+      parseInt(merge_to),
       ParseLabels(labels ?? ['']),
       expression,
       filterQuery
@@ -85,15 +91,21 @@ export function ProfileSelectionFromParams(
 }
 
 export class MergedProfileSelection implements ProfileSelection {
-  from: number;
-  to: number;
+  merge_from: number;
+  merge_to: number;
   query: string;
   filterQuery: string | undefined;
   labels: Label[];
 
-  constructor(from: number, to: number, labels: Label[], query: string, filterQuery?: string) {
-    this.from = from;
-    this.to = to;
+  constructor(
+    merge_from: number,
+    merge_to: number,
+    labels: Label[],
+    query: string,
+    filterQuery?: string
+  ) {
+    this.merge_from = merge_from;
+    this.merge_to = merge_to;
     this.query = query;
     this.filterQuery = filterQuery;
     this.labels = labels;
@@ -105,7 +117,8 @@ export class MergedProfileSelection implements ProfileSelection {
 
   HistoryParams(): {[key: string]: any} {
     return {
-      time: this.from.toString(),
+      merge_from: this.merge_from.toString(),
+      merge_to: this.merge_to.toString(),
       query: this.query,
       profile_name: this.ProfileName(),
       labels: this.labels.map(label => `${label.name}=${encodeURIComponent(label.value)}`),
@@ -117,7 +130,13 @@ export class MergedProfileSelection implements ProfileSelection {
   }
 
   ProfileSource(): ProfileSource {
-    return new MergedProfileSource(this.from, this.to, this.labels, this.query, this.filterQuery);
+    return new MergedProfileSource(
+      this.merge_from,
+      this.merge_to,
+      this.labels,
+      this.query,
+      this.filterQuery
+    );
   }
 }
 
@@ -169,15 +188,21 @@ export class ProfileDiffSource implements ProfileSource {
 }
 
 export class MergedProfileSource implements ProfileSource {
-  from: number;
-  to: number;
+  merge_from: number;
+  merge_to: number;
   labels: Label[];
   query: string;
   filterQuery: string | undefined;
 
-  constructor(from: number, to: number, labels: Label[], query: string, filterQuery?: string) {
-    this.from = from;
-    this.to = to;
+  constructor(
+    merge_from: number,
+    merge_to: number,
+    labels: Label[],
+    query: string,
+    filterQuery?: string
+  ) {
+    this.merge_from = merge_from;
+    this.merge_to = merge_to;
     this.labels = labels;
     this.query = query;
     this.filterQuery = filterQuery;
@@ -188,8 +213,8 @@ export class MergedProfileSource implements ProfileSource {
       options: {
         oneofKind: 'merge',
         merge: {
-          start: Timestamp.fromDate(new Date(this.from)),
-          end: Timestamp.fromDate(new Date(this.to)),
+          start: Timestamp.fromDate(new Date(this.merge_from)),
+          end: Timestamp.fromDate(new Date(this.merge_to)),
           query: this.query,
         },
       },
@@ -202,8 +227,8 @@ export class MergedProfileSource implements ProfileSource {
       options: {
         oneofKind: 'merge',
         merge: {
-          start: Timestamp.fromDate(new Date(this.from)),
-          end: Timestamp.fromDate(new Date(this.to)),
+          start: Timestamp.fromDate(new Date(this.merge_from)),
+          end: Timestamp.fromDate(new Date(this.merge_to)),
           query: this.query,
         },
       },
@@ -220,8 +245,8 @@ export class MergedProfileSource implements ProfileSource {
   Describe(): JSX.Element {
     return (
       <a>
-        Merge of &quot;{this.query}&quot; from {formatDate(this.from, timeFormat)} to{' '}
-        {formatDate(this.to, timeFormat)}
+        Merge of &quot;{this.query}&quot; from {formatDate(this.merge_from, timeFormat)} to{' '}
+        {formatDate(this.merge_to, timeFormat)}
       </a>
     );
   }
@@ -234,8 +259,8 @@ export class MergedProfileSource implements ProfileSource {
 
   toString(): string {
     return `merged profiles of query "${this.query}" from ${formatDate(
-      this.from,
+      this.merge_from,
       timeFormat
-    )} to ${formatDate(this.to, timeFormat)}`;
+    )} to ${formatDate(this.merge_to, timeFormat)}`;
   }
 }

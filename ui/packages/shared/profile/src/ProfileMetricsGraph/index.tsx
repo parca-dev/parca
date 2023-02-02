@@ -19,7 +19,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
 import useDelayedLoader from '../useDelayedLoader';
-import {getStepDuration, getStepDurationInMilliseconds} from '@parca/functions';
+import {getStepDuration} from '@parca/functions';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -27,10 +27,9 @@ interface ProfileMetricsGraphProps {
   profile: ProfileSelection | null;
   from: number;
   to: number;
-  select: (source: ProfileSelection) => void;
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (key: string, value: string) => void;
-  onPointClick: () => void;
+  onPointClick: (timestamp: any, labels: any, queryExpression: string) => void;
 }
 
 export interface IQueryRangeState {
@@ -87,7 +86,6 @@ const ProfileMetricsGraph = ({
   profile,
   from,
   to,
-  select,
   setTimeRange,
   addLabelMatcher,
   onPointClick,
@@ -120,18 +118,8 @@ const ProfileMetricsGraph = ({
 
   const series = response?.series;
   if (series !== null && series !== undefined && series?.length > 0) {
-    const stepDuration = getStepDuration(from, to);
-    const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
-
     const handleSampleClick = (timestamp: number, _value: number, labels: Label[]): void => {
-      const isDeltaType = Query.parse(queryExpression).profileType().delta;
-
-      const startTimestamp = timestamp;
-      // if type delta, send a merge request with end timestamp = clicked timestamp + stepDuration
-      const endTimestamp = isDeltaType ? timestamp + stepDurationInMilliseconds : timestamp;
-
-      onPointClick();
-      select(new MergedProfileSelection(startTimestamp, endTimestamp, labels, queryExpression));
+      onPointClick(timestamp, labels, queryExpression);
     };
 
     return (
