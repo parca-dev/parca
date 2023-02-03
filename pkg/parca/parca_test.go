@@ -14,12 +14,15 @@
 package parca
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"errors"
 	"io"
+	"math"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -268,4 +271,113 @@ func TestConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, len(compactedOriginalProfile.Sample), len(resProf.Sample))
+}
+
+func runCmd(t *testing.T, name string, arg ...string) {
+	t.Helper()
+
+	cmd := exec.Command(name, arg...)
+	var outb bytes.Buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &outb
+	require.NoError(t, cmd.Run(), outb.String())
+}
+
+func TestPGOE2e(t *testing.T) {
+	runCmd(t, "go", "build", "-o", "testdata/pgotest", "./testdata/pgotest.go")
+	runCmd(t, "./testdata/pgotest")
+
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col, err := frostdb.New()
+	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
+	table, err := colDB.Table(
+		"stacktraces",
+		frostdb.NewTableConfig(schema),
+	)
+	require.NoError(t, err)
+	m := metastoretest.NewTestMetastore(
+		t,
+		logger,
+		reg,
+		tracer,
+	)
+
+	metastore := metastore.NewInProcessClient(m)
+
+	fileContent, err := os.ReadFile("./testdata/pgotest.prof")
+	require.NoError(t, err)
+
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+	)
+
+	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "process_cpu",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, table.EnsureCompaction())
+	api := queryservice.NewColumnQueryAPI(
+		logger,
+		tracer,
+		getShareServerConn(t),
+		parcacol.NewQuerier(
+
+			logger,
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
+		),
+	)
+
+	res, err := api.Query(ctx, &querypb.QueryRequest{
+		Mode:       querypb.QueryRequest_MODE_MERGE,
+		ReportType: querypb.QueryRequest_REPORT_TYPE_PPROF,
+		Options: &querypb.QueryRequest_Merge{
+			Merge: &querypb.MergeProfile{
+				Query: `process_cpu:samples:count:cpu:nanoseconds:delta`,
+				Start: timestamppb.New(timestamp.Time(math.MinInt64)),
+				End:   timestamppb.New(timestamp.Time(math.MaxInt64)),
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	rawPprof := res.Report.(*querypb.QueryResponse_Pprof).Pprof
+
+	require.NoError(t, os.WriteFile("./testdata/pgotest.res.prof", rawPprof, 0o644))
+	runCmd(t, "go", "build", "-pgo", "./testdata/pgotest.res.prof", "-o", "./testdata/pgotest", "./testdata/pgotest.go")
 }
