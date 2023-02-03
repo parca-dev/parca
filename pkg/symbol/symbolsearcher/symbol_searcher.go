@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package symbolSearcher
+package symbolsearcher
 
 import (
 	"debug/elf"
@@ -20,14 +20,14 @@ import (
 	"strings"
 )
 
-type SymbolSearcher struct {
+type Searcher struct {
 	symbols []elf.Symbol
 }
 
-func New(syms []elf.Symbol) SymbolSearcher {
+func New(syms []elf.Symbol) Searcher {
 	newSyms := make([]elf.Symbol, 0, len(syms))
 	for _, s := range syms {
-		if elfSymIsFunction(s) {
+		if isFunction(s) {
 			newSyms = append(newSyms, s)
 		}
 	}
@@ -39,16 +39,12 @@ func New(syms []elf.Symbol) SymbolSearcher {
 		}
 		return chooseBestSymbol(newSyms[i], newSyms[j])
 	})
-	return SymbolSearcher{
+	return Searcher{
 		symbols: newSyms,
 	}
 }
 
-func (s SymbolSearcher) Symbols() []elf.Symbol {
-	return s.symbols
-}
-
-func (s SymbolSearcher) Find(addr uint64) (string, error) {
+func (s Searcher) Search(addr uint64) (string, error) {
 	i := sort.Search(len(s.symbols), func(i int) bool {
 		sym := s.symbols[i]
 		return sym.Value > addr
@@ -64,8 +60,19 @@ func (s SymbolSearcher) Find(addr uint64) (string, error) {
 	return s.symbols[i].Name, nil
 }
 
+func (s Searcher) PCRange() ([2]uint64, error) {
+	if len(s.symbols) == 0 {
+		return [2]uint64{}, errors.New("no symbols found")
+	}
+
+	return [2]uint64{
+		s.symbols[0].Value,
+		s.symbols[len(s.symbols)-1].Value + s.symbols[len(s.symbols)-1].Size,
+	}, nil
+}
+
 // copy from symbol-elf.c/elf_sym__is_function.
-func elfSymIsFunction(s elf.Symbol) bool {
+func isFunction(s elf.Symbol) bool {
 	return elf.ST_TYPE(s.Info) == elf.STT_FUNC && s.Name != "" && s.Section != elf.SHN_UNDEF
 }
 

@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"debug/elf"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -28,17 +27,19 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
-	"github.com/parca-dev/parca/pkg/symbol/symbolSearcher"
+	"github.com/parca-dev/parca/pkg/symbol/symbolsearcher"
+)
+
+const (
+	pltSuffix = "@plt" // add pltSuffix for plt symbol to keep consistent with perf
 )
 
 // SymtabLiner is a liner which utilizes .symtab and .dynsym sections.
 type SymtabLiner struct {
 	logger log.Logger
 
-	// symbols contains sorted symbols.
-	symbols   []elf.Symbol
 	demangler *demangle.Demangler
-	searcher  symbolSearcher.SymbolSearcher
+	searcher  symbolsearcher.Searcher
 
 	filename string
 	f        *elf.File
@@ -51,11 +52,10 @@ func Symbols(logger log.Logger, filename string, f *elf.File, demangler *demangl
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
 	}
 
-	searcher := symbolSearcher.New(symbols)
+	searcher := symbolsearcher.New(symbols)
 	return &SymtabLiner{
 		logger:    log.With(logger, "liner", "symtab"),
 		searcher:  searcher,
-		symbols:   searcher.Symbols(),
 		demangler: demangler,
 		filename:  filename,
 		f:         f,
@@ -71,19 +71,12 @@ func (lnr *SymtabLiner) File() string {
 }
 
 func (lnr *SymtabLiner) PCRange() ([2]uint64, error) {
-	if len(lnr.symbols) == 0 {
-		return [2]uint64{}, errors.New("no symbols found")
-	}
-
-	return [2]uint64{
-		lnr.symbols[0].Value,
-		lnr.symbols[len(lnr.symbols)-1].Value + lnr.symbols[len(lnr.symbols)-1].Size,
-	}, nil
+	return lnr.searcher.PCRange()
 }
 
 // PCToLines looks up the line number information for a program counter (memory address).
 func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
-	name, err := lnr.searcher.Find(addr)
+	name, err := lnr.searcher.Search(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -93,13 +86,16 @@ func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, er
 		line int64 // 0
 	)
 
-	isplt := strings.HasSuffix(name, "@plt")
+	// plt symbol suffix with pltSuffix
+	// to demangle name, we should remove the pltSuffix first
+	// and then add it to demangled name
+	isplt := strings.HasSuffix(name, pltSuffix)
 	result := lnr.demangler.Demangle(&pb.Function{
-		SystemName: strings.TrimSuffix(name, "@plt"),
+		SystemName: strings.TrimSuffix(name, pltSuffix),
 		Filename:   file,
 	})
 	if isplt {
-		result.Name = result.Name + "@plt"
+		result.Name = result.Name + pltSuffix
 	}
 	lines = append(lines, profile.LocationLine{
 		Line:     line,
@@ -146,7 +142,7 @@ func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 			s := dynSyms[i-1]
 
 			pltSymbols = append(pltSymbols, elf.Symbol{
-				Name:    s.Name + "@plt", // keep consistent with perf
+				Name:    s.Name + pltSuffix,
 				Info:    elf.ST_INFO(elf.STB_GLOBAL, elf.STT_FUNC),
 				Section: elf.SectionIndex(1), // just to pass elfSymIsFunction's section check
 				Value:   off,

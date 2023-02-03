@@ -24,7 +24,7 @@ import (
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
-	"github.com/parca-dev/parca/pkg/symbol/symbolSearcher"
+	"github.com/parca-dev/parca/pkg/symbol/symbolsearcher"
 )
 
 func TestSymtabLiner_PCToLines(t *testing.T) {
@@ -219,11 +219,10 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 				tt.fields.symbols[i].Section = elf.SectionIndex(1)
 				tt.fields.symbols[i].Info = elf.ST_INFO(elf.STB_GLOBAL, elf.STT_FUNC)
 			}
-			searcher := symbolSearcher.New(tt.fields.symbols)
+			searcher := symbolsearcher.New(tt.fields.symbols)
 			lnr := &SymtabLiner{
 				logger:    log.NewNopLogger(),
 				searcher:  searcher,
-				symbols:   searcher.Symbols(),
 				demangler: demangle.NewDemangler("simple", false),
 			}
 			gotLines, err := lnr.PCToLines(tt.args.addr)
