@@ -48,7 +48,7 @@ jobs:
           go-version-file: .go-version
           check-latest: true
 
-      - uses: bufbuild/buf-setup-action@e433c27a7eacc2e54ffb3895663a425829563ef9 # v1.12.0
+      - uses: bufbuild/buf-setup-action@c0d6e88e3b14554edd06bbf75a070ee450713564 # v1.13.0
 
       - name: version
         run: buf --version
