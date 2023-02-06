@@ -1,7 +1,5 @@
 Decision making in Parca is done in the form of documented RFCs. RFCs help us to take time to develop clarity of the problems that we seek out to solve and our thoughts about trade-offs in decision making. Decisions are not final, but RFCs are intended to explain the train of thought that went into decision making.
 
-1. [RFC Template](https://drive.google.com/open?id=1zTb8ZxUZvuFdmsPnpjgq2-MaTXUqzOvy-zPUO1o3K_Y&usp=drive_copy)
-
 ## Parca Agent
 
 1. [Kernel compatibility for eBPF/BTF features](https://drive.google.com/open?id=17xrqMeCCcOwO7pmb4XhFp1ah5AX3tjlfhZfAPJKHczQ&usp=drive_copy)
