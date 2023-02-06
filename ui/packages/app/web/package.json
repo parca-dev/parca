@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.183",
+  "version": "0.16.184",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -31,7 +31,7 @@
     "@parca/functions": "^0.16.59",
     "@parca/icons": "^0.16.51",
     "@parca/parser": "^0.16.53",
-    "@parca/profile": "^0.16.105",
+    "@parca/profile": "^0.16.106",
     "@parca/store": "^0.16.53",
     "@svgr/webpack": "6.5.1",
     "@tailwindcss/typography": "^0.5.8",
@@ -44,7 +44,7 @@
     "lodash.throttle": "4.1.1",
     "moment": "2.29.4",
     "postcss": "8.4.21",
-    "react-datepicker": "4.9.0",
+    "react-datepicker": "4.10.0",
     "react-dom": "18.2.0",
     "react-github-btn": "^1.4.0",
     "react-markdown": "^8.0.4",
