@@ -19,7 +19,7 @@ import (
 	"debug/elf"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 
 	"github.com/go-kit/log"
@@ -116,7 +116,7 @@ func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 	if pltRelSection, pltSection := objFile.Section(".rela.plt"), objFile.Section(".plt"); dErr == nil &&
 		pltRelSection != nil && pltSection != nil &&
 		objFile.Sections[pltRelSection.Link].Type == elf.SHT_DYNSYM {
-		data, err := ioutil.ReadAll(pltRelSection.Open())
+		data, err := io.ReadAll(pltRelSection.Open())
 		if err != nil {
 			return nil, fmt.Errorf("failed to data of .rela.plt section:%s", err)
 		}
