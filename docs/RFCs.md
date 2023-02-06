@@ -9,7 +9,7 @@ Decision making in Parca is done in the form of documented RFCs. RFCs help us to
 5. [Java Support: Embedding async profiler in parca-agent](https://drive.google.com/open?id=1_a3kW9N7mkVGXl2MScYQvldr-OY5y3QQfXHYgyHVUUw&usp=drive_copy)
 6. [Allocation Profiling](https://drive.google.com/open?id=1v2-Nj3COCRSOV7UqBTgXiiNuR2zGJsmeggAf_TTiBoU&usp=drive_copy)
 7. [Agent: Process Discovery](https://drive.google.com/open?id=14XfJLqB_8_ZNSSsW5TM8P8gLjeJbLgrMhUGFXA0S5oU&usp=drive_copy)
-9. 
+8.
 
 ## Parca
 
