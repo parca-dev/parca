@@ -31,6 +31,7 @@ import {hexifyAddress} from '../utils';
 import '../TopTable.styles.css';
 
 interface TopTableProps {
+  loading: boolean;
   data?: Top;
   sampleUnit: string;
   navigateTo?: NavigateFunction;
@@ -62,7 +63,12 @@ const addPlusSign = (num: string): string => {
   return `+${num}`;
 };
 
-export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProps): JSX.Element => {
+export const TopTable = ({
+  data: top,
+  sampleUnit: unit,
+  navigateTo,
+  loading,
+}: TopTableProps): JSX.Element => {
   const router = parseParams(window.location.search);
   const currentSearchString = selectQueryParam('search_string') as string;
   const compareMode =
@@ -166,7 +172,7 @@ export const TopTable = ({data: top, sampleUnit: unit, navigateTo}: TopTableProp
 
   const total = top != null ? top.list.length : 0;
 
-  if (total === 0) return <>Profile has no samples</>;
+  if (total === 0 && !loading) return <>Profile has no samples</>;
 
   return (
     <>
