@@ -13,6 +13,7 @@
 
 import React, {useMemo} from 'react';
 
+import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
 import {
   Mapping,
@@ -182,6 +183,13 @@ export const IcicleNode = React.memo(function IcicleNode({
       ? totalWidth
       : xScale(cumulative);
 
+  const {isHighlightEnabled = false, isHighlighted = false} = useMemo(() => {
+    if (searchString === undefined || searchString === '') {
+      return {isHighlightEnabled: false};
+    }
+    return {isHighlightEnabled: true, isHighlighted: isSearchMatch(searchString, name)};
+  }, [searchString, name]);
+
   if (width <= 1) {
     return <>{null}</>;
   }
@@ -214,14 +222,11 @@ export const IcicleNode = React.memo(function IcicleNode({
           width={width - 1}
           height={height - 1}
           style={{
-            opacity:
-              searchString !== undefined &&
-              searchString !== '' &&
-              !isSearchMatch(searchString, name)
-                ? 0.5
-                : 1,
             fill: colorResult,
           }}
+          className={cx({
+            'opacity-50': isHighlightEnabled && !isHighlighted,
+          })}
         />
         {width > 5 && (
           <svg width={width - 5} height={height}>
