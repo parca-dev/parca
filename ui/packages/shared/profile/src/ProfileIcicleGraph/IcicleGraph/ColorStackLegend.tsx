@@ -48,7 +48,7 @@ const ColorStackLegend = ({navigateTo, compareMode = false}: Props): JSX.Element
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-10 gap-2 px-10 my-6">
+    <div className="flex flex-wrap gap-2 my-6 justify-center">
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
         const isHighlighted = currentSearchString === feature;
@@ -72,9 +72,7 @@ const ColorStackLegend = ({navigateTo, compareMode = false}: Props): JSX.Element
           >
             <div className="flex items-center">
               <div className="w-4 h-4 mr-1 inline-block" style={{backgroundColor: color}} />
-              <span className="text-sm text-ellipsis whitespace-nowrap overflow-hidden">
-                {feature}
-              </span>
+              <span className="text-sm">{feature}</span>
             </div>
             {isHighlighted ? (
               <Icon

@@ -16,6 +16,7 @@ import {QueryServiceClient} from '@parca/client';
 import {ProfileSelection, ProfileViewWithData} from '..';
 
 import ProfileSelector, {QuerySelection} from '../ProfileSelector';
+import {KeyDownProvider} from '@parca/components';
 
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;
@@ -37,7 +38,7 @@ const ProfileExplorerSingle = ({
   navigateTo,
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
-    <>
+    <KeyDownProvider>
       <div className="grid grid-cols-1">
         <div>
           <ProfileSelector
@@ -66,7 +67,7 @@ const ProfileExplorerSingle = ({
           )}
         </div>
       </div>
-    </>
+    </KeyDownProvider>
   );
 };
 
