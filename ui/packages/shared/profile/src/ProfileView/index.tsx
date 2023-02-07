@@ -158,6 +158,7 @@ export const ProfileView = ({
               sampleUnit={sampleUnit}
               onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}
+              loading={flamegraphData.loading}
             />
           </Profiler>
         ) : (
@@ -178,7 +179,12 @@ export const ProfileView = ({
       }
       case 'table': {
         return topTableData != null ? (
-          <TopTable data={topTableData.data} sampleUnit={sampleUnit} navigateTo={navigateTo} />
+          <TopTable
+            loading={topTableData.loading}
+            data={topTableData.data}
+            sampleUnit={sampleUnit}
+            navigateTo={navigateTo}
+          />
         ) : (
           <></>
         );
@@ -221,7 +227,6 @@ export const ProfileView = ({
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
-                      disabled={isLoading}
                     />
                   ) : null}
 
@@ -231,7 +236,6 @@ export const ProfileView = ({
                       e.preventDefault();
                       onDownloadPProf();
                     }}
-                    disabled={isLoading}
                   >
                     Download pprof
                   </Button>

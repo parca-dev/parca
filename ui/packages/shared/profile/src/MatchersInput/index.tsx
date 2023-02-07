@@ -84,7 +84,7 @@ const MatchersInput = ({
           // replace single `\` in the `labelValues` string with doubles `\\` if available.
           const newValues = sanitizeLabelValue(response.labelValues);
 
-          setLabelValues(newValues);
+          return setLabelValues(newValues);
         })
         .catch(() => setLabelValues(null))
         .finally(() => setLabelValuesLoading(false));
