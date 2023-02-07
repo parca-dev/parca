@@ -19,7 +19,7 @@
     "@grafana/toolkit": "latest",
     "@grafana/ui": "latest",
     "@testing-library/jest-dom": "5.16.5",
-    "@testing-library/react": "10.4.9",
+    "@testing-library/react": "13.4.0",
     "@types/lodash": "latest"
   },
   "engines": {
