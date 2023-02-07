@@ -12,7 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
-    "@iconify/react": "^3.2.2",
+    "@iconify/react": "^4.0.0",
     "@parca/client": "^0.16.62",
     "@parca/dynamicsize": "^0.16.52",
     "@parca/functions": "^0.16.59",
