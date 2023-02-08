@@ -54,7 +54,7 @@
     "web-vitals": "2.1.4"
   },
   "devDependencies": {
-    "@craco/craco": "6.4.5",
+    "@craco/craco": "7.0.0",
     "@storybook/addon-actions": "6.5.16",
     "@storybook/addon-essentials": "6.5.16",
     "@storybook/addon-links": "6.5.16",
