@@ -16,6 +16,7 @@ import {Button, IconButton, Modal} from '@parca/components';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 import {useState} from 'react';
+import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
 interface FlagToggleProps {
@@ -57,6 +58,7 @@ const UserPreferences = () => {
         <div className="min-h-40 mt-8">
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING} />
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.ENABLE_GRAPH_TRIMMING} />
+          <FlamegraphColorProfileSelector />
           <div className="min-w-96 mt-10">
             <h4 className="font-medium mb-2">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />

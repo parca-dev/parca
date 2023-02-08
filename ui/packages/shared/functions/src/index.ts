@@ -13,7 +13,7 @@
 
 import format from 'date-fns/format';
 import {Label} from '@parca/client';
-export * from './hooks';
+import colors from 'tailwindcss/colors';
 
 export type NavigateFunction = (
   path: string,
@@ -273,13 +273,79 @@ export function convertLocalToUTCDate(date: Date): Date {
   );
 }
 
-export const getNewSpanColor = (isDarkMode: boolean): string =>
-  isDarkMode ? '#B3BAE1' : '#929FEB';
+export type ColorProfileName = 'default' | 'subtle' | 'ocean' | 'warm' | 'rainbow';
+export type ColorsDuo = [string, string];
+
+export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} = {
+  default: {colors: [['#929FEB', '#B3BAE1']]},
+  subtle: {
+    colors: [
+      [colors.slate['200'], colors.slate['200']],
+      [colors.orange['200'], colors.orange['200']],
+      [colors.yellow['200'], colors.yellow['200']],
+      [colors.green['100'], colors.green['100']],
+      [colors.emerald['200'], colors.emerald['200']],
+      [colors.indigo['200'], colors.indigo['200']],
+      [colors.pink['200'], colors.pink['200']],
+    ],
+  },
+  ocean: {
+    colors: [
+      [colors.green['300'], colors.green['300']],
+      [colors.emerald['300'], colors.emerald['300']],
+      [colors.teal['300'], colors.teal['300']],
+      [colors.cyan['300'], colors.cyan['300']],
+      [colors.sky['300'], colors.sky['300']],
+      [colors.blue['300'], colors.blue['300']],
+      [colors.indigo['300'], colors.indigo['300']],
+      [colors.violet['300'], colors.violet['300']],
+      [colors.purple['300'], colors.purple['300']],
+    ],
+  },
+  warm: {
+    colors: [
+      [colors.red['300'], colors.red['300']],
+      [colors.orange['300'], colors.orange['300']],
+      [colors.amber['300'], colors.amber['300']],
+      [colors.yellow['300'], colors.yellow['300']],
+      [colors.lime['300'], colors.lime['300']],
+      [colors.green['300'], colors.green['300']],
+      [colors.emerald['300'], colors.emerald['300']],
+    ],
+  },
+  rainbow: {
+    colors: [
+      [colors.red['300'], colors.red['300']],
+      [colors.orange['300'], colors.orange['300']],
+      [colors.amber['300'], colors.amber['300']],
+      [colors.yellow['300'], colors.yellow['300']],
+      [colors.lime['300'], colors.lime['300']],
+      [colors.green['300'], colors.green['300']],
+      [colors.emerald['300'], colors.emerald['300']],
+      [colors.teal['300'], colors.teal['300']],
+      [colors.cyan['300'], colors.cyan['300']],
+      [colors.sky['300'], colors.sky['300']],
+      [colors.blue['300'], colors.blue['300']],
+      [colors.indigo['300'], colors.indigo['300']],
+      [colors.violet['300'], colors.violet['300']],
+      [colors.purple['300'], colors.purple['300']],
+      [colors.fuchsia['300'], colors.fuchsia['300']],
+      [colors.pink['300'], colors.pink['300']],
+      [colors.rose['300'], colors.rose['300']],
+    ],
+  },
+};
+
+export const getNewSpanColor = (isDarkMode: boolean): string => {
+  return isDarkMode ? '#B3BAE1' : '#929FEB';
+};
+
 export const getIncreasedSpanColor = (transparency: number, isDarkMode: boolean): string => {
   return isDarkMode
     ? `rgba(255, 177, 204, ${transparency})`
     : `rgba(254, 153, 187, ${transparency})`;
 };
+
 export const getReducedSpanColor = (transparency: number, isDarkMode: boolean): string => {
   return isDarkMode
     ? `rgba(103, 158, 92, ${transparency})`
@@ -297,7 +363,8 @@ export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean)
   const increasedSpanColor = getIncreasedSpanColor(diffTransparency, isDarkMode);
   const reducedSpanColor = getReducedSpanColor(diffTransparency, isDarkMode);
 
-  const color = diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
+  const color: string =
+    diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
 
   return color;
 };

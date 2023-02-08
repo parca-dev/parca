@@ -1,14 +1,18 @@
 {
   "name": "@parca/functions",
-  "version": "0.16.59",
+  "version": "0.16.60",
   "description": "Templated shared functions",
-  "main": "src/index.ts",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
+    "prepublish": "yarn build",
+    "build": "tsc",
     "watch": "tsc-watch"
   },
   "dependencies": {
-    "@rehooks/local-storage": "^2.4.4"
+    "@parca/client": "^0.16.62",
+    "@rehooks/local-storage": "^2.4.4",
+    "tailwindcss": "^3.2.4"
   },
   "keywords": [],
   "author": "",

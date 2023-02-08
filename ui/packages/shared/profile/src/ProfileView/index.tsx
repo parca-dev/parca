@@ -15,11 +15,11 @@ import {Profiler, useEffect, useMemo, useState} from 'react';
 import {scaleLinear} from 'd3';
 
 import cx from 'classnames';
-import {getNewSpanColor, useURLState} from '@parca/functions';
+import {getNewSpanColor} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
 import {Icon} from '@iconify/react';
 import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, useParcaContext} from '@parca/components';
+import {Button, Card, useParcaContext, KeyDownProvider, useURLState} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {useAppSelector, selectDarkMode} from '@parca/store';
 import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
@@ -157,10 +157,12 @@ export const ProfileView = ({
               graph={flamegraphData.data}
               sampleUnit={sampleUnit}
               onContainerResize={onFlamegraphContainerResize}
+              navigateTo={navigateTo}
+              loading={flamegraphData.loading}
             />
           </Profiler>
         ) : (
-          <></>
+          <> </>
         );
       }
       case 'callgraph': {
@@ -177,7 +179,12 @@ export const ProfileView = ({
       }
       case 'table': {
         return topTableData != null ? (
-          <TopTable data={topTableData.data} sampleUnit={sampleUnit} navigateTo={navigateTo} />
+          <TopTable
+            loading={topTableData.loading}
+            data={topTableData.data}
+            sampleUnit={sampleUnit}
+            navigateTo={navigateTo}
+          />
         ) : (
           <></>
         );
@@ -209,7 +216,7 @@ export const ProfileView = ({
   };
 
   return (
-    <>
+    <KeyDownProvider>
       <div className="py-3">
         <Card>
           <Card.Body>
@@ -220,7 +227,6 @@ export const ProfileView = ({
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
-                      disabled={isLoading}
                     />
                   ) : null}
 
@@ -230,7 +236,6 @@ export const ProfileView = ({
                       e.preventDefault();
                       onDownloadPProf();
                     }}
-                    disabled={isLoading}
                   >
                     Download pprof
                   </Button>
@@ -331,6 +336,6 @@ export const ProfileView = ({
           </Card.Body>
         </Card>
       </div>
-    </>
+    </KeyDownProvider>
   );
 };

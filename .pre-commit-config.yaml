@@ -33,7 +33,7 @@ repos:
         files: \.tsx?$
         exclude: ^ui/packages/shared/client/
   - repo: https://github.com/bufbuild/buf
-    rev: v1.12.0
+    rev: v1.13.1
     hooks:
       # Hijack an existing hook ID to run buf generate
       # It also mean running `pre-commit run buf-format` will run both format and generate
@@ -46,7 +46,7 @@ repos:
         args:
           - --against=https://github.com/parca-dev/parca.git#branch=main,ref=HEAD~1,subdir=proto
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.50.1
+    rev: v1.51.1
     hooks:
       - id: golangci-lint
   - repo: https://github.com/hadolint/hadolint
