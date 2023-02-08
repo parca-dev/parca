@@ -68,6 +68,7 @@ const getColorForFeature = (
 export interface SetFeaturesRequest {
   features: string[];
   colorProfileName: ColorProfileName;
+  isDarkMode: boolean;
 }
 
 export const colorsSlice = createSlice({
@@ -84,12 +85,24 @@ export const colorsSlice = createSlice({
     setFeatures: (state, action: PayloadAction<SetFeaturesRequest>) => {
       state.colors = action.payload.features
         .map(feature => {
-          return [feature, getColorForFeature(feature, false, action.payload.colorProfileName)];
+          return [
+            feature,
+            getColorForFeature(feature, action.payload.isDarkMode, action.payload.colorProfileName),
+          ];
         })
-        .reduce((acc: {[key: string]: string}, [feature, color]) => {
-          acc[feature] = color;
-          return acc;
-        }, {});
+        .reduce(
+          (acc: {[key: string]: string}, [feature, color]) => {
+            acc[feature] = color;
+            return acc;
+          },
+          {
+            [EVERYTHING_ELSE]: getColorForFeature(
+              EVERYTHING_ELSE,
+              action.payload.isDarkMode,
+              action.payload.colorProfileName
+            ),
+          }
+        );
     },
     resetColors: state => {
       state.colors = {};

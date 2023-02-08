@@ -35,6 +35,7 @@ interface IcicleGraphProps {
   curPath: string[];
   setCurPath: (path: string[]) => void;
   navigateTo?: NavigateFunction;
+  isTrimmed?: boolean;
 }
 
 export const IcicleGraph = memo(function IcicleGraph({
@@ -44,6 +45,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   curPath,
   sampleUnit,
   navigateTo,
+  isTrimmed = false,
 }: IcicleGraphProps): JSX.Element {
   const [hoveringNode, setHoveringNode] = useState<
     FlamegraphNode | FlamegraphRootNode | undefined
@@ -89,7 +91,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   };
 
   return (
-    <div onMouseLeave={() => setHoveringNode(undefined)} className="relative">
+    <div onMouseLeave={() => setHoveringNode(undefined)}>
       <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
       <GraphTooltip
         unit={sampleUnit}
@@ -105,7 +107,11 @@ export const IcicleGraph = memo(function IcicleGraph({
       />
       <div
         className={cx(
-          dashboardItems.length > 1 ? 'top-[-46px] left-[25px]' : 'top-[-45px]',
+          dashboardItems.length > 1
+            ? `${isTrimmed ? 'top-[-54px]' : 'top-[-70px]'} left-[25px]`
+            : isTrimmed
+            ? 'top-[-54px]'
+            : 'top-[-69px]',
           'flex justify-start absolute '
         )}
       >
