@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {MoonIcon, SunIcon} from '@heroicons/react/solid';
+import {MoonIcon, SunIcon} from '@heroicons/react/20/solid';
 import {useAppSelector, useAppDispatch, setDarkMode, selectDarkMode} from '@parca/store';
 
 const DarkModeToggle = () => {
