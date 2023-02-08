@@ -17,11 +17,11 @@ import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
 import type {KonvaEventObject} from 'konva/lib/Node';
-import {Button} from '@parca/components';
+import {Button, useURLState} from '@parca/components';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot, getCurvePoints} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
-import {isSearchMatch, selectQueryParam, useURLState} from '@parca/functions';
+import {isSearchMatch, selectQueryParam} from '@parca/functions';
 import Tooltip from '../GraphTooltip';
 import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
 
