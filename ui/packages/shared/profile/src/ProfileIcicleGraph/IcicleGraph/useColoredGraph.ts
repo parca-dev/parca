@@ -19,7 +19,7 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import type {ColorProfileName} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
-import {setFeatures, useAppDispatch} from '@parca/store';
+import {setFeatures, useAppDispatch, useAppSelector, selectDarkMode} from '@parca/store';
 import {useEffect, useMemo} from 'react';
 import {extractFeature} from './utils';
 
@@ -73,6 +73,7 @@ const useColoredGraph = (graph: Flamegraph): ColoredFlamegraph => {
   const [colorProfile] = useUserPreference<ColorProfileName>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
+  const isDarkMode = useAppSelector(selectDarkMode);
 
   const [coloredGraph, features]: [ColoredFlamegraph, string[]] = useMemo(() => {
     if (graph.root == null) {
@@ -97,8 +98,8 @@ const useColoredGraph = (graph: Flamegraph): ColoredFlamegraph => {
   }, [graph]);
 
   useEffect(() => {
-    dispatch(setFeatures({features, colorProfileName: colorProfile}));
-  }, [features, colorProfile, dispatch]);
+    dispatch(setFeatures({features, colorProfileName: colorProfile, isDarkMode}));
+  }, [features, colorProfile, dispatch, isDarkMode]);
 
   return coloredGraph;
 };
