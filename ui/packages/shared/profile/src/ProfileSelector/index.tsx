@@ -13,12 +13,7 @@
 
 import {Query} from '@parca/parser';
 import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
-import {
-  getStepDuration,
-  getStepDurationInMilliseconds,
-  useURLState,
-  NavigateFunction,
-} from '@parca/functions';
+import {getStepDuration, getStepDurationInMilliseconds} from '@parca/functions';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {MergedProfileSelection, ProfileSelection} from '..';
 import React, {useEffect, useState} from 'react';
@@ -55,8 +50,6 @@ interface ProfileSelectorProps {
   profileSelection: ProfileSelection | null;
   comparing: boolean;
   onCompareProfile: () => void;
-  navigateTo?: NavigateFunction;
-  suffix: string;
 }
 
 export interface IProfileTypesResult {
@@ -95,8 +88,6 @@ const ProfileSelector = ({
   profileSelection,
   comparing,
   onCompareProfile,
-  navigateTo,
-  suffix,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -131,7 +122,6 @@ const ProfileSelector = ({
   const query =
     enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(queryExpressionString);
   const selectedProfileName = query.profileName();
-  const selectedProfileTypeDelta = query.profileType().delta;
 
   const setNewQueryExpression = (expr: string): void => {
     const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);

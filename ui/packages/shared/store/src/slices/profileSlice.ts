@@ -39,6 +39,7 @@ export const profileSlice = createSlice({
         action.payload.value === '' ||
         action.payload.value === null
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete state[action.payload.key];
       } else {
         state[action.payload.key] = action.payload.value;

@@ -50,8 +50,6 @@ const ProfileExplorerSingle = ({
             comparing={false}
             onCompareProfile={compareProfile}
             enforcedProfileName={''} // TODO
-            navigateTo={navigateTo}
-            suffix={'_a'}
           />
         </div>
       </div>

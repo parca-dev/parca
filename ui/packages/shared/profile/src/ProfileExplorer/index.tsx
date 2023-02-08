@@ -178,7 +178,9 @@ const ProfileExplorerApp = ({
   if (compare_a !== 'true' && compare_b !== 'true') {
     const selectQuery = (q: QuerySelection): void => {
       const mergeParams =
-        q.mergeFrom && q.mergeTo ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo} : {};
+        q.mergeFrom !== undefined && q.mergeTo !== undefined
+          ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo}
+          : {};
       return navigateTo(
         '/',
         // Filtering the _a suffix causes us to reset potential profile
@@ -260,7 +262,9 @@ const ProfileExplorerApp = ({
 
   const selectQueryA = (q: QuerySelection): void => {
     const mergeParams =
-      q.mergeFrom && q.mergeTo ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo} : {};
+      q.mergeFrom !== undefined && q.mergeTo !== undefined
+        ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo}
+        : {};
     return navigateTo(
       '/',
       // Filtering the _a suffix causes us to reset potential profile
@@ -284,7 +288,9 @@ const ProfileExplorerApp = ({
 
   const selectQueryB = (q: QuerySelection): void => {
     const mergeParams =
-      q.mergeFrom && q.mergeTo ? {merge_from_b: q.mergeFrom, merge_to_b: q.mergeTo} : {};
+      q.mergeFrom !== undefined && q.mergeTo !== undefined
+        ? {merge_from_b: q.mergeFrom, merge_to_b: q.mergeTo}
+        : {};
     return navigateTo(
       '/',
       // Filtering the _b suffix causes us to reset potential profile
