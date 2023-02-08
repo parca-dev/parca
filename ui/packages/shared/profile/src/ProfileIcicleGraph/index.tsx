@@ -15,8 +15,9 @@ import {Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 import DiffLegend from '../components/DiffLegend';
-import IcicleGraph from '../IcicleGraph';
+import IcicleGraph from './IcicleGraph';
 import {selectQueryParam} from '@parca/functions';
+import type {NavigateFunction} from '@parca/functions';
 import {useEffect, useMemo} from 'react';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
@@ -30,6 +31,7 @@ interface ProfileIcicleGraphProps {
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
   onContainerResize?: ResizeHandler;
+  navigateTo?: NavigateFunction;
   loading: boolean;
 }
 
@@ -39,6 +41,7 @@ const ProfileIcicleGraph = ({
   setNewCurPath,
   sampleUnit,
   onContainerResize,
+  navigateTo,
   loading,
 }: ProfileIcicleGraphProps): JSX.Element => {
   const compareMode: boolean =
@@ -93,6 +96,7 @@ const ProfileIcicleGraph = ({
           curPath={curPath}
           setCurPath={setNewCurPath}
           sampleUnit={sampleUnit}
+          navigateTo={navigateTo}
         />
       </div>
     </>
