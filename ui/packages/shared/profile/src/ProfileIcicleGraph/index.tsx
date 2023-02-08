@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import cx from 'classnames';
 import {Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
@@ -55,10 +56,10 @@ const ProfileIcicleGraph = ({
     onContainerResize(dimensions.width, dimensions.height);
   }, [dimensions, onContainerResize]);
 
-  const [trimDifference, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] =
+  const [isTrimmed, trimDifference, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] =
     useMemo(() => {
       if (graph === undefined || graph.untrimmedTotal === '0') {
-        return [BigInt(0), '0'];
+        return [false, BigInt(0), '0'];
       }
 
       const untrimmedTotal = BigInt(graph.untrimmedTotal);
@@ -68,6 +69,7 @@ const ProfileIcicleGraph = ({
       const trimmedPercentage = (total * BigInt(100)) / untrimmedTotal;
 
       return [
+        trimDifference > BigInt(0),
         trimDifference,
         trimmedPercentage.toString(),
         numberFormatter.format(total),
@@ -82,9 +84,9 @@ const ProfileIcicleGraph = ({
   if (parseFloat(total) === 0 && !loading) return <>Profile has no samples</>;
 
   return (
-    <>
+    <div className="relative">
       {compareMode && <DiffLegend />}
-      {trimDifference > BigInt(0) ? (
+      {isTrimmed ? (
         <p className="my-2 text-sm">
           Showing {formattedTotal}({trimmedPercentage}%) out of {formattedUntrimmedTotal} samples
         </p>
@@ -97,9 +99,10 @@ const ProfileIcicleGraph = ({
           setCurPath={setNewCurPath}
           sampleUnit={sampleUnit}
           navigateTo={navigateTo}
+          isTrimmed={isTrimmed}
         />
       </div>
-    </>
+    </div>
   );
 };
 

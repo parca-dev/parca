@@ -32,6 +32,8 @@ const useNodeColor = ({data, compareMode}: Props): string => {
       return diffColor(diff, cumulative, isDarkMode);
     }
 
+    console.log('data.feature', colors);
+
     const color = colors[data.feature ?? EVERYTHING_ELSE];
     return color;
   }, [data, colors, isDarkMode, compareMode]);
