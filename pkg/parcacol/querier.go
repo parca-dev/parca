@@ -864,7 +864,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		append(
 			selectorExprs,
 			logicalplan.Col(ColumnTimestamp).GtEq(logicalplan.Literal(start)),
-			logicalplan.Col(ColumnTimestamp).Lt(logicalplan.Literal(end)),
+			logicalplan.Col(ColumnTimestamp).LtEq(logicalplan.Literal(end)),
 		)...,
 	)
 
