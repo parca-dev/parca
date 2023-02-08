@@ -93,13 +93,14 @@ const ProfileExplorerApp = ({
     filter_by_function,
     dashboard_items,
   } = queryParams;
+
   /* eslint-enable @typescript-eslint/naming-convention */
   const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
 
   useEffect(() => {
-    const mergeFrom = merge_from_a ?? from_a;
-    const mergeTo = merge_to_a ?? to_a;
+    const mergeFrom = merge_from_a ?? undefined;
+    const mergeTo = merge_to_a ?? undefined;
     const labels = (labels_a as string[]) ?? [''];
     const profileA = ProfileSelectionFromParams(
       expression_a,
@@ -107,7 +108,8 @@ const ProfileExplorerApp = ({
       to_a as string,
       mergeFrom as string,
       mergeTo as string,
-      labels
+      labels,
+      filter_by_function as string
     );
 
     setProfileA(profileA);
@@ -115,8 +117,8 @@ const ProfileExplorerApp = ({
   }, [merge_from_a, merge_to_a]);
 
   useEffect(() => {
-    const mergeFrom = merge_from_b ?? from_b;
-    const mergeTo = merge_to_b ?? to_b;
+    const mergeFrom = merge_from_b ?? undefined;
+    const mergeTo = merge_to_b ?? undefined;
     const labels = (labels_b as string[]) ?? [''];
     const profileB = ProfileSelectionFromParams(
       expression_b,
@@ -124,7 +126,8 @@ const ProfileExplorerApp = ({
       to_b as string,
       mergeFrom as string,
       mergeTo as string,
-      labels
+      labels,
+      filter_by_function as string
     );
 
     setProfileB(profileB);
@@ -174,6 +177,8 @@ const ProfileExplorerApp = ({
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
     const selectQuery = (q: QuerySelection): void => {
+      const mergeParams =
+        q.mergeFrom && q.mergeTo ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo} : {};
       return navigateTo(
         '/',
         // Filtering the _a suffix causes us to reset potential profile
@@ -186,6 +191,7 @@ const ProfileExplorerApp = ({
             to_a: q.to.toString(),
             time_selection_a: q.timeSelection,
             dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
+            ...mergeParams,
           },
         }
       );
@@ -253,6 +259,8 @@ const ProfileExplorerApp = ({
   };
 
   const selectQueryA = (q: QuerySelection): void => {
+    const mergeParams =
+      q.mergeFrom && q.mergeTo ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo} : {};
     return navigateTo(
       '/',
       // Filtering the _a suffix causes us to reset potential profile
@@ -268,12 +276,15 @@ const ProfileExplorerApp = ({
           time_selection_a: q.timeSelection,
           filter_by_function: filter_by_function ?? '',
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
+          ...mergeParams,
         },
       }
     );
   };
 
   const selectQueryB = (q: QuerySelection): void => {
+    const mergeParams =
+      q.mergeFrom && q.mergeTo ? {merge_from_b: q.mergeFrom, merge_to_b: q.mergeTo} : {};
     return navigateTo(
       '/',
       // Filtering the _b suffix causes us to reset potential profile
@@ -289,6 +300,7 @@ const ProfileExplorerApp = ({
           time_selection_b: q.timeSelection,
           filter_by_function: filter_by_function ?? '',
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
+          ...mergeParams,
         },
       }
     );

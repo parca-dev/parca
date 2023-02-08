@@ -41,6 +41,8 @@ export interface QuerySelection {
   from: number;
   to: number;
   timeSelection: string;
+  mergeFrom?: number;
+  mergeTo?: number;
 }
 
 interface ProfileSelectorProps {
@@ -102,9 +104,6 @@ const ProfileSelector = ({
     error,
   } = useProfileTypes(queryClient);
 
-  const [_mergeFrom, setMergeFrom] = useURLState({param: `merge_from${suffix}`, navigateTo});
-  const [_mergeTo, setMergeTo] = useURLState({param: `merge_to${suffix}`, navigateTo});
-
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
   );
@@ -132,13 +131,26 @@ const ProfileSelector = ({
   const query =
     enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(queryExpressionString);
   const selectedProfileName = query.profileName();
+  const selectedProfileTypeDelta = query.profileType().delta;
 
   const setNewQueryExpression = (expr: string): void => {
+    const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
+    const delta = query.profileType().delta;
+    const from = timeRangeSelection.getFromMs();
+    const to = timeRangeSelection.getToMs();
+    const mergeParams = delta
+      ? {
+          mergeFrom: from,
+          mergeTo: to,
+        }
+      : {};
+
     selectQuery({
       expression: expr,
-      from: timeRangeSelection.getFromMs(),
-      to: timeRangeSelection.getToMs(),
+      from,
+      to,
       timeSelection: timeRangeSelection.getRangeKey(),
+      ...mergeParams,
     });
   };
 
@@ -154,12 +166,6 @@ const ProfileSelector = ({
     if (changed) {
       setNewQueryExpression(newQuery.toString());
     }
-  };
-
-  const setMergedSelection = (): void => {
-    setMergeFrom(querySelection.from.toString());
-    setMergeTo(querySelection.to.toString());
-    setQueryExpression();
   };
 
   const setMatchersString = (matchers: string): void => {
@@ -224,7 +230,7 @@ const ProfileSelector = ({
               disabled={searchDisabled}
               onClick={(e: React.MouseEvent<HTMLElement>) => {
                 e.preventDefault();
-                setMergedSelection();
+                setQueryExpression();
               }}
             >
               Search
@@ -265,15 +271,8 @@ const ProfileSelector = ({
                 const stepDuration = getStepDuration(querySelection.from, querySelection.to);
                 const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
                 const isDeltaType = Query.parse(queryExpression).profileType().delta;
-                const mergeFrom = timestamp;
-                // if type delta, send a merge request with end timestamp = clicked timestamp + stepDuration
-                const mergeTo = isDeltaType
-                  ? parseInt(timestamp) + stepDurationInMilliseconds
-                  : timestamp;
-
-                setMergeFrom(mergeFrom.toString());
-                setMergeTo(mergeTo.toString());
-
+                const mergeFrom = parseInt(timestamp);
+                const mergeTo = isDeltaType ? mergeFrom + stepDurationInMilliseconds : mergeFrom;
                 selectProfile(
                   new MergedProfileSelection(mergeFrom, mergeTo, labels, queryExpression)
                 );

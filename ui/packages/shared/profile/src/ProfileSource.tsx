@@ -117,8 +117,8 @@ export class MergedProfileSelection implements ProfileSelection {
 
   HistoryParams(): {[key: string]: any} {
     return {
-      mergeFrom: this.mergeFrom.toString(),
-      mergeTo: this.mergeTo.toString(),
+      merge_from: this.mergeFrom.toString(),
+      merge_to: this.mergeTo.toString(),
       query: this.query,
       profile_name: this.ProfileName(),
       labels: this.labels.map(label => `${label.name}=${encodeURIComponent(label.value)}`),

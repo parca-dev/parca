@@ -34,7 +34,15 @@ export const profileSlice = createSlice({
       state,
       action: PayloadAction<{key: string; value: string | string[] | undefined}>
     ) => {
-      state[action.payload.key] = action.payload.value;
+      if (
+        action.payload.value === undefined ||
+        action.payload.value === '' ||
+        action.payload.value === null
+      ) {
+        delete state[action.payload.key];
+      } else {
+        state[action.payload.key] = action.payload.value;
+      }
     },
   },
 });
