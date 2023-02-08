@@ -11,7 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import cx from 'classnames';
 import {Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
@@ -56,26 +55,25 @@ const ProfileIcicleGraph = ({
     onContainerResize(dimensions.width, dimensions.height);
   }, [dimensions, onContainerResize]);
 
-  const [isTrimmed, trimDifference, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] =
-    useMemo(() => {
-      if (graph === undefined || graph.untrimmedTotal === '0') {
-        return [false, BigInt(0), '0'];
-      }
+  const [isTrimmed, _, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] = useMemo(() => {
+    if (graph === undefined || graph.untrimmedTotal === '0') {
+      return [false, BigInt(0), '0'];
+    }
 
-      const untrimmedTotal = BigInt(graph.untrimmedTotal);
-      const total = BigInt(graph.total);
+    const untrimmedTotal = BigInt(graph.untrimmedTotal);
+    const total = BigInt(graph.total);
 
-      const trimDifference = untrimmedTotal - total;
-      const trimmedPercentage = (total * BigInt(100)) / untrimmedTotal;
+    const trimDifference = untrimmedTotal - total;
+    const trimmedPercentage = (total * BigInt(100)) / untrimmedTotal;
 
-      return [
-        trimDifference > BigInt(0),
-        trimDifference,
-        trimmedPercentage.toString(),
-        numberFormatter.format(total),
-        numberFormatter.format(untrimmedTotal),
-      ];
-    }, [graph]);
+    return [
+      trimDifference > BigInt(0),
+      trimDifference,
+      trimmedPercentage.toString(),
+      numberFormatter.format(total),
+      numberFormatter.format(untrimmedTotal),
+    ];
+  }, [graph]);
 
   if (graph === undefined) return <div>no data...</div>;
 
