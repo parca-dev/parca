@@ -19,7 +19,8 @@ import {
   Location,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {hexifyAddress} from '../../utils';
-import {EVERYTHING_ELSE} from '@parca/store';
+import {EVERYTHING_ELSE, FEATURE_TYPES} from '@parca/store';
+import type {Feature} from '@parca/store';
 
 export const getBinaryName = (
   node: FlamegraphNode,
@@ -50,21 +51,25 @@ export function nodeLabel(
   strings: string[],
   mappings: Mapping[],
   locations: Location[],
-  functions: ParcaFunction[]
+  functions: ParcaFunction[],
+  showBinaryName: boolean
 ): string {
   if (node.meta?.locationIndex === undefined) return '<unknown>';
   if (node.meta?.locationIndex === 0) return '<unknown>';
 
   const location = locations[node.meta.locationIndex - 1];
 
-  const binary = getBinaryName(node, mappings, locations, strings);
+  let mappingString = '';
 
-  const mappingString: string = binary != null ? `[${binary}]` : '';
+  if (showBinaryName) {
+    const binary = getBinaryName(node, mappings, locations, strings);
+    if (binary != null) mappingString = `[${binary}]`;
+  }
 
   if (location.lines.length > 0) {
     const funcName =
       strings[functions[location.lines[node.meta.lineIndex].functionIndex - 1].nameStringIndex];
-    return `${mappingString} ${funcName}`;
+    return `${mappingString.length > 0 ? `${mappingString} ` : ''}${funcName}`;
   }
 
   const address = hexifyAddress(location.address);
@@ -79,16 +84,16 @@ export const extractFeature = (
   locations: Location[],
   strings: string[],
   functions: ParcaFunction[]
-): string => {
-  const name = nodeLabel(data, strings, mappings, locations, functions).trim();
+): Feature => {
+  const name = nodeLabel(data, strings, mappings, locations, functions, false).trim();
   if (name.startsWith('runtime') || name === 'root') {
-    return 'runtime';
+    return {name: 'runtime', type: FEATURE_TYPES.Runtime};
   }
 
   const binaryName = getBinaryName(data, mappings, locations, strings);
   if (binaryName != null) {
-    return binaryName;
+    return {name: binaryName, type: FEATURE_TYPES.Binary};
   }
 
-  return EVERYTHING_ELSE;
+  return {name: EVERYTHING_ELSE, type: FEATURE_TYPES.Misc};
 };
