@@ -20,6 +20,7 @@ import {
 import type {ColorProfileName} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 import {setFeatures, useAppDispatch, useAppSelector, selectDarkMode} from '@parca/store';
+import type {FeatureType, FeaturesMap} from '@parca/store';
 import {useEffect, useMemo} from 'react';
 import {extractFeature} from './utils';
 
@@ -43,7 +44,7 @@ const colorNodes = (
   mappings: Mapping[],
   locations: Location[],
   functions: ParcaFunction[],
-  features: {[key: string]: boolean}
+  features: {[key: string]: FeatureType}
 ): ColoredFlamegraphNode[] => {
   if (nodes === undefined) {
     return [];
@@ -62,8 +63,9 @@ const colorNodes = (
         features
       );
     }
-    coloredNode.feature = extractFeature(node, mappings, locations, strings, functions);
-    features[coloredNode.feature] = true;
+    const feature = extractFeature(node, mappings, locations, strings, functions);
+    coloredNode.feature = feature.name;
+    features[feature.name] = feature.type;
     return coloredNode;
   });
 };
@@ -75,11 +77,11 @@ const useColoredGraph = (graph: Flamegraph): ColoredFlamegraph => {
   );
   const isDarkMode = useAppSelector(selectDarkMode);
 
-  const [coloredGraph, features]: [ColoredFlamegraph, string[]] = useMemo(() => {
+  const [coloredGraph, features]: [ColoredFlamegraph, FeaturesMap] = useMemo(() => {
     if (graph.root == null) {
-      return [graph as ColoredFlamegraph, []];
+      return [graph as ColoredFlamegraph, {}];
     }
-    const features: {[key: string]: boolean} = {};
+    const features: FeaturesMap = {};
     const coloredGraph = {
       ...graph,
       root: {
@@ -94,7 +96,7 @@ const useColoredGraph = (graph: Flamegraph): ColoredFlamegraph => {
         ),
       },
     };
-    return [coloredGraph, Object.keys(features)];
+    return [coloredGraph, features];
   }, [graph]);
 
   useEffect(() => {

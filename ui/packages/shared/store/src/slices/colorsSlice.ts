@@ -23,16 +23,35 @@ export type StackColorMap = {[key: string]: string};
 // Define a type for the slice state
 export interface ColorsState {
   colors: StackColorMap;
+  binaries: string[];
 }
 
 // Define the initial state using that type
 const initialState: ColorsState = {
   colors: {},
+  binaries: [],
 };
 
 export interface StackColor {
   color: string;
   name: string;
+}
+
+export const FEATURE_TYPES = {
+  Runtime: 'Runtime',
+  Binary: 'Binary',
+  Misc: 'Misc',
+} as const;
+
+export type FeatureType = typeof FEATURE_TYPES[keyof typeof FEATURE_TYPES];
+
+export interface Feature {
+  name: string;
+  type: FeatureType;
+}
+
+export interface FeaturesMap {
+  [key: string]: FeatureType;
 }
 
 export const EVERYTHING_ELSE = 'Everything else';
@@ -66,7 +85,7 @@ const getColorForFeature = (
 };
 
 export interface SetFeaturesRequest {
-  features: string[];
+  features: FeaturesMap;
   colorProfileName: ColorProfileName;
   isDarkMode: boolean;
 }
@@ -83,7 +102,10 @@ export const colorsSlice = createSlice({
       };
     },
     setFeatures: (state, action: PayloadAction<SetFeaturesRequest>) => {
-      state.colors = action.payload.features
+      state.binaries = Object.keys(action.payload.features).filter(name => {
+        return action.payload.features[name] === FEATURE_TYPES.Binary;
+      });
+      state.colors = Object.keys(action.payload.features)
         .map(feature => {
           return [
             feature,
@@ -114,5 +136,7 @@ export const {addColor, resetColors, setFeatures} = colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;
+
+export const selectBinaries = (state: RootState): string[] => state.colors.binaries;
 
 export default colorsSlice.reducer;
