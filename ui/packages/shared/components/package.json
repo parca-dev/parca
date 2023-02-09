@@ -27,6 +27,7 @@
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.0",
     "react-datepicker": "^4.6.0",
+    "react-tooltip": "^5.7.5",
     "react-use": "^17.3.2",
     "react-virtual": "^2.10.4"
   },
