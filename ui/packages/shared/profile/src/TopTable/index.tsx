@@ -13,16 +13,10 @@
 
 import {useCallback, useMemo} from 'react';
 
-import {
-  getLastItem,
-  valueFormatter,
-  isSearchMatch,
-  parseParams,
-  selectQueryParam,
-} from '@parca/functions';
+import {getLastItem, valueFormatter, isSearchMatch, parseParams} from '@parca/functions';
 import type {NavigateFunction} from '@parca/functions';
 import {TopNode, TopNodeMeta, Top} from '@parca/client';
-import {Table} from '@parca/components';
+import {Button, Table, useURLState} from '@parca/components';
 import {createColumnHelper} from '@tanstack/react-table';
 import type {ColumnDef} from '@tanstack/react-table';
 
@@ -70,9 +64,13 @@ export const TopTable = ({
   loading,
 }: TopTableProps): JSX.Element => {
   const router = parseParams(window.location.search);
-  const currentSearchString = selectQueryParam('search_string') as string;
-  const compareMode =
-    Boolean(selectQueryParam('compare_a')) && Boolean(selectQueryParam('compare_b'));
+  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
+  const [currentSearchString] = useURLState({param: 'search_string'});
+  const [rawcompareMode] = useURLState({param: 'compare_a'});
+
+  const compareMode: boolean = rawcompareMode === undefined ? false : rawcompareMode === 'true';
+
+  const dashboardItems = rawDashboardItems as string[];
 
   const columns = useMemo(() => {
     const cols: Array<ColumnDef<TopNode, any>> = [
@@ -142,6 +140,11 @@ export const TopTable = ({
 
   const onRowClick = useCallback(
     (row: TopNode) => {
+      // If there is only one dashboard item, we don't want to select a span
+      if (dashboardItems.length <= 1) {
+        return;
+      }
+
       const meta = row.meta;
       if (meta === undefined) {
         return;
@@ -149,7 +152,7 @@ export const TopTable = ({
       const name = RowLabel(meta);
       selectSpan(name);
     },
-    [selectSpan]
+    [selectSpan, dashboardItems.length]
   );
 
   const shouldHighlightRow = useCallback(
@@ -157,7 +160,7 @@ export const TopTable = ({
       const meta = row.meta;
       if (meta === undefined) return false;
       const name = RowLabel(meta);
-      return isSearchMatch(currentSearchString, name);
+      return isSearchMatch(currentSearchString as string, name);
     },
     [currentSearchString]
   );
@@ -165,6 +168,19 @@ export const TopTable = ({
   const enableHighlighting = useMemo(() => {
     return currentSearchString != null && currentSearchString?.length > 0;
   }, [currentSearchString]);
+
+  const clearSelection = useCallback((): void => {
+    if (navigateTo != null) {
+      navigateTo(
+        '/',
+        {
+          ...router,
+          ...{search_string: ''},
+        },
+        {replace: true}
+      );
+    }
+  }, [navigateTo, router]);
 
   const initialSorting = useMemo(() => {
     return [{id: compareMode ? 'diff' : 'cumulative', desc: true}];
@@ -175,7 +191,22 @@ export const TopTable = ({
   if (total === 0 && !loading) return <>Profile has no samples</>;
 
   return (
-    <>
+    <div className="relative">
+      {/* Clearing the selection is only useful when two visualizations types are selected. So we'll only show it in that case */}
+      {dashboardItems.length > 1 && (
+        <div className="left-[25px] top-[-45px] absolute">
+          <Button
+            color="neutral"
+            onClick={clearSelection}
+            className="w-auto"
+            variant="neutral"
+            disabled={currentSearchString === undefined || currentSearchString.length === 0}
+          >
+            Clear selection
+          </Button>
+        </div>
+      )}
+
       <div className="w-full font-robotoMono h-[80vh] overflow-scroll">
         <Table
           data={top?.list ?? []}
@@ -184,9 +215,10 @@ export const TopTable = ({
           onRowClick={onRowClick}
           enableHighlighting={enableHighlighting}
           shouldHighlightRow={shouldHighlightRow}
+          usePointerCursor={dashboardItems.length > 1}
         />
       </div>
-    </>
+    </div>
   );
 };
 

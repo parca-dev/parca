@@ -27,6 +27,7 @@ import useColoredGraph from './useColoredGraph';
 import {selectQueryParam} from '@parca/functions';
 import type {NavigateFunction} from '@parca/functions';
 import ColorStackLegend from './ColorStackLegend';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -64,6 +65,10 @@ export const IcicleGraph = memo(function IcicleGraph({
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
 
+  const [colorProfileName] = useUserPreference<string>(
+    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
+  );
+
   useEffect(() => {
     if (ref.current != null) {
       setHeight(ref?.current.getBoundingClientRect().height);
@@ -89,6 +94,7 @@ export const IcicleGraph = memo(function IcicleGraph({
 
     throttledSetPos([rel[0], rel[1]]);
   };
+  const isColorStackLegendVisible = colorProfileName !== 'default';
 
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
@@ -106,14 +112,20 @@ export const IcicleGraph = memo(function IcicleGraph({
         functions={coloredGraph.function}
       />
       <div
-        className={cx(
-          dashboardItems.length > 1
-            ? `${isTrimmed ? 'top-[-54px]' : 'top-[-70px]'} left-[25px]`
-            : isTrimmed
-            ? 'top-[-54px]'
-            : 'top-[-69px]',
-          'flex justify-start absolute '
-        )}
+        className={cx('flex justify-start absolute', {
+          'top-[-48px]': dashboardItems.length <= 1 && !isTrimmed && !isColorStackLegendVisible,
+          'top-[-69px]': dashboardItems.length <= 1 && !isTrimmed,
+          'top-[-54px]': dashboardItems.length <= 1 && isTrimmed && isColorStackLegendVisible,
+          'top-[-54px] ': dashboardItems.length <= 1 && isTrimmed && !isColorStackLegendVisible,
+          'top-[-54px] left-[25px]':
+            dashboardItems.length > 1 && isTrimmed && isColorStackLegendVisible,
+          'top-[-54px] left-[25px] ':
+            dashboardItems.length > 1 && isTrimmed && !isColorStackLegendVisible,
+          'top-[-70px] left-[25px]':
+            dashboardItems.length > 1 && !isTrimmed && isColorStackLegendVisible,
+          'top-[-46px] left-[25px]':
+            dashboardItems.length > 1 && !isTrimmed && !isColorStackLegendVisible,
+        })}
       >
         <Button
           color="neutral"
