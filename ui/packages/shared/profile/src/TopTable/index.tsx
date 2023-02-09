@@ -215,6 +215,7 @@ export const TopTable = ({
           onRowClick={onRowClick}
           enableHighlighting={enableHighlighting}
           shouldHighlightRow={shouldHighlightRow}
+          usePointerCursor={dashboardItems.length > 1}
         />
       </div>
     </div>
