@@ -22,7 +22,7 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {isSearchMatch} from '@parca/functions';
 import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-
+import {useAppSelector, selectBinaries} from '@parca/store';
 import {nodeLabel} from './utils';
 import useNodeColor from './useNodeColor';
 import {useKeyDown} from '@parca/components';
@@ -68,11 +68,15 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodes({
   searchString,
   compareMode,
 }: IcicleGraphNodesProps): JSX.Element {
+  const binaries = useAppSelector(selectBinaries);
   const nodes =
     curPath.length === 0
       ? data
       : data.filter(
-          d => d != null && curPath[0] === nodeLabel(d, strings, mappings, locations, functions)
+          d =>
+            d != null &&
+            curPath[0] ===
+              nodeLabel(d, strings, mappings, locations, functions, binaries.length > 1)
         );
 
   return (
@@ -162,11 +166,14 @@ export const IcicleNode = React.memo(function IcicleNode({
   searchString,
   compareMode,
 }: IcicleNodeProps): JSX.Element {
+  const binaries = useAppSelector(selectBinaries);
   const {isShiftDown} = useKeyDown();
   const colorResult = useNodeColor({data, compareMode});
   const name = useMemo(() => {
-    return isRoot ? 'root' : nodeLabel(data, strings, mappings, locations, functions);
-  }, [data, strings, mappings, locations, functions, isRoot]);
+    return isRoot
+      ? 'root'
+      : nodeLabel(data, strings, mappings, locations, functions, binaries.length > 1);
+  }, [data, strings, mappings, locations, functions, isRoot, binaries]);
   const nextPath = path.concat([name]);
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
