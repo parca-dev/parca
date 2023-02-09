@@ -138,7 +138,7 @@ const ProfileExplorerApp = ({
     return <>{loader}</>;
   }
 
-  if (profileTypesData?.types.length === 1) {
+  if (profileTypesData?.types.length === 0) {
     return <>{noDataPrompt}</>;
   }
 
