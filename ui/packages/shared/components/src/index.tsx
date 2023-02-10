@@ -31,7 +31,7 @@ import Tab from './Tab';
 import Table from './Table';
 import EmptyState from './EmptyState';
 import {useURLState} from './hooks/useURLState';
-import TooltipIfNeeded from './TooltipIfNeeded';
+import TextWithTooltip from './TextWithTooltip';
 
 export type {PillVariant, SelectElement};
 
@@ -58,7 +58,7 @@ export {
   Spinner,
   Tab,
   Table,
-  TooltipIfNeeded,
+  TextWithTooltip,
   EmptyState,
   useGrpcMetadata,
   useKeyDown,

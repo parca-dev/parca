@@ -16,7 +16,7 @@ import {usePopper} from 'react-popper';
 import type {VirtualElement} from '@popperjs/core';
 
 import {Label} from '@parca/client';
-import {TooltipIfNeeded} from '@parca/components';
+import {TextWithTooltip} from '@parca/components';
 import {valueFormatter, formatDate} from '@parca/functions';
 
 import {timeFormat} from '../../';
@@ -139,7 +139,7 @@ const MetricsTooltip = ({
                           className="inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3"
                           onClick={() => onLabelClick(label.name, label.value)}
                         >
-                          <TooltipIfNeeded
+                          <TextWithTooltip
                             text={`${label.name}="${label.value}"`}
                             maxTextLength={37}
                             id={`tooltip-${label.name}-${label.value}`}

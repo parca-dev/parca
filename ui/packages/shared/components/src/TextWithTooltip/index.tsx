@@ -22,7 +22,7 @@ interface Props {
   id: string;
 }
 
-const TooltipIfNeeded = ({text, maxTextLength, id}: Props) => {
+const TextWithTooltip = ({text, maxTextLength, id}: Props): JSX.Element => {
   return (
     <>
       <span id={id} data-tooltip-content={text}>
@@ -33,4 +33,4 @@ const TooltipIfNeeded = ({text, maxTextLength, id}: Props) => {
   );
 };
 
-export default TooltipIfNeeded;
+export default TextWithTooltip;
