@@ -19,7 +19,9 @@ import DateTimePicker from './DateTimePicker';
 import Dropdown from './Dropdown';
 import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './GrpcMetadataContext';
 import Input from './Input';
+import {KeyDownProvider, useKeyDown} from './KeyDownContext';
 import Modal from './Modal';
+import {NoDataPrompt} from './NoDataPrompt';
 import ParcaContext, {defaultValue, ParcaContextProvider, useParcaContext} from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
@@ -29,6 +31,8 @@ import Spinner from './Spinner';
 import Tab from './Tab';
 import Table from './Table';
 import EmptyState from './EmptyState';
+import {useURLState} from './hooks/useURLState';
+import TextWithTooltip from './TextWithTooltip';
 
 export type {PillVariant, SelectElement};
 
@@ -44,7 +48,9 @@ export {
   GrpcMetadataProvider,
   IconButton,
   Input,
+  KeyDownProvider,
   Modal,
+  NoDataPrompt,
   ParcaContext,
   defaultValue as parcaContextDefaultValue,
   ParcaContextProvider,
@@ -54,7 +60,10 @@ export {
   Spinner,
   Tab,
   Table,
+  TextWithTooltip,
   EmptyState,
   useGrpcMetadata,
+  useKeyDown,
   useParcaContext,
+  useURLState,
 };

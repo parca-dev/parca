@@ -227,6 +227,7 @@ func Test_Config_Validation(t *testing.T) {
 		},
 	}
 	for name, test := range tests {
+		test := test
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			require.Error(t, test.Validate())

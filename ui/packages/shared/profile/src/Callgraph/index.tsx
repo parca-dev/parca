@@ -12,11 +12,12 @@
 // limitations under the License.
 
 import {useState, useEffect, useRef} from 'react';
+import cx from 'classnames';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
 import type {KonvaEventObject} from 'konva/lib/Node';
-import {Button} from '@parca/components';
+import {Button, useURLState} from '@parca/components';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {jsonToDot, getCurvePoints} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
@@ -181,6 +182,9 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   const {nodes: rawNodes, cumulative: total} = graph;
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
+  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
+
+  const dashboardItems = rawDashboardItems as string[];
 
   useEffect(() => {
     const getDataWithPositions = async (): Promise<void> => {
@@ -345,9 +349,16 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
           contextElement={containerRef.current}
         />
         {stage.scale.x !== 1 && (
-          <Button className="w-auto !absolute top-0 left-0" variant="neutral" onClick={resetZoom}>
-            Reset Zoom
-          </Button>
+          <div
+            className={cx(
+              dashboardItems.length > 1 ? 'left-[25px]' : 'left-0',
+              'w-auto absolute top-[-46px]'
+            )}
+          >
+            <Button variant="neutral" onClick={resetZoom}>
+              Reset Zoom
+            </Button>
+          </div>
         )}
       </div>
     </div>

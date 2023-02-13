@@ -15,9 +15,11 @@ import {createContext, ReactNode, useContext, ProfilerOnRenderCallback} from 're
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import Spinner from '../Spinner';
+import {NoDataPrompt} from '../NoDataPrompt';
 
 interface Props {
   loader: ReactNode;
+  noDataPrompt: ReactNode;
   perf?: {
     onRender?: ProfilerOnRenderCallback;
     markInteraction: (interactionName: string, sampleCount: number | string) => void;
@@ -27,6 +29,7 @@ interface Props {
 
 export const defaultValue: Props = {
   loader: <Spinner />,
+  noDataPrompt: <NoDataPrompt />,
   perf: {
     onRender: () => {},
     markInteraction: () => {},

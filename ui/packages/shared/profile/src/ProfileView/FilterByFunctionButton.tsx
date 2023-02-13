@@ -11,8 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Input} from '@parca/components';
-import {useURLState, NavigateFunction} from '@parca/functions';
+import {Input, useURLState} from '@parca/components';
+import type {NavigateFunction} from '@parca/functions';
 import {Icon} from '@iconify/react';
 import {useCallback, useMemo, useState} from 'react';
 

@@ -19,7 +19,7 @@ export interface UserPreferenceDetails {
   name: string;
   key: string;
   type: string;
-  default: boolean;
+  default: boolean | string;
 }
 
 export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
@@ -34,6 +34,12 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     key: 'ENABLE_GRAPH_TRIMMING',
     type: 'boolean',
     default: false,
+  },
+  FLAMEGRAPH_COLOR_PROFILE: {
+    name: 'Flamegraph color profile',
+    key: 'FLAMEGRAPH_COLOR_PROFILE',
+    type: 'string',
+    default: 'default',
   },
 } as const;
 

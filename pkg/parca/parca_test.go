@@ -72,6 +72,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 				GranuleSize:  8 * 1024,
 				ActiveMemory: 512 * 1024 * 1024,
 			},
+			ProfileShareServer: "api.pprof.dummy:443",
 		}, "test-version")
 		if !errors.Is(err, context.Canceled) {
 			require.NoError(b, err)

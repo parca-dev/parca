@@ -10,17 +10,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {useState} from 'react';
-import {QuerySelection} from '../ProfileSelector';
+
+import {useEffect, useState} from 'react';
+import {QuerySelection, useProfileTypes} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
 import {store} from '@parca/store';
 import {Provider} from 'react-redux';
-import {DateTimeRange} from '@parca/components';
-import {NavigateFunction} from '@parca/functions';
-import {useEffect} from 'react';
+import {DateTimeRange, useParcaContext} from '@parca/components';
+import type {NavigateFunction} from '@parca/functions';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -72,6 +72,20 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
+  const {
+    loading: profileTypesLoading,
+    data: profileTypesData,
+    error,
+  } = useProfileTypes(queryClient);
+
+  const {loader, noDataPrompt, onError} = useParcaContext();
+
+  useEffect(() => {
+    if (error !== undefined && error !== null) {
+      onError?.(error, 'ProfileExplorer');
+    }
+  }, [error, onError]);
+
   /* eslint-disable @typescript-eslint/naming-convention */
   let {
     from_a,
@@ -133,6 +147,26 @@ const ProfileExplorerApp = ({
     setProfileB(profileB);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [merge_from_b, merge_to_b]);
+
+  if (profileTypesLoading) {
+    return <>{loader}</>;
+  }
+
+  if (profileTypesData?.types.length === 0) {
+    return <>{noDataPrompt}</>;
+  }
+
+  if (error !== undefined && error !== null) {
+    return (
+      <div
+        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        role="alert"
+      >
+        <strong className="font-bold">Error! </strong>
+        <span className="block sm:inline">{error.message}</span>
+      </div>
+    );
+  }
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;

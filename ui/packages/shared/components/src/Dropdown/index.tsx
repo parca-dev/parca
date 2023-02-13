@@ -13,7 +13,7 @@
 
 import {Menu, Transition} from '@headlessui/react';
 import React, {Fragment} from 'react';
-import {ChevronDownIcon} from '@heroicons/react/solid';
+import {ChevronDownIcon} from '@heroicons/react/20/solid';
 import Button from '../Button';
 import cx from 'classnames';
 
