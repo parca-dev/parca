@@ -19,7 +19,7 @@ import {QueryServiceClient} from '@parca/client';
 import {store} from '@parca/store';
 import {Provider} from 'react-redux';
 import {DateTimeRange} from '@parca/components';
-import {NavigateFunction} from '@parca/functions';
+import type {NavigateFunction} from '@parca/functions';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;

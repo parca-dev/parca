@@ -1,4 +1,5 @@
-FROM docker.io/mhart/alpine-node:16.4.2@sha256:c9014e9e5b33f29d47c867ea548edc0235ba71677f40456409a44c278d8a8e01
+# vim: ft=dockerfile
+FROM docker.io/node:16.19.0-alpine@sha256:1621ddffc775ccf10dc8710660e70d5bfb8e4ee349b926f133698e6512144b73
 WORKDIR /app
 
 COPY package.json yarn.lock ./

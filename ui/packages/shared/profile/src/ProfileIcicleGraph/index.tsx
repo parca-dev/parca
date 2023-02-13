@@ -15,8 +15,9 @@ import {Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 import DiffLegend from '../components/DiffLegend';
-import IcicleGraph from '../IcicleGraph';
+import IcicleGraph from './IcicleGraph';
 import {selectQueryParam} from '@parca/functions';
+import type {NavigateFunction} from '@parca/functions';
 import {useEffect, useMemo} from 'react';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
@@ -30,6 +31,7 @@ interface ProfileIcicleGraphProps {
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
   onContainerResize?: ResizeHandler;
+  navigateTo?: NavigateFunction;
   loading: boolean;
 }
 
@@ -39,6 +41,7 @@ const ProfileIcicleGraph = ({
   setNewCurPath,
   sampleUnit,
   onContainerResize,
+  navigateTo,
   loading,
 }: ProfileIcicleGraphProps): JSX.Element => {
   const compareMode: boolean =
@@ -52,25 +55,25 @@ const ProfileIcicleGraph = ({
     onContainerResize(dimensions.width, dimensions.height);
   }, [dimensions, onContainerResize]);
 
-  const [trimDifference, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] =
-    useMemo(() => {
-      if (graph === undefined || graph.untrimmedTotal === '0') {
-        return [BigInt(0), '0'];
-      }
+  const [isTrimmed, _, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] = useMemo(() => {
+    if (graph === undefined || graph.untrimmedTotal === '0') {
+      return [false, BigInt(0), '0'];
+    }
 
-      const untrimmedTotal = BigInt(graph.untrimmedTotal);
-      const total = BigInt(graph.total);
+    const untrimmedTotal = BigInt(graph.untrimmedTotal);
+    const total = BigInt(graph.total);
 
-      const trimDifference = untrimmedTotal - total;
-      const trimmedPercentage = (total * BigInt(100)) / untrimmedTotal;
+    const trimDifference = untrimmedTotal - total;
+    const trimmedPercentage = (total * BigInt(100)) / untrimmedTotal;
 
-      return [
-        trimDifference,
-        trimmedPercentage.toString(),
-        numberFormatter.format(total),
-        numberFormatter.format(untrimmedTotal),
-      ];
-    }, [graph]);
+    return [
+      trimDifference > BigInt(0),
+      trimDifference,
+      trimmedPercentage.toString(),
+      numberFormatter.format(total),
+      numberFormatter.format(untrimmedTotal),
+    ];
+  }, [graph]);
 
   if (graph === undefined) return <div>no data...</div>;
 
@@ -79,9 +82,9 @@ const ProfileIcicleGraph = ({
   if (parseFloat(total) === 0 && !loading) return <>Profile has no samples</>;
 
   return (
-    <>
+    <div className="relative">
       {compareMode && <DiffLegend />}
-      {trimDifference > BigInt(0) ? (
+      {isTrimmed ? (
         <p className="my-2 text-sm">
           Showing {formattedTotal}({trimmedPercentage}%) out of {formattedUntrimmedTotal} samples
         </p>
@@ -93,9 +96,11 @@ const ProfileIcicleGraph = ({
           curPath={curPath}
           setCurPath={setNewCurPath}
           sampleUnit={sampleUnit}
+          navigateTo={navigateTo}
+          isTrimmed={isTrimmed}
         />
       </div>
-    </>
+    </div>
   );
 };
 
