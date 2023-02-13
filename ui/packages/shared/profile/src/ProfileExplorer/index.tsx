@@ -11,14 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {QuerySelection} from '../ProfileSelector';
+import {QuerySelection, useProfileTypes} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import {QueryServiceClient} from '@parca/client';
 import {store} from '@parca/store';
 import {Provider} from 'react-redux';
-import {DateTimeRange} from '@parca/components';
+import {DateTimeRange, useParcaContext} from '@parca/components';
 import type {NavigateFunction} from '@parca/functions';
 
 interface ProfileExplorerProps {
@@ -71,6 +71,10 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
+  const {loading: profileTypesLoading, data: profileTypesData} = useProfileTypes(queryClient);
+
+  const {loader, noDataPrompt} = useParcaContext();
+
   /* eslint-disable @typescript-eslint/naming-convention */
   let {
     from_a,
@@ -125,6 +129,14 @@ const ProfileExplorerApp = ({
   const selectProfileB = (p: ProfileSelection): void => {
     return selectProfile(p, '_b');
   };
+
+  if (profileTypesLoading) {
+    return <>{loader}</>;
+  }
+
+  if (profileTypesData?.types.length === 0) {
+    return <>{noDataPrompt}</>;
+  }
 
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
