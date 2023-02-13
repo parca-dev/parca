@@ -34,16 +34,7 @@ export const profileSlice = createSlice({
       state,
       action: PayloadAction<{key: string; value: string | string[] | undefined}>
     ) => {
-      if (
-        action.payload.value === undefined ||
-        action.payload.value === '' ||
-        action.payload.value === null
-      ) {
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-        delete state[action.payload.key];
-      } else {
-        state[action.payload.key] = action.payload.value;
-      }
+      state[action.payload.key] = action.payload.value;
     },
   },
 });

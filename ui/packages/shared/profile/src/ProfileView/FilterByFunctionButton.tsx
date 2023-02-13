@@ -24,8 +24,6 @@ const FilterByFunctionButton = ({
   const [storeValue, setStoreValue] = useURLState({param: 'filter_by_function', navigateTo});
   const [localValue, setLocalValue] = useState(storeValue as string);
 
-  console.log({localValue, storeValue});
-
   const isClearAction = useMemo(() => {
     return localValue === storeValue && localValue != null && localValue !== '';
   }, [localValue, storeValue]);
