@@ -13,7 +13,8 @@
     "build": "lerna run build",
     "watch": "lerna run --parallel watch",
     "publish:ci": "lerna publish --yes --no-verify-access",
-    "benchmark": "NODE_ENV=production BROWSERSLIST='Chrome > 100' GENERATE_SOURCEMAP=false ts-node --experimental-specifier-resolution=node scripts/run-benchmark.mts"
+    "benchmark": "NODE_ENV=production BROWSERSLIST='Chrome > 100' GENERATE_SOURCEMAP=false ts-node --experimental-specifier-resolution=node scripts/run-benchmark.mts",
+    "prettier": "prettier --write --ignore-path .prettierignore 'packages/**/*.{js,jsx,ts,tsx,md,mdx}'"
   },
   "workspaces": {
     "packages": [
@@ -39,6 +40,7 @@
     "@babel/core": "^7.20.5",
     "@babel/node": "^7.20.5",
     "@babel/preset-env": "^7.20.2",
+    "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
     "@mdx-js/loader": "2.2.1",
     "@next/bundle-analyzer": "12.3.4",
     "@next/eslint-plugin-next": "12.3.4",
