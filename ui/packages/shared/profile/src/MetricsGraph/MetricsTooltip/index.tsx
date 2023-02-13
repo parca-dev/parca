@@ -20,7 +20,7 @@ import {TextWithTooltip} from '@parca/components';
 import {valueFormatter, formatDate} from '@parca/functions';
 
 import {timeFormat} from '../../';
-import {HighlightedSeries} from 'MetricsGraph';
+import {HighlightedSeries} from '../';
 
 interface Props {
   x: number;
