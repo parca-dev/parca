@@ -71,11 +71,7 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const {
-    loading: profileTypesLoading,
-    data: profileTypesData,
-    error,
-  } = useProfileTypes(queryClient);
+  const {loading: profileTypesLoading, data: profileTypesData} = useProfileTypes(queryClient);
 
   const {loader, noDataPrompt} = useParcaContext();
 
