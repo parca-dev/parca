@@ -68,6 +68,7 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
             new MergedProfileSource(
               data.timeRange.from.valueOf(),
               data.timeRange.to.valueOf(),
+              [],
               (data.request?.targets[0] as any).parcaQuery
             )
           }

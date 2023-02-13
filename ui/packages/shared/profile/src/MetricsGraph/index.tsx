@@ -18,7 +18,7 @@ import throttle from 'lodash.throttle';
 
 import {DateTimeRange, useKeyDown} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {formatForTimespan} from '@parca/functions/time';
+import {formatForTimespan} from '@parca/functions';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
 import {valueFormatter, formatDate, sanitizeHighlightedValues} from '@parca/functions';
 
