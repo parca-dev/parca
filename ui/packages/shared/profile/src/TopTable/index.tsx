@@ -22,8 +22,6 @@ import type {ColumnDef} from '@tanstack/react-table';
 
 import {hexifyAddress} from '../utils';
 
-import '../TopTable.styles.css';
-
 interface TopTableProps {
   loading: boolean;
   data?: Top;

@@ -34,8 +34,6 @@ import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
 import useDelayedLoader from '../useDelayedLoader';
 
-import '../ProfileView.styles.css';
-
 type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 
 export interface FlamegraphData {
