@@ -13,8 +13,8 @@
 
 import {Label} from '@parca/client';
 import {unitsInTime} from './time';
-export * from './time';
 import colors from 'tailwindcss/colors';
+export * from './time';
 
 export type NavigateFunction = (
   path: string,
