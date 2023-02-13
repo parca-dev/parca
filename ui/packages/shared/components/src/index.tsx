@@ -21,6 +21,7 @@ import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './Grpc
 import Input from './Input';
 import {KeyDownProvider, useKeyDown} from './KeyDownContext';
 import Modal from './Modal';
+import {NoDataPrompt} from './NoDataPrompt';
 import ParcaContext, {defaultValue, ParcaContextProvider, useParcaContext} from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
@@ -48,6 +49,7 @@ export {
   Input,
   KeyDownProvider,
   Modal,
+  NoDataPrompt,
   ParcaContext,
   defaultValue as parcaContextDefaultValue,
   ParcaContextProvider,
