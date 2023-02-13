@@ -23,38 +23,41 @@ const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PRE
 
 export const NoDataPrompt = (): JSX.Element => {
   return (
-    <div className="flex flex-col items-center h-96 justify-center gap-6">
-      <Icon icon="material-symbols:info-outline" width={48} height={48} />
-      <p className="text-center">
-        The Parca server hasn&apos;t recieved any data yet! <br />
-        <br />
-        Please check the{' '}
-        <a href={`${pathPrefix}/targets`} className="text-blue-500">
-          targets
-        </a>{' '}
-        page and ensure that the agents are configured correctly and sending data to the server.
-        <br />
-        <br />
-        If you&apos;re still having trouble, please check out the{' '}
-        <a
-          href="https://www.parca.dev/docs/"
-          className="text-blue-500"
-          target="_blank"
-          rel="noreferrer"
-        >
-          documentation
-        </a>{' '}
-        or join our{' '}
-        <a
-          href="https://discord.gg/ZgUpYgpzXy"
-          className="text-blue-500"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Discord
-        </a>{' '}
-        for help.
-      </p>
+    <div className="flex justify-center">
+      <div className="flex flex-col items-center h-96 justify-center gap-6 shadow rounded-lg bg-white dark:bg-gray-700 px-12 mt-6 text-sm">
+        <Icon icon="material-symbols:info-outline" width={40} height={40} />
+        <p className="text-center max-w-[560px]">
+          <span className="text-xl">The Parca server hasn&apos;t recieved any data yet!</span>{' '}
+          <br />
+          <br />
+          Please check the{' '}
+          <a href={`${pathPrefix}/targets`} className="text-blue-500">
+            targets
+          </a>{' '}
+          page and ensure that the agents are configured correctly and sending data to the server.
+          <br />
+          <br />
+          If you&apos;re still having trouble, please check out the{' '}
+          <a
+            href="https://www.parca.dev/docs/troubleshooting-parca-agent"
+            className="text-blue-500"
+            target="_blank"
+            rel="noreferrer"
+          >
+            documentation
+          </a>{' '}
+          or join our{' '}
+          <a
+            href="https://discord.gg/ZgUpYgpzXy"
+            className="text-blue-500"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Discord
+          </a>{' '}
+          for help.
+        </p>
+      </div>
     </div>
   );
 };
