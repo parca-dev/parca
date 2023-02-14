@@ -72,15 +72,19 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const {loading: profileTypesLoading, data: profileTypesData} = useProfileTypes(queryClient);
+  const {
+    loading: profileTypesLoading,
+    data: profileTypesData,
+    error: profileTypesError,
+  } = useProfileTypes(queryClient);
 
   const {loader, noDataPrompt, onError} = useParcaContext();
 
   useEffect(() => {
-    if (error !== undefined && error !== null) {
-      onError?.(error, 'ProfileExplorer');
+    if (profileTypesError !== undefined && profileTypesError !== null) {
+      onError?.(profileTypesError, 'ProfileExplorer');
     }
-  }, [error, onError]);
+  }, [profileTypesError, onError]);
 
   /* eslint-disable @typescript-eslint/naming-convention */
   let {
@@ -152,14 +156,14 @@ const ProfileExplorerApp = ({
     return <>{noDataPrompt}</>;
   }
 
-  if (error !== undefined && error !== null) {
+  if (profileTypesError !== undefined && profileTypesError !== null) {
     return (
       <div
         className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
         role="alert"
       >
         <strong className="font-bold">Error! </strong>
-        <span className="block sm:inline">{error.message}</span>
+        <span className="block sm:inline">{profileTypesError.message}</span>
       </div>
     );
   }
