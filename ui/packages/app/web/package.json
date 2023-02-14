@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.197",
+  "version": "0.16.199",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -23,7 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@headlessui/react": "1.7.9",
+    "@headlessui/react": "1.7.10",
     "@heroicons/react": "2.0.14",
     "@parca/client": "^0.16.62",
     "@parca/components": "^0.16.96",
@@ -48,7 +48,7 @@
     "react-dom": "18.2.0",
     "react-github-btn": "^1.4.0",
     "react-markdown": "^8.0.4",
-    "react-router-dom": "6.8.0",
+    "react-router-dom": "6.8.1",
     "react-use": "17.4.0",
     "tailwindcss": "3.2.4",
     "web-vitals": "3.1.1"
