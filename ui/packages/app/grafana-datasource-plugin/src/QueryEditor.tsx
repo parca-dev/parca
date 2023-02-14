@@ -11,14 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import React, {FunctionComponent, useCallback, useEffect, useState} from 'react';
+
+import {QueryEditorProps, SelectableValue} from '@grafana/data';
+import {Field, Input, Select} from '@grafana/ui';
 import defaults from 'lodash/defaults';
 
-import React, { useCallback, useState, useEffect, FunctionComponent } from 'react';
-import { Field, Input, Select } from '@grafana/ui';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { DataSource } from './datasource';
-import { defaultQuery, ParcaDataSourceOptions, ParcaQuery } from './types';
-import { normalizeProfileTypesData, wellKnownProfiles } from '@parca/profile';
+import {normalizeProfileTypesData, wellKnownProfiles} from '@parca/profile';
+
+import {DataSource} from './datasource';
+import {ParcaDataSourceOptions, ParcaQuery, defaultQuery} from './types';
 
 type Props = QueryEditorProps<DataSource, ParcaQuery, ParcaDataSourceOptions>;
 
@@ -41,7 +43,7 @@ export const QueryEditor: FunctionComponent<
   QueryEditorProps<DataSource, ParcaQuery, ParcaDataSourceOptions, ParcaQuery>
 > = (props: Props) => {
   const query = defaults(props.query, defaultQuery);
-  const { parcaQuery } = query;
+  const {parcaQuery} = query;
 
   const [profileType, setProfileType] = useState<SelectableValue<string>>(() => {
     const indexOf = parcaQuery.indexOf('{');
@@ -61,13 +63,13 @@ export const QueryEditor: FunctionComponent<
   const [profileTypesLoading, setProfileTypesLoading] = useState<boolean>(true);
   const [profileTypes, setProfileTypes] = useState<Array<SelectableValue<string>>>([]);
 
-  const { onChange, query: stateQuery, onRunQuery, datasource } = props;
+  const {onChange, query: stateQuery, onRunQuery, datasource} = props;
   const onParcaQueryChange = useCallback(
     (parcaQuery: string) => {
       if (parcaQuery === stateQuery.parcaQuery) {
         return;
       }
-      onChange({ ...stateQuery, parcaQuery });
+      onChange({...stateQuery, parcaQuery});
       // executes the query
       onRunQuery();
     },
@@ -80,11 +82,13 @@ export const QueryEditor: FunctionComponent<
     }
     void (async () => {
       try {
-        const { response } = await datasource.queryClient.profileTypes({});
+        const {response} = await datasource.queryClient.profileTypes({});
         const profileNames = normalizeProfileTypesData(response.types);
         const newProfileTypes = profileNames.map(getDropDownItemForProfileKey);
         setProfileTypes(newProfileTypes);
-        setProfileType(newProfileTypes.find(({ label }) => label === profileType?.label) ?? newProfileTypes[0]);
+        setProfileType(
+          newProfileTypes.find(({label}) => label === profileType?.label) ?? newProfileTypes[0]
+        );
       } catch (error) {
         console.log('error', error);
       }
@@ -119,7 +123,7 @@ export const QueryEditor: FunctionComponent<
         <Field label="Query Selector" description="" required>
           <Input
             placeholder='{podName="api"}'
-            onChange={(e) => setQuerySelector((e.target as HTMLInputElement).value)}
+            onChange={e => setQuerySelector((e.target as HTMLInputElement).value)}
             value={querySelector}
           />
         </Field>

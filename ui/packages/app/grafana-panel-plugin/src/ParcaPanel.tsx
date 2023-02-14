@@ -12,25 +12,27 @@
 // limitations under the License.
 
 import React from 'react';
-import { Provider } from 'react-redux';
-import { PanelProps } from '@grafana/data';
-import { css, cx } from 'emotion';
-import { stylesFactory } from '@grafana/ui';
-import { ProfileView, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
-import { store } from '@parca/store';
+
+import {PanelProps} from '@grafana/data';
+import {stylesFactory} from '@grafana/ui';
+import {css, cx} from 'emotion';
+import {Provider} from 'react-redux';
+
+import {GrafanaParcaData, MergedProfileSource, ProfileView} from '@parca/profile';
+import {store} from '@parca/store';
 
 import '@parca/profile/dist/styles.css';
 import '@parca/components/dist/styles.css';
 
 interface Props extends PanelProps<{}> {}
 
-const { store: parcaStore } = store();
+const {store: parcaStore} = store();
 
 function extractData<T>(data: any): T {
   return data.series[0].fields[0].values.get(0);
 }
 
-export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
+export const ParcaPanel: React.FC<Props> = ({data, width, height}) => {
   const styles = getStyles();
 
   const response = extractData<GrafanaParcaData>(data);
@@ -46,7 +48,7 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
     );
   }
 
-  const { flamegraphData, topTableData, actions } = response;
+  const {flamegraphData, topTableData, actions} = response;
 
   return (
     <Provider store={parcaStore}>
