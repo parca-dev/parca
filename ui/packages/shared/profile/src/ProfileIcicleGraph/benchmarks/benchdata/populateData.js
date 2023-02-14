@@ -17,12 +17,13 @@ const fs = require('fs-extra');
 const path = require('path');
 // const {fileURLToPath} = require('url');
 const fetch = require('node-fetch');
+const {getApiEndPoint, getGrpcMetadata} = require('./common');
 
 globalThis.fetch = fetch;
 globalThis.Headers = fetch.Headers;
 const DIR_NAME = __dirname; // path.dirname(fileURLToPath(import.meta.url));
 
-const apiEndpoint = 'https://demo.parca.dev';
+const apiEndpoint = getApiEndPoint();
 
 const queryClient = new client.QueryServiceClient(
   new GrpcWebFetchTransport({
@@ -35,18 +36,21 @@ const populateDataIfNeeded = async (from, filename) => {
   if (Object.keys(await readFile(filePath)).length > 0) {
     return;
   }
-  const {response} = await queryClient.query({
-    options: {
-      oneofKind: 'merge',
-      merge: {
-        start: client.Timestamp.fromDate(from),
-        end: client.Timestamp.fromDate(new Date()),
-        query: 'parca_agent_cpu:samples:count:cpu:nanoseconds:delta{container="parca"}',
+  const {response} = await queryClient.query(
+    {
+      options: {
+        oneofKind: 'merge',
+        merge: {
+          start: client.Timestamp.fromDate(from),
+          end: client.Timestamp.fromDate(new Date()),
+          query: 'parca_agent_cpu:samples:count:cpu:nanoseconds:delta{}',
+        },
       },
+      reportType: client.QueryRequest_ReportType.FLAMEGRAPH_TABLE,
+      mode: client.QueryRequest_Mode.MERGE,
     },
-    reportType: client.QueryRequest_ReportType.FLAMEGRAPH_TABLE,
-    mode: client.QueryRequest_Mode.MERGE,
-  });
+    getGrpcMetadata()
+  );
   if (response.report.oneofKind !== 'flamegraph') {
     throw new Error('Expected flamegraph report');
   }
@@ -68,9 +72,12 @@ const readFile = async filename => {
 
 const run = async () => {
   await Promise.all([
-    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60), 'parca-1m.json'),
-    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 10), 'parca-10m.json'),
-    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 20), 'parca-20m.json'),
+    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 15), 'parca-15m.json'),
+    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 60), 'parca-1h.json'),
+    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 60 * 6), 'parca-6h.json'),
+    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 60 * 12), 'parca-12h.json'),
+    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 60 * 24), 'parca-1d.json'),
+    populateDataIfNeeded(new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 3), 'parca-3d.json'),
   ]);
 };
 

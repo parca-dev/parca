@@ -17,12 +17,16 @@ const fs = require('fs-extra');
 const path = require('path');
 // const {fileURLToPath} = require('url');
 const fetch = require('node-fetch');
+const {
+  getApiEndPoint,
+  getGrpcMetadata,
+} = require('../../../ProfileIcicleGraph/benchmarks/benchdata/common');
 
 globalThis.fetch = fetch;
 globalThis.Headers = fetch.Headers;
 const DIR_NAME = __dirname; // path.dirname(fileURLToPath(import.meta.url));
 
-const apiEndpoint = 'https://demo.parca.dev';
+const apiEndpoint = getApiEndPoint();
 
 const queryClient = new client.QueryServiceClient(
   new GrpcWebFetchTransport({
@@ -35,18 +39,21 @@ const populateDataIfNeeded = async (from, filename) => {
   if (Object.keys(await readFile(filePath)).length > 0) {
     return;
   }
-  const {response} = await queryClient.query({
-    options: {
-      oneofKind: 'merge',
-      merge: {
-        start: client.Timestamp.fromDate(from),
-        end: client.Timestamp.fromDate(new Date()),
-        query: 'parca_agent_cpu:samples:count:cpu:nanoseconds:delta{container="parca"}',
+  const {response} = await queryClient.query(
+    {
+      options: {
+        oneofKind: 'merge',
+        merge: {
+          start: client.Timestamp.fromDate(from),
+          end: client.Timestamp.fromDate(new Date()),
+          query: 'parca_agent_cpu:samples:count:cpu:nanoseconds:delta{container="parca"}',
+        },
       },
+      reportType: client.QueryRequest_ReportType.TOP,
+      mode: client.QueryRequest_Mode.MERGE,
     },
-    reportType: client.QueryRequest_ReportType.TOP,
-    mode: client.QueryRequest_Mode.MERGE,
-  });
+    getGrpcMetadata()
+  );
   if (response.report.oneofKind !== 'top') {
     throw new Error('Expected topTable report');
   }
