@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {ReactNode, createContext, useContext} from 'react';
+
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
-import {createContext, ReactNode, useContext} from 'react';
 
 const DEFAULT_VALUE = {};
 

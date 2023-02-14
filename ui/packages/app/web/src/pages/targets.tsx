@@ -12,6 +12,10 @@
 // limitations under the License.
 
 import React, {useEffect, useState} from 'react';
+
+import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
+import {RpcError} from '@protobuf-ts/runtime-rpc';
+
 import {
   Agent,
   AgentsResponse,
@@ -22,11 +26,10 @@ import {
   TargetsRequest_State,
   TargetsResponse,
 } from '@parca/client';
-import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {EmptyState} from '@parca/components';
-import TargetsTable from '../components/Targets/TargetsTable';
-import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
+
 import AgentsTable from '../components/Targets/AgentsTable';
+import TargetsTable from '../components/Targets/TargetsTable';
 
 const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 

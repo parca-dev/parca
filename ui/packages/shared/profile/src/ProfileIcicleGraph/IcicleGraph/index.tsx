@@ -14,20 +14,19 @@
 import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import cx from 'classnames';
-import {throttle} from 'lodash';
-import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
+import {pointer} from 'd3-selection';
+import {throttle} from 'lodash';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import type {HoveringNode} from '../../GraphTooltip';
-import GraphTooltip from '../../GraphTooltip';
 import {Button, useURLState} from '@parca/components';
+import {selectQueryParam, type NavigateFunction} from '@parca/functions';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+
+import GraphTooltip, {type HoveringNode} from '../../GraphTooltip';
+import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight} from './IcicleGraphNodes';
 import useColoredGraph from './useColoredGraph';
-import {selectQueryParam} from '@parca/functions';
-import type {NavigateFunction} from '@parca/functions';
-import ColorStackLegend from './ColorStackLegend';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 interface IcicleGraphProps {
   graph: Flamegraph;

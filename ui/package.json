@@ -40,7 +40,7 @@
     "@babel/core": "^7.20.5",
     "@babel/node": "^7.20.5",
     "@babel/preset-env": "^7.20.2",
-    "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
+    "@ianvs/prettier-plugin-sort-imports": "3.7.1",
     "@mdx-js/loader": "2.2.1",
     "@next/bundle-analyzer": "12.3.4",
     "@next/eslint-plugin-next": "12.3.4",

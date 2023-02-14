@@ -12,12 +12,12 @@
 // limitations under the License.
 
 import {
-  capitalize,
-  valueFormatter,
-  convertTime,
-  formatDuration,
-  formatDate,
   TimeUnits,
+  capitalize,
+  convertTime,
+  formatDate,
+  formatDuration,
+  valueFormatter,
 } from './index';
 
 describe('capitalize', () => {

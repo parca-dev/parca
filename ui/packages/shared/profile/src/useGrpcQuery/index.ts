@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useQuery, UseQueryResult} from 'react-query';
+import {UseQueryResult, useQuery} from 'react-query';
 
 interface Props<IRes> {
   key: string | any[];

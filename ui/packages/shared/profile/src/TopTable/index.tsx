@@ -13,12 +13,17 @@
 
 import {useCallback, useMemo} from 'react';
 
-import {getLastItem, valueFormatter, isSearchMatch, parseParams} from '@parca/functions';
-import type {NavigateFunction} from '@parca/functions';
-import {TopNode, TopNodeMeta, Top} from '@parca/client';
+import {createColumnHelper, type ColumnDef} from '@tanstack/react-table';
+
+import {Top, TopNode, TopNodeMeta} from '@parca/client';
 import {Button, Table, useURLState} from '@parca/components';
-import {createColumnHelper} from '@tanstack/react-table';
-import type {ColumnDef} from '@tanstack/react-table';
+import {
+  getLastItem,
+  isSearchMatch,
+  parseParams,
+  valueFormatter,
+  type NavigateFunction,
+} from '@parca/functions';
 
 import {hexifyAddress} from '../utils';
 

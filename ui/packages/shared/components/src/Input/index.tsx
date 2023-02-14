@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Icon} from '@iconify/react';
-import Button from '../Button';
-import cx from 'classnames';
 import {useRef} from 'react';
+
+import {Icon} from '@iconify/react';
+import cx from 'classnames';
+
+import Button from '../Button';
 
 interface SelfProps {
   className?: string;

@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useDispatch, useSelector} from 'react-redux';
-import type {TypedUseSelectorHook} from 'react-redux';
-import type {RootState, AppDispatch} from './store';
+import {useDispatch, useSelector, type TypedUseSelectorHook} from 'react-redux';
+
+import type {AppDispatch, RootState} from './store';
 
 // Use throughout app instead of plain `useDispatch` and `useSelector`
 export const useAppDispatch = (): AppDispatch => useDispatch<AppDispatch>();

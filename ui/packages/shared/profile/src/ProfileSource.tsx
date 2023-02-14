@@ -11,17 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {formatDate} from '@parca/functions';
-import {Query, ProfileType} from '@parca/parser';
 import {
   Label,
+  ProfileDiffSelection,
+  ProfileDiffSelection_Mode,
   QueryRequest,
   QueryRequest_Mode,
   QueryRequest_ReportType,
-  ProfileDiffSelection,
-  ProfileDiffSelection_Mode,
   Timestamp,
 } from '@parca/client';
+import {formatDate} from '@parca/functions';
+import {ProfileType, Query} from '@parca/parser';
 
 export interface ProfileSource {
   QueryRequest: () => QueryRequest;

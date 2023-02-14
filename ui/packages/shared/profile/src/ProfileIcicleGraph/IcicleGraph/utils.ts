@@ -11,16 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {getLastItem} from '@parca/functions';
 import {FlamegraphNode} from '@parca/client';
 import {
+  Location,
   Mapping,
   Function as ParcaFunction,
-  Location,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {getLastItem} from '@parca/functions';
+import {EVERYTHING_ELSE, FEATURE_TYPES, type Feature} from '@parca/store';
+
 import {hexifyAddress} from '../../utils';
-import {EVERYTHING_ELSE, FEATURE_TYPES} from '@parca/store';
-import type {Feature} from '@parca/store';
 
 export const getBinaryName = (
   node: FlamegraphNode,

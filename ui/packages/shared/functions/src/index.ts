@@ -12,8 +12,9 @@
 // limitations under the License.
 
 import format from 'date-fns/format';
-import {Label} from '@parca/client';
 import colors from 'tailwindcss/colors';
+
+import {Label} from '@parca/client';
 
 export type NavigateFunction = (
   path: string,
@@ -57,7 +58,7 @@ export const TimeUnits = {
   Years: 'years',
 } as const;
 
-export type TimeUnit = typeof TimeUnits[keyof typeof TimeUnits];
+export type TimeUnit = (typeof TimeUnits)[keyof typeof TimeUnits];
 
 const unitsInTime = {
   [TimeUnits.Nanos]: {multiplier: 1, symbol: 'ns'},

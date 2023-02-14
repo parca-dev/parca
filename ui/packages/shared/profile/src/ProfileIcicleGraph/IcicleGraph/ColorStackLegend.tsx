@@ -11,13 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import cx from 'classnames';
-import {Icon} from '@iconify/react';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
-import {EVERYTHING_ELSE, selectStackColors, useAppSelector} from '@parca/store';
 import {useMemo} from 'react';
+
+import {Icon} from '@iconify/react';
+import cx from 'classnames';
+
 import {useURLState} from '@parca/components';
 import type {NavigateFunction} from '@parca/functions';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {EVERYTHING_ELSE, selectStackColors, useAppSelector} from '@parca/store';
 
 interface Props {
   navigateTo?: NavigateFunction;

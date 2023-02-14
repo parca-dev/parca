@@ -13,13 +13,15 @@
 
 import {Disclosure} from '@headlessui/react';
 import {Bars3Icon, XMarkIcon} from '@heroicons/react/20/solid';
-import {Parca, ParcaSmall} from '@parca/icons';
-import GitHubButton from 'react-github-btn';
 import cx from 'classnames';
+import GitHubButton from 'react-github-btn';
+
+import {Parca, ParcaSmall} from '@parca/icons';
+import {selectDarkMode, useAppSelector} from '@parca/store';
+
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import DarkModeToggle from './DarkModeToggle';
 import UserPreferences from './UserPreferences';
-import {useAppSelector, selectDarkMode} from '@parca/store';
 
 const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
 

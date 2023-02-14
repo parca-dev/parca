@@ -11,25 +11,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Query} from '@parca/parser';
-import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
-import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {ProfileSelection} from '..';
 import React, {useEffect, useState} from 'react';
-import ProfileMetricsGraph from '../ProfileMetricsGraph';
-import MatchersInput from '../MatchersInput/index';
-import MergeButton from './MergeButton';
-import CompareButton from './CompareButton';
+
+import {RpcError} from '@protobuf-ts/runtime-rpc';
+
+import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
-  Card,
-  DateTimeRangePicker,
-  DateTimeRange,
   Button,
   ButtonGroup,
+  Card,
+  DateTimeRange,
+  DateTimeRangePicker,
   useGrpcMetadata,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
+import {Query} from '@parca/parser';
+
+import {ProfileSelection} from '..';
+import MatchersInput from '../MatchersInput/index';
+import ProfileMetricsGraph from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
+import CompareButton from './CompareButton';
+import MergeButton from './MergeButton';
 
 export interface QuerySelection {
   expression: string;

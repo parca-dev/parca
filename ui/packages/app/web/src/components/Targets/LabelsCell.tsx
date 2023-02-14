@@ -12,7 +12,9 @@
 // limitations under the License.
 
 import {useState} from 'react';
+
 import {ChevronDoubleDownIcon, ChevronDoubleUpIcon} from '@heroicons/react/20/solid';
+
 import {Label} from '@parca/client';
 import {Pill, PillVariant} from '@parca/components';
 
