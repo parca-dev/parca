@@ -35,8 +35,6 @@ export const TimeUnits = {
   Minutes: 'minutes',
   Hours: 'hours',
   Days: 'days',
-  Weeks: 'weeks',
-  Years: 'years',
 } as const;
 
 export type TimeUnit = typeof TimeUnits[keyof typeof TimeUnits];
@@ -49,8 +47,6 @@ export const unitsInTime = {
   [TimeUnits.Minutes]: {multiplier: 6 * 1e10, symbol: 'm'},
   [TimeUnits.Hours]: {multiplier: 60 * 60 * 1e9, symbol: 'h'},
   [TimeUnits.Days]: {multiplier: 60 * 60 * 24 * 1e9, symbol: 'd'},
-  [TimeUnits.Weeks]: {multiplier: 60 * 60 * 24 * 7 * 1e9, symbol: 'w'},
-  [TimeUnits.Years]: {multiplier: 60 * 60 * 24 * 365 * 1e9, symbol: 'y'},
 };
 
 export const convertTime = (value: number, from: TimeUnit, to: TimeUnit): number => {
