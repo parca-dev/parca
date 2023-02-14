@@ -36,7 +36,7 @@
     "prepublish": "yarn build",
     "build": "tsc && yarn compile:styles",
     "watch": "tsc-watch --onSuccess 'yarn compile:styles'",
-    "compile:styles": "tailwindcss -o dist/styles.css --minify && cp src/*.css ./dist/"
+    "compile:styles": "tailwindcss -o dist/styles.css --minify"
   },
   "keywords": [],
   "author": "",
