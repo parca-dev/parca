@@ -1,0 +1,13 @@
+import {useContainerDimensions} from '@parca/dynamicsize';
+import {FlameGraph} from 'react-flame-graph';
+
+const RowBasedFlamegraph = ({data}): JSX.Element => {
+  const {ref, dimensions} = useContainerDimensions();
+  return (
+    <div ref={ref}>
+      <FlameGraph data={data} height={1020} width={dimensions?.width ?? 0} />
+    </div>
+  );
+};
+
+export default RowBasedFlamegraph;
