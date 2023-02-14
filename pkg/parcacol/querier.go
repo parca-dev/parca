@@ -308,7 +308,7 @@ func (q *Querier) QueryRange(
 	filterExpr := logicalplan.And(exprs...)
 
 	if queryParts.Delta {
-		return q.queryRangeDelta(ctx, filterExpr, step)
+		return q.queryRangeDelta(ctx, filterExpr, step, queryParts.Meta.SampleType.Unit)
 	}
 
 	return q.queryRangeNonDelta(ctx, filterExpr, step)
@@ -321,7 +321,7 @@ const (
 	ColumnValueSum    = "sum(" + ColumnValue + ")"
 )
 
-func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
+func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
 	var ar arrow.Record
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -428,12 +428,27 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		valueSum := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
 		valueCount := ar.Column(columnIndices[ColumnValueCount].index).(*array.Int64).Value(i)
 
-		result := 1000 * (float64(valueSum) * (float64(periodSum) / float64(valueCount))) / (float64(durationSum) / float64(valueCount))
+		// TODO: We should do these period and duration calculations in frostDB,
+		// so that we can push these down as projections.
+
+		// Because we store the period with each sample yet query for the sum(period) we need to normalize by the amount of values (rows in a database).
+		period := periodSum / valueCount
+		// Because we store the duration with each sample yet query for the sum(duration) we need to normalize by the amount of values (rows in a database).
+		duration := durationSum / valueCount
+
+		// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
+		// If we already have CPU nanoseconds we don't need to multiply by the period.
+		if sampleTypeUnit != "nanoseconds" {
+			valueSum = valueSum * period
+		}
+
+		// TODO: We shouldn't multiply by 100 here but our payload value is int64 and we cannot send float64...
+		percentage := 100 * float64(valueSum) / float64(duration)
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
 			Timestamp: timestamppb.New(timestamp.Time(ts)),
-			Value:     int64(result),
+			Value:     int64(percentage),
 		})
 	}
 
