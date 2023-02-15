@@ -1,0 +1,18 @@
+.next/
+dist/
+node_modules/
+out/
+.yarn/
+coverage/
+
+# Exclude protobuf generated files
+ui/packages/shared/client
+
+ui/packages/shared/**/dist/
+ui/packages/shared/**/benchmarks/
+ui/packages/app/grafana-datasource-plugin/
+ui/packages/app/grafana-panel-plugin/
+ui/packages/app/web/build/
+
+# Exclude generated changelogs
+**/CHANGELOG.md
