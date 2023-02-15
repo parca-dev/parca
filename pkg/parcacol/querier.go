@@ -359,7 +359,13 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		Timestamp   int
 		ValueCount  int
 		ValueSum    int
-	}{}
+	}{
+		DurationSum: -1,
+		PeriodSum:   -1,
+		Timestamp:   -1,
+		ValueCount:  -1,
+		ValueSum:    -1,
+	}
 
 	labelColumnIndices := []int{}
 
@@ -386,6 +392,22 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		if strings.HasPrefix(field.Name, "labels.") {
 			labelColumnIndices = append(labelColumnIndices, i)
 		}
+	}
+
+	if columnIndices.DurationSum == -1 {
+		return nil, errors.New("sum(duration) column not found")
+	}
+	if columnIndices.PeriodSum == -1 {
+		return nil, errors.New("sum(period) column not found")
+	}
+	if columnIndices.Timestamp == -1 {
+		return nil, errors.New("timestamp column not found")
+	}
+	if columnIndices.ValueCount == -1 {
+		return nil, errors.New("count(value) column not found")
+	}
+	if columnIndices.ValueSum == -1 {
+		return nil, errors.New("sum(value) column not found")
 	}
 
 	labelSet := labels.Labels{}
