@@ -11,27 +11,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {ChangeEvent, PureComponent} from 'react';
-
-import {DataSourcePluginOptionsEditorProps} from '@grafana/data';
-import {Field, Icon, Input} from '@grafana/ui';
-
-import {ParcaDataSourceOptions} from './types';
+import React, { ChangeEvent, PureComponent } from 'react';
+import { Field, Input, Icon } from '@grafana/ui';
+import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
+import { ParcaDataSourceOptions } from './types';
 
 interface Props extends DataSourcePluginOptionsEditorProps<ParcaDataSourceOptions> {}
 
 export class ConfigEditor extends PureComponent<Props, {}> {
   onPathChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    const {onOptionsChange, options} = this.props;
+    const { onOptionsChange, options } = this.props;
     const jsonData = {
       ...options.jsonData,
       APIEndpoint: event.target.value,
     };
-    onOptionsChange({...options, jsonData});
+    onOptionsChange({ ...options, jsonData });
   };
 
   onResetAPIKey = (): void => {
-    const {onOptionsChange, options} = this.props;
+    const { onOptionsChange, options } = this.props;
     onOptionsChange({
       ...options,
       secureJsonFields: {
@@ -46,8 +44,8 @@ export class ConfigEditor extends PureComponent<Props, {}> {
   };
 
   render(): JSX.Element {
-    const {options} = this.props;
-    const {jsonData} = options;
+    const { options } = this.props;
+    const { jsonData } = options;
 
     return (
       <div className="gf-form-group">
@@ -63,8 +61,8 @@ export class ConfigEditor extends PureComponent<Props, {}> {
               />
               <span>
                 <br />
-                <strong>Note</strong>: Please make sure cors configuration of the Parca server allow
-                requests from <code>{window.location.origin}</code> origin.
+                <strong>Note</strong>: Please make sure cors configuration of the Parca server allow requests from{' '}
+                <code>{window.location.origin}</code> origin.
                 <br />
                 Ensure that the Parca server is started with either{' '}
                 <code>--cors-allowed-origins=&apos;{window.location.origin}&apos;</code> or{' '}

@@ -16,19 +16,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {
-  MESSAGE_TYPE,
-  MessageType,
-  UnknownFieldHandler,
-  WireType,
-  reflectionMergePartial,
-  type BinaryReadOptions,
-  type BinaryWriteOptions,
-  type IBinaryReader,
-  type IBinaryWriter,
-  type PartialMessage,
-} from '@protobuf-ts/runtime';
-
+import type { BinaryWriteOptions } from "@protobuf-ts/runtime";
+import type { IBinaryWriter } from "@protobuf-ts/runtime";
+import { WireType } from "@protobuf-ts/runtime";
+import type { BinaryReadOptions } from "@protobuf-ts/runtime";
+import type { IBinaryReader } from "@protobuf-ts/runtime";
+import { UnknownFieldHandler } from "@protobuf-ts/runtime";
+import type { PartialMessage } from "@protobuf-ts/runtime";
+import { reflectionMergePartial } from "@protobuf-ts/runtime";
+import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
+import { MessageType } from "@protobuf-ts/runtime";
 /**
  * Defines the HTTP configuration for an API service. It contains a list of
  * [HttpRule][google.api.HttpRule], each specifying the mapping of an RPC method
@@ -37,25 +34,25 @@ import {
  * @generated from protobuf message google.api.Http
  */
 export interface Http {
-  /**
-   * A list of HTTP configuration rules that apply to individual API methods.
-   *
-   * **NOTE:** All service configuration rules follow "last one wins" order.
-   *
-   * @generated from protobuf field: repeated google.api.HttpRule rules = 1;
-   */
-  rules: HttpRule[];
-  /**
-   * When set to true, URL path parameters will be fully URI-decoded except in
-   * cases of single segment matches in reserved expansion, where "%2F" will be
-   * left encoded.
-   *
-   * The default behavior is to not decode RFC 6570 reserved characters in multi
-   * segment matches.
-   *
-   * @generated from protobuf field: bool fully_decode_reserved_expansion = 2;
-   */
-  fullyDecodeReservedExpansion: boolean;
+    /**
+     * A list of HTTP configuration rules that apply to individual API methods.
+     *
+     * **NOTE:** All service configuration rules follow "last one wins" order.
+     *
+     * @generated from protobuf field: repeated google.api.HttpRule rules = 1;
+     */
+    rules: HttpRule[];
+    /**
+     * When set to true, URL path parameters will be fully URI-decoded except in
+     * cases of single segment matches in reserved expansion, where "%2F" will be
+     * left encoded.
+     *
+     * The default behavior is to not decode RFC 6570 reserved characters in multi
+     * segment matches.
+     *
+     * @generated from protobuf field: bool fully_decode_reserved_expansion = 2;
+     */
+    fullyDecodeReservedExpansion: boolean;
 }
 /**
  * # gRPC Transcoding
@@ -331,20 +328,19 @@ export interface Http {
  * @generated from protobuf message google.api.HttpRule
  */
 export interface HttpRule {
-  /**
-   * Selects a method to which this rule applies.
-   *
-   * Refer to [selector][google.api.DocumentationRule.selector] for syntax details.
-   *
-   * @generated from protobuf field: string selector = 1;
-   */
-  selector: string;
-  /**
-   * @generated from protobuf oneof: pattern
-   */
-  pattern:
-    | {
-        oneofKind: 'get';
+    /**
+     * Selects a method to which this rule applies.
+     *
+     * Refer to [selector][google.api.DocumentationRule.selector] for syntax details.
+     *
+     * @generated from protobuf field: string selector = 1;
+     */
+    selector: string;
+    /**
+     * @generated from protobuf oneof: pattern
+     */
+    pattern: {
+        oneofKind: "get";
         /**
          * Maps to HTTP GET. Used for listing and getting information about
          * resources.
@@ -352,45 +348,40 @@ export interface HttpRule {
          * @generated from protobuf field: string get = 2;
          */
         get: string;
-      }
-    | {
-        oneofKind: 'put';
+    } | {
+        oneofKind: "put";
         /**
          * Maps to HTTP PUT. Used for replacing a resource.
          *
          * @generated from protobuf field: string put = 3;
          */
         put: string;
-      }
-    | {
-        oneofKind: 'post';
+    } | {
+        oneofKind: "post";
         /**
          * Maps to HTTP POST. Used for creating a resource or performing an action.
          *
          * @generated from protobuf field: string post = 4;
          */
         post: string;
-      }
-    | {
-        oneofKind: 'delete';
+    } | {
+        oneofKind: "delete";
         /**
          * Maps to HTTP DELETE. Used for deleting a resource.
          *
          * @generated from protobuf field: string delete = 5;
          */
         delete: string;
-      }
-    | {
-        oneofKind: 'patch';
+    } | {
+        oneofKind: "patch";
         /**
          * Maps to HTTP PATCH. Used for updating a resource.
          *
          * @generated from protobuf field: string patch = 6;
          */
         patch: string;
-      }
-    | {
-        oneofKind: 'custom';
+    } | {
+        oneofKind: "custom";
         /**
          * The custom pattern is used for specifying an HTTP method that is not
          * included in the `pattern` field, such as HEAD, or "*" to leave the
@@ -400,40 +391,39 @@ export interface HttpRule {
          * @generated from protobuf field: google.api.CustomHttpPattern custom = 8;
          */
         custom: CustomHttpPattern;
-      }
-    | {
+    } | {
         oneofKind: undefined;
-      };
-  /**
-   * The name of the request field whose value is mapped to the HTTP request
-   * body, or `*` for mapping all request fields not captured by the path
-   * pattern to the HTTP body, or omitted for not having any HTTP request body.
-   *
-   * NOTE: the referred field must be present at the top-level of the request
-   * message type.
-   *
-   * @generated from protobuf field: string body = 7;
-   */
-  body: string;
-  /**
-   * Optional. The name of the response field whose value is mapped to the HTTP
-   * response body. When omitted, the entire response message will be used
-   * as the HTTP response body.
-   *
-   * NOTE: The referred field must be present at the top-level of the response
-   * message type.
-   *
-   * @generated from protobuf field: string response_body = 12;
-   */
-  responseBody: string;
-  /**
-   * Additional HTTP bindings for the selector. Nested bindings must
-   * not contain an `additional_bindings` field themselves (that is,
-   * the nesting may only be one level deep).
-   *
-   * @generated from protobuf field: repeated google.api.HttpRule additional_bindings = 11;
-   */
-  additionalBindings: HttpRule[];
+    };
+    /**
+     * The name of the request field whose value is mapped to the HTTP request
+     * body, or `*` for mapping all request fields not captured by the path
+     * pattern to the HTTP body, or omitted for not having any HTTP request body.
+     *
+     * NOTE: the referred field must be present at the top-level of the request
+     * message type.
+     *
+     * @generated from protobuf field: string body = 7;
+     */
+    body: string;
+    /**
+     * Optional. The name of the response field whose value is mapped to the HTTP
+     * response body. When omitted, the entire response message will be used
+     * as the HTTP response body.
+     *
+     * NOTE: The referred field must be present at the top-level of the response
+     * message type.
+     *
+     * @generated from protobuf field: string response_body = 12;
+     */
+    responseBody: string;
+    /**
+     * Additional HTTP bindings for the selector. Nested bindings must
+     * not contain an `additional_bindings` field themselves (that is,
+     * the nesting may only be one level deep).
+     *
+     * @generated from protobuf field: repeated google.api.HttpRule additional_bindings = 11;
+     */
+    additionalBindings: HttpRule[];
 }
 /**
  * A custom pattern is used for defining custom HTTP verb.
@@ -441,88 +431,68 @@ export interface HttpRule {
  * @generated from protobuf message google.api.CustomHttpPattern
  */
 export interface CustomHttpPattern {
-  /**
-   * The name of this custom HTTP verb.
-   *
-   * @generated from protobuf field: string kind = 1;
-   */
-  kind: string;
-  /**
-   * The path matched by this custom verb.
-   *
-   * @generated from protobuf field: string path = 2;
-   */
-  path: string;
+    /**
+     * The name of this custom HTTP verb.
+     *
+     * @generated from protobuf field: string kind = 1;
+     */
+    kind: string;
+    /**
+     * The path matched by this custom verb.
+     *
+     * @generated from protobuf field: string path = 2;
+     */
+    path: string;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class Http$Type extends MessageType<Http> {
-  constructor() {
-    super('google.api.Http', [
-      {no: 1, name: 'rules', kind: 'message', repeat: 1 /*RepeatType.PACKED*/, T: () => HttpRule},
-      {no: 2, name: 'fully_decode_reserved_expansion', kind: 'scalar', T: 8 /*ScalarType.BOOL*/},
-    ]);
-  }
-  create(value?: PartialMessage<Http>): Http {
-    const message = {rules: [], fullyDecodeReservedExpansion: false};
-    globalThis.Object.defineProperty(message, MESSAGE_TYPE, {enumerable: false, value: this});
-    if (value !== undefined) reflectionMergePartial<Http>(this, message, value);
-    return message;
-  }
-  internalBinaryRead(
-    reader: IBinaryReader,
-    length: number,
-    options: BinaryReadOptions,
-    target?: Http
-  ): Http {
-    let message = target ?? this.create(),
-      end = reader.pos + length;
-    while (reader.pos < end) {
-      let [fieldNo, wireType] = reader.tag();
-      switch (fieldNo) {
-        case /* repeated google.api.HttpRule rules */ 1:
-          message.rules.push(HttpRule.internalBinaryRead(reader, reader.uint32(), options));
-          break;
-        case /* bool fully_decode_reserved_expansion */ 2:
-          message.fullyDecodeReservedExpansion = reader.bool();
-          break;
-        default:
-          let u = options.readUnknownField;
-          if (u === 'throw')
-            throw new globalThis.Error(
-              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`
-            );
-          let d = reader.skip(wireType);
-          if (u !== false)
-            (u === true ? UnknownFieldHandler.onRead : u)(
-              this.typeName,
-              message,
-              fieldNo,
-              wireType,
-              d
-            );
-      }
+    constructor() {
+        super("google.api.Http", [
+            { no: 1, name: "rules", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => HttpRule },
+            { no: 2, name: "fully_decode_reserved_expansion", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
     }
-    return message;
-  }
-  internalBinaryWrite(
-    message: Http,
-    writer: IBinaryWriter,
-    options: BinaryWriteOptions
-  ): IBinaryWriter {
-    /* repeated google.api.HttpRule rules = 1; */
-    for (let i = 0; i < message.rules.length; i++)
-      HttpRule.internalBinaryWrite(
-        message.rules[i],
-        writer.tag(1, WireType.LengthDelimited).fork(),
-        options
-      ).join();
-    /* bool fully_decode_reserved_expansion = 2; */
-    if (message.fullyDecodeReservedExpansion !== false)
-      writer.tag(2, WireType.Varint).bool(message.fullyDecodeReservedExpansion);
-    let u = options.writeUnknownFields;
-    if (u !== false) (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-    return writer;
-  }
+    create(value?: PartialMessage<Http>): Http {
+        const message = { rules: [], fullyDecodeReservedExpansion: false };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<Http>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Http): Http {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated google.api.HttpRule rules */ 1:
+                    message.rules.push(HttpRule.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* bool fully_decode_reserved_expansion */ 2:
+                    message.fullyDecodeReservedExpansion = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Http, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated google.api.HttpRule rules = 1; */
+        for (let i = 0; i < message.rules.length; i++)
+            HttpRule.internalBinaryWrite(message.rules[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* bool fully_decode_reserved_expansion = 2; */
+        if (message.fullyDecodeReservedExpansion !== false)
+            writer.tag(2, WireType.Varint).bool(message.fullyDecodeReservedExpansion);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
 }
 /**
  * @generated MessageType for protobuf message google.api.Http
@@ -530,168 +500,127 @@ class Http$Type extends MessageType<Http> {
 export const Http = new Http$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class HttpRule$Type extends MessageType<HttpRule> {
-  constructor() {
-    super('google.api.HttpRule', [
-      {no: 1, name: 'selector', kind: 'scalar', T: 9 /*ScalarType.STRING*/},
-      {no: 2, name: 'get', kind: 'scalar', oneof: 'pattern', T: 9 /*ScalarType.STRING*/},
-      {no: 3, name: 'put', kind: 'scalar', oneof: 'pattern', T: 9 /*ScalarType.STRING*/},
-      {no: 4, name: 'post', kind: 'scalar', oneof: 'pattern', T: 9 /*ScalarType.STRING*/},
-      {no: 5, name: 'delete', kind: 'scalar', oneof: 'pattern', T: 9 /*ScalarType.STRING*/},
-      {no: 6, name: 'patch', kind: 'scalar', oneof: 'pattern', T: 9 /*ScalarType.STRING*/},
-      {no: 8, name: 'custom', kind: 'message', oneof: 'pattern', T: () => CustomHttpPattern},
-      {no: 7, name: 'body', kind: 'scalar', T: 9 /*ScalarType.STRING*/},
-      {no: 12, name: 'response_body', kind: 'scalar', T: 9 /*ScalarType.STRING*/},
-      {
-        no: 11,
-        name: 'additional_bindings',
-        kind: 'message',
-        repeat: 1 /*RepeatType.PACKED*/,
-        T: () => HttpRule,
-      },
-    ]);
-  }
-  create(value?: PartialMessage<HttpRule>): HttpRule {
-    const message = {
-      selector: '',
-      pattern: {oneofKind: undefined},
-      body: '',
-      responseBody: '',
-      additionalBindings: [],
-    };
-    globalThis.Object.defineProperty(message, MESSAGE_TYPE, {enumerable: false, value: this});
-    if (value !== undefined) reflectionMergePartial<HttpRule>(this, message, value);
-    return message;
-  }
-  internalBinaryRead(
-    reader: IBinaryReader,
-    length: number,
-    options: BinaryReadOptions,
-    target?: HttpRule
-  ): HttpRule {
-    let message = target ?? this.create(),
-      end = reader.pos + length;
-    while (reader.pos < end) {
-      let [fieldNo, wireType] = reader.tag();
-      switch (fieldNo) {
-        case /* string selector */ 1:
-          message.selector = reader.string();
-          break;
-        case /* string get */ 2:
-          message.pattern = {
-            oneofKind: 'get',
-            get: reader.string(),
-          };
-          break;
-        case /* string put */ 3:
-          message.pattern = {
-            oneofKind: 'put',
-            put: reader.string(),
-          };
-          break;
-        case /* string post */ 4:
-          message.pattern = {
-            oneofKind: 'post',
-            post: reader.string(),
-          };
-          break;
-        case /* string delete */ 5:
-          message.pattern = {
-            oneofKind: 'delete',
-            delete: reader.string(),
-          };
-          break;
-        case /* string patch */ 6:
-          message.pattern = {
-            oneofKind: 'patch',
-            patch: reader.string(),
-          };
-          break;
-        case /* google.api.CustomHttpPattern custom */ 8:
-          message.pattern = {
-            oneofKind: 'custom',
-            custom: CustomHttpPattern.internalBinaryRead(
-              reader,
-              reader.uint32(),
-              options,
-              (message.pattern as any).custom
-            ),
-          };
-          break;
-        case /* string body */ 7:
-          message.body = reader.string();
-          break;
-        case /* string response_body */ 12:
-          message.responseBody = reader.string();
-          break;
-        case /* repeated google.api.HttpRule additional_bindings */ 11:
-          message.additionalBindings.push(
-            HttpRule.internalBinaryRead(reader, reader.uint32(), options)
-          );
-          break;
-        default:
-          let u = options.readUnknownField;
-          if (u === 'throw')
-            throw new globalThis.Error(
-              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`
-            );
-          let d = reader.skip(wireType);
-          if (u !== false)
-            (u === true ? UnknownFieldHandler.onRead : u)(
-              this.typeName,
-              message,
-              fieldNo,
-              wireType,
-              d
-            );
-      }
+    constructor() {
+        super("google.api.HttpRule", [
+            { no: 1, name: "selector", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "get", kind: "scalar", oneof: "pattern", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "put", kind: "scalar", oneof: "pattern", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "post", kind: "scalar", oneof: "pattern", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "delete", kind: "scalar", oneof: "pattern", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "patch", kind: "scalar", oneof: "pattern", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "custom", kind: "message", oneof: "pattern", T: () => CustomHttpPattern },
+            { no: 7, name: "body", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 12, name: "response_body", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 11, name: "additional_bindings", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => HttpRule }
+        ]);
     }
-    return message;
-  }
-  internalBinaryWrite(
-    message: HttpRule,
-    writer: IBinaryWriter,
-    options: BinaryWriteOptions
-  ): IBinaryWriter {
-    /* string selector = 1; */
-    if (message.selector !== '') writer.tag(1, WireType.LengthDelimited).string(message.selector);
-    /* string get = 2; */
-    if (message.pattern.oneofKind === 'get')
-      writer.tag(2, WireType.LengthDelimited).string(message.pattern.get);
-    /* string put = 3; */
-    if (message.pattern.oneofKind === 'put')
-      writer.tag(3, WireType.LengthDelimited).string(message.pattern.put);
-    /* string post = 4; */
-    if (message.pattern.oneofKind === 'post')
-      writer.tag(4, WireType.LengthDelimited).string(message.pattern.post);
-    /* string delete = 5; */
-    if (message.pattern.oneofKind === 'delete')
-      writer.tag(5, WireType.LengthDelimited).string(message.pattern.delete);
-    /* string patch = 6; */
-    if (message.pattern.oneofKind === 'patch')
-      writer.tag(6, WireType.LengthDelimited).string(message.pattern.patch);
-    /* google.api.CustomHttpPattern custom = 8; */
-    if (message.pattern.oneofKind === 'custom')
-      CustomHttpPattern.internalBinaryWrite(
-        message.pattern.custom,
-        writer.tag(8, WireType.LengthDelimited).fork(),
-        options
-      ).join();
-    /* string body = 7; */
-    if (message.body !== '') writer.tag(7, WireType.LengthDelimited).string(message.body);
-    /* string response_body = 12; */
-    if (message.responseBody !== '')
-      writer.tag(12, WireType.LengthDelimited).string(message.responseBody);
-    /* repeated google.api.HttpRule additional_bindings = 11; */
-    for (let i = 0; i < message.additionalBindings.length; i++)
-      HttpRule.internalBinaryWrite(
-        message.additionalBindings[i],
-        writer.tag(11, WireType.LengthDelimited).fork(),
-        options
-      ).join();
-    let u = options.writeUnknownFields;
-    if (u !== false) (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-    return writer;
-  }
+    create(value?: PartialMessage<HttpRule>): HttpRule {
+        const message = { selector: "", pattern: { oneofKind: undefined }, body: "", responseBody: "", additionalBindings: [] };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<HttpRule>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: HttpRule): HttpRule {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string selector */ 1:
+                    message.selector = reader.string();
+                    break;
+                case /* string get */ 2:
+                    message.pattern = {
+                        oneofKind: "get",
+                        get: reader.string()
+                    };
+                    break;
+                case /* string put */ 3:
+                    message.pattern = {
+                        oneofKind: "put",
+                        put: reader.string()
+                    };
+                    break;
+                case /* string post */ 4:
+                    message.pattern = {
+                        oneofKind: "post",
+                        post: reader.string()
+                    };
+                    break;
+                case /* string delete */ 5:
+                    message.pattern = {
+                        oneofKind: "delete",
+                        delete: reader.string()
+                    };
+                    break;
+                case /* string patch */ 6:
+                    message.pattern = {
+                        oneofKind: "patch",
+                        patch: reader.string()
+                    };
+                    break;
+                case /* google.api.CustomHttpPattern custom */ 8:
+                    message.pattern = {
+                        oneofKind: "custom",
+                        custom: CustomHttpPattern.internalBinaryRead(reader, reader.uint32(), options, (message.pattern as any).custom)
+                    };
+                    break;
+                case /* string body */ 7:
+                    message.body = reader.string();
+                    break;
+                case /* string response_body */ 12:
+                    message.responseBody = reader.string();
+                    break;
+                case /* repeated google.api.HttpRule additional_bindings */ 11:
+                    message.additionalBindings.push(HttpRule.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: HttpRule, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string selector = 1; */
+        if (message.selector !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.selector);
+        /* string get = 2; */
+        if (message.pattern.oneofKind === "get")
+            writer.tag(2, WireType.LengthDelimited).string(message.pattern.get);
+        /* string put = 3; */
+        if (message.pattern.oneofKind === "put")
+            writer.tag(3, WireType.LengthDelimited).string(message.pattern.put);
+        /* string post = 4; */
+        if (message.pattern.oneofKind === "post")
+            writer.tag(4, WireType.LengthDelimited).string(message.pattern.post);
+        /* string delete = 5; */
+        if (message.pattern.oneofKind === "delete")
+            writer.tag(5, WireType.LengthDelimited).string(message.pattern.delete);
+        /* string patch = 6; */
+        if (message.pattern.oneofKind === "patch")
+            writer.tag(6, WireType.LengthDelimited).string(message.pattern.patch);
+        /* google.api.CustomHttpPattern custom = 8; */
+        if (message.pattern.oneofKind === "custom")
+            CustomHttpPattern.internalBinaryWrite(message.pattern.custom, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* string body = 7; */
+        if (message.body !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.body);
+        /* string response_body = 12; */
+        if (message.responseBody !== "")
+            writer.tag(12, WireType.LengthDelimited).string(message.responseBody);
+        /* repeated google.api.HttpRule additional_bindings = 11; */
+        for (let i = 0; i < message.additionalBindings.length; i++)
+            HttpRule.internalBinaryWrite(message.additionalBindings[i], writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
 }
 /**
  * @generated MessageType for protobuf message google.api.HttpRule
@@ -699,67 +628,53 @@ class HttpRule$Type extends MessageType<HttpRule> {
 export const HttpRule = new HttpRule$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CustomHttpPattern$Type extends MessageType<CustomHttpPattern> {
-  constructor() {
-    super('google.api.CustomHttpPattern', [
-      {no: 1, name: 'kind', kind: 'scalar', T: 9 /*ScalarType.STRING*/},
-      {no: 2, name: 'path', kind: 'scalar', T: 9 /*ScalarType.STRING*/},
-    ]);
-  }
-  create(value?: PartialMessage<CustomHttpPattern>): CustomHttpPattern {
-    const message = {kind: '', path: ''};
-    globalThis.Object.defineProperty(message, MESSAGE_TYPE, {enumerable: false, value: this});
-    if (value !== undefined) reflectionMergePartial<CustomHttpPattern>(this, message, value);
-    return message;
-  }
-  internalBinaryRead(
-    reader: IBinaryReader,
-    length: number,
-    options: BinaryReadOptions,
-    target?: CustomHttpPattern
-  ): CustomHttpPattern {
-    let message = target ?? this.create(),
-      end = reader.pos + length;
-    while (reader.pos < end) {
-      let [fieldNo, wireType] = reader.tag();
-      switch (fieldNo) {
-        case /* string kind */ 1:
-          message.kind = reader.string();
-          break;
-        case /* string path */ 2:
-          message.path = reader.string();
-          break;
-        default:
-          let u = options.readUnknownField;
-          if (u === 'throw')
-            throw new globalThis.Error(
-              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`
-            );
-          let d = reader.skip(wireType);
-          if (u !== false)
-            (u === true ? UnknownFieldHandler.onRead : u)(
-              this.typeName,
-              message,
-              fieldNo,
-              wireType,
-              d
-            );
-      }
+    constructor() {
+        super("google.api.CustomHttpPattern", [
+            { no: 1, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "path", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
     }
-    return message;
-  }
-  internalBinaryWrite(
-    message: CustomHttpPattern,
-    writer: IBinaryWriter,
-    options: BinaryWriteOptions
-  ): IBinaryWriter {
-    /* string kind = 1; */
-    if (message.kind !== '') writer.tag(1, WireType.LengthDelimited).string(message.kind);
-    /* string path = 2; */
-    if (message.path !== '') writer.tag(2, WireType.LengthDelimited).string(message.path);
-    let u = options.writeUnknownFields;
-    if (u !== false) (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-    return writer;
-  }
+    create(value?: PartialMessage<CustomHttpPattern>): CustomHttpPattern {
+        const message = { kind: "", path: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<CustomHttpPattern>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CustomHttpPattern): CustomHttpPattern {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string kind */ 1:
+                    message.kind = reader.string();
+                    break;
+                case /* string path */ 2:
+                    message.path = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CustomHttpPattern, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string kind = 1; */
+        if (message.kind !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.kind);
+        /* string path = 2; */
+        if (message.path !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.path);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
 }
 /**
  * @generated MessageType for protobuf message google.api.CustomHttpPattern

@@ -11,15 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {DataSourcePlugin} from '@grafana/data';
+import { DataSourcePlugin } from '@grafana/data';
+import { DataSource } from './datasource';
+import { ConfigEditor } from './ConfigEditor';
+import { QueryEditor } from './QueryEditor';
+import { ParcaQuery, ParcaDataSourceOptions } from './types';
 
-import {ConfigEditor} from './ConfigEditor';
-import {QueryEditor} from './QueryEditor';
-import {DataSource} from './datasource';
-import {ParcaDataSourceOptions, ParcaQuery} from './types';
-
-export const plugin = new DataSourcePlugin<DataSource, ParcaQuery, ParcaDataSourceOptions>(
-  DataSource
-)
+export const plugin = new DataSourcePlugin<DataSource, ParcaQuery, ParcaDataSourceOptions>(DataSource)
   .setConfigEditor(ConfigEditor)
   .setQueryEditor(QueryEditor);

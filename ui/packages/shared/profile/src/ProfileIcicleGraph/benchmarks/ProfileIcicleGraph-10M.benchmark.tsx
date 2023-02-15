@@ -12,14 +12,11 @@
 // limitations under the License.
 
 import React from 'react';
-
-import {Provider} from 'react-redux';
-
-import {Flamegraph} from '@parca/client';
-import {store} from '@parca/store';
-
 import ProfileIcicleGraph from '..';
+import {Provider} from 'react-redux';
+import {store} from '@parca/store';
 import parca10mGraphData from './benchdata/parca-10m.json';
+import {Flamegraph} from '@parca/client';
 
 const {store: reduxStore} = store();
 

@@ -12,14 +12,11 @@
 // limitations under the License.
 
 import React from 'react';
-
-import {Provider} from 'react-redux';
-
-import {Top} from '@parca/client';
-import {store} from '@parca/store';
-
 import TopTable from '..';
+import {Provider} from 'react-redux';
+import {store} from '@parca/store';
 import parca10mGraphData from './benchdata/parca-toptable-10m.json';
+import {Top} from '@parca/client';
 
 const {store: reduxStore} = store();
 
