@@ -35,7 +35,7 @@ import (
 type Querier interface {
 	Labels(ctx context.Context, match []string, start, end time.Time) ([]string, error)
 	Values(ctx context.Context, labelName string, match []string, start, end time.Time) ([]string, error)
-	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, limit uint32) ([]*pb.MetricsSeries, error)
+	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time) (*profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time) (*profile.Profile, error)
@@ -96,7 +96,7 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	res, err := q.querier.QueryRange(ctx, req.Query, req.Start.AsTime(), req.End.AsTime(), req.Limit)
+	res, err := q.querier.QueryRange(ctx, req.Query, req.Start.AsTime(), req.End.AsTime(), req.Step.AsDuration(), req.Limit)
 	if err != nil {
 		return nil, err
 	}

@@ -11,4 +11,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './src/time';
+package main
+
+import (
+	"log"
+	"os"
+	"runtime/pprof"
+)
+
+func main() {
+	f, err := os.Create("testdata/pgotest.prof")
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
+	defer f.Close() // error handling omitted for example
+	if err := pprof.StartCPUProfile(f); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+
+	hot()
+
+	defer pprof.StopCPUProfile()
+}
+
+func hot() {
+	for i := 0; i < 10_000_000_000; i++ {
+	}
+}

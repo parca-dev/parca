@@ -11,9 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import format from 'date-fns/format';
 import {Label} from '@parca/client';
+import {unitsInTime} from './time';
 import colors from 'tailwindcss/colors';
+export * from './time';
+export * from './string';
 
 export type NavigateFunction = (
   path: string,
@@ -33,105 +35,6 @@ interface Unit {
   multiplier: number;
   symbol: string;
 }
-export interface TimeObject {
-  nanos?: number;
-  micros?: number;
-  milliseconds?: number;
-  seconds?: number;
-  minutes?: number;
-  hours?: number;
-  days?: number;
-  weeks?: number;
-  years?: number;
-}
-
-export const TimeUnits = {
-  Nanos: 'nanos',
-  Micros: 'micros',
-  Milliseconds: 'milliseconds',
-  Seconds: 'seconds',
-  Minutes: 'minutes',
-  Hours: 'hours',
-  Days: 'days',
-  Weeks: 'weeks',
-  Years: 'years',
-} as const;
-
-export type TimeUnit = typeof TimeUnits[keyof typeof TimeUnits];
-
-const unitsInTime = {
-  [TimeUnits.Nanos]: {multiplier: 1, symbol: 'ns'},
-  [TimeUnits.Micros]: {multiplier: 1e3, symbol: 'µs'},
-  [TimeUnits.Milliseconds]: {multiplier: 1e6, symbol: 'ms'},
-  [TimeUnits.Seconds]: {multiplier: 1e9, symbol: 's'},
-  [TimeUnits.Minutes]: {multiplier: 6 * 1e10, symbol: 'm'},
-  [TimeUnits.Hours]: {multiplier: 60 * 60 * 1e9, symbol: 'h'},
-  [TimeUnits.Days]: {multiplier: 60 * 60 * 24 * 1e9, symbol: 'd'},
-  [TimeUnits.Weeks]: {multiplier: 60 * 60 * 24 * 7 * 1e9, symbol: 'w'},
-  [TimeUnits.Years]: {multiplier: 60 * 60 * 24 * 365 * 1e9, symbol: 'y'},
-};
-
-export const convertTime = (value: number, from: TimeUnit, to: TimeUnit): number => {
-  const startUnit = unitsInTime[from];
-  const endUnit = unitsInTime[to];
-  if (startUnit === undefined || endUnit === undefined) {
-    console.error('invalid start or end unit provided');
-    return value;
-  }
-
-  return (value * startUnit.multiplier) / endUnit.multiplier;
-};
-
-export const formatDuration = (timeObject: TimeObject, to?: number): string => {
-  let values: string[] = [];
-  const unitsLargeToSmall = Object.values(TimeUnits).reverse();
-
-  let nanos = (Object.keys(timeObject) as Array<keyof TimeObject>)
-    .map(unit => {
-      const time = timeObject[unit];
-      return time !== undefined ? convertTime(time, unit as TimeUnit, TimeUnits.Nanos) : 0;
-    })
-    .reduce((prev, curr) => prev + curr, 0);
-
-  if (to !== undefined) {
-    nanos = to - nanos;
-  }
-
-  // for more than one second, just show up until whole seconds; otherwise, show whole micros
-  if (Math.floor(nanos / unitsInTime[TimeUnits.Seconds].multiplier) > 0) {
-    for (let i = 0; i < unitsLargeToSmall.length; i++) {
-      const multiplier = unitsInTime[unitsLargeToSmall[i]].multiplier;
-
-      if (nanos > multiplier) {
-        if (unitsLargeToSmall[i] === TimeUnits.Milliseconds) {
-          break;
-        } else {
-          const amount = Math.floor(nanos / multiplier);
-          values = [...values, `${amount}${unitsInTime[unitsLargeToSmall[i]].symbol}`];
-          nanos -= amount * multiplier;
-        }
-      }
-    }
-  } else {
-    const milliseconds = Math.floor(nanos / unitsInTime[TimeUnits.Milliseconds].multiplier);
-    if (milliseconds > 0) {
-      values = [`${milliseconds}${unitsInTime[TimeUnits.Milliseconds].symbol}`];
-    } else {
-      return '<1ms';
-    }
-  }
-
-  return values.join(' ');
-};
-
-export const formatDate = (date: number | Date, timeFormat: string): string => {
-  if (typeof date === 'number') {
-    date = new Date(date);
-  }
-
-  const ISOString = date.toISOString().slice(0, -1);
-  return format(new Date(ISOString), timeFormat);
-};
 
 const unitsInBytes = {
   bytes: {multiplier: 1, symbol: 'Bytes'},

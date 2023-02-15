@@ -18,20 +18,20 @@ import throttle from 'lodash.throttle';
 
 import {DateTimeRange, useKeyDown} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {formatForTimespan} from '@parca/functions/time';
+import {formatForTimespan} from '@parca/functions';
 import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
 import {valueFormatter, formatDate, sanitizeHighlightedValues} from '@parca/functions';
 
 import MetricsSeries from '../MetricsSeries';
 import MetricsCircle from '../MetricsCircle';
 import MetricsTooltip from './MetricsTooltip';
-import {SingleProfileSelection} from '..';
+import {MergedProfileSelection} from '..';
 
 interface Props {
   data: MetricsSeriesPb[];
   from: number;
   to: number;
-  profile: SingleProfileSelection | null;
+  profile: MergedProfileSelection | null;
   onSampleClick: (timestamp: number, value: number, labels: Label[]) => void;
   onLabelClick: (labelName: string, labelValue: string) => void;
   setTimeRange: (range: DateTimeRange) => void;
@@ -113,7 +113,8 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
   const {isShiftDown} = useKeyDown();
 
-  const time: number = parseFloat(profile?.HistoryParams().time);
+  // the time of the selected point is the start of the merge window
+  const time: number = parseFloat(profile?.HistoryParams().merge_from);
 
   if (width === undefined || width == null) {
     width = 0;
@@ -326,7 +327,6 @@ export const RawMetricsGraph = ({
   };
 
   const selected = findSelectedProfile();
-
   return (
     <>
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
