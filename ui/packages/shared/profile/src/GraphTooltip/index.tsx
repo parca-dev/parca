@@ -17,7 +17,7 @@ import {usePopper} from 'react-popper';
 
 import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
-import {hexifyAddress, truncateString} from '../';
+import {hexifyAddress} from '../';
 import {useKeyDown} from '@parca/components';
 import {
   Function as ParcaFunction,
@@ -149,7 +149,9 @@ const TooltipMetaInfo = ({
             <td className="w-1/5">File</td>
             <td className="w-4/5 break-all">
               <CopyToClipboard onCopy={onCopy} text={getTextForFile(hoveringNode)}>
-                <button className="cursor-pointer text-left">{getTextForFile(hoveringNode)}</button>
+                <button className="cursor-pointer text-left whitespace-nowrap">
+                  {getTextForFile(hoveringNode)}
+                </button>
               </CopyToClipboard>
             </td>
           </tr>
@@ -187,8 +189,8 @@ const TooltipMetaInfo = ({
           <td className="w-1/5">Build Id</td>
           <td className="w-4/5 break-all">
             <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.buildId}>
-              <button className="cursor-pointer">
-                {truncateString(getLastItem(hoveringNode.meta.mapping.buildId) as string, 16)}
+              <button className="cursor-pointer text-ellipsis w-56 overflow-hidden whitespace-nowrap">
+                {getLastItem(hoveringNode.meta.mapping.buildId)}
               </button>
             </CopyToClipboard>
           </td>
@@ -265,12 +267,9 @@ const GraphTooltipContent = ({
   };
 
   return (
-    <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>
-      <div className={`m-auto w-full ${isFixed ? 'w-full h-36' : ''}`}>
-        <div
-          className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
-          style={{borderWidth: 1}}
-        >
+    <div className={`flex ${isFixed ? 'w-full' : ''}`}>
+      <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
+        <div className="border border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90 min-h-52 min-w-96 flex justify-between flex-col">
           <div className="flex flex-row">
             <div className="ml-2 mr-6">
               <span className="font-semibold break-all">
@@ -336,12 +335,11 @@ const GraphTooltipContent = ({
                   </tbody>
                 </table>
               </span>
-
-              <span className="block text-gray-500 text-xs mt-2">
-                {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
-              </span>
             </div>
           </div>
+          <span className="block text-gray-500 text-xs ml-2 mr-6">
+            {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
+          </span>
         </div>
       </div>
     </div>

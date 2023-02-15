@@ -97,7 +97,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   const isColorStackLegendVisible = colorProfileName !== 'default';
 
   return (
-    <div onMouseLeave={() => setHoveringNode(undefined)}>
+    <div onMouseLeave={undefined}>
       <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
       <GraphTooltip
         unit={sampleUnit}
