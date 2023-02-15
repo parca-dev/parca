@@ -29,7 +29,7 @@ interface ProfileMetricsGraphProps {
   to: number;
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (key: string, value: string) => void;
-  onPointClick: (timestamp: any, labels: any, queryExpression: string) => void;
+  onPointClick: (timestamp: number, labels: Label[], queryExpression: string) => void;
 }
 
 export interface IQueryRangeState {
