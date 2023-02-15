@@ -352,38 +352,39 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		)
 	}
 
-	type columnIndex struct {
-		index int
-		found bool
-	}
 	// Add necessary columns and their found value is false by default.
-	columnIndices := map[string]columnIndex{
-		ColumnDurationSum: {},
-		ColumnPeriodSum:   {},
-		ColumnTimestamp:   {},
-		ColumnValueCount:  {},
-		ColumnValueSum:    {},
-	}
+	columnIndices := struct {
+		DurationSum int
+		PeriodSum   int
+		Timestamp   int
+		ValueCount  int
+		ValueSum    int
+	}{}
+
 	labelColumnIndices := []int{}
 
 	fields := ar.Schema().Fields()
 	for i, field := range fields {
-		if _, ok := columnIndices[field.Name]; ok {
-			columnIndices[field.Name] = columnIndex{
-				index: i,
-				found: true,
-			}
+		switch field.Name {
+		case ColumnDurationSum:
+			columnIndices.DurationSum = i
+			continue
+		case ColumnPeriodSum:
+			columnIndices.PeriodSum = i
+			continue
+		case ColumnTimestamp:
+			columnIndices.Timestamp = i
+			continue
+		case ColumnValueCount:
+			columnIndices.ValueCount = i
+			continue
+		case ColumnValueSum:
+			columnIndices.ValueSum = i
 			continue
 		}
 
 		if strings.HasPrefix(field.Name, "labels.") {
 			labelColumnIndices = append(labelColumnIndices, i)
-		}
-	}
-
-	for name, index := range columnIndices {
-		if !index.found {
-			return nil, fmt.Errorf("%s column not found", name)
 		}
 	}
 
@@ -422,11 +423,11 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 			labelsetToIndex[s] = index
 		}
 
-		ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
-		durationSum := ar.Column(columnIndices[ColumnDurationSum].index).(*array.Int64).Value(i)
-		periodSum := ar.Column(columnIndices[ColumnPeriodSum].index).(*array.Int64).Value(i)
-		valueSum := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
-		valueCount := ar.Column(columnIndices[ColumnValueCount].index).(*array.Int64).Value(i)
+		ts := ar.Column(columnIndices.Timestamp).(*array.Int64).Value(i)
+		durationSum := ar.Column(columnIndices.DurationSum).(*array.Int64).Value(i)
+		periodSum := ar.Column(columnIndices.PeriodSum).(*array.Int64).Value(i)
+		valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
+		valueCount := ar.Column(columnIndices.ValueCount).(*array.Int64).Value(i)
 
 		// TODO: We should do these period and duration calculations in frostDB,
 		// so that we can push these down as projections.
