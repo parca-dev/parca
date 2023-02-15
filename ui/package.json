@@ -95,7 +95,7 @@
     "local-web-server": "5.3.0",
     "next-transpile-modules": "9.1.0",
     "ora": "^6.1.2",
-    "plop": "3.1.1",
+    "plop": "3.1.2",
     "pm2": "5.2.2",
     "postcss": "8.4.21",
     "prettier": "2.8.3",
