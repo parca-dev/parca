@@ -17,13 +17,14 @@ import {usePopper} from 'react-popper';
 
 import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
 import {getLastItem, valueFormatter} from '@parca/functions';
-import {hexifyAddress} from '../';
+import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {useKeyDown} from '@parca/components';
 import {
   Function as ParcaFunction,
   Location,
   Mapping,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {ExpandOnHover} from './ExpandOnHoverValue';
 
 interface GraphTooltipProps {
   x: number;
@@ -140,17 +141,18 @@ const TooltipMetaInfo = ({
           }`
     }`;
   };
+  const file = getTextForFile(hoveringNode);
 
   return (
     <>
       {hoveringNode.meta.function?.filename !== undefined &&
         hoveringNode.meta.function?.filename !== '' && (
           <tr>
-            <td className="w-1/5">File</td>
-            <td className="w-4/5 break-all">
-              <CopyToClipboard onCopy={onCopy} text={getTextForFile(hoveringNode)}>
+            <td className="w-1/4">File</td>
+            <td className="w-3/4 break-all">
+              <CopyToClipboard onCopy={onCopy} text={file}>
                 <button className="cursor-pointer text-left whitespace-nowrap">
-                  {getTextForFile(hoveringNode)}
+                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
                 </button>
               </CopyToClipboard>
             </td>
@@ -159,8 +161,8 @@ const TooltipMetaInfo = ({
       {hoveringNode.meta.location?.address !== undefined &&
         hoveringNode.meta.location?.address !== '0' && (
           <tr>
-            <td className="w-1/5">Address</td>
-            <td className="w-4/5 break-all">
+            <td className="w-1/4">Address</td>
+            <td className="w-3/4 break-all">
               <CopyToClipboard
                 onCopy={onCopy}
                 text={hexifyAddress(hoveringNode.meta.location.address)}
@@ -174,8 +176,8 @@ const TooltipMetaInfo = ({
         )}
       {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.file !== '' && (
         <tr>
-          <td className="w-1/5">Binary</td>
-          <td className="w-4/5 break-all">
+          <td className="w-1/4">Binary</td>
+          <td className="w-3/4 break-all">
             <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.file}>
               <button className="cursor-pointer">
                 {getLastItem(hoveringNode.meta.mapping.file)}
@@ -186,11 +188,11 @@ const TooltipMetaInfo = ({
       )}
       {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.buildId !== '' && (
         <tr>
-          <td className="w-1/5">Build Id</td>
-          <td className="w-4/5 break-all">
+          <td className="w-1/4">Build Id</td>
+          <td className="w-3/4 break-all">
             <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.buildId}>
-              <button className="cursor-pointer text-ellipsis w-56 overflow-hidden whitespace-nowrap">
-                {getLastItem(hoveringNode.meta.mapping.buildId)}
+              <button className="cursor-pointer">
+                {truncateString(getLastItem(hoveringNode.meta.mapping.buildId) as string, 28)}
               </button>
             </CopyToClipboard>
           </td>
@@ -267,12 +269,12 @@ const GraphTooltipContent = ({
   };
 
   return (
-    <div className={`flex ${isFixed ? 'w-full' : ''}`}>
+    <div className={`text-sm flex ${isFixed ? 'w-full' : ''}`}>
       <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
-        <div className="border border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90 min-h-52 min-w-96 flex justify-between flex-col">
+        <div className="border border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg min-h-52 w-[500px] flex justify-between flex-col">
           <div className="flex flex-row">
-            <div className="ml-2 mr-6">
-              <span className="font-semibold break-all">
+            <div className="mx-2">
+              <div className="font-semibold break-all h-10 flex items-center">
                 {hoveringNode.meta === undefined ? (
                   <p>root</p>
                 ) : (
@@ -303,41 +305,39 @@ const GraphTooltipContent = ({
                     )}
                   </>
                 )}
-              </span>
-              <span className="text-gray-700 dark:text-gray-300 my-2">
-                <table className="table-fixed">
-                  <tbody>
-                    <tr>
-                      <td className="w-1/5">Cumulative</td>
+              </div>
+              <table className="table-fixed pr-0 text-gray-700 dark:text-gray-300 my-2 w-full">
+                <tbody>
+                  <tr>
+                    <td className="w-1/4">Cumulative</td>
 
-                      <td className="w-4/5">
-                        <CopyToClipboard
-                          onCopy={onCopy}
-                          text={getTextForCumulative(hoveringNodeCumulative)}
-                        >
-                          <button className="cursor-pointer">
-                            {getTextForCumulative(hoveringNodeCumulative)}
-                          </button>
+                    <td className="w-3/4">
+                      <CopyToClipboard
+                        onCopy={onCopy}
+                        text={getTextForCumulative(hoveringNodeCumulative)}
+                      >
+                        <button className="cursor-pointer">
+                          {getTextForCumulative(hoveringNodeCumulative)}
+                        </button>
+                      </CopyToClipboard>
+                    </td>
+                  </tr>
+                  {hoveringNode.diff !== undefined && diff !== 0 && (
+                    <tr>
+                      <td className="w-1/4">Diff</td>
+                      <td className="w-3/4">
+                        <CopyToClipboard onCopy={onCopy} text={diffText}>
+                          <button className="cursor-pointer">{diffText}</button>
                         </CopyToClipboard>
                       </td>
                     </tr>
-                    {hoveringNode.diff !== undefined && diff !== 0 && (
-                      <tr>
-                        <td className="w-1/5">Diff</td>
-                        <td className="w-4/5">
-                          <CopyToClipboard onCopy={onCopy} text={diffText}>
-                            <button className="cursor-pointer">{diffText}</button>
-                          </CopyToClipboard>
-                        </td>
-                      </tr>
-                    )}
-                    {metaRows}
-                  </tbody>
-                </table>
-              </span>
+                  )}
+                  {metaRows}
+                </tbody>
+              </table>
             </div>
           </div>
-          <span className="block text-gray-500 text-xs ml-2 mr-6">
+          <span className="block text-gray-500 text-xs mx-2">
             {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
           </span>
         </div>
