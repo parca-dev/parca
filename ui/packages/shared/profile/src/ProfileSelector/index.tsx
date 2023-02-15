@@ -261,7 +261,7 @@ const ProfileSelector = ({
                 const stepDuration = getStepDuration(querySelection.from, querySelection.to);
                 const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
                 const isDeltaType = Query.parse(queryExpression).profileType().delta;
-                const mergeFrom = parseInt(timestamp);
+                const mergeFrom = timestamp;
                 const mergeTo = isDeltaType ? mergeFrom + stepDurationInMilliseconds : mergeFrom;
                 selectProfile(
                   new MergedProfileSelection(mergeFrom, mergeTo, labels, queryExpression)
