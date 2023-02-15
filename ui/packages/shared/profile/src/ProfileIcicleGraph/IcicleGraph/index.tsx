@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
+import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import cx from 'classnames';
 import {throttle} from 'lodash';
@@ -83,21 +83,28 @@ export const IcicleGraph = memo(function IcicleGraph({
     return scaleLinear().domain([0, total]).range([0, width]);
   }, [total, width]);
 
+  const throttledSetPos = useMemo(() => {
+    return throttle(setPos, 15, {leading: true, trailing: true});
+  }, [setPos]);
+
+  const onMouseMove = useCallback(
+    (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
+      // X/Y coordinate array relative to svg
+      const rel = pointer(e);
+
+      throttledSetPos([rel[0], rel[1]]);
+    },
+    [throttledSetPos]
+  );
+
   if (coloredGraph.root === undefined || width === undefined) {
     return <></>;
   }
 
-  const throttledSetPos = throttle(setPos, 20);
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
-    // X/Y coordinate array relative to svg
-    const rel = pointer(e);
-
-    throttledSetPos([rel[0], rel[1]]);
-  };
   const isColorStackLegendVisible = colorProfileName !== 'default';
 
   return (
-    <div onMouseLeave={undefined}>
+    <div onMouseLeave={() => setHoveringNode(undefined)}>
       <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
       <GraphTooltip
         unit={sampleUnit}

@@ -207,7 +207,6 @@ export const IcicleNode = React.memo(function IcicleNode({
     setHoveringNode(data);
   };
   const onMouseLeave = (): void => {
-    return;
     if (isShiftDown) return;
 
     setHoveringNode(undefined);
@@ -227,12 +226,12 @@ export const IcicleNode = React.memo(function IcicleNode({
         <rect
           x={0}
           y={0}
-          width={width - 1}
-          height={height - 1}
+          width={width}
+          height={height}
           style={{
             fill: colorResult,
           }}
-          className={cx('stroke-white dark:stroke-gray-700 stroke-[0.1px]', {
+          className={cx('stroke-white dark:stroke-gray-700', {
             'opacity-50': isHighlightEnabled && !isHighlighted,
           })}
         />
