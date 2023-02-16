@@ -11,14 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect, useMemo} from 'react';
+
 import {Flamegraph} from '@parca/client';
 import {useContainerDimensions} from '@parca/dynamicsize';
+import {selectQueryParam, type NavigateFunction} from '@parca/functions';
 
 import DiffLegend from '../components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
-import {selectQueryParam} from '@parca/functions';
-import type {NavigateFunction} from '@parca/functions';
-import {useEffect, useMemo} from 'react';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 

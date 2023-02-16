@@ -12,15 +12,16 @@
 // limitations under the License.
 
 import {useEffect, useState} from 'react';
-import {usePopper} from 'react-popper';
+
 import type {VirtualElement} from '@popperjs/core';
+import {usePopper} from 'react-popper';
 
 import {Label} from '@parca/client';
 import {TextWithTooltip} from '@parca/components';
-import {valueFormatter, formatDate} from '@parca/functions';
+import {formatDate, valueFormatter} from '@parca/functions';
 
-import {timeFormat} from '../../';
 import {HighlightedSeries} from '../';
+import {timeFormat} from '../../';
 
 interface Props {
   x: number;

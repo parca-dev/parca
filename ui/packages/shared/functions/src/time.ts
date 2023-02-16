@@ -13,6 +13,7 @@
 
 import format from 'date-fns/format';
 import intervalToDuration from 'date-fns/intervalToDuration';
+
 import {Duration} from '@parca/client';
 
 export interface TimeObject {
@@ -37,7 +38,7 @@ export const TimeUnits = {
   Days: 'days',
 } as const;
 
-export type TimeUnit = typeof TimeUnits[keyof typeof TimeUnits];
+export type TimeUnit = (typeof TimeUnits)[keyof typeof TimeUnits];
 
 export const unitsInTime = {
   [TimeUnits.Nanos]: {multiplier: 1, symbol: 'ns'},

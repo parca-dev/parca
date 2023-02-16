@@ -12,7 +12,9 @@
 // limitations under the License.
 
 import * as d3 from 'd3';
-import {CallgraphNode, CallgraphEdge} from '@parca/client';
+
+import {CallgraphEdge, CallgraphNode} from '@parca/client';
+
 import {DEFAULT_NODE_HEIGHT} from './constants';
 
 export const pixelsToInches = (pixels: number): number => pixels / 96;

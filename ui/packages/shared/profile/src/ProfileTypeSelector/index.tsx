@@ -12,10 +12,11 @@
 // limitations under the License.
 
 import {useMemo} from 'react';
-import {ProfileType, ProfileTypesResponse} from '@parca/client';
+
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {Select} from '@parca/components';
-import type {SelectElement} from '@parca/components';
+
+import {ProfileType, ProfileTypesResponse} from '@parca/client';
+import {Select, type SelectElement} from '@parca/components';
 
 interface WellKnownProfile {
   name: string;

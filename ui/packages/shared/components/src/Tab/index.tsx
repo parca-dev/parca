@@ -11,8 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import cx from 'classnames';
 import {Tab as HeadlessTab} from '@headlessui/react';
+import cx from 'classnames';
 
 const Tab = ({
   tabs,

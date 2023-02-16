@@ -12,7 +12,9 @@
 // limitations under the License.
 
 import {useState} from 'react';
+
 import {Icon} from '@iconify/react';
+
 import {Label} from '@parca/client';
 import {Pill, PillVariant} from '@parca/components';
 

@@ -78,3 +78,6 @@ repos:
     hooks:
       - id: prettier
         files: \.(?:[jt]sx?|md|html|s?css)$
+        additional_dependencies:
+          - "prettier@2.8.3"
+          - "@ianvs/prettier-plugin-sort-imports@3.7.1"

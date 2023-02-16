@@ -12,10 +12,13 @@
 // limitations under the License.
 
 import {Fragment, useCallback, useEffect, useState} from 'react';
+
 import {Transition} from '@headlessui/react';
-import SuggestionItem from './SuggestionItem';
 import {usePopper} from 'react-popper';
+
 import {useParcaContext} from '@parca/components';
+
+import SuggestionItem from './SuggestionItem';
 
 export class Suggestion {
   type: string;

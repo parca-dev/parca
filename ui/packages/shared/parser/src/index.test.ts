@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {MatcherTypes, Matcher, Query, ProfileType} from './index';
+import {Matcher, MatcherTypes, ProfileType, Query} from './index';
 
 test('QueryParseEmpty', () => {
   expect(Query.parse('')).toMatchObject(

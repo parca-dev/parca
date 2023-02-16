@@ -12,9 +12,11 @@
 // limitations under the License.
 
 import React from 'react';
+
 import {Agent} from '@parca/client';
-import LastScrapeCell from './LastScrapeCell';
 import {TimeObject} from '@parca/functions';
+
+import LastScrapeCell from './LastScrapeCell';
 
 const AgentsTableHeader = {
   id: 'Name',

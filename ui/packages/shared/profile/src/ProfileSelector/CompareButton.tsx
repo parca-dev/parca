@@ -12,7 +12,9 @@
 // limitations under the License.
 
 import {useState} from 'react';
+
 import {usePopper} from 'react-popper';
+
 import {Button} from '@parca/components';
 
 const CompareButton = ({

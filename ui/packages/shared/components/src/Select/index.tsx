@@ -11,11 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Listbox, Transition} from '@headlessui/react';
-import cx from 'classnames';
-import {useParcaContext} from '../ParcaContext';
 import {Fragment} from 'react';
+
+import {Listbox, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
+
+import {useParcaContext} from '../ParcaContext';
 
 export interface SelectElement {
   active: JSX.Element;
