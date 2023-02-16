@@ -113,7 +113,7 @@ export const IcicleGraph = memo(function IcicleGraph({
       <div
         className={cx('flex justify-start absolute', {
           'top-[-48px]': dashboardItems.length <= 1 && !isTrimmed && !isColorStackLegendVisible,
-          'top-[-69px]': dashboardItems.length <= 1 && !isTrimmed,
+          'top-[-69px]': dashboardItems.length <= 1 && !isTrimmed && isColorStackLegendVisible,
           'top-[-54px]': dashboardItems.length <= 1 && isTrimmed && isColorStackLegendVisible,
           'top-[-54px] ': dashboardItems.length <= 1 && isTrimmed && !isColorStackLegendVisible,
           'top-[-54px] left-[25px]':
