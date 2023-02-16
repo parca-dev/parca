@@ -156,7 +156,7 @@ jobs:
 
       - name: Install crane
         if: ${{ github.event_name != 'pull_request' }}
-        uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4 # tag=v0.2
+        uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c # v0.3
 
       - name: Login to registry
         if: ${{ github.event_name != 'pull_request' }}
