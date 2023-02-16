@@ -30,6 +30,7 @@ import {
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
+import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
   expression: string;
@@ -173,6 +174,13 @@ const ProfileSelector = ({
       setQueryExpressionString(q);
     }
   };
+
+  useAutoQuerySelector({
+    selectedProfileName,
+    profileTypesData,
+    setProfileName,
+    setQueryExpression,
+  });
 
   const handleCompareClick = (): void => onCompareProfile();
 

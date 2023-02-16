@@ -129,17 +129,16 @@ function profileSelectElement(
   };
 }
 
+export const constructProfileName = (type: ProfileType): string => {
+  return `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${type.periodUnit}${
+    type.delta ? ':delta' : ''
+  }`;
+};
+
 export const normalizeProfileTypesData = (types: ProfileType[]): string[] => {
-  return types
-    .map(
-      type =>
-        `${type.name}:${type.sampleType}:${type.sampleUnit}:${type.periodType}:${type.periodUnit}${
-          type.delta ? ':delta' : ''
-        }`
-    )
-    .sort((a: string, b: string): number => {
-      return a.localeCompare(b);
-    });
+  return types.map(constructProfileName).sort((a: string, b: string): number => {
+    return a.localeCompare(b);
+  });
 };
 
 interface Props {

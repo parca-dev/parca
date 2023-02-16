@@ -20,6 +20,7 @@ import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import DarkModeToggle from './DarkModeToggle';
 import UserPreferences from './UserPreferences';
 import {useAppSelector, selectDarkMode} from '@parca/store';
+import {Link, useLocation} from 'react-router-dom';
 
 const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
 
@@ -46,17 +47,10 @@ const GitHubStarButton = () => {
 };
 
 const Navbar = () => {
-  const removePathPrefix = (href: string) =>
-    href.startsWith(window.PATH_PREFIX) ? href.slice(window.PATH_PREFIX.length) : href;
+  const location = useLocation();
 
-  const getPageByHref = (href: string = '/'): {label: string; href: string; external: boolean} => {
-    const link = removePathPrefix(href);
-    return links[link] ?? links['/'];
-  };
-
-  const currentPage = getPageByHref(window.location.pathname);
   const isCurrentPage = (item: {label: string; href: string; external: boolean}) =>
-    item.href === currentPage.href;
+    location.pathname === item.href;
 
   return (
     <Disclosure as="nav" className="dark:bg-gray-900 relative z-10">
@@ -93,23 +87,39 @@ const Navbar = () => {
                 </div>
                 <div className="hidden sm:block sm:ml-6">
                   <div className="flex gap-2 items-center">
-                    {Object.values(links).map(item => (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        target={item.external ? '_blank' : undefined}
-                        className={cx(
-                          isCurrentPage(item)
-                            ? 'bg-gray-900 dark:bg-gray-700 text-white'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white',
-                          'px-3 py-2 rounded-md text-sm font-medium'
-                        )}
-                        aria-current={isCurrentPage(item) ? 'page' : undefined}
-                        rel="noreferrer"
-                      >
-                        {item.label}
-                      </a>
-                    ))}
+                    {Object.values(links).map(item =>
+                      item.external ? (
+                        <a
+                          key={item.label}
+                          href={item.href}
+                          target={item.external ? '_blank' : undefined}
+                          className={cx(
+                            isCurrentPage(item)
+                              ? 'bg-gray-900 dark:bg-gray-700 text-white'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white',
+                            'px-3 py-2 rounded-md text-sm font-medium'
+                          )}
+                          aria-current={isCurrentPage(item) ? 'page' : undefined}
+                          rel="noreferrer"
+                        >
+                          {item.label}
+                        </a>
+                      ) : (
+                        <Link
+                          to={item.href}
+                          key={item.label}
+                          className={cx(
+                            isCurrentPage(item)
+                              ? 'bg-gray-900 dark:bg-gray-700 text-white'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white',
+                            'px-3 py-2 rounded-md text-sm font-medium'
+                          )}
+                          aria-current={isCurrentPage(item) ? 'page' : undefined}
+                        >
+                          {item.label}
+                        </Link>
+                      )
+                    )}
                     <div className="px-3 hidden md:flex pt-2">
                       <GitHubStarButton />
                     </div>
