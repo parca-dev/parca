@@ -14,6 +14,7 @@ repos:
         args:
           - --license-filepath=scripts/LICENSE.txt
           - --comment-style=//
+          - --use-current-year
           - --fuzzy-match-generates-todo
         exclude: \.pb(?:\.gw)?\.go$
         types: [go]
@@ -22,6 +23,7 @@ repos:
         args:
           - --license-filepath=scripts/LICENSE.txt
           - --comment-style=#
+          - --use-current-year
           - --fuzzy-match-generates-todo
         types: [shell]
       - id: insert-license
