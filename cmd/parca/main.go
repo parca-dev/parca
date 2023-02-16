@@ -22,6 +22,7 @@ import (
 	"github.com/common-nighthawk/go-figure"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/parca-dev/parca/pkg/parca"
 )
@@ -51,6 +52,12 @@ func main() {
 		"commit", commit,
 		"config", fmt.Sprint(flags),
 	)
+
+	if _, err := maxprocs.Set(maxprocs.Logger(func(format string, a ...interface{}) {
+		level.Info(logger).Log("msg", fmt.Sprintf(format, a...))
+	})); err != nil {
+		level.Warn(logger).Log("msg", "failed to set GOMAXPROCS automatically", "err", err)
+	}
 
 	registry := prometheus.NewRegistry()
 
