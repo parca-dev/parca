@@ -73,7 +73,7 @@ TODO:
 
 # Making a PR
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change. If you are not entirely sure about this, you can discuss this on the [Parca Discord](https://discord.gg/ZgUpYgpzXy) server as well.
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change. If you are not entirely sure about this, you can discuss this on the [Parca Discord](https://discord.gg/ZgUpYgpzXy) server as well. RFCs are used to document all things architecture and design for the Parca project. You can find an index of the existing RFCs [here](https://docs.google.com/document/d/171XgH4l_gxvGnETVKQBddo75jQz5aTSDOqO0EZ7LLqE/edit?usp=share_link).
 
 Please make sure to update tests as appropriate.
 

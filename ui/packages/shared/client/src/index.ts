@@ -5,5 +5,6 @@ export * from './parca/profilestore/v1alpha1/profilestore';
 export * from './parca/scrape/v1alpha1/scrape.client';
 export * from './parca/scrape/v1alpha1/scrape';
 export * from './google/protobuf/timestamp';
+export * from './google/protobuf/duration';
 export * from './grpc/health/v1/health.client';
 export * from './grpc/health/v1/health';

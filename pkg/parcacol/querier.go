@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -39,11 +39,6 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
-)
-
-var (
-	ErrTimestampColumnNotFound = errors.New("timestamp column not found")
-	ErrValueColumnNotFound     = errors.New("value column not found")
 )
 
 type Engine interface {
@@ -203,10 +198,46 @@ func MatchersToBooleanExpressions(matchers []*labels.Matcher) ([]logicalplan.Exp
 	return exprs, nil
 }
 
-func QueryToFilterExprs(query string) (profile.Meta, []logicalplan.Expr, error) {
+func QueryToFilterExprs(query string) (QueryParts, []logicalplan.Expr, error) {
+	qp, err := parseQuery(query)
+	if err != nil {
+		return qp, nil, err
+	}
+
+	labelFilterExpressions, err := MatchersToBooleanExpressions(qp.Matchers)
+	if err != nil {
+		return qp, nil, status.Error(codes.InvalidArgument, "failed to build query")
+	}
+
+	exprs := append([]logicalplan.Expr{
+		logicalplan.Col(ColumnName).Eq(logicalplan.Literal(qp.Meta.Name)),
+		logicalplan.Col(ColumnSampleType).Eq(logicalplan.Literal(qp.Meta.SampleType.Type)),
+		logicalplan.Col(ColumnSampleUnit).Eq(logicalplan.Literal(qp.Meta.SampleType.Unit)),
+		logicalplan.Col(ColumnPeriodType).Eq(logicalplan.Literal(qp.Meta.PeriodType.Type)),
+		logicalplan.Col(ColumnPeriodUnit).Eq(logicalplan.Literal(qp.Meta.PeriodType.Unit)),
+	}, labelFilterExpressions...)
+
+	deltaPlan := logicalplan.Col(ColumnDuration).Eq(logicalplan.Literal(0))
+	if qp.Delta {
+		deltaPlan = logicalplan.Col(ColumnDuration).NotEq(logicalplan.Literal(0))
+	}
+
+	exprs = append(exprs, deltaPlan)
+
+	return qp, exprs, nil
+}
+
+type QueryParts struct {
+	Meta     profile.Meta
+	Delta    bool
+	Matchers []*labels.Matcher
+}
+
+// parseQuery from a string into the QueryParts struct.
+func parseQuery(query string) (QueryParts, error) {
 	parsedSelector, err := parser.ParseMetricSelector(query)
 	if err != nil {
-		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "failed to parse query")
+		return QueryParts{}, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
 
 	sel := make([]*labels.Matcher, 0, len(parsedSelector))
@@ -219,52 +250,43 @@ func QueryToFilterExprs(query string) (profile.Meta, []logicalplan.Expr, error) 
 		}
 	}
 	if nameLabel == nil {
-		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
+		return QueryParts{}, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
 	}
 
 	parts := strings.Split(nameLabel.Value, ":")
 	if len(parts) != 5 && len(parts) != 6 {
-		return profile.Meta{}, nil, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
+		return QueryParts{}, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
 	}
-	name, sampleType, sampleUnit, periodType, periodUnit, delta := parts[0], parts[1], parts[2], parts[3], parts[4], false
+	delta := false
 	if len(parts) == 6 && parts[5] == "delta" {
 		delta = true
 	}
 
-	labelFilterExpressions, err := MatchersToBooleanExpressions(sel)
-	if err != nil {
-		return profile.Meta{}, nil, status.Error(codes.InvalidArgument, "failed to build query")
-	}
-
-	exprs := append([]logicalplan.Expr{
-		logicalplan.Col("name").Eq(logicalplan.Literal(name)),
-		logicalplan.Col("sample_type").Eq(logicalplan.Literal(sampleType)),
-		logicalplan.Col("sample_unit").Eq(logicalplan.Literal(sampleUnit)),
-		logicalplan.Col("period_type").Eq(logicalplan.Literal(periodType)),
-		logicalplan.Col("period_unit").Eq(logicalplan.Literal(periodUnit)),
-	}, labelFilterExpressions...)
-
-	deltaPlan := logicalplan.Col("duration").Eq(logicalplan.Literal(0))
-	if delta {
-		deltaPlan = logicalplan.Col("duration").NotEq(logicalplan.Literal(0))
-	}
-
-	exprs = append(exprs, deltaPlan)
-
-	return profile.Meta{
-		Name:       name,
-		SampleType: profile.ValueType{Type: sampleType, Unit: sampleUnit},
-		PeriodType: profile.ValueType{Type: periodType, Unit: periodUnit},
-	}, exprs, nil
+	return QueryParts{
+		Meta: profile.Meta{
+			Name: parts[0],
+			SampleType: profile.ValueType{
+				Type: parts[1],
+				Unit: parts[2],
+			},
+			PeriodType: profile.ValueType{
+				Type: parts[3],
+				Unit: parts[4],
+			},
+		},
+		Delta:    delta,
+		Matchers: sel,
+	}, nil
 }
 
 func (q *Querier) QueryRange(
 	ctx context.Context,
 	query string,
 	startTime, endTime time.Time,
+	step time.Duration,
 	limit uint32,
 ) ([]*pb.MetricsSeries, error) {
-	_, selectorExprs, err := QueryToFilterExprs(query)
+	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
 		return nil, err
 	}
@@ -272,29 +294,47 @@ func (q *Querier) QueryRange(
 	start := timestamp.FromTime(startTime)
 	end := timestamp.FromTime(endTime)
 
+	// The step cannot be lower than 1s
+	if step < time.Second {
+		step = time.Second
+	}
+
 	exprs := append(
 		selectorExprs,
-		logicalplan.Col("timestamp").Gt(logicalplan.Literal(start)),
-		logicalplan.Col("timestamp").Lt(logicalplan.Literal(end)),
+		logicalplan.Col(ColumnTimestamp).Gt(logicalplan.Literal(start)),
+		logicalplan.Col(ColumnTimestamp).Lt(logicalplan.Literal(end)),
 	)
 
 	filterExpr := logicalplan.And(exprs...)
 
-	resSeries := []*pb.MetricsSeries{}
-	labelsetToIndex := map[string]int{}
+	if queryParts.Delta {
+		return q.queryRangeDelta(ctx, filterExpr, step, queryParts.Meta.SampleType.Unit)
+	}
 
-	labelSet := labels.Labels{}
+	return q.queryRangeNonDelta(ctx, filterExpr, step)
+}
 
+const (
+	ColumnDurationSum = "sum(" + ColumnDuration + ")"
+	ColumnPeriodSum   = "sum(" + ColumnPeriod + ")"
+	ColumnValueCount  = "count(" + ColumnValue + ")"
+	ColumnValueSum    = "sum(" + ColumnValue + ")"
+)
+
+func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
 	var ar arrow.Record
-	err = q.engine.ScanTable(q.tableName).
+	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col("value")),
+				logicalplan.Sum(logicalplan.Col(ColumnDuration)),
+				logicalplan.Sum(logicalplan.Col(ColumnPeriod)),
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+				logicalplan.Count(logicalplan.Col(ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.DynCol("labels"),
-				logicalplan.Col("timestamp"),
+				logicalplan.DynCol(ColumnLabels),
+				logicalplan.Duration(step),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -312,22 +352,40 @@ func (q *Querier) QueryRange(
 		)
 	}
 
-	timestampColumnIndex := 0
-	timestampColumnFound := false
-	valueColumnIndex := 0
-	valueColumnFound := false
+	// Add necessary columns and their found value is false by default.
+	columnIndices := struct {
+		DurationSum int
+		PeriodSum   int
+		Timestamp   int
+		ValueCount  int
+		ValueSum    int
+	}{
+		DurationSum: -1,
+		PeriodSum:   -1,
+		Timestamp:   -1,
+		ValueCount:  -1,
+		ValueSum:    -1,
+	}
+
 	labelColumnIndices := []int{}
 
 	fields := ar.Schema().Fields()
 	for i, field := range fields {
-		if field.Name == "timestamp" {
-			timestampColumnIndex = i
-			timestampColumnFound = true
+		switch field.Name {
+		case ColumnDurationSum:
+			columnIndices.DurationSum = i
 			continue
-		}
-		if field.Name == "sum(value)" {
-			valueColumnIndex = i
-			valueColumnFound = true
+		case ColumnPeriodSum:
+			columnIndices.PeriodSum = i
+			continue
+		case ColumnTimestamp:
+			columnIndices.Timestamp = i
+			continue
+		case ColumnValueCount:
+			columnIndices.ValueCount = i
+			continue
+		case ColumnValueSum:
+			columnIndices.ValueSum = i
 			continue
 		}
 
@@ -336,13 +394,26 @@ func (q *Querier) QueryRange(
 		}
 	}
 
-	if !timestampColumnFound {
-		return nil, ErrTimestampColumnNotFound
+	if columnIndices.DurationSum == -1 {
+		return nil, errors.New("sum(duration) column not found")
+	}
+	if columnIndices.PeriodSum == -1 {
+		return nil, errors.New("sum(period) column not found")
+	}
+	if columnIndices.Timestamp == -1 {
+		return nil, errors.New("timestamp column not found")
+	}
+	if columnIndices.ValueCount == -1 {
+		return nil, errors.New("count(value) column not found")
+	}
+	if columnIndices.ValueSum == -1 {
+		return nil, errors.New("sum(value) column not found")
 	}
 
-	if !valueColumnFound {
-		return nil, ErrValueColumnNotFound
-	}
+	labelSet := labels.Labels{}
+
+	resSeries := []*pb.MetricsSeries{}
+	labelsetToIndex := map[string]int{}
 
 	for i := 0; i < int(ar.NumRows()); i++ {
 		labelSet = labelSet[:0]
@@ -374,11 +445,168 @@ func (q *Querier) QueryRange(
 			labelsetToIndex[s] = index
 		}
 
+		ts := ar.Column(columnIndices.Timestamp).(*array.Int64).Value(i)
+		durationSum := ar.Column(columnIndices.DurationSum).(*array.Int64).Value(i)
+		periodSum := ar.Column(columnIndices.PeriodSum).(*array.Int64).Value(i)
+		valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
+		valueCount := ar.Column(columnIndices.ValueCount).(*array.Int64).Value(i)
+
+		// TODO: We should do these period and duration calculations in frostDB,
+		// so that we can push these down as projections.
+
+		// Because we store the period with each sample yet query for the sum(period) we need to normalize by the amount of values (rows in a database).
+		period := periodSum / valueCount
+		// Because we store the duration with each sample yet query for the sum(duration) we need to normalize by the amount of values (rows in a database).
+		duration := durationSum / valueCount
+
+		// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
+		// If we already have CPU nanoseconds we don't need to multiply by the period.
+		if sampleTypeUnit != "nanoseconds" {
+			valueSum = valueSum * period
+		}
+
+		// TODO: We shouldn't multiply by 100 here but our payload value is int64 and we cannot send float64...
+		percentage := 100 * float64(valueSum) / float64(duration)
+
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp: timestamppb.New(timestamp.Time(ar.Column(timestampColumnIndex).(*array.Int64).Value(i))),
-			Value:     ar.Column(valueColumnIndex).(*array.Int64).Value(i),
+			Timestamp: timestamppb.New(timestamp.Time(ts)),
+			Value:     int64(percentage),
 		})
+	}
+
+	// This is horrible and should be fixed. The data is sorted in the storage, we should not have to sort it here.
+	for _, series := range resSeries {
+		sort.Slice(series.Samples, func(i, j int) bool {
+			return series.Samples[i].Timestamp.AsTime().Before(series.Samples[j].Timestamp.AsTime())
+		})
+	}
+
+	return resSeries, nil
+}
+
+func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
+	var ar arrow.Record
+	err := q.engine.ScanTable(q.tableName).
+		Filter(filterExpr).
+		Aggregate(
+			[]logicalplan.Expr{
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+			},
+			[]logicalplan.Expr{
+				logicalplan.DynCol(ColumnLabels),
+				logicalplan.Col(ColumnTimestamp),
+			},
+		).
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+			r.Retain()
+			ar = r
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	if ar == nil || ar.NumRows() == 0 {
+		return nil, status.Error(
+			codes.NotFound,
+			"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
+		)
+	}
+
+	type columnIndex struct {
+		index int
+		found bool
+	}
+	// Add necessary columns and their found value is false by default.
+	columnIndices := map[string]columnIndex{
+		ColumnTimestamp: {},
+		ColumnValueSum:  {},
+	}
+	labelColumnIndices := []int{}
+
+	fields := ar.Schema().Fields()
+	for i, field := range fields {
+		if _, ok := columnIndices[field.Name]; ok {
+			columnIndices[field.Name] = columnIndex{
+				index: i,
+				found: true,
+			}
+			continue
+		}
+
+		if strings.HasPrefix(field.Name, "labels.") {
+			labelColumnIndices = append(labelColumnIndices, i)
+		}
+	}
+
+	for name, index := range columnIndices {
+		if !index.found {
+			return nil, fmt.Errorf("%s column not found", name)
+		}
+	}
+
+	labelSet := labels.Labels{}
+
+	resSeries := []*pb.MetricsSeries{}
+	resSeriesBuckets := map[int]map[int64]struct{}{}
+	labelsetToIndex := map[string]int{}
+
+	for i := 0; i < int(ar.NumRows()); i++ {
+		labelSet = labelSet[:0]
+		for _, labelColumnIndex := range labelColumnIndices {
+			col, ok := ar.Column(labelColumnIndex).(*array.Dictionary)
+			if col.IsNull(i) || !ok {
+				continue
+			}
+
+			v := StringValueFromDictionary(col, i)
+			if len(v) > 0 {
+				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: v})
+			}
+		}
+
+		sort.Sort(labelSet)
+		s := labelSet.String()
+		index, ok := labelsetToIndex[s]
+		if !ok {
+			pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
+			for _, l := range labelSet {
+				pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
+					Name:  l.Name,
+					Value: l.Value,
+				})
+			}
+			resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
+			index = len(resSeries) - 1
+			labelsetToIndex[s] = index
+			resSeriesBuckets[index] = map[int64]struct{}{}
+		}
+
+		ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
+		value := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
+
+		// Each step bucket will only return one of the timestamps and its value.
+		// For this reason we'll take each timestamp and divide it by the step seconds.
+		// If we have seen a MetricsSample for this bucket before, we'll ignore this one.
+		// If we haven't seen one we'll add this sample to the response.
+
+		// TODO: This still queries way too much data from the underlying database.
+		// This needs to be moved to FrostDB to not even query all of this data in the first place.
+		// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
+		// Even worse for a week, we'd query 60480 samples and only return 1000.
+		tsBucket := ts / 1000 / int64(step.Seconds())
+		if _, found := resSeriesBuckets[index][tsBucket]; found {
+			// We already have a MetricsSample for this timestamp bucket, ignore it.
+			continue
+		}
+
+		series := resSeries[index]
+		series.Samples = append(series.Samples, &pb.MetricsSample{
+			Timestamp: timestamppb.New(timestamp.Time(ts)),
+			Value:     value,
+		})
+		// Mark the timestamp bucket as filled by the above MetricsSample.
+		resSeriesBuckets[index][tsBucket] = struct{}{}
 	}
 
 	// This is horrible and should be fixed. The data is sorted in the storage, we should not have to sort it here.
@@ -590,7 +818,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
 	defer span.End()
 
-	meta, selectorExprs, err := QueryToFilterExprs(query)
+	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
 		return nil, "", profile.Meta{}, err
 	}
@@ -607,12 +835,12 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col("value")),
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.Col("stacktrace"),
-				logicalplan.DynCol("pprof_labels"),
-				logicalplan.DynCol("pprof_num_labels"),
+				logicalplan.Col(ColumnStacktrace),
+				logicalplan.DynCol(ColumnPprofLabels),
+				logicalplan.DynCol(ColumnPprofNumLabels),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -627,9 +855,9 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 	return ar,
 		"sum(value)",
 		profile.Meta{
-			Name:       meta.Name,
-			SampleType: meta.SampleType,
-			PeriodType: meta.PeriodType,
+			Name:       queryParts.Meta.Name,
+			SampleType: queryParts.Meta.SampleType,
+			PeriodType: queryParts.Meta.PeriodType,
 			Timestamp:  requestedTime,
 		},
 		nil
@@ -662,7 +890,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
-	meta, selectorExprs, err := QueryToFilterExprs(query)
+	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
 		return nil, "", profile.Meta{}, err
 	}
@@ -673,8 +901,8 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col("timestamp").Gt(logicalplan.Literal(start)),
-			logicalplan.Col("timestamp").Lt(logicalplan.Literal(end)),
+			logicalplan.Col(ColumnTimestamp).GtEq(logicalplan.Literal(start)),
+			logicalplan.Col(ColumnTimestamp).LtEq(logicalplan.Literal(end)),
 		)...,
 	)
 
@@ -683,10 +911,12 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col("value")),
+				logicalplan.Sum(logicalplan.Col(ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.Col("stacktrace"),
+				logicalplan.Col(ColumnStacktrace),
+				logicalplan.DynCol(ColumnPprofLabels),
+				logicalplan.DynCol(ColumnPprofNumLabels),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -698,10 +928,10 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		return nil, "", profile.Meta{}, err
 	}
 
-	meta = profile.Meta{
-		Name:       meta.Name,
-		SampleType: meta.SampleType,
-		PeriodType: meta.PeriodType,
+	meta := profile.Meta{
+		Name:       queryParts.Meta.Name,
+		SampleType: queryParts.Meta.SampleType,
+		PeriodType: queryParts.Meta.PeriodType,
 		Timestamp:  start,
 	}
 	return ar, "sum(value)", meta, nil
