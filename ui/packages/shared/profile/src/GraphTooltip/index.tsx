@@ -366,7 +366,7 @@ const GraphTooltip = ({
     virtualContextElement ? virtualElement : contextElement,
     popperElement,
     {
-      placement: 'auto-start',
+      placement: 'bottom-start',
       strategy: 'absolute',
       modifiers: [
         {

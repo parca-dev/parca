@@ -92,7 +92,7 @@ export const IcicleGraph = memo(function IcicleGraph({
       // X/Y coordinate array relative to svg
       const rel = pointer(e);
 
-      throttledSetPos([rel[0], rel[1]]);
+      throttledSetPos(rel);
     },
     [throttledSetPos]
   );
