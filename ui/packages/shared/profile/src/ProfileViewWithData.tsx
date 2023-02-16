@@ -35,7 +35,7 @@ export const ProfileViewWithData = ({
   navigateTo,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
+  const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
   const [nodeTrimThreshold, setNodeTrimThreshold] = useState<number>(0);
   const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
 

@@ -182,7 +182,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   const {nodes: rawNodes, cumulative: total} = graph;
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
-  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
+  const [rawDashboardItems = ['icicle']] = useURLState({param: 'dashboard_items'});
 
   const dashboardItems = rawDashboardItems as string[];
 

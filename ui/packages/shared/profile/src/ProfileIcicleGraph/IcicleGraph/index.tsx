@@ -55,7 +55,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
-  const [rawDashboardItems] = useURLState({
+  const [rawDashboardItems = ['icicle']] = useURLState({
     param: 'dashboard_items',
   });
 
