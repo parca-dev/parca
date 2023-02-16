@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
-
 interface Props {
   value: string | number | undefined;
   displayValue?: string | number | undefined;
