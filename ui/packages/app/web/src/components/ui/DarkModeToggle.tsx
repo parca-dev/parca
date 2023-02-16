@@ -11,13 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {MoonIcon, SunIcon} from '@heroicons/react/20/solid';
 import {useAppSelector, useAppDispatch, setDarkMode, selectDarkMode} from '@parca/store';
+import {Icon} from '@iconify/react';
 
 const DarkModeToggle = () => {
   const dispatch = useAppDispatch();
   const isDarkMode = useAppSelector(selectDarkMode);
-  const Icon = isDarkMode ? MoonIcon : SunIcon;
+
   return (
     <button
       type="button"
@@ -28,6 +28,7 @@ const DarkModeToggle = () => {
         onClick={() => dispatch(setDarkMode(!isDarkMode))}
         className="w-5 h-5"
         aria-hidden="true"
+        icon={isDarkMode ? 'heroicons:moon-20-solid' : 'heroicons:sun-20-solid'}
       />
     </button>
   );
