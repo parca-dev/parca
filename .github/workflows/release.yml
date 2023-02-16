@@ -180,7 +180,7 @@ jobs:
         uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b # tag=v2.8.1
 
       - name: Install crane
-        uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4 # tag=v0.2
+        uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c # v0.3
 
       - name: Push container
         run: |
