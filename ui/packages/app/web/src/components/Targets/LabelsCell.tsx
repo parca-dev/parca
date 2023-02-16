@@ -13,7 +13,7 @@
 
 import {useState} from 'react';
 
-import {ChevronDoubleDownIcon, ChevronDoubleUpIcon} from '@heroicons/react/20/solid';
+import {Icon} from '@iconify/react';
 
 import {Label} from '@parca/client';
 import {Pill, PillVariant} from '@parca/components';
@@ -50,12 +50,12 @@ const LabelsCell = ({
       {areDiscoveredLabelsVisible ? (
         <div className={buttonClasses} onClick={() => setAreDiscoveredLabelsVisible(false)}>
           <span className="mr-1">Hide Discovered Labels</span>
-          <ChevronDoubleUpIcon className="h-5 w-5" aria-hidden="true" />
+          <Icon icon="heroicons:chevron-double-up-20-solid" aria-hidden="true" />
         </div>
       ) : (
         <div className={buttonClasses} onClick={() => setAreDiscoveredLabelsVisible(true)}>
           <span className="mr-1">Show Discovered Labels</span>
-          <ChevronDoubleDownIcon className="h-5 w-5" aria-hidden="true" />
+          <Icon icon="heroicons:chevron-double-down-20-solid" aria-hidden="true" />
         </div>
       )}
     </td>

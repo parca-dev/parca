@@ -14,7 +14,7 @@
 import React, {Fragment} from 'react';
 
 import {Menu, Transition} from '@headlessui/react';
-import {ChevronDownIcon} from '@heroicons/react/20/solid';
+import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import Button from '../Button';
@@ -38,9 +38,10 @@ const Dropdown = ({
             {element !== undefined ? (
               <Button variant={variant}>
                 {text}{' '}
-                <ChevronDownIcon
-                  className="w-5 h-5 ml-2 -mr-1 text-violet-200 hover:text-violet-100"
+                <Icon
+                  icon="heroicons:chevron-down-20-solid"
                   aria-hidden="true"
+                  className="text-violet-200 hover:text-violet-100"
                 />
               </Button>
             ) : (
