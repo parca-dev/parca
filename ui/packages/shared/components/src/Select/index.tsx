@@ -12,10 +12,10 @@
 // limitations under the License.
 
 import {Listbox, Transition} from '@headlessui/react';
-import {CheckIcon, ChevronUpDownIcon} from '@heroicons/react/20/solid';
 import cx from 'classnames';
 import {useParcaContext} from '../ParcaContext';
 import {Fragment} from 'react';
+import {Icon} from '@iconify/react';
 
 export interface SelectElement {
   active: JSX.Element;
@@ -86,8 +86,8 @@ const Select = ({
                     {selection?.key !== '' ? selection.element.active : placeholder}
                   </span>
                 </span>
-                <span className="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                  <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                <span className="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-gray-400">
+                  <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />
                 </span>
               </Listbox.Button>
 
@@ -144,7 +144,7 @@ const Select = ({
                                         'absolute inset-y-0 right-0 flex items-center pr-4'
                                       )}
                                     >
-                                      <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                      <Icon icon="heroicons:check-20-solid" aria-hidden="true" />
                                     </span>
                                   ) : null}
                                 </>

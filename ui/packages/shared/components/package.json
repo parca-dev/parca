@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.4.3",
-    "@heroicons/react": "^2.0.0",
     "@iconify/react": "^4.0.0",
     "@parca/client": "^0.16.63",
     "@parca/dynamicsize": "^0.16.52",
