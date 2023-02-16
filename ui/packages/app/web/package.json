@@ -24,7 +24,7 @@
   "license": "ISC",
   "dependencies": {
     "@headlessui/react": "1.7.10",
-    "@heroicons/react": "2.0.14",
+    "@heroicons/react": "2.0.15",
     "@parca/client": "^0.16.63",
     "@parca/components": "^0.16.97",
     "@parca/dynamicsize": "^0.16.52",
