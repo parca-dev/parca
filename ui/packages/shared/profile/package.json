@@ -19,7 +19,7 @@
     "react-copy-to-clipboard": "^5.1.0",
     "react-cytoscapejs": "1.2.1",
     "react-flame-graph": "^1.4.0",
-    "react-konva": "18.2.4",
+    "react-konva": "18.2.5",
     "react-query": "^3.39.2",
     "react-textarea-autosize": "^8.4.0"
   },

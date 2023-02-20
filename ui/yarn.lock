@@ -6176,7 +6176,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-reconciler@^0.28.0":
+"@types/react-reconciler@^0.28.0", "@types/react-reconciler@^0.28.2":
   version "0.28.2"
   resolved "https://registry.yarnpkg.com/@types/react-reconciler/-/react-reconciler-0.28.2.tgz#f16b0e8cc4748af70ca975eaaace0d79582c71fa"
   integrity sha512-8tu6lHzEgYPlfDf/J6GOQdIc+gs+S2yAqlby3zTsB3SP2svlqTYe5fwZNtZyfactP74ShooP2vvi1BOp9ZemWw==
@@ -23275,11 +23275,12 @@ react-is@^16.12.0, react-is@^16.13.1, react-is@^16.6.0, react-is@^16.7.0:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
-react-konva@18.2.4:
-  version "18.2.4"
-  resolved "https://registry.yarnpkg.com/react-konva/-/react-konva-18.2.4.tgz#f5f63d07bb287d3edf7eee35612282ddc55a6d6f"
-  integrity sha512-cVo0+L8PjUSrSAMLlutwRiI1t8koU4Z6EOsbrWxuXvTwNXG3qd0wFoNBBVGjOQgZX9hqufbK7NEQdfqlKve9jQ==
+react-konva@18.2.5:
+  version "18.2.5"
+  resolved "https://registry.yarnpkg.com/react-konva/-/react-konva-18.2.5.tgz#592692619c5f4a9c14726e146574ddc8bc468a7c"
+  integrity sha512-lTqJStcHnpGSXB9RlV7p5at3MpRML/TujzbuUDZRIInsLocJ/I4Nhhg3w6yJm9UV05kcwr88OY6LO+2zRyzXog==
   dependencies:
+    "@types/react-reconciler" "^0.28.2"
     its-fine "^1.0.6"
     react-reconciler "~0.29.0"
     scheduler "^0.23.0"
