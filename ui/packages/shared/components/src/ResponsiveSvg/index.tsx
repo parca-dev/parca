@@ -11,7 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState, useEffect, Children} from 'react';
+import {Children, useEffect, useState} from 'react';
+
 import {useContainerDimensions} from '@parca/dynamicsize';
 
 interface Props {

@@ -11,11 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Input, useURLState} from '../';
 import {useEffect, useMemo} from 'react';
-import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
-import type {NavigateFunction} from '@parca/functions';
+
 import {debounce} from 'lodash';
+
+import type {NavigateFunction} from '@parca/functions';
+import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+
+import {Input, useURLState} from '../';
 
 interface Props {
   navigateTo?: NavigateFunction;

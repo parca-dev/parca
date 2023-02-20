@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import cx from 'classnames';
 import {useEffect, useRef} from 'react';
+
+import cx from 'classnames';
 
 interface Props {
   isHighlighted: boolean;

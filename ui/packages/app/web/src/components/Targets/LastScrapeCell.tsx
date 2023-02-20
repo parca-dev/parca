@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {TimeObject, formatDuration, TimeUnits, convertTime} from '@parca/functions';
+import {TimeObject, TimeUnits, convertTime, formatDuration} from '@parca/functions';
 
 const LastScrapeCell = ({
   key,

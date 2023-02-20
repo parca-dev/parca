@@ -13,7 +13,8 @@
     "build": "lerna run build",
     "watch": "lerna run --parallel watch",
     "publish:ci": "lerna publish --yes --no-verify-access",
-    "benchmark": "NODE_ENV=production BROWSERSLIST='Chrome > 100' GENERATE_SOURCEMAP=false ts-node --experimental-specifier-resolution=node scripts/run-benchmark.mts"
+    "benchmark": "NODE_ENV=production BROWSERSLIST='Chrome > 100' GENERATE_SOURCEMAP=false ts-node --experimental-specifier-resolution=node scripts/run-benchmark.mts",
+    "prettier": "prettier --write --ignore-path ../.prettierignore 'packages/**/*.{js,jsx,ts,tsx,md,mdx}'"
   },
   "workspaces": {
     "packages": [
@@ -39,7 +40,8 @@
     "@babel/core": "^7.20.5",
     "@babel/node": "^7.20.5",
     "@babel/preset-env": "^7.20.2",
-    "@mdx-js/loader": "2.2.1",
+    "@ianvs/prettier-plugin-sort-imports": "3.7.1",
+    "@mdx-js/loader": "2.3.0",
     "@next/bundle-analyzer": "12.3.4",
     "@next/eslint-plugin-next": "12.3.4",
     "@next/mdx": "12.3.4",
@@ -55,7 +57,7 @@
     "@storybook/react": "6.5.16",
     "@svgr/webpack": "6.5.1",
     "@swc/cli": "0.1.61",
-    "@swc/core": "1.3.34",
+    "@swc/core": "1.3.35",
     "@swc/jest": "0.2.24",
     "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "13.4.0",
@@ -69,7 +71,7 @@
     "arg": "5.0.2",
     "css-loader": "6.7.3",
     "dev-kong": "0.11.0",
-    "eslint": "8.33.0",
+    "eslint": "8.34.0",
     "eslint-config-prettier": "8.6.0",
     "eslint-config-react-app": "7.0.1",
     "eslint-config-standard-with-typescript": "22.0.0",

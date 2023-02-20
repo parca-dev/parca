@@ -14,20 +14,19 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import cx from 'classnames';
-import {throttle} from 'lodash';
-import {pointer} from 'd3-selection';
 import {scaleLinear} from 'd3-scale';
+import {pointer} from 'd3-selection';
+import {throttle} from 'lodash';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import type {HoveringNode} from '../../GraphTooltip';
-import GraphTooltip from '../../GraphTooltip';
 import {Button, useURLState} from '@parca/components';
+import {selectQueryParam, type NavigateFunction} from '@parca/functions';
+import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+
+import GraphTooltip, {type HoveringNode} from '../../GraphTooltip';
+import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight} from './IcicleGraphNodes';
 import useColoredGraph from './useColoredGraph';
-import {selectQueryParam} from '@parca/functions';
-import type {NavigateFunction} from '@parca/functions';
-import ColorStackLegend from './ColorStackLegend';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
@@ -121,7 +120,7 @@ export const IcicleGraph = memo(function IcicleGraph({
       <div
         className={cx('flex justify-start absolute', {
           'top-[-48px]': dashboardItems.length <= 1 && !isTrimmed && !isColorStackLegendVisible,
-          'top-[-69px]': dashboardItems.length <= 1 && !isTrimmed,
+          'top-[-69px]': dashboardItems.length <= 1 && !isTrimmed && isColorStackLegendVisible,
           'top-[-54px]': dashboardItems.length <= 1 && isTrimmed && isColorStackLegendVisible,
           'top-[-54px] ': dashboardItems.length <= 1 && isTrimmed && !isColorStackLegendVisible,
           'top-[-54px] left-[25px]':

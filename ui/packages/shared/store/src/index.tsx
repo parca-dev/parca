@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import store from './store';
 import {useAppDispatch, useAppSelector} from './hooks';
+import store from './store';
+
 export * from './slices/uiSlice';
 export * from './slices/profileSlice';
 export * from './slices/colorsSlice';

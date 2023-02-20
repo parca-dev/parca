@@ -12,10 +12,12 @@
 // limitations under the License.
 
 import {useState} from 'react';
-import cx from 'classnames';
+
 import {Icon} from '@iconify/react';
-import {Button} from '@parca/components';
+import cx from 'classnames';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
+
+import {Button} from '@parca/components';
 
 interface Props {
   value: string;

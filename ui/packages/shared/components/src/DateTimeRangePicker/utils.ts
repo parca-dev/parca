@@ -24,8 +24,8 @@ export const POSITIONS = {
   TO: 'to',
 };
 
-export type UNIT_TYPE = typeof UNITS[keyof typeof UNITS];
-export type POSITION_TYPE = typeof POSITIONS[keyof typeof POSITIONS];
+export type UNIT_TYPE = (typeof UNITS)[keyof typeof UNITS];
+export type POSITION_TYPE = (typeof POSITIONS)[keyof typeof POSITIONS];
 
 interface BaseDate {
   isRelative: () => boolean;

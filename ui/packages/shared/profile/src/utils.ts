@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
+
+import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 
 export const hexifyAddress = (address?: string): string => {
   if (address == null) {

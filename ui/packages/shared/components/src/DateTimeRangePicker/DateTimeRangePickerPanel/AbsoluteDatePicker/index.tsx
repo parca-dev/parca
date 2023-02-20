@@ -13,9 +13,9 @@
 
 import {useState} from 'react';
 
-import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../utils';
 import Button from '../../../Button';
 import {UTCDateTimePicker} from '../../../DateTimePicker';
+import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../utils';
 
 interface AbsoluteDatePickerProps {
   range: DateTimeRange;
