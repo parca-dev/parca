@@ -12,12 +12,13 @@
 // limitations under the License.
 
 import {useState} from 'react';
+
 import {capitalize} from '@parca/functions';
 
-import Input from '../../../Input';
-import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 import Button from '../../../Button';
+import Input from '../../../Input';
 import Select, {contructItemsFromArray} from '../../../Select';
+import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';
 
 const constructKeyAndLabels = (UNITS: UNIT_TYPE[]): Array<{key: string; label: string}> => {
   return UNITS.map(unit => ({

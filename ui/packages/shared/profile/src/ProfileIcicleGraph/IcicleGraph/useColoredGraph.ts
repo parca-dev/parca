@@ -11,17 +11,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect, useMemo} from 'react';
+
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {
+  Location,
   Mapping,
   Function as ParcaFunction,
-  Location,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import type {ColorProfileName} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
-import {setFeatures, useAppDispatch, useAppSelector, selectDarkMode} from '@parca/store';
-import type {FeatureType, FeaturesMap} from '@parca/store';
-import {useEffect, useMemo} from 'react';
+import {
+  selectDarkMode,
+  setFeatures,
+  useAppDispatch,
+  useAppSelector,
+  type FeatureType,
+  type FeaturesMap,
+} from '@parca/store';
+
 import {extractFeature} from './utils';
 
 export interface ColoredFlamegraphNode extends FlamegraphNode {

@@ -12,20 +12,25 @@
 // limitations under the License.
 
 import React, {useRef, useState} from 'react';
+
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
 import throttle from 'lodash.throttle';
 
+import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
 import {DateTimeRange, useKeyDown} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {formatForTimespan} from '@parca/functions';
-import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
-import {valueFormatter, formatDate, sanitizeHighlightedValues} from '@parca/functions';
+import {
+  formatDate,
+  formatForTimespan,
+  sanitizeHighlightedValues,
+  valueFormatter,
+} from '@parca/functions';
 
-import MetricsSeries from '../MetricsSeries';
-import MetricsCircle from '../MetricsCircle';
-import MetricsTooltip from './MetricsTooltip';
 import {MergedProfileSelection} from '..';
+import MetricsCircle from '../MetricsCircle';
+import MetricsSeries from '../MetricsSeries';
+import MetricsTooltip from './MetricsTooltip';
 
 interface Props {
   data: MetricsSeriesPb[];

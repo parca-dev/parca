@@ -11,19 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState, useEffect, useRef} from 'react';
+import {useEffect, useRef, useState} from 'react';
+
 import cx from 'classnames';
-import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
-import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
+import graphviz from 'graphviz-wasm';
 import type {KonvaEventObject} from 'konva/lib/Node';
+import {Arrow, Label, Layer, Rect, Stage, Text} from 'react-konva';
+
+import {CallgraphEdge, CallgraphNode, Callgraph as CallgraphType} from '@parca/client';
 import {Button, useURLState} from '@parca/components';
-import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
-import {jsonToDot, getCurvePoints} from './utils';
-import type {HoveringNode} from '../GraphTooltip';
 import {isSearchMatch, selectQueryParam} from '@parca/functions';
-import Tooltip from '../GraphTooltip';
+
+import Tooltip, {type HoveringNode} from '../GraphTooltip';
 import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
+import {getCurvePoints, jsonToDot} from './utils';
 
 interface NodeProps {
   node: INode;

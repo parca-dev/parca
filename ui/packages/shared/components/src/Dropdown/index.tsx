@@ -11,11 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Menu, Transition} from '@headlessui/react';
 import React, {Fragment} from 'react';
-import Button from '../Button';
-import cx from 'classnames';
+
+import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
+
+import Button from '../Button';
 
 const Dropdown = ({
   text,

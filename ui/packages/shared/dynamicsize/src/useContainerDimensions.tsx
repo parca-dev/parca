@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {RefObject, useRef, useState, useEffect} from 'react';
+import {RefObject, useEffect, useRef, useState} from 'react';
 
 export const useContainerDimensions = (): {
   dimensions?: DOMRect;

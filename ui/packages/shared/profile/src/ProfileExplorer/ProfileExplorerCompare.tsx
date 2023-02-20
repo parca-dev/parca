@@ -11,11 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {QueryServiceClient} from '@parca/client';
 import type {NavigateFunction} from '@parca/functions';
 import {Query} from '@parca/parser';
-import {QueryServiceClient} from '@parca/client';
-import {ProfileDiffSource, ProfileSelection, ProfileViewWithData} from '..';
 
+import {ProfileDiffSource, ProfileSelection, ProfileViewWithData} from '..';
 import ProfileSelector, {QuerySelection} from '../ProfileSelector';
 
 interface ProfileExplorerCompareProps {

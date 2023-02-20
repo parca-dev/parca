@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {QueryServiceClient, QueryResponse, QueryRequest_ReportType} from '@parca/client';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+
+import {QueryRequest_ReportType, QueryResponse, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 
 import {ProfileSource} from './ProfileSource';

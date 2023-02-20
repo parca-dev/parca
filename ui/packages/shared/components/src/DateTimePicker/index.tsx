@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/functions';
 import ReactDatePicker from 'react-datepicker';
+
+import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/functions';
 
 interface Props {
   selected: Date;

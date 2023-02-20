@@ -11,15 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState, useEffect} from 'react';
-import MetricsGraph from '../MetricsGraph';
-import {MergedProfileSelection, ProfileSelection} from '..';
-import {QueryServiceClient, QueryRangeResponse, Label, Timestamp, Duration} from '@parca/client';
+import {useEffect, useState} from 'react';
+
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+
+import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
-import {Query} from '@parca/parser';
-import useDelayedLoader from '../useDelayedLoader';
 import {getStepDuration} from '@parca/functions';
+import {Query} from '@parca/parser';
+
+import {MergedProfileSelection, ProfileSelection} from '..';
+import MetricsGraph from '../MetricsGraph';
+import useDelayedLoader from '../useDelayedLoader';
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;

@@ -11,19 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect, useState} from 'react';
+
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';
 
 import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
-import {getLastItem, valueFormatter} from '@parca/functions';
-import {hexifyAddress, truncateString} from '../';
-import {useKeyDown} from '@parca/components';
 import {
-  Function as ParcaFunction,
   Location,
   Mapping,
+  Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {useKeyDown} from '@parca/components';
+import {getLastItem, valueFormatter} from '@parca/functions';
+
+import {hexifyAddress, truncateString} from '../';
 
 interface GraphTooltipProps {
   x: number;

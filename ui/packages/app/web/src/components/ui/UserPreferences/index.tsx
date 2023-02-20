@@ -11,11 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useState} from 'react';
+
 import {Icon} from '@iconify/react';
+
 import {Button, IconButton, Modal} from '@parca/components';
 import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
 import {USER_PREFERENCES} from '@parca/functions/useUserPreference';
-import {useState} from 'react';
+
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 

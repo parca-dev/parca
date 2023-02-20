@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import {Grammar, Parser} from 'nearley';
+
 import grammar from './selector';
 
 export function NewParser(): Parser {
@@ -25,7 +26,7 @@ export const MatcherTypes = {
   MatchNotRegexp: '!~',
 } as const;
 
-export type MatcherType = typeof MatcherTypes[keyof typeof MatcherTypes];
+export type MatcherType = (typeof MatcherTypes)[keyof typeof MatcherTypes];
 
 function matcherTypeFromString(matcherTypeString: string): MatcherType {
   switch (matcherTypeString) {

@@ -12,29 +12,33 @@
 // limitations under the License.
 
 import {Profiler, useEffect, useMemo, useState} from 'react';
-import {scaleLinear} from 'd3';
 
+import {Icon} from '@iconify/react';
 import cx from 'classnames';
+import {scaleLinear} from 'd3';
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  type DraggableLocation,
+  type DropResult,
+} from 'react-beautiful-dnd';
+
+import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
+import {Button, Card, KeyDownProvider, useParcaContext, useURLState} from '@parca/components';
+import {useContainerDimensions} from '@parca/dynamicsize';
 import {getNewSpanColor} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
-import {Icon} from '@iconify/react';
-import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, useParcaContext, KeyDownProvider, useURLState} from '@parca/components';
-import {useContainerDimensions} from '@parca/dynamicsize';
-import {useAppSelector, selectDarkMode} from '@parca/store';
-import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
-import type {DropResult, DraggableLocation} from 'react-beautiful-dnd';
+import {selectDarkMode, useAppSelector} from '@parca/store';
 
 import {Callgraph} from '../';
-import ProfileShareButton from '../components/ProfileShareButton';
-import FilterByFunctionButton from './FilterByFunctionButton';
-import ViewSelector from './ViewSelector';
 import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
+import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
-
-import '../ProfileView.styles.css';
+import FilterByFunctionButton from './FilterByFunctionButton';
+import ViewSelector from './ViewSelector';
 
 type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 

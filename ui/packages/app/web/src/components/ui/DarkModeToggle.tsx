@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useAppSelector, useAppDispatch, setDarkMode, selectDarkMode} from '@parca/store';
 import {Icon} from '@iconify/react';
+
+import {selectDarkMode, setDarkMode, useAppDispatch, useAppSelector} from '@parca/store';
 
 const DarkModeToggle = () => {
   const dispatch = useAppDispatch();

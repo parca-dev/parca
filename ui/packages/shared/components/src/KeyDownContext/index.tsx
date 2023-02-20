@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createContext, ReactNode, useContext, useEffect, useMemo, useState} from 'react';
+import {ReactNode, createContext, useContext, useEffect, useMemo, useState} from 'react';
 
 export interface KeyDownState {
   isShiftDown: boolean;

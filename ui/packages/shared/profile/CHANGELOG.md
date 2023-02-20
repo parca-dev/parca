@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.118](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.117...@parca/profile@0.16.118) (2023-02-16)
+
+### Reverts
+
+- Revert "[pre-commit.ci lite] apply automatic fixes" ([8982724](https://github.com/parca-dev/parca/commit/8982724b9adc0630bcf2c15f9ebca31ba69b0cb6))
+
 ## 0.16.117 (2023-02-16)
 
 **Note:** Version bump only for package @parca/profile

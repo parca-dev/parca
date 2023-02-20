@@ -12,10 +12,12 @@
 // limitations under the License.
 
 import {useEffect, useState} from 'react';
-import {useCookie} from 'react-use';
+
 import cx from 'classnames';
 import ReactMarkdown from 'react-markdown';
-import {Modal, Button} from '@parca/components';
+import {useCookie} from 'react-use';
+
+import {Button, Modal} from '@parca/components';
 
 interface Props {
   version: string;

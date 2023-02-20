@@ -12,9 +12,12 @@
 // limitations under the License.
 
 import {useState} from 'react';
-import {Button, Modal, useGrpcMetadata} from '@parca/components';
+
 import {Icon} from '@iconify/react';
+
 import {QueryRequest, QueryServiceClient} from '@parca/client';
+import {Button, Modal, useGrpcMetadata} from '@parca/components';
+
 import ResultBox from './ResultBox';
 
 interface Props {

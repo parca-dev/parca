@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import cx from 'classnames';
+
 import useUserPreference, {UserPreferenceDetails} from '@parca/functions/useUserPreference';
 
 interface GenericInputProps {
