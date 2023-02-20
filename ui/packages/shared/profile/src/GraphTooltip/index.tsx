@@ -28,6 +28,10 @@ import {getLastItem, valueFormatter} from '@parca/functions';
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 
+const NoData = (): JSX.Element => {
+  return <span className="rounded bg-gray-200 dark:bg-gray-800 px-2">Not available</span>;
+};
+
 interface GraphTooltipProps {
   x: number;
   y: number;
@@ -85,12 +89,10 @@ const TooltipMetaInfo = ({
   locations?: Location[];
   functions?: ParcaFunction[];
 }): JSX.Element => {
-  if (hoveringNode.meta === undefined) return <></>;
-
   // populate meta from the flamegraph metadata tables
   if (
     locations !== undefined &&
-    hoveringNode.meta.locationIndex !== undefined &&
+    hoveringNode.meta?.locationIndex !== undefined &&
     hoveringNode.meta.locationIndex !== 0
   ) {
     const location = locations[hoveringNode.meta.locationIndex - 1];
@@ -147,59 +149,69 @@ const TooltipMetaInfo = ({
 
   return (
     <>
-      {hoveringNode.meta.function?.filename !== undefined &&
-        hoveringNode.meta.function?.filename !== '' && (
-          <tr>
-            <td className="w-1/4">File</td>
-            <td className="w-3/4 break-all">
-              <CopyToClipboard onCopy={onCopy} text={file}>
-                <button className="cursor-pointer text-left whitespace-nowrap">
-                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
-                </button>
-              </CopyToClipboard>
-            </td>
-          </tr>
-        )}
-      {hoveringNode.meta.location?.address !== undefined &&
-        hoveringNode.meta.location?.address !== '0' && (
-          <tr>
-            <td className="w-1/4">Address</td>
-            <td className="w-3/4 break-all">
-              <CopyToClipboard
-                onCopy={onCopy}
-                text={hexifyAddress(hoveringNode.meta.location.address)}
-              >
-                <button className="cursor-pointer">
-                  {hexifyAddress(hoveringNode.meta.location.address)}
-                </button>
-              </CopyToClipboard>
-            </td>
-          </tr>
-        )}
-      {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.file !== '' && (
-        <tr>
-          <td className="w-1/4">Binary</td>
-          <td className="w-3/4 break-all">
+      <tr>
+        <td className="w-1/4">File</td>
+        <td className="w-3/4 break-all">
+          {hoveringNode.meta?.function?.filename == null ||
+          hoveringNode.meta?.function.filename === '' ? (
+            <NoData />
+          ) : (
+            <CopyToClipboard onCopy={onCopy} text={file}>
+              <button className="cursor-pointer text-left whitespace-nowrap">
+                <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
+              </button>
+            </CopyToClipboard>
+          )}
+        </td>
+      </tr>
+
+      <tr>
+        <td className="w-1/4">Address</td>
+        <td className="w-3/4 break-all">
+          {hoveringNode.meta?.location?.address == null ||
+          hoveringNode.meta?.location.address === '0' ? (
+            <NoData />
+          ) : (
+            <CopyToClipboard
+              onCopy={onCopy}
+              text={hexifyAddress(hoveringNode.meta.location.address)}
+            >
+              <button className="cursor-pointer">
+                {hexifyAddress(hoveringNode.meta.location.address)}
+              </button>
+            </CopyToClipboard>
+          )}
+        </td>
+      </tr>
+      <tr>
+        <td className="w-1/4">Binary</td>
+        <td className="w-3/4 break-all">
+          {hoveringNode.meta?.mapping == null || hoveringNode.meta.mapping.file === '' ? (
+            <NoData />
+          ) : (
             <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.file}>
               <button className="cursor-pointer">
                 {getLastItem(hoveringNode.meta.mapping.file)}
               </button>
             </CopyToClipboard>
-          </td>
-        </tr>
-      )}
-      {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.buildId !== '' && (
-        <tr>
-          <td className="w-1/4">Build Id</td>
-          <td className="w-3/4 break-all">
+          )}
+        </td>
+      </tr>
+
+      <tr>
+        <td className="w-1/4">Build Id</td>
+        <td className="w-3/4 break-all">
+          {hoveringNode.meta?.mapping == null || hoveringNode.meta?.mapping.buildId === '' ? (
+            <NoData />
+          ) : (
             <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.buildId}>
               <button className="cursor-pointer">
                 {truncateString(getLastItem(hoveringNode.meta.mapping.buildId) as string, 28)}
               </button>
             </CopyToClipboard>
-          </td>
-        </tr>
-      )}
+          )}
+        </td>
+      </tr>
     </>
   );
 };
@@ -250,20 +262,6 @@ const GraphTooltipContent = ({
   const diffValueText = diffSign + valueFormatter(diff, unit, 1);
   const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
   const diffText = `${diffValueText} (${diffPercentageText})`;
-  const metaRows =
-    hoveringNode.meta === undefined ? (
-      <></>
-    ) : (
-      <TooltipMetaInfo
-        onCopy={onCopy}
-        // @ts-expect-error
-        hoveringNode={hoveringNode}
-        strings={strings}
-        mappings={mappings}
-        locations={locations}
-        functions={functions}
-      />
-    );
 
   const getTextForCumulative = (hoveringNodeCumulative: number): string => {
     return `${valueFormatter(hoveringNodeCumulative, unit, 2)} (
@@ -334,7 +332,15 @@ const GraphTooltipContent = ({
                       </td>
                     </tr>
                   )}
-                  {metaRows}
+                  <TooltipMetaInfo
+                    onCopy={onCopy}
+                    // @ts-expect-error
+                    hoveringNode={hoveringNode}
+                    strings={strings}
+                    mappings={mappings}
+                    locations={locations}
+                    functions={functions}
+                  />
                 </tbody>
               </table>
             </div>
