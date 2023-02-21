@@ -56,14 +56,12 @@ export function SuffixParams(params: {[key: string]: any}, suffix: string): {[ke
 }
 
 export function ParseLabels(labels: string[]): Label[] {
-  if (labels.length === 0 || (labels.length === 1 && labels[0] === '')) {
-    return [];
-  }
-
-  return labels.map(function (labelString): Label {
-    const parts = labelString.split('=', 2);
-    return {name: parts[0], value: parts[1]};
-  });
+  return labels
+    .filter(str => str !== '')
+    .map(function (labelString): Label {
+      const parts = labelString.split('=', 2);
+      return {name: parts[0], value: parts[1]};
+    });
 }
 
 export function ProfileSelectionFromParams(
@@ -219,9 +217,7 @@ export class MergedProfileSource implements ProfileSource {
         (agg: string, label: Label) => agg + `${label.name}="${label.value}",`,
         '{'
       );
-    const query = seriesQuery + '}';
-    console.log(query);
-    return query;
+    return seriesQuery + '}';
   }
 
   DiffSelection(): ProfileDiffSelection {
