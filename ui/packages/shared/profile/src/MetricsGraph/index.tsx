@@ -134,9 +134,9 @@ export const RawMetricsGraph = ({
       agg.push({
         metric: s.labelset.labels,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
-          if (d.timestamp !== undefined && d.value !== undefined) {
+          if (d.timestamp !== undefined && d.valuePrecision !== undefined) {
             const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
-            agg.push([t, parseFloat(d.value)]);
+            agg.push([t, d.valuePrecision]);
           }
           return agg;
         }, []),

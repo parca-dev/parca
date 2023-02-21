@@ -767,6 +767,12 @@ func (m *MetricsSample) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.ValuePrecision != 0 {
+		i -= 8
+		binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.ValuePrecision))))
+		i--
+		dAtA[i] = 0x19
+	}
 	if m.Value != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.Value))
 		i--
@@ -2824,6 +2830,9 @@ func (m *MetricsSample) SizeVT() (n int) {
 	if m.Value != 0 {
 		n += 1 + sov(uint64(m.Value))
 	}
+	if m.ValuePrecision != 0 {
+		n += 9
+	}
 	if m.unknownFields != nil {
 		n += len(m.unknownFields)
 	}
@@ -4621,6 +4630,17 @@ func (m *MetricsSample) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 3:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValuePrecision", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.ValuePrecision = float64(math.Float64frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

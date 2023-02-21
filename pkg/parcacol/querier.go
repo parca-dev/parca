@@ -472,13 +472,13 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 			valueSum = valueSum * period
 		}
 
-		// TODO: We shouldn't multiply by 100 here but our payload value is int64 and we cannot send float64...
 		percentage := 100 * float64(valueSum) / float64(duration)
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp: timestamppb.New(timestamp.Time(ts)),
-			Value:     int64(percentage),
+			Timestamp:      timestamppb.New(timestamp.Time(ts)),
+			Value:          int64(percentage),
+			ValuePrecision: percentage,
 		})
 	}
 
@@ -609,8 +609,9 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp: timestamppb.New(timestamp.Time(ts)),
-			Value:     value,
+			Timestamp:      timestamppb.New(timestamp.Time(ts)),
+			Value:          value,
+			ValuePrecision: float64(value),
 		})
 		// Mark the timestamp bucket as filled by the above MetricsSample.
 		resSeriesBuckets[index][tsBucket] = struct{}{}
