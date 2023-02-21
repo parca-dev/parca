@@ -264,7 +264,7 @@ const ProfileSelector = ({
               onPointClick={(timestamp, labels, queryExpression) => {
                 // TODO: Pass the query object via click rather than queryExpression
                 let query = Query.parse(queryExpression);
-                labels.forEach((l) => {
+                labels.forEach(l => {
                   const [newQuery, updated] = query.setMatcher(l.name, l.value);
                   if (updated) {
                     query = newQuery;
