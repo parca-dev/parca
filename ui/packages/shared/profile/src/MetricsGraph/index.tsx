@@ -295,14 +295,14 @@ export const RawMetricsGraph = ({
     let seriesIndex = -1;
 
     outer: for (let i = 0; i < series.length; i++) {
-      const keys = profile.labels.map(e => e.name);
+      const keys = profile.query.matchers.map(e => e.key);
       for (let j = 0; j < keys.length; j++) {
-        const labelName = keys[j];
-        const label = series[i].metric.find(e => e.name === labelName);
+        const matcherKey = keys[j];
+        const label = series[i].metric.find(e => e.name === matcherKey);
         if (label === undefined) {
           continue outer; // label doesn't exist to begin with
         }
-        if (profile.labels[j].value !== label.value) {
+        if (profile.query.matchers[j].value !== label.value) {
           continue outer; // label values don't match
         }
       }
