@@ -78,7 +78,7 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
   }
 
   async getData(from: number, to: number, query: ParcaQuery, labels: Label[]): Promise<GrafanaParcaData> {
-    const profileSource = new MergedProfileSource(from, to, labels, query.parcaQuery);
+    const profileSource = new MergedProfileSource(from, to,query.parcaQuery, labels);
     const flamegraphReq = profileSource.QueryRequest();
     flamegraphReq.reportType = QueryRequest_ReportType.FLAMEGRAPH_TABLE;
     const topTableReq = profileSource.QueryRequest();
