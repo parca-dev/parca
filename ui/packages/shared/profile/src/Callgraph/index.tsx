@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState, useEffect, useRef} from 'react';
+import {memo, useState, useCallback, useRef, useEffect} from 'react';
 import cx from 'classnames';
 import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
@@ -27,7 +27,7 @@ import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
 
 interface NodeProps {
   node: INode;
-  hoveredNode: INode | null;
+  isHovered: boolean;
   setHoveredNode: (node: INode | null) => void;
   isCurrentSearchMatch: boolean;
 }
@@ -80,22 +80,8 @@ interface GraphvizType {
   bb: string;
 }
 
-const Node = ({
-  node,
-  hoveredNode,
-  setHoveredNode,
-  isCurrentSearchMatch,
-}: NodeProps): JSX.Element => {
-  const {
-    data: {id},
-    x,
-    y,
-    color,
-    functionName,
-    width: widthString,
-    height: heightString,
-  } = node;
-  const isHovered = Boolean(hoveredNode) && hoveredNode?.data.id === id;
+const Node = ({node, isHovered, setHoveredNode, isCurrentSearchMatch}: NodeProps): JSX.Element => {
+  const {x, y, color, functionName, width: widthString, height: heightString} = node;
   const width = Number(widthString);
   const height = Number(heightString);
   const textPadding = 6;
@@ -136,6 +122,8 @@ const Node = ({
   );
 };
 
+const MemoizedNode = memo(Node);
+
 const Edge = ({
   edge,
   sourceNode,
@@ -170,9 +158,12 @@ const Edge = ({
   );
 };
 
+const MemoizedEdge = memo(Edge);
+
 const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [graphData, setGraphData] = useState<any>(null);
+  const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
   const [stage, setStage] = useState<{scale: {x: number; y: number}; x: number; y: number}>({
     scale: {x: 1, y: 1},
@@ -183,33 +174,44 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-
   const dashboardItems = rawDashboardItems as string[];
 
+  const getDataWithPositions = useCallback(() => {
+    // 1. Translate JSON to 'dot' graph string
+    const dataAsDot = jsonToDot({
+      graph,
+      width,
+      colorRange,
+    });
+
+    // 2. Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
+    const jsonGraph = graphviz.layout(dataAsDot, 'json', 'dot');
+
+    setGraphData(jsonGraph);
+  }, []);
+
+  // start loading wasm as soon as the component is mounted
   useEffect(() => {
-    const getDataWithPositions = async (): Promise<void> => {
-      // 1. Translate JSON to 'dot' graph string
-      const dataAsDot = jsonToDot({
-        graph,
-        width,
-        colorRange,
-      });
-
-      // 2. Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
-      await graphviz.loadWASM(); // need to load the WASM instance and wait for it
-
-      const jsonGraph = graphviz.layout(dataAsDot, 'json', 'dot');
-
-      setGraphData(jsonGraph);
-    };
-
-    if (width !== null) {
-      void getDataWithPositions();
+    async function loadGraphvizWasm() {
+      await graphviz.loadWASM();
+      await console.log('graphviz loaded');
+      await setGraphvizLoaded(true);
     }
-  }, [graph, width, colorRange]);
+
+    loadGraphvizWasm();
+
+    return setGraphData(null);
+  }, []);
+
+  useEffect(() => {
+    if (graphvizLoaded && width !== null) {
+      getDataWithPositions();
+    }
+  }, [graphvizLoaded]);
 
   // 3. Render the graph with calculated layout in Canvas container
-  if (width == null || graphData == null) return <></>;
+  if (!graphvizLoaded || graphData == null || width == null) return <></>;
+
   const {objects: gvizNodes, edges, bb: boundingBox} = JSON.parse(graphData) as GraphvizType;
 
   if (gvizNodes.length < 1) return <>Profile has no samples</>;
@@ -312,7 +314,7 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
                 : isSearchMatch(currentSearchString, sourceNode.functionName) &&
                   isSearchMatch(currentSearchString, targetNode.functionName);
               return (
-                <Edge
+                <MemoizedEdge
                   key={`edge-${edge.tail}-${edge.head}`}
                   edge={edge}
                   xScale={xScale}
@@ -328,10 +330,10 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
                 ? true
                 : isSearchMatch(currentSearchString, node.functionName);
               return (
-                <Node
+                <MemoizedNode
                   key={`node-${node._gvid}`}
                   node={node}
-                  hoveredNode={hoveredNode}
+                  isHovered={Boolean(hoveredNode) && hoveredNode?.data.id === node.data.id}
                   setHoveredNode={setHoveredNode}
                   isCurrentSearchMatch={isCurrentSearchMatch}
                 />

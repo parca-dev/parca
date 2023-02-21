@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Profiler, useEffect, useMemo, useState} from 'react';
+import {Profiler, useEffect, useMemo, useState, useCallback} from 'react';
 import {scaleLinear} from 'd3';
 
 import cx from 'classnames';
@@ -140,60 +140,57 @@ export const ProfileView = ({
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
 
-  const getDashboardItemByType = ({
-    type,
-    isHalfScreen,
-  }: {
-    type: string;
-    isHalfScreen: boolean;
-  }): JSX.Element => {
-    switch (type) {
-      case 'icicle': {
-        return flamegraphData?.data != null ? (
-          <Profiler id="icicleGraph" onRender={perf?.onRender as React.ProfilerOnRenderCallback}>
-            <ProfileIcicleGraph
-              curPath={curPath}
-              setNewCurPath={setNewCurPath}
-              graph={flamegraphData.data}
+  const getDashboardItemByType = useCallback(
+    ({type, isHalfScreen}: {type: string; isHalfScreen: boolean}) => {
+      switch (type) {
+        case 'icicle': {
+          return flamegraphData?.data != null ? (
+            <Profiler id="icicleGraph" onRender={perf?.onRender as React.ProfilerOnRenderCallback}>
+              <ProfileIcicleGraph
+                curPath={curPath}
+                setNewCurPath={setNewCurPath}
+                graph={flamegraphData.data}
+                sampleUnit={sampleUnit}
+                onContainerResize={onFlamegraphContainerResize}
+                navigateTo={navigateTo}
+                loading={flamegraphData.loading}
+              />
+            </Profiler>
+          ) : (
+            <> </>
+          );
+        }
+        case 'callgraph': {
+          return callgraphData?.data != null && dimensions?.width !== undefined ? (
+            <Callgraph
+              graph={callgraphData.data}
               sampleUnit={sampleUnit}
-              onContainerResize={onFlamegraphContainerResize}
-              navigateTo={navigateTo}
-              loading={flamegraphData.loading}
+              width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
+              colorRange={colorRange}
             />
-          </Profiler>
-        ) : (
-          <> </>
-        );
+          ) : (
+            <></>
+          );
+        }
+        case 'table': {
+          return topTableData != null ? (
+            <TopTable
+              loading={topTableData.loading}
+              data={topTableData.data}
+              sampleUnit={sampleUnit}
+              navigateTo={navigateTo}
+            />
+          ) : (
+            <></>
+          );
+        }
+        default: {
+          return <></>;
+        }
       }
-      case 'callgraph': {
-        return callgraphData?.data != null && dimensions?.width !== undefined ? (
-          <Callgraph
-            graph={callgraphData.data}
-            sampleUnit={sampleUnit}
-            width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
-            colorRange={colorRange}
-          />
-        ) : (
-          <></>
-        );
-      }
-      case 'table': {
-        return topTableData != null ? (
-          <TopTable
-            loading={topTableData.loading}
-            data={topTableData.data}
-            sampleUnit={sampleUnit}
-            navigateTo={navigateTo}
-          />
-        ) : (
-          <></>
-        );
-      }
-      default: {
-        return <></>;
-      }
-    }
-  };
+    },
+    [dashboardItems, isMultiPanelView, callgraphData, flamegraphData, topTableData]
+  );
 
   const handleClosePanel = (visualizationType: string): void => {
     const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);
