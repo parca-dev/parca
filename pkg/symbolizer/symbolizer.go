@@ -430,35 +430,28 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 		if err != nil {
 			return nil, nil, fmt.Errorf("fetch debuginfo (BuildID: %q): %w", m.BuildId, err)
 		}
+		defer func() {
+			if err := rc.Close(); err != nil {
+				level.Error(s.logger).Log("msg", "failed to close debuginfo reader", "err", err)
+			}
+		}()
 
 		f, err := os.CreateTemp(s.tmpDir, "parca-symbolizer-*")
 		if err != nil {
-			if err := rc.Close(); err != nil {
-				level.Error(s.logger).Log("msg", "failed to close debuginfo reader", "err", err)
-			}
 			return nil, nil, fmt.Errorf("create temp file: %w", err)
 		}
-
-		_, err = io.Copy(f, rc)
-		if err != nil {
-			if err := rc.Close(); err != nil {
-				level.Error(s.logger).Log("msg", "failed to close debuginfo reader", "err", err)
-			}
+		defer func() {
 			if err := f.Close(); err != nil {
 				level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
 			}
 			if err := os.Remove(f.Name()); err != nil {
 				level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
 			}
+		}()
+
+		_, err = io.Copy(f, rc)
+		if err != nil {
 			return nil, nil, fmt.Errorf("copy debuginfo to temp file: %w", err)
-		}
-
-		if err := rc.Close(); err != nil {
-			return nil, nil, fmt.Errorf("close debuginfo reader: %w", err)
-		}
-
-		if err := f.Close(); err != nil {
-			return nil, nil, fmt.Errorf("close debuginfo file: %w", err)
 		}
 
 		e, err := elf.Open(f.Name())
@@ -469,12 +462,13 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 				level.Error(s.logger).Log("msg", "failed to set metadata quality", "err", merr)
 			}
 
-			if err := os.Remove(f.Name()); err != nil {
-				level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
-			}
-
 			return nil, nil, fmt.Errorf("open temp file as ELF: %w", err)
 		}
+		defer func() {
+			if err := e.Close(); err != nil {
+				level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
+			}
+		}()
 
 		if dbginfo.Quality == nil {
 			dbginfo.Quality = &debuginfopb.DebuginfoQuality{
@@ -484,35 +478,14 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 				HasDynsym:    elfutils.HasDynsym(e),
 			}
 			if err := s.metadata.SetQuality(ctx, m.BuildId, dbginfo.Quality); err != nil {
-				if err := e.Close(); err != nil {
-					level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
-				}
-
-				if err := os.Remove(f.Name()); err != nil {
-					level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
-				}
 				return nil, nil, fmt.Errorf("set quality: %w", err)
 			}
 			if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab && dbginfo.Quality.HasDynsym) {
-				if err := e.Close(); err != nil {
-					level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
-				}
-
-				if err := os.Remove(f.Name()); err != nil {
-					level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
-				}
 				return nil, nil, fmt.Errorf("check debuginfo quality: %w", ErrNoDebuginfo)
 			}
 		}
 		liner, err = s.newLiner(f.Name(), e, dbginfo.Quality)
 		if err != nil {
-			if err := e.Close(); err != nil {
-				level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
-			}
-
-			if err := os.Remove(f.Name()); err != nil {
-				level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
-			}
 			return nil, nil, fmt.Errorf("new liner: %w", err)
 		}
 	}

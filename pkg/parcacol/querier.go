@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/arrow/go/v10/arrow"
 	"github.com/apache/arrow/go/v10/arrow/array"
+	"github.com/apache/arrow/go/v10/arrow/scalar"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -171,8 +172,14 @@ func MatcherToBooleanExpression(matcher *labels.Matcher) (logicalplan.Expr, erro
 	ref := logicalplan.Col("labels." + matcher.Name)
 	switch matcher.Type {
 	case labels.MatchEqual:
+		if matcher.Value == "" {
+			return ref.Eq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), nil
+		}
 		return ref.Eq(logicalplan.Literal(matcher.Value)), nil
 	case labels.MatchNotEqual:
+		if matcher.Value == "" {
+			return ref.NotEq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), nil
+		}
 		return ref.NotEq(logicalplan.Literal(matcher.Value)), nil
 	case labels.MatchRegexp:
 		return ref.RegexMatch(matcher.Value), nil

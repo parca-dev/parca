@@ -12,7 +12,7 @@
   "dependencies": {
     "@parca/client": "^0.16.63",
     "@rehooks/local-storage": "^2.4.4",
-    "tailwindcss": "^3.2.4"
+    "tailwindcss": "3.2.4"
   },
   "keywords": [],
   "author": "",
