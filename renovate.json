@@ -32,6 +32,11 @@
       "description": "Group prettier packages",
       "matchPackageNames": ["pre-commit/mirrors-prettier", "prettier"],
       "groupName": "prettier"
+    },
+    {
+      "description": "Disable tailwindcss upgrades",
+      "matchPackageNames": ["tailwindcss"],
+      "enabled": false
     }
   ],
   "regexManagers": [
