@@ -14,6 +14,7 @@
 import Button, {IconButton} from './Button';
 import ButtonGroup from './ButtonGroup';
 import Card from './Card';
+import {ConditionalWrapper} from './ConditionalWrapper';
 import DateTimePicker from './DateTimePicker';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
 import Dropdown from './Dropdown';
@@ -39,6 +40,7 @@ export {
   Button,
   ButtonGroup,
   Card,
+  ConditionalWrapper,
   DateTimePicker,
   DateTimeRange,
   DateTimeRangePicker,
