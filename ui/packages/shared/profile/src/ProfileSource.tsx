@@ -56,6 +56,10 @@ export function SuffixParams(params: {[key: string]: any}, suffix: string): {[ke
 }
 
 export function ParseLabels(labels: string[]): Label[] {
+  if (labels.length === 0 || (labels.length === 1 && labels[0] === '')) {
+    return [];
+  }
+
   return labels.map(function (labelString): Label {
     const parts = labelString.split('=', 2);
     return {name: parts[0], value: parts[1]};
@@ -133,8 +137,8 @@ export class MergedProfileSelection implements ProfileSelection {
     return new MergedProfileSource(
       this.mergeFrom,
       this.mergeTo,
+      this.ProfileName(),
       this.labels,
-      this.query,
       this.filterQuery
     );
   }
@@ -190,22 +194,34 @@ export class ProfileDiffSource implements ProfileSource {
 export class MergedProfileSource implements ProfileSource {
   mergeFrom: number;
   mergeTo: number;
+  profName: string;
   labels: Label[];
-  query: string;
   filterQuery: string | undefined;
 
   constructor(
     mergeFrom: number,
     mergeTo: number,
+    profName: string,
     labels: Label[],
-    query: string,
     filterQuery?: string
   ) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
+    this.profName = profName;
     this.labels = labels;
-    this.query = query;
     this.filterQuery = filterQuery;
+  }
+
+  query(): string {
+    const seriesQuery =
+      this.profName +
+      this.labels.reduce(
+        (agg: string, label: Label) => agg + `${label.name}="${label.value}",`,
+        '{'
+      );
+    const query = seriesQuery + '}';
+    console.log(query);
+    return query;
   }
 
   DiffSelection(): ProfileDiffSelection {
@@ -215,7 +231,7 @@ export class MergedProfileSource implements ProfileSource {
         merge: {
           start: Timestamp.fromDate(new Date(this.mergeFrom)),
           end: Timestamp.fromDate(new Date(this.mergeTo)),
-          query: this.query,
+          query: this.query(),
         },
       },
       mode: ProfileDiffSelection_Mode.MERGE,
@@ -229,7 +245,7 @@ export class MergedProfileSource implements ProfileSource {
         merge: {
           start: Timestamp.fromDate(new Date(this.mergeFrom)),
           end: Timestamp.fromDate(new Date(this.mergeTo)),
-          query: this.query,
+          query: this.query(),
         },
       },
       reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
@@ -239,13 +255,13 @@ export class MergedProfileSource implements ProfileSource {
   }
 
   ProfileType(): ProfileType {
-    return ProfileType.fromString(Query.parse(this.query).profileName());
+    return ProfileType.fromString(Query.parse(this.query()).profileName());
   }
 
   Describe(): JSX.Element {
     return (
       <a>
-        Merge of &quot;{this.query}&quot; from {formatDate(this.mergeFrom, timeFormat)} to{' '}
+        Merge of &quot;{this.query()}&quot; from {formatDate(this.mergeFrom, timeFormat)} to{' '}
         {formatDate(this.mergeTo, timeFormat)}
       </a>
     );
@@ -258,7 +274,7 @@ export class MergedProfileSource implements ProfileSource {
   }
 
   toString(): string {
-    return `merged profiles of query "${this.query}" from ${formatDate(
+    return `merged profiles of query "${this.query()}" from ${formatDate(
       this.mergeFrom,
       timeFormat
     )} to ${formatDate(this.mergeTo, timeFormat)}`;
