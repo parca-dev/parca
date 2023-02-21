@@ -399,7 +399,7 @@ const GraphTooltip = ({
 
   useEffect(() => {
     if (contextElement === null) return;
-    const onMouseMove = (e: MouseEvent): void => {
+    const onMouseMove: EventListenerOrEventListenerObject = (e: Event) => {
       if (isShiftDown) {
         return;
       }
