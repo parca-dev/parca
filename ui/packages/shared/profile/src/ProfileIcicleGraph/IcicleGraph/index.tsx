@@ -11,12 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
+import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
-import {pointer} from 'd3-selection';
-import {throttle} from 'lodash';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {Button, useURLState} from '@parca/components';
@@ -50,7 +48,6 @@ export const IcicleGraph = memo(function IcicleGraph({
   const [hoveringNode, setHoveringNode] = useState<
     FlamegraphNode | FlamegraphRootNode | undefined
   >();
-  const [pos, setPos] = useState([0, 0]);
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
@@ -86,13 +83,6 @@ export const IcicleGraph = memo(function IcicleGraph({
     return <></>;
   }
 
-  const throttledSetPos = throttle(setPos, 20);
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
-    // X/Y coordinate array relative to svg
-    const rel = pointer(e);
-
-    throttledSetPos([rel[0], rel[1]]);
-  };
   const isColorStackLegendVisible = colorProfileName !== 'default';
 
   return (
@@ -101,8 +91,6 @@ export const IcicleGraph = memo(function IcicleGraph({
       <GraphTooltip
         unit={sampleUnit}
         total={total}
-        x={pos[0]}
-        y={pos[1]}
         hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
         strings={coloredGraph.stringTable}
@@ -140,7 +128,6 @@ export const IcicleGraph = memo(function IcicleGraph({
         className="font-robotoMono"
         width={width}
         height={height}
-        onMouseMove={onMouseMove}
         preserveAspectRatio="xMinYMid"
         ref={svg}
       >

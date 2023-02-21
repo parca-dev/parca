@@ -25,7 +25,14 @@ import {
 } from 'react-beautiful-dnd';
 
 import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
-import {Button, Card, KeyDownProvider, useParcaContext, useURLState} from '@parca/components';
+import {
+  Button,
+  Card,
+  ConditionalWrapper,
+  KeyDownProvider,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {getNewSpanColor} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
@@ -154,7 +161,17 @@ export const ProfileView = ({
     switch (type) {
       case 'icicle': {
         return flamegraphData?.data != null ? (
-          <Profiler id="icicleGraph" onRender={perf?.onRender as React.ProfilerOnRenderCallback}>
+          <ConditionalWrapper
+            condition={perf?.onRender != null}
+            wrapper={({children}) => (
+              <Profiler
+                id="icicleGraph"
+                onRender={perf?.onRender as React.ProfilerOnRenderCallback}
+              >
+                {children}
+              </Profiler>
+            )}
+          >
             <ProfileIcicleGraph
               curPath={curPath}
               setNewCurPath={setNewCurPath}
@@ -164,7 +181,7 @@ export const ProfileView = ({
               navigateTo={navigateTo}
               loading={flamegraphData.loading}
             />
-          </Profiler>
+          </ConditionalWrapper>
         ) : (
           <> </>
         );
