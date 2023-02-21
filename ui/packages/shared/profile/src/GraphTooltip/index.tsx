@@ -13,6 +13,7 @@
 
 import {useEffect, useState} from 'react';
 
+import {pointer} from 'd3-selection';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {usePopper} from 'react-popper';
 
@@ -33,8 +34,8 @@ const NoData = (): JSX.Element => {
 };
 
 interface GraphTooltipProps {
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
   unit: string;
   total: number;
   hoveringNode: HoveringNode;
@@ -394,17 +395,36 @@ const GraphTooltip = ({
     }
   );
 
-  const update = popperProps.update;
   const {isShiftDown} = useKeyDown();
 
   useEffect(() => {
-    if (contextElement != null) {
-      if (isShiftDown) return;
+    if (contextElement === null) return;
+    const onMouseMove = (e: MouseEvent): void => {
+      if (isShiftDown) {
+        return;
+      }
 
-      virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y);
-      void update?.();
-    }
-  }, [x, y, contextElement, update, isShiftDown]);
+      let tooltipX = x;
+      let tooltipY = y;
+      if (tooltipX == null || tooltipY == null) {
+        const rel = pointer(e);
+        tooltipX = rel[0];
+        tooltipY = rel[1];
+      }
+      virtualElement.getBoundingClientRect = generateGetBoundingClientRect(
+        contextElement,
+        tooltipX,
+        tooltipY
+      );
+
+      void popperProps.update?.();
+    };
+
+    contextElement.addEventListener('mousemove', onMouseMove);
+    return () => {
+      contextElement.removeEventListener('mousemove', onMouseMove);
+    };
+  }, [contextElement, popperProps, isShiftDown, x, y]);
 
   if (hoveringNode === undefined || hoveringNode == null) return <></>;
 

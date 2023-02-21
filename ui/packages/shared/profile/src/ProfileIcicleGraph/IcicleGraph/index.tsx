@@ -11,12 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
-import {pointer} from 'd3-selection';
-import {throttle} from 'lodash';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {Button, useURLState} from '@parca/components';
@@ -50,7 +48,6 @@ export const IcicleGraph = memo(function IcicleGraph({
   const [hoveringNode, setHoveringNode] = useState<
     FlamegraphNode | FlamegraphRootNode | undefined
   >();
-  const [pos, setPos] = useState([0, 0]);
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
@@ -82,20 +79,6 @@ export const IcicleGraph = memo(function IcicleGraph({
     return scaleLinear().domain([0, total]).range([0, width]);
   }, [total, width]);
 
-  const throttledSetPos = useMemo(() => {
-    return throttle(setPos, 15, {leading: true, trailing: true});
-  }, [setPos]);
-
-  const onMouseMove = useCallback(
-    (e: React.MouseEvent<SVGSVGElement | HTMLDivElement>): void => {
-      // X/Y coordinate array relative to svg
-      const rel = pointer(e);
-
-      throttledSetPos(rel);
-    },
-    [throttledSetPos]
-  );
-
   if (coloredGraph.root === undefined || width === undefined) {
     return <></>;
   }
@@ -108,8 +91,6 @@ export const IcicleGraph = memo(function IcicleGraph({
       <GraphTooltip
         unit={sampleUnit}
         total={total}
-        x={pos[0]}
-        y={pos[1]}
         hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
         strings={coloredGraph.stringTable}
@@ -147,7 +128,6 @@ export const IcicleGraph = memo(function IcicleGraph({
         className="font-robotoMono"
         width={width}
         height={height}
-        onMouseMove={onMouseMove}
         preserveAspectRatio="xMinYMid"
         ref={svg}
       >
