@@ -74,7 +74,7 @@
     "jest-runtime": "29.4.2",
     "pm2": "5.2.2",
     "react-scripts": "5.0.1",
-    "sass": "1.58.0",
+    "sass": "1.58.1",
     "sass-loader": "13.2.0",
     "storybook-dark-mode": "1.1.2",
     "tslint": "6.1.3",
