@@ -1118,10 +1118,10 @@
           "format": "int64",
           "title": "value is the cumulative value for the profile"
         },
-        "valuePrecision": {
+        "valuePerSecond": {
           "type": "number",
           "format": "double",
-          "title": "value_precision is the cumulative value as double for the profile"
+          "title": "value_per_second is the calculated per second average in the steps duration"
         }
       },
       "title": "MetricsSample is a cumulative value and timestamp of a profile"

@@ -767,9 +767,9 @@ func (m *MetricsSample) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.ValuePrecision != 0 {
+	if m.ValuePerSecond != 0 {
 		i -= 8
-		binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.ValuePrecision))))
+		binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.ValuePerSecond))))
 		i--
 		dAtA[i] = 0x19
 	}
@@ -2830,7 +2830,7 @@ func (m *MetricsSample) SizeVT() (n int) {
 	if m.Value != 0 {
 		n += 1 + sov(uint64(m.Value))
 	}
-	if m.ValuePrecision != 0 {
+	if m.ValuePerSecond != 0 {
 		n += 9
 	}
 	if m.unknownFields != nil {
@@ -4632,7 +4632,7 @@ func (m *MetricsSample) UnmarshalVT(dAtA []byte) error {
 			}
 		case 3:
 			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ValuePrecision", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ValuePerSecond", wireType)
 			}
 			var v uint64
 			if (iNdEx + 8) > l {
@@ -4640,7 +4640,7 @@ func (m *MetricsSample) UnmarshalVT(dAtA []byte) error {
 			}
 			v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
 			iNdEx += 8
-			m.ValuePrecision = float64(math.Float64frombits(v))
+			m.ValuePerSecond = float64(math.Float64frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

@@ -178,16 +178,15 @@ export interface MetricsSample {
     /**
      * value is the cumulative value for the profile
      *
-     * @deprecated
-     * @generated from protobuf field: int64 value = 2 [deprecated = true];
+     * @generated from protobuf field: int64 value = 2;
      */
     value: string;
     /**
-     * value_precision is the cumulative value as double for the profile
+     * value_per_second is the calculated per second average in the steps duration
      *
-     * @generated from protobuf field: double value_precision = 3;
+     * @generated from protobuf field: double value_per_second = 3;
      */
-    valuePrecision: number;
+    valuePerSecond: number;
 }
 /**
  * MergeProfile contains parameters for a merge request
@@ -1380,11 +1379,11 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         super("parca.query.v1alpha1.MetricsSample", [
             { no: 1, name: "timestamp", kind: "message", T: () => Timestamp },
             { no: 2, name: "value", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
-            { no: 3, name: "value_precision", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ }
+            { no: 3, name: "value_per_second", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ }
         ]);
     }
     create(value?: PartialMessage<MetricsSample>): MetricsSample {
-        const message = { value: "0", valuePrecision: 0 };
+        const message = { value: "0", valuePerSecond: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<MetricsSample>(this, message, value);
@@ -1398,11 +1397,11 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
                 case /* google.protobuf.Timestamp timestamp */ 1:
                     message.timestamp = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.timestamp);
                     break;
-                case /* int64 value = 2 [deprecated = true];*/ 2:
+                case /* int64 value */ 2:
                     message.value = reader.int64().toString();
                     break;
-                case /* double value_precision */ 3:
-                    message.valuePrecision = reader.double();
+                case /* double value_per_second */ 3:
+                    message.valuePerSecond = reader.double();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1419,12 +1418,12 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         /* google.protobuf.Timestamp timestamp = 1; */
         if (message.timestamp)
             Timestamp.internalBinaryWrite(message.timestamp, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* int64 value = 2 [deprecated = true]; */
+        /* int64 value = 2; */
         if (message.value !== "0")
             writer.tag(2, WireType.Varint).int64(message.value);
-        /* double value_precision = 3; */
-        if (message.valuePrecision !== 0)
-            writer.tag(3, WireType.Bit64).double(message.valuePrecision);
+        /* double value_per_second = 3; */
+        if (message.valuePerSecond !== 0)
+            writer.tag(3, WireType.Bit64).double(message.valuePerSecond);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

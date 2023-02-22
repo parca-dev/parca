@@ -119,10 +119,10 @@ message MetricsSample {
   google.protobuf.Timestamp timestamp = 1;
 
   // value is the cumulative value for the profile
-  int64 value = 2 [deprecated = true];
+  int64 value = 2;
 
-  // value_precision is the cumulative value as double for the profile
-  double value_precision = 3;
+  // value_per_second is the calculated per second average in the steps duration
+  double value_per_second = 3;
 }
 
 // MergeProfile contains parameters for a merge request
