@@ -30,5 +30,5 @@ export const ConditionalWrapper = <T extends PropsWithChildren>({
     return <WrapperComponent {...wrapperProps}>{children}</WrapperComponent>;
   }
 
-  return <>children</>;
+  return <>{children}</>;
 };
