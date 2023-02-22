@@ -468,17 +468,18 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 
 		// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
 		// If we already have CPU nanoseconds we don't need to multiply by the period.
+		valuePerSecondSum := valueSum
 		if sampleTypeUnit != "nanoseconds" {
-			valueSum = valueSum * period
+			valuePerSecondSum = valueSum * period
 		}
 
-		percentage := 100 * float64(valueSum) / float64(duration)
+		valuePerSecond := float64(valuePerSecondSum) / float64(duration)
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
 			Timestamp:      timestamppb.New(timestamp.Time(ts)),
-			Value:          int64(percentage),
-			ValuePrecision: percentage,
+			Value:          valueSum,
+			ValuePerSecond: valuePerSecond,
 		})
 	}
 
@@ -611,7 +612,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 		series.Samples = append(series.Samples, &pb.MetricsSample{
 			Timestamp:      timestamppb.New(timestamp.Time(ts)),
 			Value:          value,
-			ValuePrecision: float64(value),
+			ValuePerSecond: float64(value),
 		})
 		// Mark the timestamp bucket as filled by the above MetricsSample.
 		resSeriesBuckets[index][tsBucket] = struct{}{}
