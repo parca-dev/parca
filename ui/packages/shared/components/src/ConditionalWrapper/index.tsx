@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FC, PropsWithChildren, ReactNode } from 'react';
+import {FC, PropsWithChildren, ReactNode} from 'react';
 
 interface Props<T> {
   condition: boolean;
