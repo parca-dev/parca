@@ -13,7 +13,7 @@
 
 import {Profiler, useEffect, useMemo, useState, useCallback} from 'react';
 import {scaleLinear} from 'd3';
-
+import graphviz from 'graphviz-wasm';
 import cx from 'classnames';
 import {getNewSpanColor} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
@@ -33,8 +33,10 @@ import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
 import useDelayedLoader from '../useDelayedLoader';
+import {jsonToDot} from '../Callgraph/utils';
 
 import '../ProfileView.styles.css';
+import {GraphvizType} from 'Callgraph';
 
 type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 
@@ -95,6 +97,7 @@ export const ProfileView = ({
     param: 'dashboard_items',
     navigateTo,
   });
+  const [callgraphLayout, setCallgraphLayout] = useState<GraphvizType | undefined>(undefined);
   const dashboardItems = rawDashboardItems as string[];
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
@@ -111,13 +114,19 @@ export const ProfileView = ({
       return Boolean(flamegraphData?.loading);
     }
     if (dashboardItems.includes('callgraph')) {
-      return Boolean(callgraphData?.loading);
+      return Boolean(callgraphData?.loading) || Boolean(callgraphLayout == undefined);
     }
     if (dashboardItems.includes('table')) {
       return Boolean(topTableData?.loading);
     }
     return false;
-  }, [dashboardItems, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
+  }, [
+    dashboardItems,
+    callgraphData?.loading,
+    flamegraphData?.loading,
+    topTableData?.loading,
+    callgraphLayout,
+  ]);
 
   const isLoaderVisible = useDelayedLoader(isLoading);
 
@@ -140,6 +149,39 @@ export const ProfileView = ({
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
 
+  // TODO: If we want to further optimize the experience, we could try to load the graphviz layout in the ProfileViewWithData layer
+  useEffect(() => {
+    async function loadCallgraphLayout(graph, width, colorRange) {
+      console.log('load graphviz');
+      console.time('graphviz loading');
+      await graphviz.loadWASM();
+      console.timeEnd('graphviz loading');
+
+      // Translate JSON to 'dot' graph string
+      const dataAsDot = await jsonToDot({
+        graph,
+        width,
+        colorRange,
+      });
+
+      // Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
+      const jsonGraph = await graphviz.layout(dataAsDot, 'json', 'dot');
+      await setCallgraphLayout(JSON.parse(jsonGraph) as GraphvizType);
+    }
+
+    if (
+      callgraphData?.data != null &&
+      callgraphData?.data != undefined &&
+      dimensions?.width !== undefined
+    ) {
+      loadCallgraphLayout(callgraphData?.data, dimensions?.width, colorRange);
+    } else {
+      setCallgraphLayout(undefined);
+    }
+
+    return setCallgraphLayout(undefined);
+  }, [callgraphData]);
+
   const getDashboardItemByType = useCallback(
     ({type, isHalfScreen}: {type: string; isHalfScreen: boolean}) => {
       switch (type) {
@@ -161,11 +203,20 @@ export const ProfileView = ({
           );
         }
         case 'callgraph': {
-          return callgraphData?.data != null && dimensions?.width !== undefined ? (
+          return callgraphData?.data != null &&
+            callgraphLayout != undefined &&
+            dimensions?.width !== undefined ? (
             <Callgraph
-              graph={callgraphData.data}
+              data={callgraphData.data}
+              layout={callgraphLayout}
               sampleUnit={sampleUnit}
-              width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
+              width={
+                dimensions?.width
+                  ? isHalfScreen
+                    ? dimensions?.width / 2
+                    : dimensions?.width
+                  : 1400
+              }
               colorRange={colorRange}
             />
           ) : (
@@ -189,7 +240,15 @@ export const ProfileView = ({
         }
       }
     },
-    [dashboardItems, isMultiPanelView, callgraphData, flamegraphData, topTableData]
+    [
+      dashboardItems,
+      isMultiPanelView,
+      callgraphData,
+      flamegraphData,
+      topTableData,
+      dimensions,
+      callgraphLayout,
+    ]
   );
 
   const handleClosePanel = (visualizationType: string): void => {
@@ -253,11 +312,11 @@ export const ProfileView = ({
               </div>
             </div>
 
-            {isLoaderVisible ? (
-              <>{loader}</>
-            ) : (
-              <DragDropContext onDragEnd={onDragEnd}>
-                <div className="w-full" ref={ref}>
+            <div className="w-full" ref={ref}>
+              {isLoaderVisible ? (
+                <>{loader}</>
+              ) : (
+                <DragDropContext onDragEnd={onDragEnd}>
                   <Droppable droppableId="droppable" direction="horizontal">
                     {provided => (
                       <div
@@ -327,9 +386,9 @@ export const ProfileView = ({
                       </div>
                     )}
                   </Droppable>
-                </div>
-              </DragDropContext>
-            )}
+                </DragDropContext>
+              )}
+            </div>
           </Card.Body>
         </Card>
       </div>

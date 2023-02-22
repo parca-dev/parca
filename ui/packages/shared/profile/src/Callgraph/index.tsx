@@ -11,15 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {memo, useState, useCallback, useRef, useEffect} from 'react';
+import {memo, useState, useRef} from 'react';
 import cx from 'classnames';
-import graphviz from 'graphviz-wasm';
 import * as d3 from 'd3';
 import {Stage, Layer, Rect, Arrow, Text, Label} from 'react-konva';
 import type {KonvaEventObject} from 'konva/lib/Node';
 import {Button, useURLState} from '@parca/components';
 import {CallgraphNode, CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
-import {jsonToDot, getCurvePoints} from './utils';
+import {getCurvePoints} from './utils';
 import type {HoveringNode} from '../GraphTooltip';
 import {isSearchMatch, selectQueryParam} from '@parca/functions';
 import Tooltip from '../GraphTooltip';
@@ -38,12 +37,6 @@ interface EdgeProps {
   xScale: (x: number) => number;
   yScale: (y: number) => number;
   isCurrentSearchMatch: boolean;
-}
-export interface Props {
-  graph: CallgraphType;
-  sampleUnit: string;
-  width: number;
-  colorRange: [string, string];
 }
 
 interface GraphvizNode extends CallgraphNode {
@@ -74,10 +67,18 @@ interface GraphvizEdge extends CallgraphEdge {
   boxHeight: number;
 }
 
-interface GraphvizType {
+export interface GraphvizType {
   edges: GraphvizEdge[];
   objects: GraphvizNode[];
   bb: string;
+}
+
+export interface Props {
+  data: CallgraphType;
+  layout?: GraphvizType;
+  sampleUnit: string;
+  width: number;
+  colorRange: [string, string];
 }
 
 const Node = ({node, isHovered, setHoveredNode, isCurrentSearchMatch}: NodeProps): JSX.Element => {
@@ -160,66 +161,30 @@ const Edge = ({
 
 const MemoizedEdge = memo(Edge);
 
-const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element => {
+const Callgraph = ({data, layout, sampleUnit, width, colorRange}: Props): JSX.Element => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [graphData, setGraphData] = useState<any>(null);
-  const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
   const [stage, setStage] = useState<{scale: {x: number; y: number}; x: number; y: number}>({
     scale: {x: 1, y: 1},
     x: 0,
     y: 0,
   });
-  const {nodes: rawNodes, cumulative: total} = graph;
+  const {nodes: rawNodes, cumulative: total} = data;
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
   const dashboardItems = rawDashboardItems as string[];
 
-  const getDataWithPositions = useCallback(() => {
-    // 1. Translate JSON to 'dot' graph string
-    const dataAsDot = jsonToDot({
-      graph,
-      width,
-      colorRange,
-    });
+  if (layout == null) return <></>;
 
-    // 2. Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
-    const jsonGraph = graphviz.layout(dataAsDot, 'json', 'dot');
-
-    setGraphData(jsonGraph);
-  }, []);
-
-  // start loading wasm as soon as the component is mounted
-  useEffect(() => {
-    async function loadGraphvizWasm() {
-      await graphviz.loadWASM();
-      await console.log('graphviz loaded');
-      await setGraphvizLoaded(true);
-    }
-
-    loadGraphvizWasm();
-
-    return setGraphData(null);
-  }, []);
-
-  useEffect(() => {
-    if (graphvizLoaded && width !== null) {
-      getDataWithPositions();
-    }
-  }, [graphvizLoaded]);
-
-  // 3. Render the graph with calculated layout in Canvas container
-  if (!graphvizLoaded || graphData == null || width == null) return <></>;
-
-  const {objects: gvizNodes, edges, bb: boundingBox} = JSON.parse(graphData) as GraphvizType;
+  const {objects: gvizNodes, edges, bb: boundingBox} = layout;
 
   if (gvizNodes.length < 1) return <>Profile has no samples</>;
 
   const graphBB = boundingBox.split(',');
   const bbWidth = Number(graphBB[2]);
   const bbHeight = Number(graphBB[3]);
-  const height = (width * bbHeight) / bbWidth;
+  const height = (width * bbHeight * 10) / bbWidth;
   const xScale = d3
     .scaleLinear()
     .domain([0, bbWidth])
@@ -282,6 +247,29 @@ const Callgraph = ({graph, sampleUnit, width, colorRange}: Props): JSX.Element =
       y: 0,
     });
   };
+
+  // let duplicateEdges: GraphvizEdge[] = [];
+  // edges.forEach(edge => {
+  //   const duplicate = edges.find(
+  //     (e: GraphvizEdge) => e.tail === edge.head && e.head === edge.tail && e.tail !== e.head
+  //   );
+  //   if (duplicate) {
+  //     duplicateEdges.push(duplicate);
+  //   }
+  // });
+
+  // console.log({duplicateEdges});
+
+  // TODO: remove this, only temporary to measure performance of layout calc vs. rendering
+  return (
+    <>
+      {edges.map(edge => (
+        <div>
+          {edge.tail} - {edge.head}{' '}
+        </div>
+      ))}
+    </>
+  );
 
   return (
     <div className="relative">
