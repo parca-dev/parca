@@ -13,13 +13,10 @@
 
 import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
-import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {Button, useURLState} from '@parca/components';
 import {selectQueryParam, type NavigateFunction} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
 import GraphTooltip, {type HoveringNode} from '../../GraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
@@ -33,7 +30,6 @@ interface IcicleGraphProps {
   curPath: string[];
   setCurPath: (path: string[]) => void;
   navigateTo?: NavigateFunction;
-  isTrimmed?: boolean;
 }
 
 export const IcicleGraph = memo(function IcicleGraph({
@@ -43,7 +39,6 @@ export const IcicleGraph = memo(function IcicleGraph({
   curPath,
   sampleUnit,
   navigateTo,
-  isTrimmed = false,
 }: IcicleGraphProps): JSX.Element {
   const [hoveringNode, setHoveringNode] = useState<
     FlamegraphNode | FlamegraphRootNode | undefined
@@ -51,19 +46,11 @@ export const IcicleGraph = memo(function IcicleGraph({
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
-  const [rawDashboardItems] = useURLState({
-    param: 'dashboard_items',
-  });
 
-  const dashboardItems = rawDashboardItems as string[];
   const coloredGraph = useColoredGraph(graph);
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
-
-  const [colorProfileName] = useUserPreference<string>(
-    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
-  );
 
   useEffect(() => {
     if (ref.current != null) {
@@ -83,8 +70,6 @@ export const IcicleGraph = memo(function IcicleGraph({
     return <></>;
   }
 
-  const isColorStackLegendVisible = colorProfileName !== 'default';
-
   return (
     <div onMouseLeave={() => setHoveringNode(undefined)}>
       <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
@@ -98,32 +83,6 @@ export const IcicleGraph = memo(function IcicleGraph({
         locations={coloredGraph.locations}
         functions={coloredGraph.function}
       />
-      <div
-        className={cx('flex justify-start absolute', {
-          'top-[-48px]': dashboardItems.length <= 1 && !isTrimmed && !isColorStackLegendVisible,
-          'top-[-69px]': dashboardItems.length <= 1 && !isTrimmed && isColorStackLegendVisible,
-          'top-[-54px]': dashboardItems.length <= 1 && isTrimmed && isColorStackLegendVisible,
-          'top-[-54px] ': dashboardItems.length <= 1 && isTrimmed && !isColorStackLegendVisible,
-          'top-[-54px] left-[25px]':
-            dashboardItems.length > 1 && isTrimmed && isColorStackLegendVisible,
-          'top-[-54px] left-[25px] ':
-            dashboardItems.length > 1 && isTrimmed && !isColorStackLegendVisible,
-          'top-[-70px] left-[25px]':
-            dashboardItems.length > 1 && !isTrimmed && isColorStackLegendVisible,
-          'top-[-46px] left-[25px]':
-            dashboardItems.length > 1 && !isTrimmed && !isColorStackLegendVisible,
-        })}
-      >
-        <Button
-          color="neutral"
-          onClick={() => setCurPath([])}
-          disabled={curPath.length === 0}
-          className="w-auto"
-          variant="neutral"
-        >
-          Reset View
-        </Button>
-      </div>
       <svg
         className="font-robotoMono"
         width={width}
