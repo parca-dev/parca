@@ -134,7 +134,7 @@ export const RawMetricsGraph = ({
     if (s.labelset !== undefined) {
       agg.push({
         metric: s.labelset.labels,
-        values: s.samples.reduce<number[][]>(function(agg: number[][], d: MetricsSample) {
+        values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
             const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
             agg.push([t, d.valuePerSecond, parseFloat(d.value)]);
@@ -327,7 +327,7 @@ export const RawMetricsGraph = ({
       labels: [],
       seriesIndex,
       timestamp: sample[0],
-      valuePerSecond:sample[1],
+      valuePerSecond: sample[1],
       value: sample[2],
       x: xScale(sample[0]),
       y: yScale(sample[1]),

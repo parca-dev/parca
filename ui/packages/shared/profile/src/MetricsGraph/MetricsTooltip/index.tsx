@@ -116,13 +116,13 @@ const MetricsTooltip = ({
                 <span className="block text-gray-700 dark:text-gray-300 my-2">
                   <table className="table-auto">
                     <tbody>
-                     <tr>
-                         <td className="w-1/4">Value</td>
+                      <tr>
+                        <td className="w-1/4">Value</td>
                         <td className="w-3/4">
                           {valueFormatter(highlighted.valuePerSecond, sampleUnit, 5)}
                         </td>
                       </tr>
-                       <tr>
+                      <tr>
                         <td className="w-1/4">Total</td>
                         <td className="w-3/4">
                           {valueFormatter(highlighted.value, sampleUnit, 2)}
