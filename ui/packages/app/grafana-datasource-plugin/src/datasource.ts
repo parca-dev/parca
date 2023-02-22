@@ -33,6 +33,7 @@ import {
   Label,
 } from '@parca/client';
 import { saveAsBlob } from '@parca/functions';
+import {Query} from '@parca/parser';
 
 export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions> {
   queryClient: QueryServiceClient;
@@ -78,7 +79,15 @@ export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions
   }
 
   async getData(from: number, to: number, query: ParcaQuery, labels: Label[]): Promise<GrafanaParcaData> {
-    const profileSource = new MergedProfileSource(from, to, labels, query.parcaQuery);
+    let parsedQuery = Query.parse(query.parcaQuery);
+    labels.forEach((l) => {
+      const [newQuery, updated] = parsedQuery.setMatcher(l.name, l.value);
+      if (updated) {
+        parsedQuery = newQuery;
+      }
+    });
+
+    const profileSource = new MergedProfileSource(from, to, parsedQuery);
     const flamegraphReq = profileSource.QueryRequest();
     flamegraphReq.reportType = QueryRequest_ReportType.FLAMEGRAPH_TABLE;
     const topTableReq = profileSource.QueryRequest();

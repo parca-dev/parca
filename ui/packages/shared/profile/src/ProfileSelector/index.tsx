@@ -157,6 +157,7 @@ const ProfileSelector = ({
     const newValue = value.includes('\\') ? value.replaceAll('\\', '\\\\') : value;
     const [newQuery, changed] = Query.parse(queryExpressionString).setMatcher(key, newValue);
     if (changed) {
+      // TODO: Change this to store the query object
       setNewQueryExpression(newQuery.toString());
     }
   };
@@ -261,14 +262,22 @@ const ProfileSelector = ({
               }}
               addLabelMatcher={addLabelMatcher}
               onPointClick={(timestamp, labels, queryExpression) => {
+                // TODO: Pass the query object via click rather than queryExpression
+                let query = Query.parse(queryExpression);
+                labels.forEach(l => {
+                  const [newQuery, updated] = query.setMatcher(l.name, l.value);
+                  if (updated) {
+                    query = newQuery;
+                  }
+                });
+
                 const stepDuration = getStepDuration(querySelection.from, querySelection.to);
                 const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
-                const isDeltaType = Query.parse(queryExpression).profileType().delta;
                 const mergeFrom = timestamp;
-                const mergeTo = isDeltaType ? mergeFrom + stepDurationInMilliseconds : mergeFrom;
-                selectProfile(
-                  new MergedProfileSelection(mergeFrom, mergeTo, labels, queryExpression)
-                );
+                const mergeTo = query.profileType().delta
+                  ? mergeFrom + stepDurationInMilliseconds
+                  : mergeFrom;
+                selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
               }}
             />
           ) : (
