@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Profiler, useEffect, useMemo, useState} from 'react';
+import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
@@ -163,16 +163,13 @@ export const ProfileView = ({
     switch (type) {
       case 'icicle': {
         return flamegraphData?.data != null ? (
-          <ConditionalWrapper
+          <ConditionalWrapper<ProfilerProps>
             condition={perf?.onRender != null}
-            wrapper={({children}) => (
-              <Profiler
-                id="icicleGraph"
-                onRender={perf?.onRender as React.ProfilerOnRenderCallback}
-              >
-                {children}
-              </Profiler>
-            )}
+            WrapperComponent={Profiler}
+            wrapperProps={{
+              id: 'icicleGraph',
+              onRender: perf?.onRender as React.ProfilerOnRenderCallback,
+            }}
           >
             <ProfileIcicleGraph
               curPath={curPath}

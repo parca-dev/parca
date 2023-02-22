@@ -11,18 +11,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode} from 'react';
+import {FC, PropsWithChildren, ReactNode} from 'react';
 
-interface Props {
+interface Props<T> {
   condition: boolean;
-  wrapper: ({children}: {children: ReactNode}) => JSX.Element;
-  children: JSX.Element;
+  children: ReactNode;
+  WrapperComponent: FC<T>;
+  wrapperProps: T;
 }
 
-export const ConditionalWrapper = ({condition, wrapper: Wrapper, children}: Props): JSX.Element => {
+export const ConditionalWrapper = <T extends PropsWithChildren>({
+  condition,
+  WrapperComponent,
+  wrapperProps,
+  children,
+}: Props<T>): JSX.Element => {
   if (condition) {
-    return <Wrapper>{children}</Wrapper>;
+    return <WrapperComponent {...wrapperProps}>{children}</WrapperComponent>;
   }
 
-  return children;
+  return <>children</>;
 };
