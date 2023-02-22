@@ -5198,10 +5198,10 @@
     "@svgr/plugin-svgo" "^5.5.0"
     loader-utils "^2.0.0"
 
-"@swc/cli@0.1.61":
-  version "0.1.61"
-  resolved "https://registry.yarnpkg.com/@swc/cli/-/cli-0.1.61.tgz#202c70644b30e7b5f9c2590045f7fda72920b998"
-  integrity sha512-HeYMJ+8gKfJzM9xgcZqTpAHJYAJVGSljBSmWRUx2B6UiGraLsLjEcqxITwi6/t6Af+QboBMiQX5Wwll89oPK7g==
+"@swc/cli@0.1.62":
+  version "0.1.62"
+  resolved "https://registry.yarnpkg.com/@swc/cli/-/cli-0.1.62.tgz#6442fde2fcf75175a300fb4fcf30f8c60bbb3ab3"
+  integrity sha512-kOFLjKY3XH1DWLfXL1/B5MizeNorHR8wHKEi92S/Zi9Md/AK17KSqR8MgyRJ6C1fhKHvbBCl8wboyKAFXStkYw==
   dependencies:
     "@mole-inc/bin-wrapper" "^8.0.1"
     commander "^7.1.0"
