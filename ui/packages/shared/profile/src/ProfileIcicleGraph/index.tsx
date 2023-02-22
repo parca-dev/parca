@@ -14,11 +14,12 @@
 import {useEffect, useMemo} from 'react';
 
 import {Flamegraph} from '@parca/client';
+import {Button} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {selectQueryParam, type NavigateFunction} from '@parca/functions';
 
 import DiffLegend from '../components/DiffLegend';
-import IcicleGraph from './IcicleGraph';
+import {IcicleGraph} from './IcicleGraph';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -33,6 +34,7 @@ interface ProfileIcicleGraphProps {
   onContainerResize?: ResizeHandler;
   navigateTo?: NavigateFunction;
   loading: boolean;
+  setActionButtons?: (buttons: JSX.Element) => void;
 }
 
 const ProfileIcicleGraph = ({
@@ -43,6 +45,7 @@ const ProfileIcicleGraph = ({
   onContainerResize,
   navigateTo,
   loading,
+  setActionButtons,
 }: ProfileIcicleGraphProps): JSX.Element => {
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
@@ -75,6 +78,25 @@ const ProfileIcicleGraph = ({
     ];
   }, [graph]);
 
+  useEffect(() => {
+    if (setActionButtons === undefined) {
+      return;
+    }
+    setActionButtons(
+      <>
+        <Button
+          color="neutral"
+          onClick={() => setNewCurPath([])}
+          disabled={curPath.length === 0}
+          className="w-auto"
+          variant="neutral"
+        >
+          Reset View
+        </Button>
+      </>
+    );
+  }, [setNewCurPath, curPath, setActionButtons]);
+
   if (graph === undefined) return <div>no data...</div>;
 
   const total = graph.total;
@@ -97,7 +119,6 @@ const ProfileIcicleGraph = ({
           setCurPath={setNewCurPath}
           sampleUnit={sampleUnit}
           navigateTo={navigateTo}
-          isTrimmed={isTrimmed}
         />
       </div>
     </div>

@@ -13,7 +13,6 @@
 
 import {Profiler, useEffect, useMemo, useState} from 'react';
 
-import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
 import {
@@ -35,7 +34,6 @@ import {
 } from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
 import {getNewSpanColor} from '@parca/functions';
-import {CloseIcon} from '@parca/icons';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 
 import {Callgraph} from '../';
@@ -46,6 +44,7 @@ import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
 import ViewSelector from './ViewSelector';
+import {VisualizationPanel} from './VisualizationPanel';
 
 type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 
@@ -106,6 +105,7 @@ export const ProfileView = ({
     param: 'dashboard_items',
     navigateTo,
   });
+  const [currentSearchString] = useURLState({param: 'search_string'});
   const dashboardItems = rawDashboardItems as string[];
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
@@ -154,9 +154,11 @@ export const ProfileView = ({
   const getDashboardItemByType = ({
     type,
     isHalfScreen,
+    setActionButtons,
   }: {
     type: string;
     isHalfScreen: boolean;
+    setActionButtons: (actionButtons: JSX.Element) => void;
   }): JSX.Element => {
     switch (type) {
       case 'icicle': {
@@ -180,6 +182,7 @@ export const ProfileView = ({
               onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}
               loading={flamegraphData.loading}
+              setActionButtons={setActionButtons}
             />
           </ConditionalWrapper>
         ) : (
@@ -205,6 +208,8 @@ export const ProfileView = ({
             data={topTableData.data}
             sampleUnit={sampleUnit}
             navigateTo={navigateTo}
+            setActionButtons={setActionButtons}
+            currentSearchString={currentSearchString as string}
           />
         ) : (
           <></>
@@ -308,41 +313,15 @@ export const ProfileView = ({
                                     snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
                                   )}
                                 >
-                                  <div className="w-full flex justify-end pb-2">
-                                    <div className="w-full flex justify-between">
-                                      <div
-                                        className={cx(
-                                          isMultiPanelView ? 'visible' : 'invisible',
-                                          'flex items-center'
-                                        )}
-                                        {...provided.dragHandleProps}
-                                      >
-                                        <Icon
-                                          className="text-xl"
-                                          icon="material-symbols:drag-indicator"
-                                        />
-                                      </div>
-                                      <ViewSelector
-                                        defaultValue={dashboardItem}
-                                        navigateTo={navigateTo}
-                                        position={index}
-                                      />
-                                    </div>
-
-                                    {isMultiPanelView && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleClosePanel(dashboardItem)}
-                                        className="pl-2"
-                                      >
-                                        <CloseIcon />
-                                      </button>
-                                    )}
-                                  </div>
-                                  {getDashboardItemByType({
-                                    type: dashboardItem,
-                                    isHalfScreen: isMultiPanelView,
-                                  })}
+                                  <VisualizationPanel
+                                    handleClosePanel={handleClosePanel}
+                                    isMultiPanelView={isMultiPanelView}
+                                    dashboardItem={dashboardItem}
+                                    getDashboardItemByType={getDashboardItemByType}
+                                    dragHandleProps={provided.dragHandleProps}
+                                    navigateTo={navigateTo}
+                                    index={index}
+                                  />
                                 </div>
                               )}
                             </Draggable>
