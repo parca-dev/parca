@@ -30,6 +30,10 @@ const ResultBox = ({value, className = ''}: Props): JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const onCopy = (): void => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     setIsCopied(true);
     (window.document?.activeElement as HTMLElement)?.blur();
     if (timeoutHandle != null) {

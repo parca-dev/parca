@@ -127,6 +127,10 @@ export const parseParams = (querystring: string): Record<string, string | string
 };
 
 export const selectQueryParam = (key: string): string | string[] | undefined => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
   const router = parseParams(window.location.search);
 
   if (key === 'dashboard_items') {

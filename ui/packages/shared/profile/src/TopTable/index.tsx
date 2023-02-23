@@ -70,7 +70,7 @@ export const TopTable = React.memo(function TopTable({
   currentSearchString,
   setActionButtons,
 }: TopTableProps): JSX.Element {
-  const router = parseParams(window.location.search);
+  const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
   const [rawcompareMode] = useURLState({param: 'compare_a'});
 
