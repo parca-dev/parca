@@ -399,7 +399,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 		if dbginfo.Quality.NotValidElf {
 			return nil, nil, ErrNotValidElf
 		}
-		if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab && dbginfo.Quality.HasDynsym) {
+		if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab || dbginfo.Quality.HasDynsym) {
 			return nil, nil, fmt.Errorf("check previously reported debuginfo quality: %w", ErrNoDebuginfo)
 		}
 	}
@@ -480,7 +480,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 			if err := s.metadata.SetQuality(ctx, m.BuildId, dbginfo.Quality); err != nil {
 				return nil, nil, fmt.Errorf("set quality: %w", err)
 			}
-			if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab && dbginfo.Quality.HasDynsym) {
+			if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab || dbginfo.Quality.HasDynsym) {
 				return nil, nil, fmt.Errorf("check debuginfo quality: %w", ErrNoDebuginfo)
 			}
 		}
@@ -556,7 +556,8 @@ func (s *Symbolizer) newLiner(filepath string, f *elf.File, quality *debuginfopb
 		}
 
 		return lnr, nil
-	case quality.HasSymtab && quality.HasDynsym:
+		// TODO CHECK plt
+	case quality.HasSymtab || quality.HasDynsym:
 		lnr, err := addr2line.Symbols(s.logger, filepath, f, s.demangler)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Symtab liner: %w", err)
