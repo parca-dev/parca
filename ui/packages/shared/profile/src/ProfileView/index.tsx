@@ -33,10 +33,10 @@ import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
 import useDelayedLoader from '../useDelayedLoader';
+import {GraphvizType} from '../Callgraph';
 import {jsonToDot} from '../Callgraph/utils';
 
 import '../ProfileView.styles.css';
-import {GraphvizType} from 'Callgraph';
 
 type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 
@@ -97,6 +97,7 @@ export const ProfileView = ({
     param: 'dashboard_items',
     navigateTo,
   });
+  const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [callgraphLayout, setCallgraphLayout] = useState<GraphvizType | undefined>(undefined);
   const dashboardItems = rawDashboardItems as string[];
   const isDarkMode = useAppSelector(selectDarkMode);
@@ -149,14 +150,21 @@ export const ProfileView = ({
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
 
-  // TODO: If we want to further optimize the experience, we could try to load the graphviz layout in the ProfileViewWithData layer
+  useEffect(() => {
+    async function loadGraphviz() {
+      await graphviz.loadWASM();
+      setGraphvizLoaded(true);
+    }
+    loadGraphviz();
+  }, []);
+
+  // Note: If we want to further optimize the experience, we could try to load the graphviz layout in the ProfileViewWithData layer
+  // and pass it down to the ProfileView. This would allow us to load the layout in parallel with the flamegraph data.
+  // However, the layout calculation is dependent on the width and color range of the graph container, which is why it is done at this level
   useEffect(() => {
     async function loadCallgraphLayout(graph, width, colorRange) {
-      console.log('load graphviz');
-      console.time('graphviz loading');
-      await graphviz.loadWASM();
-      console.timeEnd('graphviz loading');
-
+      await setCallgraphLayout(undefined);
+      console.time('calculate layout');
       // Translate JSON to 'dot' graph string
       const dataAsDot = await jsonToDot({
         graph,
@@ -166,21 +174,19 @@ export const ProfileView = ({
 
       // Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
       const jsonGraph = await graphviz.layout(dataAsDot, 'json', 'dot');
+      console.timeEnd('calculate layout');
       await setCallgraphLayout(JSON.parse(jsonGraph) as GraphvizType);
     }
 
     if (
+      graphvizLoaded &&
       callgraphData?.data != null &&
       callgraphData?.data != undefined &&
       dimensions?.width !== undefined
     ) {
       loadCallgraphLayout(callgraphData?.data, dimensions?.width, colorRange);
-    } else {
-      setCallgraphLayout(undefined);
     }
-
-    return setCallgraphLayout(undefined);
-  }, [callgraphData]);
+  }, [graphvizLoaded, callgraphData?.data]);
 
   const getDashboardItemByType = useCallback(
     ({type, isHalfScreen}: {type: string; isHalfScreen: boolean}) => {
@@ -199,12 +205,12 @@ export const ProfileView = ({
               />
             </Profiler>
           ) : (
-            <> </>
+            <></>
           );
         }
         case 'callgraph': {
           return callgraphData?.data != null &&
-            callgraphLayout != undefined &&
+            callgraphLayout !== undefined &&
             dimensions?.width !== undefined ? (
             <Callgraph
               data={callgraphData.data}
