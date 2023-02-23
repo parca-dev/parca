@@ -1999,10 +1999,10 @@
     uplot "1.6.23"
     uuid "9.0.0"
 
-"@headlessui/react@1.7.10":
-  version "1.7.10"
-  resolved "https://registry.yarnpkg.com/@headlessui/react/-/react-1.7.10.tgz#0971a33843a76f2bf4b801a43f76e3730fe15884"
-  integrity sha512-1m66h/5eayTEZVT2PI13/2PG3EVC7a9XalmUtVSC8X76pcyKYMuyX1XAL2RUtCr8WhoMa/KrDEyoeU5v+kSQOw==
+"@headlessui/react@1.7.11":
+  version "1.7.11"
+  resolved "https://registry.yarnpkg.com/@headlessui/react/-/react-1.7.11.tgz#1cc5750226abe5af2c94f72e975c0c8d2f5cc5a6"
+  integrity sha512-EaDbVgcyiylhtskZZf4Qb/JiiByY7cYbd0qgZ9xm2pm2X7hKojG0P4TaQYKgPOV3vojPhd/pZyQh3nmRkkcSyw==
   dependencies:
     client-only "^0.0.1"
 
