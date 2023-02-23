@@ -32,6 +32,10 @@ export const KeyDownProvider = ({
   const [isShiftDown, setIsShiftDown] = useState<boolean>(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const handleShiftDown = (event: {keyCode: number}): void => {
       if (event.keyCode === 16) {
         setIsShiftDown(true);
