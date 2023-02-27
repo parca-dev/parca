@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/prometheus/common/model"
+
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -142,10 +144,10 @@ func LabelNamesFromSamples(
 	for labelName := range labels {
 		resLabelName := labelName
 		if _, ok := takenLabels[labelName]; ok {
-			resLabelName = "exported_" + resLabelName
+			resLabelName = model.ExportedLabelPrefix + resLabelName
 		}
-		if _, ok := resLabels[resLabelName]; !ok {
-			resLabelName = "exported_" + resLabelName
+		if _, ok := resLabels[resLabelName]; ok {
+			resLabelName = model.ExportedLabelPrefix + resLabelName
 		}
 		resLabels[resLabelName] = struct{}{}
 	}
@@ -167,7 +169,7 @@ func LabelNamesFromSamples(
 }
 
 // TODO: support num label units.
-func LabelsFromSample(takenLabelNames map[string]string, stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
+func LabelsFromSample(takenLabels map[string]string, stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
 	labels := map[string][]string{}
 	labelNames := []string{}
 	for _, label := range plabels {
@@ -188,11 +190,11 @@ func LabelsFromSample(takenLabelNames map[string]string, stringTable []string, p
 	resLabels := map[string]string{}
 	for _, labelName := range labelNames {
 		resLabelName := labelName
-		if _, ok := takenLabelNames[resLabelName]; ok {
-			resLabelName = "exported_" + resLabelName
+		if _, ok := takenLabels[resLabelName]; ok {
+			resLabelName = model.ExportedLabelPrefix + resLabelName
 		}
 		if _, ok := resLabels[resLabelName]; ok {
-			resLabelName = "exported_" + resLabelName
+			resLabelName = model.ExportedLabelPrefix + resLabelName
 		}
 		resLabels[resLabelName] = labels[labelName][0]
 	}

@@ -21,55 +21,126 @@ import (
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 )
 
+func TestLabelNamesFromSamples(t *testing.T) {
+	cases := []struct {
+		name         string
+		takenLabels  map[string]string
+		stringTable  []string
+		samples      []*pprofpb.Sample
+		allLabels    map[string]struct{}
+		allNumLabels map[string]struct{}
+	}{
+		{
+			name: "colliding labels in descending order",
+			takenLabels: map[string]string{
+				"instance": "127.0.0.1:6060",
+			},
+			stringTable: []string{"", "instance", "17", "method", "GET"},
+			samples: []*pprofpb.Sample{
+				{
+					Label: []*pprofpb.Label{{
+						Key: 3,
+						Str: 4,
+					}, {
+						Key: 1,
+						Str: 2,
+					}},
+				},
+			},
+			allLabels: map[string]struct{}{
+				"exported_instance": {},
+				"method":            {},
+			},
+			allNumLabels: map[string]struct{}{},
+		},
+		{
+			name: "colliding labels in ascending order",
+			takenLabels: map[string]string{
+				"instance": "127.0.0.1:6060",
+			},
+			stringTable: []string{"", "instance", "17", "method", "GET"},
+			samples: []*pprofpb.Sample{
+				{
+					Label: []*pprofpb.Label{{
+						Key: 1,
+						Str: 2,
+					}, {
+						Key: 3,
+						Str: 4,
+					}},
+				},
+			},
+			allLabels: map[string]struct{}{
+				"exported_instance": {},
+				"method":            {},
+			},
+			allNumLabels: map[string]struct{}{},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run("", func(t *testing.T) {
+			allLabels := map[string]struct{}{}
+			allNumLabels := map[string]struct{}{}
+			LabelNamesFromSamples(c.takenLabels, c.stringTable, c.samples, allLabels, allNumLabels)
+			require.Equal(t, c.allLabels, allLabels)
+			require.Equal(t, c.allNumLabels, allNumLabels)
+		})
+	}
+}
+
 func TestLabelsFromSample(t *testing.T) {
 	cases := []struct {
 		name            string
 		takenLabels     map[string]string
 		stringTable     []string
-		samples         []*pprofpb.Label
+		labels          []*pprofpb.Label
 		resultLabels    map[string]string
 		resultNumLabels map[string]int64
-	}{{
-		name: "descending order",
-		takenLabels: map[string]string{
-			"foo": "bar",
+	}{
+		{
+			name: "colliding labels in descending order",
+			takenLabels: map[string]string{
+				"instance": "127.0.0.1:6060",
+			},
+			stringTable: []string{"", "instance", "17", "method", "GET"},
+			labels: []*pprofpb.Label{{
+				Key: 3,
+				Str: 4,
+			}, {
+				Key: 1,
+				Str: 2,
+			}},
+			resultLabels: map[string]string{
+				"exported_instance": "17",
+				"method":            "GET",
+			},
+			resultNumLabels: map[string]int64{},
 		},
-		stringTable: []string{"", "foo", "bar", "exported_foo", "baz"},
-		samples: []*pprofpb.Label{{
-			Key: 1,
-			Str: 2,
-		}, {
-			Key: 3,
-			Str: 4,
-		}},
-		resultLabels: map[string]string{
-			"exported_foo":          "baz",
-			"exported_exported_foo": "bar",
+		{
+			name: "colliding labels in ascending order",
+			takenLabels: map[string]string{
+				"instance": "127.0.0.1:6060",
+			},
+			stringTable: []string{"", "instance", "17", "method", "GET"},
+			labels: []*pprofpb.Label{{
+				Key: 1,
+				Str: 2,
+			}, {
+				Key: 3,
+				Str: 4,
+			}},
+			resultLabels: map[string]string{
+				"exported_instance": "17",
+				"method":            "GET",
+			},
+			resultNumLabels: map[string]int64{},
 		},
-		resultNumLabels: map[string]int64{},
-	}, {
-		name: "ascending order",
-		takenLabels: map[string]string{
-			"a": "b",
-		},
-		stringTable: []string{"", "a", "bar", "exported_a", "baz"},
-		samples: []*pprofpb.Label{{
-			Key: 1,
-			Str: 2,
-		}, {
-			Key: 3,
-			Str: 4,
-		}},
-		resultLabels: map[string]string{
-			"exported_a":          "bar",
-			"exported_exported_a": "baz",
-		},
-		resultNumLabels: map[string]int64{},
-	}}
+	}
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
-			labels, numLabels := LabelsFromSample(c.takenLabels, c.stringTable, c.samples)
+			labels, numLabels := LabelsFromSample(c.takenLabels, c.stringTable, c.labels)
 			require.Equal(t, c.resultLabels, labels)
 			require.Equal(t, c.resultNumLabels, numLabels)
 		})

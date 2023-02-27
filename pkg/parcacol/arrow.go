@@ -16,6 +16,7 @@ package parcacol
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/apache/arrow/go/v10/arrow"
 	"github.com/apache/arrow/go/v10/arrow/array"
@@ -88,10 +89,30 @@ func (c *ArrowToProfileConverter) Convert(
 			return nil, fmt.Errorf("read stacktrace metadata: %w", err)
 		}
 
+		labelIndexes := make(map[string]int)
+		for i, field := range schema.Fields() {
+			if strings.HasPrefix(field.Name, ColumnPprofLabels+".") {
+				labelIndexes[strings.TrimPrefix(field.Name, ColumnPprofLabels+".")] = i
+			}
+		}
+
 		for i := 0; i < rows; i++ {
+			labels := make(map[string]string, len(labelIndexes))
+			for name, index := range labelIndexes {
+				c := ar.Column(index).(*array.Dictionary)
+				d := c.Dictionary().(*array.Binary)
+				if !c.IsNull(i) {
+					labelValue := d.Value(c.GetValueIndex(i))
+					if len(labelValue) > 0 {
+						labels[name] = string(labelValue)
+					}
+				}
+			}
+
 			samples = append(samples, &profile.SymbolizedSample{
 				Value:     valueColumn.Value(i),
 				Locations: stacktraceLocations[i],
+				Label:     labels,
 			})
 		}
 	}
@@ -119,6 +140,8 @@ func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context
 			Value:     sample.Value,
 			DiffValue: sample.DiffValue,
 			Locations: stacktraceLocations[i],
+			Label:     sample.Label,
+			NumLabel:  sample.NumLabel,
 		}
 	}
 
