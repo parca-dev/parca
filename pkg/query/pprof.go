@@ -152,9 +152,15 @@ func GenerateFlatPprof(ctx context.Context, ip *parcaprofile.Profile) (*profile.
 			s.Value = s.DiffValue
 		}
 
+		labels := make(map[string][]string, len(s.Label))
+		for k, v := range s.Label {
+			labels[k] = []string{v}
+		}
+
 		p.Sample = append(p.Sample, &profile.Sample{
 			Value:    []int64{s.Value},
 			Location: locations,
+			Label:    labels,
 		})
 	}
 
