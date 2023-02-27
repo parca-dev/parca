@@ -19,7 +19,7 @@ const HealthStatus = {
   Bad: 'Bad',
 } as const;
 
-type HealthStatusType = typeof HealthStatus[keyof typeof HealthStatus];
+type HealthStatusType = (typeof HealthStatus)[keyof typeof HealthStatus];
 
 export const getHealthStatus = (numericValue: number) => {
   const label = Object.values(HealthStatus)[numericValue];

@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -216,9 +216,9 @@ func (sp *scrapePool) Sync(tgs []*targetgroup.Group) {
 		}
 
 		for _, t := range targets {
-			if t.Labels().Len() > 0 {
+			if !t.Labels().IsEmpty() {
 				all = append(all, t)
-			} else if t.DiscoveredLabels().Len() > 0 {
+			} else if !t.DiscoveredLabels().IsEmpty() {
 				sp.droppedTargets = append(sp.droppedTargets, t)
 			}
 		}
@@ -468,12 +468,12 @@ mainLoop:
 
 			tl := sl.target.Labels()
 			tl = append(tl, labels.Label{Name: "__name__", Value: profileType})
-			for _, l := range sl.externalLabels {
+			sl.externalLabels.Range(func(l labels.Label) {
 				tl = append(tl, labels.Label{
 					Name:  l.Name,
 					Value: l.Value,
 				})
-			}
+			})
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			protolbls := &profilepb.LabelSet{

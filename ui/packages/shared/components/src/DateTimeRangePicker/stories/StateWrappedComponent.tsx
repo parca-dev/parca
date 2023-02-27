@@ -12,8 +12,9 @@
 // limitations under the License.
 
 import {useState} from 'react';
-import {DateTimeRange} from '../utils';
+
 import DateTimeRangePicker from '../index';
+import {DateTimeRange} from '../utils';
 
 const StateWrappedComponent = (props: {key: string; value: any}): JSX.Element => {
   const [range, setRange] = useState(new DateTimeRange());

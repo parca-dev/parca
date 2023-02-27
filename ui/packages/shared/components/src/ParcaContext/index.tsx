@@ -11,11 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createContext, ReactNode, useContext, ProfilerOnRenderCallback} from 'react';
+import {ProfilerOnRenderCallback, ReactNode, createContext, useContext} from 'react';
+
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
-import Spinner from '../Spinner';
 import {NoDataPrompt} from '../NoDataPrompt';
+import Spinner from '../Spinner';
 
 interface Props {
   loader: ReactNode;

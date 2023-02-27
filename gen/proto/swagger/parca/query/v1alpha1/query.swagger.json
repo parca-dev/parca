@@ -382,6 +382,13 @@
             "required": false,
             "type": "integer",
             "format": "int64"
+          },
+          {
+            "name": "step",
+            "description": "step is the duration of each sample returned.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -1110,6 +1117,11 @@
           "type": "string",
           "format": "int64",
           "title": "value is the cumulative value for the profile"
+        },
+        "valuePerSecond": {
+          "type": "number",
+          "format": "double",
+          "title": "value_per_second is the calculated per second average in the steps duration"
         }
       },
       "title": "MetricsSample is a cumulative value and timestamp of a profile"

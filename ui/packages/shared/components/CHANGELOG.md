@@ -3,6 +3,38 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.16.104 (2023-02-23)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.103 (2023-02-22)
+
+**Note:** Version bump only for package @parca/components
+
+## [0.16.102](https://github.com/parca-dev/parca/compare/@parca/components@0.16.101...@parca/components@0.16.102) (2023-02-22)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.101 (2023-02-21)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.100 (2023-02-21)
+
+**Note:** Version bump only for package @parca/components
+
+## [0.16.99](https://github.com/parca-dev/parca/compare/@parca/components@0.16.98...@parca/components@0.16.99) (2023-02-16)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.98 (2023-02-16)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.97 (2023-02-15)
+
+**Note:** Version bump only for package @parca/components
+
 ## [0.16.96](https://github.com/parca-dev/parca/compare/@parca/components@0.16.95...@parca/components@0.16.96) (2023-02-13)
 
 **Note:** Version bump only for package @parca/components

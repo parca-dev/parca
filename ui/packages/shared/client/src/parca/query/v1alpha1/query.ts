@@ -17,6 +17,7 @@ import { Function } from "../../metastore/v1alpha1/metastore";
 import { Mapping } from "../../metastore/v1alpha1/metastore";
 import { Location } from "../../metastore/v1alpha1/metastore";
 import { LabelSet } from "../../profilestore/v1alpha1/profilestore";
+import { Duration } from "../../../google/protobuf/duration";
 import { Timestamp } from "../../../google/protobuf/timestamp";
 /**
  * ProfileTypesRequest is the request to retrieve the list of available profile types.
@@ -111,6 +112,12 @@ export interface QueryRangeRequest {
      * @generated from protobuf field: uint32 limit = 4;
      */
     limit: number;
+    /**
+     * step is the duration of each sample returned.
+     *
+     * @generated from protobuf field: google.protobuf.Duration step = 5;
+     */
+    step?: Duration;
 }
 /**
  * QueryRangeResponse is the set of matching profile values
@@ -174,6 +181,12 @@ export interface MetricsSample {
      * @generated from protobuf field: int64 value = 2;
      */
     value: string;
+    /**
+     * value_per_second is the calculated per second average in the steps duration
+     *
+     * @generated from protobuf field: double value_per_second = 3;
+     */
+    valuePerSecond: number;
 }
 /**
  * MergeProfile contains parameters for a merge request
@@ -1177,7 +1190,8 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
             { no: 1, name: "query", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "start", kind: "message", T: () => Timestamp },
             { no: 3, name: "end", kind: "message", T: () => Timestamp },
-            { no: 4, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 4, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "step", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<QueryRangeRequest>): QueryRangeRequest {
@@ -1204,6 +1218,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
                 case /* uint32 limit */ 4:
                     message.limit = reader.uint32();
                     break;
+                case /* google.protobuf.Duration step */ 5:
+                    message.step = Duration.internalBinaryRead(reader, reader.uint32(), options, message.step);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1228,6 +1245,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
         /* uint32 limit = 4; */
         if (message.limit !== 0)
             writer.tag(4, WireType.Varint).uint32(message.limit);
+        /* google.protobuf.Duration step = 5; */
+        if (message.step)
+            Duration.internalBinaryWrite(message.step, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1358,11 +1378,12 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
     constructor() {
         super("parca.query.v1alpha1.MetricsSample", [
             { no: 1, name: "timestamp", kind: "message", T: () => Timestamp },
-            { no: 2, name: "value", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
+            { no: 2, name: "value", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 3, name: "value_per_second", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ }
         ]);
     }
     create(value?: PartialMessage<MetricsSample>): MetricsSample {
-        const message = { value: "0" };
+        const message = { value: "0", valuePerSecond: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<MetricsSample>(this, message, value);
@@ -1378,6 +1399,9 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
                     break;
                 case /* int64 value */ 2:
                     message.value = reader.int64().toString();
+                    break;
+                case /* double value_per_second */ 3:
+                    message.valuePerSecond = reader.double();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1397,6 +1421,9 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         /* int64 value = 2; */
         if (message.value !== "0")
             writer.tag(2, WireType.Varint).int64(message.value);
+        /* double value_per_second = 3; */
+        if (message.valuePerSecond !== 0)
+            writer.tag(3, WireType.Bit64).double(message.valuePerSecond);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

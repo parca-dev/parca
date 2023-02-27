@@ -11,4 +11,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './src/time';
+import {FC, PropsWithChildren, ReactNode} from 'react';
+
+interface Props<T> {
+  condition: boolean;
+  children: ReactNode;
+  WrapperComponent: FC<T>;
+  wrapperProps: T;
+}
+
+export const ConditionalWrapper = <T extends PropsWithChildren>({
+  condition,
+  WrapperComponent,
+  wrapperProps,
+  children,
+}: Props<T>): JSX.Element => {
+  if (condition) {
+    return <WrapperComponent {...wrapperProps}>{children}</WrapperComponent>;
+  }
+
+  return <>{children}</>;
+};

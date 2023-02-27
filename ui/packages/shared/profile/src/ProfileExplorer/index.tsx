@@ -11,15 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {QuerySelection, useProfileTypes} from '../ProfileSelector';
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
-import ProfileExplorerSingle from './ProfileExplorerSingle';
-import ProfileExplorerCompare from './ProfileExplorerCompare';
-import {QueryServiceClient} from '@parca/client';
-import {store} from '@parca/store';
+import {useEffect, useState} from 'react';
+
 import {Provider} from 'react-redux';
+
+import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, useParcaContext} from '@parca/components';
 import type {NavigateFunction} from '@parca/functions';
+import {store} from '@parca/store';
+
+import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
+import {QuerySelection, useProfileTypes} from '../ProfileSelector';
+import ProfileExplorerCompare from './ProfileExplorerCompare';
+import ProfileExplorerSingle from './ProfileExplorerSingle';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -71,32 +75,101 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const {loading: profileTypesLoading, data: profileTypesData} = useProfileTypes(queryClient);
+  const {
+    loading: profileTypesLoading,
+    data: profileTypesData,
+    error: profileTypesError,
+  } = useProfileTypes(queryClient);
 
-  const {loader, noDataPrompt} = useParcaContext();
+  const {loader, noDataPrompt, onError} = useParcaContext();
+
+  useEffect(() => {
+    if (profileTypesError !== undefined && profileTypesError !== null) {
+      onError?.(profileTypesError, 'ProfileExplorer');
+    }
+  }, [profileTypesError, onError]);
 
   /* eslint-disable @typescript-eslint/naming-convention */
   let {
     from_a,
     to_a,
-    merge_a,
     profile_name_a,
     labels_a,
-    time_a,
+    merge_from_a,
+    merge_to_a,
     time_selection_a,
     compare_a,
     from_b,
     to_b,
-    merge_b,
     profile_name_b,
     labels_b,
-    time_b,
+    merge_from_b,
+    merge_to_b,
     time_selection_b,
     compare_b,
     filter_by_function,
     dashboard_items,
   } = queryParams;
+
   /* eslint-enable @typescript-eslint/naming-convention */
+  const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
+  const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
+
+  useEffect(() => {
+    const mergeFrom = merge_from_a ?? undefined;
+    const mergeTo = merge_to_a ?? undefined;
+    const labels = (labels_a as string[]) ?? [''];
+    const profileA = ProfileSelectionFromParams(
+      expression_a,
+      from_a as string,
+      to_a as string,
+      mergeFrom as string,
+      mergeTo as string,
+      labels,
+      filter_by_function as string
+    );
+
+    setProfileA(profileA);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merge_from_a, merge_to_a]);
+
+  useEffect(() => {
+    const mergeFrom = merge_from_b ?? undefined;
+    const mergeTo = merge_to_b ?? undefined;
+    const labels = (labels_b as string[]) ?? [''];
+    const profileB = ProfileSelectionFromParams(
+      expression_b,
+      from_b as string,
+      to_b as string,
+      mergeFrom as string,
+      mergeTo as string,
+      labels,
+      filter_by_function as string
+    );
+
+    setProfileB(profileB);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merge_from_b, merge_to_b]);
+
+  if (profileTypesLoading) {
+    return <>{loader}</>;
+  }
+
+  if (profileTypesData?.types.length === 0) {
+    return <>{noDataPrompt}</>;
+  }
+
+  if (profileTypesError !== undefined && profileTypesError !== null) {
+    return (
+      <div
+        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        role="alert"
+      >
+        <strong className="font-bold">Error! </strong>
+        <span className="block sm:inline">{profileTypesError.message}</span>
+      </div>
+    );
+  }
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);
   time_selection_a = sanitizedRange.time_selection_a;
@@ -130,37 +203,21 @@ const ProfileExplorerApp = ({
     return selectProfile(p, '_b');
   };
 
-  if (profileTypesLoading) {
-    return <>{loader}</>;
-  }
-
-  if (profileTypesData?.types.length === 0) {
-    return <>{noDataPrompt}</>;
-  }
+  const queryA = {
+    expression: expression_a,
+    from: parseInt(from_a as string),
+    to: parseInt(to_a as string),
+    timeSelection: time_selection_a as string,
+    profile_name: profile_name_a as string,
+  };
 
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
-    const query = {
-      expression: expression_a,
-      from: parseInt(from_a as string),
-      to: parseInt(to_a as string),
-      merge: (merge_a as string) === 'true',
-      profile_name: profile_name_a as string,
-      timeSelection: time_selection_a as string,
-    };
-
-    const profile = ProfileSelectionFromParams(
-      expression_a,
-      from_a as string,
-      to_a as string,
-      merge_a as string,
-      labels_a as string[],
-      profile_name_a as string,
-      time_a as string,
-      filter_by_function
-    );
-
     const selectQuery = (q: QuerySelection): void => {
+      const mergeParams =
+        q.mergeFrom !== undefined && q.mergeTo !== undefined
+          ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo}
+          : {};
       return navigateTo(
         '/',
         // Filtering the _a suffix causes us to reset potential profile
@@ -171,9 +228,9 @@ const ProfileExplorerApp = ({
             expression_a: encodeURIComponent(q.expression),
             from_a: q.from.toString(),
             to_a: q.to.toString(),
-            merge_a: q.merge,
             time_selection_a: q.timeSelection,
             dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
+            ...mergeParams,
           },
         }
       );
@@ -191,25 +248,23 @@ const ProfileExplorerApp = ({
     const compareProfile = (): void => {
       let compareQuery = {
         compare_a: 'true',
-        expression_a: encodeURIComponent(query.expression),
-        from_a: query.from.toString(),
-        to_a: query.to.toString(),
-        merge_a: query.merge,
-        time_selection_a: query.timeSelection,
-        profile_name_a: query.profile_name,
+        expression_a: encodeURIComponent(queryA.expression),
+        from_a: queryA.from.toString(),
+        to_a: queryA.to.toString(),
+        time_selection_a: queryA.timeSelection,
+        profile_name_a: queryA.profile_name,
 
         compare_b: 'true',
-        expression_b: encodeURIComponent(query.expression),
-        from_b: query.from.toString(),
-        to_b: query.to.toString(),
-        merge_b: query.merge,
-        time_selection_b: query.timeSelection,
-        profile_name_b: query.profile_name,
+        expression_b: encodeURIComponent(queryA.expression),
+        from_b: queryA.from.toString(),
+        to_b: queryA.to.toString(),
+        time_selection_b: queryA.timeSelection,
+        profile_name_b: queryA.profile_name,
       };
 
-      if (profile != null) {
+      if (profileA != null) {
         compareQuery = {
-          ...SuffixParams(profile.HistoryParams(), '_a'),
+          ...SuffixParams(profileA.HistoryParams(), '_a'),
           ...compareQuery,
         };
       }
@@ -224,8 +279,8 @@ const ProfileExplorerApp = ({
     return (
       <ProfileExplorerSingle
         queryClient={queryClient}
-        query={query}
-        profile={profile}
+        query={queryA}
+        profile={profileA}
         selectQuery={selectQuery}
         selectProfile={selectProfile}
         compareProfile={compareProfile}
@@ -234,43 +289,19 @@ const ProfileExplorerApp = ({
     );
   }
 
-  const queryA = {
-    expression: expression_a,
-    from: parseInt(from_a as string),
-    to: parseInt(to_a as string),
-    merge: (merge_a as string) === 'true',
-    timeSelection: time_selection_a as string,
-    profile_name: profile_name_a as string,
-  };
   const queryB = {
     expression: expression_b,
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
-    merge: (merge_b as string) === 'true',
     timeSelection: time_selection_b as string,
     profile_name: profile_name_b as string,
   };
 
-  const profileA = ProfileSelectionFromParams(
-    expression_a,
-    from_a as string,
-    to_a as string,
-    merge_a as string,
-    labels_a as string[],
-    profile_name_a as string,
-    time_a as string
-  );
-  const profileB = ProfileSelectionFromParams(
-    expression_b,
-    from_b as string,
-    to_b as string,
-    merge_b as string,
-    labels_b as string[],
-    profile_name_b as string,
-    time_b as string
-  );
-
   const selectQueryA = (q: QuerySelection): void => {
+    const mergeParams =
+      q.mergeFrom !== undefined && q.mergeTo !== undefined
+        ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo}
+        : {};
     return navigateTo(
       '/',
       // Filtering the _a suffix causes us to reset potential profile
@@ -283,16 +314,20 @@ const ProfileExplorerApp = ({
           expression_b: encodeURIComponent(expression_b),
           from_a: q.from.toString(),
           to_a: q.to.toString(),
-          merge_a: q.merge,
           time_selection_a: q.timeSelection,
           filter_by_function: filter_by_function ?? '',
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
+          ...mergeParams,
         },
       }
     );
   };
 
   const selectQueryB = (q: QuerySelection): void => {
+    const mergeParams =
+      q.mergeFrom !== undefined && q.mergeTo !== undefined
+        ? {merge_from_b: q.mergeFrom, merge_to_b: q.mergeTo}
+        : {};
     return navigateTo(
       '/',
       // Filtering the _b suffix causes us to reset potential profile
@@ -305,10 +340,10 @@ const ProfileExplorerApp = ({
           expression_a: encodeURIComponent(expression_a),
           from_b: q.from.toString(),
           to_b: q.to.toString(),
-          merge_b: q.merge,
           time_selection_b: q.timeSelection,
           filter_by_function: filter_by_function ?? '',
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
+          ...mergeParams,
         },
       }
     );

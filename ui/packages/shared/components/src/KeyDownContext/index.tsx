@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createContext, ReactNode, useContext, useEffect, useMemo, useState} from 'react';
+import {ReactNode, createContext, useContext, useEffect, useMemo, useState} from 'react';
 
 export interface KeyDownState {
   isShiftDown: boolean;
@@ -32,6 +32,10 @@ export const KeyDownProvider = ({
   const [isShiftDown, setIsShiftDown] = useState<boolean>(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const handleShiftDown = (event: {keyCode: number}): void => {
       if (event.keyCode === 16) {
         setIsShiftDown(true);

@@ -11,13 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState, useEffect} from 'react';
-import MetricsGraph from '../MetricsGraph';
-import {ProfileSelection, SingleProfileSelection} from '..';
-import {QueryServiceClient, QueryRangeResponse, Label, Timestamp} from '@parca/client';
+import {useEffect, useState} from 'react';
+
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+
+import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
+import {getStepDuration} from '@parca/functions';
 import {Query} from '@parca/parser';
+
+import {MergedProfileSelection, ProfileSelection} from '..';
+import MetricsGraph from '../MetricsGraph';
 import useDelayedLoader from '../useDelayedLoader';
 
 interface ProfileMetricsGraphProps {
@@ -26,9 +30,9 @@ interface ProfileMetricsGraphProps {
   profile: ProfileSelection | null;
   from: number;
   to: number;
-  select: (source: ProfileSelection) => void;
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (key: string, value: string) => void;
+  onPointClick: (timestamp: number, labels: Label[], queryExpression: string) => void;
 }
 
 export interface IQueryRangeState {
@@ -58,11 +62,13 @@ export const useQueryRange = (
         error: null,
       });
 
+      const stepDuration = getStepDuration(start, end);
       const call = client.queryRange(
         {
           query: queryExpression,
           start: Timestamp.fromDate(new Date(start)),
           end: Timestamp.fromDate(new Date(end)),
+          step: Duration.create(stepDuration),
           limit: 0,
         },
         {meta: metadata}
@@ -83,9 +89,9 @@ const ProfileMetricsGraph = ({
   profile,
   from,
   to,
-  select,
   setTimeRange,
   addLabelMatcher,
+  onPointClick,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
@@ -116,9 +122,7 @@ const ProfileMetricsGraph = ({
   const series = response?.series;
   if (series !== null && series !== undefined && series?.length > 0) {
     const handleSampleClick = (timestamp: number, _value: number, labels: Label[]): void => {
-      select(
-        new SingleProfileSelection(Query.parse(queryExpression).profileName(), labels, timestamp)
-      );
+      onPointClick(timestamp, labels, queryExpression);
     };
 
     return (
@@ -130,7 +134,7 @@ const ProfileMetricsGraph = ({
           data={series}
           from={from}
           to={to}
-          profile={profile as SingleProfileSelection}
+          profile={profile as MergedProfileSelection}
           setTimeRange={setTimeRange}
           onSampleClick={handleSampleClick}
           onLabelClick={addLabelMatcher}

@@ -12,14 +12,15 @@
 // limitations under the License.
 
 import {useEffect} from 'react';
-import {
-  useAppDispatch,
-  useAppSelector,
-  setProfileStateValue,
-  selectProfileStateValue,
-} from '@parca/store';
+
 import {parseParams} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {
+  selectProfileStateValue,
+  setProfileStateValue,
+  useAppDispatch,
+  useAppSelector,
+} from '@parca/store';
 
 interface Props {
   param: string;
@@ -33,7 +34,7 @@ export const useURLState = ({
   withURLUpdate = true,
 }: Props): [string | string[], (val: string | string[]) => void] => {
   const dispatch = useAppDispatch();
-  const router = parseParams(window.location.search);
+  const router = parseParams(window?.location.search);
   const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
   );

@@ -11,12 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {flexRender, getCoreRowModel, getSortedRowModel, useReactTable} from '@tanstack/react-table';
-import type {ColumnDef, SortingState} from '@tanstack/react-table';
+import {useCallback, useRef, useState} from 'react';
+
+import {Icon} from '@iconify/react';
+import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
+} from '@tanstack/react-table';
 import cx from 'classnames';
 import {useVirtual} from 'react-virtual';
-import {useCallback, useRef, useState} from 'react';
-import {Icon} from '@iconify/react';
 
 declare module '@tanstack/table-core' {
   // @ts-expect-error
