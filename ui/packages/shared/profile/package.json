@@ -6,6 +6,7 @@
     "@parca/client": "^0.16.64",
     "@parca/components": "^0.16.104",
     "@parca/dynamicsize": "^0.16.53",
+    "@parca/hooks": "^0.0.1",
     "@parca/functions": "^0.16.65",
     "@parca/parser": "^0.16.54",
     "@parca/store": "^0.16.61",

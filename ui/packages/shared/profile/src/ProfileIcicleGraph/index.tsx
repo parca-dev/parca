@@ -15,8 +15,8 @@ import {useEffect, useMemo} from 'react';
 
 import {Flamegraph} from '@parca/client';
 import {Button} from '@parca/components';
-import {useContainerDimensions} from '@parca/dynamicsize';
 import {selectQueryParam, type NavigateFunction} from '@parca/functions';
+import {useContainerDimensions} from '@parca/hooks';
 
 import DiffLegend from '../components/DiffLegend';
 import {IcicleGraph} from './IcicleGraph';

@@ -32,6 +32,7 @@
     "@parca/parser": "^0.16.54",
     "@parca/profile": "^0.16.125",
     "@parca/store": "^0.16.61",
+    "@parca/hooks": "^0.0.1",
     "@svgr/webpack": "6.5.1",
     "@tailwindcss/typography": "^0.5.8",
     "@testing-library/jest-dom": "5.16.5",

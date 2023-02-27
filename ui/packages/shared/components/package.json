@@ -14,6 +14,7 @@
     "@iconify/react": "^4.0.0",
     "@parca/client": "^0.16.64",
     "@parca/dynamicsize": "^0.16.53",
+    "@parca/hooks": "^0.0.1",
     "@parca/functions": "^0.16.65",
     "@parca/icons": "^0.16.52",
     "@parca/parser": "^0.16.54",
