@@ -244,7 +244,7 @@ export const ProfileView = ({
         <Card>
           <Card.Body>
             <div className="flex py-3 w-full">
-              <div className="w-2/5 flex space-x-4">
+              <div className="lg:w-1/2 flex space-x-4">
                 <div className="flex space-x-1">
                   {profileSource != null && queryClient != null ? (
                     <ProfileShareButton
@@ -254,6 +254,7 @@ export const ProfileView = ({
                   ) : null}
 
                   <Button
+                    className="!w-auto"
                     color="neutral"
                     onClick={e => {
                       e.preventDefault();

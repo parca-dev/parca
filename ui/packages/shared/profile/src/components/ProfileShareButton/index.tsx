@@ -126,7 +126,12 @@ const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props
 
   return (
     <>
-      <Button color="neutral" className="w-fit" onClick={() => setIsOpen(true)} disabled={disabled}>
+      <Button
+        color="neutral"
+        className="!w-auto"
+        onClick={() => setIsOpen(true)}
+        disabled={disabled}
+      >
         <Icon icon="ei:share-apple" width={20} />
       </Button>
       <ProfileShareModal
