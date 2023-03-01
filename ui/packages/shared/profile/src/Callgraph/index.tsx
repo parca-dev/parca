@@ -19,7 +19,7 @@ import {Button, useURLState} from '@parca/components';
 import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import type {HoveringNode} from '../GraphTooltip';
 import {isSearchMatch, selectQueryParam} from '@parca/functions';
-import Tooltip from '../GraphTooltip';
+import {GraphTooltipContent as TooltipContent} from '../GraphTooltip';
 import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
 import SVG from 'react-inlinesvg';
 import {MapInteractionCSS} from 'react-map-interaction';
@@ -35,7 +35,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   const svgRef = useRef(null);
   const svgWrapper = useRef(null);
   const [svgWrapperLoaded, setSvgWrapperLoaded] = useState(false);
-  // const [hoveredNode, setHoveredNode] = useState<INode | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<any | null>(null);
   // const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   // const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
   // const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
@@ -49,7 +49,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   const maxColor: string = getNewSpanColor(isDarkMode);
   const minColor: string = d3.scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
-  const cumulatives = data.edges.map((edge: CallgraphEdge) => Number(edge.cumulative));
+  const cumulatives = data.edges.map((edge: CallgraphEdge) => parseInt(edge.cumulative));
   const cumulativesRange = d3.extent(cumulatives);
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateBlues)
@@ -65,34 +65,34 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   // };
 
   useEffect(() => {
-    //TODO: add node interaction using D3
     if (svgWrapperLoaded && svgRef.current) {
       const addInteraction = () => {
         const svg = d3.select(svgRef.current);
         const nodes = svg.selectAll('.node');
 
-        console.log(nodes);
-        // TODO: color the node based on the nodeData.flat or nodeData.cumulative value
-        nodes.each((d: any, i) => {
-          console.log({d, i, this: this});
-          // const nodeData = data.nodes.find(n => n.id === d.id);
-          // d3.select(this)
-          // const rgbColor = colorScale(Number(node.cumulative));
+        nodes.each(function () {
+          const nodeData = data.nodes.find(n => {
+            // @ts-ignore
+            return n.id === this.id;
+          });
+
+          const defaultColor = colorScale(Number(nodeData?.cumulative));
           // const hexColor = d3.color(rgbColor)?.formatHex() ?? 'red';
-        });
-        // TODO: show tooltip on hover at the x and y of the hovered node and showing nodeData
-        nodes.style('cursor', 'pointer').on('mouseenter', function (e) {
-          d3.select(this).select('path').style('fill', 'white');
-          const nodeData = data.nodes.find(n => n.id === e.target.id);
-          console.log(nodeData);
-          // TODO: set tooltip position to 'e' x and y!
-          // setHoveredNode({...nodeData, mouseX: e.evt.clientX, mouseY: e.evt.clientY});
-        });
-        nodes.on('mouseexit', function (e) {
-          console.log('mouseout', {e});
-          const node = d3.select(this).select('path');
-          node.style('stroke', e.target.attributes.fill.value);
-          // setHoveredNode(null);
+
+          const node = d3.select(this);
+          const path = node.select('path');
+
+          node
+            .style('cursor', 'pointer')
+            .on('mouseenter', function (e) {
+              d3.select(this).select('path').style('fill', 'white');
+              setHoveredNode({...nodeData, mouseX: e.clientX, mouseY: e.clientY});
+            })
+            .on('mouseleave', function (e) {
+              d3.select(this).select('path').style('fill', defaultColor);
+              setHoveredNode(null);
+            });
+          path.style('fill', defaultColor);
         });
       };
 
@@ -103,7 +103,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   if (data.nodes.length < 1) return <>Profile has no samples</>;
 
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full overflow-hidden relative">
       <MapInteractionCSS showControls minScale={1} maxScale={5}>
         <SVG
           ref={svgWrapper}
@@ -114,15 +114,21 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
           innerRef={svgRef}
         />
       </MapInteractionCSS>
-      {/* <Tooltip
-        hoveringNode={rawNodes.find(n => n.id === hoveredNode?.data.id) as HoveringNode}
-        unit={sampleUnit}
-        total={+total}
-        isFixed={false}
-        x={hoveredNode?.mouseX ?? 0}
-        y={hoveredNode?.mouseY ?? 0}
-        contextElement={containerRef.current}
-      /> */}
+      {hoveredNode && (
+        // <div className={`absolute top-${hoveredNode.mouseY} left-${hoveredNode.mouseX}`}>
+        <div className={`absolute top-0 left-0`}>
+          <TooltipContent
+            hoveringNode={hoveredNode as HoveringNode}
+            unit={sampleUnit}
+            total={parseInt(data.cumulative)}
+            isFixed={false}
+            strings={hoveredNode.meta.line}
+            locations={hoveredNode.meta.location}
+            functions={hoveredNode.meta.function}
+            mappings={hoveredNode.meta.mapping}
+          />
+        </div>
+      )}
       {/* {stage.scale.x !== 1 && (
           <div
             className={cx(

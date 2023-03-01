@@ -208,7 +208,7 @@ export const ProfileView = ({
           );
         }
         case 'callgraph': {
-          return callgraphData?.data != null &&
+          return callgraphData?.data !== undefined &&
             callgraphSVG !== undefined &&
             dimensions?.width !== undefined ? (
             <Callgraph

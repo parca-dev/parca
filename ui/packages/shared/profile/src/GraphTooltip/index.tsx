@@ -206,7 +206,7 @@ export interface HoveringNode extends CallgraphNode, FlamegraphRootNode, Flamegr
 
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-const GraphTooltipContent = ({
+export const GraphTooltipContent = ({
   hoveringNode,
   unit,
   total,
