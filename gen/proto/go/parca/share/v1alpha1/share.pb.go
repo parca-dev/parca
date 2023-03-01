@@ -320,6 +320,7 @@ type QueryResponse struct {
 	// report is the generated report
 	//
 	// Types that are assignable to Report:
+	//
 	//	*QueryResponse_Flamegraph
 	//	*QueryResponse_Pprof
 	//	*QueryResponse_Top
