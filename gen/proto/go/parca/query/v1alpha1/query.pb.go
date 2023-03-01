@@ -843,6 +843,7 @@ type ProfileDiffSelection struct {
 	// options are the available options for a diff selection
 	//
 	// Types that are assignable to Options:
+	//
 	//	*ProfileDiffSelection_Merge
 	//	*ProfileDiffSelection_Single
 	Options isProfileDiffSelection_Options `protobuf_oneof:"options"`
@@ -937,6 +938,7 @@ type QueryRequest struct {
 	// options are the options corresponding to the mode
 	//
 	// Types that are assignable to Options:
+	//
 	//	*QueryRequest_Diff
 	//	*QueryRequest_Merge
 	//	*QueryRequest_Single
@@ -1961,6 +1963,7 @@ type QueryResponse struct {
 	// report is the generated report
 	//
 	// Types that are assignable to Report:
+	//
 	//	*QueryResponse_Flamegraph
 	//	*QueryResponse_Pprof
 	//	*QueryResponse_Top
@@ -2246,7 +2249,7 @@ type LabelsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	/// label_names are the set of matching label names
+	// / label_names are the set of matching label names
 	LabelNames []string `protobuf:"bytes,1,rep,name=label_names,json=labelNames,proto3" json:"label_names,omitempty"`
 	// warnings is unimplemented
 	Warnings []string `protobuf:"bytes,2,rep,name=warnings,proto3" json:"warnings,omitempty"`
