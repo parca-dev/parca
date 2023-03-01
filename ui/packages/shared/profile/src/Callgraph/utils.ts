@@ -13,71 +13,7 @@
 
 import * as d3 from 'd3';
 import {CallgraphNode, CallgraphEdge} from '@parca/client';
-import {DEFAULT_NODE_HEIGHT} from './constants';
 import {withAlphaHex} from 'with-alpha-hex';
-
-export const pixelsToInches = (pixels: number): number => pixels / 96;
-
-export const getCurvePoints = ({
-  pos,
-  xScale = n => n,
-  yScale = n => n,
-  source = [],
-  target = [],
-  offset = 0,
-  isSelfLoop = false,
-}: {
-  pos: string;
-  xScale?: (pos: number) => number;
-  yScale?: (pos: number) => number;
-  source?: number[];
-  target?: number[];
-  isSelfLoop?: boolean;
-  offset?: number;
-}): number[] => {
-  if (isSelfLoop) {
-    const [sourceX, sourceY] = source;
-    const [targetX, targetY] = target;
-
-    return [
-      sourceX,
-      sourceY + offset,
-      sourceX,
-      sourceY + 3 * offset,
-      targetX + 5 * offset,
-      targetY,
-      targetX + offset,
-      targetY,
-    ];
-  }
-
-  // graphviz pos format is in format 'endpoint,startpoint,triple(cp1,cp2,end),...triple...'
-  const scalePoint = (point: number[]): number[] => [xScale(point[0]), yScale(point[1])];
-  const strAsNumArray = (string: string): number[] =>
-    string
-      .replace('e,', '')
-      .split(',')
-      .map(str => Number(str));
-  const getLastPointWithOffset = (target: number[], last: number[], offset: number): number[] => {
-    const [targetX, targetY] = target;
-    const [lastX, lastY] = last;
-    const diffX = targetX - lastX;
-    const diffY = targetY - lastY;
-    const diffZ = Math.hypot(diffX, diffY);
-
-    const offsetX = (diffX * offset) / diffZ;
-    const offsetY = (diffY * offset) / diffZ;
-
-    return [targetX - offsetX, targetY - offsetY];
-  };
-  const points: number[][] = pos.split(' ').map(str => strAsNumArray(str));
-  const scaledPoints: number[][] = points.map(point => scalePoint(point));
-
-  const lastPointIndex = scaledPoints.length - 1;
-  const lastPointWithOffset = getLastPointWithOffset(target, scaledPoints[lastPointIndex], offset);
-
-  return [source, ...scaledPoints.slice(2, points.length - 1), lastPointWithOffset].flat();
-};
 
 const objectAsDotAttributes = (obj: {[key: string]: string | number}): string =>
   Object.entries(obj)
@@ -95,7 +31,6 @@ export const jsonToDot = ({
   const {nodes, edges} = graph;
   const cumulatives = edges.map((edge: CallgraphEdge) => Number(edge.cumulative));
   const cumulativesRange = d3.extent(cumulatives) as [number, number];
-
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateBlues)
     .domain(cumulativesRange)
@@ -110,14 +45,11 @@ export const jsonToDot = ({
     const rgbColor = colorScale(Number(node.cumulative));
     const hexColor = d3.color(rgbColor)?.formatHex() ?? 'red';
     const dataAttributes = {
-      address: node.meta?.location?.address ?? '',
-      label: node.meta?.function?.name.substring(0, 10) ?? '',
-      functionName: node.meta?.function?.name ?? '',
-      cumulative: node.cumulative ?? '',
+      label: node.meta?.function?.name.substring(0, 12) ?? '',
       root: (node.id === 'root').toString(),
       fillcolor: hexColor,
-      // color: hexColor,
-      class: node.id === 'root' ? 'root' : 'leaf',
+      className: 'node',
+      id: node.id,
     };
 
     return `"${node.id}" [${objectAsDotAttributes(dataAttributes)}]`;
@@ -127,6 +59,7 @@ export const jsonToDot = ({
     const dataAttributes = {
       cumulative: edge.cumulative,
       color: withAlphaHex(colorRange[1], colorOpacityScale(Number(edge.cumulative))),
+      className: 'edge',
       // boxHeight: DEFAULT_NODE_HEIGHT,
     };
 
