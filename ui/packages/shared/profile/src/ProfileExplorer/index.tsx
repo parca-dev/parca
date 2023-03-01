@@ -11,19 +11,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 
-import {Provider} from 'react-redux';
 
-import {QueryServiceClient} from '@parca/client';
-import {DateTimeRange, useParcaContext} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
-import {store} from '@parca/store';
 
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
-import {QuerySelection, useProfileTypes} from '../ProfileSelector';
+import { Provider } from 'react-redux';
+
+
+
+import { QueryServiceClient } from '@parca/client';
+import { DateTimeRange, useParcaContext } from '@parca/components';
+import type { NavigateFunction } from '@parca/functions';
+import { store } from '@parca/store';
+
+
+
+import { ProfileSelection, ProfileSelectionFromParams, SuffixParams } from '..';
+import { QuerySelection, useProfileTypes } from '../ProfileSelector';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
+
+
+
+
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -131,7 +141,7 @@ const ProfileExplorerApp = ({
 
     setProfileA(profileA);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_a, merge_to_a]);
+  }, [merge_from_a, merge_to_a, filter_by_function]);
 
   useEffect(() => {
     const mergeFrom = merge_from_b ?? undefined;
@@ -149,7 +159,7 @@ const ProfileExplorerApp = ({
 
     setProfileB(profileB);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_b, merge_to_b]);
+  }, [merge_from_b, merge_to_b, filter_by_function]);
 
   if (profileTypesLoading) {
     return <>{loader}</>;
