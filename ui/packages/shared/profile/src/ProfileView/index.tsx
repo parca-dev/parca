@@ -32,9 +32,9 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
-import {getNewSpanColor} from '@parca/functions';
 import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
+import {getNewSpanColor} from '@parca/utilities';
 
 import {Callgraph} from '../';
 import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';

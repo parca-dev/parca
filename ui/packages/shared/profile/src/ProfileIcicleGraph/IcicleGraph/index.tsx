@@ -16,7 +16,7 @@ import {memo, useEffect, useMemo, useRef, useState} from 'react';
 import {scaleLinear} from 'd3-scale';
 
 import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {selectQueryParam, type NavigateFunction} from '@parca/functions';
+import {selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import GraphTooltip, {type HoveringNode} from '../../GraphTooltip';
 import ColorStackLegend from './ColorStackLegend';

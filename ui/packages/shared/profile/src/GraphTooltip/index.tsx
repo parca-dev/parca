@@ -24,7 +24,7 @@ import {
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
-import {getLastItem, valueFormatter} from '@parca/functions';
+import {getLastItem, valueFormatter} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';

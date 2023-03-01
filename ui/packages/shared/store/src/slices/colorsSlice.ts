@@ -13,7 +13,7 @@
 
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 
-import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/functions';
+import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/utilities';
 
 import type {RootState} from '../store';
 

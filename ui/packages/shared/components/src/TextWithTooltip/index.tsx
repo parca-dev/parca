@@ -15,7 +15,7 @@ import {Tooltip} from 'react-tooltip';
 
 import 'react-tooltip/dist/react-tooltip.css';
 
-import {cutToMaxStringLength} from '@parca/functions';
+import {cutToMaxStringLength} from '@parca/utilities';
 
 interface Props {
   text: string;

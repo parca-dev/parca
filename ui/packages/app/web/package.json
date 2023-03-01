@@ -28,6 +28,7 @@
     "@parca/components": "^0.16.105",
     "@parca/dynamicsize": "^0.16.53",
     "@parca/functions": "^0.16.65",
+    "@parca/utilities": "^0.0.1",
     "@parca/icons": "^0.16.52",
     "@parca/parser": "^0.16.54",
     "@parca/profile": "^0.16.127",

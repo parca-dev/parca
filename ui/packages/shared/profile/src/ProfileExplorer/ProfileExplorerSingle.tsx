@@ -13,7 +13,7 @@
 
 import {QueryServiceClient} from '@parca/client';
 import {KeyDownProvider} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
+import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileViewWithData} from '..';
 import ProfileSelector, {QuerySelection} from '../ProfileSelector';

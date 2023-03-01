@@ -17,8 +17,8 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
-import {getStepDuration} from '@parca/functions';
 import {Query} from '@parca/parser';
+import {getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph from '../MetricsGraph';

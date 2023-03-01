@@ -20,8 +20,8 @@ import {
   QueryRequest_ReportType,
   Timestamp,
 } from '@parca/client';
-import {formatDate} from '@parca/functions';
 import {Matcher, ProfileType, Query} from '@parca/parser';
+import {formatDate} from '@parca/utilities';
 
 export interface ProfileSource {
   QueryRequest: () => QueryRequest;

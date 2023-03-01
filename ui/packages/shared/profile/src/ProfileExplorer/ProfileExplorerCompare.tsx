@@ -12,8 +12,8 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import type {NavigateFunction} from '@parca/functions';
 import {Query} from '@parca/parser';
+import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileDiffSource, ProfileSelection, ProfileViewWithData} from '..';
 import ProfileSelector, {QuerySelection} from '../ProfileSelector';

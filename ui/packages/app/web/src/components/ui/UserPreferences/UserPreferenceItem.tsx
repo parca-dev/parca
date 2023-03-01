@@ -13,7 +13,7 @@
 
 import cx from 'classnames';
 
-import useUserPreference, {UserPreferenceDetails} from '@parca/functions/useUserPreference';
+import {useUserPreference, type UserPreferenceDetails} from '@parca/hooks';
 
 interface GenericInputProps {
   id: string;

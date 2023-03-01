@@ -19,13 +19,13 @@ import throttle from 'lodash.throttle';
 
 import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
 import {DateTimeRange, useKeyDown} from '@parca/components';
+import {useContainerDimensions} from '@parca/hooks';
 import {
   formatDate,
   formatForTimespan,
   sanitizeHighlightedValues,
   valueFormatter,
-} from '@parca/functions';
-import {useContainerDimensions} from '@parca/hooks';
+} from '@parca/utilities';
 
 import {MergedProfileSelection} from '..';
 import MetricsCircle from '../MetricsCircle';

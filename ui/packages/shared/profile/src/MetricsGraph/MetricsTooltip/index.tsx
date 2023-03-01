@@ -18,7 +18,7 @@ import {usePopper} from 'react-popper';
 
 import {Label} from '@parca/client';
 import {TextWithTooltip} from '@parca/components';
-import {formatDate, valueFormatter} from '@parca/functions';
+import {formatDate, valueFormatter} from '@parca/utilities';
 
 import {HighlightedSeries} from '../';
 import {timeFormat} from '../../';

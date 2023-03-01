@@ -24,9 +24,9 @@ import {
   DateTimeRangePicker,
   useGrpcMetadata,
 } from '@parca/components';
-import {getStepDuration, getStepDurationInMilliseconds} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
+import {getStepDuration, getStepDurationInMilliseconds} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MatchersInput from '../MatchersInput/index';

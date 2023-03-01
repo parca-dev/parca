@@ -23,8 +23,8 @@ import {
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
-import {isSearchMatch} from '@parca/functions';
 import {selectBinaries, useAppSelector} from '@parca/store';
+import {isSearchMatch} from '@parca/utilities';
 
 import useNodeColor from './useNodeColor';
 import {nodeLabel} from './utils';

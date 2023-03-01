@@ -13,7 +13,11 @@
 
 import useContainerDimensions from './useContainerDimensions';
 import useUIFeatureFlag from './useUIFeatureFlag';
-import useUserPreference, {USER_PREFERENCES, type UserPreference} from './useUserPreference';
+import useUserPreference, {
+  USER_PREFERENCES,
+  type UserPreference,
+  type UserPreferenceDetails,
+} from './useUserPreference';
 
 export {
   useContainerDimensions,
@@ -21,4 +25,5 @@ export {
   useUserPreference,
   USER_PREFERENCES,
   type UserPreference,
+  type UserPreferenceDetails,
 };

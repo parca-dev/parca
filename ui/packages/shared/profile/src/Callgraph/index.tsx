@@ -21,7 +21,7 @@ import {Arrow, Label, Layer, Rect, Stage, Text} from 'react-konva';
 
 import {CallgraphEdge, CallgraphNode, Callgraph as CallgraphType} from '@parca/client';
 import {Button, useURLState} from '@parca/components';
-import {isSearchMatch, selectQueryParam} from '@parca/functions';
+import {isSearchMatch, selectQueryParam} from '@parca/utilities';
 
 import Tooltip, {type HoveringNode} from '../GraphTooltip';
 import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
