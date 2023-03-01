@@ -2,7 +2,7 @@
   "name": "@parca/hooks",
   "version": "0.0.1",
   "description": "A library containing React hooks used in the Parca UI",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
