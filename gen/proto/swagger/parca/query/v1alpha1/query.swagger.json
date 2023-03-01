@@ -604,6 +604,7 @@
         "lines": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/metastorev1alpha1Line"
           },
           "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
@@ -681,6 +682,7 @@
         "types": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1ProfileType"
           },
           "description": "types is the list of available profile types."
@@ -796,6 +798,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -807,6 +810,7 @@
         "nodes": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1CallgraphNode"
           },
           "title": "nodes are the nodes in the callgraph"
@@ -814,6 +818,7 @@
         "edges": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1CallgraphEdge"
           },
           "title": "edges are the edges connecting nodes in the callgraph"
@@ -944,6 +949,7 @@
         "locations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/metastorev1alpha1Location"
           },
           "description": "locations deduplicated by their ID to be referenced by nodes."
@@ -951,6 +957,7 @@
         "mapping": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/metastorev1alpha1Mapping"
           },
           "description": "mapping deduplicated by their ID to be referenced by nodes."
@@ -958,6 +965,7 @@
         "function": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/metastorev1alpha1Function"
           },
           "description": "function deduplicated by their ID to be referenced by nodes."
@@ -990,6 +998,7 @@
         "children": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1FlamegraphNode"
           },
           "title": "children are the child nodes"
@@ -1045,6 +1054,7 @@
         "children": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1FlamegraphNode"
           },
           "title": "children are the list of the children of the root node"
@@ -1058,6 +1068,7 @@
         "labels": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/profilestorev1alpha1Label"
           },
           "title": "labels are the grouping of labels"
@@ -1136,6 +1147,7 @@
         "samples": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1MetricsSample"
           },
           "title": "samples is the set of top-level cumulative values of the corresponding profiles"
@@ -1215,6 +1227,7 @@
         "series": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1MetricsSeries"
           },
           "title": "series is the set of metrics series that satisfy the query range request"
@@ -1282,6 +1295,7 @@
         "list": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1TopNode"
           },
           "title": "list are the list of ordered elements of the table"

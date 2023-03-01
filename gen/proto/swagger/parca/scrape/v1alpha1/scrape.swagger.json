@@ -103,6 +103,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -114,6 +115,7 @@
         "labels": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/profilestorev1alpha1Label"
           },
           "title": "labels are the grouping of labels"
@@ -162,6 +164,7 @@
         "targets": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1Target"
           },
           "title": "targets is a list of targets"
