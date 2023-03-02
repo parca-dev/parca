@@ -111,6 +111,12 @@ const ProfileExplorerApp = ({
     dashboard_items,
   } = queryParams;
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const expression_a = getExpressionAsAString(queryParams.expression_a);
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const expression_b = getExpressionAsAString(queryParams.expression_b);
+
   /* eslint-enable @typescript-eslint/naming-convention */
   const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
@@ -175,12 +181,6 @@ const ProfileExplorerApp = ({
   time_selection_a = sanitizedRange.time_selection_a;
   from_a = sanitizedRange.from_a;
   to_a = sanitizedRange.to_a;
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const expression_a = getExpressionAsAString(queryParams.expression_a);
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const expression_b = getExpressionAsAString(queryParams.expression_b);
 
   if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
   if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;
