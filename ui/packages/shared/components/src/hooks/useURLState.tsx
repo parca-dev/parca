@@ -80,10 +80,10 @@ export const useURLState = ({
     if (typeof value === 'string') {
       dashboardItems = [value] ?? [];
     } else {
-      dashboardItems = value;
+      dashboardItems = value as string[];
     }
     return [dashboardItems, setValue];
   }
 
-  return [value, setValue];
+  return [value as string[], setValue];
 };
