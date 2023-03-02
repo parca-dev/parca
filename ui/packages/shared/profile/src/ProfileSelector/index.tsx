@@ -252,12 +252,19 @@ const ProfileSelector = ({
               to={querySelection.to}
               profile={profileSelection}
               setTimeRange={(range: DateTimeRange) => {
+                const from = range.getFromMs();
+                const to = range.getToMs();
+                let mergedProfileParams = {};
+                if (query.profileType().delta) {
+                  mergedProfileParams = {mergeFrom: from, mergeTo: to};
+                }
                 setTimeRangeSelection(range);
                 selectQuery({
                   expression: queryExpressionString,
-                  from: range.getFromMs(),
-                  to: range.getToMs(),
+                  from,
+                  to,
                   timeSelection: range.getRangeKey(),
+                  ...mergedProfileParams,
                 });
               }}
               addLabelMatcher={addLabelMatcher}
