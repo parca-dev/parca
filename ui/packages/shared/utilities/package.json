@@ -2,7 +2,7 @@
   "name": "@parca/utilities",
   "version": "0.0.1",
   "description": "A set of reusable functions for Parca",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
