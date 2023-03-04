@@ -23,7 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@headlessui/react": "1.7.11",
+    "@headlessui/react": "1.7.12",
     "@parca/client": "^0.16.65",
     "@parca/components": "^0.16.106",
     "@parca/dynamicsize": "^0.16.54",
