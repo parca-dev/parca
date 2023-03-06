@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@parca/client": "^0.16.65",
     "@parca/functions": "^0.16.66",
     "@reduxjs/toolkit": "^1.7.2",
     "react-redux": "^8.0.2",

@@ -11,7 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
+
+
 
 import {pointer} from 'd3-selection';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
@@ -25,9 +27,14 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
 import {getLastItem, valueFormatter} from '@parca/functions';
+import {selectHoveringNode, useAppSelector} from '@parca/store';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';
+
+
+
+
 
 const NoData = (): JSX.Element => {
   return <span className="rounded bg-gray-200 dark:bg-gray-800 px-2">Not available</span>;
@@ -38,7 +45,7 @@ interface GraphTooltipProps {
   y?: number;
   unit: string;
   total: number;
-  hoveringNode: HoveringNode;
+  hoveringNode?: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;
@@ -360,7 +367,7 @@ const GraphTooltip = ({
   y,
   unit,
   total,
-  hoveringNode,
+  hoveringNode: hoveringNodeProp,
   contextElement,
   isFixed = false,
   virtualContextElement = true,
@@ -369,6 +376,22 @@ const GraphTooltip = ({
   locations,
   functions,
 }: GraphTooltipProps): JSX.Element => {
+  const hoveringNodeState = useAppSelector(selectHoveringNode);
+  const hoveringNode = useMemo<HoveringNode>(() => {
+    const h = (hoveringNodeProp ?? hoveringNodeState) as HoveringNode;
+    if (h == null) {
+      return h;
+    }
+
+    // Cloning the object to avoid the mutating error as this is Redux store object and we are modifying the meta object in GraphTooltipContent component.
+    return {
+      ...h,
+      meta: {
+        ...h.meta,
+      },
+    };
+  }, [hoveringNodeProp, hoveringNodeState]);
+
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
   const {styles, attributes, ...popperProps} = usePopper(

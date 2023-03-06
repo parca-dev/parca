@@ -11,7 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo} from 'react';
+import React, { useMemo } from 'react';
+
+
 
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
@@ -24,7 +26,7 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
 import {isSearchMatch} from '@parca/functions';
-import {selectBinaries, useAppSelector} from '@parca/store';
+import {selectBinaries, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
 
 import useNodeColor from './useNodeColor';
 import {nodeLabel} from './utils';
@@ -44,14 +46,13 @@ interface IcicleGraphNodesProps {
   level: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
-  setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
   path: string[];
   xScale: (value: number) => number;
   searchString?: string;
   compareMode: boolean;
 }
 
-export const IcicleGraphNodes = React.memo(function IcicleGraphNodes({
+export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   data,
   strings,
   mappings,
@@ -63,7 +64,6 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodes({
   total,
   totalWidth,
   level,
-  setHoveringNode,
   path,
   setCurPath,
   curPath,
@@ -83,7 +83,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodes({
 
   return (
     <g transform={`translate(${x}, ${y})`}>
-      {nodes.map((d, i) => {
+      {nodes.map(function nodeMapper(d, i) {
         const start = nodes.slice(0, i).reduce((sum, d) => sum + parseFloat(d.cumulative), 0);
         const xStart = xScale(start);
 
@@ -96,7 +96,6 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodes({
             height={RowHeight}
             path={path}
             setCurPath={setCurPath}
-            setHoveringNode={setHoveringNode}
             level={level}
             curPath={curPath}
             data={d}
@@ -130,7 +129,6 @@ interface IcicleNodeProps {
   path: string[];
   total: number;
   setCurPath: (path: string[]) => void;
-  setHoveringNode: (node: FlamegraphNode | FlamegraphRootNode | undefined) => void;
   xScale: (value: number) => number;
   isRoot?: boolean;
   searchString?: string;
@@ -147,12 +145,11 @@ const fadedIcicleRectStyles = {
   opacity: '0.5',
 };
 
-export const IcicleNode = React.memo(function IcicleNode({
+export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   x,
   y,
   height,
   setCurPath,
-  setHoveringNode,
   curPath,
   level,
   path,
@@ -169,6 +166,7 @@ export const IcicleNode = React.memo(function IcicleNode({
   compareMode,
 }: IcicleNodeProps): JSX.Element {
   const binaries = useAppSelector(selectBinaries);
+  const dispatch = useAppDispatch();
   const {isShiftDown} = useKeyDown();
   const colorResult = useNodeColor({data, compareMode});
   const name = useMemo(() => {
@@ -206,12 +204,12 @@ export const IcicleNode = React.memo(function IcicleNode({
   const onMouseEnter = (): void => {
     if (isShiftDown) return;
 
-    setHoveringNode(data);
+    dispatch(setHoveringNode(data));
   };
   const onMouseLeave = (): void => {
     if (isShiftDown) return;
 
-    setHoveringNode(undefined);
+    dispatch(setHoveringNode(undefined));
   };
 
   return (
@@ -258,7 +256,6 @@ export const IcicleNode = React.memo(function IcicleNode({
           total={total}
           totalWidth={totalWidth}
           level={nextLevel}
-          setHoveringNode={setHoveringNode}
           path={nextPath}
           curPath={nextCurPath}
           setCurPath={setCurPath}

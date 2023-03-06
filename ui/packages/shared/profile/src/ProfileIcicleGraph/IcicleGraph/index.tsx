@@ -11,12 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {memo, useEffect, useMemo, useRef, useState} from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
-import {scaleLinear} from 'd3-scale';
 
-import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+
+import { scaleLinear } from 'd3-scale';
+
+
+
+import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client';
 import {selectQueryParam, type NavigateFunction} from '@parca/functions';
+import {selectHoveringNode, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
 
 import GraphTooltip, {type HoveringNode} from '../../GraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
@@ -40,9 +45,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   sampleUnit,
   navigateTo,
 }: IcicleGraphProps): JSX.Element {
-  const [hoveringNode, setHoveringNode] = useState<
-    FlamegraphNode | FlamegraphRootNode | undefined
-  >();
+  const dispatch = useAppDispatch();
   const [height, setHeight] = useState(0);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
@@ -71,12 +74,11 @@ export const IcicleGraph = memo(function IcicleGraph({
   }
 
   return (
-    <div onMouseLeave={() => setHoveringNode(undefined)}>
+    <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
       <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
       <GraphTooltip
         unit={sampleUnit}
         total={total}
-        hoveringNode={hoveringNode as HoveringNode}
         contextElement={svg.current}
         strings={coloredGraph.stringTable}
         mappings={coloredGraph.mapping}
@@ -98,7 +100,6 @@ export const IcicleGraph = memo(function IcicleGraph({
               totalWidth={width}
               height={RowHeight}
               setCurPath={setCurPath}
-              setHoveringNode={setHoveringNode}
               curPath={curPath}
               data={coloredGraph.root}
               strings={coloredGraph.stringTable}
