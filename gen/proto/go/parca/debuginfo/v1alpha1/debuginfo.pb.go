@@ -595,6 +595,7 @@ type UploadRequest struct {
 	// data contains either the upload info metadata or the debug info
 	//
 	// Types that are assignable to Data:
+	//
 	//	*UploadRequest_Info
 	//	*UploadRequest_ChunkData
 	Data isUploadRequest_Data `protobuf_oneof:"data"`

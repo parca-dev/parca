@@ -35,7 +35,7 @@ repos:
         files: \.tsx?$
         exclude: ^ui/packages/shared/client/
   - repo: https://github.com/bufbuild/buf
-    rev: v1.13.1
+    rev: v1.14.0
     hooks:
       # Hijack an existing hook ID to run buf generate
       # It also mean running `pre-commit run buf-format` will run both format and generate
@@ -48,7 +48,7 @@ repos:
         args:
           - --against=https://github.com/parca-dev/parca.git#branch=main,ref=HEAD~1,subdir=proto
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.51.1
+    rev: v1.51.2
     hooks:
       - id: golangci-lint
   - repo: https://github.com/hadolint/hadolint
@@ -78,3 +78,6 @@ repos:
     hooks:
       - id: prettier
         files: \.(?:[jt]sx?|md|html|s?css)$
+        additional_dependencies:
+          - "prettier@2.8.3"
+          - "@ianvs/prettier-plugin-sort-imports@3.7.1"

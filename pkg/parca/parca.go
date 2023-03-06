@@ -253,7 +253,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	frostdbOptions := []frostdb.Option{
 		frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
 		frostdb.WithLogger(logger),
-		frostdb.WithRegistry(reg),
+		frostdb.WithRegistry(prometheus.WrapRegistererWithPrefix("frostdb", reg)),
 		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
 		frostdb.WithGranuleSizeBytes(flags.Storage.GranuleSize),
 	}
@@ -584,10 +584,7 @@ func runScraper(
 		return err
 	}
 
-	externalLabels := labels.Labels{}
-	for name, value := range flags.ExternalLabel {
-		externalLabels = append(externalLabels, labels.Label{Name: name, Value: value})
-	}
+	externalLabels := labels.FromMap(flags.ExternalLabel)
 
 	m := scrape.NewManager(logger, reg, store, cfg.ScrapeConfigs, externalLabels)
 	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {

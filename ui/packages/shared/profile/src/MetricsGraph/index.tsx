@@ -12,20 +12,25 @@
 // limitations under the License.
 
 import React, {useRef, useState} from 'react';
+
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
 import throttle from 'lodash.throttle';
 
+import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
 import {DateTimeRange, useKeyDown} from '@parca/components';
 import {useContainerDimensions} from '@parca/dynamicsize';
-import {formatForTimespan} from '@parca/functions';
-import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
-import {valueFormatter, formatDate, sanitizeHighlightedValues} from '@parca/functions';
+import {
+  formatDate,
+  formatForTimespan,
+  sanitizeHighlightedValues,
+  valueFormatter,
+} from '@parca/functions';
 
-import MetricsSeries from '../MetricsSeries';
-import MetricsCircle from '../MetricsCircle';
-import MetricsTooltip from './MetricsTooltip';
 import {MergedProfileSelection} from '..';
+import MetricsCircle from '../MetricsCircle';
+import MetricsSeries from '../MetricsSeries';
+import MetricsTooltip from './MetricsTooltip';
 
 interface Props {
   data: MetricsSeriesPb[];
@@ -44,6 +49,7 @@ export interface HighlightedSeries {
   labels: Label[];
   timestamp: number;
   value: number;
+  valuePerSecond: number;
   x: number;
   y: number;
 }
@@ -129,9 +135,9 @@ export const RawMetricsGraph = ({
       agg.push({
         metric: s.labelset.labels,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
-          if (d.timestamp !== undefined && d.value !== undefined) {
+          if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
             const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
-            agg.push([t, parseFloat(d.value)]);
+            agg.push([t, d.valuePerSecond, parseFloat(d.value)]);
           }
           return agg;
         }, []),
@@ -197,7 +203,8 @@ export const RawMetricsGraph = ({
       seriesIndex: closestSeriesIndex,
       labels: series[closestSeriesIndex].metric,
       timestamp: point[0],
-      value: point[1],
+      valuePerSecond: point[1],
+      value: point[2],
       x: xScale(point[0]),
       y: yScale(point[1]),
     };
@@ -290,14 +297,14 @@ export const RawMetricsGraph = ({
     let seriesIndex = -1;
 
     outer: for (let i = 0; i < series.length; i++) {
-      const keys = profile.labels.map(e => e.name);
+      const keys = profile.query.matchers.map(e => e.key);
       for (let j = 0; j < keys.length; j++) {
-        const labelName = keys[j];
-        const label = series[i].metric.find(e => e.name === labelName);
+        const matcherKey = keys[j];
+        const label = series[i].metric.find(e => e.name === matcherKey);
         if (label === undefined) {
           continue outer; // label doesn't exist to begin with
         }
-        if (profile.labels[j].value !== label.value) {
+        if (profile.query.matchers[j].value !== label.value) {
           continue outer; // label values don't match
         }
       }
@@ -320,7 +327,8 @@ export const RawMetricsGraph = ({
       labels: [],
       seriesIndex,
       timestamp: sample[0],
-      value: sample[1],
+      valuePerSecond: sample[1],
+      value: sample[2],
       x: xScale(sample[0]),
       y: yScale(sample[1]),
     };

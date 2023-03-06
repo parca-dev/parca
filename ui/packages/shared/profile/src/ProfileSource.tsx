@@ -11,17 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {formatDate} from '@parca/functions';
-import {Query, ProfileType} from '@parca/parser';
 import {
   Label,
+  ProfileDiffSelection,
+  ProfileDiffSelection_Mode,
   QueryRequest,
   QueryRequest_Mode,
   QueryRequest_ReportType,
-  ProfileDiffSelection,
-  ProfileDiffSelection_Mode,
   Timestamp,
 } from '@parca/client';
+import {formatDate} from '@parca/functions';
+import {Matcher, ProfileType, Query} from '@parca/parser';
 
 export interface ProfileSource {
   QueryRequest: () => QueryRequest;
@@ -56,10 +56,12 @@ export function SuffixParams(params: {[key: string]: any}, suffix: string): {[ke
 }
 
 export function ParseLabels(labels: string[]): Label[] {
-  return labels.map(function (labelString): Label {
-    const parts = labelString.split('=', 2);
-    return {name: parts[0], value: parts[1]};
-  });
+  return labels
+    .filter(str => str !== '')
+    .map(function (labelString): Label {
+      const parts = labelString.split('=', 2);
+      return {name: parts[0], value: parts[1]};
+    });
 }
 
 export function ProfileSelectionFromParams(
@@ -78,13 +80,16 @@ export function ProfileSelectionFromParams(
     mergeTo !== undefined &&
     expression !== undefined
   ) {
-    return new MergedProfileSelection(
-      parseInt(mergeFrom),
-      parseInt(mergeTo),
-      ParseLabels(labels ?? ['']),
-      expression,
-      filterQuery
-    );
+    // TODO: Refactor parsing the query and adding matchers
+    let query = Query.parse(expression);
+    ParseLabels(labels ?? ['']).forEach(l => {
+      const [newQuery, changed] = query.setMatcher(l.name, l.value);
+      if (changed) {
+        query = newQuery;
+      }
+    });
+
+    return new MergedProfileSelection(parseInt(mergeFrom), parseInt(mergeTo), query, filterQuery);
   }
 
   return null;
@@ -93,26 +98,18 @@ export function ProfileSelectionFromParams(
 export class MergedProfileSelection implements ProfileSelection {
   mergeFrom: number;
   mergeTo: number;
-  query: string;
+  query: Query;
   filterQuery: string | undefined;
-  labels: Label[];
 
-  constructor(
-    mergeFrom: number,
-    mergeTo: number,
-    labels: Label[],
-    query: string,
-    filterQuery?: string
-  ) {
+  constructor(mergeFrom: number, mergeTo: number, query: Query, filterQuery?: string) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
     this.filterQuery = filterQuery;
-    this.labels = labels;
   }
 
   ProfileName(): string {
-    return Query.parse(this.query).profileName();
+    return this.query.profileName();
   }
 
   HistoryParams(): {[key: string]: any} {
@@ -121,7 +118,7 @@ export class MergedProfileSelection implements ProfileSelection {
       merge_to: this.mergeTo.toString(),
       query: this.query,
       profile_name: this.ProfileName(),
-      labels: this.labels.map(label => `${label.name}=${encodeURIComponent(label.value)}`),
+      labels: this.query.matchers.map(m => `${m.key}=${encodeURIComponent(m.value)}`),
     };
   }
 
@@ -130,13 +127,7 @@ export class MergedProfileSelection implements ProfileSelection {
   }
 
   ProfileSource(): ProfileSource {
-    return new MergedProfileSource(
-      this.mergeFrom,
-      this.mergeTo,
-      this.labels,
-      this.query,
-      this.filterQuery
-    );
+    return new MergedProfileSource(this.mergeFrom, this.mergeTo, this.query, this.filterQuery);
   }
 }
 
@@ -190,20 +181,12 @@ export class ProfileDiffSource implements ProfileSource {
 export class MergedProfileSource implements ProfileSource {
   mergeFrom: number;
   mergeTo: number;
-  labels: Label[];
-  query: string;
+  query: Query;
   filterQuery: string | undefined;
 
-  constructor(
-    mergeFrom: number,
-    mergeTo: number,
-    labels: Label[],
-    query: string,
-    filterQuery?: string
-  ) {
+  constructor(mergeFrom: number, mergeTo: number, query: Query, filterQuery?: string) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
-    this.labels = labels;
     this.query = query;
     this.filterQuery = filterQuery;
   }
@@ -215,7 +198,7 @@ export class MergedProfileSource implements ProfileSource {
         merge: {
           start: Timestamp.fromDate(new Date(this.mergeFrom)),
           end: Timestamp.fromDate(new Date(this.mergeTo)),
-          query: this.query,
+          query: this.query.toString(),
         },
       },
       mode: ProfileDiffSelection_Mode.MERGE,
@@ -229,7 +212,7 @@ export class MergedProfileSource implements ProfileSource {
         merge: {
           start: Timestamp.fromDate(new Date(this.mergeFrom)),
           end: Timestamp.fromDate(new Date(this.mergeTo)),
-          query: this.query,
+          query: this.query.toString(),
         },
       },
       reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
@@ -239,26 +222,26 @@ export class MergedProfileSource implements ProfileSource {
   }
 
   ProfileType(): ProfileType {
-    return ProfileType.fromString(Query.parse(this.query).profileName());
+    return ProfileType.fromString(Query.parse(this.query.toString()).profileName());
   }
 
   Describe(): JSX.Element {
     return (
       <a>
-        Merge of &quot;{this.query}&quot; from {formatDate(this.mergeFrom, timeFormat)} to{' '}
-        {formatDate(this.mergeTo, timeFormat)}
+        Merge of &quot;{this.query.toString()}&quot; from {formatDate(this.mergeFrom, timeFormat)}{' '}
+        to {formatDate(this.mergeTo, timeFormat)}
       </a>
     );
   }
 
-  stringLabels(): string[] {
-    return this.labels
-      .filter((label: Label) => label.name !== '__name__')
-      .map((label: Label) => `${label.name}=${label.value}`);
+  stringMatchers(): string[] {
+    return this.query.matchers
+      .filter((m: Matcher) => m.key !== '__name__')
+      .map((m: Matcher) => `${m.key}=${m.value}`);
   }
 
   toString(): string {
-    return `merged profiles of query "${this.query}" from ${formatDate(
+    return `merged profiles of query "${this.query.toString()}" from ${formatDate(
       this.mergeFrom,
       timeFormat
     )} to ${formatDate(this.mergeTo, timeFormat)}`;

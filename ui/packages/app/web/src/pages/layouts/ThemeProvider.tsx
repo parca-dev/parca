@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useAppSelector, selectDarkMode} from '@parca/store';
 import React, {useEffect} from 'react';
+
+import {selectDarkMode, useAppSelector} from '@parca/store';
 
 const ThemeProvider = ({children}: {children: React.ReactNode}) => {
   const darkMode = useAppSelector(selectDarkMode);

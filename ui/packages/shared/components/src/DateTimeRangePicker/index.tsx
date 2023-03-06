@@ -12,12 +12,14 @@
 // limitations under the License.
 
 import {useRef, useState} from 'react';
-import cx from 'classnames';
+
 import {Popover} from '@headlessui/react';
-import {DateTimeRange, DateUnion} from './utils';
+import cx from 'classnames';
 import {useClickAway} from 'react-use';
-import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
+
 import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
+import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
+import {DateTimeRange, DateUnion} from './utils';
 
 interface DateTimeRangePickerProps {
   onRangeSelection: (range: DateTimeRange) => void;

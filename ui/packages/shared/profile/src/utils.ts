@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
+
+import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 
 export const hexifyAddress = (address?: string): string => {
   if (address == null) {
@@ -49,4 +50,12 @@ export const truncateString = (str: string, num: number): string => {
   }
 
   return str.slice(0, num) + '...';
+};
+
+export const truncateStringReverse = (str: string, num: number): string => {
+  if (str.length <= num) {
+    return str;
+  }
+
+  return '...' + str.slice(str.length - num);
 };

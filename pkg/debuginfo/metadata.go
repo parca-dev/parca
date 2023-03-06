@@ -110,6 +110,7 @@ func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string) (*debug
 		}
 		return nil, fmt.Errorf("fetch debuginfo metadata from object storage: %w", err)
 	}
+	defer r.Close()
 
 	content, err := io.ReadAll(r)
 	if err != nil {

@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type {ColorProfileName, ColorsDuo} from '@parca/functions';
-import {COLOR_PROFILES} from '@parca/functions';
-import {createSlice} from '@reduxjs/toolkit';
-import type {PayloadAction} from '@reduxjs/toolkit';
+import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
+
+import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/functions';
+
 import type {RootState} from '../store';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
@@ -43,7 +43,7 @@ export const FEATURE_TYPES = {
   Misc: 'Misc',
 } as const;
 
-export type FeatureType = typeof FEATURE_TYPES[keyof typeof FEATURE_TYPES];
+export type FeatureType = (typeof FEATURE_TYPES)[keyof typeof FEATURE_TYPES];
 
 export interface Feature {
   name: string;

@@ -19,7 +19,12 @@ declare global {
   }
 }
 
-const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
+const pathPrefix =
+  process.env.NODE_ENV === 'development'
+    ? ''
+    : typeof window !== 'undefined'
+    ? window.PATH_PREFIX
+    : '';
 
 export const NoDataPrompt = (): JSX.Element => {
   return (

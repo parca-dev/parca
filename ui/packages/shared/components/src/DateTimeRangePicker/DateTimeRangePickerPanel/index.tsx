@@ -13,8 +13,8 @@
 
 import Tab from '../../Tab';
 import type {DateTimeRange, DateUnion} from '../utils';
-import RelativeDatePicker from './RelativeDatePicker';
 import AbsoluteDatePicker from './AbsoluteDatePicker';
+import RelativeDatePicker from './RelativeDatePicker';
 
 interface DateTimeRangePickerProps {
   range: DateTimeRange;

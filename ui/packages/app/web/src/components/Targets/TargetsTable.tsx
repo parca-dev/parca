@@ -12,12 +12,14 @@
 // limitations under the License.
 
 import React from 'react';
+
 import {Target} from '@parca/client';
+import {Pill} from '@parca/components';
+import {TimeObject} from '@parca/functions';
+
 import LabelsCell from './LabelsCell';
 import LastScrapeCell from './LastScrapeCell';
 import {getHealthStatus} from './utils';
-import {Pill} from '@parca/components';
-import {TimeObject} from '@parca/functions';
 
 const TargetsTableHeader = {
   url: 'URL',

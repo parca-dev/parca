@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.16.66 (2023-03-02)
+
+# 0.16.0 (2023-03-01)
+
+**Note:** Version bump only for package @parca/functions
+
+## 0.16.65 (2023-02-23)
+
+**Note:** Version bump only for package @parca/functions
+
+## 0.16.64 (2023-02-22)
+
+**Note:** Version bump only for package @parca/functions
+
+## 0.16.63 (2023-02-21)
+
+**Note:** Version bump only for package @parca/functions
+
+## 0.16.62 (2023-02-16)
+
+**Note:** Version bump only for package @parca/functions
+
 ## 0.16.61 (2023-02-15)
 
 **Note:** Version bump only for package @parca/functions

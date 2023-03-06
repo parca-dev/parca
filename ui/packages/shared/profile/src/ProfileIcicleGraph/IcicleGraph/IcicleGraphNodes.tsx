@@ -15,17 +15,19 @@ import React, {useMemo} from 'react';
 
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
+
+import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {
+  Location,
   Mapping,
   Function as ParcaFunction,
-  Location,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
-import {isSearchMatch} from '@parca/functions';
-import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
-import {useAppSelector, selectBinaries} from '@parca/store';
-import {nodeLabel} from './utils';
-import useNodeColor from './useNodeColor';
 import {useKeyDown} from '@parca/components';
+import {isSearchMatch} from '@parca/functions';
+import {selectBinaries, useAppSelector} from '@parca/store';
+
+import useNodeColor from './useNodeColor';
+import {nodeLabel} from './utils';
 
 export const RowHeight = 26;
 
@@ -226,12 +228,12 @@ export const IcicleNode = React.memo(function IcicleNode({
         <rect
           x={0}
           y={0}
-          width={width - 1}
-          height={height - 1}
+          width={width}
+          height={height}
           style={{
             fill: colorResult,
           }}
-          className={cx({
+          className={cx('stroke-white dark:stroke-gray-700', {
             'opacity-50': isHighlightEnabled && !isHighlighted,
           })}
         />

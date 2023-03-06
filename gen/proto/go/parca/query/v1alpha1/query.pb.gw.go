@@ -484,7 +484,7 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 // RegisterQueryServiceHandlerFromEndpoint is same as RegisterQueryServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterQueryServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.Dial(endpoint, opts...)
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
 	}

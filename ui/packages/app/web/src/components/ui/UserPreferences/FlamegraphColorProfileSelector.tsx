@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ColorProfileName, ColorsDuo, COLOR_PROFILES} from '@parca/functions';
+import {COLOR_PROFILES, ColorProfileName, ColorsDuo} from '@parca/functions';
 import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 

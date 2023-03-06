@@ -11,18 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {memo, useEffect, useState, useRef} from 'react';
+import {memo, useEffect, useRef, useState} from 'react';
+
 import * as d3 from 'd3';
-import {getNewSpanColor} from '@parca/functions';
-import {useAppSelector, selectDarkMode} from '@parca/store';
-import {Button, useURLState} from '@parca/components';
-import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
-import type {HoveringNode} from '../GraphTooltip';
-import {isSearchMatch, selectQueryParam} from '@parca/functions';
-import {GraphTooltipContent as TooltipContent} from '../GraphTooltip';
-import {DEFAULT_NODE_HEIGHT, GRAPH_MARGIN} from './constants';
 import SVG from 'react-inlinesvg';
 import {MapInteractionCSS} from 'react-map-interaction';
+
+import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
+import {getNewSpanColor} from '@parca/functions';
+import {selectDarkMode, useAppSelector} from '@parca/store';
+
+import {GraphTooltipContent as TooltipContent, type HoveringNode} from '../GraphTooltip';
 
 export interface Props {
   data: CallgraphType;

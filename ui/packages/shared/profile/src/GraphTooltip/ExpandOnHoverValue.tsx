@@ -11,32 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {UseQueryResult, useQuery} from 'react-query';
-
-interface Props<IRes> {
-  key: string | any[];
-  queryFn: () => Promise<IRes>;
-  options?: {
-    enabled?: boolean | undefined;
-    staleTime?: number | undefined;
-  };
+interface Props {
+  value: string | number | undefined;
+  displayValue?: string | number | undefined;
 }
 
-const useGrpcQuery = <IRes>({
-  key,
-  queryFn,
-  options: {enabled = true, staleTime} = {},
-}: Props<IRes>): UseQueryResult<IRes> => {
-  return useQuery<IRes>(
-    key,
-    async () => {
-      return await queryFn();
-    },
-    {
-      enabled,
-      staleTime,
-    }
+export const ExpandOnHover = ({value, displayValue}: Props): JSX.Element => {
+  return (
+    <div className="relative group w-full">
+      <div className="text-ellipsis w-full overflow-hidden whitespace-nowrap">
+        {displayValue ?? value}
+      </div>
+      <div className="group-hover:flex hidden absolute -inset-2 max-w-[500px] whitespace-normal h-fit bg-gray-50 dark:bg-gray-900 shadow-[0_0_10px_2px_rgba(0,0,0,0.3)] rounded p-2 break-all">
+        {value}
+      </div>
+    </div>
   );
 };
-
-export default useGrpcQuery;

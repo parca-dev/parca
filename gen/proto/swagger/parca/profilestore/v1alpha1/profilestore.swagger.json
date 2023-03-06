@@ -113,6 +113,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -147,6 +148,7 @@
         "agents": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1Agent"
           },
           "title": "agents is a list of agents"
@@ -160,6 +162,7 @@
         "labels": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/profilestorev1alpha1Label"
           },
           "title": "labels are the grouping of labels"
@@ -177,6 +180,7 @@
         "samples": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1RawSample"
           },
           "title": "samples are the set of profile bytes"
@@ -205,6 +209,7 @@
         "series": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1alpha1RawProfileSeries"
           },
           "title": "series is a set raw pprof profiles and accompanying labels"

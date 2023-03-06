@@ -120,6 +120,9 @@ message MetricsSample {
 
   // value is the cumulative value for the profile
   int64 value = 2;
+
+  // value_per_second is the calculated per second average in the steps duration
+  double value_per_second = 3;
 }
 
 // MergeProfile contains parameters for a merge request

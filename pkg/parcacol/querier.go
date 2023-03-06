@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/arrow/go/v10/arrow"
 	"github.com/apache/arrow/go/v10/arrow/array"
+	"github.com/apache/arrow/go/v10/arrow/scalar"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -171,8 +172,14 @@ func MatcherToBooleanExpression(matcher *labels.Matcher) (logicalplan.Expr, erro
 	ref := logicalplan.Col("labels." + matcher.Name)
 	switch matcher.Type {
 	case labels.MatchEqual:
+		if matcher.Value == "" {
+			return ref.Eq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), nil
+		}
 		return ref.Eq(logicalplan.Literal(matcher.Value)), nil
 	case labels.MatchNotEqual:
+		if matcher.Value == "" {
+			return ref.NotEq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), nil
+		}
 		return ref.NotEq(logicalplan.Literal(matcher.Value)), nil
 	case labels.MatchRegexp:
 		return ref.RegexMatch(matcher.Value), nil
@@ -461,17 +468,18 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 
 		// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
 		// If we already have CPU nanoseconds we don't need to multiply by the period.
+		valuePerSecondSum := valueSum
 		if sampleTypeUnit != "nanoseconds" {
-			valueSum = valueSum * period
+			valuePerSecondSum = valueSum * period
 		}
 
-		// TODO: We shouldn't multiply by 100 here but our payload value is int64 and we cannot send float64...
-		percentage := 100 * float64(valueSum) / float64(duration)
+		valuePerSecond := float64(valuePerSecondSum) / float64(duration)
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp: timestamppb.New(timestamp.Time(ts)),
-			Value:     int64(percentage),
+			Timestamp:      timestamppb.New(timestamp.Time(ts)),
+			Value:          valueSum,
+			ValuePerSecond: valuePerSecond,
 		})
 	}
 
@@ -602,8 +610,9 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 
 		series := resSeries[index]
 		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp: timestamppb.New(timestamp.Time(ts)),
-			Value:     value,
+			Timestamp:      timestamppb.New(timestamp.Time(ts)),
+			Value:          value,
+			ValuePerSecond: float64(value),
 		})
 		// Mark the timestamp bucket as filled by the above MetricsSample.
 		resSeriesBuckets[index][tsBucket] = struct{}{}

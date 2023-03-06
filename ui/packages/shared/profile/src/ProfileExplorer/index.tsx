@@ -12,15 +12,18 @@
 // limitations under the License.
 
 import {useEffect, useState} from 'react';
-import {QuerySelection, useProfileTypes} from '../ProfileSelector';
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
-import ProfileExplorerSingle from './ProfileExplorerSingle';
-import ProfileExplorerCompare from './ProfileExplorerCompare';
-import {QueryServiceClient} from '@parca/client';
-import {store} from '@parca/store';
+
 import {Provider} from 'react-redux';
+
+import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, useParcaContext} from '@parca/components';
 import type {NavigateFunction} from '@parca/functions';
+import {store} from '@parca/store';
+
+import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
+import {QuerySelection, useProfileTypes} from '../ProfileSelector';
+import ProfileExplorerCompare from './ProfileExplorerCompare';
+import ProfileExplorerSingle from './ProfileExplorerSingle';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -108,6 +111,12 @@ const ProfileExplorerApp = ({
     dashboard_items,
   } = queryParams;
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const expression_a = getExpressionAsAString(queryParams.expression_a);
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const expression_b = getExpressionAsAString(queryParams.expression_b);
+
   /* eslint-enable @typescript-eslint/naming-convention */
   const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
@@ -128,7 +137,7 @@ const ProfileExplorerApp = ({
 
     setProfileA(profileA);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_a, merge_to_a]);
+  }, [merge_from_a, merge_to_a, filter_by_function]);
 
   useEffect(() => {
     const mergeFrom = merge_from_b ?? undefined;
@@ -146,7 +155,7 @@ const ProfileExplorerApp = ({
 
     setProfileB(profileB);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_b, merge_to_b]);
+  }, [merge_from_b, merge_to_b, filter_by_function]);
 
   if (profileTypesLoading) {
     return <>{loader}</>;
@@ -172,12 +181,6 @@ const ProfileExplorerApp = ({
   time_selection_a = sanitizedRange.time_selection_a;
   from_a = sanitizedRange.from_a;
   to_a = sanitizedRange.to_a;
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const expression_a = getExpressionAsAString(queryParams.expression_a);
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const expression_b = getExpressionAsAString(queryParams.expression_b);
 
   if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
   if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;

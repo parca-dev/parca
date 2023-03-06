@@ -11,9 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Label} from '@parca/client';
-import {unitsInTime} from './time';
 import colors from 'tailwindcss/colors';
+
+import {Label} from '@parca/client';
+
+import {unitsInTime} from './time';
+
 export * from './time';
 export * from './string';
 
@@ -124,6 +127,10 @@ export const parseParams = (querystring: string): Record<string, string | string
 };
 
 export const selectQueryParam = (key: string): string | string[] | undefined => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
   const router = parseParams(window.location.search);
 
   if (key === 'dashboard_items') {

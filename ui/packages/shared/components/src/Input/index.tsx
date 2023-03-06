@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Icon} from '@iconify/react';
-import Button from '../Button';
-import cx from 'classnames';
 import {useRef} from 'react';
+
+import {Icon} from '@iconify/react';
+import cx from 'classnames';
+
+import Button from '../Button';
 
 interface SelfProps {
   className?: string;
@@ -69,7 +71,7 @@ const Input = ({
       {onAction != null ? (
         <Button
           onClick={onAction}
-          className="!absolute w-fit inset-y-0 right-0 !px-2 rounded-tl-none rounded-bl-none"
+          className="!absolute !w-auto inset-y-0 right-0 !px-2 rounded-tl-none rounded-bl-none"
         >
           {actionIcon}
         </Button>
