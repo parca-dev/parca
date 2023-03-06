@@ -38,7 +38,8 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   // const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   // const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
   // const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  // const dashboardItems = rawDashboardItems as string[];
+  // const dashboardItems =
+  //   rawDashboardItems !== undefined ? (rawDashboardItems as string[]) : ['icicle'];
   // const isCurrentSearchMatch = isSearchEmpty
   //               ? true
   //               : isSearchMatch(currentSearchString, sourceNode.functionName) &&

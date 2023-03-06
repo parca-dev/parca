@@ -110,7 +110,14 @@ export const ProfileView = ({
   const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
   const [currentSearchString] = useURLState({param: 'search_string'});
-  const dashboardItems = rawDashboardItems as string[];
+
+  const dashboardItems = useMemo(() => {
+    if (rawDashboardItems !== undefined) {
+      return rawDashboardItems as string[];
+    }
+    return ['icicle'];
+  }, [rawDashboardItems]);
+
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
