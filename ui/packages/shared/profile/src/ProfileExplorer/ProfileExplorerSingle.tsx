@@ -11,18 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryServiceClient } from '@parca/client';
-import { KeyDownProvider } from '@parca/components';
-import type { NavigateFunction } from '@parca/functions';
+import {QueryServiceClient} from '@parca/client';
+import {KeyDownProvider} from '@parca/components';
+import type {NavigateFunction} from '@parca/functions';
 
-
-
-import { ProfileSelection, ProfileViewWithData } from '..';
-import ProfileSelector, { QuerySelection } from '../ProfileSelector';
-
-
-
-
+import {ProfileSelection, ProfileViewWithData} from '..';
+import ProfileSelector, {QuerySelection} from '../ProfileSelector';
 
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;

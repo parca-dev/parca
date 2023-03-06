@@ -11,15 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
+import {scaleLinear} from 'd3-scale';
 
-
-import { scaleLinear } from 'd3-scale';
-
-
-
-import { Flamegraph, FlamegraphNode, FlamegraphRootNode } from '@parca/client';
+import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {selectQueryParam, type NavigateFunction} from '@parca/functions';
 import {selectHoveringNode, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
 

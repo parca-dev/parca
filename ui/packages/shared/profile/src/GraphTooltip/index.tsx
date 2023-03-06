@@ -13,8 +13,6 @@
 
 import {useEffect, useMemo, useState} from 'react';
 
-
-
 import {pointer} from 'd3-selection';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {usePopper} from 'react-popper';
@@ -31,10 +29,6 @@ import {selectHoveringNode, useAppSelector} from '@parca/store';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';
-
-
-
-
 
 const NoData = (): JSX.Element => {
   return <span className="rounded bg-gray-200 dark:bg-gray-800 px-2">Not available</span>;

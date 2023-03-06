@@ -11,9 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useMemo } from 'react';
-
-
+import React, {useMemo} from 'react';
 
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
