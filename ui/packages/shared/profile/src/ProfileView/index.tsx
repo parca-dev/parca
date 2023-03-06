@@ -106,7 +106,8 @@ export const ProfileView = ({
     navigateTo,
   });
   const [currentSearchString] = useURLState({param: 'search_string'});
-  const dashboardItems = rawDashboardItems as string[];
+  const dashboardItems =
+    (rawDashboardItems as string[]) !== undefined ? rawDashboardItems : ['icicle'];
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
