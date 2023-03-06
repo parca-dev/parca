@@ -262,7 +262,9 @@ func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer) (arrow
 				case ColumnSampleType:
 					fallthrough
 				case ColumnSampleUnit:
-					bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(r[i].String())
+					if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(r[i].String()); err != nil {
+						return nil, err
+					}
 				case ColumnStacktrace:
 					bldr.Field(i).(*array.BinaryBuilder).AppendString(r[i].String())
 				case ColumnDuration:
