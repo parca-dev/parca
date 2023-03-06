@@ -82,7 +82,7 @@ export function ProfileSelectionFromParams(
   ) {
     // TODO: Refactor parsing the query and adding matchers
     let query = Query.parse(expression);
-    if (labels) {
+    if (labels !== undefined) {
       ParseLabels(labels ?? ['']).forEach(l => {
         const hasLabels = labels.length > 0 && labels.filter(val => val !== '').length > 0;
         if (hasLabels) {
