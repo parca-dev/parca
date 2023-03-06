@@ -15,11 +15,11 @@ import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import {scaleLinear} from 'd3-scale';
 
-import {Flamegraph, FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {Flamegraph} from '@parca/client';
 import {selectQueryParam, type NavigateFunction} from '@parca/functions';
-import {selectHoveringNode, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
+import {setHoveringNode, useAppDispatch} from '@parca/store';
 
-import GraphTooltip, {type HoveringNode} from '../../GraphTooltip';
+import GraphTooltip from '../../GraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight} from './IcicleGraphNodes';
 import useColoredGraph from './useColoredGraph';

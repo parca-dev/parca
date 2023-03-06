@@ -16,7 +16,7 @@ import React, {useMemo} from 'react';
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
 
-import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {FlamegraphNode} from '@parca/client';
 import {
   Location,
   Mapping,
