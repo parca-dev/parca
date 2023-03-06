@@ -253,7 +253,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	frostdbOptions := []frostdb.Option{
 		frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
 		frostdb.WithLogger(logger),
-		frostdb.WithRegistry(prometheus.WrapRegistererWithPrefix("frostdb", reg)),
+		frostdb.WithRegistry(reg),
 		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
 		frostdb.WithGranuleSizeBytes(flags.Storage.GranuleSize),
 	}
