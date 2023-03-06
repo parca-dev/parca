@@ -88,31 +88,6 @@ type Series struct {
 }
 
 func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
-	// Experimental feature that ingests profiles as arrow records.
-	if ExperimentalArrow {
-		record, err := SeriesToArrowRecord(
-			ing.schema,
-			series,
-			ing.allLabelNames,
-			ing.allPprofLabelNames,
-			ing.allPprofNumLabelNames,
-		)
-		if err != nil {
-			return err
-		}
-		defer record.Release()
-
-		if record.NumRows() == 0 {
-			return nil
-		}
-
-		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
 	pBuf, err := ing.schema.GetBuffer(map[string][]string{
 		ColumnLabels:         ing.allLabelNames,
 		ColumnPprofLabels:    ing.allPprofLabelNames,
@@ -154,6 +129,26 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	}
 
 	pBuf.Sort()
+
+	// Experimental feature that ingests profiles as arrow records.
+	if ExperimentalArrow {
+		// Read sorted rows into an arrow record
+		record, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer)
+		if err != nil {
+			return err
+		}
+		defer record.Release()
+
+		if record.NumRows() == 0 {
+			return nil
+		}
+
+		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
+			return err
+		}
+
+		return nil
+	}
 
 	buf := ing.bufferPool.Get().(*bytes.Buffer)
 	buf.Reset()
