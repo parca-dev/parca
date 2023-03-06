@@ -12,7 +12,6 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import {KeyDownProvider} from '@parca/components';
 import type {NavigateFunction} from '@parca/functions';
 
 import {ProfileSelection, ProfileViewWithData} from '..';
