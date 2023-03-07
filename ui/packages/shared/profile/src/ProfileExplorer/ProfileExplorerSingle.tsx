@@ -12,7 +12,6 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import {KeyDownProvider} from '@parca/components';
 import type {NavigateFunction} from '@parca/functions';
 
 import {ProfileSelection, ProfileViewWithData} from '..';
@@ -38,7 +37,7 @@ const ProfileExplorerSingle = ({
   navigateTo,
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
-    <KeyDownProvider>
+    <>
       <div className="grid grid-cols-1">
         <div>
           <ProfileSelector
@@ -67,7 +66,7 @@ const ProfileExplorerSingle = ({
           )}
         </div>
       </div>
-    </KeyDownProvider>
+    </>
   );
 };
 
