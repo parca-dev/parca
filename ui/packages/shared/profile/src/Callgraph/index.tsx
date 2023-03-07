@@ -11,17 +11,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {memo, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
+import cx from 'classnames';
 import * as d3 from 'd3';
 import SVG from 'react-inlinesvg';
 import {MapInteractionCSS} from 'react-map-interaction';
 
 import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
+import {Button, useKeyDown, useURLState} from '@parca/components';
 import {getNewSpanColor} from '@parca/functions';
-import {selectDarkMode, useAppSelector} from '@parca/store';
+import {
+  selectDarkMode,
+  selectHoveringNode,
+  setHoveringNode,
+  useAppDispatch,
+  useAppSelector,
+} from '@parca/store';
 
-import {GraphTooltipContent as TooltipContent, type HoveringNode} from '../GraphTooltip';
+import GraphTooltip from '../GraphTooltip';
 
 export interface Props {
   data: CallgraphType;
@@ -30,20 +38,32 @@ export interface Props {
   width: number;
 }
 
+interface View {
+  scale: number;
+  translation: {x: number; y: number};
+}
+
 const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => {
+  const originalView = {
+    scale: 1,
+    translation: {x: 0, y: 0},
+  };
+  const [view, setView] = useState<View>(originalView);
+  const containerRef = useRef(null);
   const svgRef = useRef(null);
   const svgWrapper = useRef(null);
   const [svgWrapperLoaded, setSvgWrapperLoaded] = useState(false);
-  const [hoveredNode, setHoveredNode] = useState<any | null>(null);
+  const dispatch = useAppDispatch();
+  const {isShiftDown} = useKeyDown();
   // const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   // const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
-  // const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  // const dashboardItems =
-  //   rawDashboardItems !== undefined ? (rawDashboardItems as string[]) : ['icicle'];
   // const isCurrentSearchMatch = isSearchEmpty
-  //               ? true
-  //               : isSearchMatch(currentSearchString, sourceNode.functionName) &&
-  //                 isSearchMatch(currentSearchString, targetNode.functionName);
+  //   ? true
+  //   : isSearchMatch(currentSearchString, sourceNode.functionName) &&
+  //     isSearchMatch(currentSearchString, targetNode.functionName);
+  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
+  const dashboardItems =
+    rawDashboardItems !== undefined ? (rawDashboardItems as string[]) : ['icicle'];
 
   const isDarkMode = useAppSelector(selectDarkMode);
   const maxColor: string = getNewSpanColor(isDarkMode);
@@ -59,10 +79,6 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   useEffect(() => {
     setSvgWrapperLoaded(true);
   }, []);
-
-  // const resetView = (): void => {
-  //   set scale and translate to default values
-  // };
 
   useEffect(() => {
     if (svgWrapperLoaded && svgRef.current) {
@@ -85,12 +101,19 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
           node
             .style('cursor', 'pointer')
             .on('mouseenter', function (e) {
+              if (isShiftDown) return;
               d3.select(this).select('path').style('fill', 'white');
-              setHoveredNode({...nodeData, mouseX: e.clientX, mouseY: e.clientY});
+              const hoveringNode = {
+                ...nodeData,
+                meta: {...nodeData?.meta, lineIndex: 0, locationIndex: 0},
+              };
+              // @ts-expect-error
+              dispatch(setHoveringNode(hoveringNode));
             })
             .on('mouseleave', function (e) {
+              if (isShiftDown) return;
               d3.select(this).select('path').style('fill', defaultColor);
-              setHoveredNode(null);
+              dispatch(setHoveringNode(undefined));
             });
           path.style('fill', defaultColor);
         });
@@ -102,47 +125,58 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
 
   if (data.nodes.length < 1) return <>Profile has no samples</>;
 
+  const resetView = (): void => setView(originalView);
+
+  const isResetViewButtonEnabled =
+    view.scale !== originalView.scale ||
+    view.translation.x !== originalView.translation.x ||
+    view.translation.y !== originalView.translation.y;
+
   return (
-    <div className="w-full overflow-hidden relative">
-      <MapInteractionCSS showControls minScale={1} maxScale={5}>
-        <SVG
-          ref={svgWrapper}
-          src={svgString}
-          width={width}
-          height="auto"
-          title="Callgraph"
-          innerRef={svgRef}
-        />
-      </MapInteractionCSS>
-      {hoveredNode && (
-        // <div className={`absolute top-${hoveredNode.mouseY} left-${hoveredNode.mouseX}`}>
-        <div className={`absolute top-0 left-0`}>
-          <TooltipContent
-            hoveringNode={hoveredNode as HoveringNode}
+    <div className="w-full relative">
+      <div ref={containerRef} className="w-full overflow-hidden">
+        <MapInteractionCSS
+          showControls
+          minScale={1}
+          maxScale={5}
+          value={view}
+          onChange={(value: View) => setView(value)}
+        >
+          <SVG
+            ref={svgWrapper}
+            src={svgString}
+            width={width}
+            height="auto"
+            title="Callgraph"
+            innerRef={svgRef}
+          />
+        </MapInteractionCSS>
+        {svgRef.current && (
+          <GraphTooltip
+            type="callgraph"
             unit={sampleUnit}
             total={parseInt(data.cumulative)}
-            isFixed={false}
-            strings={hoveredNode.meta.line}
-            locations={hoveredNode.meta.location}
-            functions={hoveredNode.meta.function}
-            mappings={hoveredNode.meta.mapping}
+            contextElement={containerRef.current}
           />
-        </div>
-      )}
-      {/* {stage.scale.x !== 1 && (
-          <div
-            className={cx(
-              dashboardItems.length > 1 ? 'left-[25px]' : 'left-0',
-              'w-auto absolute top-[-46px]'
-            )}
-          >
-            <Button variant="neutral" onClick={resetZoom}>
-              Reset Zoom
-            </Button>
-          </div>
-        )} */}
+        )}
+      </div>
+      <div
+        className={cx(
+          dashboardItems.length > 1 ? 'left-[25px]' : 'left-0',
+          'w-auto absolute top-[-46px]'
+        )}
+      >
+        <Button
+          variant="neutral"
+          onClick={resetView}
+          className="z-50"
+          disabled={!isResetViewButtonEnabled}
+        >
+          Reset View
+        </Button>
+      </div>
     </div>
   );
 };
 
-export default memo(Callgraph);
+export default Callgraph;
