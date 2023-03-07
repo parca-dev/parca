@@ -82,12 +82,17 @@ export function ProfileSelectionFromParams(
   ) {
     // TODO: Refactor parsing the query and adding matchers
     let query = Query.parse(expression);
-    ParseLabels(labels ?? ['']).forEach(l => {
-      const [newQuery, changed] = query.setMatcher(l.name, l.value);
-      if (changed) {
-        query = newQuery;
-      }
-    });
+    if (labels !== undefined) {
+      ParseLabels(labels ?? ['']).forEach(l => {
+        const hasLabels = labels.length > 0 && labels.filter(val => val !== '').length > 0;
+        if (hasLabels) {
+          const [newQuery, changed] = query.setMatcher(l.name, l.value);
+          if (changed) {
+            query = newQuery;
+          }
+        }
+      });
+    }
 
     return new MergedProfileSelection(parseInt(mergeFrom), parseInt(mergeTo), query, filterQuery);
   }
