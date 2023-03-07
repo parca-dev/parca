@@ -13,7 +13,7 @@ plugins:
     opt: paths=source_relative
 
   # renovate: datasource=github-releases depName=planetscale/vtprotobuf
-  - remote: buf.build/planetscale/plugins/vtproto:v0.3.0
+  - remote: buf.build/planetscale/plugins/vtproto:v0.4.0
     out: gen/proto/go
     opt:
       - paths=source_relative,features=marshal+unmarshal+size+pool+grpc
