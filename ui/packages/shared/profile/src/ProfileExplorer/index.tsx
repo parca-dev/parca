@@ -16,7 +16,7 @@ import {useEffect, useState} from 'react';
 import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
-import {DateTimeRange, useParcaContext} from '@parca/components';
+import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
 import type {NavigateFunction} from '@parca/functions';
 import {store} from '@parca/store';
 
@@ -391,11 +391,13 @@ const ProfileExplorer = ({
 
   return (
     <Provider store={reduxStore}>
-      <ProfileExplorerApp
-        queryClient={queryClient}
-        queryParams={queryParams}
-        navigateTo={navigateTo}
-      />
+      <KeyDownProvider>
+        <ProfileExplorerApp
+          queryClient={queryClient}
+          queryParams={queryParams}
+          navigateTo={navigateTo}
+        />
+      </KeyDownProvider>
     </Provider>
   );
 };
