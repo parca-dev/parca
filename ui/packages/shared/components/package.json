@@ -31,7 +31,7 @@
     "react-virtual": "^2.10.4"
   },
   "devDependencies": {
-    "@types/react-datepicker": "4.8.0",
+    "@types/react-datepicker": "4.10.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
