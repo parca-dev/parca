@@ -14,7 +14,7 @@ RUN for i in {1..50} ; do \
     wget -qO/bin/grpc_health_probe "https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-${TARGETOS}-${TARGETARCH}" && \
     chmod +x /bin/grpc_health_probe && \
     break; \
-    echo "Failed to download grpc_health_probe on $i th attempt, retrying in 5s..."
+    echo "Failed to download grpc_health_probe on $i th attempt, retrying in 5s..." \
     sleep 5; \
     done
 
