@@ -128,12 +128,20 @@ export const ProfileView = ({
     setCurPath([]);
   }, [profileSource]);
 
+  useEffect(() => {
+    async function loadGraphviz(): Promise<void> {
+      await graphviz.loadWASM();
+      setGraphvizLoaded(true);
+    }
+    void loadGraphviz();
+  }, []);
+
   const isLoading = useMemo(() => {
     if (dashboardItems.includes('icicle')) {
       return Boolean(flamegraphData?.loading);
     }
     if (dashboardItems.includes('callgraph')) {
-      return Boolean(callgraphData?.loading) || Boolean(callgraphSVG == undefined);
+      return Boolean(callgraphData?.loading) || Boolean(callgraphSVG === undefined);
     }
     if (dashboardItems.includes('table')) {
       return Boolean(topTableData?.loading);
@@ -149,7 +157,40 @@ export const ProfileView = ({
 
   const isLoaderVisible = useDelayedLoader(isLoading);
 
-  if (flamegraphData?.error != null) {
+  const maxColor: string = getNewSpanColor(isDarkMode);
+  const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
+  const colorRange: [string, string] = [minColor, maxColor];
+  // Note: If we want to further optimize the experience, we could try to load the graphviz layout in the ProfileViewWithData layer
+  // and pass it down to the ProfileView. This would allow us to load the layout in parallel with the flamegraph data.
+  // However, the layout calculation is dependent on the width and color range of the graph container, which is why it is done at this level
+  useEffect(() => {
+    async function loadCallgraphSVG(graph, width, colorRange): Promise<void> {
+      await setCallgraphSVG(undefined);
+      // Translate JSON to 'dot' graph string
+      const dataAsDot = await jsonToDot({
+        graph,
+        width,
+        colorRange,
+      });
+
+      // Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
+      const svgGraph = await graphviz.layout(dataAsDot, 'svg', 'dot');
+      await setCallgraphSVG(svgGraph);
+    }
+
+    if (
+      graphvizLoaded &&
+      callgraphData?.data !== null &&
+      callgraphData?.data !== undefined &&
+      dimensions?.width !== undefined
+    ) {
+      void loadCallgraphSVG(callgraphData?.data, dimensions?.width, colorRange);
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphvizLoaded, callgraphData?.data]);
+
+  if (flamegraphData?.error !== null) {
     console.error('Error: ', flamegraphData?.error);
     return (
       <div className="p-10 flex justify-center">
@@ -163,48 +204,6 @@ export const ProfileView = ({
       setCurPath(path);
     }
   };
-
-  const maxColor: string = getNewSpanColor(isDarkMode);
-  const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
-  const colorRange: [string, string] = [minColor, maxColor];
-
-  useEffect(() => {
-    async function loadGraphviz() {
-      await graphviz.loadWASM();
-      setGraphvizLoaded(true);
-    }
-    loadGraphviz();
-  }, []);
-
-  // Note: If we want to further optimize the experience, we could try to load the graphviz layout in the ProfileViewWithData layer
-  // and pass it down to the ProfileView. This would allow us to load the layout in parallel with the flamegraph data.
-  // However, the layout calculation is dependent on the width and color range of the graph container, which is why it is done at this level
-  useEffect(() => {
-    async function loadCallgraphSVG(graph, width, colorRange) {
-      await setCallgraphSVG(undefined);
-      console.time('calculate layout');
-      // Translate JSON to 'dot' graph string
-      const dataAsDot = await jsonToDot({
-        graph,
-        width,
-        colorRange,
-      });
-
-      // Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
-      const svgGraph = await graphviz.layout(dataAsDot, 'svg', 'dot');
-      console.timeEnd('calculate layout');
-      await setCallgraphSVG(svgGraph);
-    }
-
-    if (
-      graphvizLoaded &&
-      callgraphData?.data != null &&
-      callgraphData?.data != undefined &&
-      dimensions?.width !== undefined
-    ) {
-      loadCallgraphSVG(callgraphData?.data, dimensions?.width, colorRange);
-    }
-  }, [graphvizLoaded, callgraphData?.data]);
 
   const getDashboardItemByType = ({
     type,
@@ -303,7 +302,7 @@ export const ProfileView = ({
             <div className="flex py-3 w-full">
               <div className="lg:w-1/2 flex space-x-4">
                 <div className="flex space-x-1">
-                  {profileSource != null && queryClient != null ? (
+                  {profileSource !== undefined && queryClient !== undefined ? (
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}

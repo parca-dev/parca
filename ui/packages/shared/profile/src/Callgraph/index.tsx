@@ -21,13 +21,7 @@ import {MapInteractionCSS} from 'react-map-interaction';
 import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {Button, useKeyDown, useURLState} from '@parca/components';
 import {getNewSpanColor} from '@parca/functions';
-import {
-  selectDarkMode,
-  selectHoveringNode,
-  setHoveringNode,
-  useAppDispatch,
-  useAppSelector,
-} from '@parca/store';
+import {selectDarkMode, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
 
 import GraphTooltip from '../GraphTooltip';
 
@@ -81,26 +75,23 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   }, []);
 
   useEffect(() => {
-    if (svgWrapperLoaded && svgRef.current) {
-      const addInteraction = () => {
+    if (svgWrapperLoaded && svgRef.current !== null) {
+      const addInteraction = (): void => {
         const svg = d3.select(svgRef.current);
         const nodes = svg.selectAll('.node');
 
         nodes.each(function () {
-          const nodeData = data.nodes.find(n => {
-            // @ts-ignore
+          const nodeData = data.nodes.find((n): boolean => {
+            // @ts-expect-error
             return n.id === this.id;
           });
-
           const defaultColor = colorScale(Number(nodeData?.cumulative));
-          // const hexColor = d3.color(rgbColor)?.formatHex() ?? 'red';
-
           const node = d3.select(this);
           const path = node.select('path');
 
           node
             .style('cursor', 'pointer')
-            .on('mouseenter', function (e) {
+            .on('mouseenter', function () {
               if (isShiftDown) return;
               d3.select(this).select('path').style('fill', 'white');
               const hoveringNode = {
@@ -110,7 +101,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
               // @ts-expect-error
               dispatch(setHoveringNode(hoveringNode));
             })
-            .on('mouseleave', function (e) {
+            .on('mouseleave', function () {
               if (isShiftDown) return;
               d3.select(this).select('path').style('fill', defaultColor);
               dispatch(setHoveringNode(undefined));
@@ -121,6 +112,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
 
       setTimeout(addInteraction, 1000);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [svgWrapper.current, svgWrapperLoaded]);
 
   if (data.nodes.length < 1) return <>Profile has no samples</>;
@@ -151,7 +143,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
             innerRef={svgRef}
           />
         </MapInteractionCSS>
-        {svgRef.current && (
+        {svgRef.current !== null && (
           <GraphTooltip
             type="callgraph"
             unit={sampleUnit}

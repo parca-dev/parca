@@ -357,6 +357,7 @@ export const GraphTooltipContent = ({
                     mappings={mappings}
                     locations={locations}
                     functions={functions}
+                    type={type}
                   />
                 </tbody>
               </table>
@@ -387,9 +388,9 @@ const GraphTooltip = ({
   type = 'flamegraph',
 }: GraphTooltipProps): JSX.Element => {
   const hoveringNodeState = useAppSelector(selectHoveringNode);
-  // @ts-ignore
+  // @ts-expect-error
   const hoveringNode = useMemo<HoveringNode>(() => {
-    const h = (hoveringNodeProp ?? hoveringNodeState) as HoveringNode;
+    const h = hoveringNodeProp ?? hoveringNodeState;
     if (h == null) {
       return h;
     }
