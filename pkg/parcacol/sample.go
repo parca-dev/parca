@@ -16,6 +16,8 @@ package parcacol
 import (
 	"context"
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/apache/arrow/go/v10/arrow"
 	"github.com/apache/arrow/go/v10/arrow/array"
@@ -213,6 +215,86 @@ func SeriesToArrowRecord(
 
 					if err != nil {
 						return nil, err
+					}
+				}
+			}
+		}
+	}
+
+	return bldr.NewRecord(), nil
+}
+
+func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer) (arrow.Record, error) {
+	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, buf.Schema(), logicalplan.IterOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	bldr := array.NewRecordBuilder(memory.NewGoAllocator(), as)
+	defer bldr.Release()
+
+	rows := buf.Rows()
+	defer rows.Close()
+
+	buffSize := 256
+	rowBuf := make([]parquet.Row, buffSize)
+
+	for {
+		n, err := rows.ReadRows(rowBuf)
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+
+		if n == 0 {
+			break
+		}
+
+		// Write each row to the arrow record
+		for _, r := range rowBuf[:n] {
+			for i := range r {
+				switch as.Field(i).Name {
+				case ColumnName:
+					fallthrough
+				case ColumnPeriodType:
+					fallthrough
+				case ColumnPeriodUnit:
+					fallthrough
+				case ColumnSampleType:
+					fallthrough
+				case ColumnSampleUnit:
+					if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(r[i].String()); err != nil {
+						return nil, err
+					}
+				case ColumnStacktrace:
+					bldr.Field(i).(*array.BinaryBuilder).AppendString(r[i].String())
+				case ColumnDuration:
+					fallthrough
+				case ColumnPeriod:
+					fallthrough
+				case ColumnTimestamp:
+					fallthrough
+				case ColumnValue:
+					bldr.Field(i).(*array.Int64Builder).Append(r[i].Int64())
+				default:
+					switch {
+					case strings.HasPrefix(as.Field(i).Name, ColumnPprofNumLabels):
+						if r[i].IsNull() {
+							bldr.Field(i).AppendNull()
+						} else {
+							bldr.Field(i).(*array.Int64Builder).Append(r[i].Int64())
+						}
+					case strings.HasPrefix(as.Field(i).Name, ColumnPprofLabels):
+						fallthrough
+					case strings.HasPrefix(as.Field(i).Name, ColumnLabels):
+						if r[i].IsNull() {
+							bldr.Field(i).AppendNull()
+						} else {
+							if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(r[i].String()); err != nil {
+								return nil, err
+							}
+						}
+					default:
+						panic(fmt.Sprintf("unknown column %v", as.Field(i).Name))
 					}
 				}
 			}
