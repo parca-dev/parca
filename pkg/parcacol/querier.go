@@ -301,6 +301,11 @@ func (q *Querier) QueryRange(
 	start := timestamp.FromTime(startTime)
 	end := timestamp.FromTime(endTime)
 
+	// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
+	// Even worse for a week, we'd query 60480 samples and only return 1000.
+	if step < endTime.Sub(startTime)/1000 {
+		step = endTime.Sub(startTime) / 1000
+	}
 	// The step cannot be lower than 1s
 	if step < time.Second {
 		step = time.Second
@@ -600,9 +605,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 
 		// TODO: This still queries way too much data from the underlying database.
 		// This needs to be moved to FrostDB to not even query all of this data in the first place.
-		// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
-		// Even worse for a week, we'd query 60480 samples and only return 1000.
-		tsBucket := ts / 1000 / int64(step.Seconds())
+		tsBucket := ts / int64(step.Seconds())
 		if _, found := resSeriesBuckets[index][tsBucket]; found {
 			// We already have a MetricsSample for this timestamp bucket, ignore it.
 			continue
