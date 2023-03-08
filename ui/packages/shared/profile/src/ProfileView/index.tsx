@@ -164,7 +164,11 @@ export const ProfileView = ({
   // and pass it down to the ProfileView. This would allow us to load the layout in parallel with the flamegraph data.
   // However, the layout calculation is dependent on the width and color range of the graph container, which is why it is done at this level
   useEffect(() => {
-    async function loadCallgraphSVG(graph, width, colorRange): Promise<void> {
+    async function loadCallgraphSVG(
+      graph: CallgraphType,
+      width: number,
+      colorRange: [string, string]
+    ): Promise<void> {
       await setCallgraphSVG(undefined);
       // Translate JSON to 'dot' graph string
       const dataAsDot = await jsonToDot({
