@@ -44,7 +44,7 @@
       "description": "Update Buf plugins",
       "fileMatch": ["(^|/)buf\\.gen\\.yaml$"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)(?: (?:packageName)=(?<packageName>.+?))?(?: versioning=(?<versioning>.+?))?\\s*-?\\s*remote: ('|\")?.*:(?<currentValue>.+?)(-\\d+)?('|\")?\\s"
+        "# renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)(?: (?:packageName)=(?<packageName>.+?))?(?: versioning=(?<versioning>.+?))?\\s*-?\\s*plugin: ('|\")?.*:(?<currentValue>.+?)('|\")?\\s"
       ]
     }
   ]
