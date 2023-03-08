@@ -31,7 +31,7 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/polarsignals/frostdb v0.0.0-20230227172736-d0eea82a3fcb
 	github.com/prometheus/client_golang v1.14.0
-	github.com/prometheus/common v0.41.0
+	github.com/prometheus/common v0.42.0
 	github.com/prometheus/prometheus v0.42.0
 	github.com/segmentio/parquet-go v0.0.0-20230209224803-1d85e8136681
 	github.com/stretchr/testify v1.8.2
