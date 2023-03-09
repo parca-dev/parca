@@ -41,7 +41,7 @@ export interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, Callgr
 export interface ColorsState {
   colors: StackColorMap;
   binaries: string[];
-  hoveringNode: HoveringNode;
+  hoveringNode: HoveringNode | undefined;
 }
 
 // Define the initial state using that type
@@ -161,6 +161,7 @@ export const selectStackColors = (state: RootState): StackColorMap => state.colo
 
 export const selectBinaries = (state: RootState): string[] => state.colors.binaries;
 
-export const selectHoveringNode = (state: RootState): HoveringNode => state.colors.hoveringNode;
+export const selectHoveringNode = (state: RootState): HoveringNode | undefined =>
+  state.colors.hoveringNode;
 
 export default colorsSlice.reducer;
