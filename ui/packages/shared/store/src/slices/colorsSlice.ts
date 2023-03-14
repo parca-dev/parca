@@ -13,6 +13,7 @@
 
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 
+import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
 import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/functions';
 
 import type {RootState} from '../store';
@@ -20,16 +21,20 @@ import type {RootState} from '../store';
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type StackColorMap = {[key: string]: string};
 
+export type HoveringNode = FlamegraphNode | FlamegraphRootNode | undefined;
+
 // Define a type for the slice state
 export interface ColorsState {
   colors: StackColorMap;
   binaries: string[];
+  hoveringNode: HoveringNode;
 }
 
 // Define the initial state using that type
 const initialState: ColorsState = {
   colors: {},
   binaries: [],
+  hoveringNode: undefined,
 };
 
 export interface StackColor {
@@ -126,17 +131,22 @@ export const colorsSlice = createSlice({
           }
         );
     },
+    setHoveringNode: (state, action: PayloadAction<HoveringNode>) => {
+      state.hoveringNode = action.payload;
+    },
     resetColors: state => {
       state.colors = {};
     },
   },
 });
 
-export const {addColor, resetColors, setFeatures} = colorsSlice.actions;
+export const {addColor, resetColors, setFeatures, setHoveringNode} = colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;
 
 export const selectBinaries = (state: RootState): string[] => state.colors.binaries;
+
+export const selectHoveringNode = (state: RootState): HoveringNode => state.colors.hoveringNode;
 
 export default colorsSlice.reducer;
