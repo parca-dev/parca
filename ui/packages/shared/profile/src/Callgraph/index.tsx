@@ -49,6 +49,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   const [svgWrapperLoaded, setSvgWrapperLoaded] = useState(false);
   const dispatch = useAppDispatch();
   const {isShiftDown} = useKeyDown();
+  // TODO: implement highlighting nodes on user search
   // const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   // const isSearchEmpty = currentSearchString === undefined || currentSearchString === '';
   // const isCurrentSearchMatch = isSearchEmpty

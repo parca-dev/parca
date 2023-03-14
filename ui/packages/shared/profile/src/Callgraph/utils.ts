@@ -100,10 +100,6 @@ export const jsonToDot = ({
     .domain(cumulativesRange)
     .range(colorRange);
   const colorOpacityScale = d3.scaleLinear().domain(cumulativesRange).range([0.5, 1]);
-  // const boxWidthScale = d3
-  //   .scaleLog()
-  //   .domain(cumulativesRange)
-  //   .range([DEFAULT_NODE_HEIGHT, DEFAULT_NODE_HEIGHT + 40]);
 
   const nodesAsStrings = nodes.map((node: CallgraphNode) => {
     const rgbColor = colorScale(Number(node.cumulative));
