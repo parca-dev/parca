@@ -67,18 +67,6 @@ export const ProfileViewWithData = ({
   });
   const {perf} = useParcaContext();
 
-  useEffect(() => {
-    if (flamegraphLoading) {
-      return;
-    }
-
-    if (flamegraphResponse?.report.oneofKind !== 'flamegraph') {
-      return;
-    }
-
-    perf?.markInteraction('Flamegraph Render', flamegraphResponse?.report?.flamegraph.total);
-  }, [flamegraphLoading, flamegraphResponse, perf]);
-
   const {
     isLoading: topTableLoading,
     response: topTableResponse,
@@ -94,6 +82,34 @@ export const ProfileViewWithData = ({
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
     skip: !dashboardItems.includes('callgraph'),
   });
+
+  useEffect(() => {
+    if (flamegraphLoading || flamegraphResponse?.report.oneofKind !== 'flamegraph') {
+      return;
+    } else {
+      perf?.markInteraction('Flamegraph render', flamegraphResponse?.report?.flamegraph.total);
+    }
+
+    if (topTableLoading || topTableResponse?.report.oneofKind !== 'top') {
+      return;
+    } else {
+      perf?.markInteraction('Top table render', topTableResponse?.report?.top.total);
+    }
+
+    if (callgraphLoading || callgraphResponse?.report.oneofKind !== 'callgraph') {
+      return;
+    } else {
+      perf?.markInteraction('Callgraph render', callgraphResponse?.report?.callgraph.cumulative);
+    }
+  }, [
+    flamegraphLoading,
+    flamegraphResponse,
+    callgraphResponse,
+    callgraphLoading,
+    topTableLoading,
+    topTableResponse,
+    perf,
+  ]);
 
   const sampleUnit = profileSource.ProfileType().sampleUnit;
 
