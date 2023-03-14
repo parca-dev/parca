@@ -254,7 +254,6 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 
 		samples := make([][]*profile.NormalizedProfile, 0, len(rawSeries.Samples))
 		for _, sample := range rawSeries.Samples {
-
 			if len(sample.RawProfile) >= 2 && sample.RawProfile[0] == 0x1f && sample.RawProfile[1] == 0x8b {
 				gz, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
 				if err == nil {
