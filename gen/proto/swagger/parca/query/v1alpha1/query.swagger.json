@@ -974,6 +974,11 @@
           "type": "string",
           "format": "int64",
           "title": "untrimmed_total is the total weight of the flame graph before trimming"
+        },
+        "unfilteredTotal": {
+          "type": "string",
+          "format": "int64",
+          "title": "unfiltered_total is the total weight of the flame graph before trimming"
         }
       },
       "title": "Flamegraph is the flame graph report type"

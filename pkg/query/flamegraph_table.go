@@ -24,7 +24,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, fp *FilteredProfile, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
 	rootNode := &querypb.FlamegraphNode{}
 	current := rootNode
 
@@ -41,9 +41,9 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		functionsIndex: map[string]uint32{},
 	}
 
-	tables.AddString("") // Add empty string to the string table.
+	tables.AddString("") // Add empty string to the string table. This is expected by pprof.
 
-	for _, s := range p.Samples {
+	for _, s := range fp.Profile.Samples {
 		locations := s.Locations
 		if int32(len(locations)) > height {
 			height = int32(len(locations))
@@ -104,10 +104,10 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 			Diff:       rootNode.Diff,
 			Children:   rootNode.Children,
 		},
-		Total:          rootNode.Cumulative,
-		UntrimmedTotal: rootNode.Cumulative,
-		Unit:           p.Meta.SampleType.Unit,
-		Height:         height + 1, // add one for the root
+		Total:           rootNode.Cumulative,
+		UnfilteredTotal: fp.TotalUnfiltered,
+		Unit:            fp.Profile.Meta.SampleType.Unit,
+		Height:          height + 1, // add one for the root
 
 		StringTable: tables.Strings(),
 		Mapping:     tables.Mappings(),
@@ -314,8 +314,9 @@ func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *query
 
 	it := NewFlamegraphIterator(oldRootNode)
 	tree := &querypb.Flamegraph{
-		Total:  fg.Total,
-		Height: fg.Height,
+		Total:           fg.Total,
+		UnfilteredTotal: fg.UnfilteredTotal,
+		Height:          fg.Height,
 		Root: &querypb.FlamegraphRootNode{
 			Cumulative: fg.Root.Cumulative,
 			Diff:       fg.Root.Diff,
@@ -507,9 +508,7 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	if graph == nil {
 		return nil
 	}
-	total := graph.Total
-
-	threshold := int64(float64(thresholdRate) * float64(total))
+	threshold := int64(float64(thresholdRate) * float64(graph.Total))
 	var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, graph.Root.Children, threshold)
 	newTotal := int64(0)
 	newDiff := int64(0)
@@ -524,14 +523,15 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 			Cumulative: newTotal,
 			Diff:       newDiff,
 		},
-		Total:          newTotal,
-		UntrimmedTotal: graph.Total,
-		Unit:           graph.Unit,
-		Height:         graph.Height,
-		StringTable:    graph.StringTable,
-		Locations:      graph.Locations,
-		Mapping:        graph.Mapping,
-		Function:       graph.Function,
+		Total:           newTotal,
+		UnfilteredTotal: graph.UnfilteredTotal,
+		UntrimmedTotal:  graph.Total,
+		Unit:            graph.Unit,
+		Height:          graph.Height,
+		StringTable:     graph.StringTable,
+		Locations:       graph.Locations,
+		Mapping:         graph.Mapping,
+		Function:        graph.Function,
 	}
 
 	return trimmedGraph
@@ -546,8 +546,8 @@ func trimFlamegraphNodes(ctx context.Context, tracer trace.Tracer, nodes []*quer
 		var oldChildren FlamegraphChildren = node.Children
 		flat := node.Cumulative - oldChildren.Cumulative()
 		var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, node.Children, threshold)
-		newCum := int64(flat)
-		newDiff := int64(node.Diff)
+		newCum := flat
+		newDiff := node.Diff
 		if len(children) > 0 {
 			newCum += children.Cumulative()
 			newDiff += children.Diff()

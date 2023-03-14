@@ -312,6 +312,9 @@ message Flamegraph {
 
   // untrimmed_total is the total weight of the flame graph before trimming
   int64 untrimmed_total = 9;
+
+  // unfiltered_total is the total weight of the flame graph before trimming
+  int64 unfiltered_total = 10;
 }
 
 // FlamegraphRootNode is a root node of a flame graph

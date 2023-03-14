@@ -58,23 +58,60 @@ const ProfileIcicleGraph = ({
     onContainerResize(dimensions.width, dimensions.height);
   }, [dimensions, onContainerResize]);
 
-  const [isTrimmed, _, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] = useMemo(() => {
-    if (graph === undefined || graph.untrimmedTotal === '0') {
-      return [false, BigInt(0), '0'];
+  const [
+    totalFormatted,
+    rawFormatted,
+    isTrimmed,
+    trimmedFormatted,
+    trimmedPercentage,
+    isFiltered,
+    filteredFormatted,
+    filteredPercentage,
+  ] = useMemo(() => {
+    if (graph === undefined) {
+      return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    const untrimmedTotal = BigInt(graph.untrimmedTotal);
     const total = BigInt(graph.total);
+    const totalFormatted = numberFormatter.format(total);
 
-    const trimDifference = untrimmedTotal - total;
-    const trimmedPercentage = (total * BigInt(100)) / untrimmedTotal;
+    if (graph.untrimmedTotal === '0' && graph.unfilteredTotal === '0') {
+      return [totalFormatted, '', false, '0', '0', false, '0', '0'];
+    }
+
+    const unfilteredTotal = BigInt(graph.unfilteredTotal);
+    const untrimmedTotal = BigInt(graph.untrimmedTotal);
+
+    let raw = total;
+    if (untrimmedTotal > raw) {
+      raw = untrimmedTotal;
+    }
+    if (unfilteredTotal > raw) {
+      raw = unfilteredTotal;
+    }
+
+    const trimmed = untrimmedTotal - total;
+    let trimmedPercentage = BigInt(0);
+    if (trimmed > 0) {
+      trimmedPercentage = (trimmed * BigInt(100)) / untrimmedTotal;
+    }
+
+    const trimmedOrTotal = trimmed > 0 ? trimmed : total;
+    const filtered = unfilteredTotal - trimmedOrTotal;
+    let filteredPercentage = BigInt(0);
+    if (filtered > 0) {
+      filteredPercentage = (filtered * BigInt(100)) / unfilteredTotal;
+    }
 
     return [
-      trimDifference > BigInt(0),
-      trimDifference,
+      totalFormatted,
+      numberFormatter.format(raw),
+      trimmed > 0,
+      numberFormatter.format(trimmed),
       trimmedPercentage.toString(),
-      numberFormatter.format(total),
-      numberFormatter.format(untrimmedTotal),
+      filtered > 0,
+      numberFormatter.format(filtered),
+      filteredPercentage.toString(),
     ];
   }, [graph]);
 
@@ -106,11 +143,6 @@ const ProfileIcicleGraph = ({
   return (
     <div className="relative">
       {compareMode && <DiffLegend />}
-      {isTrimmed ? (
-        <p className="my-2 text-sm">
-          Showing {formattedTotal}({trimmedPercentage}%) out of {formattedUntrimmedTotal} samples
-        </p>
-      ) : null}
       <div ref={ref}>
         <IcicleGraph
           width={dimensions?.width}
@@ -121,6 +153,24 @@ const ProfileIcicleGraph = ({
           navigateTo={navigateTo}
         />
       </div>
+      <p className="my-2 text-xs">
+        Showing {totalFormatted} {isFiltered || isTrimmed ? <span>of {rawFormatted} </span> : <></>}
+        samples.{' '}
+        {isFiltered ? (
+          <span>
+            Filtered {filteredFormatted} ({filteredPercentage}%) samples.&nbsp;
+          </span>
+        ) : (
+          <></>
+        )}
+        {isTrimmed ? (
+          <span>
+            Trimmed {trimmedFormatted} ({trimmedPercentage}%) too small samples.
+          </span>
+        ) : (
+          <></>
+        )}
+      </p>
     </div>
   );
 };

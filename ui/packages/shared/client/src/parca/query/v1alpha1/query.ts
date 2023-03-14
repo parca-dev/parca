@@ -588,6 +588,12 @@ export interface Flamegraph {
      * @generated from protobuf field: int64 untrimmed_total = 9;
      */
     untrimmedTotal: string;
+    /**
+     * unfiltered_total is the total weight of the flame graph before trimming
+     *
+     * @generated from protobuf field: int64 unfiltered_total = 10;
+     */
+    unfilteredTotal: string;
 }
 /**
  * FlamegraphRootNode is a root node of a flame graph
@@ -1997,11 +2003,12 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
             { no: 6, name: "locations", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Location },
             { no: 7, name: "mapping", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Mapping },
             { no: 8, name: "function", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Function },
-            { no: 9, name: "untrimmed_total", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
+            { no: 9, name: "untrimmed_total", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 10, name: "unfiltered_total", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<Flamegraph>): Flamegraph {
-        const message = { total: "0", unit: "", height: 0, stringTable: [], locations: [], mapping: [], function: [], untrimmedTotal: "0" };
+        const message = { total: "0", unit: "", height: 0, stringTable: [], locations: [], mapping: [], function: [], untrimmedTotal: "0", unfilteredTotal: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Flamegraph>(this, message, value);
@@ -2038,6 +2045,9 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
                     break;
                 case /* int64 untrimmed_total */ 9:
                     message.untrimmedTotal = reader.int64().toString();
+                    break;
+                case /* int64 unfiltered_total */ 10:
+                    message.unfilteredTotal = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2078,6 +2088,9 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
         /* int64 untrimmed_total = 9; */
         if (message.untrimmedTotal !== "0")
             writer.tag(9, WireType.Varint).int64(message.untrimmedTotal);
+        /* int64 unfiltered_total = 10; */
+        if (message.unfilteredTotal !== "0")
+            writer.tag(10, WireType.Varint).int64(message.unfilteredTotal);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

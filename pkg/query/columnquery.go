@@ -118,7 +118,7 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 	}, nil
 }
 
-// Query issues a instant query against the storage.
+// Query issues an instant query against the storage.
 func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -156,7 +156,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
 	for _, loc := range s.Locations {
 		for _, l := range loc.Lines {
-			if l.Function != nil && strings.Contains(strings.ToLower(l.Function.Name), strings.ToLower(filterQuery)) {
+			if l.Function != nil && strings.Contains(strings.ToLower(l.Function.Name), filterQuery) {
 				return true
 			}
 		}
@@ -164,23 +164,42 @@ func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
 	return false
 }
 
+type FilteredProfile struct {
+	TotalUnfiltered int64
+	*profile.Profile
+}
+
 func filterProfileData(
 	ctx context.Context,
 	tracer trace.Tracer,
 	p *profile.Profile,
 	filterQuery string,
-) *profile.Profile {
+) *FilteredProfile {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
+
+	// We want to filter by function name case-insensitive, so we need to lowercase the query.
+	// We lower case the query here, so we don't have to do it for every sample.
+	filterQuery = strings.ToLower(filterQuery)
+
+	var total int64
 	filteredSamples := []*profile.SymbolizedSample{}
 	for _, s := range p.Samples {
+		// We sum up the total number of values here, regardless whether it's filtered or not,
+		// to get the unfiltered total.
+		total += s.Value
+
 		if keepSample(s, filterQuery) {
 			filteredSamples = append(filteredSamples, s)
 		}
 	}
-	return &profile.Profile{
-		Samples: filteredSamples,
-		Meta:    p.Meta,
+
+	return &FilteredProfile{
+		TotalUnfiltered: total,
+		Profile: &profile.Profile{
+			Samples: filteredSamples,
+			Meta:    p.Meta,
+		},
 	}
 }
 
@@ -206,8 +225,9 @@ func RenderReport(
 	span.SetAttributes(attribute.String("reportType", typ.String()))
 	defer span.End()
 
+	fp := &FilteredProfile{Profile: p}
 	if filterQuery != nil {
-		p = filterProfileData(ctx, tracer, p, *filterQuery)
+		fp = filterProfileData(ctx, tracer, p, *filterQuery)
 	}
 
 	nodeTrimFraction := float32(0)
@@ -218,7 +238,7 @@ func RenderReport(
 	switch typ {
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := GenerateFlamegraphFlat(ctx, tracer, p)
+		fg, err := GenerateFlamegraphFlat(ctx, tracer, fp.Profile)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
@@ -228,7 +248,7 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
-		fg, err := GenerateFlamegraphTable(ctx, tracer, p, nodeTrimFraction)
+		fg, err := GenerateFlamegraphTable(ctx, tracer, fp, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
@@ -238,7 +258,7 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
-		pp, err := GenerateFlatPprof(ctx, p)
+		pp, err := GenerateFlatPprof(ctx, fp.Profile)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
@@ -252,7 +272,7 @@ func RenderReport(
 			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
-		top, err := GenerateTopTable(ctx, p)
+		top, err := GenerateTopTable(ctx, fp.Profile)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
@@ -261,7 +281,7 @@ func RenderReport(
 			Report: &pb.QueryResponse_Top{Top: top},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
-		callgraph, err := GenerateCallgraph(ctx, p)
+		callgraph, err := GenerateCallgraph(ctx, fp.Profile)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())
 		}
