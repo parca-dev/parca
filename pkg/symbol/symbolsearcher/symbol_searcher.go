@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-// symbol like elf.Symbol, but only reserve field we need to reduce memory usage
+// symbol like elf.Symbol, but only reserve field we need to reduce memory usage.
 type symbol struct {
 	name  string
 	value uint64
