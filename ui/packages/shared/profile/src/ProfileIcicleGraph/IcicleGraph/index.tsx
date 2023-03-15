@@ -58,6 +58,13 @@ export const IcicleGraph = memo(function IcicleGraph({
   }, [width, coloredGraph]);
 
   const total = useMemo(() => parseFloat(coloredGraph.total), [coloredGraph.total]);
+  const totalMax = useMemo(() => {
+    return Math.max(
+      parseFloat(coloredGraph.total),
+      parseFloat(coloredGraph.unfilteredTotal),
+      parseFloat(coloredGraph.untrimmedTotal)
+    );
+  }, [coloredGraph]);
   const xScale = useMemo(() => {
     if (width === undefined) {
       return () => 0;
@@ -75,6 +82,7 @@ export const IcicleGraph = memo(function IcicleGraph({
       <GraphTooltip
         unit={sampleUnit}
         total={total}
+        totalMax={totalMax}
         contextElement={svg.current}
         strings={coloredGraph.stringTable}
         mappings={coloredGraph.mapping}
