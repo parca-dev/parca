@@ -202,7 +202,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const onMouseEnter = (): void => {
     if (isShiftDown) return;
 
-    dispatch(setHoveringNode(data));
+    // need to add id and flat for tooltip purposes
+    dispatch(setHoveringNode({...data, id: '', flat: ''}));
   };
   const onMouseLeave = (): void => {
     if (isShiftDown) return;

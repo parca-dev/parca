@@ -14,14 +14,14 @@
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.0",
-    "konva": "8.4.2",
     "react-beautiful-dnd": "^13.1.1",
     "react-copy-to-clipboard": "^5.1.0",
-    "react-cytoscapejs": "1.2.1",
     "react-flame-graph": "^1.4.0",
-    "react-konva": "18.2.5",
+    "react-inlinesvg": "^3.0.2",
+    "react-map-interaction": "^2.1.0",
     "react-query": "^3.39.2",
-    "react-textarea-autosize": "^8.4.0"
+    "react-textarea-autosize": "^8.4.0",
+    "with-alpha-hex": "^1.0.6"
   },
   "devDependencies": {
     "@types/d3": "7.4.0",

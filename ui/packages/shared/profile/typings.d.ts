@@ -12,3 +12,4 @@
 // limitations under the License.
 
 declare module '*.svg';
+declare module 'react-map-interaction';
