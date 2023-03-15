@@ -127,7 +127,7 @@ export const jsonToDot = ({
   });
 
   const graphAsDot = `digraph "callgraph" {
-      rankdir="BT"
+      rankdir="TB"
       overlap="prism"
       ratio="1,3"
       margin=15
