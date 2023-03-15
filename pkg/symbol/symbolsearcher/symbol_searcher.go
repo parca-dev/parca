@@ -20,8 +20,15 @@ import (
 	"strings"
 )
 
+// symbol like elf.Symbol, but only reserve field we need to reduce memory usage
+type symbol struct {
+	name  string
+	value uint64
+}
+
 type Searcher struct {
-	symbols []elf.Symbol
+	symbols []symbol
+	ranges  [2]uint64
 }
 
 func New(syms []elf.Symbol) Searcher {
@@ -39,25 +46,43 @@ func New(syms []elf.Symbol) Searcher {
 		}
 		return chooseBestSymbol(newSyms[i], newSyms[j])
 	})
+
+	var ranges [2]uint64
+	if len(newSyms) != 0 {
+		ranges = [2]uint64{
+			newSyms[0].Value,
+			newSyms[len(newSyms)-1].Value + newSyms[len(newSyms)-1].Size,
+		}
+	}
+
+	sortedSyms := make([]symbol, 0, len(newSyms))
+	for _, s := range newSyms {
+		sortedSyms = append(sortedSyms, symbol{
+			name:  s.Name,
+			value: s.Value,
+		})
+	}
+
 	return Searcher{
-		symbols: newSyms,
+		symbols: sortedSyms,
+		ranges:  ranges,
 	}
 }
 
 func (s Searcher) Search(addr uint64) (string, error) {
 	i := sort.Search(len(s.symbols), func(i int) bool {
 		sym := s.symbols[i]
-		return sym.Value > addr
+		return sym.value > addr
 	})
 	if i == 0 ||
 		// addr < sym[i-1]
-		addr < s.symbols[i-1].Value {
+		addr < s.symbols[i-1].value {
 		return "", errors.New("failed to find symbol for address")
 	}
 
 	// sym[i-1] <= addr < sym[i]
 	i--
-	return s.symbols[i].Name, nil
+	return s.symbols[i].name, nil
 }
 
 func (s Searcher) PCRange() ([2]uint64, error) {
@@ -65,10 +90,7 @@ func (s Searcher) PCRange() ([2]uint64, error) {
 		return [2]uint64{}, errors.New("no symbols found")
 	}
 
-	return [2]uint64{
-		s.symbols[0].Value,
-		s.symbols[len(s.symbols)-1].Value + s.symbols[len(s.symbols)-1].Size,
-	}, nil
+	return s.ranges, nil
 }
 
 // copy from symbol-elf.c/elf_sym__is_function.
