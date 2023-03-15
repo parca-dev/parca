@@ -292,7 +292,7 @@
         "cumulative": {
           "type": "string",
           "format": "int64",
-          "title": "cumulative is the total cumulative value of the callgraph"
+          "description": "cumulative is the total cumulative value of the callgraph\nUse total from the top level query response instead."
         }
       },
       "title": "Callgraph is the callgraph report type"
@@ -380,7 +380,7 @@
         "total": {
           "type": "string",
           "format": "int64",
-          "title": "total is the total weight of the flame graph"
+          "description": "total is the total weight of the flame graph\nUse total from the top level query response instead."
         },
         "unit": {
           "type": "string",
@@ -425,12 +425,12 @@
         "untrimmedTotal": {
           "type": "string",
           "format": "int64",
-          "title": "untrimmed_total is the total weight of the flame graph before trimming"
+          "description": "untrimmed_total is the total weight of the flame graph before trimming.\nUse trimmed instead."
         },
-        "unfilteredTotal": {
+        "trimmed": {
           "type": "string",
           "format": "int64",
-          "title": "unfiltered_total is the total weight of the flame graph before trimming"
+          "description": "trimmed is the amount of samples trimmed from the flame graph."
         }
       },
       "title": "Flamegraph is the flame graph report type"
@@ -568,7 +568,7 @@
         "total": {
           "type": "integer",
           "format": "int32",
-          "title": "total is the number of lines that exist in the report"
+          "description": "total is the number of lines that exist in the report\nUse total from the top level query response instead."
         },
         "unit": {
           "type": "string",

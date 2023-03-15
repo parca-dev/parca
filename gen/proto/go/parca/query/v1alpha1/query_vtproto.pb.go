@@ -1437,8 +1437,8 @@ func (m *Flamegraph) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.UnfilteredTotal != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.UnfilteredTotal))
+	if m.Trimmed != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Trimmed))
 		i--
 		dAtA[i] = 0x50
 	}
@@ -2027,6 +2027,16 @@ func (m *QueryResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			return 0, err
 		}
 		i -= size
+	}
+	if m.Filtered != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Filtered))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.Total != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x48
 	}
 	return len(dAtA) - i, nil
 }
@@ -3129,8 +3139,8 @@ func (m *Flamegraph) SizeVT() (n int) {
 	if m.UntrimmedTotal != 0 {
 		n += 1 + sov(uint64(m.UntrimmedTotal))
 	}
-	if m.UnfilteredTotal != 0 {
-		n += 1 + sov(uint64(m.UnfilteredTotal))
+	if m.Trimmed != 0 {
+		n += 1 + sov(uint64(m.Trimmed))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3327,6 +3337,12 @@ func (m *QueryResponse) SizeVT() (n int) {
 	_ = l
 	if vtmsg, ok := m.Report.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
+	}
+	if m.Total != 0 {
+		n += 1 + sov(uint64(m.Total))
+	}
+	if m.Filtered != 0 {
+		n += 1 + sov(uint64(m.Filtered))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -6237,9 +6253,9 @@ func (m *Flamegraph) UnmarshalVT(dAtA []byte) error {
 			}
 		case 10:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnfilteredTotal", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Trimmed", wireType)
 			}
-			m.UnfilteredTotal = 0
+			m.Trimmed = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflow
@@ -6249,7 +6265,7 @@ func (m *Flamegraph) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.UnfilteredTotal |= int64(b&0x7F) << shift
+				m.Trimmed |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -7652,6 +7668,44 @@ func (m *QueryResponse) UnmarshalVT(dAtA []byte) error {
 				m.Report = &QueryResponse_Callgraph{Callgraph: v}
 			}
 			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Filtered", wireType)
+			}
+			m.Filtered = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Filtered |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
