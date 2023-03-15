@@ -1,14 +1,14 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.136",
+  "version": "0.16.137",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@parca/client": "^0.16.66",
-    "@parca/components": "^0.16.111",
+    "@parca/components": "^0.16.112",
     "@parca/dynamicsize": "^0.16.54",
     "@parca/functions": "^0.16.67",
     "@parca/parser": "^0.16.55",
-    "@parca/store": "^0.16.64",
+    "@parca/store": "^0.16.65",
     "@types/react-beautiful-dnd": "^13.1.3",
     "d3": "7.8.2",
     "d3-scale": "^4.0.2",
