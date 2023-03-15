@@ -28,6 +28,8 @@ export type ResizeHandler = (width: number, height: number) => void;
 interface ProfileIcicleGraphProps {
   width?: number;
   graph: Flamegraph | undefined;
+  total: bigint;
+  filtered: bigint;
   sampleUnit: string;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
@@ -39,6 +41,8 @@ interface ProfileIcicleGraphProps {
 
 const ProfileIcicleGraph = ({
   graph,
+  total,
+  filtered,
   curPath,
   setNewCurPath,
   sampleUnit,
@@ -72,48 +76,21 @@ const ProfileIcicleGraph = ({
       return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    const total = BigInt(graph.total);
-    const totalFormatted = numberFormatter.format(total);
+    const trimmed = BigInt(graph.trimmed);
 
-    if (graph.untrimmedTotal === '0' && graph.unfilteredTotal === '0') {
-      return [totalFormatted, '', false, '0', '0', false, '0', '0'];
-    }
-
-    const unfilteredTotal = BigInt(graph.unfilteredTotal);
-    const untrimmedTotal = BigInt(graph.untrimmedTotal);
-
-    let raw = total;
-    if (untrimmedTotal > raw) {
-      raw = untrimmedTotal;
-    }
-    if (unfilteredTotal > raw) {
-      raw = unfilteredTotal;
-    }
-
-    const trimmed = untrimmedTotal - total;
-    let trimmedPercentage = BigInt(0);
-    if (trimmed > 0) {
-      trimmedPercentage = (trimmed * BigInt(100)) / untrimmedTotal;
-    }
-
-    const trimmedOrTotal = trimmed > 0 ? trimmed : total;
-    const filtered = unfilteredTotal - trimmedOrTotal;
-    let filteredPercentage = BigInt(0);
-    if (filtered > 0) {
-      filteredPercentage = (filtered * BigInt(100)) / unfilteredTotal;
-    }
+    const rawTotal = total + filtered + trimmed;
 
     return [
-      totalFormatted,
-      numberFormatter.format(raw),
+      numberFormatter.format(total),
+      numberFormatter.format(rawTotal),
       trimmed > 0,
       numberFormatter.format(trimmed),
-      trimmedPercentage.toString(),
+      numberFormatter.format((trimmed * BigInt(100)) / rawTotal),
       filtered > 0,
       numberFormatter.format(filtered),
-      filteredPercentage.toString(),
+      numberFormatter.format((filtered * BigInt(100)) / rawTotal),
     ];
-  }, [graph]);
+  }, [filtered, graph, total]);
 
   useEffect(() => {
     if (setActionButtons === undefined) {
@@ -136,9 +113,7 @@ const ProfileIcicleGraph = ({
 
   if (graph === undefined) return <div>no data...</div>;
 
-  const total = graph.total;
-
-  if (parseFloat(total) === 0 && !loading) return <>Profile has no samples</>;
+  if (total === BigInt(0) && !loading) return <>Profile has no samples</>;
 
   return (
     <div className="relative">

@@ -141,7 +141,7 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, &FilteredProfile{Profile: p}, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0))
 	require.NoError(t, err)
 
 	require.Equal(t, int32(5), fg.Height)
@@ -297,7 +297,7 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, &FilteredProfile{Profile: p}, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0))
 	require.NoError(t, err)
 
 	require.Equal(t, int32(2), fg.Height)
@@ -403,7 +403,7 @@ func testGenerateFlamegraphTableFromProfile(t *testing.T, l metastorepb.Metastor
 	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, &FilteredProfile{Profile: sp}, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, float32(0))
 	require.NoError(t, err)
 
 	return fg
@@ -461,7 +461,7 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, &FilteredProfile{Profile: symbolizedProfile}, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0))
 	require.NoError(t, err)
 
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
@@ -614,7 +614,7 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, &FilteredProfile{Profile: symbolizedProfile}, float32(0))
+	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0))
 	require.NoError(t, err)
 
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
@@ -995,14 +995,16 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fp := filterProfileData(ctx, tracer, p, "b") // querying for "b" should filter out the "5.c" function.
+	p, filtered := filterProfileData(ctx, tracer, p, "b") // querying for "b" should filter out the "5.c" function.
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, fp, float32(0.5)) // 50% threshold
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5)) // 50% threshold
 	require.NoError(t, err)
 
 	require.Equal(t, int32(6), fg.Height)
-	require.Equal(t, int64(18), fg.UnfilteredTotal)
-	require.Equal(t, int64(15), fg.UntrimmedTotal)
+
+	// The raw flamegraph had 12+3+3 = 18 samples.
+	require.Equal(t, int64(3), filtered)
+	require.Equal(t, int64(3), fg.Trimmed)
 	require.Equal(t, int64(12), fg.Total)
 
 	// Check if tables and thus deduplication was correct and deterministic

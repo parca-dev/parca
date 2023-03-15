@@ -125,8 +125,9 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	var (
-		p   *profile.Profile
-		err error
+		p        *profile.Profile
+		filtered int64
+		err      error
 	)
 
 	switch req.Mode {
@@ -139,9 +140,12 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
-
 	if err != nil {
 		return nil, err
+	}
+
+	if req.FilterQuery != nil {
+		p, filtered = filterProfileData(ctx, q.tracer, p, req.GetFilterQuery())
 	}
 
 	return q.renderReport(
@@ -149,7 +153,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		p,
 		req.GetReportType(),
 		req.GetNodeTrimThreshold(),
-		req.FilterQuery,
+		filtered,
 	)
 }
 
@@ -174,7 +178,7 @@ func filterProfileData(
 	tracer trace.Tracer,
 	p *profile.Profile,
 	filterQuery string,
-) *FilteredProfile {
+) (*profile.Profile, int64) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
 
@@ -182,25 +186,26 @@ func filterProfileData(
 	// We lower case the query here, so we don't have to do it for every sample.
 	filterQuery = strings.ToLower(filterQuery)
 
-	var total int64
+	var (
+		totalUnfiltered int64
+		totalFiltered   int64
+	)
 	filteredSamples := []*profile.SymbolizedSample{}
 	for _, s := range p.Samples {
 		// We sum up the total number of values here, regardless whether it's filtered or not,
 		// to get the unfiltered total.
-		total += s.Value
+		totalUnfiltered += s.Value
 
 		if keepSample(s, filterQuery) {
 			filteredSamples = append(filteredSamples, s)
+			totalFiltered += s.Value
 		}
 	}
 
-	return &FilteredProfile{
-		TotalUnfiltered: total,
-		Profile: &profile.Profile{
-			Samples: filteredSamples,
-			Meta:    p.Meta,
-		},
-	}
+	return &profile.Profile{
+		Samples: filteredSamples,
+		Meta:    p.Meta,
+	}, totalUnfiltered - totalFiltered
 }
 
 func (q *ColumnQueryAPI) renderReport(
@@ -208,9 +213,9 @@ func (q *ColumnQueryAPI) renderReport(
 	p *profile.Profile,
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
-	filterQuery *string,
+	filtered int64,
 ) (*pb.QueryResponse, error) {
-	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filterQuery)
+	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered)
 }
 
 func RenderReport(
@@ -219,16 +224,11 @@ func RenderReport(
 	p *profile.Profile,
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
-	filterQuery *string,
+	filtered int64,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
 	defer span.End()
-
-	fp := &FilteredProfile{Profile: p}
-	if filterQuery != nil {
-		fp = filterProfileData(ctx, tracer, p, *filterQuery)
-	}
 
 	nodeTrimFraction := float32(0)
 	if nodeTrimThreshold != 0 {
@@ -238,27 +238,31 @@ func RenderReport(
 	switch typ {
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := GenerateFlamegraphFlat(ctx, tracer, fp.Profile)
+		fg, err := GenerateFlamegraphFlat(ctx, tracer, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
 		return &pb.QueryResponse{
+			Total:    fg.Total,
+			Filtered: filtered,
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
-		fg, err := GenerateFlamegraphTable(ctx, tracer, fp, nodeTrimFraction)
+		fg, err := GenerateFlamegraphTable(ctx, tracer, p, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
 		return &pb.QueryResponse{
+			Total:    fg.Total,
+			Filtered: filtered,
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
-		pp, err := GenerateFlatPprof(ctx, fp.Profile)
+		pp, err := GenerateFlatPprof(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
@@ -269,24 +273,30 @@ func RenderReport(
 		}
 
 		return &pb.QueryResponse{
-			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
+			Total:    0, // TODO: Figure out how to get total for pprof
+			Filtered: filtered,
+			Report:   &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
-		top, err := GenerateTopTable(ctx, fp.Profile)
+		top, err := GenerateTopTable(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
 		return &pb.QueryResponse{
-			Report: &pb.QueryResponse_Top{Top: top},
+			Total:    int64(top.Total),
+			Filtered: filtered,
+			Report:   &pb.QueryResponse_Top{Top: top},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
-		callgraph, err := GenerateCallgraph(ctx, fp.Profile)
+		callgraph, err := GenerateCallgraph(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())
 		}
 		return &pb.QueryResponse{
-			Report: &pb.QueryResponse_Callgraph{Callgraph: callgraph},
+			Total:    callgraph.Cumulative,
+			Filtered: filtered,
+			Report:   &pb.QueryResponse_Callgraph{Callgraph: callgraph},
 		}, nil
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")
