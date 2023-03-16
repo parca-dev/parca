@@ -353,6 +353,7 @@ export const RawMetricsGraph = ({
             onLabelClick={onLabelClick}
             contextElement={graph.current}
             sampleUnit={sampleUnit}
+            delta={profile !== null ? profile?.query.profType.delta : false}
           />
         </div>
       )}
