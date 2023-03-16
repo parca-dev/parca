@@ -55,7 +55,7 @@ interface GraphTooltipProps {
   y?: number;
   unit: string;
   total: number;
-  totalMax: number;
+  totalRaw: number;
   hoveringNode?: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
@@ -245,7 +245,7 @@ export const GraphTooltipContent = ({
   hoveringNode,
   unit,
   total,
-  totalMax,
+  totalRaw,
   isFixed,
   strings,
   mappings,
@@ -256,7 +256,7 @@ export const GraphTooltipContent = ({
   hoveringNode: HoveringNode;
   unit: string;
   total: number;
-  totalMax: number;
+  totalRaw: number;
   isFixed: boolean;
   strings?: string[];
   mappings?: Mapping[];
@@ -285,9 +285,9 @@ export const GraphTooltipContent = ({
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
   const getTextForCumulative = (hoveringNodeCumulative: number): string => {
-    const relative = totalMax > total ? ` / ${((hoveringNodeCumulative *100)/total).toFixed(2)}% filtered`: ''
+    const relative = totalRaw > total ? ` / ${((hoveringNodeCumulative *100)/total).toFixed(2)}% filtered`: ''
     return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
-    (${((hoveringNodeCumulative * 100) / totalMax).toFixed(2)}%${relative})`;
+    (${((hoveringNodeCumulative * 100) / totalRaw).toFixed(2)}%${relative})`;
   };
 
   return (
@@ -381,7 +381,7 @@ const GraphTooltip = ({
   y,
   unit,
   total,
-  totalMax,
+  totalRaw,
   hoveringNode: hoveringNodeProp,
   contextElement,
   isFixed = false,
@@ -473,7 +473,7 @@ const GraphTooltip = ({
       hoveringNode={hoveringNode}
       unit={unit}
       total={total}
-      totalMax={totalMax}
+      totalRaw={totalRaw}
       isFixed={isFixed}
       type={type}
     />
@@ -483,7 +483,7 @@ const GraphTooltip = ({
         hoveringNode={hoveringNode}
         unit={unit}
         total={total}
-        totalMax={totalMax}
+        totalRaw={totalRaw}
         isFixed={isFixed}
         strings={strings}
         mappings={mappings}

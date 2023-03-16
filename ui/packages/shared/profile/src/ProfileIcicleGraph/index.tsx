@@ -127,6 +127,8 @@ const ProfileIcicleGraph = ({
         <IcicleGraph
           width={dimensions?.width}
           graph={graph}
+          total={total}
+          filtered={filtered}
           curPath={curPath}
           setCurPath={setNewCurPath}
           sampleUnit={sampleUnit}
