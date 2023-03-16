@@ -95,13 +95,21 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {loader, onError} = useParcaContext();
+  const {loader, onError, perf} = useParcaContext();
 
   useEffect(() => {
     if (error !== null) {
       onError?.(error, 'metricsGraph');
     }
   }, [error, onError]);
+
+  useEffect(() => {
+    if (response === null) {
+      return;
+    }
+
+    perf?.markInteraction('Metrics graph render', response.series[0].samples.length);
+  }, [perf, response]);
 
   if (isLoaderVisible) {
     return <>{loader}</>;
