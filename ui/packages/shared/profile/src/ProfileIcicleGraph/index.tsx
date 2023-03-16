@@ -80,15 +80,18 @@ const ProfileIcicleGraph = ({
 
     const rawTotal = total + filtered + trimmed;
 
+    // safeguard against division by zero
+    const rawTotalDivisor = rawTotal  > 0 ? rawTotal : BigInt(1);
+
     return [
       numberFormatter.format(total),
       numberFormatter.format(rawTotal),
       trimmed > 0,
       numberFormatter.format(trimmed),
-      numberFormatter.format((trimmed * BigInt(100)) / rawTotal),
+      numberFormatter.format((trimmed * BigInt(100)) / rawTotalDivisor),
       filtered > 0,
       numberFormatter.format(filtered),
-      numberFormatter.format((filtered * BigInt(100)) / rawTotal),
+      numberFormatter.format((filtered * BigInt(100)) / rawTotalDivisor),
     ];
   }, [filtered, graph, total]);
 
