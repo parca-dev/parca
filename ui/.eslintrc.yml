@@ -14,6 +14,7 @@ extends:
   - 'plugin:import/typescript'
   - 'plugin:promise/recommended'
   - 'plugin:react-hooks/recommended'
+  - 'plugin:storybook/recommended'
 
 parser: '@typescript-eslint/parser'
 
