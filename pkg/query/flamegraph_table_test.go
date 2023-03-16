@@ -197,6 +197,152 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 	require.True(t, proto.Equal(expected, fg.Root))
 }
 
+func TestGenerateFlamegraphTableTrimming(t *testing.T) {
+	ctx := context.Background()
+	var err error
+
+	l := metastoretest.NewTestMetastore(
+		t,
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+	)
+
+	metastore := metastore.NewInProcessClient(l)
+
+	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
+		Mappings: []*metastorepb.Mapping{{
+			File: "a",
+		}},
+	})
+	require.NoError(t, err)
+	m := mres.Mappings[0]
+
+	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
+		Functions: []*metastorepb.Function{{
+			Name: "1",
+		}, {
+			Name: "2",
+		}, {
+			Name: "3",
+		}, {
+			Name: "4",
+		}, {
+			Name: "5",
+		}},
+	})
+	require.NoError(t, err)
+	f1 := fres.Functions[0]
+	f2 := fres.Functions[1]
+	f3 := fres.Functions[2]
+	f4 := fres.Functions[3]
+	f5 := fres.Functions[4]
+
+	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+		Locations: []*metastorepb.Location{{
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f1.Id,
+			}},
+		}, {
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f2.Id,
+			}},
+		}, {
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f3.Id,
+			}},
+		}, {
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f4.Id,
+			}},
+		}, {
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f5.Id,
+			}},
+		}},
+	})
+	require.NoError(t, err)
+	l1 := lres.Locations[0]
+	l2 := lres.Locations[1]
+	l3 := lres.Locations[2]
+	l4 := lres.Locations[3]
+	l5 := lres.Locations[4]
+
+	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+		Stacktraces: []*metastorepb.Stacktrace{{
+			LocationIds: []string{l2.Id, l1.Id},
+		}, {
+			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
+		}, {
+			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
+		}},
+	})
+	require.NoError(t, err)
+	s1 := sres.Stacktraces[0]
+	s2 := sres.Stacktraces[1]
+	s3 := sres.Stacktraces[2]
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+		Samples: []*parcaprofile.NormalizedSample{{
+			StacktraceID: s1.Id,
+			Value:        10,
+		}, {
+			// The following two samples are trimmed from the flamegraph.
+			StacktraceID: s2.Id,
+			Value:        1,
+		}, {
+			StacktraceID: s3.Id,
+			Value:        3,
+		}},
+	})
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5))
+	require.NoError(t, err)
+
+	require.Equal(t, int32(5), fg.Height)
+	require.Equal(t, int64(10), fg.Total)
+	require.Equal(t, int64(14), fg.UntrimmedTotal)
+
+	// Check if tables and thus deduplication was correct and deterministic
+
+	require.Equal(t, []string{"", "a", "2", "1"}, fg.StringTable)
+	require.Equal(t, []*metastorepb.Location{
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
+	}, fg.Locations)
+	require.Equal(t, []*metastorepb.Mapping{
+		{BuildIdStringIndex: 0, FileStringIndex: 1},
+	}, fg.Mapping)
+	require.Equal(t, []*metastorepb.Function{
+		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+	}, fg.Function)
+
+	// Check the recursive flamegraph that references the tables above.
+
+	expected := &pb.FlamegraphRootNode{
+		Cumulative: 10,
+		Children: []*pb.FlamegraphNode{{
+			Cumulative: 10,
+			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 10,
+				Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+			}},
+		}},
+	}
+	require.Equal(t, expected, fg.Root)
+	require.True(t, proto.Equal(expected, fg.Root))
+}
+
 func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	ctx := context.Background()
 	var err error
