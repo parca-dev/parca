@@ -146,3 +146,87 @@ func TestPprofToParquet(t *testing.T) {
 		}
 	}
 }
+
+func TestUncompressedPprofToParquet(t *testing.T) {
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	ctx := context.Background()
+
+	schema, err := Schema()
+	require.NoError(t, err)
+
+	m := metastoretest.NewTestMetastore(
+		t,
+		logger,
+		reg,
+		tracer,
+	)
+	metastore := metastore.NewInProcessClient(m)
+
+	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+
+	r, err := gzip.NewReader(bytes.NewReader(fileContent))
+	require.NoError(t, err)
+
+	fileContent, err = io.ReadAll(r)
+	require.NoError(t, err)
+	require.NoError(t, r.Close())
+
+	table := &fakeTable{
+		schema: schema,
+	}
+
+	ing := NewIngester(
+		logger,
+		table,
+		schema,
+		metastore,
+		&sync.Pool{
+			New: func() interface{} {
+				return bytes.NewBuffer(nil)
+			},
+		},
+	)
+
+	require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "memory",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	}))
+
+	for i, insert := range table.inserts {
+		serBuf, err := dynparquet.ReaderFromBytes(insert)
+		require.NoError(t, err)
+
+		rows := serBuf.Reader()
+		rowBuf := []parquet.Row{{}}
+		for {
+			_, err := rows.ReadRows(rowBuf)
+			if err == io.EOF {
+				break
+			}
+			if err != io.EOF {
+				if err != nil {
+					require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), insert, 0o777))
+				}
+				require.NoError(t, err)
+			}
+		}
+	}
+}
