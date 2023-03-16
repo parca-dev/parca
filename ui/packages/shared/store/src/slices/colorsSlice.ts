@@ -13,7 +13,13 @@
 
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 
-import {FlamegraphNode, FlamegraphRootNode} from '@parca/client';
+import {
+  CallgraphNode,
+  CallgraphNodeMeta,
+  FlamegraphNode,
+  FlamegraphNodeMeta,
+  FlamegraphRootNode,
+} from '@parca/client';
 import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/functions';
 
 import type {RootState} from '../store';
@@ -21,13 +27,21 @@ import type {RootState} from '../store';
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type StackColorMap = {[key: string]: string};
 
-export type HoveringNode = FlamegraphNode | FlamegraphRootNode | undefined;
+interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
+  lineIndex: number;
+  locationIndex: number;
+}
+
+export interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
+  diff: string;
+  meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
+}
 
 // Define a type for the slice state
 export interface ColorsState {
   colors: StackColorMap;
   binaries: string[];
-  hoveringNode: HoveringNode;
+  hoveringNode: HoveringNode | undefined;
 }
 
 // Define the initial state using that type
@@ -147,6 +161,7 @@ export const selectStackColors = (state: RootState): StackColorMap => state.colo
 
 export const selectBinaries = (state: RootState): string[] => state.colors.binaries;
 
-export const selectHoveringNode = (state: RootState): HoveringNode => state.colors.hoveringNode;
+export const selectHoveringNode = (state: RootState): HoveringNode | undefined =>
+  state.colors.hoveringNode;
 
 export default colorsSlice.reducer;

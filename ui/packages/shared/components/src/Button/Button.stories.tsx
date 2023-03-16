@@ -11,5 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-declare module '*.svg';
-declare module 'react-map-interaction';
+import Button, {BUTTON_VARIANT} from './';
+
+export default {
+  component: Button,
+  title: 'Components/Button',
+  argTypes: {variant: {control: {type: 'select'}, options: Object.keys(BUTTON_VARIANT)}},
+};
+export const Primary = {args: {variant: 'primary', children: 'Primary', disabled: false}};
+export const Neutral = {args: {variant: 'neutral', children: 'Neutral', disabled: false}};
+export const Link = {args: {variant: 'link', children: 'Link Text', disabled: false}};

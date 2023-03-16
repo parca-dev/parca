@@ -206,7 +206,7 @@ func MatchersToBooleanExpressions(matchers []*labels.Matcher) ([]logicalplan.Exp
 }
 
 func QueryToFilterExprs(query string) (QueryParts, []logicalplan.Expr, error) {
-	qp, err := parseQuery(query)
+	qp, err := ParseQuery(query)
 	if err != nil {
 		return qp, nil, err
 	}
@@ -240,8 +240,8 @@ type QueryParts struct {
 	Matchers []*labels.Matcher
 }
 
-// parseQuery from a string into the QueryParts struct.
-func parseQuery(query string) (QueryParts, error) {
+// ParseQuery from a string into the QueryParts struct.
+func ParseQuery(query string) (QueryParts, error) {
 	parsedSelector, err := parser.ParseMetricSelector(query)
 	if err != nil {
 		return QueryParts{}, status.Error(codes.InvalidArgument, "failed to parse query")

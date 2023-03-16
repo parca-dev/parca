@@ -17,7 +17,13 @@ import {pointer} from 'd3-selection';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {usePopper} from 'react-popper';
 
-import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
+import {
+  CallgraphNode,
+  CallgraphNodeMeta,
+  FlamegraphNode,
+  FlamegraphNodeMeta,
+  FlamegraphRootNode,
+} from '@parca/client';
 import {
   Location,
   Mapping,
@@ -34,6 +40,16 @@ const NoData = (): JSX.Element => {
   return <span className="rounded bg-gray-200 dark:bg-gray-800 px-2">Not available</span>;
 };
 
+interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
+  lineIndex: number;
+  locationIndex: number;
+}
+
+interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
+  diff: string;
+  meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
+}
+
 interface GraphTooltipProps {
   x?: number;
   y?: number;
@@ -47,6 +63,7 @@ interface GraphTooltipProps {
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }
 
 const virtualElement = {
@@ -83,16 +100,19 @@ const TooltipMetaInfo = ({
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: {
-  hoveringNode: FlamegraphNode;
+  hoveringNode: HoveringNode;
   onCopy: () => void;
   strings?: string[];
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }): JSX.Element => {
   // populate meta from the flamegraph metadata tables
   if (
+    type === 'flamegraph' &&
     locations !== undefined &&
     hoveringNode.meta?.locationIndex !== undefined &&
     hoveringNode.meta.locationIndex !== 0
@@ -133,7 +153,7 @@ const TooltipMetaInfo = ({
     }
   }
 
-  const getTextForFile = (hoveringNode: FlamegraphNode): string => {
+  const getTextForFile = (hoveringNode: HoveringNode): string => {
     if (hoveringNode.meta?.function == null) return '<unknown>';
 
     return `${hoveringNode.meta.function.filename} ${
@@ -218,15 +238,9 @@ const TooltipMetaInfo = ({
   );
 };
 
-// @ts-expect-error
-export interface HoveringNode extends CallgraphNode, FlamegraphRootNode, FlamegraphNode {
-  diff: string;
-  meta?: FlamegraphNodeMeta | {[key: string]: any};
-}
-
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-const GraphTooltipContent = ({
+export const GraphTooltipContent = ({
   hoveringNode,
   unit,
   total,
@@ -235,6 +249,7 @@ const GraphTooltipContent = ({
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: {
   hoveringNode: HoveringNode;
   unit: string;
@@ -244,6 +259,7 @@ const GraphTooltipContent = ({
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }): JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -336,12 +352,12 @@ const GraphTooltipContent = ({
                   )}
                   <TooltipMetaInfo
                     onCopy={onCopy}
-                    // @ts-expect-error
                     hoveringNode={hoveringNode}
                     strings={strings}
                     mappings={mappings}
                     locations={locations}
                     functions={functions}
+                    type={type}
                   />
                 </tbody>
               </table>
@@ -369,10 +385,12 @@ const GraphTooltip = ({
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: GraphTooltipProps): JSX.Element => {
   const hoveringNodeState = useAppSelector(selectHoveringNode);
+  // @ts-expect-error
   const hoveringNode = useMemo<HoveringNode>(() => {
-    const h = (hoveringNodeProp ?? hoveringNodeState) as HoveringNode;
+    const h = hoveringNodeProp ?? hoveringNodeState;
     if (h == null) {
       return h;
     }
@@ -446,7 +464,13 @@ const GraphTooltip = ({
   if (hoveringNode === undefined || hoveringNode == null) return <></>;
 
   return isFixed ? (
-    <GraphTooltipContent hoveringNode={hoveringNode} unit={unit} total={total} isFixed={isFixed} />
+    <GraphTooltipContent
+      hoveringNode={hoveringNode}
+      unit={unit}
+      total={total}
+      isFixed={isFixed}
+      type={type}
+    />
   ) : (
     <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
       <GraphTooltipContent
@@ -458,6 +482,7 @@ const GraphTooltip = ({
         mappings={mappings}
         locations={locations}
         functions={functions}
+        type={type}
       />
     </div>
   );

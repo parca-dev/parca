@@ -13,7 +13,7 @@
 
 import cx from 'classnames';
 
-const BUTTON_VARIANT = {
+export const BUTTON_VARIANT = {
   primary: {
     text: 'text-gray-100 dark-gray-900 justify-center',
     bg: 'bg-indigo-600',
