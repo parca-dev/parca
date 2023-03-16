@@ -145,6 +145,7 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, int32(5), fg.Height)
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int64(6), fg.Total)
 
 	// Check if tables and thus deduplication was correct and deterministic
@@ -301,6 +302,7 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, int32(2), fg.Height)
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int64(7), fg.Total)
 
 	// Check if tables and thus deduplication was correct and deterministic
@@ -521,6 +523,7 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 		}},
 	}}, fg.GetLocations())
 
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int64(1), fg.GetTotal())
 	require.Equal(t, int32(4), fg.GetHeight())
 	require.Equal(t, "bytes", fg.GetUnit())
@@ -674,6 +677,7 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 		}},
 	}}, fg.GetLocations())
 
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int64(3), fg.GetTotal())
 	require.Equal(t, int32(4), fg.GetHeight())
 	require.Equal(t, "", fg.GetUnit())
@@ -769,6 +773,7 @@ func TestFlamegraphTrimming(t *testing.T) {
 	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, 0.02)
 	require.Equal(t, &pb.Flamegraph{
 		Total:          100,
+		Trimmed:        2,
 		UntrimmedTotal: 102,
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: 100,
@@ -829,6 +834,7 @@ func TestFlamegraphTrimmingSingleNodeGraph(t *testing.T) {
 	require.Equal(t, &pb.Flamegraph{
 		Total:          100,
 		UntrimmedTotal: 100,
+		Trimmed:        0,
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: 100,
 			Children: []*pb.FlamegraphNode{{
@@ -857,6 +863,7 @@ func TestFlamegraphTrimmingNodeWithFlatValues(t *testing.T) {
 	require.Equal(t, &pb.Flamegraph{
 		Total:          150,
 		UntrimmedTotal: 151,
+		Trimmed:        1,
 		Root: &pb.FlamegraphRootNode{
 			Cumulative: 150,
 			Children: []*pb.FlamegraphNode{{
@@ -1005,6 +1012,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	// The raw flamegraph had 12+3+3 = 18 samples.
 	require.Equal(t, int64(3), filtered)
 	require.Equal(t, int64(3), fg.Trimmed)
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int64(12), fg.Total)
 
 	// Check if tables and thus deduplication was correct and deterministic

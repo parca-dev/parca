@@ -255,6 +255,7 @@ func RenderReport(
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
 		return &pb.QueryResponse{
+			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
 			Total:    fg.Total,
 			Filtered: filtered,
 			Report: &pb.QueryResponse_Flamegraph{
@@ -284,6 +285,7 @@ func RenderReport(
 		}
 
 		return &pb.QueryResponse{
+			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
 			Total:    int64(top.Total),
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Top{Top: top},
@@ -294,6 +296,7 @@ func RenderReport(
 			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())
 		}
 		return &pb.QueryResponse{
+			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
 			Total:    callgraph.Cumulative,
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Callgraph{Callgraph: callgraph},

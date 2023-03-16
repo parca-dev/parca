@@ -313,6 +313,7 @@ func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *query
 
 	it := NewFlamegraphIterator(oldRootNode)
 	tree := &querypb.Flamegraph{
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 		Total:  fg.Total,
 		Height: fg.Height,
 		Root: &querypb.FlamegraphRootNode{
@@ -506,6 +507,7 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	if graph == nil {
 		return nil
 	}
+	//nolint:staticcheck // SA1019: TODO: The total should be passed differently in the future.
 	threshold := int64(float64(thresholdRate) * float64(graph.Total))
 	var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, graph.Root.Children, threshold)
 	newTotal := int64(0)
@@ -521,15 +523,18 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 			Cumulative: newTotal,
 			Diff:       newDiff,
 		},
-		Total:          newTotal,
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+		Total: newTotal,
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 		UntrimmedTotal: graph.Total,
-		Trimmed:        graph.Total - newTotal,
-		Unit:           graph.Unit,
-		Height:         graph.Height,
-		StringTable:    graph.StringTable,
-		Locations:      graph.Locations,
-		Mapping:        graph.Mapping,
-		Function:       graph.Function,
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+		Trimmed:     graph.Total - newTotal,
+		Unit:        graph.Unit,
+		Height:      graph.Height,
+		StringTable: graph.StringTable,
+		Locations:   graph.Locations,
+		Mapping:     graph.Mapping,
+		Function:    graph.Function,
 	}
 
 	return trimmedGraph

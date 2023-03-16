@@ -160,7 +160,8 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 	return &pb.Top{
 		List:     list,
 		Reported: int32(len(list)),
-		Total:    top.GetTotal(),
-		Unit:     top.GetUnit(),
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+		Total: top.GetTotal(),
+		Unit:  top.GetUnit(),
 	}
 }
