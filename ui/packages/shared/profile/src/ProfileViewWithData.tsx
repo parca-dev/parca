@@ -84,21 +84,15 @@ export const ProfileViewWithData = ({
   });
 
   useEffect(() => {
-    if (flamegraphLoading || flamegraphResponse?.report.oneofKind !== 'flamegraph') {
-      return;
-    } else {
-      perf?.markInteraction('Flamegraph render', flamegraphResponse?.report?.flamegraph.total);
+    if (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraph') {
+      perf?.markInteraction('Flamegraph render', flamegraphResponse.report.flamegraph.total);
     }
 
-    if (topTableLoading || topTableResponse?.report.oneofKind !== 'top') {
-      return;
-    } else {
+    if (!topTableLoading && topTableResponse?.report.oneofKind === 'top') {
       perf?.markInteraction('Top table render', topTableResponse?.report?.top.total);
     }
 
-    if (callgraphLoading || callgraphResponse?.report.oneofKind !== 'callgraph') {
-      return;
-    } else {
+    if (!callgraphLoading && callgraphResponse?.report.oneofKind === 'callgraph') {
       perf?.markInteraction('Callgraph render', callgraphResponse?.report?.callgraph.cumulative);
     }
   }, [
