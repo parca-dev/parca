@@ -128,6 +128,14 @@ const MetricsTooltip = ({
                           {valueFormatter(highlighted.value, sampleUnit, 2)}
                         </td>
                       </tr>
+                      {highlighted.duration > 0 && (
+                        <tr>
+                          <td className="w-1/4">Duration</td>
+                          <td className="w-3/4">
+                            {valueFormatter(highlighted.duration, 'nanoseconds', 2)}
+                          </td>
+                        </tr>
+                      )}
                       <tr>
                         <td className="w-1/4">At</td>
                         <td className="w-3/4">{formatDate(highlighted.timestamp, timeFormat)}</td>
