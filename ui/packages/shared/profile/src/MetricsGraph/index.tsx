@@ -50,6 +50,7 @@ export interface HighlightedSeries {
   timestamp: number;
   value: number;
   valuePerSecond: number;
+  duration: number;
   x: number;
   y: number;
 }
@@ -137,7 +138,7 @@ export const RawMetricsGraph = ({
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
             const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
-            agg.push([t, d.valuePerSecond, parseFloat(d.value)]);
+            agg.push([t, d.valuePerSecond, parseFloat(d.value), parseFloat(d.duration)]);
           }
           return agg;
         }, []),
@@ -205,6 +206,7 @@ export const RawMetricsGraph = ({
       timestamp: point[0],
       valuePerSecond: point[1],
       value: point[2],
+      duration: point[3],
       x: xScale(point[0]),
       y: yScale(point[1]),
     };
@@ -329,6 +331,7 @@ export const RawMetricsGraph = ({
       timestamp: sample[0],
       valuePerSecond: sample[1],
       value: sample[2],
+      duration: sample[3],
       x: xScale(sample[0]),
       y: yScale(sample[1]),
     };
@@ -350,6 +353,7 @@ export const RawMetricsGraph = ({
             onLabelClick={onLabelClick}
             contextElement={graph.current}
             sampleUnit={sampleUnit}
+            delta={profile !== null ? profile?.query.profType.delta : false}
           />
         </div>
       )}

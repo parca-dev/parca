@@ -187,6 +187,12 @@ export interface MetricsSample {
      * @generated from protobuf field: double value_per_second = 3;
      */
     valuePerSecond: number;
+    /**
+     * duration is the normalized aggregated duration the metric samples has been observed over.
+     *
+     * @generated from protobuf field: int64 duration = 4;
+     */
+    duration: string;
 }
 /**
  * MergeProfile contains parameters for a merge request
@@ -1379,11 +1385,12 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         super("parca.query.v1alpha1.MetricsSample", [
             { no: 1, name: "timestamp", kind: "message", T: () => Timestamp },
             { no: 2, name: "value", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
-            { no: 3, name: "value_per_second", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ }
+            { no: 3, name: "value_per_second", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 4, name: "duration", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<MetricsSample>): MetricsSample {
-        const message = { value: "0", valuePerSecond: 0 };
+        const message = { value: "0", valuePerSecond: 0, duration: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<MetricsSample>(this, message, value);
@@ -1402,6 +1409,9 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
                     break;
                 case /* double value_per_second */ 3:
                     message.valuePerSecond = reader.double();
+                    break;
+                case /* int64 duration */ 4:
+                    message.duration = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1424,6 +1434,9 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         /* double value_per_second = 3; */
         if (message.valuePerSecond !== 0)
             writer.tag(3, WireType.Bit64).double(message.valuePerSecond);
+        /* int64 duration = 4; */
+        if (message.duration !== "0")
+            writer.tag(4, WireType.Varint).int64(message.duration);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
