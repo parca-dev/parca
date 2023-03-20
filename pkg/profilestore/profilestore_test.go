@@ -49,7 +49,7 @@ func Test_LabelName_Error(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(schema),
+		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -128,7 +128,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(schema),
+		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(b, err)
 	m := metastoretest.NewTestMetastore(

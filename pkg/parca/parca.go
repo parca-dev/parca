@@ -33,6 +33,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
 	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
@@ -272,31 +273,27 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	if err := col.ReplayWALs(context.Background()); err != nil {
-		level.Error(logger).Log("msg", "failed to replay WAL", "err", err)
-		return err
-	}
-
 	colDB, err := col.DB(ctx, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to load database", "err", err)
 		return err
 	}
 
-	schema, err := parcacol.Schema()
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to get schema", "err", err)
-		return err
-	}
-
+	def := parcacol.SchemaDefinition()
 	table, err := colDB.Table("stacktraces",
 		frostdb.NewTableConfig(
-			schema,
+			def,
 			frostdb.WithRowGroupSize(flags.Storage.RowGroupSize),
 		),
 	)
 	if err != nil {
 		level.Error(logger).Log("msg", "create table", "err", err)
+		return err
+	}
+
+	schema, err := dynparquet.SchemaFromDefinition(def)
+	if err != nil {
+		level.Error(logger).Log("msg", "schema from definition", "err", err)
 		return err
 	}
 
