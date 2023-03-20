@@ -81,7 +81,7 @@ const ProfileIcicleGraph = ({
     const rawTotal = total + filtered + trimmed;
 
     // safeguard against division by zero
-    const rawTotalDivisor = rawTotal  > 0 ? rawTotal : BigInt(1);
+    const rawTotalDivisor = rawTotal > 0 ? rawTotal : BigInt(1);
 
     return [
       numberFormatter.format(total),
