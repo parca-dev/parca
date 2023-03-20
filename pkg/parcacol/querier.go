@@ -382,7 +382,6 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 	labelsetToIndex := map[string]int{}
 
 	for _, ar := range records {
-
 		fields := ar.Schema().Fields()
 		for i, field := range fields {
 			switch field.Name {
@@ -543,7 +542,6 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	labelsetToIndex := map[string]int{}
 
 	for _, ar := range records {
-
 		fields := ar.Schema().Fields()
 		for i, field := range fields {
 			if _, ok := columnIndices[field.Name]; ok {
