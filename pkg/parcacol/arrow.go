@@ -51,43 +51,49 @@ func NewArrowToProfileConverter(
 
 func (c *ArrowToProfileConverter) Convert(
 	ctx context.Context,
-	ar arrow.Record,
+	records []arrow.Record,
 	valueColumnName string,
 	meta profile.Meta,
 ) (*profile.Profile, error) {
 	ctx, span := c.tracer.Start(ctx, "convert-arrow-record-to-profile")
 	defer span.End()
 
-	schema := ar.Schema()
-	indices := schema.FieldIndices("stacktrace")
-	if len(indices) != 1 {
-		return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
+	rows := 0
+	for _, ar := range records {
+		rows += int(ar.NumRows())
 	}
-	stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
-
-	indices = schema.FieldIndices("sum(value)")
-	if len(indices) != 1 {
-		return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
-	}
-	valueColumn := ar.Column(indices[0]).(*array.Int64)
-
-	rows := int(ar.NumRows())
-	stacktraceIDs := make([]string, rows)
-	for i := 0; i < rows; i++ {
-		stacktraceIDs[i] = string(stacktraceColumn.Value(i))
-	}
-
-	stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
-	if err != nil {
-		return nil, fmt.Errorf("read stacktrace metadata: %w", err)
-	}
-
 	samples := make([]*profile.SymbolizedSample, 0, rows)
-	for i := 0; i < rows; i++ {
-		samples = append(samples, &profile.SymbolizedSample{
-			Value:     valueColumn.Value(i),
-			Locations: stacktraceLocations[i],
-		})
+	for _, ar := range records {
+		schema := ar.Schema()
+		indices := schema.FieldIndices("stacktrace")
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
+		}
+		stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
+
+		indices = schema.FieldIndices("sum(value)")
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
+		}
+		valueColumn := ar.Column(indices[0]).(*array.Int64)
+
+		rows := int(ar.NumRows())
+		stacktraceIDs := make([]string, rows)
+		for i := 0; i < rows; i++ {
+			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
+		}
+
+		stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
+		if err != nil {
+			return nil, fmt.Errorf("read stacktrace metadata: %w", err)
+		}
+
+		for i := 0; i < rows; i++ {
+			samples = append(samples, &profile.SymbolizedSample{
+				Value:     valueColumn.Value(i),
+				Locations: stacktraceLocations[i],
+			})
+		}
 	}
 
 	return &profile.Profile{
