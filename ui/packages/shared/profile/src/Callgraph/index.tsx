@@ -149,6 +149,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
             type="callgraph"
             unit={sampleUnit}
             total={parseInt(data.cumulative)}
+            totalRaw={parseInt(data.cumulative)}
             contextElement={containerRef.current}
           />
         )}
