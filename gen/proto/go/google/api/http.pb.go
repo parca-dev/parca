@@ -1,4 +1,4 @@
-// Copyright 2015 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -269,15 +269,18 @@ func (x *Http) GetFullyDecodeReservedExpansion() bool {
 //  1. Leaf request fields (recursive expansion nested messages in the request
 //     message) are classified into three categories:
 //     - Fields referred by the path template. They are passed via the URL path.
-//     - Fields referred by the [HttpRule.body][google.api.HttpRule.body]. They are passed via the HTTP
+//     - Fields referred by the [HttpRule.body][google.api.HttpRule.body]. They
+//     are passed via the HTTP
 //     request body.
 //     - All other fields are passed via the URL query parameters, and the
 //     parameter name is the field path in the request message. A repeated
 //     field can be represented as multiple query parameters under the same
 //     name.
-//  2. If [HttpRule.body][google.api.HttpRule.body] is "*", there is no URL query parameter, all fields
+//  2. If [HttpRule.body][google.api.HttpRule.body] is "*", there is no URL
+//     query parameter, all fields
 //     are passed via URL path and HTTP request body.
-//  3. If [HttpRule.body][google.api.HttpRule.body] is omitted, there is no HTTP request body, all
+//  3. If [HttpRule.body][google.api.HttpRule.body] is omitted, there is no HTTP
+//     request body, all
 //     fields are passed via URL path and URL query parameters.
 //
 // ### Path template syntax
@@ -376,7 +379,8 @@ type HttpRule struct {
 
 	// Selects a method to which this rule applies.
 	//
-	// Refer to [selector][google.api.DocumentationRule.selector] for syntax details.
+	// Refer to [selector][google.api.DocumentationRule.selector] for syntax
+	// details.
 	Selector string `protobuf:"bytes,1,opt,name=selector,proto3" json:"selector,omitempty"`
 	// Determines the URL pattern is matched by this rules. This pattern can be
 	// used with any of the {get|put|post|delete|patch} methods. A custom method

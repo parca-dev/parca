@@ -123,6 +123,9 @@ message MetricsSample {
 
   // value_per_second is the calculated per second average in the steps duration
   double value_per_second = 3;
+
+  // duration is the normalized aggregated duration the metric samples has been observed over.
+  int64 duration = 4;
 }
 
 // MergeProfile contains parameters for a merge request
