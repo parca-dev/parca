@@ -21520,9 +21520,9 @@ rc-tooltip@5.3.1:
     rc-trigger "^5.3.1"
 
 rc-tree@~5.7.0:
-  version "5.7.2"
-  resolved "https://registry.yarnpkg.com/rc-tree/-/rc-tree-5.7.2.tgz#270ea7d9e1b2e5e81cd3659eba2fbd022a4831f6"
-  integrity sha512-nmnL6qLnfwVckO5zoqKL2I9UhwDqzyCtjITQCkwhimyz1zfuFkG5ZPIXpzD/Guzso94qQA/QrMsvzic5W6QDjg==
+  version "5.7.3"
+  resolved "https://registry.yarnpkg.com/rc-tree/-/rc-tree-5.7.3.tgz#5da576ba87039486d59092eb4490831690b8b3b5"
+  integrity sha512-Oql2S9+ZmT+mfTp5SNo1XM0QvkENjc0mPRFsHWRFSPuKird0OYMZZKmLznUJ+0aGDeFFWN42wiUZJtMFhrLgLw==
   dependencies:
     "@babel/runtime" "^7.10.1"
     classnames "2.x"
