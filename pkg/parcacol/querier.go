@@ -329,7 +329,8 @@ const (
 )
 
 func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
-	var ar arrow.Record
+	records := []arrow.Record{}
+	rows := 0
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
@@ -346,13 +347,14 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
-			ar = r
+			records = append(records, r)
+			rows += int(r.NumRows())
 			return nil
 		})
 	if err != nil {
 		return nil, err
 	}
-	if ar == nil || ar.NumRows() == 0 {
+	if len(records) == 0 || rows == 0 {
 		return nil, status.Error(
 			codes.NotFound,
 			"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
@@ -375,113 +377,113 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 	}
 
 	labelColumnIndices := []int{}
-
-	fields := ar.Schema().Fields()
-	for i, field := range fields {
-		switch field.Name {
-		case ColumnDurationSum:
-			columnIndices.DurationSum = i
-			continue
-		case ColumnPeriodSum:
-			columnIndices.PeriodSum = i
-			continue
-		case ColumnTimestamp:
-			columnIndices.Timestamp = i
-			continue
-		case ColumnValueCount:
-			columnIndices.ValueCount = i
-			continue
-		case ColumnValueSum:
-			columnIndices.ValueSum = i
-			continue
-		}
-
-		if strings.HasPrefix(field.Name, "labels.") {
-			labelColumnIndices = append(labelColumnIndices, i)
-		}
-	}
-
-	if columnIndices.DurationSum == -1 {
-		return nil, errors.New("sum(duration) column not found")
-	}
-	if columnIndices.PeriodSum == -1 {
-		return nil, errors.New("sum(period) column not found")
-	}
-	if columnIndices.Timestamp == -1 {
-		return nil, errors.New("timestamp column not found")
-	}
-	if columnIndices.ValueCount == -1 {
-		return nil, errors.New("count(value) column not found")
-	}
-	if columnIndices.ValueSum == -1 {
-		return nil, errors.New("sum(value) column not found")
-	}
-
 	labelSet := labels.Labels{}
-
 	resSeries := []*pb.MetricsSeries{}
 	labelsetToIndex := map[string]int{}
 
-	for i := 0; i < int(ar.NumRows()); i++ {
-		labelSet = labelSet[:0]
-		for _, labelColumnIndex := range labelColumnIndices {
-			col := ar.Column(labelColumnIndex).(*array.Dictionary)
-			if col.IsNull(i) {
+	for _, ar := range records {
+		fields := ar.Schema().Fields()
+		for i, field := range fields {
+			switch field.Name {
+			case ColumnDurationSum:
+				columnIndices.DurationSum = i
+				continue
+			case ColumnPeriodSum:
+				columnIndices.PeriodSum = i
+				continue
+			case ColumnTimestamp:
+				columnIndices.Timestamp = i
+				continue
+			case ColumnValueCount:
+				columnIndices.ValueCount = i
+				continue
+			case ColumnValueSum:
+				columnIndices.ValueSum = i
 				continue
 			}
 
-			v := col.Dictionary().(*array.Binary).Value(col.GetValueIndex(i))
-			if len(v) > 0 {
-				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: string(v)})
+			if strings.HasPrefix(field.Name, "labels.") {
+				labelColumnIndices = append(labelColumnIndices, i)
 			}
 		}
 
-		sort.Sort(labelSet)
-		s := labelSet.String()
-		index, ok := labelsetToIndex[s]
-		if !ok {
-			pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
-			for _, l := range labelSet {
-				pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
-					Name:  l.Name,
-					Value: l.Value,
-				})
+		if columnIndices.DurationSum == -1 {
+			return nil, errors.New("sum(duration) column not found")
+		}
+		if columnIndices.PeriodSum == -1 {
+			return nil, errors.New("sum(period) column not found")
+		}
+		if columnIndices.Timestamp == -1 {
+			return nil, errors.New("timestamp column not found")
+		}
+		if columnIndices.ValueCount == -1 {
+			return nil, errors.New("count(value) column not found")
+		}
+		if columnIndices.ValueSum == -1 {
+			return nil, errors.New("sum(value) column not found")
+		}
+
+		for i := 0; i < int(ar.NumRows()); i++ {
+			labelSet = labelSet[:0]
+			for _, labelColumnIndex := range labelColumnIndices {
+				col := ar.Column(labelColumnIndex).(*array.Dictionary)
+				if col.IsNull(i) {
+					continue
+				}
+
+				v := col.Dictionary().(*array.Binary).Value(col.GetValueIndex(i))
+				if len(v) > 0 {
+					labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: string(v)})
+				}
 			}
-			resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
-			index = len(resSeries) - 1
-			labelsetToIndex[s] = index
+
+			sort.Sort(labelSet)
+			s := labelSet.String()
+			index, ok := labelsetToIndex[s]
+			if !ok {
+				pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
+				for _, l := range labelSet {
+					pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
+						Name:  l.Name,
+						Value: l.Value,
+					})
+				}
+				resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
+				index = len(resSeries) - 1
+				labelsetToIndex[s] = index
+			}
+
+			ts := ar.Column(columnIndices.Timestamp).(*array.Int64).Value(i)
+			durationSum := ar.Column(columnIndices.DurationSum).(*array.Int64).Value(i)
+			periodSum := ar.Column(columnIndices.PeriodSum).(*array.Int64).Value(i)
+			valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
+			valueCount := ar.Column(columnIndices.ValueCount).(*array.Int64).Value(i)
+
+			// TODO: We should do these period and duration calculations in frostDB,
+			// so that we can push these down as projections.
+
+			// Because we store the period with each sample yet query for the sum(period) we need to normalize by the amount of values (rows in a database).
+			period := periodSum / valueCount
+			// Because we store the duration with each sample yet query for the sum(duration) we need to normalize by the amount of values (rows in a database).
+			duration := durationSum / valueCount
+
+			// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
+			// If we already have CPU nanoseconds we don't need to multiply by the period.
+			valuePerSecondSum := valueSum
+			if sampleTypeUnit != "nanoseconds" {
+				valuePerSecondSum = valueSum * period
+			}
+
+			valuePerSecond := float64(valuePerSecondSum) / float64(duration)
+
+			series := resSeries[index]
+			series.Samples = append(series.Samples, &pb.MetricsSample{
+				Timestamp:      timestamppb.New(timestamp.Time(ts)),
+				Value:          valueSum,
+				ValuePerSecond: valuePerSecond,
+				Duration:       duration,
+			})
 		}
-
-		ts := ar.Column(columnIndices.Timestamp).(*array.Int64).Value(i)
-		durationSum := ar.Column(columnIndices.DurationSum).(*array.Int64).Value(i)
-		periodSum := ar.Column(columnIndices.PeriodSum).(*array.Int64).Value(i)
-		valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
-		valueCount := ar.Column(columnIndices.ValueCount).(*array.Int64).Value(i)
-
-		// TODO: We should do these period and duration calculations in frostDB,
-		// so that we can push these down as projections.
-
-		// Because we store the period with each sample yet query for the sum(period) we need to normalize by the amount of values (rows in a database).
-		period := periodSum / valueCount
-		// Because we store the duration with each sample yet query for the sum(duration) we need to normalize by the amount of values (rows in a database).
-		duration := durationSum / valueCount
-
-		// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
-		// If we already have CPU nanoseconds we don't need to multiply by the period.
-		valuePerSecondSum := valueSum
-		if sampleTypeUnit != "nanoseconds" {
-			valuePerSecondSum = valueSum * period
-		}
-
-		valuePerSecond := float64(valuePerSecondSum) / float64(duration)
-
-		series := resSeries[index]
-		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp:      timestamppb.New(timestamp.Time(ts)),
-			Value:          valueSum,
-			ValuePerSecond: valuePerSecond,
-			Duration:       duration,
-		})
 	}
 
 	// This is horrible and should be fixed. The data is sorted in the storage, we should not have to sort it here.
@@ -495,7 +497,8 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 }
 
 func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
-	var ar arrow.Record
+	records := []arrow.Record{}
+	rows := 0
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
@@ -509,13 +512,14 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
-			ar = r
+			records = append(records, r)
+			rows += int(r.NumRows())
 			return nil
 		})
 	if err != nil {
 		return nil, err
 	}
-	if ar == nil || ar.NumRows() == 0 {
+	if len(records) == 0 || rows == 0 {
 		return nil, status.Error(
 			codes.NotFound,
 			"No data found for the query, try a different query or time range or no data has been written to be queried yet.",
@@ -532,91 +536,91 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 		ColumnValueSum:  {},
 	}
 	labelColumnIndices := []int{}
-
-	fields := ar.Schema().Fields()
-	for i, field := range fields {
-		if _, ok := columnIndices[field.Name]; ok {
-			columnIndices[field.Name] = columnIndex{
-				index: i,
-				found: true,
-			}
-			continue
-		}
-
-		if strings.HasPrefix(field.Name, "labels.") {
-			labelColumnIndices = append(labelColumnIndices, i)
-		}
-	}
-
-	for name, index := range columnIndices {
-		if !index.found {
-			return nil, fmt.Errorf("%s column not found", name)
-		}
-	}
-
 	labelSet := labels.Labels{}
-
 	resSeries := []*pb.MetricsSeries{}
 	resSeriesBuckets := map[int]map[int64]struct{}{}
 	labelsetToIndex := map[string]int{}
 
-	for i := 0; i < int(ar.NumRows()); i++ {
-		labelSet = labelSet[:0]
-		for _, labelColumnIndex := range labelColumnIndices {
-			col, ok := ar.Column(labelColumnIndex).(*array.Dictionary)
-			if col.IsNull(i) || !ok {
+	for _, ar := range records {
+		fields := ar.Schema().Fields()
+		for i, field := range fields {
+			if _, ok := columnIndices[field.Name]; ok {
+				columnIndices[field.Name] = columnIndex{
+					index: i,
+					found: true,
+				}
 				continue
 			}
 
-			v := StringValueFromDictionary(col, i)
-			if len(v) > 0 {
-				labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: v})
+			if strings.HasPrefix(field.Name, "labels.") {
+				labelColumnIndices = append(labelColumnIndices, i)
 			}
 		}
 
-		sort.Sort(labelSet)
-		s := labelSet.String()
-		index, ok := labelsetToIndex[s]
-		if !ok {
-			pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
-			for _, l := range labelSet {
-				pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
-					Name:  l.Name,
-					Value: l.Value,
-				})
+		for name, index := range columnIndices {
+			if !index.found {
+				return nil, fmt.Errorf("%s column not found", name)
 			}
-			resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
-			index = len(resSeries) - 1
-			labelsetToIndex[s] = index
-			resSeriesBuckets[index] = map[int64]struct{}{}
 		}
 
-		ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
-		value := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
+		for i := 0; i < int(ar.NumRows()); i++ {
+			labelSet = labelSet[:0]
+			for _, labelColumnIndex := range labelColumnIndices {
+				col, ok := ar.Column(labelColumnIndex).(*array.Dictionary)
+				if col.IsNull(i) || !ok {
+					continue
+				}
 
-		// Each step bucket will only return one of the timestamps and its value.
-		// For this reason we'll take each timestamp and divide it by the step seconds.
-		// If we have seen a MetricsSample for this bucket before, we'll ignore this one.
-		// If we haven't seen one we'll add this sample to the response.
+				v := StringValueFromDictionary(col, i)
+				if len(v) > 0 {
+					labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: v})
+				}
+			}
 
-		// TODO: This still queries way too much data from the underlying database.
-		// This needs to be moved to FrostDB to not even query all of this data in the first place.
-		// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
-		// Even worse for a week, we'd query 60480 samples and only return 1000.
-		tsBucket := ts / 1000 / int64(step.Seconds())
-		if _, found := resSeriesBuckets[index][tsBucket]; found {
-			// We already have a MetricsSample for this timestamp bucket, ignore it.
-			continue
+			sort.Sort(labelSet)
+			s := labelSet.String()
+			index, ok := labelsetToIndex[s]
+			if !ok {
+				pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
+				for _, l := range labelSet {
+					pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
+						Name:  l.Name,
+						Value: l.Value,
+					})
+				}
+				resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
+				index = len(resSeries) - 1
+				labelsetToIndex[s] = index
+				resSeriesBuckets[index] = map[int64]struct{}{}
+			}
+
+			ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
+			value := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
+
+			// Each step bucket will only return one of the timestamps and its value.
+			// For this reason we'll take each timestamp and divide it by the step seconds.
+			// If we have seen a MetricsSample for this bucket before, we'll ignore this one.
+			// If we haven't seen one we'll add this sample to the response.
+
+			// TODO: This still queries way too much data from the underlying database.
+			// This needs to be moved to FrostDB to not even query all of this data in the first place.
+			// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
+			// Even worse for a week, we'd query 60480 samples and only return 1000.
+			tsBucket := ts / 1000 / int64(step.Seconds())
+			if _, found := resSeriesBuckets[index][tsBucket]; found {
+				// We already have a MetricsSample for this timestamp bucket, ignore it.
+				continue
+			}
+
+			series := resSeries[index]
+			series.Samples = append(series.Samples, &pb.MetricsSample{
+				Timestamp:      timestamppb.New(timestamp.Time(ts)),
+				Value:          value,
+				ValuePerSecond: float64(value),
+			})
+			// Mark the timestamp bucket as filled by the above MetricsSample.
+			resSeriesBuckets[index][tsBucket] = struct{}{}
 		}
-
-		series := resSeries[index]
-		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp:      timestamppb.New(timestamp.Time(ts)),
-			Value:          value,
-			ValuePerSecond: float64(value),
-		})
-		// Mark the timestamp bucket as filled by the above MetricsSample.
-		resSeriesBuckets[index][tsBucket] = struct{}{}
 	}
 
 	// This is horrible and should be fixed. The data is sorted in the storage, we should not have to sort it here.
@@ -771,7 +775,7 @@ func BooleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error
 
 func (q *Querier) arrowRecordToProfile(
 	ctx context.Context,
-	r arrow.Record,
+	records []arrow.Record,
 	valueColumn string,
 	meta profile.Meta,
 ) (*profile.Profile, error) {
@@ -779,7 +783,7 @@ func (q *Querier) arrowRecordToProfile(
 	defer span.End()
 	return q.converter.Convert(
 		ctx,
-		r,
+		records,
 		valueColumn,
 		meta,
 	)
@@ -820,7 +824,7 @@ func (q *Querier) QuerySingle(
 	return p, nil
 }
 
-func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (arrow.Record, string, profile.Meta, error) {
+func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.Record, string, profile.Meta, error) {
 	requestedTime := timestamp.FromTime(t)
 
 	ctx, span := q.tracer.Start(ctx, "Querier/findSingle")
@@ -840,7 +844,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 		)...,
 	)
 
-	var ar arrow.Record
+	records := []arrow.Record{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
@@ -855,14 +859,14 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) (ar
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
-			ar = r
+			records = append(records, r)
 			return nil
 		})
 	if err != nil {
 		return nil, "", profile.Meta{}, fmt.Errorf("execute query: %w", err)
 	}
 
-	return ar,
+	return records,
 		"sum(value)",
 		profile.Meta{
 			Name:       queryParts.Meta.Name,
@@ -877,15 +881,19 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	r, valueColumn, meta, err := q.selectMerge(ctx, query, start, end)
+	records, valueColumn, meta, err := q.selectMerge(ctx, query, start, end)
 	if err != nil {
 		return nil, err
 	}
-	defer r.Release()
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 
 	p, err := q.arrowRecordToProfile(
 		ctx,
-		r,
+		records,
 		valueColumn,
 		meta,
 	)
@@ -896,7 +904,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	return p, nil
 }
 
-func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endTime time.Time) (arrow.Record, string, profile.Meta, error) {
+func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endTime time.Time) ([]arrow.Record, string, profile.Meta, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
@@ -916,7 +924,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		)...,
 	)
 
-	var ar arrow.Record
+	records := []arrow.Record{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
@@ -931,7 +939,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
-			ar = r
+			records = append(records, r)
 			return nil
 		})
 	if err != nil {
@@ -944,5 +952,5 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		PeriodType: queryParts.Meta.PeriodType,
 		Timestamp:  start,
 	}
-	return ar, "sum(value)", meta, nil
+	return records, "sum(value)", meta, nil
 }
