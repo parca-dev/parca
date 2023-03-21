@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.69](https://github.com/parca-dev/parca/compare/@parca/store@0.16.68...@parca/store@0.16.69) (2023-03-21)
+
+**Note:** Version bump only for package @parca/store
+
 ## [0.16.68](https://github.com/parca-dev/parca/compare/@parca/store@0.16.67...@parca/store@0.16.68) (2023-03-21)
 
 **Note:** Version bump only for package @parca/store
