@@ -767,6 +767,11 @@ func (m *MetricsSample) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Duration != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Duration))
+		i--
+		dAtA[i] = 0x20
+	}
 	if m.ValuePerSecond != 0 {
 		i -= 8
 		binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.ValuePerSecond))))
@@ -2812,6 +2817,9 @@ func (m *MetricsSample) SizeVT() (n int) {
 	if m.ValuePerSecond != 0 {
 		n += 9
 	}
+	if m.Duration != 0 {
+		n += 1 + sov(uint64(m.Duration))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -4566,6 +4574,25 @@ func (m *MetricsSample) UnmarshalVT(dAtA []byte) error {
 			v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
 			iNdEx += 8
 			m.ValuePerSecond = float64(math.Float64frombits(v))
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Duration", wireType)
+			}
+			m.Duration = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Duration |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
