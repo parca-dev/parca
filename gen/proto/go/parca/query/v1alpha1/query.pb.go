@@ -1335,7 +1335,7 @@ type Flamegraph struct {
 	//
 	// Deprecated: Marked as deprecated in parca/query/v1alpha1/query.proto.
 	UntrimmedTotal int64 `protobuf:"varint,9,opt,name=untrimmed_total,json=untrimmedTotal,proto3" json:"untrimmed_total,omitempty"`
-	// trimmed is the amount of samples trimmed from the flame graph.
+	// trimmed is the amount of cumulative value trimmed from the flame graph.
 	Trimmed int64 `protobuf:"varint,10,opt,name=trimmed,proto3" json:"trimmed,omitempty"`
 }
 

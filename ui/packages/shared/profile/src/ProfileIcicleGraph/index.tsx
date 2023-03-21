@@ -69,7 +69,6 @@ const ProfileIcicleGraph = ({
     trimmedFormatted,
     trimmedPercentage,
     isFiltered,
-    filteredFormatted,
     filteredPercentage,
   ] = useMemo(() => {
     if (graph === undefined) {
@@ -90,8 +89,7 @@ const ProfileIcicleGraph = ({
       numberFormatter.format(trimmed),
       numberFormatter.format((trimmed * BigInt(100)) / rawTotalDivisor),
       filtered > 0,
-      numberFormatter.format(filtered),
-      numberFormatter.format((filtered * BigInt(100)) / rawTotalDivisor),
+      numberFormatter.format((total * BigInt(100)) / rawTotalDivisor)
     ];
   }, [filtered, graph, total]);
 
@@ -132,18 +130,11 @@ const ProfileIcicleGraph = ({
         />
       </div>
       <p className="my-2 text-xs">
-        Showing {totalFormatted} {isFiltered || isTrimmed ? <span>of {rawFormatted} </span> : <></>}
-        samples.{' '}
-        {isFiltered ? (
-          <span>
-            Filtered {filteredFormatted} ({filteredPercentage}%) samples.&nbsp;
-          </span>
-        ) : (
-          <></>
-        )}
+        Showing {totalFormatted} {isFiltered ? <span>({filteredPercentage}%) filtered of {rawFormatted} </span> : <></>}
+        values.{' '}
         {isTrimmed ? (
           <span>
-            Trimmed {trimmedFormatted} ({trimmedPercentage}%) too small samples.
+            Trimmed {trimmedFormatted} ({trimmedPercentage}%) too small values.
           </span>
         ) : (
           <></>

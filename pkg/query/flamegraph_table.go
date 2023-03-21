@@ -501,34 +501,33 @@ func (n FlamegraphChildren) Diff() int64 {
 	return diff
 }
 
-func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, thresholdRate float32) *querypb.Flamegraph {
+func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, threshold float32) *querypb.Flamegraph {
 	ctx, span := tracer.Start(ctx, "trimFlamegraph")
 	defer span.End()
 	if graph == nil {
 		return nil
 	}
-	//nolint:staticcheck // SA1019: TODO: The total should be passed differently in the future.
-	threshold := int64(float64(thresholdRate) * float64(graph.Total))
-	var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, graph.Root.Children, threshold)
-	newTotal := int64(0)
-	newDiff := int64(0)
-	if len(graph.Root.Children) > 0 {
-		newTotal = children.Cumulative()
-		newDiff = children.Diff()
-	}
+
+	children, trimmedCumulative := trimFlamegraphNodes(
+		ctx,
+		tracer,
+		graph.Root.Children,
+		graph.Root.Cumulative,
+		threshold,
+	)
 
 	trimmedGraph := &querypb.Flamegraph{
 		Root: &querypb.FlamegraphRootNode{
 			Children:   children,
-			Cumulative: newTotal,
-			Diff:       newDiff,
+			Cumulative: graph.Root.Cumulative,
+			Diff:       graph.Root.Diff,
 		},
 		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
-		Total: newTotal,
+		Total: graph.Total,
 		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 		UntrimmedTotal: graph.Total,
 		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
-		Trimmed:     graph.Total - newTotal,
+		Trimmed:     trimmedCumulative,
 		Unit:        graph.Unit,
 		Height:      graph.Height,
 		StringTable: graph.StringTable,
@@ -540,27 +539,37 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	return trimmedGraph
 }
 
-func trimFlamegraphNodes(ctx context.Context, tracer trace.Tracer, nodes []*querypb.FlamegraphNode, threshold int64) []*querypb.FlamegraphNode {
-	var trimmedNodes []*querypb.FlamegraphNode
+func trimFlamegraphNodes(ctx context.Context, tracer trace.Tracer, nodes []*querypb.FlamegraphNode, parentCumulative int64, threshold float32) ([]*querypb.FlamegraphNode, int64) {
+	var (
+		trimmedCumulative int64
+		remainingNodes    []*querypb.FlamegraphNode
+	)
 	for _, node := range nodes {
-		if node.Cumulative < threshold {
+		c := float32(node.Cumulative)
+		ct := float32(parentCumulative) * (threshold)
+		// If the node's cumulative value is less than the (threshold * (cumulative value)) of this level, skip it.
+		if c < ct {
+			trimmedCumulative += node.Cumulative
 			continue
 		}
-		var oldChildren FlamegraphChildren = node.Children
-		flat := node.Cumulative - oldChildren.Cumulative()
-		var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, node.Children, threshold)
-		newCum := flat
-		newDiff := node.Diff
-		if len(children) > 0 {
-			newCum += children.Cumulative()
-			newDiff += children.Diff()
+		// We have reached a leaf node.
+		if node.Children == nil {
+			remainingNodes = append(remainingNodes, node)
+			continue
 		}
-		trimmedNodes = append(trimmedNodes, &querypb.FlamegraphNode{
-			Meta:       node.Meta,
-			Cumulative: newCum,
-			Diff:       newDiff,
-			Children:   children,
-		})
+
+		children, childrenTrimmedCumulative := trimFlamegraphNodes(
+			ctx,
+			tracer,
+			node.Children,
+			node.Cumulative,
+			threshold,
+		)
+
+		trimmedCumulative += childrenTrimmedCumulative
+		node.Children = children
+		remainingNodes = append(remainingNodes, node)
 	}
-	return trimmedNodes
+
+	return remainingNodes, trimmedCumulative
 }

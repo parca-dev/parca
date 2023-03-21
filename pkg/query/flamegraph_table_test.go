@@ -729,7 +729,10 @@ func TestFlamegraphTrimming(t *testing.T) {
 						LineIndex:     0,
 					},
 					Children: []*pb.FlamegraphNode{
-						{Cumulative: 1},
+						{
+							// This node is trimmed because it is below the threshold.
+							Cumulative: 1,
+						},
 						{
 							Cumulative: 30,
 							Meta: &pb.FlamegraphNodeMeta{
@@ -761,7 +764,8 @@ func TestFlamegraphTrimming(t *testing.T) {
 					},
 				},
 				{
-					Cumulative: 1,
+					// This node is trimmed because it is below the threshold.
+					Cumulative: 3,
 					Meta: &pb.FlamegraphNodeMeta{
 						LocationIndex: 3,
 						LineIndex:     0,
@@ -770,16 +774,17 @@ func TestFlamegraphTrimming(t *testing.T) {
 			},
 		},
 	}
-	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, 0.02)
+	// trim all children that have less than 10% cumulative value of the parent.
+	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, 0.1)
 	require.Equal(t, &pb.Flamegraph{
-		Total:          100,
-		Trimmed:        2,
+		Total:          102,
+		Trimmed:        4,
 		UntrimmedTotal: 102,
 		Root: &pb.FlamegraphRootNode{
-			Cumulative: 100,
+			Cumulative: 102,
 			Children: []*pb.FlamegraphNode{
 				{
-					Cumulative: 100,
+					Cumulative: 101,
 					Meta: &pb.FlamegraphNodeMeta{
 						LocationIndex: 1,
 						LineIndex:     0,
@@ -861,13 +866,13 @@ func TestFlamegraphTrimmingNodeWithFlatValues(t *testing.T) {
 	}
 	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, float32(0.02))
 	require.Equal(t, &pb.Flamegraph{
-		Total:          150,
+		Total:          151,
 		UntrimmedTotal: 151,
 		Trimmed:        1,
 		Root: &pb.FlamegraphRootNode{
-			Cumulative: 150,
+			Cumulative: 151,
 			Children: []*pb.FlamegraphNode{{
-				Cumulative: 150,
+				Cumulative: 151,
 				Children: []*pb.FlamegraphNode{{
 					Cumulative: 100,
 				}},
@@ -1009,11 +1014,12 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 
 	require.Equal(t, int32(6), fg.Height)
 
-	// The raw flamegraph had 12+3+3 = 18 samples.
+	// The unfiltered flamegraph had 15+3 = 18 samples.
+	// There were nodes that got trimmed with a cumulative value of 3.
 	require.Equal(t, int64(3), filtered)
 	require.Equal(t, int64(3), fg.Trimmed)
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
-	require.Equal(t, int64(12), fg.Total)
+	require.Equal(t, int64(15), fg.Total)
 
 	// Check if tables and thus deduplication was correct and deterministic
 
@@ -1042,18 +1048,18 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	// Check the recursive flamegraph that references the tables above.
 
 	expected := &pb.FlamegraphRootNode{
-		Cumulative: 12,
+		Cumulative: 15,
 		Children: []*pb.FlamegraphNode{{
-			Cumulative: 12,
+			Cumulative: 15,
 			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
 			Children: []*pb.FlamegraphNode{{
-				Cumulative: 12,
+				Cumulative: 15,
 				Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
 				Children: []*pb.FlamegraphNode{{
-					Cumulative: 12,
+					Cumulative: 15,
 					Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 3},
 					Children: []*pb.FlamegraphNode{{
-						Cumulative: 12,
+						Cumulative: 15,
 						Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 4},
 					}},
 				}},
