@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@parca/client": "^0.16.68",
-    "@parca/functions": "^0.16.69",
+    "@parca/hooks": "^0.0.2",
     "@parca/utilities": "^0.0.2",
     "@reduxjs/toolkit": "^1.7.2",
     "react-redux": "^8.0.2",

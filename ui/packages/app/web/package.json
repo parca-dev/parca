@@ -24,7 +24,7 @@
     "@parca/client": "^0.16.68",
     "@parca/components": "^0.16.118",
     "@parca/dynamicsize": "^0.16.54",
-    "@parca/functions": "^0.16.69",
+    "@parca/hooks": "^0.0.2",
     "@parca/icons": "^0.16.53",
     "@parca/parser": "^0.16.55",
     "@parca/profile": "^0.16.144",
