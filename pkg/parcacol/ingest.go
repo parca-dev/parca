@@ -88,31 +88,6 @@ type Series struct {
 }
 
 func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
-	// Experimental feature that ingests profiles as arrow records.
-	if ExperimentalArrow {
-		record, err := SeriesToArrowRecord(
-			ing.schema,
-			series,
-			ing.allLabelNames,
-			ing.allPprofLabelNames,
-			ing.allPprofNumLabelNames,
-		)
-		if err != nil {
-			return err
-		}
-		defer record.Release()
-
-		if record.NumRows() == 0 {
-			return nil
-		}
-
-		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
 	pBuf, err := ing.schema.GetBuffer(map[string][]string{
 		ColumnLabels:         ing.allLabelNames,
 		ColumnPprofLabels:    ing.allPprofLabelNames,
@@ -154,6 +129,26 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	}
 
 	pBuf.Sort()
+
+	// Experimental feature that ingests profiles as arrow records.
+	if ExperimentalArrow {
+		// Read sorted rows into an arrow record
+		record, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer)
+		if err != nil {
+			return err
+		}
+		defer record.Release()
+
+		if record.NumRows() == 0 {
+			return nil
+		}
+
+		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
+			return err
+		}
+
+		return nil
+	}
 
 	buf := ing.bufferPool.Get().(*bytes.Buffer)
 	buf.Reset()
@@ -259,22 +254,22 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 
 		samples := make([][]*profile.NormalizedProfile, 0, len(rawSeries.Samples))
 		for _, sample := range rawSeries.Samples {
-			r, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
-			if err != nil {
-				return NormalizedWriteRawRequest{}, status.Errorf(codes.Internal, "failed to create gzip reader: %v", err)
-			}
+			if len(sample.RawProfile) >= 2 && sample.RawProfile[0] == 0x1f && sample.RawProfile[1] == 0x8b {
+				gz, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
+				if err == nil {
+					sample.RawProfile, err = io.ReadAll(gz)
+				}
+				if err != nil {
+					return NormalizedWriteRawRequest{}, fmt.Errorf("decompressing profile: %v", err)
+				}
 
-			content, err := io.ReadAll(r)
-			if err != nil {
-				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "failed to decompress profile: %v", err)
-			}
-
-			if err := r.Close(); err != nil {
-				return NormalizedWriteRawRequest{}, status.Errorf(codes.Internal, "failed to close gzip reader: %v", err)
+				if err := gz.Close(); err != nil {
+					return NormalizedWriteRawRequest{}, fmt.Errorf("close gzip reader: %v", err)
+				}
 			}
 
 			p := &pprofpb.Profile{}
-			if err := p.UnmarshalVT(content); err != nil {
+			if err := p.UnmarshalVT(sample.RawProfile); err != nil {
 				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
 			}
 

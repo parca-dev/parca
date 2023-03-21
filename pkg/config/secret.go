@@ -12,7 +12,7 @@
 // limitations under the License.
 
 // This package no longer handles safe yaml parsing. In order to
-// ensure correct yaml unmarshalling, use "yaml.UnmarshalStrict()".
+// ensure correct yaml unmarshalling, use "yaml.Decoder" with "Decoder.KnownFields(true)".
 
 package config
 

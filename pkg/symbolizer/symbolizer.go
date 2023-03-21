@@ -126,27 +126,27 @@ func New(
 ) *Symbolizer {
 	attemptsTotal := promauto.With(reg).NewCounter(
 		prometheus.CounterOpts{
-			Name: "symbolizer_symbolication_attempts_total",
+			Name: "parca_symbolizer_symbolication_attempts_total",
 			Help: "Total number of symbolication attempts in batches.",
 		},
 	)
 	errorsTotal := promauto.With(reg).NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "symbolizer_symbolication_errors_total",
+			Name: "parca_symbolizer_symbolication_errors_total",
 			Help: "Total number of symbolication errors in batches, partitioned by an error reason.",
 		},
 		[]string{"reason"},
 	)
 	duration := promauto.With(reg).NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "symbolizer_symbolication_duration_seconds",
+			Name:    "parca_symbolizer_symbolication_duration_seconds",
 			Help:    "How long it took in seconds to finish a round of the symbolication cycle in batches.",
 			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
 		},
 	)
 	storeDuration := promauto.With(reg).NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "symbolizer_store_duration_seconds",
+			Name:    "parca_symbolizer_store_duration_seconds",
 			Help:    "How long it took in seconds to store a batch of the symbolized locations.",
 			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
 		},

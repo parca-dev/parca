@@ -35,7 +35,7 @@ const ViewSelector = ({
   disabled = false,
 }: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [dashboardItems, setDashboardItems] = useURLState({
+  const [dashboardItems = ['icicle'], setDashboardItems] = useURLState({
     param: 'dashboard_items',
     navigateTo,
   });

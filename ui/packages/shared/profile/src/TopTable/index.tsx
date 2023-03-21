@@ -76,7 +76,12 @@ export const TopTable = React.memo(function TopTable({
 
   const compareMode: boolean = rawcompareMode === undefined ? false : rawcompareMode === 'true';
 
-  const dashboardItems = rawDashboardItems as string[];
+  const dashboardItems = useMemo(() => {
+    if (rawDashboardItems !== undefined) {
+      return rawDashboardItems as string[];
+    }
+    return ['icicle'];
+  }, [rawDashboardItems]);
 
   const columns = useMemo(() => {
     const cols: Array<ColumnDef<TopNode, any>> = [

@@ -15,6 +15,7 @@ import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
+import graphviz from 'graphviz-wasm';
 import {
   DragDropContext,
   Draggable,
@@ -37,6 +38,7 @@ import {selectDarkMode, useAppSelector} from '@parca/store';
 import {getNewSpanColor} from '@parca/utilities';
 
 import {Callgraph} from '../';
+import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
@@ -105,8 +107,17 @@ export const ProfileView = ({
     param: 'dashboard_items',
     navigateTo,
   });
+  const [graphvizLoaded, setGraphvizLoaded] = useState(false);
+  const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
   const [currentSearchString] = useURLState({param: 'search_string'});
-  const dashboardItems = rawDashboardItems as string[];
+
+  const dashboardItems = useMemo(() => {
+    if (rawDashboardItems !== undefined) {
+      return rawDashboardItems as string[];
+    }
+    return ['icicle'];
+  }, [rawDashboardItems]);
+
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
@@ -117,22 +128,73 @@ export const ProfileView = ({
     setCurPath([]);
   }, [profileSource]);
 
+  useEffect(() => {
+    async function loadGraphviz(): Promise<void> {
+      await graphviz.loadWASM();
+      setGraphvizLoaded(true);
+    }
+    void loadGraphviz();
+  }, []);
+
   const isLoading = useMemo(() => {
     if (dashboardItems.includes('icicle')) {
       return Boolean(flamegraphData?.loading);
     }
     if (dashboardItems.includes('callgraph')) {
-      return Boolean(callgraphData?.loading);
+      return Boolean(callgraphData?.loading) || Boolean(callgraphSVG === undefined);
     }
     if (dashboardItems.includes('table')) {
       return Boolean(topTableData?.loading);
     }
     return false;
-  }, [dashboardItems, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
+  }, [
+    dashboardItems,
+    callgraphData?.loading,
+    flamegraphData?.loading,
+    topTableData?.loading,
+    callgraphSVG,
+  ]);
 
   const isLoaderVisible = useDelayedLoader(isLoading);
 
-  if (flamegraphData?.error != null) {
+  const maxColor: string = getNewSpanColor(isDarkMode);
+  const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
+  const colorRange: [string, string] = [minColor, maxColor];
+  // Note: If we want to further optimize the experience, we could try to load the graphviz layout in the ProfileViewWithData layer
+  // and pass it down to the ProfileView. This would allow us to load the layout in parallel with the flamegraph data.
+  // However, the layout calculation is dependent on the width and color range of the graph container, which is why it is done at this level
+  useEffect(() => {
+    async function loadCallgraphSVG(
+      graph: CallgraphType,
+      width: number,
+      colorRange: [string, string]
+    ): Promise<void> {
+      await setCallgraphSVG(undefined);
+      // Translate JSON to 'dot' graph string
+      const dataAsDot = await jsonToDot({
+        graph,
+        width,
+        colorRange,
+      });
+
+      // Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
+      const svgGraph = await graphviz.layout(dataAsDot, 'svg', 'dot');
+      await setCallgraphSVG(svgGraph);
+    }
+
+    if (
+      graphvizLoaded &&
+      callgraphData?.data !== null &&
+      callgraphData?.data !== undefined &&
+      dimensions?.width !== undefined
+    ) {
+      void loadCallgraphSVG(callgraphData?.data, dimensions?.width, colorRange);
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphvizLoaded, callgraphData?.data]);
+
+  if (flamegraphData?.error !== null) {
     console.error('Error: ', flamegraphData?.error);
     return (
       <div className="p-10 flex justify-center">
@@ -146,10 +208,6 @@ export const ProfileView = ({
       setCurPath(path);
     }
   };
-
-  const maxColor: string = getNewSpanColor(isDarkMode);
-  const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
-  const colorRange: [string, string] = [minColor, maxColor];
 
   const getDashboardItemByType = ({
     type,
@@ -187,12 +245,14 @@ export const ProfileView = ({
         );
       }
       case 'callgraph': {
-        return callgraphData?.data != null && dimensions?.width !== undefined ? (
+        return callgraphData?.data !== undefined &&
+          callgraphSVG !== undefined &&
+          dimensions?.width !== undefined ? (
           <Callgraph
-            graph={callgraphData.data}
+            data={callgraphData.data}
+            svgString={callgraphSVG}
             sampleUnit={sampleUnit}
             width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
-            colorRange={colorRange}
           />
         ) : (
           <></>
@@ -246,7 +306,7 @@ export const ProfileView = ({
             <div className="flex py-3 w-full">
               <div className="lg:w-1/2 flex space-x-4">
                 <div className="flex space-x-1">
-                  {profileSource != null && queryClient != null ? (
+                  {profileSource !== undefined && queryClient !== undefined ? (
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
@@ -280,11 +340,11 @@ export const ProfileView = ({
               </div>
             </div>
 
-            {isLoaderVisible ? (
-              <>{loader}</>
-            ) : (
-              <DragDropContext onDragEnd={onDragEnd}>
-                <div className="w-full" ref={ref}>
+            <div className="w-full" ref={ref}>
+              {isLoaderVisible ? (
+                <>{loader}</>
+              ) : (
+                <DragDropContext onDragEnd={onDragEnd}>
                   <Droppable droppableId="droppable" direction="horizontal">
                     {provided => (
                       <div
@@ -328,9 +388,9 @@ export const ProfileView = ({
                       </div>
                     )}
                   </Droppable>
-                </div>
-              </DragDropContext>
-            )}
+                </DragDropContext>
+              )}
+            </div>
           </Card.Body>
         </Card>
       </div>

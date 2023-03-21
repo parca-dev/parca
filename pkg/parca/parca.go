@@ -49,7 +49,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -253,7 +253,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	frostdbOptions := []frostdb.Option{
 		frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
 		frostdb.WithLogger(logger),
-		frostdb.WithRegistry(prometheus.WrapRegistererWithPrefix("frostdb", reg)),
+		frostdb.WithRegistry(reg),
 		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
 		frostdb.WithGranuleSizeBytes(flags.Storage.GranuleSize),
 	}

@@ -15,9 +15,10 @@ import {useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
-import {Button, IconButton, Modal} from '@parca/components';
-import {USER_PREFERENCES, useUIFeatureFlag} from '@parca/hooks';
+import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+import {USER_PREFERENCES} from '@parca/functions/useUserPreference';
 
+import {Button, IconButton, Modal} from '../';
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
@@ -42,7 +43,7 @@ const FlagToggle = ({name, id}: FlagToggleProps): JSX.Element => {
   );
 };
 
-const UserPreferences = () => {
+const UserPreferences = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   return (
     <div>

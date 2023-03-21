@@ -108,7 +108,6 @@ import { MessageType } from "@protobuf-ts/runtime";
  * microsecond should be expressed in JSON format as "3.000001s".
  *
  *
- *
  * @generated from protobuf message google.protobuf.Duration
  */
 export interface Duration {
