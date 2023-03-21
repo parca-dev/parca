@@ -430,7 +430,7 @@
         "trimmed": {
           "type": "string",
           "format": "int64",
-          "description": "trimmed is the amount of samples trimmed from the flame graph."
+          "description": "trimmed is the amount of cumulative value trimmed from the flame graph."
         }
       },
       "title": "Flamegraph is the flame graph report type"

@@ -316,7 +316,7 @@ message Flamegraph {
   // Use trimmed instead.
   int64 untrimmed_total = 9 [deprecated = true];
 
-  // trimmed is the amount of samples trimmed from the flame graph.
+  // trimmed is the amount of cumulative value trimmed from the flame graph.
   int64 trimmed = 10;
 }
 
