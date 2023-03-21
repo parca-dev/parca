@@ -75,7 +75,7 @@ We have a feature flag system that allows you to enable or disable features for 
 ### Usage
 
 ```js
-import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+import useUIFeatureFlag from '@parca/hooks';
 
 const Header = () => {
   const isGreetingEnabled = useUIFeatureFlag('greeting');

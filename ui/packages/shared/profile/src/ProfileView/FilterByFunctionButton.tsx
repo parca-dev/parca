@@ -16,7 +16,7 @@ import {useCallback, useMemo, useState} from 'react';
 import {Icon} from '@iconify/react';
 
 import {Input, useURLState} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
+import type {NavigateFunction} from '@parca/utilities';
 
 const FilterByFunctionButton = ({
   navigateTo,

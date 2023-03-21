@@ -17,8 +17,8 @@ import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import {useLocation, useNavigate} from 'react-router-dom';
 
 import {QueryServiceClient} from '@parca/client';
-import {convertToQueryParams, parseParams} from '@parca/functions';
 import {ProfileExplorer} from '@parca/profile';
+import {convertToQueryParams, parseParams} from '@parca/utilities';
 
 const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 

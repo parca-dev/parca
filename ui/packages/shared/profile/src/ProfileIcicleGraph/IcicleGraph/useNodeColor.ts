@@ -13,8 +13,8 @@
 
 import {useMemo} from 'react';
 
-import {COLOR_PROFILES, diffColor} from '@parca/functions';
 import {EVERYTHING_ELSE, selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
+import {COLOR_PROFILES, diffColor} from '@parca/utilities';
 
 import type {ColoredFlamegraphNode} from './useColoredGraph';
 
