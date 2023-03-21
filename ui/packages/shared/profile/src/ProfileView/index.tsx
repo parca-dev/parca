@@ -53,6 +53,8 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
@@ -233,6 +235,8 @@ export const ProfileView = ({
               curPath={curPath}
               setNewCurPath={setNewCurPath}
               graph={flamegraphData.data}
+              total={flamegraphData?.total ?? BigInt(0)}
+              filtered={flamegraphData?.filtered ?? BigInt(0)}
               sampleUnit={sampleUnit}
               onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}

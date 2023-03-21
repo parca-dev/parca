@@ -30,6 +30,7 @@ interface Props {
   onLabelClick: (labelName: string, labelValue: string) => void;
   contextElement: Element | null;
   sampleUnit: string;
+  delta: boolean;
 }
 
 const virtualElement: VirtualElement = {
@@ -67,6 +68,7 @@ const MetricsTooltip = ({
   onLabelClick,
   contextElement,
   sampleUnit,
+  delta,
 }: Props): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
@@ -122,12 +124,22 @@ const MetricsTooltip = ({
                           {valueFormatter(highlighted.valuePerSecond, sampleUnit, 5)}
                         </td>
                       </tr>
-                      <tr>
-                        <td className="w-1/4">Total</td>
-                        <td className="w-3/4">
-                          {valueFormatter(highlighted.value, sampleUnit, 2)}
-                        </td>
-                      </tr>
+                      {delta && (
+                        <tr>
+                          <td className="w-1/4">Total</td>
+                          <td className="w-3/4">
+                            {valueFormatter(highlighted.value, sampleUnit, 2)}
+                          </td>
+                        </tr>
+                      )}
+                      {highlighted.duration > 0 && (
+                        <tr>
+                          <td className="w-1/4">Duration</td>
+                          <td className="w-3/4">
+                            {valueFormatter(highlighted.duration, 'nanoseconds', 2)}
+                          </td>
+                        </tr>
+                      )}
                       <tr>
                         <td className="w-1/4">At</td>
                         <td className="w-3/4">{formatDate(highlighted.timestamp, timeFormat)}</td>

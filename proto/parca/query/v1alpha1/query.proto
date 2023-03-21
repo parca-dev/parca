@@ -123,6 +123,9 @@ message MetricsSample {
 
   // value_per_second is the calculated per second average in the steps duration
   double value_per_second = 3;
+
+  // duration is the normalized aggregated duration the metric samples has been observed over.
+  int64 duration = 4;
 }
 
 // MergeProfile contains parameters for a merge request
@@ -245,7 +248,8 @@ message Top {
   int32 reported = 2;
 
   // total is the number of lines that exist in the report
-  int32 total = 3;
+  // Use total from the top level query response instead.
+  int32 total = 3 [deprecated = true];
 
   // unit is the unit represented by top table
   string unit = 4;
@@ -287,7 +291,8 @@ message Flamegraph {
   FlamegraphRootNode root = 1;
 
   // total is the total weight of the flame graph
-  int64 total = 2;
+  // Use total from the top level query response instead.
+  int64 total = 2 [deprecated = true];
 
   // unit is the unit represented by the flame graph
   string unit = 3;
@@ -307,8 +312,12 @@ message Flamegraph {
   // function deduplicated by their ID to be referenced by nodes.
   repeated parca.metastore.v1alpha1.Function function = 8;
 
-  // untrimmed_total is the total weight of the flame graph before trimming
-  int64 untrimmed_total = 9;
+  // untrimmed_total is the total weight of the flame graph before trimming.
+  // Use trimmed instead.
+  int64 untrimmed_total = 9 [deprecated = true];
+
+  // trimmed is the amount of samples trimmed from the flame graph.
+  int64 trimmed = 10;
 }
 
 // FlamegraphRootNode is a root node of a flame graph
@@ -416,7 +425,8 @@ message Callgraph {
   repeated CallgraphEdge edges = 2;
 
   // cumulative is the total cumulative value of the callgraph
-  int64 cumulative = 3;
+  // Use total from the top level query response instead.
+  int64 cumulative = 3 [deprecated = true];
 }
 
 // QueryResponse is the returned report for the given query
@@ -435,6 +445,12 @@ message QueryResponse {
     // callgraph is a callgraph nodes and edges representation of the report
     Callgraph callgraph = 8;
   }
+
+  // total is the total number of samples shown in the report.
+  int64 total = 9;
+
+  // filtered is the number of samples filtered out of the report.
+  int64 filtered = 10;
 }
 
 // SeriesRequest is unimplemented

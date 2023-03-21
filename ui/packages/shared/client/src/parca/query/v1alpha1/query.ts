@@ -187,6 +187,12 @@ export interface MetricsSample {
      * @generated from protobuf field: double value_per_second = 3;
      */
     valuePerSecond: number;
+    /**
+     * duration is the normalized aggregated duration the metric samples has been observed over.
+     *
+     * @generated from protobuf field: int64 duration = 4;
+     */
+    duration: string;
 }
 /**
  * MergeProfile contains parameters for a merge request
@@ -449,8 +455,10 @@ export interface Top {
     reported: number;
     /**
      * total is the number of lines that exist in the report
+     * Use total from the top level query response instead.
      *
-     * @generated from protobuf field: int32 total = 3;
+     * @deprecated
+     * @generated from protobuf field: int32 total = 3 [deprecated = true];
      */
     total: number;
     /**
@@ -536,8 +544,10 @@ export interface Flamegraph {
     root?: FlamegraphRootNode;
     /**
      * total is the total weight of the flame graph
+     * Use total from the top level query response instead.
      *
-     * @generated from protobuf field: int64 total = 2;
+     * @deprecated
+     * @generated from protobuf field: int64 total = 2 [deprecated = true];
      */
     total: string;
     /**
@@ -577,11 +587,19 @@ export interface Flamegraph {
      */
     function: Function[];
     /**
-     * untrimmed_total is the total weight of the flame graph before trimming
+     * untrimmed_total is the total weight of the flame graph before trimming.
+     * Use trimmed instead.
      *
-     * @generated from protobuf field: int64 untrimmed_total = 9;
+     * @deprecated
+     * @generated from protobuf field: int64 untrimmed_total = 9 [deprecated = true];
      */
     untrimmedTotal: string;
+    /**
+     * trimmed is the amount of samples trimmed from the flame graph.
+     *
+     * @generated from protobuf field: int64 trimmed = 10;
+     */
+    trimmed: string;
 }
 /**
  * FlamegraphRootNode is a root node of a flame graph
@@ -801,8 +819,10 @@ export interface Callgraph {
     edges: CallgraphEdge[];
     /**
      * cumulative is the total cumulative value of the callgraph
+     * Use total from the top level query response instead.
      *
-     * @generated from protobuf field: int64 cumulative = 3;
+     * @deprecated
+     * @generated from protobuf field: int64 cumulative = 3 [deprecated = true];
      */
     cumulative: string;
 }
@@ -850,6 +870,18 @@ export interface QueryResponse {
     } | {
         oneofKind: undefined;
     };
+    /**
+     * total is the total number of samples shown in the report.
+     *
+     * @generated from protobuf field: int64 total = 9;
+     */
+    total: string;
+    /**
+     * filtered is the number of samples filtered out of the report.
+     *
+     * @generated from protobuf field: int64 filtered = 10;
+     */
+    filtered: string;
 }
 /**
  * SeriesRequest is unimplemented
@@ -1379,11 +1411,12 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         super("parca.query.v1alpha1.MetricsSample", [
             { no: 1, name: "timestamp", kind: "message", T: () => Timestamp },
             { no: 2, name: "value", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
-            { no: 3, name: "value_per_second", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ }
+            { no: 3, name: "value_per_second", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 4, name: "duration", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<MetricsSample>): MetricsSample {
-        const message = { value: "0", valuePerSecond: 0 };
+        const message = { value: "0", valuePerSecond: 0, duration: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<MetricsSample>(this, message, value);
@@ -1402,6 +1435,9 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
                     break;
                 case /* double value_per_second */ 3:
                     message.valuePerSecond = reader.double();
+                    break;
+                case /* int64 duration */ 4:
+                    message.duration = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1424,6 +1460,9 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         /* double value_per_second = 3; */
         if (message.valuePerSecond !== 0)
             writer.tag(3, WireType.Bit64).double(message.valuePerSecond);
+        /* int64 duration = 4; */
+        if (message.duration !== "0")
+            writer.tag(4, WireType.Varint).int64(message.duration);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1796,7 +1835,7 @@ class Top$Type extends MessageType<Top> {
                 case /* int32 reported */ 2:
                     message.reported = reader.int32();
                     break;
-                case /* int32 total */ 3:
+                case /* int32 total = 3 [deprecated = true];*/ 3:
                     message.total = reader.int32();
                     break;
                 case /* string unit */ 4:
@@ -1820,7 +1859,7 @@ class Top$Type extends MessageType<Top> {
         /* int32 reported = 2; */
         if (message.reported !== 0)
             writer.tag(2, WireType.Varint).int32(message.reported);
-        /* int32 total = 3; */
+        /* int32 total = 3 [deprecated = true]; */
         if (message.total !== 0)
             writer.tag(3, WireType.Varint).int32(message.total);
         /* string unit = 4; */
@@ -1984,11 +2023,12 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
             { no: 6, name: "locations", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Location },
             { no: 7, name: "mapping", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Mapping },
             { no: 8, name: "function", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Function },
-            { no: 9, name: "untrimmed_total", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
+            { no: 9, name: "untrimmed_total", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 10, name: "trimmed", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<Flamegraph>): Flamegraph {
-        const message = { total: "0", unit: "", height: 0, stringTable: [], locations: [], mapping: [], function: [], untrimmedTotal: "0" };
+        const message = { total: "0", unit: "", height: 0, stringTable: [], locations: [], mapping: [], function: [], untrimmedTotal: "0", trimmed: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Flamegraph>(this, message, value);
@@ -2002,7 +2042,7 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
                 case /* parca.query.v1alpha1.FlamegraphRootNode root */ 1:
                     message.root = FlamegraphRootNode.internalBinaryRead(reader, reader.uint32(), options, message.root);
                     break;
-                case /* int64 total */ 2:
+                case /* int64 total = 2 [deprecated = true];*/ 2:
                     message.total = reader.int64().toString();
                     break;
                 case /* string unit */ 3:
@@ -2023,8 +2063,11 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
                 case /* repeated parca.metastore.v1alpha1.Function function */ 8:
                     message.function.push(Function.internalBinaryRead(reader, reader.uint32(), options));
                     break;
-                case /* int64 untrimmed_total */ 9:
+                case /* int64 untrimmed_total = 9 [deprecated = true];*/ 9:
                     message.untrimmedTotal = reader.int64().toString();
+                    break;
+                case /* int64 trimmed */ 10:
+                    message.trimmed = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2041,7 +2084,7 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
         /* parca.query.v1alpha1.FlamegraphRootNode root = 1; */
         if (message.root)
             FlamegraphRootNode.internalBinaryWrite(message.root, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* int64 total = 2; */
+        /* int64 total = 2 [deprecated = true]; */
         if (message.total !== "0")
             writer.tag(2, WireType.Varint).int64(message.total);
         /* string unit = 3; */
@@ -2062,9 +2105,12 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
         /* repeated parca.metastore.v1alpha1.Function function = 8; */
         for (let i = 0; i < message.function.length; i++)
             Function.internalBinaryWrite(message.function[i], writer.tag(8, WireType.LengthDelimited).fork(), options).join();
-        /* int64 untrimmed_total = 9; */
+        /* int64 untrimmed_total = 9 [deprecated = true]; */
         if (message.untrimmedTotal !== "0")
             writer.tag(9, WireType.Varint).int64(message.untrimmedTotal);
+        /* int64 trimmed = 10; */
+        if (message.trimmed !== "0")
+            writer.tag(10, WireType.Varint).int64(message.trimmed);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2524,7 +2570,7 @@ class Callgraph$Type extends MessageType<Callgraph> {
                 case /* repeated parca.query.v1alpha1.CallgraphEdge edges */ 2:
                     message.edges.push(CallgraphEdge.internalBinaryRead(reader, reader.uint32(), options));
                     break;
-                case /* int64 cumulative */ 3:
+                case /* int64 cumulative = 3 [deprecated = true];*/ 3:
                     message.cumulative = reader.int64().toString();
                     break;
                 default:
@@ -2545,7 +2591,7 @@ class Callgraph$Type extends MessageType<Callgraph> {
         /* repeated parca.query.v1alpha1.CallgraphEdge edges = 2; */
         for (let i = 0; i < message.edges.length; i++)
             CallgraphEdge.internalBinaryWrite(message.edges[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* int64 cumulative = 3; */
+        /* int64 cumulative = 3 [deprecated = true]; */
         if (message.cumulative !== "0")
             writer.tag(3, WireType.Varint).int64(message.cumulative);
         let u = options.writeUnknownFields;
@@ -2565,11 +2611,13 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 5, name: "flamegraph", kind: "message", oneof: "report", T: () => Flamegraph },
             { no: 6, name: "pprof", kind: "scalar", oneof: "report", T: 12 /*ScalarType.BYTES*/ },
             { no: 7, name: "top", kind: "message", oneof: "report", T: () => Top },
-            { no: 8, name: "callgraph", kind: "message", oneof: "report", T: () => Callgraph }
+            { no: 8, name: "callgraph", kind: "message", oneof: "report", T: () => Callgraph },
+            { no: 9, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 10, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<QueryResponse>): QueryResponse {
-        const message = { report: { oneofKind: undefined } };
+        const message = { report: { oneofKind: undefined }, total: "0", filtered: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<QueryResponse>(this, message, value);
@@ -2604,6 +2652,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         callgraph: Callgraph.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).callgraph)
                     };
                     break;
+                case /* int64 total */ 9:
+                    message.total = reader.int64().toString();
+                    break;
+                case /* int64 filtered */ 10:
+                    message.filtered = reader.int64().toString();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2628,6 +2682,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.Callgraph callgraph = 8; */
         if (message.report.oneofKind === "callgraph")
             Callgraph.internalBinaryWrite(message.report.callgraph, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* int64 total = 9; */
+        if (message.total !== "0")
+            writer.tag(9, WireType.Varint).int64(message.total);
+        /* int64 filtered = 10; */
+        if (message.filtered !== "0")
+            writer.tag(10, WireType.Varint).int64(message.filtered);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

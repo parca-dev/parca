@@ -128,6 +128,8 @@ export const ProfileViewWithData = ({
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
             : undefined,
+        total: BigInt(flamegraphResponse?.total ?? '0'),
+        filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
       }}
       topTableData={{

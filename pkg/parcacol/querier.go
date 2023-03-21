@@ -480,6 +480,7 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 			Timestamp:      timestamppb.New(timestamp.Time(ts)),
 			Value:          valueSum,
 			ValuePerSecond: valuePerSecond,
+			Duration:       duration,
 		})
 	}
 
