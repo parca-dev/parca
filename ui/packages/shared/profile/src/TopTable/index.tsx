@@ -23,7 +23,7 @@ import {
   parseParams,
   valueFormatter,
   type NavigateFunction,
-} from '@parca/functions';
+} from '@parca/utilities';
 
 import {hexifyAddress} from '../utils';
 

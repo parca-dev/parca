@@ -33,9 +33,9 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
-import {useContainerDimensions} from '@parca/dynamicsize';
-import {getNewSpanColor} from '@parca/functions';
+import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
+import {getNewSpanColor} from '@parca/utilities';
 
 import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';

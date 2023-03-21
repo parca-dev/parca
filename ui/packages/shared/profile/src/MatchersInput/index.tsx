@@ -18,8 +18,8 @@ import TextareaAutosize from 'react-textarea-autosize';
 
 import {LabelsResponse, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
-import {sanitizeLabelValue} from '@parca/functions';
 import {Query} from '@parca/parser';
+import {sanitizeLabelValue} from '@parca/utilities';
 
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 

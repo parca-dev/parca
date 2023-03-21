@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
+import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/utilities';
 
 const FlamegraphColorProfileSelector = (): JSX.Element => {
   const [colorProfileName, setColorProfileName] = useUserPreference<string>(

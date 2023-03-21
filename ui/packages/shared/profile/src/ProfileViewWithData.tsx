@@ -15,8 +15,8 @@ import {useEffect, useState} from 'react';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
-import {saveAsBlob, type NavigateFunction} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';

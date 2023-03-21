@@ -20,7 +20,7 @@ import {
   FlamegraphNodeMeta,
   FlamegraphRootNode,
 } from '@parca/client';
-import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/functions';
+import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/utilities';
 
 import type {RootState} from '../store';
 
@@ -145,7 +145,7 @@ export const colorsSlice = createSlice({
           }
         );
     },
-    setHoveringNode: (state, action: PayloadAction<HoveringNode>) => {
+    setHoveringNode: (state, action: PayloadAction<HoveringNode | undefined>) => {
       state.hoveringNode = action.payload;
     },
     resetColors: state => {

@@ -17,8 +17,8 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import type {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
-import type {NavigateFunction} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
+import type {NavigateFunction} from '@parca/utilities';
 
 import ViewSelector from './ViewSelector';
 

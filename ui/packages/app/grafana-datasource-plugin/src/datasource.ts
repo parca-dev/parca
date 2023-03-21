@@ -32,7 +32,7 @@ import {
   HealthCheckResponse_ServingStatus,
   Label,
 } from '@parca/client';
-import { saveAsBlob } from '@parca/functions';
+import { saveAsBlob } from '@parca/utilities';
 import {Query} from '@parca/parser';
 
 export class DataSource extends DataSourceApi<ParcaQuery, ParcaDataSourceOptions> {
