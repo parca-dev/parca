@@ -1,6 +1,6 @@
 {
   "name": "@parca/functions",
-  "version": "0.16.68",
+  "version": "0.16.69",
   "description": "Templated shared functions",
   "main": "dist/src/index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "watch": "tsc-watch"
   },
   "dependencies": {
-    "@parca/client": "^0.16.67",
+    "@parca/client": "^0.16.68",
     "@rehooks/local-storage": "^2.4.4",
     "tailwindcss": "3.2.4"
   },
