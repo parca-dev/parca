@@ -116,9 +116,9 @@ const ProfileIcicleGraph = ({
 
   if (total === BigInt(0) && !loading) return <>Profile has no samples</>;
 
- if (isTrimmed) {
-   console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`)
- }
+  if (isTrimmed) {
+    console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);
+  }
 
   return (
     <div className="relative">
