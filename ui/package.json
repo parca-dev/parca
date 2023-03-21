@@ -119,7 +119,7 @@
     "sass-loader": "13.2.0",
     "storybook": "^7.0.0-rc.3",
     "storybook-dark-mode": "1.1.2",
-    "style-loader": "3.3.1",
+    "style-loader": "3.3.2",
     "ts-jest": "29.0.5",
     "ts-node": "10.9.1",
     "tsc-watch": "6.0.0",
