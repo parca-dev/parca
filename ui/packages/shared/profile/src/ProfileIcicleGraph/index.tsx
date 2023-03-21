@@ -89,7 +89,7 @@ const ProfileIcicleGraph = ({
       numberFormatter.format(trimmed),
       numberFormatter.format((trimmed * BigInt(100)) / rawTotalDivisor),
       filtered > 0,
-      numberFormatter.format((total * BigInt(100)) / rawTotalDivisor)
+      numberFormatter.format((total * BigInt(100)) / rawTotalDivisor),
     ];
   }, [filtered, graph, total]);
 
@@ -130,7 +130,14 @@ const ProfileIcicleGraph = ({
         />
       </div>
       <p className="my-2 text-xs">
-        Showing {totalFormatted} {isFiltered ? <span>({filteredPercentage}%) filtered of {rawFormatted} </span> : <></>}
+        Showing {totalFormatted}{' '}
+        {isFiltered ? (
+          <span>
+            ({filteredPercentage}%) filtered of {rawFormatted}{' '}
+          </span>
+        ) : (
+          <></>
+        )}
         values.{' '}
         {isTrimmed ? (
           <span>
