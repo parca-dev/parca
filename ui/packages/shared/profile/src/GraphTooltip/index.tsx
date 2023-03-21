@@ -11,13 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {pointer} from 'd3-selection';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {usePopper} from 'react-popper';
 
-import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
+import {
+  CallgraphNode,
+  CallgraphNodeMeta,
+  FlamegraphNode,
+  FlamegraphNodeMeta,
+  FlamegraphRootNode,
+} from '@parca/client';
 import {
   Location,
   Mapping,
@@ -25,6 +31,7 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
 import {getLastItem, valueFormatter} from '@parca/functions';
+import {selectHoveringNode, useAppSelector} from '@parca/store';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';
@@ -33,12 +40,22 @@ const NoData = (): JSX.Element => {
   return <span className="rounded bg-gray-200 dark:bg-gray-800 px-2">Not available</span>;
 };
 
+interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
+  lineIndex: number;
+  locationIndex: number;
+}
+
+interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
+  diff: string;
+  meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
+}
+
 interface GraphTooltipProps {
   x?: number;
   y?: number;
   unit: string;
   total: number;
-  hoveringNode: HoveringNode;
+  hoveringNode?: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;
@@ -46,6 +63,7 @@ interface GraphTooltipProps {
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }
 
 const virtualElement = {
@@ -82,16 +100,19 @@ const TooltipMetaInfo = ({
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: {
-  hoveringNode: FlamegraphNode;
+  hoveringNode: HoveringNode;
   onCopy: () => void;
   strings?: string[];
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }): JSX.Element => {
   // populate meta from the flamegraph metadata tables
   if (
+    type === 'flamegraph' &&
     locations !== undefined &&
     hoveringNode.meta?.locationIndex !== undefined &&
     hoveringNode.meta.locationIndex !== 0
@@ -132,7 +153,7 @@ const TooltipMetaInfo = ({
     }
   }
 
-  const getTextForFile = (hoveringNode: FlamegraphNode): string => {
+  const getTextForFile = (hoveringNode: HoveringNode): string => {
     if (hoveringNode.meta?.function == null) return '<unknown>';
 
     return `${hoveringNode.meta.function.filename} ${
@@ -217,15 +238,9 @@ const TooltipMetaInfo = ({
   );
 };
 
-// @ts-expect-error
-export interface HoveringNode extends CallgraphNode, FlamegraphRootNode, FlamegraphNode {
-  diff: string;
-  meta?: FlamegraphNodeMeta | {[key: string]: any};
-}
-
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-const GraphTooltipContent = ({
+export const GraphTooltipContent = ({
   hoveringNode,
   unit,
   total,
@@ -234,6 +249,7 @@ const GraphTooltipContent = ({
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: {
   hoveringNode: HoveringNode;
   unit: string;
@@ -243,6 +259,7 @@ const GraphTooltipContent = ({
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }): JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -335,12 +352,12 @@ const GraphTooltipContent = ({
                   )}
                   <TooltipMetaInfo
                     onCopy={onCopy}
-                    // @ts-expect-error
                     hoveringNode={hoveringNode}
                     strings={strings}
                     mappings={mappings}
                     locations={locations}
                     functions={functions}
+                    type={type}
                   />
                 </tbody>
               </table>
@@ -360,7 +377,7 @@ const GraphTooltip = ({
   y,
   unit,
   total,
-  hoveringNode,
+  hoveringNode: hoveringNodeProp,
   contextElement,
   isFixed = false,
   virtualContextElement = true,
@@ -368,7 +385,25 @@ const GraphTooltip = ({
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: GraphTooltipProps): JSX.Element => {
+  const hoveringNodeState = useAppSelector(selectHoveringNode);
+  // @ts-expect-error
+  const hoveringNode = useMemo<HoveringNode>(() => {
+    const h = hoveringNodeProp ?? hoveringNodeState;
+    if (h == null) {
+      return h;
+    }
+
+    // Cloning the object to avoid the mutating error as this is Redux store object and we are modifying the meta object in GraphTooltipContent component.
+    return {
+      ...h,
+      meta: {
+        ...h.meta,
+      },
+    };
+  }, [hoveringNodeProp, hoveringNodeState]);
+
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
   const {styles, attributes, ...popperProps} = usePopper(
@@ -429,7 +464,13 @@ const GraphTooltip = ({
   if (hoveringNode === undefined || hoveringNode == null) return <></>;
 
   return isFixed ? (
-    <GraphTooltipContent hoveringNode={hoveringNode} unit={unit} total={total} isFixed={isFixed} />
+    <GraphTooltipContent
+      hoveringNode={hoveringNode}
+      unit={unit}
+      total={total}
+      isFixed={isFixed}
+      type={type}
+    />
   ) : (
     <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
       <GraphTooltipContent
@@ -441,6 +482,7 @@ const GraphTooltip = ({
         mappings={mappings}
         locations={locations}
         functions={functions}
+        type={type}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 # https://github.com/hadolint/hadolint/issues/861
 # hadolint ignore=DL3029
-FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.36.0@sha256:7b3ccabffc97de872a30dfd234fd972a66d247c8cfc69b0550f276481852627c as builder
+FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.36.0@sha256:b5d6fe0712636ceb7430189de28819e195e8966372edfc2d9409d79402a0dc16 as builder
 RUN mkdir /.cache && touch -t 202101010000.00 /.cache
 
 ARG TARGETOS=linux
@@ -8,9 +8,15 @@ ARG TARGETARCH=amd64
 ARG TARGETVARIANT=v1
 
 # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-health-probe
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.15
-RUN wget -qO/bin/grpc_health_probe "https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-${TARGETOS}-${TARGETARCH}" && \
-    chmod +x /bin/grpc_health_probe
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.16
+# Downloading grpc_health_probe from github releases with retry as we have seen it fail a lot on ci.
+RUN for i in `seq 1 50`; do \
+    wget -qO/bin/grpc_health_probe "https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-${TARGETOS}-${TARGETARCH}" && \
+    chmod +x /bin/grpc_health_probe && \
+    break; \
+    echo "Failed to download grpc_health_probe on $i th attempt, retrying in 5s..." \
+    sleep 5; \
+    done
 
 WORKDIR /app
 COPY dist dist
@@ -27,7 +33,7 @@ RUN chmod +x parca
 
 # https://github.com/hadolint/hadolint/issues/861
 # hadolint ignore=DL3029
-FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.17.2@sha256:69665d02cb32192e52e07644d76bc6f25abeb5410edc1c7a81a10ba3f0efb90a AS runner
+FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.17.2@sha256:ff6bdca1701f3a8a67e328815ff2346b0e4067d32ec36b7992c1fdc001dc8517 AS runner
 
 USER nobody
 

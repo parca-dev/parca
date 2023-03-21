@@ -16,12 +16,12 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import GitHubButton from 'react-github-btn';
 
+import {UserPreferences} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import DarkModeToggle from './DarkModeToggle';
-import UserPreferences from './UserPreferences';
 
 const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
 

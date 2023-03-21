@@ -13,7 +13,7 @@
 
 import cx from 'classnames';
 
-const BUTTON_VARIANT = {
+export const BUTTON_VARIANT = {
   primary: {
     text: 'text-gray-100 dark-gray-900 justify-center',
     bg: 'bg-indigo-600',
@@ -62,7 +62,7 @@ const Button = ({
       className={cx(
         disabled ? 'opacity-50 pointer-events-none' : '',
         ...Object.values(BUTTON_VARIANT[variant]),
-        'cursor-pointer group relative w-full flex text-sm rounded-md text-whitefocus:outline-none focus:ring-2 focus:ring-offset-2 items-center justify-center',
+        'cursor-pointer group relative w-full flex text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center justify-center',
         className
       )}
       disabled={disabled}

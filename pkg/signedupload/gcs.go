@@ -25,7 +25,7 @@ import (
 	"github.com/thanos-io/objstore/providers/gcs"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type GCSClient struct {

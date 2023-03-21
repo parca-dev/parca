@@ -36,7 +36,7 @@ const ReleaseNotesViewer = ({version}: Props) => {
         return;
       }
       const release = await fetch(
-        `https://api.github.com/repos/parca-dev/parca/releases/tags/${version}`
+        `https://api.github.com/repos/parca-dev/parca/releases/tags/v${version}`
       ).then(res => res.json());
       setReleaseNotes(
         `Here's the list of changes in this release:\n${release.body

@@ -23,7 +23,13 @@ interface GenericInputProps {
   disabled?: boolean;
 }
 
-const GenericInput = ({id, type, value, onChange, disabled = false}: GenericInputProps) => {
+const GenericInput = ({
+  id,
+  type,
+  value,
+  onChange,
+  disabled = false,
+}: GenericInputProps): JSX.Element => {
   switch (type) {
     case 'boolean':
       return (
@@ -49,7 +55,7 @@ const GenericInput = ({id, type, value, onChange, disabled = false}: GenericInpu
         />
       );
   }
-  return null;
+  return <></>;
 };
 
 interface UserPreferenceItemProps {
@@ -66,7 +72,7 @@ function UserPreferenceItem<T>({
   labelToLeft = false,
   disabled = false,
   inputSuffix = '',
-}: UserPreferenceItemProps) {
+}: UserPreferenceItemProps): JSX.Element {
   const [enabledTrimming, setEnabledTrimming] = useUserPreference<T>(userPreferenceDetails.key);
 
   return (
@@ -86,7 +92,7 @@ function UserPreferenceItem<T>({
         type={userPreferenceDetails.type}
         disabled={disabled}
       />
-      {inputSuffix ? <span>{inputSuffix}</span> : null}
+      {inputSuffix.length > 0 ? <span>{inputSuffix}</span> : null}
       {!labelToLeft ? (
         <label htmlFor={userPreferenceDetails.key}>{userPreferenceDetails.name}</label>
       ) : null}
