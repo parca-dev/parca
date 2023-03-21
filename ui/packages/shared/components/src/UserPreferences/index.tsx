@@ -15,8 +15,7 @@ import {useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
-import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
-import {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {USER_PREFERENCES, useUIFeatureFlag} from '@parca/hooks';
 
 import {Button, IconButton, Modal} from '../';
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';

@@ -145,7 +145,7 @@ export const colorsSlice = createSlice({
           }
         );
     },
-    setHoveringNode: (state, action: PayloadAction<HoveringNode>) => {
+    setHoveringNode: (state, action: PayloadAction<HoveringNode | undefined>) => {
       state.hoveringNode = action.payload;
     },
     resetColors: state => {
