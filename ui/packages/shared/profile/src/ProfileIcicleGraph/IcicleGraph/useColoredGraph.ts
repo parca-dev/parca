@@ -19,8 +19,7 @@ import {
   Mapping,
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
-import type {ColorProfileName} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   selectDarkMode,
   setFeatures,
@@ -29,6 +28,7 @@ import {
   type FeatureType,
   type FeaturesMap,
 } from '@parca/store';
+import type {ColorProfileName} from '@parca/utilities';
 
 import {extractFeature} from './utils';
 

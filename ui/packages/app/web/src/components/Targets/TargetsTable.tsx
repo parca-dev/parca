@@ -15,7 +15,7 @@ import React from 'react';
 
 import {Target} from '@parca/client';
 import {Pill} from '@parca/components';
-import {TimeObject} from '@parca/functions';
+import {TimeObject} from '@parca/utilities';
 
 import LabelsCell from './LabelsCell';
 import LastScrapeCell from './LastScrapeCell';

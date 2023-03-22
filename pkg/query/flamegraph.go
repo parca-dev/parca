@@ -120,6 +120,7 @@ func aggregateByFunction(fg *querypb.Flamegraph) *querypb.Flamegraph {
 
 	it := NewFlamegraphIterator(oldRootNode)
 	tree := &querypb.Flamegraph{
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 		Total:  fg.Total,
 		Height: fg.Height,
 		Root: &querypb.FlamegraphRootNode{

@@ -15,8 +15,8 @@ import {useEffect, useMemo} from 'react';
 
 import {Flamegraph} from '@parca/client';
 import {Button} from '@parca/components';
-import {useContainerDimensions} from '@parca/dynamicsize';
-import {selectQueryParam, type NavigateFunction} from '@parca/functions';
+import {useContainerDimensions} from '@parca/hooks';
+import {selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
 import {IcicleGraph} from './IcicleGraph';
@@ -28,6 +28,8 @@ export type ResizeHandler = (width: number, height: number) => void;
 interface ProfileIcicleGraphProps {
   width?: number;
   graph: Flamegraph | undefined;
+  total: number;
+  filtered: number;
   sampleUnit: string;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
@@ -39,6 +41,8 @@ interface ProfileIcicleGraphProps {
 
 const ProfileIcicleGraph = ({
   graph,
+  total,
+  filtered,
   curPath,
   setNewCurPath,
   sampleUnit,
@@ -58,25 +62,35 @@ const ProfileIcicleGraph = ({
     onContainerResize(dimensions.width, dimensions.height);
   }, [dimensions, onContainerResize]);
 
-  const [isTrimmed, _, trimmedPercentage, formattedTotal, formattedUntrimmedTotal] = useMemo(() => {
-    if (graph === undefined || graph.untrimmedTotal === '0') {
-      return [false, BigInt(0), '0'];
+  const [
+    totalFormatted,
+    totalUnfilteredFormatted,
+    isTrimmed,
+    trimmedFormatted,
+    trimmedPercentage,
+    isFiltered,
+    filteredPercentage,
+  ] = useMemo(() => {
+    if (graph === undefined) {
+      return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    const untrimmedTotal = BigInt(graph.untrimmedTotal);
-    const total = BigInt(graph.total);
+    const trimmed = parseInt(graph.trimmed);
 
-    const trimDifference = untrimmedTotal - total;
-    const trimmedPercentage = (total * BigInt(100)) / untrimmedTotal;
+    const totalUnfiltered = total + filtered;
+    // safeguard against division by zero
+    const totalUnfilteredDivisor = totalUnfiltered > 0 ? totalUnfiltered : 1;
 
     return [
-      trimDifference > BigInt(0),
-      trimDifference,
-      trimmedPercentage.toString(),
       numberFormatter.format(total),
-      numberFormatter.format(untrimmedTotal),
+      numberFormatter.format(totalUnfiltered),
+      trimmed > 0,
+      numberFormatter.format(trimmed),
+      numberFormatter.format((trimmed * 100) / totalUnfilteredDivisor),
+      filtered > 0,
+      numberFormatter.format((total * 100) / totalUnfilteredDivisor),
     ];
-  }, [graph]);
+  }, [graph, filtered, total]);
 
   useEffect(() => {
     if (setActionButtons === undefined) {
@@ -99,28 +113,38 @@ const ProfileIcicleGraph = ({
 
   if (graph === undefined) return <div>no data...</div>;
 
-  const total = graph.total;
+  if (total === 0 && !loading) return <>Profile has no samples</>;
 
-  if (parseFloat(total) === 0 && !loading) return <>Profile has no samples</>;
+  if (isTrimmed) {
+    console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);
+  }
 
   return (
     <div className="relative">
       {compareMode && <DiffLegend />}
-      {isTrimmed ? (
-        <p className="my-2 text-sm">
-          Showing {formattedTotal}({trimmedPercentage}%) out of {formattedUntrimmedTotal} samples
-        </p>
-      ) : null}
       <div ref={ref}>
         <IcicleGraph
           width={dimensions?.width}
           graph={graph}
+          total={total}
+          filtered={filtered}
           curPath={curPath}
           setCurPath={setNewCurPath}
           sampleUnit={sampleUnit}
           navigateTo={navigateTo}
         />
       </div>
+      <p className="my-2 text-xs">
+        Showing {totalFormatted}{' '}
+        {isFiltered ? (
+          <span>
+            ({filteredPercentage}%) filtered of {totalUnfilteredFormatted}{' '}
+          </span>
+        ) : (
+          <></>
+        )}
+        values.{' '}
+      </p>
     </div>
   );
 };

@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.0.98](https://github.com/parca-dev/parca/compare/@parca/grafana-datasource@0.0.97...@parca/grafana-datasource@0.0.98) (2023-03-22)
+
+**Note:** Version bump only for package @parca/grafana-datasource
+
+## [0.0.97](https://github.com/parca-dev/parca/compare/@parca/grafana-datasource@0.0.96...@parca/grafana-datasource@0.0.97) (2023-03-21)
+
+**Note:** Version bump only for package @parca/grafana-datasource
+
+## [0.0.96](https://github.com/parca-dev/parca/compare/@parca/grafana-datasource@0.0.95...@parca/grafana-datasource@0.0.96) (2023-03-21)
+
+# 0.16.0 (2023-03-01)
+
+**Note:** Version bump only for package @parca/grafana-datasource
+
+## [0.0.95](https://github.com/parca-dev/parca/compare/@parca/grafana-datasource@0.0.94...@parca/grafana-datasource@0.0.95) (2023-03-21)
+
+**Note:** Version bump only for package @parca/grafana-datasource
+
 ## [0.0.94](https://github.com/parca-dev/parca/compare/@parca/grafana-datasource@0.0.93...@parca/grafana-datasource@0.0.94) (2023-03-21)
 
 **Note:** Version bump only for package @parca/grafana-datasource

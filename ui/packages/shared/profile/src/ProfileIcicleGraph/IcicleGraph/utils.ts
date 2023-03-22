@@ -17,8 +17,8 @@ import {
   Mapping,
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
-import {getLastItem} from '@parca/functions';
 import {EVERYTHING_ELSE, FEATURE_TYPES, type Feature} from '@parca/store';
+import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress} from '../../utils';
 

@@ -33,9 +33,9 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
-import {useContainerDimensions} from '@parca/dynamicsize';
-import {getNewSpanColor} from '@parca/functions';
+import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
+import {getNewSpanColor} from '@parca/utilities';
 
 import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
@@ -53,6 +53,8 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
@@ -233,6 +235,8 @@ export const ProfileView = ({
               curPath={curPath}
               setNewCurPath={setNewCurPath}
               graph={flamegraphData.data}
+              total={Number(flamegraphData.total) ?? 0}
+              filtered={Number(flamegraphData?.filtered) ?? 0}
               sampleUnit={sampleUnit}
               onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}

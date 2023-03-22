@@ -13,7 +13,7 @@
 
 import ReactDatePicker from 'react-datepicker';
 
-import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/functions';
+import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/utilities';
 
 interface Props {
   selected: Date;

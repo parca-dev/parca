@@ -57,7 +57,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 
 			table, err := colDB.Table(
 				"stacktraces",
-				columnstore.NewTableConfig(schema),
+				columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 			)
 			require.NoError(b, err)
 			metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
@@ -154,8 +154,6 @@ func Benchmark_ProfileTypes(b *testing.B) {
 		frostdb.WithStoragePath("../../data"),
 	)
 	require.NoError(b, err)
-
-	require.NoError(b, col.ReplayWALs(ctx))
 
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(b, err)

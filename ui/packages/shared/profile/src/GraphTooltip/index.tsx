@@ -30,8 +30,8 @@ import {
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
-import {getLastItem, valueFormatter} from '@parca/functions';
 import {selectHoveringNode, useAppSelector} from '@parca/store';
+import {getLastItem, valueFormatter} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';
@@ -55,6 +55,7 @@ interface GraphTooltipProps {
   y?: number;
   unit: string;
   total: number;
+  totalUnfiltered: number;
   hoveringNode?: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
@@ -244,6 +245,7 @@ export const GraphTooltipContent = ({
   hoveringNode,
   unit,
   total,
+  totalUnfiltered,
   isFixed,
   strings,
   mappings,
@@ -254,6 +256,7 @@ export const GraphTooltipContent = ({
   hoveringNode: HoveringNode;
   unit: string;
   total: number;
+  totalUnfiltered: number;
   isFixed: boolean;
   strings?: string[];
   mappings?: Mapping[];
@@ -282,8 +285,12 @@ export const GraphTooltipContent = ({
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
   const getTextForCumulative = (hoveringNodeCumulative: number): string => {
-    return `${valueFormatter(hoveringNodeCumulative, unit, 2)} (
-      ${((hoveringNodeCumulative * 100) / total).toFixed(2)}%)`;
+    const filtered =
+      totalUnfiltered > total
+        ? ` / ${((hoveringNodeCumulative * 100) / total).toFixed(2)}% of filtered`
+        : '';
+    return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
+    (${((hoveringNodeCumulative * 100) / totalUnfiltered).toFixed(2)}%${filtered})`;
   };
 
   return (
@@ -377,6 +384,7 @@ const GraphTooltip = ({
   y,
   unit,
   total,
+  totalUnfiltered,
   hoveringNode: hoveringNodeProp,
   contextElement,
   isFixed = false,
@@ -468,6 +476,7 @@ const GraphTooltip = ({
       hoveringNode={hoveringNode}
       unit={unit}
       total={total}
+      totalUnfiltered={totalUnfiltered}
       isFixed={isFixed}
       type={type}
     />
@@ -477,6 +486,7 @@ const GraphTooltip = ({
         hoveringNode={hoveringNode}
         unit={unit}
         total={total}
+        totalUnfiltered={totalUnfiltered}
         isFixed={isFixed}
         strings={strings}
         mappings={mappings}
