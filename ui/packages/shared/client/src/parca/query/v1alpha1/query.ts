@@ -595,7 +595,7 @@ export interface Flamegraph {
      */
     untrimmedTotal: string;
     /**
-     * trimmed is the amount of samples trimmed from the flame graph.
+     * trimmed is the amount of cumulative value trimmed from the flame graph.
      *
      * @generated from protobuf field: int64 trimmed = 10;
      */

@@ -28,8 +28,8 @@ export type ResizeHandler = (width: number, height: number) => void;
 interface ProfileIcicleGraphProps {
   width?: number;
   graph: Flamegraph | undefined;
-  total: bigint;
-  filtered: bigint;
+  total: number;
+  filtered: number;
   sampleUnit: string;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
@@ -64,36 +64,33 @@ const ProfileIcicleGraph = ({
 
   const [
     totalFormatted,
-    rawFormatted,
+    totalUnfilteredFormatted,
     isTrimmed,
     trimmedFormatted,
     trimmedPercentage,
     isFiltered,
-    filteredFormatted,
     filteredPercentage,
   ] = useMemo(() => {
     if (graph === undefined) {
       return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    const trimmed = BigInt(graph.trimmed);
+    const trimmed = parseInt(graph.trimmed);
 
-    const rawTotal = total + filtered + trimmed;
-
+    const totalUnfiltered = total + filtered;
     // safeguard against division by zero
-    const rawTotalDivisor = rawTotal > 0 ? rawTotal : BigInt(1);
+    const totalUnfilteredDivisor = totalUnfiltered > 0 ? totalUnfiltered : 1;
 
     return [
       numberFormatter.format(total),
-      numberFormatter.format(rawTotal),
+      numberFormatter.format(totalUnfiltered),
       trimmed > 0,
       numberFormatter.format(trimmed),
-      numberFormatter.format((trimmed * BigInt(100)) / rawTotalDivisor),
+      numberFormatter.format((trimmed * 100) / totalUnfilteredDivisor),
       filtered > 0,
-      numberFormatter.format(filtered),
-      numberFormatter.format((filtered * BigInt(100)) / rawTotalDivisor),
+      numberFormatter.format((total * 100) / totalUnfilteredDivisor),
     ];
-  }, [filtered, graph, total]);
+  }, [graph, filtered, total]);
 
   useEffect(() => {
     if (setActionButtons === undefined) {
@@ -116,7 +113,11 @@ const ProfileIcicleGraph = ({
 
   if (graph === undefined) return <div>no data...</div>;
 
-  if (total === BigInt(0) && !loading) return <>Profile has no samples</>;
+  if (total === 0 && !loading) return <>Profile has no samples</>;
+
+  if (isTrimmed) {
+    console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);
+  }
 
   return (
     <div className="relative">
@@ -125,6 +126,8 @@ const ProfileIcicleGraph = ({
         <IcicleGraph
           width={dimensions?.width}
           graph={graph}
+          total={total}
+          filtered={filtered}
           curPath={curPath}
           setCurPath={setNewCurPath}
           sampleUnit={sampleUnit}
@@ -132,22 +135,15 @@ const ProfileIcicleGraph = ({
         />
       </div>
       <p className="my-2 text-xs">
-        Showing {totalFormatted} {isFiltered || isTrimmed ? <span>of {rawFormatted} </span> : <></>}
-        samples.{' '}
+        Showing {totalFormatted}{' '}
         {isFiltered ? (
           <span>
-            Filtered {filteredFormatted} ({filteredPercentage}%) samples.&nbsp;
+            ({filteredPercentage}%) filtered of {totalUnfilteredFormatted}{' '}
           </span>
         ) : (
           <></>
         )}
-        {isTrimmed ? (
-          <span>
-            Trimmed {trimmedFormatted} ({trimmedPercentage}%) too small samples.
-          </span>
-        ) : (
-          <></>
-        )}
+        values.{' '}
       </p>
     </div>
   );
