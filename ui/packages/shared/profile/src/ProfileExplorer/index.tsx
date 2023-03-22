@@ -17,8 +17,8 @@ import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
 import {store} from '@parca/store';
+import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';

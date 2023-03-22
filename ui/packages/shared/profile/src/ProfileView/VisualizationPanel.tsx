@@ -18,8 +18,8 @@ import cx from 'classnames';
 import type {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
 import {IconButton} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
+import type {NavigateFunction} from '@parca/utilities';
 
 import ViewSelector from './ViewSelector';
 

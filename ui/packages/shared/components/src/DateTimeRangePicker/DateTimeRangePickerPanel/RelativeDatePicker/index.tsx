@@ -13,7 +13,7 @@
 
 import {useState} from 'react';
 
-import {capitalize} from '@parca/functions';
+import {capitalize} from '@parca/utilities';
 
 import {Button} from '../../../Button';
 import Input from '../../../Input';

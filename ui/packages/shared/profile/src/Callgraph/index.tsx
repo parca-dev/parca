@@ -20,8 +20,8 @@ import {MapInteractionCSS} from 'react-map-interaction';
 
 import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {Button, useKeyDown, useURLState} from '@parca/components';
-import {getNewSpanColor} from '@parca/functions';
 import {selectDarkMode, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
+import {getNewSpanColor} from '@parca/utilities';
 
 import GraphTooltip from '../GraphTooltip';
 

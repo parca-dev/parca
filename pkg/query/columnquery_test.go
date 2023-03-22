@@ -69,10 +69,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
-	require.NoError(t, err)
-
-	_, err = colDB.Table("stacktraces", columnstore.NewTableConfig(schema))
+	_, err = colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.SchemaDefinition()))
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
 		t,
@@ -154,7 +151,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -250,7 +247,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -380,7 +377,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -467,7 +464,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -727,7 +724,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -820,7 +817,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -903,7 +900,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(

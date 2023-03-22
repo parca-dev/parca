@@ -17,9 +17,9 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {useURLState} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectStackColors, useAppSelector} from '@parca/store';
+import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {
   navigateTo?: NavigateFunction;
