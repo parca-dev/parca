@@ -65,7 +65,9 @@ export const IcicleGraph = memo(function IcicleGraph({
     if (width === undefined) {
       return () => 0;
     }
-    return scaleLinear().domain([0, Number(total)]).range([0, width]);
+    return scaleLinear()
+      .domain([0, Number(total)])
+      .range([0, width]);
   }, [total, width]);
 
   if (coloredGraph.root === undefined || width === undefined) {

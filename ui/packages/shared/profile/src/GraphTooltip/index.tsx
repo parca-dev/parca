@@ -285,7 +285,10 @@ export const GraphTooltipContent = ({
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
   const getTextForCumulative = (hoveringNodeCumulative: number): string => {
-    const filtered = totalUnfiltered > total ? ` / ${((hoveringNodeCumulative *100)/total).toFixed(2)}% of filtered`: ''
+    const filtered =
+      totalUnfiltered > total
+        ? ` / ${((hoveringNodeCumulative * 100) / total).toFixed(2)}% of filtered`
+        : '';
     return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
     (${((hoveringNodeCumulative * 100) / totalUnfiltered).toFixed(2)}%${filtered})`;
   };
