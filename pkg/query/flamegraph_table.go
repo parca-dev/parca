@@ -52,7 +52,7 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		// Reverse walking the location as stacked location are like 3 > 2 > 1 > 0 where 0 is the root.
 		for i := len(locations) - 1; i >= 0; i-- {
 			tables.AddMapping(locations[i].Mapping)
-			li := tables.AddLocation(locations[i])
+			li := tables.AddProfileLocation(locations[i])
 			location := tables.locationsSlice[li-1]
 
 			nodes := tableLocationToTreeNodes(location, li)
@@ -104,20 +104,15 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 			Diff:       rootNode.Diff,
 			Children:   rootNode.Children,
 		},
-		Total:  rootNode.Cumulative,
-		Unit:   p.Meta.SampleType.Unit,
-		Height: height + 1, // add one for the root
+		Total:          rootNode.Cumulative,
+		UntrimmedTotal: rootNode.Cumulative,
+		Unit:           p.Meta.SampleType.Unit,
+		Height:         height + 1, // add one for the root
 
 		StringTable: tables.Strings(),
 		Mapping:     tables.Mappings(),
 		Locations:   tables.Locations(),
 		Function:    tables.Functions(),
-	}
-
-	for _, f := range flamegraph.Function {
-		// At this point we don't need the function's ID anymore, so we don't
-		// need to transfer it over the wire.
-		f.Id = ""
 	}
 
 	aggregatedFlamegraph := aggregateByFunctionTable(tables, flamegraph)
@@ -126,7 +121,21 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		return aggregatedFlamegraph, nil
 	}
 
-	return TrimFlamegraph(ctx, tracer, aggregatedFlamegraph, nodeTrimFraction), nil
+	trimmedGraph := TrimFlamegraph(ctx, tracer, aggregatedFlamegraph, nodeTrimFraction)
+
+	// Remove the IDs from the trimmed graph.
+	// The frontend doesn't need them, and they take up a lot of space.
+	for _, m := range trimmedGraph.Mapping {
+		m.Id = ""
+	}
+	for _, l := range trimmedGraph.Locations {
+		l.Id = ""
+	}
+	for _, f := range trimmedGraph.Function {
+		f.Id = ""
+	}
+
+	return trimmedGraph, nil
 }
 
 type tableConverter struct {
@@ -145,13 +154,29 @@ func (c *tableConverter) Strings() []string {
 	return c.stringsSlice
 }
 
+func (c *tableConverter) GetString(index uint32) string {
+	if uint32(len(c.stringsSlice)) <= index {
+		return ""
+	}
+
+	return c.stringsSlice[index]
+}
+
 // Mappings return the table, slice more specifically, of all mappings.
 func (c *tableConverter) Mappings() []*metastorev1alpha1.Mapping {
-	for _, m := range c.mappingsSlice {
-		// Set all for unnecessary fields, for the frontend, to empty strings.
-		m.Id = ""
-	}
 	return c.mappingsSlice
+}
+
+func (c *tableConverter) GetMapping(index uint32) *metastorev1alpha1.Mapping {
+	if index == 0 {
+		return nil
+	}
+
+	if uint32(len(c.mappingsSlice)) <= (index - 1) {
+		return nil
+	}
+
+	return c.mappingsSlice[index-1]
 }
 
 // GetLocation by its index. Returns nil if index doesn't exist.
@@ -206,6 +231,8 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 		return 0
 	}
 	if i, ok := c.mappingsIndex[m.Id]; ok {
+		m.File = ""
+		m.BuildId = ""
 		return i
 	}
 
@@ -220,9 +247,9 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 	return c.mappingsIndex[m.Id]
 }
 
-// AddLocation by its ID and only add it if it's not yet in the table.
-// Returns the locations's index in the table.
-func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
+// AddProfileLocation by its ID and only add it if it's not yet in the table.
+// Returns the location's index in the table.
+func (c *tableConverter) AddProfileLocation(l *profile.Location) uint32 {
 	if i, ok := c.locationsIndex[l.ID]; ok {
 		return i
 	}
@@ -242,16 +269,24 @@ func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
 	}
 
 	msl := &metastorev1alpha1.Location{
-		// Id Not important for the frontend
+		Id:           l.ID,
 		Address:      l.Address,
 		MappingIndex: mid,
 		IsFolded:     l.IsFolded,
 		Lines:        lines,
 	}
 
-	c.locationsSlice = append(c.locationsSlice, msl)
-	c.locationsIndex[l.ID] = uint32(len(c.locationsSlice))
-	return c.locationsIndex[l.ID]
+	return c.AddLocation(msl)
+}
+
+func (c *tableConverter) AddLocation(l *metastorev1alpha1.Location) uint32 {
+	if i, ok := c.locationsIndex[l.Id]; ok {
+		return i
+	}
+
+	c.locationsSlice = append(c.locationsSlice, l)
+	c.locationsIndex[l.Id] = uint32(len(c.locationsSlice))
+	return c.locationsIndex[l.Id]
 }
 
 // AddFunction by its ID and only add it if it's not yet in the table.
@@ -502,15 +537,34 @@ func (n FlamegraphChildren) Diff() int64 {
 }
 
 func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, threshold float32) *querypb.Flamegraph {
-	ctx, span := tracer.Start(ctx, "trimFlamegraph")
+	_, span := tracer.Start(ctx, "trimFlamegraph")
 	defer span.End()
 	if graph == nil {
 		return nil
 	}
 
+	oldTable := &tableConverter{
+		stringsSlice:   graph.StringTable,
+		mappingsSlice:  graph.Mapping,
+		locationsSlice: graph.Locations,
+		functionsSlice: graph.Function,
+	}
+
+	newTable := &tableConverter{
+		stringsSlice:   []string{},
+		stringsIndex:   map[string]uint32{},
+		mappingsSlice:  []*metastorev1alpha1.Mapping{},
+		mappingsIndex:  map[string]uint32{},
+		locationsSlice: []*metastorev1alpha1.Location{},
+		locationsIndex: map[string]uint32{},
+		functionsSlice: []*metastorev1alpha1.Function{},
+		functionsIndex: map[string]uint32{},
+	}
+	newTable.AddString("") // Add empty string to the string table.
+
 	children, trimmedCumulative := trimFlamegraphNodes(
-		ctx,
-		tracer,
+		oldTable,
+		newTable,
 		graph.Root.Children,
 		graph.Root.Cumulative,
 		threshold,
@@ -530,16 +584,21 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 		Trimmed:     trimmedCumulative,
 		Unit:        graph.Unit,
 		Height:      graph.Height,
-		StringTable: graph.StringTable,
-		Locations:   graph.Locations,
-		Mapping:     graph.Mapping,
-		Function:    graph.Function,
+		StringTable: newTable.Strings(),
+		Locations:   newTable.Locations(),
+		Mapping:     newTable.Mappings(),
+		Function:    newTable.Functions(),
 	}
 
 	return trimmedGraph
 }
 
-func trimFlamegraphNodes(ctx context.Context, tracer trace.Tracer, nodes []*querypb.FlamegraphNode, parentCumulative int64, threshold float32) ([]*querypb.FlamegraphNode, int64) {
+func trimFlamegraphNodes(
+	oldTable, newTable *tableConverter,
+	nodes []*querypb.FlamegraphNode,
+	parentCumulative int64,
+	threshold float32,
+) ([]*querypb.FlamegraphNode, int64) {
 	var (
 		trimmedCumulative int64
 		remainingNodes    []*querypb.FlamegraphNode
@@ -558,14 +617,36 @@ func trimFlamegraphNodes(ctx context.Context, tracer trace.Tracer, nodes []*quer
 			continue
 		}
 
+		// Only if the oldTable has locations we want to trim the metadata.
+		// This is mostly for testing purposes, in production we always have locations.
+		if oldTable.locationsSlice != nil {
+			// We only want to add the metadata if it's needed after trimming.
+			oldLocation := oldTable.GetLocation(node.Meta.LocationIndex)
+
+			// Reconstruct the mapping and add it to the new table.
+			oldMapping := oldTable.GetMapping(oldLocation.MappingIndex)
+			oldMapping.File = oldTable.GetString(oldMapping.FileStringIndex)
+			oldMapping.BuildId = oldTable.GetString(oldMapping.BuildIdStringIndex)
+			oldLocation.MappingIndex = newTable.AddMapping(oldMapping)
+
+			// Reconstruct the location and function and add it to the new table.
+			for _, line := range oldLocation.Lines {
+				oldFunction := oldTable.GetFunction(line.FunctionIndex)
+				oldFunction.Name = oldTable.GetString(oldFunction.NameStringIndex)
+				oldFunction.Filename = oldTable.GetString(oldFunction.FilenameStringIndex)
+				oldFunction.SystemName = oldTable.GetString(oldFunction.SystemNameStringIndex)
+				line.FunctionIndex = newTable.AddFunction(oldFunction)
+			}
+			node.Meta.LocationIndex = newTable.AddLocation(oldLocation)
+		}
+
 		children, childrenTrimmedCumulative := trimFlamegraphNodes(
-			ctx,
-			tracer,
+			oldTable,
+			newTable,
 			node.Children,
 			node.Cumulative,
 			threshold,
 		)
-
 		trimmedCumulative += childrenTrimmedCumulative
 		node.Children = children
 		remainingNodes = append(remainingNodes, node)
