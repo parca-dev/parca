@@ -308,7 +308,9 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, int32(5), fg.Height)
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int64(14), fg.Total)
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int64(14), fg.UntrimmedTotal)
 
 	// Check if tables and thus deduplication was correct and deterministic

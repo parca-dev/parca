@@ -537,7 +537,7 @@ func (n FlamegraphChildren) Diff() int64 {
 }
 
 func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, threshold float32) *querypb.Flamegraph {
-	ctx, span := tracer.Start(ctx, "trimFlamegraph")
+	_, span := tracer.Start(ctx, "trimFlamegraph")
 	defer span.End()
 	if graph == nil {
 		return nil
