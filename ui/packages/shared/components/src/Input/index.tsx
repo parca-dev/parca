@@ -16,7 +16,7 @@ import {useRef} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import Button from '../Button';
+import {Button} from '../Button';
 
 interface SelfProps {
   className?: string;

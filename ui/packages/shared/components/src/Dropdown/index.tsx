@@ -17,7 +17,7 @@ import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import Button from '../Button';
+import {Button} from '../Button';
 
 const Dropdown = ({
   text,
