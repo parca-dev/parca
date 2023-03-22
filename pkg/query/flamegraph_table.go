@@ -617,25 +617,28 @@ func trimFlamegraphNodes(
 			continue
 		}
 
-		// We only want to add the metadata if it's needed after trimming.
-		oldLocation := oldTable.GetLocation(node.Meta.LocationIndex)
+		// Only if the oldTable has locations we want to trim the metadata.
+		// This is mostly for testing purposes, in production we always have locations.
+		if oldTable.locationsSlice != nil {
+			// We only want to add the metadata if it's needed after trimming.
+			oldLocation := oldTable.GetLocation(node.Meta.LocationIndex)
 
-		// Reconstruct the mapping and add it to the new table.
-		oldMapping := oldTable.GetMapping(oldLocation.MappingIndex)
-		oldMapping.File = oldTable.GetString(oldMapping.FileStringIndex)
-		oldMapping.BuildId = oldTable.GetString(oldMapping.BuildIdStringIndex)
-		oldLocation.MappingIndex = newTable.AddMapping(oldMapping)
+			// Reconstruct the mapping and add it to the new table.
+			oldMapping := oldTable.GetMapping(oldLocation.MappingIndex)
+			oldMapping.File = oldTable.GetString(oldMapping.FileStringIndex)
+			oldMapping.BuildId = oldTable.GetString(oldMapping.BuildIdStringIndex)
+			oldLocation.MappingIndex = newTable.AddMapping(oldMapping)
 
-		// Reconstruct the location and function and add it to the new table.
-		for _, line := range oldLocation.Lines {
-			oldFunction := oldTable.GetFunction(line.FunctionIndex)
-			oldFunction.Name = oldTable.GetString(oldFunction.NameStringIndex)
-			oldFunction.Filename = oldTable.GetString(oldFunction.FilenameStringIndex)
-			oldFunction.SystemName = oldTable.GetString(oldFunction.SystemNameStringIndex)
-			line.FunctionIndex = newTable.AddFunction(oldFunction)
+			// Reconstruct the location and function and add it to the new table.
+			for _, line := range oldLocation.Lines {
+				oldFunction := oldTable.GetFunction(line.FunctionIndex)
+				oldFunction.Name = oldTable.GetString(oldFunction.NameStringIndex)
+				oldFunction.Filename = oldTable.GetString(oldFunction.FilenameStringIndex)
+				oldFunction.SystemName = oldTable.GetString(oldFunction.SystemNameStringIndex)
+				line.FunctionIndex = newTable.AddFunction(oldFunction)
+			}
+			node.Meta.LocationIndex = newTable.AddLocation(oldLocation)
 		}
-
-		node.Meta.LocationIndex = newTable.AddLocation(oldLocation)
 
 		children, childrenTrimmedCumulative := trimFlamegraphNodes(
 			oldTable,
