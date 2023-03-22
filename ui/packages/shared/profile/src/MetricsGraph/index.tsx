@@ -58,7 +58,7 @@ export interface HighlightedSeries {
 interface Series {
   metric: Label[];
   values: number[][];
-  id: string;
+  labelset: string;
 }
 
 const MetricsGraph = ({
@@ -144,14 +144,14 @@ export const RawMetricsGraph = ({
           }
           return agg;
         }, []),
-        id: metric.map(m => `${m.name}=${m.value}`).join(','),
+        labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
       });
     }
     return agg;
   }, []);
 
   // Sort series by id to make sure the colors are consistent
-  series.sort((a, b) => a.id.localeCompare(b.id));
+  series.sort((a, b) => a.labelset.localeCompare(b.labelset));
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
