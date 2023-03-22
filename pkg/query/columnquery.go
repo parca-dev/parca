@@ -369,24 +369,59 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (*pr
 	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.
 	diff := &profile.Profile{}
 
-	// TODO: Use parcacol.Sample for comparing these
-	for i := range compare.Samples {
-		diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
-			Locations: compare.Samples[i].Locations,
-			Value:     compare.Samples[i].Value,
-			DiffValue: compare.Samples[i].Value,
-			Label:     compare.Samples[i].Label,
-			NumLabel:  compare.Samples[i].NumLabel,
-		})
-	}
+	// If both durations are 0, we know the profiles are non-delta profiles,
+	// and we can just compare the individual samples.
+	if base.Meta.Duration == 0 && compare.Meta.Duration == 0 {
+		// TODO: Use parcacol.Sample for comparing these
+		for i := range compare.Samples {
+			diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
+				Locations: compare.Samples[i].Locations,
+				Value:     compare.Samples[i].Value,
+				DiffValue: compare.Samples[i].Value,
+				Label:     compare.Samples[i].Label,
+				NumLabel:  compare.Samples[i].NumLabel,
+			})
+		}
 
-	for i := range base.Samples {
-		diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
-			Locations: base.Samples[i].Locations,
-			DiffValue: -base.Samples[i].Value,
-			Label:     base.Samples[i].Label,
-			NumLabel:  base.Samples[i].NumLabel,
-		})
+		for i := range base.Samples {
+			diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
+				Locations: base.Samples[i].Locations,
+				DiffValue: -base.Samples[i].Value,
+				Label:     base.Samples[i].Label,
+				NumLabel:  base.Samples[i].NumLabel,
+			})
+		}
+	} else {
+		// TODO: Implement diffing delta profiles
+		// We should be able to multiply the profile's sample values that has the shorter duration
+		// by the ratio of the longer duration to the shorter duration.
+
+		baseRatio := 1.0
+		compareRatio := 1.0
+		if base.Meta.Duration > compare.Meta.Duration {
+			compareRatio = float64(base.Meta.Duration) / float64(compare.Meta.Duration)
+		} else {
+			baseRatio = float64(compare.Meta.Duration) / float64(base.Meta.Duration)
+		}
+
+		for i := range compare.Samples {
+			diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
+				Locations: compare.Samples[i].Locations,
+				Value:     int64(float64(compare.Samples[i].Value) * compareRatio),
+				DiffValue: int64(float64(compare.Samples[i].Value) * compareRatio),
+				Label:     compare.Samples[i].Label,
+				NumLabel:  compare.Samples[i].NumLabel,
+			})
+		}
+
+		for i := range base.Samples {
+			diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
+				Locations: base.Samples[i].Locations,
+				DiffValue: int64(float64(-base.Samples[i].Value) * (baseRatio)),
+				Label:     base.Samples[i].Label,
+				NumLabel:  base.Samples[i].NumLabel,
+			})
+		}
 	}
 
 	return diff, nil

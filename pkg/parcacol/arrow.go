@@ -53,6 +53,7 @@ func (c *ArrowToProfileConverter) Convert(
 	ctx context.Context,
 	records []arrow.Record,
 	valueColumnName string,
+	durationColumnName string,
 	meta profile.Meta,
 ) (*profile.Profile, error) {
 	ctx, span := c.tracer.Start(ctx, "convert-arrow-record-to-profile")
@@ -62,6 +63,11 @@ func (c *ArrowToProfileConverter) Convert(
 	for _, ar := range records {
 		rows += int(ar.NumRows())
 	}
+
+	// For each timestamp we only need one sample's duration.
+	// At the end we will sum up all the durations and use it in the meta.
+	timestampDuration := map[int64]int64{}
+
 	samples := make([]*profile.SymbolizedSample, 0, rows)
 	for _, ar := range records {
 		schema := ar.Schema()
@@ -71,11 +77,28 @@ func (c *ArrowToProfileConverter) Convert(
 		}
 		stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
 
-		indices = schema.FieldIndices("sum(value)")
+		indices = schema.FieldIndices(valueColumnName)
 		if len(indices) != 1 {
-			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
+			return nil, ErrMissingColumn{Column: valueColumnName, Columns: len(indices)}
 		}
 		valueColumn := ar.Column(indices[0]).(*array.Int64)
+
+		var durationColumn *array.Int64
+		var timestampColumn *array.Int64
+		if durationColumnName != "" {
+			indices = schema.FieldIndices(durationColumnName)
+			if len(indices) != 1 {
+				return nil, ErrMissingColumn{Column: durationColumnName, Columns: len(indices)}
+			}
+			durationColumn = ar.Column(indices[0]).(*array.Int64)
+
+			timestampColumnMin := "min(" + ColumnTimestamp + ")"
+			indices = schema.FieldIndices(timestampColumnMin)
+			if len(indices) != 1 {
+				return nil, ErrMissingColumn{Column: ColumnTimestamp, Columns: len(indices)}
+			}
+			timestampColumn = ar.Column(indices[0]).(*array.Int64)
+		}
 
 		rows := int(ar.NumRows())
 		stacktraceIDs := make([]string, rows)
@@ -93,7 +116,14 @@ func (c *ArrowToProfileConverter) Convert(
 				Value:     valueColumn.Value(i),
 				Locations: stacktraceLocations[i],
 			})
+			if durationColumn != nil {
+				timestampDuration[timestampColumn.Value(i)] = durationColumn.Value(i)
+			}
 		}
+	}
+
+	for _, d := range timestampDuration {
+		meta.Duration += d
 	}
 
 	return &profile.Profile{

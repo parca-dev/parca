@@ -776,7 +776,7 @@ func BooleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error
 func (q *Querier) arrowRecordToProfile(
 	ctx context.Context,
 	records []arrow.Record,
-	valueColumn string,
+	valueColumn, durationColumn string,
 	meta profile.Meta,
 ) (*profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/arrowRecordToProfile")
@@ -785,6 +785,7 @@ func (q *Querier) arrowRecordToProfile(
 		ctx,
 		records,
 		valueColumn,
+		durationColumn,
 		meta,
 	)
 }
@@ -806,6 +807,7 @@ func (q *Querier) QuerySingle(
 		ctx,
 		ar,
 		valueColumn,
+		"",
 		meta,
 	)
 	if err != nil {
@@ -867,7 +869,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 	}
 
 	return records,
-		"sum(value)",
+		ColumnValueSum,
 		profile.Meta{
 			Name:       queryParts.Meta.Name,
 			SampleType: queryParts.Meta.SampleType,
@@ -881,7 +883,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	records, valueColumn, meta, err := q.selectMerge(ctx, query, start, end)
+	records, valueColumn, durationColumn, meta, err := q.selectMerge(ctx, query, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -895,6 +897,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 		ctx,
 		records,
 		valueColumn,
+		durationColumn,
 		meta,
 	)
 	if err != nil {
@@ -904,13 +907,13 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	return p, nil
 }
 
-func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endTime time.Time) ([]arrow.Record, string, profile.Meta, error) {
+func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endTime time.Time) ([]arrow.Record, string, string, profile.Meta, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
 	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
-		return nil, "", profile.Meta{}, err
+		return nil, "", "", profile.Meta{}, err
 	}
 
 	start := timestamp.FromTime(startTime)
@@ -930,6 +933,8 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		Aggregate(
 			[]logicalplan.Expr{
 				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+				logicalplan.Sum(logicalplan.Col(ColumnDuration)),
+				logicalplan.Min(logicalplan.Col(ColumnTimestamp)),
 			},
 			[]logicalplan.Expr{
 				logicalplan.Col(ColumnStacktrace),
@@ -943,7 +948,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 			return nil
 		})
 	if err != nil {
-		return nil, "", profile.Meta{}, err
+		return nil, "", "", profile.Meta{}, err
 	}
 
 	meta := profile.Meta{
@@ -952,5 +957,5 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		PeriodType: queryParts.Meta.PeriodType,
 		Timestamp:  start,
 	}
-	return records, "sum(value)", meta, nil
+	return records, ColumnValueSum, ColumnDurationSum, meta, nil
 }
