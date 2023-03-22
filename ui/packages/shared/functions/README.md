@@ -1,1 +1,0 @@
-# Parca Shared Functions
