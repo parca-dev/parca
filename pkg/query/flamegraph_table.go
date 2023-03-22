@@ -611,11 +611,6 @@ func trimFlamegraphNodes(
 			trimmedCumulative += node.Cumulative
 			continue
 		}
-		// We have reached a leaf node.
-		if node.Children == nil {
-			remainingNodes = append(remainingNodes, node)
-			continue
-		}
 
 		// Only if the oldTable has locations we want to trim the metadata.
 		// This is mostly for testing purposes, in production we always have locations.
@@ -638,6 +633,12 @@ func trimFlamegraphNodes(
 				line.FunctionIndex = newTable.AddFunction(oldFunction)
 			}
 			node.Meta.LocationIndex = newTable.AddLocation(oldLocation)
+		}
+
+		// We have reached a leaf node.
+		if node.Children == nil {
+			remainingNodes = append(remainingNodes, node)
+			continue
 		}
 
 		children, childrenTrimmedCumulative := trimFlamegraphNodes(

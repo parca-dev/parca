@@ -1240,3 +1240,43 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	require.Equal(t, expected, fg.Root)
 	require.True(t, proto.Equal(expected, fg.Root))
 }
+
+func TestTableConverterLocation(t *testing.T) {
+	tc := &tableConverter{locationsIndex: map[string]uint32{}}
+	id := "foo"
+	index := tc.AddLocation(&metastorepb.Location{Id: id})
+	l := tc.GetLocation(index)
+	require.Equal(t, id, l.Id)
+}
+
+func TestTableConverterMapping(t *testing.T) {
+	tc := &tableConverter{
+		stringsIndex:  map[string]uint32{},
+		mappingsIndex: map[string]uint32{},
+	}
+	tc.AddString("")
+
+	in := &metastorepb.Mapping{Id: "foo", File: "file", BuildId: "build"}
+	index := tc.AddMapping(in)
+	out := tc.GetMapping(index)
+	require.Equal(t, in, out)
+}
+
+func TestTableConverterFunction(t *testing.T) {
+	tc := &tableConverter{
+		stringsIndex:   map[string]uint32{},
+		functionsIndex: map[string]uint32{},
+	}
+	tc.AddString("")
+
+	in := &metastorepb.Function{
+		Id:         "foo",
+		StartLine:  12,
+		Name:       "name",
+		SystemName: "systemname",
+		Filename:   "filename",
+	}
+	index := tc.AddFunction(in)
+	out := tc.GetFunction(index)
+	require.Equal(t, in, out)
+}
