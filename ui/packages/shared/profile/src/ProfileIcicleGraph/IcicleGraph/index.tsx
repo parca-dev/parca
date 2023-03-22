@@ -61,9 +61,6 @@ export const IcicleGraph = memo(function IcicleGraph({
     }
   }, [width, coloredGraph]);
 
-  const totalRaw: number = useMemo(() => {
-    return total + filtered + parseInt(graph.trimmed)
-  }, [graph]);
   const xScale = useMemo(() => {
     if (width === undefined) {
       return () => 0;
@@ -80,8 +77,8 @@ export const IcicleGraph = memo(function IcicleGraph({
       <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
       <GraphTooltip
         unit={sampleUnit}
-        total={Number(total)}
-        totalRaw={totalRaw}
+        total={total}
+        totalUnfiltered={total + filtered}
         contextElement={svg.current}
         strings={coloredGraph.stringTable}
         mappings={coloredGraph.mapping}
