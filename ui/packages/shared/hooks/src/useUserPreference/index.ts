@@ -33,7 +33,7 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     name: 'Enable trimming of nodes that are too small to be seen',
     key: 'ENABLE_GRAPH_TRIMMING',
     type: 'boolean',
-    default: false,
+    default: true,
   },
   FLAMEGRAPH_COLOR_PROFILE: {
     name: 'Flamegraph color profile',
