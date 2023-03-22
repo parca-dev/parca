@@ -94,7 +94,7 @@ const ProfileShareModal = ({
               onChange={e => setDescription(e.target.value)}
             ></textarea>
             <Button
-              className="w-fit mt-4"
+              className="mt-4"
               onClick={e => {
                 e.preventDefault();
                 void handleSubmit();
@@ -126,12 +126,7 @@ const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props
 
   return (
     <>
-      <Button
-        color="neutral"
-        className="!w-auto"
-        onClick={() => setIsOpen(true)}
-        disabled={disabled}
-      >
+      <Button color="neutral" onClick={() => setIsOpen(true)} disabled={disabled}>
         <Icon icon="ei:share-apple" width={20} />
       </Button>
       <ProfileShareModal

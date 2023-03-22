@@ -314,7 +314,6 @@ export const ProfileView = ({
                   ) : null}
 
                   <Button
-                    className="!w-auto"
                     color="neutral"
                     onClick={e => {
                       e.preventDefault();

@@ -47,9 +47,10 @@ const UserPreferences = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   return (
     <div>
-      <IconButton onClick={() => setIsOpen(!isOpen)}>
-        <Icon icon="material-symbols:settings-outline-rounded" fontSize={20} />
-      </IconButton>
+      <IconButton
+        onClick={() => setIsOpen(!isOpen)}
+        icon={<Icon icon="material-symbols:settings-outline-rounded" fontSize={20} />}
+      />
       <Modal
         isOpen={isOpen}
         closeModal={() => {
