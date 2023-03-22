@@ -11,9 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import cx from 'classnames';
+import {useMemo} from 'react';
 
-export const BUTTON_VARIANT = {
+import {Icon} from '@iconify/react';
+import cx from 'classnames';
+import {twMerge} from 'tailwind-merge';
+
+const BUTTON_VARIANT_CONFIG = {
   primary: {
     text: 'text-gray-100 dark-gray-900 justify-center',
     bg: 'bg-indigo-600',
@@ -38,58 +42,63 @@ export const BUTTON_VARIANT = {
     hover: 'hover:underline p-0',
     padding: 'py-1',
   },
-};
+} as const;
 
-export type ButtonVariant = keyof typeof BUTTON_VARIANT;
+export type ButtonVariant = keyof typeof BUTTON_VARIANT_CONFIG;
 
 type Props = {
   disabled?: boolean;
+  /**
+   * variant specifies the variant of the button to be rendered
+   */
   variant?: ButtonVariant;
   className?: string;
   children: React.ReactNode;
 } & JSX.IntrinsicElements['button'];
 
-const Button = ({
-  disabled = false,
+export const Button = ({
   variant = 'primary',
-  children,
+  disabled = false,
   className = '',
   ...props
 }: Props): JSX.Element => {
-  return (
-    <button
-      type="button"
-      className={cx(
-        disabled ? 'opacity-50 pointer-events-none' : '',
-        ...Object.values(BUTTON_VARIANT[variant]),
-        'cursor-pointer group relative w-full flex text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center justify-center',
-        className
-      )}
-      disabled={disabled}
-      {...props}
-    >
-      {children}
-    </button>
-  );
+  const classes = useMemo<string>(() => {
+    const variantConfig = BUTTON_VARIANT_CONFIG[variant];
+
+    const classes = cx(
+      'flex text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center relative',
+      ...Object.values(variantConfig),
+      {'opacity-50 pointer-events-none': disabled},
+      {[className]: className}
+    );
+    const classesMerged = twMerge(classes);
+
+    if (classes.length > classesMerged.length) {
+      const classesTokens = classes.split(' ');
+      const classesMergedTokens = classesMerged.split(' ');
+      console.warn(
+        'Button: Conflicting classes found in `className` prop, please use/create an appropriate variant instead. Conflicting classes:',
+        classesTokens.filter(token => !classesMergedTokens.includes(token))
+      );
+    }
+
+    return classesMerged;
+  }, [className, disabled, variant]);
+
+  return <button {...props} disabled={disabled} className={classes} />;
 };
 
-export default Button;
+type IconButtonProps = {
+  /** Icon to display in the button.
+   * Can be a string (icon name from @iconify/react) or a ReactNode (e.g. an SVG)
+   */
+  icon: string | React.ReactNode;
+} & Omit<Props, 'variant' | 'children'>;
 
-export const IconButton = ({className = '', ...props}: Exclude<Props, 'variant'>): JSX.Element => {
-  return <Button {...props} variant="link" className={`w-fit ${className}`} />;
-};
-
-export const PageButton = ({children, className = '', ...rest}: Props): JSX.Element => {
+export const IconButton = ({icon, ...props}: IconButtonProps): JSX.Element => {
   return (
-    <button
-      type="button"
-      className={cx(
-        'relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-none bg-white dark:bg-gray-900 text-sm font-medium text-gray-500 hover:bg-gray-50',
-        className
-      )}
-      {...rest}
-    >
-      {children}
-    </button>
+    <Button {...props} variant="link">
+      {typeof icon === 'string' ? <Icon icon={icon} /> : icon}
+    </Button>
   );
 };
