@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Button, {IconButton} from './Button';
+import {Button, IconButton} from './Button';
 import ButtonGroup from './ButtonGroup';
 import Card from './Card';
 import {ConditionalWrapper} from './ConditionalWrapper';

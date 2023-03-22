@@ -22,6 +22,7 @@ import {
   Card,
   DateTimeRange,
   DateTimeRangePicker,
+  IconButton,
   useGrpcMetadata,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
@@ -189,8 +190,8 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header className="flex space-x-2">
-        <div className="flex flex-wrap w-full justify-start space-x-2 space-y-1">
+      <Card.Header className="flex space-x-2 !items-center">
+        <div className="flex flex-wrap w-full justify-start space-x-2 space-y-1 items-center">
           <div className="ml-2 mt-1">
             <ProfileTypeSelector
               profileTypesData={profileTypesData}
@@ -231,13 +232,7 @@ const ProfileSelector = ({
             </Button>
           </ButtonGroup>
         </div>
-        <div>
-          {comparing && (
-            <button type="button" onClick={() => closeProfile()}>
-              <CloseIcon />
-            </button>
-          )}
-        </div>
+        <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
       </Card.Header>
       {
         <Card.Body>

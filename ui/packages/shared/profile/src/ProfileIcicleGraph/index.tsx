@@ -102,7 +102,6 @@ const ProfileIcicleGraph = ({
           color="neutral"
           onClick={() => setNewCurPath([])}
           disabled={curPath.length === 0}
-          className="w-auto !text-gray-800 dark:!text-gray-200"
           variant="neutral"
         >
           Reset View
