@@ -154,21 +154,21 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 
 	require.Equal(t, []string{"", "a", "1", "2", "3", "5", "4"}, fg.StringTable)
 	require.Equal(t, []*metastorepb.Location{
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}, Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/mq717xceAZPk_DwjoEV9l4Zea2W6gCPeVQE6xhupIyA="},
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}, Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/nywr5cWVdwJb1cAWbrm2oKprBJKYoVpjEHbtKenHaGg="},
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 3}}, Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/Ykzo9tYbar2yhdULf19Jp20SZmCJLn1c5TLXLumKSKc="},
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 4}}, Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/FyW1Ts_USzmLVTuEbWNGW3bLt3vEf8Gn15goyXywkQw="},
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 5}}, Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/cukmn1qTXWLpu2SG5ox8x8A2hZqNjS55baOmijXi3co="},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 3}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 4}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 5}}},
 	}, fg.Locations)
 	require.Equal(t, []*metastorepb.Mapping{
-		{BuildIdStringIndex: 0, FileStringIndex: 1, Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A="},
+		{BuildIdStringIndex: 0, FileStringIndex: 1},
 	}, fg.Mapping)
 	require.Equal(t, []*metastorepb.Function{
-		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0, Id: "unknown-filename/7qd6hvHIBYXdQJ7V9xewooDjrmdIR_zZ0Jveuutjpyg="},
-		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0, Id: "unknown-filename/iba2LWuPfiWoW-U7bfl8Y_zmXJV0N22DMycYfD944AA="},
-		{NameStringIndex: 4, SystemNameStringIndex: 0, FilenameStringIndex: 0, Id: "unknown-filename/4CNM2O_LHZCLNRVCXHnlyun6GwI-Sv6rwgMbR7EaJQ4="},
-		{NameStringIndex: 5, SystemNameStringIndex: 0, FilenameStringIndex: 0, Id: "unknown-filename/PwksWp7MLSZfdiTUSy4aP-r0Bjr_O_3-9VEJ0SE_4Yc="},
-		{NameStringIndex: 6, SystemNameStringIndex: 0, FilenameStringIndex: 0, Id: "unknown-filename/tIwpxw9EeOUPRuqj2MDOrI3yyqNRmHZPT_zpLCp5yhs="},
+		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 4, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 5, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 6, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 	}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.
@@ -487,14 +487,13 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	require.Equal(t, uint32(1), fg.Locations[3].Lines[0].FunctionIndex)
 
 	require.Equal(t, []*metastorepb.Mapping{
-		{BuildIdStringIndex: 0, FileStringIndex: 1, Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A="},
-		{BuildIdStringIndex: 0, FileStringIndex: 3, Id: "x3cPeMLBULG5if1o7UCq5xxpiofyZIE_1V6MBIOY47k="},
+		{BuildIdStringIndex: 0, FileStringIndex: 1},
+		{BuildIdStringIndex: 0, FileStringIndex: 3},
 	}, fg.Mapping)
 	require.Equal(t, []*metastorepb.Function{{
 		NameStringIndex:       2,
 		SystemNameStringIndex: 0,
 		FilenameStringIndex:   0,
-		Id:                    "unknown-filename/7qd6hvHIBYXdQJ7V9xewooDjrmdIR_zZ0Jveuutjpyg=",
 	}}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.
@@ -644,28 +643,23 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 		NameStringIndex:       1,
 		SystemNameStringIndex: 1,
 		FilenameStringIndex:   2,
-		Id:                    "X41EE15Xxty3PrlqUcutB78Ky065QN8ikr3Oe3lJCyk=/TwSdYgG7s5EyzoYpXaSLH1hgWDHZAx71F2B7rfxyvLc=",
 	}, {
 		NameStringIndex:       3,
 		SystemNameStringIndex: 3,
 		FilenameStringIndex:   4,
-		Id:                    "vMl-yJEz1SsY8o6W-Lxuzeq9jsKV_ED-k-qkZ4MwL7Y=/_wsHOkzMl1Lpbx9VXgtine4hJArOr2seSnHY62sf-Q8=",
 	}, {
 		NameStringIndex:       5,
 		SystemNameStringIndex: 5,
 		FilenameStringIndex:   6,
-		Id:                    "di0EZIvkHha8U8He-ZgW0DFTfFynx34ltT5cbHWvtXY=/S7CG45dizCdxVa6kkqIIlY8FYFla8TBKHXog0LoR85Q=",
 	}, {
 		NameStringIndex:       7,
 		SystemNameStringIndex: 7,
 		FilenameStringIndex:   6,
-		Id:                    "di0EZIvkHha8U8He-ZgW0DFTfFynx34ltT5cbHWvtXY=/QsXGa5kGpsxygKpOahq1YmSBkx2dUch-Nmr0l3-AkEQ=",
 	}}, fg.GetFunction())
 
 	require.Equal(t, []*metastorepb.Location{{
 		Address:      94658718830132,
 		MappingIndex: 0,
-		Id:           "unknown-mapping/wJmUgWzHpt_1Bzsh-bnkPo913VmZj2rOa1tl20PcJvA=",
 		Lines: []*metastorepb.Line{{
 			Line:          173,
 			FunctionIndex: 1,
@@ -673,7 +667,6 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	}, {
 		Address:      94658718611115,
 		MappingIndex: 0,
-		Id:           "unknown-mapping/JzDHFIpGrx8A4p04YPmWW5GMV-OZyMuUXJtG-4-psFQ=",
 		Lines: []*metastorepb.Line{{
 			Line:          89,
 			FunctionIndex: 2,
@@ -684,7 +677,6 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	}, {
 		Address:      94658718597969,
 		MappingIndex: 0,
-		Id:           "unknown-mapping/ErbUKNq4N3aXRlqxBjLFiUkt-1eWmB7Bj4rz5qcACpc=",
 		Lines: []*metastorepb.Line{{
 			Line:          84,
 			FunctionIndex: 4,
@@ -805,28 +797,23 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 		NameStringIndex:       1,
 		SystemNameStringIndex: 1,
 		FilenameStringIndex:   2,
-		Id:                    "X41EE15Xxty3PrlqUcutB78Ky065QN8ikr3Oe3lJCyk=/TwSdYgG7s5EyzoYpXaSLH1hgWDHZAx71F2B7rfxyvLc=",
 	}, {
 		NameStringIndex:       3,
 		SystemNameStringIndex: 3,
 		FilenameStringIndex:   4,
-		Id:                    "vMl-yJEz1SsY8o6W-Lxuzeq9jsKV_ED-k-qkZ4MwL7Y=/_wsHOkzMl1Lpbx9VXgtine4hJArOr2seSnHY62sf-Q8=",
 	}, {
 		NameStringIndex:       5,
 		SystemNameStringIndex: 5,
 		FilenameStringIndex:   6,
-		Id:                    "di0EZIvkHha8U8He-ZgW0DFTfFynx34ltT5cbHWvtXY=/S7CG45dizCdxVa6kkqIIlY8FYFla8TBKHXog0LoR85Q=",
 	}, {
 		NameStringIndex:       7,
 		SystemNameStringIndex: 7,
 		FilenameStringIndex:   6,
-		Id:                    "di0EZIvkHha8U8He-ZgW0DFTfFynx34ltT5cbHWvtXY=/QsXGa5kGpsxygKpOahq1YmSBkx2dUch-Nmr0l3-AkEQ=",
 	}}, fg.GetFunction())
 
 	require.Equal(t, []*metastorepb.Location{{
 		Address:      94658718830132,
 		MappingIndex: 0,
-		Id:           "unknown-mapping/wJmUgWzHpt_1Bzsh-bnkPo913VmZj2rOa1tl20PcJvA=",
 		Lines: []*metastorepb.Line{{
 			Line:          173,
 			FunctionIndex: 1,
@@ -834,7 +821,6 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	}, {
 		Address:      94658718611115,
 		MappingIndex: 0,
-		Id:           "unknown-mapping/JzDHFIpGrx8A4p04YPmWW5GMV-OZyMuUXJtG-4-psFQ=",
 		Lines: []*metastorepb.Line{{
 			Line:          89,
 			FunctionIndex: 2,
@@ -845,7 +831,6 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	}, {
 		Address:      94658718597969,
 		MappingIndex: 0,
-		Id:           "unknown-mapping/ErbUKNq4N3aXRlqxBjLFiUkt-1eWmB7Bj4rz5qcACpc=",
 		Lines: []*metastorepb.Line{{
 			Line:          84,
 			FunctionIndex: 4,

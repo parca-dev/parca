@@ -117,23 +117,23 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 
 	aggregatedFlamegraph := aggregateByFunctionTable(tables, flamegraph)
 
+	// Remove the IDs from the aggregated graph.
+	// The frontend doesn't need them, and they take up a lot of space.
+	for _, m := range aggregatedFlamegraph.Mapping {
+		m.Id = ""
+	}
+	for _, l := range aggregatedFlamegraph.Locations {
+		l.Id = ""
+	}
+	for _, f := range aggregatedFlamegraph.Function {
+		f.Id = ""
+	}
+
 	if nodeTrimFraction == 0 {
 		return aggregatedFlamegraph, nil
 	}
 
 	trimmedGraph := TrimFlamegraph(ctx, tracer, aggregatedFlamegraph, nodeTrimFraction)
-
-	// Remove the IDs from the trimmed graph.
-	// The frontend doesn't need them, and they take up a lot of space.
-	for _, m := range trimmedGraph.Mapping {
-		m.Id = ""
-	}
-	for _, l := range trimmedGraph.Locations {
-		l.Id = ""
-	}
-	for _, f := range trimmedGraph.Function {
-		f.Id = ""
-	}
 
 	return trimmedGraph, nil
 }
