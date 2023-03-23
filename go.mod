@@ -3,7 +3,7 @@ module github.com/parca-dev/parca
 go 1.19
 
 require (
-	cloud.google.com/go/storage v1.29.0
+	cloud.google.com/go/storage v1.30.0
 	github.com/alecthomas/kong v0.7.1
 	github.com/apache/arrow/go/v10 v10.0.1
 	github.com/cenkalti/backoff/v4 v4.2.0
