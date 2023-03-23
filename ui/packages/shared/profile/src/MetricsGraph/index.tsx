@@ -58,6 +58,7 @@ export interface HighlightedSeries {
 interface Series {
   metric: Label[];
   values: number[][];
+  labelset: string;
 }
 
 const MetricsGraph = ({
@@ -133,8 +134,9 @@ export const RawMetricsGraph = ({
 
   const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb) {
     if (s.labelset !== undefined) {
+      const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
       agg.push({
-        metric: s.labelset.labels,
+        metric,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
             const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
@@ -142,10 +144,14 @@ export const RawMetricsGraph = ({
           }
           return agg;
         }, []),
+        labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
       });
     }
     return agg;
   }, []);
+
+  // Sort series by id to make sure the colors are consistent
+  series.sort((a, b) => a.labelset.localeCompare(b.labelset));
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
