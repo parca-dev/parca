@@ -317,10 +317,14 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 
 	// Check if tables and thus deduplication was correct and deterministic
 
-	require.Equal(t, []string{"", "a", "1", "2"}, fg.StringTable)
+	require.Equal(t, []string{"", "a", "1", "2", "" /* 3 */, "" /* 5 */, "" /* 4 */}, fg.StringTable)
 	require.Equal(t, []*metastorepb.Location{
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
+		// The following locations aren't referenced from the flame graph.
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 3}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 4}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 5}}},
 	}, fg.Locations)
 	require.Equal(t, []*metastorepb.Mapping{
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
@@ -328,6 +332,10 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 	require.Equal(t, []*metastorepb.Function{
 		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		// The following functions aren't referenced from the flame graph.
+		{NameStringIndex: 4, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 5, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 6, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 	}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.
@@ -989,10 +997,6 @@ func TestFlamegraphTrimming(t *testing.T) {
 				},
 			},
 		},
-		StringTable: []string{""},
-		Locations:   []*metastorepb.Location{},
-		Mapping:     []*metastorepb.Mapping{},
-		Function:    []*metastorepb.Function{},
 	}, trimmedGraph)
 }
 
@@ -1017,10 +1021,6 @@ func TestFlamegraphTrimmingSingleNodeGraph(t *testing.T) {
 				Cumulative: 100,
 			}},
 		},
-		StringTable: []string{""},
-		Locations:   []*metastorepb.Location{},
-		Mapping:     []*metastorepb.Mapping{},
-		Function:    []*metastorepb.Function{},
 	}, trimmedGraph)
 }
 
@@ -1053,10 +1053,6 @@ func TestFlamegraphTrimmingNodeWithFlatValues(t *testing.T) {
 				}},
 			}},
 		},
-		StringTable: []string{""},
-		Locations:   []*metastorepb.Location{},
-		Mapping:     []*metastorepb.Mapping{},
-		Function:    []*metastorepb.Function{},
 	}, trimmedGraph)
 }
 
@@ -1201,12 +1197,14 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	require.Equal(t, int64(15), fg.Total)
 
 	// Check if tables and thus deduplication was correct and deterministic
-	require.Equal(t, []string{"", "a", "1.a", "2.a", "3.a", "4.b"}, fg.StringTable)
+	require.Equal(t, []string{"", "a", "1.a", "2.a", "3.a", "4.b", "" /* 6.b*/}, fg.StringTable)
 	require.Equal(t, []*metastorepb.Location{
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 3}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 4}}},
+		// The location isn't referenced from the flame graph.
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 5}}},
 	}, fg.Locations)
 	require.Equal(t, []*metastorepb.Mapping{
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
@@ -1216,6 +1214,8 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		{NameStringIndex: 4, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		{NameStringIndex: 5, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		// The function isn't referenced from the flame graph.
+		{NameStringIndex: 6, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 	}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.
@@ -1246,9 +1246,15 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 func TestTableConverterLocation(t *testing.T) {
 	tc := &tableConverter{locationsIndex: map[string]uint32{}}
 	id := "foo"
-	index := tc.AddLocation(&metastorepb.Location{Id: id})
+	address := uint64(0x1234)
+	index := tc.AddLocation(&metastorepb.Location{Id: id, Address: address})
 	l := tc.GetLocation(index)
 	require.Equal(t, id, l.Id)
+	require.Equal(t, address, l.Address)
+
+	// doesn't exist
+	require.Nil(t, tc.GetLocation(0))
+	require.Nil(t, tc.GetLocation(2))
 }
 
 func TestTableConverterMapping(t *testing.T) {
@@ -1281,6 +1287,18 @@ func TestTableConverterFunction(t *testing.T) {
 	index := tc.AddFunction(in)
 	out := tc.GetFunction(index)
 	require.Equal(t, in, out)
+}
+
+func TestAddGetString(t *testing.T) {
+	tc := &tableConverter{stringsIndex: map[string]uint32{}}
+	tc.AddString("")
+
+	require.Equal(t, "foo", tc.GetString(tc.AddString("foo")))
+	require.Equal(t, "bar", tc.GetString(tc.AddString("bar")))
+	require.Equal(t, "foo", tc.GetString(tc.AddString("foo")))
+	require.Equal(t, "", tc.GetString(tc.AddString("")))
+	// doesn't exist
+	require.Equal(t, "", tc.GetString(3))
 }
 
 func TestGenerateFlamegraphTrimmingStringTablesCompare(t *testing.T) {

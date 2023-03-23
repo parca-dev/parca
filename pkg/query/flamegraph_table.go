@@ -154,6 +154,16 @@ func (c *tableConverter) Strings() []string {
 	return c.stringsSlice
 }
 
+// AddString to the string table and return the strings index in the table.
+func (c *tableConverter) AddString(s string) uint32 {
+	if i, ok := c.stringsIndex[s]; ok {
+		return i
+	}
+	c.stringsSlice = append(c.stringsSlice, s)
+	c.stringsIndex[s] = uint32(len(c.stringsSlice) - 1)
+	return c.stringsIndex[s]
+}
+
 func (c *tableConverter) GetString(index uint32) string {
 	if uint32(len(c.stringsSlice)) <= index {
 		return ""
@@ -212,16 +222,6 @@ func (c *tableConverter) GetFunction(index uint32) *metastorev1alpha1.Function {
 // Functions returns all the functions deduplicated by their ID.
 func (c *tableConverter) Functions() []*metastorev1alpha1.Function {
 	return c.functionsSlice
-}
-
-// AddString to the string table and return the strings index in the table.
-func (c *tableConverter) AddString(s string) uint32 {
-	if i, ok := c.stringsIndex[s]; ok {
-		return i
-	}
-	c.stringsSlice = append(c.stringsSlice, s)
-	c.stringsIndex[s] = uint32(len(c.stringsSlice) - 1)
-	return c.stringsIndex[s]
 }
 
 // AddMapping by its ID and only add it if it's not yet in the table.
@@ -543,24 +543,12 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 		return nil
 	}
 
-	oldTable := &tableConverter{
+	table := &tableConverter{
 		stringsSlice:   graph.StringTable,
 		mappingsSlice:  graph.Mapping,
 		locationsSlice: graph.Locations,
 		functionsSlice: graph.Function,
 	}
-
-	newTable := &tableConverter{
-		stringsSlice:   []string{},
-		stringsIndex:   map[string]uint32{},
-		mappingsSlice:  []*metastorev1alpha1.Mapping{},
-		mappingsIndex:  map[string]uint32{},
-		locationsSlice: []*metastorev1alpha1.Location{},
-		locationsIndex: map[string]uint32{},
-		functionsSlice: []*metastorev1alpha1.Function{},
-		functionsIndex: map[string]uint32{},
-	}
-	newTable.AddString("") // Add empty string to the string table.
 
 	it := NewFlamegraphIterator(&querypb.FlamegraphNode{
 		Cumulative: graph.Root.Cumulative,
@@ -576,11 +564,10 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 			Cumulative: graph.Root.Cumulative,
 			Diff:       graph.Root.Diff,
 		},
-		// They are replaced with the new table later.
-		StringTable: oldTable.Strings(),
-		Locations:   oldTable.Locations(),
-		Mapping:     oldTable.Mappings(),
-		Function:    oldTable.Functions(),
+		StringTable: graph.StringTable,
+		Locations:   graph.Locations,
+		Mapping:     graph.Mapping,
+		Function:    graph.Function,
 	}
 	if !it.HasMore() {
 		return trimmedGraph
@@ -593,6 +580,7 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	stack := TreeStack{{nodes: []*querypb.FlamegraphNode{newRootNode}}}
 
 	trimmedCumulative := int64(0)
+	keepString := map[uint32]struct{}{}
 
 	for it.HasMore() {
 		if it.NextChild() {
@@ -610,10 +598,23 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 				continue
 			}
 
-			// We only copy the meta data for nodes we are keeping.
-			// This results in a smaller string table as well as a smaller
-			// locations, mappings and functions table if nodes are skipped.
-			copyNodeMeta(oldTable, newTable, node.Meta)
+			// We only want to trim the graph if the graph has locations.
+			// This is mostly for testing purposes, in production we always have locations.
+			if graph.Locations != nil {
+				location := table.GetLocation(node.Meta.LocationIndex)
+				mapping := table.GetMapping(location.MappingIndex)
+				if mapping != nil {
+					keepString[mapping.FileStringIndex] = struct{}{}
+					keepString[mapping.BuildIdStringIndex] = struct{}{}
+				}
+
+				for _, line := range location.Lines {
+					function := table.GetFunction(line.FunctionIndex)
+					keepString[function.NameStringIndex] = struct{}{}
+					keepString[function.SystemNameStringIndex] = struct{}{}
+					keepString[function.FilenameStringIndex] = struct{}{}
+				}
+			}
 
 			// Create a new node with the new meta data.
 			// We need a new node because we are going to append children to it,
@@ -644,35 +645,16 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	trimmedGraph.UntrimmedTotal = graph.Total
 	trimmedGraph.Root.Children = newRootNode.Children
-	trimmedGraph.StringTable = newTable.Strings()
-	trimmedGraph.Locations = newTable.Locations()
-	trimmedGraph.Mapping = newTable.Mappings()
-	trimmedGraph.Function = newTable.Functions()
+
+	// Only trim the string table entries if we actually have fewer strings to keep.
+	if len(keepString) < len(graph.StringTable) {
+		// Iterate over the string table and set the strings we don't need to empty string.
+		for i := range graph.StringTable {
+			if _, ok := keepString[uint32(i)]; !ok {
+				graph.StringTable[i] = ""
+			}
+		}
+	}
 
 	return trimmedGraph
-}
-
-func copyNodeMeta(oldTable, newTable *tableConverter, meta *querypb.FlamegraphNodeMeta) {
-	// Only if the oldTable has locations we want to trim the metadata.
-	// This is mostly for testing purposes, in production we always have locations.
-	if oldTable.locationsSlice != nil {
-		// We only want to add the metadata if it's needed after trimming.
-		oldLocation := oldTable.GetLocation(meta.LocationIndex)
-
-		// Reconstruct the mapping and add it to the new table.
-		oldMapping := oldTable.GetMapping(oldLocation.MappingIndex)
-		oldMapping.File = oldTable.GetString(oldMapping.FileStringIndex)
-		oldMapping.BuildId = oldTable.GetString(oldMapping.BuildIdStringIndex)
-		oldLocation.MappingIndex = newTable.AddMapping(oldMapping)
-
-		// Reconstruct the location and function and add it to the new table.
-		for _, line := range oldLocation.Lines {
-			oldFunction := oldTable.GetFunction(line.FunctionIndex)
-			oldFunction.Name = oldTable.GetString(oldFunction.NameStringIndex)
-			oldFunction.Filename = oldTable.GetString(oldFunction.FilenameStringIndex)
-			oldFunction.SystemName = oldTable.GetString(oldFunction.SystemNameStringIndex)
-			line.FunctionIndex = newTable.AddFunction(oldFunction)
-		}
-		meta.LocationIndex = newTable.AddLocation(oldLocation)
-	}
 }
