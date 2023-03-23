@@ -87,6 +87,12 @@ func (fgi *FlamegraphIterator) At() *querypb.FlamegraphNode {
 	return peekNode.Children[fgi.stack.Peek().currentChild]
 }
 
+func (fgi *FlamegraphIterator) AtParent() *querypb.FlamegraphNode {
+	peekNodes := fgi.stack.Peek().nodes
+	peekNode := peekNodes[len(peekNodes)-1]
+	return peekNode
+}
+
 func (fgi *FlamegraphIterator) StepInto() bool {
 	peekNodes := fgi.stack.Peek().nodes
 	peekNode := peekNodes[len(peekNodes)-1]
