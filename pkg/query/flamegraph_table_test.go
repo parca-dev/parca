@@ -322,9 +322,7 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
 		// The following locations aren't referenced from the flame graph.
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 3}}},
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 4}}},
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 5}}},
+		nil, nil, nil,
 	}, fg.Locations)
 	require.Equal(t, []*metastorepb.Mapping{
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
@@ -333,9 +331,7 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		// The following functions aren't referenced from the flame graph.
-		{NameStringIndex: 4, SystemNameStringIndex: 0, FilenameStringIndex: 0},
-		{NameStringIndex: 5, SystemNameStringIndex: 0, FilenameStringIndex: 0},
-		{NameStringIndex: 6, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		nil, nil, nil,
 	}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.
@@ -1189,7 +1185,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 3}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 4}}},
 		// The location isn't referenced from the flame graph.
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 5}}},
+		nil,
 	}, fg.Locations)
 	require.Equal(t, []*metastorepb.Mapping{
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
@@ -1200,7 +1196,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 		{NameStringIndex: 4, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		{NameStringIndex: 5, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		// The function isn't referenced from the flame graph.
-		{NameStringIndex: 6, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		nil,
 	}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.

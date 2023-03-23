@@ -580,7 +580,9 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	stack := TreeStack{{nodes: []*querypb.FlamegraphNode{newRootNode}}}
 
 	trimmedCumulative := int64(0)
-	keepString := map[uint32]struct{}{}
+	keepStrings := map[uint32]struct{}{}
+	keepLocations := map[uint32]struct{}{}
+	keepFunctions := map[uint32]struct{}{}
 
 	for it.HasMore() {
 		if it.NextChild() {
@@ -602,17 +604,24 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 			// This is mostly for testing purposes, in production we always have locations.
 			if graph.Locations != nil {
 				location := table.GetLocation(node.Meta.LocationIndex)
-				mapping := table.GetMapping(location.MappingIndex)
-				if mapping != nil {
-					keepString[mapping.FileStringIndex] = struct{}{}
-					keepString[mapping.BuildIdStringIndex] = struct{}{}
-				}
+				if location != nil {
+					keepLocations[node.Meta.LocationIndex-1] = struct{}{}
 
-				for _, line := range location.Lines {
-					function := table.GetFunction(line.FunctionIndex)
-					keepString[function.NameStringIndex] = struct{}{}
-					keepString[function.SystemNameStringIndex] = struct{}{}
-					keepString[function.FilenameStringIndex] = struct{}{}
+					mapping := table.GetMapping(location.MappingIndex)
+					if mapping != nil {
+						keepStrings[mapping.FileStringIndex] = struct{}{}
+						keepStrings[mapping.BuildIdStringIndex] = struct{}{}
+					}
+
+					for _, line := range location.Lines {
+						function := table.GetFunction(line.FunctionIndex)
+						if function != nil {
+							keepFunctions[line.FunctionIndex-1] = struct{}{}
+							keepStrings[function.NameStringIndex] = struct{}{}
+							keepStrings[function.SystemNameStringIndex] = struct{}{}
+							keepStrings[function.FilenameStringIndex] = struct{}{}
+						}
+					}
 				}
 			}
 
@@ -647,11 +656,27 @@ func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Fla
 	trimmedGraph.Root.Children = newRootNode.Children
 
 	// Only trim the string table entries if we actually have fewer strings to keep.
-	if len(keepString) < len(graph.StringTable) {
+	if len(keepStrings) < len(graph.StringTable) {
 		// Iterate over the string table and set the strings we don't need to empty string.
 		for i := range graph.StringTable {
-			if _, ok := keepString[uint32(i)]; !ok {
+			if _, ok := keepStrings[uint32(i)]; !ok {
 				graph.StringTable[i] = ""
+			}
+		}
+	}
+	if len(keepLocations) < len(graph.Locations) {
+		// Iterate over the locations table and set the locations we don't need to nil.
+		for i := range graph.Locations {
+			if _, ok := keepLocations[uint32(i)]; !ok {
+				graph.Locations[i] = nil
+			}
+		}
+	}
+	if len(keepFunctions) < len(graph.Function) {
+		// Iterate over the functions table and set the functions we don't need to nil.
+		for i := range graph.Function {
+			if _, ok := keepFunctions[uint32(i)]; !ok {
+				graph.Function[i] = nil
 			}
 		}
 	}
