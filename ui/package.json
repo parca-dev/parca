@@ -16,7 +16,7 @@
     "prettier": "prettier --write --ignore-path ../.prettierignore 'packages/**/*.{js,jsx,ts,tsx,md,mdx}'",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "chromatic": "chromatic --project-token 19693a33e466"
+    "chromatic": "chromatic"
   },
   "workspaces": {
     "packages": [
