@@ -16,6 +16,8 @@ package query
 import (
 	"bytes"
 	"context"
+	"math"
+	"sort"
 	"testing"
 
 	"github.com/go-kit/log"
@@ -1279,4 +1281,34 @@ func TestTableConverterFunction(t *testing.T) {
 	index := tc.AddFunction(in)
 	out := tc.GetFunction(index)
 	require.Equal(t, in, out)
+}
+
+func TestGenerateFlamegraphTrimmingStringTablesCompare(t *testing.T) {
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	reg := prometheus.NewRegistry()
+
+	l := metastoretest.NewTestMetastore(t, log.NewNopLogger(), reg, tracer)
+	// Generate a flamegraph with a threshold of 0. This disables trimming.
+	original := testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l), 0)
+	// Generate a flamegraph with a threshold that enables trimming but so small it doesn't actually trim anything.
+	trimmed := testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l), math.SmallestNonzeroFloat32)
+
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+	require.Equal(t, original.Total, trimmed.Total)
+	require.Equal(t, original.Height, trimmed.Height)
+	require.Equal(t, original.Unit, trimmed.Unit)
+	require.Equal(t, original.Trimmed, trimmed.Trimmed)
+
+	// Check if table converter has the same number of entries for each type.
+	require.Len(t, trimmed.StringTable, len(trimmed.StringTable))
+	require.Len(t, trimmed.Locations, len(trimmed.Locations))
+	require.Len(t, trimmed.Mapping, len(trimmed.Mapping))
+	require.Len(t, trimmed.Function, len(trimmed.Function))
+
+	// sort the tables as trimming is not fully equal but the sorted tables should be equal.
+	sort.Strings(original.StringTable)
+	sort.Strings(trimmed.StringTable)
+	require.Equal(t, original.StringTable, trimmed.StringTable)
+
+	require.Equal(t, original.Root.Cumulative, trimmed.Root.Cumulative)
 }

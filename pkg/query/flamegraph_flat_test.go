@@ -208,10 +208,10 @@ func TestGenerateFlamegraphFromProfile(t *testing.T) {
 		tracer,
 	)
 
-	testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l))
+	testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l), 0)
 }
 
-func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServiceClient) *pb.Flamegraph {
+func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServiceClient, nodeTrimFraction float32) *pb.Flamegraph {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
@@ -227,7 +227,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServ
 	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphFlat(ctx, tracer, sp)
+	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, nodeTrimFraction)
 	require.NoError(t, err)
 
 	return fg
