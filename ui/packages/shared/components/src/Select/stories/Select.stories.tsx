@@ -12,26 +12,103 @@
 // limitations under the License.
 
 import Select from '..';
-import {profileSelectElement, wellKnownProfiles} from '../../../../profile';
 
 export default {
   component: Select,
   title: 'Components/Select ',
 };
 
-const wellKnownProfilesAsArray = Object.entries(wellKnownProfiles).map(([key]) => ({
-  key,
-}));
-
-const profileLabels = wellKnownProfilesAsArray.map(key => ({
-  key,
-  element: profileSelectElement(key.key, true),
-}));
+const items = [
+  {
+    key: {key: 'Block Contentions Total'},
+    element: {
+      active: <>Block Contentions Total</>,
+      expanded: (
+        <>
+          <span>Block Contentions Total</span>
+          <br />
+          <span className="text-xs">
+            Stack traces that led to blocking on synchronization primitives.
+          </span>
+        </>
+      ),
+    },
+  },
+  {
+    key: {key: 'Goroutine Created Total'},
+    element: {
+      active: <>Goroutine Created Total</>,
+      expanded: (
+        <>
+          <span>Goroutine Created Total</span>
+          <br />
+          <span className="text-xs">Stack traces that created all current goroutines.</span>
+        </>
+      ),
+    },
+  },
+  {
+    key: {key: 'Memory Allocated Bytes Total'},
+    element: {
+      active: <>Memory Allocated Bytes Total</>,
+      expanded: (
+        <>
+          <span>Memory Allocated Bytes Total</span>
+          <br />
+          <span className="text-xs">A sampling of all past memory allocations in bytes.</span>
+        </>
+      ),
+    },
+  },
+  {
+    key: {key: 'Memory Allocated Bytes Delta'},
+    element: {
+      active: <>Memory Allocated Bytes Delta</>,
+      expanded: (
+        <>
+          <span>Memory Allocated Bytes Delta</span>
+          <br />
+          <span className="text-xs">
+            A sampling of all memory allocations during the observation in bytes.
+          </span>
+        </>
+      ),
+    },
+  },
+  {
+    key: {key: 'Process CPU Nanoseconds'},
+    element: {
+      active: <>Process CPU Nanoseconds</>,
+      expanded: (
+        <>
+          <span>Process CPU Nanoseconds</span>
+          <br />
+          <span className="text-xs">
+            CPU profile measured by the process itself in nanoseconds.
+          </span>
+        </>
+      ),
+    },
+  },
+  {
+    key: {key: 'Process CPU Samples'},
+    element: {
+      active: <>Process CPU Samples</>,
+      expanded: (
+        <>
+          <span>Process CPU Samples</span>
+          <br />
+          <span className="text-xs">CPU profile samples observed by the process itself.</span>
+        </>
+      ),
+    },
+  },
+];
 
 export const Default = {
   args: {
     placeholder: 'Select Profile',
-    items: profileLabels,
+    items,
     selectedKey: 'Block Contentions Total',
   },
 };
@@ -39,7 +116,7 @@ export const Default = {
 export const Loading = {
   args: {
     placeholder: 'Select Profile',
-    items: profileLabels,
+    items,
     loading: true,
     selectedKey: 'Block Contentions Total',
   },
