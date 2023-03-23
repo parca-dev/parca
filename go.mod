@@ -3,7 +3,7 @@ module github.com/parca-dev/parca
 go 1.19
 
 require (
-	cloud.google.com/go/storage v1.30.0
+	cloud.google.com/go/storage v1.30.1
 	github.com/alecthomas/kong v0.7.1
 	github.com/apache/arrow/go/v10 v10.0.1
 	github.com/cenkalti/backoff/v4 v4.2.0
@@ -46,8 +46,8 @@ require (
 	golang.org/x/net v0.8.0
 	golang.org/x/oauth2 v0.6.0
 	golang.org/x/sync v0.1.0
-	google.golang.org/api v0.113.0
-	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
+	google.golang.org/api v0.114.0
+	google.golang.org/genproto v0.0.0-20230320184635-7606e756e683
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.29.1
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.2
