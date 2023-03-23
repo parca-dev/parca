@@ -11,27 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Tooltip} from 'react-tooltip';
+import Pill from '..';
 
-import 'react-tooltip/dist/react-tooltip.css';
-
-import {cutToMaxStringLength} from '@parca/utilities';
-
-export interface Props {
-  text: string;
-  maxTextLength: number;
-  id: string;
-}
-
-const TextWithTooltip = ({text, maxTextLength, id}: Props): JSX.Element => {
-  return (
-    <>
-      <span id={id} data-tooltip-content={text}>
-        {cutToMaxStringLength(text, maxTextLength)}
-      </span>
-      <Tooltip anchorId={id} />
-    </>
-  );
+export default {
+  component: Pill,
+  title: 'Components/Pill',
 };
 
-export default TextWithTooltip;
+export const Primary = {args: {variant: 'primary', children: <>Primary Pill</>}};
+export const Success = {args: {variant: 'success', children: <>Success Pill</>}};
+export const Danger = {args: {variant: 'danger', children: <>Danger Pill</>}};
+export const Warning = {args: {variant: 'warning', children: <>Warning Pill</>}};
+export const Info = {args: {variant: 'info', children: <>Info Pill</>}};
+export const Neutral = {args: {variant: 'neutral', children: <>Neutral Pill</>}};

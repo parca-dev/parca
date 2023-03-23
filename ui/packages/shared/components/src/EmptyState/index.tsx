@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-interface EmptyStateProps {
+export interface EmptyStateProps {
   isEmpty: boolean;
   body?: string | JSX.Element | JSX.Element[];
   title?: string;
