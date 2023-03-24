@@ -653,7 +653,7 @@ func (b *Bucket) SignedPUT(
 	size int64,
 	expiry time.Time,
 ) (string, error) {
-	u, err := b.client.PresignedPutObject(ctx, b.name, objectKey, expiry.Sub(time.Now()))
+	u, err := b.client.PresignedPutObject(ctx, b.name, objectKey, time.Until(expiry))
 	if err != nil {
 		return "", err
 	}
