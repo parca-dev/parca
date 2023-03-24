@@ -208,3 +208,11 @@ release-dry-run:
 .PHONY: release-build
 release-build:
 	goreleaser build --rm-dist --skip-validate --snapshot --debug
+
+.PHONY: signedupload/s3
+signedupload/s3:
+	rm -rf pkg/signedupload/s3
+	rm -rf tmp/objstore
+	$(CMD_GIT) clone https://github.com/thanos-io/objstore tmp/objstore
+	cp -r tmp/objstore/providers/s3 pkg/signedupload/s3
+	rm -rf tmp/objstore

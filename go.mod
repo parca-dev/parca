@@ -6,10 +6,14 @@ require (
 	cloud.google.com/go/storage v1.30.1
 	github.com/alecthomas/kong v0.7.1
 	github.com/apache/arrow/go/v10 v10.0.1
+	github.com/aws/aws-sdk-go-v2 v1.16.0
+	github.com/aws/aws-sdk-go-v2/config v1.15.1
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/dgraph-io/badger/v3 v3.2103.5
+	github.com/efficientgo/core v1.0.0-rc.0.0.20221201130417-ba593f67d2a4
+	github.com/efficientgo/e2e v0.13.1-0.20220922081603-45de9fc588a8
 	github.com/felixge/fgprof v0.9.4-0.20221116204635-ececf7638e93
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.8
@@ -27,8 +31,10 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20220517205856-0058ec4f073c
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.16.3
+	github.com/minio/minio-go/v7 v7.0.45
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
+	github.com/pkg/errors v0.9.1
 	github.com/polarsignals/frostdb v0.0.0-20230323200733-2d118da30218
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.42.0
@@ -51,6 +57,7 @@ require (
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.2
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -82,8 +89,6 @@ require (
 	github.com/apache/thrift v0.16.0 // indirect
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/aws/aws-sdk-go v1.44.187 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.16.0 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.15.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.11.0 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.1 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.7 // indirect
@@ -110,7 +115,6 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/efficientgo/core v1.0.0-rc.0.0.20221201130417-ba593f67d2a4 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/envoyproxy/go-control-plane v0.10.3 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.9.1 // indirect
@@ -176,7 +180,6 @@ require (
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
-	github.com/minio/minio-go/v7 v7.0.45 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -196,7 +199,6 @@ require (
 	github.com/ovh/go-ovh v1.3.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
@@ -234,7 +236,6 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.2.0 // indirect
 	k8s.io/api v0.26.1 // indirect
 	k8s.io/apimachinery v0.26.1 // indirect
