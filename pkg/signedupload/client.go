@@ -54,9 +54,7 @@ func NewClient(ctx context.Context, logger log.Logger, bucketConf *client.Bucket
 		return nil, fmt.Errorf("failed to marshal bucket config: %w", err)
 	}
 
-	var (
-		c Client
-	)
+	var c Client
 	switch bucketConf.Type {
 	case client.GCS:
 		c, err = NewGCSClient(ctx, config)

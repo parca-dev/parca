@@ -1,4 +1,6 @@
 // Copyright (c) The Thanos Authors.
+// TODO: This license is not consistent with license used in the project.
+//       Delete the inconsistent license and above line and rerun pre-commit to insert a good license.
 // Licensed under the Apache License 2.0.
 
 package s3
