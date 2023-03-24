@@ -208,6 +208,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		var err error
 		signedUploadClient, err = signedupload.NewClient(
 			context.Background(),
+			logger,
 			cfg.ObjectStorage.Bucket,
 		)
 

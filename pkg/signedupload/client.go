@@ -20,8 +20,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/thanos-io/objstore/client"
 	"gopkg.in/yaml.v3"
+
+	"github.com/parca-dev/parca/pkg/signedupload/s3"
 )
 
 // DirDelim is the delimiter used to model a directory structure in an object store bucket.
@@ -45,19 +48,28 @@ type Client interface {
 	) (string, error)
 }
 
-func NewClient(ctx context.Context, bucketConf *client.BucketConfig) (Client, error) {
-	if bucketConf.Type != client.GCS {
-		return nil, ErrUnsupportedProvider{Provider: bucketConf.Type}
-	}
-
+func NewClient(ctx context.Context, logger log.Logger, bucketConf *client.BucketConfig) (Client, error) {
 	config, err := yaml.Marshal(bucketConf.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal bucket config: %w", err)
 	}
 
-	c, err := NewGCSClient(ctx, config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GCS client: %w", err)
+	var (
+		c Client
+	)
+	switch bucketConf.Type {
+	case client.GCS:
+		c, err = NewGCSClient(ctx, config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create GCS client: %w", err)
+		}
+	case client.S3:
+		c, err = s3.NewBucket(logger, config, "")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create OSS client: %w", err)
+		}
+	default:
+		return nil, ErrUnsupportedProvider{Provider: bucketConf.Type}
 	}
 
 	return NewPrefixedClient(c, bucketConf.Prefix), nil

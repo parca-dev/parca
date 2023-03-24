@@ -633,3 +633,16 @@ func NewTestBucketFromConfig(t testing.TB, location string, c Config, reuseBucke
 func ContextWithSSEConfig(ctx context.Context, value encrypt.ServerSide) context.Context {
 	return context.WithValue(ctx, sseConfigKey, value)
 }
+
+func (b *Bucket) SignedPUT(
+	ctx context.Context,
+	objectKey string,
+	size int64,
+	expiry time.Time,
+) (string, error) {
+	u, err := b.client.PresignedPutObject(ctx, b.name, objectKey, expiry.Sub(time.Now()))
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
+}
