@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/alecthomas/kong"
 	"github.com/common-nighthawk/go-figure"
@@ -36,6 +37,7 @@ func main() {
 	ctx := context.Background()
 	flags := &parca.Flags{}
 
+	debug.PrintStack()
 	kong.Parse(flags)
 
 	if flags.Version {
