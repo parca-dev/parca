@@ -341,7 +341,7 @@ type TableGetter interface {
 }
 
 func aggregateByFunctionTable(ctx context.Context, tracer trace.Tracer, tables TableGetter, fg *querypb.Flamegraph) *querypb.Flamegraph {
-	ctx, span := tracer.Start(ctx, "aggregateByFunctionTable")
+	_, span := tracer.Start(ctx, "aggregateByFunctionTable")
 	defer span.End()
 	oldRootNode := &querypb.FlamegraphNode{
 		Cumulative: fg.Root.Cumulative,
