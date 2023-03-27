@@ -16,6 +16,8 @@ package query
 import (
 	"bytes"
 	"context"
+	"math"
+	"sort"
 	"testing"
 
 	"github.com/go-kit/log"
@@ -197,6 +199,158 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 	require.True(t, proto.Equal(expected, fg.Root))
 }
 
+func TestGenerateFlamegraphTableTrimming(t *testing.T) {
+	ctx := context.Background()
+	var err error
+
+	l := metastoretest.NewTestMetastore(
+		t,
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+	)
+
+	metastore := metastore.NewInProcessClient(l)
+
+	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
+		Mappings: []*metastorepb.Mapping{{
+			File: "a",
+		}},
+	})
+	require.NoError(t, err)
+	m := mres.Mappings[0]
+
+	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
+		Functions: []*metastorepb.Function{{
+			Name: "1",
+		}, {
+			Name: "2",
+		}, {
+			Name: "3",
+		}, {
+			Name: "4",
+		}, {
+			Name: "5",
+		}},
+	})
+	require.NoError(t, err)
+	f1 := fres.Functions[0]
+	f2 := fres.Functions[1]
+	f3 := fres.Functions[2]
+	f4 := fres.Functions[3]
+	f5 := fres.Functions[4]
+
+	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+		Locations: []*metastorepb.Location{{
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f1.Id,
+			}},
+		}, {
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f2.Id,
+			}},
+		}, {
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f3.Id,
+			}},
+		}, {
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f4.Id,
+			}},
+		}, {
+			MappingId: m.Id,
+			Lines: []*metastorepb.Line{{
+				FunctionId: f5.Id,
+			}},
+		}},
+	})
+	require.NoError(t, err)
+	l1 := lres.Locations[0]
+	l2 := lres.Locations[1]
+	l3 := lres.Locations[2]
+	l4 := lres.Locations[3]
+	l5 := lres.Locations[4]
+
+	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+		Stacktraces: []*metastorepb.Stacktrace{{
+			LocationIds: []string{l2.Id, l1.Id},
+		}, {
+			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
+		}, {
+			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
+		}},
+	})
+	require.NoError(t, err)
+	s1 := sres.Stacktraces[0]
+	s2 := sres.Stacktraces[1]
+	s3 := sres.Stacktraces[2]
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+		Samples: []*parcaprofile.NormalizedSample{{
+			StacktraceID: s1.Id,
+			Value:        10,
+		}, {
+			// The following two samples are trimmed from the flamegraph.
+			StacktraceID: s2.Id,
+			Value:        1,
+		}, {
+			StacktraceID: s3.Id,
+			Value:        3,
+		}},
+	})
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5))
+	require.NoError(t, err)
+
+	require.Equal(t, int32(5), fg.Height)
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+	require.Equal(t, int64(14), fg.Total)
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+	require.Equal(t, int64(14), fg.UntrimmedTotal)
+
+	// Check if tables and thus deduplication was correct and deterministic
+
+	require.Equal(t, []string{"", "a", "1", "2", "" /* 3 */, "" /* 5 */, "" /* 4 */}, fg.StringTable)
+	require.Equal(t, []*metastorepb.Location{
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
+		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
+		// The following locations aren't referenced from the flame graph.
+		nil, nil, nil,
+	}, fg.Locations)
+	require.Equal(t, []*metastorepb.Mapping{
+		{BuildIdStringIndex: 0, FileStringIndex: 1},
+	}, fg.Mapping)
+	require.Equal(t, []*metastorepb.Function{
+		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		// The following functions aren't referenced from the flame graph.
+		nil, nil, nil,
+	}, fg.Function)
+
+	// Check the recursive flamegraph that references the tables above.
+
+	expected := &pb.FlamegraphRootNode{
+		Cumulative: 14,
+		Children: []*pb.FlamegraphNode{{
+			Cumulative: 14,
+			Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 1},
+			Children: []*pb.FlamegraphNode{{
+				Cumulative: 14,
+				Meta:       &pb.FlamegraphNodeMeta{LocationIndex: 2},
+			}},
+		}},
+	}
+	require.Equal(t, expected, fg.Root)
+	require.True(t, proto.Equal(expected, fg.Root))
+}
+
 func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	ctx := context.Background()
 	var err error
@@ -332,9 +486,11 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
 		{BuildIdStringIndex: 0, FileStringIndex: 3},
 	}, fg.Mapping)
-	require.Equal(t, []*metastorepb.Function{
-		{NameStringIndex: 2, SystemNameStringIndex: 0, FilenameStringIndex: 0},
-	}, fg.Function)
+	require.Equal(t, []*metastorepb.Function{{
+		NameStringIndex:       2,
+		SystemNameStringIndex: 0,
+		FilenameStringIndex:   0,
+	}}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.
 
@@ -1022,17 +1178,14 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	require.Equal(t, int64(15), fg.Total)
 
 	// Check if tables and thus deduplication was correct and deterministic
-
-	// StringTable has too many entries.
-	// The string 6.b is trimmed and shouldn't be contained in this table.
-	// Check https://github.com/parca-dev/parca/issues/2763 for more details.
-	require.Equal(t, []string{"", "a", "1.a", "2.a", "3.a", "4.b", "6.b"}, fg.StringTable)
+	require.Equal(t, []string{"", "a", "1.a", "2.a", "3.a", "4.b", "" /* 6.b*/}, fg.StringTable)
 	require.Equal(t, []*metastorepb.Location{
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 1}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 2}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 3}}},
 		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 4}}},
-		{MappingIndex: 1, Lines: []*metastorepb.Line{{FunctionIndex: 5}}},
+		// The location isn't referenced from the flame graph.
+		nil,
 	}, fg.Locations)
 	require.Equal(t, []*metastorepb.Mapping{
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
@@ -1042,7 +1195,8 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 		{NameStringIndex: 3, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		{NameStringIndex: 4, SystemNameStringIndex: 0, FilenameStringIndex: 0},
 		{NameStringIndex: 5, SystemNameStringIndex: 0, FilenameStringIndex: 0},
-		{NameStringIndex: 6, SystemNameStringIndex: 0, FilenameStringIndex: 0},
+		// The function isn't referenced from the flame graph.
+		nil,
 	}, fg.Function)
 
 	// Check the recursive flamegraph that references the tables above.
@@ -1068,4 +1222,92 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	}
 	require.Equal(t, expected, fg.Root)
 	require.True(t, proto.Equal(expected, fg.Root))
+}
+
+func TestTableConverterLocation(t *testing.T) {
+	tc := &tableConverter{locationsIndex: map[string]uint32{}}
+	id := "foo"
+	address := uint64(0x1234)
+	index := tc.AddLocation(&metastorepb.Location{Id: id, Address: address})
+	l := tc.GetLocation(index)
+	require.Equal(t, id, l.Id)
+	require.Equal(t, address, l.Address)
+
+	// doesn't exist
+	require.Nil(t, tc.GetLocation(0))
+	require.Nil(t, tc.GetLocation(2))
+}
+
+func TestTableConverterMapping(t *testing.T) {
+	tc := &tableConverter{
+		stringsIndex:  map[string]uint32{},
+		mappingsIndex: map[string]uint32{},
+	}
+	tc.AddString("")
+
+	in := &metastorepb.Mapping{Id: "foo", File: "file", BuildId: "build"}
+	index := tc.AddMapping(in)
+	out := tc.GetMapping(index)
+	require.Equal(t, in, out)
+}
+
+func TestTableConverterFunction(t *testing.T) {
+	tc := &tableConverter{
+		stringsIndex:   map[string]uint32{},
+		functionsIndex: map[string]uint32{},
+	}
+	tc.AddString("")
+
+	in := &metastorepb.Function{
+		Id:         "foo",
+		StartLine:  12,
+		Name:       "name",
+		SystemName: "systemname",
+		Filename:   "filename",
+	}
+	index := tc.AddFunction(in)
+	out := tc.GetFunction(index)
+	require.Equal(t, in, out)
+}
+
+func TestAddGetString(t *testing.T) {
+	tc := &tableConverter{stringsIndex: map[string]uint32{}}
+	tc.AddString("")
+
+	require.Equal(t, "foo", tc.GetString(tc.AddString("foo")))
+	require.Equal(t, "bar", tc.GetString(tc.AddString("bar")))
+	require.Equal(t, "foo", tc.GetString(tc.AddString("foo")))
+	require.Equal(t, "", tc.GetString(tc.AddString("")))
+	// doesn't exist
+	require.Equal(t, "", tc.GetString(3))
+}
+
+func TestGenerateFlamegraphTrimmingStringTablesCompare(t *testing.T) {
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	reg := prometheus.NewRegistry()
+
+	l := metastoretest.NewTestMetastore(t, log.NewNopLogger(), reg, tracer)
+	// Generate a flamegraph with a threshold of 0. This disables trimming.
+	original := testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l), 0)
+	// Generate a flamegraph with a threshold that enables trimming but so small it doesn't actually trim anything.
+	trimmed := testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l), math.SmallestNonzeroFloat32)
+
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+	require.Equal(t, original.Total, trimmed.Total)
+	require.Equal(t, original.Height, trimmed.Height)
+	require.Equal(t, original.Unit, trimmed.Unit)
+	require.Equal(t, original.Trimmed, trimmed.Trimmed)
+
+	// Check if table converter has the same number of entries for each type.
+	require.Len(t, trimmed.StringTable, len(trimmed.StringTable))
+	require.Len(t, trimmed.Locations, len(trimmed.Locations))
+	require.Len(t, trimmed.Mapping, len(trimmed.Mapping))
+	require.Len(t, trimmed.Function, len(trimmed.Function))
+
+	// sort the tables as trimming is not fully equal but the sorted tables should be equal.
+	sort.Strings(original.StringTable)
+	sort.Strings(trimmed.StringTable)
+	require.Equal(t, original.StringTable, trimmed.StringTable)
+
+	require.Equal(t, original.Root.Cumulative, trimmed.Root.Cumulative)
 }
