@@ -16,6 +16,7 @@ package query
 import (
 	"context"
 	"sort"
+	"sync"
 
 	"go.opentelemetry.io/otel/trace"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32, pool *sync.Pool) (*querypb.Flamegraph, error) {
 	ctx, span := tracer.Start(ctx, "GenerateFlamegraphTable")
 	defer span.End()
 	rootNode := &querypb.FlamegraphNode{}
@@ -32,17 +33,12 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 
 	var height int32
 
-	tables := &tableConverter{
-		stringsSlice:   []string{},
-		stringsIndex:   map[string]uint32{},
-		mappingsSlice:  []*metastorev1alpha1.Mapping{},
-		mappingsIndex:  map[string]uint32{},
-		locationsSlice: []*metastorev1alpha1.Location{},
-		locationsIndex: map[string]uint32{},
-		functionsSlice: []*metastorev1alpha1.Function{},
-		functionsIndex: map[string]uint32{},
-	}
-
+	tables := pool.Get().(*tableConverter)
+	go func() {
+		<-ctx.Done()
+		tables.Reset()
+		pool.Put(tables)
+	}()
 	tables.AddString("") // Add empty string to the string table. This is expected by pprof.
 
 	for _, s := range p.Samples {
@@ -149,6 +145,25 @@ type tableConverter struct {
 	locationsIndex map[string]uint32
 	functionsSlice []*metastorev1alpha1.Function
 	functionsIndex map[string]uint32
+}
+
+func (c *tableConverter) Reset() {
+	c.stringsSlice = c.stringsSlice[:0]
+	for k := range c.stringsIndex {
+		delete(c.stringsIndex, k)
+	}
+	c.mappingsSlice = c.mappingsSlice[:0]
+	for k := range c.mappingsIndex {
+		delete(c.mappingsIndex, k)
+	}
+	c.locationsSlice = c.locationsSlice[:0]
+	for k := range c.locationsIndex {
+		delete(c.locationsIndex, k)
+	}
+	c.functionsSlice = c.functionsSlice[:0]
+	for k := range c.functionsIndex {
+		delete(c.functionsIndex, k)
+	}
 }
 
 // Strings return the table, slice more specifically, of all strings.

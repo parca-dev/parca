@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-kit/log"
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -50,6 +52,8 @@ type ColumnQueryAPI struct {
 	tracer      trace.Tracer
 	shareClient sharepb.ShareServiceClient
 	querier     Querier
+
+	tableConverterPool *sync.Pool
 }
 
 func NewColumnQueryAPI(
@@ -59,10 +63,28 @@ func NewColumnQueryAPI(
 	querier Querier,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
-		logger:      logger,
-		tracer:      tracer,
-		shareClient: shareClient,
-		querier:     querier,
+		logger:             logger,
+		tracer:             tracer,
+		shareClient:        shareClient,
+		querier:            querier,
+		tableConverterPool: newTableConverterPool(),
+	}
+}
+
+func newTableConverterPool() *sync.Pool {
+	return &sync.Pool{
+		New: func() any {
+			return &tableConverter{
+				stringsSlice:   make([]string, 0, 300),
+				stringsIndex:   make(map[string]uint32, 300),
+				mappingsSlice:  make([]*metastorev1alpha1.Mapping, 0, 300),
+				mappingsIndex:  make(map[string]uint32, 300),
+				locationsSlice: make([]*metastorev1alpha1.Location, 0, 300),
+				locationsIndex: make(map[string]uint32, 300),
+				functionsSlice: make([]*metastorev1alpha1.Function, 0, 300),
+				functionsIndex: make(map[string]uint32, 300),
+			}
+		},
 	}
 }
 
@@ -215,7 +237,7 @@ func (q *ColumnQueryAPI) renderReport(
 	nodeTrimThreshold float32,
 	filtered int64,
 ) (*pb.QueryResponse, error) {
-	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered)
+	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, q.tableConverterPool)
 }
 
 func RenderReport(
@@ -225,6 +247,7 @@ func RenderReport(
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
 	filtered int64,
+	pool *sync.Pool,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
@@ -250,7 +273,7 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
-		fg, err := GenerateFlamegraphTable(ctx, tracer, p, nodeTrimFraction)
+		fg, err := GenerateFlamegraphTable(ctx, tracer, p, nodeTrimFraction, pool)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
