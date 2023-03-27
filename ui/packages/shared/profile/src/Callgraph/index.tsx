@@ -83,8 +83,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
 
         nodes.each(function () {
           const nodeData = data.nodes.find((n): boolean => {
-            // @ts-expect-error
-            return n.id === this.id;
+            return n.id === (this as Element).id;
           });
           const defaultColor = colorScale(Number(nodeData?.cumulative));
           const node = d3.select(this);
