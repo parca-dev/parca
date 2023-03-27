@@ -13,6 +13,7 @@
 
 import {Icon} from '@iconify/react';
 
+import {IconButton} from '@parca/components';
 import {selectDarkMode, setDarkMode, useAppDispatch, useAppSelector} from '@parca/store';
 
 const DarkModeToggle = () => {
@@ -20,18 +21,16 @@ const DarkModeToggle = () => {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   return (
-    <button
-      type="button"
-      className="p-1 cursor-pointer rounded-full flex align-center items-center"
-      onClick={() => {}}
-    >
-      <Icon
-        onClick={() => dispatch(setDarkMode(!isDarkMode))}
-        className="w-5 h-5"
-        aria-hidden="true"
-        icon={isDarkMode ? 'heroicons:moon-20-solid' : 'heroicons:sun-20-solid'}
-      />
-    </button>
+    <IconButton
+      onClick={() => dispatch(setDarkMode(!isDarkMode))}
+      icon={
+        <Icon
+          className="w-5 h-5"
+          aria-hidden="true"
+          icon={isDarkMode ? 'heroicons:moon-20-solid' : 'heroicons:sun-20-solid'}
+        />
+      }
+    />
   );
 };
 

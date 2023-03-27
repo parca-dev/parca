@@ -13,7 +13,7 @@
 
 import {useState} from 'react';
 
-import Button from '../../../Button';
+import {Button} from '../../../Button';
 import {UTCDateTimePicker} from '../../../DateTimePicker';
 import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../utils';
 

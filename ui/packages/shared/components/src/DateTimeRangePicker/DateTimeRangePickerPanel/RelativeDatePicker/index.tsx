@@ -15,7 +15,7 @@ import {useState} from 'react';
 
 import {capitalize} from '@parca/utilities';
 
-import Button from '../../../Button';
+import {Button} from '../../../Button';
 import Input from '../../../Input';
 import Select, {contructItemsFromArray} from '../../../Select';
 import {DateTimeRange, RelativeDate, UNITS, UNIT_TYPE} from '../../utils';

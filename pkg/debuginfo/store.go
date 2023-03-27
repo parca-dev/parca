@@ -150,10 +150,14 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 		}
 
 		if existsInDebuginfod {
+			if err := s.metadata.MarkAsDebuginfodSource(ctx, buildID); err != nil {
+				return nil, status.Error(codes.Internal, fmt.Errorf("mark Build ID to be available from debuginfod: %w", err).Error())
+			}
+
 			return &debuginfopb.ShouldInitiateUploadResponse{
 				ShouldInitiateUpload: false,
 				Reason:               ReasonDebuginfoInDebuginfod,
-			}, s.metadata.MarkAsDebuginfodSource(ctx, buildID)
+			}, nil
 		}
 
 		return &debuginfopb.ShouldInitiateUploadResponse{
