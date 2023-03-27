@@ -11,27 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Tooltip} from 'react-tooltip';
+import TextWithTooltip from '..';
 
-import 'react-tooltip/dist/react-tooltip.css';
-
-import {cutToMaxStringLength} from '@parca/utilities';
-
-export interface Props {
-  text: string;
-  maxTextLength: number;
-  id: string;
-}
-
-const TextWithTooltip = ({text, maxTextLength, id}: Props): JSX.Element => {
-  return (
-    <>
-      <span id={id} data-tooltip-content={text}>
-        {cutToMaxStringLength(text, maxTextLength)}
-      </span>
-      <Tooltip anchorId={id} />
-    </>
-  );
+export default {
+  component: TextWithTooltip,
+  title: 'Components/TextWithTooltip',
 };
 
-export default TextWithTooltip;
+export const Default = {
+  args: {
+    text: "agent_revision='6cf956bb0a0dbebba64ba00abbff37e25a5e8234'",
+    maxTextLength: 20,
+    id: 'test-id',
+  },
+};
