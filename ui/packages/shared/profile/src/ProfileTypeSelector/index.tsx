@@ -108,7 +108,7 @@ function flexibleWellKnownProfileMatching(name: string): WellKnownProfile | unde
   return requiredKey != null ? wellKnownProfiles[requiredKey] : undefined;
 }
 
-function profileSelectElement(
+export function profileSelectElement(
   name: string,
   flexibleKnownProfilesDetection: boolean
 ): SelectElement {

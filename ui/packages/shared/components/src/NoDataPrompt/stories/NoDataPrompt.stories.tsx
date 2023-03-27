@@ -11,27 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Tooltip} from 'react-tooltip';
+import {NoDataPrompt} from '..';
 
-import 'react-tooltip/dist/react-tooltip.css';
-
-import {cutToMaxStringLength} from '@parca/utilities';
-
-export interface Props {
-  text: string;
-  maxTextLength: number;
-  id: string;
-}
-
-const TextWithTooltip = ({text, maxTextLength, id}: Props): JSX.Element => {
-  return (
-    <>
-      <span id={id} data-tooltip-content={text}>
-        {cutToMaxStringLength(text, maxTextLength)}
-      </span>
-      <Tooltip anchorId={id} />
-    </>
-  );
+export default {
+  component: NoDataPrompt,
+  title: 'Components/NoDataPrompt ',
 };
 
-export default TextWithTooltip;
+export const Default = {};
