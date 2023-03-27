@@ -21,7 +21,10 @@ export default {
 
 const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
 const panels = ['content 1', 'content 2', 'content 3'].map(text => (
-  <div className="flex justify-center items-center h-32 text-gray-700 dark:text-gray-300">
+  <div
+    key={text}
+    className="flex justify-center items-center h-32 text-gray-700 dark:text-gray-300"
+  >
     {text}
   </div>
 ));
