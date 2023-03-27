@@ -13,9 +13,9 @@
 
 import TextareaAutosize from 'react-textarea-autosize';
 
-import {Button, NoDataPrompt} from '@parca/components';
-
 import Card from '..';
+import {Button} from '../../Button';
+import {NoDataPrompt} from '../../NoDataPrompt';
 
 const ComponentStory = () => (
   <div className="ml-8">
