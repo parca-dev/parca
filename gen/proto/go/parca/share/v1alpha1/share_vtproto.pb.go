@@ -469,6 +469,16 @@ func (m *QueryResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.Filtered != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Filtered))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.Total != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x28
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -653,6 +663,12 @@ func (m *QueryResponse) SizeVT() (n int) {
 	_ = l
 	if vtmsg, ok := m.Report.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
+	}
+	if m.Total != 0 {
+		n += 1 + sov(uint64(m.Total))
+	}
+	if m.Filtered != 0 {
+		n += 1 + sov(uint64(m.Filtered))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1463,6 +1479,44 @@ func (m *QueryResponse) UnmarshalVT(dAtA []byte) error {
 				m.Report = &QueryResponse_Callgraph{Callgraph: v}
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Filtered", wireType)
+			}
+			m.Filtered = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Filtered |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

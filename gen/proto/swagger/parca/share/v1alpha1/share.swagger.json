@@ -224,6 +224,16 @@
         "callgraph": {
           "$ref": "#/definitions/v1alpha1Callgraph",
           "title": "callgraph is a callgraph nodes and edges representation of the report"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64",
+          "description": "total is the total number of samples shown in the report."
+        },
+        "filtered": {
+          "type": "string",
+          "format": "int64",
+          "description": "filtered is the number of samples filtered out of the report."
         }
       },
       "description": "QueryResponse is the returned report for the given query."

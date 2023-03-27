@@ -156,6 +156,18 @@ export interface QueryResponse {
     } | {
         oneofKind: undefined;
     };
+    /**
+     * total is the total number of samples shown in the report.
+     *
+     * @generated from protobuf field: int64 total = 5;
+     */
+    total: string;
+    /**
+     * filtered is the number of samples filtered out of the report.
+     *
+     * @generated from protobuf field: int64 filtered = 6;
+     */
+    filtered: string;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class UploadRequest$Type extends MessageType<UploadRequest> {
@@ -434,11 +446,13 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 1, name: "flamegraph", kind: "message", oneof: "report", T: () => Flamegraph },
             { no: 2, name: "pprof", kind: "scalar", oneof: "report", T: 12 /*ScalarType.BYTES*/ },
             { no: 3, name: "top", kind: "message", oneof: "report", T: () => Top },
-            { no: 4, name: "callgraph", kind: "message", oneof: "report", T: () => Callgraph }
+            { no: 4, name: "callgraph", kind: "message", oneof: "report", T: () => Callgraph },
+            { no: 5, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 6, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<QueryResponse>): QueryResponse {
-        const message = { report: { oneofKind: undefined } };
+        const message = { report: { oneofKind: undefined }, total: "0", filtered: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<QueryResponse>(this, message, value);
@@ -473,6 +487,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         callgraph: Callgraph.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).callgraph)
                     };
                     break;
+                case /* int64 total */ 5:
+                    message.total = reader.int64().toString();
+                    break;
+                case /* int64 filtered */ 6:
+                    message.filtered = reader.int64().toString();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -497,6 +517,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.Callgraph callgraph = 4; */
         if (message.report.oneofKind === "callgraph")
             Callgraph.internalBinaryWrite(message.report.callgraph, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* int64 total = 5; */
+        if (message.total !== "0")
+            writer.tag(5, WireType.Varint).int64(message.total);
+        /* int64 filtered = 6; */
+        if (message.filtered !== "0")
+            writer.tag(6, WireType.Varint).int64(message.filtered);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

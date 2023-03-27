@@ -77,4 +77,10 @@ message QueryResponse {
     // callgraph is a callgraph nodes and edges representation of the report
     parca.query.v1alpha1.Callgraph callgraph = 4;
   }
+
+  // total is the total number of samples shown in the report.
+  int64 total = 5;
+
+  // filtered is the number of samples filtered out of the report.
+  int64 filtered = 6;
 }
