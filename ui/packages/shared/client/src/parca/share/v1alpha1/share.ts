@@ -79,6 +79,18 @@ export interface QueryRequest {
      * @generated from protobuf field: parca.query.v1alpha1.QueryRequest.ReportType report_type = 3;
      */
     reportType: QueryRequest_ReportType;
+    /**
+     * filter_query is the query string to filter the profile samples
+     *
+     * @generated from protobuf field: optional string filter_query = 4;
+     */
+    filterQuery?: string;
+    /**
+     * node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
+     *
+     * @generated from protobuf field: optional float node_trim_threshold = 5;
+     */
+    nodeTrimThreshold?: number;
 }
 /**
  * ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
@@ -283,7 +295,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         super("parca.share.v1alpha1.QueryRequest", [
             { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "profile_type", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] }
+            { no: 3, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] },
+            { no: 4, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -307,6 +321,12 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* parca.query.v1alpha1.QueryRequest.ReportType report_type */ 3:
                     message.reportType = reader.int32();
                     break;
+                case /* optional string filter_query */ 4:
+                    message.filterQuery = reader.string();
+                    break;
+                case /* optional float node_trim_threshold */ 5:
+                    message.nodeTrimThreshold = reader.float();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -328,6 +348,12 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* parca.query.v1alpha1.QueryRequest.ReportType report_type = 3; */
         if (message.reportType !== 0)
             writer.tag(3, WireType.Varint).int32(message.reportType);
+        /* optional string filter_query = 4; */
+        if (message.filterQuery !== undefined)
+            writer.tag(4, WireType.LengthDelimited).string(message.filterQuery);
+        /* optional float node_trim_threshold = 5; */
+        if (message.nodeTrimThreshold !== undefined)
+            writer.tag(5, WireType.Bit32).float(message.nodeTrimThreshold);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

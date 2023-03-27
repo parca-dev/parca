@@ -44,6 +44,12 @@ message QueryRequest {
 
   // report_type is the type of report to return
   parca.query.v1alpha1.QueryRequest.ReportType report_type = 3;
+
+  // filter_query is the query string to filter the profile samples
+  optional string filter_query = 4;
+
+  // node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
+  optional float node_trim_threshold = 5;
 }
 
 // ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
