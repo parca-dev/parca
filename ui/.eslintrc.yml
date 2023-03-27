@@ -39,6 +39,7 @@ settings:
         - .tsx
         - .js
         - .jsx
+        - .mdx
   react:
     version: detect
 

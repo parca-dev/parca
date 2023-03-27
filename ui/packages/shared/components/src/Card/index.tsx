@@ -15,7 +15,7 @@ import React from 'react';
 
 import cx from 'classnames';
 
-interface CardProps {
+export interface CardProps {
   children: React.ReactNode;
   className?: string;
 }
