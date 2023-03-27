@@ -3519,9 +3519,9 @@
     "@protobuf-ts/runtime" "^2.8.2"
 
 "@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.8.2":
-  version "2.8.2"
-  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.8.2.tgz#5d5424a6ae7fb846c3f4d0f2dd6448db65bb69d6"
-  integrity sha512-PVxsH81y9kEbHldxxG/8Y3z2mTXWQytRl8zNS0mTPUjkEC+8GUX6gj6LsA8EFp25fAs9V0ruh+aNWmPccEI9MA==
+  version "2.8.3"
+  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.8.3.tgz#827b87429afddf11b70be39880c9201f5dac2aae"
+  integrity sha512-nVL1s5wWpF6U+wtWTEWfUPD9Ockckj+fHqhzgm41CKV4Oma3D/2M6tzqOQ+wrm4GZu1bt+s6f43feNnar6fhjA==
 
 "@rc-component/portal@^1.0.0-6":
   version "1.1.0"
