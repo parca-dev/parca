@@ -13,7 +13,7 @@
 
 import DateTimeRangePicker from './StateWrappedComponent';
 
-const ComponentStory = () => (
+const ComponentStory = (): JSX.Element => (
   <div className="ml-8">
     <DateTimeRangePicker key={''} value={undefined} />
   </div>

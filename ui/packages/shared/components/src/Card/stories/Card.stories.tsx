@@ -17,7 +17,7 @@ import Card from '..';
 import {Button} from '../../Button';
 import {NoDataPrompt} from '../../NoDataPrompt';
 
-const ComponentStory = () => (
+const ComponentStory = (): JSX.Element => (
   <div className="ml-8">
     <Card>
       <Card.Header className="flex space-x-2 !items-center">
