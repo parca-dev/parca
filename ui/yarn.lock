@@ -3503,7 +3503,15 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.6.tgz#cee20bd55e68a1720bdab363ecf0c821ded4cd45"
   integrity sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==
 
-"@protobuf-ts/grpcweb-transport@2.8.2", "@protobuf-ts/grpcweb-transport@^2.5.0":
+"@protobuf-ts/grpcweb-transport@2.8.3":
+  version "2.8.3"
+  resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.8.3.tgz#2a3e479681b0b2c4b6476d74f8a6139b4eb27474"
+  integrity sha512-m6E/1JySQ5imGZgQbqQc++Cd/8xm0y7ilrQm2OQpJHex3IGnd0SiLJgnfluQVlXF9AE4hRJTKcEnBUevp6oIyA==
+  dependencies:
+    "@protobuf-ts/runtime" "^2.8.3"
+    "@protobuf-ts/runtime-rpc" "^2.8.3"
+
+"@protobuf-ts/grpcweb-transport@^2.5.0":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.8.2.tgz#7eb15e40aeb354ea8480030c86055dedcc7bdb1a"
   integrity sha512-VG7132dOcH7t4C95EUiirzV2RTolBxIBWGxPFmnbKwHuR1lcSWDUbZZ1FIC1C/qip5jK4qcw5R76YZfV7gf8Pw==
@@ -3511,7 +3519,7 @@
     "@protobuf-ts/runtime" "^2.8.2"
     "@protobuf-ts/runtime-rpc" "^2.8.2"
 
-"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.8.2":
+"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.8.2", "@protobuf-ts/runtime-rpc@^2.8.3":
   version "2.8.3"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime-rpc/-/runtime-rpc-2.8.3.tgz#1dfef7902529cc43812db6e040dd0f6f363ba6d3"
   integrity sha512-Tb6nuevgezjGNnT8WF+aveGWeI5xeAbNpySd/nzknKx6ynepXdlNz5cN0xIADeOgDJHo/05Ka+vZ5ZI33tz2Og==
