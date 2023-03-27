@@ -4,19 +4,38 @@
 name: 'Chromatic'
 
 # Event for the workflow
-on: push
+on:
+  push:
+    branches:
+    - main
+    - release-*
+  pull_request:
+    branches:
+    - main
+    - release-*
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
 
 # List of jobs
 jobs:
   chromatic-deployment:
     # Operating System
+    needs: skip-check
+    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Job steps
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3.4.0
+      # 👇 Install dependencies with the same package manager used in the project (yarn)
+      - name: Set up Node.js
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: .node-version
+          cache: yarn
       - name: Install dependencies
-        # 👇 Install dependencies with the same package manager used in the project (replace it as needed), e.g. yarn, npm, pnpm
-        run: yarn
+        run: yarn install --frozen-lockfile
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
         uses: chromaui/action@v1
