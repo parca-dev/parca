@@ -193,11 +193,11 @@ const MatchersInput = ({
   const profileSelected = currentQuery.profileName() === '';
 
   return (
-    <div className="font-mono flex-1 w-full min-w-[300px]">
+    <div className="w-full min-w-[300px] flex-1 font-mono">
       <TextareaAutosize
         ref={inputRef}
         className={cx(
-          'bg-gray-50 dark:bg-gray-900 focus:ring-indigo-800 flex-1 block w-full px-2 py-2 text-sm outline-none rounded',
+          'block w-full flex-1 rounded bg-gray-50 px-2 py-2 text-sm outline-none focus:ring-indigo-800 dark:bg-gray-900',
           profileSelected && 'cursor-not-allowed'
         )}
         placeholder={

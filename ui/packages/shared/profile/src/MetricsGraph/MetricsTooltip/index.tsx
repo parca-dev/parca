@@ -109,13 +109,13 @@ const MetricsTooltip = ({
       <div className="flex max-w-md">
         <div className="m-auto">
           <div
-            className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
+            className="rounded-lg border-gray-300 bg-gray-50 p-3 opacity-90 shadow-lg dark:border-gray-500 dark:bg-gray-900"
             style={{borderWidth: 1}}
           >
             <div className="flex flex-row">
               <div className="ml-2 mr-6">
                 <span className="font-semibold">{highlightedNameLabel.value}</span>
-                <span className="block text-gray-700 dark:text-gray-300 my-2">
+                <span className="my-2 block text-gray-700 dark:text-gray-300">
                   <table className="table-auto">
                     <tbody>
                       <tr>
@@ -147,7 +147,7 @@ const MetricsTooltip = ({
                     </tbody>
                   </table>
                 </span>
-                <span className="block text-gray-500 my-2">
+                <span className="my-2 block text-gray-500">
                   {highlighted.labels
                     .filter((label: Label) => label.name !== '__name__')
                     .map(function (label: Label) {
@@ -155,7 +155,7 @@ const MetricsTooltip = ({
                         <button
                           key={label.name}
                           type="button"
-                          className="inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3"
+                          className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                           onClick={() => onLabelClick(label.name, label.value)}
                         >
                           <TextWithTooltip
@@ -167,7 +167,7 @@ const MetricsTooltip = ({
                       );
                     })}
                 </span>
-                <span className="block text-gray-500 text-xs">
+                <span className="block text-xs text-gray-500">
                   Hold shift and click label to add to query.
                 </span>
               </div>

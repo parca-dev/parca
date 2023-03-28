@@ -125,7 +125,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
     view.translation.y !== originalView.translation.y;
 
   return (
-    <div className="w-full relative">
+    <div className="relative w-full">
       <div ref={containerRef} className="w-full overflow-hidden">
         <MapInteractionCSS
           showControls
@@ -156,7 +156,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
       <div
         className={cx(
           dashboardItems.length > 1 ? 'left-[25px]' : 'left-0',
-          'w-auto absolute top-[-46px]'
+          'absolute top-[-46px] w-auto'
         )}
       >
         <Button

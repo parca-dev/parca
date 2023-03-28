@@ -75,12 +75,12 @@ const RelativeDatePicker = ({
   const [unit, setUnit] = useState<UNIT_TYPE>(date.isRelative() ? date.unit : UNITS.MINUTE);
   const [value, setValue] = useState<number>(date.isRelative() ? date.value : 15);
   return (
-    <div className="p-4 w-[300px]">
+    <div className="w-[300px] p-4">
       <div className="pb-2">
         <div className="mb-4 hidden">
-          <span className="uppercase text-xs text-gray-500">Quick Ranges</span>
+          <span className="text-xs uppercase text-gray-500">Quick Ranges</span>
         </div>
-        <div className="grid grid-rows-3 grid-flow-col gap-2">
+        <div className="grid grid-flow-col grid-rows-3 gap-2">
           {quickPresetRanges.map(({title, unit, value}) => (
             <Button
               onClick={() => {
@@ -95,14 +95,14 @@ const RelativeDatePicker = ({
         </div>
       </div>
       <div>
-        <div className="my-4 border-b-[1px] border-gray-200 text-xs leading-[0px] mx-auto text-center">
-          <span className="bg-gray-100 dark:bg-gray-800 px-1">OR</span>
+        <div className="my-4 mx-auto border-b-[1px] border-gray-200 text-center text-xs leading-[0px]">
+          <span className="bg-gray-100 px-1 dark:bg-gray-800">OR</span>
         </div>
-        <div className="flex items-center justify-center p-1 my-4">
-          <span className="uppercase text-xs mr-4">Last</span>
+        <div className="my-4 flex items-center justify-center p-1">
+          <span className="mr-4 text-xs uppercase">Last</span>
           <Input
             type="number"
-            className="w-16 mr-2 text-sm"
+            className="mr-2 w-16 text-sm"
             value={value}
             min={0}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -116,7 +116,7 @@ const RelativeDatePicker = ({
             onSelection={key => setUnit(key)}
           />
         </div>
-        <div className="w-32 mx-auto pb-2">
+        <div className="mx-auto w-32 pb-2">
           <Button
             onClick={() => {
               onChange(new RelativeDate(unit, value), NOW);
@@ -126,7 +126,7 @@ const RelativeDatePicker = ({
           </Button>
         </div>
       </div>
-      <p className="text-gray-500 text-xs italic text-center mx-4">
+      <p className="mx-4 text-center text-xs italic text-gray-500">
         Note: Setting a relative time means that on every search the time will be set to the time of
         the search.
       </p>

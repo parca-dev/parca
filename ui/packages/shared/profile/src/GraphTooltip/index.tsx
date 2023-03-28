@@ -37,7 +37,7 @@ import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 
 const NoData = (): JSX.Element => {
-  return <span className="rounded bg-gray-200 dark:bg-gray-800 px-2">Not available</span>;
+  return <span className="rounded bg-gray-200 px-2 dark:bg-gray-800">Not available</span>;
 };
 
 interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
@@ -180,7 +180,7 @@ const TooltipMetaInfo = ({
             <NoData />
           ) : (
             <CopyToClipboard onCopy={onCopy} text={file}>
-              <button className="cursor-pointer text-left whitespace-nowrap">
+              <button className="cursor-pointer whitespace-nowrap text-left">
                 <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
               </button>
             </CopyToClipboard>
@@ -294,12 +294,12 @@ export const GraphTooltipContent = ({
   };
 
   return (
-    <div className={`text-sm flex ${isFixed ? 'w-full' : ''}`}>
+    <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
       <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
-        <div className="border border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg min-h-52 w-[500px] flex justify-between flex-col">
+        <div className="min-h-52 flex w-[500px] flex-col justify-between rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-lg dark:border-gray-500 dark:bg-gray-900">
           <div className="flex flex-row">
             <div className="mx-2">
-              <div className="font-semibold break-all h-10 flex items-center">
+              <div className="flex h-10 items-center break-all font-semibold">
                 {hoveringNode.meta === undefined ? (
                   <p>root</p>
                 ) : (
@@ -331,7 +331,7 @@ export const GraphTooltipContent = ({
                   </>
                 )}
               </div>
-              <table className="table-fixed pr-0 text-gray-700 dark:text-gray-300 my-2 w-full">
+              <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
                 <tbody>
                   <tr>
                     <td className="w-1/4">Cumulative</td>
@@ -370,7 +370,7 @@ export const GraphTooltipContent = ({
               </table>
             </div>
           </div>
-          <span className="block text-gray-500 text-xs mx-2">
+          <span className="mx-2 block text-xs text-gray-500">
             {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
           </span>
         </div>

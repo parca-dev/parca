@@ -199,7 +199,7 @@ export const ProfileView = ({
   if (flamegraphData?.error !== null) {
     console.error('Error: ', flamegraphData?.error);
     return (
-      <div className="p-10 flex justify-center">
+      <div className="flex justify-center p-10">
         An error occurred: {flamegraphData?.error.message}
       </div>
     );
@@ -307,8 +307,8 @@ export const ProfileView = ({
       <div className="py-3">
         <Card>
           <Card.Body>
-            <div className="flex py-3 w-full">
-              <div className="lg:w-1/2 flex space-x-4">
+            <div className="flex w-full py-3">
+              <div className="flex space-x-4 lg:w-1/2">
                 <div className="flex space-x-1">
                   {profileSource !== undefined && queryClient !== undefined ? (
                     <ProfileShareButton
@@ -330,7 +330,7 @@ export const ProfileView = ({
                 <FilterByFunctionButton navigateTo={navigateTo} />
               </div>
 
-              <div className="flex ml-auto gap-2">
+              <div className="ml-auto flex gap-2">
                 <ViewSelector
                   defaultValue=""
                   navigateTo={navigateTo}
@@ -352,7 +352,7 @@ export const ProfileView = ({
                     {provided => (
                       <div
                         ref={provided.innerRef}
-                        className="flex space-x-4 justify-between w-full"
+                        className="flex w-full justify-between space-x-4"
                         {...provided.droppableProps}
                       >
                         {dashboardItems.map((dashboardItem, index) => {
@@ -369,7 +369,7 @@ export const ProfileView = ({
                                   {...provided.draggableProps}
                                   key={dashboardItem}
                                   className={cx(
-                                    'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
+                                    'rounded border border-gray-300 p-3 dark:border-gray-500 dark:bg-gray-700',
                                     isMultiPanelView ? 'w-1/2' : 'w-full',
                                     snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
                                   )}

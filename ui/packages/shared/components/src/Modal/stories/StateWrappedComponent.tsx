@@ -38,11 +38,11 @@ const StateWrappedComponent = (): JSX.Element => {
             your organisation.
           </p>
           <>
-            <p className="text-sm text-gray-500 dark:text-gray-300 mt-3 mb-2">
+            <p className="mt-3 mb-2 text-sm text-gray-500 dark:text-gray-300">
               Enter a description (optional)
             </p>
             <textarea
-              className="border w-full text-gray-500 dark:text-gray-300 bg-inherit text-sm px-2 py-2"
+              className="w-full border bg-inherit px-2 py-2 text-sm text-gray-500 dark:text-gray-300"
               value={description}
               onChange={e => setDescription(e.target.value)}
             ></textarea>

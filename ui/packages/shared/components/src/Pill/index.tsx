@@ -54,7 +54,7 @@ const Pill = ({
     className={cx(
       VARIANTS[variant].color,
       VARIANTS[variant].bg,
-      `px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap `
+      `inline-flex whitespace-nowrap rounded-full px-2 text-xs font-semibold leading-5 `
     )}
     {...props}
   >

@@ -29,9 +29,9 @@ const pathPrefix =
 export const NoDataPrompt = (): JSX.Element => {
   return (
     <div className="flex justify-center">
-      <div className="flex flex-col items-center h-96 justify-center gap-6 shadow rounded-lg bg-white dark:bg-gray-700 px-12 mt-6 text-sm">
+      <div className="mt-6 flex h-96 flex-col items-center justify-center gap-6 rounded-lg bg-white px-12 text-sm shadow dark:bg-gray-700">
         <Icon icon="material-symbols:info-outline" width={40} height={40} />
-        <p className="text-center max-w-[560px]">
+        <p className="max-w-[560px] text-center">
           <span className="text-xl">The Parca server hasn&apos;t recieved any data yet!</span>{' '}
           <br />
           <br />

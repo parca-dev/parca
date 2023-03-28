@@ -40,8 +40,8 @@ const SuggestionItem = ({
 
   return (
     <div
-      className={cx('cursor-default select-none relative py-2 pl-3 pr-9', {
-        'text-white bg-indigo-600': isHighlighted,
+      className={cx('relative cursor-default select-none py-2 pl-3 pr-9', {
+        'bg-indigo-600 text-white': isHighlighted,
       })}
       onMouseOver={() => onHighlight()}
       onClick={() => onApplySuggestion()}
