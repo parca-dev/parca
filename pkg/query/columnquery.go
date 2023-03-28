@@ -75,14 +75,14 @@ func newTableConverterPool() *sync.Pool {
 	return &sync.Pool{
 		New: func() any {
 			return &tableConverter{
-				stringsSlice:   make([]string, 0, 300),
-				stringsIndex:   make(map[string]uint32, 300),
-				mappingsSlice:  make([]*metastorev1alpha1.Mapping, 0, 300),
-				mappingsIndex:  make(map[string]uint32, 300),
-				locationsSlice: make([]*metastorev1alpha1.Location, 0, 300),
-				locationsIndex: make(map[string]uint32, 300),
-				functionsSlice: make([]*metastorev1alpha1.Function, 0, 300),
-				functionsIndex: make(map[string]uint32, 300),
+				stringsSlice:   []string{},
+				stringsIndex:   map[string]uint32{},
+				mappingsSlice:  []*metastorev1alpha1.Mapping{},
+				mappingsIndex:  map[string]uint32{},
+				locationsSlice: []*metastorev1alpha1.Location{},
+				locationsIndex: map[string]uint32{},
+				functionsSlice: []*metastorev1alpha1.Function{},
+				functionsIndex: map[string]uint32{},
 			}
 		},
 	}
