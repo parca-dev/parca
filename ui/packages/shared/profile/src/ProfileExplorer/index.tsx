@@ -168,7 +168,7 @@ const ProfileExplorerApp = ({
   if (profileTypesError !== undefined && profileTypesError !== null) {
     return (
       <div
-        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
         role="alert"
       >
         <strong className="font-bold">Error! </strong>

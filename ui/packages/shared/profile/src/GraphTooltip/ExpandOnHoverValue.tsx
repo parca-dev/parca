@@ -18,11 +18,11 @@ interface Props {
 
 export const ExpandOnHover = ({value, displayValue}: Props): JSX.Element => {
   return (
-    <div className="relative group w-full">
-      <div className="text-ellipsis w-full overflow-hidden whitespace-nowrap">
+    <div className="group relative w-full">
+      <div className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
         {displayValue ?? value}
       </div>
-      <div className="group-hover:flex hidden absolute -inset-2 max-w-[500px] whitespace-normal h-fit bg-gray-50 dark:bg-gray-900 shadow-[0_0_10px_2px_rgba(0,0,0,0.3)] rounded p-2 break-all">
+      <div className="absolute -inset-2 hidden h-fit max-w-[500px] whitespace-normal break-all rounded bg-gray-50 p-2 shadow-[0_0_10px_2px_rgba(0,0,0,0.3)] group-hover:flex dark:bg-gray-900">
         {value}
       </div>
     </div>

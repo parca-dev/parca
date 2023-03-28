@@ -25,6 +25,8 @@ import (
 )
 
 func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
+	ctx, span := tracer.Start(ctx, "GenerateFlamegraphTable")
+	defer span.End()
 	rootNode := &querypb.FlamegraphNode{}
 	current := rootNode
 
@@ -115,7 +117,7 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		Function:    tables.Functions(),
 	}
 
-	aggregatedFlamegraph := aggregateByFunctionTable(tables, flamegraph)
+	aggregatedFlamegraph := aggregateByFunctionTable(ctx, tracer, tables, flamegraph)
 
 	// Remove the IDs from the aggregated graph.
 	// The frontend doesn't need them, and they take up a lot of space.
@@ -338,7 +340,9 @@ type TableGetter interface {
 	GetFunction(index uint32) *metastorev1alpha1.Function
 }
 
-func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *querypb.Flamegraph {
+func aggregateByFunctionTable(ctx context.Context, tracer trace.Tracer, tables TableGetter, fg *querypb.Flamegraph) *querypb.Flamegraph {
+	_, span := tracer.Start(ctx, "aggregateByFunctionTable")
+	defer span.End()
 	oldRootNode := &querypb.FlamegraphNode{
 		Cumulative: fg.Root.Cumulative,
 		Diff:       fg.Root.Diff,

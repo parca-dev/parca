@@ -22,14 +22,14 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   return (
-    <fieldset className={'flex gap-2 items-center mt-2'}>
+    <fieldset className={'mt-2 flex items-center gap-2'}>
       <legend className="mb-1">Flamegraph Color Profile</legend>
-      <div className="flex flex-col pl-4 gap-3 text-sm">
+      <div className="flex flex-col gap-3 pl-4 text-sm">
         {(Object.keys(COLOR_PROFILES) as ColorProfileName[]).map(profile => {
           const isSelected = profile === colorProfileName;
           return (
             <div className="flex items-center" key={profile}>
-              <label key={profile} className="capitalize flex gap-1 items-center w-24">
+              <label key={profile} className="flex w-24 items-center gap-1 capitalize">
                 <input
                   type="radio"
                   name="colorProfile"
@@ -43,11 +43,11 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
                 />
                 <span>{profile}</span>
               </label>
-              <div className="flex gap-2 w-72 overflow-auto">
+              <div className="flex w-72 gap-2 overflow-auto">
                 {COLOR_PROFILES[profile].colors.map((color: ColorsDuo) => (
                   <div
                     key={`${color[0]}-${color[1]}`}
-                    className="w-3 h-4 rounded-full flex-shrink-0"
+                    className="h-4 w-3 flex-shrink-0 rounded-full"
                     style={{backgroundColor: isDarkMode ? color[0] : color[1]}}
                   />
                 ))}

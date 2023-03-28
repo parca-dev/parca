@@ -36,14 +36,14 @@ const DEFAULT_ICON = (
 
 const EmptyState = ({title, icon, body, isEmpty, children}: EmptyStateProps): JSX.Element => {
   return isEmpty ? (
-    <div className="flex justify-center items-center flex-col h-64">
+    <div className="flex h-64 flex-col items-center justify-center">
       <>
         {icon ?? DEFAULT_ICON}
-        <p className="flex items-center justify-center text-xl p-4 text-gray-500">
+        <p className="flex items-center justify-center p-4 text-xl text-gray-500">
           {title ?? 'No data available'}
         </p>
         {Boolean(body) && (
-          <div className="flex items-center justify-center p-1 text-gray-500 text-sm">{body}</div>
+          <div className="flex items-center justify-center p-1 text-sm text-gray-500">{body}</div>
         )}
       </>
     </div>

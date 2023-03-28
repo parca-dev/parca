@@ -35,7 +35,7 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
 
   return (
     <Popover>
-      <div ref={containerRef} className="items-center w-fit">
+      <div ref={containerRef} className="w-fit items-center">
         <DateTimeRangePickerTrigger
           range={range}
           isActive={isActive}
@@ -46,7 +46,7 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
         {isActive ? (
           <Popover.Panel
             className={cx(
-              'absolute z-10 w-fit mt-2 rounded shadow-lg ring-1 ring-black ring-opacity-5 border dark:border-gray-600'
+              'absolute z-10 mt-2 w-fit rounded border shadow-lg ring-1 ring-black ring-opacity-5 dark:border-gray-600'
             )}
             static
           >

@@ -61,14 +61,14 @@ const Navbar = () => {
     item.href === currentPage.href;
 
   return (
-    <Disclosure as="nav" className="dark:bg-gray-900 relative z-10">
+    <Disclosure as="nav" className="relative z-10 dark:bg-gray-900">
       {({open}) => (
         <>
           <div className="mx-auto px-3">
-            <div className="relative flex items-center justify-between h-16 gap-1">
+            <div className="relative flex h-16 items-center justify-between gap-1">
               <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
                 {/* mobile menu button */}
-                <Disclosure.Button className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
+                <Disclosure.Button className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
                   <span className="sr-only">Open main menu</span>
                   {open ? (
                     <Icon icon="heroicons:x-mark-20-solid" aria-hidden="true" />
@@ -77,24 +77,24 @@ const Navbar = () => {
                   )}
                 </Disclosure.Button>
               </div>
-              <div className="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
-                <div className="flex-shrink-0 flex items-center">
+              <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+                <div className="flex flex-shrink-0 items-center">
                   {/* image for small screens: */}
-                  <div style={{padding: '5px'}} className="block lg:hidden h-8 w-auto rounded-full">
+                  <div style={{padding: '5px'}} className="block h-8 w-auto rounded-full lg:hidden">
                     <ParcaSmall
                       style={{height: '100%', width: '100%'}}
-                      className="block lg:hidden h-8 w-auto"
+                      className="block h-8 w-auto lg:hidden"
                     />
                   </div>
                   {/* image for larger screens: */}
                   <Parca
                     height={32}
                     style={{transform: 'translateY(5px)'}}
-                    className="hidden lg:block h-8 w-auto"
+                    className="hidden h-8 w-auto lg:block"
                   />
                 </div>
-                <div className="hidden sm:block sm:ml-6">
-                  <div className="flex gap-2 items-center">
+                <div className="hidden sm:ml-6 sm:block">
+                  <div className="flex items-center gap-2">
                     {Object.values(links).map(item => (
                       <a
                         key={item.label}
@@ -102,9 +102,9 @@ const Navbar = () => {
                         target={item.external ? '_blank' : undefined}
                         className={cx(
                           isCurrentPage(item)
-                            ? 'bg-gray-900 dark:bg-gray-700 text-white'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white',
-                          'px-3 py-2 rounded-md text-sm font-medium'
+                            ? 'bg-gray-900 text-white dark:bg-gray-700'
+                            : 'text-gray-700 hover:bg-gray-700 hover:text-white dark:text-gray-300',
+                          'rounded-md px-3 py-2 text-sm font-medium'
                         )}
                         aria-current={isCurrentPage(item) ? 'page' : undefined}
                         rel="noreferrer"
@@ -112,13 +112,13 @@ const Navbar = () => {
                         {item.label}
                       </a>
                     ))}
-                    <div className="px-3 hidden md:flex pt-2">
+                    <div className="hidden px-3 pt-2 md:flex">
                       <GitHubStarButton />
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3 items-center">
+              <div className="flex items-center gap-3">
                 <div className="text-gray-500">
                   <ReleaseNotesViewer version={window.APP_VERSION} />
                 </div>
@@ -138,16 +138,16 @@ const Navbar = () => {
           </div>
 
           <Disclosure.Panel className="sm:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1">
+            <div className="space-y-1 px-2 pt-2 pb-3">
               {Object.values(links).map(item => (
                 <a
                   key={item.label}
                   href={item.href}
                   className={cx(
                     isCurrentPage(item)
-                      ? 'bg-gray-900 dark:bg-gray-700 text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white',
-                    'block px-3 py-2 rounded-md text-base font-medium'
+                      ? 'bg-gray-900 text-white dark:bg-gray-700'
+                      : 'text-gray-700 hover:bg-gray-700 hover:text-white dark:text-gray-300',
+                    'block rounded-md px-3 py-2 text-base font-medium'
                   )}
                   aria-current={isCurrentPage(item) ? 'page' : undefined}
                 >

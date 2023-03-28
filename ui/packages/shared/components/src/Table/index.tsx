@@ -86,7 +86,7 @@ const Table = <T,>({
   return (
     <div ref={tableContainerRef} className="h-full overflow-scroll pr-2">
       <table className="w-full">
-        <thead className="text-sm bg-gray-50 dark:bg-gray-800">
+        <thead className="bg-gray-50 text-sm dark:bg-gray-800">
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => {
@@ -134,7 +134,7 @@ const Table = <T,>({
             </tr>
           ))}
         </thead>
-        <tbody className="text-xs bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+        <tbody className="divide-y divide-gray-200 bg-white text-xs dark:divide-gray-700 dark:bg-gray-900">
           {paddingTop > 0 && (
             <tr>
               <td style={{height: `${paddingTop}px`}} />

@@ -190,8 +190,8 @@ const ProfileSelector = ({
 
   return (
     <Card>
-      <Card.Header className="flex space-x-2 !items-center">
-        <div className="flex flex-wrap w-full justify-start space-x-2 space-y-1 items-center">
+      <Card.Header className="flex !items-center space-x-2">
+        <div className="flex w-full flex-wrap items-center justify-start space-x-2 space-y-1">
           <div className="ml-2 mt-1">
             <ProfileTypeSelector
               profileTypesData={profileTypesData}

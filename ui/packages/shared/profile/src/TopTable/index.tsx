@@ -224,7 +224,7 @@ export const TopTable = React.memo(function TopTable({
 
   return (
     <div className="relative">
-      <div className="w-full font-robotoMono h-[80vh] overflow-scroll">
+      <div className="font-robotoMono h-[80vh] w-full overflow-scroll">
         <Table
           data={top?.list ?? []}
           columns={columns}
