@@ -6,6 +6,7 @@ package sharev1alpha1
 
 import (
 	context "context"
+	binary "encoding/binary"
 	fmt "fmt"
 	v1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	grpc "google.golang.org/grpc"
@@ -13,6 +14,7 @@ import (
 	status "google.golang.org/grpc/status"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
+	math "math"
 	bits "math/bits"
 )
 
@@ -316,6 +318,19 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.NodeTrimThreshold != nil {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(*m.NodeTrimThreshold))))
+		i--
+		dAtA[i] = 0x2d
+	}
+	if m.FilterQuery != nil {
+		i -= len(*m.FilterQuery)
+		copy(dAtA[i:], *m.FilterQuery)
+		i = encodeVarint(dAtA, i, uint64(len(*m.FilterQuery)))
+		i--
+		dAtA[i] = 0x22
+	}
 	if m.ReportType != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.ReportType))
 		i--
@@ -469,6 +484,16 @@ func (m *QueryResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.Filtered != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Filtered))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.Total != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x28
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -607,6 +632,13 @@ func (m *QueryRequest) SizeVT() (n int) {
 	if m.ReportType != 0 {
 		n += 1 + sov(uint64(m.ReportType))
 	}
+	if m.FilterQuery != nil {
+		l = len(*m.FilterQuery)
+		n += 1 + l + sov(uint64(l))
+	}
+	if m.NodeTrimThreshold != nil {
+		n += 5
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -653,6 +685,12 @@ func (m *QueryResponse) SizeVT() (n int) {
 	_ = l
 	if vtmsg, ok := m.Report.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
+	}
+	if m.Total != 0 {
+		n += 1 + sov(uint64(m.Total))
+	}
+	if m.Filtered != 0 {
+		n += 1 + sov(uint64(m.Filtered))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1056,6 +1094,51 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FilterQuery", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.FilterQuery = &s
+			iNdEx = postIndex
+		case 5:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeTrimThreshold", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			v2 := float32(math.Float32frombits(v))
+			m.NodeTrimThreshold = &v2
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -1463,6 +1546,44 @@ func (m *QueryResponse) UnmarshalVT(dAtA []byte) error {
 				m.Report = &QueryResponse_Callgraph{Callgraph: v}
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Filtered", wireType)
+			}
+			m.Filtered = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Filtered |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

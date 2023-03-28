@@ -1163,7 +1163,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	p, filtered := filterProfileData(ctx, tracer, p, "b") // querying for "b" should filter out the "5.c" function.
+	p, filtered := FilterProfileData(ctx, tracer, p, "b") // querying for "b" should filter out the "5.c" function.
 
 	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5)) // 50% threshold
 	require.NoError(t, err)

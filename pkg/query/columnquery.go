@@ -145,7 +145,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	if req.FilterQuery != nil {
-		p, filtered = filterProfileData(ctx, q.tracer, p, req.GetFilterQuery())
+		p, filtered = FilterProfileData(ctx, q.tracer, p, req.GetFilterQuery())
 	}
 
 	return q.renderReport(
@@ -173,7 +173,7 @@ type FilteredProfile struct {
 	*profile.Profile
 }
 
-func filterProfileData(
+func FilterProfileData(
 	ctx context.Context,
 	tracer trace.Tracer,
 	p *profile.Profile,
