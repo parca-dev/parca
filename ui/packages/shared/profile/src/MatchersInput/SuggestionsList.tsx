@@ -222,7 +222,7 @@ const SuggestionsList = ({
           >
             <div
               style={{width: inputRef?.offsetWidth}}
-              className="absolute z-10 max-h-[400px] mt-1 bg-gray-50 dark:bg-gray-900 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+              className="absolute z-10 mt-1 max-h-[400px] overflow-auto rounded-md bg-gray-50 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 sm:text-sm"
             >
               {isLabelNamesLoading ? (
                 <LoadingSpinner />

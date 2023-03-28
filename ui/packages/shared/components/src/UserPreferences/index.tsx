@@ -63,7 +63,7 @@ const UserPreferences = (): JSX.Element => {
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.ENABLE_GRAPH_TRIMMING} />
           <FlamegraphColorProfileSelector />
           <div className="min-w-96 mt-10">
-            <h4 className="font-medium mb-2">Experimental Features</h4>
+            <h4 className="mb-2 font-medium">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />
           </div>
         </div>

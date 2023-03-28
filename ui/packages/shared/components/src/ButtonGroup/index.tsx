@@ -16,7 +16,7 @@ const ButtonGroup = ({
   ...props
 }: {children: React.ReactNode} & JSX.IntrinsicElements['div']): JSX.Element => {
   return (
-    <div className="flex justify-center items-baseline flex-wrap" {...props}>
+    <div className="flex flex-wrap items-baseline justify-center" {...props}>
       <div className="flex space-x-1">{children}</div>
     </div>
   );

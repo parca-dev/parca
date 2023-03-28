@@ -26,7 +26,7 @@ const DateTimeRangePickerPanel = ({
   onChange = () => null,
 }: DateTimeRangePickerProps): JSX.Element => {
   return (
-    <div className="w-[300px] p-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+    <div className="w-[300px] rounded bg-gray-100 p-2 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
       <Tab
         tabs={['Relative', 'Absolute']}
         panels={[
