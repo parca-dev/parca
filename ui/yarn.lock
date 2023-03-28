@@ -3510,7 +3510,7 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.6.tgz#cee20bd55e68a1720bdab363ecf0c821ded4cd45"
   integrity sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==
 
-"@protobuf-ts/grpcweb-transport@2.8.3":
+"@protobuf-ts/grpcweb-transport@2.8.3", "@protobuf-ts/grpcweb-transport@^2.5.0":
   version "2.8.3"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.8.3.tgz#2a3e479681b0b2c4b6476d74f8a6139b4eb27474"
   integrity sha512-m6E/1JySQ5imGZgQbqQc++Cd/8xm0y7ilrQm2OQpJHex3IGnd0SiLJgnfluQVlXF9AE4hRJTKcEnBUevp6oIyA==
@@ -3518,22 +3518,14 @@
     "@protobuf-ts/runtime" "^2.8.3"
     "@protobuf-ts/runtime-rpc" "^2.8.3"
 
-"@protobuf-ts/grpcweb-transport@^2.5.0":
-  version "2.8.2"
-  resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.8.2.tgz#7eb15e40aeb354ea8480030c86055dedcc7bdb1a"
-  integrity sha512-VG7132dOcH7t4C95EUiirzV2RTolBxIBWGxPFmnbKwHuR1lcSWDUbZZ1FIC1C/qip5jK4qcw5R76YZfV7gf8Pw==
-  dependencies:
-    "@protobuf-ts/runtime" "^2.8.2"
-    "@protobuf-ts/runtime-rpc" "^2.8.2"
-
-"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.8.2", "@protobuf-ts/runtime-rpc@^2.8.3":
+"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.8.3":
   version "2.8.3"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime-rpc/-/runtime-rpc-2.8.3.tgz#1dfef7902529cc43812db6e040dd0f6f363ba6d3"
   integrity sha512-Tb6nuevgezjGNnT8WF+aveGWeI5xeAbNpySd/nzknKx6ynepXdlNz5cN0xIADeOgDJHo/05Ka+vZ5ZI33tz2Og==
   dependencies:
     "@protobuf-ts/runtime" "^2.8.3"
 
-"@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.8.2", "@protobuf-ts/runtime@^2.8.3":
+"@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.8.3":
   version "2.8.3"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.8.3.tgz#827b87429afddf11b70be39880c9201f5dac2aae"
   integrity sha512-nVL1s5wWpF6U+wtWTEWfUPD9Ockckj+fHqhzgm41CKV4Oma3D/2M6tzqOQ+wrm4GZu1bt+s6f43feNnar6fhjA==
@@ -11465,10 +11457,10 @@ eslint-config-prettier@8.5.0:
   resolved "https://registry.yarnpkg.com/eslint-config-prettier/-/eslint-config-prettier-8.5.0.tgz#5a81680ec934beca02c7b1a61cf8ca34b66feab1"
   integrity sha512-obmWKLUNCnhtQRKc+tmnYuQl0pFU1ibYJQ5BGhTVB08bHe9wC8qUeG7c08dj9XX+AuPj1YSGSQIHl1pnDHZR0Q==
 
-eslint-config-prettier@8.7.0:
-  version "8.7.0"
-  resolved "https://registry.yarnpkg.com/eslint-config-prettier/-/eslint-config-prettier-8.7.0.tgz#f1cc58a8afebc50980bd53475451df146c13182d"
-  integrity sha512-HHVXLSlVUhMSmyW4ZzEuvjpwqamgmlfkutD53cYXLikh4pt/modINRcCIApJ84czDxM4GZInwUrromsDdTImTA==
+eslint-config-prettier@8.8.0:
+  version "8.8.0"
+  resolved "https://registry.yarnpkg.com/eslint-config-prettier/-/eslint-config-prettier-8.8.0.tgz#bfda738d412adc917fd7b038857110efe98c9348"
+  integrity sha512-wLbQiFre3tdGgpDv67NQKnJuTlcUVYHas3k+DZCc2U2BadthoEY4B7hLPvAxaqdyOGCzuLfii2fqGph10va7oA==
 
 eslint-config-react-app@7.0.1, eslint-config-react-app@^7.0.1:
   version "7.0.1"
