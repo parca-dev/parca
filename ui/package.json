@@ -15,7 +15,8 @@
     "benchmark": "NODE_ENV=production BROWSERSLIST='Chrome > 100' GENERATE_SOURCEMAP=false ts-node --experimental-specifier-resolution=node scripts/run-benchmark.mts",
     "prettier": "prettier --write --ignore-path ../.prettierignore 'packages/**/*.{js,jsx,ts,tsx,md,mdx}'",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "chromatic": "chromatic"
   },
   "workspaces": {
     "packages": [
@@ -77,6 +78,7 @@
     "@typescript-eslint/eslint-plugin": "^5.45.1",
     "@typescript-eslint/parser": "^5.45.1",
     "arg": "5.0.2",
+    "chromatic": "^6.17.2",
     "css-loader": "6.7.3",
     "dev-kong": "0.11.0",
     "eslint": "8.36.0",
