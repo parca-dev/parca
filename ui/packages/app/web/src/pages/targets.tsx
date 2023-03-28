@@ -124,7 +124,7 @@ const TargetsPage = (): JSX.Element => {
   return (
     <div className="flex flex-col">
       <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+        <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
           <EmptyState
             isEmpty={targetNamespaces?.length <= 0 && agents.length <= 0}
             title="No targets available"
@@ -143,10 +143,10 @@ const TargetsPage = (): JSX.Element => {
           >
             <>
               {agents.length > 0 ? (
-                <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                  <div className="my-2 p-2 border-b-2">
+                <div className="overflow-hidden border-b border-gray-200 shadow sm:rounded-lg">
+                  <div className="my-2 border-b-2 p-2">
                     <div className="my-2">
-                      <span className="font-semibold text-xl">Parca Agents</span>
+                      <span className="text-xl font-semibold">Parca Agents</span>
                     </div>
                     <AgentsTable agents={sortAgents(agents)} />
                   </div>
@@ -155,16 +155,16 @@ const TargetsPage = (): JSX.Element => {
                 <></>
               )}
               {Object.keys(targets ?? {}).length > 0 ? (
-                <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <div className="overflow-hidden border-b border-gray-200 shadow sm:rounded-lg">
                   {sortTargets(targetNamespaces)?.map(namespace => {
                     const name = Object.keys(namespace)[0];
                     const targets = namespace[name].sort((a: Target, b: Target) => {
                       return a.url.localeCompare(b.url);
                     });
                     return (
-                      <div key={name} className="my-2 p-2 border-b-2">
+                      <div key={name} className="my-2 border-b-2 p-2">
                         <div className="my-2">
-                          <span className="font-semibold text-xl">{name}</span>
+                          <span className="text-xl font-semibold">{name}</span>
                         </div>
                         <TargetsTable targets={targets} />
                       </div>

@@ -25,17 +25,17 @@ const Tab = ({
 }): JSX.Element => {
   return (
     <HeadlessTab.Group defaultIndex={defaultTabIndex}>
-      <HeadlessTab.List className="flex p-1 space-x-1 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl w-[80%] mx-auto border border-gray-300 dark:border-gray-400">
+      <HeadlessTab.List className="mx-auto flex w-[80%] space-x-1 rounded-xl border border-gray-300 bg-gray-50 p-1 text-gray-500 dark:border-gray-400 dark:bg-gray-700 dark:text-gray-400">
         {tabs.map((tab, idx) => (
           <HeadlessTab
             key={idx}
             className={({selected}) =>
               cx(
-                'w-full py-2.5 text-sm leading-5 font-medium rounded-lg',
-                'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60',
+                'w-full rounded-lg py-2.5 text-sm font-medium leading-5',
+                'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
                 selected
-                  ? 'font-medium bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-200 shadow'
-                  : 'font-normal hover:bg-gray-200 hover:dark:bg-white/[0.12] hover:text-gray-800 hover:dark:text-gray-300'
+                  ? 'bg-gray-200 font-medium text-gray-900 shadow dark:bg-gray-900 dark:text-gray-200'
+                  : 'font-normal hover:bg-gray-200 hover:text-gray-800 hover:dark:bg-white/[0.12] hover:dark:text-gray-300'
               )
             }
           >
@@ -49,7 +49,7 @@ const Tab = ({
             key={idx}
             className={cx(
               'rounded',
-              'focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60'
+              'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
             )}
           >
             {panel}

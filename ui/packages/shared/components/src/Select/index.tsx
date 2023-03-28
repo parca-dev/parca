@@ -75,7 +75,7 @@ const Select = ({
           <Listbox.Button
             className={cx(
               width !== undefined ? `w-${width}` : '',
-              disabled ? 'opacity-50 cursor-not-allowed' : '',
+              disabled ? 'cursor-not-allowed opacity-50' : '',
               primary ? primaryStyles : defaultStyles,
               {[className]: className.length > 0}
             )}
@@ -85,7 +85,7 @@ const Select = ({
                 {selection?.key !== '' ? selection.element.active : placeholder}
               </span>
             </span>
-            <span className="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-gray-400">
+            <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2 text-gray-400">
               <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />
             </span>
           </Listbox.Button>
@@ -98,7 +98,7 @@ const Select = ({
           >
             <Listbox.Options>
               {loading === true ? (
-                <div className="absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 dark:border-gray-600 shadow-lg rounded-md py-1 text-base ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-20 overflow-auto focus:outline-none sm:text-sm">
+                <div className="absolute z-10 mt-1 overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm">
                   <div className="w-[270px]">{loader}</div>
                 </div>
               ) : (
@@ -107,7 +107,7 @@ const Select = ({
                     <div
                       className={cx(
                         width !== undefined ? `w-${width}` : '',
-                        'absolute z-10 mt-1 bg-gray-50 dark:bg-gray-900 dark:border-gray-600 shadow-lg rounded-md py-1 text-base ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-20 overflow-auto focus:outline-none sm:text-sm'
+                        'absolute z-10 mt-1 overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm'
                       )}
                     >
                       {items.map(option => (
@@ -116,8 +116,8 @@ const Select = ({
                           disabled={option.disabled ?? false}
                           className={({active, disabled}) =>
                             cx(
-                              active && 'text-white bg-indigo-600',
-                              'cursor-default select-none relative py-2 pl-3 pr-9',
+                              active && 'bg-indigo-600 text-white',
+                              'relative cursor-default select-none py-2 pl-3 pr-9',
                               disabled && 'opacity-50'
                             )
                           }

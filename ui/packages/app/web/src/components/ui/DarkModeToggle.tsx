@@ -25,7 +25,7 @@ const DarkModeToggle = () => {
       onClick={() => dispatch(setDarkMode(!isDarkMode))}
       icon={
         <Icon
-          className="w-5 h-5"
+          className="h-5 w-5"
           aria-hidden="true"
           icon={isDarkMode ? 'heroicons:moon-20-solid' : 'heroicons:sun-20-solid'}
         />

@@ -15,7 +15,7 @@ const CloseIcon = (): JSX.Element => {
   return (
     <>
       <svg
-        className="h-5 w-5 text-white-400"
+        className="text-white-400 h-5 w-5"
         width="24"
         height="24"
         viewBox="0 0 24 24"

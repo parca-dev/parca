@@ -65,7 +65,7 @@ const Modal = ({
             >
               <div
                 className={cx(
-                  'inline-block w-fit min-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-700 shadow-xl rounded-2xl',
+                  'min-w-md my-8 inline-block w-fit transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-gray-700',
                   {[className]: className?.length > 0}
                 )}
               >
