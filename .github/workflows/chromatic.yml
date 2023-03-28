@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 15
     # Job steps
     steps:
-      - uses: actions/checkout@v3.4.0
+      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3.4.0
       # 👇 Install dependencies with the same package manager used in the project (yarn)
       - name: Set up Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
@@ -38,7 +38,7 @@ jobs:
         run: yarn install --frozen-lockfile
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        uses: chromaui/action@v1
+        uses: chromaui/action@c3d67c7f1fb1b9fecddfb8a82a7022a45aaa382d # v1
         # Chromatic GitHub Action options
         with:
           # 👇 Chromatic projectToken, refer to the manage page to obtain it.
