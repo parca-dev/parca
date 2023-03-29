@@ -13,7 +13,7 @@
 
 import React from 'react';
 
-import {Agent} from '@parca/client';
+import {Agent} from '@parca/client/src/connect';
 import {TimeObject} from '@parca/utilities';
 
 import LastScrapeCell from './LastScrapeCell';

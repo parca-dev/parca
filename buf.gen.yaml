@@ -23,6 +23,13 @@ plugins:
     opt:
       - paths=source_relative,features=marshal+unmarshal+size+pool+grpc
 
+  # renovate: datasource=github-releases depName=timostamm/protobuf-ts
+  - plugin: buf.build/community/timostamm-protobuf-ts:v2.8.2
+    out: ui/packages/shared/client/src
+    opt:
+      - long_type_string
+      - generate_dependencies
+
   # renovate: datasource=github-releases depName=bufbuild/connect-es
   - plugin: es
     out: ui/packages/shared/client/src
