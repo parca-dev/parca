@@ -49,9 +49,9 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
   const { flamegraphData, topTableData, actions } = response;
 
   let total = BigInt(0);
-  if (flamegraphData.data !== undefined) {
+  if (flamegraphData.total !== undefined) {
     total = BigInt(flamegraphData.total);
-  } else if (topTableData.data !== undefined) {
+  } else if (topTableData.total !== undefined) {
     total = BigInt(topTableData.total);
   }
 

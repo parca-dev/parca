@@ -61,12 +61,16 @@ export interface FlamegraphData {
 export interface TopTableData {
   loading: boolean;
   data?: Top;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 interface CallgraphData {
   loading: boolean;
   data?: CallgraphType;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
