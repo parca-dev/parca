@@ -46,6 +46,9 @@ jobs:
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3.4.0
         with:
@@ -56,8 +59,6 @@ jobs:
           node-version-file: .node-version
           cache: yarn
       - name: Install dependencies
-        with:
-          workingDir: ./ui
         run: yarn install --frozen-lockfile
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
