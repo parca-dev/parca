@@ -29,8 +29,8 @@ const useNodeColor = ({data, compareMode}: Props): string => {
 
   const color: string = useMemo(() => {
     if (compareMode) {
-      const diff = parseFloat(data.diff);
-      const cumulative = parseFloat(data.cumulative);
+      const diff = data.diff;
+      const cumulative = data.cumulative;
       return diffColor(diff, cumulative, isDarkMode);
     }
 

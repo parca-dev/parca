@@ -16,7 +16,7 @@ import {useEffect, useMemo} from 'react';
 import {Flamegraph} from '@parca/client';
 import {Button} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
-import {selectQueryParam, type NavigateFunction} from '@parca/utilities';
+import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
 import {IcicleGraph} from './IcicleGraph';
@@ -28,8 +28,8 @@ export type ResizeHandler = (width: number, height: number) => void;
 interface ProfileIcicleGraphProps {
   width?: number;
   graph: Flamegraph | undefined;
-  total: number;
-  filtered: number;
+  total: bigint;
+  filtered: bigint;
   sampleUnit: string;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
@@ -75,20 +75,20 @@ const ProfileIcicleGraph = ({
       return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    const trimmed = parseInt(graph.trimmed);
+    const trimmed = graph.trimmed;
 
     const totalUnfiltered = total + filtered;
     // safeguard against division by zero
-    const totalUnfilteredDivisor = totalUnfiltered > 0 ? totalUnfiltered : 1;
+    const totalUnfilteredDivisor = totalUnfiltered > 0 ? totalUnfiltered : 1n;
 
     return [
       numberFormatter.format(total),
       numberFormatter.format(totalUnfiltered),
       trimmed > 0,
       numberFormatter.format(trimmed),
-      numberFormatter.format((trimmed * 100) / totalUnfilteredDivisor),
+      numberFormatter.format(divide(trimmed * 100n, totalUnfilteredDivisor)),
       filtered > 0,
-      numberFormatter.format((total * 100) / totalUnfilteredDivisor),
+      numberFormatter.format(divide(total * 100n, totalUnfilteredDivisor)),
     ];
   }, [graph, filtered, total]);
 
@@ -112,7 +112,7 @@ const ProfileIcicleGraph = ({
 
   if (graph === undefined) return <div>no data...</div>;
 
-  if (total === 0 && !loading) return <>Profile has no samples</>;
+  if (total === 0n && !loading) return <>Profile has no samples</>;
 
   if (isTrimmed) {
     console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);

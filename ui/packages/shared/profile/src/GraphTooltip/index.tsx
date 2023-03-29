@@ -31,7 +31,7 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
 import {selectHoveringNode, useAppSelector} from '@parca/store';
-import {getLastItem, valueFormatter} from '@parca/utilities';
+import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';
@@ -46,7 +46,7 @@ interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
 }
 
 interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
-  diff: string;
+  diff: bigint;
   meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
 }
 
@@ -54,8 +54,8 @@ interface GraphTooltipProps {
   x?: number;
   y?: number;
   unit: string;
-  total: number;
-  totalUnfiltered: number;
+  total: bigint;
+  totalUnfiltered: bigint;
   hoveringNode?: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
@@ -158,11 +158,11 @@ const TooltipMetaInfo = ({
     if (hoveringNode.meta?.function == null) return '<unknown>';
 
     return `${hoveringNode.meta.function.filename} ${
-      hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== '0'
+      hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== 0n
         ? ` +${hoveringNode.meta.line.line.toString()}`
         : `${
             hoveringNode.meta.function?.startLine !== undefined &&
-            hoveringNode.meta.function?.startLine !== '0'
+            hoveringNode.meta.function?.startLine !== 0n
               ? ` +${hoveringNode.meta.function.startLine}`
               : ''
           }`
@@ -192,7 +192,7 @@ const TooltipMetaInfo = ({
         <td className="w-1/4">Address</td>
         <td className="w-3/4 break-all">
           {hoveringNode.meta?.location?.address == null ||
-          hoveringNode.meta?.location.address === '0' ? (
+          hoveringNode.meta?.location.address === 0n ? (
             <NoData />
           ) : (
             <CopyToClipboard
@@ -255,8 +255,8 @@ export const GraphTooltipContent = ({
 }: {
   hoveringNode: HoveringNode;
   unit: string;
-  total: number;
-  totalUnfiltered: number;
+  total: bigint;
+  totalUnfiltered: bigint;
   isFixed: boolean;
   strings?: string[];
   mappings?: Mapping[];
@@ -275,22 +275,22 @@ export const GraphTooltipContent = ({
     timeoutHandle = setTimeout(() => setIsCopied(false), 3000);
   };
 
-  const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
-  const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
+  const hoveringNodeCumulative = hoveringNode.cumulative;
+  const diff = hoveringNode.diff;
   const prevValue = hoveringNodeCumulative - diff;
-  const diffRatio = Math.abs(diff) > 0 ? diff / prevValue : 0;
+  const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
   const diffSign = diff > 0 ? '+' : '';
   const diffValueText = diffSign + valueFormatter(diff, unit, 1);
   const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
-  const getTextForCumulative = (hoveringNodeCumulative: number): string => {
+  const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
     const filtered =
       totalUnfiltered > total
-        ? ` / ${((hoveringNodeCumulative * 100) / total).toFixed(2)}% of filtered`
+        ? ` / ${divide(hoveringNodeCumulative * 100n, total).toFixed(2)}% of filtered`
         : '';
     return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
-    (${((hoveringNodeCumulative * 100) / totalUnfiltered).toFixed(2)}%${filtered})`;
+    (${divide(hoveringNodeCumulative * 100n, totalUnfiltered).toFixed(2)}%${filtered})`;
   };
 
   return (
@@ -314,7 +314,7 @@ export const GraphTooltipContent = ({
                     ) : (
                       <>
                         {hoveringNode.meta.location !== undefined &&
-                        parseInt(hoveringNode.meta.location.address, 10) !== 0 ? (
+                        hoveringNode.meta.location.address !== 0n ? (
                           <CopyToClipboard
                             onCopy={onCopy}
                             text={hexifyAddress(hoveringNode.meta.location.address)}
@@ -347,7 +347,7 @@ export const GraphTooltipContent = ({
                       </CopyToClipboard>
                     </td>
                   </tr>
-                  {hoveringNode.diff !== undefined && diff !== 0 && (
+                  {hoveringNode.diff !== undefined && diff !== 0n && (
                     <tr>
                       <td className="w-1/4">Diff</td>
                       <td className="w-3/4">

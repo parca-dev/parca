@@ -23,7 +23,7 @@ interface Props {
   noDataPrompt: ReactNode;
   perf?: {
     onRender?: ProfilerOnRenderCallback;
-    markInteraction: (interactionName: string, sampleCount: number | string) => void;
+    markInteraction: (interactionName: string, sampleCount: number | string | bigint) => void;
   };
   onError?: (error: RpcError, originatingFeature: string) => void;
 }

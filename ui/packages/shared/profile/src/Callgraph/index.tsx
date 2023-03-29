@@ -64,7 +64,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   const maxColor: string = getNewSpanColor(isDarkMode);
   const minColor: string = d3.scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
-  const cumulatives = data.edges.map((edge: CallgraphEdge) => parseInt(edge.cumulative));
+  const cumulatives = data.edges.map((edge: CallgraphEdge) => edge.cumulative.toString());
   const cumulativesRange = d3.extent(cumulatives);
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateBlues)
@@ -147,8 +147,8 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
           <GraphTooltip
             type="callgraph"
             unit={sampleUnit}
-            total={parseInt(data.cumulative)}
-            totalUnfiltered={parseInt(data.cumulative)}
+            total={data.cumulative}
+            totalUnfiltered={data.cumulative}
             contextElement={containerRef.current}
           />
         )}

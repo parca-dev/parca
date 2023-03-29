@@ -139,8 +139,8 @@ export const RawMetricsGraph = ({
         metric,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
-            const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
-            agg.push([t, d.valuePerSecond, parseFloat(d.value), parseFloat(d.duration)]);
+            const t = (Number(d.timestamp.seconds) * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
+            agg.push([t, d.valuePerSecond, Number(d.value), Number(d.duration)]);
           }
           return agg;
         }, []),
@@ -462,7 +462,7 @@ export const RawMetricsGraph = ({
                 >
                   <line stroke="currentColor" x2={-6} />
                   <text fill="currentColor" x={-9} dy={'0.32em'}>
-                    {valueFormatter(d, sampleUnit, 1)}
+                    {valueFormatter(BigInt(d), sampleUnit, 1)}
                   </text>
                 </g>
               ))}

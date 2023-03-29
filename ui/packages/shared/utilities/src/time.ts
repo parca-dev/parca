@@ -131,9 +131,10 @@ export const getStepDuration = (start: number, end: number, stepCount = 1000): D
   const whole = Math.floor(durationSeconds);
   const decimal = durationSeconds - whole;
 
-  return {seconds: whole.toString(), nanos: Math.floor(decimal * 1e9)};
+  return {seconds: BigInt(whole), nanos: Math.floor(decimal * 1e9)};
 };
 
 export const getStepDurationInMilliseconds = (stepDuration: Duration): number => {
-  return parseInt(stepDuration.seconds, 10) * 1000 + stepDuration.nanos / 1e6;
+  // Converts both seconds and nanoseconds to milliseconds and adds them together
+  return Number(stepDuration.seconds) * 1000 + stepDuration.nanos / 1e6;
 };

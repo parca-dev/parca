@@ -26,8 +26,8 @@ import useColoredGraph from './useColoredGraph';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
-  total: number;
-  filtered: number;
+  total: bigint;
+  filtered: bigint;
   sampleUnit: string;
   width?: number;
   curPath: string[];
@@ -65,6 +65,7 @@ export const IcicleGraph = memo(function IcicleGraph({
     if (width === undefined) {
       return () => 0;
     }
+    // TODO(manoj): create a scale that supports bigint
     return scaleLinear()
       .domain([0, Number(total)])
       .range([0, width]);

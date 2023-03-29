@@ -39,7 +39,7 @@ interface IcicleGraphNodesProps {
   functions: ParcaFunction[];
   x: number;
   y: number;
-  total: number;
+  total: bigint;
   totalWidth: number;
   level: number;
   curPath: string[];
@@ -82,8 +82,9 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   return (
     <g transform={`translate(${x}, ${y})`}>
       {nodes.map(function nodeMapper(d, i) {
-        const start = nodes.slice(0, i).reduce((sum, d) => sum + parseFloat(d.cumulative), 0);
-        const xStart = xScale(start);
+        const start = nodes.slice(0, i).reduce((sum, d) => sum + d.cumulative, 0n);
+        // TODO(manoj): Fix the scale to accept bigint
+        const xStart = xScale(Number(start));
 
         return (
           <IcicleNode
@@ -125,7 +126,7 @@ interface IcicleNodeProps {
   locations: Location[];
   functions: ParcaFunction[];
   path: string[];
-  total: number;
+  total: bigint;
   setCurPath: (path: string[]) => void;
   xScale: (value: number) => number;
   isRoot?: boolean;
@@ -176,17 +177,19 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
   const nextLevel = level + 1;
-  const cumulative = parseFloat(data.cumulative);
+  const cumulative = data.cumulative;
   const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);
   const newXScale =
     nextCurPath.length === 0 && curPath.length === 1
-      ? scaleLinear().domain([0, cumulative]).range([0, totalWidth])
+      ? scaleLinear()
+          .domain([0, Number(cumulative)])
+          .range([0, totalWidth])
       : xScale;
 
   const width =
     nextCurPath.length > 0 || (nextCurPath.length === 0 && curPath.length === 1)
       ? totalWidth
-      : xScale(cumulative);
+      : xScale(Number(cumulative));
 
   const {isHighlightEnabled = false, isHighlighted = false} = useMemo(() => {
     if (searchString === undefined || searchString === '') {
@@ -203,7 +206,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     if (isShiftDown) return;
 
     // need to add id and flat for tooltip purposes
-    dispatch(setHoveringNode({...data, id: '', flat: ''}));
+    dispatch(setHoveringNode({...data, id: '', flat: 0n}));
   };
   const onMouseLeave = (): void => {
     if (isShiftDown) return;

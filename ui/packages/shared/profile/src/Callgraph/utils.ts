@@ -117,7 +117,7 @@ export const jsonToDot = ({
 
   const edgesAsStrings = edges.map((edge: CallgraphEdge) => {
     const dataAttributes = {
-      cumulative: edge.cumulative,
+      cumulative: Number(edge.cumulative),
       color: withAlphaHex(colorRange[1], colorOpacityScale(Number(edge.cumulative))),
       className: 'edge',
       // boxHeight: DEFAULT_NODE_HEIGHT,
