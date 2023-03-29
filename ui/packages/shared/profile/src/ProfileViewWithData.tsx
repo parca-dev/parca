@@ -120,8 +120,25 @@ export const ProfileViewWithData = ({
     }
   };
 
+  // TODO: Refactor how we get responses such that we have a single response,
+  //  regardless of the report type.
+  let total = BigInt(0);
+  let filtered = BigInt(0);
+  if (flamegraphResponse !== null) {
+    total = BigInt(flamegraphResponse.total);
+    filtered = BigInt(flamegraphResponse.filtered);
+  } else if (topTableResponse !== null) {
+    total = BigInt(topTableResponse.total);
+    filtered = BigInt(topTableResponse.filtered);
+  } else if (callgraphResponse !== null) {
+    total = BigInt(callgraphResponse.total);
+    filtered = BigInt(callgraphResponse.filtered);
+  }
+
   return (
     <ProfileView
+      total={total}
+      filtered={filtered}
       flamegraphData={{
         loading: flamegraphLoading,
         data:
