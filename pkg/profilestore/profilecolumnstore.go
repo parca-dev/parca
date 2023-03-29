@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/dynparquet"
@@ -30,6 +31,7 @@ import (
 
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	"github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1/profilestorev1alpha1connect"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
@@ -41,8 +43,8 @@ type agent struct {
 }
 
 type ProfileColumnStore struct {
-	profilestorepb.UnimplementedProfileStoreServiceServer
-	profilestorepb.UnimplementedAgentsServiceServer
+	profilestorev1alpha1connect.UnimplementedProfileStoreServiceHandler
+	profilestorev1alpha1connect.UnimplementedAgentsServiceHandler
 
 	logger    log.Logger
 	tracer    trace.Tracer
@@ -57,8 +59,6 @@ type ProfileColumnStore struct {
 
 	bufferPool *sync.Pool
 }
-
-var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
 
 func NewProfileColumnStore(
 	logger log.Logger,
@@ -125,16 +125,16 @@ found:
 	return nodeName, true
 }
 
-func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
+func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *connect.Request[profilestorepb.WriteRawRequest]) (*connect.Response[profilestorepb.WriteRawResponse], error) {
 	ctx, span := s.tracer.Start(ctx, "write-raw")
 	defer span.End()
 
 	start := time.Now()
-	writeErr := s.writeSeries(ctx, req)
+	writeErr := s.writeSeries(ctx, req.Msg)
 
 	// update agent info only when the request is come from agent
-	if p, ok := peer.FromContext(ctx); ok && len(req.Series) != 0 {
-		nodeName, _ := nodeNameFromLabels(req.Series)
+	if p, ok := peer.FromContext(ctx); ok && len(req.Msg.Series) != 0 {
+		nodeName, _ := nodeNameFromLabels(req.Msg.Series)
 		ag := agent{
 			nodeName:         nodeName,
 			lastPush:         start,
@@ -151,10 +151,10 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 		return nil, writeErr
 	}
 
-	return &profilestorepb.WriteRawResponse{}, nil
+	return connect.NewResponse(&profilestorepb.WriteRawResponse{}), nil
 }
 
-func (s *ProfileColumnStore) Agents(ctx context.Context, req *profilestorepb.AgentsRequest) (*profilestorepb.AgentsResponse, error) {
+func (s *ProfileColumnStore) Agents(ctx context.Context, req *connect.Request[profilestorepb.AgentsRequest]) (*connect.Response[profilestorepb.AgentsResponse], error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
@@ -179,9 +179,7 @@ func (s *ProfileColumnStore) Agents(ctx context.Context, req *profilestorepb.Age
 		})
 	}
 
-	resp := &profilestorepb.AgentsResponse{
+	return connect.NewResponse(&profilestorepb.AgentsResponse{
 		Agents: agents,
-	}
-
-	return resp, nil
+	}), nil
 }

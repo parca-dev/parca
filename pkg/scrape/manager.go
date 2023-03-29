@@ -24,8 +24,8 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 
-	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
+	"github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1/profilestorev1alpha1connect"
+	"github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1/scrapev1alpha1connect"
 	"github.com/parca-dev/parca/pkg/config"
 )
 
@@ -33,7 +33,7 @@ import (
 func NewManager(
 	logger log.Logger,
 	reg prometheus.Registerer,
-	store profilepb.ProfileStoreServiceServer,
+	store profilestorev1alpha1connect.ProfileStoreServiceHandler,
 	scrapeConfigs []*config.ScrapeConfig,
 	externalLabels labels.Labels,
 ) *Manager {
@@ -119,10 +119,10 @@ func NewManager(
 // Manager maintains a set of scrape pools and manages start/stop cycles
 // when receiving new target groups form the discovery manager.
 type Manager struct {
-	scrapepb.UnimplementedScrapeServiceServer
+	scrapev1alpha1connect.UnimplementedScrapeServiceHandler
 
 	logger    log.Logger
-	store     profilepb.ProfileStoreServiceServer
+	store     profilestorev1alpha1connect.ProfileStoreServiceHandler
 	graceShut chan struct{}
 
 	externalLabels labels.Labels

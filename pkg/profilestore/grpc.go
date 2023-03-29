@@ -16,6 +16,7 @@ package profilestore
 import (
 	"context"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"google.golang.org/grpc"
@@ -39,12 +40,12 @@ func NewGRPCForwarder(conn grpc.ClientConnInterface, logger log.Logger) *GRPCFor
 	}
 }
 
-func (s *GRPCForwarder) WriteRaw(ctx context.Context, req *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
+func (s *GRPCForwarder) WriteRaw(ctx context.Context, req *connect.Request[profilestorepb.WriteRawRequest]) (*connect.Response[profilestorepb.WriteRawResponse], error) {
 	// TODO: Batch writes to only send a request every now and then.
 	// See https://github.com/parca-dev/parca-agent/blob/main/pkg/agent/write_client.go#L28
-	resp, err := s.client.WriteRaw(ctx, req)
+	resp, err := s.client.WriteRaw(ctx, req.Msg)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to forward profiles", "err", err)
 	}
-	return resp, err
+	return connect.NewResponse(resp), err
 }

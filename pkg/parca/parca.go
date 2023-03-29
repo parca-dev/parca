@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	goruntime "runtime"
@@ -27,10 +28,10 @@ import (
 
 	"github.com/apache/arrow/go/v10/arrow/memory"
 	"github.com/dgraph-io/badger/v3"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
 	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/dynparquet"
@@ -52,11 +53,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v3"
 
-	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	"github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1/debuginfov1alpha1connect"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
+	"github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1/profilestorev1alpha1connect"
+	"github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1/queryv1alpha1connect"
+	"github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1/scrapev1alpha1connect"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
@@ -460,35 +461,34 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				flags.HTTPAddress,
 				flags.CORSAllowedOrigins,
 				flags.PathPrefix,
-				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-					debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
-					profilestorepb.RegisterProfileStoreServiceServer(srv, s)
-					profilestorepb.RegisterAgentsServiceServer(srv, s)
-					querypb.RegisterQueryServiceServer(srv, q)
-					scrapepb.RegisterScrapeServiceServer(srv, m)
+				func(r chi.Router) {
+					patterns := []string{}
+					handlers := []http.Handler{}
 
-					if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
+					debuginfoPattern, debuginfoHandler := debuginfov1alpha1connect.NewDebuginfoServiceHandler(dbginfo)
+					patterns = append(patterns, debuginfoPattern)
+					handlers = append(handlers, debuginfoHandler)
+
+					profilestorePattern, profilestoreHandler := profilestorev1alpha1connect.NewProfileStoreServiceHandler(s)
+					patterns = append(patterns, profilestorePattern)
+					handlers = append(handlers, profilestoreHandler)
+
+					agentsPattern, agentsHandler := profilestorev1alpha1connect.NewAgentsServiceHandler(s)
+					patterns = append(patterns, agentsPattern)
+					handlers = append(handlers, agentsHandler)
+
+					queryPattern, queryHandler := queryv1alpha1connect.NewQueryServiceHandler(q)
+					patterns = append(patterns, queryPattern)
+					handlers = append(handlers, queryHandler)
+
+					scrapePattern, scrapeHandler := scrapev1alpha1connect.NewScrapeServiceHandler(m)
+					patterns = append(patterns, scrapePattern)
+					handlers = append(handlers, scrapeHandler)
+
+					for i, pattern := range patterns {
+						r.Mount("/api"+pattern, http.StripPrefix("/api", handlers[i]))
 					}
-
-					if err := profilestorepb.RegisterProfileStoreServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
-
-					if err := profilestorepb.RegisterAgentsServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
-
-					if err := querypb.RegisterQueryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
-
-					if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
-
-					return nil
-				}),
+				},
 			)
 		},
 		func(_ error) {
@@ -651,13 +651,16 @@ func runScraper(
 					flags.HTTPAddress,
 					flags.CORSAllowedOrigins,
 					flags.PathPrefix,
-					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-						scrapepb.RegisterScrapeServiceServer(srv, m)
-						if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-							return err
-						}
-						return nil
-					}),
+					func(r chi.Router) {
+						r.Mount(scrapev1alpha1connect.NewScrapeServiceHandler(m))
+					},
+					//server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
+					//	scrapepb.RegisterScrapeServiceServer(srv, m)
+					//	if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+					//		return err
+					//	}
+					//	return nil
+					//}),
 				)
 			},
 			func(_ error) {
