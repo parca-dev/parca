@@ -58,8 +58,8 @@ jobs:
         with:
           node-version-file: .node-version
           cache: yarn
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Install dependencies and build app
+        run: yarn install --frozen-lockfile && yarn --prefer-offline && yarn bootstrap && yarn build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
         uses: chromaui/action@c3d67c7f1fb1b9fecddfb8a82a7022a45aaa382d # v1
