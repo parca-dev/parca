@@ -56,6 +56,8 @@ jobs:
           node-version-file: .node-version
           cache: yarn
       - name: Install dependencies
+        with:
+          workingDir: ./ui
         run: yarn install --frozen-lockfile
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
