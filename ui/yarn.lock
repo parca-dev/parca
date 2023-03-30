@@ -1810,19 +1810,12 @@
   resolved "https://registry.yarnpkg.com/@fal-works/esbuild-plugin-global-externals/-/esbuild-plugin-global-externals-2.1.2.tgz#c05ed35ad82df8e6ac616c68b92c2282bd083ba4"
   integrity sha512-cEee/Z+I12mZcFJshKcCqC8tuX5hG3s+d+9nZ3LabqKF1vKdF41B92pJVCBggjAGORAeOzyyDDKrZwIkLffeOQ==
 
-"@floating-ui/core@^1.2.2", "@floating-ui/core@^1.2.4":
+"@floating-ui/core@^1.2.4":
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/@floating-ui/core/-/core-1.2.4.tgz#89e6311b021190c9e121fcf20306e76ac66e4066"
   integrity sha512-SQOeVbMwb1di+mVWWJLpsUTToKfqVNioXys011beCAhyOIFtS+GQoW4EQSneuxzmQKddExDwQ+X0hLl4lJJaSQ==
 
-"@floating-ui/dom@1.2.3":
-  version "1.2.3"
-  resolved "https://registry.yarnpkg.com/@floating-ui/dom/-/dom-1.2.3.tgz#8dc6fbf799fbb5c29f705b54bdd51f3ab0ee03a2"
-  integrity sha512-lK9cZUrHSJLMVAdCvDqs6Ug8gr0wmqksYiaoj/bxj2gweRQkSuhg2/V6Jswz2KiQ0RAULbqw1oQDJIMpQ5GfGA==
-  dependencies:
-    "@floating-ui/core" "^1.2.2"
-
-"@floating-ui/dom@^1.0.1":
+"@floating-ui/dom@^1.0.0", "@floating-ui/dom@^1.0.1":
   version "1.2.5"
   resolved "https://registry.yarnpkg.com/@floating-ui/dom/-/dom-1.2.5.tgz#c9ec259a24ce0958b1ea29674df4eee4455361a9"
   integrity sha512-+sAUfpQ3Frz+VCbPCqj+cZzvEESy3fjSeT/pDWkYCWOBXYNNKZfuVsHuv8/JO2zze8+Eb/Q7a6hZVgzS81fLbQ==
@@ -9084,7 +9077,7 @@ class-utils@^0.3.5:
     isobject "^3.0.0"
     static-extend "^0.1.1"
 
-classnames@2.3.2, classnames@2.x, classnames@^2.2.1, classnames@^2.2.5, classnames@^2.2.6, classnames@^2.3.1, classnames@^2.3.2:
+classnames@2.3.2, classnames@2.x, classnames@^2.2.1, classnames@^2.2.5, classnames@^2.2.6, classnames@^2.3.0, classnames@^2.3.1, classnames@^2.3.2:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.3.2.tgz#351d813bf0137fcc6a76a16b88208d2560a0d924"
   integrity sha512-CSbhY4cFEJRe6/GQzIk5qXZ4Jeg5pcsP7b5peFSDpffpe1cqjASH/n9UTjBwOp6XpMSTwQ8Za2K5V02ueA7Tmw==
@@ -22309,12 +22302,12 @@ react-textarea-autosize@^8.4.0:
     use-latest "^1.2.1"
 
 react-tooltip@^5.7.5:
-  version "5.10.0"
-  resolved "https://registry.yarnpkg.com/react-tooltip/-/react-tooltip-5.10.0.tgz#3650b8a903188fbf2511fdf2dcfb87e5beaef919"
-  integrity sha512-9qhzkWJNBXf/ajD84e4eIMUgpZW/x+q0QaVjBcELImrH8UHcW1nlIEQOeKsgKgZfqT2vrQho2Dhfh0eALcjTJQ==
+  version "5.10.4"
+  resolved "https://registry.yarnpkg.com/react-tooltip/-/react-tooltip-5.10.4.tgz#e4f5608ad1613ccb3dd929704254ebc2a2e36808"
+  integrity sha512-QUBX6k3+qjOyAy64ntV/NkwzZqaghjcEpZ6Q5pqVbYUYS8kGcmIgXznRc2syQDlffCtzeWJGGMz93JYKjGo2Pw==
   dependencies:
-    "@floating-ui/dom" "1.2.3"
-    classnames "^2.3.2"
+    "@floating-ui/dom" "^1.0.0"
+    classnames "^2.3.0"
 
 react-transition-group@4.4.5, react-transition-group@^4.3.0:
   version "4.4.5"
