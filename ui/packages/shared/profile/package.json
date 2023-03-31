@@ -29,7 +29,7 @@
     "@types/react-copy-to-clipboard": "5.0.4"
   },
   "resolutions": {
-    "konva": "8.4.2"
+    "konva": "8.4.3"
   },
   "main": "dist/index.js",
   "scripts": {
