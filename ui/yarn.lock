@@ -5625,16 +5625,16 @@
     postcss-selector-parser "6.0.10"
 
 "@tanstack/react-table@^8.7.0":
-  version "8.7.9"
-  resolved "https://registry.yarnpkg.com/@tanstack/react-table/-/react-table-8.7.9.tgz#9efcd168fb0080a7e0bc213b5eac8b55513babf4"
-  integrity sha512-6MbbQn5AupSOkek1+6IYu+1yZNthAKTRZw9tW92Vi6++iRrD1GbI3lKTjJalf8lEEKOqapPzQPE20nywu0PjCA==
+  version "8.8.4"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-table/-/react-table-8.8.4.tgz#814acc520f8d7356d007b441a784c5a30154f516"
+  integrity sha512-5w2AoBnDBJYuUa80sLOqelcG/eJdGwIPFBRnEiU3RCAEeZ1QIhYse/0vzhTY8VAcTXa2sjWhXNDWci4VlktNmg==
   dependencies:
-    "@tanstack/table-core" "8.7.9"
+    "@tanstack/table-core" "8.8.4"
 
-"@tanstack/table-core@8.7.9":
-  version "8.7.9"
-  resolved "https://registry.yarnpkg.com/@tanstack/table-core/-/table-core-8.7.9.tgz#0e975f8a5079972f1827a569079943d43257c42f"
-  integrity sha512-4RkayPMV1oS2SKDXfQbFoct1w5k+pvGpmX18tCXMofK/VDRdA2hhxfsQlMvsJ4oTX8b0CI4Y3GDKn5T425jBCw==
+"@tanstack/table-core@8.8.4":
+  version "8.8.4"
+  resolved "https://registry.yarnpkg.com/@tanstack/table-core/-/table-core-8.8.4.tgz#4b6938c0531011afc0746a50ff9b3f772199be36"
+  integrity sha512-4gq0A/Qz/JFuclxPd1UnNi5P57vbVF10mPK743Iuv2ORLLgF/O/XkaYjYDGw5SHMof8CgiT/nfdJdlgHsOfRIg==
 
 "@testing-library/dom@>=7":
   version "9.0.1"
