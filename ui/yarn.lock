@@ -2162,10 +2162,10 @@
   resolved "https://registry.yarnpkg.com/@hutson/parse-repository-url/-/parse-repository-url-3.0.2.tgz#98c23c950a3d9b6c8f0daed06da6c3af06981340"
   integrity sha512-H9XAx3hc0BQHY6l+IFSWHDySypcXsvsuLhgYLUGywmJ5pswRVQJUHpOsobnLYp2ZUaUlKiKDrgWWhosOwAEM8Q==
 
-"@ianvs/prettier-plugin-sort-imports@3.7.1":
-  version "3.7.1"
-  resolved "https://registry.yarnpkg.com/@ianvs/prettier-plugin-sort-imports/-/prettier-plugin-sort-imports-3.7.1.tgz#260baf4bde78e6abf5dd1ab556f7ecf9054948b7"
-  integrity sha512-XDnBUUruJY9KgNd7T2ZHnVPWo5B9NzVDCLEMm7HjXTA3rTtMg5Q46gYRjLvampDXSmN8+icu54aRE3IIT8U+1w==
+"@ianvs/prettier-plugin-sort-imports@3.7.2":
+  version "3.7.2"
+  resolved "https://registry.yarnpkg.com/@ianvs/prettier-plugin-sort-imports/-/prettier-plugin-sort-imports-3.7.2.tgz#3254166be1e908de72bc3ddc66143f54333510a9"
+  integrity sha512-bVckKToJM8XV2wTOG1VpeXrSmfAG49esVrikbxeFbY51RJdNke9AdMANJtGuACB59uo+pGlz0wBdWFrRzWyO1A==
   dependencies:
     "@babel/core" "^7.17.7"
     "@babel/generator" "^7.17.7"
