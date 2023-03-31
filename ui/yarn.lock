@@ -4382,9 +4382,9 @@
     ts-dedent "^2.0.0"
 
 "@storybook/addon-styling@^0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-styling/-/addon-styling-0.3.1.tgz#a18ec2bf8f198a459ca710d4c3a92c4090b98c74"
-  integrity sha512-vKE9qG0cHKqCenhoStPXatEY67rldxhsWgChZZCm1xPSBsdwa5MuXc7IAbsx2H7GPOJEy367gIY6HGqw0oLfAA==
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-styling/-/addon-styling-0.3.2.tgz#c393fd9f1647f7748a41601c0b6516dc0a7e939e"
+  integrity sha512-ztKy9uU2yKBtvBp4/Km4LD1JCNNFHpXS33LjbeIfho0toRv100g8tUojrdnoRX1b2KVK6cqep5mJV0z2ak9hIQ==
 
 "@storybook/addon-toolbars@7.0.0-rc.7":
   version "7.0.0-rc.7"
