@@ -43,10 +43,16 @@ type SymtabLiner struct {
 
 	filename string
 	f        *elf.File
+	// mmapOffset is the offset of mapped segment within ELF file, e.g., 0x1000.
+	mmapOffset uint64
+	// mmapStart is the virtual address where segment was mapped, e.g., 0x401000.
+	mmapStart uint64
+	// isPIE indicates whether the ELF file is position independent executable.
+	isPIE bool
 }
 
 // Symbols creates a new SymtabLiner.
-func Symbols(logger log.Logger, filename string, f *elf.File, demangler *demangle.Demangler) (*SymtabLiner, error) {
+func Symbols(logger log.Logger, filename string, f *elf.File, mmapOffset, mmapStart uint64, demangler *demangle.Demangler) (*SymtabLiner, error) {
 	symbols, err := symtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
@@ -54,11 +60,14 @@ func Symbols(logger log.Logger, filename string, f *elf.File, demangler *demangl
 
 	searcher := symbolsearcher.New(symbols)
 	return &SymtabLiner{
-		logger:    log.With(logger, "liner", "symtab"),
-		searcher:  searcher,
-		demangler: demangler,
-		filename:  filename,
-		f:         f,
+		logger:     log.With(logger, "liner", "symtab"),
+		searcher:   searcher,
+		demangler:  demangler,
+		filename:   filename,
+		f:          f,
+		mmapOffset: mmapOffset,
+		mmapStart:  mmapStart,
+		isPIE:      isPIE(f, mmapOffset, mmapStart),
 	}, nil
 }
 
@@ -76,6 +85,17 @@ func (lnr *SymtabLiner) PCRange() ([2]uint64, error) {
 
 // PCToLines looks up the line number information for a program counter (memory address).
 func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
+	if lnr.isPIE {
+		if addr < lnr.mmapStart {
+			return nil, fmt.Errorf("address %x can't be lower than beginning of segment %x", addr, lnr.mmapStart)
+		}
+		// Distance between the sampled memory address and
+		// beginning of the loaded segment (vm_start memory address).
+		segmentDistance := addr - lnr.mmapStart
+		// Sampled address adjusted to .symtab address range.
+		addr = lnr.mmapOffset + segmentDistance
+	}
+
 	name, err := lnr.searcher.Search(addr)
 	if err != nil {
 		return nil, err
@@ -159,4 +179,40 @@ func symtab(objFile *elf.File) ([]elf.Symbol, error) {
 
 	syms = append(syms, append(dynSyms, pltSymbols...)...)
 	return syms, nil
+}
+
+// isPIE indicates whether the program is position independent executable.
+// PIE is used by default in gcc for security measures,
+// i.e., address space layout randomization.
+func isPIE(f *elf.File, mmapOffset, mmapStart uint64) bool {
+	// The executable segment usually maps to 0x401000 for non PIE programs,
+	// and to a random address such as 0x5646e2188000 for PIE.
+	if mmapStart == 0 {
+		return false
+	}
+
+	// Find the mapped segment in ELF file.
+	var segment elf.ProgHeader
+	for i := range f.Progs {
+		if f.Progs[i].Off == mmapOffset {
+			segment = f.Progs[i].ProgHeader
+			break
+		}
+	}
+	isReadable := (segment.Flags & elf.PF_R) != 0
+	isExecutable := (segment.Flags & elf.PF_X) != 0
+	if segment.Type != elf.PT_LOAD || !isReadable || !isExecutable {
+		return false
+	}
+
+	// In case of PIE, virtual address and file offset are equal
+	// when looking at the ELF file,
+	// but vm_start shown in /proc/$PID/maps will be a random high address,
+	// e.g., 0x5646e2188000.
+	//
+	// Type Offset   VirtAddr           PhysAddr           FileSiz  MemSiz   Flg Align
+	// LOAD 0x001000 0x0000000000001000 0x0000000000001000 0x0001ed 0x0001ed R E 0x1000
+	isPIE := segment.Vaddr == segment.Off
+
+	return isPIE
 }

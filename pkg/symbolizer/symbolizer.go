@@ -484,7 +484,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 				return nil, nil, fmt.Errorf("check debuginfo quality: %w", ErrNoDebuginfo)
 			}
 		}
-		liner, err = s.newLiner(f.Name(), e, dbginfo.Quality)
+		liner, err = s.newLiner(f.Name(), e, m, dbginfo.Quality)
 		if err != nil {
 			return nil, nil, fmt.Errorf("new liner: %w", err)
 		}
@@ -540,7 +540,7 @@ func (s *Symbolizer) countLocationsToSymbolize(key string, locations []*pb.Locat
 }
 
 // newLiner creates a new liner for the given mapping and object file path.
-func (s *Symbolizer) newLiner(filepath string, f *elf.File, quality *debuginfopb.DebuginfoQuality) (liner, error) {
+func (s *Symbolizer) newLiner(filepath string, f *elf.File, m *pb.Mapping, quality *debuginfopb.DebuginfoQuality) (liner, error) {
 	switch {
 	case quality.HasDwarf:
 		lnr, err := addr2line.DWARF(s.logger, filepath, f, s.demangler)
@@ -558,7 +558,7 @@ func (s *Symbolizer) newLiner(filepath string, f *elf.File, quality *debuginfopb
 		return lnr, nil
 		// TODO CHECK plt
 	case quality.HasSymtab || quality.HasDynsym:
-		lnr, err := addr2line.Symbols(s.logger, filepath, f, s.demangler)
+		lnr, err := addr2line.Symbols(s.logger, filepath, f, m.Offset, m.Start, s.demangler)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Symtab liner: %w", err)
 		}
