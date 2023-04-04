@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	goruntime "runtime"
@@ -36,6 +37,7 @@ import (
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
+	promconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/thanos-io/objstore"
@@ -341,7 +343,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	var debuginfodClient debuginfo.DebuginfodClient = debuginfo.NopDebuginfodClient{}
 	if len(flags.Debuginfod.UpstreamServers) > 0 {
-		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.Debuginfod.UpstreamServers, flags.Debuginfod.HTTPRequestTimeout)
+		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.Debuginfod.UpstreamServers, &http.Client{
+			Transport: promconfig.NewUserAgentRoundTripper(fmt.Sprintf("parca.dev/debuginfod-client/%s", version), http.DefaultTransport),
+			Timeout:   flags.Debuginfod.HTTPRequestTimeout,
+		})
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
 			return err
