@@ -124,7 +124,7 @@ const ProfileExplorerApp = ({
   useEffect(() => {
     const mergeFrom = merge_from_a ?? undefined;
     const mergeTo = merge_to_a ?? undefined;
-    const labels = typeof(labels_a) === 'string' ? [labels_a] : (labels_a as string[]) ?? [''];
+    const labels = typeof labels_a === 'string' ? [labels_a] : (labels_a as string[]) ?? [''];
     const profileA = ProfileSelectionFromParams(
       expression_a,
       from_a as string,
@@ -142,7 +142,7 @@ const ProfileExplorerApp = ({
   useEffect(() => {
     const mergeFrom = merge_from_b ?? undefined;
     const mergeTo = merge_to_b ?? undefined;
-    const labels = typeof(labels_b) === 'string' ? [labels_b] : (labels_b as string[]) ?? [''];
+    const labels = typeof labels_b === 'string' ? [labels_b] : (labels_b as string[]) ?? [''];
     const profileB = ProfileSelectionFromParams(
       expression_b,
       from_b as string,
