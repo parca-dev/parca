@@ -14,7 +14,6 @@
 import React, {useMemo} from 'react';
 
 import cx from 'classnames';
-import {scaleLinear} from 'd3-scale';
 
 import {FlamegraphNode} from '@parca/client';
 import {
@@ -24,7 +23,7 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
 import {selectBinaries, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
-import {isSearchMatch} from '@parca/utilities';
+import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import useNodeColor from './useNodeColor';
 import {nodeLabel} from './utils';
@@ -45,7 +44,7 @@ interface IcicleGraphNodesProps {
   curPath: string[];
   setCurPath: (path: string[]) => void;
   path: string[];
-  xScale: (value: number) => number;
+  xScale: (value: bigint) => number;
   searchString?: string;
   compareMode: boolean;
 }
@@ -83,8 +82,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
     <g transform={`translate(${x}, ${y})`}>
       {nodes.map(function nodeMapper(d, i) {
         const start = nodes.slice(0, i).reduce((sum, d) => sum + d.cumulative, 0n);
-        // TODO(manoj): Fix the scale to accept bigint
-        const xStart = xScale(Number(start));
+        const xStart = xScale(start);
 
         return (
           <IcicleNode
@@ -128,7 +126,7 @@ interface IcicleNodeProps {
   path: string[];
   total: bigint;
   setCurPath: (path: string[]) => void;
-  xScale: (value: number) => number;
+  xScale: (value: bigint) => number;
   isRoot?: boolean;
   searchString?: string;
   compareMode: boolean;
@@ -181,15 +179,13 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);
   const newXScale =
     nextCurPath.length === 0 && curPath.length === 1
-      ? scaleLinear()
-          .domain([0, Number(cumulative)])
-          .range([0, totalWidth])
+      ? scaleLinear([0n, cumulative], [0, totalWidth])
       : xScale;
 
   const width =
     nextCurPath.length > 0 || (nextCurPath.length === 0 && curPath.length === 1)
       ? totalWidth
-      : xScale(Number(cumulative));
+      : xScale(cumulative);
 
   const {isHighlightEnabled = false, isHighlighted = false} = useMemo(() => {
     if (searchString === undefined || searchString === '') {

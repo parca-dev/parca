@@ -24,3 +24,20 @@ export const divide = (a: bigint, b: bigint): number => {
 export const abs = (a: bigint): bigint => {
   return a < 0n ? -a : a;
 };
+
+export const scaleLinear = (
+  domain: [bigint, bigint],
+  range: [number, number]
+): ((x: bigint) => number) => {
+  const [domainMin, domainMax] = domain;
+  const [rangeMin, rangeMax] = range;
+  const domainRange = domainMax - domainMin;
+  const rangeRange = BigInt(rangeMax - rangeMin);
+
+  // rate * 100 to retain the decimal places in BigInt format, then divide by 100 to get the final result
+  const rate = BigInt(Math.round(divide(rangeRange, domainRange) * 100));
+
+  return x => {
+    return Number(BigInt(rangeMin) + (x - domainMin) * rate) / 100;
+  };
+};

@@ -121,14 +121,14 @@ const MetricsTooltip = ({
                       <tr>
                         <td className="w-1/4">Value</td>
                         <td className="w-3/4">
-                          {valueFormatter(BigInt(highlighted.valuePerSecond), sampleUnit, 5)}
+                          {valueFormatter(highlighted.valuePerSecond, sampleUnit, 5)}
                         </td>
                       </tr>
                       {delta && (
                         <tr>
                           <td className="w-1/4">Total</td>
                           <td className="w-3/4">
-                            {valueFormatter(BigInt(highlighted.value), sampleUnit, 2)}
+                            {valueFormatter(highlighted.value, sampleUnit, 2)}
                           </td>
                         </tr>
                       )}
@@ -136,7 +136,7 @@ const MetricsTooltip = ({
                         <tr>
                           <td className="w-1/4">Duration</td>
                           <td className="w-3/4">
-                            {valueFormatter(BigInt(highlighted.duration), 'nanoseconds', 2)}
+                            {valueFormatter(highlighted.duration, 'nanoseconds', 2)}
                           </td>
                         </tr>
                       )}

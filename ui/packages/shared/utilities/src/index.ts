@@ -68,8 +68,9 @@ const knownValueFormatters = {
   count: unitsInCount,
 };
 
-export const valueFormatter = (num: bigint, unit: string, digits: number): string => {
-  const absoluteNum = abs(num);
+export const valueFormatter = (num: bigint | number, unit: string, digits: number): string => {
+  const isBigInt = typeof num === 'bigint';
+  const absoluteNum = isBigInt ? abs(num) : Math.abs(num);
   const format: Unit[] = Object.values(
     knownValueFormatters[unit as keyof typeof knownValueFormatters]
   );
@@ -85,9 +86,11 @@ export const valueFormatter = (num: bigint, unit: string, digits: number): strin
       break;
     }
   }
-  return `${divide(num, BigInt(format[i].multiplier)).toFixed(digits).replace(rx, '$1')}${
-    format[i].symbol
-  }`;
+
+  const multiplier = format[i].multiplier;
+  return `${(isBigInt ? divide(num, BigInt(multiplier)) : num / multiplier)
+    .toFixed(digits)
+    .replace(rx, '$1')}${format[i].symbol}`;
 };
 
 export const isDevMode = (): boolean => {

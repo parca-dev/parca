@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {abs, divide} from './bigint';
+import {abs, divide, scaleLinear} from './bigint';
 
 describe('bigint divide', () => {
   it('divides two bigints and returns a number', () => {
@@ -29,5 +29,30 @@ describe('bigint abs', () => {
 
   it('returns the absolute value of a positive bigint', () => {
     expect(abs(4n)).toBe(4n);
+  });
+});
+
+describe('bigint scaleLinear', () => {
+  it('scale works fine with a 1:1 function', () => {
+    const scale = scaleLinear([0n, 100n], [0, 100]);
+    expect(scale(50n)).toBe(50);
+    expect(scale(100n)).toBe(100);
+    expect(scale(0n)).toBe(0);
+    expect(scale(20n)).toBe(20);
+  });
+  it('scale works fine with a 1:2 function', () => {
+    const scale = scaleLinear([0n, 100n], [0, 200]);
+    expect(scale(50n)).toBe(100);
+    expect(scale(100n)).toBe(200);
+    expect(scale(0n)).toBe(0);
+    expect(scale(20n)).toBe(40);
+  });
+
+  it('scale works fine with a 2:1 function', () => {
+    const scale = scaleLinear([0n, 100n], [0, 50]);
+    expect(scale(50n)).toBe(25);
+    expect(scale(100n)).toBe(50);
+    expect(scale(0n)).toBe(0);
+    expect(scale(20n)).toBe(10);
   });
 });
