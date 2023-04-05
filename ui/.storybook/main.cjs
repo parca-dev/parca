@@ -19,6 +19,7 @@ module.exports = {
     },
     '@storybook/addon-mdx-gfm',
     'storybook-dark-mode',
+    'storybook-css-modules-preset',
   ],
   core: {
     disableTelemetry: true,

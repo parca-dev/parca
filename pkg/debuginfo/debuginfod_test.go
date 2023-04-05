@@ -152,7 +152,9 @@ func TestHTTPDebugInfodClientRedirect(t *testing.T) {
 	}))
 	defer rs.Close()
 
-	c, err := NewHTTPDebuginfodClient(log.NewNopLogger(), []string{rs.URL}, 30*time.Second)
+	c, err := NewHTTPDebuginfodClient(log.NewNopLogger(), []string{rs.URL}, &http.Client{
+		Timeout: 30 * time.Second,
+	})
 	require.NoError(t, err)
 
 	ctx := context.Background()

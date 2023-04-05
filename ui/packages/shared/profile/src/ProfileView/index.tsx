@@ -61,16 +61,22 @@ export interface FlamegraphData {
 export interface TopTableData {
   loading: boolean;
   data?: Top;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 interface CallgraphData {
   loading: boolean;
   data?: CallgraphType;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 export interface ProfileViewProps {
+  total: bigint;
+  filtered: bigint;
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
@@ -93,6 +99,8 @@ function arrayEquals<T>(a: T[], b: T[]): boolean {
 }
 
 export const ProfileView = ({
+  total,
+  filtered,
   flamegraphData,
   topTableData,
   callgraphData,
@@ -235,8 +243,8 @@ export const ProfileView = ({
               curPath={curPath}
               setNewCurPath={setNewCurPath}
               graph={flamegraphData.data}
-              total={flamegraphData.total ?? 0n}
-              filtered={flamegraphData?.filtered ?? 0n}
+              total={total}
+              filtered={filtered}
               sampleUnit={sampleUnit}
               onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}
