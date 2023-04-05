@@ -310,5 +310,11 @@ func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer, rowsPe
 		}
 	}
 
+	// Append final record
+	r := bldr.NewRecord()
+	if r.NumRows() > 0 {
+		records = append(records, r)
+	}
+
 	return records, nil
 }
