@@ -67,11 +67,11 @@ func NewColumnQueryAPI(
 		tracer:             tracer,
 		shareClient:        shareClient,
 		querier:            querier,
-		tableConverterPool: newTableConverterPool(),
+		tableConverterPool: NewTableConverterPool(),
 	}
 }
 
-func newTableConverterPool() *sync.Pool {
+func NewTableConverterPool() *sync.Pool {
 	return &sync.Pool{
 		New: func() any {
 			return &tableConverter{
