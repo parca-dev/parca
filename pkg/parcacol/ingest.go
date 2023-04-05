@@ -133,20 +133,25 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	// Experimental feature that ingests profiles as arrow records.
 	if ExperimentalArrow {
 		// Read sorted rows into an arrow record
-		record, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer)
+		records, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer, 0)
 		if err != nil {
 			return err
 		}
-		defer record.Release()
+		defer func() {
+			for _, record := range records {
+				record.Release()
+			}
+		}()
 
-		if record.NumRows() == 0 {
-			return nil
+		for _, record := range records {
+			if record.NumRows() == 0 {
+				return nil
+			}
+
+			if _, err := ing.table.InsertRecord(ctx, record); err != nil {
+				return err
+			}
 		}
-
-		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
-			return err
-		}
-
 		return nil
 	}
 
