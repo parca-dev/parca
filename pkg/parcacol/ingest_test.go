@@ -59,7 +59,7 @@ func (t *fakeTable) Schema() *dynparquet.Schema {
 }
 
 func (t *fakeTable) InsertRecord(ctx context.Context, record arrow.Record) (uint64, error) {
-	return 0, fmt.Errorf("unimplemented")
+	return 0, nil
 }
 
 func (t *fakeTable) Insert(ctx context.Context, data []byte) (uint64, error) {
