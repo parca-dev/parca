@@ -227,7 +227,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServ
 	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, nodeTrimFraction, newTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, nodeTrimFraction, NewTableConverterPool())
 	require.NoError(t, err)
 
 	return fg

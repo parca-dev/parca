@@ -59,7 +59,7 @@ func (t *fakeTable) Schema() *dynparquet.Schema {
 }
 
 func (t *fakeTable) InsertRecord(ctx context.Context, record arrow.Record) (uint64, error) {
-	return 0, fmt.Errorf("unimplemented")
+	return 0, nil
 }
 
 func (t *fakeTable) Insert(ctx context.Context, data []byte) (uint64, error) {
@@ -90,60 +90,77 @@ func TestPprofToParquet(t *testing.T) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
-	table := &fakeTable{
-		schema: schema,
+	tests := map[string]struct {
+		arrow bool
+	}{
+		"parquet": {false},
+		"arrow":   {true},
 	}
 
-	ing := NewIngester(
-		logger,
-		table,
-		schema,
-		metastore,
-		&sync.Pool{
-			New: func() interface{} {
-				return bytes.NewBuffer(nil)
-			},
-		},
-	)
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			table := &fakeTable{
+				schema: schema,
+			}
 
-	require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
-		Series: []*profilestorepb.RawProfileSeries{{
-			Labels: &profilestorepb.LabelSet{
-				Labels: []*profilestorepb.Label{
-					{
-						Name:  "__name__",
-						Value: "memory",
-					},
-					{
-						Name:  "job",
-						Value: "default",
+			ing := NewIngester(
+				logger,
+				table,
+				schema,
+				metastore,
+				&sync.Pool{
+					New: func() interface{} {
+						return bytes.NewBuffer(nil)
 					},
 				},
-			},
-			Samples: []*profilestorepb.RawSample{{
-				RawProfile: fileContent,
-			}},
-		}},
-	}))
+			)
 
-	for i, insert := range table.inserts {
-		serBuf, err := dynparquet.ReaderFromBytes(insert)
-		require.NoError(t, err)
-
-		rows := serBuf.Reader()
-		rowBuf := []parquet.Row{{}}
-		for {
-			_, err := rows.ReadRows(rowBuf)
-			if err == io.EOF {
-				break
+			if test.arrow {
+				ExperimentalArrow = true
+				t.Cleanup(func() {
+					ExperimentalArrow = false
+				})
 			}
-			if err != io.EOF {
-				if err != nil {
-					require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), insert, 0o777))
-				}
+			require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
+				Series: []*profilestorepb.RawProfileSeries{{
+					Labels: &profilestorepb.LabelSet{
+						Labels: []*profilestorepb.Label{
+							{
+								Name:  "__name__",
+								Value: "memory",
+							},
+							{
+								Name:  "job",
+								Value: "default",
+							},
+						},
+					},
+					Samples: []*profilestorepb.RawSample{{
+						RawProfile: fileContent,
+					}},
+				}},
+			}))
+
+			for i, insert := range table.inserts {
+				serBuf, err := dynparquet.ReaderFromBytes(insert)
 				require.NoError(t, err)
+
+				rows := serBuf.Reader()
+				rowBuf := []parquet.Row{{}}
+				for {
+					_, err := rows.ReadRows(rowBuf)
+					if err == io.EOF {
+						break
+					}
+					if err != io.EOF {
+						if err != nil {
+							require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), insert, 0o777))
+						}
+						require.NoError(t, err)
+					}
+				}
 			}
-		}
+		})
 	}
 }
 
@@ -174,59 +191,76 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, r.Close())
 
-	table := &fakeTable{
-		schema: schema,
+	tests := map[string]struct {
+		arrow bool
+	}{
+		"parquet": {false},
+		"arrow":   {true},
 	}
 
-	ing := NewIngester(
-		logger,
-		table,
-		schema,
-		metastore,
-		&sync.Pool{
-			New: func() interface{} {
-				return bytes.NewBuffer(nil)
-			},
-		},
-	)
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			table := &fakeTable{
+				schema: schema,
+			}
 
-	require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
-		Series: []*profilestorepb.RawProfileSeries{{
-			Labels: &profilestorepb.LabelSet{
-				Labels: []*profilestorepb.Label{
-					{
-						Name:  "__name__",
-						Value: "memory",
-					},
-					{
-						Name:  "job",
-						Value: "default",
+			ing := NewIngester(
+				logger,
+				table,
+				schema,
+				metastore,
+				&sync.Pool{
+					New: func() interface{} {
+						return bytes.NewBuffer(nil)
 					},
 				},
-			},
-			Samples: []*profilestorepb.RawSample{{
-				RawProfile: fileContent,
-			}},
-		}},
-	}))
+			)
 
-	for i, insert := range table.inserts {
-		serBuf, err := dynparquet.ReaderFromBytes(insert)
-		require.NoError(t, err)
-
-		rows := serBuf.Reader()
-		rowBuf := []parquet.Row{{}}
-		for {
-			_, err := rows.ReadRows(rowBuf)
-			if err == io.EOF {
-				break
+			if test.arrow {
+				ExperimentalArrow = true
+				t.Cleanup(func() {
+					ExperimentalArrow = false
+				})
 			}
-			if err != io.EOF {
-				if err != nil {
-					require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), insert, 0o777))
-				}
+			require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
+				Series: []*profilestorepb.RawProfileSeries{{
+					Labels: &profilestorepb.LabelSet{
+						Labels: []*profilestorepb.Label{
+							{
+								Name:  "__name__",
+								Value: "memory",
+							},
+							{
+								Name:  "job",
+								Value: "default",
+							},
+						},
+					},
+					Samples: []*profilestorepb.RawSample{{
+						RawProfile: fileContent,
+					}},
+				}},
+			}))
+
+			for i, insert := range table.inserts {
+				serBuf, err := dynparquet.ReaderFromBytes(insert)
 				require.NoError(t, err)
+
+				rows := serBuf.Reader()
+				rowBuf := []parquet.Row{{}}
+				for {
+					_, err := rows.ReadRows(rowBuf)
+					if err == io.EOF {
+						break
+					}
+					if err != io.EOF {
+						if err != nil {
+							require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), insert, 0o777))
+						}
+						require.NoError(t, err)
+					}
+				}
 			}
-		}
+		})
 	}
 }

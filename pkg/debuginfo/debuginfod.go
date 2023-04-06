@@ -60,7 +60,7 @@ type DebuginfodClientObjectStorageCache struct {
 }
 
 // NewHTTPDebuginfodClient returns a new HTTP debug info client.
-func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, timeoutDuration time.Duration) (*HTTPDebuginfodClient, error) {
+func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, client *http.Client) (*HTTPDebuginfodClient, error) {
 	logger = log.With(logger, "component", "debuginfod")
 	parsedURLs := make([]*url.URL, 0, len(serverURLs))
 	for _, serverURL := range serverURLs {
@@ -79,7 +79,7 @@ func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, timeoutDura
 	return &HTTPDebuginfodClient{
 		logger:          logger,
 		upstreamServers: parsedURLs,
-		client:          &http.Client{Timeout: timeoutDuration},
+		client:          client,
 	}, nil
 }
 

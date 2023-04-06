@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.285",
+  "version": "0.16.289",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -27,7 +27,7 @@
     "@parca/hooks": "^0.0.2",
     "@parca/icons": "^0.16.54",
     "@parca/parser": "^0.16.55",
-    "@parca/profile": "^0.16.159",
+    "@parca/profile": "^0.16.160",
     "@parca/store": "^0.16.73",
     "@parca/utilities": "^0.0.5",
     "@svgr/webpack": "6.5.1",
@@ -41,11 +41,11 @@
     "lodash.throttle": "4.1.1",
     "moment": "2.29.4",
     "postcss": "8.4.21",
-    "react-datepicker": "4.10.0",
+    "react-datepicker": "4.11.0",
     "react-dom": "18.2.0",
     "react-github-btn": "^1.4.0",
     "react-markdown": "^8.0.4",
-    "react-router-dom": "6.9.0",
+    "react-router-dom": "6.10.0",
     "react-use": "17.4.0",
     "tailwindcss": "3.2.4",
     "web-vitals": "3.3.0"
@@ -70,7 +70,7 @@
     "tslint-config-prettier": "1.18.0",
     "tslint-plugin-prettier": "2.3.0",
     "tslint-react": "5.0.0",
-    "webpack": "5.76.3"
+    "webpack": "5.77.0"
   },
   "eslintConfig": {
     "extends": [
