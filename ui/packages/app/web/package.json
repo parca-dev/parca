@@ -70,7 +70,7 @@
     "tslint-config-prettier": "1.18.0",
     "tslint-plugin-prettier": "2.3.0",
     "tslint-react": "5.0.0",
-    "webpack": "5.77.0"
+    "webpack": "5.78.0"
   },
   "eslintConfig": {
     "extends": [
