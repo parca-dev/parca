@@ -115,6 +115,8 @@ type Flags struct {
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
 
 	ExperimentalArrow bool `default:"false" help:"EXPERIMENTAL: Enables Arrow ingestion, this will reduce CPU usage but will increase memory usage."`
+
+	Hidden FlagsHidden `embed:"" prefix:"" hidden:""`
 }
 
 type FlagsLogs struct {
@@ -147,6 +149,11 @@ type FlagsDebuginfo struct {
 type FlagsDebuginfod struct {
 	UpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
+}
+
+// FlagsHidden contains hidden flags intended only for debugging.
+type FlagsHidden struct {
+	DebugNormalizeAddresses bool `kong:"help='Normalize sampled addresses.',default='true',hidden=''"`
 }
 
 // Run the parca server.
@@ -305,6 +312,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		metastore,
 		table,
 		schema,
+		flags.Hidden.DebugNormalizeAddresses,
 	)
 	conn, err := grpc.Dial(flags.ProfileShareServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	if err != nil {

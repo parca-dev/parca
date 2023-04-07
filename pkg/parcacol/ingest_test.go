@@ -99,29 +99,17 @@ func TestPprofToParquet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			table := &fakeTable{
-				schema: schema,
-			}
-
-			ing := NewIngester(
-				logger,
-				table,
-				schema,
-				metastore,
-				&sync.Pool{
-					New: func() interface{} {
-						return bytes.NewBuffer(nil)
-					},
-				},
-			)
-
 			if test.arrow {
 				ExperimentalArrow = true
 				t.Cleanup(func() {
 					ExperimentalArrow = false
 				})
 			}
-			require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
+
+			table := &fakeTable{
+				schema: schema,
+			}
+			req := &profilestorepb.WriteRawRequest{
 				Series: []*profilestorepb.RawProfileSeries{{
 					Labels: &profilestorepb.LabelSet{
 						Labels: []*profilestorepb.Label{
@@ -139,7 +127,21 @@ func TestPprofToParquet(t *testing.T) {
 						RawProfile: fileContent,
 					}},
 				}},
-			}))
+			}
+			err := NormalizedIngest(
+				ctx,
+				req,
+				logger,
+				table,
+				schema,
+				metastore,
+				&sync.Pool{
+					New: func() interface{} {
+						return bytes.NewBuffer(nil)
+					},
+				},
+			)
+			require.NoError(t, err)
 
 			for i, insert := range table.inserts {
 				serBuf, err := dynparquet.ReaderFromBytes(insert)
@@ -200,29 +202,17 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			table := &fakeTable{
-				schema: schema,
-			}
-
-			ing := NewIngester(
-				logger,
-				table,
-				schema,
-				metastore,
-				&sync.Pool{
-					New: func() interface{} {
-						return bytes.NewBuffer(nil)
-					},
-				},
-			)
-
 			if test.arrow {
 				ExperimentalArrow = true
 				t.Cleanup(func() {
 					ExperimentalArrow = false
 				})
 			}
-			require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
+
+			table := &fakeTable{
+				schema: schema,
+			}
+			req := &profilestorepb.WriteRawRequest{
 				Series: []*profilestorepb.RawProfileSeries{{
 					Labels: &profilestorepb.LabelSet{
 						Labels: []*profilestorepb.Label{
@@ -240,7 +230,21 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 						RawProfile: fileContent,
 					}},
 				}},
-			}))
+			}
+			err := NormalizedIngest(
+				ctx,
+				req,
+				logger,
+				table,
+				schema,
+				metastore,
+				&sync.Pool{
+					New: func() interface{} {
+						return bytes.NewBuffer(nil)
+					},
+				},
+			)
+			require.NoError(t, err)
 
 			for i, insert := range table.inserts {
 				serBuf, err := dynparquet.ReaderFromBytes(insert)

@@ -214,6 +214,7 @@ func TestConsistency(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -322,6 +323,7 @@ func TestPGOE2e(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{

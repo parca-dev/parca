@@ -170,41 +170,39 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	return nil
 }
 
-type Ingester struct {
-	logger     log.Logger
-	table      Table
-	schema     *dynparquet.Schema
-	metastore  metastorepb.MetastoreServiceClient
-	bufferPool *sync.Pool
-}
-
-func NewIngester(
+// Ingest persists pprof samples.
+func Ingest(
+	ctx context.Context,
+	req *profilestorepb.WriteRawRequest,
 	logger log.Logger,
 	table Table,
 	schema *dynparquet.Schema,
 	metastore metastorepb.MetastoreServiceClient,
 	bufferPool *sync.Pool,
-) Ingester {
-	return Ingester{
-		logger:     logger,
-		table:      table,
-		schema:     schema,
-		metastore:  metastore,
-		bufferPool: bufferPool,
-	}
+) error {
+	return fmt.Errorf("raw samples ingestion is not supported yet")
 }
 
-func (ing Ingester) Ingest(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
-	normalizedRequest, err := NormalizeWriteRawRequest(ctx, NewNormalizer(ing.metastore), req)
+// NormalizedIngest normalizes and persists pprof samples.
+func NormalizedIngest(
+	ctx context.Context,
+	req *profilestorepb.WriteRawRequest,
+	logger log.Logger,
+	table Table,
+	schema *dynparquet.Schema,
+	metastore metastorepb.MetastoreServiceClient,
+	bufferPool *sync.Pool,
+) error {
+	normalizedRequest, err := NormalizeWriteRawRequest(ctx, NewNormalizer(metastore), req)
 	if err != nil {
 		return err
 	}
 
 	if err := NewNormalizedIngester(
-		ing.logger,
-		ing.table,
-		ing.schema,
-		ing.bufferPool,
+		logger,
+		table,
+		schema,
+		bufferPool,
 		normalizedRequest.AllLabelNames,
 		normalizedRequest.AllPprofLabelNames,
 		normalizedRequest.AllPprofNumLabelNames,

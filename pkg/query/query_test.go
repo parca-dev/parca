@@ -76,6 +76,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				metastore,
 				table,
 				schema,
+				true,
 			)
 
 			for j := 0; j < n; j++ {
