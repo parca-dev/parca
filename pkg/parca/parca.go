@@ -116,7 +116,7 @@ type Flags struct {
 
 	ExperimentalArrow bool `default:"false" help:"EXPERIMENTAL: Enables Arrow ingestion, this will reduce CPU usage but will increase memory usage."`
 
-	Hidden FlagsHidden `embed:"" prefix:"" hidden:""`
+	Hidden FlagsHidden `embed:"" prefix:""`
 }
 
 type FlagsLogs struct {
