@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.16.131 (2023-04-08)
+
+**Note:** Version bump only for package @parca/components
+
 ## [0.16.130](https://github.com/parca-dev/parca/compare/@parca/components@0.16.129...@parca/components@0.16.130) (2023-04-06)
 
 **Note:** Version bump only for package @parca/components
